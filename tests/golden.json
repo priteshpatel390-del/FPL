@@ -1,0 +1,220 @@
+{
+  "stable": {
+    "matchContext_strong_home": {
+      "xGF": 2.091244,
+      "xGA": 0.961448,
+      "cs": 0.382339,
+      "atk": 1.472707,
+      "def": 1.476939,
+      "home": true
+    },
+    "matchContext_weak_away": {
+      "xGF": 0.961448,
+      "xGA": 2.091244,
+      "cs": 0.123533,
+      "atk": 0.677076,
+      "def": 0.679022,
+      "home": false
+    },
+    "multToDiff_boundaries": [
+      1,
+      1,
+      2,
+      2,
+      3,
+      3,
+      4,
+      4,
+      5
+    ],
+    "runScore_attack_t1": 1.161115,
+    "runScore_def_t1": 1.153112,
+    "double_gw11_team5": 2,
+    "matchContext_with_ustat": {
+      "xGF": 2.756813,
+      "xGA": 0.916069,
+      "cs": 0.400089,
+      "atk": 1.941417,
+      "def": 1.550101,
+      "home": true
+    },
+    "matchContext_with_odds_home": {
+      "xGF": 2.654884,
+      "xGA": 0.775624,
+      "cs": 0.460416,
+      "atk": 1.869637,
+      "def": 1.830784,
+      "home": true
+    },
+    "matchContext_with_odds_awayPerspective": {
+      "xGF": 0.775624,
+      "xGA": 2.654884,
+      "cs": 0.070307,
+      "atk": 0.546214,
+      "def": 0.534863,
+      "home": false
+    },
+    "xp_eliteFWD": {
+      "total": 46.583972,
+      "perGW": 7.763995,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 23.717883,
+        "Assists": 4.185509,
+        "Bonus": 8.180581,
+        "Cards": -1.2
+      }
+    },
+    "xp_goodFWD": {
+      "total": 35.797488,
+      "perGW": 5.966248,
+      "parts": {
+        "Appearance": 13.65,
+        "Goals": 15.7936,
+        "Assists": 3.701625,
+        "Bonus": 4.052263,
+        "Cards": -1.4
+      }
+    },
+    "xp_budgetFWD": {
+      "total": 14.341936,
+      "perGW": 2.390323,
+      "parts": {
+        "Appearance": 10.461818,
+        "Goals": 3.014131,
+        "Assists": 0.822036,
+        "Bonus": 1.243952,
+        "Cards": -1.2
+      }
+    },
+    "xp_eliteMID": {
+      "total": 48.297063,
+      "perGW": 8.049511,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 19.209549,
+        "Assists": 8.382349,
+        "Clean sheet": 1.706122,
+        "Bonus": 8.499043,
+        "Cards": -1.2
+      }
+    },
+    "xp_dcMID": {
+      "total": 25.808004,
+      "perGW": 4.301334,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 1.558462,
+        "Assists": 1.870154,
+        "Clean sheet": 1.457678,
+        "Defensive actions": 8.297156,
+        "Bonus": 2.124554,
+        "Cards": -1.2
+      }
+    },
+    "xp_eliteDEF": {
+      "total": 32.30069,
+      "perGW": 5.383448,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 5.016015,
+        "Assists": 3.762011,
+        "Clean sheet": 6.77579,
+        "Goals conceded": -2.675717,
+        "Defensive actions": 4.519586,
+        "Bonus": 4.403004,
+        "Cards": -1.2
+      }
+    },
+    "xp_weakDEF": {
+      "total": 15.714178,
+      "perGW": 2.61903,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 0.610031,
+        "Assists": 0.457523,
+        "Clean sheet": 4.415451,
+        "Goals conceded": -3.611671,
+        "Defensive actions": 3.342844,
+        "Bonus": 0,
+        "Cards": -1.2
+      }
+    },
+    "xp_eliteGKP": {
+      "total": 23.95721,
+      "perGW": 3.992868,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 0,
+        "Assists": 0,
+        "Clean sheet": 6.77579,
+        "Goals conceded": -2.675717,
+        "Saves": 5.583134,
+        "Bonus": 3.774004,
+        "Cards": -1.2
+      }
+    },
+    "xp_busyGKP": {
+      "total": 26.680466,
+      "perGW": 4.446744,
+      "parts": {
+        "Appearance": 11.7,
+        "Goals": 0,
+        "Assists": 0,
+        "Clean sheet": 4.415451,
+        "Goals conceded": -3.611671,
+        "Saves": 13.659163,
+        "Bonus": 1.717523,
+        "Cards": -1.2
+      }
+    },
+    "xp_injured_isZero": 0,
+    "xp_doubt75_scaled": 21.36851,
+    "availability_states": [
+      1,
+      0.75,
+      0,
+      0,
+      0,
+      0
+    ],
+    "xp_eliteFWD_calibrated_ratio": 1.2,
+    "preseason_priceBaseline_ordering": true,
+    "preseason_xp_eliteFWD": 62.161058,
+    "bestXI": {
+      "shape": "3-5-2",
+      "tot": 64.779526,
+      "xiSize": 11,
+      "benchSize": 4,
+      "gkInXI": 1
+    },
+    "sellPrice_cases": [
+      50,
+      51,
+      50,
+      48
+    ],
+    "poisson_over25_at27": 0.506376,
+    "solveLambda_inverts": 0.55,
+    "csv_quoted": "Smith, John",
+    "pearson_correlated": 0.998652,
+    "mapTeamName": [
+      1,
+      2,
+      3,
+      null
+    ],
+    "parseUnderstat_decodes": "Manchester United"
+  },
+  "expectedToChange": {
+    "MIN1_expectedMinutes_900min_gw10": 90,
+    "MIN1_expectedMinutes_bencher_450min": 45,
+    "DEN1_gamesPlayed_equals_currentGW": true,
+    "SCOR1_gk_parts": {
+      "saves": 13.659163,
+      "conceded": -3.611671
+    },
+    "SCOR2_bonus_eliteFWD": 8.180581,
+    "FIX1_blank_penalty_probe": 1.262185
+  }
+}
