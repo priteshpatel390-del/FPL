@@ -1,5 +1,5 @@
 # STAGE_HISTORY.md — engineering diary
-Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-26.
+Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-27.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, AUDIT.md (all retained verbatim in /docs).
 
 ## Pre-stage era (v1.x, founding conversation)
@@ -33,13 +33,18 @@ touch breaking direct imports. All fixed same-stage. Lessons: the characterisati
 keep four times in one stage; generated code needs path tests. Outstanding: BT-1 pinning; views
 module intentionally monolithic until Stage 9.
 
-## Stage 3 — Security & hardening (DESIGNED, awaiting approval)
-Design: docs/STAGE3-DESIGN.md (8 deliverables). Open judgement calls for owner: fixture-id dedupe
-inside validation (DUP-1); style-src-attr concession. Issue resolved during design review:
-misleading duplicate-fixture test title corrected (tests and audit now agree). Owner has mandated a
-full architecture review gate after Stage 3, before any model work.
+## Stage 3 — Security & hardening (IN PROGRESS)
+Design: docs/STAGE3-DESIGN.md (8 deliverables), approved with CSP intentionally specified last.
+First implementation: D-13 fixture validation/deduplication in `hydrate()`; DUP-1 closed and suite
+96 → 108. Second implementation (2026-07-27): SEC-3 closed — Anthropic key field, persistence,
+key headers and hosted browser request removed; one-time stored-config migration added; keyless
+Claude-preview path retained. Five focused tests bring the suite to 113. Third implementation:
+D-14 per-endpoint schema validation, atomic hydrate and safe issue reporting; VAL-1 closed and suite
+113 → 146. Fourth implementation: D-15 bounded transient-only retry with attempt/time ceilings and
+normalised metadata for the health model; suite 146 → 179. Next: item 4 provider health. Owner
+architecture-review gate remains after Stage 3, before any model work.
 
-## Documentation stage (THIS, 2026-07-26)
+## Documentation stage (DONE, 2026-07-26)
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
 system (12 files) + CLAUDE.md; no code. Lessons: a several-hundred-turn founding conversation is a
 liability; decision records should have started at turn one.

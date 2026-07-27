@@ -3,6 +3,8 @@ import { $, num } from '../util.mjs';
 import { fetchVia } from './transport.mjs';
 import { mapTeamName } from './common.mjs';
 import { markHealth } from './registry.mjs';
+import { validateUnderstat, collapseIssues } from './validate.mjs';
+import { recordIssues } from '../state.mjs';
 /* ---------------------------------------------------------------------
    UNDERSTAT LAYER — rolling actual xG replaces trusting FPL's slow-moving
    strength ratings. Parses the teamsData JSON embedded in the league page.
@@ -20,6 +22,10 @@ async function loadUnderstat(){
   if(!$('useUstat').checked || !S.boot) return;
   const html = await fetchVia('https://understat.com/league/EPL', {asText:true});
   let data = html ? parseUnderstat(html) : null;
+  // D-14: parseUnderstat only proves the page yielded JSON; validate the shape
+  // its consumers actually rely on (title + history[]) before using it.
+  const uIssues = [];
+  if(data){ const v = validateUnderstat(data); uIssues.push(...v.issues); data = v.value; }
   let label = 'current season';
   const matchCount = data ? Object.values(data).reduce((a,t) => a + (t.history||[]).length, 0) : 0;
   if(!data || matchCount < 40){
@@ -27,8 +33,12 @@ async function loadUnderstat(){
     const prevYear = new Date().getMonth() >= 6 ? new Date().getFullYear() - 1 : new Date().getFullYear() - 2;
     const prev = await fetchVia('https://understat.com/league/EPL/' + prevYear, {asText:true});
     const pd = prev ? parseUnderstat(prev) : null;
-    if(pd){ data = pd; label = `last season's closing form`; }
+    if(pd){
+      const v = validateUnderstat(pd); uIssues.push(...v.issues);
+      if(v.value){ data = v.value; label = `last season's closing form`; }
+    }
   }
+  recordIssues('understat', 'league/EPL', collapseIssues(uIssues));
   if(!data){ S.ustatNote = 'Understat unreachable — using FPL strength ratings only.'; markHealth('understat', false, 'unreachable', true); return; }
 
   const map = {}; let sumA = 0, sumD = 0, n = 0;

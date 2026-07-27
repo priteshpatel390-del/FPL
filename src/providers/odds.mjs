@@ -4,6 +4,9 @@ import { fetchT } from './transport.mjs';
 import { mapTeamName } from './common.mjs';
 import { ODDS_RULES } from '../config.mjs';
 import { markHealth } from './registry.mjs';
+import { validateOdds } from './validate.mjs';
+import { recordIssues, recordRetry } from '../state.mjs';
+import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from './retry.mjs';
 /* ---------------------------------------------------------------------
    ODDS LAYER — bookmaker match odds converted to market-implied goals.
    The market prices team news and everything else in minutes; the model
@@ -30,19 +33,39 @@ async function loadOdds(){
   const key = $('oddsKey').value.trim();
   if(!key || !S.boot) return;
   let data = null;
-  try{
-    // SEC-1: this request carries the API key, so it must NEVER transit a public
-    // relay. Direct-only; on failure fall back to the internal team model and
-    // reduce confidence — do not retry via proxies.
-    const res = await fetchT('https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key), 10000);
-    if(res.ok) data = await res.json();
-    else if(res.status === 401) { S.oddsNote = 'Odds API key rejected — check it at the-odds-api.com.'; return; }
-    else if(res.status === 429) { S.oddsNote = 'Odds API quota used up for this period.'; return; }
-  }catch(e){
+  // SEC-1: this request carries the API key, so it must NEVER transit a public
+  // relay. Direct-only; on failure fall back to the internal team model and
+  // reduce confidence — do not retry via proxies. D-15 retries the DIRECT
+  // request only, which leaves that guarantee structurally intact.
+  const oddsUrl = 'https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key);
+  const { result, record } = await withRetry(
+    async () => {
+      let res;
+      try{ res = await fetchT(oddsUrl, 10000); }
+      catch(e){ return {ok:false, retryable:true, status:'network'}; }
+      // 401 is a bad key and 429 is an exhausted quota WINDOW, not a transient
+      // burst — retrying either just delays the same answer, so both are permanent.
+      if(res.status === 401 || res.status === 429) return {ok:false, retryable:false, status:res.status};
+      if(!res.ok) return {ok:false, retryable:isRetryableStatus(res.status), status:res.status};
+      try{ return {ok:true, value: await res.json(), status:res.status}; }
+      catch(e){ return {ok:false, retryable:false, status:'parse'}; }
+    },
+    { ...policyFor('odds'), endpoint: safeEndpoint(oddsUrl) }
+  );
+  recordRetry(record);
+  if(result && result.ok) data = result.value;
+  else if(record.finalStatus === 401){ S.oddsNote = 'Odds API key rejected — check it at the-odds-api.com.'; return; }
+  else if(record.finalStatus === 429){ S.oddsNote = 'Odds API quota used up for this period.'; return; }
+  else if(record.finalStatus === 'network' || record.finalStatus === 'parse'){
+    // the pre-D-15 catch block covered both of these; message kept identical
     S.oddsNote = 'Odds provider unreachable — internal team model active (reduced confidence).';
     markHealth('odds', false, 'direct fetch failed', true);
     return;
   }
+  // D-14: validate the event array before the parsing loop touches it.
+  const oddsV = validateOdds(data);
+  recordIssues('odds', 'v4/sports/soccer_epl/odds', oddsV.issues);
+  data = oddsV.value;
   if(!Array.isArray(data) || !data.length){ if(!S.oddsNote) S.oddsNote = 'No EPL odds returned (out of season window, or feed empty).'; return; }
 
   const fetchedAt = Date.now();

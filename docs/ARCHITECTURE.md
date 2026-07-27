@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 Purpose: detailed technical architecture. Audience: developers/Claude before changing code.
-Last updated: 2026-07-26. Related: PROJECT_CONTEXT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last updated: 2026-07-27. Related: PROJECT_CONTEXT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -14,6 +14,8 @@ src/
   storage.mjs       sget/sset (window.storage→localStorage fallback), saveCfg,
                     cachePut/cacheGet (versioned envelope)
   providers/
+    retry.mjs       bounded transient-failure retry policies + safe endpoint labels
+    validate.mjs    per-endpoint payload validation, fixture normalisation, issue collapse
     registry.mjs    six-attribute quality descriptors + runtime health marks
     transport.mjs   fetchT (timeout), RELAYS cascade, api(), fetchVia(), pool()
     common.mjs      NAME_ALIASES, mapTeamName
@@ -29,7 +31,7 @@ src/
   squad.mjs         flagsFor, priceMomentum, newsAge, sellPrice, mySquad, bestXI
   main.mjs          loadAll orchestration
   ui/views.mjs      all views, wiring, init (monolithic by design until Stage 9)
-tests/              harness.mjs + 4 suites + golden.json
+tests/              harness.mjs + 10 suite files + golden.json
 tools/split.py      historical record of the Stage-2 extraction
 docs/               this documentation set + AUDIT/STAGE records
 dist/               BUILD ARTEFACT (bundle, index.html, manifest.json) — never edit
@@ -70,8 +72,9 @@ embedded (BUILD_INFO) and emitted as manifest. Deploy = upload dist/index.html.
 
 ## Testing strategy (detail in TESTING.md)
 Characterisation (77, runs against the BUILT BUNDLE via DOM harness — the extraction-faithfulness
-gate), SEC-1 regression, direct-import unit tests (10), resilience tests (8). Golden snapshots with
-an expected-to-change quarantine keyed to AUDIT issue ids.
+gate), SEC-1 regression, direct-import unit tests (10), resilience tests (8), fixture validation
+(12), Anthropic-removal security tests (5), endpoint-schema tests (25+8), and retry tests (20+13).
+Golden snapshots retain an expected-to-change quarantine keyed to AUDIT issue ids.
 
 ## Future serverless architecture (planned, not built)
 Cloudflare Pages/Netlify: static app unchanged; per-provider base URL flips to /api/<provider>;

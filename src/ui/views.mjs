@@ -335,13 +335,24 @@ async function compareLeague(){
   el.innerHTML = `<p class="status"><span class="spinner"></span>Reading the league…</p>`;
   await saveCfg();
   try{
-    const st = await api('/leagues-classic/'+id+'/standings/', {optional:true});
+    const stV = validateStandings(await api('/leagues-classic/'+id+'/standings/', {optional:true}));
+    recordIssues('fpl', '/leagues-classic/standings/', stV.issues);
+    const st = stV.value;
     if(!st || !st.standings){ el.innerHTML = `<div class="note bad">League ${id} not found, or it's private.</div>`; return; }
     await rememberLeague(id, $('leagueName').value.trim() || st.league?.name || '');
     const n = +$('lgN').value;
     const rivals = st.standings.results.slice(0, n).filter(r => String(r.entry) !== String(S.teamId));
     el.innerHTML = `<p class="status"><span class="spinner"></span>Reading ${rivals.length} rival squads…</p>`;
-    const picks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
+    const rawPicks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
+    // D-14: each rival squad is validated individually; issues are collapsed so
+    // 20 bad responses cannot flood S.dataIssues with near-identical entries.
+    const rivalIssues = [];
+    const picks = rawPicks.map(pk => {
+      const v = validatePicks(pk, '/entry/event/picks/ (rival)');
+      if(v.issues.length) rivalIssues.push(...v.issues);
+      return v.value;
+    });
+    recordIssues('fpl', '/entry/event/picks/ (rival)', collapseIssues(rivalIssues));
 
     const own = {}, cap = {};
     let counted = 0;
@@ -464,28 +475,24 @@ Be decisive and blunt. Say plainly when the honest answer is to do nothing — a
 
 APP DATA
 ${buildContext()}`;
-    const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
-    const key = $('claudeKey').value.trim();
-    const headers = {'Content-Type':'application/json'};
-    if(key){
-      headers['x-api-key'] = key;
-      headers['anthropic-version'] = '2023-06-01';
-      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+    // D-08 / SEC-3: no Anthropic secret is accepted, stored or sent by this
+    // frontend. Claude's artifact preview provides the only approved keyless
+    // path. Static hosted builds stop before making any Anthropic request.
+    if(!window.storage){
+      S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, the Ask tab is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
     }
+    const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers,
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:1000, system,
         messages: msgs,
         tools:[{type:'web_search_20250305', name:'web_search'}]
       })
     });
-    if(!res.ok && !key){
-      S.thread.push({role:'assistant', content:'The Ask tab needs a connection to Claude. Inside the Claude app it works automatically; hosted here it needs an API key — get one at console.anthropic.com and paste it under Data sources & model calibration.'});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
-    }
-    if(res.status === 401){
-      S.thread.push({role:'assistant', content:'That API key was rejected — check it was copied in full from console.anthropic.com.'});
+    if(!res.ok){
+      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Try again later or use the hosted app without the Ask feature.'});
       renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
     }
     const data = await res.json();
@@ -598,9 +605,8 @@ $('loadBtn').addEventListener('click', loadAll);
 $('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
-// keys save per keystroke — 'change' alone can lose a paste if the app is
-// closed before the field loses focus
-$('claudeKey').addEventListener('input', debounce(saveCfg, 300));
+// The low-value odds key remains client-side temporarily (D-08); save it on
+// input so a pasted value is not lost before the field blurs.
 $('oddsKey').addEventListener('input', debounce(saveCfg, 300));
 $('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds().then(() => { clearXP(); renderAll(); }); });
 $('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat().then(() => { clearXP(); renderAll(); }); });
@@ -611,7 +617,7 @@ document.addEventListener('click', e => {
 });
 
 (async function init(){
-  const cfg = await sget(K_CFG);
+  const cfg = await loadCfg();
   if(cfg){
     if(cfg.teamId) $('teamId').value = cfg.teamId;
     if(cfg.ft != null) $('ftCount').value = cfg.ft;
@@ -619,7 +625,6 @@ document.addEventListener('click', e => {
     if(cfg.leagueId) $('leagueId').value = cfg.leagueId;
     if(cfg.useManual) $('useManual').checked = true;
     if(cfg.oddsKey) $('oddsKey').value = cfg.oddsKey;
-    if(cfg.claudeKey) $('claudeKey').value = cfg.claudeKey;
     if(cfg.useUstat === false) $('useUstat').checked = false;
   }
   const cal = await sget(K_CAL);

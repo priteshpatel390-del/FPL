@@ -1,9 +1,12 @@
 import { $ } from './util.mjs';
+import { normaliseFixtures, validateBootstrap, hasFatal } from './providers/validate.mjs';
 const S = {
   boot:null, fixtures:null, entry:null, picks:null, history:null,
   teams:{}, byId:{}, posName:{}, avg:null,
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
-  source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[]
+  source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
+  dataIssues:[],
+  retryStats:{}
 };
 
 /* ---------------------------------------------------------------------
@@ -34,23 +37,36 @@ function slim(boot, fixtures){
   };
 }
 
+/* D-13 + D-14: the snapshot is validated on EVERY load, fresh or cached,
+   before a single assignment is made. A fatal payload returns early with
+   state untouched — a half-populated S is worse than no refresh at all. */
 function hydrate(d){
-  S.boot = {events:d.events, teams:d.teams, elements:d.elements, element_types:d.element_types};
-  S.fixtures = d.fixtures;
-  S.teams = {}; d.teams.forEach(t => S.teams[t.id] = t);
-  S.byId = {}; d.elements.forEach(p => S.byId[p.id] = p);
+  const bv = validateBootstrap(d);
+  const fx = bv.value === null ? { fixtures: [], issues: [] }
+                               : normaliseFixtures(bv.value.fixtures);
+  const issues = bv.issues.concat(fx.issues);
+  if(bv.value === null || hasFatal(issues)){
+    S.dataIssues = issues;                 // reported; nothing else disturbed
+    return { ok:false, issues };
+  }
+  const v = bv.value;
+  S.boot = {events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types};
+  S.fixtures = fx.fixtures;
+  S.dataIssues = issues;
+  S.teams = {}; v.teams.forEach(t => S.teams[t.id] = t);
+  S.byId = {}; v.elements.forEach(p => S.byId[p.id] = p);
   S.posName = {}; S.posFull = {};
-  d.element_types.forEach(t => { S.posName[t.id] = t.singular_name_short; S.posFull[t.id] = t.singular_name; });
+  v.element_types.forEach(t => { S.posName[t.id] = t.singular_name_short; S.posFull[t.id] = t.singular_name; });
 
-  const cur  = d.events.find(e => e.is_current);
-  const next = d.events.find(e => e.is_next) || d.events.find(e => !e.finished);
+  const cur  = v.events.find(e => e.is_current);
+  const next = v.events.find(e => e.is_next) || v.events.find(e => !e.finished);
   S.currentGW = cur ? cur.id : 0;
   S.nextGW = next ? next.id : 38;
-  S.seasonLive = d.events.some(e => e.finished);
+  S.seasonLive = v.events.some(e => e.finished);
   S.gamesPlayed = Math.max(1, S.currentGW);
-  S.cachedAt = d.at;
+  S.cachedAt = v.at;
 
-  const ts = d.teams, n = ts.length || 1;
+  const ts = v.teams, n = ts.length || 1;
   const mean = k => ts.reduce((a,t) => a + (t[k]||1000), 0) / n;
   S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
            defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
@@ -58,7 +74,26 @@ function hydrate(d){
   // populate position filter once
   const sel = $('plPos');
   if(sel.options.length <= 1)
-    d.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
+    v.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
+
+  return { ok:true, issues };
 }
 
-export { S, KEEP, slim, hydrate };
+/* Optional providers report AFTER hydrate, on their own schedule. Replacing
+   by provider+endpoint keeps repeat loads idempotent instead of accreting
+   duplicate issues every time a panel is refreshed. */
+function recordIssues(provider, endpoint, issues){
+  S.dataIssues = S.dataIssues.filter(i => !(i.provider === provider && i.endpoint === endpoint));
+  if(issues && issues.length) S.dataIssues = S.dataIssues.concat(issues);
+}
+
+/* D-15: retry metadata, keyed by provider + normalised endpoint so a pooled
+   sweep of 20 rival managers cannot grow 20 entries. Latest attempt wins —
+   this is a current-status surface, not a log. The provider-health model
+   (item 4) is the intended consumer; nothing reads it yet. */
+function recordRetry(record){
+  if(!record || !record.provider) return;
+  S.retryStats[record.provider + '|' + record.endpoint] = record;
+}
+
+export { S, KEEP, slim, hydrate, recordIssues, recordRetry };

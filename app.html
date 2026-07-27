@@ -214,11 +214,6 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
           </label>
           <span class="check"><input type="checkbox" id="useUstat" checked> Understat rolling xG</span>
         </div>
-        <div class="row" style="margin-top:10px">
-          <label class="fld" style="flex:1 1 200px">Anthropic API key (console.anthropic.com — powers the Ask tab outside Claude)
-            <input type="password" id="claudeKey" placeholder="sk-ant-…" autocomplete="off">
-          </label>
-        </div>
         <div class="row" style="margin-top:12px">
           <button class="btn ghost" id="btBtn">Run backtest against last season</button>
         </div>
@@ -323,7 +318,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <section class="view panel" id="view-ask" hidden>
     <span class="eyebrow">Second opinion</span>
     <h2>Ask about a decision</h2>
-    <p class="hint">Your squad, projections and fixtures go with the question. Live news is searched where it matters.</p>
+    <p class="hint">Your squad, projections and fixtures go with the question. The AI assistant works keylessly inside Claude's artifact preview; hosted builds require the planned serverless migration.</p>
     <div class="chips">
       <button class="chip" data-q="Who should I captain this week and why?">Captain call</button>
       <button class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>

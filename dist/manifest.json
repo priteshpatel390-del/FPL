@@ -1,11 +1,13 @@
 {
   "modelVersion": "2.0.0",
   "rulesVersion": "2025-26.1",
-  "sourceHash": "7bc5ea8094609d2ebb7d76b4bb74051a0a79fb89e354afddb9f549036d39ccab",
+  "sourceHash": "b9762cdd0d02d022fb13d34d6cebe7219e46c67a46b7cad67e9fe7a619895b6e",
   "commit": "unversioned",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
+    "src/providers/retry.mjs",
+    "src/providers/validate.mjs",
     "src/state.mjs",
     "src/storage.mjs",
     "src/providers/registry.mjs",

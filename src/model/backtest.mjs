@@ -1,9 +1,11 @@
-import { S } from '../state.mjs';
+import { S, recordRetry } from '../state.mjs';
+import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from '../providers/retry.mjs';
 import { $, num, clamp } from '../util.mjs';
 import { GOAL_PTS, CS_PTS, ASSIST_PTS, DC_THRESH, BASE_GOALS, MODEL_VERSION, RULES_VERSION } from '../config.mjs';
 import { sset } from '../storage.mjs';
 import { fetchT } from '../providers/transport.mjs';
 import { clearXP } from './xp.mjs';
+import { validateArchiveHeader, ARCHIVE_REQUIRED_COLUMNS } from '../providers/validate.mjs';
 /* ---------------------------------------------------------------------
    BACKTEST — fetches last season gameweek-by-gameweek from the vaastav
    archive, builds each player's first-half per-90 profile, projects the
@@ -42,11 +44,15 @@ function pearson(xs, ys){
 export function computeBacktest(text, meta = {}){
   const season = meta.season || 'unknown';
   const rows = parseCSV(text);
-  const head = rows[0], col = {}; head.forEach((h,i) => col[h.trim()] = i);
-  const need = ['name','position','minutes','total_points','GW'];
-  if(need.some(k => col[k] === undefined)){
-    throw new Error('archive format changed — missing: ' + need.filter(k=>col[k]===undefined).join(', '));
+  // D-14: header contract is the archive's only structural guarantee. The
+  // thrown message is user-facing and pinned by a resilience test — unchanged.
+  const head = rows[0];
+  const headerV = validateArchiveHeader(head);
+  if(headerV.value === null){
+    const missing = (headerV.issues[0] && headerV.issues[0].fields) || ARCHIVE_REQUIRED_COLUMNS;
+    throw new Error('archive format changed — missing: ' + missing.join(', '));
   }
+  const col = {}; head.forEach((h,i) => col[h.trim()] = i);
   const g = (r,k) => col[k] !== undefined ? r[col[k]] : '';
   const POSMAP = {GK:1, GKP:1, DEF:2, MID:3, FWD:4};
   const hasDC = col['defensive_contribution'] !== undefined;
@@ -147,11 +153,22 @@ async function runBacktest(){
   const seasons = ['2025-26','2024-25'];
   let text = null, season = null, url = null;
   for(const s of seasons){
-    try{
-      const u = 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/'+s+'/gws/merged_gw.csv';
-      const res = await fetchT(u, 60000);
-      if(res.ok){ text = await res.text(); season = s; url = u; break; }
-    }catch(e){}
+    const u = 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/'+s+'/gws/merged_gw.csv';
+    // D-15: a 14MB download is expensive to repeat, so the archive policy is
+    // the most conservative of the four — two attempts, long backoff.
+    const { result, record } = await withRetry(
+      async () => {
+        let res;
+        try{ res = await fetchT(u, 60000); }
+        catch(e){ return {ok:false, retryable:true, status:'network'}; }
+        if(!res.ok) return {ok:false, retryable:isRetryableStatus(res.status), status:res.status};
+        try{ return {ok:true, value: await res.text(), status:res.status}; }
+        catch(e){ return {ok:false, retryable:false, status:'parse'}; }
+      },
+      { ...policyFor('archive'), endpoint: safeEndpoint(u) }
+    );
+    recordRetry(record);
+    if(result && result.ok){ text = result.value; season = s; url = u; break; }
   }
   if(!text){ out.innerHTML = `<div class="note bad">Couldn't download the archive — check the connection and try again.</div>`; btn.disabled = false; return; }
   out.innerHTML = `<p class="status"><span class="spinner"></span>Replaying ${season} through the model…</p>`;

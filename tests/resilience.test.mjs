@@ -40,7 +40,7 @@ test('resilience: missing optional player fields default safely', () => {
 
 test('resilience: malformed provider responses do not poison state', () => {
   assert.equal(parseUnderstat('<html>redesigned page, no teamsData</html>'), null);
-  assert.equal(parseUnderstat(`teamsData = JSON.parse('\\x7Bbroken')`), null);
+  assert.equal(parseUnderstat(`teamsData = JSON.parse('\x7Bbroken')`), null);
   assert.throws(() => computeBacktest('wrong,headers\n1,2\n'), /archive format changed/);
 });
 
@@ -56,16 +56,40 @@ test('resilience: odds provider outage → no data, fallback note, key never rel
   assert.ok(urls.every(u => u.startsWith('https://api.the-odds-api.com/')));
 });
 
-test('resilience: duplicate fixtures ARE currently double-counted (pinned limitation, fix proposed Stage 3)', () => {
-  const dupe = { event: 12, team_h: 1, team_a: 2, team_h_difficulty: 3, team_a_difficulty: 3, finished: false };
-  S.fixtures.push(dupe, { ...dupe });         // same fixture twice
-  const games = teamFixtures(1, 12, 1)[0];
-  // current behaviour: duplicates DO appear (no fixture-id dedupe yet) — pin it
-  // as a documented limitation; the assertion is that nothing crashes and the
-  // count is explainable.  Registered as a Stage-5 dedupe candidate.
-  assert.ok(games.length >= 2, 'duplicates visible (known limitation, pinned)');
-  S.fixtures = S.fixtures.filter(f => f !== dupe).filter((f,i,a) =>
-    !(f.event===12 && f.team_h===1 && a.findIndex(g=>g.event===12&&g.team_h===1)!==i));
+// FORMERLY A PINNED LIMITATION (DUP-1). Until Stage 3 / D-13 this test asserted
+// the OPPOSITE — that duplicate fixture rows were visibly double-counted — and
+// was pinned as documented known-bad behaviour. DUP-1 is now closed by
+// normaliseFixtures() in hydrate(); this test characterises the fixed behaviour.
+// The assertion that genuine doubles STILL appear is the more valuable half:
+// a dedupe that quietly ate real double gameweeks would be far worse than the
+// original bug.
+test('resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)', () => {
+  const ELEMENT_TYPES = [{id:1,singular_name_short:'GKP',singular_name:'Goalkeeper'},
+    {id:2,singular_name_short:'DEF',singular_name:'Defender'},
+    {id:3,singular_name_short:'MID',singular_name:'Midfielder'},
+    {id:4,singular_name_short:'FWD',singular_name:'Forward'}];
+  const world = syntheticWorld({ hydrate, S, clearXP: () => {} });
+
+  // team 1's single genuine GW12 game, duplicated verbatim in the payload
+  const real = world.fixtures.find(f => f.event === 12 && (f.team_h === 1 || f.team_a === 1));
+  assert.ok(real, 'synthetic world has a GW12 fixture for team 1');
+  const payload = world.fixtures.concat([{ ...real }]);
+
+  hydrate({ at: 1753500000000, events: world.events, teams: world.teams,
+    elements: world.elements, element_types: ELEMENT_TYPES, fixtures: payload });
+
+  assert.equal(teamFixtures(1, 12, 1)[0].length, 1,
+    'the duplicated row is collapsed — no phantom double for team 1');
+  assert.equal(S.dataIssues.find(i => i.code === 'fixture_exact_duplicate').count, 1,
+    'and the collapse is reported rather than silent');
+
+  // team 5 has a REAL double in GW11 (16-v-5 plus the extra 5-v-12 row)
+  assert.equal(teamFixtures(5, 11, 1)[0].length, 2,
+    'genuine double gameweek still reported after dedupe');
+  assert.equal(teamFixtures(12, 11, 1)[0].length, 2,
+    'and for the other side of that same extra fixture');
+
+  syntheticWorld({ hydrate, S, clearXP: () => {} }); clearXP();   // restore
 });
 
 test('resilience: unmapped team name returns null and blend degrades cleanly', () => {

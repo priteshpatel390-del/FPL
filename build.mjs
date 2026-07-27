@@ -7,7 +7,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const ORDER = [
-  'src/config.mjs', 'src/util.mjs', 'src/state.mjs', 'src/storage.mjs',
+  'src/config.mjs', 'src/util.mjs', 'src/providers/retry.mjs', 'src/providers/validate.mjs',
+  'src/state.mjs', 'src/storage.mjs',
   'src/providers/registry.mjs', 'src/providers/transport.mjs', 'src/providers/common.mjs',
   'src/providers/understat.mjs', 'src/providers/odds.mjs',
   'src/model/fixtures.mjs', 'src/model/scoring.mjs', 'src/squad.mjs',
