@@ -51,6 +51,9 @@ function thresholdFor(name, context = {}){
 
 function setHealth(name, state, {note='', consequence='', lastSuccess=null, at=Date.now(), detail=null} = {}){
   const previous = health[name] || {};
+  const usingFallback = state === HEALTH_STATES.FALLBACK;
+  const ok = [HEALTH_STATES.LIVE, HEALTH_STATES.CACHED, HEALTH_STATES.STALE,
+    HEALTH_STATES.PARTIAL, HEALTH_STATES.DISABLED].includes(state);
   health[name] = {
     provider:name,
     state,
@@ -58,7 +61,11 @@ function setHealth(name, state, {note='', consequence='', lastSuccess=null, at=D
     consequence,
     lastSuccess:lastSuccess ?? previous.lastSuccess ?? null,
     at,
-    detail:detail || null
+    detail:detail || null,
+    // Stage-2 compatibility fields. They are derived from the richer state and
+    // retained so existing callers/tests do not need a breaking migration.
+    ok,
+    usingFallback
   };
   return health[name];
 }
