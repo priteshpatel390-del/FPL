@@ -39,6 +39,28 @@ Last updated: 2026-07-27. Related: STAGE_HISTORY.md for engineering detail.
 
 ## [Unreleased] — Stage 3 (in progress)
 
+### Item 4 — Provider Health (D-16)
+#### Added
+- Approved seven-state runtime model: Live, Cached, Stale, Fallback, Partial, Disabled and
+  Unavailable.
+- Provider-specific stale thresholds: FPL 30 minutes during live gameweeks / 6 hours otherwise,
+  Understat 24 hours, odds 6 hours.
+- Last-success age, internal note and user-facing consequence for every health entry.
+- Compact Provider Health strip in the existing settings panel, rendered with DOM nodes.
+- `tests/provider-health.test.mjs` (10 transition/compatibility tests).
+- `docs/STAGE3-ITEM4.md` implementation record.
+#### Changed
+- FPL now distinguishes live, cached-refreshing, stale-cache, saved-data fallback and no-data states.
+- Understat distinguishes user-disabled, live, partial coverage and fallback to FPL strengths.
+- Odds distinguishes no-key disabled, invalid-key unavailable, partial/live coverage and fallback to
+  the internal model for quota/network/empty/matching failures.
+- Legacy `ok` and `usingFallback` fields remain as values derived from the richer state.
+#### Unchanged
+- No projection, scoring, expected-minutes, fixture-difficulty, calibration, squad, captaincy,
+  transfer or backtest formula changed. No provider was added. Stage 9 layout work remains deferred.
+#### Tests
+- Suite 179 → 189. Full `./run-tests.sh` green and deterministic two-build byte comparison green.
+
 ### Item 3 — retry policy (D-15)
 #### Added
 - `src/providers/retry.mjs`: pure, dependency-free retry engine — `withRetry`, `policyFor`,
