@@ -13,13 +13,13 @@ and an on-device backtest that calibrates the model against real historical seas
 - Season 2026-27 starts 21 Aug 2026; app is in pre-season mode (price-implied projections; squad/
   league features dormant until GW1 picks publish).
 - Codebase refactored into ES modules with a deterministic bundler; verified main baseline is 179
-  automated tests passing.
+  automated tests passing. Draft PR #2 raises the verified branch suite to 189.
 - Backtested on 2025-26: r=0.80, ±0.5 pts/GW (aggregate method — superseded by walk-forward in a
   future stage), per-position calibration applied (notably FWD ×1.17).
 - Stage 3 (security hardening) is IN PROGRESS. D-13 fixture deduplication, item 1 (Anthropic key
   removal), item 2 (per-endpoint validation) and item 3 (bounded retry) are merged. Item 4, the
-  approved seven-state provider-health model, is implemented in draft PR #2 and awaits full-suite,
-  deterministic-build and owner review evidence before merge.
+  approved seven-state provider-health model, is implemented and fully verified in draft PR #2;
+  only owner review/approval remains before merge.
 
 ## Goals & priorities (owner-stated, in order)
 1. Reliable expected-points projections  2. Accurate expected-minutes  3. Clean-sheet / attacking
@@ -44,9 +44,9 @@ mobile. The app also runs inside Claude's artifact preview (keyless Ask tab work
 ## Completed / current / upcoming
 Completed: Stage 1 (characterisation tests + data audit), SEC-1 hot-fix, Stage 2 (module
 extraction, provider registry, provenance, build identity), and the documentation handover. Current:
-Stage 3 security hardening; D-13 and items 1–3 are merged; item 4 Provider Health is in draft PR #2.
-Next after approval: rendering safety, odds-key hygiene and CSP → owner architecture review →
-Stages 4–9 modelling and UI (ROADMAP.md).
+Stage 3 security hardening; D-13 and items 1–3 are merged; item 4 Provider Health is verified in
+draft PR #2. Next after approval: rendering safety, odds-key hygiene and CSP → owner architecture
+review → Stages 4–9 modelling and UI (ROADMAP.md).
 
 ## Major risks
 Public CORS-relay dependence for FPL/Understat transport (R1); undocumented FPL API schema drift
