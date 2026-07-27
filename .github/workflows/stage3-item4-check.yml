@@ -1,0 +1,23 @@
+name: Stage 3.4 temporary verification
+on:
+  push:
+    branches: [stage3-item4-provider-health]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Full build and test suite
+        run: ./run-tests.sh
+      - name: Deterministic build
+        run: |
+          cp dist/index.html /tmp/index-first.html
+          cp dist/app.bundle.js /tmp/bundle-first.js
+          cp dist/manifest.json /tmp/manifest-first.json
+          node build.mjs
+          cmp /tmp/index-first.html dist/index.html
+          cmp /tmp/bundle-first.js dist/app.bundle.js
+          cmp /tmp/manifest-first.json dist/manifest.json
