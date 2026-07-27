@@ -1,6 +1,6 @@
 # Stage 3 item 4 — Provider Health
 
-Status: implemented on `stage3-item4-provider-health`; pending owner review.
+Status: implemented and verified on `stage3-item4-provider-health`; pending owner review.
 Date: 2026-07-27.
 Decision: D-16.
 
@@ -37,15 +37,22 @@ Decision: D-16.
    provider last supplied usable data.
 4. The strip is inserted dynamically beside the existing source status rather than pulling the
    Stage 9 settings-page redesign forward.
+5. Stage-2 `ok` and `usingFallback` fields remain as derived compatibility values. The first full
+   suite run exposed that contract; the old test was preserved and the implementation corrected.
 
 ## Verification
 
-The focused tests, full `./run-tests.sh` suite and deterministic two-build comparison must all be
-recorded in the draft PR before owner approval. The temporary verification workflow used to obtain
-that evidence is removed from the final diff.
+- `./run-tests.sh`: **189 passed, 0 failed**.
+- Build completed successfully and regenerated `dist/index.html`, `dist/app.bundle.js` and
+  `dist/manifest.json` from source.
+- A second `node build.mjs` produced byte-identical copies of all three generated files.
+- The generated deployable files are committed to the feature branch.
+- The temporary GitHub Actions verification workflow was removed from the final product diff.
 
 ## Remaining limitations
 
 - Public relay dependence remains until serverless migration.
 - Health is in-memory for the current app session; only the underlying cached snapshot persists.
 - Provider health reports current consequence; it is not a long-term incident log.
+- RET-2 transport-level circuit suppression remains open; this item delivered the health state it
+  depends on without silently expanding into a separate transport-policy change.
