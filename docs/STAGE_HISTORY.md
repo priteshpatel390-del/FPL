@@ -41,8 +41,18 @@ key headers and hosted browser request removed; one-time stored-config migration
 Claude-preview path retained. Five focused tests bring the suite to 113. Third implementation:
 D-14 per-endpoint schema validation, atomic hydrate and safe issue reporting; VAL-1 closed and suite
 113 → 146. Fourth implementation: D-15 bounded transient-only retry with attempt/time ceilings and
-normalised metadata for the health model; suite 146 → 179. Next: item 4 provider health. Owner
-architecture-review gate remains after Stage 3, before any model work.
+normalised metadata for the health model; suite 146 → 179.
+
+Fifth implementation: D-16 Provider Health. The Stage-2 boolean marker was replaced with Live,
+Cached, Stale, Fallback, Partial, Disabled and Unavailable while retaining derived `ok` and
+`usingFallback` fields for backwards compatibility. FPL, Understat and Odds now report distinct
+consequences; provider-specific stale thresholds are derived on read; a compact strip is inserted
+into the existing settings panel with DOM nodes. Ten tests bring the suite 179 → 189. The first CI
+run correctly caught the removed `usingFallback` compatibility field; the field was restored as a
+derived value rather than weakening the old test. Full suite and deterministic two-build comparison
+then passed. Item remains in draft PR #2 pending owner review; next is rendering safety.
+
+Owner architecture-review gate remains after Stage 3, before any model work.
 
 ## Documentation stage (DONE, 2026-07-26)
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs

@@ -14,10 +14,15 @@ evidence.
 3. docs/DECISIONS.md — settled questions (do not relitigate silently)
 4. docs/ROADMAP.md — where we are; what's next; blockers
 5. docs/KNOWN_LIMITATIONS.md — before promising anything
-6. The current stage's design doc (today: docs/STAGE3-DESIGN.md)
+6. The current stage's design doc (today: docs/STAGE3-DESIGN.md; item 4 record: docs/STAGE3-ITEM4.md)
 7. Before ANY model work: docs/PROJECTION_MODEL.md + docs/TESTING.md
 8. Before provider/security work: docs/DATA_SOURCES.md + docs/SECURITY.md
 9. History when needed: docs/STAGE_HISTORY.md, docs/CHANGELOG.md, docs/AUDIT.md, docs/STAGE1/2.md
+
+## Current checkpoint
+Stage 3 items 1–3 are merged. Item 4 Provider Health is implemented in draft PR #2 with 189 tests
+and deterministic builds verified; it still requires owner review and explicit approval before merge.
+The next planned item after approval is rendering safety (DOM builders + AI-output sanitisation).
 
 ## Non-negotiable rules
 - Never modify projection logic without tests, and never change a formula without first presenting:
@@ -27,7 +32,7 @@ evidence.
   `expectedToChange` section moves only as part of the stage that fixes its issue id.
 - Never claim improved prediction accuracy without out-of-sample validation (DECISIONS D-11). The
   published r=0.80 is in-sample-flattered; do not quote it as validated.
-- Keep every stage independently deployable; run `./run-tests.sh` (build + 179 tests) green before
+- Keep every stage independently deployable; run `./run-tests.sh` (build + 189 tests) green before
   presenting anything.
 - Maintain deterministic builds (same sources → same bytes; BUILD_COMMIT stamps identity).
 - Preserve mobile-first design and the owner's one-file deploy workflow (upload dist/index.html).

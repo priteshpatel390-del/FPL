@@ -4,7 +4,7 @@ Last updated: 2026-07-27. Related: tests/, docs/STAGE1.md, CLAUDE.md.
 
 ## Stack
 node:test only (zero dependencies, Node ≥18). Entry: `./run-tests.sh` (builds first — the bundle is
-a test target). 179 tests across 10 suite files; all must stay green in every stage.
+a test target). 189 tests across 11 suite files; all must stay green in every stage.
 
 ## Suites
 1. **characterisation.test.mjs (77)** — golden-snapshot pinning of model behaviour, executed against
@@ -30,6 +30,9 @@ a test target). 179 tests across 10 suite files; all must stay green in every st
    elapsed-time ceilings, bounded half-jitter backoff and endpoint scrubbing.
 10. **retry-transport.test.mjs (13)** — transport integration: healthy single attempts, bounded
     relay cascades, recovery, permanent short-circuiting and normalised retry metadata.
+11. **provider-health.test.mjs (10)** — D-16 seven-state vocabulary, provider-specific stale
+    thresholds, Live/Cached/Stale/Fallback/Partial/Disabled/Unavailable transitions, neutral Disabled
+    behaviour, age calculation and Stage-2 compatibility fields.
 
 ## Harness
 tests/harness.mjs stubs DOM/storage/fetch and loads `dist/app.bundle.js` (APP_TARGET overrides);

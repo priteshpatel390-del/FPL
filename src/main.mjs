@@ -7,6 +7,41 @@ import { bootstrapStructure, validateEntry, validatePicks, validateHistory } fro
 import { loadUnderstat } from './providers/understat.mjs';
 import { loadOdds } from './providers/odds.mjs';
 import { clearXP } from './model/xp.mjs';
+import { HEALTH_STATES, healthRows, markLive, markCached, markFallback, markPartial, markUnavailable } from './providers/registry.mjs';
+
+const HEALTH_LABELS = {fpl:'FPL', understat:'Understat', odds:'Odds', archive:'Archive'};
+function ageLabel(ms){
+  if(ms == null) return '';
+  const mins = Math.floor(ms / 60000);
+  if(mins < 1) return 'now';
+  if(mins < 60) return mins + 'm ago';
+  const hours = Math.floor(mins / 60);
+  if(hours < 48) return hours + 'h ago';
+  return Math.floor(hours / 24) + 'd ago';
+}
+function renderProviderHealth(){
+  const setup = $('setupPanel');
+  if(!setup) return;
+  let box = $('providerHealth');
+  if(!box){
+    box = document.createElement('div'); box.id = 'providerHealth'; box.className = 'note plain';
+    box.style.marginTop = '10px';
+    const status = $('srcStatus');
+    if(status && status.parentNode) status.parentNode.insertBefore(box, status.nextSibling);
+    else setup.appendChild(box);
+  }
+  box.textContent = '';
+  const title = document.createElement('b'); title.textContent = 'Provider health'; box.appendChild(title);
+  const rows = healthRows({seasonLive:S.seasonLive});
+  if(!rows.length){ box.appendChild(document.createTextNode(' — waiting for first data load.')); return; }
+  rows.forEach(h => {
+    const line = document.createElement('div'); line.className = 'status'; line.style.marginTop = '5px';
+    const age = h.lastSuccess ? ' · ' + ageLabel(h.ageMs) : '';
+    line.textContent = `${HEALTH_LABELS[h.provider] || h.provider}: ${h.state}${age}${h.consequence ? ' — ' + h.consequence : h.note ? ' — ' + h.note : ''}`;
+    box.appendChild(line);
+  });
+}
+
 /* ---------------------------------------------------------------------
    LOAD
    --------------------------------------------------------------------- */
@@ -14,11 +49,10 @@ async function loadAll(){
   const st = $('status');
   const cached = await sget(K_CACHE);
   if(cached && !S.boot){
-    // D-14: the cached snapshot goes through exactly the same validation as a
-    // fresh one. An unreadable cache is discarded, not rendered.
     if(hydrate(cached).ok){
+      markCached('fpl', cached.at, 'saved season snapshot', 'refreshing live feed');
       st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
-      renderAll();
+      renderProviderHealth(); renderAll();
     } else {
       st.textContent = 'Your saved copy of the season data could not be read — fetching a fresh one…';
     }
@@ -27,10 +61,6 @@ async function loadAll(){
   }
   try{
     const [boot, fixtures] = await Promise.all([api('/bootstrap-static/'), api('/fixtures/')]);
-    // D-14: structural guard BEFORE slim(). slim() maps the four collections
-    // and would throw on a malformed payload, and a payload this broken must
-    // never reach the cache. Row-level filtering deliberately happens later in
-    // hydrate(), so the cached snapshot stays raw-shaped for provenance (D-13).
     const bs = bootstrapStructure(boot);
     const fixturesOk = Array.isArray(fixtures);
     if(!bs.ok || !fixturesOk){
@@ -41,7 +71,11 @@ async function loadAll(){
     }
     const d = slim(boot, fixtures);
     await sset(K_CACHE, d);
-    if(!hydrate(d).ok){ const e = new Error('feed shape unusable'); e.feedShape = true; throw e; }
+    const hydrated = hydrate(d);
+    if(!hydrated.ok){ const e = new Error('feed shape unusable'); e.feedShape = true; throw e; }
+    const partial = hydrated.issues.some(i => i.severity === 'partial');
+    if(partial) markPartial('fpl', 'some optional fields were missing', 'defaults applied; core season data remains usable', d.at);
+    else markLive('fpl', S.source || 'live feed', 'core season data current', d.at);
     clearXP();
 
     S.teamId = $('teamId').value.replace(/\D/g,'');
@@ -70,27 +104,30 @@ async function loadAll(){
     if(S.entry || !S.teamId)
       st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
     await saveCfg();
-    renderAll();
-    // external layers arrive after first paint, then re-render
-    Promise.all([loadUnderstat(), loadOdds()]).then(() => { clearXP(); renderAll(); });
+    renderProviderHealth(); renderAll();
+    Promise.all([loadUnderstat(), loadOdds()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
   }catch(err){
-    await saveCfg();   // never lose typed settings just because the feed failed
+    await saveCfg();
     const shape = !!(err && err.feedShape);
     if(S.boot){
+      markFallback('fpl', shape ? 'live feed shape unusable' : 'live feed unreachable', 'saved season snapshot remains active');
       st.textContent = (shape
         ? 'The season feed came back in an unexpected format — still showing saved data from '
         : 'Live feed unreachable — still showing saved data from ') +
         new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
     } else if(shape){
+      markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
       st.textContent = 'Season data could not be read.';
       $('ticker').innerHTML = `<div class="empty"><strong>Season data isn't usable right now</strong>
         The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly.</div>`;
     } else {
+      markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
       st.textContent = 'Data feed unreachable.';
       $('ticker').innerHTML = `<div class="empty"><strong>No connection to the FPL feed</strong>
         Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.</div>`;
     }
+    renderProviderHealth();
   }
 }
 
-export { loadAll };
+export { loadAll, renderProviderHealth, ageLabel };

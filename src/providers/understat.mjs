@@ -2,7 +2,7 @@ import { S } from '../state.mjs';
 import { $, num } from '../util.mjs';
 import { fetchVia } from './transport.mjs';
 import { mapTeamName } from './common.mjs';
-import { markHealth } from './registry.mjs';
+import { markLive, markFallback, markPartial, markDisabled } from './registry.mjs';
 import { validateUnderstat, collapseIssues } from './validate.mjs';
 import { recordIssues } from '../state.mjs';
 /* ---------------------------------------------------------------------
@@ -19,17 +19,18 @@ function parseUnderstat(html){
 }
 async function loadUnderstat(){
   S.ustat = null; S.ustatNote = '';
-  if(!$('useUstat').checked || !S.boot) return;
+  if(!$('useUstat').checked){
+    markDisabled('understat', 'turned off in settings', 'FPL strength ratings used');
+    return;
+  }
+  if(!S.boot) return;
   const html = await fetchVia('https://understat.com/league/EPL', {asText:true});
   let data = html ? parseUnderstat(html) : null;
-  // D-14: parseUnderstat only proves the page yielded JSON; validate the shape
-  // its consumers actually rely on (title + history[]) before using it.
   const uIssues = [];
   if(data){ const v = validateUnderstat(data); uIssues.push(...v.issues); data = v.value; }
   let label = 'current season';
   const matchCount = data ? Object.values(data).reduce((a,t) => a + (t.history||[]).length, 0) : 0;
   if(!data || matchCount < 40){
-    // too few games this season to be meaningful — use last season's closing form
     const prevYear = new Date().getMonth() >= 6 ? new Date().getFullYear() - 1 : new Date().getFullYear() - 2;
     const prev = await fetchVia('https://understat.com/league/EPL/' + prevYear, {asText:true});
     const pd = prev ? parseUnderstat(prev) : null;
@@ -38,8 +39,13 @@ async function loadUnderstat(){
       if(v.value){ data = v.value; label = `last season's closing form`; }
     }
   }
-  recordIssues('understat', 'league/EPL', collapseIssues(uIssues));
-  if(!data){ S.ustatNote = 'Understat unreachable — using FPL strength ratings only.'; markHealth('understat', false, 'unreachable', true); return; }
+  const collapsed = collapseIssues(uIssues);
+  recordIssues('understat', 'league/EPL', collapsed);
+  if(!data){
+    S.ustatNote = 'Understat unreachable — using FPL strength ratings only.';
+    markFallback('understat', 'unreachable', 'FPL strength ratings used');
+    return;
+  }
 
   const map = {}; let sumA = 0, sumD = 0, n = 0;
   Object.values(data).forEach(t => {
@@ -50,12 +56,18 @@ async function loadUnderstat(){
     const id = mapTeamName(t.title);
     if(id){ map[id] = {xg, xga}; sumA += xg; sumD += xga; n++; }
   });
-  if(!n){ S.ustatNote = 'Understat team names could not be matched.'; return; }
+  if(!n){
+    S.ustatNote = 'Understat team names could not be matched.';
+    markFallback('understat', 'team mapping failed', 'FPL strength ratings used');
+    return;
+  }
   const avgXg = sumA/n, avgXga = sumD/n;
   Object.values(map).forEach(v => { v.atk = v.xg/avgXg; v.def = avgXga/v.xga; });
   S.ustat = map;
-  markHealth('understat', true, label);
   const missing = S.boot.teams.filter(t => !map[t.id]).map(t => t.short_name);
+  const degraded = missing.length > 0 || collapsed.some(i => i.severity === 'partial');
+  if(degraded) markPartial('understat', label, 'FPL ratings fill missing teams');
+  else markLive('understat', label, 'rolling team xG active');
   S.ustatNote = `Understat: last-6 xG loaded (${label})` + (missing.length ? `; no data for ${missing.join(', ')} — FPL ratings used for them` : '') + '.';
 }
 
