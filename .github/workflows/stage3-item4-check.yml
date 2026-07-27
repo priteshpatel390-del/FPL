@@ -1,5 +1,7 @@
 name: Stage 3.4 temporary verification
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [stage3-item4-provider-health]
 jobs:
