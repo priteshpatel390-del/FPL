@@ -18,11 +18,12 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md (current), DECISIONS.m
 - **Stage 3 — Security & provider hardening** · IN PROGRESS under the approved
   docs/STAGE3-DESIGN.md. D-13 and items 1–3 are complete: fixture deduplication,
   Anthropic-key removal, per-endpoint schema validation and bounded retry.
-- **Item 4 — Provider health** · IMPLEMENTED ON DRAFT BRANCH `stage3-item4-provider-health`,
-  pending full-suite/build verification and owner review. The runtime now distinguishes Live,
-  Cached, Stale, Fallback, Partial, Disabled and Unavailable, applies provider-specific stale
+- **Item 4 — Provider health** · IMPLEMENTED AND VERIFIED IN DRAFT PR #2 on branch
+  `stage3-item4-provider-health`; awaiting owner review/approval only. The runtime distinguishes
+  Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable, applies provider-specific stale
   thresholds, records consequence lines and surfaces a compact settings-panel health strip.
-  Ten focused transition tests were added. No model formula changed.
+  Ten focused transition tests were added; full suite is 189/189 and the two-build byte comparison
+  is green. No model formula changed.
 - Next checkpoint after item 4 approval: DOM-builder rendering and AI-output sanitisation.
 
 ## Upcoming (order fixed; later stages depend on earlier)
@@ -45,6 +46,6 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md (current), DECISIONS.m
   placement, inline-style→classes (deletes CSP concession), docs refresh.
 
 ## Current blockers
-1. Stage 3 item 4 requires full `./run-tests.sh` and deterministic-build verification before owner approval.
+1. Stage 3 item 4 requires owner review and explicit approval before merge.
 2. BT-1 dataset SHA (owner `git ls-remote` or Stage-7 ETag).
 3. Season data realities: squad/league features and prospective odds logging need GW1 (21 Aug 2026).
