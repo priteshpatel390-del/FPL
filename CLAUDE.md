@@ -1,6 +1,6 @@
 # CLAUDE.md — onboarding for every future Claude session
 Purpose: read this FIRST, in full. The GitHub repository — not any conversation — is the project's
-source of truth. Last updated: 2026-07-26.
+source of truth. Last updated: 2026-07-27.
 
 ## Who you're working with
 Pritesh: the owner, working from an iPhone, non-developer but a rigorous reviewer who independently
@@ -27,7 +27,7 @@ evidence.
   `expectedToChange` section moves only as part of the stage that fixes its issue id.
 - Never claim improved prediction accuracy without out-of-sample validation (DECISIONS D-11). The
   published r=0.80 is in-sample-flattered; do not quote it as validated.
-- Keep every stage independently deployable; run `./run-tests.sh` (build + 96 tests) green before
+- Keep every stage independently deployable; run `./run-tests.sh` (build + 179 tests) green before
   presenting anything.
 - Maintain deterministic builds (same sources → same bytes; BUILD_COMMIT stamps identity).
 - Preserve mobile-first design and the owner's one-file deploy workflow (upload dist/index.html).
@@ -43,7 +43,7 @@ evidence.
 - Tests: `./run-tests.sh`. Characterisation runs against dist/app.bundle.js via tests/harness.mjs.
 - Bundler contract: unique top-level names, no default exports, single-line imports.
 - The owner deploys by uploading dist/index.html via GitHub mobile web; give him exact tap-by-tap
-  steps when a deploy is needed, and never require folder uploads from the phone (OPS-1).
+  steps when a deploy is needed. The full repository is now committed; retain the one-file deploy workflow.
 
 ## Ending every stage
 Update: ROADMAP (status), CHANGELOG, KNOWN_LIMITATIONS (close/open ids), STAGE_HISTORY (diary

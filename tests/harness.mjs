@@ -8,7 +8,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 export function loadApp(fieldValues = {}) {
   const defaults = { fxFrom:'4', fxSpan:'6', fxSort:'ease', fxLens:'attack', plHorizon:'6',
-    ftCount:'1', bankIn:'0', oddsKey:'', claudeKey:'', useUstat:false, useManual:false,
+    ftCount:'1', bankIn:'0', oddsKey:'', useUstat:false, useManual:false,
     leagueId:'', leagueName:'', lgN:'20', teamId:'', plPos:'0', plMax:'15', plFit:true, plOwn:false,
     trHorizon:'6', trTop:'8', pSearch:'', q:'' };
   const vals = { ...defaults, ...fieldValues };
@@ -35,7 +35,7 @@ export function loadApp(fieldValues = {}) {
   (0, eval)(src + `\nObject.assign(globalThis.__EXPORTS__, { S, hydrate, matchContext, multToDiff, runScore,
     teamFixtures, playerFixtureXP, projectXP, priceBaseline, availability, expectedMinutes, bestXI,
     sellPrice, mySquad, parseCSV, pearson, poissonOver, solveLambda, mapTeamName, parseUnderstat,
-    runBacktest, rememberLeague, sget, sset, clearXP, flagsFor, priceMomentum });\nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
+    runBacktest, rememberLeague, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask, clearXP, flagsFor, priceMomentum });\nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
   delete globalThis.__EXPORTS__;
   return { T: exports, doc: made, setFetch: f => { globalThis.fetch = f; } };
 }

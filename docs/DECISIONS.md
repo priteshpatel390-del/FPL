@@ -55,3 +55,75 @@ label the current r=0.80 as method-flattered.
 **D-12 · 2026-07-26 · Accepted · Documentation-driven workflow; repository is the source of truth**
 Reason: conversation-length limits; continuity across sessions. Consequences: this /docs system;
 CLAUDE.md onboarding; every stage updates docs; fresh chat per stage (see CLAUDE.md workflow).
+
+**D-13 · 2026-07-26 · Accepted · Fixture deduplication in the Stage-3 validation layer (DUP-1 closed)**
+Reason: duplicate fixture rows would inflate projections, fake double-gameweek styling and chip-window
+notes, and propagate into captaincy, best XI and transfers. Input-integrity fix; no formula, weight,
+calibration, optimiser or ranking rule altered. Key strategy: provider fixture `id` primary, composite
+`event+team_h+team_a` fallback only when `id` is absent; genuine doubles are preserved because their
+rows carry distinct ids. Conflicting rows sharing one identity are reported as `partial`, never
+silently resolved; rows with no safe identity are excluded and reported rather than having identity
+invented. Alternatives considered: dedupe inside `teamFixtures` (rejected — repeated per call, and
+hides the issue from health reporting); dedupe in `slim()` only (rejected — cached snapshots would
+bypass validation and the issue would never be re-reported). Consequences: `normaliseFixtures` runs in
+`hydrate()` on every load for both fresh and cached data; `slim()` deliberately preserves the
+raw-shaped list for provenance; issues surface on `S.dataIssues` for the health strip.
+
+**D-14 · 2026-07-27 · Accepted · Per-endpoint schema validation at the provider boundary (Stage 3 item 2)**
+Reason: VAL-1 — no runtime validation of provider responses, so schema drift either failed silently or
+crashed a consumer mid-render. Approach: one focused validator per endpoint in `src/providers/validate.mjs`,
+extending the D-13 pattern rather than replacing it. Each returns `{value, issues}`, is pure, never mutates
+provider input, and never manufactures identifiers, values or missing structures. Issues carry
+`{provider, endpoint, code, severity, count}` plus at most a bounded diagnostic field (field names or a
+received-type string) — never rows or payloads. FATAL means the payload cannot be safely consumed and
+`value` is null; PARTIAL means bad rows are dropped and the usable remainder is retained. The first valid
+row wins wherever duplicates are possible, consistent with D-13.
+Placement: core FPL data (bootstrap + fixtures) is validated inside `hydrate()`, so cached and fresh
+snapshots take the identical path; a fatal payload returns early with state untouched rather than leaving a
+half-populated `S`. A separate fatal-only `bootstrapStructure()` guard runs before `slim()` on the fresh
+path only, because `slim()` maps the four collections and would throw first — and because a payload that
+broken must never reach the cache. Row-level filtering is deliberately NOT applied before `slim()`, so the
+cached snapshot stays raw-shaped for provenance exactly as D-13 specified.
+Optional providers (entry, picks, history, standings, rival picks, Understat, odds, archive) report through
+`recordIssues(provider, endpoint, issues)`, which replaces rather than appends so repeated panel refreshes
+stay idempotent; pooled fan-out is collapsed by provider+endpoint+code so twenty bad rival squads cannot
+flood `S.dataIssues` with twenty near-identical entries.
+Alternatives considered: a single generic schema-description validator (rejected — it hides the per-endpoint
+assumptions that actually matter when a feed drifts, and every endpoint here has different fatal/partial
+semantics); validating inside `transport.api()` (rejected — transport is endpoint-agnostic and would need a
+registry mapping paths to schemas, adding indirection for no gain); throwing on fatal optional-provider
+payloads (rejected — optional providers must degrade to their existing fallbacks, never block core data).
+Consequences: malformed provider rows no longer reach consumers, so output can differ from Stage 2 only when
+the feed itself is malformed. No scoring, projection, calibration or optimisation formula was touched.
+
+**D-15 · 2026-07-27 · Accepted · Bounded retry for transient provider failures (Stage 3 item 3)**
+Reason: a single dropped packet or momentary 503 cost the user a whole layer of data, with no
+distinction drawn between "try again" and "this will never work". Approach: a pure retry engine in
+`src/providers/retry.mjs`, integrated inside the transport layer so consumers never learn a retry
+happened. `withRetry(task, policy, deps)` runs a plain bounded `for` loop — no recursion, and all
+timing dependencies (`sleep`, `random`, `now`) are injectable so the whole engine is unit-testable
+with a fake clock.
+Classification: retryable = network error, timeout, 429, 500, 502, 503, 504. Non-retryable =
+400/401/403/404, JSON parse failure, and schema-FATAL. The task closure classifies its own failure
+rather than this layer catching generically, because only the caller can tell a dead socket from a
+malformed body — collapsing that distinction is exactly how malformed payloads end up being retried.
+D-14 validation runs after transport and its failures never re-enter the retry loop.
+Bounding: three simultaneous limits — an attempt ceiling (clamped to 5 regardless of what a policy
+asks for), a capped half-jitter exponential backoff, and an elapsed-time budget checked before each
+sleep. The budget is the load-bearing one: an FPL relay cascade can take ~40s to fail, so an
+attempt ceiling alone would have permitted a two-minute wait. Retry cheap failures, not expensive ones.
+Placement: one relay cascade counts as ONE attempt. Rotating relays is transport selection and is
+already the redundancy mechanism; retrying each of five relays three times would mean fifteen
+requests per call. Optional FPL endpoints get 2 attempts rather than 3, because rival picks are
+pooled twenty at a time and they already degrade gracefully.
+Alternatives considered and rejected: honouring `Retry-After` (RET-1 — under a relay the header
+describes the proxy, not the origin, and an arbitrary server-chosen delay conflicts with keeping a
+phone app responsive); a per-provider circuit breaker (RET-2 — it needs the durable provider-down
+signal that item 4 exists to produce, and duplicating that state privately inside transport would be
+the wrong shape); retrying at the individual relay level (far too slow); retrying odds 429 (an
+exhausted quota window is not transient, and retrying burns time for the same answer).
+Consequences: healthy providers behave identically and are fetched exactly once — asserted by test.
+Failure paths retry within bounds and then produce exactly the same fallback as before. Retry
+metadata lands on `S.retryStats`, keyed by provider and a normalised endpoint (digit runs collapsed
+to `{id}`, query strings stripped) so it can neither grow per manager nor carry the odds API key.
+No scoring, projection, calibration or optimisation code was touched.

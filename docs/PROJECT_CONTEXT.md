@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 Purpose: master overview — the first document any new developer or Claude session reads after CLAUDE.md.
-Audience: anyone joining the project. Last updated: 2026-07-26. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md.
+Audience: anyone joining the project. Last updated: 2026-07-27. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md.
 
 ## What this is
 **Teamsheet — FPL decision desk.** A single-file, mobile-first web app that helps one manager (the
@@ -8,15 +8,16 @@ owner, Pritesh) make Fantasy Premier League decisions: fixture difficulty, per-p
 points, squad review with best-XI and captaincy, transfer costing, mini-league effective ownership,
 and an on-device backtest that calibrates the model against real historical seasons.
 
-## Current status (2026-07-26)
+## Current status (2026-07-27)
 - Live at https://priteshpatel390-del.github.io/FPL/ (GitHub Pages, repo `priteshpatel390-del/FPL`).
 - Season 2026-27 starts 21 Aug 2026; app is in pre-season mode (price-implied projections; squad/
   league features dormant until GW1 picks publish).
-- Codebase refactored into ES modules with a deterministic bundler; 96 automated tests passing.
+- Codebase refactored into ES modules with a deterministic bundler; 179 automated tests passing.
 - Backtested on 2025-26: r=0.80, ±0.5 pts/GW (aggregate method — superseded by walk-forward in a
   future stage), per-position calibration applied (notably FWD ×1.17).
-- Stage 3 (security hardening) is DESIGNED and awaiting owner approval of docs/STAGE3-DESIGN.md.
-  Development is paused for this documentation stage.
+- Stage 3 (security hardening) is IN PROGRESS. D-13 fixture deduplication, item 1 (Anthropic key
+  removal), item 2 (per-endpoint validation) and item 3 (bounded retry) are implemented. Item 4,
+  the seven-state provider-health model, is next and requires owner design approval before coding.
 
 ## Goals & priorities (owner-stated, in order)
 1. Reliable expected-points projections  2. Accurate expected-minutes  3. Clean-sheet / attacking
@@ -40,8 +41,9 @@ mobile. The app also runs inside Claude's artifact preview (keyless Ask tab work
 
 ## Completed / current / upcoming
 Completed: Stage 1 (characterisation tests + data audit), SEC-1 hot-fix, Stage 2 (module
-extraction, provider registry, provenance, build identity). Current: documentation stage (this).
-Next: Stage 3 security → owner architecture review → Stages 4–9 modelling and UI (ROADMAP.md).
+extraction, provider registry, provenance, build identity), and the documentation handover. Current:
+Stage 3 security hardening; D-13 and items 1–3 are complete. Next: provider health, rendering safety,
+odds-key hygiene and CSP → owner architecture review → Stages 4–9 modelling and UI (ROADMAP.md).
 
 ## Major risks
 Public CORS-relay dependence for FPL/Understat transport (R1); undocumented FPL API schema drift

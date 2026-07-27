@@ -1,13 +1,14 @@
 # SECURITY.md
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
-Last updated: 2026-07-26. Related: STAGE3-DESIGN.md (authoritative current design — §§1–8),
+Last updated: 2026-07-27. Related: STAGE3-DESIGN.md (authoritative current design — §§1–8),
 KNOWN_LIMITATIONS (SEC-2/SEC-3/CSP-1/XSS-1/VAL-1/FRAME-1), DECISIONS D-06/D-07/D-08, AUDIT §3.
 
-## Current architecture (deployed build, pre-Stage-3)
+## Current architecture (Stage 3 in progress)
 Static single file on GitHub Pages. SEC-1 enforced: odds key direct-only, never relayed (tested).
 Persistence: localStorage/window.storage wrapper. No serverless component. Relays carry only
-key-free FPL/Understat traffic. Frontend Anthropic key field still present (SEC-3 — removal is
-Stage 3's first task).
+key-free FPL/Understat traffic. SEC-3 is closed: no Anthropic key field, persistence or keyed
+browser request exists; a one-time migration deletes any legacy stored value. Hosted Ask fails
+before network access, while Claude artifact preview retains the approved keyless path.
 
 ## Known risks & mitigations
 - XSS via API/user strings in innerHTML (XSS-1) → Stage 3 DOM-builder rewrite per inventory in
@@ -16,14 +17,15 @@ Stage 3's first task).
 - No CSP (CSP-1) → Stage 3 hash-based policy; documented narrow concession style-src-attr
   'unsafe-inline' until Stage 9; frame-ancestors ineffective on Pages (FRAME-1) → frame-buster now,
   real header at serverless.
-- Schema drift / malformed providers (VAL-1) → Stage 3 per-endpoint validation, fatal vs degraded
-  vs unknown-field classes, no raw payloads or keyed URLs in errors.
-- Secrets: Anthropic client-side BANNED (D-08; Stage 3 deletes field + wipes stored value); odds
+- Schema drift / malformed providers (VAL-1) → closed by D-14 per-endpoint validation; fatal
+  payloads are rejected atomically, partial rows degrade safely, and issue metadata carries no raw
+  payloads or keyed URLs.
+- Secrets: Anthropic client-side BANNED (D-08; field/keyed path removed and legacy stored value wiped); odds
   key accepted-temporary → never logged, scrub() on all outbound strings, "Forget API key" action,
   absent from manifest/BUILD_INFO (verified).
-- Retry policy (Stage 3): transient-only (timeout/network/429 w. Retry-After/5xx), exponential
-  backoff + full jitter, max 3, relay cascade = one attempt; never retry auth/schema failures;
-  odds-via-relay structurally impossible.
+- Retry policy (D-15): transient-only with per-provider attempt and elapsed-time ceilings, capped
+  exponential half-jitter, and one relay cascade per attempt. Odds 401/429 and schema/parse failures
+  are permanent; odds-via-relay remains structurally impossible.
 - Health monitoring: seven states (Live/Cached/Stale/Fallback/Partial/Disabled/Unavailable) with
   age + consequence lines; Disabled is user choice, never styled as failure.
 

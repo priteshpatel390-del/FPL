@@ -43,3 +43,57 @@ Config, manual squad, saved leagues, calibration, cache envelope. Never stores A
 Sentiment/social/trends/etc. (owner spec §6); player-level Understat (D-05); FBref & Transfermarkt
 scraping without owner licensing approval; subscription predicted-lineup scraping (a provider-
 neutral startProbability interface may ingest a PERMITTED source later — Stage 4 optional input).
+
+## Endpoint validation inventory (D-14, Stage 3 item 2)
+Every externally fetched payload and its cached equivalent, the consumer that
+defines its minimum shape, and what fatal/partial mean for it. Validators live
+in `src/providers/validate.mjs`; issues land on `S.dataIssues`.
+
+| Provider | Endpoint | Consumer | Minimum required shape | FATAL | PARTIAL |
+|---|---|---|---|---|---|
+| fpl | `/bootstrap-static/` | `slim()`, `hydrate()` | object with `events[]`, `teams[]`, `elements[]`, `element_types[]` | not an object; any of the four collections missing or not an array | rows that are not objects or lack an `id`; duplicate `id` (first kept) |
+| fpl | `/fixtures/` | `hydrate()` → ticker, projections, chips | array | not an array | duplicate/conflicting/unidentifiable rows (D-13) |
+| fpl | `/entry/{id}/` | `loadAll`, squad + header views | object; `name` read for display | not an object | `name` missing (not manufactured) |
+| fpl | `/entry/{id}/event/{gw}/picks/` | `mySquad()` | object with `picks[]`, rows having `element` + `position` | not an object; `picks` missing or not an array | invalid rows; duplicate `element` (first kept) |
+| fpl | `/entry/{id}/history/` | chip list | object; `chips[]` optional | not an object | `chips` present but wrong type (emptied); chip rows without `name` |
+| fpl | `/leagues-classic/{id}/standings/` | league comparison | object with `standings.results[]`, rows having `entry` | not an object; `standings.results` missing | invalid rows; duplicate `entry` (first kept) |
+| fpl | rival picks (pooled, same shape) | effective ownership | as picks above | per-response only — never blocks the panel | collapsed across the pool |
+| understat | `league/EPL` (+ prior season) | team xG blend | object map of team → `{title, history[]}` | not an object; no usable teams (→ FPL ratings fallback) | individual unusable teams dropped |
+| odds | `v4/sports/soccer_epl/odds` | market blend | array of events with string `home_team`/`away_team`, `bookmakers` absent or an array | not an array (→ internal model fallback) | unusable events dropped, remainder still priced |
+| archive | `merged_gw.csv` | `computeBacktest()` | header row containing name, position, minutes, total_points, GW | missing header or required columns | — (row-level guards remain inline; see VAL-3) |
+| cache | `K_CACHE` snapshot envelope | `hydrate()` | same shape as bootstrap + fixtures | same rules as the live endpoints | same rules as the live endpoints |
+
+Cached-data treatment: the snapshot passes through the identical validator as a
+fresh fetch, because `hydrate()` is the single point both paths meet. A fatal
+cached payload is discarded and re-fetched, never rendered. Row-level filtering
+happens in `hydrate()` rather than `slim()`, so the cached snapshot stays
+raw-shaped for provenance (D-13).
+
+Criticality: only bootstrap, fixtures and the cache are core. Every other
+payload is optional — a fatal there degrades to the existing fallback and must
+never prevent core FPL data from loading.
+
+## Retry inventory (D-15, Stage 3 item 3)
+Retry sits inside the transport layer; consumers are unaware of it. One relay
+cascade counts as one attempt. `attempts` includes the first try.
+
+| Provider | Applies to | Attempts | Base / max delay | Budget | Retried on | Never retried on |
+|---|---|---|---|---|---|---|
+| fpl | `/bootstrap-static/`, `/fixtures/` (core) | 3 | 300ms / 1.2s | 15s | network, timeout, 429, 5xx | 400/401/403/404, parse, schema-FATAL |
+| fpl | entry, picks, history, standings, rival picks (optional) | 2 | 300ms / 1.2s | 15s | as above | as above; provider "not found" is an answer, not a failure |
+| understat | `league/EPL` via relay cascade | 2 | 300ms / 1.2s | 15s | network, timeout, 429, 5xx | parse, permanent 4xx |
+| odds | `v4/sports/soccer_epl/odds` (direct only) | 2 | 400ms / 1.6s | 12s | network, timeout, 5xx | **401 (bad key), 429 (quota window)**, parse |
+| archive | `merged_gw.csv` | 2 | 800ms / 3.2s | 90s | network, timeout, 5xx | parse, permanent 4xx |
+
+Interaction with validation (D-14): validation runs *after* transport. A schema
+failure is permanent by definition and never re-enters the retry loop — a feed
+that returned the wrong shape will return the wrong shape again.
+
+Interaction with SEC-1: only the direct odds request is retried. The key still
+cannot reach a relay, because the retry wraps the direct call and the relay
+cascade is not part of that path at all.
+
+Metadata: each call writes `{provider, endpoint, attempts, finalStatus,
+retryable, exhausted, budgetExceeded}` to `S.retryStats`, keyed by provider and
+a normalised endpoint — query strings stripped (so the odds key cannot appear)
+and digit runs collapsed to `{id}` (so twenty rivals cannot create twenty keys).

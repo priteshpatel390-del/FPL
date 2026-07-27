@@ -214,11 +214,6 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
           </label>
           <span class="check"><input type="checkbox" id="useUstat" checked> Understat rolling xG</span>
         </div>
-        <div class="row" style="margin-top:10px">
-          <label class="fld" style="flex:1 1 200px">Anthropic API key (console.anthropic.com — powers the Ask tab outside Claude)
-            <input type="password" id="claudeKey" placeholder="sk-ant-…" autocomplete="off">
-          </label>
-        </div>
         <div class="row" style="margin-top:12px">
           <button class="btn ghost" id="btBtn">Run backtest against last season</button>
         </div>
@@ -323,7 +318,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <section class="view panel" id="view-ask" hidden>
     <span class="eyebrow">Second opinion</span>
     <h2>Ask about a decision</h2>
-    <p class="hint">Your squad, projections and fixtures go with the question. Live news is searched where it matters.</p>
+    <p class="hint">Your squad, projections and fixtures go with the question. The AI assistant works keylessly inside Claude's artifact preview; hosted builds require the planned serverless migration.</p>
     <div class="chips">
       <button class="chip" data-q="Who should I captain this week and why?">Captain call</button>
       <button class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>
@@ -350,16 +345,12 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* =====================================================================
-   TEAMSHEET — FPL decision desk
-   Projected-points engine with per-position models.
-   ===================================================================== */
+/* BUILD {"modelVersion":"2.0.0","rulesVersion":"2025-26.1","sourceHash":"b9762cdd0d02d022","commit":"unversioned"} */
+const BUILD_INFO = {"modelVersion":"2.0.0","rulesVersion":"2025-26.1","sourceHash":"b9762cdd0d02d022fb13d34d6cebe7219e46c67a46b7cad67e9fe7a619895b6e","commit":"unversioned","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/model/fixtures.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs"]};
 
-const $ = id => document.getElementById(id);
-const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
-const fmt1 = v => (Math.round(v*10)/10).toFixed(1);
-
+/* ===== src/config.mjs ===== */
+// Season-specific rules and model configuration (Stage 2: values verbatim from
+// the monolith; Stage 5 moves the full FPL rulebook here).
 const GOAL_PTS   = {1:6, 2:6, 3:5, 4:4};
 const CS_PTS     = {1:4, 2:4, 3:1, 4:0};
 const ASSIST_PTS = 3;
@@ -367,13 +358,665 @@ const DC_THRESH  = {2:10, 3:12, 4:12};      // defensive contribution thresholds
 const BASE_GOALS = 1.42;                     // league average goals per team per game
 const HOME_TILT  = 1.10;
 
+const SCHEMA_VERSION = 2;          // cache envelope; bump invalidates cached snapshots
+const MODEL_VERSION  = '2.0.0';    // projection engine
+const RULES_VERSION  = '2025-26.1';// FPL scoring rules encoded
+
+// Adjustment-5 market rules — DEFINED here before any formula change (Stage 5+
+// may consume more of these; today they gate inclusion/staleness only).
+const ODDS_RULES = {
+  minH2hBooks: 2,            // events with fewer h2h books are skipped (thin market)
+  minTotalsBooks: 1,
+  outlierProbDeviation: 0.15,// drop books whose devigged prob deviates >15% from median
+  maxQuoteAgeHours: 24,      // bookmaker last_update older than this is stale → excluded
+  kickoffMatchWindowHours: 72,// fixture↔event matching tolerance
+  lowConfidenceBooks: 3      // below this many books, mark confidence 'low'
+};
+
+
+
+/* ===== src/util.mjs ===== */
+const $ = id => document.getElementById(id);
+const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+const fmt1 = v => (Math.round(v*10)/10).toFixed(1);
+
+const ESC_MAP = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const escapeHTML = v => String(v).replace(/[&<>"']/g, c => ESC_MAP[c]);
+
+
+/* ===== src/providers/retry.mjs ===== */
+/* ---------------------------------------------------------------------
+   RETRY POLICY (Stage 3 item 3, D-15) — bounded, iterative retry for
+   transient provider failures.
+
+   Placement: this sits INSIDE the transport layer. Consumers call api(),
+   fetchVia() or fetchT() exactly as before and never learn that a retry
+   happened. Nothing here touches scoring, projections or calibration.
+
+   Two rules shape the whole design:
+
+   1. Only genuinely transient failures are retried. A malformed payload,
+      a parse failure, a rejected key or a 404 will fail identically on
+      the next attempt, so retrying them only wastes the user's time and,
+      for metered providers, their quota. Schema validation (D-14) runs
+      AFTER transport and its failures are permanent by definition —
+      they never re-enter this layer.
+
+   2. Retries are bounded three ways at once: a hard attempt ceiling, an
+      elapsed-time budget, and a capped backoff. The budget matters more
+      than it looks — the FPL relay cascade can burn 40s before failing,
+      and without a budget a "max 3 attempts" policy would licence a
+      two-minute spinner. Cheap failures get retried; expensive ones do not.
+
+   This module is pure and imports nothing, so it can be unit-tested with
+   fake clocks. All timing dependencies are injectable.
+   --------------------------------------------------------------------- */
+
+// Transient at the HTTP level: the same request may well succeed shortly.
+const RETRYABLE_STATUS = Object.freeze([429, 500, 502, 503, 504]);
+// Permanent at the HTTP level: retrying cannot change the answer.
+const PERMANENT_STATUS = Object.freeze([400, 401, 403, 404]);
+
+const isRetryableStatus = status => RETRYABLE_STATUS.includes(status);
+const isPermanentStatus = status => PERMANENT_STATUS.includes(status);
+
+/* Per-provider configuration. attempts counts the FIRST try, so attempts:2
+   means one initial request plus at most one retry. Delays are deliberately
+   short: this is a phone app and a user staring at a spinner is a worse
+   outcome than a missing optional layer.
+
+   budgetMs is elapsed time since the operation began, checked BEFORE
+   sleeping. For fpl/understat one "attempt" is a full relay cascade, which
+   is why their budgets are lower than their theoretical worst-case runtime —
+   a cascade that took longer than the budget is not a transient blip. */
+const RETRY_POLICY = Object.freeze({
+  fpl: Object.freeze({ provider: 'fpl', attempts: 3,
+    baseDelayMs: 300, maxDelayMs: 1200, budgetMs: 15000 }),
+  understat: Object.freeze({ provider: 'understat', attempts: 2,
+    baseDelayMs: 300, maxDelayMs: 1200, budgetMs: 15000 }),
+  odds: Object.freeze({ provider: 'odds', attempts: 2,
+    baseDelayMs: 400, maxDelayMs: 1600, budgetMs: 12000 }),
+  archive: Object.freeze({ provider: 'archive', attempts: 2,
+    baseDelayMs: 800, maxDelayMs: 3200, budgetMs: 90000 })
+});
+
+const ATTEMPT_CEILING = 5;   // hard upper bound, whatever a policy claims
+
+function policyFor(provider, overrides) {
+  const base = RETRY_POLICY[provider] || RETRY_POLICY.fpl;
+  const p = { ...base, ...(overrides || {}) };
+  // Defensive clamp: a policy can never authorise an unbounded or absent loop.
+  p.attempts = Math.max(1, Math.min(ATTEMPT_CEILING, Math.floor(p.attempts) || 1));
+  return p;
+}
+
+/* Half-jitter exponential backoff: 50–100% of the capped exponential delay.
+   Jitter avoids every client on a flaky relay retrying in lockstep; the 50%
+   floor keeps the delay meaningful. Pure — the random source is injected, so
+   tests get exact numbers. */
+function retryDelay(attempt, policy, random = Math.random) {
+  const exp = Math.min(policy.baseDelayMs * Math.pow(2, attempt - 1), policy.maxDelayMs);
+  if (policy.jitter === false) return exp;
+  return Math.round(exp * (0.5 + 0.5 * random()));
+}
+
+/* Endpoint labels for retry metadata. Two jobs:
+   - strip the query string, because the odds request carries the API key
+     there and metadata must never contain a secret;
+   - collapse digit runs, so /entry/12345/event/7/picks/ becomes a stable
+     key instead of creating one metadata entry per rival manager. */
+function safeEndpoint(url) {
+  const s = String(url);
+  const noQuery = s.split('?')[0].split('#')[0];
+  return noQuery.replace(/\d+/g, '{id}');
+}
+
+function defaultSleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/* withRetry(task, policy, deps) -> { result, record }
+
+   `task(attempt)` must resolve to an outcome object, never throw:
+     { ok:true,  value, status }                       success
+     { ok:false, retryable:boolean, status, reason }   failure
+
+   Making the task classify its own failure is deliberate. Only the caller
+   knows whether a thrown error was a dead socket (transient) or a JSON
+   parse failure (permanent), and collapsing that distinction into a generic
+   catch here is exactly how malformed payloads end up being retried.
+
+   The loop is a plain bounded `for`. There is no recursion and no
+   condition under which it can run more than policy.attempts times. */
+async function withRetry(task, policy, deps = {}) {
+  const sleep = deps.sleep || defaultSleep;
+  const random = deps.random || Math.random;
+  const now = deps.now || Date.now;
+  const p = policyFor(policy && policy.provider, policy);
+  const started = now();
+
+  const record = { provider: p.provider, endpoint: p.endpoint || 'unknown',
+    attempts: 0, finalStatus: null, retryable: false, exhausted: false,
+    budgetExceeded: false };
+
+  let result = null;
+  for (let attempt = 1; attempt <= p.attempts; attempt++) {
+    record.attempts = attempt;
+    result = await task(attempt);
+
+    if (result && result.ok) {
+      record.finalStatus = result.status === undefined ? 'ok' : result.status;
+      record.retryable = false;
+      record.exhausted = false;
+      return { result, record };
+    }
+
+    record.finalStatus = result && result.status !== undefined
+      ? result.status : (result && result.reason) || 'error';
+    record.retryable = !!(result && result.retryable);
+
+    if (!record.retryable) return { result, record };   // permanent — stop now
+    if (attempt >= p.attempts) break;                    // attempt ceiling reached
+    if (p.budgetMs && (now() - started) >= p.budgetMs) { // too slow to be transient
+      record.budgetExceeded = true;
+      break;
+    }
+    await sleep(retryDelay(attempt, p, random));
+  }
+
+  record.exhausted = true;
+  return { result, record };
+}
+
+
+
+/* ===== src/providers/validate.mjs ===== */
+/* ---------------------------------------------------------------------
+   INPUT INTEGRITY (Stage 3, D-13) — validation and normalisation of
+   provider payloads before any consumer sees them.
+
+   Called from hydrate(), NOT from slim(), and deliberately so: hydrate
+   runs for cached snapshots as well as fresh fetches, so a bad payload
+   is re-reported on every load instead of being noticed once at fetch
+   time and then silently served from cache forever. slim() keeps the
+   raw-shaped list so the cached provider snapshot stays intact for
+   provenance.
+
+   Nothing here mutates the input array or any row in it.
+   No scoring, weighting or calibration behaviour is touched.
+   --------------------------------------------------------------------- */
+
+// Fields whose disagreement between two rows sharing one identity is a real
+// data conflict. `started`/`finished`/`provisional_start_time` are excluded:
+// within a single response they are a benign in-flight artefact, not a
+// contradiction about which match this is or how it is rated.
+const MATERIAL_FIELDS = ['event', 'team_h', 'team_a',
+  'team_h_difficulty', 'team_a_difficulty', 'kickoff_time'];
+
+/* Identity of a fixture row.
+   Provider `id` is primary and is trusted alone — a real FPL row always
+   carries one, and genuine double gameweeks are distinct rows with
+   distinct ids, so id-keyed dedupe can never collapse a real double.
+   The composite key is a FALLBACK used only when `id` is absent; it is
+   never used to second-guess an id that is present.
+   Returns null when no safe identity exists — identity is never invented. */
+function fixtureIdentity(f) {
+  if (f === null || typeof f !== 'object' || Array.isArray(f)) return null;
+  if (f.id !== undefined && f.id !== null) return 'id:' + f.id;
+  // Note: a row WITH an id and a null event (postponed/TBD) is kept untouched
+  // by the branch above. Only id-less rows need a complete composite.
+  const { event, team_h, team_a } = f;
+  if (event === undefined || event === null) return null;
+  if (team_h === undefined || team_h === null) return null;
+  if (team_a === undefined || team_a === null) return null;
+  return 'k:' + event + '|' + team_h + '|' + team_a;
+}
+
+function materialDiff(a, b) {
+  const out = [];
+  for (const k of MATERIAL_FIELDS) if (!Object.is(a[k], b[k])) out.push(k);
+  return out;
+}
+
+/* normaliseFixtures(input) -> { fixtures, issues }
+   - exact duplicates (same identity, no material disagreement) collapse to
+     the first occurrence;
+   - conflicting duplicates keep the FIRST occurrence and raise an issue
+     naming the disagreeing fields — never silently resolved;
+   - rows with no safe identity are excluded and reported;
+   - a non-array payload is fatal and yields an empty list. */
+function normaliseFixtures(input) {
+  const issues = [];
+
+  if (!Array.isArray(input)) {
+    issues.push({ provider: 'fpl', endpoint: '/fixtures/',
+      code: 'fixtures_not_array', severity: 'fatal', count: 1,
+      received: input === null ? 'null' : typeof input });
+    return { fixtures: [], issues };
+  }
+
+  const seen = new Map();
+  const fixtures = [];
+  const conflicts = [];
+  let exactDuplicates = 0;
+  let missingIdentity = 0;
+
+  for (const row of input) {
+    const key = fixtureIdentity(row);
+    if (key === null) { missingIdentity++; continue; }
+
+    if (!seen.has(key)) { seen.set(key, row); fixtures.push(row); continue; }
+
+    const diff = materialDiff(seen.get(key), row);
+    if (diff.length === 0) exactDuplicates++;
+    else conflicts.push({ identity: key, fields: diff });
+  }
+
+  if (exactDuplicates)
+    issues.push({ provider: 'fpl', endpoint: '/fixtures/',
+      code: 'fixture_exact_duplicate', severity: 'partial',
+      count: exactDuplicates });
+  if (conflicts.length)
+    issues.push({ provider: 'fpl', endpoint: '/fixtures/',
+      code: 'fixture_conflicting_duplicate', severity: 'partial',
+      count: conflicts.length, conflicts });
+  if (missingIdentity)
+    issues.push({ provider: 'fpl', endpoint: '/fixtures/',
+      code: 'fixture_missing_identity', severity: 'partial',
+      count: missingIdentity });
+
+  return { fixtures, issues };
+}
+
+/* Payload-free rollup for the health strip: counts and worst severity only,
+   never identities, team ids, or raw rows. Safe to render anywhere. */
+function issueSummary(issues) {
+  if (!Array.isArray(issues) || issues.length === 0)
+    return { ok: true, worst: 'none', counts: {} };
+  const counts = {};
+  let worst = 'partial';
+  for (const i of issues) {
+    counts[i.code] = (counts[i.code] || 0) + (typeof i.count === 'number' ? i.count : 1);
+    if (i.severity === 'fatal') worst = 'fatal';
+  }
+  return { ok: false, worst, counts };
+}
+
+/* =====================================================================
+   PER-ENDPOINT SCHEMA VALIDATION (Stage 3 item 2, D-14)
+
+   One focused function per endpoint, deliberately NOT a single generic
+   validator: each endpoint's assumptions are the ones its consumers
+   actually make, and burying them in a shared schema language would hide
+   exactly the detail that matters when a feed drifts.
+
+   Every validator:
+     - returns { value, issues } and is pure;
+     - never mutates the provider payload (filtered collections are new
+       arrays/objects; surviving rows are passed through by reference);
+     - never manufactures identifiers, values or missing structures;
+     - distinguishes FATAL (payload cannot be safely consumed; value is
+       null) from PARTIAL (bad rows dropped, usable remainder retained).
+
+   Issue shape: { provider, endpoint, code, severity, count } plus at most
+   a small bounded diagnostic field (field names, or a received-type string).
+   Raw payloads and row contents never appear in issues.
+   ===================================================================== */
+
+const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isNum = v => typeof v === 'number' && Number.isFinite(v);
+// FPL ids arrive as numbers, but relays occasionally stringify them.
+const isId  = v => isNum(v) || (typeof v === 'string' && v.trim() !== '' && Number.isFinite(+v));
+
+function mkIssue(provider, endpoint, code, severity, count, extra) {
+  const i = { provider, endpoint, code, severity, count };
+  if (extra) for (const k of Object.keys(extra)) i[k] = extra[k];
+  return i;
+}
+
+/* Filter a collection of rows, keeping the first valid occurrence of each
+   identity where an identity accessor is supplied. Returns counts so the
+   caller can raise correctly-shaped issues. Never mutates. */
+function filterRows(rows, isValid, identityOf) {
+  const kept = [], seen = new Set();
+  let invalid = 0, duplicate = 0;
+  for (const row of rows) {
+    if (!isValid(row)) { invalid++; continue; }
+    if (identityOf) {
+      const k = identityOf(row);
+      if (seen.has(k)) { duplicate++; continue; }   // retain the FIRST valid row
+      seen.add(k);
+    }
+    kept.push(row);
+  }
+  return { kept, invalid, duplicate };
+}
+
+/* ---- FPL /bootstrap-static/ ------------------------------------------
+   Consumers: slim() + hydrate() (events, teams, elements, element_types).
+   The four collections are load-bearing for every downstream view, so a
+   missing one is fatal. Individual malformed rows are dropped. */
+const BOOTSTRAP_COLLECTIONS = ['events', 'teams', 'elements', 'element_types'];
+
+/* Structural (fatal-only) check. Split out so the fresh-fetch path can
+   guard slim() from throwing WITHOUT filtering rows before the snapshot is
+   cached — D-13 keeps the cached snapshot raw-shaped for provenance, and
+   row-level filtering belongs in hydrate() where both paths meet. */
+function bootstrapStructure(payload) {
+  if (!isObj(payload))
+    return { ok: false, issues: [mkIssue('fpl', '/bootstrap-static/',
+      'bootstrap_not_object', 'fatal', 1,
+      { received: payload === null ? 'null' : Array.isArray(payload) ? 'array' : typeof payload })] };
+  const missing = BOOTSTRAP_COLLECTIONS.filter(k => !Array.isArray(payload[k]));
+  if (missing.length)
+    return { ok: false, issues: [mkIssue('fpl', '/bootstrap-static/',
+      'bootstrap_missing_collection', 'fatal', missing.length, { fields: missing })] };
+  return { ok: true, issues: [] };
+}
+
+function validateBootstrap(payload) {
+  const structural = bootstrapStructure(payload);
+  if (!structural.ok) return { value: null, issues: structural.issues };
+
+  const issues = [];
+  const value = {};
+  for (const key of BOOTSTRAP_COLLECTIONS) {
+    const { kept, invalid, duplicate } = filterRows(payload[key],
+      r => isObj(r) && isId(r.id), r => String(r.id));
+    value[key] = kept;
+    if (invalid)
+      issues.push(mkIssue('fpl', '/bootstrap-static/', 'bootstrap_invalid_rows',
+        'partial', invalid, { field: key }));
+    if (duplicate)
+      issues.push(mkIssue('fpl', '/bootstrap-static/', 'bootstrap_duplicate_rows',
+        'partial', duplicate, { field: key }));
+  }
+  // Every other bootstrap field is passed through untouched: unknown/extra
+  // fields are tolerated by design, never rejected and never counted as bad.
+  for (const k of Object.keys(payload))
+    if (!BOOTSTRAP_COLLECTIONS.includes(k)) value[k] = payload[k];
+
+  return { value, issues };
+}
+
+/* ---- FPL /entry/{id}/ -------------------------------------------------
+   Consumers: main.mjs (last_deadline_bank), views (name, player names,
+   summary_overall_rank). Optional endpoint: a null means "not found" and
+   is already handled by the caller, so it is not a validation failure. */
+function validateEntry(payload) {
+  if (payload === null || payload === undefined) return { value: null, issues: [] };
+  if (!isObj(payload))
+    return { value: null, issues: [mkIssue('fpl', '/entry/', 'entry_not_object',
+      'fatal', 1, { received: Array.isArray(payload) ? 'array' : typeof payload })] };
+  const issues = [];
+  if (typeof payload.name !== 'string')
+    issues.push(mkIssue('fpl', '/entry/', 'entry_missing_field', 'partial', 1,
+      { fields: ['name'] }));
+  return { value: payload, issues };
+}
+
+/* ---- FPL /entry/{id}/event/{gw}/picks/ (own AND rival) ----------------
+   Consumer: squad.mjs mySquad() reads picks[].element/position/multiplier;
+   views.mjs reads is_captain for effective ownership. Without picks[] there
+   is nothing to consume, so that is fatal for this payload. */
+function validatePicks(payload, endpoint = '/entry/event/picks/') {
+  if (payload === null || payload === undefined) return { value: null, issues: [] };
+  if (!isObj(payload))
+    return { value: null, issues: [mkIssue('fpl', endpoint, 'picks_not_object',
+      'fatal', 1, { received: Array.isArray(payload) ? 'array' : typeof payload })] };
+  if (!Array.isArray(payload.picks))
+    return { value: null, issues: [mkIssue('fpl', endpoint, 'picks_missing_collection',
+      'fatal', 1, { fields: ['picks'] })] };
+
+  const issues = [];
+  const { kept, invalid, duplicate } = filterRows(payload.picks,
+    r => isObj(r) && isId(r.element) && isId(r.position), r => String(r.element));
+  if (invalid)
+    issues.push(mkIssue('fpl', endpoint, 'picks_invalid_rows', 'partial', invalid));
+  if (duplicate)
+    issues.push(mkIssue('fpl', endpoint, 'picks_duplicate_element', 'partial', duplicate));
+  return { value: { ...payload, picks: kept }, issues };
+}
+
+/* ---- FPL /entry/{id}/history/ ----------------------------------------
+   Consumer: main.mjs reads chips[].name and chips[].event only. chips is
+   optional in the real feed (a manager may have used none), so its absence
+   is not an issue; a chips value of the wrong TYPE is. */
+function validateHistory(payload) {
+  if (payload === null || payload === undefined) return { value: null, issues: [] };
+  if (!isObj(payload))
+    return { value: null, issues: [mkIssue('fpl', '/entry/history/', 'history_not_object',
+      'fatal', 1, { received: Array.isArray(payload) ? 'array' : typeof payload })] };
+  if (payload.chips === undefined || payload.chips === null)
+    return { value: payload, issues: [] };
+  if (!Array.isArray(payload.chips))
+    return { value: { ...payload, chips: [] },
+      issues: [mkIssue('fpl', '/entry/history/', 'history_chips_not_array', 'partial', 1,
+        { fields: ['chips'] })] };
+
+  const issues = [];
+  const { kept, invalid } = filterRows(payload.chips, r => isObj(r) && typeof r.name === 'string');
+  if (invalid)
+    issues.push(mkIssue('fpl', '/entry/history/', 'history_invalid_chip_rows', 'partial', invalid));
+  return { value: { ...payload, chips: kept }, issues };
+}
+
+/* ---- FPL /leagues-classic/{id}/standings/ -----------------------------
+   Consumer: views.mjs reads standings.results[].entry and .rank, and
+   league.name. Without standings.results there is no league to render. */
+function validateStandings(payload) {
+  if (payload === null || payload === undefined) return { value: null, issues: [] };
+  if (!isObj(payload))
+    return { value: null, issues: [mkIssue('fpl', '/leagues-classic/standings/',
+      'standings_not_object', 'fatal', 1,
+      { received: Array.isArray(payload) ? 'array' : typeof payload })] };
+  if (!isObj(payload.standings) || !Array.isArray(payload.standings.results))
+    return { value: null, issues: [mkIssue('fpl', '/leagues-classic/standings/',
+      'standings_missing_results', 'fatal', 1, { fields: ['standings.results'] })] };
+
+  const issues = [];
+  const { kept, invalid, duplicate } = filterRows(payload.standings.results,
+    r => isObj(r) && isId(r.entry), r => String(r.entry));
+  if (invalid)
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_rows',
+      'partial', invalid));
+  if (duplicate)
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_duplicate_entry',
+      'partial', duplicate));
+  return { value: { ...payload, standings: { ...payload.standings, results: kept } }, issues };
+}
+
+/* ---- Understat (post-parse) ------------------------------------------
+   Consumer: understat.mjs reads each team's .title and .history[].xG/.xGA.
+   parseUnderstat() already returns null for an unparseable page; this
+   validates the shape of what it DID parse. Optional provider: a fatal
+   here degrades to FPL strength ratings, it never blocks core data. */
+function validateUnderstat(parsed) {
+  if (parsed === null || parsed === undefined) return { value: null, issues: [] };
+  if (!isObj(parsed))
+    return { value: null, issues: [mkIssue('understat', 'league/EPL',
+      'understat_not_object', 'fatal', 1,
+      { received: Array.isArray(parsed) ? 'array' : typeof parsed })] };
+
+  const issues = [];
+  const value = {};
+  let invalid = 0;
+  for (const k of Object.keys(parsed)) {
+    const t = parsed[k];
+    if (!isObj(t) || typeof t.title !== 'string' || !Array.isArray(t.history)) { invalid++; continue; }
+    value[k] = t;
+  }
+  if (invalid)
+    issues.push(mkIssue('understat', 'league/EPL', 'understat_invalid_teams', 'partial', invalid));
+  if (!Object.keys(value).length)
+    issues.push(mkIssue('understat', 'league/EPL', 'understat_no_usable_teams', 'fatal', 1));
+  return { value: Object.keys(value).length ? value : null, issues };
+}
+
+/* ---- The Odds API v4 --------------------------------------------------
+   Consumer: odds.mjs reads home_team/away_team/commence_time/bookmakers[].
+   A row whose bookmakers field is present but not an array cannot be
+   consumed (the parser iterates it), so the ROW is dropped rather than
+   having an empty array manufactured for it. Optional provider. */
+function validateOdds(payload) {
+  if (payload === null || payload === undefined) return { value: null, issues: [] };
+  if (!Array.isArray(payload))
+    return { value: null, issues: [mkIssue('odds', 'v4/sports/soccer_epl/odds',
+      'odds_not_array', 'fatal', 1,
+      { received: payload === null ? 'null' : typeof payload })] };
+
+  const issues = [];
+  const { kept, invalid } = filterRows(payload, r => isObj(r) &&
+    typeof r.home_team === 'string' && typeof r.away_team === 'string' &&
+    (r.bookmakers === undefined || r.bookmakers === null || Array.isArray(r.bookmakers)));
+  if (invalid)
+    issues.push(mkIssue('odds', 'v4/sports/soccer_epl/odds', 'odds_invalid_events',
+      'partial', invalid));
+  return { value: kept, issues };
+}
+
+/* ---- Historical archive CSV (vaastav merged_gw.csv) -------------------
+   Consumer: computeBacktest(). Column presence is the only structural
+   contract; the existing thrown message is preserved verbatim because it
+   is user-facing and pinned by a resilience test. */
+const ARCHIVE_REQUIRED_COLUMNS = ['name', 'position', 'minutes', 'total_points', 'GW'];
+
+function validateArchiveHeader(headerRow) {
+  if (!Array.isArray(headerRow))
+    return { value: null, issues: [mkIssue('archive', 'merged_gw.csv',
+      'archive_no_header', 'fatal', 1)] };
+  const present = new Set(headerRow.map(h => String(h).trim()));
+  const missing = ARCHIVE_REQUIRED_COLUMNS.filter(c => !present.has(c));
+  if (missing.length)
+    return { value: null, issues: [mkIssue('archive', 'merged_gw.csv',
+      'archive_missing_columns', 'fatal', missing.length, { fields: missing })] };
+  return { value: headerRow, issues: [] };
+}
+
+/* Merge issues sharing provider+endpoint+code, summing counts. Pooled calls
+   (20 rival squads) would otherwise emit 20 near-identical issue objects;
+   this keeps S.dataIssues bounded regardless of fan-out. Bounded diagnostic
+   fields from the first occurrence are kept; nothing is concatenated. */
+function collapseIssues(list) {
+  if (!Array.isArray(list) || !list.length) return [];
+  const byKey = new Map();
+  for (const i of list) {
+    const k = i.provider + '|' + i.endpoint + '|' + i.code;
+    if (!byKey.has(k)) byKey.set(k, { ...i, count: typeof i.count === 'number' ? i.count : 1 });
+    else byKey.get(k).count += (typeof i.count === 'number' ? i.count : 1);
+  }
+  return [...byKey.values()];
+}
+
+/* Convenience predicates used at every integration point. */
+const hasFatal = issues => Array.isArray(issues) && issues.some(i => i.severity === 'fatal');
+
+// NOTE: single-line export — the bundler's strip contract (README-BUILD.md)
+// only recognises `export { ... };` on one line. A wrapped list survives into
+// the bundle as a syntax error.
+
+
+/* ===== src/state.mjs ===== */
 const S = {
   boot:null, fixtures:null, entry:null, picks:null, history:null,
   teams:{}, byId:{}, posName:{}, avg:null,
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
-  source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[]
+  source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
+  dataIssues:[],
+  retryStats:{}
 };
 
+/* ---------------------------------------------------------------------
+   SLIM + CACHE — bootstrap is far too large to store whole, so only the
+   fields the model uses are kept.
+   --------------------------------------------------------------------- */
+const KEEP = ['id','web_name','team','element_type','now_cost','total_points','form','points_per_game',
+  'selected_by_percent','minutes','starts','goals_scored','assists','clean_sheets','saves','bonus','bps',
+  'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
+  'expected_goals_conceded_per_90','defensive_contribution','defensive_contribution_per_90',
+  'status','chance_of_playing_next_round','news','news_added','cost_change_event','cost_change_start',
+  'transfers_in_event','transfers_out_event','penalties_order','ep_next','yellow_cards','red_cards'];
+
+function slim(boot, fixtures){
+  return {
+    at: Date.now(),
+    events: boot.events.map(e => ({id:e.id, deadline_time:e.deadline_time, is_current:e.is_current,
+      is_next:e.is_next, finished:e.finished, name:e.name})),
+    teams: boot.teams.map(t => ({id:t.id, name:t.name, short_name:t.short_name,
+      strength_attack_home:t.strength_attack_home, strength_attack_away:t.strength_attack_away,
+      strength_defence_home:t.strength_defence_home, strength_defence_away:t.strength_defence_away})),
+    element_types: boot.element_types.map(t => ({id:t.id, singular_name_short:t.singular_name_short, singular_name:t.singular_name})),
+    elements: boot.elements.map(p => { const o = {}; KEEP.forEach(k => { if(p[k] !== undefined) o[k] = p[k]; }); return o; }),
+    fixtures: fixtures.map(f => ({event:f.event, id:f.id, team_h:f.team_h, team_a:f.team_a,
+      team_h_difficulty:f.team_h_difficulty, team_a_difficulty:f.team_a_difficulty,
+      kickoff_time:f.kickoff_time, started:f.started, finished:f.finished,
+      provisional_start_time:f.provisional_start_time}))
+  };
+}
+
+/* D-13 + D-14: the snapshot is validated on EVERY load, fresh or cached,
+   before a single assignment is made. A fatal payload returns early with
+   state untouched — a half-populated S is worse than no refresh at all. */
+function hydrate(d){
+  const bv = validateBootstrap(d);
+  const fx = bv.value === null ? { fixtures: [], issues: [] }
+                               : normaliseFixtures(bv.value.fixtures);
+  const issues = bv.issues.concat(fx.issues);
+  if(bv.value === null || hasFatal(issues)){
+    S.dataIssues = issues;                 // reported; nothing else disturbed
+    return { ok:false, issues };
+  }
+  const v = bv.value;
+  S.boot = {events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types};
+  S.fixtures = fx.fixtures;
+  S.dataIssues = issues;
+  S.teams = {}; v.teams.forEach(t => S.teams[t.id] = t);
+  S.byId = {}; v.elements.forEach(p => S.byId[p.id] = p);
+  S.posName = {}; S.posFull = {};
+  v.element_types.forEach(t => { S.posName[t.id] = t.singular_name_short; S.posFull[t.id] = t.singular_name; });
+
+  const cur  = v.events.find(e => e.is_current);
+  const next = v.events.find(e => e.is_next) || v.events.find(e => !e.finished);
+  S.currentGW = cur ? cur.id : 0;
+  S.nextGW = next ? next.id : 38;
+  S.seasonLive = v.events.some(e => e.finished);
+  S.gamesPlayed = Math.max(1, S.currentGW);
+  S.cachedAt = v.at;
+
+  const ts = v.teams, n = ts.length || 1;
+  const mean = k => ts.reduce((a,t) => a + (t[k]||1000), 0) / n;
+  S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
+           defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
+
+  // populate position filter once
+  const sel = $('plPos');
+  if(sel.options.length <= 1)
+    v.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
+
+  return { ok:true, issues };
+}
+
+/* Optional providers report AFTER hydrate, on their own schedule. Replacing
+   by provider+endpoint keeps repeat loads idempotent instead of accreting
+   duplicate issues every time a panel is refreshed. */
+function recordIssues(provider, endpoint, issues){
+  S.dataIssues = S.dataIssues.filter(i => !(i.provider === provider && i.endpoint === endpoint));
+  if(issues && issues.length) S.dataIssues = S.dataIssues.concat(issues);
+}
+
+/* D-15: retry metadata, keyed by provider + normalised endpoint so a pooled
+   sweep of 20 rival managers cannot grow 20 entries. Latest attempt wins —
+   this is a current-status surface, not a log. The provider-health model
+   (item 4) is the intended consumer; nothing reads it yet. */
+function recordRetry(record){
+  if(!record || !record.provider) return;
+  S.retryStats[record.provider + '|' + record.endpoint] = record;
+}
+
+
+
+/* ===== src/storage.mjs ===== */
 /* ---------------------------------------------------------------------
    STORAGE
    --------------------------------------------------------------------- */
@@ -393,6 +1036,24 @@ async function sset(key, val){
   if(window.storage){ try{ await window.storage.set(key, s); return; }catch(e){} }
   try{ localStorage.setItem(key, s); }catch(e){}
 }
+
+// D-08 / SEC-3 migration: Anthropic secrets are banned client-side. Older
+// configurations may still contain claudeKey, so remove it once and persist
+// the scrubbed object before any UI consumes the configuration.
+function stripDeprecatedSecrets(value){
+  if(!value || typeof value !== 'object' || Array.isArray(value) ||
+     !Object.prototype.hasOwnProperty.call(value, 'claudeKey'))
+    return { config:value, changed:false };
+  const config = { ...value };
+  delete config.claudeKey;
+  return { config, changed:true };
+}
+async function loadCfg(){
+  const raw = await sget(K_CFG);
+  const migrated = stripDeprecatedSecrets(raw);
+  if(migrated.changed) await sset(K_CFG, migrated.config);
+  return migrated.config;
+}
 async function saveCfg(){
   await sset(K_CFG, {
     teamId: $('teamId').value.replace(/\D/g,''),
@@ -401,15 +1062,79 @@ async function saveCfg(){
     leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
     oddsKey: $('oddsKey').value.trim(),
-    claudeKey: $('claudeKey').value.trim(),
     useUstat: $('useUstat').checked
   });
 }
 
+
+// Versioned cache envelope (season snapshots only; generic sget/sset stay raw).
+async function cachePut(key, payload, season){
+  await sset(key, { schemaVersion: SCHEMA_VERSION, season, fetchedAt: Date.now(), payload });
+}
+async function cacheGet(key, season){
+  const env = await sget(key);
+  if(!env || typeof env !== 'object') return null;
+  if(env.schemaVersion !== SCHEMA_VERSION) return null;
+  if(season && env.season && env.season !== season) return null;
+  return env.payload ?? null;
+}
+
+
+/* ===== src/providers/registry.mjs ===== */
+// src/providers/registry.mjs — provider quality is six separate attributes
+// (adjustment 2), not one vague "reliability". Static descriptors reflect the
+// audit; dynamic health reflects runtime observation.
+const scale = ['low','medium','high']; // documentation of the vocabulary
+
+const PROVIDER_QUALITY = {
+  fpl: {
+    dataAuthority:'high',            // primary source of truth for the game itself
+    transportAvailability:'medium',  // no CORS → public-relay dependent until serverless
+    schemaStability:'medium',        // undocumented; drifts between seasons
+    freshness:'high',                // near-live during gameweeks
+    historicalReproducibility:'low', // API is current-state only; history via archive
+    licensingConfidence:'medium'     // unofficial but universally tolerated
+  },
+  understat: {
+    dataAuthority:'medium', transportAvailability:'low', schemaStability:'low',
+    freshness:'medium', historicalReproducibility:'medium', licensingConfidence:'low'
+  },
+  odds: {
+    dataAuthority:'high', transportAvailability:'high', schemaStability:'high',
+    freshness:'high', historicalReproducibility:'low',   // no free historical odds
+    licensingConfidence:'high'
+  },
+  archive: { // vaastav historical dataset
+    dataAuthority:'medium', transportAvailability:'high', schemaStability:'medium',
+    freshness:'low', historicalReproducibility:'medium', // un-pinned master; pin = high
+    licensingConfidence:'high'
+  }
+};
+
+const health = {}; // name → {ok, note, at, usingFallback}
+function markHealth(name, ok, note = '', usingFallback = false){
+  health[name] = { ok, note, at: Date.now(), usingFallback };
+}
+function getHealth(name){ return health[name] || null; }
+function healthSummary(){
+  return Object.entries(health).map(([n,h]) =>
+    `${n}: ${h.ok ? (h.usingFallback ? 'fallback' : 'live') : 'down'}${h.note ? ' — ' + h.note : ''}`);
+}
+
+
+/* ===== src/providers/transport.mjs ===== */
 /* ---------------------------------------------------------------------
    FETCH — the FPL API sends no CORS headers, so requests cascade through
    public read-only relays. Each attempt is capped so one dead relay
    cannot stall the chain.
+
+   D-15: retry sits around the WHOLE cascade, not around each relay.
+   Rotating to the next relay is transport selection, not a retry — it is
+   already the redundancy mechanism. Retrying each of five relays three
+   times would mean fifteen requests and roughly two minutes of spinner
+   on a total outage. One cascade therefore counts as one attempt, and a
+   second cascade only runs if the first failed transiently AND failed
+   quickly enough to still look like a blip (the elapsed-time budget).
    --------------------------------------------------------------------- */
 const BASE = 'https://fantasy.premierleague.com/api';
 const RELAYS = [
@@ -428,20 +1153,66 @@ async function fetchT(url, ms){
   finally{ clearTimeout(t); }
 }
 
-async function api(path, {optional=false, timeout=8000} = {}){
-  const url = BASE + path;
+/* One full pass over the relay list. Returns an outcome describing what
+   happened, including whether the failures looked transient:
+     {outcome:'value',    value, status}
+     {outcome:'notfound', status}          provider says the entry isn't there
+     {outcome:'failed',   retryable, status}
+   A parse failure does NOT mark the cascade retryable — a relay returning
+   junk will keep returning junk — but the next relay is still tried, since
+   that is a different upstream and may well be fine. */
+async function cascadeOnce(url, timeout, optional){
+  let sawRetryable = false, lastStatus = null;
   for(let i=0;i<RELAYS.length;i++){
     const idx = (relayIdx + i) % RELAYS.length;
-    try{
-      const res = await fetchT(RELAYS[idx](url), timeout);
-      if(!res.ok) continue;
-      const data = await res.json();
-      if(data && (data.detail === 'Not found.' || data.detail)) { if(optional) return null; continue; }
-      relayIdx = idx;
-      S.source = idx === 0 ? 'direct' : 'relay ' + idx;
-      return data;
-    }catch(e){ /* next relay */ }
+    let res;
+    try{ res = await fetchT(RELAYS[idx](url), timeout); }
+    catch(e){ sawRetryable = true; lastStatus = 'network'; continue; }
+
+    if(!res.ok){
+      lastStatus = res.status;
+      if(isRetryableStatus(res.status)) sawRetryable = true;
+      continue;
+    }
+
+    let data;
+    try{ data = await res.json(); }
+    catch(e){ lastStatus = 'parse'; continue; }
+
+    if(data && (data.detail === 'Not found.' || data.detail)){
+      if(optional) return {outcome:'notfound', status:'not-found'};
+      lastStatus = 'detail';
+      continue;
+    }
+
+    relayIdx = idx;
+    S.source = idx === 0 ? 'direct' : 'relay ' + idx;
+    return {outcome:'value', value:data, status:res.status};
   }
+  return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
+}
+
+async function api(path, {optional=false, timeout=8000} = {}){
+  const url = BASE + path;
+  // Optional endpoints already have a graceful fallback, and several of them
+  // are fetched in a pool of twenty (rival squads). Spending the full core-data
+  // allowance on each would turn one outage into hundreds of doomed requests,
+  // so they get a smaller one. Core data keeps the full allowance.
+  const policy = policyFor('fpl');
+  if(optional) policy.attempts = Math.min(policy.attempts, 2);
+
+  const { result, record } = await withRetry(
+    async () => {
+      const c = await cascadeOnce(url, timeout, optional);
+      if(c.outcome === 'value')    return {ok:true, value:c.value, status:c.status};
+      if(c.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
+      return {ok:false, retryable:c.retryable, status:c.status};
+    },
+    { ...policy, endpoint: safeEndpoint(path) }
+  );
+  recordRetry(record);
+
+  if(result && result.ok) return result.value;
   if(optional) return null;
   throw new Error('feed unreachable: ' + path);
 }
@@ -461,16 +1232,33 @@ async function pool(items, worker, size=4){
 
 // generic relay fetch for non-FPL sites (Understat needs it; raw GitHub doesn't)
 async function fetchVia(url, {timeout=12000, asText=false} = {}){
-  for(const wrap of RELAYS){
-    try{
-      const res = await fetchT(wrap(url), timeout);
-      if(!res.ok) continue;
-      return asText ? await res.text() : await res.json();
-    }catch(e){}
-  }
-  return null;
+  const { result, record } = await withRetry(
+    async () => {
+      let sawRetryable = false, lastStatus = null;
+      for(const wrap of RELAYS){
+        let res;
+        try{ res = await fetchT(wrap(url), timeout); }
+        catch(e){ sawRetryable = true; lastStatus = 'network'; continue; }
+
+        if(!res.ok){
+          lastStatus = res.status;
+          if(isRetryableStatus(res.status)) sawRetryable = true;
+          continue;
+        }
+        try{ return {ok:true, value: asText ? await res.text() : await res.json(), status:res.status}; }
+        catch(e){ lastStatus = 'parse'; continue; }
+      }
+      return {ok:false, retryable:sawRetryable, status:lastStatus};
+    },
+    { ...policyFor('understat'), endpoint: safeEndpoint(url) }
+  );
+  recordRetry(record);
+  return result && result.ok ? result.value : null;
 }
 
+
+
+/* ===== src/providers/common.mjs ===== */
 /* ---------------------------------------------------------------------
    TEAM NAME MAPPING — Understat and the odds feed use full club names;
    FPL uses its own short forms.
@@ -493,6 +1281,9 @@ function mapTeamName(external){
   return hit ? hit.id : null;
 }
 
+
+
+/* ===== src/providers/understat.mjs ===== */
 /* ---------------------------------------------------------------------
    UNDERSTAT LAYER — rolling actual xG replaces trusting FPL's slow-moving
    strength ratings. Parses the teamsData JSON embedded in the league page.
@@ -510,6 +1301,10 @@ async function loadUnderstat(){
   if(!$('useUstat').checked || !S.boot) return;
   const html = await fetchVia('https://understat.com/league/EPL', {asText:true});
   let data = html ? parseUnderstat(html) : null;
+  // D-14: parseUnderstat only proves the page yielded JSON; validate the shape
+  // its consumers actually rely on (title + history[]) before using it.
+  const uIssues = [];
+  if(data){ const v = validateUnderstat(data); uIssues.push(...v.issues); data = v.value; }
   let label = 'current season';
   const matchCount = data ? Object.values(data).reduce((a,t) => a + (t.history||[]).length, 0) : 0;
   if(!data || matchCount < 40){
@@ -517,9 +1312,13 @@ async function loadUnderstat(){
     const prevYear = new Date().getMonth() >= 6 ? new Date().getFullYear() - 1 : new Date().getFullYear() - 2;
     const prev = await fetchVia('https://understat.com/league/EPL/' + prevYear, {asText:true});
     const pd = prev ? parseUnderstat(prev) : null;
-    if(pd){ data = pd; label = `last season's closing form`; }
+    if(pd){
+      const v = validateUnderstat(pd); uIssues.push(...v.issues);
+      if(v.value){ data = v.value; label = `last season's closing form`; }
+    }
   }
-  if(!data){ S.ustatNote = 'Understat unreachable — using FPL strength ratings only.'; return; }
+  recordIssues('understat', 'league/EPL', collapseIssues(uIssues));
+  if(!data){ S.ustatNote = 'Understat unreachable — using FPL strength ratings only.'; markHealth('understat', false, 'unreachable', true); return; }
 
   const map = {}; let sumA = 0, sumD = 0, n = 0;
   Object.values(data).forEach(t => {
@@ -534,10 +1333,14 @@ async function loadUnderstat(){
   const avgXg = sumA/n, avgXga = sumD/n;
   Object.values(map).forEach(v => { v.atk = v.xg/avgXg; v.def = avgXga/v.xga; });
   S.ustat = map;
+  markHealth('understat', true, label);
   const missing = S.boot.teams.filter(t => !map[t.id]).map(t => t.short_name);
   S.ustatNote = `Understat: last-6 xG loaded (${label})` + (missing.length ? `; no data for ${missing.join(', ')} — FPL ratings used for them` : '') + '.';
 }
 
+
+
+/* ===== src/providers/odds.mjs ===== */
 /* ---------------------------------------------------------------------
    ODDS LAYER — bookmaker match odds converted to market-implied goals.
    The market prices team news and everything else in minutes; the model
@@ -564,262 +1367,113 @@ async function loadOdds(){
   const key = $('oddsKey').value.trim();
   if(!key || !S.boot) return;
   let data = null;
-  try{
-    const res = await fetchT('https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key), 10000);
-    if(res.ok) data = await res.json();
-    else if(res.status === 401) { S.oddsNote = 'Odds API key rejected — check it at the-odds-api.com.'; return; }
-    else if(res.status === 429) { S.oddsNote = 'Odds API quota used up for this period.'; return; }
-  }catch(e){
-    data = await fetchVia('https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key));
+  // SEC-1: this request carries the API key, so it must NEVER transit a public
+  // relay. Direct-only; on failure fall back to the internal team model and
+  // reduce confidence — do not retry via proxies. D-15 retries the DIRECT
+  // request only, which leaves that guarantee structurally intact.
+  const oddsUrl = 'https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key);
+  const { result, record } = await withRetry(
+    async () => {
+      let res;
+      try{ res = await fetchT(oddsUrl, 10000); }
+      catch(e){ return {ok:false, retryable:true, status:'network'}; }
+      // 401 is a bad key and 429 is an exhausted quota WINDOW, not a transient
+      // burst — retrying either just delays the same answer, so both are permanent.
+      if(res.status === 401 || res.status === 429) return {ok:false, retryable:false, status:res.status};
+      if(!res.ok) return {ok:false, retryable:isRetryableStatus(res.status), status:res.status};
+      try{ return {ok:true, value: await res.json(), status:res.status}; }
+      catch(e){ return {ok:false, retryable:false, status:'parse'}; }
+    },
+    { ...policyFor('odds'), endpoint: safeEndpoint(oddsUrl) }
+  );
+  recordRetry(record);
+  if(result && result.ok) data = result.value;
+  else if(record.finalStatus === 401){ S.oddsNote = 'Odds API key rejected — check it at the-odds-api.com.'; return; }
+  else if(record.finalStatus === 429){ S.oddsNote = 'Odds API quota used up for this period.'; return; }
+  else if(record.finalStatus === 'network' || record.finalStatus === 'parse'){
+    // the pre-D-15 catch block covered both of these; message kept identical
+    S.oddsNote = 'Odds provider unreachable — internal team model active (reduced confidence).';
+    markHealth('odds', false, 'direct fetch failed', true);
+    return;
   }
+  // D-14: validate the event array before the parsing loop touches it.
+  const oddsV = validateOdds(data);
+  recordIssues('odds', 'v4/sports/soccer_epl/odds', oddsV.issues);
+  data = oddsV.value;
   if(!Array.isArray(data) || !data.length){ if(!S.oddsNote) S.oddsNote = 'No EPL odds returned (out of season window, or feed empty).'; return; }
 
-  const map = {}; let priced = 0;
+  const fetchedAt = Date.now();
+  const parsed = []; // one entry per provider event, with full provenance
   data.forEach(ev => {
     const hId = mapTeamName(ev.home_team), aId = mapTeamName(ev.away_team);
     if(!hId || !aId) return;
-    let pH=[], pD=[], pA=[], overs=[];
-    (ev.bookmakers||[]).forEach(bk => (bk.markets||[]).forEach(mk => {
-      if(mk.key === 'h2h' && mk.outcomes?.length >= 2){
-        const o = {}; mk.outcomes.forEach(x => o[x.name] = 1/x.price);
-        const s = Object.values(o).reduce((a,b)=>a+b,0);
-        if(o[ev.home_team]) pH.push(o[ev.home_team]/s);
-        if(o['Draw']) pD.push(o['Draw']/s);
-        if(o[ev.away_team]) pA.push(o[ev.away_team]/s);
-      }
-      if(mk.key === 'totals'){
-        const over = mk.outcomes?.find(x => x.name === 'Over');
-        const under = mk.outcomes?.find(x => x.name === 'Under');
-        if(over && under && Math.abs(over.point - 2.5) <= 1.01){
-          const po = (1/over.price)/((1/over.price)+(1/under.price));
-          overs.push({p:po, line:over.point});
+    const kickoff = ev.commence_time ? Date.parse(ev.commence_time) : null;
+    let h2h = [], overs = [], booksUsed = 0, marketCount = 0, staleDropped = 0;
+    (ev.bookmakers||[]).forEach(bk => {
+      const quoteAgeH = bk.last_update ? (fetchedAt - Date.parse(bk.last_update))/3.6e6 : 0;
+      if(quoteAgeH > ODDS_RULES.maxQuoteAgeHours){ staleDropped++; return; }   // staleness rule
+      let counted = false;
+      (bk.markets||[]).forEach(mk => {
+        marketCount++;
+        if(mk.key === 'h2h' && mk.outcomes?.length >= 2){
+          const o = {}; mk.outcomes.forEach(x => o[x.name] = 1/x.price);
+          const s = Object.values(o).reduce((a,b)=>a+b,0);          // devig: normalise overround
+          if(o[ev.home_team] && o[ev.away_team]){
+            h2h.push({pH:o[ev.home_team]/s, pA:o[ev.away_team]/s}); counted = true;
+          }
         }
-      }
-    }));
-    if(!pH.length || !pA.length || !overs.length) return;
+        if(mk.key === 'totals'){
+          const over = mk.outcomes?.find(x => x.name === 'Over');
+          const under = mk.outcomes?.find(x => x.name === 'Under');
+          if(over && under && Math.abs(over.point - 2.5) <= 1.01){
+            const po = (1/over.price)/((1/over.price)+(1/under.price));
+            overs.push({p:po, line:over.point}); counted = true;
+          }
+        }
+      });
+      if(counted) booksUsed++;
+    });
+    // outlier rejection: drop books whose devigged home prob deviates from median
+    if(h2h.length >= 3){
+      const med = h2h.map(x=>x.pH).sort((a,b)=>a-b)[Math.floor(h2h.length/2)];
+      h2h = h2h.filter(x => Math.abs(x.pH - med) <= ODDS_RULES.outlierProbDeviation);
+    }
+    // inclusion rules (thin markets skipped, not guessed at)
+    if(h2h.length < ODDS_RULES.minH2hBooks || overs.length < ODDS_RULES.minTotalsBooks) return;
     const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
     const lambda = solveLambda(avg(overs.map(o=>o.p)), overs[0].line);
-    const r = Math.pow(avg(pH)/avg(pA), 0.45);        // win-prob split → goal split (approximation)
-    const xGH = lambda * r/(1+r), xGA = lambda/(1+r);
-    map[hId + '|' + aId] = {xGH, xGA};
+    const r = Math.pow(avg(h2h.map(x=>x.pH))/avg(h2h.map(x=>x.pA)), 0.45); // split approximation, unchanged
+    parsed.push({ hId, aId, kickoff,
+      xGH: lambda * r/(1+r), xGA: lambda/(1+r),
+      providerEventId: ev.id ?? null, fetchedAt,
+      booksUsed, marketCount, staleDropped,
+      confidence: booksUsed >= ODDS_RULES.lowConfidenceBooks ? 'normal' : 'low' });
+  });
+
+  // fixture matching: teams + kickoff proximity (adjustment 5), not pair alone.
+  // Falls back to pair-only when the cached fixture lacks kickoff_time.
+  const map = {}; let priced = 0;
+  const windowMs = ODDS_RULES.kickoffMatchWindowHours * 3.6e6;
+  const upcoming = (S.fixtures||[]).filter(f => !f.finished);
+  parsed.forEach(entry => {
+    const fx = upcoming.find(f => f.team_h === entry.hId && f.team_a === entry.aId &&
+      (!f.kickoff_time || !entry.kickoff || Math.abs(Date.parse(f.kickoff_time) - entry.kickoff) <= windowMs));
+    if(!fx) return;                       // event doesn't correspond to a known upcoming fixture
+    const pair = entry.hId + '|' + entry.aId;
+    if(map[pair] && map[pair].kickoff && entry.kickoff &&
+       fx.kickoff_time && Math.abs(Date.parse(fx.kickoff_time) - map[pair].kickoff)
+         <= Math.abs(Date.parse(fx.kickoff_time) - entry.kickoff)) return; // keep closer match
+    map[pair] = entry;
     priced++;
   });
+  markHealth('odds', priced > 0, priced + ' fixtures priced');
   if(priced){ S.odds = map; S.oddsNote = `Odds: ${priced} fixture${priced===1?'':'s'} priced by the market.`; }
   else S.oddsNote = 'Odds feed answered but no fixtures could be matched.';
 }
 
-/* ---------------------------------------------------------------------
-   BACKTEST — fetches last season gameweek-by-gameweek from the vaastav
-   archive, builds each player's first-half per-90 profile, projects the
-   second half with the exact production formulas, and compares to what
-   actually happened. Derives per-position calibration multipliers.
-   --------------------------------------------------------------------- */
-S.calib = null; S.backtest = null;
 
-function parseCSV(text){
-  const rows = []; let row = [], cell = '', inQ = false;
-  for(let i=0; i<text.length; i++){
-    const ch = text[i];
-    if(inQ){
-      if(ch === '"'){ if(text[i+1] === '"'){ cell += '"'; i++; } else inQ = false; }
-      else cell += ch;
-    } else {
-      if(ch === '"') inQ = true;
-      else if(ch === ',') { row.push(cell); cell = ''; }
-      else if(ch === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
-      else if(ch !== '\r') cell += ch;
-    }
-  }
-  if(cell.length || row.length){ row.push(cell); rows.push(row); }
-  return rows;
-}
-function pearson(xs, ys){
-  const n = xs.length; if(n < 3) return 0;
-  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
-  let sxy=0, sxx=0, syy=0;
-  for(let i=0;i<n;i++){ const dx=xs[i]-mx, dy=ys[i]-my; sxy+=dx*dy; sxx+=dx*dx; syy+=dy*dy; }
-  return sxx && syy ? sxy/Math.sqrt(sxx*syy) : 0;
-}
 
-async function runBacktest(){
-  const out = $('btOut'), btn = $('btBtn');
-  btn.disabled = true;
-  out.innerHTML = `<p class="status"><span class="spinner"></span>Downloading last season (~14MB — best on wi-fi)…</p>`;
-  const seasons = ['2025-26','2024-25'];
-  let text = null, season = null;
-  for(const s of seasons){
-    try{
-      const res = await fetchT('https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/'+s+'/gws/merged_gw.csv', 60000);
-      if(res.ok){ text = await res.text(); season = s; break; }
-    }catch(e){}
-  }
-  if(!text){ out.innerHTML = `<div class="note bad">Couldn't download the archive — check the connection and try again.</div>`; btn.disabled = false; return; }
-
-  out.innerHTML = `<p class="status"><span class="spinner"></span>Replaying ${season} through the model…</p>`;
-  await new Promise(r => setTimeout(r, 30));   // let the UI paint
-
-  const rows = parseCSV(text);
-  const head = rows[0], col = {}; head.forEach((h,i) => col[h.trim()] = i);
-  const need = ['name','position','minutes','total_points','GW'];
-  if(need.some(k => col[k] === undefined)){
-    out.innerHTML = `<div class="note bad">The archive format has changed — columns missing: ${need.filter(k=>col[k]===undefined).join(', ')}.</div>`;
-    btn.disabled = false; return;
-  }
-  const g = (r,k) => col[k] !== undefined ? r[col[k]] : '';
-  const POSMAP = {GK:1, GKP:1, DEF:2, MID:3, FWD:4};
-  const hasDC = col['defensive_contribution'] !== undefined;
-
-  // aggregate halves per player
-  const players = {};
-  for(let i=1; i<rows.length; i++){
-    const r = rows[i]; if(!r || r.length < head.length-2) continue;
-    const gw = parseInt(g(r,'GW')); if(!gw) continue;
-    const key = g(r,'name') + '|' + g(r,'position');
-    const p = players[key] || (players[key] = {pos:POSMAP[g(r,'position')] || 0, h1:{min:0,xg:0,xa:0,sv:0,bps:0,dc:0,yc:0,app:0}, h2:{min:0,pts:0,app:0}});
-    const mins = num(g(r,'minutes'));
-    if(gw <= 19){
-      if(mins > 0){
-        p.h1.min += mins; p.h1.app++;
-        p.h1.xg += num(g(r,'expected_goals')); p.h1.xa += num(g(r,'expected_assists'));
-        p.h1.sv += num(g(r,'saves')); p.h1.bps += num(g(r,'bps'));
-        p.h1.yc += num(g(r,'yellow_cards'));
-        if(hasDC) p.h1.dc += num(g(r,'defensive_contribution'));
-      }
-    } else if(mins > 0){
-      p.h2.min += mins; p.h2.pts += num(g(r,'total_points')); p.h2.app++;
-    }
-  }
-
-  // project H2 with the production formulas under an average fixture
-  const avgCtx = {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS), atk:1, def:1};
-  const preds = [], actuals = [], poss = [], names = [];
-  const perPos = {1:{p:0,a:0,n:0,rP:[],rA:[]},2:{p:0,a:0,n:0,rP:[],rA:[]},3:{p:0,a:0,n:0,rP:[],rA:[]},4:{p:0,a:0,n:0,rP:[],rA:[]}};
-
-  Object.entries(players).forEach(([key,p]) => {
-    if(!p.pos || p.h1.min < 540 || p.h2.app < 5) return;
-    const n90 = p.h1.min/90;
-    const per = {xg:p.h1.xg/n90, xa:p.h1.xa/n90, sv:p.h1.sv/n90, bps:p.h1.bps/n90, dc:p.h1.dc/n90, yc:p.h1.yc/n90};
-    const expM = p.h2.min/p.h2.app;                          // real H2 minutes — isolates scoring calibration
-    const mF = expM/90, pAny = clamp(expM/28,0,.98), p60 = clamp((expM-18)/55,0,.97);
-
-    let xp = pAny + p60;                                     // appearance
-    xp += per.xg * mF * (GOAL_PTS[p.pos] ?? 4);
-    xp += per.xa * mF * ASSIST_PTS;
-    if(CS_PTS[p.pos]) xp += avgCtx.cs * CS_PTS[p.pos] * p60;
-    if(p.pos <= 2) xp -= (avgCtx.xGA/2) * mF * 0.72;
-    if(p.pos === 1) xp += (per.sv / 3) * mF;
-    const thr = DC_THRESH[p.pos];
-    if(thr && per.dc) xp += 2 * (1/(1+Math.exp(-(per.dc-thr)/2.2))) * p60;
-    xp += clamp((per.bps-16)/20, 0, 1.8) * mF;
-    xp -= per.yc * mF;
-
-    const predicted = xp * p.h2.app, actual = p.h2.pts;
-    preds.push(predicted); actuals.push(actual); poss.push(p.pos); names.push(key.split('|')[0]);
-    const pp = perPos[p.pos]; pp.p += predicted; pp.a += actual; pp.n++; pp.rP.push(predicted); pp.rA.push(actual);
-  });
-
-  if(preds.length < 50){
-    out.innerHTML = `<div class="note bad">Only ${preds.length} qualifying players in the file — not enough to calibrate. The season file may be incomplete.</div>`;
-    btn.disabled = false; return;
-  }
-
-  const r = pearson(preds, actuals);
-  const mae = preds.reduce((a,v,i) => a + Math.abs(v - actuals[i]), 0) / preds.length;
-  const maeGW = mae / 19;
-  const posLabel = {1:'GKP',2:'DEF',3:'MID',4:'FWD'};
-  const calib = {};
-  let posHTML = '';
-  [1,2,3,4].forEach(k => {
-    const pp = perPos[k]; if(!pp.n) return;
-    const ratio = pp.a/pp.p;
-    calib[k] = clamp(ratio, 0.7, 1.3);
-    posHTML += `<tr><td>${posLabel[k]}</td><td class="num">${pp.n}</td>
-      <td class="num">${pearson(pp.rP, pp.rA).toFixed(2)}</td>
-      <td class="num">${((ratio-1)*100).toFixed(0)}%</td>
-      <td class="num">${calib[k].toFixed(2)}×</td></tr>`;
-  });
-
-  // captain check: of the 20 highest predicted, how did their actual ranks land?
-  const idx = preds.map((v,i)=>i).sort((a,b)=>preds[b]-preds[a]).slice(0,20);
-  const actRank = preds.map((_,i)=>i).sort((a,b)=>actuals[b]-actuals[a]);
-  const rankOf = {}; actRank.forEach((i,r2)=>rankOf[i]=r2+1);
-  const top20hit = idx.filter(i => rankOf[i] <= 30).length;
-
-  S.calib = calib;
-  S.backtest = {season, n:preds.length, r:+r.toFixed(3), maeGW:+maeGW.toFixed(2), top20hit,
-    bias: Object.fromEntries([1,2,3,4].map(k => [posLabel[k], perPos[k].n ? +((perPos[k].a/perPos[k].p-1)*100).toFixed(1) : null])),
-    hasDC};
-  await sset(K_CAL, {calib, backtest:S.backtest});
-  clearXP();
-
-  out.innerHTML = `
-    <div class="kpis" style="margin-top:10px">
-      <div class="kpi"><div class="k">Season</div><div class="v">${season}</div></div>
-      <div class="kpi"><div class="k">Players</div><div class="v">${preds.length}</div></div>
-      <div class="kpi"><div class="k">Correlation</div><div class="v">${r.toFixed(2)}</div></div>
-      <div class="kpi"><div class="k">Error /GW</div><div class="v">±${maeGW.toFixed(1)}</div></div>
-    </div>
-    <div class="scroll"><table class="data" style="min-width:420px"><thead><tr><th>Pos</th><th class="num">n</th><th class="num">r</th><th class="num">Model bias</th><th class="num">Correction</th></tr></thead><tbody>${posHTML}</tbody></table></div>
-    <div class="note good"><b>Calibration applied.</b> Every projection in the app is now multiplied by the per-position corrections above (negative bias = the model was over-predicting that position). ${top20hit}/20 of the model's top picks finished inside the actual top 30.</div>
-    ${!hasDC ? `<div class="note plain">This season file has no defensive-contribution column, so the DEF/MID corrections also absorb those points — expect them to run above 1.0×.</div>` : ''}
-    <div class="note plain">Method: first-half per-90 profiles project the second half under an average fixture, using each player's real second-half minutes — this isolates the scoring model from minutes prediction, which is judged separately. Ask tab can analyse these numbers for you.</div>`;
-  btn.disabled = false;
-  renderAll();
-}
-
-/* ---------------------------------------------------------------------
-   SLIM + CACHE — bootstrap is far too large to store whole, so only the
-   fields the model uses are kept.
-   --------------------------------------------------------------------- */
-const KEEP = ['id','web_name','team','element_type','now_cost','total_points','form','points_per_game',
-  'selected_by_percent','minutes','starts','goals_scored','assists','clean_sheets','saves','bonus','bps',
-  'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
-  'expected_goals_conceded_per_90','defensive_contribution','defensive_contribution_per_90',
-  'status','chance_of_playing_next_round','news','news_added','cost_change_event','cost_change_start',
-  'transfers_in_event','transfers_out_event','penalties_order','ep_next','yellow_cards','red_cards'];
-
-function slim(boot, fixtures){
-  return {
-    at: Date.now(),
-    events: boot.events.map(e => ({id:e.id, deadline_time:e.deadline_time, is_current:e.is_current,
-      is_next:e.is_next, finished:e.finished, name:e.name})),
-    teams: boot.teams.map(t => ({id:t.id, name:t.name, short_name:t.short_name,
-      strength_attack_home:t.strength_attack_home, strength_attack_away:t.strength_attack_away,
-      strength_defence_home:t.strength_defence_home, strength_defence_away:t.strength_defence_away})),
-    element_types: boot.element_types.map(t => ({id:t.id, singular_name_short:t.singular_name_short, singular_name:t.singular_name})),
-    elements: boot.elements.map(p => { const o = {}; KEEP.forEach(k => { if(p[k] !== undefined) o[k] = p[k]; }); return o; }),
-    fixtures: fixtures.map(f => ({event:f.event, team_h:f.team_h, team_a:f.team_a,
-      team_h_difficulty:f.team_h_difficulty, team_a_difficulty:f.team_a_difficulty, finished:f.finished}))
-  };
-}
-
-function hydrate(d){
-  S.boot = {events:d.events, teams:d.teams, elements:d.elements, element_types:d.element_types};
-  S.fixtures = d.fixtures;
-  S.teams = {}; d.teams.forEach(t => S.teams[t.id] = t);
-  S.byId = {}; d.elements.forEach(p => S.byId[p.id] = p);
-  S.posName = {}; S.posFull = {};
-  d.element_types.forEach(t => { S.posName[t.id] = t.singular_name_short; S.posFull[t.id] = t.singular_name; });
-
-  const cur  = d.events.find(e => e.is_current);
-  const next = d.events.find(e => e.is_next) || d.events.find(e => !e.finished);
-  S.currentGW = cur ? cur.id : 0;
-  S.nextGW = next ? next.id : 38;
-  S.seasonLive = d.events.some(e => e.finished);
-  S.gamesPlayed = Math.max(1, S.currentGW);
-  S.cachedAt = d.at;
-
-  const ts = d.teams, n = ts.length || 1;
-  const mean = k => ts.reduce((a,t) => a + (t[k]||1000), 0) / n;
-  S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
-           defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
-
-  // populate position filter once
-  const sel = $('plPos');
-  if(sel.options.length <= 1)
-    d.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
-}
-
+/* ===== src/model/fixtures.mjs ===== */
 /* ---------------------------------------------------------------------
    FIXTURE MODEL — expected goals for and against, from team strength
    ratings rather than the official 1–5 difficulty.
@@ -895,6 +1549,9 @@ function runScore(teamId, fromGW, span, lens){
   return n ? total/n : 1;
 }
 
+
+
+/* ===== src/model/scoring.mjs ===== */
 /* ---------------------------------------------------------------------
    PLAYER MODEL — projected points, built separately per position.
    Returns a breakdown so every number is inspectable.
@@ -1015,6 +1672,9 @@ function xpOf(p, fromGW, span){
 }
 const clearXP = () => xpCache.clear();
 
+
+
+/* ===== src/squad.mjs ===== */
 /* ---------------------------------------------------------------------
    SHARED BITS
    --------------------------------------------------------------------- */
@@ -1077,6 +1737,207 @@ function bestXI(squad, gw){
   return best;
 }
 
+
+
+/* ===== src/model/backtest.mjs ===== */
+/* ---------------------------------------------------------------------
+   BACKTEST — fetches last season gameweek-by-gameweek from the vaastav
+   archive, builds each player's first-half per-90 profile, projects the
+   second half with the exact production formulas, and compares to what
+   actually happened. Derives per-position calibration multipliers.
+   --------------------------------------------------------------------- */
+S.calib = null; S.backtest = null;
+
+function parseCSV(text){
+  const rows = []; let row = [], cell = '', inQ = false;
+  for(let i=0; i<text.length; i++){
+    const ch = text[i];
+    if(inQ){
+      if(ch === '"'){ if(text[i+1] === '"'){ cell += '"'; i++; } else inQ = false; }
+      else cell += ch;
+    } else {
+      if(ch === '"') inQ = true;
+      else if(ch === ',') { row.push(cell); cell = ''; }
+      else if(ch === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if(ch !== '\r') cell += ch;
+    }
+  }
+  if(cell.length || row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+function pearson(xs, ys){
+  const n = xs.length; if(n < 3) return 0;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let sxy=0, sxx=0, syy=0;
+  for(let i=0;i<n;i++){ const dx=xs[i]-mx, dy=ys[i]-my; sxy+=dx*dy; sxx+=dx*dx; syy+=dy*dy; }
+  return sxx && syy ? sxy/Math.sqrt(sxx*syy) : 0;
+}
+
+// Pure engine (adjustment 8: directly importable/testable, no DOM, no network).
+// Provenance (adjustment 6): every result carries model/rules versions + dataset ref.
+function computeBacktest(text, meta = {}){
+  const season = meta.season || 'unknown';
+  const rows = parseCSV(text);
+  // D-14: header contract is the archive's only structural guarantee. The
+  // thrown message is user-facing and pinned by a resilience test — unchanged.
+  const head = rows[0];
+  const headerV = validateArchiveHeader(head);
+  if(headerV.value === null){
+    const missing = (headerV.issues[0] && headerV.issues[0].fields) || ARCHIVE_REQUIRED_COLUMNS;
+    throw new Error('archive format changed — missing: ' + missing.join(', '));
+  }
+  const col = {}; head.forEach((h,i) => col[h.trim()] = i);
+  const g = (r,k) => col[k] !== undefined ? r[col[k]] : '';
+  const POSMAP = {GK:1, GKP:1, DEF:2, MID:3, FWD:4};
+  const hasDC = col['defensive_contribution'] !== undefined;
+
+  // aggregate halves per player
+  const players = {};
+  for(let i=1; i<rows.length; i++){
+    const r = rows[i]; if(!r || r.length < head.length-2) continue;
+    const gw = parseInt(g(r,'GW')); if(!gw) continue;
+    const key = g(r,'name') + '|' + g(r,'position');
+    const p = players[key] || (players[key] = {pos:POSMAP[g(r,'position')] || 0, h1:{min:0,xg:0,xa:0,sv:0,bps:0,dc:0,yc:0,app:0}, h2:{min:0,pts:0,app:0}});
+    const mins = num(g(r,'minutes'));
+    if(gw <= 19){
+      if(mins > 0){
+        p.h1.min += mins; p.h1.app++;
+        p.h1.xg += num(g(r,'expected_goals')); p.h1.xa += num(g(r,'expected_assists'));
+        p.h1.sv += num(g(r,'saves')); p.h1.bps += num(g(r,'bps'));
+        p.h1.yc += num(g(r,'yellow_cards'));
+        if(hasDC) p.h1.dc += num(g(r,'defensive_contribution'));
+      }
+    } else if(mins > 0){
+      p.h2.min += mins; p.h2.pts += num(g(r,'total_points')); p.h2.app++;
+    }
+  }
+
+  // project H2 with the production formulas under an average fixture
+  const avgCtx = {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS), atk:1, def:1};
+  const preds = [], actuals = [], poss = [], names = [];
+  const perPos = {1:{p:0,a:0,n:0,rP:[],rA:[]},2:{p:0,a:0,n:0,rP:[],rA:[]},3:{p:0,a:0,n:0,rP:[],rA:[]},4:{p:0,a:0,n:0,rP:[],rA:[]}};
+
+  Object.entries(players).forEach(([key,p]) => {
+    if(!p.pos || p.h1.min < 540 || p.h2.app < 5) return;
+    const n90 = p.h1.min/90;
+    const per = {xg:p.h1.xg/n90, xa:p.h1.xa/n90, sv:p.h1.sv/n90, bps:p.h1.bps/n90, dc:p.h1.dc/n90, yc:p.h1.yc/n90};
+    const expM = p.h2.min/p.h2.app;                          // real H2 minutes — isolates scoring calibration
+    const mF = expM/90, pAny = clamp(expM/28,0,.98), p60 = clamp((expM-18)/55,0,.97);
+
+    let xp = pAny + p60;                                     // appearance
+    xp += per.xg * mF * (GOAL_PTS[p.pos] ?? 4);
+    xp += per.xa * mF * ASSIST_PTS;
+    if(CS_PTS[p.pos]) xp += avgCtx.cs * CS_PTS[p.pos] * p60;
+    if(p.pos <= 2) xp -= (avgCtx.xGA/2) * mF * 0.72;
+    if(p.pos === 1) xp += (per.sv / 3) * mF;
+    const thr = DC_THRESH[p.pos];
+    if(thr && per.dc) xp += 2 * (1/(1+Math.exp(-(per.dc-thr)/2.2))) * p60;
+    xp += clamp((per.bps-16)/20, 0, 1.8) * mF;
+    xp -= per.yc * mF;
+
+    const predicted = xp * p.h2.app, actual = p.h2.pts;
+    preds.push(predicted); actuals.push(actual); poss.push(p.pos); names.push(key.split('|')[0]);
+    const pp = perPos[p.pos]; pp.p += predicted; pp.a += actual; pp.n++; pp.rP.push(predicted); pp.rA.push(actual);
+  });
+
+  if(preds.length < 50){
+    throw new Error('only ' + preds.length + ' qualifying players — not enough to calibrate');
+  }
+
+  const r = pearson(preds, actuals);
+  const mae = preds.reduce((a,v,i) => a + Math.abs(v - actuals[i]), 0) / preds.length;
+  const maeGW = mae / 19;
+  const posLabel = {1:'GKP',2:'DEF',3:'MID',4:'FWD'};
+  const calib = {};
+  let posHTML = '';
+  [1,2,3,4].forEach(k => {
+    const pp = perPos[k]; if(!pp.n) return;
+    const ratio = pp.a/pp.p;
+    calib[k] = clamp(ratio, 0.7, 1.3);
+    posHTML += `<tr><td>${posLabel[k]}</td><td class="num">${pp.n}</td>
+      <td class="num">${pearson(pp.rP, pp.rA).toFixed(2)}</td>
+      <td class="num">${((ratio-1)*100).toFixed(0)}%</td>
+      <td class="num">${calib[k].toFixed(2)}×</td></tr>`;
+  });
+
+  // captain check: of the 20 highest predicted, how did their actual ranks land?
+  const idx = preds.map((v,i)=>i).sort((a,b)=>preds[b]-preds[a]).slice(0,20);
+  const actRank = preds.map((_,i)=>i).sort((a,b)=>actuals[b]-actuals[a]);
+  const rankOf = {}; actRank.forEach((i,r2)=>rankOf[i]=r2+1);
+  const top20hit = idx.filter(i => rankOf[i] <= 30).length;
+
+  return { calib,
+    backtest: { season, n: preds.length, r:+r.toFixed(3), maeGW:+maeGW.toFixed(2), top20hit,
+      bias: Object.fromEntries([1,2,3,4].map(k => [posLabel[k], perPos[k].n ? +((perPos[k].a/perPos[k].p-1)*100).toFixed(1) : null])),
+      hasDC,
+      provenance: {
+        modelVersion: MODEL_VERSION, rulesVersion: RULES_VERSION,
+        dataset: { url: meta.url || null, season, rows: rows.length,
+          pinned: false /* TODO: pin to commit SHA — tracked in AUDIT BT-1 */ },
+        predictedAt: meta.now ?? Date.now(),
+        method: 'H1-per90 → H2 projection, real H2 minutes, average fixture'
+      } },
+    posHTML };
+}
+
+async function runBacktest(){
+  const out = $('btOut'), btn = $('btBtn');
+  btn.disabled = true;
+  out.innerHTML = `<p class="status"><span class="spinner"></span>Downloading last season (~14MB — best on wi-fi)…</p>`;
+  const seasons = ['2025-26','2024-25'];
+  let text = null, season = null, url = null;
+  for(const s of seasons){
+    const u = 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/'+s+'/gws/merged_gw.csv';
+    // D-15: a 14MB download is expensive to repeat, so the archive policy is
+    // the most conservative of the four — two attempts, long backoff.
+    const { result, record } = await withRetry(
+      async () => {
+        let res;
+        try{ res = await fetchT(u, 60000); }
+        catch(e){ return {ok:false, retryable:true, status:'network'}; }
+        if(!res.ok) return {ok:false, retryable:isRetryableStatus(res.status), status:res.status};
+        try{ return {ok:true, value: await res.text(), status:res.status}; }
+        catch(e){ return {ok:false, retryable:false, status:'parse'}; }
+      },
+      { ...policyFor('archive'), endpoint: safeEndpoint(u) }
+    );
+    recordRetry(record);
+    if(result && result.ok){ text = result.value; season = s; url = u; break; }
+  }
+  if(!text){ out.innerHTML = `<div class="note bad">Couldn't download the archive — check the connection and try again.</div>`; btn.disabled = false; return; }
+  out.innerHTML = `<p class="status"><span class="spinner"></span>Replaying ${season} through the model…</p>`;
+  await new Promise(r => setTimeout(r, 30));
+  let result;
+  try{ result = computeBacktest(text, { season, url }); }
+  catch(err){
+    out.innerHTML = `<div class="note bad">${String(err.message || err)}</div>`;
+    btn.disabled = false; return;
+  }
+  const { calib, backtest, posHTML } = result;
+  const r = { toFixed: d => backtest.r.toFixed(d) }, maeGW = backtest.maeGW, top20hit = backtest.top20hit,
+        hasDC = backtest.hasDC, preds = { length: backtest.n };
+  S.calib = calib;
+  S.backtest = backtest;
+  await sset(K_CAL, {calib, backtest});
+  clearXP();
+  out.innerHTML = `
+    <div class="kpis" style="margin-top:10px">
+      <div class="kpi"><div class="k">Season</div><div class="v">${season}</div></div>
+      <div class="kpi"><div class="k">Players</div><div class="v">${preds.length}</div></div>
+      <div class="kpi"><div class="k">Correlation</div><div class="v">${r.toFixed(2)}</div></div>
+      <div class="kpi"><div class="k">Error /GW</div><div class="v">±${maeGW.toFixed(1)}</div></div>
+    </div>
+    <div class="scroll"><table class="data" style="min-width:420px"><thead><tr><th>Pos</th><th class="num">n</th><th class="num">r</th><th class="num">Model bias</th><th class="num">Correction</th></tr></thead><tbody>${posHTML}</tbody></table></div>
+    <div class="note good"><b>Calibration applied.</b> Every projection in the app is now multiplied by the per-position corrections above (negative bias = the model was over-predicting that position). ${top20hit}/20 of the model's top picks finished inside the actual top 30.</div>
+    ${!hasDC ? `<div class="note plain">This season file has no defensive-contribution column, so the DEF/MID corrections also absorb those points — expect them to run above 1.0×.</div>` : ''}
+    <div class="note plain">Method: first-half per-90 profiles project the second half under an average fixture, using each player's real second-half minutes — this isolates the scoring model from minutes prediction, which is judged separately. Ask tab can analyse these numbers for you.</div>`;
+  btn.disabled = false;
+  renderAll();
+}
+
+
+
+/* ===== src/main.mjs ===== */
 /* ---------------------------------------------------------------------
    LOAD
    --------------------------------------------------------------------- */
@@ -1084,31 +1945,54 @@ async function loadAll(){
   const st = $('status');
   const cached = await sget(K_CACHE);
   if(cached && !S.boot){
-    hydrate(cached);
-    st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
-    renderAll();
+    // D-14: the cached snapshot goes through exactly the same validation as a
+    // fresh one. An unreadable cache is discarded, not rendered.
+    if(hydrate(cached).ok){
+      st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
+      renderAll();
+    } else {
+      st.textContent = 'Your saved copy of the season data could not be read — fetching a fresh one…';
+    }
   } else {
     st.textContent = 'Fetching season data…';
   }
   try{
     const [boot, fixtures] = await Promise.all([api('/bootstrap-static/'), api('/fixtures/')]);
+    // D-14: structural guard BEFORE slim(). slim() maps the four collections
+    // and would throw on a malformed payload, and a payload this broken must
+    // never reach the cache. Row-level filtering deliberately happens later in
+    // hydrate(), so the cached snapshot stays raw-shaped for provenance (D-13).
+    const bs = bootstrapStructure(boot);
+    const fixturesOk = Array.isArray(fixtures);
+    if(!bs.ok || !fixturesOk){
+      S.dataIssues = bs.issues.concat(fixturesOk ? [] :
+        [{ provider:'fpl', endpoint:'/fixtures/', code:'fixtures_not_array',
+           severity:'fatal', count:1, received: fixtures === null ? 'null' : typeof fixtures }]);
+      const e = new Error('feed shape unusable'); e.feedShape = true; throw e;
+    }
     const d = slim(boot, fixtures);
     await sset(K_CACHE, d);
-    hydrate(d);
+    if(!hydrate(d).ok){ const e = new Error('feed shape unusable'); e.feedShape = true; throw e; }
     clearXP();
 
     S.teamId = $('teamId').value.replace(/\D/g,'');
     S.entry = null; S.picks = null; S.chipsUsed = [];
     if(S.teamId){
       st.textContent = 'Fetching your team…';
-      S.entry = await api('/entry/' + S.teamId + '/', {optional:true});
+      const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
+      recordIssues('fpl', '/entry/', entryV.issues);
+      S.entry = entryV.value;
       if(!S.entry){
         st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
       } else {
         if(S.currentGW){
-          S.picks = await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true});
+          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true}));
+          recordIssues('fpl', '/entry/event/picks/', picksV.issues);
+          S.picks = picksV.value;
         }
-        const hist = await api('/entry/'+S.teamId+'/history/', {optional:true});
+        const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
+        recordIssues('fpl', '/entry/history/', histV.issues);
+        const hist = histV.value;
         if(hist && hist.chips) S.chipsUsed = hist.chips.map(c => `${c.name} (GW${c.event})`);
         if(S.entry.last_deadline_bank != null && !num($('bankIn').value))
           $('bankIn').value = (S.entry.last_deadline_bank/10).toFixed(1);
@@ -1122,9 +2006,16 @@ async function loadAll(){
     Promise.all([loadUnderstat(), loadOdds()]).then(() => { clearXP(); renderAll(); });
   }catch(err){
     await saveCfg();   // never lose typed settings just because the feed failed
+    const shape = !!(err && err.feedShape);
     if(S.boot){
-      st.textContent = 'Live feed unreachable — still showing saved data from ' +
+      st.textContent = (shape
+        ? 'The season feed came back in an unexpected format — still showing saved data from '
+        : 'Live feed unreachable — still showing saved data from ') +
         new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
+    } else if(shape){
+      st.textContent = 'Season data could not be read.';
+      $('ticker').innerHTML = `<div class="empty"><strong>Season data isn't usable right now</strong>
+        The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly.</div>`;
     } else {
       st.textContent = 'Data feed unreachable.';
       $('ticker').innerHTML = `<div class="empty"><strong>No connection to the FPL feed</strong>
@@ -1133,6 +2024,10 @@ async function loadAll(){
   }
 }
 
+
+
+/* ===== src/ui/views.mjs ===== */
+// Views import broadly; the bundler flattens everything into one scope.
 /* ---------------------------------------------------------------------
    VIEW — FIXTURE TICKER
    --------------------------------------------------------------------- */
@@ -1469,13 +2364,24 @@ async function compareLeague(){
   el.innerHTML = `<p class="status"><span class="spinner"></span>Reading the league…</p>`;
   await saveCfg();
   try{
-    const st = await api('/leagues-classic/'+id+'/standings/', {optional:true});
+    const stV = validateStandings(await api('/leagues-classic/'+id+'/standings/', {optional:true}));
+    recordIssues('fpl', '/leagues-classic/standings/', stV.issues);
+    const st = stV.value;
     if(!st || !st.standings){ el.innerHTML = `<div class="note bad">League ${id} not found, or it's private.</div>`; return; }
     await rememberLeague(id, $('leagueName').value.trim() || st.league?.name || '');
     const n = +$('lgN').value;
     const rivals = st.standings.results.slice(0, n).filter(r => String(r.entry) !== String(S.teamId));
     el.innerHTML = `<p class="status"><span class="spinner"></span>Reading ${rivals.length} rival squads…</p>`;
-    const picks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
+    const rawPicks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
+    // D-14: each rival squad is validated individually; issues are collapsed so
+    // 20 bad responses cannot flood S.dataIssues with near-identical entries.
+    const rivalIssues = [];
+    const picks = rawPicks.map(pk => {
+      const v = validatePicks(pk, '/entry/event/picks/ (rival)');
+      if(v.issues.length) rivalIssues.push(...v.issues);
+      return v.value;
+    });
+    recordIssues('fpl', '/entry/event/picks/ (rival)', collapseIssues(rivalIssues));
 
     const own = {}, cap = {};
     let counted = 0;
@@ -1598,28 +2504,24 @@ Be decisive and blunt. Say plainly when the honest answer is to do nothing — a
 
 APP DATA
 ${buildContext()}`;
-    const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
-    const key = $('claudeKey').value.trim();
-    const headers = {'Content-Type':'application/json'};
-    if(key){
-      headers['x-api-key'] = key;
-      headers['anthropic-version'] = '2023-06-01';
-      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+    // D-08 / SEC-3: no Anthropic secret is accepted, stored or sent by this
+    // frontend. Claude's artifact preview provides the only approved keyless
+    // path. Static hosted builds stop before making any Anthropic request.
+    if(!window.storage){
+      S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, the Ask tab is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
     }
+    const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers,
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:1000, system,
         messages: msgs,
         tools:[{type:'web_search_20250305', name:'web_search'}]
       })
     });
-    if(!res.ok && !key){
-      S.thread.push({role:'assistant', content:'The Ask tab needs a connection to Claude. Inside the Claude app it works automatically; hosted here it needs an API key — get one at console.anthropic.com and paste it under Data sources & model calibration.'});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
-    }
-    if(res.status === 401){
-      S.thread.push({role:'assistant', content:'That API key was rejected — check it was copied in full from console.anthropic.com.'});
+    if(!res.ok){
+      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Try again later or use the hosted app without the Ask feature.'});
       renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
     }
     const data = await res.json();
@@ -1732,9 +2634,8 @@ $('loadBtn').addEventListener('click', loadAll);
 $('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
-// keys save per keystroke — 'change' alone can lose a paste if the app is
-// closed before the field loses focus
-$('claudeKey').addEventListener('input', debounce(saveCfg, 300));
+// The low-value odds key remains client-side temporarily (D-08); save it on
+// input so a pasted value is not lost before the field blurs.
 $('oddsKey').addEventListener('input', debounce(saveCfg, 300));
 $('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds().then(() => { clearXP(); renderAll(); }); });
 $('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat().then(() => { clearXP(); renderAll(); }); });
@@ -1745,7 +2646,7 @@ document.addEventListener('click', e => {
 });
 
 (async function init(){
-  const cfg = await sget(K_CFG);
+  const cfg = await loadCfg();
   if(cfg){
     if(cfg.teamId) $('teamId').value = cfg.teamId;
     if(cfg.ft != null) $('ftCount').value = cfg.ft;
@@ -1753,7 +2654,6 @@ document.addEventListener('click', e => {
     if(cfg.leagueId) $('leagueId').value = cfg.leagueId;
     if(cfg.useManual) $('useManual').checked = true;
     if(cfg.oddsKey) $('oddsKey').value = cfg.oddsKey;
-    if(cfg.claudeKey) $('claudeKey').value = cfg.claudeKey;
     if(cfg.useUstat === false) $('useUstat').checked = false;
   }
   const cal = await sget(K_CAL);
@@ -1766,6 +2666,7 @@ document.addEventListener('click', e => {
   renderLeagueChips();
   loadAll();
 })();
+
 
 </script>
 </body>

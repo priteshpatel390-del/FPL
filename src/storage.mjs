@@ -20,6 +20,24 @@ async function sset(key, val){
   if(window.storage){ try{ await window.storage.set(key, s); return; }catch(e){} }
   try{ localStorage.setItem(key, s); }catch(e){}
 }
+
+// D-08 / SEC-3 migration: Anthropic secrets are banned client-side. Older
+// configurations may still contain claudeKey, so remove it once and persist
+// the scrubbed object before any UI consumes the configuration.
+function stripDeprecatedSecrets(value){
+  if(!value || typeof value !== 'object' || Array.isArray(value) ||
+     !Object.prototype.hasOwnProperty.call(value, 'claudeKey'))
+    return { config:value, changed:false };
+  const config = { ...value };
+  delete config.claudeKey;
+  return { config, changed:true };
+}
+async function loadCfg(){
+  const raw = await sget(K_CFG);
+  const migrated = stripDeprecatedSecrets(raw);
+  if(migrated.changed) await sset(K_CFG, migrated.config);
+  return migrated.config;
+}
 async function saveCfg(){
   await sset(K_CFG, {
     teamId: $('teamId').value.replace(/\D/g,''),
@@ -28,12 +46,11 @@ async function saveCfg(){
     leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
     oddsKey: $('oddsKey').value.trim(),
-    claudeKey: $('claudeKey').value.trim(),
     useUstat: $('useUstat').checked
   });
 }
 
-export { K_CFG, K_SQUAD, K_CACHE, K_CAL, sget, sset, saveCfg };
+export { K_CFG, K_SQUAD, K_CACHE, K_CAL, sget, sset, saveCfg, stripDeprecatedSecrets, loadCfg };
 
 // Versioned cache envelope (season snapshots only; generic sget/sset stay raw).
 export async function cachePut(key, payload, season){

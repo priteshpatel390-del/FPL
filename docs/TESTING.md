@@ -1,10 +1,10 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-26. Related: tests/, docs/STAGE1.md, CLAUDE.md.
+Last updated: 2026-07-27. Related: tests/, docs/STAGE1.md, CLAUDE.md.
 
 ## Stack
 node:test only (zero dependencies, Node ≥18). Entry: `./run-tests.sh` (builds first — the bundle is
-a test target). 96 tests across 4 suites; all must stay green in every stage.
+a test target). 179 tests across 10 suite files; all must stay green in every stage.
 
 ## Suites
 1. **characterisation.test.mjs (77)** — golden-snapshot pinning of model behaviour, executed against
@@ -16,8 +16,20 @@ a test target). 96 tests across 4 suites; all must stay green in every stage.
 2. **sec1.test.mjs (1)** — fetch-spy regression: odds key never reaches a relay under any failure.
 3. **unit.test.mjs (10)** — direct ES-module imports (no DOM harness) for fixtures, scoring, squad,
    odds maths, pure backtest (planted-bias recovery + provenance), cache envelope, registry, config.
-4. **resilience.test.mjs (8)** — corruption/outage/malformed-input behaviour, including honestly-
-   titled pinned limitations (e.g. DUP-1).
+4. **resilience.test.mjs (8)** — corruption/outage/malformed-input behaviour. DUP-1 is now a
+   fixed-behaviour characterisation: phantom duplicates collapse while genuine doubles survive.
+5. **validation.test.mjs (12)** — pure D-13 fixture-integrity tests: identity, exact/conflicting
+   duplicate handling, postponed rows, fatal shape failure, immutability and payload-free summaries.
+6. **anthropic-removal.test.mjs (5)** — D-08/SEC-3 regression battery: legacy secret migration,
+   no persistence, hosted fail-fast, keyless preview request and static key-affordance scan.
+7. **schema.test.mjs (25)** — pure per-endpoint payload contracts covering fatal and partial
+   validation, issue collapse, immutability and safe metadata.
+8. **schema-state.test.mjs (8)** — D-14 state/orchestration integration: atomic hydrate, issue
+   replacement, cache rejection and optional-provider degradation.
+9. **retry.test.mjs (20)** — D-15 retry-engine policy: transient/permanent classes, attempt and
+   elapsed-time ceilings, bounded half-jitter backoff and endpoint scrubbing.
+10. **retry-transport.test.mjs (13)** — transport integration: healthy single attempts, bounded
+    relay cascades, recovery, permanent short-circuiting and normalised retry metadata.
 
 ## Harness
 tests/harness.mjs stubs DOM/storage/fetch and loads `dist/app.bundle.js` (APP_TARGET overrides);
