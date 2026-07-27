@@ -13,8 +13,14 @@ jobs:
         with:
           node-version: '20'
       - name: Full build and test suite
-        run: ./run-tests.sh
+        id: suite
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./run-tests.sh 2>&1 | tee test.log
       - name: Deterministic build
+        id: deterministic
+        continue-on-error: true
         run: |
           cp dist/index.html /tmp/index-first.html
           cp dist/app.bundle.js /tmp/bundle-first.js
@@ -23,3 +29,12 @@ jobs:
           cmp /tmp/index-first.html dist/index.html
           cmp /tmp/bundle-first.js dist/app.bundle.js
           cmp /tmp/manifest-first.json dist/manifest.json
+      - name: Upload verification log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage3-item4-verification-log
+          path: test.log
+      - name: Fail if verification failed
+        if: steps.suite.outcome != 'success' || steps.deterministic.outcome != 'success'
+        run: exit 1
