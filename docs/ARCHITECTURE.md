@@ -16,7 +16,7 @@ src/
   providers/
     retry.mjs       bounded transient-failure retry policies + safe endpoint labels
     validate.mjs    per-endpoint payload validation, fixture normalisation, issue collapse
-    registry.mjs    six-attribute quality descriptors + runtime health marks
+    registry.mjs    six quality descriptors + seven-state runtime Provider Health
     transport.mjs   fetchT (timeout), RELAYS cascade, api(), fetchVia(), pool()
     common.mjs      NAME_ALIASES, mapTeamName
     understat.mjs   parseUnderstat, loadUnderstat (team last-6 xG/xGA only)
@@ -29,9 +29,9 @@ src/
     xp.mjs          SHIM re-export of projection surface
     backtest.mjs    parseCSV, pearson, computeBacktest (pure, provenance), runBacktest (UI)
   squad.mjs         flagsFor, priceMomentum, newsAge, sellPrice, mySquad, bestXI
-  main.mjs          loadAll orchestration
+  main.mjs          loadAll orchestration + compact Provider Health strip
   ui/views.mjs      all views, wiring, init (monolithic by design until Stage 9)
-tests/              harness.mjs + 10 suite files + golden.json
+tests/              harness.mjs + suites + golden.json, including provider-health transitions
 tools/split.py      historical record of the Stage-2 extraction
 docs/               this documentation set + AUDIT/STAGE records
 dist/               BUILD ARTEFACT (bundle, index.html, manifest.json) — never edit
@@ -43,12 +43,23 @@ flowchart TD
   CFG[config] --> ST[state] --> STO[storage]
   CFG --> FIX[model/fixtures] --> SCO[model/scoring] --> SQ[squad]
   ST --> TRANS[providers/transport] --> UST[understat] & ODDS[odds]
-  REG[registry] --> UST & ODDS
+  REG[registry + health] --> UST & ODDS & MAIN
   SCO --> BT[model/backtest]
   SQ & BT & UST & ODDS & STO --> MAIN[main] --> VIEWS[ui/views]
 ```
 Bundler flattens everything into one scope in fixed ORDER (build.mjs); direct ES imports are the
 contract for tests. Constraint: unique top-level names, no default exports, single-line imports.
+
+## Provider Health architecture (D-16)
+Runtime provider state is stored in-memory in `providers/registry.mjs`. The model is descriptive,
+not a synthetic reliability score: Live, Cached, Stale, Fallback, Partial, Disabled and
+Unavailable. Entries retain `lastSuccess`, calculated age, a technical note and a concise
+consequence line. Staleness is derived when read, using FPL 30m during live GWs / 6h otherwise,
+Understat 24h and odds 6h. `Disabled` is a neutral user choice and never ages into failure.
+
+`main.mjs` maps the core FPL fresh/cache/error paths and renders the compact strip with DOM nodes.
+`understat.mjs` and `odds.mjs` map their validation and fallback outcomes. The state is intentionally
+session-scoped; the underlying FPL snapshot remains the persisted fallback source.
 
 ## Model architecture (documented fully in PROJECTION_MODEL.md)
 Layered team strength → per-fixture context {xGF,xGA,cs,atk,def} → per-position component scoring →
@@ -58,7 +69,8 @@ context). Layers: FPL strengths (base) ⊕ Understat last-6 (45%) ⊕ market odd
 ## Storage architecture
 Keys: fpl:config, fpl:squad, fpl:leagues, fpl:calib (raw JSON via sget/sset) and fpl:cache
 (versioned envelope: schemaVersion+season+fetchedAt; mismatch invalidates). window.storage inside
-Claude artifacts, localStorage when hosted; both wrapped, both failure-tolerant.
+Claude artifacts, localStorage when hosted; both wrapped, both failure-tolerant. Provider Health
+itself is not persisted.
 
 ## Build & deployment
 ```mermaid
@@ -71,10 +83,9 @@ Deterministic: same sources → same bytes; SHA-256 source hash + model/rules ve
 embedded (BUILD_INFO) and emitted as manifest. Deploy = upload dist/index.html.
 
 ## Testing strategy (detail in TESTING.md)
-Characterisation (77, runs against the BUILT BUNDLE via DOM harness — the extraction-faithfulness
-gate), SEC-1 regression, direct-import unit tests (10), resilience tests (8), fixture validation
-(12), Anthropic-removal security tests (5), endpoint-schema tests (25+8), and retry tests (20+13).
-Golden snapshots retain an expected-to-change quarantine keyed to AUDIT issue ids.
+Characterisation runs against the built bundle via the DOM harness; direct-import unit and
+resilience suites cover provider validation, retry and Provider Health transitions. Golden
+snapshots retain an expected-to-change quarantine keyed to AUDIT issue ids.
 
 ## Future serverless architecture (planned, not built)
 Cloudflare Pages/Netlify: static app unchanged; per-provider base URL flips to /api/<provider>;
