@@ -27,7 +27,7 @@ src/
     backtest.mjs        historical evaluation utilities
   squad.mjs             squad helpers and deterministic best-XI selection
   main.mjs              load orchestration
-  ui/                    app shell, visual-only team-pitch helpers, player-detail controller, views, restricted Markdown and security wiring
+  ui/                    app shell, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
 tests/                  characterisation, model, simulation, provider, security, UI-helper and build tests
 docs/                   canonical project records
 dist/                   generated deployable; never hand-edit
@@ -41,7 +41,7 @@ Configuration and state feed providers, storage and model modules. Official FPL 
 Minutes never imports scoring. Scoring may reuse exported minutes helpers. Simulation imports both but neither imports simulation, preventing cycles.
 
 ## Build boundary
-The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` is bundled before the main views and owns the dialog controller plus pure presentation helpers. `ui/views.mjs` composes those helpers with existing model outputs. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.
+The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` is bundled before the views and owns only session-scoped preview state and pure transformation helpers. `ui/views.mjs` composes those helpers with existing model outputs. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.
 
 ## Expected-minutes boundary
 `model/minutes.mjs` returns `{pStart,pAppear,p60,expMin,confidence,confidenceLabel,source}`. Completed team fixtures are the aggregate denominator; detailed histories use recency weighting and shrinkage. Official availability is applied once.
@@ -63,19 +63,19 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 `squad-simulation.mjs` validates legal starting formations, processes the reserve goalkeeper separately, respects outfield bench order, preserves minimum formation rules and applies captain-to-vice fallback. Equal inputs and seeds produce equal outputs.
 
 ## Stage 9 UI boundary
-`ui/app-shell.mjs` owns the four primary destinations. `ui/team-pitch.mjs` owns only deterministic visual grouping and repository-owned shirt palettes. `ui/player-detail.mjs` owns open/close behaviour, Escape handling, focus restoration/trapping, approved spread-label thresholds and range positioning; it does not calculate projections or simulation samples. `ui/views.mjs` calls the existing projection, expected-minutes and Stage 8 simulation functions, then renders their unchanged outputs in the portrait pitch and player detail panel. Captain/vice, squad and persisted state remain unchanged.
+`ui/app-shell.mjs` owns the four primary destinations. `ui/team-pitch.mjs` owns deterministic visual grouping and repository-owned shirt palettes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns temporary transfer/captain preview state, exact application of optimiser `finalSquadIds`, role swapping and stale-preview invalidation. `ui/views.mjs` renders either the real squad or a derived preview copy through the existing `bestXI()` and captain-ranking functions. The real squad, persisted configuration and model recommendation remain unchanged.
 
 ## Provider Health and storage
-Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Minute histories use a separate schema/model-versioned cache. Stage 8 results are session-computed and are not persisted.
+Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
 
 ## Build and deployment
 `node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json` and single-file `dist/index.html`. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts.
 
 ## Security posture
-Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style are SHA-256 hash locked by CSP. Stage 9.3 adds no provider, storage or secret surface; the approved inline-style concession remains until checkpoint 9.6.
+Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style are SHA-256 hash locked by CSP. Stage 9.4 adds no provider, storage, secret or FPL-write surface; preview state exists only in module memory. The approved inline-style concession remains until checkpoint 9.6.
 
 ## Testing
-Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 8 adds player-simulation and squad-simulation suites. Stage 9.2 covers formation grouping, captain/vice identity and deterministic shirt palettes. Stage 9.3 adds direct tests for exact spread thresholds, unavailable/reduced-quality suppression, range positioning, official availability labels, dialog semantics, Escape/focus restoration and removal of the legacy inline drawer. Build tests directly exercise module stripping. Goldens may change only for approved user-visible consequences and final verification runs without regeneration.
+Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 8 adds player-simulation and squad-simulation suites. Stage 9.2 covers formation grouping and shirt palettes; Stage 9.3 covers player-detail and uncertainty presentation; Stage 9.4 adds nine direct preview tests for non-mutation, optimiser-final-squad agreement, captain/vice role rules, stale-state invalidation, deterministic signatures, score separation, accessible wiring and absence of persistence. Build tests directly exercise module stripping. Goldens may change only for approved user-visible consequences and final verification runs without regeneration.
 
 ## Future serverless architecture
 Static UI shape can remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
