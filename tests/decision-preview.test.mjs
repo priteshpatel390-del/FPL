@@ -59,7 +59,7 @@ test('bench players cannot be selected for captaincy preview',()=>{
   assert.equal(decisionPreviewChooseRole('captain',12,[1,2,3,4,5,6,7,8,9,10,11]),false);
 });
 
-test('squad or optimiser changes clear stale preview state',()=>{
+test('squad or optimiser changes clear stale transfer preview state',()=>{
   decisionPreviewClearAll();
   const real=squad(), sig=decisionPreviewSquadSignature(real);
   const plan={transferCount:1,signature:'7>99',transfers:[{outPlayerId:7,inPlayerId:99}],finalSquadIds:real.map(x=>x.p.id)};
@@ -74,11 +74,26 @@ test('squad or optimiser changes clear stale preview state',()=>{
   assert.notEqual(sig,decisionPreviewSquadSignature(changed));
 });
 
-test('optimiser and plan signatures are deterministic',()=>{
-  const plans=[{signature:'2>22'},{transfers:[{outPlayerId:1,inPlayerId:11}]}];
-  assert.equal(decisionPreviewPlanSignature(plans[1]),'1>11');
-  assert.equal(decisionPreviewOptimiserSignature({squadSignature:'s',horizon:6,bank:10,freeTransfers:2,plans}),
-    decisionPreviewOptimiserSignature({squadSignature:'s',horizon:6,bank:10,freeTransfers:2,plans}));
+test('changed optimiser inputs also clear captain-only preview state',()=>{
+  decisionPreviewClearAll();
+  decisionPreviewSyncOptimiser('optimiser-a');
+  decisionPreviewBeginRole('captain',{captainId:1,viceId:2});
+  decisionPreviewChooseRole('captain',3,[1,2,3]);
+  assert.equal(decisionPreviewSnapshot().captainId,3);
+  assert.equal(decisionPreviewSyncOptimiser('optimiser-b'),true);
+  const state=decisionPreviewSnapshot();
+  assert.equal(state.captainId,null);
+  assert.equal(state.viceId,null);
+});
+
+test('optimiser signatures include result changes as well as transfer identities',()=>{
+  const plan={signature:'2>22',transferCount:1,finalSquadIds:[1,2,22],netGain:3.2,hitCost:0,bankAfter:5,freeTransfersNextGW:1,grossBestXIPoints:50};
+  const first=decisionPreviewOptimiserSignature({squadSignature:'s',horizon:6,bank:10,freeTransfers:2,plans:[plan]});
+  const same=decisionPreviewOptimiserSignature({squadSignature:'s',horizon:6,bank:10,freeTransfers:2,plans:[{...plan}]});
+  const changed=decisionPreviewOptimiserSignature({squadSignature:'s',horizon:6,bank:10,freeTransfers:2,plans:[{...plan,netGain:3.3}]});
+  assert.equal(decisionPreviewPlanSignature({transfers:[{outPlayerId:1,inPlayerId:11}]}),'1>11');
+  assert.equal(first,same);
+  assert.notEqual(first,changed);
 });
 
 test('captain preview total keeps base XI score separate from the captain uplift',()=>{
@@ -94,6 +109,7 @@ test('preview implementation is session-only and wired to accessible controls',(
   assert.match(views,/Choose captain/);
   assert.match(views,/Choose vice-captain/);
   assert.match(views,/Clear preview/);
+  assert.match(views,/bestXI\(squad,gw\)/);
   assert.match(transfers,/Preview on pitch/);
   assert.match(transfers,/Use current squad/);
 });
