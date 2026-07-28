@@ -43,6 +43,16 @@ export const SCORING_RULES = Object.freeze({
   penaltyRoleOrders:Object.freeze([1,2])
 });
 
+export const TRANSFER_RULES = Object.freeze({
+  maxTransfers:3,
+  squadSize:15,
+  positions:Object.freeze({1:2,2:5,3:5,4:3}),
+  maxPerClub:3,
+  hitCost:4,
+  nextFreeTransferValue:1,
+  maxFreeTransfers:5
+});
+
 // Adjustment-5 market rules — configuration remains unvalidated until Stage 7.
 export const ODDS_RULES = {
   minH2hBooks: 2,

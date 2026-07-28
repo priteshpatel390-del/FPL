@@ -140,3 +140,6 @@ separate Stage 3.6 decision after design approval. Alternatives rejected: generi
 the approved construction model), and bundling CSP/AI/key work (stage-discipline violation).
 Consequences: XSS-1 is closed for API/provider/user rendering; five adversarial tests and a static
 sink inventory guard the boundary. No model formula, provider behaviour, dependency or layout changed.
+
+**D-19 · 2026-07-28 · Accepted · Exact full-squad transfer optimisation (Stage 6)**
+Plans contain zero to three transfers and rank by horizon best-XI xP minus four-point paid-transfer hits plus one point per next-Gameweek free transfer. Full 15-player legality and combined selling-value affordability are mandatory. Exhaustive search is the reference; production branch-and-bound uses safe upper bounds and never top-N candidate pruning. See `STAGE6-DESIGN.md`.

@@ -30,3 +30,6 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 1. Stage 6 design and formula approval.
 2. BT-1 historical dataset pin for Stage 7.
 3. Live-season data requirements beginning with GW1 on 21 August 2026.
+
+## Stage 6 — Transfer Optimiser (implemented; draft review)
+Exact zero-to-three-transfer optimisation, full resulting-squad validation, selling-price budget, approved hit/free-transfer objective, per-Gameweek projected best XI and exhaustive-equivalence tests are complete.

@@ -11,7 +11,7 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 - Stage 3 security/provider hardening is complete.
 - Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
 - Stage 5 scoring corrections are complete and merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`. Source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
-- The next planned item is Stage 6 — Transfer Optimiser. Its design and formula choices require explicit owner approval before implementation.
+- Stage 6 — Transfer Optimiser is implemented on its dedicated branch and awaiting draft-PR review.
 - The historical 2025/26 aggregate backtest result, r=0.80 and approximately ±0.5 points/GW, is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities

@@ -96,3 +96,6 @@ optimisation formula changed.
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
 system (12 files) + CLAUDE.md; no code. Lessons: a several-hundred-turn founding conversation is a
 liability; decision records should have started at turn one.
+
+## Stage 6 — Transfer Optimiser (implemented 2026-07-28)
+Added exact zero-to-three-transfer planning with complete squad legality, actual selling-price affordability, approved hit/free-transfer objective and per-Gameweek best-XI evaluation. Production branch-and-bound is checked against exhaustive search. No projection, minutes, fixture or captaincy formula changed.

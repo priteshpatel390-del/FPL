@@ -34,3 +34,8 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | STYLE-1 | `style-src-attr 'unsafe-inline'` remains necessary | Style attributes are not hash-locked; scripts remain hash-only | Stage 9 class migration | Accepted-temporary |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
+
+## Stage 6 optimiser
+- Exact search is synchronous and capped at three transfers; progress/cancellation and worker execution are deferred.
+- Manual-squad selling values depend on recorded purchase price; public picks use FPL `selling_price`.
+- The objective deliberately excludes captaincy, autosubs, bench percentage and uncertainty weighting.

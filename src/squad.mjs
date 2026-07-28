@@ -39,7 +39,7 @@ function mySquad(){
   if($('useManual').checked || !S.picks || !S.picks.picks){
     return S.manual.map((m,i) => ({p:S.byId[m.id], bought:m.bought, position:i+1, multiplier:1})).filter(x => x.p);
   }
-  return S.picks.picks.map(pk => ({p:S.byId[pk.element], bought:null, position:pk.position,
+  return S.picks.picks.map(pk => ({p:S.byId[pk.element], bought:null, sellingPrice:pk.selling_price, position:pk.position,
     multiplier:pk.multiplier, is_captain:pk.is_captain})).filter(x => x.p);
 }
 
