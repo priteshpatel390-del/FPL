@@ -2,6 +2,12 @@
 // Reorganises existing views without changing their rendering or model behaviour.
 
 function setupAppShell(){
+  if(typeof document === 'undefined' ||
+     typeof document.querySelector !== 'function' ||
+     typeof document.getElementById !== 'function' ||
+     typeof document.createElement !== 'function' ||
+     typeof document.createTextNode !== 'function') return;
+
   const nav = document.querySelector('nav.tabs');
   const main = document.querySelector('main');
   const teamView = document.getElementById('view-squad');
