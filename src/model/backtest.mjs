@@ -2,16 +2,11 @@ import { S, recordRetry } from '../state.mjs';
 import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from '../providers/retry.mjs';
 import { $, num, clamp, el, setChildren } from '../util.mjs';
 import { GOAL_PTS, CS_PTS, ASSIST_PTS, DC_THRESH, BASE_GOALS, MODEL_VERSION, RULES_VERSION } from '../config.mjs';
-import { sset } from '../storage.mjs';
 import { fetchT } from '../providers/transport.mjs';
-import { clearXP } from './xp.mjs';
 import { validateArchiveHeader, ARCHIVE_REQUIRED_COLUMNS } from '../providers/validate.mjs';
-/* ---------------------------------------------------------------------
-   BACKTEST — fetches last season gameweek-by-gameweek from the vaastav
-   archive, builds each player's first-half per-90 profile, projects the
-   second half with the exact production formulas, and compares to what
-   actually happened. Derives per-position calibration multipliers.
-   --------------------------------------------------------------------- */
+import { evaluateWalkForward } from './walk-forward.mjs';
+import { ARCHIVE_DATASET, buildArchiveReplay, sha256Hex } from './archive-replay.mjs';
+
 S.calib = null; S.backtest = null;
 
 function parseCSV(text){
@@ -39,13 +34,12 @@ function pearson(xs, ys){
   return sxx && syy ? sxy/Math.sqrt(sxx*syy) : 0;
 }
 
-// Pure engine (adjustment 8: directly importable/testable, no DOM, no network).
-// Provenance (adjustment 6): every result carries model/rules versions + dataset ref.
+// Retained only for regression coverage and historical comparison. It is not
+// used by the UI because it leaks real second-half minutes and calibrates on
+// the same sample it reports.
 export function computeBacktest(text, meta = {}){
   const season = meta.season || 'unknown';
   const rows = parseCSV(text);
-  // D-14: header contract is the archive's only structural guarantee. The
-  // thrown message is user-facing and pinned by a resilience test — unchanged.
   const head = rows[0];
   const headerV = validateArchiveHeader(head);
   if(headerV.value === null){
@@ -56,8 +50,6 @@ export function computeBacktest(text, meta = {}){
   const g = (r,k) => col[k] !== undefined ? r[col[k]] : '';
   const POSMAP = {GK:1, GKP:1, DEF:2, MID:3, FWD:4};
   const hasDC = col['defensive_contribution'] !== undefined;
-
-  // aggregate halves per player
   const players = {};
   for(let i=1; i<rows.length; i++){
     const r = rows[i]; if(!r || r.length < head.length-2) continue;
@@ -77,20 +69,16 @@ export function computeBacktest(text, meta = {}){
       p.h2.min += mins; p.h2.pts += num(g(r,'total_points')); p.h2.app++;
     }
   }
-
-  // project H2 with the production formulas under an average fixture
   const avgCtx = {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS), atk:1, def:1};
-  const preds = [], actuals = [], poss = [], names = [];
+  const preds = [], actuals = [];
   const perPos = {1:{p:0,a:0,n:0,rP:[],rA:[]},2:{p:0,a:0,n:0,rP:[],rA:[]},3:{p:0,a:0,n:0,rP:[],rA:[]},4:{p:0,a:0,n:0,rP:[],rA:[]}};
-
   Object.entries(players).forEach(([key,p]) => {
     if(!p.pos || p.h1.min < 540 || p.h2.app < 5) return;
     const n90 = p.h1.min/90;
     const per = {xg:p.h1.xg/n90, xa:p.h1.xa/n90, sv:p.h1.sv/n90, bps:p.h1.bps/n90, dc:p.h1.dc/n90, yc:p.h1.yc/n90};
-    const expM = p.h2.min/p.h2.app;                          // real H2 minutes — isolates scoring calibration
+    const expM = p.h2.min/p.h2.app;
     const mF = expM/90, pAny = clamp(expM/28,0,.98), p60 = clamp((expM-18)/55,0,.97);
-
-    let xp = pAny + p60;                                     // appearance
+    let xp = pAny + p60;
     xp += per.xg * mF * (GOAL_PTS[p.pos] ?? 4);
     xp += per.xa * mF * ASSIST_PTS;
     if(CS_PTS[p.pos]) xp += avgCtx.cs * CS_PTS[p.pos] * p60;
@@ -100,99 +88,85 @@ export function computeBacktest(text, meta = {}){
     if(thr && per.dc) xp += 2 * (1/(1+Math.exp(-(per.dc-thr)/2.2))) * p60;
     xp += clamp((per.bps-16)/20, 0, 1.8) * mF;
     xp -= per.yc * mF;
-
     const predicted = xp * p.h2.app, actual = p.h2.pts;
-    preds.push(predicted); actuals.push(actual); poss.push(p.pos); names.push(key.split('|')[0]);
+    preds.push(predicted); actuals.push(actual);
     const pp = perPos[p.pos]; pp.p += predicted; pp.a += actual; pp.n++; pp.rP.push(predicted); pp.rA.push(actual);
   });
-
-  if(preds.length < 50){
-    throw new Error('only ' + preds.length + ' qualifying players — not enough to calibrate');
-  }
-
+  if(preds.length < 50) throw new Error('only ' + preds.length + ' qualifying players — not enough to calibrate');
   const r = pearson(preds, actuals);
   const mae = preds.reduce((a,v,i) => a + Math.abs(v - actuals[i]), 0) / preds.length;
-  const maeGW = mae / 19;
   const posLabel = {1:'GKP',2:'DEF',3:'MID',4:'FWD'};
-  const calib = {};
-  const posRows = [];
+  const calib = {}, posRows = [];
   [1,2,3,4].forEach(k => {
     const pp = perPos[k]; if(!pp.n) return;
     const ratio = pp.a/pp.p;
     calib[k] = clamp(ratio, 0.7, 1.3);
     posRows.push([posLabel[k],pp.n,pearson(pp.rP,pp.rA).toFixed(2),`${((ratio-1)*100).toFixed(0)}%`,`${calib[k].toFixed(2)}×`]);
   });
-
-  // captain check: of the 20 highest predicted, how did their actual ranks land?
-  const idx = preds.map((v,i)=>i).sort((a,b)=>preds[b]-preds[a]).slice(0,20);
-  const actRank = preds.map((_,i)=>i).sort((a,b)=>actuals[b]-actuals[a]);
-  const rankOf = {}; actRank.forEach((i,r2)=>rankOf[i]=r2+1);
-  const top20hit = idx.filter(i => rankOf[i] <= 30).length;
-
-  return { calib,
-    backtest: { season, n: preds.length, r:+r.toFixed(3), maeGW:+maeGW.toFixed(2), top20hit,
-      bias: Object.fromEntries([1,2,3,4].map(k => [posLabel[k], perPos[k].n ? +((perPos[k].a/perPos[k].p-1)*100).toFixed(1) : null])),
-      hasDC,
-      provenance: {
-        modelVersion: MODEL_VERSION, rulesVersion: RULES_VERSION,
-        dataset: { url: meta.url || null, season, rows: rows.length,
-          pinned: false /* TODO: pin to commit SHA — tracked in AUDIT BT-1 */ },
-        predictedAt: meta.now ?? Date.now(),
-        method: 'H1-per90 → H2 projection, real H2 minutes, average fixture'
-      } },
-    posRows };
+  return {calib,backtest:{season,n:preds.length,r:+r.toFixed(3),maeGW:+(mae/19).toFixed(2),top20hit:0,
+    bias:Object.fromEntries([1,2,3,4].map(k=>[posLabel[k],perPos[k].n?+((perPos[k].a/perPos[k].p-1)*100).toFixed(1):null])),
+    hasDC,provenance:{modelVersion:MODEL_VERSION,rulesVersion:RULES_VERSION,dataset:{url:meta.url||null,season,rows:rows.length,pinned:false},predictedAt:meta.now??Date.now(),method:'legacy H1/H2 diagnostic with future minutes'}},posRows};
 }
+
+function fmt(value,digits=2){ return value === null || value === undefined ? '—' : Number(value).toFixed(digits); }
 
 async function runBacktest(){
   const out = $('btOut'), btn = $('btBtn');
   btn.disabled = true;
-  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Downloading last season (~14MB — best on wi-fi)…'));
-  const seasons = ['2025-26','2024-25'];
-  let text = null, season = null, url = null;
-  for(const s of seasons){
-    const u = 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/'+s+'/gws/merged_gw.csv';
-    // D-15: a 14MB download is expensive to repeat, so the archive policy is
-    // the most conservative of the four — two attempts, long backoff.
-    const { result, record } = await withRetry(
-      async () => {
-        let res;
-        try{ res = await fetchT(u, 60000); }
-        catch(e){ return {ok:false, retryable:true, status:'network'}; }
-        if(!res.ok) return {ok:false, retryable:isRetryableStatus(res.status), status:res.status};
-        try{ return {ok:true, value: await res.text(), status:res.status}; }
-        catch(e){ return {ok:false, retryable:false, status:'parse'}; }
-      },
-      { ...policyFor('archive'), endpoint: safeEndpoint(u) }
-    );
-    recordRetry(record);
-    if(result && result.ok){ text = result.value; season = s; url = u; break; }
+  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Downloading pinned 2025–26 archive (~14MB — best on wi-fi)…'));
+  const u = ARCHIVE_DATASET.url;
+  const { result, record } = await withRetry(
+    async () => {
+      let res;
+      try{ res = await fetchT(u,60000); }
+      catch(e){ return {ok:false,retryable:true,status:'network'}; }
+      if(!res.ok) return {ok:false,retryable:isRetryableStatus(res.status),status:res.status};
+      try{ return {ok:true,value:await res.text(),status:res.status}; }
+      catch(e){ return {ok:false,retryable:false,status:'parse'}; }
+    },
+    {...policyFor('archive'),endpoint:safeEndpoint(u)}
+  );
+  recordRetry(record);
+  if(!result?.ok){
+    setChildren(out,el('div',{class:'note bad'},"Couldn't download the pinned archive — check the connection and try again."));
+    btn.disabled=false; return;
   }
-  if(!text){ setChildren(out,el('div',{class:'note bad'},"Couldn't download the archive — check the connection and try again.")); btn.disabled = false; return; }
-  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),`Replaying ${season} through the model…`));
-  await new Promise(r => setTimeout(r, 30));
-  let result;
-  try{ result = computeBacktest(text, { season, url }); }
-  catch(err){
-    setChildren(out,el('div',{class:'note bad'},'The archive could not be calibrated because its data was incomplete or malformed.'));
-    btn.disabled = false; return;
+  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Building deadline-safe walk-forward folds…'));
+  await new Promise(resolve=>setTimeout(resolve,30));
+  try{
+    const checksum=await sha256Hex(result.value);
+    const replay=buildArchiveReplay(result.value);
+    const evaluation=evaluateWalkForward(replay.observations,{dataset:{
+      season:ARCHIVE_DATASET.season,sourceRef:ARCHIVE_DATASET.sourceRef,sha256:checksum,
+      rows:replay.rows,malformedRows:replay.malformedRows
+    }});
+    S.backtest=evaluation;
+    const raw=evaluation.ablations.raw?.overall;
+    const calibrated=evaluation.ablations.fold_calibrated?.overall;
+    const kpi=(key,value)=>el('div',{class:'kpi'},el('div',{class:'k'},key),el('div',{class:'v'},value));
+    const rows=[
+      ['Raw',raw?.n,fmt(raw?.mae),fmt(raw?.rmse),fmt(raw?.bias),fmt(raw?.r)],
+      ['Fold calibrated',calibrated?.n,fmt(calibrated?.mae),fmt(calibrated?.rmse),fmt(calibrated?.bias),fmt(calibrated?.r)]
+    ];
+    const body=el('tbody');
+    rows.forEach(row=>body.appendChild(el('tr',{},...row.map((value,index)=>el('td',index?{class:'num'}:{},value))));
+    setChildren(out,[
+      el('div',{class:'kpis',style:{marginTop:'10px'}},
+        kpi('Season',ARCHIVE_DATASET.season),kpi('Folds',evaluation.folds.length),
+        kpi('Holdout rows',raw?.n??0),kpi('Malformed rows',replay.malformedRows)),
+      el('div',{class:'scroll'},el('table',{class:'data',style:{minWidth:'520px'}},
+        el('thead',{},el('tr',{},...['Variant','n','MAE','RMSE','Bias','r'].map((value,index)=>el('th',index?{class:'num'}:{},value)))),body)),
+      el('div',{class:'note good'},el('b',{},'Deadline-safe evaluation complete.'),
+        ' Every holdout prediction uses only earlier Gameweeks, and fold calibration is fitted only on the immediately preceding calibration window.'),
+      el('div',{class:'note plain'},
+        `Pinned source ${ARCHIVE_DATASET.sourceRef.slice(0,12)}… · SHA-256 ${checksum.slice(0,12)}… · historical odds ${evaluation.oddsHistory}.`),
+      el('div',{class:'note'},el('b',{},'Coverage limitation. '),
+        'This replays the existing archive scoring diagnostic with trailing historical minutes and average-fixture context. Historical deadline snapshots for Understat, odds, detailed minutes inputs and production fixture ratings do not exist, so this is not a full out-of-sample validation of the live production model and does not alter current projections.')
+    ]);
+  } catch(error){
+    setChildren(out,el('div',{class:'note bad'},'The pinned archive could not be evaluated safely: '+error.message));
   }
-  const { calib, backtest, posRows } = result;
-  const r = { toFixed: d => backtest.r.toFixed(d) }, maeGW = backtest.maeGW, top20hit = backtest.top20hit,
-        hasDC = backtest.hasDC, preds = { length: backtest.n };
-  S.calib = calib;
-  S.backtest = backtest;
-  await sset(K_CAL, {calib, backtest});
-  clearXP();
-  const kpi=(k,v)=>el('div',{class:'kpi'},el('div',{class:'k'},k),el('div',{class:'v'},v));
-  const body=el('tbody'); posRows.forEach(row=>body.appendChild(el('tr',{},...row.map((v,i)=>el('td',i?{class:'num'}:{},v)))));
-  const nodes=[el('div',{class:'kpis',style:{marginTop:'10px'}},kpi('Season',season),kpi('Players',preds.length),kpi('Correlation',r.toFixed(2)),kpi('Error /GW',`±${maeGW.toFixed(1)}`)),
-    el('div',{class:'scroll'},el('table',{class:'data',style:{minWidth:'420px'}},el('thead',{},el('tr',{},...['Pos','n','r','Model bias','Correction'].map((v,i)=>el('th',i?{class:'num'}:{},v)))),body)),
-    el('div',{class:'note good'},el('b',{},'Calibration applied.'),` Every projection in the app is now multiplied by the per-position corrections above (negative bias = the model was over-predicting that position). ${top20hit}/20 of the model's top picks finished inside the actual top 30.`)];
-  if(!hasDC) nodes.push(el('div',{class:'note plain'},'This season file has no defensive-contribution column, so the DEF/MID corrections also absorb those points — expect them to run above 1.0×.'));
-  nodes.push(el('div',{class:'note plain'},"Method: first-half per-90 profiles project the second half under an average fixture, using each player's real second-half minutes — this isolates the scoring model from minutes prediction, which is judged separately. Ask tab can analyse these numbers for you."));
-  setChildren(out,nodes);
-  btn.disabled = false;
-  renderAll();
+  btn.disabled=false;
 }
 
 export { parseCSV, pearson, runBacktest };
