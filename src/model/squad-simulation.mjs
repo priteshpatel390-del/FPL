@@ -1,6 +1,6 @@
 import { clamp, num } from '../util.mjs';
 import { SIMULATION_RULES } from '../config.mjs';
-import { createSeed, createRng, simulatePlayerGameweek, summariseSamples } from './simulation.mjs';
+import { createSeed, simulatePlayerGameweek, summariseSamples } from './simulation.mjs';
 
 function formationCounts(entries){
   const counts={1:0,2:0,3:0,4:0};
@@ -50,8 +50,8 @@ function simulateSquadGameweek(input){
   for(let i=0;i<samples;i++){
     const outcomes=new Map();
     all.forEach(entry => {
-      const points=playerResults.get(entry.p.id).samples[i];
-      outcomes.set(entry.p.id,{points,appeared:points!==0 || playerResults.get(entry.p.id).appearanceProbability===1});
+      const result=playerResults.get(entry.p.id);
+      outcomes.set(entry.p.id,{points:result.samples[i],appeared:Boolean(result.appearanceSamples[i])});
     });
     const applied=applyAutosubs(starters,bench,outcomes);
     let total=applied.scoringXI.reduce((sum,entry)=>sum+num(outcomes.get(entry.p.id)?.points),0);
