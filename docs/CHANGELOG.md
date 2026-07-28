@@ -2,6 +2,22 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 3.6] — 2026-07-28 — AI/Markdown sanitisation
+### Added
+- A bounded, dependency-free restricted-Markdown parser and DOM renderer for the Ask surface.
+- Eight adversarial tests covering unsafe schemes, encoded and entity-obscured URLs, hostile HTML-shaped input, permitted block syntax, input bounding and DOM-only rendering invariants.
+- `docs/STAGE3-ITEM6.md` implementation and verification record.
+### Changed
+- Ask responses now render only paragraphs, `##`/`###` headings, unordered lists, bold, italic and absolute HTTP(S) links.
+- Approved links open with `target="_blank"` and `rel="noopener noreferrer"`; rejected destinations remain inert visible text.
+- The active Ask renderer no longer assigns untrusted AI output to `innerHTML`.
+### Unchanged
+- No projection, expected-minutes, scoring, calibration, fixture, captaincy, squad, transfer, provider, retry, key-handling, CSP or visual-design behaviour changed. No dependency was added.
+### Verification
+- Full `./run-tests.sh` passed with 202 tests.
+- Deterministic two-build byte comparison passed in GitHub Actions run `30336857903`.
+- The temporary verification workflow was removed before merge and is not part of the final product change.
+
 ## [Stage 3.5] — 2026-07-28 — DOM-builder rendering
 ### Added
 - A text-node-first `el()` DOM builder and `setChildren()` replacement helper.

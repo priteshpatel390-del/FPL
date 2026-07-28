@@ -2,6 +2,11 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, AUDIT.md (all retained verbatim in /docs).
 
+## Stage 3.6 — AI/Markdown sanitisation (MERGED 2026-07-28)
+Replaced the Ask surface's string-to-HTML Markdown path with a bounded, default-deny parser and DOM renderer. The supported subset is deliberately small: paragraphs, `##`/`###` headings, unordered lists, bold, italic and absolute HTTP(S) links. Raw HTML and unsupported Markdown remain inert text. Unsafe, relative, protocol-relative, encoded, entity-obscured and control-character URL targets are rejected while preserving visible labels.
+
+Eight adversarial tests bring the suite from 194 to 202. GitHub Actions run `30336857903` passed the full `./run-tests.sh` step and deterministic two-build byte comparison. A temporary verification workflow was removed before merge, so no CI-policy change remains in the product diff. No model, provider, retry, key-handling, CSP, formula or visual-design behaviour changed.
+
 ## Stage 3.5 — DOM-builder rendering (MERGED 2026-07-28)
 Introduced shared text-node-first DOM primitives and migrated the complete approved inventory:
 gameweek/source/chip status, ticker and swing notes, player table and drawer, squad/captain/best-XI,
@@ -63,8 +68,9 @@ run correctly caught the removed `usingFallback` compatibility field; the field 
 derived value rather than weakening the old test. Full suite and deterministic two-build comparison
 then passed. Item was merged through PR #2.
 
-Sixth implementation: Stage 3.5 DOM-builder rendering, recorded above. Stage 3.6 AI/Markdown
-sanitisation is the next design and owner-approval gate.
+Sixth implementation: Stage 3.5 DOM-builder rendering, recorded above. Seventh implementation:
+Stage 3.6 AI/Markdown sanitisation, recorded above. Remaining Stage 3 work is odds-key hygiene and
+hash-based CSP.
 
 Owner architecture-review gate remains after Stage 3, before any model work.
 
