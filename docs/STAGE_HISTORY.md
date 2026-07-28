@@ -2,13 +2,16 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, AUDIT.md (all retained verbatim in /docs).
 
-## Stage 3.5 — DOM-builder rendering (IMPLEMENTED; owner review pending)
+## Stage 3.5 — DOM-builder rendering (MERGED 2026-07-28)
 Introduced shared text-node-first DOM primitives and migrated the complete approved inventory:
 gameweek/source/chip status, ticker and swing notes, player table and drawer, squad/captain/best-XI,
 transfers, league output and controls, manual squad/search, core failure states and backtest output.
 Hostile provider/user strings now become text nodes rather than HTML. Ask Markdown was explicitly
 restored to its Stage 3.4 baseline because AI sanitisation belongs to separately approved Stage 3.6.
 Five adversarial checks bring the suite from 189 to 194; formulas and golden results are unchanged.
+The work landed through PR #3: implementation commit `138f2b826487c487733cd32546a577d515459646`,
+merge commit `5623abb594159916b4041e6bd3c44be80f714ce7`. The recorded implementation run was
+194/194 with deterministic builds; no GitHub Actions run is attached to the merge.
 
 ## Pre-stage era (v1.x, founding conversation)
 Objective: working product. Changes: full app built iteratively (ticker → xP engine → transfers →
@@ -58,7 +61,10 @@ consequences; provider-specific stale thresholds are derived on read; a compact 
 into the existing settings panel with DOM nodes. Ten tests bring the suite 179 → 189. The first CI
 run correctly caught the removed `usingFallback` compatibility field; the field was restored as a
 derived value rather than weakening the old test. Full suite and deterministic two-build comparison
-then passed. Item remains in draft PR #2 pending owner review; next is rendering safety.
+then passed. Item was merged through PR #2.
+
+Sixth implementation: Stage 3.5 DOM-builder rendering, recorded above. Stage 3.6 AI/Markdown
+sanitisation is the next design and owner-approval gate.
 
 Owner architecture-review gate remains after Stage 3, before any model work.
 
