@@ -42,3 +42,57 @@ tests/characterisation.test.mjs, tests/golden.json, run-tests.sh, docs/AUDIT.md,
 Tests added: 77. Issues discovered: 13 (AUDIT §3) incl. SEC-1 key-via-relay, LEAK-1 calibration
 leakage, MIN-1 minutes. Lessons: expected-to-change quarantine keeps honesty and refactor-safety
 compatible. Outstanding: none (audit decisions delegated to owner).
+
+## SEC-1 hot-fix (DONE, deployed)
+Objective: stop the odds key transiting relays immediately. Changes: relay fallback removed from
+loadOdds; degrade-to-internal-model note. Files: app.js (then src/providers/odds.mjs), tests/
+sec1.test.mjs. Tests: +1 (fetch-spy). Lessons: security fixes ship separately from refactors.
+
+## Stage 2 — Module extraction (DONE, owner-approved)
+Objective: modular architecture without behaviour change. Changes: 17 src/ modules (verbatim moves
+via tools/split.py + sanctioned edits: odds provenance/rules/kickoff-matching, slim() fixture
+fields, cache envelope, pure computeBacktest + provenance, registry, escapeHTML). Files: src/**,
+build.mjs, tests/unit.test.mjs, tests/resilience.test.mjs, README-BUILD.md. Tests: 96 total.
+Issues discovered BY the suites during extraction: dropped final line of init IIFE (bundle syntax);
+duplicate computeBacktest export; wrong relative import paths in generated headers; hydrate's DOM
+touch breaking direct imports. All fixed same-stage. Lessons: the characterisation gate earned its
+keep four times in one stage; generated code needs path tests. Outstanding: BT-1 pinning; views
+module intentionally monolithic until Stage 9.
+
+## Stage 3 — Security & hardening (DONE, merged 2026-07-28)
+Design: docs/STAGE3-DESIGN.md (8 deliverables), approved with CSP intentionally specified last.
+First implementation: D-13 fixture validation/deduplication in `hydrate()`; DUP-1 closed and suite
+96 → 108. Second implementation (2026-07-27): SEC-3 closed — Anthropic key field, persistence,
+key headers and hosted browser request removed; one-time stored-config migration added; keyless
+Claude-preview path retained. Five focused tests bring the suite to 113. Third implementation:
+D-14 per-endpoint schema validation, atomic hydrate and safe issue reporting; VAL-1 closed and suite
+113 → 146. Fourth implementation: D-15 bounded transient-only retry with attempt/time ceilings and
+normalised metadata for the health model; suite 146 → 179.
+
+Fifth implementation: D-16 Provider Health. The Stage-2 boolean marker was replaced with Live,
+Cached, Stale, Fallback, Partial, Disabled and Unavailable while retaining derived `ok` and
+`usingFallback` fields for backwards compatibility. FPL, Understat and Odds now report distinct
+consequences; provider-specific stale thresholds are derived on read; a compact strip is inserted
+into the existing settings panel with DOM nodes. Ten tests bring the suite 179 → 189. The first CI
+run correctly caught the removed `usingFallback` compatibility field; the field was restored as a
+derived value rather than weakening the old test. Full suite and deterministic two-build comparison
+then passed. Item was merged through PR #2.
+
+Sixth implementation: Stage 3.5 DOM-builder rendering, recorded above. Seventh implementation:
+Stage 3.6 AI/Markdown sanitisation, recorded above. Eighth implementation: odds-key hygiene and
+hash-based CSP. The key is password-masked, omitted when empty, removable in one action and scrubbed
+from diagnostics. The build emits and independently verifies SHA-256 hashes for the exact inline
+script and style, with a hashed frame-buster compensating for GitHub Pages' inability to enforce
+`frame-ancestors` via meta CSP. Eight focused tests bring the suite 202 → 210. Verified generated
+`dist/` files were checked byte-for-byte against the successful build artefact and committed before
+the temporary verification workflow was removed.
+
+Stage 3 landed through PR #6 at merge commit `3f662b7e133ce2995da74c5e52165ae84744e120`.
+The verified completion baseline is 210/210 tests passing, successful build and deterministic
+two-build comparison. No projection, expected-minutes, scoring, fixture, captaincy, squad or
+optimisation formula changed.
+
+## Documentation stage (DONE, 2026-07-26)
+Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
+system (12 files) + CLAUDE.md; no code. Lessons: a several-hundred-turn founding conversation is a
+liability; decision records should have started at turn one.
