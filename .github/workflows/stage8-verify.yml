@@ -2,6 +2,8 @@ name: Stage 8 verification
 on:
   push:
     branches: [agent/stage8-uncertainty-simulation]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   verify:
