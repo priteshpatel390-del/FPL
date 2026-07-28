@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 7 is merged into `main` at `78b42e09d2ad3b8338b587ba2b89e815cfc0c45a` with a verified **274/274** baseline. Stage 8 — Uncertainty and Squad Simulation is implemented on draft PR #16 from branch `agent/stage8-uncertainty-simulation`. Approved design: `docs/STAGE8-DESIGN.md`. The scope adds deterministic seeded player and squad simulation, percentiles, threshold probabilities, legal auto-subs and captain/vice fallback while leaving deterministic `projectXP()` and the transfer optimiser unchanged. Full verification, generated artefacts and owner review remain required before merge.
+Stage 8 is merged into `main` at `b0f6e1683b1bdb38c9cb233024a8d0bfd652caa8` with a verified **284/284** baseline. Stage 9 — UI integration is approved in `docs/STAGE9-DESIGN.md`. Checkpoint 9.1 is implemented and verified on draft PR #17 from branch `agent/stage9-1-app-shell`: four primary destinations (Team, Players, Transfers and More), Team as the default landing screen, and the existing setup/fixtures/league/Ask surfaces regrouped under More. No model or feature behaviour changed. Owner review and explicit merge approval remain required. Checkpoint 9.2 must not begin before 9.1 is merged. Uncertainty spread-label thresholds remain separately gated for owner approval during checkpoint 9.3.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
@@ -38,7 +38,7 @@ Stage 7 is merged into `main` at `78b42e09d2ad3b8338b587ba2b89e815cfc0c45a` with
 - Odds key is masked, omitted when empty, one-action forgettable and scrubbed from diagnostics.
 - Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
 - The custom bundler strips complete static import/export declarations and fails if raw module syntax survives.
-- `style-src-attr 'unsafe-inline'` remains an explicit Stage 9 concession.
+- `style-src-attr 'unsafe-inline'` remains an explicit Stage 9 concession until checkpoint 9.6.
 - Meta `frame-ancestors` is ineffective on Pages; a hashed frame-buster compensates until serverless headers.
 
 ## Completion report for every item
