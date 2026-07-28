@@ -99,12 +99,19 @@ test('stable result serialisation is key ordered and rounds finite numbers',()=>
   assert.equal(stableResult({z:1/3,a:{y:2,x:1}}),'{"a":{"x":1,"y":2},"z":0.33333333}');
 });
 
-test('full evaluation requires a pin and reports unavailable historical odds explicitly',()=>{
-  const result=evaluateWalkForward(rows(14,['raw','alt']),{dataset:pin});
+test('full evaluation preserves supplied ablations when fold calibration is disabled',()=>{
+  const result=evaluateWalkForward(rows(14,['raw','alt']),{dataset:pin},{includeFoldCalibration:false});
   assert.equal(result.method,'deadline-information-only walk-forward');
   assert.equal(result.folds.length,2);
   assert.equal(result.oddsHistory,'not_available');
   assert.equal(result.dataset.malformedRows,2);
   assert.deepEqual(Object.keys(result.ablations),['alt','raw']);
   assert.throws(()=>evaluateWalkForward(rows(14),{dataset:{...pin,sourceRef:'main'}}),/not pinned/);
+});
+
+test('raw-only evaluation emits train-only fold calibration',()=>{
+  const result=evaluateWalkForward(rows(14),{dataset:pin});
+  assert.deepEqual(Object.keys(result.ablations),['fold_calibrated','raw']);
+  assert.equal(result.ablations.raw.overall.n,result.ablations.fold_calibrated.overall.n);
+  assert.ok(result.folds.every(fold=>fold.calibration&&Object.keys(fold.calibration).length===4));
 });
