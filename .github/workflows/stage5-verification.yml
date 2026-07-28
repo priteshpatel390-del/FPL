@@ -1,0 +1,44 @@
+name: Stage 5 verification
+on:
+  push:
+    branches: [agent/stage5-scoring-corrections]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Full test suite
+        run: ./run-tests.sh
+      - name: Deterministic two-build comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          BUILD_COMMIT=stage5-verify node build.mjs
+          mkdir -p /tmp/stage5-build
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage5-build/
+          rm -rf dist
+          BUILD_COMMIT=stage5-verify node build.mjs
+          cmp dist/index.html /tmp/stage5-build/index.html
+          cmp dist/app.bundle.js /tmp/stage5-build/app.bundle.js
+          cmp dist/manifest.json /tmp/stage5-build/manifest.json
+      - name: Independent CSP verification
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const html = readFileSync('dist/index.html','utf8');
+          const script = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)][0][1];
+          const style = [...html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)][0][1];
+          const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)">/.exec(html)[1];
+          const hash = value => 'sha256-' + createHash('sha256').update(value,'utf8').digest('base64');
+          if(!csp.includes(`script-src '${hash(script)}'`)) throw new Error('script CSP mismatch');
+          if(!csp.includes(`style-src-elem '${hash(style)}'`)) throw new Error('style CSP mismatch');
+          NODE
