@@ -15,7 +15,7 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | RET-2 | No transport-level per-provider circuit breaker | Pooled outages can issue more doomed requests than ideal | Future provider hardening only with separate approval | Open |
 | HEALTH-1 | Provider Health is session-scoped | No multi-session incident history | No planned stage | Accepted |
 | VAL-2 | Understat values are structurally but not range validated | Nonsense numeric values could pass structure checks | Stage 7 ablation | Open |
-| VAL-3 | Archive CSV validates headers but not every row width | Bad rows are skipped rather than counted | Stage 7 | Open |
+| VAL-3 | Archive CSV validates headers but not every row width | Stage 7 replay now rejects and counts malformed required values instead of manufacturing defaults | Stage 7 | **CLOSED in PR #15; verification pending** |
 | MIN-1 | Expected minutes = season minutes ÷ current GW | Replaced by tiered current-season histories with aggregate/prior fallback and explicit pStart/pAppear/p60/expMin/confidence outputs | Stage 4 | **CLOSED 2026-07-28** |
 | DEN-1 | Per-match denominators use GW number | Replaced by completed team fixtures and detailed player opportunities | Stage 4 | **CLOSED 2026-07-28** |
 | SCOR-1 | Linear approximations of stepped FPL rules | Replaced in PR #9 by deterministic expected-value distributions for saves and goals conceded plus threshold probability for defensive contributions | Stage 5 | **CLOSED and verified 2026-07-28** |
@@ -24,9 +24,10 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | SCOR-3 | Stage 5 Poisson and shrinkage constants are judgement-based | Rule implementation is explicit but not validated as an accuracy optimum | Stage 7 | Open |
 | SCOR-4 | Bonus is empirical rather than a full match-relative BPS simulation | Cannot model match-specific bonus rank or tie outcomes prospectively | Stage 8+ only with separate approval | Accepted-temporary |
 | SCOR-5 | Clean-sheet retention after a player leaves is simplified as full-match CS probability × p60 | Understates some early-substitution clean sheets | Stage 8 | Open |
-| LEAK-1 | Calibration fitted and reported on same sample | Published r=0.80 is method-flattered | Stage 7 | Open |
-| TRF-1 | Transfer UI does not validate combined plans | Potentially illegal or over-budget combinations implied | Stage 6 | Open |
-| BT-1 | Historical dataset is unpinned | Backtests not strictly reproducible | Stage 7 | Open |
+| LEAK-1 | Calibration fitted and reported on the same sample | Replaced in the Stage 7 diagnostic by chronological train/calibration/holdout folds; no fold uses its own holdout to fit correction | Stage 7 | **CLOSED in PR #15; verification pending** |
+| TRF-1 | Transfer UI did not validate combined plans | Stage 6 exact optimiser validates complete 15-player legality, budget and club quotas | Stage 6 | **CLOSED and verified 2026-07-28** |
+| BT-1 | Historical dataset was unpinned | Stage 7 uses the immutable vaastav final-2025/26 commit and computes SHA-256 from the exact downloaded bytes | Stage 7 | **CLOSED in PR #15; verification pending** |
+| BT-2 | Historical pre-deadline snapshots do not exist for Understat, odds, detailed minutes inputs or production fixture ratings | The Stage 7 archive replay is an honest scoring diagnostic, not full out-of-sample validation of every live production input | Prospective logging from 2026/27 | Open (accepted) |
 | ODDS-2 | No free historical odds | Odds/blend ablation must be prospective | Stage 7+ | Open |
 | UST-1 | Pre-season Understat uses previous closing six matches | Early-season form may be mislabelled | Stage 7 ablation | Open |
 | DC-1 | Defensive-contribution history starts in 2025/26 | No multi-season validation | Permanent | Accepted |
