@@ -42,7 +42,7 @@ const rulesVersion = /RULES_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 const manifest = { modelVersion, rulesVersion, sourceHash, commit, moduleOrder: ORDER };
 bundle = `/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: sourceHash.slice(0,16), commit })} */\n`
   + `const BUILD_INFO = ${JSON.stringify(manifest)};\n`
-  + `if (top !== self) top.location = self.location;\n`
+  + `if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;\n`
   + bundle;
 
 const sha256Csp = value => 'sha256-' + createHash('sha256').update(value, 'utf8').digest('base64');
