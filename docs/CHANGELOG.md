@@ -134,3 +134,9 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 ## [1.x] — 2026-07-26 (pre-refactor product evolution)
 ### Added
 - Initial working Teamsheet product and iterative feature set.
+
+
+## 2026-07-28 — Stage 8 uncertainty and squad simulation
+- Added deterministic player score percentiles and blank/return/haul probabilities.
+- Added legal squad auto-substitution and captain/vice fallback simulation.
+- Disabled detailed uncertainty output in pre-season rather than presenting false precision.

@@ -140,3 +140,7 @@ separate Stage 3.6 decision after design approval. Alternatives rejected: generi
 the approved construction model), and bundling CSP/AI/key work (stage-discipline violation).
 Consequences: XSS-1 is closed for API/provider/user rendering; five adversarial tests and a static
 sink inventory guard the boundary. No model formula, provider behaviour, dependency or layout changed.
+
+
+**D-18 · 2026-07-28 · Accepted · Deterministic seeded uncertainty and legal squad simulation (Stage 8)**
+Reason: expected points alone hide non-appearance risk, tail outcomes, auto-subs and captain fallback. Approach: a separate seeded Monte Carlo layer reconstructs five minutes states from pStart/pAppear/p60/expMin, samples approved scoring components, reports percentiles and explicit blank/return/haul thresholds, and simulates legal bench/captain mechanics. Deterministic projectXP, calibration and transfer objectives remain unchanged. Detailed pre-season simulation is disabled rather than manufactured. Consequences: equal inputs produce equal outputs; uncertainty remains conditional on the current model and requires prospective calibration before accuracy claims.

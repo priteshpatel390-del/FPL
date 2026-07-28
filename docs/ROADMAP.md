@@ -21,7 +21,7 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified baseline: **274/274 tests passed**, successful build, deterministic two-build comparison and build-identity checks.
 
 ## Current
-- **Stage 8 — Uncertainty and squad simulation** · implemented on draft PR #16; verification and owner review gate remain.
+- **Stage 8 — Uncertainty and squad simulation** · implemented and verified on draft PR #16; owner review and explicit merge approval remain.
   - Approved design: `docs/STAGE8-DESIGN.md`.
   - Deterministic seeded player simulations with P10/P25/median/P75/P90 and blank/return/haul probabilities.
   - Five-state minutes reconstruction preserving pStart/pAppear/p60 and expected minutes where feasible.
@@ -33,6 +33,6 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 9 — UI integration** · FPL-style squad home page, shirts, settings, health-strip placement and inline-style migration.
 
 ## Current blockers
-1. Stage 8 full verification, generated artefact commit and owner review before merge.
+1. Owner review and explicit merge approval for Stage 8 draft PR #16.
 2. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 3. Live-season prospective data requirements begin with GW1 on 21 August 2026.

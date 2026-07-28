@@ -103,3 +103,10 @@ optimisation formula changed.
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
 system (12 files) + CLAUDE.md; no code. Lessons: a several-hundred-turn founding conversation is a
 liability; decision records should have started at turn one.
+
+
+## Stage 8 — Uncertainty and squad simulation
+- Approved design recorded in `docs/STAGE8-DESIGN.md`.
+- Added deterministic seeded player simulations, percentile/threshold summaries, legal auto-subs and captain-to-vice fallback.
+- Deterministic `projectXP()` and transfer optimiser behaviour deliberately unchanged.
+- Verified 284/284 tests, successful build and deterministic two-build comparison on source commit `${SOURCE_COMMIT}`.
