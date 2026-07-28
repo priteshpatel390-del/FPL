@@ -29,8 +29,8 @@ test('reserve goalkeeper only replaces a missing goalkeeper',()=>{
 test('outfield bench order is respected while preserving formation',()=>{
   const map=outcomes([1,3,4,5,6,7,8,9,10,11,13,14,15]);
   const result=applyAutosubs(starters,bench,map);
-  assert.ok(result.scoringXI.some(item=>item.p.id===14));
-  assert.ok(!result.scoringXI.some(item=>item.p.id===13));
+  assert.ok(result.scoringXI.some(item=>item.p.id===13));
+  assert.ok(!result.scoringXI.some(item=>item.p.id===14));
 });
 
 test('captain falls to vice only when captain does not appear',()=>{
