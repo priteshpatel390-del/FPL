@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.0.0",
   "rulesVersion": "2025-26.1",
-  "sourceHash": "baac493bd9cc1d2469b751f81048364cf6bf1881b609946d60868afeb3183c92",
-  "commit": "e4e01e6c5397d6802863e7483b42aff0d6fea7ea",
+  "sourceHash": "d52245eb812c77c0cdd08ca9e0c744c55011f7deef00d4c068ec8678c5b3e046",
+  "commit": "unversioned",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -20,8 +20,6 @@
     "src/squad.mjs",
     "src/model/backtest.mjs",
     "src/main.mjs",
-    "src/ui/views.mjs",
-    "src/ui/markdown.mjs",
-    "src/ui/security-wiring.mjs"
+    "src/ui/views.mjs"
   ]
 }
