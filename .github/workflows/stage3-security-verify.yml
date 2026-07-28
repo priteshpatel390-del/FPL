@@ -19,6 +19,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Build
+        run: node build.mjs
+      - name: Focused security completion tests
+        run: node --test tests/security-completion.test.mjs
       - name: Full test suite
         run: ./run-tests.sh
       - name: Deterministic two-build comparison
@@ -36,6 +40,7 @@ jobs:
           cmp /tmp/teamsheet-build-a/manifest.json /tmp/teamsheet-build-b/manifest.json
           sha256sum /tmp/teamsheet-build-a/*
       - name: Upload verified build
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: stage3-security-build
