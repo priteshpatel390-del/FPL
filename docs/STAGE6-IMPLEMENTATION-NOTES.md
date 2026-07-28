@@ -1,17 +1,38 @@
 # Stage 6 implementation notes
 
-This branch implements the owner-approved Transfer Optimiser design. Verification is performed through the temporary branch/PR workflow because the execution environment cannot clone GitHub directly.
+Status: implemented and verified on draft PR #14; awaiting owner review and explicit merge approval.
 
-Current implementation scope:
+## Implemented scope
 - versioned transfer rules and model/rules version bump
 - pure transfer optimiser module
-- complete zero-to-three move search
-- squad legality, position quotas and club rules
-- selling-price, shared-bank, free-transfer and hit calculations
-- per-Gameweek best-XI horizon scoring
-- deterministic plan ordering
-- zero-transfer baseline and fail-closed evaluation limit
-- Stage 6 transfer-view integration
-- dedicated direct-module tests
+- exact zero-to-three move search with a mandatory roll baseline
+- complete squad legality, position quotas and inherited club-quota repair
+- exact selling prices where purchase prices are known and explicit estimated affordability otherwise
+- pooled bank, free-transfer, hit and next-Gameweek transfer calculations
+- per-Gameweek legal best-XI horizon scoring
+- unavailable-target exclusion and doubtful-player warnings
+- deterministic plan ordering and fail-closed evaluation limit
+- production safe pruning with position-feasibility, minimum-cost and partial club-impossibility checks
+- independent exhaustive reference search for reduced-pool equivalence tests
+- Stage 6 transfer-view integration and dedicated direct-module tests
 
-This record must be replaced with final test counts, exact verified commit identity and remaining limitations after the workflow passes. The temporary verification workflow must be removed before merge.
+## Verification
+Verified source commit: `5181299c8773c118220bdd8c18e80eb053eaf592`.
+
+- Full `./run-tests.sh`: **254/254 passed**.
+- Deterministic two-build comparison: passed for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`.
+- Production versus independent exhaustive reference: passed on reduced search pools.
+- Null or missing purchase-price regression: passed; current price is used and the result is labelled estimated.
+- Search-incomplete behaviour: passed; only the zero-transfer baseline is returned and no partial optimum is claimed.
+
+## Deliberate exclusions
+No expected-minutes, scoring, calibration, fixture, captaincy, ownership, provider, Wildcard, Free Hit, uncertainty, future-transfer-path or Stage 9 UI formula changed. No prediction-accuracy improvement is claimed.
+
+## Remaining limitations
+- Public squad imports may not expose purchase prices, so affordability can be estimated rather than verified.
+- The planning horizon holds the resulting squad fixed and does not model later transfers or chips.
+- Projections are point estimates; uncertainty and auto-sub simulation remain Stage 8 work.
+- The 0.5-point roll value is an explicit judgement parameter, not a validated predictive constant.
+- Exact search is bounded by a deterministic evaluation ceiling and fails closed if that ceiling is reached.
+
+The temporary verification workflow must be removed before merge. Stage 7 must not begin until Pritesh explicitly approves and merges Stage 6.
