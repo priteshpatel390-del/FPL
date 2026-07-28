@@ -1,4 +1,18 @@
 // Views import broadly; the bundler flattens everything into one scope.
+const elNode = el;
+const flagNodes = p => {
+  const nodes = [];
+  if(['i','u','s','n'].includes(p.status)) nodes.push(elNode('span',{class:'flag out'},p.status==='s'?'SUSP':'OUT'));
+  else if(p.status === 'd') nodes.push(elNode('span',{class:'flag doubt'},`${p.chance_of_playing_next_round ?? '?'}%`));
+  if(p.cost_change_event > 0) nodes.push(elNode('span',{class:'flag rise'},'▲'));
+  if(p.cost_change_event < 0) nodes.push(elNode('span',{class:'flag fall'},'▼'));
+  const mo = priceMomentum(p);
+  if(mo) nodes.push(elNode('span',{class:`flag ${mo === 'rising' ? 'rise' : 'fall'}`},mo));
+  return nodes;
+};
+const cell = (text, cls = '') => elNode('td', cls ? {class:cls} : {}, text);
+const head = (text, cls = '') => elNode('th', cls ? {class:cls} : {}, text);
+const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+kind : ''}`},children);
 /* ---------------------------------------------------------------------
    VIEW — FIXTURE TICKER
    --------------------------------------------------------------------- */
@@ -13,24 +27,25 @@ function renderTicker(){
   else if(sort === 'hard') teams.sort((a,b) => a.s - b.s);
   else teams.sort((a,b) => a.t.name.localeCompare(b.t.name));
 
-  let html = '<table class="ticker"><thead><tr><th class="tm">Team</th>';
-  for(let gw = from; gw < from+span; gw++) html += `<th>GW${gw}</th>`;
-  html += '</tr></thead><tbody>';
-
+  const header = elNode('tr',{},head('Team','tm'));
+  for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
+  const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    html += `<tr><td class="team">${t.short_name}<span class="ease">${s.toFixed(2)}</span></td>`;
+    const row = elNode('tr',{},elNode('td',{class:'team'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
     teamFixtures(t.id, from, span).forEach(games => {
-      if(!games.length){ html += `<td><div class="cell blank">—<small>BLANK</small></div></td>`; return; }
-      const dbl = games.length > 1 ? ' dbl' : '';
+      if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
       const diffs = games.map(g => lens === 'official' ? g.officialDiff
         : multToDiff(lens === 'defence' ? g.ctx.def : g.ctx.atk));
-      const inner = games.map((g,i) =>
-        `${g.opp.short_name}<small>${g.home?'H':'A'} · ${diffs[i]}</small>`).join('<hr style="border:0;height:1px;background:rgba(255,255,255,.45);width:80%;margin:2px 0">');
-      html += `<td><div class="cell d${diffs[0]}${dbl}">${inner}</div></td>`;
+      const contents = [];
+      games.forEach((g,i) => {
+        if(i) contents.push(elNode('hr',{style:{border:'0',height:'1px',background:'rgba(255,255,255,.45)',width:'80%',margin:'2px 0'}}));
+        contents.push(g.opp.short_name,elNode('small',{},`${g.home?'H':'A'} · ${diffs[i]}`));
+      });
+      row.appendChild(elNode('td',{},elNode('div',{class:`cell d${diffs[0]}${games.length > 1 ? ' dbl' : ''}`},contents)));
     });
-    html += '</tr>';
+    body.appendChild(row);
   });
-  $('ticker').innerHTML = html + '</tbody></table>';
+  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('thead',{},header),body));
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
@@ -38,9 +53,9 @@ function renderTicker(){
   });
   const up = swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
   const down = swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
-  let sh = '';
-  if(up.length) sh += `<div class="note good"><b>Turns favourable from GW${from+3}:</b> ${up.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.</div>`;
-  if(down.length) sh += `<div class="note bad"><b>Turns hard from GW${from+3}:</b> ${down.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.</div>`;
+  const swingNodes = [];
+  if(up.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${up.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
+  if(down.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${down.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
 
   const perGW = {};
   S.fixtures.filter(f => f.event >= from && f.event < from+span).forEach(f => {
@@ -54,8 +69,8 @@ function renderTicker(){
     if(teamsIn < 20) flags.push(`GW${gw}: ${20-teamsIn} teams blank`);
     if(dbls.length) flags.push(`GW${gw} double: ${dbls.join(', ')}`);
   });
-  if(flags.length) sh += `<div class="note"><b>Chip windows:</b> ${flags.join(' · ')}</div>`;
-  $('swings').innerHTML = sh;
+  if(flags.length) swingNodes.push(noteNode('',elNode('b',{},'Chip windows:'),` ${flags.join(' · ')}`));
+  setChildren($('swings'),swingNodes);
 }
 
 /* ---------------------------------------------------------------------
@@ -70,9 +85,9 @@ function renderPlayers(){
   const hideFlag = $('plFit').checked, onlyMine = $('plOwn').checked;
   const mineIds = new Set(mySquad().map(s => s.p.id));
 
-  $('rankerHint').innerHTML = S.seasonLive
+  setChildren($('rankerHint'),S.seasonLive
     ? 'Expected points per gameweek, modelled separately for each position — clean sheets and saves for keepers and defenders, expected goal involvement for attackers, plus bonus and defensive actions. Tap a row for the breakdown.'
-    : '<b>Pre-season.</b> No match data exists yet, so projections start from the price FPL set (a decent prior for expected output) adjusted by fixture and ownership. Real form, xGI and bonus switch on after GW1. Tap a row for the breakdown.';
+    : [elNode('b',{},'Pre-season.'),' No match data exists yet, so projections start from the price FPL set (a decent prior for expected output) adjusted by fixture and ownership. Real form, xGI and bonus switch on after GW1. Tap a row for the breakdown.']);
 
   let pool = S.boot.elements.filter(p =>
     (!pos || p.element_type === pos) &&
@@ -84,22 +99,17 @@ function renderPlayers(){
     .sort((a,b) => b.x.total - a.x.total).slice(0, 45);
   const maxPer = ranked.length ? ranked[0].x.perGW : 1;
 
-  let h = `<table class="data"><thead><tr><th>Player</th><th class="num">£</th><th class="num">Own%</th>
-    <th class="num">Form</th><th class="num">xP/GW</th><th class="num">xP ${span}GW</th><th class="num">per £m</th></tr></thead><tbody>`;
+  const playerBody = elNode('tbody');
   ranked.forEach(({p,x}) => {
     const t = S.teams[p.team];
-    h += `<tr class="clickable" data-pid="${p.id}">
-      <td><span class="pname">${p.web_name}${flagsFor(p)}</span>
-          <span class="pmeta"><span class="pos">${S.posName[p.element_type]||'?'}</span> ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}</span></td>
-      <td class="num">${(p.now_cost/10).toFixed(1)}</td>
-      <td class="num">${p.selected_by_percent}</td>
-      <td class="num">${fmt1(num(p.form))}</td>
-      <td class="num"><span class="xp ${x.perGW >= maxPer*0.82 ? 'hot':''}">${fmt1(x.perGW)}</span></td>
-      <td class="num">${fmt1(x.total)}</td>
-      <td class="num">${fmt1(x.total/(p.now_cost/10))}</td>
-    </tr>`;
+    playerBody.appendChild(elNode('tr',{class:'clickable',dataset:{pid:p.id}},
+      elNode('td',{},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
+        elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`)),
+      cell((p.now_cost/10).toFixed(1),'num'),cell(p.selected_by_percent,'num'),cell(fmt1(num(p.form)),'num'),
+      elNode('td',{class:'num'},elNode('span',{class:`xp ${x.perGW >= maxPer*0.82 ? 'hot':''}`},fmt1(x.perGW))),
+      cell(fmt1(x.total),'num'),cell(fmt1(x.total/(p.now_cost/10)),'num')));
   });
-  $('playerTable').innerHTML = h + '</tbody></table>';
+  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
 
   $('playerTable').querySelectorAll('tr.clickable').forEach(tr => tr.addEventListener('click', () => {
     const pid = +tr.dataset.pid;
@@ -107,123 +117,87 @@ function renderPlayers(){
     if(next && next.classList.contains('bd')){ next.remove(); openRow = null; return; }
     document.querySelectorAll('tr.bd').forEach(r => r.remove());
     const p = S.byId[pid], x = xpOf(p, from, span);
-    const row = document.createElement('tr');
-    row.className = 'bd';
-    row.innerHTML = `<td colspan="7" style="padding:0"><div class="drawer">${breakdownHTML(p, x, span)}</div></td>`;
+    const row = elNode('tr',{class:'bd'},elNode('td',{colspan:'7',style:{padding:'0'}},elNode('div',{class:'drawer'},breakdownNode(p,x,span))));
     tr.after(row); openRow = pid;
   }));
 }
 
-function breakdownHTML(p, x, span){
+function breakdownNode(p, x, span){
   const entries = Object.entries(x.parts).filter(([,v]) => Math.abs(v) > 0.01)
     .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]));
   const max = Math.max(...entries.map(([,v]) => Math.abs(v)), 0.01);
-  let h = `<b>${p.web_name}</b> — ${fmt1(x.total)} projected points over ${span} gameweek${span>1?'s':''} (${x.games} fixture${x.games===1?'':'s'})`;
-  if(p.news) h += `<div style="margin-top:6px;color:var(--claret)">${p.news} <span class="flag dark">${newsAge(p)}</span></div>`;
-  h += '<div class="bars">';
+  const nodes = [elNode('b',{},p.web_name),` — ${fmt1(x.total)} projected points over ${span} gameweek${span>1?'s':''} (${x.games} fixture${x.games===1?'':'s'})`];
+  if(p.news) nodes.push(elNode('div',{style:{marginTop:'6px',color:'var(--claret)'}},p.news,' ',elNode('span',{class:'flag dark'},newsAge(p))));
+  const bars = elNode('div',{class:'bars'});
   entries.forEach(([k,v]) => {
-    h += `<div class="bar"><span>${k}</span><span class="track"><span class="fill ${v<0?'neg':''}" style="width:${Math.abs(v)/max*100}%"></span></span><span class="v">${v>0?'+':''}${fmt1(v)}</span></div>`;
+    bars.appendChild(elNode('div',{class:'bar'},elNode('span',{},k),elNode('span',{class:'track'},elNode('span',{class:`fill ${v<0?'neg':''}`,style:{width:`${Math.abs(v)/max*100}%`}})),elNode('span',{class:'v'},`${v>0?'+':''}${fmt1(v)}`)));
   });
-  h += '</div>';
+  nodes.push(bars);
   const runs = teamFixtures(p.team, clamp(parseInt($('fxFrom').value)||S.nextGW,1,38), span);
   const fx = runs.map((g,i) => g.length ? g.map(o => `${o.opp.short_name}(${o.home?'H':'A'})`).join('+') : 'blank').join(' · ');
-  h += `<div style="margin-top:8px;color:var(--ink-soft)"><b>Fixtures:</b> ${fx}</div>`;
+  nodes.push(elNode('div',{style:{marginTop:'8px',color:'var(--ink-soft)'}},elNode('b',{},'Fixtures:'),` ${fx}`));
   const mo = priceMomentum(p);
-  if(mo) h += `<div style="margin-top:4px;color:var(--ink-soft)"><b>Price:</b> heavy net transfers ${mo==='rising'?'in — a rise looks likely':'out — a fall looks likely'}.</div>`;
-  return h;
+  if(mo) nodes.push(elNode('div',{style:{marginTop:'4px',color:'var(--ink-soft)'}},elNode('b',{},'Price:'),` heavy net transfers ${mo==='rising'?'in — a rise looks likely':'out — a fall looks likely'}.`));
+  return nodes;
 }
 
 /* ---------------------------------------------------------------------
    VIEW — SQUAD
    --------------------------------------------------------------------- */
 function renderSquad(){
-  const el = $('squadOut');
-  const squad = mySquad();
+  const out = $('squadOut'), squad = mySquad();
   if(!squad.length){
-    el.innerHTML = `<div class="empty"><strong>No squad yet</strong>
-      ${S.entry ? `Team found: <b>${S.entry.name}</b>. FPL only publishes picks once a gameweek is under way — until then, build your 15 by hand below and everything still works.`
-                : 'Add your team ID above, or build your 15 by hand below.'}</div>`;
+    setChildren(out,elNode('div',{class:'empty'},elNode('strong',{},'No squad yet'),
+      S.entry ? ['Team found: ',elNode('b',{},S.entry.name),'. FPL only publishes picks once a gameweek is under way — until then, build your 15 by hand below and everything still works.']
+        : 'Add your team ID above, or build your 15 by hand below.'));
     return;
   }
-  const gw = S.nextGW;
-  const xi = bestXI(squad, gw);
-  const bank = num($('bankIn').value)*10;
+  const gw=S.nextGW, xi=bestXI(squad,gw), nodes=[];
+  const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v));
+  nodes.push(elNode('div',{class:'kpis'},kpi(`Projected GW${gw}`,fmt1(xi.tot)),kpi('Shape',xi.shape),
+    kpi('Squad value',`£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m`),kpi('Free transfers',num($('ftCount').value))));
+  if(S.entry) nodes.push(elNode('p',{class:'status',style:{marginBottom:'10px'}},`${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}`));
 
-  const problems = [];
-  squad.forEach(({p}) => {
-    if(['i','u','s','n'].includes(p.status)) problems.push(`<b>${p.web_name}</b> unavailable${p.news?` — ${p.news} <span class="flag dark">${newsAge(p)}</span>`:''}`);
-    else if(p.status === 'd') problems.push(`<b>${p.web_name}</b> doubtful ${p.chance_of_playing_next_round ?? '?'}%${p.news?` — ${p.news} <span class="flag dark">${newsAge(p)}</span>`:''}`);
-    else if(priceMomentum(p) === 'falling') problems.push(`<b>${p.web_name}</b> is being sold heavily — a price fall looks likely`);
+  const problems=[];
+  squad.forEach(({p})=>{
+    let tail=null;
+    if(['i','u','s','n'].includes(p.status)) tail=[' unavailable'];
+    else if(p.status==='d') tail=[` doubtful ${p.chance_of_playing_next_round ?? '?'}%`];
+    else if(priceMomentum(p)==='falling') tail=[' is being sold heavily — a price fall looks likely'];
+    if(tail){ if(p.news) tail.push(` — ${p.news} `,elNode('span',{class:'flag dark'},newsAge(p))); problems.push([elNode('b',{},p.web_name),tail]); }
   });
-  const blanks = squad.filter(({p}) => (teamFixtures(p.team, gw, 1)[0]||[]).length === 0);
-  if(blanks.length) problems.push(`<b>${blanks.map(b=>b.p.web_name).join(', ')}</b> ${blanks.length>1?'have':'has'} no fixture in GW${gw}`);
+  const blanks=squad.filter(({p})=>(teamFixtures(p.team,gw,1)[0]||[]).length===0);
+  if(blanks.length) problems.push([elNode('b',{},blanks.map(b=>b.p.web_name).join(', ')),` ${blanks.length>1?'have':'has'} no fixture in GW${gw}`]);
+  if(problems.length){ const n=noteNode('bad',elNode('b',{},'Needs attention')); problems.forEach(p=>n.append(elNode('br'),...p)); nodes.push(n); }
+  else nodes.push(noteNode('good','No injuries, suspensions, blanks or price falls in your 15. Nothing forces a transfer this week.'));
 
-  let h = '';
-  h += `<div class="kpis">
-    <div class="kpi"><div class="k">Projected GW${gw}</div><div class="v">${fmt1(xi.tot)}</div></div>
-    <div class="kpi"><div class="k">Shape</div><div class="v">${xi.shape}</div></div>
-    <div class="kpi"><div class="k">Squad value</div><div class="v">£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m</div></div>
-    <div class="kpi"><div class="k">Free transfers</div><div class="v">${num($('ftCount').value)}</div></div>
-  </div>`;
-  if(S.entry) h += `<p class="status" style="margin-bottom:10px">${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}</p>`;
-  h += problems.length ? `<div class="note bad"><b>Needs attention</b><br>${problems.join('<br>')}</div>`
-                       : `<div class="note good">No injuries, suspensions, blanks or price falls in your 15. Nothing forces a transfer this week.</div>`;
-
-  // captain
-  const capRank = xi.xi.map(s => ({s, x:xpOf(s.p, gw, 1).total, own:num(s.p.selected_by_percent)}))
-    .sort((a,b) => b.x - a.x);
+  const capRank=xi.xi.map(s=>({s,x:xpOf(s.p,gw,1).total,own:num(s.p.selected_by_percent)})).sort((a,b)=>b.x-a.x);
   if(capRank.length){
-    const c1 = capRank[0], c2 = capRank[1];
-    h += `<h3 style="margin:16px 0 6px">Captain</h3><div class="capgrid">`;
-    capRank.slice(0,4).forEach((c,i) => {
-      const games = teamFixtures(c.s.p.team, gw, 1)[0] || [];
-      const why = games.length
-        ? games.map(g => `${g.home?'vs':'away to'} ${g.opp.short_name}`).join(' + ') + ` · ${fmt1(c.x)} xP · ${c.own}% owned`
-        : 'no fixture';
-      h += `<div class="capcard ${i===0?'top':''}"><div class="rank">${i+1}</div>
-        <div class="capbody"><span class="pname">${c.s.p.web_name}${flagsFor(c.s.p)}</span><div class="why">${why}</div></div>
-        <span class="xp ${i===0?'hot':''}">${fmt1(c.x*2)}</span></div>`;
+    const c1=capRank[0], c2=capRank[1], grid=elNode('div',{class:'capgrid'});
+    nodes.push(elNode('h3',{style:{margin:'16px 0 6px'}},'Captain'),grid);
+    capRank.slice(0,4).forEach((c,i)=>{
+      const games=teamFixtures(c.s.p.team,gw,1)[0]||[];
+      const why=games.length?games.map(g=>`${g.home?'vs':'away to'} ${g.opp.short_name}`).join(' + ')+` · ${fmt1(c.x)} xP · ${c.own}% owned`:'no fixture';
+      grid.appendChild(elNode('div',{class:`capcard ${i===0?'top':''}`},elNode('div',{class:'rank'},i+1),
+        elNode('div',{class:'capbody'},elNode('span',{class:'pname'},c.s.p.web_name,flagNodes(c.s.p)),elNode('div',{class:'why'},why)),
+        elNode('span',{class:`xp ${i===0?'hot':''}`},fmt1(c.x*2))));
     });
-    h += '</div>';
-    if(c2 && (c1.x - c2.x) < 0.6){
-      const safer = c1.own >= c2.own ? c1 : c2;
-      h += `<div class="note">${c1.s.p.web_name} and ${c2.s.p.web_name} are within half a point — effectively a coin toss. ${safer.s.p.web_name} is the higher-owned pick at ${safer.own}%, so it protects your rank; the other is the rank-climbing play.</div>`;
-    }
+    if(c2&&(c1.x-c2.x)<.6){ const safer=c1.own>=c2.own?c1:c2; nodes.push(noteNode('',`${c1.s.p.web_name} and ${c2.s.p.web_name} are within half a point — effectively a coin toss. ${safer.s.p.web_name} is the higher-owned pick at ${safer.own}%, so it protects your rank; the other is the rank-climbing play.`)); }
   }
-
-  // best XI
-  h += `<h3 style="margin:18px 0 8px">Best XI by projection</h3>`;
-  [1,2,3,4].forEach(pos => {
-    const line = xi.xi.filter(s => s.p.element_type === pos);
-    if(!line.length) return;
-    h += '<div class="pitchrow">' + line.map(s => {
-      const bad = availability(s.p) < 1;
-      const isCap = capRank[0] && capRank[0].s.p.id === s.p.id;
-      return `<div class="pcard ${isCap?'cap':''} ${bad?'warn':''}"><b>${s.p.web_name}${isCap?' (C)':''}</b>
-        <span class="x">${fmt1(xpOf(s.p,gw,1).total)}</span></div>`;
-    }).join('') + '</div>';
-  });
-  h += `<div class="benchband"><div class="status" style="margin-bottom:6px">Bench order</div><div class="pitchrow">` +
-    xi.bench.map((s,i) => `<div class="pcard"><b>${i+1}. ${s.p.web_name}</b><span class="x">${fmt1(xpOf(s.p,gw,1).total)}</span></div>`).join('') +
-    `</div></div>`;
-
-  // full table
-  h += `<h3 style="margin:18px 0 6px">All 15 over 6 gameweeks</h3><div class="scroll"><table class="data"><thead><tr>
-    <th>Player</th><th class="num">£</th><th class="num">Sell</th><th class="num">Form</th><th class="num">xP GW${gw}</th><th class="num">xP 6GW</th></tr></thead><tbody>`;
-  squad.slice().sort((a,b) => a.p.element_type - b.p.element_type || xpOf(b.p,gw,6).total - xpOf(a.p,gw,6).total)
-    .forEach(s => {
-      h += `<tr><td><span class="pname">${s.p.web_name}${flagsFor(s.p)}</span>
-        <span class="pmeta"><span class="pos">${S.posName[s.p.element_type]||'?'}</span> ${S.teams[s.p.team]?.short_name||''}</span></td>
-        <td class="num">${(s.p.now_cost/10).toFixed(1)}</td>
-        <td class="num">${(sellPrice(s)/10).toFixed(1)}</td>
-        <td class="num">${fmt1(num(s.p.form))}</td>
-        <td class="num">${fmt1(xpOf(s.p,gw,1).total)}</td>
-        <td class="num"><span class="xp">${fmt1(xpOf(s.p,gw,6).total)}</span></td></tr>`;
-    });
-  h += '</tbody></table></div>';
-  if(!$('useManual').checked && S.picks)
-    h += `<div class="note plain">Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact.</div>`;
-  el.innerHTML = h;
+  nodes.push(elNode('h3',{style:{margin:'18px 0 8px'}},'Best XI by projection'));
+  [1,2,3,4].forEach(pos=>{ const line=xi.xi.filter(s=>s.p.element_type===pos); if(!line.length)return;
+    nodes.push(elNode('div',{class:'pitchrow'},line.map(s=>{ const bad=availability(s.p)<1,isCap=capRank[0]&&capRank[0].s.p.id===s.p.id;
+      return elNode('div',{class:`pcard ${isCap?'cap':''} ${bad?'warn':''}`},elNode('b',{},`${s.p.web_name}${isCap?' (C)':''}`),elNode('span',{class:'x'},fmt1(xpOf(s.p,gw,1).total))); }))); });
+  nodes.push(elNode('div',{class:'benchband'},elNode('div',{class:'status',style:{marginBottom:'6px'}},'Bench order'),
+    elNode('div',{class:'pitchrow'},xi.bench.map((s,i)=>elNode('div',{class:'pcard'},elNode('b',{},`${i+1}. ${s.p.web_name}`),elNode('span',{class:'x'},fmt1(xpOf(s.p,gw,1).total)))))));
+  nodes.push(elNode('h3',{style:{margin:'18px 0 6px'}},'All 15 over 6 gameweeks'));
+  const tbody=elNode('tbody');
+  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{},
+    elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
+    cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total))))));
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
+  if(!$('useManual').checked&&S.picks) nodes.push(noteNode('plain',"Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact."));
+  setChildren(out,nodes);
 }
 
 /* ---------------------------------------------------------------------
@@ -233,7 +207,7 @@ function renderTransfers(){
   const el = $('transferOut');
   const squad = mySquad();
   if(!squad.length){
-    el.innerHTML = `<div class="empty"><strong>No squad loaded</strong>Add your 15 on the Squad tab — by hand is fine — and the planner will cost every swap.</div>`;
+    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},'No squad loaded'),'Add your 15 on the Squad tab — by hand is fine — and the planner will cost every swap.'));
     return;
   }
   const span = +$('trHorizon').value, topN = +$('trTop').value;
@@ -261,36 +235,25 @@ function renderTransfers(){
   moves.sort((a,b) => b.gain - a.gain);
 
   if(!moves.length){
-    el.innerHTML = `<div class="note good"><b>No upgrade found.</b> Nothing available within budget projects better than what you already own over the next ${span} gameweek${span>1?'s':''}. Roll the transfer.</div>`;
+    setChildren(el,noteNode('good',elNode('b',{},'No upgrade found.'),` Nothing available within budget projects better than what you already own over the next ${span} gameweek${span>1?'s':''}. Roll the transfer.`));
     return;
   }
-  const best = moves[0];
-  let h = `<div class="note ${best.gain > 4 ? 'good' : 'plain'}"><b>Top move:</b> ${best.out.p.web_name} → ${best.inP.web_name},
-    +${fmt1(best.gain)} projected points over ${span} GW${span>1?'s':''}.
-    ${ft >= 1 ? `You have ${ft} free transfer${ft>1?'s':''}, so this costs nothing.`
-              : best.gain > 4 ? 'Even after a −4 this clears the bar.'
-                              : `After a −4 it nets ${fmt1(best.gain-4)} — not worth it.`}</div>`;
-  if(ft >= 2) h += `<div class="note plain">With ${ft} banked, the top ${Math.min(ft,5)} moves below can all be made free — but check they aren't two players from the same fixture swing.</div>`;
-
-  h += `<div class="scroll"><table class="data"><thead><tr><th>Out</th><th>In</th><th class="num">Cost £m</th>
-    <th class="num">Gain</th><th class="num">After −4</th><th>Verdict</th></tr></thead><tbody>`;
-  moves.slice(0, topN).forEach(m => {
-    const net = m.gain - 4;
-    const verdict = m.gain > 6 ? '<span class="flag rise">strong</span>'
-                  : m.gain > 4 ? '<span class="flag rise">worth a hit</span>'
-                  : m.gain > 1.5 ? '<span class="flag info">free only</span>'
-                  : '<span class="flag dark">marginal</span>';
-    h += `<tr>
-      <td><span class="pname">${m.out.p.web_name}</span><span class="pmeta">${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP</span></td>
-      <td><span class="pname">${m.inP.web_name}${flagsFor(m.inP)}</span><span class="pmeta">${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP</span></td>
-      <td class="num">${m.cost>0?'+':''}${fmt1(m.cost)}</td>
-      <td class="num"><span class="xp ${m.gain>4?'hot':''}">+${fmt1(m.gain)}</span></td>
-      <td class="num" style="color:${net>0?'var(--pitch)':'var(--claret)'}">${net>0?'+':''}${fmt1(net)}</td>
-      <td>${verdict}</td></tr>`;
+  const best=moves[0], nodes=[];
+  const freeText=ft>=1?`You have ${ft} free transfer${ft>1?'s':''}, so this costs nothing.`:best.gain>4?'Even after a −4 this clears the bar.':`After a −4 it nets ${fmt1(best.gain-4)} — not worth it.`;
+  nodes.push(noteNode(best.gain>4?'good':'plain',elNode('b',{},'Top move:'),` ${best.out.p.web_name} → ${best.inP.web_name}, +${fmt1(best.gain)} projected points over ${span} GW${span>1?'s':''}. ${freeText}`));
+  if(ft>=2) nodes.push(noteNode('plain',`With ${ft} banked, the top ${Math.min(ft,5)} moves below can all be made free — but check they aren't two players from the same fixture swing.`));
+  const tbody=elNode('tbody');
+  moves.slice(0,topN).forEach(m=>{
+    const net=m.gain-4, verdict=m.gain>6?['rise','strong']:m.gain>4?['rise','worth a hit']:m.gain>1.5?['info','free only']:['dark','marginal'];
+    tbody.appendChild(elNode('tr',{},
+      elNode('td',{},elNode('span',{class:'pname'},m.out.p.web_name),elNode('span',{class:'pmeta'},`${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP`)),
+      elNode('td',{},elNode('span',{class:'pname'},m.inP.web_name,flagNodes(m.inP)),elNode('span',{class:'pmeta'},`${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP`)),
+      cell(`${m.cost>0?'+':''}${fmt1(m.cost)}`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${m.gain>4?'hot':''}`},`+${fmt1(m.gain)}`)),
+      elNode('td',{class:'num',style:{color:net>0?'var(--pitch)':'var(--claret)'}},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
   });
-  h += `</tbody></table></div>
-    <div class="note plain">A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.</div>`;
-  el.innerHTML = h;
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Out'),head('In'),head('Cost £m','num'),head('Gain','num'),head('After −4','num'),head('Verdict'))),tbody)));
+  nodes.push(noteNode('plain','A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.'));
+  setChildren(el,nodes);
 }
 
 /* ---------------------------------------------------------------------
@@ -304,10 +267,12 @@ S.leagues = [];
 async function saveLeagues(){ await sset('fpl:leagues', S.leagues); }
 function renderLeagueChips(){
   const el = $('leagueChips');
-  if(!S.leagues.length){ el.innerHTML = ''; return; }
-  el.innerHTML = S.leagues.map((l,i) =>
-    `<button class="chip" data-lg="${i}">${l.name || l.id}</button>
-     <button class="chip" data-lgrm="${i}" aria-label="Remove ${l.name || l.id}" style="padding:6px 9px;color:var(--claret)">×</button>`).join('');
+  setChildren(el, S.leagues.flatMap((l,i) => {
+    const label = l.name || l.id;
+    return [elNode('button', {class:'chip', dataset:{lg:i}}, label),
+      elNode('button', {class:'chip', dataset:{lgrm:i}, 'aria-label':`Remove ${label}`,
+        style:{padding:'6px 9px', color:'var(--claret)'}}, '×')];
+  }));
   el.querySelectorAll('[data-lg]').forEach(b => b.addEventListener('click', () => {
     const l = S.leagues[+b.dataset.lg];
     $('leagueId').value = l.id; $('leagueName').value = l.name || '';
@@ -327,22 +292,22 @@ async function rememberLeague(id, name){
 
 async function compareLeague(){
   const el = $('leagueOut'), id = $('leagueId').value.replace(/\D/g,'');
-  if(!id){ el.innerHTML = `<div class="note bad">Add a league ID first — it's the number in your league's URL.</div>`; return; }
+  if(!id){ setChildren(el,noteNode('bad',"Add a league ID first — it's the number in your league's URL.")); return; }
   if(!S.seasonLive || !S.currentGW){
-    el.innerHTML = `<div class="empty"><strong>Rival squads aren't published yet</strong>FPL only exposes other managers' picks once a gameweek has finished. This comes alive after GW1.</div>`;
+    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},"Rival squads aren't published yet"),"FPL only exposes other managers' picks once a gameweek has finished. This comes alive after GW1."));
     return;
   }
-  el.innerHTML = `<p class="status"><span class="spinner"></span>Reading the league…</p>`;
+  setChildren(el,elNode('p',{class:'status'},elNode('span',{class:'spinner'}),'Reading the league…'));
   await saveCfg();
   try{
     const stV = validateStandings(await api('/leagues-classic/'+id+'/standings/', {optional:true}));
     recordIssues('fpl', '/leagues-classic/standings/', stV.issues);
     const st = stV.value;
-    if(!st || !st.standings){ el.innerHTML = `<div class="note bad">League ${id} not found, or it's private.</div>`; return; }
+    if(!st || !st.standings){ setChildren(el,noteNode('bad',`League ${id} not found, or it's private.`)); return; }
     await rememberLeague(id, $('leagueName').value.trim() || st.league?.name || '');
     const n = +$('lgN').value;
     const rivals = st.standings.results.slice(0, n).filter(r => String(r.entry) !== String(S.teamId));
-    el.innerHTML = `<p class="status"><span class="spinner"></span>Reading ${rivals.length} rival squads…</p>`;
+    setChildren(el,elNode('p',{class:'status'},elNode('span',{class:'spinner'}),`Reading ${rivals.length} rival squads…`));
     const rawPicks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
     // D-14: each rival squad is validated individually; issues are collapsed so
     // 20 bad responses cannot flood S.dataIssues with near-identical entries.
@@ -364,7 +329,7 @@ async function compareLeague(){
         if(x.is_captain) cap[x.element] = (cap[x.element]||0) + 1;
       });
     });
-    if(!counted){ el.innerHTML = `<div class="note bad">Could not read any rival squads — the relays may be rate limiting. Try a smaller number of rivals.</div>`; return; }
+    if(!counted){ setChildren(el,noteNode('bad','Could not read any rival squads — the relays may be rate limiting. Try a smaller number of rivals.')); return; }
 
     const mine = new Set(mySquad().map(s => s.p.id));
     const gw = S.nextGW;
@@ -378,35 +343,19 @@ async function compareLeague(){
     const diffs   = rows.filter(r =>  r.mine && r.own <= 25).sort((a,b) => b.xp - a.xp).slice(0,10);
     const myOnly  = [...mine].filter(x => !own[x]).map(x => S.byId[x]).filter(Boolean);
 
-    let h = `<div class="kpis">
-      <div class="kpi"><div class="k">Rivals read</div><div class="v">${counted}</div></div>
-      <div class="kpi"><div class="k">My rank</div><div class="v">${(st.standings.results.find(r=>String(r.entry)===String(S.teamId))||{}).rank ?? '—'}</div></div>
-      <div class="kpi"><div class="k">Unique to me</div><div class="v">${myOnly.length}</div></div>
-    </div>`;
-    h += `<p class="status" style="margin-bottom:12px">${st.league.name} · effective ownership = owned % + captained %.</p>`;
-
-    h += `<h3>Biggest threats you don't own</h3><div class="scroll"><table class="data"><thead><tr>
-      <th>Player</th><th class="num">Owned</th><th class="num">Capt</th><th class="num">EO</th><th class="num">xP 6GW</th></tr></thead><tbody>`;
-    threats.forEach(r => h += `<tr><td><span class="pname">${r.p.web_name}${flagsFor(r.p)}</span>
-      <span class="pmeta"><span class="pos">${S.posName[r.p.element_type]||''}</span> ${S.teams[r.p.team]?.short_name||''} · £${(r.p.now_cost/10).toFixed(1)}m</span></td>
-      <td class="num">${r.own.toFixed(0)}%</td><td class="num">${r.cap.toFixed(0)}%</td>
-      <td class="num"><span class="xp ${r.eo>80?'hot':''}">${r.eo.toFixed(0)}%</span></td>
-      <td class="num">${fmt1(r.xp)}</td></tr>`);
-    h += `</tbody></table></div>`;
-    if(!threats.length) h += `<div class="note good">Nothing widely owned that you're missing — you're covered on the template.</div>`;
-
-    h += `<h3 style="margin-top:18px">Your differentials</h3>`;
-    if(diffs.length){
-      h += `<div class="scroll"><table class="data"><thead><tr><th>Player</th><th class="num">Rival own</th><th class="num">xP 6GW</th></tr></thead><tbody>`;
-      diffs.forEach(r => h += `<tr><td><span class="pname">${r.p.web_name}</span>
-        <span class="pmeta">${S.teams[r.p.team]?.short_name||''}</span></td>
-        <td class="num">${r.own.toFixed(0)}%</td><td class="num">${fmt1(r.xp)}</td></tr>`);
-      h += `</tbody></table></div>`;
-    }
-    if(myOnly.length) h += `<div class="note"><b>Owned by nobody else in the league:</b> ${myOnly.map(p=>p.web_name).join(', ')}. These are where you win or lose the league.</div>`;
-    el.innerHTML = h;
+    const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v)), nodes=[];
+    nodes.push(elNode('div',{class:'kpis'},kpi('Rivals read',counted),kpi('My rank',(st.standings.results.find(r=>String(r.entry)===String(S.teamId))||{}).rank??'—'),kpi('Unique to me',myOnly.length)),
+      elNode('p',{class:'status',style:{marginBottom:'12px'}},`${st.league.name} · effective ownership = owned % + captained %.`),elNode('h3',{},"Biggest threats you don't own"));
+    const threatBody=elNode('tbody');
+    threats.forEach(r=>threatBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name,flagNodes(r.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[r.p.element_type]||''),` ${S.teams[r.p.team]?.short_name||''} · £${(r.p.now_cost/10).toFixed(1)}m`)),cell(`${r.own.toFixed(0)}%`,'num'),cell(`${r.cap.toFixed(0)}%`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${r.eo>80?'hot':''}`},`${r.eo.toFixed(0)}%`)),cell(fmt1(r.xp),'num'))));
+    nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Owned','num'),head('Capt','num'),head('EO','num'),head('xP 6GW','num'))),threatBody)));
+    if(!threats.length) nodes.push(noteNode('good',"Nothing widely owned that you're missing — you're covered on the template."));
+    nodes.push(elNode('h3',{style:{marginTop:'18px'}},'Your differentials'));
+    if(diffs.length){ const diffBody=elNode('tbody'); diffs.forEach(r=>diffBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name),elNode('span',{class:'pmeta'},S.teams[r.p.team]?.short_name||'')),cell(`${r.own.toFixed(0)}%`,'num'),cell(fmt1(r.xp),'num')))); nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Rival own','num'),head('xP 6GW','num'))),diffBody))); }
+    if(myOnly.length) nodes.push(noteNode('',elNode('b',{},'Owned by nobody else in the league:'),` ${myOnly.map(p=>p.web_name).join(', ')}. These are where you win or lose the league.`));
+    setChildren(el,nodes);
   }catch(e){
-    el.innerHTML = `<div class="note bad">Couldn't read that league — the relays may be busy. Try again, or reduce the number of rivals.</div>`;
+    setChildren(el,noteNode('bad',"Couldn't read that league — the relays may be busy. Try again, or reduce the number of rivals."));
   }
 }
 
@@ -467,7 +416,7 @@ async function ask(){
   $('q').value = '';
   renderThread();
   const btn = $('askBtn'); btn.disabled = true;
-  $('askStatus').innerHTML = '<span class="spinner"></span>Thinking…';
+  setChildren($('askStatus'),elNode('span',{class:'spinner'}),'Thinking…');
   try{
     const system = `You are an experienced Fantasy Premier League analyst advising one manager. Today is ${new Date().toDateString()}.
 Treat the app data as the source of truth for squad, prices, projections and fixtures. Search the web for anything time-sensitive: injuries, press conferences, expected line-ups, transfers, rotation risk.
@@ -513,12 +462,13 @@ ${buildContext()}`;
    --------------------------------------------------------------------- */
 function renderManual(){
   const list = $('manualList');
-  list.innerHTML = S.manual.map((m,i) => {
+  setChildren(list, S.manual.map((m,i) => {
     const p = S.byId[m.id];
-    if(!p) return '';
-    return `<span class="pill">${p.web_name} <span class="mono" style="color:var(--ink-soft)">${S.posName[p.element_type]||''}</span>
-      <button data-rm="${i}" aria-label="Remove ${p.web_name}">×</button></span>`;
-  }).join('');
+    if(!p) return null;
+    return elNode('span', {class:'pill'}, p.web_name, ' ',
+      elNode('span', {class:'mono', style:{color:'var(--ink-soft)'}}, S.posName[p.element_type]||''),
+      elNode('button', {dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
+  }));
   const counts = {1:0,2:0,3:0,4:0};
   S.manual.forEach(m => { const p = S.byId[m.id]; if(p && counts[p.element_type]!==undefined) counts[p.element_type]++; });
   $('manualCount').textContent = `${S.manual.length}/15 · ${counts[1]} GKP, ${counts[2]} DEF, ${counts[3]} MID, ${counts[4]} FWD`
@@ -533,9 +483,9 @@ function searchPlayers(term){
   if(!S.boot || term.length < 2){ box.hidden = true; return; }
   const t = term.toLowerCase();
   const hits = S.boot.elements.filter(p => p.web_name.toLowerCase().includes(t)).slice(0,12);
-  box.innerHTML = hits.map(p => `<div data-add="${p.id}">${p.web_name}
-    <span class="pmeta">${S.posName[p.element_type]||''} · ${S.teams[p.team]?.short_name||''} · £${(p.now_cost/10).toFixed(1)}m</span></div>`).join('')
-    || '<div>No player by that name</div>';
+  setChildren(box, hits.length ? hits.map(p => elNode('div', {dataset:{add:p.id}}, p.web_name,
+    elNode('span', {class:'pmeta'}, `${S.posName[p.element_type]||''} · ${S.teams[p.team]?.short_name||''} · £${(p.now_cost/10).toFixed(1)}m`)))
+    : elNode('div', {}, 'No player by that name'));
   box.hidden = false;
   box.querySelectorAll('[data-add]').forEach(d => d.addEventListener('click', async () => {
     const id = +d.dataset.add;
@@ -555,22 +505,21 @@ function renderAll(){
   if(!S.boot) return;
   clearXP();
   const ev = S.boot.events.find(e => e.id === S.nextGW);
-  const bits = [`<span>Next <b>GW${S.nextGW}</b></span>`];
+  const bits = [elNode('span',{},'Next ',elNode('b',{},`GW${S.nextGW}`))];
   if(ev?.deadline_time){
     const dl = new Date(ev.deadline_time), hrs = (dl - Date.now())/3600000;
     const cd = hrs < 0 ? 'closed' : hrs < 48 ? `${Math.floor(hrs)}h ${Math.floor((hrs%1)*60)}m` : `${Math.floor(hrs/24)}d`;
-    bits.push(`<span>Deadline <b class="${hrs<48&&hrs>0?'live':''}">${dl.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${cd}</b></span>`);
+    bits.push(elNode('span',{},'Deadline ',elNode('b',{class:hrs<48&&hrs>0?'live':''},`${dl.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${cd}`)));
   }
-  bits.push(`<span>Season <b>${S.seasonLive ? 'live' : 'pre-season'}</b></span>`);
-  if(S.entry) bits.push(`<span>Team <b>${S.entry.name}</b></span>`);
-  $('gwstrip').innerHTML = bits.join('');
+  bits.push(elNode('span',{},'Season ',elNode('b',{},S.seasonLive ? 'live' : 'pre-season')));
+  if(S.entry) bits.push(elNode('span',{},'Team ',elNode('b',{},S.entry.name)));
+  setChildren($('gwstrip'),bits);
   const srcBits = [];
   if(S.ustatNote) srcBits.push(S.ustatNote);
   if(S.oddsNote) srcBits.push(S.oddsNote);
   if(S.calib) srcBits.push(`Calibrated against ${S.backtest?.season || 'last season'} (r ${S.backtest?.r ?? '—'}).`);
-  $('srcStatus').innerHTML = srcBits.length ? srcBits.map(s => `<div>${s}</div>`).join('') : '';
-  $('chipState').innerHTML = S.chipsUsed.length
-    ? `<div class="note plain"><b>Chips already used:</b> ${S.chipsUsed.join(', ')}.</div>` : '';
+  setChildren($('srcStatus'),srcBits.map(s=>elNode('div',{},s)));
+  setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
   if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
   renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual();
 }
@@ -630,7 +579,7 @@ document.addEventListener('click', e => {
   const cal = await sget(K_CAL);
   if(cal){
     S.calib = cal.calib; S.backtest = cal.backtest;
-    $('btOut').innerHTML = `<div class="note good" style="margin-top:8px">Calibration from ${cal.backtest?.season} is active (r ${cal.backtest?.r}, ±${cal.backtest?.maeGW} pts/GW). Re-run any time.</div>`;
+    setChildren($('btOut'),elNode('div',{class:'note good',style:{marginTop:'8px'}},`Calibration from ${cal.backtest?.season} is active (r ${cal.backtest?.r}, ±${cal.backtest?.maeGW} pts/GW). Re-run any time.`));
   }
   S.manual = (await sget(K_SQUAD)) || [];
   S.leagues = (await sget('fpl:leagues')) || [];

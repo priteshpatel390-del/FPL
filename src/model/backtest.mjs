@@ -1,6 +1,6 @@
 import { S, recordRetry } from '../state.mjs';
 import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from '../providers/retry.mjs';
-import { $, num, clamp } from '../util.mjs';
+import { $, num, clamp, el, setChildren } from '../util.mjs';
 import { GOAL_PTS, CS_PTS, ASSIST_PTS, DC_THRESH, BASE_GOALS, MODEL_VERSION, RULES_VERSION } from '../config.mjs';
 import { sset } from '../storage.mjs';
 import { fetchT } from '../providers/transport.mjs';
@@ -115,15 +115,12 @@ export function computeBacktest(text, meta = {}){
   const maeGW = mae / 19;
   const posLabel = {1:'GKP',2:'DEF',3:'MID',4:'FWD'};
   const calib = {};
-  let posHTML = '';
+  const posRows = [];
   [1,2,3,4].forEach(k => {
     const pp = perPos[k]; if(!pp.n) return;
     const ratio = pp.a/pp.p;
     calib[k] = clamp(ratio, 0.7, 1.3);
-    posHTML += `<tr><td>${posLabel[k]}</td><td class="num">${pp.n}</td>
-      <td class="num">${pearson(pp.rP, pp.rA).toFixed(2)}</td>
-      <td class="num">${((ratio-1)*100).toFixed(0)}%</td>
-      <td class="num">${calib[k].toFixed(2)}×</td></tr>`;
+    posRows.push([posLabel[k],pp.n,pearson(pp.rP,pp.rA).toFixed(2),`${((ratio-1)*100).toFixed(0)}%`,`${calib[k].toFixed(2)}×`]);
   });
 
   // captain check: of the 20 highest predicted, how did their actual ranks land?
@@ -143,13 +140,13 @@ export function computeBacktest(text, meta = {}){
         predictedAt: meta.now ?? Date.now(),
         method: 'H1-per90 → H2 projection, real H2 minutes, average fixture'
       } },
-    posHTML };
+    posRows };
 }
 
 async function runBacktest(){
   const out = $('btOut'), btn = $('btBtn');
   btn.disabled = true;
-  out.innerHTML = `<p class="status"><span class="spinner"></span>Downloading last season (~14MB — best on wi-fi)…</p>`;
+  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Downloading last season (~14MB — best on wi-fi)…'));
   const seasons = ['2025-26','2024-25'];
   let text = null, season = null, url = null;
   for(const s of seasons){
@@ -170,33 +167,30 @@ async function runBacktest(){
     recordRetry(record);
     if(result && result.ok){ text = result.value; season = s; url = u; break; }
   }
-  if(!text){ out.innerHTML = `<div class="note bad">Couldn't download the archive — check the connection and try again.</div>`; btn.disabled = false; return; }
-  out.innerHTML = `<p class="status"><span class="spinner"></span>Replaying ${season} through the model…</p>`;
+  if(!text){ setChildren(out,el('div',{class:'note bad'},"Couldn't download the archive — check the connection and try again.")); btn.disabled = false; return; }
+  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),`Replaying ${season} through the model…`));
   await new Promise(r => setTimeout(r, 30));
   let result;
   try{ result = computeBacktest(text, { season, url }); }
   catch(err){
-    out.innerHTML = `<div class="note bad">${String(err.message || err)}</div>`;
+    setChildren(out,el('div',{class:'note bad'},'The archive could not be calibrated because its data was incomplete or malformed.'));
     btn.disabled = false; return;
   }
-  const { calib, backtest, posHTML } = result;
+  const { calib, backtest, posRows } = result;
   const r = { toFixed: d => backtest.r.toFixed(d) }, maeGW = backtest.maeGW, top20hit = backtest.top20hit,
         hasDC = backtest.hasDC, preds = { length: backtest.n };
   S.calib = calib;
   S.backtest = backtest;
   await sset(K_CAL, {calib, backtest});
   clearXP();
-  out.innerHTML = `
-    <div class="kpis" style="margin-top:10px">
-      <div class="kpi"><div class="k">Season</div><div class="v">${season}</div></div>
-      <div class="kpi"><div class="k">Players</div><div class="v">${preds.length}</div></div>
-      <div class="kpi"><div class="k">Correlation</div><div class="v">${r.toFixed(2)}</div></div>
-      <div class="kpi"><div class="k">Error /GW</div><div class="v">±${maeGW.toFixed(1)}</div></div>
-    </div>
-    <div class="scroll"><table class="data" style="min-width:420px"><thead><tr><th>Pos</th><th class="num">n</th><th class="num">r</th><th class="num">Model bias</th><th class="num">Correction</th></tr></thead><tbody>${posHTML}</tbody></table></div>
-    <div class="note good"><b>Calibration applied.</b> Every projection in the app is now multiplied by the per-position corrections above (negative bias = the model was over-predicting that position). ${top20hit}/20 of the model's top picks finished inside the actual top 30.</div>
-    ${!hasDC ? `<div class="note plain">This season file has no defensive-contribution column, so the DEF/MID corrections also absorb those points — expect them to run above 1.0×.</div>` : ''}
-    <div class="note plain">Method: first-half per-90 profiles project the second half under an average fixture, using each player's real second-half minutes — this isolates the scoring model from minutes prediction, which is judged separately. Ask tab can analyse these numbers for you.</div>`;
+  const kpi=(k,v)=>el('div',{class:'kpi'},el('div',{class:'k'},k),el('div',{class:'v'},v));
+  const body=el('tbody'); posRows.forEach(row=>body.appendChild(el('tr',{},...row.map((v,i)=>el('td',i?{class:'num'}:{},v)))));
+  const nodes=[el('div',{class:'kpis',style:{marginTop:'10px'}},kpi('Season',season),kpi('Players',preds.length),kpi('Correlation',r.toFixed(2)),kpi('Error /GW',`±${maeGW.toFixed(1)}`)),
+    el('div',{class:'scroll'},el('table',{class:'data',style:{minWidth:'420px'}},el('thead',{},el('tr',{},...['Pos','n','r','Model bias','Correction'].map((v,i)=>el('th',i?{class:'num'}:{},v)))),body)),
+    el('div',{class:'note good'},el('b',{},'Calibration applied.'),` Every projection in the app is now multiplied by the per-position corrections above (negative bias = the model was over-predicting that position). ${top20hit}/20 of the model's top picks finished inside the actual top 30.`)];
+  if(!hasDC) nodes.push(el('div',{class:'note plain'},'This season file has no defensive-contribution column, so the DEF/MID corrections also absorb those points — expect them to run above 1.0×.'));
+  nodes.push(el('div',{class:'note plain'},"Method: first-half per-90 profiles project the second half under an average fixture, using each player's real second-half minutes — this isolates the scoring model from minutes prediction, which is judged separately. Ask tab can analyse these numbers for you."));
+  setChildren(out,nodes);
   btn.disabled = false;
   renderAll();
 }

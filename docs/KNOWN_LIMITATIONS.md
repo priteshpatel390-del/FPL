@@ -1,13 +1,13 @@
 # KNOWN_LIMITATIONS.md
 Purpose: single register of every current limitation. Audience: all sessions; check before promising anything.
-Last updated: 2026-07-27. Related: AUDIT.md (origin of most ids), ROADMAP.md (planned stages).
+Last updated: 2026-07-28. Related: AUDIT.md (origin of most ids), ROADMAP.md (planned stages).
 
 | ID | Description | Reason | Current impact | Planned stage | Status |
 |---|---|---|---|---|---|
 | SEC-2 | Serverless deferred; odds key client-side (localStorage), visible to a determined page inspector | Owner decision D-08; only low-value secret exists | Capped-cost key exposure to link-holders | On hosted-AI trigger | Accepted-temporary |
 | SEC-3 | Frontend Anthropic key field/persistence and keyed browser request path | Removed under D-08; legacy `claudeKey` is deleted from stored config on first run | None; hosted Ask now fails fast, Claude preview remains keyless | Stage 3 | **CLOSED 2026-07-27** (5 tests) |
 | CSP-1 | No CSP in deployed build; design proposes hash-based policy with style-src-attr concession | Stage 3 pending | Standard XSS surface until landed | Stage 3 (concession removed Stage 9) | Open |
-| XSS-1 | innerHTML interpolation of API/user strings throughout views | Pre-refactor pattern | Injection risk, worst via mini-league rival names + user league names | Stage 3 | Open |
+| XSS-1 | innerHTML interpolation of API/user strings throughout views | Fixed by text-node-first DOM builders across the Stage 3.5 inventory; Ask remains a separate Stage 3.6 scope | None on API/provider/user rendering surfaces | Stage 3.5 | **CLOSED 2026-07-28** (5 adversarial tests) |
 | VAL-1 | No runtime schema validation of provider responses | Fixed: per-endpoint validators in `src/providers/validate.mjs` cover all ten external payloads plus the cached snapshot; fatal vs partial per endpoint | None | Stage 3 | **CLOSED 2026-07-27** (D-14; 33 tests in tests/schema.test.mjs + tests/schema-state.test.mjs) |
 | DUP-1 | Duplicate fixture rows would double-count projections/ticker/ease/chip detection | Fixed: `normaliseFixtures` dedupes by provider id (composite fallback) in `hydrate()` before any consumer | None | Stage 3 | **CLOSED 2026-07-26** (D-13; 12 tests in tests/validation.test.mjs) |
 | RET-1 | HTTP `Retry-After` is not honoured; a fixed capped backoff is used instead | Under the relay cascade the header describes the relay, not the FPL origin, and an arbitrary server-chosen delay conflicts with keeping a phone app responsive | A provider asking for a longer pause is retried sooner than requested | Revisit with serverless, where requests are direct | Open (accepted) |

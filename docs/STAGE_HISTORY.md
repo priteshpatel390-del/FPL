@@ -1,6 +1,14 @@
 # STAGE_HISTORY.md — engineering diary
-Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-27.
+Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, AUDIT.md (all retained verbatim in /docs).
+
+## Stage 3.5 — DOM-builder rendering (IMPLEMENTED; owner review pending)
+Introduced shared text-node-first DOM primitives and migrated the complete approved inventory:
+gameweek/source/chip status, ticker and swing notes, player table and drawer, squad/captain/best-XI,
+transfers, league output and controls, manual squad/search, core failure states and backtest output.
+Hostile provider/user strings now become text nodes rather than HTML. Ask Markdown was explicitly
+restored to its Stage 3.4 baseline because AI sanitisation belongs to separately approved Stage 3.6.
+Five adversarial checks bring the suite from 189 to 194; formulas and golden results are unchanged.
 
 ## Pre-stage era (v1.x, founding conversation)
 Objective: working product. Changes: full app built iteratively (ticker → xP engine → transfers →

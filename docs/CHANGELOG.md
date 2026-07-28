@@ -1,6 +1,18 @@
 # CHANGELOG.md
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
-Last updated: 2026-07-27. Related: STAGE_HISTORY.md for engineering detail.
+Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
+
+## [Unreleased] — Stage 3.5 rendering safety
+### Added
+- A text-node-first `el()` DOM builder and `setChildren()` replacement helper.
+- Adversarial DOM tests for hostile player, team, entry, league and provider text.
+### Changed
+- Every approved Stage 3.5 dynamic rendering surface now uses DOM nodes: gameweek/source status,
+  ticker, players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search and
+  backtest output.
+### Unchanged
+- Ask Markdown rendering is restored to the Stage 3.4 baseline; its separate sanitisation design is
+  deferred to Stage 3.6. No model, provider, key handling, CSP, formula or visual redesign changed.
 
 ## [2.0.0-docs] — 2026-07-26 (documentation stage)
 ### Added

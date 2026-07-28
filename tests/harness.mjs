@@ -13,14 +13,18 @@ export function loadApp(fieldValues = {}) {
     trHorizon:'6', trTop:'8', pSearch:'', q:'' };
   const vals = { ...defaults, ...fieldValues };
   const made = {};
-  const mk = id => ({ id, value: vals[id] ?? '', checked: vals[id] === true, innerHTML:'', textContent:'',
+  const mk = (id, tag = 'div') => ({ id, tagName:tag.toUpperCase(), attrs:{}, nodeType:1, value: vals[id] ?? '', checked: vals[id] === true, innerHTML:'', textContent:'', children:[],
     options:{length:9}, add(){}, hidden:false, dataset:{}, style:{}, addEventListener(){},
     querySelectorAll(){ return []; }, after(){}, remove(){}, nextElementSibling:null,
-    classList:{ contains(){ return false; } }, setAttribute(){}, focus(){}, click(){},
+    classList:{ contains(){ return false; } }, setAttribute(k,v){ this.attrs[k] = String(v); this[k] = String(v); }, focus(){}, click(){},
+    closest(){ return null; }, appendChild(child){ this.children.push(child); child.parentNode = this; return child; },
+    append(...children){ children.forEach(child => this.appendChild(child)); },
+    removeChild(child){ this.children.splice(this.children.indexOf(child), 1); }, get firstChild(){ return this.children[0] || null; },
     closest(){ return null; }, disabled:false });
 
   globalThis.document = { getElementById: id => made[id] || (made[id] = mk(id)),
-    querySelectorAll: () => [], addEventListener(){}, createElement: () => mk('x') };
+    querySelectorAll: () => [], addEventListener(){}, createElement: tag => mk('x', tag),
+    createTextNode: text => ({nodeType:3, textContent:String(text), parentNode:null}) };
   globalThis.window = { scrollTo(){} };
   globalThis.localStorage = { _d:{}, getItem(k){ return this._d[k] ?? null; },
     setItem(k,v){ this._d[k]=v; }, removeItem(k){ delete this._d[k]; } };
@@ -35,7 +39,9 @@ export function loadApp(fieldValues = {}) {
   (0, eval)(src + `\nObject.assign(globalThis.__EXPORTS__, { S, hydrate, matchContext, multToDiff, runScore,
     teamFixtures, playerFixtureXP, projectXP, priceBaseline, availability, expectedMinutes, bestXI,
     sellPrice, mySquad, parseCSV, pearson, poissonOver, solveLambda, mapTeamName, parseUnderstat,
-    runBacktest, rememberLeague, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask, clearXP, flagsFor, priceMomentum });\nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
+    runBacktest, rememberLeague, renderLeagueChips, renderTicker, renderPlayers, renderSquad, renderTransfers,
+    renderManual, searchPlayers, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
+    clearXP, flagsFor, priceMomentum });\nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
   delete globalThis.__EXPORTS__;
   return { T: exports, doc: made, setFetch: f => { globalThis.fetch = f; } };
 }

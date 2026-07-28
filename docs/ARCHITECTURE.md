@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 Purpose: detailed technical architecture. Audience: developers/Claude before changing code.
-Last updated: 2026-07-27. Related: PROJECT_CONTEXT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last updated: 2026-07-28. Related: PROJECT_CONTEXT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -9,7 +9,7 @@ build.mjs           deterministic bundler (emits dist/)
 run-tests.sh        build + full test suite
 src/
   config.mjs        scoring constants, versions (MODEL/RULES/SCHEMA), ODDS_RULES
-  util.mjs          $, num, clamp, fmt1, escapeHTML
+  util.mjs          $, num, clamp, fmt1, escapeHTML, el, setChildren
   state.mjs         S (global state), KEEP field list, slim(), hydrate()
   storage.mjs       sget/sset (window.storage→localStorage fallback), saveCfg,
                     cachePut/cacheGet (versioned envelope)
@@ -60,6 +60,14 @@ Understat 24h and odds 6h. `Disabled` is a neutral user choice and never ages in
 `main.mjs` maps the core FPL fresh/cache/error paths and renders the compact strip with DOM nodes.
 `understat.mjs` and `odds.mjs` map their validation and fallback outcomes. The state is intentionally
 session-scoped; the underlying FPL snapshot remains the persisted fallback source.
+
+## Rendering architecture (Stage 3.5)
+`el(tag, attrs, ...children)` and `setChildren(parent, ...children)` are the shared rendering
+primitives. Non-node children are always converted to text nodes. The gameweek/status surfaces,
+ticker, player ranker/drawer, squad and captaincy, transfers, mini-leagues, manual squad/search,
+core failure messages and backtest UI use these primitives; static CSS classes, event wiring and
+table semantics are retained. Ask is intentionally excluded and remains at the Stage 3.4 baseline
+until the separately approved Stage 3.6 sanitisation design.
 
 ## Model architecture (documented fully in PROJECTION_MODEL.md)
 Layered team strength → per-fixture context {xGF,xGA,cs,atk,def} → per-position component scoring →
