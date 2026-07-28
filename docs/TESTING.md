@@ -1,11 +1,13 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-28. Related: tests/, CLAUDE.md, STAGE7-DESIGN.md.
+Last updated: 2026-07-28. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 7 verified baseline: **274/274 passing tests**, successful production build, deterministic two-build comparison and build-identity checks passed. Verified source commit: `42d3106fcb15f2e68db7409e0ae96fd27cd4f61a`. Verified generated artefacts were committed at `d2f1e7d93cf200e5a1d6d1a2d96829e750740ff9`.
+Stage 7 merged baseline: **274/274 passing tests**, successful production build, deterministic two-build comparison and build-identity checks.
+
+Stage 8 draft PR #16 adds ten direct tests, taking the current verified branch baseline to **284/284 passing tests**. A branch-only workflow also verifies a deterministic two-build comparison. Verified generated artefacts are committed from the successful workflow; the temporary workflow is removed in the same finalisation commit.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -16,15 +18,17 @@ Stage 7 verified baseline: **274/274 passing tests**, successful production buil
 6. Provider Health suite — seven-state vocabulary and transitions.
 7. Rendering, Markdown and security-completion suites — hostile input, secret handling and CSP.
 8. `minutes-model.test.mjs` — Stage 4 denominators, histories, probabilities, shrinkage and invariants.
-9. `scoring-rules.test.mjs` — Stage 5 rule configuration, Poisson groups, defensive thresholds, rare events, bonus denominator, penalty-role gating and genuine blank/double behaviour.
+9. `scoring-rules.test.mjs` — official rule configuration, Poisson groups, defensive thresholds, rare events, bonus denominator, penalty-role gating and genuine blank/double behaviour.
 10. `transfer-optimiser.test.mjs` — Stage 6 legality, affordability, hit accounting, search completeness and deterministic ordering.
 11. `walk-forward.test.mjs` and `archive-replay.test.mjs` — Stage 7 fold chronology, leakage rejection, train-only calibration, metrics, immutable dataset provenance, malformed rows, double Gameweeks and deadline-safe replay.
-12. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for single-line and multi-line imports/exports, unterminated declarations and unsupported surviving module syntax.
+12. `simulation.test.mjs` — Stage 8 seeded randomness, minutes-state marginals, expected-minutes convergence, bounded inconsistent inputs, percentile ordering and probability thresholds.
+13. `squad-simulation.test.mjs` — Stage 8 legal formations, goalkeeper substitution, ordered outfield substitutions and captain/vice fallback.
+14. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
 
-Stage 7 changed no projection formula and required no golden regeneration.
+Stage 8 changes no deterministic projection formula and requires no golden regeneration.
 
 ## Harness
 `tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. Characterisation therefore exercises the production bundling path rather than a separate test-only implementation.
@@ -39,4 +43,4 @@ Stage 7 changed no projection formula and required no golden regeneration.
 7. Remove temporary verification workflows before merge.
 
 ## Philosophy
-Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy. Stage 7 provides an honest deadline-safe archive scoring diagnostic, but missing historical provider snapshots mean it is not full validation of every live production input.
+Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 8 probability coverage must be evaluated prospectively during 2026/27 before any calibration claim.

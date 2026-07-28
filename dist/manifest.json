@@ -1,8 +1,8 @@
 {
-  "modelVersion": "2.3.0",
-  "rulesVersion": "2026-27.2",
-  "sourceHash": "9f12b96abca1c7f2535687a13b1d991846e6fdef26fcad85886144d59a05fc89",
-  "commit": "718dae582e7f8ae807c11ae58cb6688b6c7e1017",
+  "modelVersion": "2.4.0",
+  "rulesVersion": "2026-27.3",
+  "sourceHash": "8f212a2a7eca1fd34961272fd3ef46ca40c494150a2cc452161fe3b9570a774f",
+  "commit": "ef66fd47c53f6cda02108090c7ab03f65414cbf3",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -20,7 +20,9 @@
     "src/model/minutes.mjs",
     "src/model/scoring-rules.mjs",
     "src/model/scoring.mjs",
+    "src/model/simulation.mjs",
     "src/squad.mjs",
+    "src/model/squad-simulation.mjs",
     "src/model/transfers.mjs",
     "src/model/walk-forward.mjs",
     "src/model/archive-replay.mjs",

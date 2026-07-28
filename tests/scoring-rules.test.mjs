@@ -19,9 +19,9 @@ clearXP();
 
 const fixtureFor = (team, opp, home=true) => ({ctx:matchContext(team,opp,home)});
 
-test('Stage 6 model and rules versions are explicit', () => {
-  assert.equal(MODEL_VERSION, '2.3.0');
-  assert.equal(RULES_VERSION, '2026-27.2');
+test('Stage 8 model and rules versions are explicit', () => {
+  assert.equal(MODEL_VERSION, '2.4.0');
+  assert.equal(RULES_VERSION, '2026-27.3');
   assert.equal(FPL_RULES.season, '2026-27');
   assert.deepEqual(FPL_RULES.bonus, [3,2,1]);
 });

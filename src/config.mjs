@@ -23,8 +23,8 @@ const BASE_GOALS = 1.42;
 const HOME_TILT  = 1.10;
 
 export const SCHEMA_VERSION = 3;
-export const MODEL_VERSION  = '2.3.0';
-export const RULES_VERSION  = '2026-27.2';
+export const MODEL_VERSION  = '2.4.0';
+export const RULES_VERSION  = '2026-27.3';
 
 export const MINUTES_RULES = Object.freeze({
   detailedCohort:80,
@@ -53,6 +53,19 @@ export const TRANSFER_RULES = Object.freeze({
   unavailableStatuses:Object.freeze(['i','u','s','n']),
   maxHorizon:8,
   maxEvaluations:2000000
+});
+
+export const SIMULATION_RULES = Object.freeze({
+  version:'1.0.0',
+  productionSamples:5000,
+  maxSamples:25000,
+  blankMaximum:2,
+  returnMinimum:5,
+  haulMinimum:10,
+  megaHaulMinimum:15,
+  floorPercentile:0.25,
+  upsidePercentile:0.90,
+  preSeasonMode:'disabled'
 });
 
 // Adjustment-5 market rules — configuration remains unvalidated until Stage 7.

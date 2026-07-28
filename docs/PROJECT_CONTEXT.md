@@ -8,11 +8,10 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 ## Current status
 - Live on GitHub Pages from repository `priteshpatel390-del/FPL`.
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
-- Stage 3 security/provider hardening is complete.
-- Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
-- Stage 5 scoring corrections are complete and merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`. Source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
-- The next planned item is Stage 6 — Transfer Optimiser. Its design and formula choices require explicit owner approval before implementation.
-- The historical 2025/26 aggregate backtest result, r=0.80 and approximately ±0.5 points/GW, is method-flattered and must not be presented as validated out-of-sample accuracy.
+- Stages 1–7 are complete and merged.
+- Stage 7 merged through PR #15 at `78b42e09d2ad3b8338b587ba2b89e815cfc0c45a` with a verified baseline of 274 passing tests, successful build, deterministic two-build comparison and build-identity checks.
+- Stage 8 — Uncertainty and Squad Simulation is implemented on draft PR #16 and remains behind full verification and owner-review gates.
+- The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
 1. Reliable expected-points projections.
@@ -36,14 +35,14 @@ The overriding principle is the simplest reliable data stack that supports good 
 Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 18 or newer runs the custom deterministic bundler and `node:test` suite. `node build.mjs` emits `dist/index.html`, the single deployable uploaded through the GitHub web interface. The custom bundler strips complete static module declarations, rejects surviving module syntax and embeds model, rules, source-hash and commit identity.
 
 ## Completed, current and next
-Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes and Stage 5 scoring corrections.
+Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser and Stage 7 walk-forward backtest.
 
-Current: Stage 6 transfer-optimiser investigation and design approval checkpoint. No Stage 6 implementation has begun.
+Current: Stage 8 implementation and verification on draft PR #16. It adds a deterministic uncertainty layer, percentiles, threshold probabilities, legal squad auto-subs and captain/vice fallback without changing deterministic `projectXP()`.
 
-Next after design approval: implement Stage 6 on a dedicated branch, verify against exhaustive search, run the full suite and open a draft pull request.
+Next after Stage 8 merge: Stage 9 UI integration.
 
 ## Major risks
-Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven out of sample; and single-maintainer phone-first operations.
+Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not fully proven out of sample; simulation probability calibration still prospective; and single-maintainer phone-first operations.
 
 ## Known assumptions
-The public FPL API and vaastav archive remain available; the historical dataset pin is still owed for Stage 7; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger.
+The public FPL API and pinned vaastav archive remain available; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger; and detailed Stage 8 simulation remains disabled in pre-season rather than manufacturing precise distributions from the price baseline.
