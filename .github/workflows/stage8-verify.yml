@@ -17,13 +17,24 @@ jobs:
         shell: bash
         run: |
           set +e
-          ./run-tests.sh > /tmp/stage8-tests.log 2>&1
-          status=$?
+          ./run-tests.sh > stage8-tests.log 2>&1
+          echo $? > stage8-tests.status
+          tail -n 40 stage8-tests.log
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-test-diagnostics
+          path: |
+            stage8-tests.log
+            stage8-tests.status
+      - name: Enforce test result
+        shell: bash
+        run: |
+          status=$(cat stage8-tests.status)
           if [ "$status" -ne 0 ]; then
-            tail -n 160 /tmp/stage8-tests.log
             exit "$status"
           fi
-          tail -n 40 /tmp/stage8-tests.log
       - name: Deterministic build comparison
         shell: bash
         run: |
