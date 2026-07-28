@@ -1,0 +1,65 @@
+name: Stage 9.3 corrected implementation
+
+on:
+  push:
+    branches:
+      - agent/stage9-3-player-detail-uncertainty
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-3-player-detail-uncertainty
+          fetch-depth: 0
+      - name: Implement and verify Stage 9.3
+        run: |
+          if [ -f src/ui/player-detail.mjs ]; then
+            echo "Stage 9.3 implementation already present."
+            exit 0
+          fi
+          awk '/python - <<'"'"'PY'"'"'/{capture=1;next} /^          PY$/{capture=0} capture{sub(/^          /,"");print}' .github/workflows/stage9-3-implement.yml > /tmp/stage9-3-implement.py
+
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('/tmp/stage9-3-implement.py')
+          text=path.read_text()
+          needle="text=replace_once(text,old_pitch,new_pitch,'pitch player interaction')"
+          replacement="""pitch_old="    return elNode('div',{class:`pitch-player${benchIndex==null?'':' bench-player'}${bad?' warn':''}`,"
+pitch_new="    return elNode('button',{type:'button',class:`pitch-player${benchIndex==null?'':' bench-player'}${bad?' warn':''}`,"
+if pitch_old not in text:
+    raise SystemExit('Pitch player interaction marker not found')
+text=text.replace(pitch_old,pitch_new,1)
+pitch_aria="      'aria-label':`${label}, ${fixture}, ${projected} expected points${role==='captain'?', captain':role==='vice'?', vice-captain':''}`},"
+if pitch_aria not in text:
+    raise SystemExit('Pitch aria-label marker not found')
+text=text.replace(pitch_aria,"      onclick:event=>openPlayerDetailView(p,gw,1,event.currentTarget),\\n"+pitch_aria,1)"""
+          if needle not in text:
+              raise SystemExit('Embedded pitch replacement call not found')
+          path.write_text(text.replace(needle,replacement,1))
+          PY
+
+          python /tmp/stage9-3-implement.py
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.html build.mjs src/ui/player-detail.mjs src/ui/views.mjs tests/player-detail.test.mjs
+          git commit -m 'Implement Stage 9.3 player detail uncertainty'
+          SOURCE_SHA=$(git rev-parse HEAD)
+
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh
+          mkdir -p /tmp/stage9-3-first
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-3-first/
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cmp /tmp/stage9-3-first/index.html dist/index.html
+          cmp /tmp/stage9-3-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage9-3-first/manifest.json dist/manifest.json
+          node -e "const m=require('./dist/manifest.json');if(m.commit!=='$SOURCE_SHA')throw new Error('build identity mismatch: '+m.commit)"
+
+          git add dist/index.html dist/app.bundle.js dist/manifest.json
+          git commit -m 'Commit verified Stage 9.3 deployables'
+          git push origin HEAD:agent/stage9-3-player-detail-uncertainty
