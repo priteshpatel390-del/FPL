@@ -10,7 +10,7 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
 - Stage 3 security/provider hardening is complete.
 - Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
-- Stage 5 scoring corrections are implemented and verified on draft PR #9. Source commit `adbebdeaf0ab194193f6d7fd0702b18da16f4d0f` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
+- Stage 5 scoring corrections are implemented and verified on draft PR #9. Source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
 - The only remaining Stage 5 gate is explicit owner merge approval. Stage 6 must not begin before merge.
 - The historical 2025/26 aggregate backtest result, r=0.80 and approximately ±0.5 points/GW, is method-flattered and must not be presented as validated out-of-sample accuracy.
 
