@@ -3,8 +3,7 @@ Purpose: security posture record. Audience: all sessions; Stage 3 implementers e
 Last updated: 2026-07-28. Related: STAGE3-DESIGN.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
 
 ## Current architecture
-Static single-file application on GitHub Pages. Stage 3 security hardening is implemented on draft
-PR #6 and verified at 210 passing tests with deterministic two-build output.
+Static single-file application on GitHub Pages. Stage 3 security hardening is complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`. The verified Stage 3 baseline was 210 passing tests with deterministic two-build output.
 
 - Odds transport is DIRECT ONLY. The key cannot enter the FPL/Understat relay cascade.
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
