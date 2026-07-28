@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -23,17 +25,26 @@ jobs:
         run: ./run-tests.sh
       - name: Deterministic build comparison
         shell: bash
+        env:
+          BUILD_ID: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          commit="${GITHUB_SHA}"
           rm -rf /tmp/stage9-build-a /tmp/stage9-build-b
-          BUILD_COMMIT="$commit" node build.mjs
+          BUILD_COMMIT="$BUILD_ID" node build.mjs
           mkdir -p /tmp/stage9-build-a
           cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-build-a/
-          BUILD_COMMIT="$commit" node build.mjs
+          BUILD_COMMIT="$BUILD_ID" node build.mjs
           mkdir -p /tmp/stage9-build-b
           cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-build-b/
           cmp /tmp/stage9-build-a/index.html /tmp/stage9-build-b/index.html
           cmp /tmp/stage9-build-a/app.bundle.js /tmp/stage9-build-b/app.bundle.js
           cmp /tmp/stage9-build-a/manifest.json /tmp/stage9-build-b/manifest.json
-          node -e "const m=require('./dist/manifest.json'); if(m.commit!==process.env.GITHUB_SHA) throw new Error('build identity mismatch')"
+          node -e "const m=require('./dist/manifest.json'); if(m.commit!==process.env.BUILD_ID) throw new Error('build identity mismatch')"
+      - name: Upload verified deployables
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-1-dist
+          path: |
+            dist/index.html
+            dist/app.bundle.js
+            dist/manifest.json
