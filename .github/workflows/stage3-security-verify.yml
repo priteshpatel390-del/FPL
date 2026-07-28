@@ -21,8 +21,22 @@ jobs:
           node-version: '20'
       - name: Build
         run: node build.mjs
-      - name: Focused security completion tests
-        run: node --test tests/security-completion.test.mjs
+      - name: Test scrubber
+        run: node --test --test-name-pattern="scrubber" tests/security-completion.test.mjs
+      - name: Test forget action
+        run: node --test --test-name-pattern="forget odds key" tests/security-completion.test.mjs
+      - name: Test empty-key storage
+        run: node --test --test-name-pattern="storage source" tests/security-completion.test.mjs
+      - name: Test masked UI
+        run: node --test --test-name-pattern="built UI" tests/security-completion.test.mjs
+      - name: Test CSP hashes
+        run: node --test --test-name-pattern="CSP hashes" tests/security-completion.test.mjs
+      - name: Test CSP policy
+        run: node --test --test-name-pattern="CSP retains" tests/security-completion.test.mjs
+      - name: Test bundle identity
+        run: node --test --test-name-pattern="frame-buster" tests/security-completion.test.mjs
+      - name: Test artefact secret scan
+        run: node --test --test-name-pattern="generated artefacts" tests/security-completion.test.mjs
       - name: Full test suite
         run: ./run-tests.sh
       - name: Deterministic two-build comparison
