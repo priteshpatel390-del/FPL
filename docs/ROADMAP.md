@@ -3,37 +3,28 @@ Purpose: stage plan with status. Audience: session planning. Last updated: 2026-
 Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, DECISIONS.md.
 
 ## Completed
-- **Stage 1 — Characterisation & audit** · Objective: freeze behaviour + audit sources.
-  Deliverables: 77-test suite, golden snapshots, docs/AUDIT.md. Status: DONE (owner-verified).
-- **SEC-1 hot-fix** · Odds key never transits relays; regression-tested. Status: DONE, deployed.
-- **Stage 2 — Module extraction** · ES modules, deterministic build+manifest, provider registry,
-  odds schema/matching rules, pure backtest with provenance and resilience coverage. Status: DONE.
-- **Documentation handover** · Repository established as the permanent source of truth. Status: DONE.
-- **Stage 3 — Security & provider hardening** · Status: DONE and merged through PR #6.
-- **Stage 4 — Expected-minutes model** · Tiered current-season histories, pStart/pAppear/p60/expMin/
-  confidence, aggregate/prior fallbacks, history cache and Provider Health integration. Status: DONE and
-  merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`; inherited verification baseline is
-  220 passing tests with deterministic two-build comparison.
+- **Stage 1 — Characterisation and audit** · DONE.
+- **SEC-1 hot-fix** · Odds key never transits relays · DONE and deployed.
+- **Stage 2 — Module extraction** · ES modules, deterministic build, provider registry and backtest provenance · DONE.
+- **Documentation handover** · Repository established as permanent source of truth · DONE.
+- **Stage 3 — Security and provider hardening** · DONE and merged through PR #6.
+- **Stage 4 — Expected-minutes model** · Detailed histories, aggregate/prior fallback, pStart/pAppear/p60/expMin/confidence and Provider Health integration · DONE and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`. Verified baseline: 220 passing tests and deterministic builds.
 
 ## Current
-- **Stage 5 — Scoring corrections** · Owner-approved implementation on draft PR #9 from branch
-  `agent/stage5-scoring-corrections`. 2026/27 rules configuration, stepped saves/goals-conceded
-  distributions, defensive-contribution threshold probability, empirical bonus, sparse negative-event
-  components, penalty-role gating and fixture-run correction are implemented. Repository-hosted full
-  verification remains pending; do not merge.
+- **Stage 5 — Scoring corrections** · Owner-approved implementation on draft PR #9 from branch `agent/stage5-scoring-corrections`.
+  - Implemented: 2026/27 rules configuration; stepped saves and goals conceded; defensive-contribution threshold probability; empirical bonus; sparse disciplinary/penalty events; penalty-role gating; real blank/double fixture-run scoring.
+  - Review fixes implemented: complete multi-line import/export stripping with fail-closed guard; direct bundler fixture tests; Stage 4 aggregate appearance denominator for bonus; genuine blank-Gameweek regression; verification no longer regenerates goldens.
+  - Remaining gates: clean full-suite/deterministic/CSP verification on the final reviewed source, verified artefact commit, temporary workflow removal, final review and explicit owner merge approval.
+  - **Do not merge and do not begin Stage 6 yet.**
 
-## Upcoming (order fixed; later stages depend on earlier)
-- **Stage 6 — Transfer optimiser** · complete legal plans (0–3 moves), squad-level ranking,
-  roll-value configuration and pruning verified against exhaustive search.
-- **Stage 7 — Walk-forward backtest** · deadline-information-only replay, train/calibrate/holdout,
-  metric battery, provider ablations, dataset pinning and prospective odds logging.
-- **Stage 8 — Uncertainty & squad simulation** · percentiles, appearance/haul probabilities,
-  auto-sub simulation and captain floor/upside.
-- **Stage 9 — UI integration** · FPL-style squad home page with shirts, settings page, health-strip
-  placement and inline-style-to-class migration, which removes the CSP style-attribute concession.
+## Upcoming
+- **Stage 6 — Transfer optimiser** · complete legal 0–3 move plans, squad-level ranking, roll-value configuration and pruning verified against exhaustive search.
+- **Stage 7 — Walk-forward backtest** · deadline-information-only replay, train/calibrate/holdout split, metrics, provider ablations, dataset pinning and prospective odds logging.
+- **Stage 8 — Uncertainty and squad simulation** · percentiles, appearance/haul probabilities, auto-sub simulation and captain floor/upside.
+- **Stage 9 — UI integration** · FPL-style squad home page, shirts, settings, health-strip placement and inline-style migration.
 
 ## Current blockers
-1. Stage 5 full-suite, deterministic-build and CSP verification evidence.
-2. Owner review and explicit merge approval for draft PR #9 after verification.
-3. BT-1 dataset SHA (owner `git ls-remote` or Stage-7 ETag).
-4. Season data realities: squad/league features and prospective odds logging need GW1 (21 Aug 2026).
+1. Final Stage 5 clean verification and artefact closeout.
+2. Owner review and explicit merge approval for PR #9.
+3. BT-1 historical dataset pin for Stage 7.
+4. Live-season data requirements beginning with GW1 on 21 August 2026.
