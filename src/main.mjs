@@ -6,6 +6,7 @@ import { slim, hydrate, recordIssues } from './state.mjs';
 import { bootstrapStructure, validateEntry, validatePicks, validateHistory } from './providers/validate.mjs';
 import { loadUnderstat } from './providers/understat.mjs';
 import { loadOdds } from './providers/odds.mjs';
+import { loadMinuteHistories } from './providers/minutes-history.mjs';
 import { clearXP } from './model/xp.mjs';
 import { HEALTH_STATES, healthRows, markLive, markCached, markFallback, markPartial, markUnavailable } from './providers/registry.mjs';
 
@@ -42,9 +43,6 @@ function renderProviderHealth(){
   });
 }
 
-/* ---------------------------------------------------------------------
-   LOAD
-   --------------------------------------------------------------------- */
 async function loadAll(){
   const st = $('status');
   const cached = await sget(K_CACHE);
@@ -105,7 +103,7 @@ async function loadAll(){
       st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
     await saveCfg();
     renderProviderHealth(); renderAll();
-    Promise.all([loadUnderstat(), loadOdds()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
+    Promise.all([loadUnderstat(), loadOdds(), loadMinuteHistories()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
   }catch(err){
     await saveCfg();
     const shape = !!(err && err.feedShape);

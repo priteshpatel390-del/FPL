@@ -4,10 +4,8 @@ import { SCHEMA_VERSION } from './config.mjs';
 /* ---------------------------------------------------------------------
    STORAGE
    --------------------------------------------------------------------- */
-const K_CFG = 'fpl:config', K_SQUAD = 'fpl:squad', K_CACHE = 'fpl:cache', K_CAL = 'fpl:calib';
+const K_CFG = 'fpl:config', K_SQUAD = 'fpl:squad', K_CACHE = 'fpl:cache', K_CAL = 'fpl:calib', K_MINUTES = 'fpl:minutes-history';
 
-// Inside Claude artifacts window.storage exists; hosted elsewhere (e.g. a
-// home-screen web app) it doesn't, so fall back to localStorage there.
 async function sget(key){
   if(window.storage){
     try{ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
@@ -21,9 +19,6 @@ async function sset(key, val){
   try{ localStorage.setItem(key, s); }catch(e){}
 }
 
-// D-08 / SEC-3 migration: Anthropic secrets are banned client-side. Older
-// configurations may still contain claudeKey, so remove it once and persist
-// the scrubbed object before any UI consumes the configuration.
 function stripDeprecatedSecrets(value){
   if(!value || typeof value !== 'object' || Array.isArray(value) ||
      !Object.prototype.hasOwnProperty.call(value, 'claudeKey'))
@@ -51,13 +46,10 @@ function currentConfig(){
   if(oddsKey) config.oddsKey = oddsKey;
   return config;
 }
-async function saveCfg(){
-  await sset(K_CFG, currentConfig());
-}
+async function saveCfg(){ await sset(K_CFG, currentConfig()); }
 
-export { K_CFG, K_SQUAD, K_CACHE, K_CAL, sget, sset, saveCfg, currentConfig, stripDeprecatedSecrets, loadCfg };
+export { K_CFG, K_SQUAD, K_CACHE, K_CAL, K_MINUTES, sget, sset, saveCfg, currentConfig, stripDeprecatedSecrets, loadCfg };
 
-// Versioned cache envelope (season snapshots only; generic sget/sset stay raw).
 export async function cachePut(key, payload, season){
   await sset(key, { schemaVersion: SCHEMA_VERSION, season, fetchedAt: Date.now(), payload });
 }

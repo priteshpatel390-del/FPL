@@ -4,7 +4,8 @@ Last updated: 2026-07-28. Related: tests/, docs/STAGE1.md, CLAUDE.md.
 
 ## Stack
 `node:test` only (zero dependencies, Node ≥18). Entry: `./run-tests.sh`, which builds first because
-the generated bundle is itself a test target. Current verified baseline: **210 passing tests**.
+the generated bundle is itself a test target. Stage 4 draft PR #8 verification baseline: **220
+passing tests**.
 
 ## Suites
 1. **characterisation.test.mjs (77)** — model behaviour against the built bundle and golden snapshots.
@@ -22,6 +23,13 @@ the generated bundle is itself a test target. Current verified baseline: **210 p
 13. **markdown-sanitisation.test.mjs (8)** — restricted Markdown and hostile-link battery.
 14. **security-completion.test.mjs (8)** — odds forgetting/scrubbing, storage omission, masked UI,
     CSP hash verification, policy allow-list, frame-buster/build identity and artefact secret scans.
+15. **minutes-model.test.mjs (10)** — completed-team denominators, starters, substitutes, rotation,
+    availability, limited-history shrinkage, invariants and element-summary validation.
+
+## Stage 4 golden changes
+Golden changes are limited to projections affected by MIN-1/DEN-1: appearance probabilities,
+minutes-scaled components, doubtful scaling, best-XI total and the former expected-minutes quarantine.
+SCOR-1, SCOR-2 and FIX-1 goldens remain unchanged.
 
 ## Harness
 `tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. The frame-buster is
@@ -29,7 +37,6 @@ guarded for non-browser execution so the same production bundle remains the char
 
 ## Required checks
 Before implementation work is described as complete:
-
 1. Run `./run-tests.sh` with all tests green.
 2. Build twice with the same explicit `BUILD_COMMIT` and compare `dist/index.html`,
    `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte.
@@ -39,5 +46,5 @@ Before implementation work is described as complete:
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. Golden changes belong only to the stage that
-fixes their recorded issue. Security guarantees require adversarial regression coverage. Prediction
-accuracy cannot be claimed from in-sample or method-flattered results.
+fixes their recorded issue. Prediction accuracy cannot be claimed from in-sample or method-flattered
+results; Stage 4 verification demonstrates deterministic behaviour, not improved accuracy.

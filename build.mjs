@@ -10,12 +10,12 @@ const ORDER = [
   'src/config.mjs', 'src/util.mjs', 'src/providers/retry.mjs', 'src/providers/validate.mjs',
   'src/state.mjs', 'src/storage.mjs',
   'src/providers/registry.mjs', 'src/providers/transport.mjs', 'src/providers/common.mjs',
-  'src/providers/understat.mjs', 'src/providers/odds.mjs',
-  'src/model/fixtures.mjs', 'src/model/scoring.mjs', 'src/squad.mjs',
+  'src/providers/understat.mjs', 'src/providers/odds.mjs', 'src/providers/minutes-history.mjs',
+  'src/model/fixtures.mjs', 'src/model/minutes.mjs', 'src/model/scoring.mjs', 'src/squad.mjs',
   'src/model/backtest.mjs', 'src/main.mjs', 'src/ui/views.mjs', 'src/ui/markdown.mjs',
   'src/ui/security-wiring.mjs',
 ];
-// shims (model/minutes.mjs, model/xp.mjs) are re-export-only: excluded from the bundle.
+// model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
 const strip = code => code.split('\n').filter(l => {
   const t = l.trim();
@@ -71,8 +71,6 @@ let html = template
   .replace('</title>', `</title>\n<meta http-equiv="Content-Security-Policy" content="${csp}">`)
   .replace('<script src="app.js"></script>', '<script>' + scriptContent + '</script>');
 
-// Build-time CSP verification is deliberately independent of the values above:
-// re-extract the final assets, recompute their hashes and reject a bad artefact.
 const emittedScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
 const emittedStyles = [...html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)];
 const emittedCsp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)">/.exec(html)?.[1];

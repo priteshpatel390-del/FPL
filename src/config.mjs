@@ -7,9 +7,19 @@ const DC_THRESH  = {2:10, 3:12, 4:12};      // defensive contribution thresholds
 const BASE_GOALS = 1.42;                     // league average goals per team per game
 const HOME_TILT  = 1.10;
 
-export const SCHEMA_VERSION = 2;          // cache envelope; bump invalidates cached snapshots
-export const MODEL_VERSION  = '2.0.0';    // projection engine
+export const SCHEMA_VERSION = 3;          // cache envelope; bump invalidates cached snapshots
+export const MODEL_VERSION  = '2.1.0';    // Stage 4 expected-minutes model
 export const RULES_VERSION  = '2025-26.1';// FPL scoring rules encoded
+
+export const MINUTES_RULES = Object.freeze({
+  detailedCohort:80,
+  historyWindow:8,
+  recencyDecay:0.90,
+  priorMatches:4,
+  prior:{pStart:0.50,pAppear:0.70,p60:0.40,expMin:45,confidence:0.20},
+  confidence:{high:0.75,medium:0.45},
+  cacheMaxAgeMs:7 * 24 * 60 * 60 * 1000
+});
 
 // Adjustment-5 market rules — DEFINED here before any formula change (Stage 5+
 // may consume more of these; today they gate inclusion/staleness only).

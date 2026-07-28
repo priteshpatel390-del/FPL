@@ -6,7 +6,8 @@ const S = {
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
   dataIssues:[],
-  retryStats:{}
+  retryStats:{},
+  minuteHistory:{}
 };
 
 /* ---------------------------------------------------------------------
@@ -46,7 +47,7 @@ function hydrate(d){
                                : normaliseFixtures(bv.value.fixtures);
   const issues = bv.issues.concat(fx.issues);
   if(bv.value === null || hasFatal(issues)){
-    S.dataIssues = issues;                 // reported; nothing else disturbed
+    S.dataIssues = issues;
     return { ok:false, issues };
   }
   const v = bv.value;
@@ -71,7 +72,6 @@ function hydrate(d){
   S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
            defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
 
-  // populate position filter once
   const sel = $('plPos');
   if(sel.options.length <= 1)
     v.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
@@ -79,18 +79,11 @@ function hydrate(d){
   return { ok:true, issues };
 }
 
-/* Optional providers report AFTER hydrate, on their own schedule. Replacing
-   by provider+endpoint keeps repeat loads idempotent instead of accreting
-   duplicate issues every time a panel is refreshed. */
 function recordIssues(provider, endpoint, issues){
   S.dataIssues = S.dataIssues.filter(i => !(i.provider === provider && i.endpoint === endpoint));
   if(issues && issues.length) S.dataIssues = S.dataIssues.concat(issues);
 }
 
-/* D-15: retry metadata, keyed by provider + normalised endpoint so a pooled
-   sweep of 20 rival managers cannot grow 20 entries. Latest attempt wins —
-   this is a current-status surface, not a log. The provider-health model
-   (item 4) is the intended consumer; nothing reads it yet. */
 function recordRetry(record){
   if(!record || !record.provider) return;
   S.retryStats[record.provider + '|' + record.endpoint] = record;

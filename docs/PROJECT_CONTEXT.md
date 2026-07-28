@@ -12,12 +12,16 @@ and an on-device backtest that calibrates the model against real historical seas
 - Live at https://priteshpatel390-del.github.io/FPL/ (GitHub Pages, repo `priteshpatel390-del/FPL`).
 - Season 2026-27 starts 21 Aug 2026; app is in pre-season mode (price-implied projections; squad/
   league features dormant until GW1 picks publish).
-- Codebase refactored into ES modules with a deterministic bundler; Stage 3.5 is merged through PR #3.
-  The implementation record reports 194 automated tests passing and deterministic builds.
+- Stage 3 security and provider hardening is complete and merged through PR #6 at
+  `3f662b7e133ce2995da74c5e52165ae84744e120`; documentation closeout is merged through PR #7 and
+  verified main HEAD `7977d0c1a1060dea425d5f0da38829826949ef92`.
+- Verified Stage 3 baseline: 210 passing tests, successful build, byte-identical two-build comparison
+  and generated `dist/` files verified against the successful build artefact.
+- The current checkpoint is Stage 4 — Expected Minutes, following owner approval of the architecture
+  review and model design.
 - Backtested on 2025-26: r=0.80, ±0.5 pts/GW (aggregate method — superseded by walk-forward in a
-  future stage), per-position calibration applied (notably FWD ×1.17).
-- Stage 3 (security hardening) is IN PROGRESS. Items 1–5 are merged. Stage 3.6 AI/Markdown
-  sanitisation is not implemented and requires design approval before work begins.
+  future stage), per-position calibration applied (notably FWD ×1.17). This is method-flattered and
+  must not be presented as validated out-of-sample accuracy.
 
 ## Goals & priorities (owner-stated, in order)
 1. Reliable expected-points projections  2. Accurate expected-minutes  3. Clean-sheet / attacking
@@ -41,10 +45,9 @@ mobile. The app also runs inside Claude's artifact preview (keyless Ask tab work
 
 ## Completed / current / upcoming
 Completed: Stage 1 (characterisation tests + data audit), SEC-1 hot-fix, Stage 2 (module
-extraction, provider registry, provenance, build identity), the documentation handover, and Stage 3
-items 1–5 including Provider Health and DOM-builder rendering. Current: Stage 3 security hardening.
-Next: Stage 3.6 AI/Markdown sanitisation design approval, then remaining odds-key/CSP work → owner
-architecture review → Stages 4–9 modelling and UI (ROADMAP.md).
+extraction, provider registry, provenance, build identity), the documentation handover and Stage 3
+security/provider hardening. Current: Stage 4 expected-minutes implementation on an approved isolated
+branch. Next: Stage 5 scoring corrections after Stage 4 is verified, reviewed and merged.
 
 ## Major risks
 Public CORS-relay dependence for FPL/Understat transport (R1); undocumented FPL API schema drift

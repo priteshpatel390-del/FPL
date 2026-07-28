@@ -15,8 +15,8 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | HEALTH-1 | Provider Health is session-scoped | No multi-session incident history | No planned stage | Accepted |
 | VAL-2 | Understat values are structurally but not range validated | Nonsense numeric values could pass structure checks | Stage 7 ablation | Open |
 | VAL-3 | Archive CSV validates headers but not every row width | Bad rows are skipped rather than counted | Stage 7 | Open |
-| MIN-1 | Expected minutes = season minutes ÷ current GW | Largest projection error source | Stage 4 | Open, quarantined golden |
-| DEN-1 | Per-match denominators use GW number | Postponement bias | Stage 4 | Open, quarantined golden |
+| MIN-1 | Expected minutes = season minutes ÷ current GW | Replaced by tiered current-season histories with aggregate/prior fallback and explicit pStart/pAppear/p60/expMin/confidence outputs | Stage 4 | **CLOSED in draft PR #8; pending merge** |
+| DEN-1 | Per-match denominators use GW number | Replaced by completed team fixtures and detailed player opportunities | Stage 4 | **CLOSED in draft PR #8; pending merge** |
 | SCOR-1 | Linear approximations of stepped FPL rules | Small systematic scoring biases | Stage 5 | Open, quarantined golden |
 | SCOR-2 | Bonus uses BPS/90 heuristic | Bonus miscalibration | Stage 5 | Open, quarantined golden |
 | FIX-1 | Blank/double ease constants are arbitrary | Chip-window ease approximate | Stage 5/7 | Open, quarantined golden |
