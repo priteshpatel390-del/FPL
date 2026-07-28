@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 6 — Transfer Optimiser is implemented and verified on draft PR #14 from branch `agent/stage6-transfer-optimiser`. The approved scope covers exact 0–3 transfer plans, complete squad legality and pooled affordability, free-transfer/hit handling, per-Gameweek legal best-XI scoring, a zero-transfer baseline, inherited club-quota handling, explicit estimated-price labelling, deterministic ordering and fail-closed limits. Verified source commit `5181299c8773c118220bdd8c18e80eb053eaf592` passed **254/254 tests** and deterministic two-build comparison. Production search is checked against an independent exhaustive reference on reduced pools. Verified generated artefacts were committed at `212b071687aa1ec6fc99e2006db824eb99291657`; the temporary workflow was removed at `026848dc5b11dded156e0e7fc873d5a457f59067`. Pritesh’s explicit approval is required before merge or Stage 7 begins.
+Stage 7 is merged into `main` at `78b42e09d2ad3b8338b587ba2b89e815cfc0c45a` with a verified **274/274** baseline. Stage 8 — Uncertainty and Squad Simulation is implemented on draft PR #16 from branch `agent/stage8-uncertainty-simulation`. Approved design: `docs/STAGE8-DESIGN.md`. The scope adds deterministic seeded player and squad simulation, percentiles, threshold probabilities, legal auto-subs and captain/vice fallback while leaving deterministic `projectXP()` and the transfer optimiser unchanged. Full verification, generated artefacts and owner review remain required before merge.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
@@ -37,7 +37,7 @@ Stage 6 — Transfer Optimiser is implemented and verified on draft PR #14 from 
 - AI output uses restricted Markdown AST rendering.
 - Odds key is masked, omitted when empty, one-action forgettable and scrubbed from diagnostics.
 - Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
-- The custom bundler strips complete static import/export declarations and fails if raw module syntax survives; focused build regression tests guard this boundary.
+- The custom bundler strips complete static import/export declarations and fails if raw module syntax survives.
 - `style-src-attr 'unsafe-inline'` remains an explicit Stage 9 concession.
 - Meta `frame-ancestors` is ineffective on Pages; a hashed frame-buster compensates until serverless headers.
 
