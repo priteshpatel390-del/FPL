@@ -1,0 +1,135 @@
+name: Stage 9.4 clean finalisation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  finalise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-4-decision-previews
+          fetch-depth: 0
+      - name: Reverify, document and clean Stage 9.4
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='849ff757c68c35e92744dc96efc34848110fa19e'
+          ARTEFACT_SHA='ed275d2a148d90d09836199f8d1485394d72b6f5'
+          BRANCH='agent/stage9-4-decision-previews'
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          grep -q '^status=0$' .stage9-4-result
+          grep -q "^source=${SOURCE_SHA}$" .stage9-4-result
+          grep -q "^artefact=${ARTEFACT_SHA}$" .stage9-4-result
+          git diff --exit-code "$ARTEFACT_SHA" -- app.html build.mjs src tests dist
+
+          mkdir -p /tmp/stage9-4-committed /tmp/stage9-4-first
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-4-committed/
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/stage9-4-tests.log
+          grep -q '# pass 304' /tmp/stage9-4-tests.log
+          grep -q '# fail 0' /tmp/stage9-4-tests.log
+          cmp /tmp/stage9-4-committed/index.html dist/index.html
+          cmp /tmp/stage9-4-committed/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage9-4-committed/manifest.json dist/manifest.json
+
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-4-first/
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cmp /tmp/stage9-4-first/index.html dist/index.html
+          cmp /tmp/stage9-4-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage9-4-first/manifest.json dist/manifest.json
+          node -e "const m=require('./dist/manifest.json');if(m.commit!=='$SOURCE_SHA')throw new Error('build identity mismatch: '+m.commit)"
+
+          python - <<'PY'
+          from pathlib import Path
+
+          decisions=Path('docs/DECISIONS.md')
+          text=decisions.read_text()
+          if '**D-19 · 2026-07-28 · Accepted · Session-only decision previews (Stage 9.4)**' not in text:
+              text += """
+
+**D-19 · 2026-07-28 · Accepted · Session-only decision previews (Stage 9.4)**
+Reason: the owner needs to inspect optimiser and captaincy alternatives without changing the model recommendation, saved squad or FPL account. Approach: `ui/decision-preview.mjs` stores temporary state only in module memory, applies exact optimiser `finalSquadIds` to cloned squad entries, routes the clone through unchanged `bestXI()`, and keeps model captaincy visible beside any preview. Squad signatures and optimiser input/result signatures invalidate stale state. Consequences: refresh clears previews; no storage write or FPL submission exists; changing transfer context clears custom captaincy; formulas and persisted data remain unchanged.
+"""
+              decisions.write_text(text)
+
+          changelog=Path('docs/CHANGELOG.md')
+          text=changelog.read_text()
+          if '## [Stage 9.4] — 2026-07-28 — Temporary decision previews' not in text:
+              entry="""## [Stage 9.4] — 2026-07-28 — Temporary decision previews
+### Added
+- Session-only transfer-plan previews that apply exact optimiser plans to a cloned squad and show the resulting next-Gameweek pitch.
+- Temporary captain and vice-captain selection with role swapping, model-comparison copy and separate captain uplift/preview total.
+- Automatic invalidation when the real squad or optimiser inputs/results change.
+- Nine focused preview-state and UI-wiring tests.
+### Verification
+- Verified source commit `849ff757c68c35e92744dc96efc34848110fa19e`.
+- Full suite: **304/304 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`.
+### Unchanged
+- No projection, expected-minutes, best-XI, captaincy-ranking, transfer-optimiser, provider, storage or security formula changed.
+- No preview is persisted or submitted to FPL.
+### Status
+- Implemented and verified on draft PR #23; awaiting owner review and explicit merge approval.
+
+"""
+              marker='## [Stage 9.2]'
+              if marker not in text: raise SystemExit('Stage 9.2 changelog marker missing')
+              changelog.write_text(text.replace(marker,entry+marker,1))
+
+          history=Path('docs/STAGE_HISTORY.md')
+          text=history.read_text()
+          if '## Stage 9.4 — Temporary decision previews' not in text:
+              section="""## Stage 9.4 — Temporary decision previews (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+Added session-only transfer-plan and captain/vice previews while keeping the real squad, model recommendations and persisted state authoritative. Exact optimiser plans are applied to cloned squad entries and checked against `finalSquadIds`; the resulting temporary squad uses the unchanged `bestXI()` for pitch presentation. Preview captaincy remains distinct, supports role swapping and shows its uplift separately from the base XI score.
+
+Preview state is invalidated by real-squad changes and by optimiser input or result changes. Review caught and fixed two stale-state gaps before completion: optimiser result values were added to the signature, and captain-only previews now clear when optimiser context changes. Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Generated artefacts were committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No formula, storage, provider, security or FPL-write behaviour changed.
+
+"""
+              marker='## Stage 7 — Walk-forward backtest'
+              if marker not in text: raise SystemExit('Stage history marker missing')
+              history.write_text(text.replace(marker,section+marker,1))
+
+          limitations=Path('docs/KNOWN_LIMITATIONS.md')
+          text=limitations.read_text()
+          if '## Stage 9.4 preview limitations' not in text:
+              text += """
+
+## Stage 9.4 preview limitations
+- Decision previews are intentionally session-only and disappear on refresh.
+- Previews do not submit transfers, captaincy or vice-captain choices to FPL.
+- Transfer previews show the next-Gameweek pitch while optimiser net gain may cover a multi-Gameweek horizon; the UI labels both values explicitly.
+- Transfer previews reuse deterministic expected points and `bestXI()`; they do not rerun Stage 8 squad uncertainty for the temporary squad.
+- Browser screenshot regression tooling is still absent, so final responsive appearance requires human review.
+"""
+              limitations.write_text(text)
+
+          required={
+              'CLAUDE.md':['Stage 9.4','304/304'],
+              'docs/PROJECT_CONTEXT.md':['Stage 9.4','PR #23'],
+              'docs/ARCHITECTURE.md':['decision-preview.mjs','session-only'],
+              'docs/ROADMAP.md':['Checkpoint 9.4','304/304'],
+              'docs/STAGE9-DESIGN.md':['Implemented and verified on draft PR #23'],
+              'docs/TESTING.md':['304/304','decision-preview.test.mjs'],
+              'docs/STAGE9-4-SCOPE.md':['304/304','849ff757c68c35e92744dc96efc34848110fa19e']
+          }
+          for filename,needles in required.items():
+              value=Path(filename).read_text()
+              for needle in needles:
+                  if needle not in value: raise SystemExit(f'{filename} missing {needle}')
+          PY
+
+          rm -f .stage9-4-result .stage9-4-trigger tools/stage9-4-run.sh tools/stage9-4-implement.b64.*
+          rm -f .github/workflows/stage9-4-cleanup.yml
+          git add -A
+          git commit -m 'Finalise and clean Stage 9.4 review branch'
+          git push origin HEAD:"$BRANCH"
