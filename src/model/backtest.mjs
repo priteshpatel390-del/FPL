@@ -149,7 +149,7 @@ async function runBacktest(){
       ['Fold calibrated',calibrated?.n,fmt(calibrated?.mae),fmt(calibrated?.rmse),fmt(calibrated?.bias),fmt(calibrated?.r)]
     ];
     const body=el('tbody');
-    rows.forEach(row=>body.appendChild(el('tr',{},...row.map((value,index)=>el('td',index?{class:'num'}:{},value))));
+    rows.forEach(row=>body.appendChild(el('tr',{},...row.map((value,index)=>el('td',index?{class:'num'}:{},value)))));
     setChildren(out,[
       el('div',{class:'kpis',style:{marginTop:'10px'}},
         kpi('Season',ARCHIVE_DATASET.season),kpi('Folds',evaluation.folds.length),
