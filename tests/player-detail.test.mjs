@@ -5,6 +5,7 @@ import {
   PLAYER_DETAIL_SPREAD_THRESHOLDS,
   playerDetailSpread,
   playerDetailRangePosition,
+  playerDetailAvailabilityLabel,
   playerDetailSetup,
   playerDetailOpen
 } from '../src/ui/player-detail.mjs';
@@ -25,6 +26,12 @@ test('unavailable and reduced-quality simulations suppress descriptive labels',(
   assert.equal(reduced.width,6);
   assert.equal(reduced.label,null);
   assert.equal(reduced.quality,'reduced');
+});
+
+test('official doubtful status stays doubtful regardless of percentage',()=>{
+  assert.equal(playerDetailAvailabilityLabel({status:'d',chance_of_playing_next_round:25}),'Doubtful');
+  assert.equal(playerDetailAvailabilityLabel({status:'i'}),'Unavailable');
+  assert.equal(playerDetailAvailabilityLabel({status:'a'}),'Available');
 });
 
 test('range marker positions are deterministic and bounded',()=>{

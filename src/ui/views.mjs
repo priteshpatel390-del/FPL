@@ -163,7 +163,7 @@ function openPlayerDetailView(p,from,span,trigger){
       playerDetailMetric(`GW${S.nextGW} xP`,fmt1(next.total),fixtureLabel),
       playerDetailMetric(`${span} GW xP`,fmt1(x.total),`${x.games} fixture${x.games===1?'':'s'}`),
       playerDetailMetric('Form',fmt1(num(p.form)),`${p.selected_by_percent}% owned`),
-      playerDetailMetric('Availability',availability(p)>=1?'Available':availability(p)>=.75?'Doubtful':'Unavailable',p.status==='a'?'Official status clear':p.news||'Check latest team news'))));
+      playerDetailMetric('Availability',playerDetailAvailabilityLabel(p),p.status==='a'?'Official status clear':p.news||'Check latest team news'))));
 
   detail.push(playerDetailSection('Expected minutes',
     elNode('div',{class:'player-detail-grid minutes-grid'},

@@ -23,6 +23,12 @@ function playerDetailRangePosition(value,min,max){
   return clamp((num(value)-low)/(high-low)*100,0,100);
 }
 
+function playerDetailAvailabilityLabel(p = {}){
+  if(['i','u','s','n'].includes(p.status)) return 'Unavailable';
+  if(p.status === 'd') return 'Doubtful';
+  return 'Available';
+}
+
 function playerDetailClose(){
   if(typeof document === 'undefined') return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
@@ -90,6 +96,7 @@ export {
   PLAYER_DETAIL_SPREAD_THRESHOLDS,
   playerDetailSpread,
   playerDetailRangePosition,
+  playerDetailAvailabilityLabel,
   playerDetailSetup,
   playerDetailOpen,
   playerDetailClose
