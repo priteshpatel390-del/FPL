@@ -12,7 +12,7 @@ const ORDER = [
   'src/providers/registry.mjs', 'src/providers/transport.mjs', 'src/providers/common.mjs',
   'src/providers/understat.mjs', 'src/providers/odds.mjs',
   'src/model/fixtures.mjs', 'src/model/scoring.mjs', 'src/squad.mjs',
-  'src/model/backtest.mjs', 'src/main.mjs', 'src/ui/views.mjs',
+  'src/model/backtest.mjs', 'src/main.mjs', 'src/ui/views.mjs', 'src/ui/markdown.mjs',
 ];
 // shims (model/minutes.mjs, model/xp.mjs) are re-export-only: excluded from the bundle.
 
