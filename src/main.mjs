@@ -1,5 +1,5 @@
 import { S } from './state.mjs';
-import { $, num } from './util.mjs';
+import { $, num, el, setChildren } from './util.mjs';
 import { api } from './providers/transport.mjs';
 import { sget, sset, saveCfg, K_CFG, K_CACHE, K_CAL } from './storage.mjs';
 import { slim, hydrate, recordIssues } from './state.mjs';
@@ -118,13 +118,13 @@ async function loadAll(){
     } else if(shape){
       markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
       st.textContent = 'Season data could not be read.';
-      $('ticker').innerHTML = `<div class="empty"><strong>Season data isn't usable right now</strong>
-        The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly.</div>`;
+      setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
+        "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
       markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
       st.textContent = 'Data feed unreachable.';
-      $('ticker').innerHTML = `<div class="empty"><strong>No connection to the FPL feed</strong>
-        Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.</div>`;
+      setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
+        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.'));
     }
     renderProviderHealth();
   }

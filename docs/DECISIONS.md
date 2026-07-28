@@ -127,3 +127,16 @@ Failure paths retry within bounds and then produce exactly the same fallback as 
 metadata lands on `S.retryStats`, keyed by provider and a normalised endpoint (digit runs collapsed
 to `{id}`, query strings stripped) so it can neither grow per manager nor carry the odds API key.
 No scoring, projection, calibration or optimisation code was touched.
+
+**D-17 · 2026-07-28 · Accepted · Text-node-first rendering for dynamic non-AI views (Stage 3.5)**
+Reason: API, provider and user strings were interpolated into `innerHTML`, allowing names or notes to
+be interpreted as markup. Approach: shared `el()` and `setChildren()` primitives convert every
+non-node child to a text node. The complete approved inventory—gameweek/source status, ticker,
+players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search, core errors and
+backtest output—uses real DOM nodes while retaining its existing classes, semantics and listeners.
+Ask output is deliberately excluded and restored to the Stage 3.4 baseline; AI/Markdown policy is a
+separate Stage 3.6 decision after design approval. Alternatives rejected: generic HTML sanitisation
+(new policy and parser surface), escaping strings before `innerHTML` (easy to omit and contrary to
+the approved construction model), and bundling CSP/AI/key work (stage-discipline violation).
+Consequences: XSS-1 is closed for API/provider/user rendering; five adversarial tests and a static
+sink inventory guard the boundary. No model formula, provider behaviour, dependency or layout changed.

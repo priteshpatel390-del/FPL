@@ -24,10 +24,11 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md (current), DECISIONS.m
   thresholds, records consequence lines and surfaces a compact settings-panel health strip.
   Ten focused transition tests were added; full suite is 189/189 and the two-build byte comparison
   is green. No model formula changed.
-- Next checkpoint after item 4 approval: DOM-builder rendering and AI-output sanitisation.
+- **Stage 3.5 — DOM-builder rendering** · IMPLEMENTED on the review branch: full approved dynamic
+  view inventory migrated, five focused tests, 194 total. Awaiting owner review; Ask is excluded.
 
 ## Upcoming (order fixed; later stages depend on earlier)
-- **Stage 3 remaining work** · DOM-builder rendering, AI-output sanitisation,
+- **Stage 3 remaining work** · Stage 3.6 AI-output sanitisation (after design approval),
   odds-key hygiene (“Forget key”, scrubber), and hash-based CSP.
 - **Owner architecture review gate** (owner-mandated pause before any model work).
 - **Stage 4 — Expected-minutes model** · tiered per-player histories (squad+~top-80 detailed,
@@ -46,6 +47,6 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md (current), DECISIONS.m
   placement, inline-style→classes (deletes CSP concession), docs refresh.
 
 ## Current blockers
-1. Stage 3 item 4 requires owner review and explicit approval before merge.
+1. Stage 3.5 requires a published draft PR plus owner review and explicit approval before merge.
 2. BT-1 dataset SHA (owner `git ls-remote` or Stage-7 ETag).
 3. Season data realities: squad/league features and prospective odds logging need GW1 (21 Aug 2026).

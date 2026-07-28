@@ -1,6 +1,6 @@
 # CLAUDE.md — onboarding for every future Claude session
 Purpose: read this FIRST, in full. The GitHub repository — not any conversation — is the project's
-source of truth. Last updated: 2026-07-27.
+source of truth. Last updated: 2026-07-28.
 
 ## Who you're working with
 Pritesh: the owner, working from an iPhone, non-developer but a rigorous reviewer who independently
@@ -14,15 +14,15 @@ evidence.
 3. docs/DECISIONS.md — settled questions (do not relitigate silently)
 4. docs/ROADMAP.md — where we are; what's next; blockers
 5. docs/KNOWN_LIMITATIONS.md — before promising anything
-6. The current stage's design doc (today: docs/STAGE3-DESIGN.md; item 4 record: docs/STAGE3-ITEM4.md)
+6. The current stage's design doc (docs/STAGE3-DESIGN.md; item 5 record: docs/STAGE3-ITEM5.md)
 7. Before ANY model work: docs/PROJECTION_MODEL.md + docs/TESTING.md
 8. Before provider/security work: docs/DATA_SOURCES.md + docs/SECURITY.md
 9. History when needed: docs/STAGE_HISTORY.md, docs/CHANGELOG.md, docs/AUDIT.md, docs/STAGE1/2.md
 
 ## Current checkpoint
-Stage 3 items 1–3 are merged. Item 4 Provider Health is implemented in draft PR #2 with 189 tests
-and deterministic builds verified; it still requires owner review and explicit approval before merge.
-The next planned item after approval is rendering safety (DOM builders + AI-output sanitisation).
+Stage 3 items 1–4 are merged at the last locally available checkpoint. Stage 3.5 DOM-builder
+rendering is implemented on its review branch with 194 tests; owner review and a published draft PR
+are still required. Stage 3.6 AI/Markdown sanitisation is separate and awaits design approval.
 
 ## Non-negotiable rules
 - Never modify projection logic without tests, and never change a formula without first presenting:
@@ -32,7 +32,7 @@ The next planned item after approval is rendering safety (DOM builders + AI-outp
   `expectedToChange` section moves only as part of the stage that fixes its issue id.
 - Never claim improved prediction accuracy without out-of-sample validation (DECISIONS D-11). The
   published r=0.80 is in-sample-flattered; do not quote it as validated.
-- Keep every stage independently deployable; run `./run-tests.sh` (build + 189 tests) green before
+- Keep every stage independently deployable; run `./run-tests.sh` (build + 194 tests) green before
   presenting anything.
 - Maintain deterministic builds (same sources → same bytes; BUILD_COMMIT stamps identity).
 - Preserve mobile-first design and the owner's one-file deploy workflow (upload dist/index.html).

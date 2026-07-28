@@ -31,7 +31,8 @@ Date: 2026-07-26 · App version audited: single-file build, 96,153 bytes · Audi
 8. **UST-1 (medium):** pre-season uses previous season's *closing* last-6 as if current; spec-compliant early-season prior needed. Refresh cadence wasteful.
 9. **TRF-1 (medium, UI claim):** "top N moves can all be made free" shown without combined-plan validation. Remove in Stage 6.
 10. **CACHE-1 (low):** no schemaVersion/season/modelVersion; kickoff_time/started/provisional not retained in slim().
-11. **XSS-1 (low):** innerHTML interpolation of API strings throughout views; md() escapes < and & only. Stage 2/3: textContent-first + escapeHTML.
+11. **XSS-1 (closed Stage 3.5):** API/provider/user strings across the approved view inventory now
+    render through text-node-first DOM builders. Ask `md()` remains a separate Stage 3.6 scope.
 12. **BT-1 (low):** backtest joins on name|position (duplicate-name collisions); un-pinned dataset.
 13. **FIX-1 (low):** blank-GW ease constants (0.55/1.0) and double bonus (+0.45) arbitrary/untested.
 
