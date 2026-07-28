@@ -38,3 +38,6 @@ Stage 5 golden changes are limited to SCOR-1, SCOR-2 and FIX-1 consequences plus
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy. Accuracy claims require Stage 7 walk-forward holdout evidence.
+
+## Stage 6 transfer optimiser
+`tests/transfer-optimiser.test.mjs` covers full-squad legality, approved hit and next-free-transfer formulas, actual selling-price affordability, doubtful/unavailable eligibility, fail-closed behaviour and deterministic equality between exhaustive reference and exact production branch-and-bound on a controlled dataset.

@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e0135970765","commit":"aee6d0fee7cc177622a046f37885b554013debbd"} */
-const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e01359707656387d2f4d47008c32c0663c608adae055385c9af1373e4ca","commit":"aee6d0fee7cc177622a046f37885b554013debbd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b55b2bc39bd8066","commit":"04fb794cd54c456e9d1860dc092991a8659fcf81"} */
+const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b55b2bc39bd8066b9b48b553b123cb9f8230858667329777601bdf9ade05e81","commit":"04fb794cd54c456e9d1860dc092991a8659fcf81","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -46,6 +46,16 @@ const SCORING_RULES = Object.freeze({
   bonusPriorAppearances:8,
   minimumExposure90:0.5,
   penaltyRoleOrders:Object.freeze([1,2])
+});
+
+const TRANSFER_RULES = Object.freeze({
+  maxTransfers:3,
+  squadSize:15,
+  positions:Object.freeze({1:2,2:5,3:5,4:3}),
+  maxPerClub:3,
+  hitCost:4,
+  nextFreeTransferValue:1,
+  maxFreeTransfers:5
 });
 
 // Adjustment-5 market rules — configuration remains unvalidated until Stage 7.
@@ -1815,18 +1825,18 @@ function newsAge(p){
   const days = Math.floor((Date.now() - new Date(p.news_added))/86400000);
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + 'd ago';
 }
-function sellPrice(entry){
+function sellingPrice(now, bought=now){
   // FPL keeps half of any rise, rounded down to 0.1
-  const now = entry.p.now_cost, bought = entry.bought ?? now;
   if(now <= bought) return now;
   return bought + Math.floor((now - bought)/2);
 }
+function sellPrice(entry){ return sellingPrice(entry.p.now_cost,entry.bought ?? entry.p.now_cost); }
 
 function mySquad(){
   if($('useManual').checked || !S.picks || !S.picks.picks){
     return S.manual.map((m,i) => ({p:S.byId[m.id], bought:m.bought, position:i+1, multiplier:1})).filter(x => x.p);
   }
-  return S.picks.picks.map(pk => ({p:S.byId[pk.element], bought:null, position:pk.position,
+  return S.picks.picks.map(pk => ({p:S.byId[pk.element], bought:null, sellingPrice:pk.selling_price, position:pk.position,
     multiplier:pk.multiplier, is_captain:pk.is_captain})).filter(x => x.p);
 }
 
@@ -1849,6 +1859,123 @@ function bestXI(squad, gw){
     .sort((a,b) => (a.p.element_type===1?1:0)-(b.p.element_type===1?1:0) || xpOf(b.p,gw,1).total - xpOf(a.p,gw,1).total);
   return best;
 }
+
+
+
+/* ===== src/model/transfers.mjs ===== */
+
+const byId = (a,b) => Number(a.id)-Number(b.id);
+const playerOf = entry => entry.p || entry;
+const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ??
+  sellingPrice(playerOf(entry).now_cost,entry.bought ?? playerOf(entry).now_cost);
+
+function validateTransferSquad(squad, rules=TRANSFER_RULES){
+  if(!Array.isArray(squad) || squad.length !== rules.squadSize) return false;
+  const ids=new Set(), positions={1:0,2:0,3:0,4:0}, clubs={};
+  for(const entry of squad){
+    const p=playerOf(entry);
+    if(!p || p.id == null || ids.has(p.id) || !rules.positions[p.element_type]) return false;
+    ids.add(p.id); positions[p.element_type]++;
+    clubs[p.team]=(clubs[p.team]||0)+1;
+    if(clubs[p.team] > rules.maxPerClub) return false;
+  }
+  return Object.entries(rules.positions).every(([pos,count])=>positions[pos]===count);
+}
+
+function nextFreeTransfers(freeTransfers, transferCount, rules=TRANSFER_RULES){
+  return Math.min(rules.maxFreeTransfers,Math.max(0,freeTransfers-transferCount)+1);
+}
+
+function evaluateTransferPlan(squad, transfers, options){
+  const rules=options.rules || TRANSFER_RULES, count=transfers.length;
+  const paid=Math.max(0,count-options.freeTransfers), hit=paid*rules.hitCost;
+  const nextFT=nextFreeTransfers(options.freeTransfers,count,rules);
+  let projected=0;
+  for(let offset=0;offset<options.horizon;offset++) projected += options.bestXI(squad,options.fromGW+offset);
+  return {projected,paidTransfers:paid,hit,nextFreeTransfers:nextFT,
+    objective:projected-hit+rules.nextFreeTransferValue*nextFT};
+}
+
+function comparePlans(a,b){
+  const delta=b.objective-a.objective;
+  if(Math.abs(delta)>1e-9) return delta;
+  if(a.transfers.length!==b.transfers.length) return a.transfers.length-b.transfers.length;
+  const ak=a.transfers.map(t=>`${t.out.id}:${t.in.id}`).join('|');
+  const bk=b.transfers.map(t=>`${t.out.id}:${t.in.id}`).join('|');
+  return ak.localeCompare(bk);
+}
+
+function optimiseTransfers(input,{branchAndBound=true}={}){
+  const rules=input.rules || TRANSFER_RULES;
+  if(!validateTransferSquad(input.squad,rules) || !Number.isFinite(input.bank) || input.bank<0 ||
+      !Number.isInteger(input.horizon) || input.horizon<1) return {complete:false,plans:[]};
+  const owned=input.squad.map(e=>({p:playerOf(e),sellingPrice:saleOf(e)})).sort((a,b)=>byId(a.p,b.p));
+  const ownedIds=new Set(owned.map(e=>e.p.id));
+  const candidates=(input.players||[]).filter(p=>p && !ownedIds.has(p.id) &&
+    rules.positions[p.element_type] && input.availability(p)>0).slice().sort(byId);
+  const options={...input,rules};
+  const plans=[], maxResults=Number.isInteger(input.maxResults)&&input.maxResults>0?input.maxResults:Infinity;
+  const addPlan=(outs,ins)=>{
+    const outIds=new Set(outs.map(e=>e.p.id));
+    const result=owned.filter(e=>!outIds.has(e.p.id)).concat(ins.map(p=>({p}))).map(e=>e.p);
+    if(!validateTransferSquad(result,rules)) return;
+    const funds=input.bank+outs.reduce((s,e)=>s+e.sellingPrice,0)-ins.reduce((s,p)=>s+p.now_cost,0);
+    if(funds<0) return;
+    const transfers=outs.map((e,i)=>({out:e.p,in:ins[i]})).sort((a,b)=>byId(a.out,b.out));
+    plans.push({...evaluateTransferPlan(result,transfers,options),transfers,squad:result,bank:funds});
+    if(plans.length>maxResults*2){ plans.sort(comparePlans); plans.length=maxResults; }
+  };
+  addPlan([],[]);
+  const max=Math.min(rules.maxTransfers,owned.length);
+  function chooseOut(start,want,outs){
+    if(outs.length===want){
+      const orderedOuts=outs.slice().sort((a,b)=>a.p.element_type-b.p.element_type||byId(a.p,b.p));
+      const slots=orderedOuts.map(e=>e.p.element_type);
+      const chosen=[];
+      function chooseIn(slotIndex,lastByPos){
+        if(slotIndex===slots.length){ addPlan(orderedOuts,chosen); return; }
+        if(branchAndBound && plans.length>=maxResults && input.playerPoints){
+          const retained=owned.filter(e=>!orderedOuts.includes(e)).map(e=>e.p).concat(chosen);
+          const remaining=new Set(slots.slice(slotIndex));
+          const universe=retained.concat(candidates.filter(p=>remaining.has(p.element_type)));
+          let optimistic=0;
+          for(let offset=0;offset<input.horizon;offset++) optimistic+=universe.map(p=>input.playerPoints(p,input.fromGW+offset))
+            .sort((a,b)=>b-a).slice(0,11).reduce((s,x)=>s+x,0);
+          const hit=Math.max(0,want-input.freeTransfers)*rules.hitCost;
+          const upper=optimistic-hit+nextFreeTransfers(input.freeTransfers,want,rules)*rules.nextFreeTransferValue;
+          plans.sort(comparePlans);
+          if(upper<plans[Math.min(maxResults,plans.length)-1].objective-1e-9) return;
+        }
+        const pos=slots[slotIndex], min=lastByPos[pos] ?? -Infinity;
+        for(const p of candidates){
+          if(p.element_type!==pos || p.id<=min || chosen.some(x=>x.id===p.id)) continue;
+          chosen.push(p);
+          if(branchAndBound){
+            const retained=owned.filter(e=>!orderedOuts.includes(e)).map(e=>e.p).concat(chosen);
+            const clubs={}; retained.forEach(x=>clubs[x.team]=(clubs[x.team]||0)+1);
+            const spent=chosen.reduce((s,x)=>s+x.now_cost,0);
+            const funds=input.bank+orderedOuts.reduce((s,e)=>s+e.sellingPrice,0);
+            if(clubs[p.team]>rules.maxPerClub || spent>funds){ chosen.pop(); continue; }
+          }
+          chooseIn(slotIndex+1,{...lastByPos,[pos]:p.id}); chosen.pop();
+        }
+      }
+      chooseIn(0,{}); return;
+    }
+    for(let i=start;i<=owned.length-(want-outs.length);i++){
+      outs.push(owned[i]); chooseOut(i+1,want,outs); outs.pop();
+    }
+  }
+  // The production path prunes only branches already proved illegal (club/budget),
+  // so it remains exact. The reference path enumerates them and rejects at the leaf.
+  for(let count=1;count<=max;count++) chooseOut(0,count,[]);
+  plans.sort(comparePlans);
+  if(plans.length>maxResults) plans.length=maxResults;
+  return {complete:true,algorithm:branchAndBound?'branch-and-bound':'exhaustive',plans};
+}
+
+const exhaustiveTransferPlans = input => optimiseTransfers(input,{branchAndBound:false});
+const branchAndBoundTransferPlans = input => optimiseTransfers(input,{branchAndBound:true});
 
 
 
@@ -2381,47 +2508,32 @@ function renderTransfers(){
   }
   const span = +$('trHorizon').value, topN = +$('trTop').value;
   const gw = S.nextGW, bank = num($('bankIn').value)*10, ft = num($('ftCount').value);
-  const mineIds = new Set(squad.map(s => s.p.id));
-  const teamCount = {};
-  squad.forEach(s => teamCount[s.p.team] = (teamCount[s.p.team]||0)+1);
-
-  const moves = [];
-  squad.forEach(out => {
-    const budget = sellPrice(out) + bank;
-    const outXP = xpOf(out.p, gw, span).total;
-    S.boot.elements.forEach(inP => {
-      if(mineIds.has(inP.id)) return;
-      if(inP.element_type !== out.p.element_type) return;
-      if(inP.now_cost > budget) return;
-      if(availability(inP) < 0.75) return;
-      const cnt = (teamCount[inP.team]||0) - (inP.team === out.p.team ? 1 : 0);
-      if(cnt >= 3) return;                                  // 3-per-club rule
-      const gain = xpOf(inP, gw, span).total - outXP;
-      if(gain <= 0) return;
-      moves.push({out, inP, gain, cost:(inP.now_cost - sellPrice(out))/10});
-    });
-  });
-  moves.sort((a,b) => b.gain - a.gain);
-
-  if(!moves.length){
-    setChildren(el,noteNode('good',elNode('b',{},'No upgrade found.'),` Nothing available within budget projects better than what you already own over the next ${span} gameweek${span>1?'s':''}. Roll the transfer.`));
+  let result;
+  try { result=branchAndBoundTransferPlans({squad,players:S.boot.elements,bank,freeTransfers:ft,
+    fromGW:gw,horizon:span,maxResults:topN,availability,playerPoints:(p,gameweek)=>xpOf(p,gameweek,1).total,
+    bestXI:(players,gameweek)=>bestXI(players.map(p=>({p})),gameweek).tot}); }
+  catch(_err){ result={complete:false,plans:[]}; }
+  if(!result.complete){
+    const baseline=validateTransferSquad(squad)?bestXI(squad,gw).tot:null;
+    setChildren(el,noteNode('bad',elNode('b',{},'Exact optimisation could not complete.'),
+      baseline==null?' The squad is invalid or incomplete, so no recommendation is shown.':` The zero-transfer baseline is ${fmt1(baseline)} xP for the next gameweek; no transfer plan is claimed.`));
     return;
   }
-  const best=moves[0], nodes=[];
-  const freeText=ft>=1?`You have ${ft} free transfer${ft>1?'s':''}, so this costs nothing.`:best.gain>4?'Even after a −4 this clears the bar.':`After a −4 it nets ${fmt1(best.gain-4)} — not worth it.`;
-  nodes.push(noteNode(best.gain>4?'good':'plain',elNode('b',{},'Top move:'),` ${best.out.p.web_name} → ${best.inP.web_name}, +${fmt1(best.gain)} projected points over ${span} GW${span>1?'s':''}. ${freeText}`));
-  if(ft>=2) nodes.push(noteNode('plain',`With ${ft} banked, the top ${Math.min(ft,5)} moves below can all be made free — but check they aren't two players from the same fixture swing.`));
+  const plans=result.plans, best=plans[0], nodes=[];
+  const baselineObjective=Array.from({length:span},(_,i)=>bestXI(squad,gw+i).tot).reduce((a,b)=>a+b,0)+Math.min(5,ft+1);
+  const change=best.objective-baselineObjective;
+  nodes.push(noteNode(change>0?'good':'plain',elNode('b',{},best.transfers.length?'Top exact plan:':'Roll the transfer:'),
+    ` ${best.transfers.length?best.transfers.map(t=>`${t.out.web_name} → ${t.in.web_name}`).join('; '):'no transfers'}. Objective ${fmt1(best.objective)} (${fmt1(best.projected)} best-XI xP − ${best.hit} hit + ${best.nextFreeTransfers} next free transfers).`));
   const tbody=elNode('tbody');
-  moves.slice(0,topN).forEach(m=>{
-    const net=m.gain-4, verdict=m.gain>6?['rise','strong']:m.gain>4?['rise','worth a hit']:m.gain>1.5?['info','free only']:['dark','marginal'];
+  plans.slice(0,topN).forEach(p=>{
+    const label=p.transfers.length?p.transfers.map(t=>`${t.out.web_name} → ${t.in.web_name}`).join('; '):'Roll / no transfer';
     tbody.appendChild(elNode('tr',{},
-      elNode('td',{},elNode('span',{class:'pname'},m.out.p.web_name),elNode('span',{class:'pmeta'},`${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP`)),
-      elNode('td',{},elNode('span',{class:'pname'},m.inP.web_name,flagNodes(m.inP)),elNode('span',{class:'pmeta'},`${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP`)),
-      cell(`${m.cost>0?'+':''}${fmt1(m.cost)}`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${m.gain>4?'hot':''}`},`+${fmt1(m.gain)}`)),
-      elNode('td',{class:'num',style:{color:net>0?'var(--pitch)':'var(--claret)'}},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
+      elNode('td',{},elNode('span',{class:'pname'},label),elNode('span',{class:'pmeta'},`${p.transfers.length} transfer${p.transfers.length===1?'':'s'} · £${fmt1(p.bank/10)}m left`)),
+      cell(fmt1(p.projected),'num'),cell(`−${p.hit}`,'num'),cell(String(p.nextFreeTransfers),'num'),
+      elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(p.objective)))));
   });
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Out'),head('In'),head('Cost £m','num'),head('Gain','num'),head('After −4','num'),head('Verdict'))),tbody)));
-  nodes.push(noteNode('plain','A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.'));
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Plan'),head('Best-XI xP','num'),head('Hit','num'),head('Next FT','num'),head('Objective','num'))),tbody)));
+  nodes.push(noteNode('plain','Exact search validates the complete 15-player result, combined selling-price budget, position quotas, uniqueness and the three-per-club limit. Doubtful players may be considered; unavailable players are excluded.'));
   setChildren(el,nodes);
 }
 

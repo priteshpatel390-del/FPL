@@ -176,3 +176,11 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - All failure fallbacks produce the same user-facing outcome as before.
 - No scoring, projection, minutes, fixture-difficulty, odds-weighting, backtest-correction,
   squad, transfer or captaincy logic touched. Suite 146 -> 179; build byte-deterministic.
+
+## [Stage 6] — 2026-07-28 — Transfer Optimiser
+### Added
+- Exact legal plans containing zero, one, two or three transfers with deterministic ordering.
+- Full resulting-squad, combined selling-price budget, hit and next-free-transfer validation.
+- Exhaustive reference and exact branch-and-bound production implementations with equivalence tests.
+### Unchanged
+- Projection, expected-minutes, fixture, captaincy, autosub and uncertainty formulas.
