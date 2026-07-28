@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-28.
-Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md, DECISIONS.md.
+Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md, STAGE4-DESIGN.md, DECISIONS.md.
 
 ## Completed
 - **Stage 1 — Characterisation & audit** · Objective: freeze behaviour + audit sources.
@@ -17,12 +17,12 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md, DECISIONS.md.
   committed before merge and the temporary verification workflow was removed.
 
 ## Current
-- **Owner architecture-review gate** · Review the completed Stage 3 foundations and explicitly approve
-  progression before any Stage 4 model work begins.
+- **Stage 4 — Expected-minutes model** · Owner-approved design implemented on draft PR #8.
+  Tiered current-season player histories, pStart/pAppear/p60/expMin/confidence, aggregate/prior
+  fallbacks, history cache and Provider Health integration replace MIN-1/DEN-1. Verification baseline:
+  220 passing tests and deterministic two-build comparison. Awaiting owner review; not merged.
 
 ## Upcoming (order fixed; later stages depend on earlier)
-- **Stage 4 — Expected-minutes model** · tiered per-player histories (squad+~top-80 detailed,
-  aggregate elsewhere), pStart/pAppear/p60/expMin/confidence; replaces AUDIT MIN-1/DEN-1.
 - **Stage 5 — Scoring corrections** · season rules config; stepped-rule distributions, bonus,
   set-piece roles and fixture-model configuration with approved validation.
 - **Stage 6 — Transfer optimiser** · complete legal plans (0–3 moves), squad-level ranking,
@@ -35,6 +35,6 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md, DECISIONS.md.
   placement and inline-style-to-class migration, which removes the CSP style-attribute concession.
 
 ## Current blockers
-1. Owner architecture-review approval before Stage 4.
+1. Owner review and explicit merge approval for Stage 4 draft PR #8.
 2. BT-1 dataset SHA (owner `git ls-remote` or Stage-7 ETag).
 3. Season data realities: squad/league features and prospective odds logging need GW1 (21 Aug 2026).
