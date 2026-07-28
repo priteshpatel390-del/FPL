@@ -11,11 +11,12 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 ### Changed
 - The Team surface now leads with projected score, shape, squad value, free transfers and the football-first pitch rather than legacy flat player cards.
 - The existing captain ranking and six-Gameweek squad table remain available below the pitch.
+- On narrow iPhones, the projected score now leads in a full-width card with the three supporting facts in a separate uncluttered row.
 ### Verification
-- Verified source commit `02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad`.
+- Verified source commit `38bb08e2e8f903deeb39dc4e1a4db070da4d4870`.
 - Full suite: **288/288 passing**.
 - Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
-- Verified generated artefacts committed at `372576324b049972b88437540046c3c1f85457d5`.
+- Verified generated artefacts committed at `a806ccc0`.
 ### Unchanged
 - `bestXI()`, bench ordering, projections, expected minutes, scoring, fixtures, simulation, captain ranking, transfer optimisation, providers, storage and security behaviour.
 - No official FPL or club artwork and no prediction-accuracy claim.

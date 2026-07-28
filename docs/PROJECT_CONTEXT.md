@@ -10,7 +10,7 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
 - Stages 1–8 and Stage 9 checkpoint 9.1 are complete and merged.
 - Stage 9.1 merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`, establishing Team, Players, Transfers and More with Team as the default landing screen.
-- Stage 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 with 288 passing tests, successful deterministic builds and owner review still required.
+- Stage 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 with 288 passing tests, successful deterministic builds, narrow-iPhone summary polish and owner review still required.
 - The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities

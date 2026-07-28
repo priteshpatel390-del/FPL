@@ -35,8 +35,8 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Portrait football pitch presents the unchanged model-selected XI.
   - Repository-owned CSS shirts use deterministic club palettes with safe fallbacks.
   - Model-ranked captain and vice-captain are marked directly on the pitch; bench order is preserved.
-  - Verified source commit `02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad`: **288/288 tests passed**, successful build, deterministic two-build comparison and build-identity check.
-  - Generated deployables committed at `372576324b049972b88437540046c3c1f85457d5`.
+  - Verified source commit `38bb08e2e8f903deeb39dc4e1a4db070da4d4870`: **288/288 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Generated deployables committed at `a806ccc0`.
   - No projection, minutes, scoring, fixture, simulation, squad, optimiser or provider behaviour changed.
 
 ## Upcoming
