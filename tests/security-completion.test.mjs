@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { scrubOddsSecret, forgetOddsKey } from '../src/providers/odds.mjs';
 import { S } from '../src/state.mjs';
+import { getHealth } from '../src/providers/registry.mjs';
 
 const html = () => readFileSync('dist/index.html','utf8');
 const bundle = () => readFileSync('dist/app.bundle.js','utf8');
@@ -35,7 +36,7 @@ test('forget odds key clears field, storage property and active odds state', asy
   assert.deepEqual(stored,result);
   assert.equal(S.odds,null);
   assert.equal(S.oddsNote,'');
-  assert.equal(S.providerHealth.odds.state,'Disabled');
+  assert.equal(getHealth('odds').state,'Disabled');
 });
 
 test('storage source omits an empty odds key rather than persisting an empty secret', () => {
