@@ -5,11 +5,15 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -36,11 +40,17 @@ jobs:
           cmp /tmp/build-one/index.html dist/index.html
           cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
           cmp /tmp/build-one/manifest.json dist/manifest.json
-      - name: Upload verified dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: stage6-verified-dist
-          path: |
-            dist/index.html
-            dist/app.bundle.js
-            dist/manifest.json
+      - name: Commit verified dist to branch
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- dist/index.html dist/app.bundle.js dist/manifest.json; then
+            echo 'Verified dist already matches source.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/index.html dist/app.bundle.js dist/manifest.json
+          git commit -m 'Build Stage 6 verified artefacts'
+          git push origin HEAD:agent/stage6-transfer-optimiser
