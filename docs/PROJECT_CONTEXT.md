@@ -8,9 +8,9 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 ## Current status
 - Live on GitHub Pages from repository `priteshpatel390-del/FPL`.
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
-- Stages 1–8 and Stage 9 checkpoint 9.1 are complete and merged.
-- Stage 9.1 merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`, establishing Team, Players, Transfers and More with Team as the default landing screen.
-- Stage 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 with 288 passing tests, successful deterministic builds, narrow-iPhone summary polish and owner review still required.
+- Stages 1–8 and Stage 9 checkpoints 9.1–9.2 are complete and merged.
+- Stage 9.2 merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`, adding the portrait pitch, repository-owned shirts and narrow-iPhone summary polish with the existing squad logic unchanged.
+- Stage 9.3 — Player detail and uncertainty is implemented and verified on draft PR #22 with 294 passing tests, deterministic builds and owner review still required.
 - The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
@@ -36,11 +36,11 @@ The overriding principle is the simplest reliable data stack that supports good 
 Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 18 or newer runs the custom deterministic bundler and `node:test` suite. `node build.mjs` emits `dist/index.html`, the single deployable uploaded through the GitHub web interface. The custom bundler strips complete static module declarations, rejects surviving module syntax and embeds model, rules, source-hash and commit identity.
 
 ## Completed, current and next
-Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and Stage 9.1 app shell.
+Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and Stage 9 checkpoints 9.1–9.2.
 
-Current: Stage 9.2 implementation and owner review on draft PR #18. It presents the unchanged model-selected XI on a portrait pitch with repository-owned CSS shirts and clear model-selected captain/vice treatment.
+Current: Stage 9.3 implementation and owner review on draft PR #22. It replaces the inline player drawer with an accessible mobile bottom sheet/desktop side panel and presents the existing minutes and uncertainty outputs without changing their formulas.
 
-Next after Stage 9.2 merge: Stage 9.3 player detail and uncertainty presentation. Descriptive spread-label thresholds require separate owner approval before implementation.
+Next after Stage 9.3 merge: Stage 9.4 temporary captain/vice and transfer-plan previews.
 
 ## Major risks
 Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not fully proven out of sample; simulation probability calibration still prospective; and single-maintainer phone-first operations.

@@ -2,6 +2,14 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, AUDIT.md.
 
+## Stage 9.3 — Player detail and uncertainty (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+Replaced the legacy inline player-table drawer with one accessible responsive detail surface: a mobile bottom sheet and desktop right-side panel. Players can open it from the Players table, the Team pitch and bench, or the all-15 squad table. It presents the existing decision summary, expected-minutes outputs and confidence/source, P25–P75 and P10–P90 ranges, outcome probabilities and the existing projection-component explanation.
+
+Pritesh approved absolute P25–P75 spread labels of Tight ≤2.0 points, Moderate >2.0–5.0 and Wide >5.0. Labels are deliberately suppressed in pre-season and for reduced-quality inputs. They describe model-conditional spread only and do not claim calibrated coverage or improved accuracy. Verified source `455e1e1eb143485fd68c3c52d622ef23f9e21c83` passed **294/294 tests**, successful production build, deterministic two-build comparison and build-identity checks; generated artefacts were committed at `3fe0c3467bb451e350f05311420cbe8aa9f81c52`. No projection, expected-minutes, simulation, best-XI, captaincy, bench or optimiser behaviour changed. Draft PR #22 remains behind owner review and explicit merge approval.
+
+## Stage 9.2 — Team pitch and shirts (MERGED 2026-07-28)
+Added the portrait pitch, repository-owned CSS shirt representations, direct captain/vice treatment and narrow-iPhone summary polish while preserving the existing model-selected XI and bench order. Verified baseline: 288/288 tests and deterministic builds. Merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`.
+
 ## Stage 7 — Walk-forward backtest (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
 Replaced the misleading live backtest presentation with a deterministic deadline-information-only walk-forward framework. The evaluator enforces chronological train/calibration/holdout separation, rejects future-information leakage and conflicting duplicates, calculates MAE, RMSE, bias and Pearson correlation, supports position/Gameweek/prediction-band segmentation and compares named ablations only on identical holdout keys.
 

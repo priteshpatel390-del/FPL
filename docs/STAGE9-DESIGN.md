@@ -37,8 +37,8 @@ Setup and provider controls move out of the permanent top-level workflow and int
 
 - P25–P75 is the main compact range.
 - P10–P90 appears in expanded detail.
-- Numeric thresholds for descriptive spread labels such as stable, moderate range and high variance are **not approved**.
-- Those thresholds must return to Pritesh for separate approval during checkpoint 9.3 before being encoded.
+- Descriptive labels use absolute P25–P75 width: **Tight ≤2.0 points**, **Moderate >2.0–5.0 points** and **Wide >5.0 points**, approved by Pritesh on 28 July 2026.
+- Labels are suppressed in pre-season and for reduced-quality simulation inputs. They are presentation categories, not probability-calibration or accuracy claims.
 
 ## Security and implementation boundaries
 
@@ -69,7 +69,8 @@ Explicit exclusions: no football-pitch redesign, club shirts, player detail shee
 
 - Add mobile bottom-sheet and desktop side-panel player detail.
 - Present expected minutes, confidence and approved uncertainty ranges.
-- Return descriptive spread-label thresholds to Pritesh for approval before implementation.
+- Apply the approved Tight/Moderate/Wide P25–P75 width labels, suppressing them in pre-season and for reduced-quality inputs.
+- Preserve the existing projection breakdown and keep the sheet/panel presentation-only.
 
 ### 9.4 — Temporary decision previews
 

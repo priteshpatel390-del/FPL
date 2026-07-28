@@ -1,6 +1,6 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-07-26. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
+Last updated: 2026-07-28. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives:
@@ -144,3 +144,7 @@ sink inventory guard the boundary. No model formula, provider behaviour, depende
 
 **D-18 · 2026-07-28 · Accepted · Deterministic seeded uncertainty and legal squad simulation (Stage 8)**
 Reason: expected points alone hide non-appearance risk, tail outcomes, auto-subs and captain fallback. Approach: a separate seeded Monte Carlo layer reconstructs five minutes states from pStart/pAppear/p60/expMin, samples approved scoring components, reports percentiles and explicit blank/return/haul thresholds, and simulates legal bench/captain mechanics. Deterministic projectXP, calibration and transfer objectives remain unchanged. Detailed pre-season simulation is disabled rather than manufactured. Consequences: equal inputs produce equal outputs; uncertainty remains conditional on the current model and requires prospective calibration before accuracy claims.
+
+**D-19 · 2026-07-28 · Accepted · Absolute descriptive uncertainty-width labels (Stage 9.3)**
+Reason: the player-detail UI needs a compact description of the existing P25–P75 spread without implying that the simulator is externally calibrated. Decision: categorise absolute P25–P75 width as Tight at 2.0 points or less, Moderate above 2.0 through 5.0 points, and Wide above 5.0 points. Absolute widths are used instead of percentages because percentage spreads become unstable around low or zero medians. Wording deliberately avoids “stable” and “high variance”. Labels are suppressed in pre-season and whenever simulation input quality is `reduced`; numeric values may still be shown with the existing warning. Consequences: this is presentation-only, does not change any percentile or sample, and cannot be cited as an accuracy or probability-calibration claim.
+
