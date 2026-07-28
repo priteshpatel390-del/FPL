@@ -17,18 +17,22 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified generated artefacts committed at `212b071687aa1ec6fc99e2006db824eb99291657`; temporary workflow removed at `026848dc5b11dded156e0e7fc873d5a457f59067`.
 
 ## Current
-- **Stage 7 — Walk-forward backtest** · approved and implementation in progress on branch `agent/stage7-walk-forward-backtest`.
+- **Stage 7 — Walk-forward backtest** · implemented on draft PR #15 but not yet verified or ready to merge.
   - Approved design: `docs/STAGE7-DESIGN.md`.
-  - Pure deadline-information-only fold engine added with train/calibration/holdout separation.
-  - Dataset pin validation, leakage rejection, deterministic metrics, segmentation and ablation-key matching added.
-  - Focused tests and deterministic bundle integration added.
-  - Remaining before completion: production historical replay adapter, immutable archive pin/checksum, UI presentation, full-suite verification, committed generated artefacts, documentation closure and owner review.
+  - Pure chronological fold engine with train/calibration/holdout separation and future-information rejection.
+  - Fold-only position calibration; no changes to `S.calib`, production formulas or persisted projection settings.
+  - Immutable vaastav 2025/26 source commit `f9ed3e8839b0f970e0d5d4a83c5628f6eaee755a`; exact downloaded bytes are SHA-256 hashed at runtime.
+  - Deadline-safe archive replay aggregates double Gameweeks, counts malformed rows and never manufactures missing required values.
+  - MAE, RMSE, bias, Pearson correlation, position/Gameweek/band segmentation and identical-key ablation support.
+  - Backtest UI no longer claims exact live-model replay, automatic correction or validated prediction accuracy.
+  - Historical odds, Understat, detailed expected-minutes inputs and production fixture-rating snapshots remain unavailable and are reported rather than reconstructed.
+  - Remaining gate: full `./run-tests.sh`, successful build, deterministic two-build comparison, generated artefacts, documentation closure, temporary workflow removal and owner approval.
 
 ## Upcoming
 - **Stage 8 — Uncertainty and squad simulation** · percentiles, appearance/haul probabilities, auto-sub simulation and captain floor/upside.
 - **Stage 9 — UI integration** · FPL-style squad home page, shirts, settings, health-strip placement and inline-style migration.
 
 ## Current blockers
-1. Stage 7 requires an immutable historical dataset commit and checksum before results can be described as reproducible.
-2. Free historical odds remain unavailable; odds/blend ablation must use prospective pre-deadline logging.
+1. No GitHub Actions run has been produced for PR #15, so the new full-suite and build evidence is not yet available.
+2. Free historical odds and the other pre-deadline provider snapshots do not exist; those ablations require prospective 2026/27 logging.
 3. Live-season prospective data requirements begin with GW1 on 21 August 2026.
