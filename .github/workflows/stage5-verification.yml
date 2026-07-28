@@ -2,6 +2,8 @@ name: Stage 5 verification
 on:
   push:
     branches: [agent/stage5-scoring-corrections]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
