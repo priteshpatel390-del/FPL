@@ -1,69 +1,66 @@
-# PROJECTION_MODEL.md — the Stage-4 reference document
-Purpose: precise record of the CURRENT projection engine (v2.0.0). Documents, does not change.
-Audience: anyone touching model code — read fully first. Last updated: 2026-07-26.
-Related: AUDIT.md §3 (issue ids), KNOWN_LIMITATIONS.md, DECISIONS D-09/D-11, src/model/*.
+# PROJECTION_MODEL.md — projection engine reference
+Purpose: precise record of the CURRENT projection engine on the Stage 4 branch.
+Audience: anyone touching model code — read fully first. Last updated: 2026-07-28.
+Related: STAGE4-DESIGN.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS D-09/D-11, src/model/*.
 
 ## Constants (src/config.mjs)
 GOAL_PTS {GKP/DEF:6, MID:5, FWD:4} · CS_PTS {GKP/DEF:4, MID:1, FWD:0} · ASSIST_PTS 3 ·
-DC_THRESH {DEF:10, MID/FWD:12} · BASE_GOALS 1.42 · HOME_TILT 1.10 · calibration S.calib[pos]
-(from backtest; currently applied from the 2025-26 aggregate run).
+DC_THRESH {DEF:10, MID/FWD:12} · BASE_GOALS 1.42 · HOME_TILT 1.10 · calibration S.calib[pos].
+MODEL_VERSION is 2.1.0. MINUTES_RULES records the approved Stage 4 history, decay, prior and
+confidence constants.
 
-## Layer 1 — team strengths → match context (model/fixtures.mjs · matchContext)
+## Layer 1 — team strengths → match context
 For team t vs opponent o, venue-specific FPL strengths, league-average normalised:
-```
-xGF = clamp( BASE · (tAtk/avgAtk) · (avgDefOpp/oDef) · tilt , 0.25, 4 )   tilt = 1.10 home, 1/1.10 away
-xGA = symmetric
-```
-Layer 2 (if Understat has BOTH teams): u_xGF = BASE · uAtk_t / uDef_o · tilt; blend 0.55·static+0.45·u.
-Layer 3 (if a confident odds quote matched this fixture): blend 0.35·model+0.65·market.
-Outputs: {xGF, xGA, cs = e^(−xGA), atk = xGF/BASE, def = BASE/xGA}.
-Weights are configuration, UNVALIDATED (D-09). Poisson clean-sheet assumes independence.
+`xGF = clamp(BASE · (tAtk/avgAtk) · (avgDefOpp/oDef) · tilt, 0.25, 4)` with home tilt 1.10 and
+symmetric xGA. Understat blends 45% where both teams are present; confident odds blend 65% where a
+quote matches. These weights remain unvalidated configuration under D-09.
 
-## Expected minutes (model/scoring.mjs · expectedMinutes) — KNOWN-CRUDE (MIN-1/DEN-1)
-`expMin = clamp(season_minutes / max(1, currentGW), 0, 90)`; null pre-season.
-Derived: mFactor = (expMin/90)·avail; pAny = clamp(expMin/28,0,.98)·avail; p60 = clamp((expMin−18)/55,0,.97)·avail.
-avail: a→1; d→chance/100 (default .5); i/u/s/n→0. Whole per-fixture score is availability-scaled.
+## Stage 4 expected minutes (model/minutes.mjs)
+The former `season minutes / current GW` formula is removed. Completed team fixtures are the aggregate
+denominator. Detailed current-season histories are loaded for the owner's squad/manual players and a
+deterministic approximately top-80 cohort by ownership, price and player id.
 
-## Per-fixture expected points (playerFixtureXP), by component
-- Appearance: pAny + p60.
-- Goals: xG90 · mFactor · ctx.atk · GOAL_PTS[pos]  (attacking rates scale with team goal expectation).
-- Assists: xA90 · mFactor · ctx.atk · 3.
-- Clean sheet (GKP/DEF 4, MID 1): ctx.cs · CS_PTS · p60.
-- Goals conceded (GKP/DEF): −(ctx.xGA/2) · mFactor · 0.72   ← linear proxy for floor(GC/2) (SCOR-1).
-- Saves (GKP): (saves90/3) · (ctx.xGA/BASE) · mFactor        ← linear proxy for floor(saves/3) (SCOR-1).
-- Defensive contribution: 2 · sigmoid((dc90 − thresh)/2.2) · p60 (shallow by design) (SCOR-1).
-- Bonus: clamp((bps90 − 16)/20, 0, 1.8) · mFactor · (1 + (ctx.atk−1)·0.3)  ← BPS-derived,
-  double-counts scored events (SCOR-2); calibrated so ~40+ bps/90 ≈ 1.2–1.3/game.
-- Cards: −yc90 · mFactor.
-- Final: total = max(0, Σ components) · S.calib[pos] (calibration shown as its own breakdown bar).
-per90 denominators use max(0.5, minutes/90) for saves/bps/cards/dc (small-sample guard); xG/xA use
-the API's per-90 fields directly.
+For the newest eight completed player opportunities, `w_i = 0.9^i`. Each output is shrunk toward its
+season aggregate with a four-match prior:
 
-## Pre-season fallback (priceBaseline)
-No match data → price-implied base per position (linear in price) × ownership tilt
-(1 + clamp(own,0,45)/450), fixture-adjusted by def^0.55 (GKP/DEF) or atk^0.65 (MID/FWD), ×avail.
-Prices are FPL's own expectation encoding — a stated prior, labelled in the UI.
+`estimate = (sum(w_i * observed_i) + 4 * aggregateEstimate) / (sum(w_i) + 4)`
 
-## Multi-GW projection & cache
-projectXP sums playerFixtureXP over teamFixtures(from, span) (doubles add, blanks contribute 0);
-memoised by (playerId, fromGW, span); clearXP on any input change.
+Outputs are:
+- `pStart`: probability of starting.
+- `pAppear`: probability of any appearance.
+- `p60`: probability of reaching 60 minutes.
+- `expMin`: expected minutes.
+- `confidence`: evidence-quality heuristic, plus High/Medium/Low label and detailed/aggregate/prior
+  source. It is not a calibrated probability of correctness.
 
-## Consumers
-Ranker (xP/GW, per-£m), squad review + best-XI (legal-formation exhaustive search over 1-GW xP),
-captaincy (2× top XI xP, coin-toss note <0.6), transfer planner (single-swap Δ over horizon vs −4;
-TRF-1 applies), Ask context, backtest replica of the same formulas.
+Logical guards enforce pStart <= pAppear, p60 <= pAppear, probabilities in 0–1 and expMin in 0–90.
+Official FPL availability status/chance is applied exactly once. No-history fallback is pStart 0.50,
+pAppear 0.70, p60 0.40, expMin 45 and confidence 0.20. Detailed-history failure uses validated cache,
+then aggregate fields, then this prior.
 
-## Run-score (ticker ease)
-Mean over span of atk/def multipliers (lens), blanks contribute 0.55, doubles +0.45 (FIX-1).
+## Per-fixture expected points
+Appearance points are now `pAppear + p60`; attacking, goals-conceded, saves, bonus and card components
+use `expMin/90`; clean-sheet and defensive-action eligibility use p60. All other component formulas,
+fixture layers, calibration and consumers are unchanged from model v2.0.0.
 
-## Known weaknesses (authoritative list = KNOWN_LIMITATIONS.md)
-MIN-1/DEN-1 minutes; SCOR-1 stepped rules; SCOR-2 bonus; FIX-1 constants; LEAK-1 calibration
-provenance (r=0.80 is an in-sample-flattered upper bound — never quote it as validated accuracy);
-no set-piece/penalty modelling; no uncertainty output (point estimates only); position-level
-calibration only.
+- Goals: xG90 · minutes factor · ctx.atk · GOAL_PTS[pos].
+- Assists: xA90 · minutes factor · ctx.atk · 3.
+- Clean sheet: ctx.cs · CS_PTS · p60.
+- Goals conceded, saves, defensive contribution, bonus and cards retain their existing Stage 5-bound
+  approximations.
+- Final total remains max(0, component sum) × position calibration.
 
-## Stage-4+ improvement map
-Minutes model (Stage 4) → stepped-rule distributions, bonus-per-start with shrinkage, penalties,
-weight/prior configs (Stage 5) → plan-level optimiser (Stage 6) → walk-forward validation & ablation
-(Stage 7) → uncertainty & auto-sub simulation (Stage 8). Formula-change protocol: PROPOSE (existing
-→ proposed → inputs → fallback → assumptions → limitations → tests) BEFORE implementing.
+## Pre-season fallback
+Pre-season projections continue to use the existing price-implied position baseline, ownership tilt
+and fixture adjustment. Stage 4 neutral minutes priors do not silently replace that path.
+
+## Multi-GW projection and consumers
+projectXP sums playerFixtureXP over teamFixtures; doubles add and blanks contribute zero. Ranker,
+squad review, best XI, captaincy, transfers, Ask context and backtest continue to consume the same
+projection surface.
+
+## Limitations
+No improved accuracy is claimed. The Stage 4 constants and confidence heuristic are judgement-based
+until Stage 7 walk-forward validation. Cross-season player identity, predicted line-ups, manager
+comments, congestion and uncertainty simulation are excluded. SCOR-1, SCOR-2, FIX-1, LEAK-1 and BT-1
+remain open as recorded in KNOWN_LIMITATIONS.md.
