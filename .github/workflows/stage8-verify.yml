@@ -48,3 +48,11 @@ jobs:
           cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
           cmp /tmp/build-one/manifest.json dist/manifest.json
           grep -q "$COMMIT" dist/manifest.json
+      - name: Upload verified build
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-verified-dist
+          path: |
+            dist/index.html
+            dist/app.bundle.js
+            dist/manifest.json
