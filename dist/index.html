@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-MyUGhmByVJnbEpAZ/3yDVDsei4FGn77lxr+9MnSUZNg='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-nt4sN3QPNfIHp80F4A5uzNPVA5UKUbzu8TQZpkBPCUs='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -346,8 +346,8 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.3.0","rulesVersion":"2026-27.2","sourceHash":"de591a1ea580252f","commit":"f57c5f2d260ab7dc60aac7d5e29d47bb19f44c90"} */
-const BUILD_INFO = {"modelVersion":"2.3.0","rulesVersion":"2026-27.2","sourceHash":"de591a1ea580252f140127ed15b9152794eebc82a639b3b091ab9122292e9d6e","commit":"f57c5f2d260ab7dc60aac7d5e29d47bb19f44c90","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.3.0","rulesVersion":"2026-27.2","sourceHash":"9f12b96abca1c7f2","commit":"42d3106fcb15f2e68db7409e0ae96fd27cd4f61a"} */
+const BUILD_INFO = {"modelVersion":"2.3.0","rulesVersion":"2026-27.2","sourceHash":"9f12b96abca1c7f2535687a13b1d991846e6fdef26fcad85886144d59a05fc89","commit":"42d3106fcb15f2e68db7409e0ae96fd27cd4f61a","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -2455,13 +2455,382 @@ function optimiseTransfers(args){
 }
 
 
+/* ===== src/model/walk-forward.mjs ===== */
+const DEFAULT_WALK_FORWARD = Object.freeze({
+  minTrainingGameweeks: 8,
+  calibrationGameweeks: 4,
+  holdoutGameweeks: 1,
+  stepGameweeks: 1,
+  minimumHoldoutRows: 1,
+  calibrationMin: 0.7,
+  calibrationMax: 1.3,
+  predictionBands: Object.freeze([0,2,4,6,10,Infinity]),
+  includeFoldCalibration: true
+});
+
+function finiteNumber(value, field){
+  const number = Number(value);
+  if(!Number.isFinite(number)) throw new Error(`${field} must be finite`);
+  return number;
+}
+
+function integer(value, field){
+  const number = finiteNumber(value, field);
+  if(!Number.isInteger(number)) throw new Error(`${field} must be an integer`);
+  return number;
+}
+
+function stableKey(row){
+  return `${row.variant}|${row.gameweek}|${row.playerId}`;
+}
+
+function validateDatasetPin(pin = {}){
+  const season = String(pin.season || '').trim();
+  const sourceRef = String(pin.sourceRef || '').trim();
+  const checksum = String(pin.sha256 || '').trim().toLowerCase();
+  const immutableRef = /^[0-9a-f]{40}$/i.test(sourceRef) || /^sha256:[0-9a-f]{64}$/i.test(sourceRef);
+  const ok = Boolean(season && immutableRef && /^[0-9a-f]{64}$/.test(checksum));
+  return {ok, season, sourceRef, sha256:checksum,
+    issues:[
+      ...(!season ? ['missing_season'] : []),
+      ...(!immutableRef ? ['mutable_or_missing_source_ref'] : []),
+      ...(!/^[0-9a-f]{64}$/.test(checksum) ? ['invalid_sha256'] : [])
+    ]};
+}
+
+function normaliseObservations(input){
+  if(!Array.isArray(input)) throw new Error('observations must be an array');
+  const rows = [];
+  const byKey = new Map();
+  for(const raw of input){
+    const row = {
+      playerId: integer(raw?.playerId, 'playerId'),
+      position: integer(raw?.position, 'position'),
+      gameweek: integer(raw?.gameweek, 'gameweek'),
+      informationGameweek: integer(raw?.informationGameweek, 'informationGameweek'),
+      predicted: finiteNumber(raw?.predicted, 'predicted'),
+      actual: finiteNumber(raw?.actual, 'actual'),
+      variant: String(raw?.variant || 'raw').trim() || 'raw'
+    };
+    if(row.position < 1 || row.position > 4) throw new Error('position must be 1-4');
+    if(row.gameweek < 1 || row.informationGameweek < 0) throw new Error('gameweek is out of range');
+    if(row.informationGameweek >= row.gameweek) throw new Error(`future information detected for ${stableKey(row)}`);
+    const key = stableKey(row);
+    const prior = byKey.get(key);
+    if(prior){
+      if(JSON.stringify(prior) !== JSON.stringify(row)) throw new Error(`conflicting duplicate observation: ${key}`);
+      continue;
+    }
+    byKey.set(key,row); rows.push(row);
+  }
+  rows.sort((a,b)=>a.gameweek-b.gameweek || a.playerId-b.playerId || a.variant.localeCompare(b.variant));
+  return rows;
+}
+
+function buildWalkForwardFolds(observations, options = {}){
+  const rows = normaliseObservations(observations);
+  const config = {...DEFAULT_WALK_FORWARD,...options};
+  const minTrain = integer(config.minTrainingGameweeks,'minTrainingGameweeks');
+  const calibration = integer(config.calibrationGameweeks,'calibrationGameweeks');
+  const holdout = integer(config.holdoutGameweeks,'holdoutGameweeks');
+  const step = integer(config.stepGameweeks,'stepGameweeks');
+  if(minTrain < 1 || calibration < 1 || holdout < 1 || step < 1) throw new Error('walk-forward windows must be positive');
+  const gameweeks = [...new Set(rows.map(row=>row.gameweek))].sort((a,b)=>a-b);
+  const folds = [];
+  for(let index=minTrain+calibration; index+holdout<=gameweeks.length; index+=step){
+    const holdoutGws = gameweeks.slice(index,index+holdout);
+    const calibrationGws = gameweeks.slice(index-calibration,index);
+    const trainGws = gameweeks.slice(0,index-calibration);
+    const holdoutSet = new Set(holdoutGws), calibrationSet = new Set(calibrationGws), trainSet = new Set(trainGws);
+    const fold = {
+      index: folds.length,
+      trainGameweeks: trainGws,
+      calibrationGameweeks: calibrationGws,
+      holdoutGameweeks: holdoutGws,
+      train: rows.filter(row=>trainSet.has(row.gameweek)),
+      calibration: rows.filter(row=>calibrationSet.has(row.gameweek)),
+      holdout: rows.filter(row=>holdoutSet.has(row.gameweek))
+    };
+    if(fold.holdout.length >= Number(config.minimumHoldoutRows || 1)) folds.push(fold);
+  }
+  return {config, folds};
+}
+
+function fitPositionCalibration(rows, options = {}){
+  const min = Number(options.calibrationMin ?? DEFAULT_WALK_FORWARD.calibrationMin);
+  const max = Number(options.calibrationMax ?? DEFAULT_WALK_FORWARD.calibrationMax);
+  const grouped = new Map();
+  for(const row of normaliseObservations(rows)){
+    const group = grouped.get(row.position) || {predicted:0,actual:0,n:0};
+    group.predicted += row.predicted; group.actual += row.actual; group.n++;
+    grouped.set(row.position,group);
+  }
+  const calibration = {};
+  for(const [position,group] of grouped){
+    const raw = group.predicted === 0 ? 1 : group.actual/group.predicted;
+    calibration[position] = Math.max(min,Math.min(max,raw));
+  }
+  return calibration;
+}
+
+function applyPositionCalibration(rows, calibration, variant='fold_calibrated'){
+  return normaliseObservations(rows).map(row=>({...row,
+    predicted: row.predicted * Number(calibration[row.position] ?? 1), variant
+  }));
+}
+
+function pearson(xs,ys){
+  if(xs.length !== ys.length || xs.length < 3) return null;
+  const mx=xs.reduce((a,b)=>a+b,0)/xs.length, my=ys.reduce((a,b)=>a+b,0)/ys.length;
+  let sxy=0,sxx=0,syy=0;
+  for(let i=0;i<xs.length;i++){
+    const dx=xs[i]-mx,dy=ys[i]-my;
+    sxy+=dx*dy;sxx+=dx*dx;syy+=dy*dy;
+  }
+  return sxx && syy ? sxy/Math.sqrt(sxx*syy) : null;
+}
+
+function metricSummary(rows){
+  const clean = normaliseObservations(rows);
+  if(!clean.length) return {n:0,mae:null,rmse:null,bias:null,r:null};
+  const errors = clean.map(row=>row.predicted-row.actual);
+  const mae = errors.reduce((sum,error)=>sum+Math.abs(error),0)/errors.length;
+  const rmse = Math.sqrt(errors.reduce((sum,error)=>sum+error*error,0)/errors.length);
+  const bias = errors.reduce((sum,error)=>sum+error,0)/errors.length;
+  const r = pearson(clean.map(row=>row.predicted),clean.map(row=>row.actual));
+  return {n:clean.length,mae,rmse,bias,r};
+}
+
+function bandLabel(value,bands){
+  for(let i=0;i<bands.length-1;i++) if(value>=bands[i] && value<bands[i+1]) return `${bands[i]}-${bands[i+1]}`;
+  return `${bands[bands.length-2]}+`;
+}
+
+function segmentedMetrics(rows, options = {}){
+  const clean = normaliseObservations(rows);
+  const bands = options.predictionBands || DEFAULT_WALK_FORWARD.predictionBands;
+  const group = selector => Object.fromEntries([...clean.reduce((map,row)=>{
+    const key=String(selector(row)); const list=map.get(key)||[]; list.push(row); map.set(key,list); return map;
+  },new Map())].sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([key,list])=>[key,metricSummary(list)]));
+  return {
+    overall:metricSummary(clean),
+    byPosition:group(row=>row.position),
+    byGameweek:group(row=>row.gameweek),
+    byVariant:group(row=>row.variant),
+    byPredictionBand:group(row=>bandLabel(row.predicted,bands))
+  };
+}
+
+function compareAblations(rows){
+  const clean = normaliseObservations(rows);
+  const variants = [...new Set(clean.map(row=>row.variant))].sort();
+  const keySets = variants.map(variant=>new Set(clean.filter(row=>row.variant===variant).map(row=>`${row.gameweek}|${row.playerId}`)));
+  if(keySets.length > 1){
+    const base = [...keySets[0]].sort().join(',');
+    for(let i=1;i<keySets.length;i++) if([...keySets[i]].sort().join(',') !== base) throw new Error('ablation variants must use identical holdout keys');
+  }
+  return Object.fromEntries(variants.map(variant=>[variant,segmentedMetrics(clean.filter(row=>row.variant===variant))]));
+}
+
+function stableResult(result){
+  const sortObject = value => {
+    if(Array.isArray(value)) return value.map(sortObject);
+    if(value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(key=>[key,sortObject(value[key])]));
+    if(typeof value === 'number' && Number.isFinite(value)) return Number(value.toFixed(8));
+    return value;
+  };
+  return JSON.stringify(sortObject(result));
+}
+
+function rawRows(rows){
+  return rows.filter(row=>row.variant === 'raw');
+}
+
+function evaluateFold(fold, config){
+  let holdout = fold.holdout;
+  let calibration = null;
+  if(config.includeFoldCalibration){
+    const calibrationRows = rawRows(fold.calibration);
+    const rawHoldout = rawRows(fold.holdout);
+    if(calibrationRows.length && rawHoldout.length){
+      calibration = fitPositionCalibration(calibrationRows, config);
+      holdout = [...rawHoldout, ...applyPositionCalibration(rawHoldout, calibration)];
+    }
+  }
+  return {
+    index:fold.index,
+    trainGameweeks:fold.trainGameweeks,
+    calibrationGameweeks:fold.calibrationGameweeks,
+    holdoutGameweeks:fold.holdoutGameweeks,
+    calibration,
+    holdout,
+    metrics:segmentedMetrics(holdout,config)
+  };
+}
+
+function evaluateWalkForward(observations, meta = {}, options = {}){
+  const pin = validateDatasetPin(meta.dataset);
+  if(!pin.ok) throw new Error(`dataset is not pinned: ${pin.issues.join(', ')}`);
+  const {config,folds} = buildWalkForwardFolds(observations,options);
+  if(!folds.length) throw new Error('insufficient chronological data for walk-forward evaluation');
+  const foldResults = folds.map(fold=>evaluateFold(fold,config));
+  const allHoldout = foldResults.flatMap(fold=>fold.holdout);
+  return {
+    method:'deadline-information-only walk-forward',
+    config,
+    dataset:{...pin,rows:Number(meta.dataset.rows ?? observations.length),malformedRows:Number(meta.dataset.malformedRows ?? 0)},
+    oddsHistory:meta.oddsHistory === true ? 'logged_pre_deadline' : 'not_available',
+    folds:foldResults.map(({holdout,...fold})=>fold),
+    aggregate:segmentedMetrics(allHoldout,config),
+    ablations:compareAblations(allHoldout)
+  };
+}
+
+
+
+/* ===== src/model/archive-replay.mjs ===== */
+
+const ARCHIVE_DATASET = Object.freeze({
+  season: '2025-26',
+  sourceRef: 'f9ed3e8839b0f970e0d5d4a83c5628f6eaee755a',
+  url: 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/f9ed3e8839b0f970e0d5d4a83c5628f6eaee755a/data/2025-26/gws/merged_gw.csv'
+});
+
+const REQUIRED = Object.freeze([
+  'element','position','GW','minutes','total_points','expected_goals',
+  'expected_assists','saves','bps','yellow_cards'
+]);
+const POSMAP = Object.freeze({GK:1,GKP:1,DEF:2,MID:3,FWD:4});
+
+function parseArchiveCSV(text){
+  if(typeof text !== 'string') throw new Error('archive must be text');
+  const rows=[]; let row=[],cell='',quoted=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(quoted){
+      if(ch==='"'){
+        if(text[i+1]==='"'){cell+='"';i++;} else quoted=false;
+      } else cell+=ch;
+    } else if(ch==='"') quoted=true;
+    else if(ch===','){row.push(cell);cell='';}
+    else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}
+    else if(ch!=='\r') cell+=ch;
+  }
+  if(cell.length||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+
+async function sha256Hex(text){
+  const subtle=globalThis.crypto?.subtle;
+  if(!subtle) throw new Error('SHA-256 is unavailable in this environment');
+  const bytes=new TextEncoder().encode(text);
+  const digest=await subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('');
+}
+
+function numeric(value){
+  if(value === null || value === undefined || String(value).trim() === '') return null;
+  const number=Number(value);
+  return Number.isFinite(number)?number:null;
+}
+
+function project(history,position){
+  if(history.minutes<90||history.gameweeks<4) return null;
+  const n90=history.minutes/90;
+  const per={
+    xg:history.xg/n90,xa:history.xa/n90,sv:history.saves/n90,
+    bps:history.bps/n90,dc:history.dc/n90,yc:history.yc/n90
+  };
+  const expM=clamp(history.minutes/history.gameweeks,0,90);
+  const mF=expM/90,pAny=clamp(expM/28,0,.98),p60=clamp((expM-18)/55,0,.97);
+  let xp=pAny+p60;
+  xp+=per.xg*mF*(GOAL_PTS[position]??4);
+  xp+=per.xa*mF*ASSIST_PTS;
+  if(CS_PTS[position]) xp+=Math.exp(-BASE_GOALS)*CS_PTS[position]*p60;
+  if(position<=2) xp-=(BASE_GOALS/2)*mF*.72;
+  if(position===1) xp+=(per.sv/3)*mF;
+  const threshold=DC_THRESH[position];
+  if(threshold&&per.dc) xp+=2*(1/(1+Math.exp(-(per.dc-threshold)/2.2)))*p60;
+  xp+=clamp((per.bps-16)/20,0,1.8)*mF;
+  xp-=per.yc*mF;
+  return Math.max(0,xp);
+}
+
+function emptyHistory(){
+  return {gameweeks:0,minutes:0,xg:0,xa:0,saves:0,bps:0,dc:0,yc:0,lastGameweek:0};
+}
+
+function buildArchiveReplay(text){
+  const rows=parseArchiveCSV(text);
+  if(!rows.length) throw new Error('archive is empty');
+  const header=rows[0].map(value=>value.trim());
+  const missing=REQUIRED.filter(field=>!header.includes(field));
+  if(missing.length) throw new Error('archive format changed — missing: '+missing.join(', '));
+  const column=Object.fromEntries(header.map((name,index)=>[name,index]));
+  const get=(row,name)=>column[name]===undefined?'':row[column[name]];
+  const grouped=new Map();
+  let malformedRows=0;
+
+  for(let index=1;index<rows.length;index++){
+    const raw=rows[index];
+    if(!raw||raw.length<header.length-2){malformedRows++;continue;}
+    const playerId=numeric(get(raw,'element'));
+    const gameweek=numeric(get(raw,'GW'));
+    const position=POSMAP[String(get(raw,'position')).trim()];
+    const values={
+      minutes:numeric(get(raw,'minutes')),
+      actual:numeric(get(raw,'total_points')),
+      xg:numeric(get(raw,'expected_goals')),
+      xa:numeric(get(raw,'expected_assists')),
+      saves:numeric(get(raw,'saves')),
+      bps:numeric(get(raw,'bps')),
+      yc:numeric(get(raw,'yellow_cards'))
+    };
+    const invalidRequired=Object.values(values).some(value=>value===null);
+    if(!Number.isInteger(playerId)||!Number.isInteger(gameweek)||!position||invalidRequired){malformedRows++;continue;}
+    const dcValue=column.defensive_contribution===undefined?0:numeric(get(raw,'defensive_contribution'));
+    if(dcValue===null){malformedRows++;continue;}
+    const key=`${gameweek}|${playerId}`;
+    const aggregate=grouped.get(key)||{
+      playerId,gameweek,position,minutes:0,actual:0,xg:0,xa:0,saves:0,bps:0,dc:0,yc:0
+    };
+    if(aggregate.position!==position){malformedRows++;continue;}
+    aggregate.minutes+=values.minutes;
+    aggregate.actual+=values.actual;
+    aggregate.xg+=values.xg;
+    aggregate.xa+=values.xa;
+    aggregate.saves+=values.saves;
+    aggregate.bps+=values.bps;
+    aggregate.dc+=dcValue;
+    aggregate.yc+=values.yc;
+    grouped.set(key,aggregate);
+  }
+
+  const fixtures=[...grouped.values()].sort((a,b)=>a.gameweek-b.gameweek||a.playerId-b.playerId);
+  const histories=new Map();
+  const observations=[];
+  for(const fixture of fixtures){
+    const history=histories.get(fixture.playerId)||emptyHistory();
+    const predicted=project(history,fixture.position);
+    if(predicted!==null&&history.lastGameweek<fixture.gameweek){
+      observations.push({
+        playerId:fixture.playerId,position:fixture.position,gameweek:fixture.gameweek,
+        informationGameweek:history.lastGameweek,predicted,actual:fixture.actual,variant:'raw'
+      });
+    }
+    history.gameweeks++;
+    history.minutes+=fixture.minutes;
+    history.xg+=fixture.xg; history.xa+=fixture.xa; history.saves+=fixture.saves;
+    history.bps+=fixture.bps; history.dc+=fixture.dc; history.yc+=fixture.yc;
+    history.lastGameweek=fixture.gameweek;
+    histories.set(fixture.playerId,history);
+  }
+  return {observations,rows:Math.max(0,rows.length-1),malformedRows,playerGameweeks:fixtures.length};
+}
+
+
 /* ===== src/model/backtest.mjs ===== */
-/* ---------------------------------------------------------------------
-   BACKTEST — fetches last season gameweek-by-gameweek from the vaastav
-   archive, builds each player's first-half per-90 profile, projects the
-   second half with the exact production formulas, and compares to what
-   actually happened. Derives per-position calibration multipliers.
-   --------------------------------------------------------------------- */
+
 S.calib = null; S.backtest = null;
 
 function parseCSV(text){
@@ -2489,13 +2858,12 @@ function pearson(xs, ys){
   return sxx && syy ? sxy/Math.sqrt(sxx*syy) : 0;
 }
 
-// Pure engine (adjustment 8: directly importable/testable, no DOM, no network).
-// Provenance (adjustment 6): every result carries model/rules versions + dataset ref.
+// Retained only for regression coverage and historical comparison. It is not
+// used by the UI because it leaks real second-half minutes and calibrates on
+// the same sample it reports.
 function computeBacktest(text, meta = {}){
   const season = meta.season || 'unknown';
   const rows = parseCSV(text);
-  // D-14: header contract is the archive's only structural guarantee. The
-  // thrown message is user-facing and pinned by a resilience test — unchanged.
   const head = rows[0];
   const headerV = validateArchiveHeader(head);
   if(headerV.value === null){
@@ -2506,8 +2874,6 @@ function computeBacktest(text, meta = {}){
   const g = (r,k) => col[k] !== undefined ? r[col[k]] : '';
   const POSMAP = {GK:1, GKP:1, DEF:2, MID:3, FWD:4};
   const hasDC = col['defensive_contribution'] !== undefined;
-
-  // aggregate halves per player
   const players = {};
   for(let i=1; i<rows.length; i++){
     const r = rows[i]; if(!r || r.length < head.length-2) continue;
@@ -2527,20 +2893,16 @@ function computeBacktest(text, meta = {}){
       p.h2.min += mins; p.h2.pts += num(g(r,'total_points')); p.h2.app++;
     }
   }
-
-  // project H2 with the production formulas under an average fixture
   const avgCtx = {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS), atk:1, def:1};
-  const preds = [], actuals = [], poss = [], names = [];
+  const preds = [], actuals = [];
   const perPos = {1:{p:0,a:0,n:0,rP:[],rA:[]},2:{p:0,a:0,n:0,rP:[],rA:[]},3:{p:0,a:0,n:0,rP:[],rA:[]},4:{p:0,a:0,n:0,rP:[],rA:[]}};
-
   Object.entries(players).forEach(([key,p]) => {
     if(!p.pos || p.h1.min < 540 || p.h2.app < 5) return;
     const n90 = p.h1.min/90;
     const per = {xg:p.h1.xg/n90, xa:p.h1.xa/n90, sv:p.h1.sv/n90, bps:p.h1.bps/n90, dc:p.h1.dc/n90, yc:p.h1.yc/n90};
-    const expM = p.h2.min/p.h2.app;                          // real H2 minutes — isolates scoring calibration
+    const expM = p.h2.min/p.h2.app;
     const mF = expM/90, pAny = clamp(expM/28,0,.98), p60 = clamp((expM-18)/55,0,.97);
-
-    let xp = pAny + p60;                                     // appearance
+    let xp = pAny + p60;
     xp += per.xg * mF * (GOAL_PTS[p.pos] ?? 4);
     xp += per.xa * mF * ASSIST_PTS;
     if(CS_PTS[p.pos]) xp += avgCtx.cs * CS_PTS[p.pos] * p60;
@@ -2550,99 +2912,85 @@ function computeBacktest(text, meta = {}){
     if(thr && per.dc) xp += 2 * (1/(1+Math.exp(-(per.dc-thr)/2.2))) * p60;
     xp += clamp((per.bps-16)/20, 0, 1.8) * mF;
     xp -= per.yc * mF;
-
     const predicted = xp * p.h2.app, actual = p.h2.pts;
-    preds.push(predicted); actuals.push(actual); poss.push(p.pos); names.push(key.split('|')[0]);
+    preds.push(predicted); actuals.push(actual);
     const pp = perPos[p.pos]; pp.p += predicted; pp.a += actual; pp.n++; pp.rP.push(predicted); pp.rA.push(actual);
   });
-
-  if(preds.length < 50){
-    throw new Error('only ' + preds.length + ' qualifying players — not enough to calibrate');
-  }
-
+  if(preds.length < 50) throw new Error('only ' + preds.length + ' qualifying players — not enough to calibrate');
   const r = pearson(preds, actuals);
   const mae = preds.reduce((a,v,i) => a + Math.abs(v - actuals[i]), 0) / preds.length;
-  const maeGW = mae / 19;
   const posLabel = {1:'GKP',2:'DEF',3:'MID',4:'FWD'};
-  const calib = {};
-  const posRows = [];
+  const calib = {}, posRows = [];
   [1,2,3,4].forEach(k => {
     const pp = perPos[k]; if(!pp.n) return;
     const ratio = pp.a/pp.p;
     calib[k] = clamp(ratio, 0.7, 1.3);
     posRows.push([posLabel[k],pp.n,pearson(pp.rP,pp.rA).toFixed(2),`${((ratio-1)*100).toFixed(0)}%`,`${calib[k].toFixed(2)}×`]);
   });
-
-  // captain check: of the 20 highest predicted, how did their actual ranks land?
-  const idx = preds.map((v,i)=>i).sort((a,b)=>preds[b]-preds[a]).slice(0,20);
-  const actRank = preds.map((_,i)=>i).sort((a,b)=>actuals[b]-actuals[a]);
-  const rankOf = {}; actRank.forEach((i,r2)=>rankOf[i]=r2+1);
-  const top20hit = idx.filter(i => rankOf[i] <= 30).length;
-
-  return { calib,
-    backtest: { season, n: preds.length, r:+r.toFixed(3), maeGW:+maeGW.toFixed(2), top20hit,
-      bias: Object.fromEntries([1,2,3,4].map(k => [posLabel[k], perPos[k].n ? +((perPos[k].a/perPos[k].p-1)*100).toFixed(1) : null])),
-      hasDC,
-      provenance: {
-        modelVersion: MODEL_VERSION, rulesVersion: RULES_VERSION,
-        dataset: { url: meta.url || null, season, rows: rows.length,
-          pinned: false /* TODO: pin to commit SHA — tracked in AUDIT BT-1 */ },
-        predictedAt: meta.now ?? Date.now(),
-        method: 'H1-per90 → H2 projection, real H2 minutes, average fixture'
-      } },
-    posRows };
+  return {calib,backtest:{season,n:preds.length,r:+r.toFixed(3),maeGW:+(mae/19).toFixed(2),top20hit:0,
+    bias:Object.fromEntries([1,2,3,4].map(k=>[posLabel[k],perPos[k].n?+((perPos[k].a/perPos[k].p-1)*100).toFixed(1):null])),
+    hasDC,provenance:{modelVersion:MODEL_VERSION,rulesVersion:RULES_VERSION,dataset:{url:meta.url||null,season,rows:rows.length,pinned:false},predictedAt:meta.now??Date.now(),method:'legacy H1/H2 diagnostic with future minutes'}},posRows};
 }
+
+function fmt(value,digits=2){ return value === null || value === undefined ? '—' : Number(value).toFixed(digits); }
 
 async function runBacktest(){
   const out = $('btOut'), btn = $('btBtn');
   btn.disabled = true;
-  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Downloading last season (~14MB — best on wi-fi)…'));
-  const seasons = ['2025-26','2024-25'];
-  let text = null, season = null, url = null;
-  for(const s of seasons){
-    const u = 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/'+s+'/gws/merged_gw.csv';
-    // D-15: a 14MB download is expensive to repeat, so the archive policy is
-    // the most conservative of the four — two attempts, long backoff.
-    const { result, record } = await withRetry(
-      async () => {
-        let res;
-        try{ res = await fetchT(u, 60000); }
-        catch(e){ return {ok:false, retryable:true, status:'network'}; }
-        if(!res.ok) return {ok:false, retryable:isRetryableStatus(res.status), status:res.status};
-        try{ return {ok:true, value: await res.text(), status:res.status}; }
-        catch(e){ return {ok:false, retryable:false, status:'parse'}; }
-      },
-      { ...policyFor('archive'), endpoint: safeEndpoint(u) }
-    );
-    recordRetry(record);
-    if(result && result.ok){ text = result.value; season = s; url = u; break; }
+  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Downloading pinned 2025–26 archive (~14MB — best on wi-fi)…'));
+  const u = ARCHIVE_DATASET.url;
+  const { result, record } = await withRetry(
+    async () => {
+      let res;
+      try{ res = await fetchT(u,60000); }
+      catch(e){ return {ok:false,retryable:true,status:'network'}; }
+      if(!res.ok) return {ok:false,retryable:isRetryableStatus(res.status),status:res.status};
+      try{ return {ok:true,value:await res.text(),status:res.status}; }
+      catch(e){ return {ok:false,retryable:false,status:'parse'}; }
+    },
+    {...policyFor('archive'),endpoint:safeEndpoint(u)}
+  );
+  recordRetry(record);
+  if(!result?.ok){
+    setChildren(out,el('div',{class:'note bad'},"Couldn't download the pinned archive — check the connection and try again."));
+    btn.disabled=false; return;
   }
-  if(!text){ setChildren(out,el('div',{class:'note bad'},"Couldn't download the archive — check the connection and try again.")); btn.disabled = false; return; }
-  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),`Replaying ${season} through the model…`));
-  await new Promise(r => setTimeout(r, 30));
-  let result;
-  try{ result = computeBacktest(text, { season, url }); }
-  catch(err){
-    setChildren(out,el('div',{class:'note bad'},'The archive could not be calibrated because its data was incomplete or malformed.'));
-    btn.disabled = false; return;
+  setChildren(out,el('p',{class:'status'},el('span',{class:'spinner'}),'Building deadline-safe walk-forward folds…'));
+  await new Promise(resolve=>setTimeout(resolve,30));
+  try{
+    const checksum=await sha256Hex(result.value);
+    const replay=buildArchiveReplay(result.value);
+    const evaluation=evaluateWalkForward(replay.observations,{dataset:{
+      season:ARCHIVE_DATASET.season,sourceRef:ARCHIVE_DATASET.sourceRef,sha256:checksum,
+      rows:replay.rows,malformedRows:replay.malformedRows
+    }});
+    S.backtest=evaluation;
+    const raw=evaluation.ablations.raw?.overall;
+    const calibrated=evaluation.ablations.fold_calibrated?.overall;
+    const kpi=(key,value)=>el('div',{class:'kpi'},el('div',{class:'k'},key),el('div',{class:'v'},value));
+    const rows=[
+      ['Raw',raw?.n,fmt(raw?.mae),fmt(raw?.rmse),fmt(raw?.bias),fmt(raw?.r)],
+      ['Fold calibrated',calibrated?.n,fmt(calibrated?.mae),fmt(calibrated?.rmse),fmt(calibrated?.bias),fmt(calibrated?.r)]
+    ];
+    const body=el('tbody');
+    rows.forEach(row=>body.appendChild(el('tr',{},...row.map((value,index)=>el('td',index?{class:'num'}:{},value)))));
+    setChildren(out,[
+      el('div',{class:'kpis',style:{marginTop:'10px'}},
+        kpi('Season',ARCHIVE_DATASET.season),kpi('Folds',evaluation.folds.length),
+        kpi('Holdout rows',raw?.n??0),kpi('Malformed rows',replay.malformedRows)),
+      el('div',{class:'scroll'},el('table',{class:'data',style:{minWidth:'520px'}},
+        el('thead',{},el('tr',{},...['Variant','n','MAE','RMSE','Bias','r'].map((value,index)=>el('th',index?{class:'num'}:{},value)))),body)),
+      el('div',{class:'note good'},el('b',{},'Deadline-safe evaluation complete.'),
+        ' Every holdout prediction uses only earlier Gameweeks, and fold calibration is fitted only on the immediately preceding calibration window.'),
+      el('div',{class:'note plain'},
+        `Pinned source ${ARCHIVE_DATASET.sourceRef.slice(0,12)}… · SHA-256 ${checksum.slice(0,12)}… · historical odds ${evaluation.oddsHistory}.`),
+      el('div',{class:'note'},el('b',{},'Coverage limitation. '),
+        'This replays the existing archive scoring diagnostic with trailing historical minutes and average-fixture context. Historical deadline snapshots for Understat, odds, detailed minutes inputs and production fixture ratings do not exist, so this is not a full out-of-sample validation of the live production model and does not alter current projections.')
+    ]);
+  } catch(error){
+    setChildren(out,el('div',{class:'note bad'},'The pinned archive could not be evaluated safely: '+error.message));
   }
-  const { calib, backtest, posRows } = result;
-  const r = { toFixed: d => backtest.r.toFixed(d) }, maeGW = backtest.maeGW, top20hit = backtest.top20hit,
-        hasDC = backtest.hasDC, preds = { length: backtest.n };
-  S.calib = calib;
-  S.backtest = backtest;
-  await sset(K_CAL, {calib, backtest});
-  clearXP();
-  const kpi=(k,v)=>el('div',{class:'kpi'},el('div',{class:'k'},k),el('div',{class:'v'},v));
-  const body=el('tbody'); posRows.forEach(row=>body.appendChild(el('tr',{},...row.map((v,i)=>el('td',i?{class:'num'}:{},v)))));
-  const nodes=[el('div',{class:'kpis',style:{marginTop:'10px'}},kpi('Season',season),kpi('Players',preds.length),kpi('Correlation',r.toFixed(2)),kpi('Error /GW',`±${maeGW.toFixed(1)}`)),
-    el('div',{class:'scroll'},el('table',{class:'data',style:{minWidth:'420px'}},el('thead',{},el('tr',{},...['Pos','n','r','Model bias','Correction'].map((v,i)=>el('th',i?{class:'num'}:{},v)))),body)),
-    el('div',{class:'note good'},el('b',{},'Calibration applied.'),` Every projection in the app is now multiplied by the per-position corrections above (negative bias = the model was over-predicting that position). ${top20hit}/20 of the model's top picks finished inside the actual top 30.`)];
-  if(!hasDC) nodes.push(el('div',{class:'note plain'},'This season file has no defensive-contribution column, so the DEF/MID corrections also absorb those points — expect them to run above 1.0×.'));
-  nodes.push(el('div',{class:'note plain'},"Method: first-half per-90 profiles project the second half under an average fixture, using each player's real second-half minutes — this isolates the scoring model from minutes prediction, which is judged separately. Ask tab can analyse these numbers for you."));
-  setChildren(out,nodes);
-  btn.disabled = false;
-  renderAll();
+  btn.disabled=false;
 }
 
 
@@ -3425,6 +3773,17 @@ function renderTransfers(){
   setChildren(out,nodes);
 }
 
+
+
+/* ===== src/ui/backtest-copy.mjs ===== */
+const backtestButton=document.getElementById('btBtn');
+if(backtestButton){
+  backtestButton.textContent='Run deadline-safe walk-forward check';
+  const hint=backtestButton.parentElement?.nextElementSibling;
+  if(hint?.classList?.contains('hint')){
+    hint.textContent='Downloads a commit-pinned 2025–26 archive and evaluates one Gameweek at a time using only earlier information. Results are diagnostic, do not change live projections, and clearly report unavailable historical provider coverage.';
+  }
+}
 
 
 /* ===== src/ui/markdown.mjs ===== */
