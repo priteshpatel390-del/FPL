@@ -1,4 +1,4 @@
-name: Stage 9.4 verifier
+name: Stage 9.4 finaliser
 
 on:
   pull_request:
@@ -9,37 +9,191 @@ permissions:
   contents: write
 
 jobs:
-  verify:
+  finalise:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/stage9-4-decision-previews
           fetch-depth: 0
-      - name: Verify refined Stage 9.4 source
+      - name: Update permanent records and remove temporary files
         run: |
           set -euo pipefail
-          SOURCE_SHA=849ff757c68c35e92744dc96efc34848110fa19e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/stage9-4-final.log
-          mkdir -p /tmp/stage9-4-final-first
-          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-4-final-first/
-          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
-          cmp /tmp/stage9-4-final-first/index.html dist/index.html
-          cmp /tmp/stage9-4-final-first/app.bundle.js dist/app.bundle.js
-          cmp /tmp/stage9-4-final-first/manifest.json dist/manifest.json
-          node -e "const m=require('./dist/manifest.json');if(m.commit!=='$SOURCE_SHA')throw new Error('build identity mismatch: '+m.commit)"
-          git add dist/index.html dist/app.bundle.js dist/manifest.json
-          git commit -m 'Refresh verified Stage 9.4 deployables'
-          ARTEFACT_SHA=$(git rev-parse HEAD)
-          {
-            echo 'status=0'
-            echo "source=$SOURCE_SHA"
-            echo "artefact=$ARTEFACT_SHA"
-            echo '--- log tail ---'
-            tail -n 180 /tmp/stage9-4-final.log
-          } > .stage9-4-result
-          git add .stage9-4-result
-          git commit -m 'Refresh Stage 9.4 verification result'
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p=Path(path); text=p.read_text()
+              if old not in text:
+                  raise SystemExit(f'marker not found in {path}')
+              p.write_text(text.replace(old,new,1))
+
+          replace_once('CLAUDE.md',
+          "Stage 9.2 is merged into `main` through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`. Checkpoint 9.3 — Player detail and uncertainty is implemented and verified on draft PR #20 from branch `agent/stage9-3-player-detail-uncertainty`. Tapping a player opens a mobile bottom sheet or desktop side panel with decision summary, expected minutes, confidence/source, P25–P75 and expanded P10–P90 ranges, outcome probabilities and the preserved projection breakdown. Owner-approved spread labels are Tight ≤2.0, Moderate >2.0–5.0 and Wide >5.0 points; labels are suppressed in pre-season and for reduced-quality inputs. Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08` passes **295/295** tests with deterministic builds; generated artefacts are committed at `ae7f7f35bd69c17686e776b97d416d4be56ae8df`. No model, provider, simulation, squad, captaincy or optimiser behaviour changed. Owner review and explicit merge approval remain required before checkpoint 9.4.",
+          "Stage 9.3 is merged into `main` through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`. Checkpoint 9.4 — Temporary decision previews is implemented and verified on draft PR #23 from branch `agent/stage9-4-decision-previews`. Transfer plans can be previewed on the Team pitch, and captain/vice-captain choices can be previewed without writing to storage or changing the real squad. Preview state is session-only, clearly labelled, and invalidates when the squad or optimiser inputs/results change. Verified source `849ff757c68c35e92744dc96efc34848110fa19e` passes **304/304** tests with deterministic builds; generated artefacts are committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No projection, expected-minutes, best-XI, captain-ranking, optimiser, provider, storage or security behaviour changed. Owner review and explicit merge approval remain required before checkpoint 9.5.")
+
+          replace_once('docs/PROJECT_CONTEXT.md',
+          "- Stages 1–8 and Stage 9 checkpoints 9.1–9.2 are complete and merged.\n- Stage 9.2 merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`, adding the portrait team pitch, repository-owned shirts and narrow-iPhone summary polish.\n- Stage 9.3 — Player detail and uncertainty is implemented and verified on draft PR #20 with 295 passing tests and deterministic builds; owner review and explicit merge approval remain required.",
+          "- Stages 1–8 and Stage 9 checkpoints 9.1–9.3 are complete and merged.\n- Stage 9.3 merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`, adding accessible player detail and approved uncertainty presentation.\n- Stage 9.4 — Temporary decision previews is implemented and verified on draft PR #23 with 304 passing tests and deterministic builds; owner review and explicit merge approval remain required.")
+          replace_once('docs/PROJECT_CONTEXT.md',
+          "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, Stage 9.1 app shell and Stage 9.2 pitch/shirts.\n\nCurrent: Stage 9.3 implementation and owner review on draft PR #20. Player taps open an accessible bottom sheet on mobile and side panel on desktop, presenting existing deterministic projections, expected-minutes outputs and Stage 8 uncertainty without changing their formulas.\n\nNext after Stage 9.3 merge: Stage 9.4 temporary decision previews for captaincy and transfer plans, with preview state kept separate from model recommendations and persistence.",
+          "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and Stage 9 checkpoints 9.1–9.3.\n\nCurrent: Stage 9.4 implementation and owner review on draft PR #23. Transfer plans and captain/vice choices can be previewed temporarily on the Team pitch while the model recommendation and persisted squad remain unchanged.\n\nNext after Stage 9.4 merge: Stage 9.5 Settings and Provider Health integration.")
+
+          replace_once('docs/ARCHITECTURE.md',
+          "  ui/                    app shell, visual-only team-pitch helpers, player-detail controller, views, restricted Markdown and security wiring",
+          "  ui/                    app shell, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring")
+          replace_once('docs/ARCHITECTURE.md',
+          "The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` is bundled before the main views and owns the dialog controller plus pure presentation helpers. `ui/views.mjs` composes those helpers with existing model outputs. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.",
+          "The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` is bundled before the views and owns only session-scoped preview state and pure transformation helpers. `ui/views.mjs` composes those helpers with existing model outputs. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.")
+          replace_once('docs/ARCHITECTURE.md',
+          "`ui/app-shell.mjs` owns the four primary destinations. `ui/team-pitch.mjs` owns only deterministic visual grouping and repository-owned shirt palettes. `ui/player-detail.mjs` owns open/close behaviour, Escape handling, focus restoration/trapping, approved spread-label thresholds and range positioning; it does not calculate projections or simulation samples. `ui/views.mjs` calls the existing projection, expected-minutes and Stage 8 simulation functions, then renders their unchanged outputs in the portrait pitch and player detail panel. Captain/vice, squad and persisted state remain unchanged.",
+          "`ui/app-shell.mjs` owns the four primary destinations. `ui/team-pitch.mjs` owns deterministic visual grouping and repository-owned shirt palettes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns temporary transfer/captain preview state, exact application of optimiser `finalSquadIds`, role swapping and stale-preview invalidation. `ui/views.mjs` renders either the real squad or a derived preview copy through the existing `bestXI()` and captain-ranking functions. The real squad, persisted configuration and model recommendation remain unchanged.")
+          replace_once('docs/ARCHITECTURE.md',
+          "Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style are SHA-256 hash locked by CSP. Stage 9.3 adds no provider, storage or secret surface; the approved inline-style concession remains until checkpoint 9.6.",
+          "Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style are SHA-256 hash locked by CSP. Stage 9.4 adds no provider, storage, secret or FPL-write surface; preview state exists only in module memory. The approved inline-style concession remains until checkpoint 9.6.")
+          replace_once('docs/ARCHITECTURE.md',
+          "Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 8 adds player-simulation and squad-simulation suites. Stage 9.2 covers formation grouping, captain/vice identity and deterministic shirt palettes. Stage 9.3 adds direct tests for exact spread thresholds, unavailable/reduced-quality suppression, range positioning, official availability labels, dialog semantics, Escape/focus restoration and removal of the legacy inline drawer. Build tests directly exercise module stripping. Goldens may change only for approved user-visible consequences and final verification runs without regeneration.",
+          "Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 8 adds player-simulation and squad-simulation suites. Stage 9.2 covers formation grouping and shirt palettes; Stage 9.3 covers player-detail and uncertainty presentation; Stage 9.4 adds nine direct preview tests for non-mutation, optimiser-final-squad agreement, captain/vice role rules, stale-state invalidation, deterministic signatures, score separation, accessible wiring and absence of persistence. Build tests directly exercise module stripping. Goldens may change only for approved user-visible consequences and final verification runs without regeneration.")
+
+          p=Path('docs/ROADMAP.md'); text=p.read_text()
+          old="""## Current
+- **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
+- **Checkpoint 9.3 — Player detail and uncertainty** · implemented and verified on draft PR #20; owner review and explicit merge approval remain.
+  - Mobile bottom sheet and desktop side panel replace the legacy inline table drawer.
+  - Existing expected-minutes outputs, confidence/source, P25–P75, P10–P90 and outcome probabilities are presented without formula changes.
+  - Approved labels: Tight ≤2.0, Moderate >2.0–5.0 and Wide >5.0 points; labels are suppressed in pre-season and for reduced-quality inputs.
+  - Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Verified generated deployables committed at `ae7f7f35bd69c17686e776b97d416d4be56ae8df`.
+
+## Upcoming
+1. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
+2. **Checkpoint 9.5 — Settings and Provider Health integration**.
+3. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+
+## Current blockers
+1. Owner review and explicit merge approval for Stage 9.3 draft PR #20.
+2. Browser-level visual regression tooling is not yet present; final mobile/desktop appearance still needs human review.
+3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+"""
+          new="""- **Checkpoint 9.3 — Player detail and uncertainty** · DONE and merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.
+  - Accessible mobile bottom sheet and desktop side panel with expected minutes and approved uncertainty presentation.
+  - Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed** with deterministic builds.
+
+## Current
+- **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
+- **Checkpoint 9.4 — Temporary decision previews** · implemented and verified on draft PR #23; owner review and explicit merge approval remain.
+  - Exact optimiser plans can be previewed on the Team pitch without mutating the real squad.
+  - Captain and vice-captain previews remain distinct, session-only and visibly separate from model recommendations.
+  - Squad or optimiser input/result changes clear stale preview state.
+  - Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Verified generated deployables committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`.
+
+## Upcoming
+1. **Checkpoint 9.5 — Settings and Provider Health integration**.
+2. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+
+## Current blockers
+1. Owner review and explicit merge approval for Stage 9.4 draft PR #23.
+2. Browser-level visual regression tooling is not yet present; final mobile/desktop appearance still needs human review.
+3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+"""
+          if old not in text: raise SystemExit('roadmap block not found')
+          p.write_text(text.replace(old,new,1))
+
+          replace_once('docs/STAGE9-DESIGN.md',
+          "- **Implemented and verified on draft PR #20:** accessible dialog behaviour, preserved projection breakdown, exact approved labels and pre-season/reduced-quality safeguards; no model formula changed.",
+          "- **Implemented, verified and merged through PR #20:** accessible dialog behaviour, preserved projection breakdown, exact approved labels and pre-season/reduced-quality safeguards; no model formula changed.")
+          replace_once('docs/STAGE9-DESIGN.md',
+          "- Add temporary transfer-plan preview on the pitch.\n- Add temporary captain and vice-captain previews.\n- Keep previews clearly separated from model recommendations and persisted state.",
+          "- Add temporary transfer-plan preview on the pitch.\n- Add temporary captain and vice-captain previews.\n- Keep previews clearly separated from model recommendations and persisted state.\n- **Implemented and verified on draft PR #23:** session-only state, optimiser-final-squad agreement, captain/vice role swapping, model comparison, explicit clearing and stale-preview invalidation; no formula or persistence change.")
+
+          p=Path('docs/CHANGELOG.md'); text=p.read_text()
+          section="""## [Stage 9.4] — 2026-07-28 — Temporary decision previews
+### Added
+- Session-only transfer-plan previews launched directly from exact optimiser results.
+- Temporary captain and vice-captain selection on eligible starting-XI pitch cards.
+- Preview-only banners, incoming-player markers, model-versus-preview captaincy comparison and clear/reset actions.
+- Nine focused tests covering non-mutation, final-squad identity, role swapping, bench rejection, invalidation, signatures, score separation, accessibility wiring and no persistence.
+### Changed
+- The Team pitch can render a derived preview squad through the unchanged `bestXI()` while the real squad remains authoritative.
+- Optimiser input or result changes and real-squad changes clear stale previews automatically.
+### Verification
+- Verified source commit `849ff757c68c35e92744dc96efc34848110fa19e`.
+- Full suite: **304/304 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`.
+### Unchanged
+- No projection, expected-minutes, best-XI, captain-ranking, optimiser, provider, storage, security or FPL-account behaviour changed.
+- No preview state is persisted or submitted to FPL.
+### Status
+- Implemented and verified on draft PR #23; awaiting owner review and explicit merge approval.
+
+"""
+          marker='## [Stage 9.3] — 2026-07-28 — Player detail and uncertainty\n'
+          if marker not in text: raise SystemExit('changelog marker missing')
+          text=text.replace(marker,section+marker,1)
+          text=text.replace('- Implemented and verified on draft PR #20; awaiting owner review and explicit merge approval.','- Merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.',1)
+          p.write_text(text)
+
+          p=Path('docs/DECISIONS.md'); text=p.read_text()
+          if 'D-19 · 2026-07-28 · Accepted · Session-only decision previews' not in text:
+              text += """
+
+**D-19 · 2026-07-28 · Accepted · Session-only decision previews (Stage 9.4)**
+Reason: the owner needs to inspect optimiser and captaincy alternatives without changing the model recommendation, saved squad or FPL account. Approach: `ui/decision-preview.mjs` stores temporary state only in module memory, applies exact optimiser `finalSquadIds` to cloned squad entries, routes the clone through unchanged `bestXI()`, and keeps model captaincy visible beside any preview. Squad signatures and optimiser input/result signatures invalidate stale state. Consequences: refresh clears previews; no storage write or FPL submission exists; changing transfer context clears custom captaincy; formulas and persisted data remain unchanged.
+"""
+          p.write_text(text)
+
+          p=Path('docs/TESTING.md'); text=p.read_text()
+          text=text.replace('Stage 7 merged baseline: **274/274 passing tests**, successful production build, deterministic two-build comparison and build-identity checks.\n\nStage 8 draft PR #16 adds ten direct tests, taking the current verified branch baseline to **284/284 passing tests**. A branch-only workflow also verifies a deterministic two-build comparison. Verified generated artefacts are committed from the successful workflow; the temporary workflow is removed in the same finalisation commit.',
+          'Stage 9.4 verified branch baseline: **304/304 passing tests**, successful production build, deterministic two-build comparison and exact build-identity checks. Verified source is `849ff757c68c35e92744dc96efc34848110fa19e`; generated artefacts are committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`.')
+          marker='14. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.\n'
+          if marker not in text: raise SystemExit('testing suite marker missing')
+          text=text.replace(marker,marker+'15. `decision-preview.test.mjs` — Stage 9.4 transfer-copy non-mutation, optimiser-final-squad agreement, captain/vice rules, stale-state invalidation, deterministic signatures, score separation and no-persistence wiring.\n',1)
+          text=text.replace('Stage 8 changes no deterministic projection formula and requires no golden regeneration.','Stage 8–9.4 change no deterministic projection formula and require no golden regeneration.',1)
+          p.write_text(text)
+
+          p=Path('docs/STAGE_HISTORY.md'); text=p.read_text()
+          marker='## Stage 7 — Walk-forward backtest'
+          section="""## Stage 9.4 — Temporary decision previews (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+Added session-only transfer-plan and captain/vice previews while keeping the real squad, model recommendations and persisted state authoritative. Exact optimiser plans are applied to cloned squad entries and checked against `finalSquadIds`; the resulting temporary squad uses the unchanged `bestXI()` for pitch presentation. Preview captaincy remains distinct, supports role swapping and shows its uplift separately from the base XI score.
+
+Preview state is invalidated by real-squad changes and by optimiser input or result changes. Review caught and fixed two stale-state gaps before completion: optimiser result values were added to the signature, and captain-only previews now clear when optimiser context changes. Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Generated artefacts were committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No formula, storage, provider, security or FPL-write behaviour changed.
+
+"""
+          if marker not in text: raise SystemExit('stage history marker missing')
+          p.write_text(text.replace(marker,section+marker,1))
+
+          p=Path('docs/KNOWN_LIMITATIONS.md'); text=p.read_text()
+          if '## Stage 9.4 preview limitations' not in text:
+              text += """
+
+## Stage 9.4 preview limitations
+- Decision previews are intentionally session-only and disappear on refresh.
+- Previews do not submit transfers, captaincy or vice-captain choices to FPL.
+- Transfer previews show the next-Gameweek pitch while optimiser net gain may cover a multi-Gameweek horizon; the UI labels both values explicitly.
+- Browser screenshot regression tooling is still absent, so final responsive appearance requires human review.
+"""
+          p.write_text(text)
+
+          p=Path('docs/STAGE9-4-SCOPE.md'); text=p.read_text()
+          text=text.replace('Status: approved by Pritesh on 28 July 2026.','Status: approved by Pritesh and implemented/verified on draft PR #23 on 28 July 2026.')
+          text += """
+
+## Verification
+
+- Verified source: `849ff757c68c35e92744dc96efc34848110fa19e`.
+- Verified generated artefacts: `ed275d2a148d90d09836199f8d1485394d72b6f5`.
+- Full suite: **304/304 passing**.
+- Production build, deterministic two-build comparison and exact build identity passed.
+"""
+          p.write_text(text)
+          PY
+          rm -f .stage9-4-result .stage9-4-trigger tools/stage9-4-run.sh tools/stage9-4-implement.b64.01 tools/stage9-4-implement.b64.02 tools/stage9-4-implement.b64.03 .github/workflows/stage9-4-verify.yml
+          git add -A
+          git commit -m 'Finalise Stage 9.4 records and remove verifier'
           git push origin HEAD:agent/stage9-4-decision-previews
