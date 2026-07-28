@@ -4,19 +4,23 @@ on:
   push:
     branches:
       - agent/stage7-walk-forward-backtest
+    paths-ignore:
+      - 'dist/**'
   pull_request:
     branches:
       - main
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -61,4 +65,16 @@ jobs:
             dist/index.html
             dist/app.bundle.js
             dist/manifest.json
+      - name: Commit verified dist
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/index.html dist/app.bundle.js dist/manifest.json
+          if git diff --cached --quiet; then
+            echo "Verified dist is already current."
+          else
+            git commit -m "Commit verified Stage 7 build artifacts"
+            git push origin HEAD:agent/stage7-walk-forward-backtest
+          fi
       # Diagnostic-only workflow; remove before Stage 7 is marked complete.
