@@ -1,8 +1,8 @@
 {
-  "modelVersion": "2.2.0",
-  "rulesVersion": "2026-27.1",
-  "sourceHash": "77267e01359707656387d2f4d47008c32c0663c608adae055385c9af1373e4ca",
-  "commit": "aee6d0fee7cc177622a046f37885b554013debbd",
+  "modelVersion": "2.3.0",
+  "rulesVersion": "2026-27.2",
+  "sourceHash": "de591a1ea580252f140127ed15b9152794eebc82a639b3b091ab9122292e9d6e",
+  "commit": "f57c5f2d260ab7dc60aac7d5e29d47bb19f44c90",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -21,9 +21,11 @@
     "src/model/scoring-rules.mjs",
     "src/model/scoring.mjs",
     "src/squad.mjs",
+    "src/model/transfers.mjs",
     "src/model/backtest.mjs",
     "src/main.mjs",
     "src/ui/views.mjs",
+    "src/ui/transfer-optimiser-view.mjs",
     "src/ui/markdown.mjs",
     "src/ui/security-wiring.mjs"
   ]
