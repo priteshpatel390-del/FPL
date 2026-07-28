@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRANSFER_RULES } from '../src/config.mjs';
 import {
-  transferSellPrice, nextFreeTransfers, transferHit, validateSquad,
+  hasKnownPurchasePrice, transferSellPrice, nextFreeTransfers, transferHit, validateSquad,
   bestXIForGW, optimiseTransfers, exhaustiveTransferSearch
 } from '../src/model/transfers.mjs';
 
@@ -15,6 +15,7 @@ function legalSquad(){
   return ps;
 }
 const score=(p)=>p.xp;
+const planSummary=result=>({status:result.status,pricingMode:result.pricingMode,plans:result.plans.map(p=>({signature:p.signature,netGain:p.netGain,bankAfter:p.bankAfter,hitCost:p.hitCost}))});
 
 test('Stage 6 rules are explicit and versioned',()=>{
   assert.equal(TRANSFER_RULES.maxTransfers,3);
@@ -29,6 +30,14 @@ test('selling price keeps half of rises rounded down',()=>{
   assert.equal(transferSellPrice({p:{now_cost:51},bought:50}),50);
   assert.equal(transferSellPrice({p:{now_cost:52},bought:50}),51);
   assert.equal(transferSellPrice({p:{now_cost:53},bought:50}),51);
+});
+
+test('missing and null purchase prices use current price in estimated mode',()=>{
+  assert.equal(hasKnownPurchasePrice({p:{now_cost:60},bought:null}),false);
+  assert.equal(hasKnownPurchasePrice({p:{now_cost:60}}),false);
+  assert.equal(transferSellPrice({p:{now_cost:60},bought:null}),60);
+  assert.equal(transferSellPrice({p:{now_cost:60}}),60);
+  assert.equal(hasKnownPurchasePrice({p:{now_cost:60},bought:50}),true);
 });
 
 test('free-transfer and hit formulas cover ordinary plans',()=>{
@@ -64,6 +73,18 @@ test('zero-transfer baseline is always present and can win',()=>{
   assert.equal(result.status,'ok');
   assert.equal(result.plans[0].transferCount,0);
   assert.equal(result.plans[0].netGain,0);
+  assert.equal(result.pricingMode,'exact');
+});
+
+test('estimated affordability is labelled and never treats null as a zero purchase price',()=>{
+  const squad=legalSquad();
+  squad[0].bought=null;
+  squad[0].p.now_cost=60;
+  const pool=squad.map(x=>x.p).concat([player(110,1,10,60,10)]);
+  const result=optimiseTransfers({squad,players:pool,bank:0,freeTransfers:1,startGW:1,horizon:1,scorePlayer:score});
+  assert.equal(result.status,'ok');
+  assert.equal(result.pricingMode,'estimated');
+  assert.equal(result.baseline.pricingMode,'estimated');
 });
 
 test('shared bank is applied once across a coordinated plan',()=>{
@@ -95,12 +116,29 @@ test('unavailable purchases are excluded while doubtful purchases remain eligibl
   assert.equal(doubt.warnings.length,1);
 });
 
-test('production and exhaustive reference exports agree exactly on a reduced pool',()=>{
+test('production search agrees with an independent exhaustive reference',()=>{
   const squad=legalSquad();
-  const out=squad.find(x=>x.p.element_type===2); out.p.xp=0;
-  const pool=squad.map(x=>x.p).concat([player(301,2,10,50,4),player(302,2,11,50,5)]);
-  const args={squad,players:pool,bank:0,freeTransfers:1,startGW:1,horizon:2,scorePlayer:score,maxResults:20};
-  assert.deepEqual(optimiseTransfers(args),exhaustiveTransferSearch(args));
+  const defenders=squad.filter(x=>x.p.element_type===2);
+  defenders[0].p.xp=0; defenders[1].p.xp=0;
+  const pool=squad.map(x=>x.p).concat([
+    player(301,2,10,50,4),player(302,2,11,50,5),player(303,2,12,60,8)
+  ]);
+  const args={squad,players:pool,bank:10,freeTransfers:2,startGW:1,horizon:2,scorePlayer:score,maxResults:30,maxTransfers:2};
+  const production=optimiseTransfers(args);
+  const reference=exhaustiveTransferSearch(args);
+  assert.deepEqual(planSummary(production),planSummary(reference));
+  assert.ok(production.pruned>0);
+});
+
+test('safe affordability pruning cannot remove the exhaustive optimum',()=>{
+  const squad=legalSquad();
+  const out=squad.find(x=>x.p.element_type===3); out.p.xp=0;
+  const pool=squad.map(x=>x.p).concat([
+    player(350,3,10,200,100),player(351,3,11,50,5)
+  ]);
+  const args={squad,players:pool,bank:0,freeTransfers:1,startGW:1,horizon:1,scorePlayer:score,maxResults:10,maxTransfers:1};
+  assert.deepEqual(planSummary(optimiseTransfers(args)),planSummary(exhaustiveTransferSearch(args)));
+  assert.equal(optimiseTransfers(args).plans[0].transfers[0].inPlayerId,351);
 });
 
 test('an evaluation ceiling fails closed instead of claiming a partial optimum',()=>{
