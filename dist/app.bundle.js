@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"7f527b8aee8c6fcd","commit":"d993af8d22408029555362e0c53e303d3cfe29ed"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"7f527b8aee8c6fcdf013320a0abe91a08defd00a89958b3c1d07bc0e0d172b48","commit":"d993af8d22408029555362e0c53e303d3cfe29ed","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"bea7b5c744c351f3","commit":"849ff757c68c35e92744dc96efc34848110fa19e"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"bea7b5c744c351f314d566bfa392278b7ca54d97af74e6c7ad743e654cdc821b","commit":"849ff757c68c35e92744dc96efc34848110fa19e","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3290,9 +3290,21 @@ function decisionPreviewPlanSignature(plan={}){
   if(plan?.signature) return String(plan.signature);
   return (plan?.transfers||[]).map(t=>`${Number(t.outPlayerId)}>${Number(t.inPlayerId)}`).sort().join('|');
 }
+function decisionPreviewPlanResultSignature(plan={}){
+  return [
+    decisionPreviewPlanSignature(plan),
+    Number(plan.transferCount)||0,
+    (plan.finalSquadIds||[]).map(Number).sort((a,b)=>a-b).join('.'),
+    Number(plan.netGain)||0,
+    Number(plan.hitCost)||0,
+    Number(plan.bankAfter)||0,
+    Number(plan.freeTransfersNextGW)||0,
+    Number(plan.grossBestXIPoints)||0
+  ].join(':');
+}
 function decisionPreviewOptimiserSignature({squadSignature='',horizon=0,bank=0,freeTransfers=0,plans=[]}={}){
   return [String(squadSignature),Number(horizon)||0,Number(bank)||0,Number(freeTransfers)||0,
-    (plans||[]).map(decisionPreviewPlanSignature).join(',')].join('::');
+    (plans||[]).map(decisionPreviewPlanResultSignature).join(',')].join('::');
 }
 function decisionPreviewClonePlan(plan){
   if(!plan) return null;
@@ -3319,6 +3331,10 @@ function decisionPreviewClearAll(){
   decisionPreviewClearTransfer();
   decisionPreviewState.squadSignature=null;
 }
+function decisionPreviewHasActiveState(){
+  return !!decisionPreviewState.transfer || decisionPreviewState.captainId!=null ||
+    decisionPreviewState.viceId!=null || decisionPreviewState.selectionMode!=null;
+}
 function decisionPreviewSyncSquad(squad){
   const signature=decisionPreviewSquadSignature(squad);
   const changed=decisionPreviewState.squadSignature!==null && decisionPreviewState.squadSignature!==signature;
@@ -3328,7 +3344,7 @@ function decisionPreviewSyncSquad(squad){
 }
 function decisionPreviewSyncOptimiser(signature){
   const next=String(signature||'');
-  const changed=!!decisionPreviewState.transfer && decisionPreviewState.optimiserSignature!==next;
+  const changed=decisionPreviewState.optimiserSignature!==null && decisionPreviewState.optimiserSignature!==next && decisionPreviewHasActiveState();
   if(changed) decisionPreviewClearTransfer();
   decisionPreviewState.optimiserSignature=next;
   return changed;
@@ -3411,7 +3427,6 @@ function decisionPreviewCaptainTotal(xiTotal,captainId,scoreById={}){
   const uplift=Number(scoreById?.[captainId])||0;
   return {uplift,total:(Number(xiTotal)||0)+uplift};
 }
-
 
 
 /* ===== src/ui/views.mjs ===== */
