@@ -1,0 +1,26 @@
+name: Stage 4 verification
+on:
+  push:
+    branches: [stage4-expected-minutes]
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Full test suite
+        run: ./run-tests.sh
+      - name: Deterministic build comparison
+        shell: bash
+        run: |
+          export BUILD_COMMIT="${GITHUB_SHA}"
+          node build.mjs
+          mkdir -p /tmp/build-one
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/build-one/
+          node build.mjs
+          cmp /tmp/build-one/index.html dist/index.html
+          cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/build-one/manifest.json dist/manifest.json
