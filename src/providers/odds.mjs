@@ -7,6 +7,7 @@ import { markLive, markFallback, markPartial, markDisabled, markUnavailable } fr
 import { validateOdds } from './validate.mjs';
 import { recordIssues, recordRetry } from '../state.mjs';
 import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from './retry.mjs';
+import { K_CFG, sget, sset } from '../storage.mjs';
 /* ---------------------------------------------------------------------
    ODDS LAYER — bookmaker match odds converted to market-implied goals.
    --------------------------------------------------------------------- */
@@ -25,6 +26,38 @@ function solveLambda(pOver, line){
   }
   return (lo+hi)/2;
 }
+
+// Defence in depth for any future diagnostic path. Current user-facing odds
+// messages remain fixed strings; raw provider errors and keyed URLs are never
+// displayed. This helper ensures that an accidental diagnostic addition still
+// cannot expose the current key or an apiKey query value.
+function scrubOddsSecret(value, key = ''){
+  let text = String(value ?? '');
+  const secret = String(key ?? '').trim();
+  if(secret){
+    const variants = new Set([secret]);
+    try{ variants.add(encodeURIComponent(secret)); }catch{}
+    variants.forEach(v => { if(v) text = text.split(v).join('[REDACTED]'); });
+  }
+  return text.replace(/([?&]apiKey=)[^&#\s]*/gi, '$1[REDACTED]');
+}
+
+async function forgetOddsKey(deps = {}){
+  const field = deps.field || $('oddsKey');
+  const getConfig = deps.getConfig || (() => sget(K_CFG));
+  const setConfig = deps.setConfig || (value => sset(K_CFG, value));
+  const current = await getConfig();
+  const config = current && typeof current === 'object' && !Array.isArray(current)
+    ? { ...current } : {};
+  delete config.oddsKey;
+  if(field) field.value = '';
+  await setConfig(config);
+  S.odds = null;
+  S.oddsNote = '';
+  markDisabled('odds', 'no API key supplied', 'internal team model active');
+  return config;
+}
+
 async function loadOdds(){
   S.odds = null; S.oddsNote = '';
   const key = $('oddsKey').value.trim();
@@ -146,4 +179,4 @@ async function loadOdds(){
   else S.oddsNote = 'Odds feed answered but no fixtures could be matched.';
 }
 
-export { poissonOver, solveLambda, loadOdds };
+export { poissonOver, solveLambda, scrubOddsSecret, forgetOddsKey, loadOdds };
