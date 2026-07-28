@@ -14,7 +14,7 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 5 — Scoring corrections** · Owner-approved implementation on draft PR #9 from branch `agent/stage5-scoring-corrections`.
   - Implemented: 2026/27 rules configuration; stepped saves and goals conceded; defensive-contribution threshold probability; empirical bonus; sparse disciplinary/penalty events; penalty-role gating; real blank/double fixture-run scoring.
   - Review fixes completed: complete multi-line import/export stripping with fail-closed guard; direct bundler fixture tests; Stage 4 aggregate appearance denominator for bonus; genuine blank-Gameweek regression; verification no longer regenerates goldens.
-  - Verified source commit `adbebdeaf0ab194193f6d7fd0702b18da16f4d0f`: **241/241 tests passed**, committed goldens unchanged, deterministic two-build comparison passed and independent CSP recomputation passed. Generated artefacts were committed with that exact build identity.
+  - Verified source commit `aee6d0fee7cc177622a046f37885b554013debbd`: **241/241 tests passed**, committed goldens unchanged, deterministic two-build comparison passed and independent CSP recomputation passed. Generated artefacts were committed with that exact build identity.
   - The temporary verification workflow was removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`.
   - Remaining gate: owner review and explicit merge approval only. **Do not merge and do not begin Stage 6 yet.**
 
