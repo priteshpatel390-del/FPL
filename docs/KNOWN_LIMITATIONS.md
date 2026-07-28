@@ -37,5 +37,6 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | DC-1 | Defensive-contribution history starts in 2025/26 | No multi-season validation | Permanent | Accepted |
 | FRAME-1 | `frame-ancestors` is ineffective in meta CSP on GitHub Pages | Frame-buster is compensating control | Serverless | Accepted-temporary |
 | STYLE-1 | `style-src-attr 'unsafe-inline'` remains necessary | Style attributes are not hash-locked | Stage 9 class migration | Accepted-temporary |
+| UI-1 | No browser-level screenshot/visual-regression suite | Automated tests verify DOM structure, accessibility helpers and deterministic output, but final responsive appearance still requires human device review | Stage 9.6 | Open |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |

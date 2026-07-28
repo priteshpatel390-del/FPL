@@ -28,25 +28,26 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Four primary destinations: Team, Players, Transfers and More.
   - Team is the default landing screen; existing supporting tools are regrouped under More.
   - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
+- **Checkpoint 9.2 — Team pitch and shirts** · DONE and merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`.
+  - Portrait pitch, repository-owned CSS shirts, captain/vice treatment and preserved bench order.
+  - Verified source `38bb08e2e8f903deeb39dc4e1a4db070da4d4870`: **288/288 tests passed** with deterministic builds.
 
 ## Current
 - **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
-- **Checkpoint 9.2 — Team pitch and shirts** · implemented and verified on draft PR #18; owner review and explicit merge approval remain.
-  - Portrait football pitch presents the unchanged model-selected XI.
-  - Repository-owned CSS shirts use deterministic club palettes with safe fallbacks.
-  - Model-ranked captain and vice-captain are marked directly on the pitch; bench order is preserved.
-  - Verified source commit `38bb08e2e8f903deeb39dc4e1a4db070da4d4870`: **288/288 tests passed**, successful build, deterministic two-build comparison and build-identity check.
-  - Generated deployables committed at `a806ccc0`.
-  - No projection, minutes, scoring, fixture, simulation, squad, optimiser or provider behaviour changed.
+- **Checkpoint 9.3 — Player detail and uncertainty** · implemented and verified on draft PR #20; owner review and explicit merge approval remain.
+  - Mobile bottom sheet and desktop side panel replace the legacy inline table drawer.
+  - Existing expected-minutes outputs, confidence/source, P25–P75, P10–P90 and outcome probabilities are presented without formula changes.
+  - Approved labels: Tight ≤2.0, Moderate >2.0–5.0 and Wide >5.0 points; labels are suppressed in pre-season and for reduced-quality inputs.
+  - Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Verified generated deployables committed at `ae7f7f35bd69c17686e776b97d416d4be56ae8df`.
 
 ## Upcoming
-1. **Checkpoint 9.3 — Player detail and uncertainty** · only after 9.2 is merged; spread-label thresholds require separate owner approval.
-2. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
-3. **Checkpoint 9.5 — Settings and Provider Health integration**.
-4. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+1. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
+2. **Checkpoint 9.5 — Settings and Provider Health integration**.
+3. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
 
 ## Current blockers
-1. Owner review and explicit merge approval for Stage 9.2 draft PR #18.
-2. Descriptive uncertainty spread-label thresholds remain unapproved for checkpoint 9.3.
+1. Owner review and explicit merge approval for Stage 9.3 draft PR #20.
+2. Browser-level visual regression tooling is not yet present; final mobile/desktop appearance still needs human review.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
