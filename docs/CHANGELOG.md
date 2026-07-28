@@ -2,6 +2,26 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 9.4] — 2026-07-28 — Temporary decision previews
+### Added
+- Session-only transfer-plan previews launched directly from exact optimiser results.
+- Temporary captain and vice-captain selection on eligible starting-XI pitch cards.
+- Preview-only banners, incoming-player markers, model-versus-preview captaincy comparison and clear/reset actions.
+- Nine focused tests covering non-mutation, final-squad identity, role swapping, bench rejection, invalidation, signatures, score separation, accessibility wiring and no persistence.
+### Changed
+- The Team pitch can render a derived preview squad through the unchanged `bestXI()` while the real squad remains authoritative.
+- Optimiser input or result changes and real-squad changes clear stale previews automatically.
+### Verification
+- Verified source commit `849ff757c68c35e92744dc96efc34848110fa19e`.
+- Full suite: **304/304 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`.
+### Unchanged
+- No projection, expected-minutes, best-XI, captain-ranking, optimiser, provider, storage, security or FPL-account behaviour changed.
+- No preview state is persisted or submitted to FPL.
+### Status
+- Implemented and verified on draft PR #23; awaiting owner review and explicit merge approval.
+
 ## [Stage 9.3] — 2026-07-28 — Player detail and uncertainty
 ### Added
 - Accessible mobile bottom sheet and desktop side panel opened from the pitch, Players table and all-15 squad table.
@@ -21,8 +41,7 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - No projection, expected-minutes, scoring, fixture, simulation, best-XI, captaincy, bench, transfer-optimiser, provider, storage or security formula/behaviour changed.
 - No prediction-accuracy or probability-calibration claim.
 ### Status
-- Implemented and verified on draft PR #20; awaiting owner review and explicit merge approval.
-
+- Merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.
 
 ## [Stage 9.2] — 2026-07-28 — Team pitch and shirts
 ### Added
@@ -183,7 +202,6 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 ## [1.x] — 2026-07-26 (pre-refactor product evolution)
 ### Added
 - Initial working Teamsheet product and iterative feature set.
-
 
 ## 2026-07-28 — Stage 8 uncertainty and squad simulation
 - Added deterministic player score percentiles and blank/return/haul probabilities.
