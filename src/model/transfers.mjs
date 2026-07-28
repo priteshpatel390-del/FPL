@@ -36,7 +36,6 @@ function combinations(items, size, start=0, chosen=[], out=[]){
 function playerOf(entry){ return entry?.p || entry; }
 function playerId(entry){ return Number(playerOf(entry)?.id); }
 function positionOf(entry){ return Number(playerOf(entry)?.element_type); }
-function clubOf(entry){ return Number(playerOf(entry)?.team); }
 
 function validateSquad(squad, {allowInheritedOverQuota=true}={}){
   const issues=[];
@@ -134,7 +133,7 @@ function optimiseTransfers({squad,players,bank=0,freeTransfers=1,startGW=1,horiz
   if(typeof scorePlayer!=='function') return {status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0};
   const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));
   const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));
-  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1));
+  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));
   const baselineScore=scoreSquadAcrossHorizon(squad,startGW,cleanHorizon,scorePlayer);
   const baseline={transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:cleanBank,bankAfter:cleanBank,
     freeTransfersBefore:cleanFT,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(cleanFT,0),grossBestXIPoints:baselineScore.total,
