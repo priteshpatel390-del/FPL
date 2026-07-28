@@ -1,43 +1,55 @@
 # Stage 5 — Scoring corrections
 
-Status: owner-approved and implemented on draft PR #9; full repository verification pending.
+Status: owner-approved and implemented on draft PR #9; review fixes applied; final clean verification and owner merge approval remain.
 
 ## Objective
-
 Make the live projection rule-aware where FPL applies stepped or threshold scoring, while preserving the public projection surface and avoiding unsupported match simulation.
 
 ## Approved formulas
-
 - Appearance: `pAppear + p60`.
-- Goals and assists: linear expected values using per-90 rates, `expMin/90` and attacking fixture context.
+- Goals and assists: linear expected values using per-90 rates, expected minutes and attacking fixture context.
 - Clean sheets: `P(clean sheet) × p60 × position points`.
-- Goals conceded: Poisson expected value of one deduction per complete pair conceded while the player is expected on the pitch.
+- Goals conceded: Poisson expected value of one deduction per complete pair conceded while expected on the pitch.
 - Saves: Poisson expected value of one point per complete group of three saves.
 - Defensive contributions: appearance-mixture Poisson probability of reaching the official positional threshold, capped at two points.
-- Bonus: shrunk awarded bonus per estimated appearance, multiplied by `pAppear`, with no extra fixture multiplier.
-- Yellow cards, red cards, own goals, penalty misses and penalty saves: explicit expected-value components using position-prior shrinkage for sparse events.
+- Bonus: awarded bonus per estimated appearance, shrunk toward the positional population and multiplied by `pAppear`, with no fixture multiplier.
+- Yellow cards, red cards, own goals, penalty misses and penalty saves: explicit expected-value components using positional shrinkage.
 - Penalty order: used only to gate penalty-miss risk; no speculative xG/xA uplift.
-- Fixture-run score: sum real fixture values across the requested Gameweeks and divide by Gameweeks; blanks contribute zero and doubles add both fixtures.
+- Fixture-run score: sum actual fixture values across requested Gameweeks and divide by requested Gameweeks; blanks contribute zero and doubles add both fixtures.
+
+## Appearance evidence used by bonus
+Detailed current-season history is preferred and counts actual appearances. Where detailed history is unavailable, Stage 5 reuses the Stage 4 aggregate boundary: completed team matches × aggregate `pAppear`. A final no-fixture fallback uses the greater of starts and minutes/90. Scoring must not derive season appearances from minutes/60.
 
 ## Configuration
-
-`FPL_RULES` records the 2026/27 scoring values. `SCORING_RULES` records the judgement-based shrinkage constants:
-
-- rare-event prior: 10 matches;
+`FPL_RULES` records official 2026/27 values. `SCORING_RULES` records judgement-based constants:
+- rare-event prior: 10 played-90 exposures;
 - bonus prior: 8 appearances;
 - minimum exposure: 0.5 played-90;
 - active penalty orders: 1 and 2.
 
-These constants are not validated optima and remain Stage 7 validation candidates.
+These are not validated optima and remain Stage 7 candidates.
+
+## Bundler review correction
+The Stage 5 module addition exposed a pre-existing custom-bundler weakness. The approved correction is part of this PR closeout:
+- static single-line and multi-line imports are removed as complete declarations;
+- single-line and multi-line export lists/re-export lists are removed;
+- unterminated declarations fail the build;
+- unsupported surviving import/export syntax fails the build;
+- direct fixture-based tests guard the stripper, in addition to scanning the emitted production bundle.
 
 ## Explicit exclusions
-
 No provider, fixture blend, calibration, captaincy, squad, transfer optimiser, walk-forward backtest, uncertainty simulation or Stage 9 UI change. No full BPS match-rank simulation. No prediction-accuracy claim.
 
 ## Validation contract
+Focused tests cover rules configuration, Poisson helpers, stepped saves/conceding, defensive thresholds, sparse-event shrinkage, explicit negative events, penalty-role gating, bonus denominator behaviour and real blank/double fixture runs. Build tests cover supported and unsupported module declaration forms. Characterisation changes remain limited to Stage 5-authorised scoring consequences.
 
-Focused tests cover rule configuration, Poisson helpers, stepped saves/conceding, defensive thresholds, sparse-event shrinkage, explicit negative events, penalty-role gating, empirical bonus and fixture-run blanks/doubles. Characterisation changes are limited to Stage 5-authorised scoring outputs and downstream totals.
+Final verification must:
+1. run the complete suite against committed goldens without `UPDATE_GOLDEN`;
+2. build twice using the exact source commit as `BUILD_COMMIT`;
+3. compare all generated artefacts byte-for-byte;
+4. independently recompute CSP hashes;
+5. commit verified artefacts and record the checked source commit;
+6. remove the temporary workflow before merge.
 
 ## Remaining limitations
-
-Poisson is an approximation; bonus is empirical rather than match-relative; clean-sheet retention after substitution remains simplified; second-yellow overlap cannot be separated from aggregate FPL fields; set-piece roles do not add attacking uplift; inherited positional calibration was fitted against the earlier model and is not refitted until Stage 7.
+Poisson is an approximation; bonus is empirical rather than match-relative; clean-sheet retention after substitution remains simplified; second-yellow overlap cannot be separated from aggregate FPL fields; set-piece roles do not add attacking uplift; inherited positional calibration remains unrefitted until Stage 7.
