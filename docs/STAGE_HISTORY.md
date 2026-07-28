@@ -49,7 +49,7 @@ touch breaking direct imports. All fixed same-stage. Lessons: the characterisati
 keep four times in one stage; generated code needs path tests. Outstanding: BT-1 pinning; views
 module intentionally monolithic until Stage 9.
 
-## Stage 3 — Security & hardening (IN PROGRESS)
+## Stage 3 — Security & hardening (DONE, merged 2026-07-28)
 Design: docs/STAGE3-DESIGN.md (8 deliverables), approved with CSP intentionally specified last.
 First implementation: D-13 fixture validation/deduplication in `hydrate()`; DUP-1 closed and suite
 96 → 108. Second implementation (2026-07-27): SEC-3 closed — Anthropic key field, persistence,
@@ -69,10 +69,20 @@ derived value rather than weakening the old test. Full suite and deterministic t
 then passed. Item was merged through PR #2.
 
 Sixth implementation: Stage 3.5 DOM-builder rendering, recorded above. Seventh implementation:
-Stage 3.6 AI/Markdown sanitisation, recorded above. Remaining Stage 3 work is odds-key hygiene and
-hash-based CSP.
+Stage 3.6 AI/Markdown sanitisation, recorded above. Eighth implementation: odds-key hygiene and
+hash-based CSP. The key is password-masked, omitted when empty, removable in one action and scrubbed
+from diagnostics. The build emits and independently verifies SHA-256 hashes for the exact inline
+script and style, with a hashed frame-buster compensating for GitHub Pages' inability to enforce
+`frame-ancestors` via meta CSP. Eight focused tests bring the suite 202 → 210. Verified generated
+`dist/` files were checked byte-for-byte against the successful build artefact and committed before
+the temporary verification workflow was removed.
 
-Owner architecture-review gate remains after Stage 3, before any model work.
+Stage 3 landed through PR #6 at merge commit `3f662b7e133ce2995da74c5e52165ae84744e120`.
+The verified completion baseline is 210/210 tests passing, successful build and deterministic
+two-build comparison. No projection, expected-minutes, scoring, fixture, captaincy, squad or
+optimisation formula changed.
+
+The owner architecture-review gate remains before Stage 4 or any model work.
 
 ## Documentation stage (DONE, 2026-07-26)
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
