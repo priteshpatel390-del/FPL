@@ -1,57 +1,44 @@
-# CLAUDE.md — onboarding for every future Claude session
-Purpose: read this FIRST, in full. The GitHub repository — not any conversation — is the project's
-source of truth. Last updated: 2026-07-28.
+# CLAUDE.md — onboarding for every future development session
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-07-28.
 
-## Who you're working with
-Pritesh: the owner, working from an iPhone, non-developer but a rigorous reviewer who independently
-runs the test suite and returns structured stage approvals with adjustments. He has asked for blunt
-honesty: if something is a bad idea, say so plainly; never claim accuracy or success you cannot
-evidence.
+## Owner
+Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
 
 ## Read in this order
-1. docs/PROJECT_CONTEXT.md — what/why/status
-2. docs/ARCHITECTURE.md — how it's built
-3. docs/DECISIONS.md — settled questions (do not relitigate silently)
-4. docs/ROADMAP.md — where we are; what's next; blockers
-5. docs/KNOWN_LIMITATIONS.md — before promising anything
-6. The current stage's design doc (docs/STAGE3-DESIGN.md; Stage 3.6 design is the next approval gate)
-7. Before ANY model work: docs/PROJECTION_MODEL.md + docs/TESTING.md
-8. Before provider/security work: docs/DATA_SOURCES.md + docs/SECURITY.md
-9. History when needed: docs/STAGE_HISTORY.md, docs/CHANGELOG.md, docs/AUDIT.md, docs/STAGE1/2.md
+1. `docs/PROJECT_CONTEXT.md`
+2. `docs/ARCHITECTURE.md`
+3. `docs/DECISIONS.md`
+4. `docs/ROADMAP.md`
+5. `docs/KNOWN_LIMITATIONS.md`
+6. The current stage design document
+7. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
+8. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
+9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 3 items 1–5 are merged. Stage 3.5 DOM-builder rendering landed through PR #3 at merge commit
-`5623abb594159916b4041e6bd3c44be80f714ce7`; the recorded implementation run was 194/194 tests
-with deterministic builds. Stage 3.6 AI/Markdown sanitisation is next and requires owner approval of
-its design before implementation.
+Stage 3 security and provider hardening is implemented on draft PR #6. Verified branch baseline: **210 passing tests**, successful build and byte-identical two-build comparison. The next checkpoint is the **owner architecture review gate**. Do not begin Stage 4 until Pritesh explicitly approves progression and PR #6 is merged.
 
 ## Non-negotiable rules
-- Never modify projection logic without tests, and never change a formula without first presenting:
-  existing formula → proposed formula → inputs → fallback → assumptions → limitations → validating
-  tests — and receiving owner approval.
-- Never remove existing tests. Retitle/re-home only with stated justification. The golden
-  `expectedToChange` section moves only as part of the stage that fixes its issue id.
-- Never claim improved prediction accuracy without out-of-sample validation (DECISIONS D-11). The
-  published r=0.80 is in-sample-flattered; do not quote it as validated.
-- Keep every stage independently deployable; run `./run-tests.sh` (build + 194 tests) green before
-  presenting anything.
-- Maintain deterministic builds (same sources → same bytes; BUILD_COMMIT stamps identity).
-- Preserve mobile-first design and the owner's one-file deploy workflow (upload dist/index.html).
-- Secrets: Anthropic keys NEVER client-side (D-08). Odds key: never logged, never in errors,
-  never relayed (SEC-1 — regression-tested).
-- Understat stays team-level (D-05). No new data sources without the ablation bar (AUDIT §7).
-- Stage discipline: design → owner approval → implement → tests → docs updated → deployable +
-  repo zip → stage record appended. An owner architecture-review gate sits after Stage 3.
+- Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
+- Never delete or weaken an existing test to make work pass.
+- Never claim improved prediction accuracy without genuine out-of-sample validation. The historical r=0.80 is method-flattered.
+- Run `./run-tests.sh` before describing implementation as complete.
+- Preserve deterministic builds and `BUILD_COMMIT` identity.
+- Preserve vanilla ES modules, zero dependencies, GitHub Pages and the single-file `dist/index.html` deploy workflow.
+- Generated `dist/` files come from `build.mjs`; never hand-edit them.
+- Anthropic keys are banned client-side.
+- Odds requests remain direct-only; the key must never be relayed, logged, exposed in errors or rendered into UI diagnostics.
+- Understat remains team-level only.
+- No new provider without an approved validation and ablation plan.
+- Stage discipline: inspect → scope/exclusions → owner approval where required → branch → implementation → full verification → docs → draft PR → owner review → merge only with explicit approval.
 
-## Practical environment notes
-- Zero-dependency toolchain: node:test, custom bundler; assume NO npm registry and NO sandbox
-  network. Historical data downloads happen in the USER'S browser (the app), not your sandbox.
-- Tests: `./run-tests.sh`. Characterisation runs against dist/app.bundle.js via tests/harness.mjs.
-- Bundler contract: unique top-level names, no default exports, single-line imports.
-- The owner deploys by uploading dist/index.html via GitHub mobile web; give him exact tap-by-tap
-  steps when a deploy is needed. The full repository is now committed; retain the one-file deploy workflow.
+## Current security posture
+- Provider/user rendering uses DOM builders.
+- AI output uses restricted Markdown AST rendering.
+- Odds key is masked, omitted when empty, one-action forgettable and scrubbed from diagnostics.
+- Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
+- `style-src-attr 'unsafe-inline'` remains an explicit Stage 9 concession.
+- Meta `frame-ancestors` is ineffective on Pages; a hashed frame-buster compensates until serverless headers.
 
-## Ending every stage
-Update: ROADMAP (status), CHANGELOG, KNOWN_LIMITATIONS (close/open ids), STAGE_HISTORY (diary
-entry), any doc whose facts changed, and the stage's own record. Then produce: deployable
-dist/index.html + full repo zip + a short review summary with any judgement calls flagged.
+## Completion report for every item
+Report what changed, what deliberately did not change, exact test count/result, build and reproducibility evidence, documentation updates, judgement calls, remaining limitations, branch/commit and draft PR link.
