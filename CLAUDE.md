@@ -14,15 +14,16 @@ evidence.
 3. docs/DECISIONS.md — settled questions (do not relitigate silently)
 4. docs/ROADMAP.md — where we are; what's next; blockers
 5. docs/KNOWN_LIMITATIONS.md — before promising anything
-6. The current stage's design doc (docs/STAGE3-DESIGN.md; item 5 record: docs/STAGE3-ITEM5.md)
+6. The current stage's design doc (docs/STAGE3-DESIGN.md; Stage 3.6 design is the next approval gate)
 7. Before ANY model work: docs/PROJECTION_MODEL.md + docs/TESTING.md
 8. Before provider/security work: docs/DATA_SOURCES.md + docs/SECURITY.md
 9. History when needed: docs/STAGE_HISTORY.md, docs/CHANGELOG.md, docs/AUDIT.md, docs/STAGE1/2.md
 
 ## Current checkpoint
-Stage 3 items 1–4 are merged at the last locally available checkpoint. Stage 3.5 DOM-builder
-rendering is implemented on its review branch with 194 tests; owner review and a published draft PR
-are still required. Stage 3.6 AI/Markdown sanitisation is separate and awaits design approval.
+Stage 3 items 1–5 are merged. Stage 3.5 DOM-builder rendering landed through PR #3 at merge commit
+`5623abb594159916b4041e6bd3c44be80f714ce7`; the recorded implementation run was 194/194 tests
+with deterministic builds. Stage 3.6 AI/Markdown sanitisation is next and requires owner approval of
+its design before implementation.
 
 ## Non-negotiable rules
 - Never modify projection logic without tests, and never change a formula without first presenting:

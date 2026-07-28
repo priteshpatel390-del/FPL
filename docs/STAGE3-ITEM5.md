@@ -1,5 +1,5 @@
 # Stage 3 item 5 — DOM-builder rendering (Stage 3.5)
-Purpose: implementation and review record. Date: 2026-07-28. Status: IMPLEMENTED; OWNER REVIEW PENDING.
+Purpose: implementation and review record. Date: 2026-07-28. Status: MERGED via PR #3.
 Related: STAGE3-DESIGN §5, DECISIONS D-17, SECURITY, TESTING.
 
 ## Approved boundary
@@ -30,5 +30,14 @@ representative player, team, entry, saved-league and provider values. They asser
 visible text and creates neither SCRIPT/IMG elements nor event-handler attributes. A source inventory
 test rejects any non-Ask `innerHTML` sink in `views.mjs`, `main.mjs` or `backtest.mjs`.
 
-Full result: 194/194 tests passing. Golden files and all projection/scoring outputs are unchanged.
-Production build and deterministic byte comparison are required before review handoff.
+Recorded implementation result: 194/194 tests passing, with production build and deterministic byte
+comparison reported green. Golden files and all projection/scoring outputs were unchanged. GitHub has
+no attached Actions run for this merge, so the repository record distinguishes that implementation
+evidence from an independently rerun CI result.
+
+## Merge record
+- Pull request: #3 — Stage 3.5 DOM-builder rendering.
+- Implementation commit: `138f2b826487c487733cd32546a577d515459646`.
+- Merge commit on `main`: `5623abb594159916b4041e6bd3c44be80f714ce7`.
+- Owner merged: 2026-07-28.
+- Next gate: Stage 3.6 AI/Markdown sanitisation design approval.
