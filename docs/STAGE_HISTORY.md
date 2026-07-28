@@ -1,6 +1,16 @@
 # STAGE_HISTORY.md — engineering diary
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
-Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, AUDIT.md (all retained verbatim in /docs).
+Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, AUDIT.md.
+
+## Stage 5 — Scoring corrections (DRAFT PR #9, VERIFIED 2026-07-28)
+Implemented the owner-approved 2026/27 scoring rulebook, deterministic Poisson grouped scoring for saves and goals conceded, defensive-contribution threshold probability, empirical awarded-bonus shrinkage, explicit rare disciplinary/penalty events, penalty-role gating and real blank/double fixture-run scoring. The public projection surface and downstream squad/captaincy/transfer contracts remained unchanged.
+
+Review identified four justified corrections. The custom bundler now strips complete single-line and multi-line static imports and export lists, fails on unterminated declarations and rejects surviving module syntax; direct fixture tests guard the boundary. Aggregate bonus appearances now reuse the Stage 4 completed-match × aggregate-pAppear model rather than minutes/60. The fixture test now creates a genuine blank. Final verification no longer regenerates goldens.
+
+Verified source commit `aee6d0fee7cc177622a046f37885b554013debbd`: 241/241 tests passing against committed goldens, deterministic two-build comparison passed and independent CSP verification passed. Generated artefacts embed that exact identity. Temporary workflow removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`. PR #9 remains draft and unmerged pending explicit owner approval. No accuracy improvement is claimed.
+
+## Stage 4 — Expected minutes (MERGED 2026-07-28)
+Replaced season-minutes/current-GW and GW-number denominators with completed-team fixtures, validated detailed current-season histories, recency weighting, aggregate/prior fallbacks and explicit pStart/pAppear/p60/expMin/confidence outputs. Official availability is applied once and scoring consumes the minutes boundary without circular dependency. Verified baseline: 220/220 tests and deterministic builds. Merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
 
 ## Stage 3.6 — AI/Markdown sanitisation (MERGED 2026-07-28)
 Replaced the Ask surface's string-to-HTML Markdown path with a bounded, default-deny parser and DOM renderer. The supported subset is deliberately small: paragraphs, `##`/`###` headings, unordered lists, bold, italic and absolute HTTP(S) links. Raw HTML and unsupported Markdown remain inert text. Unsafe, relative, protocol-relative, encoded, entity-obscured and control-character URL targets are rejected while preserving visible labels.
@@ -81,8 +91,6 @@ Stage 3 landed through PR #6 at merge commit `3f662b7e133ce2995da74c5e52165ae847
 The verified completion baseline is 210/210 tests passing, successful build and deterministic
 two-build comparison. No projection, expected-minutes, scoring, fixture, captaincy, squad or
 optimisation formula changed.
-
-The owner architecture-review gate remains before Stage 4 or any model work.
 
 ## Documentation stage (DONE, 2026-07-26)
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
