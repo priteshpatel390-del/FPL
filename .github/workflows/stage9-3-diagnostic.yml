@@ -1,12 +1,10 @@
 name: Stage 9.3 diagnostic verifier
 
 on:
-  push:
-    branches:
-      - agent/stage9-3-player-detail-uncertainty
   pull_request:
     branches:
       - main
+    types: [opened, reopened, synchronize, ready_for_review]
 
 permissions:
   contents: write
@@ -20,7 +18,9 @@ jobs:
           ref: agent/stage9-3-player-detail-uncertainty
           fetch-depth: 0
       - name: Apply, verify and record result
+        shell: bash
         run: |
+          set +e
           if [ -f .stage9-3-result ]; then
             echo "Recorded Stage 9.3 result already exists."
             exit 0
@@ -83,9 +83,10 @@ text=text.replace(pitch_aria,"      onclick:event=>openPlayerDetailView(p,gw,1,e
             if [ -f /tmp/stage9-3-source-sha ]; then echo "source=$(cat /tmp/stage9-3-source-sha)"; fi
             if [ -f /tmp/stage9-3-artifact-sha ]; then echo "artefact=$(cat /tmp/stage9-3-artifact-sha)"; fi
             echo "--- log tail ---"
-            tail -n 220 /tmp/stage9-3.log
+            tail -n 260 /tmp/stage9-3.log
           } > .stage9-3-result
 
           git add .stage9-3-result
           git commit -m 'Record Stage 9.3 verification result'
           git push origin HEAD:agent/stage9-3-player-detail-uncertainty
+          exit 0
