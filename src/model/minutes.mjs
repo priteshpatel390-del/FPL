@@ -83,6 +83,7 @@ function minutesEstimate(p){
   const newest = rows[0]?.kickoff_time ? Date.parse(rows[0].kickoff_time) : NaN;
   const freshness = Number.isFinite(newest) ? clamp(1 - (Date.now()-newest)/(28*24*60*60*1000),0,1) : (rows.length ? 0.5 : 0.25);
   let confidence = clamp(0.40*coverage + 0.20*freshness + 0.25*detail + 0.15*roleStability(rows),0,1);
+  if(rows.length < 3) confidence = Math.min(confidence, 0.44);
   const returning = rows.length >= 2 && rows[0].minutes > 0 && rows[0].minutes < 45 && rows.slice(1,3).some(r => r.minutes === 0);
   if(returning) confidence = Math.min(confidence, 0.74);
 
