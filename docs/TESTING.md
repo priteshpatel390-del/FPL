@@ -1,13 +1,13 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-28. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
+Last updated: 2026-07-28. Related: tests/, CLAUDE.md, ACTIONS.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 7 merged baseline: **274/274 passing tests**, successful production build, deterministic two-build comparison and build-identity checks.
+Current `main` baseline after Stage 9.1: **284/284 passing tests**, successful production build, deterministic two-build comparison and build-identity checks.
 
-Stage 8 draft PR #16 adds ten direct tests, taking the current verified branch baseline to **284/284 passing tests**. A branch-only workflow also verifies a deterministic two-build comparison. Verified generated artefacts are committed from the successful workflow; the temporary workflow is removed in the same finalisation commit.
+Repository-wide CI is defined permanently in `.github/workflows/repository-verification.yml`. It runs on pull requests to `main`, pushes to `main` and manual dispatch. Historical stage-named workflows were temporary verification scaffolding and remain visible only as old Actions records; see `docs/ACTIONS.md`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -24,11 +24,12 @@ Stage 8 draft PR #16 adds ten direct tests, taking the current verified branch b
 12. `simulation.test.mjs` — Stage 8 seeded randomness, minutes-state marginals, expected-minutes convergence, bounded inconsistent inputs, percentile ordering and probability thresholds.
 13. `squad-simulation.test.mjs` — Stage 8 legal formations, goalkeeper substitution, ordered outfield substitutions and captain/vice fallback.
 14. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
+15. Stage 9 UI suites — app-shell navigation, pitch formation grouping, captain/vice identity and deterministic repository-owned shirt palettes.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
 
-Stage 8 changes no deterministic projection formula and requires no golden regeneration.
+UI-only Stage 9 checkpoints do not alter deterministic projection formulas and require no golden regeneration unless a separately approved user-visible characterisation contract genuinely changes.
 
 ## Harness
 `tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. Characterisation therefore exercises the production bundling path rather than a separate test-only implementation.
@@ -40,7 +41,13 @@ Stage 8 changes no deterministic projection formula and requires no golden regen
 4. Independently verify CSP/build identity through the committed security tests and emitted manifest.
 5. Confirm `BUILD_INFO`, manifest module order, source hash, commit identity and generated files agree.
 6. Commit verified generated artefacts.
-7. Remove temporary verification workflows before merge.
+7. Confirm the permanent Repository verification workflow is green for the pull request.
+8. Do not add another stage-specific workflow unless the permanent workflow genuinely cannot exercise an approved check; any exception must be documented and removed before merge.
+
+## CI failure behaviour
+The test step uses Bash `pipefail` while writing a downloadable log. A failed test therefore fails the original step rather than being hidden by `continue-on-error` or a later synthetic failure step. Deterministic build, identity and CSP checks run only after the complete suite succeeds.
+
+The permanent workflow checks out the exact pull-request head SHA and uses that value as `BUILD_COMMIT`. Successful builds are uploaded for short-lived review convenience, but the workflow does not write to the repository or commit generated files.
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 8 probability coverage must be evaluated prospectively during 2026/27 before any calibration claim.
