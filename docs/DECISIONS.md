@@ -1,6 +1,6 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-07-26. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
+Last updated: 2026-07-28. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives:
@@ -144,3 +144,7 @@ sink inventory guard the boundary. No model formula, provider behaviour, depende
 
 **D-18 · 2026-07-28 · Accepted · Deterministic seeded uncertainty and legal squad simulation (Stage 8)**
 Reason: expected points alone hide non-appearance risk, tail outcomes, auto-subs and captain fallback. Approach: a separate seeded Monte Carlo layer reconstructs five minutes states from pStart/pAppear/p60/expMin, samples approved scoring components, reports percentiles and explicit blank/return/haul thresholds, and simulates legal bench/captain mechanics. Deterministic projectXP, calibration and transfer objectives remain unchanged. Detailed pre-season simulation is disabled rather than manufactured. Consequences: equal inputs produce equal outputs; uncertainty remains conditional on the current model and requires prospective calibration before accuracy claims.
+
+
+**D-19 · 2026-07-28 · Accepted · Stage 9.3 uncertainty labels are presentation-only absolute widths**
+Reason: percentage spreads behave poorly when a player median is near zero, while absolute FPL-point widths remain understandable and comparable. Pritesh approved Tight ≤2.0 points, Moderate >2.0–5.0 points and Wide >5.0 points. Labels are suppressed when detailed simulation is unavailable in pre-season or input quality is reduced; the UI states that simulations are model-conditional and not externally calibrated. Consequences: `ui/player-detail.mjs` owns only the presentation categorisation. Stage 8 sampling, percentiles, probability thresholds, expected-minutes logic, projections, captaincy, squad selection and optimisation remain unchanged.

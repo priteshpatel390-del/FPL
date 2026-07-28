@@ -2,6 +2,28 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 9.3] — 2026-07-28 — Player detail and uncertainty
+### Added
+- Accessible mobile bottom sheet and desktop side panel opened from the pitch, Players table and all-15 squad table.
+- Decision summary, expected minutes, start/appearance/60-minute probabilities, confidence/source, compact P25–P75 and expanded P10–P90 ranges.
+- Blank, return, haul and mega-haul probabilities with explicit model-conditional wording.
+- Owner-approved Tight/Moderate/Wide presentation labels and safeguards for pre-season and reduced-quality inputs.
+- Seven focused tests, including exact 2.0/5.0 boundaries, dialog focus/Escape behaviour and official doubtful-status presentation.
+### Changed
+- Replaced the legacy inline player-table breakdown row while preserving the existing projection component breakdown inside the new detail surface.
+- Pitch players and all-15 rows are now keyboard-focusable player-detail triggers.
+### Verification
+- Verified source commit `40dde666fc776e0fdcf1bab6c8dad30138825d08`.
+- Full suite: **295/295 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `ae7f7f35bd69c17686e776b97d416d4be56ae8df`.
+### Unchanged
+- No projection, expected-minutes, scoring, fixture, simulation, best-XI, captaincy, bench, transfer-optimiser, provider, storage or security formula/behaviour changed.
+- No prediction-accuracy or probability-calibration claim.
+### Status
+- Implemented and verified on draft PR #20; awaiting owner review and explicit merge approval.
+
+
 ## [Stage 9.2] — 2026-07-28 — Team pitch and shirts
 ### Added
 - Portrait, mobile-first football pitch for the unchanged model-selected starting XI.
@@ -21,7 +43,7 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - `bestXI()`, bench ordering, projections, expected minutes, scoring, fixtures, simulation, captain ranking, transfer optimisation, providers, storage and security behaviour.
 - No official FPL or club artwork and no prediction-accuracy claim.
 ### Status
-- Implemented and verified on draft PR #18; awaiting owner review and explicit merge approval.
+- Merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`.
 
 ## [Stage 9.1] — 2026-07-28 — App shell and primary navigation
 ### Added
