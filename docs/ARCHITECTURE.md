@@ -8,94 +8,89 @@ app.html            UI shell/template (script tag replaced at build)
 build.mjs           deterministic bundler (emits dist/)
 run-tests.sh        build + full test suite
 src/
-  config.mjs        scoring constants, versions (MODEL/RULES/SCHEMA), ODDS_RULES
+  config.mjs        scoring constants, versions, ODDS_RULES, MINUTES_RULES
   util.mjs          $, num, clamp, fmt1, escapeHTML, el, setChildren
-  state.mjs         S (global state), KEEP field list, slim(), hydrate()
-  storage.mjs       sget/sset (window.storage→localStorage fallback), saveCfg,
-                    cachePut/cacheGet (versioned envelope)
+  state.mjs         S, bootstrap slimming/hydration, minuteHistory session state
+  storage.mjs       config/cache access plus separate minutes-history cache key
   providers/
     retry.mjs       bounded transient-failure retry policies + safe endpoint labels
-    validate.mjs    per-endpoint payload validation, fixture normalisation, issue collapse
+    validate.mjs    core per-endpoint payload validation and fixture normalisation
     registry.mjs    six quality descriptors + seven-state runtime Provider Health
-    transport.mjs   fetchT (timeout), RELAYS cascade, api(), fetchVia(), pool()
+    transport.mjs   fetchT, relay cascade, api(), fetchVia(), pool()
+    minutes-history.mjs official FPL element-summary validation, cohort, cache and loading
     common.mjs      NAME_ALIASES, mapTeamName
-    understat.mjs   parseUnderstat, loadUnderstat (team last-6 xG/xGA only)
-    odds.mjs        poissonOver, solveLambda, loadOdds (SEC-1: direct-only)
+    understat.mjs   team last-6 xG/xGA only
+    odds.mjs        poissonOver, solveLambda, direct-only loadOdds
   model/
-    fixtures.mjs    matchContext (3-layer blend), teamFixtures, multToDiff, runScore
-    minutes.mjs     SHIM re-export (crude model lives in scoring; Stage 4 replaces)
-    scoring.mjs     availability, per90, expectedMinutes, priceBaseline,
-                    playerFixtureXP, projectXP + xp cache (xpOf/clearXP)
-    xp.mjs          SHIM re-export of projection surface
-    backtest.mjs    parseCSV, pearson, computeBacktest (pure, provenance), runBacktest (UI)
+    fixtures.mjs    matchContext, teamFixtures, multToDiff, runScore
+    minutes.mjs     Stage 4 pStart/pAppear/p60/expMin/confidence estimator
+    scoring.mjs     availability, rates, points components and projection cache
+    xp.mjs          re-export shim of projection surface
+    backtest.mjs    parseCSV, pearson, computeBacktest, runBacktest
   squad.mjs         flagsFor, priceMomentum, newsAge, sellPrice, mySquad, bestXI
-  main.mjs          loadAll orchestration + compact Provider Health strip
-  ui/views.mjs      all views, wiring, init (monolithic by design until Stage 9)
-tests/              harness.mjs + suites + golden.json, including provider-health transitions
-tools/split.py      historical record of the Stage-2 extraction
-docs/               this documentation set + AUDIT/STAGE records
-dist/               BUILD ARTEFACT (bundle, index.html, manifest.json) — never edit
+  main.mjs          load orchestration and Provider Health strip
+  ui/views.mjs      views and wiring; monolithic until Stage 9
+tests/              220-test Stage 4 draft baseline including minutes-model.test.mjs
+docs/               canonical documentation and stage records
+dist/               generated deployable; never hand-edit
 ```
 
 ## Dependency flow
-```mermaid
-flowchart TD
-  CFG[config] --> ST[state] --> STO[storage]
-  CFG --> FIX[model/fixtures] --> SCO[model/scoring] --> SQ[squad]
-  ST --> TRANS[providers/transport] --> UST[understat] & ODDS[odds]
-  REG[registry + health] --> UST & ODDS & MAIN
-  SCO --> BT[model/backtest]
-  SQ & BT & UST & ODDS & STO --> MAIN[main] --> VIEWS[ui/views]
-```
-Bundler flattens everything into one scope in fixed ORDER (build.mjs); direct ES imports are the
-contract for tests. Constraint: unique top-level names, no default exports, single-line imports.
+Configuration and state feed provider, storage and model modules. `providers/minutes-history.mjs`
+loads validated official-FPL histories into `S.minuteHistory`. `model/minutes.mjs` consumes player,
+fixture and history state and exposes an estimate object. `model/scoring.mjs` consumes that object;
+minutes never imports scoring, preventing a circular dependency. Squad, captaincy, transfers and UI
+remain downstream of the unchanged projection surface.
 
-## Provider Health architecture (D-16)
-Runtime provider state is stored in-memory in `providers/registry.mjs`. The model is descriptive,
-not a synthetic reliability score: Live, Cached, Stale, Fallback, Partial, Disabled and
-Unavailable. Entries retain `lastSuccess`, calculated age, a technical note and a concise
-consequence line. Staleness is derived when read, using FPL 30m during live GWs / 6h otherwise,
-Understat 24h and odds 6h. `Disabled` is a neutral user choice and never ages into failure.
+The bundler flattens modules in a fixed order. Direct ES imports remain the test contract. Unique
+bundle-scope names, named exports and single-line export lists remain required.
 
-`main.mjs` maps the core FPL fresh/cache/error paths and renders the compact strip with DOM nodes.
-`understat.mjs` and `odds.mjs` map their validation and fallback outcomes. The state is intentionally
-session-scoped; the underlying FPL snapshot remains the persisted fallback source.
+## Stage 4 history flow
+1. Core bootstrap and fixtures load through the existing cache/live/fallback path.
+2. Detailed histories load asynchronously after the first usable render, alongside optional providers.
+3. Squad/manual players are prioritised, followed by approximately 80 players ordered by ownership,
+   price and id. Limited concurrency uses the existing transport pool.
+4. Element-summary payloads are reduced to bounded history rows. Malformed rows are dropped and
+   reported without payload leakage.
+5. A separate schema/model-versioned cache preserves usable histories; a failed refresh does not
+   remove aggregate/prior fallback.
+6. Mixed detailed/fallback coverage marks FPL Provider Health Partial unless core FPL is already in a
+   stronger failure state such as Fallback or Unavailable.
 
-## Rendering architecture (Stage 3.5)
-`el(tag, attrs, ...children)` and `setChildren(parent, ...children)` are the shared rendering
-primitives. Non-node children are always converted to text nodes. The gameweek/status surfaces,
-ticker, player ranker/drawer, squad and captaincy, transfers, mini-leagues, manual squad/search,
-core failure messages and backtest UI use these primitives; static CSS classes, event wiring and
-table semantics are retained. Ask is intentionally excluded and remains at the Stage 3.4 baseline
-until the separately approved Stage 3.6 sanitisation design.
+## Expected-minutes boundary
+`model/minutes.mjs` owns all Stage 4 minutes behaviour and returns `{pStart,pAppear,p60,expMin,
+confidence,confidenceLabel,source}`. The model uses completed team fixtures rather than GW number,
+last-eight weighted histories where available, four-match shrinkage and deterministic aggregate/prior
+fallbacks. Official availability is applied once. Scoring no longer invents probabilities from a
+single average.
 
-## Model architecture (documented fully in PROJECTION_MODEL.md)
-Layered team strength → per-fixture context {xGF,xGA,cs,atk,def} → per-position component scoring →
-projection cache → calibration multiplier → consumers (ranker, squad, captain, transfers, Ask
-context). Layers: FPL strengths (base) ⊕ Understat last-6 (45%) ⊕ market odds (65% where quoted).
+## Provider Health
+Runtime state remains descriptive: Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable.
+Health is session-scoped. Detailed histories are an FPL enrichment, not a new provider.
 
-## Storage architecture
-Keys: fpl:config, fpl:squad, fpl:leagues, fpl:calib (raw JSON via sget/sset) and fpl:cache
-(versioned envelope: schemaVersion+season+fetchedAt; mismatch invalidates). window.storage inside
-Claude artifacts, localStorage when hosted; both wrapped, both failure-tolerant. Provider Health
-itself is not persisted.
+## Storage
+Core season snapshot, configuration, squad and calibration keys remain. `fpl:minutes-history` is a
+separate schema/model-versioned envelope so detailed histories do not bloat or alter the provenance of
+the bootstrap snapshot. Provider Health remains unpersisted.
 
-## Build & deployment
-```mermaid
-flowchart LR
-  SRC[src/*.mjs] --> B[node build.mjs] --> BUNDLE[dist/app.bundle.js]
-  B --> MAN[dist/manifest.json]
-  HTML[app.html] --> B --> IDX[dist/index.html] --> GH[GitHub Pages index.html]
-```
-Deterministic: same sources → same bytes; SHA-256 source hash + model/rules versions + BUILD_COMMIT
-embedded (BUILD_INFO) and emitted as manifest. Deploy = upload dist/index.html.
+## Build and deployment
+`node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json` and single-file `dist/index.html`.
+The source hash, model/rules versions and BUILD_COMMIT identity are embedded. Same sources and explicit
+identity produce byte-identical artefacts. Deployment remains one `dist/index.html` upload to GitHub
+Pages.
 
-## Testing strategy (detail in TESTING.md)
-Characterisation runs against the built bundle via the DOM harness; direct-import unit and
-resilience suites cover provider validation, retry and Provider Health transitions. Golden
-snapshots retain an expected-to-change quarantine keyed to AUDIT issue ids.
+## Security posture
+Dynamic provider/user strings use DOM builders; AI uses restricted Markdown AST rendering. Odds
+requests remain direct-only and key diagnostics are scrubbed. The generated single inline script and
+style are hash-locked by CSP; the Stage 9 style-attribute concession and Pages frame limitation remain.
+Stage 4 introduces no secret and no new provider origin.
 
-## Future serverless architecture (planned, not built)
-Cloudflare Pages/Netlify: static app unchanged; per-provider base URL flips to /api/<provider>;
-functions hold secrets in env vars, add origin checks, rate limiting, schema validation server-side;
-relays deleted; Anthropic key becomes possible. Trigger: the day hosted AI is wanted (DECISIONS D-08).
+## Testing
+Characterisation runs against the built production bundle. Direct-import tests cover model formulas,
+providers and storage. Stage 4 adds focused denominator, role, availability, shrinkage, invariant and
+history-validation tests. Golden changes are restricted to MIN-1/DEN-1 consequences.
+
+## Future serverless architecture
+Static UI can later retain its shape while provider base URLs move to serverless functions for secret
+storage, headers, origin checks, rate limiting and server-side schema validation. This remains deferred
+until hosted AI or another approved trigger requires it.
