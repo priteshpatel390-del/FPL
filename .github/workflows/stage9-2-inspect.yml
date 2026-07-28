@@ -1,0 +1,23 @@
+name: Stage 9.2 inspect
+
+on:
+  push:
+    branches:
+      - agent/stage9-2-pitch-shirts
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repository inventory
+        run: |
+          echo '--- FILES ---'
+          find . -maxdepth 4 -type f -not -path './.git/*' | sort
+          echo '--- SQUAD REFERENCES ---'
+          grep -RIn "renderSquad\|pitchrow\|pcard\|squadOut" src tests app.html build.mjs || true
+          echo '--- TEST FILES ---'
+          find tests -maxdepth 2 -type f | sort
