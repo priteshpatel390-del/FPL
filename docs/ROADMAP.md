@@ -23,7 +23,8 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Unavailable purchases excluded; doubtful players allowed with warnings.
   - Deterministic ordering, fail-closed evaluation ceiling and production safe pruning checked against an independent exhaustive reference.
   - Verified source commit `5181299c8773c118220bdd8c18e80eb053eaf592`: **254/254 tests passed** and deterministic two-build comparison passed.
-  - Remaining gate: verified generated artefacts, temporary workflow removal, owner review and explicit merge approval. Do not begin Stage 7 yet.
+  - Generated artefacts committed at `212b071687aa1ec6fc99e2006db824eb99291657`; temporary verification workflow removed at `026848dc5b11dded156e0e7fc873d5a457f59067`.
+  - Remaining gate: owner review and explicit merge approval. Do not begin Stage 7 yet.
 
 ## Upcoming
 - **Stage 7 — Walk-forward backtest** · deadline-information-only replay, train/calibrate/holdout split, metrics, provider ablations, dataset pinning and prospective odds logging.
