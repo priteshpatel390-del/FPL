@@ -28,12 +28,12 @@ function newsAge(p){
   const days = Math.floor((Date.now() - new Date(p.news_added))/86400000);
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + 'd ago';
 }
-function sellPrice(entry){
+function sellingPrice(now, bought=now){
   // FPL keeps half of any rise, rounded down to 0.1
-  const now = entry.p.now_cost, bought = entry.bought ?? now;
   if(now <= bought) return now;
   return bought + Math.floor((now - bought)/2);
 }
+function sellPrice(entry){ return sellingPrice(entry.p.now_cost,entry.bought ?? entry.p.now_cost); }
 
 function mySquad(){
   if($('useManual').checked || !S.picks || !S.picks.picks){
@@ -63,4 +63,4 @@ function bestXI(squad, gw){
   return best;
 }
 
-export { flagsFor, priceMomentum, newsAge, sellPrice, mySquad, bestXI };
+export { flagsFor, priceMomentum, newsAge, sellingPrice, sellPrice, mySquad, bestXI };

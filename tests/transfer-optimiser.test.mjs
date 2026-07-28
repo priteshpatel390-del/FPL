@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRANSFER_RULES } from '../src/config.mjs';
+import { sellingPrice } from '../src/squad.mjs';
 import { validateTransferSquad, nextFreeTransfers, evaluateTransferPlan,
   exhaustiveTransferPlans, branchAndBoundTransferPlans } from '../src/model/transfers.mjs';
 
@@ -73,6 +74,27 @@ test('combined affordability uses actual selling prices plus bank',()=>{
   const firstOwned=data.squad[0].p.id;
   assert.ok(result.plans.filter(p=>p.transfers.length===1).every(p=>
     !p.transfers.some(t=>t.out.id===firstOwned&&t.in.now_cost>48)));
+});
+
+test('manual selling price retains half a rise with profit rounded down',()=>{
+  assert.equal(sellingPrice(55,50),52);
+  assert.equal(sellingPrice(56,50),53);
+  assert.equal(sellingPrice(49,50),49);
+});
+
+test('manual purchase price rejects a move affordable only at current price',()=>{
+  const data=controlled(), outgoing=data.squad[0];
+  delete outgoing.sellingPrice;
+  outgoing.bought=50;
+  outgoing.p.now_cost=55;
+  const incoming={id:999,element_type:outgoing.p.element_type,team:9,now_cost:54,
+    web_name:'False current-price bargain',score:50,status:'a'};
+  data.players.push(incoming);
+  const result=branchAndBoundTransferPlans({...data,bank:0,freeTransfers:1,fromGW:1,horizon:1,bestXI,availability});
+  assert.ok(outgoing.p.now_cost>=incoming.now_cost);
+  assert.equal(sellingPrice(outgoing.p.now_cost,outgoing.bought),52);
+  assert.ok(result.plans.filter(plan=>plan.transfers.length===1).every(plan=>
+    !plan.transfers.some(t=>t.out.id===outgoing.p.id&&t.in.id===incoming.id)));
 });
 
 test('invalid optimiser input returns no recommendation',()=>{

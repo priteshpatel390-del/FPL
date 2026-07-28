@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8BqQPDFkD67Bi/OC2LK7E4Sqkl0CEAoIaUfUPFLpQTE='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-91FPo6zyiOwgTBGEHutbGHFop5c7RxE4SL16FKoDs4g='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -346,8 +346,8 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"7349b990b50b3bf9","commit":"27deb90782aa3d0f218b60add16480fb08b3572c"} */
-const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"7349b990b50b3bf99f25fc104c5d0e3c0b04bee697fad52e37e733865598a984","commit":"27deb90782aa3d0f218b60add16480fb08b3572c","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b55b2bc39bd8066","commit":"053e0db999a83a2a51e2fc985fb6e00756041f07"} */
+const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b55b2bc39bd8066b9b48b553b123cb9f8230858667329777601bdf9ade05e81","commit":"053e0db999a83a2a51e2fc985fb6e00756041f07","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -2173,12 +2173,12 @@ function newsAge(p){
   const days = Math.floor((Date.now() - new Date(p.news_added))/86400000);
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + 'd ago';
 }
-function sellPrice(entry){
+function sellingPrice(now, bought=now){
   // FPL keeps half of any rise, rounded down to 0.1
-  const now = entry.p.now_cost, bought = entry.bought ?? now;
   if(now <= bought) return now;
   return bought + Math.floor((now - bought)/2);
 }
+function sellPrice(entry){ return sellingPrice(entry.p.now_cost,entry.bought ?? entry.p.now_cost); }
 
 function mySquad(){
   if($('useManual').checked || !S.picks || !S.picks.picks){
@@ -2214,7 +2214,8 @@ function bestXI(squad, gw){
 
 const byId = (a,b) => Number(a.id)-Number(b.id);
 const playerOf = entry => entry.p || entry;
-const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ?? playerOf(entry).now_cost;
+const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ??
+  sellingPrice(playerOf(entry).now_cost,entry.bought ?? playerOf(entry).now_cost);
 
 function validateTransferSquad(squad, rules=TRANSFER_RULES){
   if(!Array.isArray(squad) || squad.length !== rules.squadSize) return false;

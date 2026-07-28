@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"7349b990b50b3bf9","commit":"27deb90782aa3d0f218b60add16480fb08b3572c"} */
-const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"7349b990b50b3bf99f25fc104c5d0e3c0b04bee697fad52e37e733865598a984","commit":"27deb90782aa3d0f218b60add16480fb08b3572c","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b55b2bc39bd8066","commit":"053e0db999a83a2a51e2fc985fb6e00756041f07"} */
+const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b55b2bc39bd8066b9b48b553b123cb9f8230858667329777601bdf9ade05e81","commit":"053e0db999a83a2a51e2fc985fb6e00756041f07","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -1825,12 +1825,12 @@ function newsAge(p){
   const days = Math.floor((Date.now() - new Date(p.news_added))/86400000);
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + 'd ago';
 }
-function sellPrice(entry){
+function sellingPrice(now, bought=now){
   // FPL keeps half of any rise, rounded down to 0.1
-  const now = entry.p.now_cost, bought = entry.bought ?? now;
   if(now <= bought) return now;
   return bought + Math.floor((now - bought)/2);
 }
+function sellPrice(entry){ return sellingPrice(entry.p.now_cost,entry.bought ?? entry.p.now_cost); }
 
 function mySquad(){
   if($('useManual').checked || !S.picks || !S.picks.picks){
@@ -1866,7 +1866,8 @@ function bestXI(squad, gw){
 
 const byId = (a,b) => Number(a.id)-Number(b.id);
 const playerOf = entry => entry.p || entry;
-const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ?? playerOf(entry).now_cost;
+const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ??
+  sellingPrice(playerOf(entry).now_cost,entry.bought ?? playerOf(entry).now_cost);
 
 function validateTransferSquad(squad, rules=TRANSFER_RULES){
   if(!Array.isArray(squad) || squad.length !== rules.squadSize) return false;

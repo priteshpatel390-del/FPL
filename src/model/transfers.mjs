@@ -1,8 +1,10 @@
 import { TRANSFER_RULES } from '../config.mjs';
+import { sellingPrice } from '../squad.mjs';
 
 const byId = (a,b) => Number(a.id)-Number(b.id);
 const playerOf = entry => entry.p || entry;
-const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ?? playerOf(entry).now_cost;
+const saleOf = entry => entry.sellingPrice ?? entry.sellPrice ??
+  sellingPrice(playerOf(entry).now_cost,entry.bought ?? playerOf(entry).now_cost);
 
 function validateTransferSquad(squad, rules=TRANSFER_RULES){
   if(!Array.isArray(squad) || squad.length !== rules.squadSize) return false;
