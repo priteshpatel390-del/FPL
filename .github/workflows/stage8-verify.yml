@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -39,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          COMMIT=$(git rev-parse HEAD)
+          COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
           BUILD_COMMIT="$COMMIT" node build.mjs
           mkdir -p /tmp/build-one
           cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/build-one/
