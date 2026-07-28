@@ -83,7 +83,7 @@ test('CSP retains only the approved inline-style concession and provider origins
 test('frame-buster and current Stage 3 modules are inside the single hashed bundle', () => {
   const js = bundle();
   const man = manifest();
-  assert.match(js,/if \(top !== self\) top\.location = self\.location/);
+  assert.match(js,/typeof top !== 'undefined'.*top !== self.*top\.location = self\.location/);
   assert.ok(man.moduleOrder.includes('src/ui/markdown.mjs'));
   assert.ok(man.moduleOrder.includes('src/ui/security-wiring.mjs'));
   assert.deepEqual(JSON.parse(/const BUILD_INFO = (\{.*?\});/.exec(js)[1]).moduleOrder,man.moduleOrder);
