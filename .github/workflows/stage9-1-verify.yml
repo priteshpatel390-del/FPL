@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/stage9-1-app-shell
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
