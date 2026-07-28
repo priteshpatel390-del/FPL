@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "853d0daa0bee26610029f8c741722a376b7fde2cf32787604b5a542afce9818c",
-  "commit": "1e4d5b9c7acd1b7b1f97cd81a9002905ff1f17c8",
+  "sourceHash": "04a6723c8aeb521e6d277d228dbe7dcbd8a2dd9e3b459a056d5d58382d0aeb78",
+  "commit": "38bb08e2e8f903deeb39dc4e1a4db070da4d4870",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -29,6 +29,7 @@
     "src/model/backtest.mjs",
     "src/main.mjs",
     "src/ui/app-shell.mjs",
+    "src/ui/team-pitch.mjs",
     "src/ui/views.mjs",
     "src/ui/transfer-optimiser-view.mjs",
     "src/ui/backtest-copy.mjs",

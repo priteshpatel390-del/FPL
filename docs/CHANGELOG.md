@@ -2,6 +2,33 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 9.2] — 2026-07-28 — Team pitch and shirts
+### Added
+- Portrait, mobile-first football pitch for the unchanged model-selected starting XI.
+- Repository-owned CSS shirt shapes and deterministic club palettes with safe fallbacks.
+- Direct captain and vice-captain badges, compact fixture/xP cards and preserved bench order.
+- Four focused tests for formation grouping, captaincy identity and shirt-palette determinism.
+### Changed
+- The Team surface now leads with projected score, shape, squad value, free transfers and the football-first pitch rather than legacy flat player cards.
+- The existing captain ranking and six-Gameweek squad table remain available below the pitch.
+- On narrow iPhones, the projected score now leads in a full-width card with the three supporting facts in a separate uncluttered row.
+### Verification
+- Verified source commit `38bb08e2e8f903deeb39dc4e1a4db070da4d4870`.
+- Full suite: **288/288 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `a806ccc0`.
+### Unchanged
+- `bestXI()`, bench ordering, projections, expected minutes, scoring, fixtures, simulation, captain ranking, transfer optimisation, providers, storage and security behaviour.
+- No official FPL or club artwork and no prediction-accuracy claim.
+### Status
+- Implemented and verified on draft PR #18; awaiting owner review and explicit merge approval.
+
+## [Stage 9.1] — 2026-07-28 — App shell and primary navigation
+### Added
+- Four primary destinations: Team, Players, Transfers and More, with Team as the default landing screen.
+### Status
+- Merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.
+
 ## [Stage 7] — 2026-07-28 — Walk-forward backtest
 ### Added
 - Deterministic chronological train/calibration/holdout fold engine with future-information rejection.

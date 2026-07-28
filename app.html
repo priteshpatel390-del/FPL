@@ -154,14 +154,72 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
 .bar .fill.neg{background:var(--claret)}
 .bar .v{text-align:right;color:var(--ink-soft)}
 
-/* squad pitch */
-.pitchrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
-.pcard{border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:82px;text-align:center;background:#fff;font-size:11.5px}
-.pcard.cap{border-color:var(--pitch);border-width:2px}
-.pcard.warn{border-color:var(--claret);background:#FCF4F5}
-.pcard b{display:block;font-size:12px}
-.pcard .x{font-family:'IBM Plex Mono',monospace;color:var(--pitch);font-weight:600}
-.benchband{background:#F2F4EF;border-radius:8px;padding:8px;margin-top:6px}
+/* team pitch */
+.team-summary{display:grid;grid-template-columns:minmax(116px,.9fr) 1.7fr;gap:8px;margin-bottom:12px}
+.team-score{background:var(--ink);color:#fff;border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;justify-content:center}
+.team-score .label,.team-fact .label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.team-score .value{font-family:'Bricolage Grotesque',sans-serif;font-size:31px;font-weight:800;line-height:1;margin-top:4px}
+.team-score .unit{font-size:11px;color:#B9C9BF;margin-top:3px}
+.team-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.team-fact{background:#F7F9F5;border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-width:0}
+.team-fact .label{display:block;color:var(--ink-soft);opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-fact .value{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-entry{margin:0 0 10px}
+.team-stage{max-width:640px;margin:14px auto 0}
+.team-pitch{position:relative;isolation:isolate;overflow:hidden;height:clamp(500px,135vw,680px);border-radius:22px;padding:22px 8px 18px;background:linear-gradient(90deg,rgba(255,255,255,.035) 0 50%,rgba(0,0,0,.025) 50% 100%),linear-gradient(#2E7A4D,#1F6540);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 16px 34px -24px rgba(20,38,28,.7)}
+.team-pitch:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.48);border-radius:13px;pointer-events:none}
+.team-pitch:after{content:"";position:absolute;left:12px;right:12px;top:50%;border-top:1px solid rgba(255,255,255,.42);pointer-events:none}
+.pitch-mark{position:absolute;border:1px solid rgba(255,255,255,.42);pointer-events:none}
+.pitch-centre-circle{width:92px;height:92px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.pitch-box{left:27%;right:27%;height:78px}
+.pitch-box-top{top:12px;border-top:0}
+.pitch-box-bottom{bottom:12px;border-bottom:0}
+.pitch-formation{position:relative;z-index:2;height:100%;display:grid;grid-template-rows:repeat(4,minmax(0,1fr));align-items:center;gap:4px}
+.pitch-line{display:flex;justify-content:space-evenly;align-items:center;gap:3px;padding:0 2px;min-width:0}
+.pitch-player{position:relative;display:flex;flex:1 1 0;min-width:0;max-width:82px;flex-direction:column;align-items:center;text-align:center}
+.shirt-wrap{position:relative;height:44px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:-2px;z-index:2}
+.club-shirt{--shirt-primary:#315C8C;--shirt-secondary:#FFFFFF;--shirt-accent:#E6B84A;--shirt-ink:#FFFFFF;position:relative;display:block;width:34px;height:39px;border-radius:8px 8px 10px 10px;background:var(--shirt-primary);box-shadow:inset 0 5px 0 -3px var(--shirt-accent),0 5px 9px rgba(7,27,17,.25)}
+.club-shirt:before,.club-shirt:after{content:"";position:absolute;top:3px;width:11px;height:16px;background:var(--shirt-primary);z-index:-1}
+.club-shirt:before{left:-7px;border-radius:7px 2px 4px 5px;transform:skewY(15deg)}
+.club-shirt:after{right:-7px;border-radius:2px 7px 5px 4px;transform:skewY(-15deg)}
+.club-shirt.pattern-sleeves:before,.club-shirt.pattern-sleeves:after{background:var(--shirt-secondary)}
+.club-shirt.pattern-stripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
+.club-shirt.pattern-halves{background:linear-gradient(90deg,var(--shirt-primary) 0 50%,var(--shirt-secondary) 50%)}
+.club-shirt.pattern-hoops{background:repeating-linear-gradient(0deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
+.club-shirt.pattern-sash{background:linear-gradient(130deg,var(--shirt-primary) 0 40%,var(--shirt-secondary) 40% 58%,var(--shirt-primary) 58%)}
+.club-shirt.pattern-pinstripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 5px,var(--shirt-secondary) 5px 7px)}
+.club-shirt-code{position:absolute;left:3px;right:3px;bottom:7px;overflow:hidden;color:var(--shirt-ink);font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:600;line-height:1;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.captain-badge{position:absolute;top:-3px;right:-13px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid #fff;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;box-shadow:0 3px 8px rgba(7,27,17,.3)}
+.captain-badge.vice{background:#fff;color:var(--ink);border-color:var(--ink)}
+.pitch-copy{position:relative;width:100%;min-width:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:8px;padding:4px 3px 5px;box-shadow:0 4px 10px rgba(7,27,17,.18)}
+.pitch-name{font-size:10px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pitch-meta{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ink-soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.pitch-xp{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--pitch);font-weight:600;line-height:1.2;margin-top:2px}
+.pitch-player.warn .club-shirt{outline:2px solid #FFD3D9;outline-offset:2px}
+.pitch-player.warn .pitch-copy{box-shadow:0 0 0 2px #F0AEB9,0 4px 10px rgba(7,27,17,.18)}
+.team-bench{background:#F7F9F5;border:1px solid var(--line);border-radius:16px;padding:10px;margin-top:10px}
+.bench-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.bench-head strong{font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
+.bench-head span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bench-player{max-width:none}
+.bench-player .shirt-wrap{height:38px;transform:scale(.88);transform-origin:center bottom}
+.bench-player .pitch-copy{box-shadow:none;border:1px solid var(--line);background:#fff}
+.section-title{margin:18px 0 7px}
+@media(max-width:420px){
+  .team-summary{grid-template-columns:1fr;gap:8px}
+  .team-score{min-height:82px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;grid-template-areas:"label value" "unit value";column-gap:14px;align-items:center}
+  .team-score .label{grid-area:label;align-self:end}.team-score .value{grid-area:value;font-size:32px;margin:0}.team-score .unit{grid-area:unit;align-self:start;margin:1px 0 0}
+  .team-fact{padding:9px 7px;text-align:center}.team-fact .label{min-height:24px;display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.2;overflow:visible}.team-fact .value{font-size:16px}
+}
+@media(max-width:380px){
+  .team-pitch{height:500px;padding-left:5px;padding-right:5px}.pitch-player{max-width:66px}.club-shirt{width:31px;height:36px}
+  .shirt-wrap{height:40px}.pitch-name{font-size:9px}.pitch-meta{font-size:7.5px}.pitch-xp{font-size:8.5px}
+}
+@media(min-width:720px){
+  .team-pitch{height:680px;padding:30px 16px 24px}.pitch-player{max-width:96px}.club-shirt{width:42px;height:48px}
+  .shirt-wrap{height:54px}.pitch-name{font-size:11px}.pitch-meta{font-size:9px}.pitch-xp{font-size:10px}
+}
 
 .searchbox{position:relative}
 .results{position:absolute;z-index:30;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
@@ -270,9 +328,9 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
 
   <!-- SQUAD -->
   <section class="view panel" id="view-squad" hidden>
-    <span class="eyebrow">Your 15</span>
-    <h2>Squad review</h2>
-    <p class="hint">Availability, price moves, best XI by projected points and the captain call.</p>
+    <span class="eyebrow">Gameweek plan</span>
+    <h2>Team</h2>
+    <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>
     <div id="squadOut"><div class="empty"><strong>No squad yet</strong>Load your team ID above, or build your 15 by hand below.</div></div>
     <details id="manualWrap" style="margin-top:16px">
       <summary>Build or edit a squad by hand</summary>
