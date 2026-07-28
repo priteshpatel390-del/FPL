@@ -24,6 +24,8 @@ Verified source commit: `5181299c8773c118220bdd8c18e80eb053eaf592`.
 - Production versus independent exhaustive reference: passed on reduced search pools.
 - Null or missing purchase-price regression: passed; current price is used and the result is labelled estimated.
 - Search-incomplete behaviour: passed; only the zero-transfer baseline is returned and no partial optimum is claimed.
+- Verified generated artefacts committed at `212b071687aa1ec6fc99e2006db824eb99291657`, embedding build identity `f57c5f2d260ab7dc60aac7d5e29d47bb19f44c90` and source hash `de591a1ea580252f140127ed15b9152794eebc82a639b3b091ab9122292e9d6e`.
+- Temporary verification workflow removed at `026848dc5b11dded156e0e7fc873d5a457f59067`.
 
 ## Deliberate exclusions
 No expected-minutes, scoring, calibration, fixture, captaincy, ownership, provider, Wildcard, Free Hit, uncertainty, future-transfer-path or Stage 9 UI formula changed. No prediction-accuracy improvement is claimed.
@@ -35,4 +37,4 @@ No expected-minutes, scoring, calibration, fixture, captaincy, ownership, provid
 - The 0.5-point roll value is an explicit judgement parameter, not a validated predictive constant.
 - Exact search is bounded by a deterministic evaluation ceiling and fails closed if that ceiling is reached.
 
-The temporary verification workflow must be removed before merge. Stage 7 must not begin until Pritesh explicitly approves and merges Stage 6.
+Stage 7 must not begin until Pritesh explicitly approves and merges Stage 6.
