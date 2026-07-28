@@ -1,8 +1,8 @@
 {
-  "modelVersion": "2.1.0",
-  "rulesVersion": "2025-26.1",
-  "sourceHash": "16cafb121f22887fd242d25f8a39ee231a5d9076b95eb3ee9f57eb2c3f3e2e81",
-  "commit": "4b0969c024f07a47f6c4d7f989cc1e5a7bcb7242",
+  "modelVersion": "2.2.0",
+  "rulesVersion": "2026-27.1",
+  "sourceHash": "6b134daa9338c5f67c6c8f4c61a5b519a2e334c0ec7cf4938f4f29d97c1c0812",
+  "commit": "stage5-verify",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -18,6 +18,7 @@
     "src/providers/minutes-history.mjs",
     "src/model/fixtures.mjs",
     "src/model/minutes.mjs",
+    "src/model/scoring-rules.mjs",
     "src/model/scoring.mjs",
     "src/squad.mjs",
     "src/model/backtest.mjs",
