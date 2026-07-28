@@ -21,7 +21,17 @@ jobs:
         with:
           node-version: 20
       - name: Full test suite
-        run: ./run-tests.sh
+        id: tests
+        shell: bash
+        run: |
+          set -o pipefail
+          ./run-tests.sh 2>&1 | tee stage7-test-output.log
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage7-test-output
+          path: stage7-test-output.log
       - name: Capture first deterministic build
         run: |
           rm -rf /tmp/stage7-build-a /tmp/stage7-build-b
