@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.0.0","rulesVersion":"2025-26.1","sourceHash":"baac493bd9cc1d24","commit":"e4e01e6c5397d6802863e7483b42aff0d6fea7ea"} */
-const BUILD_INFO = {"modelVersion":"2.0.0","rulesVersion":"2025-26.1","sourceHash":"baac493bd9cc1d2469b751f81048364cf6bf1881b609946d60868afeb3183c92","commit":"e4e01e6c5397d6802863e7483b42aff0d6fea7ea","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/model/fixtures.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.1.0","rulesVersion":"2025-26.1","sourceHash":"04d91e7f1beb8d50","commit":"d20bcaa57f7923ea345cebf77b7ea1016ef4f82d"} */
+const BUILD_INFO = {"modelVersion":"2.1.0","rulesVersion":"2025-26.1","sourceHash":"04d91e7f1beb8d50c8e490749d80526586b4f2068c35d0d5264ddc77cd139a36","commit":"d20bcaa57f7923ea345cebf77b7ea1016ef4f82d","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -12,9 +12,19 @@ const DC_THRESH  = {2:10, 3:12, 4:12};      // defensive contribution thresholds
 const BASE_GOALS = 1.42;                     // league average goals per team per game
 const HOME_TILT  = 1.10;
 
-const SCHEMA_VERSION = 2;          // cache envelope; bump invalidates cached snapshots
-const MODEL_VERSION  = '2.0.0';    // projection engine
+const SCHEMA_VERSION = 3;          // cache envelope; bump invalidates cached snapshots
+const MODEL_VERSION  = '2.1.0';    // Stage 4 expected-minutes model
 const RULES_VERSION  = '2025-26.1';// FPL scoring rules encoded
+
+const MINUTES_RULES = Object.freeze({
+  detailedCohort:80,
+  historyWindow:8,
+  recencyDecay:0.90,
+  priorMatches:4,
+  prior:{pStart:0.50,pAppear:0.70,p60:0.40,expMin:45,confidence:0.20},
+  confidence:{high:0.75,medium:0.45},
+  cacheMaxAgeMs:7 * 24 * 60 * 60 * 1000
+});
 
 // Adjustment-5 market rules — DEFINED here before any formula change (Stage 5+
 // may consume more of these; today they gate inclusion/staleness only).
@@ -614,7 +624,8 @@ const S = {
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
   dataIssues:[],
-  retryStats:{}
+  retryStats:{},
+  minuteHistory:{}
 };
 
 /* ---------------------------------------------------------------------
@@ -654,7 +665,7 @@ function hydrate(d){
                                : normaliseFixtures(bv.value.fixtures);
   const issues = bv.issues.concat(fx.issues);
   if(bv.value === null || hasFatal(issues)){
-    S.dataIssues = issues;                 // reported; nothing else disturbed
+    S.dataIssues = issues;
     return { ok:false, issues };
   }
   const v = bv.value;
@@ -679,7 +690,6 @@ function hydrate(d){
   S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
            defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
 
-  // populate position filter once
   const sel = $('plPos');
   if(sel.options.length <= 1)
     v.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
@@ -687,18 +697,11 @@ function hydrate(d){
   return { ok:true, issues };
 }
 
-/* Optional providers report AFTER hydrate, on their own schedule. Replacing
-   by provider+endpoint keeps repeat loads idempotent instead of accreting
-   duplicate issues every time a panel is refreshed. */
 function recordIssues(provider, endpoint, issues){
   S.dataIssues = S.dataIssues.filter(i => !(i.provider === provider && i.endpoint === endpoint));
   if(issues && issues.length) S.dataIssues = S.dataIssues.concat(issues);
 }
 
-/* D-15: retry metadata, keyed by provider + normalised endpoint so a pooled
-   sweep of 20 rival managers cannot grow 20 entries. Latest attempt wins —
-   this is a current-status surface, not a log. The provider-health model
-   (item 4) is the intended consumer; nothing reads it yet. */
 function recordRetry(record){
   if(!record || !record.provider) return;
   S.retryStats[record.provider + '|' + record.endpoint] = record;
@@ -710,10 +713,8 @@ function recordRetry(record){
 /* ---------------------------------------------------------------------
    STORAGE
    --------------------------------------------------------------------- */
-const K_CFG = 'fpl:config', K_SQUAD = 'fpl:squad', K_CACHE = 'fpl:cache', K_CAL = 'fpl:calib';
+const K_CFG = 'fpl:config', K_SQUAD = 'fpl:squad', K_CACHE = 'fpl:cache', K_CAL = 'fpl:calib', K_MINUTES = 'fpl:minutes-history';
 
-// Inside Claude artifacts window.storage exists; hosted elsewhere (e.g. a
-// home-screen web app) it doesn't, so fall back to localStorage there.
 async function sget(key){
   if(window.storage){
     try{ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
@@ -727,9 +728,6 @@ async function sset(key, val){
   try{ localStorage.setItem(key, s); }catch(e){}
 }
 
-// D-08 / SEC-3 migration: Anthropic secrets are banned client-side. Older
-// configurations may still contain claudeKey, so remove it once and persist
-// the scrubbed object before any UI consumes the configuration.
 function stripDeprecatedSecrets(value){
   if(!value || typeof value !== 'object' || Array.isArray(value) ||
      !Object.prototype.hasOwnProperty.call(value, 'claudeKey'))
@@ -757,12 +755,9 @@ function currentConfig(){
   if(oddsKey) config.oddsKey = oddsKey;
   return config;
 }
-async function saveCfg(){
-  await sset(K_CFG, currentConfig());
-}
+async function saveCfg(){ await sset(K_CFG, currentConfig()); }
 
 
-// Versioned cache envelope (season snapshots only; generic sget/sset stay raw).
 async function cachePut(key, payload, season){
   await sset(key, { schemaVersion: SCHEMA_VERSION, season, fetchedAt: Date.now(), payload });
 }
@@ -1316,6 +1311,75 @@ async function loadOdds(){
 
 
 
+/* ===== src/providers/minutes-history.mjs ===== */
+
+function validateElementSummary(payload){
+  const endpoint = '/element-summary/{id}/';
+  if(!payload || typeof payload !== 'object' || Array.isArray(payload) || !Array.isArray(payload.history))
+    return {value:null,issues:[{provider:'fpl',endpoint,code:'element_history_unusable',severity:'fatal',count:1}]};
+  const history = []; let invalid = 0;
+  for(const row of payload.history){
+    if(!row || typeof row !== 'object' || !Number.isFinite(+row.minutes) || !Number.isFinite(+row.fixture)) { invalid++; continue; }
+    history.push({fixture:+row.fixture,round:Number.isFinite(+row.round)?+row.round:null,minutes:+row.minutes,
+      starts:Number.isFinite(+row.starts)?+row.starts:null,kickoff_time:typeof row.kickoff_time==='string'?row.kickoff_time:null});
+  }
+  const issues = invalid ? [{provider:'fpl',endpoint,code:'element_history_invalid_rows',severity:'partial',count:invalid}] : [];
+  return {value:history,issues};
+}
+
+function cohort(){
+  const priority = new Set();
+  for(const pick of S.picks?.picks || []) priority.add(+pick.element);
+  for(const item of S.manual || []) priority.add(+(item.id ?? item.element));
+  const players = (S.boot?.elements || []).slice().sort((a,b) => {
+    const ap=priority.has(+a.id)?1:0, bp=priority.has(+b.id)?1:0;
+    return bp-ap || num(b.selected_by_percent)-num(a.selected_by_percent) || num(b.now_cost)-num(a.now_cost) || num(a.id)-num(b.id);
+  });
+  const selected = [], seen = new Set();
+  for(const p of players){
+    if(priority.has(+p.id) || selected.length < priority.size + MINUTES_RULES.detailedCohort){
+      if(!seen.has(+p.id)){ selected.push(p); seen.add(+p.id); }
+    }
+  }
+  return selected;
+}
+
+function validEnvelope(env){
+  return env && env.schemaVersion===SCHEMA_VERSION && env.modelVersion===MODEL_VERSION && env.players && typeof env.players==='object';
+}
+
+async function loadMinuteHistories(){
+  if(!S.seasonLive || !S.boot?.elements?.length) return {loaded:0,failed:0};
+  const cached = await sget(K_MINUTES);
+  if(validEnvelope(cached)){
+    for(const [id,entry] of Object.entries(cached.players)) if(Array.isArray(entry.history)) S.minuteHistory[id]=entry.history;
+  }
+  const chosen = cohort();
+  const results = await pool(chosen, async p => {
+    const payload = await api('/element-summary/'+p.id+'/', {optional:true});
+    const v = validateElementSummary(payload);
+    recordIssues('fpl', '/element-summary/', v.issues);
+    if(!v.value) return {id:p.id,ok:false};
+    S.minuteHistory[p.id]=v.value;
+    return {id:p.id,ok:true,history:v.value};
+  }, 4);
+  let loaded=0, failed=0;
+  const players = validEnvelope(cached) ? {...cached.players} : {};
+  results.forEach(r => {
+    if(r?.ok){ loaded++; players[r.id]={fetchedAt:Date.now(),history:r.history}; }
+    else failed++;
+  });
+  await sset(K_MINUTES,{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,fetchedAt:Date.now(),players});
+  const h = getHealth('fpl',{seasonLive:S.seasonLive});
+  if(h && ![HEALTH_STATES.FALLBACK,HEALTH_STATES.UNAVAILABLE].includes(h.state)){
+    if(failed) markPartial('fpl', failed+' detailed player histories unavailable', 'aggregate minutes fallback used for affected players', h.lastSuccess || Date.now());
+    else markLive('fpl', 'live feed + detailed player histories', 'core season and minutes data current', h.lastSuccess || Date.now());
+  }
+  return {loaded,failed};
+}
+
+
+
 /* ===== src/model/fixtures.mjs ===== */
 /* ---------------------------------------------------------------------
    FIXTURE MODEL — expected goals for and against, from team strength
@@ -1394,6 +1458,105 @@ function runScore(teamId, fromGW, span, lens){
 
 
 
+/* ===== src/model/minutes.mjs ===== */
+
+function availabilityFactor(p){
+  if(['i','u','s','n'].includes(p.status)) return 0;
+  if(p.status === 'd') return clamp((p.chance_of_playing_next_round ?? 50)/100, 0, 1);
+  return 1;
+}
+
+function completedTeamMatches(team){
+  return (S.fixtures || []).filter(f => f.finished && (f.team_h === team || f.team_a === team)).length;
+}
+
+function aggregateMinutes(p, teamMatches){
+  const t = Math.max(0, teamMatches);
+  if(!t) return null;
+  const expMin = clamp(num(p.minutes) / t, 0, 90);
+  const pStart = clamp(num(p.starts) / t, 0, 1);
+  const pAppear = clamp(Math.max(pStart, expMin / 28), 0, .98);
+  const p60 = clamp(Math.min(pAppear, (expMin - 18) / 55), 0, .97);
+  return {pStart,pAppear,p60,expMin};
+}
+
+function weightedRate(rows, key, fallback, prior){
+  const decay = MINUTES_RULES.recencyDecay;
+  let weighted = 0, weight = 0;
+  rows.forEach((row, idx) => {
+    const w = Math.pow(decay, idx);
+    if(row[key] === null || row[key] === undefined) return;
+    weighted += w * row[key]; weight += w;
+  });
+  return (weighted + prior * fallback) / Math.max(1e-9, weight + prior);
+}
+
+function roleStability(rows){
+  if(rows.length < 2) return 0.5;
+  const starts = rows.filter(r => r.started !== null).map(r => r.started);
+  if(starts.length < 2) return 0.5;
+  const mean = starts.reduce((a,b)=>a+b,0)/starts.length;
+  const variance = starts.reduce((a,b)=>a + Math.pow(b-mean,2),0)/starts.length;
+  return clamp(1 - variance * 4, 0, 1);
+}
+
+function minutesEstimate(p){
+  const avail = availabilityFactor(p);
+  if(avail === 0) return {pStart:0,pAppear:0,p60:0,expMin:0,confidence:0.35,confidenceLabel:'Low',source:'availability'};
+
+  const teamMatches = completedTeamMatches(p.team);
+  const aggregate = aggregateMinutes(p, teamMatches);
+  const rawHistory = Array.isArray(S.minuteHistory?.[p.id]) ? S.minuteHistory[p.id] : [];
+  const rows = rawHistory.slice().sort((a,b) => {
+    const ak = Date.parse(a.kickoff_time || '') || num(a.round) * 1e6 + num(a.fixture);
+    const bk = Date.parse(b.kickoff_time || '') || num(b.round) * 1e6 + num(b.fixture);
+    return bk - ak;
+  }).slice(0, MINUTES_RULES.historyWindow).map(r => ({
+    minutes:clamp(num(r.minutes),0,90),
+    appeared:num(r.minutes) > 0 ? 1 : 0,
+    sixty:num(r.minutes) >= 60 ? 1 : 0,
+    started:r.starts === undefined || r.starts === null ? null : (num(r.starts) > 0 ? 1 : 0),
+    kickoff_time:r.kickoff_time,
+    round:r.round,
+    fixture:r.fixture
+  }));
+
+  if(!aggregate && !rows.length){
+    const q = MINUTES_RULES.prior;
+    return {pStart:q.pStart*avail,pAppear:q.pAppear*avail,p60:q.p60*avail,expMin:q.expMin*avail,
+      confidence:q.confidence,confidenceLabel:'Low',source:'prior'};
+  }
+
+  const base = aggregate || MINUTES_RULES.prior;
+  const prior = MINUTES_RULES.priorMatches;
+  let pStart = weightedRate(rows, 'started', base.pStart, prior);
+  let pAppear = weightedRate(rows, 'appeared', base.pAppear, prior);
+  let p60 = weightedRate(rows, 'sixty', base.p60, prior);
+  let expMin = weightedRate(rows, 'minutes', base.expMin, prior);
+  pAppear = Math.max(pAppear, pStart);
+  p60 = Math.min(p60, pAppear);
+
+  const coverage = clamp(rows.length / MINUTES_RULES.historyWindow, 0, 1);
+  const detail = rows.length ? 1 : aggregate ? 0.55 : 0.25;
+  const newest = rows[0]?.kickoff_time ? Date.parse(rows[0].kickoff_time) : NaN;
+  const freshness = Number.isFinite(newest) ? clamp(1 - (Date.now()-newest)/(28*24*60*60*1000),0,1) : (rows.length ? 0.5 : 0.25);
+  let confidence = clamp(0.40*coverage + 0.20*freshness + 0.25*detail + 0.15*roleStability(rows),0,1);
+  if(rows.length < 3) confidence = Math.min(confidence, 0.44);
+  const returning = rows.length >= 2 && rows[0].minutes > 0 && rows[0].minutes < 45 && rows.slice(1,3).some(r => r.minutes === 0);
+  if(returning) confidence = Math.min(confidence, 0.74);
+
+  pStart = clamp(pStart * avail,0,1);
+  pAppear = clamp(pAppear * avail,0,1);
+  p60 = clamp(p60 * avail,0,pAppear);
+  expMin = clamp(expMin * avail,0,90);
+  const confidenceLabel = confidence >= MINUTES_RULES.confidence.high ? 'High' : confidence >= MINUTES_RULES.confidence.medium ? 'Medium' : 'Low';
+  return {pStart,pAppear,p60,expMin,confidence,confidenceLabel,source:rows.length?'detailed':aggregate?'aggregate':'prior'};
+}
+
+function expectedMinutes(p){ return S.seasonLive ? minutesEstimate(p).expMin : null; }
+
+
+
 /* ===== src/model/scoring.mjs ===== */
 /* ---------------------------------------------------------------------
    PLAYER MODEL — projected points, built separately per position.
@@ -1408,12 +1571,6 @@ function per90(p, key){
   if(p[key] !== undefined && p[key] !== null) return num(p[key]);
   return 0;
 }
-function expectedMinutes(p){
-  if(!S.seasonLive) return null;                    // no data yet
-  const mins = num(p.minutes), gp = S.gamesPlayed;
-  return clamp(mins / gp, 0, 90);
-}
-// pre-season only: FPL sets prices against expected output, so price is the prior
 function priceBaseline(p){
   const price = p.now_cost/10, pos = p.element_type;
   const table = {1: 2.30 + (price-4.0)*0.60, 2: 2.45 + (price-4.0)*0.72,
@@ -1437,34 +1594,27 @@ function playerFixtureXP(p, g){
     return {total, parts};
   }
 
-  const expMins = expectedMinutes(p);
-  // every component is discounted by the chance he actually features, not just
-  // the minutes ones — a 25% doubt must not keep a full goal projection
-  const mFactor = (expMins/90) * avail;
-  const pAny = clamp(expMins/28, 0, .98) * avail;
-  const p60  = clamp((expMins-18)/55, 0, .97) * avail;
+  const mins = minutesEstimate(p);
+  const mFactor = mins.expMin/90;
+  const pAny = mins.pAppear;
+  const p60 = mins.p60;
 
-  // appearance
   parts['Appearance'] = pAny + p60;
 
-  // attacking returns, scaled by how many goals the team is expected to score
   const xg = per90(p,'expected_goals_per_90') * mFactor * ctx.atk;
   const xa = per90(p,'expected_assists_per_90') * mFactor * ctx.atk;
   parts['Goals'] = xg * (GOAL_PTS[pos] ?? 4);
   parts['Assists'] = xa * ASSIST_PTS;
 
-  // clean sheets (needs 60 minutes) and goals conceded
   if(CS_PTS[pos]) parts['Clean sheet'] = ctx.cs * CS_PTS[pos] * p60;
   if(pos === 1 || pos === 2) parts['Goals conceded'] = -(ctx.xGA/2) * mFactor * 0.72;
 
-  // saves
   if(pos === 1){
     const played90 = Math.max(0.5, num(p.minutes)/90);
     const saves90 = num(p.saves)/played90;
     parts['Saves'] = (saves90 * (ctx.xGA/BASE_GOALS) / 3) * mFactor;
   }
 
-  // defensive contribution points
   const thr = DC_THRESH[pos];
   if(thr){
     let dc90 = per90(p,'defensive_contribution_per_90');
@@ -1472,24 +1622,18 @@ function playerFixtureXP(p, g){
       const played90 = Math.max(0.5, num(p.minutes)/90);
       dc90 = num(p.defensive_contribution)/played90;
     }
-    // a season average above the threshold doesn't mean hitting it every week,
-    // so the curve is deliberately shallow
     if(dc90) parts['Defensive actions'] = 2 * (1/(1+Math.exp(-(dc90-thr)/2.2))) * p60;
   }
 
-  // bonus, nudged by how comfortable the fixture is
   const played90b = Math.max(0.5, num(p.minutes)/90);
   const bps90 = num(p.bps)/played90b;
-  // calibrated so a 40+ bps/90 elite lands near 1.2–1.3 bonus a game, not 2+
   parts['Bonus'] = clamp((bps90-16)/20, 0, 1.8) * mFactor * (1 + (ctx.atk-1)*0.3);
 
-  // cards
   const cards90 = num(p.yellow_cards)/played90b;
   if(cards90) parts['Cards'] = -cards90 * mFactor;
 
   let total = 0;
   Object.keys(parts).forEach(k => { if(!isFinite(parts[k])) parts[k] = 0; total += parts[k]; });
-  // backtest-derived per-position correction
   const cal = S.calib?.[pos];
   if(cal && cal !== 1){ parts['Calibration'] = total*(cal-1); total *= cal; }
   return {total: Math.max(0, total), parts};
@@ -1809,9 +1953,6 @@ function renderProviderHealth(){
   });
 }
 
-/* ---------------------------------------------------------------------
-   LOAD
-   --------------------------------------------------------------------- */
 async function loadAll(){
   const st = $('status');
   const cached = await sget(K_CACHE);
@@ -1872,7 +2013,7 @@ async function loadAll(){
       st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
     await saveCfg();
     renderProviderHealth(); renderAll();
-    Promise.all([loadUnderstat(), loadOdds()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
+    Promise.all([loadUnderstat(), loadOdds(), loadMinuteHistories()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
   }catch(err){
     await saveCfg();
     const shape = !!(err && err.feedShape);
