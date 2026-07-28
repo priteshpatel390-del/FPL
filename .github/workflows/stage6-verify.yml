@@ -2,6 +2,8 @@ name: Stage 6 verification
 on:
   push:
     branches: [agent/stage6-transfer-optimiser]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   verify:
