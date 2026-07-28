@@ -84,3 +84,85 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 ### Changed
 - Completed team fixtures replace current-GW denominators.
 - Scoring consumes the expected-minutes boundary without inventing separate probabilities.
+### Verification and merge
+- 220/220 tests passing and deterministic two-build comparison passed.
+- Merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
+
+## [Stage 3 complete] — 2026-07-28 — Security and provider hardening
+### Added
+- Fixture validation and deduplication, per-endpoint schema validation and atomic hydration.
+- Bounded transient-only retries with provider-specific ceilings and metadata.
+- Seven-state Provider Health: Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable.
+- Text-node-first DOM rendering for provider/user content and restricted Markdown rendering for AI output.
+- Odds-key masking, empty-secret omission, one-action removal and diagnostic scrubbing.
+- Deterministic SHA-256 hash-based meta CSP with independent final-HTML verification and a hashed frame-buster.
+### Security
+- Anthropic browser-key handling was removed.
+- Odds traffic remains direct-only; the key is never relayed or exposed in diagnostics.
+- Generated deployment files were checked byte-for-byte against the verified build artefact.
+- The temporary verification workflow was removed before merge.
+### Verification and merge
+- Full `./run-tests.sh`: **210/210 passing**.
+- Focused final security suite: 8/8 passing.
+- Build succeeded and two builds with the same explicit `BUILD_COMMIT` compared byte-for-byte.
+- Merged through PR #6 at merge commit `3f662b7e133ce2995da74c5e52165ae84744e120`.
+### Unchanged
+- No projection, expected-minutes, scoring, calibration, fixture, captaincy, squad or optimisation formula changed.
+- No framework, runtime dependency, hosting platform or single-file deployment workflow changed.
+
+## [Stage 3.6] — 2026-07-28 — AI/Markdown sanitisation
+### Added
+- A bounded, dependency-free restricted-Markdown parser and DOM renderer for the Ask surface.
+- Eight adversarial tests covering unsafe schemes, encoded and entity-obscured URLs, hostile HTML-shaped input, permitted block syntax, input bounding and DOM-only rendering invariants.
+- `docs/STAGE3-ITEM6.md` implementation and verification record.
+### Changed
+- Ask responses now render only paragraphs, `##`/`###` headings, unordered lists, bold, italic and absolute HTTP(S) links.
+- Approved links open with `target="_blank"` and `rel="noopener noreferrer"`; rejected destinations remain inert visible text.
+- The active Ask renderer no longer assigns untrusted AI output to `innerHTML`.
+### Unchanged
+- No projection, expected-minutes, scoring, calibration, fixture, captaincy, squad, transfer, provider, retry, key-handling, CSP or visual-design behaviour changed. No dependency was added.
+### Verification
+- Full `./run-tests.sh` passed with 202 tests.
+- Deterministic two-build byte comparison passed in GitHub Actions run `30336857903`.
+- The temporary verification workflow was removed before merge and is not part of the final product change.
+
+## [Stage 3.5] — 2026-07-28 — DOM-builder rendering
+### Added
+- A text-node-first `el()` DOM builder and `setChildren()` replacement helper.
+- Adversarial DOM tests for hostile player, team, entry, league and provider text.
+### Changed
+- Every approved Stage 3.5 dynamic rendering surface now uses DOM nodes: gameweek/source/chip status, ticker, players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search and backtest output.
+### Unchanged
+- Ask Markdown rendering remains at the Stage 3.4 baseline; its separate sanitisation design is deferred to Stage 3.6. No model, provider, key handling, CSP, formula or visual redesign changed.
+### Verification and merge
+- Recorded implementation result: 194/194 tests passing and deterministic builds green.
+- Merged through PR #3 at merge commit `5623abb594159916b4041e6bd3c44be80f714ce7`.
+- No GitHub Actions run is attached to the merge; the test/build result is implementation evidence.
+
+## [2.0.0-docs] — 2026-07-26 (documentation stage)
+### Added
+- /docs system (12 documents) + root CLAUDE.md onboarding; repository declared source of truth.
+### Fixed
+- Misleading resilience-test title (duplicate fixtures ARE double-counted on malformed feeds — pinned limitation; dedupe proposed in STAGE3-DESIGN).
+
+## [2.0.0] — 2026-07-26 (Stage 2)
+### Added
+- ES-module architecture, deterministic bundler, dist manifest and build identity.
+- Provider registry and odds provenance rules.
+- Pure backtest provenance, versioned cache envelope and unit/resilience suites.
+### Changed
+- Fixture identity and kickoff fields retained for downstream providers.
+### Security
+- SEC-1 re-verified: odds key direct-only, never relayed.
+### Known issues
+- See KNOWN_LIMITATIONS.md.
+
+## [1.x] — 2026-07-26 (pre-refactor product evolution)
+### Added
+- Initial working Teamsheet product and iterative feature set.
+
+
+## 2026-07-28 — Stage 8 uncertainty and squad simulation
+- Added deterministic player score percentiles and blank/return/haul probabilities.
+- Added legal squad auto-substitution and captain/vice fallback simulation.
+- Disabled detailed uncertainty output in pre-season rather than presenting false precision.
