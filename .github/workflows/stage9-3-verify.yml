@@ -18,5 +18,7 @@ jobs:
           fetch-depth: 0
       - name: Record Stage 9.3 and remove temporary tooling
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           bash tools/stage9-3-run.sh
           bash tools/stage9-3-closeout.sh
