@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b134daa9338c5f6","commit":"stage5-verify"} */
-const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"6b134daa9338c5f67c6c8f4c61a5b519a2e334c0ec7cf4938f4f29d97c1c0812","commit":"stage5-verify","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e0135970765","commit":"stage5-verify"} */
+const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e01359707656387d2f4d47008c32c0663c608adae055385c9af1373e4ca","commit":"stage5-verify","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -1659,7 +1659,10 @@ function seasonAppearances(p){
   const rows = Array.isArray(S.minuteHistory?.[p.id]) ? S.minuteHistory[p.id] : [];
   const detailed = rows.filter(r => num(r.minutes) > 0).length;
   if(detailed) return detailed;
-  return Math.max(num(p.starts), num(p.minutes)/60, 0);
+  const matches = completedTeamMatches(p.team);
+  const aggregate = aggregateMinutes(p, matches);
+  if(aggregate) return matches * aggregate.pAppear;
+  return Math.max(num(p.starts), num(p.minutes)/90, 0);
 }
 function positionPlayers(pos){ return (S.boot?.elements || []).filter(p => p.element_type === pos); }
 function populationRate(pos, field){

@@ -55,66 +55,66 @@
       "home": false
     },
     "xp_eliteFWD": {
-      "total": 41.787522,
-      "perGW": 6.964587,
+      "total": 43.890568,
+      "perGW": 7.315095,
       "parts": {
         "Appearance": 11.82,
         "Goals": 23.717883,
         "Assists": 4.185509,
-        "Bonus": 3.33913,
+        "Bonus": 5.442177,
         "Yellow cards": -1.275
       }
     },
     "xp_goodFWD": {
-      "total": 35.693377,
-      "perGW": 5.948896,
+      "total": 38.146931,
+      "perGW": 6.357822,
       "parts": {
         "Appearance": 13.79,
         "Goals": 15.7936,
         "Assists": 3.701625,
-        "Bonus": 3.895652,
+        "Bonus": 6.349206,
         "Yellow cards": -1.4875
       }
     },
     "xp_budgetFWD": {
-      "total": 18.704831,
-      "perGW": 3.117472,
+      "total": 19.880341,
+      "perGW": 3.31339,
       "parts": {
         "Appearance": 11.309091,
         "Goals": 3.349034,
         "Assists": 0.913373,
-        "Bonus": 4.266667,
+        "Bonus": 5.442177,
         "Yellow cards": -1.133333
       }
     },
     "xp_eliteMID": {
-      "total": 43.118021,
-      "perGW": 7.186337,
+      "total": 45.360198,
+      "perGW": 7.560033,
       "parts": {
         "Appearance": 11.82,
         "Goals": 19.209549,
         "Assists": 8.382349,
         "Clean sheet": 1.706122,
-        "Bonus": 3.2,
+        "Bonus": 5.442177,
         "Yellow cards": -1.2
       }
     },
     "xp_dcMID": {
-      "total": 27.585815,
-      "perGW": 4.597636,
+      "total": 29.827992,
+      "perGW": 4.971332,
       "parts": {
         "Appearance": 11.82,
         "Goals": 1.558462,
         "Assists": 1.870154,
         "Clean sheet": 1.457678,
         "Defensive contributions": 8.879521,
-        "Bonus": 3.2,
+        "Bonus": 5.442177,
         "Yellow cards": -1.2
       }
     },
     "xp_eliteDEF": {
-      "total": 31.98043,
-      "perGW": 5.330072,
+      "total": 34.222607,
+      "perGW": 5.703768,
       "parts": {
         "Appearance": 11.82,
         "Goals": 5.016015,
@@ -122,13 +122,13 @@
         "Clean sheet": 6.77579,
         "Goals conceded": -2.344487,
         "Defensive contributions": 4.951101,
-        "Bonus": 3.2,
+        "Bonus": 5.442177,
         "Yellow cards": -1.2
       }
     },
     "xp_weakDEF": {
-      "total": 19.132319,
-      "perGW": 3.18872,
+      "total": 21.374496,
+      "perGW": 3.562416,
       "parts": {
         "Appearance": 11.82,
         "Goals": 0.610031,
@@ -136,13 +136,13 @@
         "Clean sheet": 4.415451,
         "Goals conceded": -3.571195,
         "Defensive contributions": 3.400509,
-        "Bonus": 3.2,
+        "Bonus": 5.442177,
         "Yellow cards": -1.2
       }
     },
     "xp_eliteGKP": {
-      "total": 21.824927,
-      "perGW": 3.637488,
+      "total": 24.067104,
+      "perGW": 4.011184,
       "parts": {
         "Appearance": 11.82,
         "Goals": 0,
@@ -150,13 +150,13 @@
         "Clean sheet": 6.77579,
         "Goals conceded": -2.344487,
         "Saves": 3.573625,
-        "Bonus": 3.2,
+        "Bonus": 5.442177,
         "Yellow cards": -1.2
       }
     },
     "xp_busyGKP": {
-      "total": 26.323453,
-      "perGW": 4.387242,
+      "total": 28.56563,
+      "perGW": 4.760938,
       "parts": {
         "Appearance": 11.82,
         "Goals": 0,
@@ -164,12 +164,12 @@
         "Clean sheet": 4.415451,
         "Goals conceded": -3.571195,
         "Saves": 11.659198,
-        "Bonus": 3.2,
+        "Bonus": 5.442177,
         "Yellow cards": -1.2
       }
     },
     "xp_injured_isZero": 0,
-    "xp_doubt75_scaled": 21.72961,
+    "xp_doubt75_scaled": 23.411243,
     "availability_states": [
       1,
       0.75,
@@ -183,7 +183,7 @@
     "preseason_xp_eliteFWD": 62.161058,
     "bestXI": {
       "shape": "3-5-2",
-      "tot": 62.803058,
+      "tot": 67.124423,
       "xiSize": 11,
       "benchSize": 4,
       "gkInXI": 1
@@ -214,7 +214,7 @@
       "saves": 11.659198,
       "conceded": -3.571195
     },
-    "SCOR2_bonus_eliteFWD": 3.33913,
+    "SCOR2_bonus_eliteFWD": 5.442177,
     "FIX1_blank_penalty_probe": 1.262185
   }
 }
