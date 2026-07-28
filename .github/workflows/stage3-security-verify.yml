@@ -1,0 +1,39 @@
+name: Temporary Stage 3 security verification
+
+on:
+  push:
+    branches:
+      - agent/stage3-security-completion
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Full test suite
+        run: ./run-tests.sh
+      - name: Deterministic two-build comparison
+        shell: bash
+        run: |
+          rm -rf /tmp/teamsheet-build-a /tmp/teamsheet-build-b
+          BUILD_COMMIT="$GITHUB_SHA" node build.mjs
+          mkdir -p /tmp/teamsheet-build-a
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-a/
+          BUILD_COMMIT="$GITHUB_SHA" node build.mjs
+          mkdir -p /tmp/teamsheet-build-b
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-b/
+          cmp /tmp/teamsheet-build-a/index.html /tmp/teamsheet-build-b/index.html
+          cmp /tmp/teamsheet-build-a/app.bundle.js /tmp/teamsheet-build-b/app.bundle.js
+          cmp /tmp/teamsheet-build-a/manifest.json /tmp/teamsheet-build-b/manifest.json
+          sha256sum /tmp/teamsheet-build-a/*
+      - name: Upload verified build
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage3-security-build
+          path: dist/
