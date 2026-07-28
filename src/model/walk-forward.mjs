@@ -6,7 +6,8 @@ const DEFAULT_WALK_FORWARD = Object.freeze({
   minimumHoldoutRows: 1,
   calibrationMin: 0.7,
   calibrationMax: 1.3,
-  predictionBands: Object.freeze([0,2,4,6,10,Infinity])
+  predictionBands: Object.freeze([0,2,4,6,10,Infinity]),
+  includeFoldCalibration: true
 });
 
 function finiteNumber(value, field){
@@ -183,26 +184,46 @@ export function stableResult(result){
   return JSON.stringify(sortObject(result));
 }
 
+function rawRows(rows){
+  return rows.filter(row=>row.variant === 'raw');
+}
+
+function evaluateFold(fold, config){
+  let holdout = fold.holdout;
+  let calibration = null;
+  if(config.includeFoldCalibration){
+    const calibrationRows = rawRows(fold.calibration);
+    const rawHoldout = rawRows(fold.holdout);
+    if(calibrationRows.length && rawHoldout.length){
+      calibration = fitPositionCalibration(calibrationRows, config);
+      holdout = [...rawHoldout, ...applyPositionCalibration(rawHoldout, calibration)];
+    }
+  }
+  return {
+    index:fold.index,
+    trainGameweeks:fold.trainGameweeks,
+    calibrationGameweeks:fold.calibrationGameweeks,
+    holdoutGameweeks:fold.holdoutGameweeks,
+    calibration,
+    holdout,
+    metrics:segmentedMetrics(holdout,config)
+  };
+}
+
 export function evaluateWalkForward(observations, meta = {}, options = {}){
   const pin = validateDatasetPin(meta.dataset);
   if(!pin.ok) throw new Error(`dataset is not pinned: ${pin.issues.join(', ')}`);
   const {config,folds} = buildWalkForwardFolds(observations,options);
   if(!folds.length) throw new Error('insufficient chronological data for walk-forward evaluation');
-  const foldResults = folds.map(fold=>({
-    index:fold.index,
-    trainGameweeks:fold.trainGameweeks,
-    calibrationGameweeks:fold.calibrationGameweeks,
-    holdoutGameweeks:fold.holdoutGameweeks,
-    metrics:segmentedMetrics(fold.holdout)
-  }));
-  const allHoldout = folds.flatMap(fold=>fold.holdout);
+  const foldResults = folds.map(fold=>evaluateFold(fold,config));
+  const allHoldout = foldResults.flatMap(fold=>fold.holdout);
   return {
     method:'deadline-information-only walk-forward',
     config,
     dataset:{...pin,rows:Number(meta.dataset.rows ?? observations.length),malformedRows:Number(meta.dataset.malformedRows ?? 0)},
     oddsHistory:meta.oddsHistory === true ? 'logged_pre_deadline' : 'not_available',
-    folds:foldResults,
-    aggregate:segmentedMetrics(allHoldout),
+    folds:foldResults.map(({holdout,...fold})=>fold),
+    aggregate:segmentedMetrics(allHoldout,config),
     ablations:compareAblations(allHoldout)
   };
 }
