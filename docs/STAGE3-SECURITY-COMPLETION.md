@@ -2,7 +2,8 @@
 
 Date: 2026-07-28  
 Branch: `agent/stage3-security-completion`  
-Draft PR: #6
+PR: #6 — merged 2026-07-28  
+Merge commit: `3f662b7e133ce2995da74c5e52165ae84744e120`
 
 ## Approved scope delivered
 
@@ -40,6 +41,17 @@ transfer optimiser or Stage 9 UI work was introduced.
   - `dist/index.html`: `4b9f12e2a2aeaebbc4bdef8af0d87c68d4a81389d860fbb177e6cb7677eac861`
   - `dist/app.bundle.js`: `ba2f825adfd753292a49a49d012be837509e821008a70b6a6152aaf215422d31`
   - `dist/manifest.json`: `ce2f944bb5fd513d40c00447c164561379cf287cb63becaab84ac2d9d85d39c5`
+- The committed generated files were checked byte-for-byte against the verified workflow artefact
+  before PR #6 was merged.
+- The temporary verification workflow was removed before merge and is not part of `main`.
+
+## Build-identity note
+
+The verified `dist/` files retain the explicit `BUILD_COMMIT` used for the successful reproducible
+build. Later commits on PR #6 changed only documentation and workflow status, so regenerating the
+files solely to embed the final merge commit would have changed build identity without changing the
+application. The recorded artefact hashes above are therefore the authoritative Stage 3 deployment
+verification evidence.
 
 ## Judgement calls
 
@@ -60,5 +72,5 @@ transfer optimiser or Stage 9 UI work was introduced.
 
 ## Next gate
 
-Owner review of draft PR #6, followed by the owner architecture-review gate. No Stage 4 model work
-may begin until both are explicitly approved.
+Stage 3 is complete and merged. The next checkpoint is the owner architecture-review gate. No
+Stage 4 model work may begin until Pritesh explicitly approves progression after that review.

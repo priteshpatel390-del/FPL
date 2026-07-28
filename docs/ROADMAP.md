@@ -11,15 +11,14 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md, DECISIONS.md.
 - **Documentation handover** · Repository established as the permanent source of truth. Status: DONE.
 - **Stage 3 — Security & provider hardening** · Fixture deduplication, Anthropic-key removal,
   per-endpoint schema validation, bounded retry, Provider Health, DOM-builder rendering,
-  AI/Markdown sanitisation, odds-key hygiene and hash-based CSP. Status: IMPLEMENTED on PR #6,
-  ready for owner review; verification baseline is 210 passing tests with deterministic two-build
-  comparison. Verified generated `dist/` files are committed and the temporary workflow is removed.
+  AI/Markdown sanitisation, odds-key hygiene and hash-based CSP. Status: DONE and merged through
+  PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`; verification baseline is 210 passing tests,
+  successful build and deterministic two-build comparison. Verified generated `dist/` files were
+  committed before merge and the temporary verification workflow was removed.
 
 ## Current
-- **Owner review of PR #6** · PR is ready for review and mergeable. Do not merge until Pritesh
-  explicitly approves it.
-- **Owner architecture review gate** · No model work begins until the owner reviews the completed
-  Stage 3 architecture, PR #6 is merged and progression is explicitly approved.
+- **Owner architecture-review gate** · Review the completed Stage 3 foundations and explicitly approve
+  progression before any Stage 4 model work begins.
 
 ## Upcoming (order fixed; later stages depend on earlier)
 - **Stage 4 — Expected-minutes model** · tiered per-player histories (squad+~top-80 detailed,
@@ -36,7 +35,6 @@ Related: STAGE_HISTORY.md (past detail), STAGE3-DESIGN.md, DECISIONS.md.
   placement and inline-style-to-class migration, which removes the CSP style-attribute concession.
 
 ## Current blockers
-1. Owner review and explicit merge approval for PR #6.
-2. Owner architecture review gate before Stage 4.
-3. BT-1 dataset SHA (owner `git ls-remote` or Stage-7 ETag).
-4. Season data realities: squad/league features and prospective odds logging need GW1 (21 Aug 2026).
+1. Owner architecture-review approval before Stage 4.
+2. BT-1 dataset SHA (owner `git ls-remote` or Stage-7 ETag).
+3. Season data realities: squad/league features and prospective odds logging need GW1 (21 Aug 2026).

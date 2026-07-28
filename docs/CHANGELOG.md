@@ -2,6 +2,28 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 3 complete] — 2026-07-28 — Security and provider hardening
+### Added
+- Fixture validation and deduplication, per-endpoint schema validation and atomic hydration.
+- Bounded transient-only retries with provider-specific ceilings and metadata.
+- Seven-state Provider Health: Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable.
+- Text-node-first DOM rendering for provider/user content and restricted Markdown rendering for AI output.
+- Odds-key masking, empty-secret omission, one-action removal and diagnostic scrubbing.
+- Deterministic SHA-256 hash-based meta CSP with independent final-HTML verification and a hashed frame-buster.
+### Security
+- Anthropic browser-key handling was removed.
+- Odds traffic remains direct-only; the key is never relayed or exposed in diagnostics.
+- Generated deployment files were checked byte-for-byte against the verified build artefact.
+- The temporary verification workflow was removed before merge.
+### Verification and merge
+- Full `./run-tests.sh`: **210/210 passing**.
+- Focused final security suite: 8/8 passing.
+- Build succeeded and two builds with the same explicit `BUILD_COMMIT` compared byte-for-byte.
+- Merged through PR #6 at merge commit `3f662b7e133ce2995da74c5e52165ae84744e120`.
+### Unchanged
+- No projection, expected-minutes, scoring, calibration, fixture, captaincy, squad or optimisation formula changed.
+- No framework, runtime dependency, hosting platform or single-file deployment workflow changed.
+
 ## [Stage 3.6] — 2026-07-28 — AI/Markdown sanitisation
 ### Added
 - A bounded, dependency-free restricted-Markdown parser and DOM renderer for the Ask surface.
@@ -69,7 +91,7 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - Availability discount not applied to attacking returns; bonus over-projection; settings lost on
   failed load; capitalised Index.html deployment 404.
 
-## [Unreleased] — Stage 3 (in progress)
+## Stage 3 implementation history
 
 ### Item 4 — Provider Health (D-16)
 #### Added
@@ -117,49 +139,3 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - All failure fallbacks produce the same user-facing outcome as before.
 - No scoring, projection, minutes, fixture-difficulty, odds-weighting, backtest-correction,
   squad, transfer or captaincy logic touched. Suite 146 -> 179; build byte-deterministic.
-
-### Item 2 — per-endpoint schema validation (D-14, VAL-1 closed)
-#### Added
-- Per-endpoint validators in `src/providers/validate.mjs`: `validateBootstrap` (+ fatal-only
-  `bootstrapStructure`), `validateEntry`, `validatePicks`, `validateHistory`, `validateStandings`,
-  `validateUnderstat`, `validateOdds`, `validateArchiveHeader`; shared `filterRows`/`mkIssue`
-  primitives, `collapseIssues`, `hasFatal`. All pure, all non-mutating, all returning `{value, issues}`.
-- `recordIssues(provider, endpoint, issues)` on state: replaces per provider+endpoint so repeated
-  panel refreshes stay idempotent.
-- `tests/schema.test.mjs` (25) and `tests/schema-state.test.mjs` (8).
-#### Changed
-- Issue objects now carry `{provider, endpoint, code, severity, count}`; the D-13 fixture issues were
-  retro-tagged to the same shape.
-- `hydrate()` validates the whole snapshot before any assignment and returns `{ok, issues}`; a fatal
-  payload leaves state completely untouched instead of half-populated.
-- `loadAll()` guards structurally before `slim()`, refuses to cache an unusable payload, and shows a
-  distinct non-technical message for malformed-shape (as opposed to unreachable) feeds.
-- Malformed cached snapshots are discarded and re-fetched rather than rendered.
-- Optional providers (entry, picks, history, standings, rival picks, Understat, odds, archive) validate
-  at their call sites and degrade to existing fallbacks.
-#### Fixed
-- VAL-1: provider schema drift no longer fails silently or crashes a consumer mid-render.
-#### Unchanged
-- No scoring, projection, minutes, fixture-difficulty, odds-weighting, backtest-correction, squad,
-  transfer or captaincy logic touched; `scoring.mjs`, `fixtures.mjs`, `minutes.mjs`, `xp.mjs`,
-  `squad.mjs` and `config.mjs` are byte-identical. Suite 113 -> 146; build byte-deterministic.
-### Added
-- `src/providers/validate.mjs`: fixture validation & normalisation. Identity by provider `id`,
-  composite `event+team_h+team_a` fallback only. Reports `fixture_exact_duplicate`,
-  `fixture_conflicting_duplicate`, `fixture_missing_identity` (all `partial`) and
-  `fixtures_not_array` (`fatal`). Payload-free `issueSummary()` for health reporting.
-- `S.dataIssues` populated on every load; 12 new tests (tests/validation.test.mjs).
-### Fixed
-- **DUP-1 (closed)**: duplicate fixture rows no longer double-count projections, fake
-  double-gameweek ticker styling, or generate false chip-window notes. Genuine doubles preserved.
-### Changed
-- `hydrate()` normalises fixtures at the point of use (fresh AND cached snapshots); `slim()`
-  deliberately preserves the raw-shaped list for provenance.
-- Resilience test converted from pinned-limitation to characterisation of the fixed behaviour.
-### Security
-- **SEC-3 closed (D-08):** removed the Anthropic API-key field, save/restore logic, key headers and
-  browser-access opt-in header. Hosted builds now stop before contacting Anthropic; Claude artifact
-  preview keeps the approved keyless request path.
-- Added a one-time configuration migration that deletes any legacy stored `claudeKey` value.
-### Tests
-- Added 5 focused Anthropic-removal tests; full suite is now 113 passing.
