@@ -17,14 +17,32 @@ const ORDER = [
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
-const strip = code => code.split('\n').filter(l => {
-  const t = l.trim();
-  if (t.startsWith('import ')) return false;
-  if (/^export \{[^}]*\};?$/.test(t)) return false;
-  if (/^export \{[^}]*\} from /.test(t)) return false;
-  return true;
-}).join('\n')
-  .replace(/^export (const|function|async function|let|class)/gm, '$1');
+const strip = code => {
+  const kept = [];
+  let skippingExportList = false;
+
+  for (const line of code.split('\n')) {
+    const t = line.trim();
+
+    if (skippingExportList) {
+      if (/\}(?:\s+from\s+['"][^'"]+['"])?;?$/.test(t)) skippingExportList = false;
+      continue;
+    }
+
+    if (t.startsWith('import ')) continue;
+    if (/^export\s*\{/.test(t)) {
+      if (!/\}(?:\s+from\s+['"][^'"]+['"])?;?$/.test(t)) skippingExportList = true;
+      continue;
+    }
+
+    kept.push(line);
+  }
+
+  if (skippingExportList) throw new Error('Bundler found an unterminated export list');
+
+  return kept.join('\n')
+    .replace(/^export (const|function|async function|let|class)/gm, '$1');
+};
 
 const sourceHasher = createHash('sha256');
 let bundle = '';
@@ -32,6 +50,10 @@ for (const path of ORDER) {
   const raw = readFileSync(path, 'utf8');
   sourceHasher.update(path).update('\0').update(raw);
   bundle += `\n/* ===== ${path} ===== */\n` + strip(raw) + '\n';
+}
+const remainingModuleSyntax = /^\s*(?:import|export)\b/m.exec(bundle);
+if (remainingModuleSyntax) {
+  throw new Error(`Bundler emitted unsupported module syntax: ${remainingModuleSyntax[0].trim()}`);
 }
 const sourceHash = sourceHasher.digest('hex');
 const commit = process.env.BUILD_COMMIT || 'unversioned';
