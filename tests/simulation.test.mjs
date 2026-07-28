@@ -13,7 +13,7 @@ test('minutes distribution preserves approved marginals',()=>{
   const d=buildMinutesDistribution({pStart:0.7,pAppear:0.9,p60:0.6,expMin:62});
   const total=d.states.reduce((sum,row)=>sum+row.probability,0);
   const start=d.states.filter(row=>row.key.startsWith('start')).reduce((sum,row)=>sum+row.probability,0);
-  const sixty=d.states.filter(row=>row.key.endsWith('60')).reduce((sum,row)=>sum+row.probability,0);
+  const sixty=d.states.filter(row=>row.min>=60).reduce((sum,row)=>sum+row.probability,0);
   assert.ok(Math.abs(total-1)<1e-12);
   assert.ok(Math.abs(start-0.7)<1e-12);
   assert.ok(Math.abs(sixty-0.6)<1e-12);
