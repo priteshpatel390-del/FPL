@@ -16,5 +16,7 @@ jobs:
         with:
           ref: agent/stage9-4-decision-previews
           fetch-depth: 0
+      - name: Correct generator syntax
+        run: sed -i "s/:null)),/:null),/" tools/stage9-4-run.sh
       - name: Implement and verify Stage 9.4
         run: bash tools/stage9-4-run.sh
