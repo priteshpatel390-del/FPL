@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-14ArqgfP/L4mMLcLYqKLXXBajZm9N+0Ks/baULWkHmI='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-0Pol7AwmJNocnQ2lnZYtIi+EQs7FFu4klTJEkW50oO8='; style-src-elem 'sha256-7yHX5WYwODn5hOWfdcKX9JMkT07YXMrcaXyOBvehaeU=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -155,14 +155,68 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
 .bar .fill.neg{background:var(--claret)}
 .bar .v{text-align:right;color:var(--ink-soft)}
 
-/* squad pitch */
-.pitchrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
-.pcard{border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:82px;text-align:center;background:#fff;font-size:11.5px}
-.pcard.cap{border-color:var(--pitch);border-width:2px}
-.pcard.warn{border-color:var(--claret);background:#FCF4F5}
-.pcard b{display:block;font-size:12px}
-.pcard .x{font-family:'IBM Plex Mono',monospace;color:var(--pitch);font-weight:600}
-.benchband{background:#F2F4EF;border-radius:8px;padding:8px;margin-top:6px}
+/* team pitch */
+.team-summary{display:grid;grid-template-columns:minmax(116px,.9fr) 1.7fr;gap:8px;margin-bottom:12px}
+.team-score{background:var(--ink);color:#fff;border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;justify-content:center}
+.team-score .label,.team-fact .label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.team-score .value{font-family:'Bricolage Grotesque',sans-serif;font-size:31px;font-weight:800;line-height:1;margin-top:4px}
+.team-score .unit{font-size:11px;color:#B9C9BF;margin-top:3px}
+.team-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.team-fact{background:#F7F9F5;border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-width:0}
+.team-fact .label{display:block;color:var(--ink-soft);opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-fact .value{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-entry{margin:0 0 10px}
+.team-stage{max-width:640px;margin:14px auto 0}
+.team-pitch{position:relative;isolation:isolate;overflow:hidden;height:clamp(500px,135vw,680px);border-radius:22px;padding:22px 8px 18px;background:linear-gradient(90deg,rgba(255,255,255,.035) 0 50%,rgba(0,0,0,.025) 50% 100%),linear-gradient(#2E7A4D,#1F6540);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 16px 34px -24px rgba(20,38,28,.7)}
+.team-pitch:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.48);border-radius:13px;pointer-events:none}
+.team-pitch:after{content:"";position:absolute;left:12px;right:12px;top:50%;border-top:1px solid rgba(255,255,255,.42);pointer-events:none}
+.pitch-mark{position:absolute;border:1px solid rgba(255,255,255,.42);pointer-events:none}
+.pitch-centre-circle{width:92px;height:92px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.pitch-box{left:27%;right:27%;height:78px}
+.pitch-box-top{top:12px;border-top:0}
+.pitch-box-bottom{bottom:12px;border-bottom:0}
+.pitch-formation{position:relative;z-index:2;height:100%;display:grid;grid-template-rows:repeat(4,minmax(0,1fr));align-items:center;gap:4px}
+.pitch-line{display:flex;justify-content:space-evenly;align-items:center;gap:3px;padding:0 2px;min-width:0}
+.pitch-player{position:relative;display:flex;flex:1 1 0;min-width:0;max-width:82px;flex-direction:column;align-items:center;text-align:center}
+.shirt-wrap{position:relative;height:44px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:-2px;z-index:2}
+.club-shirt{--shirt-primary:#315C8C;--shirt-secondary:#FFFFFF;--shirt-accent:#E6B84A;--shirt-ink:#FFFFFF;position:relative;display:block;width:34px;height:39px;border-radius:8px 8px 10px 10px;background:var(--shirt-primary);box-shadow:inset 0 5px 0 -3px var(--shirt-accent),0 5px 9px rgba(7,27,17,.25)}
+.club-shirt:before,.club-shirt:after{content:"";position:absolute;top:3px;width:11px;height:16px;background:var(--shirt-primary);z-index:-1}
+.club-shirt:before{left:-7px;border-radius:7px 2px 4px 5px;transform:skewY(15deg)}
+.club-shirt:after{right:-7px;border-radius:2px 7px 5px 4px;transform:skewY(-15deg)}
+.club-shirt.pattern-sleeves:before,.club-shirt.pattern-sleeves:after{background:var(--shirt-secondary)}
+.club-shirt.pattern-stripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
+.club-shirt.pattern-halves{background:linear-gradient(90deg,var(--shirt-primary) 0 50%,var(--shirt-secondary) 50%)}
+.club-shirt.pattern-hoops{background:repeating-linear-gradient(0deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
+.club-shirt.pattern-sash{background:linear-gradient(130deg,var(--shirt-primary) 0 40%,var(--shirt-secondary) 40% 58%,var(--shirt-primary) 58%)}
+.club-shirt.pattern-pinstripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 5px,var(--shirt-secondary) 5px 7px)}
+.club-shirt-code{position:absolute;left:3px;right:3px;bottom:7px;overflow:hidden;color:var(--shirt-ink);font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:600;line-height:1;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.captain-badge{position:absolute;top:-3px;right:-13px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid #fff;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;box-shadow:0 3px 8px rgba(7,27,17,.3)}
+.captain-badge.vice{background:#fff;color:var(--ink);border-color:var(--ink)}
+.pitch-copy{position:relative;width:100%;min-width:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:8px;padding:4px 3px 5px;box-shadow:0 4px 10px rgba(7,27,17,.18)}
+.pitch-name{font-size:10px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pitch-meta{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ink-soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.pitch-xp{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--pitch);font-weight:600;line-height:1.2;margin-top:2px}
+.pitch-player.warn .club-shirt{outline:2px solid #FFD3D9;outline-offset:2px}
+.pitch-player.warn .pitch-copy{box-shadow:0 0 0 2px #F0AEB9,0 4px 10px rgba(7,27,17,.18)}
+.team-bench{background:#F7F9F5;border:1px solid var(--line);border-radius:16px;padding:10px;margin-top:10px}
+.bench-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.bench-head strong{font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
+.bench-head span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bench-player{max-width:none}
+.bench-player .shirt-wrap{height:38px;transform:scale(.88);transform-origin:center bottom}
+.bench-player .pitch-copy{box-shadow:none;border:1px solid var(--line);background:#fff}
+.section-title{margin:18px 0 7px}
+@media(max-width:380px){
+  .team-summary{grid-template-columns:106px 1fr}.team-score{padding:11px}.team-score .value{font-size:27px}
+  .team-fact{padding:8px 5px}.team-fact .label{font-size:8px}.team-fact .value{font-size:14px}
+  .team-pitch{height:500px;padding-left:5px;padding-right:5px}.pitch-player{max-width:66px}.club-shirt{width:31px;height:36px}
+  .shirt-wrap{height:40px}.pitch-name{font-size:9px}.pitch-meta{font-size:7.5px}.pitch-xp{font-size:8.5px}
+}
+@media(min-width:720px){
+  .team-pitch{height:680px;padding:30px 16px 24px}.pitch-player{max-width:96px}.club-shirt{width:42px;height:48px}
+  .shirt-wrap{height:54px}.pitch-name{font-size:11px}.pitch-meta{font-size:9px}.pitch-xp{font-size:10px}
+}
 
 .searchbox{position:relative}
 .results{position:absolute;z-index:30;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
@@ -271,9 +325,9 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
 
   <!-- SQUAD -->
   <section class="view panel" id="view-squad" hidden>
-    <span class="eyebrow">Your 15</span>
-    <h2>Squad review</h2>
-    <p class="hint">Availability, price moves, best XI by projected points and the captain call.</p>
+    <span class="eyebrow">Gameweek plan</span>
+    <h2>Team</h2>
+    <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>
     <div id="squadOut"><div class="empty"><strong>No squad yet</strong>Load your team ID above, or build your 15 by hand below.</div></div>
     <details id="manualWrap" style="margin-top:16px">
       <summary>Build or edit a squad by hand</summary>
@@ -346,8 +400,8 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"853d0daa0bee2661","commit":"1e4d5b9c7acd1b7b1f97cd81a9002905ff1f17c8"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"853d0daa0bee26610029f8c741722a376b7fde2cf32787604b5a542afce9818c","commit":"1e4d5b9c7acd1b7b1f97cd81a9002905ff1f17c8","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"04a6723c8aeb521e","commit":"02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"04a6723c8aeb521e6d277d228dbe7dcbd8a2dd9e3b459a056d5d58382d0aeb78","commit":"02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3445,6 +3499,80 @@ setupAppShell();
 
 
 
+/* ===== src/ui/team-pitch.mjs ===== */
+// Stage 9.2 — visual-only pitch layout and repository-owned shirt palettes.
+// No squad selection, projection or captaincy rule lives in this module.
+
+const TEAM_PITCH_VISUAL_ORDER = Object.freeze([4, 3, 2, 1]);
+const TEAM_PITCH_PATTERNS = Object.freeze(['solid','sleeves','stripes','halves','hoops','sash','pinstripes']);
+const TEAM_PITCH_PRESETS = Object.freeze({
+  ARS:{primary:'#D71920',secondary:'#FFFFFF',accent:'#162A4C',ink:'#FFFFFF',pattern:'sleeves'},
+  AVL:{primary:'#6A1735',secondary:'#9ED8F5',accent:'#F5D36A',ink:'#FFFFFF',pattern:'sleeves'},
+  BOU:{primary:'#D71920',secondary:'#121212',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'stripes'},
+  BRE:{primary:'#D71920',secondary:'#FFFFFF',accent:'#111111',ink:'#111111',pattern:'stripes'},
+  BHA:{primary:'#1764B0',secondary:'#FFFFFF',accent:'#F4D35E',ink:'#111111',pattern:'stripes'},
+  BUR:{primary:'#6A1735',secondary:'#9ED8F5',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sleeves'},
+  CHE:{primary:'#1746A2',secondary:'#1746A2',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'solid'},
+  CRY:{primary:'#D71920',secondary:'#1746A2',accent:'#F4D35E',ink:'#FFFFFF',pattern:'stripes'},
+  EVE:{primary:'#1746A2',secondary:'#FFFFFF',accent:'#102B5C',ink:'#FFFFFF',pattern:'solid'},
+  FUL:{primary:'#FFFFFF',secondary:'#111111',accent:'#D71920',ink:'#111111',pattern:'solid'},
+  LEE:{primary:'#FFFFFF',secondary:'#1746A2',accent:'#F4D35E',ink:'#111111',pattern:'solid'},
+  LIV:{primary:'#B30D2F',secondary:'#B30D2F',accent:'#F4D35E',ink:'#FFFFFF',pattern:'solid'},
+  MCI:{primary:'#7CC7EC',secondary:'#7CC7EC',accent:'#162A4C',ink:'#162A4C',pattern:'solid'},
+  MUN:{primary:'#D71920',secondary:'#111111',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'solid'},
+  NEW:{primary:'#111111',secondary:'#FFFFFF',accent:'#3D7DB8',ink:'#FFFFFF',pattern:'stripes'},
+  NFO:{primary:'#D71920',secondary:'#D71920',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'solid'},
+  SUN:{primary:'#D71920',secondary:'#FFFFFF',accent:'#111111',ink:'#111111',pattern:'stripes'},
+  TOT:{primary:'#FFFFFF',secondary:'#162A4C',accent:'#F4D35E',ink:'#162A4C',pattern:'solid'},
+  WHU:{primary:'#6A1735',secondary:'#9ED8F5',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sleeves'},
+  WOL:{primary:'#F2A900',secondary:'#111111',accent:'#FFFFFF',ink:'#111111',pattern:'solid'},
+  LEI:{primary:'#1746A2',secondary:'#FFFFFF',accent:'#F4D35E',ink:'#FFFFFF',pattern:'solid'},
+  IPS:{primary:'#1746A2',secondary:'#FFFFFF',accent:'#D71920',ink:'#FFFFFF',pattern:'stripes'},
+  SOU:{primary:'#D71920',secondary:'#FFFFFF',accent:'#111111',ink:'#111111',pattern:'stripes'}
+});
+const TEAM_PITCH_FALLBACKS = Object.freeze([
+  {primary:'#315C8C',secondary:'#FFFFFF',accent:'#E6B84A',ink:'#FFFFFF',pattern:'solid'},
+  {primary:'#7A1E38',secondary:'#D8EEF8',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sleeves'},
+  {primary:'#1F5C3A',secondary:'#FFFFFF',accent:'#E6B84A',ink:'#FFFFFF',pattern:'halves'},
+  {primary:'#20262B',secondary:'#F0C24B',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sash'},
+  {primary:'#6C4BA6',secondary:'#FFFFFF',accent:'#A7E0D1',ink:'#FFFFFF',pattern:'pinstripes'},
+  {primary:'#A13A2A',secondary:'#F5E7D4',accent:'#152A40',ink:'#FFFFFF',pattern:'hoops'}
+]);
+
+function teamPitchNormaliseCode(team){
+  return String(team?.short_name || team?.name || '')
+    .toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3) || 'CLB';
+}
+
+function teamPitchPalette(team){
+  const code = teamPitchNormaliseCode(team);
+  const preset = TEAM_PITCH_PRESETS[code];
+  if(preset) return {code, ...preset};
+  let seed = Number(team?.id) || 0;
+  for(const ch of code) seed = ((seed * 31) + ch.charCodeAt(0)) >>> 0;
+  return {code, ...TEAM_PITCH_FALLBACKS[seed % TEAM_PITCH_FALLBACKS.length]};
+}
+
+function teamPitchLines(starters){
+  const source = Array.isArray(starters) ? starters : [];
+  return TEAM_PITCH_VISUAL_ORDER.map(position => ({
+    position,
+    players: source.filter(slot => Number(slot?.p?.element_type) === position)
+  })).filter(line => line.players.length);
+}
+
+function teamPitchCaptaincy(ranked){
+  const ids = [];
+  for(const item of Array.isArray(ranked) ? ranked : []){
+    const id = item?.s?.p?.id;
+    if(id != null && !ids.includes(id)) ids.push(id);
+    if(ids.length === 2) break;
+  }
+  return {captainId:ids[0] ?? null, viceId:ids[1] ?? null};
+}
+
+
+
 /* ===== src/ui/views.mjs ===== */
 // Views import broadly; the bundler flattens everything into one scope.
 const elNode = el;
@@ -3601,10 +3729,13 @@ function renderSquad(){
     return;
   }
   const gw=S.nextGW, xi=bestXI(squad,gw), nodes=[];
-  const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v));
-  nodes.push(elNode('div',{class:'kpis'},kpi(`Projected GW${gw}`,fmt1(xi.tot)),kpi('Shape',xi.shape),
-    kpi('Squad value',`£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m`),kpi('Free transfers',num($('ftCount').value))));
-  if(S.entry) nodes.push(elNode('p',{class:'status',style:{marginBottom:'10px'}},`${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}`));
+  nodes.push(elNode('div',{class:'team-summary'},
+    elNode('div',{class:'team-score'},elNode('span',{class:'label'},`Projected GW${gw}`),elNode('span',{class:'value'},fmt1(xi.tot)),elNode('span',{class:'unit'},'expected points')),
+    elNode('div',{class:'team-facts'},
+      elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Shape'),elNode('span',{class:'value'},xi.shape)),
+      elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Value'),elNode('span',{class:'value'},`£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m`)),
+      elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Free transfers'),elNode('span',{class:'value'},num($('ftCount').value))))));
+  if(S.entry) nodes.push(elNode('p',{class:'status team-entry'},`${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}`));
 
   const problems=[];
   squad.forEach(({p})=>{
@@ -3620,9 +3751,39 @@ function renderSquad(){
   else nodes.push(noteNode('good','No injuries, suspensions, blanks or price falls in your 15. Nothing forces a transfer this week.'));
 
   const capRank=xi.xi.map(s=>({s,x:xpOf(s.p,gw,1).total,own:num(s.p.selected_by_percent)})).sort((a,b)=>b.x-a.x);
+  const captaincy=teamPitchCaptaincy(capRank);
+  const fixtureLabel=p=>{
+    const games=teamFixtures(p.team,gw,1)[0]||[];
+    return games.length ? games.map(g=>`${g.opp.short_name} ${g.home?'H':'A'}`).join(' + ') : 'Blank';
+  };
+  const playerNode=(slot,benchIndex=null)=>{
+    const p=slot.p, team=S.teams[p.team], palette=teamPitchPalette(team);
+    const role=p.id===captaincy.captainId?'captain':p.id===captaincy.viceId?'vice':null;
+    const bad=availability(p)<1;
+    const fixture=fixtureLabel(p), projected=fmt1(xpOf(p,gw,1).total);
+    const label=benchIndex==null?p.web_name:`${benchIndex}. ${p.web_name}`;
+    const style=`--shirt-primary:${palette.primary};--shirt-secondary:${palette.secondary};--shirt-accent:${palette.accent};--shirt-ink:${palette.ink}`;
+    return elNode('div',{class:`pitch-player${benchIndex==null?'':' bench-player'}${bad?' warn':''}`,
+      'aria-label':`${label}, ${fixture}, ${projected} expected points${role==='captain'?', captain':role==='vice'?', vice-captain':''}`},
+      elNode('div',{class:'shirt-wrap'},
+        elNode('span',{class:`club-shirt pattern-${palette.pattern}`,style,'aria-hidden':'true'},elNode('span',{class:'club-shirt-code'},palette.code)),
+        role?elNode('span',{class:`captain-badge${role==='vice'?' vice':''}`},role==='captain'?'C':'VC'):null),
+      elNode('div',{class:'pitch-copy'},elNode('div',{class:'pitch-name'},label),elNode('div',{class:'pitch-meta'},fixture),elNode('div',{class:'pitch-xp'},`${projected} xP`)));
+  };
+  const formation=elNode('div',{class:'pitch-formation'},teamPitchLines(xi.xi).map(line=>
+    elNode('div',{class:`pitch-line position-${line.position}`},line.players.map(slot=>playerNode(slot)))));
+  const pitch=elNode('section',{class:'team-pitch','aria-label':`Model-selected starting eleven for Gameweek ${gw}`},
+    elNode('span',{class:'pitch-mark pitch-centre-circle','aria-hidden':'true'}),
+    elNode('span',{class:'pitch-mark pitch-box pitch-box-top','aria-hidden':'true'}),
+    elNode('span',{class:'pitch-mark pitch-box pitch-box-bottom','aria-hidden':'true'}),formation);
+  const bench=elNode('section',{class:'team-bench','aria-label':'Bench order'},
+    elNode('div',{class:'bench-head'},elNode('strong',{},'Bench'),elNode('span',{},'Auto-sub order')),
+    elNode('div',{class:'bench-grid'},xi.bench.map((slot,index)=>playerNode(slot,index+1))));
+  nodes.push(elNode('div',{class:'team-stage'},pitch,bench));
+
   if(capRank.length){
     const c1=capRank[0], c2=capRank[1], grid=elNode('div',{class:'capgrid'});
-    nodes.push(elNode('h3',{style:{margin:'16px 0 6px'}},'Captain'),grid);
+    nodes.push(elNode('h3',{class:'section-title'},'Captaincy ranking'),grid);
     capRank.slice(0,4).forEach((c,i)=>{
       const games=teamFixtures(c.s.p.team,gw,1)[0]||[];
       const why=games.length?games.map(g=>`${g.home?'vs':'away to'} ${g.opp.short_name}`).join(' + ')+` · ${fmt1(c.x)} xP · ${c.own}% owned`:'no fixture';
@@ -3632,13 +3793,7 @@ function renderSquad(){
     });
     if(c2&&(c1.x-c2.x)<.6){ const safer=c1.own>=c2.own?c1:c2; nodes.push(noteNode('',`${c1.s.p.web_name} and ${c2.s.p.web_name} are within half a point — effectively a coin toss. ${safer.s.p.web_name} is the higher-owned pick at ${safer.own}%, so it protects your rank; the other is the rank-climbing play.`)); }
   }
-  nodes.push(elNode('h3',{style:{margin:'18px 0 8px'}},'Best XI by projection'));
-  [1,2,3,4].forEach(pos=>{ const line=xi.xi.filter(s=>s.p.element_type===pos); if(!line.length)return;
-    nodes.push(elNode('div',{class:'pitchrow'},line.map(s=>{ const bad=availability(s.p)<1,isCap=capRank[0]&&capRank[0].s.p.id===s.p.id;
-      return elNode('div',{class:`pcard ${isCap?'cap':''} ${bad?'warn':''}`},elNode('b',{},`${s.p.web_name}${isCap?' (C)':''}`),elNode('span',{class:'x'},fmt1(xpOf(s.p,gw,1).total))); }))); });
-  nodes.push(elNode('div',{class:'benchband'},elNode('div',{class:'status',style:{marginBottom:'6px'}},'Bench order'),
-    elNode('div',{class:'pitchrow'},xi.bench.map((s,i)=>elNode('div',{class:'pcard'},elNode('b',{},`${i+1}. ${s.p.web_name}`),elNode('span',{class:'x'},fmt1(xpOf(s.p,gw,1).total)))))));
-  nodes.push(elNode('h3',{style:{margin:'18px 0 6px'}},'All 15 over 6 gameweeks'));
+  nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
   const tbody=elNode('tbody');
   squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{},
     elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
