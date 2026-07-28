@@ -20,9 +20,21 @@ function decisionPreviewPlanSignature(plan={}){
   if(plan?.signature) return String(plan.signature);
   return (plan?.transfers||[]).map(t=>`${Number(t.outPlayerId)}>${Number(t.inPlayerId)}`).sort().join('|');
 }
+function decisionPreviewPlanResultSignature(plan={}){
+  return [
+    decisionPreviewPlanSignature(plan),
+    Number(plan.transferCount)||0,
+    (plan.finalSquadIds||[]).map(Number).sort((a,b)=>a-b).join('.'),
+    Number(plan.netGain)||0,
+    Number(plan.hitCost)||0,
+    Number(plan.bankAfter)||0,
+    Number(plan.freeTransfersNextGW)||0,
+    Number(plan.grossBestXIPoints)||0
+  ].join(':');
+}
 function decisionPreviewOptimiserSignature({squadSignature='',horizon=0,bank=0,freeTransfers=0,plans=[]}={}){
   return [String(squadSignature),Number(horizon)||0,Number(bank)||0,Number(freeTransfers)||0,
-    (plans||[]).map(decisionPreviewPlanSignature).join(',')].join('::');
+    (plans||[]).map(decisionPreviewPlanResultSignature).join(',')].join('::');
 }
 function decisionPreviewClonePlan(plan){
   if(!plan) return null;
@@ -49,6 +61,10 @@ function decisionPreviewClearAll(){
   decisionPreviewClearTransfer();
   decisionPreviewState.squadSignature=null;
 }
+function decisionPreviewHasActiveState(){
+  return !!decisionPreviewState.transfer || decisionPreviewState.captainId!=null ||
+    decisionPreviewState.viceId!=null || decisionPreviewState.selectionMode!=null;
+}
 function decisionPreviewSyncSquad(squad){
   const signature=decisionPreviewSquadSignature(squad);
   const changed=decisionPreviewState.squadSignature!==null && decisionPreviewState.squadSignature!==signature;
@@ -58,7 +74,7 @@ function decisionPreviewSyncSquad(squad){
 }
 function decisionPreviewSyncOptimiser(signature){
   const next=String(signature||'');
-  const changed=!!decisionPreviewState.transfer && decisionPreviewState.optimiserSignature!==next;
+  const changed=decisionPreviewState.optimiserSignature!==null && decisionPreviewState.optimiserSignature!==next && decisionPreviewHasActiveState();
   if(changed) decisionPreviewClearTransfer();
   decisionPreviewState.optimiserSignature=next;
   return changed;
