@@ -53,3 +53,4 @@ jobs:
           grep -F "$GITHUB_SHA" dist/manifest.json
           grep -F "$GITHUB_SHA" dist/app.bundle.js
           grep -F "$GITHUB_SHA" dist/index.html
+      # Diagnostic-only workflow; remove before Stage 7 is marked complete.
