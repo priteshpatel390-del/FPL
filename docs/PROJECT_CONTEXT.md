@@ -10,8 +10,8 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
 - Stage 3 security/provider hardening is complete.
 - Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
-- Stage 5 scoring corrections are implemented and verified on draft PR #9. Source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
-- The only remaining Stage 5 gate is explicit owner merge approval. Stage 6 must not begin before merge.
+- Stage 5 scoring corrections are complete and merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`. Source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
+- The next planned item is Stage 6 — Transfer Optimiser. Its design and formula choices require explicit owner approval before implementation.
 - The historical 2025/26 aggregate backtest result, r=0.80 and approximately ±0.5 points/GW, is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
@@ -36,11 +36,11 @@ The overriding principle is the simplest reliable data stack that supports good 
 Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 18 or newer runs the custom deterministic bundler and `node:test` suite. `node build.mjs` emits `dist/index.html`, the single deployable uploaded through the GitHub web interface. The custom bundler strips complete static module declarations, rejects surviving module syntax and embeds model, rules, source-hash and commit identity.
 
 ## Completed, current and next
-Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening and Stage 4 expected minutes.
+Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes and Stage 5 scoring corrections.
 
-Current: Stage 5 scoring corrections on draft PR #9, verified and awaiting owner merge approval.
+Current: Stage 6 transfer-optimiser investigation and design approval checkpoint. No Stage 6 implementation has begun.
 
-Next after merge approval: Stage 6 transfer optimiser.
+Next after design approval: implement Stage 6 on a dedicated branch, verify against exhaustive search, run the full suite and open a draft pull request.
 
 ## Major risks
 Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven out of sample; and single-maintainer phone-first operations.

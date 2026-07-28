@@ -1,6 +1,6 @@
 # Stage 5 — Scoring corrections
 
-Status: owner-approved, implemented and verified on draft PR #9; awaiting explicit owner merge approval.
+Status: owner-approved, implemented, verified and merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`.
 
 ## Objective
 Make the live projection rule-aware where FPL applies stepped or threshold scoring, while preserving the public projection surface and avoiding unsupported match simulation.
@@ -37,6 +37,7 @@ Verified source commit: `aee6d0fee7cc177622a046f37885b554013debbd`.
 - Independent CSP hash recomputation: passed.
 - Generated artefacts embed the exact verified source commit as `BUILD_COMMIT`.
 - Temporary verification workflow removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`.
+- Merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8` on 28 July 2026.
 
 ## Remaining limitations
 Poisson is an approximation; bonus is empirical rather than match-relative; clean-sheet retention after substitution remains simplified; second-yellow overlap cannot be separated from aggregate FPL fields; set-piece roles do not add attacking uplift; inherited positional calibration remains unrefitted until Stage 7.

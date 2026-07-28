@@ -2,7 +2,7 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
-## [Stage 5 draft] — 2026-07-28 — Scoring corrections
+## [Stage 5] — 2026-07-28 — Scoring corrections
 ### Added
 - Explicit 2026/27 FPL rule configuration and versioned Stage 5 shrinkage constants.
 - Pure Poisson grouped-points, threshold-probability and sparse-rate helpers.
@@ -26,7 +26,7 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - No provider, fixture-blend weight, positional calibration, captaincy, squad, transfer optimiser, walk-forward validation, uncertainty simulation or Stage 9 UI behaviour changed.
 - No prediction-accuracy improvement is claimed.
 ### Status
-- Draft PR #9 remains open, mergeable and unmerged pending explicit owner approval.
+- Merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`.
 
 ## [Stage 4] — 2026-07-28 — Expected-minutes model
 ### Added

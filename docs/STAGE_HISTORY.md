@@ -2,12 +2,12 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, AUDIT.md.
 
-## Stage 5 — Scoring corrections (DRAFT PR #9, VERIFIED 2026-07-28)
+## Stage 5 — Scoring corrections (MERGED 2026-07-28)
 Implemented the owner-approved 2026/27 scoring rulebook, deterministic Poisson grouped scoring for saves and goals conceded, defensive-contribution threshold probability, empirical awarded-bonus shrinkage, explicit rare disciplinary/penalty events, penalty-role gating and real blank/double fixture-run scoring. The public projection surface and downstream squad/captaincy/transfer contracts remained unchanged.
 
 Review identified four justified corrections. The custom bundler now strips complete single-line and multi-line static imports and export lists, fails on unterminated declarations and rejects surviving module syntax; direct fixture tests guard the boundary. Aggregate bonus appearances now reuse the Stage 4 completed-match × aggregate-pAppear model rather than minutes/60. The fixture test now creates a genuine blank. Final verification no longer regenerates goldens.
 
-Verified source commit `aee6d0fee7cc177622a046f37885b554013debbd`: 241/241 tests passing against committed goldens, deterministic two-build comparison passed and independent CSP verification passed. Generated artefacts embed that exact identity. Temporary workflow removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`. PR #9 remains draft and unmerged pending explicit owner approval. No accuracy improvement is claimed.
+Verified source commit `aee6d0fee7cc177622a046f37885b554013debbd`: 241/241 tests passing against committed goldens, deterministic two-build comparison passed and independent CSP verification passed. Generated artefacts embed that exact identity. Temporary workflow removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`. Merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`. No accuracy improvement is claimed.
 
 ## Stage 4 — Expected minutes (MERGED 2026-07-28)
 Replaced season-minutes/current-GW and GW-number denominators with completed-team fixtures, validated detailed current-season histories, recency weighting, aggregate/prior fallbacks and explicit pStart/pAppear/p60/expMin/confidence outputs. Official availability is applied once and scoring consumes the minutes boundary without circular dependency. Verified baseline: 220/220 tests and deterministic builds. Merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
