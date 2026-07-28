@@ -1,4 +1,4 @@
-name: Stage 9.3 implementation verifier
+name: Stage 9.3 closeout
 
 on:
   pull_request:
@@ -9,12 +9,14 @@ permissions:
   contents: write
 
 jobs:
-  verify:
+  closeout:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/stage9-3-player-detail-uncertainty-v2
           fetch-depth: 0
-      - name: Implement and verify Stage 9.3
-        run: bash tools/stage9-3-run.sh
+      - name: Record Stage 9.3 and remove temporary tooling
+        run: |
+          bash tools/stage9-3-run.sh
+          bash tools/stage9-3-closeout.sh
