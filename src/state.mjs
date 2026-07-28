@@ -19,7 +19,9 @@ const KEEP = ['id','web_name','team','element_type','now_cost','total_points','f
   'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
   'expected_goals_conceded_per_90','defensive_contribution','defensive_contribution_per_90',
   'status','chance_of_playing_next_round','news','news_added','cost_change_event','cost_change_start',
-  'transfers_in_event','transfers_out_event','penalties_order','ep_next','yellow_cards','red_cards'];
+  'transfers_in_event','transfers_out_event','penalties_order','direct_freekicks_order',
+  'corners_and_indirect_freekicks_order','ep_next','yellow_cards','red_cards','own_goals',
+  'penalties_missed','penalties_saved'];
 
 function slim(boot, fixtures){
   return {
