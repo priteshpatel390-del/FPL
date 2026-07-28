@@ -14,13 +14,18 @@ jobs:
         with:
           node-version: 20
       - name: Full test suite
+        id: tests
+        continue-on-error: true
         shell: bash
-        run: |
-          set +e
-          ./run-tests.sh > /tmp/test.log 2>&1
-          code=$?
-          tail -n 160 /tmp/test.log
-          exit $code
+        run: ./run-tests.sh > test.log 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage4-test-log
+          path: test.log
+      - name: Fail if tests failed
+        if: steps.tests.outcome != 'success'
+        run: exit 1
       - name: Deterministic build comparison
         shell: bash
         run: |
