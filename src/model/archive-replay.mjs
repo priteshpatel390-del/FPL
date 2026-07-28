@@ -40,6 +40,7 @@ export async function sha256Hex(text){
 }
 
 function numeric(value){
+  if(value === null || value === undefined || String(value).trim() === '') return null;
   const number=Number(value);
   return Number.isFinite(number)?number:null;
 }
@@ -87,22 +88,32 @@ export function buildArchiveReplay(text){
     const playerId=numeric(get(raw,'element'));
     const gameweek=numeric(get(raw,'GW'));
     const position=POSMAP[String(get(raw,'position')).trim()];
-    const minutes=numeric(get(raw,'minutes'));
-    const actual=numeric(get(raw,'total_points'));
-    if(!Number.isInteger(playerId)||!Number.isInteger(gameweek)||!position||minutes===null||actual===null){malformedRows++;continue;}
+    const values={
+      minutes:numeric(get(raw,'minutes')),
+      actual:numeric(get(raw,'total_points')),
+      xg:numeric(get(raw,'expected_goals')),
+      xa:numeric(get(raw,'expected_assists')),
+      saves:numeric(get(raw,'saves')),
+      bps:numeric(get(raw,'bps')),
+      yc:numeric(get(raw,'yellow_cards'))
+    };
+    const invalidRequired=Object.values(values).some(value=>value===null);
+    if(!Number.isInteger(playerId)||!Number.isInteger(gameweek)||!position||invalidRequired){malformedRows++;continue;}
+    const dcValue=column.defensive_contribution===undefined?0:numeric(get(raw,'defensive_contribution'));
+    if(dcValue===null){malformedRows++;continue;}
     const key=`${gameweek}|${playerId}`;
     const aggregate=grouped.get(key)||{
       playerId,gameweek,position,minutes:0,actual:0,xg:0,xa:0,saves:0,bps:0,dc:0,yc:0
     };
     if(aggregate.position!==position){malformedRows++;continue;}
-    aggregate.minutes+=minutes;
-    aggregate.actual+=actual;
-    aggregate.xg+=numeric(get(raw,'expected_goals'))??0;
-    aggregate.xa+=numeric(get(raw,'expected_assists'))??0;
-    aggregate.saves+=numeric(get(raw,'saves'))??0;
-    aggregate.bps+=numeric(get(raw,'bps'))??0;
-    aggregate.dc+=numeric(get(raw,'defensive_contribution'))??0;
-    aggregate.yc+=numeric(get(raw,'yellow_cards'))??0;
+    aggregate.minutes+=values.minutes;
+    aggregate.actual+=values.actual;
+    aggregate.xg+=values.xg;
+    aggregate.xa+=values.xa;
+    aggregate.saves+=values.saves;
+    aggregate.bps+=values.bps;
+    aggregate.dc+=dcValue;
+    aggregate.yc+=values.yc;
     grouped.set(key,aggregate);
   }
 
