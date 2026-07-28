@@ -206,9 +206,13 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
 .bench-player .shirt-wrap{height:38px;transform:scale(.88);transform-origin:center bottom}
 .bench-player .pitch-copy{box-shadow:none;border:1px solid var(--line);background:#fff}
 .section-title{margin:18px 0 7px}
+@media(max-width:420px){
+  .team-summary{grid-template-columns:1fr;gap:8px}
+  .team-score{min-height:82px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;grid-template-areas:"label value" "unit value";column-gap:14px;align-items:center}
+  .team-score .label{grid-area:label;align-self:end}.team-score .value{grid-area:value;font-size:32px;margin:0}.team-score .unit{grid-area:unit;align-self:start;margin:1px 0 0}
+  .team-fact{padding:9px 7px;text-align:center}.team-fact .label{min-height:24px;display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.2;overflow:visible}.team-fact .value{font-size:16px}
+}
 @media(max-width:380px){
-  .team-summary{grid-template-columns:106px 1fr}.team-score{padding:11px}.team-score .value{font-size:27px}
-  .team-fact{padding:8px 5px}.team-fact .label{font-size:8px}.team-fact .value{font-size:14px}
   .team-pitch{height:500px;padding-left:5px;padding-right:5px}.pitch-player{max-width:66px}.club-shirt{width:31px;height:36px}
   .shirt-wrap{height:40px}.pitch-name{font-size:9px}.pitch-meta{font-size:7.5px}.pitch-xp{font-size:8.5px}
 }
