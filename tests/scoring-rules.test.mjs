@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { S, hydrate } from '../src/state.mjs';
 import { expectedGroupedPoints, expectedThresholdPoints, poissonTail, shrunkRate } from '../src/model/scoring-rules.mjs';
-import { playerFixtureXP, bonusPerAppearance, penaltyMissRate, rareRate, clearXP } from '../src/model/scoring.mjs';
+import { playerFixtureXP, bonusPerAppearance, penaltyMissRate, rareRate, seasonAppearances, clearXP } from '../src/model/scoring.mjs';
 import { matchContext, runScore } from '../src/model/fixtures.mjs';
 import { FPL_RULES, MODEL_VERSION, RULES_VERSION } from '../src/config.mjs';
 import { syntheticWorld } from './harness.mjs';
@@ -90,6 +90,22 @@ test('bonus uses awarded bonus per appearance without fixture multiplier', () =>
   assert.equal(easy, hard);
 });
 
+test('aggregate bonus appearances reuse the Stage 4 appearance estimate', () => {
+  const fixtures = S.fixtures;
+  const history = S.minuteHistory;
+  try {
+    S.fixtures = Array.from({length:10}, (_,i) => ({id:9000+i,event:i+1,team_h:999,team_a:1,finished:true}));
+    S.minuteHistory = {};
+    const p = {id:9999,team:999,minutes:900,starts:10};
+    const apps = seasonAppearances(p);
+    assert.equal(apps, 9.8);
+    assert.ok(apps <= 10);
+  } finally {
+    S.fixtures = fixtures;
+    S.minuteHistory = history;
+  }
+});
+
 test('defensive contributions use appearance probability rather than p60 eligibility', () => {
   const p = {...S.byId[105], defensive_contribution_per_90:20, minutes:300, starts:0};
   const r = playerFixtureXP(p, fixtureFor(p.team,1,false));
@@ -97,12 +113,17 @@ test('defensive contributions use appearance probability rather than p60 eligibi
   assert.ok(r.parts['Defensive contributions'] <= 2);
 });
 
-test('fixture run score treats blanks as zero and doubles add both games', () => {
-  const blankTeam = 6;
-  const single = runScore(blankTeam,11,1,'attack');
-  const double = runScore(5,11,1,'attack');
-  assert.ok(single >= 0);
-  assert.ok(double > single);
+test('fixture run score gives a genuine blank zero and a double both fixtures', () => {
+  const fixtures = S.fixtures;
+  try {
+    S.fixtures = fixtures.filter(f => !(f.event === 11 && (f.team_h === 6 || f.team_a === 6)));
+    assert.equal(runScore(6,11,1,'attack'), 0);
+    const double = runScore(5,11,1,'attack');
+    assert.ok(double > 0);
+    assert.equal(S.fixtures.filter(f => f.event === 11 && (f.team_h === 5 || f.team_a === 5)).length, 2);
+  } finally {
+    S.fixtures = fixtures;
+  }
 });
 
 test('rare-rate helper uses position population shrinkage', () => {
