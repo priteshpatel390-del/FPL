@@ -2,6 +2,8 @@ name: Stage 4 verification
 on:
   push:
     branches: [stage4-expected-minutes]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   verify:
