@@ -1,6 +1,13 @@
 # STAGE_HISTORY.md — engineering diary
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
-Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, AUDIT.md.
+Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, AUDIT.md.
+
+## Stage 7 — Walk-forward backtest (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+Replaced the misleading live backtest presentation with a deterministic deadline-information-only walk-forward framework. The evaluator enforces chronological train/calibration/holdout separation, rejects future-information leakage and conflicting duplicates, calculates MAE, RMSE, bias and Pearson correlation, supports position/Gameweek/prediction-band segmentation and compares named ablations only on identical holdout keys.
+
+The replay adapter pins the final 2025/26 vaastav archive commit `f9ed3e8839b0f970e0d5d4a83c5628f6eaee755a`, computes SHA-256 from the exact downloaded bytes, aggregates double Gameweeks to one player/Gameweek observation and counts malformed rows without manufacturing required values. Fold calibration is fitted only on each prior calibration window and never updates production `S.calib` or persisted projection settings. The legacy H1/H2 diagnostic remains only for regression comparison and is no longer presented as validated accuracy.
+
+Verified source commit `42d3106fcb15f2e68db7409e0ae96fd27cd4f61a`: **274/274 tests passed**, production build succeeded, two builds were byte-identical and build-identity checks passed. Verified generated artefacts were committed at `d2f1e7d93cf200e5a1d6d1a2d96829e750740ff9`. Historical pre-deadline snapshots for Understat, odds, detailed minutes inputs and production fixture ratings do not exist; this remains an honest scoring diagnostic rather than full validation of every live production input. No prediction-accuracy improvement is claimed.
 
 ## Stage 5 — Scoring corrections (MERGED 2026-07-28)
 Implemented the owner-approved 2026/27 scoring rulebook, deterministic Poisson grouped scoring for saves and goals conceded, defensive-contribution threshold probability, empirical awarded-bonus shrinkage, explicit rare disciplinary/penalty events, penalty-role gating and real blank/double fixture-run scoring. The public projection surface and downstream squad/captaincy/transfer contracts remained unchanged.

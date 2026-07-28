@@ -2,6 +2,29 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 7] — 2026-07-28 — Walk-forward backtest
+### Added
+- Deterministic chronological train/calibration/holdout fold engine with future-information rejection.
+- MAE, RMSE, bias and Pearson metrics with position, Gameweek, prediction-band and variant segmentation.
+- Fold-only bounded position calibration fitted exclusively from each prior calibration window.
+- Immutable 2025/26 vaastav archive pin at `f9ed3e8839b0f970e0d5d4a83c5628f6eaee755a` with SHA-256 of exact downloaded bytes.
+- Deadline-safe archive replay, double-Gameweek aggregation, malformed-row counting and focused Stage 7 tests.
+### Changed
+- The visible backtest now presents an honest walk-forward scoring diagnostic rather than the method-flattered H1/H2 calibration report.
+- The legacy diagnostic is retained only for regression comparison and no longer applies corrections to production projections.
+- Missing historical odds, Understat, detailed expected-minutes inputs and production fixture snapshots are reported as unavailable rather than reconstructed.
+### Verification
+- Verified source commit `42d3106fcb15f2e68db7409e0ae96fd27cd4f61a`.
+- Full suite: **274/274 passing**.
+- Production build succeeded; deterministic two-build comparison and build-identity checks passed.
+- Verified generated artefacts committed at `d2f1e7d93cf200e5a1d6d1a2d96829e750740ff9`.
+### Unchanged
+- No production projection, expected-minutes, scoring, fixture, captaincy, squad or transfer-optimiser formula changed.
+- No persisted `S.calib` behaviour or provider blend weight changed.
+- No prediction-accuracy improvement is claimed.
+### Status
+- Implemented and verified on draft PR #15; awaiting owner review and explicit merge approval.
+
 ## [Stage 5] — 2026-07-28 — Scoring corrections
 ### Added
 - Explicit 2026/27 FPL rule configuration and versioned Stage 5 shrinkage constants.
@@ -82,12 +105,9 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - A text-node-first `el()` DOM builder and `setChildren()` replacement helper.
 - Adversarial DOM tests for hostile player, team, entry, league and provider text.
 ### Changed
-- Every approved Stage 3.5 dynamic rendering surface now uses DOM nodes: gameweek/source status,
-  ticker, players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search and
-  backtest output.
+- Every approved Stage 3.5 dynamic rendering surface now uses DOM nodes: gameweek/source/chip status, ticker, players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search and backtest output.
 ### Unchanged
-- Ask Markdown rendering remains at the Stage 3.4 baseline; its separate sanitisation design is
-  deferred to Stage 3.6. No model, provider, key handling, CSP, formula or visual redesign changed.
+- Ask Markdown rendering remains at the Stage 3.4 baseline; its separate sanitisation design is deferred to Stage 3.6. No model, provider, key handling, CSP, formula or visual redesign changed.
 ### Verification and merge
 - Recorded implementation result: 194/194 tests passing and deterministic builds green.
 - Merged through PR #3 at merge commit `5623abb594159916b4041e6bd3c44be80f714ce7`.
@@ -97,82 +117,20 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 ### Added
 - /docs system (12 documents) + root CLAUDE.md onboarding; repository declared source of truth.
 ### Fixed
-- Misleading resilience-test title (duplicate fixtures ARE double-counted on malformed feeds —
-  pinned limitation; dedupe proposed in STAGE3-DESIGN).
+- Misleading resilience-test title (duplicate fixtures ARE double-counted on malformed feeds — pinned limitation; dedupe proposed in STAGE3-DESIGN).
 
 ## [2.0.0] — 2026-07-26 (Stage 2)
 ### Added
-- ES-module architecture (17 modules), deterministic bundler, dist/manifest.json + BUILD_INFO.
-- Provider registry: six-attribute quality descriptors + runtime health marks.
-- Odds provider provenance (event id, kickoff, fetchedAt, books, markets, confidence), devig,
-  median outlier rejection, staleness cut, thin-market inclusion rules (ODDS_RULES, config-defined),
-  fixture matching by teams + kickoff proximity.
-- Pure computeBacktest with prediction provenance (modelVersion, rulesVersion, dataset ref,
-  predictedAt); versioned cache envelope; escapeHTML helper; unit (direct-import) + resilience suites.
+- ES-module architecture, deterministic bundler, dist manifest and build identity.
+- Provider registry and odds provenance rules.
+- Pure backtest provenance, versioned cache envelope and unit/resilience suites.
 ### Changed
-- slim() retains fixture id, kickoff_time, started, provisional_start_time.
+- Fixture identity and kickoff fields retained for downstream providers.
 ### Security
-- SEC-1 (shipped as prior hot-fix, re-verified post-extraction): odds key direct-only, never relayed.
+- SEC-1 re-verified: odds key direct-only, never relayed.
 ### Known issues
-- See KNOWN_LIMITATIONS.md (BT-1 pinning, SEC-2 serverless deferral, CSP-1 pending, DUP-1 etc.).
+- See KNOWN_LIMITATIONS.md.
 
-## [1.x] — 2026-07-26 (pre-refactor product evolution, single conversation)
+## [1.x] — 2026-07-26 (pre-refactor product evolution)
 ### Added
-- Fixture ticker (attack/defence/official lenses, swings, blanks/doubles); per-position projected-
-  points engine with tap-through breakdowns; squad review with best-XI/captaincy; transfer planner
-  with −4 maths; multi-mini-league effective-ownership comparison; manual squad builder; saved
-  leagues; Understat team layer; bookmaker-odds layer; on-device backtest vs 2025-26 (r=0.80,
-  ±0.5/GW — aggregate method, see D-11) with per-position calibration; persistence hardening
-  (save-on-input); cached-data fallback; deadline countdown.
-### Fixed
-- Availability discount not applied to attacking returns; bonus over-projection; settings lost on
-  failed load; capitalised Index.html deployment 404.
-
-## Stage 3 implementation history
-
-### Item 4 — Provider Health (D-16)
-#### Added
-- Approved seven-state runtime model: Live, Cached, Stale, Fallback, Partial, Disabled and
-  Unavailable.
-- Provider-specific stale thresholds: FPL 30 minutes during live gameweeks / 6 hours otherwise,
-  Understat 24 hours, odds 6 hours.
-- Last-success age, internal note and user-facing consequence for every health entry.
-- Compact Provider Health strip in the existing settings panel, rendered with DOM nodes.
-- `tests/provider-health.test.mjs` (10 transition/compatibility tests).
-- `docs/STAGE3-ITEM4.md` implementation record.
-#### Changed
-- FPL now distinguishes live, cached-refreshing, stale-cache, saved-data fallback and no-data states.
-- Understat distinguishes user-disabled, live, partial coverage and fallback to FPL strengths.
-- Odds distinguishes no-key disabled, invalid-key unavailable, partial/live coverage and fallback to
-  the internal model for quota/network/empty/matching failures.
-- Legacy `ok` and `usingFallback` fields remain as values derived from the richer state.
-#### Unchanged
-- No projection, scoring, expected-minutes, fixture-difficulty, calibration, squad, captaincy,
-  transfer or backtest formula changed. No provider was added. Stage 9 layout work remains deferred.
-#### Tests
-- Suite 179 → 189. Full `./run-tests.sh` green and deterministic two-build byte comparison green.
-
-### Item 3 — retry policy (D-15)
-#### Added
-- `src/providers/retry.mjs`: pure, dependency-free retry engine — `withRetry`, `policyFor`,
-  `retryDelay`, `safeEndpoint`, `isRetryableStatus`/`isPermanentStatus`, `RETRY_POLICY`.
-  All timing dependencies injectable; the loop is a bounded `for`, never recursion.
-- Per-provider policies for fpl, understat, odds and archive, each with an attempt ceiling,
-  a capped half-jitter backoff and an elapsed-time budget.
-- `recordRetry()` on state; retry metadata exposed via `S.retryStats` in the shape the
-  provider-health model (item 4) will consume. Nothing reads it yet.
-- `tests/retry.test.mjs` (20) and `tests/retry-transport.test.mjs` (13).
-#### Changed
-- `transport.mjs`: the relay cascade is now one retry attempt (`cascadeOnce`), wrapped in a
-  bounded retry. Optional endpoints get a reduced allowance so pooled rival lookups cannot
-  amplify an outage. `fetchVia` retries on the same terms.
-- `odds.mjs`: the direct request retries on network/5xx only. 401 and 429 remain permanent.
-  SEC-1 is unaffected — only the direct request is retried, never a relayed one.
-- `backtest.mjs`: the archive download retries once on transient failure before falling
-  through to the next season, as before.
-- `build.mjs`: `src/providers/retry.mjs` added to ORDER ahead of its consumers.
-#### Unchanged
-- Healthy providers are fetched exactly once and see no added latency (asserted by test).
-- All failure fallbacks produce the same user-facing outcome as before.
-- No scoring, projection, minutes, fixture-difficulty, odds-weighting, backtest-correction,
-  squad, transfer or captaincy logic touched. Suite 146 -> 179; build byte-deterministic.
+- Initial working Teamsheet product and iterative feature set.
