@@ -145,14 +145,77 @@ textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--line);borde
 .sliders input[type=range]{width:100%;accent-color:var(--pitch)}
 details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;padding:4px 0}
 
-/* breakdown drawer */
-.drawer{background:#F7F9F5;border-left:3px solid var(--pitch);padding:12px 14px;font-size:12.5px}
+/* player detail sheet / panel */
+body.player-detail-open{overflow:hidden}
+.player-detail-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,20,13,.46);backdrop-filter:blur(2px)}
+.player-detail-panel{position:fixed;z-index:39;left:0;right:0;bottom:0;max-height:min(88dvh,780px);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column}
+.player-detail-panel[hidden],.player-detail-backdrop[hidden]{display:none}
+.player-detail-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
+.player-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+.player-detail-top h2{font-size:20px}
+.player-detail-close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.player-detail-close:hover{background:#EEF1EB}
+.player-detail-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(22px + env(safe-area-inset-bottom,0))}
+.player-detail-identity{display:flex;align-items:center;gap:14px;padding:2px 0 14px}
+.detail-shirt{width:46px;height:53px;flex:0 0 auto}
+.detail-shirt:before,.detail-shirt:after{width:14px;height:21px}
+.player-detail-identity-copy{min-width:0}
+.player-detail-name{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;line-height:1.05}
+.player-detail-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);margin-top:5px}
+.player-detail-news{font-size:12px;color:var(--claret);margin-top:6px}
+.player-detail-section{padding:15px 0;border-top:1px solid var(--line)}
+.player-detail-section h3{font-size:15px;margin-bottom:9px}
+.player-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.player-detail-metric{background:#F7F9F5;border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.player-detail-metric .label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.player-detail-metric strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:18px;margin-top:3px}
+.player-detail-metric .meta{display:block;font-size:10.5px;color:var(--ink-soft);margin-top:2px;line-height:1.25}
+.player-detail-help{font-size:11px;color:var(--ink-soft);margin:8px 0 0}
+.player-detail-range{background:#F4F8F4;border:1px solid #C9D8CD;border-radius:14px;padding:12px}
+.player-detail-range-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.player-detail-range-head strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:22px;line-height:1.05;margin-top:3px}
+.range-label{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;border-radius:999px;padding:5px 7px;white-space:nowrap}
+.range-label.tight{background:#DDEFE4;color:#17643D}
+.range-label.moderate{background:#F5E9C9;color:#7B5A13}
+.range-label.wide{background:#F4DDE2;color:#842841}
+.player-detail-range-track{position:relative;height:12px;border-radius:999px;background:#DCE4DD;margin-top:13px}
+.player-detail-range-core{position:absolute;top:0;bottom:0;border-radius:999px;background:var(--pitch)}
+.player-detail-range-median{position:absolute;top:-4px;width:3px;height:20px;border-radius:3px;background:var(--ink);transform:translateX(-1px)}
+.player-detail-range-scale{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-soft);margin-top:5px}
+.player-detail-expand{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
+.player-detail-expand summary{color:var(--ink)}
+.player-detail-expand[open] summary{margin-bottom:9px}
+.detail-percentiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+.probability-grid{margin-top:8px}
+.player-detail-breakdown{background:#F7F9F5;border-left:3px solid var(--pitch);padding:12px 14px;border-radius:0 10px 10px 0;font-size:12.5px}
 .bars{display:grid;gap:5px;margin-top:8px}
 .bar{display:grid;grid-template-columns:118px 1fr 46px;gap:8px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px}
 .bar .track{height:9px;background:#E4E8DF;border-radius:5px;overflow:hidden}
 .bar .fill{height:100%;background:var(--pitch);border-radius:5px}
 .bar .fill.neg{background:var(--claret)}
 .bar .v{text-align:right;color:var(--ink-soft)}
+.pitch-player{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+.pitch-player:focus-visible .pitch-copy{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px var(--info),0 4px 10px rgba(7,27,17,.18)}
+@media(min-width:760px){
+  .player-detail-panel{top:0;bottom:0;left:auto;right:0;width:min(460px,44vw);max-height:none;border-radius:0;border-width:0 0 0 1px}
+  .player-detail-grip{display:none}
+  .player-detail-top{padding-top:calc(18px + env(safe-area-inset-top,0))}
+  .player-detail-body{padding-bottom:24px}
+}
+@media(max-width:390px){
+  .player-detail-grid{gap:6px}
+  .player-detail-metric{padding:9px 8px}
+  .player-detail-metric strong{font-size:16px}
+  .detail-percentiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:no-preference){
+  .player-detail-panel{animation:playerDetailIn .2s ease both}
+  @keyframes playerDetailIn{from{transform:translateY(22px);opacity:.7}to{transform:none;opacity:1}}
+}
+@media(prefers-reduced-motion:no-preference) and (min-width:760px){
+  .player-detail-panel{animation-name:playerDetailInSide}
+  @keyframes playerDetailInSide{from{transform:translateX(24px);opacity:.7}to{transform:none;opacity:1}}
+}
 
 /* team pitch */
 .team-summary{display:grid;grid-template-columns:minmax(116px,.9fr) 1.7fr;gap:8px;margin-bottom:12px}
@@ -393,6 +456,19 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
     </div>
   </section>
 </main>
+
+<div id="playerDetailBackdrop" class="player-detail-backdrop" hidden></div>
+<aside id="playerDetailPanel" class="player-detail-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="playerDetailTitle" hidden>
+  <div class="player-detail-grip" aria-hidden="true"></div>
+  <div class="player-detail-top">
+    <div>
+      <span class="eyebrow">Player detail</span>
+      <h2 id="playerDetailTitle">Player details</h2>
+    </div>
+    <button type="button" class="player-detail-close" id="playerDetailClose" aria-label="Close player details">×</button>
+  </div>
+  <div class="player-detail-body" id="playerDetailBody"></div>
+</aside>
 
 <nav class="tabs" role="tablist">
   <button class="tab" role="tab" data-view="fixtures" aria-selected="true"><span class="ic">▦</span>Fixtures</button>
