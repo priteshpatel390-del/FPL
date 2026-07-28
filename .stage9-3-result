@@ -1,244 +1,104 @@
 status=0
-source=2f071aea4bae954bdf8f20463e7bbcf9e53f3875
-artefact=5cc38975e83ba46f2b822c1d9b0e1339ca5a2002
+source=40dde666fc776e0fdcf1bab6c8dad30138825d08
+artefact=ae7f7f35bd69c17686e776b97d416d4be56ae8df
 --- log tail ---
-# Subtest: production search agrees with an independent exhaustive reference
-ok 257 - production search agrees with an independent exhaustive reference
-  ---
-  duration_ms: 5.142519
-  type: 'test'
-  ...
-# Subtest: safe affordability pruning cannot remove the exhaustive optimum
-ok 258 - safe affordability pruning cannot remove the exhaustive optimum
-  ---
-  duration_ms: 1.03461
-  type: 'test'
-  ...
-# Subtest: an evaluation ceiling fails closed instead of claiming a partial optimum
-ok 259 - an evaluation ceiling fails closed instead of claiming a partial optimum
-  ---
-  duration_ms: 0.375825
-  type: 'test'
-  ...
-# Subtest: direct import: fixture model strength ordering
-ok 260 - direct import: fixture model strength ordering
-  ---
-  duration_ms: 1.111471
-  type: 'test'
-  ...
-# Subtest: direct import: projection archetypes sane and parts sum
-ok 261 - direct import: projection archetypes sane and parts sum
-  ---
-  duration_ms: 2.127611
-  type: 'test'
-  ...
-# Subtest: direct import: availability scale
-ok 262 - direct import: availability scale
-  ---
-  duration_ms: 0.210401
-  type: 'test'
-  ...
-# Subtest: direct import: bestXI legality and sellPrice rounding
-ok 263 - direct import: bestXI legality and sellPrice rounding
-  ---
-  duration_ms: 2.854364
-  type: 'test'
-  ...
-# Subtest: direct import: odds maths invertible
-ok 264 - direct import: odds maths invertible
-  ---
-  duration_ms: 0.186744
-  type: 'test'
-  ...
-# Subtest: direct import: computeBacktest recovers planted biases with provenance
-ok 265 - direct import: computeBacktest recovers planted biases with provenance
-  ---
-  duration_ms: 21.872532
-  type: 'test'
-  ...
-# Subtest: direct import: cache envelope invalidates on schema/season change
-ok 266 - direct import: cache envelope invalidates on schema/season change
-  ---
-  duration_ms: 0.920719
-  type: 'test'
-  ...
-# Subtest: direct import: registry carries six quality attributes per provider
-ok 267 - direct import: registry carries six quality attributes per provider
-  ---
-  duration_ms: 0.304552
-  type: 'test'
-  ...
-# Subtest: direct import: ODDS_RULES defined before any formula change
-ok 268 - direct import: ODDS_RULES defined before any formula change
-  ---
-  duration_ms: 0.313472
-  type: 'test'
-  ...
-# Subtest: direct import: escapeHTML neutralises the usual suspects
-ok 269 - direct import: escapeHTML neutralises the usual suspects
-  ---
-  duration_ms: 0.406828
-  type: 'test'
-  ...
-# Subtest: validation: exact duplicates collapse to the first occurrence
-ok 270 - validation: exact duplicates collapse to the first occurrence
-  ---
-  duration_ms: 2.0961
-  type: 'test'
-  ...
-# Subtest: validation: genuine doubles survive — distinct ids, same teams and gameweek
-ok 271 - validation: genuine doubles survive — distinct ids, same teams and gameweek
-  ---
-  duration_ms: 0.768277
-  type: 'test'
-  ...
-# Subtest: validation: genuine doubles survive when rows carry no id (composite distinct)
-ok 272 - validation: genuine doubles survive when rows carry no id (composite distinct)
-  ---
-  duration_ms: 0.145773
-  type: 'test'
-  ...
-# Subtest: validation: conflicting duplicate keeps the first and names the offending fields
-ok 273 - validation: conflicting duplicate keeps the first and names the offending fields
-  ---
-  duration_ms: 0.244685
-  type: 'test'
-  ...
-# Subtest: validation: a conflict is partial, never fatal — the app still loads
-ok 274 - validation: a conflict is partial, never fatal — the app still loads
-  ---
-  duration_ms: 0.299355
-  type: 'test'
-  ...
-# Subtest: validation: rows with no safe identity are excluded and reported
-ok 275 - validation: rows with no safe identity are excluded and reported
-  ---
-  duration_ms: 0.131076
-  type: 'test'
-  ...
-# Subtest: validation: identity is never invented for an id-less row with a null event
-ok 276 - validation: identity is never invented for an id-less row with a null event
-  ---
-  duration_ms: 0.187589
-  type: 'test'
-  ...
-# Subtest: validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
-ok 277 - validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
-  ---
-  duration_ms: 0.118892
-  type: 'test'
-  ...
-# Subtest: validation: started/finished differences are immaterial, not a conflict
-ok 278 - validation: started/finished differences are immaterial, not a conflict
-  ---
-  duration_ms: 0.313897
-  type: 'test'
-  ...
-# Subtest: validation: a non-array payload is fatal and yields an empty fixture list
-ok 279 - validation: a non-array payload is fatal and yields an empty fixture list
-  ---
-  duration_ms: 0.445877
-  type: 'test'
   ...
 # Subtest: validation: the input array and its rows are never mutated
-ok 280 - validation: the input array and its rows are never mutated
+ok 281 - validation: the input array and its rows are never mutated
   ---
-  duration_ms: 0.192405
+  duration_ms: 0.240219
   type: 'test'
   ...
 # Subtest: validation: issueSummary is payload-free and safe to render
-ok 281 - validation: issueSummary is payload-free and safe to render
+ok 282 - validation: issueSummary is payload-free and safe to render
   ---
-  duration_ms: 0.287176
+  duration_ms: 0.28348
   type: 'test'
   ...
 # Subtest: dataset pin requires immutable reference and SHA-256 checksum
-ok 282 - dataset pin requires immutable reference and SHA-256 checksum
+ok 283 - dataset pin requires immutable reference and SHA-256 checksum
   ---
-  duration_ms: 1.978447
+  duration_ms: 2.118638
   type: 'test'
   ...
 # Subtest: observations are sorted deterministically and identical duplicates collapse
-ok 283 - observations are sorted deterministically and identical duplicates collapse
+ok 284 - observations are sorted deterministically and identical duplicates collapse
   ---
-  duration_ms: 1.062054
+  duration_ms: 1.102008
   type: 'test'
   ...
 # Subtest: conflicting duplicate observations fail closed
-ok 284 - conflicting duplicate observations fail closed
+ok 285 - conflicting duplicate observations fail closed
   ---
-  duration_ms: 0.405238
+  duration_ms: 0.48163
   type: 'test'
   ...
 # Subtest: future information is rejected
-ok 285 - future information is rejected
+ok 286 - future information is rejected
   ---
-  duration_ms: 0.158859
+  duration_ms: 0.200976
   type: 'test'
   ...
 # Subtest: walk-forward fold boundaries are chronological and separated
-ok 286 - walk-forward fold boundaries are chronological and separated
+ok 287 - walk-forward fold boundaries are chronological and separated
   ---
-  duration_ms: 0.826298
+  duration_ms: 0.664361
   type: 'test'
   ...
 # Subtest: position calibration is fitted only from supplied rows and bounded
-ok 287 - position calibration is fitted only from supplied rows and bounded
+ok 288 - position calibration is fitted only from supplied rows and bounded
   ---
-  duration_ms: 0.256991
+  duration_ms: 0.260156
   type: 'test'
   ...
 # Subtest: calibration application creates an isolated named variant
-ok 288 - calibration application creates an isolated named variant
+ok 289 - calibration application creates an isolated named variant
   ---
-  duration_ms: 0.245012
+  duration_ms: 0.285173
   type: 'test'
   ...
 # Subtest: metric summary calculates deterministic MAE RMSE bias and correlation
-ok 289 - metric summary calculates deterministic MAE RMSE bias and correlation
+ok 290 - metric summary calculates deterministic MAE RMSE bias and correlation
   ---
-  duration_ms: 0.317476
+  duration_ms: 0.437367
   type: 'test'
   ...
 # Subtest: segmented metrics expose position gameweek variant and prediction bands
-ok 290 - segmented metrics expose position gameweek variant and prediction bands
+ok 291 - segmented metrics expose position gameweek variant and prediction bands
   ---
-  duration_ms: 7.915269
+  duration_ms: 8.297501
   type: 'test'
   ...
 # Subtest: ablation comparison requires identical holdout keys
-ok 291 - ablation comparison requires identical holdout keys
+ok 292 - ablation comparison requires identical holdout keys
   ---
-  duration_ms: 1.865051
+  duration_ms: 1.849806
   type: 'test'
   ...
 # Subtest: stable result serialisation is key ordered and rounds finite numbers
-ok 292 - stable result serialisation is key ordered and rounds finite numbers
+ok 293 - stable result serialisation is key ordered and rounds finite numbers
   ---
-  duration_ms: 0.276398
+  duration_ms: 0.276456
   type: 'test'
   ...
 # Subtest: full evaluation preserves supplied ablations when fold calibration is disabled
-ok 293 - full evaluation preserves supplied ablations when fold calibration is disabled
+ok 294 - full evaluation preserves supplied ablations when fold calibration is disabled
   ---
-  duration_ms: 1.980298
+  duration_ms: 2.301409
   type: 'test'
   ...
 # Subtest: raw-only evaluation emits train-only fold calibration
-ok 294 - raw-only evaluation emits train-only fold calibration
+ok 295 - raw-only evaluation emits train-only fold calibration
   ---
-  duration_ms: 2.092082
+  duration_ms: 1.956034
   type: 'test'
   ...
-1..294
-# tests 294
+1..295
+# tests 295
 # suites 0
-# pass 294
+# pass 295
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 3719.345108
-built dist/index.html (243345b)  model 2.4.0  rules 2026-27.3  src d8a8c2ed50a0  commit 2f071aea4bae954bdf8f20463e7bbcf9e53f3875
-[agent/stage9-3-player-detail-uncertainty 5cc3897] Commit verified Stage 9.3 deployables
- 3 files changed, 444 insertions(+), 41 deletions(-)
+# duration_ms 4013.959973
