@@ -66,7 +66,6 @@ function buildMinutesDistribution(input){
 function sampleMinutes(distribution,rng){
   const row = weightedChoice(distribution.states,rng);
   if(row.max === 0) return {state:row.key,minutes:0};
-  const width = row.max-row.min;
   const centre = row.mean;
   const low = Math.max(row.min,2*centre-row.max);
   const high = Math.min(row.max,2*centre-row.min);
@@ -141,17 +140,25 @@ function simulatePlayerFixture(player,fixture,rng,options={}){
 }
 function simulatePlayerGameweek(player,gw,options={}){
   const sampleCount = clamp(Math.floor(num(options.samples)||SIMULATION_RULES.productionSamples),1,SIMULATION_RULES.maxSamples);
-  if(!S.seasonLive) return {available:false,reason:'pre-season',samples:[],quality:'baseline-only'};
+  if(!S.seasonLive) return {available:false,reason:'pre-season',samples:[],appearanceSamples:[],quality:'baseline-only'};
   const fixtures = teamFixtures(player.team,gw,1).flat();
-  if(!fixtures.length) return {available:true,samples:Array(sampleCount).fill(0),quality:'full',...summariseSamples(Array(sampleCount).fill(0))};
-  const seed = options.seed ?? createSeed(SIMULATION_RULES.version,player.id,gw,sampleCount,fixtures.map(f => f.fixture?.id || `${f.fixture?.team_h}-${f.fixture?.team_a}`).join(','));
-  const rng = createRng(seed), mins = minutesEstimate(player), distribution = buildMinutesDistribution(mins), samples=[];
-  for(let i=0;i<sampleCount;i++){
-    let total = 0;
-    for(const fixture of fixtures) total += simulatePlayerFixture(player,fixture,rng,{minutes:mins,distribution}).points;
-    samples.push(total);
+  if(!fixtures.length){
+    const zeroes=Array(sampleCount).fill(0), appearances=Array(sampleCount).fill(false);
+    return {available:true,samples:zeroes,appearanceSamples:appearances,quality:'full',...summariseSamples(zeroes)};
   }
-  return {available:true,samples,seed,quality:distribution.quality,appearanceProbability:mins.pAppear,sixtyProbability:mins.p60,...summariseSamples(samples)};
+  const seed = options.seed ?? createSeed(SIMULATION_RULES.version,player.id,gw,sampleCount,fixtures.map(f => f.fixture?.id || `${f.fixture?.team_h}-${f.fixture?.team_a}`).join(','));
+  const rng = createRng(seed), mins = minutesEstimate(player), distribution = buildMinutesDistribution(mins), samples=[], appearanceSamples=[];
+  for(let i=0;i<sampleCount;i++){
+    let total = 0, appeared = false;
+    for(const fixture of fixtures){
+      const outcome=simulatePlayerFixture(player,fixture,rng,{minutes:mins,distribution});
+      total += outcome.points;
+      appeared = appeared || outcome.appeared;
+    }
+    samples.push(total);
+    appearanceSamples.push(appeared);
+  }
+  return {available:true,samples,appearanceSamples,seed,quality:distribution.quality,appearanceProbability:mins.pAppear,sixtyProbability:mins.p60,...summariseSamples(samples)};
 }
 
 export { hashSeed, createSeed, createRng, poisson, bernoulli, buildMinutesDistribution, sampleMinutes, percentile, summariseSamples, simulatePlayerFixture, simulatePlayerGameweek };
