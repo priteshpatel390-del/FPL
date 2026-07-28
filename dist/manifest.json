@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "8f212a2a7eca1fd34961272fd3ef46ca40c494150a2cc452161fe3b9570a774f",
-  "commit": "ef66fd47c53f6cda02108090c7ab03f65414cbf3",
+  "sourceHash": "853d0daa0bee26610029f8c741722a376b7fde2cf32787604b5a542afce9818c",
+  "commit": "1e4d5b9c7acd1b7b1f97cd81a9002905ff1f17c8",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -28,6 +28,7 @@
     "src/model/archive-replay.mjs",
     "src/model/backtest.mjs",
     "src/main.mjs",
+    "src/ui/app-shell.mjs",
     "src/ui/views.mjs",
     "src/ui/transfer-optimiser-view.mjs",
     "src/ui/backtest-copy.mjs",

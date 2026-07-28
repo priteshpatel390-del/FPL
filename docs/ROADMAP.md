@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-28.
-Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, DECISIONS.md.
+Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, DECISIONS.md.
 
 ## Completed
 - **Stage 1 — Characterisation and audit** · DONE.
@@ -19,20 +19,29 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Immutable pinned historical archive with runtime SHA-256 verification.
   - Honest replay limitations and deterministic outputs.
   - Verified baseline: **274/274 tests passed**, successful build, deterministic two-build comparison and build-identity checks.
+- **Stage 8 — Uncertainty and squad simulation** · DONE and merged through PR #16 at `b0f6e1683b1bdb38c9cb233024a8d0bfd652caa8`.
+  - Deterministic seeded player and legal squad simulations.
+  - P10/P25/median/P75/P90 plus blank/return/haul probabilities.
+  - Reserve-goalkeeper handling, ordered legal auto-subs and captain-to-vice fallback.
+  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
 
 ## Current
-- **Stage 8 — Uncertainty and squad simulation** · implemented and verified on draft PR #16; owner review and explicit merge approval remain.
-  - Approved design: `docs/STAGE8-DESIGN.md`.
-  - Deterministic seeded player simulations with P10/P25/median/P75/P90 and blank/return/haul probabilities.
-  - Five-state minutes reconstruction preserving pStart/pAppear/p60 and expected minutes where feasible.
-  - Legal auto-substitution, reserve-goalkeeper handling and captain-to-vice fallback.
-  - Existing deterministic `projectXP()` and transfer-optimiser objectives remain unchanged.
-  - Detailed pre-season simulation is disabled rather than presented with false precision.
+- **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
+- **Checkpoint 9.1 — App shell and primary navigation** · implemented and verified on draft PR #17; owner review and explicit merge approval remain.
+  - Four primary destinations: Team, Players, Transfers and More.
+  - Team is the default landing screen.
+  - Existing setup, fixtures, league and Ask surfaces are regrouped under More.
+  - No model, simulation, optimiser, provider or feature behaviour changed.
+  - Verified source commit `c75747fc6fc871a6a75991c8fb0c9be7ad572982`: **284/284 tests passed**, successful build, deterministic two-build comparison and build-identity check.
 
 ## Upcoming
-- **Stage 9 — UI integration** · FPL-style squad home page, shirts, settings, health-strip placement and inline-style migration.
+1. **Checkpoint 9.2 — Pitch and shirts** · only after 9.1 is merged.
+2. **Checkpoint 9.3 — Uncertainty presentation** · spread-label thresholds require separate owner approval before implementation.
+3. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
+4. **Checkpoint 9.5 — Settings and Provider Health integration**.
+5. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
 
 ## Current blockers
-1. Owner review and explicit merge approval for Stage 8 draft PR #16.
+1. Owner review and explicit merge approval for Stage 9.1 draft PR #17.
 2. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 3. Live-season prospective data requirements begin with GW1 on 21 August 2026.
