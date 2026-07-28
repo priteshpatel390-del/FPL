@@ -14,7 +14,13 @@ jobs:
         with:
           node-version: 20
       - name: Full test suite
-        run: ./run-tests.sh
+        shell: bash
+        run: |
+          set +e
+          ./run-tests.sh > /tmp/test.log 2>&1
+          code=$?
+          tail -n 160 /tmp/test.log
+          exit $code
       - name: Deterministic build comparison
         shell: bash
         run: |
