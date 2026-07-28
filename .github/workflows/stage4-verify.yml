@@ -37,3 +37,7 @@ jobs:
           cmp /tmp/build-one/index.html dist/index.html
           cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
           cmp /tmp/build-one/manifest.json dist/manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage4-dist
+          path: dist/
