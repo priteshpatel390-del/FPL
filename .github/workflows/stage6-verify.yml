@@ -14,15 +14,23 @@ jobs:
         with:
           node-version: 20
       - name: Full test suite
+        id: tests
         shell: bash
+        continue-on-error: true
         run: |
           set -o pipefail
-          ./run-tests.sh > /tmp/test.log 2>&1 || {
-            echo '--- final test output ---'
-            tail -n 160 /tmp/test.log
-            exit 1
-          }
-          tail -n 40 /tmp/test.log
+          ./run-tests.sh > test.log 2>&1
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-test-log
+          path: test.log
+      - name: Fail when tests failed
+        if: steps.tests.outcome != 'success'
+        run: |
+          tail -n 160 test.log
+          exit 1
       - name: Deterministic build comparison
         shell: bash
         run: |
