@@ -153,10 +153,13 @@ function renderSquad(){
     return;
   }
   const gw=S.nextGW, xi=bestXI(squad,gw), nodes=[];
-  const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v));
-  nodes.push(elNode('div',{class:'kpis'},kpi(`Projected GW${gw}`,fmt1(xi.tot)),kpi('Shape',xi.shape),
-    kpi('Squad value',`£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m`),kpi('Free transfers',num($('ftCount').value))));
-  if(S.entry) nodes.push(elNode('p',{class:'status',style:{marginBottom:'10px'}},`${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}`));
+  nodes.push(elNode('div',{class:'team-summary'},
+    elNode('div',{class:'team-score'},elNode('span',{class:'label'},`Projected GW${gw}`),elNode('span',{class:'value'},fmt1(xi.tot)),elNode('span',{class:'unit'},'expected points')),
+    elNode('div',{class:'team-facts'},
+      elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Shape'),elNode('span',{class:'value'},xi.shape)),
+      elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Value'),elNode('span',{class:'value'},`£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m`)),
+      elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Free transfers'),elNode('span',{class:'value'},num($('ftCount').value))))));
+  if(S.entry) nodes.push(elNode('p',{class:'status team-entry'},`${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}`));
 
   const problems=[];
   squad.forEach(({p})=>{
@@ -172,9 +175,39 @@ function renderSquad(){
   else nodes.push(noteNode('good','No injuries, suspensions, blanks or price falls in your 15. Nothing forces a transfer this week.'));
 
   const capRank=xi.xi.map(s=>({s,x:xpOf(s.p,gw,1).total,own:num(s.p.selected_by_percent)})).sort((a,b)=>b.x-a.x);
+  const captaincy=teamPitchCaptaincy(capRank);
+  const fixtureLabel=p=>{
+    const games=teamFixtures(p.team,gw,1)[0]||[];
+    return games.length ? games.map(g=>`${g.opp.short_name} ${g.home?'H':'A'}`).join(' + ') : 'Blank';
+  };
+  const playerNode=(slot,benchIndex=null)=>{
+    const p=slot.p, team=S.teams[p.team], palette=teamPitchPalette(team);
+    const role=p.id===captaincy.captainId?'captain':p.id===captaincy.viceId?'vice':null;
+    const bad=availability(p)<1;
+    const fixture=fixtureLabel(p), projected=fmt1(xpOf(p,gw,1).total);
+    const label=benchIndex==null?p.web_name:`${benchIndex}. ${p.web_name}`;
+    const style=`--shirt-primary:${palette.primary};--shirt-secondary:${palette.secondary};--shirt-accent:${palette.accent};--shirt-ink:${palette.ink}`;
+    return elNode('div',{class:`pitch-player${benchIndex==null?'':' bench-player'}${bad?' warn':''}`,
+      'aria-label':`${label}, ${fixture}, ${projected} expected points${role==='captain'?', captain':role==='vice'?', vice-captain':''}`},
+      elNode('div',{class:'shirt-wrap'},
+        elNode('span',{class:`club-shirt pattern-${palette.pattern}`,style,'aria-hidden':'true'},elNode('span',{class:'club-shirt-code'},palette.code)),
+        role?elNode('span',{class:`captain-badge${role==='vice'?' vice':''}`},role==='captain'?'C':'VC'):null),
+      elNode('div',{class:'pitch-copy'},elNode('div',{class:'pitch-name'},label),elNode('div',{class:'pitch-meta'},fixture),elNode('div',{class:'pitch-xp'},`${projected} xP`)));
+  };
+  const formation=elNode('div',{class:'pitch-formation'},teamPitchLines(xi.xi).map(line=>
+    elNode('div',{class:`pitch-line position-${line.position}`},line.players.map(slot=>playerNode(slot)))));
+  const pitch=elNode('section',{class:'team-pitch','aria-label':`Model-selected starting eleven for Gameweek ${gw}`},
+    elNode('span',{class:'pitch-mark pitch-centre-circle','aria-hidden':'true'}),
+    elNode('span',{class:'pitch-mark pitch-box pitch-box-top','aria-hidden':'true'}),
+    elNode('span',{class:'pitch-mark pitch-box pitch-box-bottom','aria-hidden':'true'}),formation);
+  const bench=elNode('section',{class:'team-bench','aria-label':'Bench order'},
+    elNode('div',{class:'bench-head'},elNode('strong',{},'Bench'),elNode('span',{},'Auto-sub order')),
+    elNode('div',{class:'bench-grid'},xi.bench.map((slot,index)=>playerNode(slot,index+1))));
+  nodes.push(elNode('div',{class:'team-stage'},pitch,bench));
+
   if(capRank.length){
     const c1=capRank[0], c2=capRank[1], grid=elNode('div',{class:'capgrid'});
-    nodes.push(elNode('h3',{style:{margin:'16px 0 6px'}},'Captain'),grid);
+    nodes.push(elNode('h3',{class:'section-title'},'Captaincy ranking'),grid);
     capRank.slice(0,4).forEach((c,i)=>{
       const games=teamFixtures(c.s.p.team,gw,1)[0]||[];
       const why=games.length?games.map(g=>`${g.home?'vs':'away to'} ${g.opp.short_name}`).join(' + ')+` · ${fmt1(c.x)} xP · ${c.own}% owned`:'no fixture';
@@ -184,13 +217,7 @@ function renderSquad(){
     });
     if(c2&&(c1.x-c2.x)<.6){ const safer=c1.own>=c2.own?c1:c2; nodes.push(noteNode('',`${c1.s.p.web_name} and ${c2.s.p.web_name} are within half a point — effectively a coin toss. ${safer.s.p.web_name} is the higher-owned pick at ${safer.own}%, so it protects your rank; the other is the rank-climbing play.`)); }
   }
-  nodes.push(elNode('h3',{style:{margin:'18px 0 8px'}},'Best XI by projection'));
-  [1,2,3,4].forEach(pos=>{ const line=xi.xi.filter(s=>s.p.element_type===pos); if(!line.length)return;
-    nodes.push(elNode('div',{class:'pitchrow'},line.map(s=>{ const bad=availability(s.p)<1,isCap=capRank[0]&&capRank[0].s.p.id===s.p.id;
-      return elNode('div',{class:`pcard ${isCap?'cap':''} ${bad?'warn':''}`},elNode('b',{},`${s.p.web_name}${isCap?' (C)':''}`),elNode('span',{class:'x'},fmt1(xpOf(s.p,gw,1).total))); }))); });
-  nodes.push(elNode('div',{class:'benchband'},elNode('div',{class:'status',style:{marginBottom:'6px'}},'Bench order'),
-    elNode('div',{class:'pitchrow'},xi.bench.map((s,i)=>elNode('div',{class:'pcard'},elNode('b',{},`${i+1}. ${s.p.web_name}`),elNode('span',{class:'x'},fmt1(xpOf(s.p,gw,1).total)))))));
-  nodes.push(elNode('h3',{style:{margin:'18px 0 6px'}},'All 15 over 6 gameweeks'));
+  nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
   const tbody=elNode('tbody');
   squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{},
     elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
