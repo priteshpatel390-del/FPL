@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 3 security and provider hardening is implemented on PR #6, which is ready for owner review and mergeable. Verified branch baseline: **210 passing tests**, successful build, byte-identical two-build comparison and verified generated `dist/` files committed to the branch. The temporary verification workflow has been removed. Do not merge without Pritesh's explicit approval, and do not begin Stage 4 until PR #6 is merged and the owner architecture review gate is passed.
+Stage 3 security and provider hardening is complete and merged through PR #6 at merge commit `3f662b7e133ce2995da74c5e52165ae84744e120`. Verified baseline: **210 passing tests**, successful build, byte-identical two-build comparison and verified generated `dist/` files committed before merge. The temporary verification workflow was removed. The next checkpoint is the **owner architecture-review gate**. Do not begin Stage 4 until Pritesh explicitly approves progression after that review.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
