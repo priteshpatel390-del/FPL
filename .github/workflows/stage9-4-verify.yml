@@ -16,7 +16,30 @@ jobs:
         with:
           ref: agent/stage9-4-decision-previews
           fetch-depth: 0
-      - name: Correct generator syntax
-        run: sed -i "s/:null)),/:null),/" tools/stage9-4-run.sh
-      - name: Implement and verify Stage 9.4
-        run: bash tools/stage9-4-run.sh
+      - name: Verify refined Stage 9.4 source
+        run: |
+          set -euo pipefail
+          SOURCE_SHA=849ff757c68c35e92744dc96efc34848110fa19e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/stage9-4-final.log
+          mkdir -p /tmp/stage9-4-final-first
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-4-final-first/
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cmp /tmp/stage9-4-final-first/index.html dist/index.html
+          cmp /tmp/stage9-4-final-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage9-4-final-first/manifest.json dist/manifest.json
+          node -e "const m=require('./dist/manifest.json');if(m.commit!=='$SOURCE_SHA')throw new Error('build identity mismatch: '+m.commit)"
+          git add dist/index.html dist/app.bundle.js dist/manifest.json
+          git commit -m 'Refresh verified Stage 9.4 deployables'
+          ARTEFACT_SHA=$(git rev-parse HEAD)
+          {
+            echo 'status=0'
+            echo "source=$SOURCE_SHA"
+            echo "artefact=$ARTEFACT_SHA"
+            echo '--- log tail ---'
+            tail -n 180 /tmp/stage9-4-final.log
+          } > .stage9-4-result
+          git add .stage9-4-result
+          git commit -m 'Refresh Stage 9.4 verification result'
+          git push origin HEAD:agent/stage9-4-decision-previews
