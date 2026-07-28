@@ -9,8 +9,9 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 - Live on GitHub Pages from repository `priteshpatel390-del/FPL`.
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
 - Stage 3 security/provider hardening is complete.
-- Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`; inherited baseline: 220 passing tests and deterministic builds.
-- Stage 5 scoring corrections are on draft PR #9. The approved formulas, follow-up correctness fixes, focused tests and documentation are present. Final clean verification and owner merge approval remain gates.
+- Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
+- Stage 5 scoring corrections are implemented and verified on draft PR #9. Source commit `adbebdeaf0ab194193f6d7fd0702b18da16f4d0f` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
+- The only remaining Stage 5 gate is explicit owner merge approval. Stage 6 must not begin before merge.
 - The historical 2025/26 aggregate backtest result, r=0.80 and approximately ±0.5 points/GW, is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
@@ -37,9 +38,9 @@ Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 
 ## Completed, current and next
 Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening and Stage 4 expected minutes.
 
-Current: Stage 5 scoring corrections on draft PR #9, pending final verification and owner review.
+Current: Stage 5 scoring corrections on draft PR #9, verified and awaiting owner merge approval.
 
-Next after merge approval: Stage 6 transfer optimiser. Do not begin Stage 6 from this branch.
+Next after merge approval: Stage 6 transfer optimiser.
 
 ## Major risks
 Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven out of sample; and single-maintainer phone-first operations.
