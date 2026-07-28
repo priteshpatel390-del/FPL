@@ -5,7 +5,7 @@ Last updated: 2026-07-28. Related: tests/, CLAUDE.md, STAGE5-DESIGN.md.
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 5 verified baseline: **241/241 passing tests** against committed goldens, deterministic two-build comparison passed, and independent CSP hash recomputation passed. Verified source commit: `adbebdeaf0ab194193f6d7fd0702b18da16f4d0f`.
+Stage 5 verified baseline: **241/241 passing tests** against committed goldens, deterministic two-build comparison passed, and independent CSP hash recomputation passed. Verified source commit: `aee6d0fee7cc177622a046f37885b554013debbd`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
