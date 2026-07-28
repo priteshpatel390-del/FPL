@@ -25,7 +25,8 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | SCOR-4 | Bonus is empirical rather than a full match-relative BPS simulation | Cannot model match-specific bonus rank or tie outcomes prospectively | Stage 8+ only with separate approval | Accepted-temporary |
 | SCOR-5 | Clean-sheet retention after a player leaves is simplified as full-match CS probability × p60 | Understates some early-substitution clean sheets | Stage 8 | Open |
 | LEAK-1 | Calibration fitted and reported on same sample | Published r=0.80 is method-flattered | Stage 7 | Open |
-| TRF-1 | Transfer UI does not validate combined plans | Potentially illegal or over-budget combinations implied | Stage 6 | Open |
+| TRF-1 | Transfer UI did not validate combined plans | Exact complete-squad legality and pooled affordability are enforced by Stage 6 | Stage 6 | **CLOSED 2026-07-28** |
+| TRF-2 | Optimiser plans only the current decision, not future transfer sequences, chips or price changes | Longer horizons assume the resulting squad is retained | Future stage only with separate approval | Open (accepted) |
 | BT-1 | Historical dataset is unpinned | Backtests not strictly reproducible | Stage 7 | Open |
 | ODDS-2 | No free historical odds | Odds/blend ablation must be prospective | Stage 7+ | Open |
 | UST-1 | Pre-season Understat uses previous closing six matches | Early-season form may be mislabelled | Stage 7 ablation | Open |

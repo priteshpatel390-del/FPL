@@ -1,6 +1,6 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-28. Related: tests/, CLAUDE.md, STAGE5-DESIGN.md.
+Last updated: 2026-07-28. Related: tests/, CLAUDE.md, STAGE6-DESIGN.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
@@ -18,6 +18,7 @@ Stage 5 verified baseline: **241/241 passing tests** against committed goldens, 
 8. `minutes-model.test.mjs` — Stage 4 denominators, histories, probabilities, shrinkage and invariants.
 9. `scoring-rules.test.mjs` — Stage 5 rule configuration, Poisson groups, defensive thresholds, rare events, bonus denominator, penalty-role gating and genuine blank/double behaviour.
 10. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for single-line and multi-line imports/exports, unterminated declarations and unsupported surviving module syntax.
+11. `transfer-optimiser.test.mjs` — exhaustive equivalence, deterministic ranking, legality, selling prices, arithmetic, availability and fail-closed behaviour.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.

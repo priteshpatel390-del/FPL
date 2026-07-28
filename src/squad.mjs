@@ -29,6 +29,7 @@ function newsAge(p){
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + 'd ago';
 }
 function sellPrice(entry){
+  if(Number.isFinite(Number(entry.selling))) return Number(entry.selling);
   // FPL keeps half of any rise, rounded down to 0.1
   const now = entry.p.now_cost, bought = entry.bought ?? now;
   if(now <= bought) return now;
@@ -39,7 +40,7 @@ function mySquad(){
   if($('useManual').checked || !S.picks || !S.picks.picks){
     return S.manual.map((m,i) => ({p:S.byId[m.id], bought:m.bought, position:i+1, multiplier:1})).filter(x => x.p);
   }
-  return S.picks.picks.map(pk => ({p:S.byId[pk.element], bought:null, position:pk.position,
+  return S.picks.picks.map(pk => ({p:S.byId[pk.element], bought:null, selling:pk.selling_price, position:pk.position,
     multiplier:pk.multiplier, is_captain:pk.is_captain})).filter(x => x.p);
 }
 

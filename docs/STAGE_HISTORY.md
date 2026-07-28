@@ -2,6 +2,11 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, AUDIT.md.
 
+## Stage 6 — Transfer optimiser (IMPLEMENTED, AWAITING REVIEW 2026-07-28)
+Implemented approved exact 0–3 transfer planning with complete-squad legality, pooled sale proceeds and bank, per-Gameweek best-XI value, hits and next-free-transfer value. Doubtful incoming players remain eligible; unavailable incoming players are excluded.
+
+Production branch-and-bound uses a safe bound without candidate shortlisting. Controlled tests assert identical ordered results to exhaustive search. The UI presents whole plans. Projection, minutes, fixtures, scoring, captaincy and later-stage simulation are unchanged.
+
 ## Stage 5 — Scoring corrections (MERGED 2026-07-28)
 Implemented the owner-approved 2026/27 scoring rulebook, deterministic Poisson grouped scoring for saves and goals conceded, defensive-contribution threshold probability, empirical awarded-bonus shrinkage, explicit rare disciplinary/penalty events, penalty-role gating and real blank/double fixture-run scoring. The public projection surface and downstream squad/captaincy/transfer contracts remained unchanged.
 

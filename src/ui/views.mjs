@@ -206,53 +206,33 @@ function renderSquad(){
 function renderTransfers(){
   const el = $('transferOut');
   const squad = mySquad();
-  if(!squad.length){
-    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},'No squad loaded'),'Add your 15 on the Squad tab — by hand is fine — and the planner will cost every swap.'));
+  if(squad.length!==15){
+    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},'Complete squad required'),'The optimiser fails closed until a legal 15-player squad is loaded.'));
     return;
   }
   const span = +$('trHorizon').value, topN = +$('trTop').value;
   const gw = S.nextGW, bank = num($('bankIn').value)*10, ft = num($('ftCount').value);
-  const mineIds = new Set(squad.map(s => s.p.id));
-  const teamCount = {};
-  squad.forEach(s => teamCount[s.p.team] = (teamCount[s.p.team]||0)+1);
-
-  const moves = [];
-  squad.forEach(out => {
-    const budget = sellPrice(out) + bank;
-    const outXP = xpOf(out.p, gw, span).total;
-    S.boot.elements.forEach(inP => {
-      if(mineIds.has(inP.id)) return;
-      if(inP.element_type !== out.p.element_type) return;
-      if(inP.now_cost > budget) return;
-      if(availability(inP) < 0.75) return;
-      const cnt = (teamCount[inP.team]||0) - (inP.team === out.p.team ? 1 : 0);
-      if(cnt >= 3) return;                                  // 3-per-club rule
-      const gain = xpOf(inP, gw, span).total - outXP;
-      if(gain <= 0) return;
-      moves.push({out, inP, gain, cost:(inP.now_cost - sellPrice(out))/10});
-    });
-  });
-  moves.sort((a,b) => b.gain - a.gain);
-
-  if(!moves.length){
-    setChildren(el,noteNode('good',elNode('b',{},'No upgrade found.'),` Nothing available within budget projects better than what you already own over the next ${span} gameweek${span>1?'s':''}. Roll the transfer.`));
+  const result=optimiseTransfersBranchAndBound({squad,players:S.boot?.elements,bank,freeTransfers:ft,startGW:gw,horizon:span,maxResults:topN,
+    project:(p,g)=>xpOf(p,g,1).total});
+  if(!result.complete){
+    const baseline=result.plans[0];
+    setChildren(el,noteNode('plain',elNode('b',{},'Optimisation unavailable.'),` ${result.reason}${baseline?' The zero-transfer baseline is shown as the safe fallback.':''}`));
     return;
   }
-  const best=moves[0], nodes=[];
-  const freeText=ft>=1?`You have ${ft} free transfer${ft>1?'s':''}, so this costs nothing.`:best.gain>4?'Even after a −4 this clears the bar.':`After a −4 it nets ${fmt1(best.gain-4)} — not worth it.`;
-  nodes.push(noteNode(best.gain>4?'good':'plain',elNode('b',{},'Top move:'),` ${best.out.p.web_name} → ${best.inP.web_name}, +${fmt1(best.gain)} projected points over ${span} GW${span>1?'s':''}. ${freeText}`));
-  if(ft>=2) nodes.push(noteNode('plain',`With ${ft} banked, the top ${Math.min(ft,5)} moves below can all be made free — but check they aren't two players from the same fixture swing.`));
+  const best=result.plans[0], baseline=result.plans.find(p=>p.transferCount===0), nodes=[];
+  const gain=best.objective-baseline.objective;
+  nodes.push(noteNode(best.transferCount?'good':'plain',elNode('b',{},best.transferCount?'Top exact plan:':'Roll the transfer:'),
+    ` ${best.transferCount?best.moves.map(m=>`${m.out.web_name} → ${m.in.web_name}`).join('; '):'No transfer'} · ${gain>=0?'+':''}${fmt1(gain)} objective value · ${best.hit?`−${best.hit} hit`:'no hit'} · ${best.nextFreeTransfers} FT next GW.`));
   const tbody=elNode('tbody');
-  moves.slice(0,topN).forEach(m=>{
-    const net=m.gain-4, verdict=m.gain>6?['rise','strong']:m.gain>4?['rise','worth a hit']:m.gain>1.5?['info','free only']:['dark','marginal'];
+  result.plans.forEach(plan=>{
+    const delta=plan.objective-baseline.objective;
     tbody.appendChild(elNode('tr',{},
-      elNode('td',{},elNode('span',{class:'pname'},m.out.p.web_name),elNode('span',{class:'pmeta'},`${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP`)),
-      elNode('td',{},elNode('span',{class:'pname'},m.inP.web_name,flagNodes(m.inP)),elNode('span',{class:'pmeta'},`${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP`)),
-      cell(`${m.cost>0?'+':''}${fmt1(m.cost)}`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${m.gain>4?'hot':''}`},`+${fmt1(m.gain)}`)),
-      elNode('td',{class:'num',style:{color:net>0?'var(--pitch)':'var(--claret)'}},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
+      elNode('td',{},plan.transferCount?plan.moves.map(m=>`${m.out.web_name} → ${m.in.web_name}`).join('; '):'No transfer'),
+      cell(plan.transferCount,'num'),cell(fmt1(plan.projectedBestXI),'num'),cell(plan.hit?`−${plan.hit}`:'0','num'),cell(plan.nextFreeTransfers,'num'),
+      elNode('td',{class:'num'},elNode('span',{class:`xp ${delta>0?'hot':''}`},`${delta>=0?'+':''}${fmt1(delta)}`)),cell(`£${fmt1(plan.bank/10)}m`,'num')));
   });
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Out'),head('In'),head('Cost £m','num'),head('Gain','num'),head('After −4','num'),head('Verdict'))),tbody)));
-  nodes.push(noteNode('plain','A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.'));
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Plan'),head('Moves','num'),head('Best-XI xP','num'),head('Hit','num'),head('Next FT','num'),head('Value vs roll','num'),head('Bank','num'))),tbody)));
+  nodes.push(noteNode('plain',`Exact 0–3 transfer search. Value = projected best-XI points for each of ${span} GW${span>1?'s':''} − hits + next free transfers. Doubtful players are allowed; unavailable players are excluded.`));
   setChildren(el,nodes);
 }
 

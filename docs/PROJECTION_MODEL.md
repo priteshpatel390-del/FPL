@@ -4,7 +4,7 @@ Audience: anyone touching model code. Last updated: 2026-07-28.
 Related: STAGE5-DESIGN.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.
 
 ## Versions and configuration
-- `MODEL_VERSION`: `2.2.0`
+- `MODEL_VERSION`: `2.3.0`
 - `RULES_VERSION`: `2026-27.1`
 - `FPL_RULES`: official point values and thresholds for 2026/27
 - `MINUTES_RULES`: Stage 4 history, decay, prior and confidence constants
@@ -52,6 +52,9 @@ Before the season is live, projections continue to use the established price-imp
 `projectXP` sums actual fixtures across the requested span. Doubles add both matches; blanks contribute zero. `runScore` sums real fixture values and divides by requested Gameweeks, with no arbitrary blank or double constants.
 
 Squad review, best XI, captaincy, transfers, Ask context and backtest continue to consume `{total, perGW, games, parts}`.
+
+## Stage 6 downstream transfer objective
+The optimiser sums an independently legal projected best XI for every horizon Gameweek, subtracts four points per paid move and adds 1.0 times next-GW free transfers. It does not alter player projections and adds no captaincy, autosub, bench-percentage or uncertainty term.
 
 ## Assumptions and limitations
 Poisson and shrinkage constants are judgement-based pending Stage 7. Bonus is empirical rather than match-relative BPS simulation. Clean-sheet retention after substitution remains simplified. Second-yellow overlap cannot be separated from aggregate FPL fields. Defensive-contribution history begins in 2025/26. Existing positional calibration was fitted against the prior scoring model and is intentionally not refitted until walk-forward validation.

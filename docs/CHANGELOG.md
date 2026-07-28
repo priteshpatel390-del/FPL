@@ -2,6 +2,17 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 6] — 2026-07-28 — Transfer optimiser
+### Added
+- Exact exhaustive reference and production branch-and-bound for legal 0–3 move plans.
+- Complete-squad, affordability, availability, hit, next-FT and deterministic-order contracts.
+- Exhaustive-equivalence tests and the approved Stage 6 design record.
+### Changed
+- Transfer UI ranks complete plans by per-GW best-XI projection minus hits plus next-FT value.
+- Public squads use actual `selling_price` when supplied by FPL.
+### Unchanged
+- Projection, expected minutes, fixture scoring, captaincy, autosubs, bench weighting, uncertainty and future-transfer planning.
+
 ## [Stage 5] — 2026-07-28 — Scoring corrections
 ### Added
 - Explicit 2026/27 FPL rule configuration and versioned Stage 5 shrinkage constants.

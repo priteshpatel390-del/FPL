@@ -11,7 +11,7 @@ Audience: anyone joining the project. Last updated: 2026-07-28. Related: ARCHITE
 - Stage 3 security/provider hardening is complete.
 - Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`.
 - Stage 5 scoring corrections are complete and merged through PR #9 at `68877333ebf13060e764b82b91dfc0c9752a78c8`. Source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed 241/241 tests, deterministic builds and independent CSP verification. Generated artefacts embed that exact identity; the temporary workflow has been removed.
-- The next planned item is Stage 6 — Transfer Optimiser. Its design and formula choices require explicit owner approval before implementation.
+- Stage 6 — Transfer Optimiser is implemented on its approved feature branch and awaiting review. It searches exact legal 0–3 move plans and is verified against exhaustive search.
 - The historical 2025/26 aggregate backtest result, r=0.80 and approximately ±0.5 points/GW, is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
@@ -38,9 +38,9 @@ Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 
 ## Completed, current and next
 Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes and Stage 5 scoring corrections.
 
-Current: Stage 6 transfer-optimiser investigation and design approval checkpoint. No Stage 6 implementation has begun.
+Current: Stage 6 transfer-optimiser implementation and draft-review checkpoint.
 
-Next after design approval: implement Stage 6 on a dedicated branch, verify against exhaustive search, run the full suite and open a draft pull request.
+Next: owner review of the Stage 6 draft pull request; do not merge without explicit approval.
 
 ## Major risks
 Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven out of sample; and single-maintainer phone-first operations.

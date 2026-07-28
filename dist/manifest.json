@@ -1,8 +1,8 @@
 {
-  "modelVersion": "2.2.0",
+  "modelVersion": "2.3.0",
   "rulesVersion": "2026-27.1",
-  "sourceHash": "77267e01359707656387d2f4d47008c32c0663c608adae055385c9af1373e4ca",
-  "commit": "aee6d0fee7cc177622a046f37885b554013debbd",
+  "sourceHash": "09496ff0e8645120cb1389473bfe60ee13840a1cc3c9109fadad6696cd6e22af",
+  "commit": "bc4586b9fc73003e67045c474d0307524bc9057a",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -21,6 +21,7 @@
     "src/model/scoring-rules.mjs",
     "src/model/scoring.mjs",
     "src/squad.mjs",
+    "src/model/transfers.mjs",
     "src/model/backtest.mjs",
     "src/main.mjs",
     "src/ui/views.mjs",

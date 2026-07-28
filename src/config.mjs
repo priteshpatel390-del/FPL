@@ -23,7 +23,7 @@ const BASE_GOALS = 1.42;
 const HOME_TILT  = 1.10;
 
 export const SCHEMA_VERSION = 3;
-export const MODEL_VERSION  = '2.2.0';
+export const MODEL_VERSION  = '2.3.0';
 export const RULES_VERSION  = '2026-27.1';
 
 export const MINUTES_RULES = Object.freeze({
@@ -41,6 +41,15 @@ export const SCORING_RULES = Object.freeze({
   bonusPriorAppearances:8,
   minimumExposure90:0.5,
   penaltyRoleOrders:Object.freeze([1,2])
+});
+
+export const TRANSFER_RULES = Object.freeze({
+  maximumTransfers:3,
+  maximumFreeTransfers:5,
+  hitCost:4,
+  nextFreeTransferValue:1.0,
+  squadPositions:Object.freeze({1:2,2:5,3:5,4:3}),
+  maximumPerClub:3
 });
 
 // Adjustment-5 market rules — configuration remains unvalidated until Stage 7.

@@ -16,10 +16,10 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Temporary verification workflow removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`.
 
 ## Current
-- **Stage 6 — Transfer optimiser** · investigation and design approval checkpoint.
-  - Planned scope: complete legal 0–3 move plans, squad-level ranking, roll-value configuration and pruning verified against exhaustive search.
-  - No Stage 6 implementation has begun.
-  - Optimisation behaviour, assumptions, fallbacks, trade-offs and validating tests require explicit owner approval before code changes.
+- **Stage 6 — Transfer optimiser** · IMPLEMENTED, awaiting draft-PR review.
+  - Exact legal 0–3 move plans, complete-squad validation, combined selling-price affordability and approved best-XI/hit/next-FT objective.
+  - Production branch-and-bound uses no arbitrary candidate shortlist and matches exhaustive search on controlled data.
+  - Scope and judgement calls A–J are recorded in `STAGE6-DESIGN.md`.
 
 ## Upcoming
 - **Stage 7 — Walk-forward backtest** · deadline-information-only replay, train/calibrate/holdout split, metrics, provider ablations, dataset pinning and prospective odds logging.
@@ -27,6 +27,6 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 9 — UI integration** · FPL-style squad home page, shirts, settings, health-strip placement and inline-style migration.
 
 ## Current blockers
-1. Stage 6 design and formula approval.
+1. Stage 6 draft-PR owner review.
 2. BT-1 historical dataset pin for Stage 7.
 3. Live-season data requirements beginning with GW1 on 21 August 2026.

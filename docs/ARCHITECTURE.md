@@ -59,3 +59,6 @@ Characterisation tests execute the built production bundle. Direct imports cover
 
 ## Future serverless architecture
 Static UI shape can later remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
+
+## Stage 6 transfer boundary
+`model/transfers.mjs` validates complete squads and owns exact 0–3 move enumeration, pooled selling-price affordability, hit/next-FT arithmetic, per-GW best-XI valuation and deterministic ranking. Production branch-and-bound and the exhaustive reference share legality and scoring. Transfer code consumes the existing projection surface and does not alter it.
