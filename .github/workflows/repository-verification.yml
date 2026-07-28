@@ -1,0 +1,113 @@
+name: Repository verification
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Full build and test suite
+        shell: bash
+        run: |
+          set -o pipefail
+          ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.log
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-test-log-${{ github.run_attempt }}
+          path: /tmp/teamsheet-tests.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Verify deterministic builds, identity and CSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          rm -rf /tmp/teamsheet-build-a /tmp/teamsheet-build-b dist
+
+          BUILD_COMMIT="$commit" node build.mjs
+          mkdir -p /tmp/teamsheet-build-a
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-a/
+
+          rm -rf dist
+          BUILD_COMMIT="$commit" node build.mjs
+          mkdir -p /tmp/teamsheet-build-b
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-b/
+
+          cmp /tmp/teamsheet-build-a/index.html /tmp/teamsheet-build-b/index.html
+          cmp /tmp/teamsheet-build-a/app.bundle.js /tmp/teamsheet-build-b/app.bundle.js
+          cmp /tmp/teamsheet-build-a/manifest.json /tmp/teamsheet-build-b/manifest.json
+
+          SOURCE_COMMIT="$commit" node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+
+          const expectedCommit = process.env.SOURCE_COMMIT;
+          const manifest = JSON.parse(readFileSync('dist/manifest.json', 'utf8'));
+          const bundle = readFileSync('dist/app.bundle.js', 'utf8');
+          const html = readFileSync('dist/index.html', 'utf8');
+
+          if (manifest.commit !== expectedCommit) {
+            throw new Error(`manifest identity mismatch: expected ${expectedCommit}, received ${manifest.commit}`);
+          }
+          const encodedIdentity = `\"commit\":\"${expectedCommit}\"`;
+          if (!bundle.includes(encodedIdentity)) throw new Error('bundle identity mismatch');
+          if (!html.includes(encodedIdentity)) throw new Error('HTML identity mismatch');
+
+          const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+          const styles = [...html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)];
+          const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)">/.exec(html)?.[1];
+          if (scripts.length !== 1) throw new Error(`expected one inline script, found ${scripts.length}`);
+          if (styles.length !== 1) throw new Error(`expected one inline style, found ${styles.length}`);
+          if (!csp) throw new Error('missing emitted Content Security Policy');
+
+          const hash = value => 'sha256-' + createHash('sha256').update(value, 'utf8').digest('base64');
+          const scriptHash = hash(scripts[0][1]);
+          const styleHash = hash(styles[0][1]);
+          if (!csp.includes(`script-src '${scriptHash}'`)) throw new Error('script CSP hash mismatch');
+          if (!csp.includes(`style-src-elem '${styleHash}'`)) throw new Error('style CSP hash mismatch');
+          if (csp.includes("script-src 'unsafe-inline'")) throw new Error('unsafe inline script policy detected');
+          NODE
+
+      - name: Upload verified build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-dist-${{ github.run_attempt }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
