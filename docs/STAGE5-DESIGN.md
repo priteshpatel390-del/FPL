@@ -30,7 +30,7 @@ The Stage 5 module addition exposed a pre-existing custom-bundler weakness. The 
 No provider, fixture blend, calibration, captaincy, squad, transfer optimiser, walk-forward backtest, uncertainty simulation or Stage 9 UI change. No full BPS match-rank simulation. No prediction-accuracy claim.
 
 ## Verification evidence
-Verified source commit: `adbebdeaf0ab194193f6d7fd0702b18da16f4d0f`.
+Verified source commit: `aee6d0fee7cc177622a046f37885b554013debbd`.
 
 - Full suite against committed goldens: **241/241 passing**.
 - Deterministic two-build comparison: passed for all generated artefacts.
