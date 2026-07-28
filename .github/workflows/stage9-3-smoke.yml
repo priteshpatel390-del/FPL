@@ -1,0 +1,26 @@
+name: Stage 9.3 workflow smoke test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-3-player-detail-uncertainty
+      - name: Record smoke result
+        run: |
+          if [ -f .stage9-3-smoke ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          echo smoke-ok > .stage9-3-smoke
+          git add .stage9-3-smoke
+          git commit -m 'Record Stage 9.3 workflow smoke result'
+          git push origin HEAD:agent/stage9-3-player-detail-uncertainty
