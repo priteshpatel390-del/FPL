@@ -1,0 +1,62 @@
+name: Stage 9.2 record polish
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-2-pitch-shirts
+          fetch-depth: 0
+      - name: Update Stage 9.2 verification records
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          old_source='02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad'
+          new_source='38bb08e2e8f903deeb39dc4e1a4db070da4d4870'
+          old_art='372576324b049972b88437540046c3c1f85457d5'
+          new_art='a806ccc0'
+
+          for name in ['CLAUDE.md','docs/ROADMAP.md','docs/CHANGELOG.md']:
+            path=Path(name)
+            text=path.read_text().replace(old_source,new_source).replace(old_art,new_art)
+            path.write_text(text)
+
+          changelog=Path('docs/CHANGELOG.md')
+          text=changelog.read_text()
+          marker='- The existing captain ranking and six-Gameweek squad table remain available below the pitch.\n'
+          addition='- On narrow iPhones, the projected score now leads in a full-width card with the three supporting facts in a separate uncluttered row.\n'
+          if addition not in text:
+            if marker not in text:
+              raise SystemExit('Stage 9.2 changelog marker not found')
+            text=text.replace(marker,marker+addition)
+          changelog.write_text(text)
+
+          context=Path('docs/PROJECT_CONTEXT.md')
+          text=context.read_text()
+          old='- Stage 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 with 288 passing tests, successful deterministic builds and owner review still required.'
+          new='- Stage 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 with 288 passing tests, successful deterministic builds, narrow-iPhone summary polish and owner review still required.'
+          if old in text:
+            context.write_text(text.replace(old,new))
+          elif new not in text:
+            raise SystemExit('Project context Stage 9.2 line not found')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CLAUDE.md docs/ROADMAP.md docs/CHANGELOG.md docs/PROJECT_CONTEXT.md
+          if git diff --cached --quiet; then
+            echo 'Verification records already current.'
+            exit 0
+          fi
+          git commit -m 'Record Stage 9.2 mobile polish verification'
+          git push origin HEAD:agent/stage9-2-pitch-shirts
