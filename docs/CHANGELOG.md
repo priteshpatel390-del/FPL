@@ -2,7 +2,7 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 
-## [Unreleased] — Stage 3.5 rendering safety
+## [Stage 3.5] — 2026-07-28 — DOM-builder rendering
 ### Added
 - A text-node-first `el()` DOM builder and `setChildren()` replacement helper.
 - Adversarial DOM tests for hostile player, team, entry, league and provider text.
@@ -11,8 +11,12 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
   ticker, players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search and
   backtest output.
 ### Unchanged
-- Ask Markdown rendering is restored to the Stage 3.4 baseline; its separate sanitisation design is
+- Ask Markdown rendering remains at the Stage 3.4 baseline; its separate sanitisation design is
   deferred to Stage 3.6. No model, provider, key handling, CSP, formula or visual redesign changed.
+### Verification and merge
+- Recorded implementation result: 194/194 tests passing and deterministic builds green.
+- Merged through PR #3 at merge commit `5623abb594159916b4041e6bd3c44be80f714ce7`.
+- No GitHub Actions run is attached to the merge; the test/build result is implementation evidence.
 
 ## [2.0.0-docs] — 2026-07-26 (documentation stage)
 ### Added
