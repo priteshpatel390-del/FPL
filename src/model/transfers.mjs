@@ -187,6 +187,12 @@ function exhaustiveTransferSearch(args){
   return completeResult(ctx,plans,evaluations,0,incomplete);
 }
 
+function cheapestAvailableCost(pool, count, usedIds){
+  const costs=pool.filter(p=>!usedIds.has(Number(p.id))).map(p=>Number(p.now_cost||0)).sort((a,b)=>a-b);
+  if(costs.length<count) return Infinity;
+  return costs.slice(0,count).reduce((a,n)=>a+n,0);
+}
+
 function optimiseTransfers(args){
   const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;
   const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;
@@ -198,7 +204,7 @@ function optimiseTransfers(args){
       const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);
       if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }
       const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);
-      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+byPosition[pos].slice(0,count).reduce((a,p)=>a+Number(p.now_cost||0),0),0);
+      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPosition[pos],count,new Set()),0);
       if(minimumBuy>ctx.bank+sellTotal){ pruned++; continue; }
       const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });
       const chosen=[];
@@ -213,15 +219,12 @@ function optimiseTransfers(args){
         }
         const pos=required[index], pool=byPosition[pos];
         const previousSame=index>0&&required[index-1]===pos ? Number(chosen[index-1].id) : -Infinity;
-        const remainingPositions=required.slice(index+1);
         for(const candidate of pool){
           if(Number(candidate.id)<=previousSame || chosen.some(p=>Number(p.id)===Number(candidate.id))) continue;
           const nextCost=cost+Number(candidate.now_cost||0);
-          const cheapestRest=remainingPositions.reduce((sum,rpos)=>{
-            const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));
-            const next=byPosition[rpos].find(p=>!usedIds.has(Number(p.id)));
-            return sum+(next?Number(next.now_cost||0):Infinity);
-          },0);
+          const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));
+          const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);
+          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPosition[rpos],count,usedIds),0);
           if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; continue; }
           const club=String(candidate.team), nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};
           const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);
