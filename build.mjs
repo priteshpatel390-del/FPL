@@ -15,7 +15,8 @@ const ORDER = [
   'src/model/fixtures.mjs', 'src/model/minutes.mjs', 'src/model/scoring-rules.mjs',
   'src/model/scoring.mjs', 'src/squad.mjs', 'src/model/transfers.mjs', 'src/model/walk-forward.mjs',
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
-  'src/ui/views.mjs', 'src/ui/transfer-optimiser-view.mjs', 'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs',
+  'src/ui/views.mjs', 'src/ui/transfer-optimiser-view.mjs', 'src/ui/backtest-copy.mjs',
+  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
