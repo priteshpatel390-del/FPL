@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-UEe4E2OaGfKnc9UOsLLA0Y6FsOYKFormgUSczvfK4Y0='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-EDz5zJVR8EGudSBkT6VFRxD06OsNJQfpgNeS4ofxwRY='; style-src-elem 'sha256-XBM8NFLVroIedVjOilIJLhhTh9NKI07TUhef0jbGBjg=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -346,8 +346,8 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e0135970765","commit":"aee6d0fee7cc177622a046f37885b554013debbd"} */
-const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e01359707656387d2f4d47008c32c0663c608adae055385c9af1373e4ca","commit":"aee6d0fee7cc177622a046f37885b554013debbd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.3.0","rulesVersion":"2026-27.2","sourceHash":"c13ace56346458ed","commit":"9f447dd8998185892dbee9ead12e6dd529b52aef"} */
+const BUILD_INFO = {"modelVersion":"2.3.0","rulesVersion":"2026-27.2","sourceHash":"c13ace56346458ed9977f3b8e6c1c887f1686fbeb903fb1b142e92438faf83e6","commit":"9f447dd8998185892dbee9ead12e6dd529b52aef","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/transfers.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -376,8 +376,8 @@ const BASE_GOALS = 1.42;
 const HOME_TILT  = 1.10;
 
 const SCHEMA_VERSION = 3;
-const MODEL_VERSION  = '2.2.0';
-const RULES_VERSION  = '2026-27.1';
+const MODEL_VERSION  = '2.3.0';
+const RULES_VERSION  = '2026-27.2';
 
 const MINUTES_RULES = Object.freeze({
   detailedCohort:80,
@@ -394,6 +394,18 @@ const SCORING_RULES = Object.freeze({
   bonusPriorAppearances:8,
   minimumExposure90:0.5,
   penaltyRoleOrders:Object.freeze([1,2])
+});
+
+const TRANSFER_RULES = Object.freeze({
+  maxTransfers:3,
+  maxFreeTransfers:5,
+  pointsPerPaidTransfer:4,
+  rollValue:0.5,
+  maxPerClub:3,
+  positionQuotas:Object.freeze({1:2,2:5,3:5,4:3}),
+  unavailableStatuses:Object.freeze(['i','u','s','n']),
+  maxHorizon:8,
+  maxEvaluations:2000000
 });
 
 // Adjustment-5 market rules — configuration remains unvalidated until Stage 7.
@@ -2200,6 +2212,178 @@ function bestXI(squad, gw){
 
 
 
+/* ===== src/model/transfers.mjs ===== */
+
+const POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;
+const UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);
+
+function transferSellPrice(entry){
+  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);
+  const boughtRaw = entry?.bought ?? entry?.purchasePrice;
+  const bought = Number.isFinite(Number(boughtRaw)) ? Number(boughtRaw) : now;
+  if(!Number.isFinite(now)) return 0;
+  if(now <= bought) return now;
+  return bought + Math.floor((now - bought) / 2);
+}
+
+function nextFreeTransfers(freeTransfers, transferCount){
+  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));
+  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));
+  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);
+}
+
+function transferHit(freeTransfers, transferCount){
+  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));
+  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));
+  const paidTransfers = Math.max(0, n - ft);
+  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };
+}
+
+function combinations(items, size, start=0, chosen=[], out=[]){
+  if(chosen.length === size){ out.push(chosen.slice()); return out; }
+  for(let i=start; i<=items.length-(size-chosen.length); i++){
+    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();
+  }
+  return out;
+}
+
+function playerOf(entry){ return entry?.p || entry; }
+function playerId(entry){ return Number(playerOf(entry)?.id); }
+function positionOf(entry){ return Number(playerOf(entry)?.element_type); }
+
+function validateSquad(squad, {allowInheritedOverQuota=true}={}){
+  const issues=[];
+  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');
+  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];
+  const ids = players.map(p=>Number(p.id));
+  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');
+  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)])) issues.push('unknown_player');
+  const pos={1:0,2:0,3:0,4:0}, clubs={};
+  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });
+  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });
+  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');
+  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};
+}
+
+function bestXIForGW(squad, gw, scorePlayer){
+  const byPos={1:[],2:[],3:[],4:[]};
+  squad.forEach(entry=>{
+    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));
+    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});
+  });
+  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));
+  let best=null;
+  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){
+    const f=10-d-m; if(f<1||f>3) continue;
+    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;
+    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];
+    const total=selected.reduce((a,x)=>a+x.score,0);
+    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;
+    if(!best || total>best.total || (total===best.total && signature<best.signature))
+      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};
+  }
+  return best || {total:0,formation:'—',playerIds:[],signature:''};
+}
+
+function scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){
+  const perGameweek=[]; let total=0;
+  for(let gw=startGW;gw<startGW+horizon;gw++){
+    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});
+  }
+  return {total,perGameweek};
+}
+
+function canonicalTransfers(transfers){
+  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);
+}
+function planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }
+
+function comparePlans(a,b){
+  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||
+    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||
+    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);
+}
+
+function inheritedClubLegal(startCounts, finalCounts, transferCount){
+  for(const [club,count] of Object.entries(finalCounts)){
+    const start=startCounts[club]||0;
+    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;
+    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;
+  }
+  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);
+  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);
+  return finalExcess <= Math.max(0,startExcess-transferCount);
+}
+
+function buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline}){
+  const outIds=new Set(outgoing.map(playerId));
+  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));
+  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});
+  if(!legality.ok) return null;
+  const startCounts=validateSquad(startSquad,{allowInheritedOverQuota:true}).clubCounts;
+  if(!inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;
+  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);
+  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);
+  const bankAfter=bank+sellTotal-buyTotal;
+  if(bankAfter<0) return null;
+  const hit=transferHit(freeTransfers,outgoing.length);
+  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);
+  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);
+  const rollDifference=nextFT-baseline.freeTransfersNextGW;
+  const grossGain=score.total-baseline.grossBestXIPoints;
+  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;
+  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));
+  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,
+    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,
+    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,
+    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),
+    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};
+}
+
+function optimiseTransfers({squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,
+  maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer}){
+  const legality=validateSquad(squad,{allowInheritedOverQuota:true});
+  if(!legality.ok) return {status:'invalid-input',issues:legality.issues,plans:[],evaluations:0};
+  if(typeof scorePlayer!=='function') return {status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0};
+  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));
+  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));
+  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));
+  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,cleanHorizon,scorePlayer);
+  const baseline={transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:cleanBank,bankAfter:cleanBank,
+    freeTransfersBefore:cleanFT,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(cleanFT,0),grossBestXIPoints:baselineScore.total,
+    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[]};
+  const owned=new Set(squad.map(playerId));
+  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));
+  const plans=[baseline]; let evaluations=0, incomplete=false;
+  const limit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(maxTransfers||0)));
+  outer: for(let n=1;n<=limit;n++){
+    for(const outgoing of combinations(squad,n)){
+      const required=outgoing.map(positionOf).sort((a,b)=>a-b);
+      const candidates=eligible.filter(p=>required.includes(Number(p.element_type)));
+      for(const incoming of combinations(candidates,n)){
+        if(++evaluations>maxEvaluations){ incomplete=true; break outer; }
+        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);
+        if(incomingPos.some((v,i)=>v!==required[i])) continue;
+        const orderedIncoming=[]; const used=new Set();
+        for(const out of outgoing){
+          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));
+          if(idx<0) break; used.add(idx); orderedIncoming.push(incoming[idx]);
+        }
+        if(orderedIncoming.length!==n) continue;
+        const plan=buildPlan({startSquad:squad,outgoing,incoming:orderedIncoming,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer,baseline});
+        if(plan) plans.push(plan);
+      }
+    }
+  }
+  plans.sort(comparePlans);
+  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[baseline],evaluations};
+  return {status:'ok',issues:[],plans:plans.slice(0,Math.max(1,maxResults)),evaluations,baseline};
+}
+
+const exhaustiveTransferSearch = optimiseTransfers;
+
+
+
 /* ===== src/model/backtest.mjs ===== */
 /* ---------------------------------------------------------------------
    BACKTEST — fetches last season gameweek-by-gameweek from the vaastav
@@ -3103,6 +3287,73 @@ document.addEventListener('click', e => {
   renderLeagueChips();
   loadAll();
 })();
+
+
+/* ===== src/ui/transfer-optimiser-view.mjs ===== */
+
+// Stage 6 replacement for the legacy isolated-swap renderer. The bundler places
+// this declaration after views.mjs so renderAll resolves to this implementation.
+function renderTransfers(){
+  const out=$('transferOut');
+  const squad=mySquad();
+  if(!squad.length){
+    setChildren(out,el('div',{class:'empty'},el('strong',{},'No squad loaded'),'Add your 15 on the Squad tab before running the optimiser.'));
+    return;
+  }
+  const horizon=Math.max(1,Math.min(8,Math.trunc(num($('trHorizon')?.value)||6)));
+  const maxResults=Math.max(1,Math.min(20,Math.trunc(num($('trTop')?.value)||10)));
+  const bank=Math.max(0,Math.round(num($('bankIn')?.value)*10));
+  const freeTransfers=Math.max(0,Math.min(5,Math.trunc(num($('ftCount')?.value)||0)));
+  const result=optimiseTransfers({
+    squad,players:S.boot?.elements||[],bank,freeTransfers,startGW:S.nextGW,horizon,maxResults,
+    scorePlayer:(p,gw)=>xpOf(p,gw,1).total
+  });
+  if(result.status==='invalid-input'){
+    setChildren(out,el('div',{class:'note bad'},el('b',{},'Squad cannot be optimised.'),` Fix: ${result.issues.join(', ')}.`));
+    return;
+  }
+  if(result.status==='projection-unavailable'){
+    setChildren(out,el('div',{class:'note bad'},'Projections are unavailable, so no transfer recommendation can be made.'));
+    return;
+  }
+  if(result.status==='search-incomplete'){
+    setChildren(out,el('div',{class:'note bad'},el('b',{},'Exact search did not complete.'),' No partial result is being presented as optimal. Keep the current squad and try a shorter horizon.'));
+    return;
+  }
+  const plans=result.plans||[];
+  const best=plans[0];
+  const nodes=[];
+  if(!best||best.transferCount===0){
+    nodes.push(el('div',{class:'note good'},el('b',{},'Roll the transfer.'),' No legal 1–3 move plan beats the zero-transfer baseline after hits and the 0.5-point roll value.'));
+  }else{
+    const moveText=best.transfers.map(t=>`${S.byId[t.outPlayerId]?.web_name||t.outPlayerId} → ${S.byId[t.inPlayerId]?.web_name||t.inPlayerId}`).join(' · ');
+    nodes.push(el('div',{class:'note good'},el('b',{},'Top complete plan: '),moveText,` · net ${best.netGain>=0?'+':''}${best.netGain.toFixed(1)} points over ${horizon} GW${horizon>1?'s':''} · hit −${best.hitCost} · £${(best.bankAfter/10).toFixed(1)}m left · ${best.freeTransfersNextGW} FT next GW.`));
+    if(best.warnings.length) nodes.push(el('div',{class:'note bad'},best.warnings.join(' · ')));
+  }
+  const table=el('table',{class:'data'});
+  const head=el('thead',{},el('tr',{},...['Plan','Moves','Gross gain','Hit','Roll','Net','Bank','Next FT'].map(x=>el('th',{},x))));
+  const body=el('tbody');
+  plans.slice(0,maxResults).forEach((plan,i)=>{
+    const label=plan.transferCount===0?'Roll':plan.transfers.map(t=>`${S.byId[t.outPlayerId]?.web_name||t.outPlayerId} → ${S.byId[t.inPlayerId]?.web_name||t.inPlayerId}`).join('; ');
+    body.appendChild(el('tr',{},
+      el('td',{},i===0?el('b',{},label):label),
+      el('td',{class:'num'},String(plan.transferCount)),
+      el('td',{class:'num'},`${plan.grossGain>=0?'+':''}${plan.grossGain.toFixed(1)}`),
+      el('td',{class:'num'},`−${plan.hitCost}`),
+      el('td',{class:'num'},`${(plan.rollDifference*0.5).toFixed(1)}`),
+      el('td',{class:'num'},`${plan.netGain>=0?'+':''}${plan.netGain.toFixed(1)}`),
+      el('td',{class:'num'},`£${(plan.bankAfter/10).toFixed(1)}m`),
+      el('td',{class:'num'},String(plan.freeTransfersNextGW))));
+  });
+  table.append(head,body);
+  nodes.push(el('div',{class:'scroll'},table));
+  const estimated=squad.some(s=>s.bought==null);
+  nodes.push(el('div',{class:'note plain'},estimated
+    ? 'Affordability is estimated because the public picks feed does not expose purchase prices. Confirm the plan inside FPL before acting.'
+    : 'Affordability uses the recorded purchase prices for this squad.'));
+  setChildren(out,nodes);
+}
+
 
 
 /* ===== src/ui/markdown.mjs ===== */
