@@ -53,4 +53,12 @@ jobs:
           grep -F "$GITHUB_SHA" dist/manifest.json
           grep -F "$GITHUB_SHA" dist/app.bundle.js
           grep -F "$GITHUB_SHA" dist/index.html
+      - name: Upload verified dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage7-verified-dist
+          path: |
+            dist/index.html
+            dist/app.bundle.js
+            dist/manifest.json
       # Diagnostic-only workflow; remove before Stage 7 is marked complete.
