@@ -32,6 +32,7 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | SIM-2 | Player attacking samples are not allocated from a complete simulated team score | Player outcomes can be marginally coherent without strict match-level event conservation | Future only with separate approval | Open (accepted) |
 | SIM-3 | Detailed simulation is disabled in pre-season | No precise percentiles or haul probabilities until live event-level inputs exist | Live GW1 | Accepted-honest |
 | SIM-4 | No full match-relative BPS, tactical substitution or detailed game-state engine | Some correlations and tail outcomes remain approximate | Future only with separate approval | Open (accepted) |
+| UI-1 | Stage 9.3 Tight/Moderate/Wide labels are descriptive model-spread categories, not calibrated risk bands | Useful relative shorthand can be mistaken for validated probability coverage unless the accompanying caveat is preserved | Prospective 2026/27 validation | Open (accepted) |
 | ODDS-2 | No free historical odds | Odds/blend ablation must be prospective | Stage 7+ | Open |
 | UST-1 | Pre-season Understat uses previous closing six matches | Early-season form may be mislabelled | Prospective validation | Open |
 | DC-1 | Defensive-contribution history starts in 2025/26 | No multi-season validation | Permanent | Accepted |
