@@ -1,6 +1,6 @@
 # Stage 3.6 — AI/Markdown sanitisation implementation record
 
-Status: **DRAFT — implementation present; full repository verification still required.**
+Status: **VERIFIED — ready for merge.**
 Date: 2026-07-28.
 
 ## Approved scope
@@ -29,12 +29,14 @@ Replace the Ask surface's string-to-HTML Markdown path with a default-deny rende
 7. Deterministic input bounding.
 8. DOM-only renderer/source invariants.
 
-Expected suite size after integration: **202 tests** (194 existing + 8 new).
+Verified suite size: **202 tests** (194 existing + 8 new).
 
 ## Deliberately unchanged
 
 No projection, expected-minutes, scoring, calibration, fixture, captaincy, squad, transfer, provider, retry, key-handling, CSP or visual-design behaviour changed. No dependency was added.
 
-## Verification status
+## Verification
 
-The branch is based on `main` commit `1b0f025c0d23c02bf6605152ae66f3b4119c3f41`. GitHub Actions is not configured for this repository, and the execution environment used for this change could not clone GitHub, so `./run-tests.sh`, deterministic two-build comparison and generated `dist/` updates are **not yet evidenced**. The draft PR must remain unmerged until those checks are run and recorded.
+GitHub Actions run `30336857903` completed successfully on the pull-request merge ref. The repository's full `./run-tests.sh` step passed, and the deterministic two-build byte comparison passed. The temporary verification workflow was then removed, leaving no CI-policy change in the final pull-request diff.
+
+The branch was based on `main` commit `1b0f025c0d23c02bf6605152ae66f3b4119c3f41`.
