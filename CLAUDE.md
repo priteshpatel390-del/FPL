@@ -16,14 +16,14 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 3 security and provider hardening is complete and merged. Stage 4 expected-minutes design was approved by Pritesh and implemented on draft PR #8 from branch `stage4-expected-minutes`. The verified draft baseline is **220 passing tests**, successful build and byte-identical two-build comparison; generated `dist/` files were committed from the successful build and the temporary verification workflow was removed. The next gate is owner review and explicit merge approval. Do not merge PR #8 or begin Stage 5 without that approval.
+Stage 4 expected minutes is complete and merged through PR #8 at `eb08c7af43a2e8040ea65064fc725ba8d1778882`. Stage 5 scoring corrections are implemented and verified on draft PR #9 from branch `agent/stage5-scoring-corrections`. Review fixes cover multi-line module stripping, fail-closed bundling, clean verification without golden regeneration, aggregate bonus appearances and genuine blank-Gameweek coverage. Verified source commit `aee6d0fee7cc177622a046f37885b554013debbd` passed **241/241 tests**, deterministic two-build comparison and independent CSP verification. Generated artefacts carry that exact build identity. The temporary workflow was removed at `99d9cf8184589ef5ed79b8fdad2bff13a9f96552`. The only remaining gate is Pritesh’s explicit merge approval. Do not merge PR #9 or begin Stage 6 without it.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
 - Never delete or weaken an existing test to make work pass.
 - Never claim improved prediction accuracy without genuine out-of-sample validation. The historical r=0.80 is method-flattered.
 - Run `./run-tests.sh` before describing implementation as complete.
-- Preserve deterministic builds and `BUILD_COMMIT` identity.
+- Preserve deterministic builds and exact `BUILD_COMMIT` identity.
 - Preserve vanilla ES modules, zero dependencies, GitHub Pages and the single-file `dist/index.html` deploy workflow.
 - Generated `dist/` files come from `build.mjs`; never hand-edit them.
 - Anthropic keys are banned client-side.
@@ -32,11 +32,12 @@ Stage 3 security and provider hardening is complete and merged. Stage 4 expected
 - No new provider without an approved validation and ablation plan.
 - Stage discipline: inspect → scope/exclusions → owner approval where required → branch → implementation → full verification → docs → draft PR → owner review → merge only with explicit approval.
 
-## Current security posture
+## Current security and build posture
 - Provider/user rendering uses DOM builders.
 - AI output uses restricted Markdown AST rendering.
 - Odds key is masked, omitted when empty, one-action forgettable and scrubbed from diagnostics.
 - Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
+- The custom bundler strips complete static import/export declarations and fails if raw module syntax survives; focused build regression tests guard this boundary.
 - `style-src-attr 'unsafe-inline'` remains an explicit Stage 9 concession.
 - Meta `frame-ancestors` is ineffective on Pages; a hashed frame-buster compensates until serverless headers.
 

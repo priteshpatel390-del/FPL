@@ -1,20 +1,35 @@
-/* BUILD {"modelVersion":"2.1.0","rulesVersion":"2025-26.1","sourceHash":"16cafb121f22887f","commit":"4b0969c024f07a47f6c4d7f989cc1e5a7bcb7242"} */
-const BUILD_INFO = {"modelVersion":"2.1.0","rulesVersion":"2025-26.1","sourceHash":"16cafb121f22887fd242d25f8a39ee231a5d9076b95eb3ee9f57eb2c3f3e2e81","commit":"4b0969c024f07a47f6c4d7f989cc1e5a7bcb7242","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e0135970765","commit":"aee6d0fee7cc177622a046f37885b554013debbd"} */
+const BUILD_INFO = {"modelVersion":"2.2.0","rulesVersion":"2026-27.1","sourceHash":"77267e01359707656387d2f4d47008c32c0663c608adae055385c9af1373e4ca","commit":"aee6d0fee7cc177622a046f37885b554013debbd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/squad.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/views.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
-// Season-specific rules and model configuration (Stage 2: values verbatim from
-// the monolith; Stage 5 moves the full FPL rulebook here).
-const GOAL_PTS   = {1:6, 2:6, 3:5, 4:4};
-const CS_PTS     = {1:4, 2:4, 3:1, 4:0};
-const ASSIST_PTS = 3;
-const DC_THRESH  = {2:10, 3:12, 4:12};      // defensive contribution thresholds
-const BASE_GOALS = 1.42;                     // league average goals per team per game
+// Season-specific rules and model configuration.
+const FPL_RULES = Object.freeze({
+  season:'2026-27',
+  appearance:Object.freeze({any:1,sixtyMinutes:1}),
+  goals:Object.freeze({1:6,2:6,3:5,4:4}),
+  assists:3,
+  cleanSheets:Object.freeze({1:4,2:4,3:1,4:0}),
+  saves:Object.freeze({groupSize:3,pointsPerGroup:1}),
+  goalsConceded:Object.freeze({positions:Object.freeze([1,2]),groupSize:2,pointsPerGroup:-1}),
+  defensiveContribution:Object.freeze({thresholds:Object.freeze({2:10,3:12,4:12}),points:2,maximum:2}),
+  cards:Object.freeze({yellow:-1,red:-3}),
+  ownGoal:-2,
+  penaltyMiss:-2,
+  penaltySave:5,
+  bonus:Object.freeze([3,2,1])
+});
+
+const GOAL_PTS   = FPL_RULES.goals;
+const CS_PTS     = FPL_RULES.cleanSheets;
+const ASSIST_PTS = FPL_RULES.assists;
+const DC_THRESH  = FPL_RULES.defensiveContribution.thresholds;
+const BASE_GOALS = 1.42;
 const HOME_TILT  = 1.10;
 
-const SCHEMA_VERSION = 3;          // cache envelope; bump invalidates cached snapshots
-const MODEL_VERSION  = '2.1.0';    // Stage 4 expected-minutes model
-const RULES_VERSION  = '2025-26.1';// FPL scoring rules encoded
+const SCHEMA_VERSION = 3;
+const MODEL_VERSION  = '2.2.0';
+const RULES_VERSION  = '2026-27.1';
 
 const MINUTES_RULES = Object.freeze({
   detailedCohort:80,
@@ -26,15 +41,21 @@ const MINUTES_RULES = Object.freeze({
   cacheMaxAgeMs:7 * 24 * 60 * 60 * 1000
 });
 
-// Adjustment-5 market rules — DEFINED here before any formula change (Stage 5+
-// may consume more of these; today they gate inclusion/staleness only).
+const SCORING_RULES = Object.freeze({
+  rareEventPriorMatches:10,
+  bonusPriorAppearances:8,
+  minimumExposure90:0.5,
+  penaltyRoleOrders:Object.freeze([1,2])
+});
+
+// Adjustment-5 market rules — configuration remains unvalidated until Stage 7.
 const ODDS_RULES = {
-  minH2hBooks: 2,            // events with fewer h2h books are skipped (thin market)
+  minH2hBooks: 2,
   minTotalsBooks: 1,
-  outlierProbDeviation: 0.15,// drop books whose devigged prob deviates >15% from median
-  maxQuoteAgeHours: 24,      // bookmaker last_update older than this is stale → excluded
-  kickoffMatchWindowHours: 72,// fixture↔event matching tolerance
-  lowConfidenceBooks: 3      // below this many books, mark confidence 'low'
+  outlierProbDeviation: 0.15,
+  maxQuoteAgeHours: 24,
+  kickoffMatchWindowHours: 72,
+  lowConfidenceBooks: 3
 };
 
 
@@ -637,7 +658,9 @@ const KEEP = ['id','web_name','team','element_type','now_cost','total_points','f
   'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
   'expected_goals_conceded_per_90','defensive_contribution','defensive_contribution_per_90',
   'status','chance_of_playing_next_round','news','news_added','cost_change_event','cost_change_start',
-  'transfers_in_event','transfers_out_event','penalties_order','ep_next','yellow_cards','red_cards'];
+  'transfers_in_event','transfers_out_event','penalties_order','direct_freekicks_order',
+  'corners_and_indirect_freekicks_order','ep_next','yellow_cards','red_cards','own_goals',
+  'penalties_missed','penalties_saved'];
 
 function slim(boot, fixtures){
   return {
@@ -1451,18 +1474,13 @@ function multToDiff(m){
 }
 function runScore(teamId, fromGW, span, lens){
   const runs = teamFixtures(teamId, fromGW, span);
-  let total = 0, n = 0;
-  runs.forEach(games => {
-    if(!games.length){ total += 0.55; n += 1; return; }           // blank hurts
-    games.forEach(g => {
-      total += lens === 'defence' ? g.ctx.def
-             : lens === 'official' ? (6 - g.officialDiff)/3
-             : g.ctx.atk;
-      n += 1;
-    });
-    if(games.length > 1) total += 0.45;                            // double bonus
-  });
-  return n ? total/n : 1;
+  let total = 0;
+  runs.forEach(games => games.forEach(g => {
+    total += lens === 'defence' ? g.ctx.def
+           : lens === 'official' ? (6 - g.officialDiff)/3
+           : g.ctx.atk;
+  }));
+  return total/Math.max(1,span);
 }
 
 
@@ -1566,6 +1584,53 @@ function expectedMinutes(p){ return S.seasonLive ? minutesEstimate(p).expMin : n
 
 
 
+/* ===== src/model/scoring-rules.mjs ===== */
+
+const POISSON_MAX_K = 80;
+const POISSON_TAIL_EPS = 1e-12;
+
+function poissonSeries(lambda, visit){
+  const lam = Math.max(0, num(lambda));
+  let p = Math.exp(-lam), total = p;
+  visit(0, p);
+  for(let k = 1; k <= POISSON_MAX_K; k++){
+    p *= lam / k;
+    total += p;
+    visit(k, p);
+    if(k > lam && p < POISSON_TAIL_EPS && 1-total < POISSON_TAIL_EPS) break;
+  }
+}
+
+function poissonTail(lambda, threshold){
+  const t = Math.max(0, Math.floor(num(threshold)));
+  if(t <= 0) return 1;
+  let below = 0;
+  poissonSeries(lambda, (k,p) => { if(k < t) below += p; });
+  return clamp(1-below, 0, 1);
+}
+
+function expectedGroupedPoints(lambda, groupSize, pointsPerGroup){
+  const size = Math.max(1, Math.floor(num(groupSize)));
+  const value = num(pointsPerGroup);
+  let expected = 0;
+  poissonSeries(lambda, (k,p) => { expected += p * Math.floor(k/size) * value; });
+  return expected;
+}
+
+function expectedThresholdPoints(lambda, threshold, points){
+  return poissonTail(lambda, threshold) * num(points);
+}
+
+function shrunkRate(events, exposure90, priorRate, priorExposure90){
+  const exposure = Math.max(0, num(exposure90));
+  const priorExposure = Math.max(0, num(priorExposure90));
+  const denominator = exposure + priorExposure;
+  if(!denominator) return 0;
+  return Math.max(0, (Math.max(0, num(events)) + priorExposure * Math.max(0, num(priorRate))) / denominator);
+}
+
+
+
 /* ===== src/model/scoring.mjs ===== */
 /* ---------------------------------------------------------------------
    PLAYER MODEL — projected points, built separately per position.
@@ -1589,6 +1654,44 @@ function priceBaseline(p){
   return clamp(base, 0.6, 9) * ownTilt;
 }
 
+function played90(p){ return Math.max(SCORING_RULES.minimumExposure90, num(p.minutes)/90); }
+function seasonAppearances(p){
+  const rows = Array.isArray(S.minuteHistory?.[p.id]) ? S.minuteHistory[p.id] : [];
+  const detailed = rows.filter(r => num(r.minutes) > 0).length;
+  if(detailed) return detailed;
+  const matches = completedTeamMatches(p.team);
+  const aggregate = aggregateMinutes(p, matches);
+  if(aggregate) return matches * aggregate.pAppear;
+  return Math.max(num(p.starts), num(p.minutes)/90, 0);
+}
+function positionPlayers(pos){ return (S.boot?.elements || []).filter(p => p.element_type === pos); }
+function populationRate(pos, field){
+  let events = 0, exposure = 0;
+  positionPlayers(pos).forEach(p => { events += Math.max(0,num(p[field])); exposure += Math.max(0,num(p.minutes))/90; });
+  return exposure > 0 ? events/exposure : 0;
+}
+function rareRate(p, field){
+  return shrunkRate(p[field], played90(p), populationRate(p.element_type, field), SCORING_RULES.rareEventPriorMatches);
+}
+function populationBonusPerAppearance(pos){
+  let bonus = 0, apps = 0;
+  positionPlayers(pos).forEach(p => { bonus += Math.max(0,num(p.bonus)); apps += seasonAppearances(p); });
+  return apps > 0 ? bonus/apps : 0;
+}
+function bonusPerAppearance(p){
+  const apps = seasonAppearances(p), priorApps = SCORING_RULES.bonusPriorAppearances;
+  const prior = populationBonusPerAppearance(p.element_type);
+  return (Math.max(0,num(p.bonus)) + priorApps*prior) / Math.max(1e-9, apps + priorApps);
+}
+function penaltyMissRate(p){
+  const order = p.penalties_order;
+  const prior = populationRate(p.element_type, 'penalties_missed');
+  if(order === null) return prior;
+  const rate = rareRate(p, 'penalties_missed');
+  if(order === undefined || SCORING_RULES.penaltyRoleOrders.includes(num(order))) return rate;
+  return prior;
+}
+
 function playerFixtureXP(p, g){
   const pos = p.element_type, ctx = g.ctx, avail = availability(p);
   const parts = {};
@@ -1608,38 +1711,52 @@ function playerFixtureXP(p, g){
   const pAny = mins.pAppear;
   const p60 = mins.p60;
 
-  parts['Appearance'] = pAny + p60;
+  parts['Appearance'] = pAny * FPL_RULES.appearance.any + p60 * FPL_RULES.appearance.sixtyMinutes;
 
-  const xg = per90(p,'expected_goals_per_90') * mFactor * ctx.atk;
-  const xa = per90(p,'expected_assists_per_90') * mFactor * ctx.atk;
+  const xg = Math.max(0,per90(p,'expected_goals_per_90')) * mFactor * ctx.atk;
+  const xa = Math.max(0,per90(p,'expected_assists_per_90')) * mFactor * ctx.atk;
   parts['Goals'] = xg * (GOAL_PTS[pos] ?? 4);
   parts['Assists'] = xa * ASSIST_PTS;
 
   if(CS_PTS[pos]) parts['Clean sheet'] = ctx.cs * CS_PTS[pos] * p60;
-  if(pos === 1 || pos === 2) parts['Goals conceded'] = -(ctx.xGA/2) * mFactor * 0.72;
+  if(FPL_RULES.goalsConceded.positions.includes(pos)){
+    const lambdaConceded = Math.max(0,ctx.xGA) * mFactor;
+    parts['Goals conceded'] = expectedGroupedPoints(lambdaConceded,
+      FPL_RULES.goalsConceded.groupSize,FPL_RULES.goalsConceded.pointsPerGroup);
+  }
 
   if(pos === 1){
-    const played90 = Math.max(0.5, num(p.minutes)/90);
-    const saves90 = num(p.saves)/played90;
-    parts['Saves'] = (saves90 * (ctx.xGA/BASE_GOALS) / 3) * mFactor;
+    const saves90 = Math.max(0,num(p.saves))/played90(p);
+    const lambdaSaves = saves90 * Math.max(0,ctx.xGA/BASE_GOALS) * mFactor;
+    parts['Saves'] = expectedGroupedPoints(lambdaSaves,FPL_RULES.saves.groupSize,FPL_RULES.saves.pointsPerGroup);
   }
 
-  const thr = DC_THRESH[pos];
-  if(thr){
-    let dc90 = per90(p,'defensive_contribution_per_90');
-    if(!dc90 && p.defensive_contribution !== undefined){
-      const played90 = Math.max(0.5, num(p.minutes)/90);
-      dc90 = num(p.defensive_contribution)/played90;
+  const threshold = FPL_RULES.defensiveContribution.thresholds[pos];
+  if(threshold){
+    let dc90 = Math.max(0,per90(p,'defensive_contribution_per_90'));
+    if(!dc90 && p.defensive_contribution !== undefined) dc90 = Math.max(0,num(p.defensive_contribution))/played90(p);
+    if(dc90 && pAny > 0){
+      const conditionalMinutes = clamp(mins.expMin/Math.max(pAny,1e-9),0,90);
+      const lambdaDc = dc90 * conditionalMinutes/90;
+      parts['Defensive contributions'] = pAny * expectedThresholdPoints(lambdaDc,threshold,
+        FPL_RULES.defensiveContribution.points);
     }
-    if(dc90) parts['Defensive actions'] = 2 * (1/(1+Math.exp(-(dc90-thr)/2.2))) * p60;
   }
 
-  const played90b = Math.max(0.5, num(p.minutes)/90);
-  const bps90 = num(p.bps)/played90b;
-  parts['Bonus'] = clamp((bps90-16)/20, 0, 1.8) * mFactor * (1 + (ctx.atk-1)*0.3);
+  parts['Bonus'] = pAny * bonusPerAppearance(p);
 
-  const cards90 = num(p.yellow_cards)/played90b;
-  if(cards90) parts['Cards'] = -cards90 * mFactor;
+  const yellow = rareRate(p,'yellow_cards') * mFactor;
+  if(yellow) parts['Yellow cards'] = yellow * FPL_RULES.cards.yellow;
+  const red = rareRate(p,'red_cards') * mFactor;
+  if(red) parts['Red cards'] = red * FPL_RULES.cards.red;
+  const ownGoal = rareRate(p,'own_goals') * mFactor;
+  if(ownGoal) parts['Own goals'] = ownGoal * FPL_RULES.ownGoal;
+  const penaltyMiss = penaltyMissRate(p) * mFactor;
+  if(penaltyMiss) parts['Penalty misses'] = penaltyMiss * FPL_RULES.penaltyMiss;
+  if(pos === 1){
+    const penaltySave = rareRate(p,'penalties_saved') * mFactor;
+    if(penaltySave) parts['Penalty saves'] = penaltySave * FPL_RULES.penaltySave;
+  }
 
   let total = 0;
   Object.keys(parts).forEach(k => { if(!isFinite(parts[k])) parts[k] = 0; total += parts[k]; });

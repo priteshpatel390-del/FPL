@@ -62,18 +62,13 @@ function multToDiff(m){
 }
 function runScore(teamId, fromGW, span, lens){
   const runs = teamFixtures(teamId, fromGW, span);
-  let total = 0, n = 0;
-  runs.forEach(games => {
-    if(!games.length){ total += 0.55; n += 1; return; }           // blank hurts
-    games.forEach(g => {
-      total += lens === 'defence' ? g.ctx.def
-             : lens === 'official' ? (6 - g.officialDiff)/3
-             : g.ctx.atk;
-      n += 1;
-    });
-    if(games.length > 1) total += 0.45;                            // double bonus
-  });
-  return n ? total/n : 1;
+  let total = 0;
+  runs.forEach(games => games.forEach(g => {
+    total += lens === 'defence' ? g.ctx.def
+           : lens === 'official' ? (6 - g.officialDiff)/3
+           : g.ctx.atk;
+  }));
+  return total/Math.max(1,span);
 }
 
 export { matchContext, teamFixtures, multToDiff, runScore };

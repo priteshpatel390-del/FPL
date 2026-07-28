@@ -5,34 +5,27 @@
 // bytes, except the commit id supplied through BUILD_COMMIT.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { stripModuleSyntax, assertNoModuleSyntax } from './build-utils.mjs';
 
 const ORDER = [
   'src/config.mjs', 'src/util.mjs', 'src/providers/retry.mjs', 'src/providers/validate.mjs',
   'src/state.mjs', 'src/storage.mjs',
   'src/providers/registry.mjs', 'src/providers/transport.mjs', 'src/providers/common.mjs',
   'src/providers/understat.mjs', 'src/providers/odds.mjs', 'src/providers/minutes-history.mjs',
-  'src/model/fixtures.mjs', 'src/model/minutes.mjs', 'src/model/scoring.mjs', 'src/squad.mjs',
-  'src/model/backtest.mjs', 'src/main.mjs', 'src/ui/views.mjs', 'src/ui/markdown.mjs',
-  'src/ui/security-wiring.mjs',
+  'src/model/fixtures.mjs', 'src/model/minutes.mjs', 'src/model/scoring-rules.mjs',
+  'src/model/scoring.mjs', 'src/squad.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
+  'src/ui/views.mjs', 'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
-
-const strip = code => code.split('\n').filter(l => {
-  const t = l.trim();
-  if (t.startsWith('import ')) return false;
-  if (/^export \{[^}]*\};?$/.test(t)) return false;
-  if (/^export \{[^}]*\} from /.test(t)) return false;
-  return true;
-}).join('\n')
-  .replace(/^export (const|function|async function|let|class)/gm, '$1');
 
 const sourceHasher = createHash('sha256');
 let bundle = '';
 for (const path of ORDER) {
   const raw = readFileSync(path, 'utf8');
   sourceHasher.update(path).update('\0').update(raw);
-  bundle += `\n/* ===== ${path} ===== */\n` + strip(raw) + '\n';
+  bundle += `\n/* ===== ${path} ===== */\n` + stripModuleSyntax(raw) + '\n';
 }
+assertNoModuleSyntax(bundle);
 const sourceHash = sourceHasher.digest('hex');
 const commit = process.env.BUILD_COMMIT || 'unversioned';
 const cfg = readFileSync('src/config.mjs', 'utf8');
