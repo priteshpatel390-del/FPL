@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d8a8c2ed50a052ca","commit":"2f071aea4bae954bdf8f20463e7bbcf9e53f3875"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d8a8c2ed50a052caa3d017a25ab5c96805dc16db424fb9d340102a14ab6e99a1","commit":"2f071aea4bae954bdf8f20463e7bbcf9e53f3875","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"c9f4b1bc73b80c3d","commit":"40dde666fc776e0fdcf1bab6c8dad30138825d08"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"c9f4b1bc73b80c3d263c2e95a484aee1dfce23838b44c0b58c065a637bd87116","commit":"40dde666fc776e0fdcf1bab6c8dad30138825d08","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3196,6 +3196,12 @@ function playerDetailRangePosition(value,min,max){
   return clamp((num(value)-low)/(high-low)*100,0,100);
 }
 
+function playerDetailAvailabilityLabel(p = {}){
+  if(['i','u','s','n'].includes(p.status)) return 'Unavailable';
+  if(p.status === 'd') return 'Doubtful';
+  return 'Available';
+}
+
 function playerDetailClose(){
   if(typeof document === 'undefined') return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
@@ -3427,7 +3433,7 @@ function openPlayerDetailView(p,from,span,trigger){
       playerDetailMetric(`GW${S.nextGW} xP`,fmt1(next.total),fixtureLabel),
       playerDetailMetric(`${span} GW xP`,fmt1(x.total),`${x.games} fixture${x.games===1?'':'s'}`),
       playerDetailMetric('Form',fmt1(num(p.form)),`${p.selected_by_percent}% owned`),
-      playerDetailMetric('Availability',availability(p)>=1?'Available':availability(p)>=.75?'Doubtful':'Unavailable',p.status==='a'?'Official status clear':p.news||'Check latest team news'))));
+      playerDetailMetric('Availability',playerDetailAvailabilityLabel(p),p.status==='a'?'Official status clear':p.news||'Check latest team news'))));
 
   detail.push(playerDetailSection('Expected minutes',
     elNode('div',{class:'player-detail-grid minutes-grid'},
