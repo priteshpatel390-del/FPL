@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -21,22 +21,8 @@ jobs:
           node-version: '20'
       - name: Build
         run: node build.mjs
-      - name: Test scrubber
-        run: node --test --test-name-pattern="scrubber" tests/security-completion.test.mjs
-      - name: Test forget action
-        run: node --test --test-name-pattern="forget odds key" tests/security-completion.test.mjs
-      - name: Test empty-key storage
-        run: node --test --test-name-pattern="storage source" tests/security-completion.test.mjs
-      - name: Test masked UI
-        run: node --test --test-name-pattern="built UI" tests/security-completion.test.mjs
-      - name: Test CSP hashes
-        run: node --test --test-name-pattern="CSP hashes" tests/security-completion.test.mjs
-      - name: Test CSP policy
-        run: node --test --test-name-pattern="CSP retains" tests/security-completion.test.mjs
-      - name: Test bundle identity
-        run: node --test --test-name-pattern="frame-buster" tests/security-completion.test.mjs
-      - name: Test artefact secret scan
-        run: node --test --test-name-pattern="generated artefacts" tests/security-completion.test.mjs
+      - name: Focused security completion tests
+        run: node --test tests/security-completion.test.mjs
       - name: Full test suite
         run: ./run-tests.sh
       - name: Deterministic two-build comparison
@@ -53,6 +39,19 @@ jobs:
           cmp /tmp/teamsheet-build-a/app.bundle.js /tmp/teamsheet-build-b/app.bundle.js
           cmp /tmp/teamsheet-build-a/manifest.json /tmp/teamsheet-build-b/manifest.json
           sha256sum /tmp/teamsheet-build-a/*
+      - name: Commit verified generated build
+        if: github.event_name == 'push' && github.event.head_commit.message != 'chore: refresh verified Stage 3 build'
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/index.html dist/app.bundle.js dist/manifest.json
+          if git diff --cached --quiet; then
+            echo "Generated build already current"
+          else
+            git commit -m "chore: refresh verified Stage 3 build"
+            git push origin HEAD:agent/stage3-security-completion
+          fi
       - name: Upload verified build
         if: always()
         uses: actions/upload-artifact@v4
