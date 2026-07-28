@@ -1,4 +1,4 @@
-name: Stage 9.2 implement
+name: Stage 9.2 closeout
 
 on:
   pull_request:
@@ -9,336 +9,142 @@ permissions:
   contents: write
 
 jobs:
-  implement:
+  closeout:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/stage9-2-pitch-shirts
           fetch-depth: 0
-      - name: Apply approved Stage 9.2 implementation
+      - name: Record Stage 9.2 and verify committed deployables
         run: |
-          if [ -f src/ui/team-pitch.mjs ]; then
-            echo 'Stage 9.2 source already present; no mutation required.'
-            exit 0
-          fi
-
-          cat > src/ui/team-pitch.mjs <<'EOF'
-          // Stage 9.2 — visual-only pitch layout and repository-owned shirt palettes.
-          // No squad selection, projection or captaincy rule lives in this module.
-
-          const TEAM_PITCH_VISUAL_ORDER = Object.freeze([4, 3, 2, 1]);
-          const TEAM_PITCH_PATTERNS = Object.freeze(['solid','sleeves','stripes','halves','hoops','sash','pinstripes']);
-          const TEAM_PITCH_PRESETS = Object.freeze({
-            ARS:{primary:'#D71920',secondary:'#FFFFFF',accent:'#162A4C',ink:'#FFFFFF',pattern:'sleeves'},
-            AVL:{primary:'#6A1735',secondary:'#9ED8F5',accent:'#F5D36A',ink:'#FFFFFF',pattern:'sleeves'},
-            BOU:{primary:'#D71920',secondary:'#121212',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'stripes'},
-            BRE:{primary:'#D71920',secondary:'#FFFFFF',accent:'#111111',ink:'#111111',pattern:'stripes'},
-            BHA:{primary:'#1764B0',secondary:'#FFFFFF',accent:'#F4D35E',ink:'#111111',pattern:'stripes'},
-            BUR:{primary:'#6A1735',secondary:'#9ED8F5',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sleeves'},
-            CHE:{primary:'#1746A2',secondary:'#1746A2',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'solid'},
-            CRY:{primary:'#D71920',secondary:'#1746A2',accent:'#F4D35E',ink:'#FFFFFF',pattern:'stripes'},
-            EVE:{primary:'#1746A2',secondary:'#FFFFFF',accent:'#102B5C',ink:'#FFFFFF',pattern:'solid'},
-            FUL:{primary:'#FFFFFF',secondary:'#111111',accent:'#D71920',ink:'#111111',pattern:'solid'},
-            LEE:{primary:'#FFFFFF',secondary:'#1746A2',accent:'#F4D35E',ink:'#111111',pattern:'solid'},
-            LIV:{primary:'#B30D2F',secondary:'#B30D2F',accent:'#F4D35E',ink:'#FFFFFF',pattern:'solid'},
-            MCI:{primary:'#7CC7EC',secondary:'#7CC7EC',accent:'#162A4C',ink:'#162A4C',pattern:'solid'},
-            MUN:{primary:'#D71920',secondary:'#111111',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'solid'},
-            NEW:{primary:'#111111',secondary:'#FFFFFF',accent:'#3D7DB8',ink:'#FFFFFF',pattern:'stripes'},
-            NFO:{primary:'#D71920',secondary:'#D71920',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'solid'},
-            SUN:{primary:'#D71920',secondary:'#FFFFFF',accent:'#111111',ink:'#111111',pattern:'stripes'},
-            TOT:{primary:'#FFFFFF',secondary:'#162A4C',accent:'#F4D35E',ink:'#162A4C',pattern:'solid'},
-            WHU:{primary:'#6A1735',secondary:'#9ED8F5',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sleeves'},
-            WOL:{primary:'#F2A900',secondary:'#111111',accent:'#FFFFFF',ink:'#111111',pattern:'solid'},
-            LEI:{primary:'#1746A2',secondary:'#FFFFFF',accent:'#F4D35E',ink:'#FFFFFF',pattern:'solid'},
-            IPS:{primary:'#1746A2',secondary:'#FFFFFF',accent:'#D71920',ink:'#FFFFFF',pattern:'stripes'},
-            SOU:{primary:'#D71920',secondary:'#FFFFFF',accent:'#111111',ink:'#111111',pattern:'stripes'}
-          });
-          const TEAM_PITCH_FALLBACKS = Object.freeze([
-            {primary:'#315C8C',secondary:'#FFFFFF',accent:'#E6B84A',ink:'#FFFFFF',pattern:'solid'},
-            {primary:'#7A1E38',secondary:'#D8EEF8',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sleeves'},
-            {primary:'#1F5C3A',secondary:'#FFFFFF',accent:'#E6B84A',ink:'#FFFFFF',pattern:'halves'},
-            {primary:'#20262B',secondary:'#F0C24B',accent:'#FFFFFF',ink:'#FFFFFF',pattern:'sash'},
-            {primary:'#6C4BA6',secondary:'#FFFFFF',accent:'#A7E0D1',ink:'#FFFFFF',pattern:'pinstripes'},
-            {primary:'#A13A2A',secondary:'#F5E7D4',accent:'#152A40',ink:'#FFFFFF',pattern:'hoops'}
-          ]);
-
-          function teamPitchNormaliseCode(team){
-            return String(team?.short_name || team?.name || '')
-              .toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3) || 'CLB';
-          }
-
-          function teamPitchPalette(team){
-            const code = teamPitchNormaliseCode(team);
-            const preset = TEAM_PITCH_PRESETS[code];
-            if(preset) return {code, ...preset};
-            let seed = Number(team?.id) || 0;
-            for(const ch of code) seed = ((seed * 31) + ch.charCodeAt(0)) >>> 0;
-            return {code, ...TEAM_PITCH_FALLBACKS[seed % TEAM_PITCH_FALLBACKS.length]};
-          }
-
-          function teamPitchLines(starters){
-            const source = Array.isArray(starters) ? starters : [];
-            return TEAM_PITCH_VISUAL_ORDER.map(position => ({
-              position,
-              players: source.filter(slot => Number(slot?.p?.element_type) === position)
-            })).filter(line => line.players.length);
-          }
-
-          function teamPitchCaptaincy(ranked){
-            const ids = [];
-            for(const item of Array.isArray(ranked) ? ranked : []){
-              const id = item?.s?.p?.id;
-              if(id != null && !ids.includes(id)) ids.push(id);
-              if(ids.length === 2) break;
-            }
-            return {captainId:ids[0] ?? null, viceId:ids[1] ?? null};
-          }
-
-          export { TEAM_PITCH_PATTERNS, teamPitchNormaliseCode, teamPitchPalette, teamPitchLines, teamPitchCaptaincy };
-          EOF
-
-          cat > tests/team-pitch.test.mjs <<'EOF'
-          import test from 'node:test';
-          import assert from 'node:assert/strict';
-          import { TEAM_PITCH_PATTERNS, teamPitchPalette, teamPitchLines, teamPitchCaptaincy } from '../src/ui/team-pitch.mjs';
-
-          test('pitch lines preserve every starter once in football visual order', () => {
-            const starters = [
-              {p:{id:1,element_type:1}}, {p:{id:2,element_type:2}}, {p:{id:3,element_type:2}},
-              {p:{id:4,element_type:3}}, {p:{id:5,element_type:3}}, {p:{id:6,element_type:4}}
-            ];
-            const lines = teamPitchLines(starters);
-            assert.deepEqual(lines.map(line => line.position), [4,3,2,1]);
-            assert.deepEqual(lines.flatMap(line => line.players.map(slot => slot.p.id)).sort((a,b)=>a-b), [1,2,3,4,5,6]);
-          });
-
-          test('captaincy uses the first two distinct ranked starters', () => {
-            const ranked = [
-              {s:{p:{id:10}}}, {s:{p:{id:10}}}, {s:{p:{id:11}}}, {s:{p:{id:12}}}
-            ];
-            assert.deepEqual(teamPitchCaptaincy(ranked), {captainId:10, viceId:11});
-          });
-
-          test('known club palette is repository owned and stable', () => {
-            assert.deepEqual(teamPitchPalette({id:1,short_name:'ARS'}), {
-              code:'ARS', primary:'#D71920', secondary:'#FFFFFF', accent:'#162A4C', ink:'#FFFFFF', pattern:'sleeves'
-            });
-          });
-
-          test('unknown club palette falls back deterministically to an approved pattern', () => {
-            const a = teamPitchPalette({id:77,short_name:'XYZ'});
-            const b = teamPitchPalette({id:77,short_name:'XYZ'});
-            assert.deepEqual(a,b);
-            assert.ok(TEAM_PITCH_PATTERNS.includes(a.pattern));
-            assert.match(a.primary,/^#[0-9A-F]{6}$/i);
-          });
-          EOF
-
           python - <<'PY'
           from pathlib import Path
-          import re
 
-          build = Path('build.mjs')
-          text = build.read_text()
-          old = "'src/ui/app-shell.mjs', 'src/ui/views.mjs', 'src/ui/transfer-optimiser-view.mjs'"
-          new = "'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/views.mjs', 'src/ui/transfer-optimiser-view.mjs'"
-          assert old in text
-          build.write_text(text.replace(old,new))
+          source='02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad'
+          artefacts='372576324b049972b88437540046c3c1f85457d5'
 
-          app = Path('app.html')
-          html = app.read_text()
-          old_css = """/* squad pitch */
-          .pitchrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
-          .pcard{border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:82px;text-align:center;background:#fff;font-size:11.5px}
-          .pcard.cap{border-color:var(--pitch);border-width:2px}
-          .pcard.warn{border-color:var(--claret);background:#FCF4F5}
-          .pcard b{display:block;font-size:12px}
-          .pcard .x{font-family:'IBM Plex Mono',monospace;color:var(--pitch);font-weight:600}
-          .benchband{background:#F2F4EF;border-radius:8px;padding:8px;margin-top:6px}
-          """
-          new_css = """/* team pitch */
-          .team-summary{display:grid;grid-template-columns:minmax(116px,.9fr) 1.7fr;gap:8px;margin-bottom:12px}
-          .team-score{background:var(--ink);color:#fff;border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;justify-content:center}
-          .team-score .label,.team-fact .label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
-          .team-score .value{font-family:'Bricolage Grotesque',sans-serif;font-size:31px;font-weight:800;line-height:1;margin-top:4px}
-          .team-score .unit{font-size:11px;color:#B9C9BF;margin-top:3px}
-          .team-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-          .team-fact{background:#F7F9F5;border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-width:0}
-          .team-fact .label{display:block;color:var(--ink-soft);opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-          .team-fact .value{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-          .team-entry{margin:0 0 10px}
-          .team-stage{max-width:640px;margin:14px auto 0}
-          .team-pitch{position:relative;isolation:isolate;overflow:hidden;height:clamp(500px,135vw,680px);border-radius:22px;padding:22px 8px 18px;background:linear-gradient(90deg,rgba(255,255,255,.035) 0 50%,rgba(0,0,0,.025) 50% 100%),linear-gradient(#2E7A4D,#1F6540);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 16px 34px -24px rgba(20,38,28,.7)}
-          .team-pitch:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.48);border-radius:13px;pointer-events:none}
-          .team-pitch:after{content:"";position:absolute;left:12px;right:12px;top:50%;border-top:1px solid rgba(255,255,255,.42);pointer-events:none}
-          .pitch-mark{position:absolute;border:1px solid rgba(255,255,255,.42);pointer-events:none}
-          .pitch-centre-circle{width:92px;height:92px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
-          .pitch-box{left:27%;right:27%;height:78px}
-          .pitch-box-top{top:12px;border-top:0}
-          .pitch-box-bottom{bottom:12px;border-bottom:0}
-          .pitch-formation{position:relative;z-index:2;height:100%;display:grid;grid-template-rows:repeat(4,minmax(0,1fr));align-items:center;gap:4px}
-          .pitch-line{display:flex;justify-content:space-evenly;align-items:center;gap:3px;padding:0 2px;min-width:0}
-          .pitch-player{position:relative;display:flex;flex:1 1 0;min-width:0;max-width:82px;flex-direction:column;align-items:center;text-align:center}
-          .shirt-wrap{position:relative;height:44px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:-2px;z-index:2}
-          .club-shirt{--shirt-primary:#315C8C;--shirt-secondary:#FFFFFF;--shirt-accent:#E6B84A;--shirt-ink:#FFFFFF;position:relative;display:block;width:34px;height:39px;border-radius:8px 8px 10px 10px;background:var(--shirt-primary);box-shadow:inset 0 5px 0 -3px var(--shirt-accent),0 5px 9px rgba(7,27,17,.25)}
-          .club-shirt:before,.club-shirt:after{content:"";position:absolute;top:3px;width:11px;height:16px;background:var(--shirt-primary);z-index:-1}
-          .club-shirt:before{left:-7px;border-radius:7px 2px 4px 5px;transform:skewY(15deg)}
-          .club-shirt:after{right:-7px;border-radius:2px 7px 5px 4px;transform:skewY(-15deg)}
-          .club-shirt.pattern-sleeves:before,.club-shirt.pattern-sleeves:after{background:var(--shirt-secondary)}
-          .club-shirt.pattern-stripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
-          .club-shirt.pattern-halves{background:linear-gradient(90deg,var(--shirt-primary) 0 50%,var(--shirt-secondary) 50%)}
-          .club-shirt.pattern-hoops{background:repeating-linear-gradient(0deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
-          .club-shirt.pattern-sash{background:linear-gradient(130deg,var(--shirt-primary) 0 40%,var(--shirt-secondary) 40% 58%,var(--shirt-primary) 58%)}
-          .club-shirt.pattern-pinstripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 5px,var(--shirt-secondary) 5px 7px)}
-          .club-shirt-code{position:absolute;left:3px;right:3px;bottom:7px;overflow:hidden;color:var(--shirt-ink);font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:600;line-height:1;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}
-          .captain-badge{position:absolute;top:-3px;right:-13px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid #fff;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;box-shadow:0 3px 8px rgba(7,27,17,.3)}
-          .captain-badge.vice{background:#fff;color:var(--ink);border-color:var(--ink)}
-          .pitch-copy{position:relative;width:100%;min-width:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:8px;padding:4px 3px 5px;box-shadow:0 4px 10px rgba(7,27,17,.18)}
-          .pitch-name{font-size:10px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-          .pitch-meta{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ink-soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-          .pitch-xp{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--pitch);font-weight:600;line-height:1.2;margin-top:2px}
-          .pitch-player.warn .club-shirt{outline:2px solid #FFD3D9;outline-offset:2px}
-          .pitch-player.warn .pitch-copy{box-shadow:0 0 0 2px #F0AEB9,0 4px 10px rgba(7,27,17,.18)}
-          .team-bench{background:#F7F9F5;border:1px solid var(--line);border-radius:16px;padding:10px;margin-top:10px}
-          .bench-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-          .bench-head strong{font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
-          .bench-head span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
-          .bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-          .bench-player{max-width:none}
-          .bench-player .shirt-wrap{height:38px;transform:scale(.88);transform-origin:center bottom}
-          .bench-player .pitch-copy{box-shadow:none;border:1px solid var(--line);background:#fff}
-          .section-title{margin:18px 0 7px}
-          @media(max-width:380px){
-            .team-summary{grid-template-columns:106px 1fr}.team-score{padding:11px}.team-score .value{font-size:27px}
-            .team-fact{padding:8px 5px}.team-fact .label{font-size:8px}.team-fact .value{font-size:14px}
-            .team-pitch{height:500px;padding-left:5px;padding-right:5px}.pitch-player{max-width:66px}.club-shirt{width:31px;height:36px}
-            .shirt-wrap{height:40px}.pitch-name{font-size:9px}.pitch-meta{font-size:7.5px}.pitch-xp{font-size:8.5px}
-          }
-          @media(min-width:720px){
-            .team-pitch{height:680px;padding:30px 16px 24px}.pitch-player{max-width:96px}.club-shirt{width:42px;height:48px}
-            .shirt-wrap{height:54px}.pitch-name{font-size:11px}.pitch-meta{font-size:9px}.pitch-xp{font-size:10px}
-          }
-          """
-          assert old_css in html
-          html = html.replace(old_css,new_css)
-          old_header = """    <span class="eyebrow">Your 15</span>
-              <h2>Squad review</h2>
-              <p class="hint">Availability, price moves, best XI by projected points and the captain call.</p>"""
-          new_header = """    <span class="eyebrow">Gameweek plan</span>
-              <h2>Team</h2>
-              <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>"""
-          assert old_header in html
-          app.write_text(html.replace(old_header,new_header))
+          p=Path('CLAUDE.md'); s=p.read_text()
+          old="Stage 8 is merged into `main` at `b0f6e1683b1bdb38c9cb233024a8d0bfd652caa8` with a verified **284/284** baseline. Stage 9 — UI integration is approved in `docs/STAGE9-DESIGN.md`. Checkpoint 9.1 is implemented and verified on draft PR #17 from branch `agent/stage9-1-app-shell`: four primary destinations (Team, Players, Transfers and More), Team as the default landing screen, and the existing setup/fixtures/league/Ask surfaces regrouped under More. No model or feature behaviour changed. Owner review and explicit merge approval remain required. Checkpoint 9.2 must not begin before 9.1 is merged. Uncertainty spread-label thresholds remain separately gated for owner approval during checkpoint 9.3."
+          new=f"Stage 9.1 is merged into `main` through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`. Checkpoint 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 from branch `agent/stage9-2-pitch-shirts`: portrait model-selected XI, repository-owned CSS shirts, clear captain/vice treatment and preserved bench order. Verified source `{source}` passes **288/288** tests with deterministic builds; generated artefacts are committed at `{artefacts}`. No model, provider, simulation or optimiser behaviour changed. Owner review and explicit merge approval remain required. Checkpoint 9.3 must not begin before 9.2 is merged, and its descriptive uncertainty spread-label thresholds remain separately gated for owner approval."
+          assert old in s; p.write_text(s.replace(old,new))
 
-          views = Path('src/ui/views.mjs')
-          js = views.read_text()
-          pattern = re.compile(r"function renderSquad\(\)\{.*?\n\}\n\n/\* ---------------------------------------------------------------------\n   VIEW — TRANSFER PLANNER", re.S)
-          replacement = r'''function renderSquad(){
-            const out = $('squadOut'), squad = mySquad();
-            if(!squad.length){
-              setChildren(out,elNode('div',{class:'empty'},elNode('strong',{},'No squad yet'),
-                S.entry ? ['Team found: ',elNode('b',{},S.entry.name),'. FPL only publishes picks once a gameweek is under way — until then, build your 15 by hand below and everything still works.']
-                  : 'Add your team ID above, or build your 15 by hand below.'));
-              return;
-            }
-            const gw=S.nextGW, xi=bestXI(squad,gw), nodes=[];
-            nodes.push(elNode('div',{class:'team-summary'},
-              elNode('div',{class:'team-score'},elNode('span',{class:'label'},`Projected GW${gw}`),elNode('span',{class:'value'},fmt1(xi.tot)),elNode('span',{class:'unit'},'expected points')),
-              elNode('div',{class:'team-facts'},
-                elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Shape'),elNode('span',{class:'value'},xi.shape)),
-                elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Value'),elNode('span',{class:'value'},`£${fmt1(squad.reduce((a,s)=>a+s.p.now_cost,0)/10)}m`)),
-                elNode('div',{class:'team-fact'},elNode('span',{class:'label'},'Free transfers'),elNode('span',{class:'value'},num($('ftCount').value))))));
-            if(S.entry) nodes.push(elNode('p',{class:'status team-entry'},`${S.entry.name} · ${S.entry.player_first_name||''} ${S.entry.player_last_name||''} · OR ${(S.entry.summary_overall_rank||0).toLocaleString('en-GB')}`));
+          p=Path('docs/PROJECT_CONTEXT.md'); s=p.read_text()
+          s=s.replace("- Stages 1–7 are complete and merged.\n- Stage 7 merged through PR #15 at `78b42e09d2ad3b8338b587ba2b89e815cfc0c45a` with a verified baseline of 274 passing tests, successful build, deterministic two-build comparison and build-identity checks.\n- Stage 8 — Uncertainty and Squad Simulation is implemented on draft PR #16 and remains behind full verification and owner-review gates.",
+          "- Stages 1–8 and Stage 9 checkpoint 9.1 are complete and merged.\n- Stage 9.1 merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`, establishing Team, Players, Transfers and More with Team as the default landing screen.\n- Stage 9.2 — Team pitch and shirts is implemented and verified on draft PR #18 with 288 passing tests, successful deterministic builds and owner review still required.")
+          s=s.replace("Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser and Stage 7 walk-forward backtest.\n\nCurrent: Stage 8 implementation and verification on draft PR #16. It adds a deterministic uncertainty layer, percentiles, threshold probabilities, legal squad auto-subs and captain/vice fallback without changing deterministic `projectXP()`.\n\nNext after Stage 8 merge: Stage 9 UI integration.",
+          "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and Stage 9.1 app shell.\n\nCurrent: Stage 9.2 implementation and owner review on draft PR #18. It presents the unchanged model-selected XI on a portrait pitch with repository-owned CSS shirts and clear model-selected captain/vice treatment.\n\nNext after Stage 9.2 merge: Stage 9.3 player detail and uncertainty presentation. Descriptive spread-label thresholds require separate owner approval before implementation.")
+          p.write_text(s)
 
-            const problems=[];
-            squad.forEach(({p})=>{
-              let tail=null;
-              if(['i','u','s','n'].includes(p.status)) tail=[' unavailable'];
-              else if(p.status==='d') tail=[` doubtful ${p.chance_of_playing_next_round ?? '?'}%`];
-              else if(priceMomentum(p)==='falling') tail=[' is being sold heavily — a price fall looks likely'];
-              if(tail){ if(p.news) tail.push(` — ${p.news} `,elNode('span',{class:'flag dark'},newsAge(p))); problems.push([elNode('b',{},p.web_name),tail]); }
-            });
-            const blanks=squad.filter(({p})=>(teamFixtures(p.team,gw,1)[0]||[]).length===0);
-            if(blanks.length) problems.push([elNode('b',{},blanks.map(b=>b.p.web_name).join(', ')),` ${blanks.length>1?'have':'has'} no fixture in GW${gw}`]);
-            if(problems.length){ const n=noteNode('bad',elNode('b',{},'Needs attention')); problems.forEach(p=>n.append(elNode('br'),...p)); nodes.push(n); }
-            else nodes.push(noteNode('good','No injuries, suspensions, blanks or price falls in your 15. Nothing forces a transfer this week.'));
+          p=Path('docs/ARCHITECTURE.md'); s=p.read_text()
+          s=s.replace("  ui/                    views, restricted Markdown and security wiring", "  ui/                    app shell, visual-only team-pitch helpers, views, restricted Markdown and security wiring")
+          s=s.replace("The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.",
+          "The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. `ui/team-pitch.mjs` is bundled after the Stage 9 app shell and before the main views so its pure visual helpers are available without owning selection logic. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.")
+          marker="## Provider Health and storage"
+          insert="""## Stage 9 UI boundary
+`ui/app-shell.mjs` owns the four primary destinations. `ui/team-pitch.mjs` owns only deterministic visual grouping and repository-owned shirt palettes. `ui/views.mjs` continues to call the existing `bestXI()` and projection functions, then renders those unchanged results onto the portrait pitch. Captain and vice badges represent the first two distinct players from the existing captain ranking; no formula or persisted squad state is changed.
 
-            const capRank=xi.xi.map(s=>({s,x:xpOf(s.p,gw,1).total,own:num(s.p.selected_by_percent)})).sort((a,b)=>b.x-a.x);
-            const captaincy=teamPitchCaptaincy(capRank);
-            const fixtureLabel=p=>{
-              const games=teamFixtures(p.team,gw,1)[0]||[];
-              return games.length ? games.map(g=>`${g.opp.short_name} ${g.home?'H':'A'}`).join(' + ') : 'Blank';
-            };
-            const playerNode=(slot,benchIndex=null)=>{
-              const p=slot.p, team=S.teams[p.team], palette=teamPitchPalette(team);
-              const role=p.id===captaincy.captainId?'captain':p.id===captaincy.viceId?'vice':null;
-              const bad=availability(p)<1;
-              const fixture=fixtureLabel(p), projected=fmt1(xpOf(p,gw,1).total);
-              const label=benchIndex==null?p.web_name:`${benchIndex}. ${p.web_name}`;
-              const style=`--shirt-primary:${palette.primary};--shirt-secondary:${palette.secondary};--shirt-accent:${palette.accent};--shirt-ink:${palette.ink}`;
-              return elNode('div',{class:`pitch-player${benchIndex==null?'':' bench-player'}${bad?' warn':''}`,
-                'aria-label':`${label}, ${fixture}, ${projected} expected points${role==='captain'?', captain':role==='vice'?', vice-captain':''}`},
-                elNode('div',{class:'shirt-wrap'},
-                  elNode('span',{class:`club-shirt pattern-${palette.pattern}`,style,'aria-hidden':'true'},elNode('span',{class:'club-shirt-code'},palette.code)),
-                  role?elNode('span',{class:`captain-badge${role==='vice'?' vice':''}`},role==='captain'?'C':'VC'):null),
-                elNode('div',{class:'pitch-copy'},elNode('div',{class:'pitch-name'},label),elNode('div',{class:'pitch-meta'},fixture),elNode('div',{class:'pitch-xp'},`${projected} xP`)));
-            };
-            const formation=elNode('div',{class:'pitch-formation'},teamPitchLines(xi.xi).map(line=>
-              elNode('div',{class:`pitch-line position-${line.position}`},line.players.map(slot=>playerNode(slot)))));
-            const pitch=elNode('section',{class:'team-pitch','aria-label':`Model-selected starting eleven for Gameweek ${gw}`},
-              elNode('span',{class:'pitch-mark pitch-centre-circle','aria-hidden':'true'}),
-              elNode('span',{class:'pitch-mark pitch-box pitch-box-top','aria-hidden':'true'}),
-              elNode('span',{class:'pitch-mark pitch-box pitch-box-bottom','aria-hidden':'true'}),formation);
-            const bench=elNode('section',{class:'team-bench','aria-label':'Bench order'},
-              elNode('div',{class:'bench-head'},elNode('strong',{},'Bench'),elNode('span',{},'Auto-sub order')),
-              elNode('div',{class:'bench-grid'},xi.bench.map((slot,index)=>playerNode(slot,index+1))));
-            nodes.push(elNode('div',{class:'team-stage'},pitch,bench));
+"""
+          assert marker in s; s=s.replace(marker,insert+marker)
+          s=s.replace("Stage 8 adds player-simulation and squad-simulation suites.", "Stage 8 adds player-simulation and squad-simulation suites. Stage 9.2 adds direct visual-helper tests for formation grouping, captain/vice identity and deterministic shirt palettes.")
+          p.write_text(s)
 
-            if(capRank.length){
-              const c1=capRank[0], c2=capRank[1], grid=elNode('div',{class:'capgrid'});
-              nodes.push(elNode('h3',{class:'section-title'},'Captaincy ranking'),grid);
-              capRank.slice(0,4).forEach((c,i)=>{
-                const games=teamFixtures(c.s.p.team,gw,1)[0]||[];
-                const why=games.length?games.map(g=>`${g.home?'vs':'away to'} ${g.opp.short_name}`).join(' + ')+` · ${fmt1(c.x)} xP · ${c.own}% owned`:'no fixture';
-                grid.appendChild(elNode('div',{class:`capcard ${i===0?'top':''}`},elNode('div',{class:'rank'},i+1),
-                  elNode('div',{class:'capbody'},elNode('span',{class:'pname'},c.s.p.web_name,flagNodes(c.s.p)),elNode('div',{class:'why'},why)),
-                  elNode('span',{class:`xp ${i===0?'hot':''}`},fmt1(c.x*2))));
-              });
-              if(c2&&(c1.x-c2.x)<.6){ const safer=c1.own>=c2.own?c1:c2; nodes.push(noteNode('',`${c1.s.p.web_name} and ${c2.s.p.web_name} are within half a point — effectively a coin toss. ${safer.s.p.web_name} is the higher-owned pick at ${safer.own}%, so it protects your rank; the other is the rank-climbing play.`)); }
-            }
-            nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
-            const tbody=elNode('tbody');
-            squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{},
-              elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
-              cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total))))));
-            nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
-            if(!$('useManual').checked&&S.picks) nodes.push(noteNode('plain',"Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact."));
-            setChildren(out,nodes);
-          }
+          p=Path('docs/ROADMAP.md'); s=p.read_text()
+          s=s.replace("- **Stage 8 — Uncertainty and squad simulation** · DONE and merged through PR #16 at `b0f6e1683b1bdb38c9cb233024a8d0bfd652caa8`.\n  - Deterministic seeded player and legal squad simulations.\n  - P10/P25/median/P75/P90 plus blank/return/haul probabilities.\n  - Reserve-goalkeeper handling, ordered legal auto-subs and captain-to-vice fallback.\n  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.",
+          "- **Stage 8 — Uncertainty and squad simulation** · DONE and merged through PR #16 at `b0f6e1683b1bdb38c9cb233024a8d0bfd652caa8`.\n  - Deterministic seeded player and legal squad simulations.\n  - P10/P25/median/P75/P90 plus blank/return/haul probabilities.\n  - Reserve-goalkeeper handling, ordered legal auto-subs and captain-to-vice fallback.\n  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.\n- **Checkpoint 9.1 — App shell and primary navigation** · DONE and merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.\n  - Four primary destinations: Team, Players, Transfers and More.\n  - Team is the default landing screen; existing supporting tools are regrouped under More.\n  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.")
+          start=s.index('## Current')
+          s=s[:start]+f"""## Current
+- **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
+- **Checkpoint 9.2 — Team pitch and shirts** · implemented and verified on draft PR #18; owner review and explicit merge approval remain.
+  - Portrait football pitch presents the unchanged model-selected XI.
+  - Repository-owned CSS shirts use deterministic club palettes with safe fallbacks.
+  - Model-ranked captain and vice-captain are marked directly on the pitch; bench order is preserved.
+  - Verified source commit `{source}`: **288/288 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Generated deployables committed at `{artefacts}`.
+  - No projection, minutes, scoring, fixture, simulation, squad, optimiser or provider behaviour changed.
 
-          /* ---------------------------------------------------------------------
-             VIEW — TRANSFER PLANNER'''
-          js2, count = pattern.subn(replacement,js,count=1)
-          assert count == 1, count
-          views.write_text(js2)
+## Upcoming
+1. **Checkpoint 9.3 — Player detail and uncertainty** · only after 9.2 is merged; spread-label thresholds require separate owner approval.
+2. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
+3. **Checkpoint 9.5 — Settings and Provider Health integration**.
+4. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+
+## Current blockers
+1. Owner review and explicit merge approval for Stage 9.2 draft PR #18.
+2. Descriptive uncertainty spread-label thresholds remain unapproved for checkpoint 9.3.
+3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+"""
+          p.write_text(s)
+
+          p=Path('docs/STAGE9-DESIGN.md'); s=p.read_text()
+          needle="### 9.2 — Team pitch and shirts\n\n- Replace the current squad presentation with the approved portrait pitch.\n- Add repository-owned CSS shirt representations and captain/vice treatment.\n- Keep the existing model-selected XI and squad logic unchanged."
+          replacement=needle+f"\n\nStatus: **Implemented and verified on draft PR #18.** Source `{source}` passes 288/288 tests; generated artefacts are at `{artefacts}`. Owner review and merge approval remain required."
+          assert needle in s; p.write_text(s.replace(needle,replacement))
+
+          p=Path('docs/CHANGELOG.md'); s=p.read_text()
+          marker='## [Stage 7]'
+          entry=f"""## [Stage 9.2] — 2026-07-28 — Team pitch and shirts
+### Added
+- Portrait, mobile-first football pitch for the unchanged model-selected starting XI.
+- Repository-owned CSS shirt shapes and deterministic club palettes with safe fallbacks.
+- Direct captain and vice-captain badges, compact fixture/xP cards and preserved bench order.
+- Four focused tests for formation grouping, captaincy identity and shirt-palette determinism.
+### Changed
+- The Team surface now leads with projected score, shape, squad value, free transfers and the football-first pitch rather than legacy flat player cards.
+- The existing captain ranking and six-Gameweek squad table remain available below the pitch.
+### Verification
+- Verified source commit `{source}`.
+- Full suite: **288/288 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `{artefacts}`.
+### Unchanged
+- `bestXI()`, bench ordering, projections, expected minutes, scoring, fixtures, simulation, captain ranking, transfer optimisation, providers, storage and security behaviour.
+- No official FPL or club artwork and no prediction-accuracy claim.
+### Status
+- Implemented and verified on draft PR #18; awaiting owner review and explicit merge approval.
+
+## [Stage 9.1] — 2026-07-28 — App shell and primary navigation
+### Added
+- Four primary destinations: Team, Players, Transfers and More, with Team as the default landing screen.
+### Status
+- Merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.
+
+"""
+          assert marker in s; p.write_text(s.replace(marker,entry+marker))
+
+          p=Path('docs/STAGE_HISTORY.md'); s=p.read_text()
+          s=s.replace('STAGE7-DESIGN.md, AUDIT.md.', 'STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, AUDIT.md.')
+          marker='## Stage 7 — Walk-forward backtest'
+          entry=f"""## Stage 9.2 — Team pitch and shirts (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+Replaced the legacy flat Best XI cards with a portrait, mobile-first football pitch while leaving `bestXI()`, projection calls and bench order unchanged. The same captain ranking now supplies direct captain and vice-captain badges. Compact cards show repository-owned CSS shirts, player names, next fixture and next-Gameweek expected points; injury/doubt warnings remain visible.
+
+A visual-only `src/ui/team-pitch.mjs` boundary owns formation grouping and deterministic club-colour palettes, including repository-owned fallbacks for unknown teams. No official FPL or club artwork is used. Four focused tests raise the suite from 284 to 288. Verified source `{source}` passed **288/288**, production build and byte-for-byte repeat build checks; generated artefacts are committed at `{artefacts}`. No model, provider, simulation, optimiser, storage or security behaviour changed. Draft PR #18 awaits owner review and explicit merge approval.
+
+## Stage 9.1 — App shell and primary navigation (MERGED 2026-07-28)
+Established Team, Players, Transfers and More, made Team the default landing screen and regrouped existing supporting surfaces under More without changing feature behaviour. Verified at 284/284 tests and merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.
+
+"""
+          assert marker in s; p.write_text(s.replace(marker,entry+marker))
           PY
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.html build.mjs src/ui/team-pitch.mjs src/ui/views.mjs tests/team-pitch.test.mjs
-          git commit -m 'Implement Stage 9.2 pitch and shirts'
-          SOURCE_SHA=$(git rev-parse HEAD)
+          git add CLAUDE.md docs/PROJECT_CONTEXT.md docs/ARCHITECTURE.md docs/ROADMAP.md docs/STAGE9-DESIGN.md docs/CHANGELOG.md docs/STAGE_HISTORY.md
+          git commit -m 'Record Stage 9.2 verification status'
 
+          SOURCE_SHA=02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad
+          mkdir -p /tmp/committed-dist /tmp/first-build
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/committed-dist/
           BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh
-          mkdir -p /tmp/stage9-2-first
-          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-2-first/
+          cmp /tmp/committed-dist/index.html dist/index.html
+          cmp /tmp/committed-dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/committed-dist/manifest.json dist/manifest.json
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/first-build/
           BUILD_COMMIT="$SOURCE_SHA" node build.mjs
-          cmp /tmp/stage9-2-first/index.html dist/index.html
-          cmp /tmp/stage9-2-first/app.bundle.js dist/app.bundle.js
-          cmp /tmp/stage9-2-first/manifest.json dist/manifest.json
+          cmp /tmp/first-build/index.html dist/index.html
+          cmp /tmp/first-build/app.bundle.js dist/app.bundle.js
+          cmp /tmp/first-build/manifest.json dist/manifest.json
           node -e "const m=require('./dist/manifest.json');if(m.commit!=='$SOURCE_SHA')throw new Error('build identity mismatch: '+m.commit)"
-
-          git add dist/index.html dist/app.bundle.js dist/manifest.json
-          git commit -m 'Commit verified Stage 9.2 build artefacts'
+          git diff --exit-code -- dist/
           git push origin HEAD:agent/stage9-2-pitch-shirts
