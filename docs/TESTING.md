@@ -3,53 +3,41 @@ Purpose: test architecture and rules of engagement. Audience: every session befo
 Last updated: 2026-07-28. Related: tests/, docs/STAGE1.md, CLAUDE.md.
 
 ## Stack
-node:test only (zero dependencies, Node ≥18). Entry: `./run-tests.sh` (builds first — the bundle is
-a test target). 194 tests across 12 suite files; all must stay green in every stage.
+`node:test` only (zero dependencies, Node ≥18). Entry: `./run-tests.sh`, which builds first because
+the generated bundle is itself a test target. Current verified baseline: **210 passing tests**.
 
 ## Suites
-1. **characterisation.test.mjs (77)** — golden-snapshot pinning of model behaviour, executed against
-   the BUILT BUNDLE via the DOM harness. Two golden sections: `stable` (must never drift) and
-   `expectedToChange` (known-incorrect behaviour keyed to AUDIT ids: MIN1, DEN1, SCOR1, SCOR2,
-   FIX1). When a fixing stage lands, its quarantined goldens are updated AS PART OF that stage's
-   review — a diff there is the fix arriving, never a silent regression. Regenerate only
-   deliberately: `UPDATE_GOLDEN=1 node --test tests/characterisation.test.mjs`, then review the diff.
-2. **sec1.test.mjs (1)** — fetch-spy regression: odds key never reaches a relay under any failure.
-3. **unit.test.mjs (10)** — direct ES-module imports (no DOM harness) for fixtures, scoring, squad,
-   odds maths, pure backtest (planted-bias recovery + provenance), cache envelope, registry, config.
-4. **resilience.test.mjs (8)** — corruption/outage/malformed-input behaviour. DUP-1 is now a
-   fixed-behaviour characterisation: phantom duplicates collapse while genuine doubles survive.
-5. **validation.test.mjs (12)** — pure D-13 fixture-integrity tests: identity, exact/conflicting
-   duplicate handling, postponed rows, fatal shape failure, immutability and payload-free summaries.
-6. **anthropic-removal.test.mjs (5)** — D-08/SEC-3 regression battery: legacy secret migration,
-   no persistence, hosted fail-fast, keyless preview request and static key-affordance scan.
-7. **schema.test.mjs (25)** — pure per-endpoint payload contracts covering fatal and partial
-   validation, issue collapse, immutability and safe metadata.
-8. **schema-state.test.mjs (8)** — D-14 state/orchestration integration: atomic hydrate, issue
-   replacement, cache rejection and optional-provider degradation.
-9. **retry.test.mjs (20)** — D-15 retry-engine policy: transient/permanent classes, attempt and
-   elapsed-time ceilings, bounded half-jitter backoff and endpoint scrubbing.
-10. **retry-transport.test.mjs (13)** — transport integration: healthy single attempts, bounded
-    relay cascades, recovery, permanent short-circuiting and normalised retry metadata.
-11. **provider-health.test.mjs (10)** — D-16 seven-state vocabulary, provider-specific stale
-    thresholds, Live/Cached/Stale/Fallback/Partial/Disabled/Unavailable transitions, neutral Disabled
-    behaviour, age calculation and Stage-2 compatibility fields.
-12. **rendering-security.test.mjs (5)** — hostile player, team, entry, saved-league and provider
-    strings remain visible inert text across representative DOM-built views; a source inventory
-    guard permits the sole excluded `innerHTML` sink only in the unchanged Ask renderer.
+1. **characterisation.test.mjs (77)** — model behaviour against the built bundle and golden snapshots.
+2. **sec1.test.mjs (1)** — odds key never reaches a relay.
+3. **unit.test.mjs (10)** — direct ES-module model/provider/storage tests.
+4. **resilience.test.mjs (8)** — corruption, outage and malformed-input behaviour.
+5. **validation.test.mjs (12)** — fixture identity/deduplication and payload-safe summaries.
+6. **anthropic-removal.test.mjs (5)** — legacy secret migration and hosted fail-fast behaviour.
+7. **schema.test.mjs (25)** — per-endpoint fatal/partial payload contracts.
+8. **schema-state.test.mjs (8)** — validation/state integration and cache rejection.
+9. **retry.test.mjs (20)** — bounded retry engine and endpoint scrubbing.
+10. **retry-transport.test.mjs (13)** — transport integration and retry metadata.
+11. **provider-health.test.mjs (10)** — seven-state health vocabulary and transitions.
+12. **rendering-security.test.mjs (5)** — hostile API/user strings remain inert text.
+13. **markdown-sanitisation.test.mjs (8)** — restricted Markdown and hostile-link battery.
+14. **security-completion.test.mjs (8)** — odds forgetting/scrubbing, storage omission, masked UI,
+    CSP hash verification, policy allow-list, frame-buster/build identity and artefact secret scans.
 
 ## Harness
-tests/harness.mjs stubs DOM/storage/fetch and loads `dist/app.bundle.js` (APP_TARGET overrides);
-syntheticWorld() builds the deterministic 20-team league + archetype players every suite shares.
+`tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. The frame-buster is
+guarded for non-browser execution so the same production bundle remains the characterisation target.
 
-## Philosophy & rules
-- Characterise before refactoring; never delete a test — retitle/re-home with justification.
-- New model code: pure functions, direct-import tests, synthetic ground truth with KNOWN planted
-  answers (see the backtest bias-recovery pattern).
-- Failure modes get tests, not assumptions (resilience suite is the template).
-- Security claims get adversarial tests (SEC-1 pattern; Stage 3 adds the sanitisation battery).
-- No accuracy claims from tests on training data (D-11).
+## Required checks
+Before implementation work is described as complete:
 
-## Coverage goals
-Every exported model/provider/storage function direct-import tested; every AUDIT issue either fixed
-or pinned; every stage adds its battery per its design doc; UI logic covered at bundle level until
-Stage 9 splits views.
+1. Run `./run-tests.sh` with all tests green.
+2. Build twice with the same explicit `BUILD_COMMIT` and compare `dist/index.html`,
+   `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte.
+3. Independently recompute the CSP hashes from the exact emitted inline script/style bytes.
+4. Confirm `BUILD_INFO`, manifest module order and generated files agree.
+5. For security work, use planted sentinel secrets and adversarial inputs rather than policy-only claims.
+
+## Philosophy
+Never delete or weaken a test to make a change pass. Golden changes belong only to the stage that
+fixes their recorded issue. Security guarantees require adversarial regression coverage. Prediction
+accuracy cannot be claimed from in-sample or method-flattered results.

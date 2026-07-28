@@ -38,19 +38,24 @@ async function loadCfg(){
   if(migrated.changed) await sset(K_CFG, migrated.config);
   return migrated.config;
 }
-async function saveCfg(){
-  await sset(K_CFG, {
+function currentConfig(){
+  const config = {
     teamId: $('teamId').value.replace(/\D/g,''),
     ft: num($('ftCount').value),
     bank: num($('bankIn').value),
     leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
-    oddsKey: $('oddsKey').value.trim(),
     useUstat: $('useUstat').checked
-  });
+  };
+  const oddsKey = $('oddsKey').value.trim();
+  if(oddsKey) config.oddsKey = oddsKey;
+  return config;
+}
+async function saveCfg(){
+  await sset(K_CFG, currentConfig());
 }
 
-export { K_CFG, K_SQUAD, K_CACHE, K_CAL, sget, sset, saveCfg, stripDeprecatedSecrets, loadCfg };
+export { K_CFG, K_SQUAD, K_CACHE, K_CAL, sget, sset, saveCfg, currentConfig, stripDeprecatedSecrets, loadCfg };
 
 // Versioned cache envelope (season snapshots only; generic sget/sset stay raw).
 export async function cachePut(key, payload, season){
