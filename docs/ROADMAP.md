@@ -24,24 +24,29 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - P10/P25/median/P75/P90 plus blank/return/haul probabilities.
   - Reserve-goalkeeper handling, ordered legal auto-subs and captain-to-vice fallback.
   - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
+- **Checkpoint 9.1 — App shell and primary navigation** · DONE and merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.
+  - Four primary destinations: Team, Players, Transfers and More.
+  - Team is the default landing screen; existing supporting tools are regrouped under More.
+  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
 
 ## Current
 - **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
-- **Checkpoint 9.1 — App shell and primary navigation** · implemented and verified on draft PR #17; owner review and explicit merge approval remain.
-  - Four primary destinations: Team, Players, Transfers and More.
-  - Team is the default landing screen.
-  - Existing setup, fixtures, league and Ask surfaces are regrouped under More.
-  - No model, simulation, optimiser, provider or feature behaviour changed.
-  - Verified source commit `c75747fc6fc871a6a75991c8fb0c9be7ad572982`: **284/284 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+- **Checkpoint 9.2 — Team pitch and shirts** · implemented and verified on draft PR #18; owner review and explicit merge approval remain.
+  - Portrait football pitch presents the unchanged model-selected XI.
+  - Repository-owned CSS shirts use deterministic club palettes with safe fallbacks.
+  - Model-ranked captain and vice-captain are marked directly on the pitch; bench order is preserved.
+  - Verified source commit `02d59e6e6bbdc0fe9480642d717bfcfa4f9367ad`: **288/288 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Generated deployables committed at `372576324b049972b88437540046c3c1f85457d5`.
+  - No projection, minutes, scoring, fixture, simulation, squad, optimiser or provider behaviour changed.
 
 ## Upcoming
-1. **Checkpoint 9.2 — Pitch and shirts** · only after 9.1 is merged.
-2. **Checkpoint 9.3 — Uncertainty presentation** · spread-label thresholds require separate owner approval before implementation.
-3. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
-4. **Checkpoint 9.5 — Settings and Provider Health integration**.
-5. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+1. **Checkpoint 9.3 — Player detail and uncertainty** · only after 9.2 is merged; spread-label thresholds require separate owner approval.
+2. **Checkpoint 9.4 — Decision previews** · temporary captain/vice and transfer-plan previews.
+3. **Checkpoint 9.5 — Settings and Provider Health integration**.
+4. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
 
 ## Current blockers
-1. Owner review and explicit merge approval for Stage 9.1 draft PR #17.
-2. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-3. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+1. Owner review and explicit merge approval for Stage 9.2 draft PR #18.
+2. Descriptive uncertainty spread-label thresholds remain unapproved for checkpoint 9.3.
+3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
