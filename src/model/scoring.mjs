@@ -2,7 +2,7 @@ import { S } from '../state.mjs';
 import { clamp, num } from '../util.mjs';
 import { FPL_RULES, GOAL_PTS, CS_PTS, ASSIST_PTS, BASE_GOALS, SCORING_RULES } from '../config.mjs';
 import { teamFixtures } from './fixtures.mjs';
-import { expectedMinutes, minutesEstimate } from './minutes.mjs';
+import { expectedMinutes, minutesEstimate, completedTeamMatches, aggregateMinutes } from './minutes.mjs';
 import { expectedGroupedPoints, expectedThresholdPoints, shrunkRate } from './scoring-rules.mjs';
 /* ---------------------------------------------------------------------
    PLAYER MODEL — projected points, built separately per position.
@@ -31,7 +31,10 @@ function seasonAppearances(p){
   const rows = Array.isArray(S.minuteHistory?.[p.id]) ? S.minuteHistory[p.id] : [];
   const detailed = rows.filter(r => num(r.minutes) > 0).length;
   if(detailed) return detailed;
-  return Math.max(num(p.starts), num(p.minutes)/60, 0);
+  const matches = completedTeamMatches(p.team);
+  const aggregate = aggregateMinutes(p, matches);
+  if(aggregate) return matches * aggregate.pAppear;
+  return Math.max(num(p.starts), num(p.minutes)/90, 0);
 }
 function positionPlayers(pos){ return (S.boot?.elements || []).filter(p => p.element_type === pos); }
 function populationRate(pos, field){
