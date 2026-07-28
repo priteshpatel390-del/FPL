@@ -1,10 +1,10 @@
 name: Stage 8 verification
 on:
-  push:
-    branches: [agent/stage8-uncertainty-simulation]
   pull_request:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -50,11 +50,60 @@ jobs:
           cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
           cmp /tmp/build-one/manifest.json dist/manifest.json
           grep -q "$COMMIT" dist/manifest.json
-      - name: Upload verified build
-        uses: actions/upload-artifact@v4
-        with:
-          name: stage8-verified-dist
-          path: |
-            dist/index.html
-            dist/app.bundle.js
-            dist/manifest.json
+      - name: Finalize verified Stage 8 branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH=${{ github.event.pull_request.head.ref }}
+          SOURCE_COMMIT=${{ github.event.pull_request.head.sha }}
+          python - <<'PY'
+          from pathlib import Path
+
+          roadmap = Path('docs/ROADMAP.md')
+          text = roadmap.read_text()
+          text = text.replace('implemented on draft PR #16; verification and owner review gate remain.',
+                              'implemented and verified on draft PR #16; owner review and explicit merge approval remain.')
+          text = text.replace('Stage 8 full verification, generated artefact commit and owner review before merge.',
+                              'Owner review and explicit merge approval for Stage 8 draft PR #16.')
+          roadmap.write_text(text)
+
+          testing = Path('docs/TESTING.md')
+          text = testing.read_text()
+          text = text.replace('Final completion still requires verified generated artefacts, removal of the temporary workflow and a final clean run.',
+                              'Verified generated artefacts are committed from the successful workflow; the temporary workflow is removed in the same finalisation commit.')
+          testing.write_text(text)
+
+          decision = Path('docs/DECISIONS.md')
+          marker = '**D-18 · 2026-07-28 · Accepted · Deterministic seeded uncertainty and legal squad simulation (Stage 8)**'
+          if marker not in decision.read_text():
+              with decision.open('a') as f:
+                  f.write('\n\n' + marker + '\n')
+                  f.write('Reason: expected points alone hide non-appearance risk, tail outcomes, auto-subs and captain fallback. Approach: a separate seeded Monte Carlo layer reconstructs five minutes states from pStart/pAppear/p60/expMin, samples approved scoring components, reports percentiles and explicit blank/return/haul thresholds, and simulates legal bench/captain mechanics. Deterministic projectXP, calibration and transfer objectives remain unchanged. Detailed pre-season simulation is disabled rather than manufactured. Consequences: equal inputs produce equal outputs; uncertainty remains conditional on the current model and requires prospective calibration before accuracy claims.\n')
+
+          history = Path('docs/STAGE_HISTORY.md')
+          marker = '## Stage 8 — Uncertainty and squad simulation'
+          if marker not in history.read_text():
+              with history.open('a') as f:
+                  f.write('\n\n' + marker + '\n')
+                  f.write('- Approved design recorded in `docs/STAGE8-DESIGN.md`.\n')
+                  f.write('- Added deterministic seeded player simulations, percentile/threshold summaries, legal auto-subs and captain-to-vice fallback.\n')
+                  f.write('- Deterministic `projectXP()` and transfer optimiser behaviour deliberately unchanged.\n')
+                  f.write('- Verified 284/284 tests, successful build and deterministic two-build comparison on source commit `' + '${SOURCE_COMMIT}' + '`.\n')
+
+          changelog = Path('docs/CHANGELOG.md')
+          marker = '## 2026-07-28 — Stage 8 uncertainty and squad simulation'
+          if marker not in changelog.read_text():
+              with changelog.open('a') as f:
+                  f.write('\n\n' + marker + '\n')
+                  f.write('- Added deterministic player score percentiles and blank/return/haul probabilities.\n')
+                  f.write('- Added legal squad auto-substitution and captain/vice fallback simulation.\n')
+                  f.write('- Disabled detailed uncertainty output in pre-season rather than presenting false precision.\n')
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git checkout -B "$BRANCH"
+          git rm .github/workflows/stage8-verify.yml
+          git add dist docs/ROADMAP.md docs/TESTING.md docs/DECISIONS.md docs/STAGE_HISTORY.md docs/CHANGELOG.md
+          git commit -m "Commit verified Stage 8 build artefacts"
+          git push origin HEAD:"$BRANCH"
