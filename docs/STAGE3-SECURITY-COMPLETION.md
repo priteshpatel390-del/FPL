@@ -36,6 +36,10 @@ transfer optimiser or Stage 9 UI work was introduced.
 - Build identity: manifest and embedded `BUILD_INFO` module order agree and include both
   `src/ui/markdown.mjs` and `src/ui/security-wiring.mjs`.
 - Secret scans: planted sentinel absent from generated HTML, bundle and manifest.
+- Verified artefact SHA-256 values from the successful run:
+  - `dist/index.html`: `4b9f12e2a2aeaebbc4bdef8af0d87c68d4a81389d860fbb177e6cb7677eac861`
+  - `dist/app.bundle.js`: `ba2f825adfd753292a49a49d012be837509e821008a70b6a6152aaf215422d31`
+  - `dist/manifest.json`: `ce2f944bb5fd513d40c00447c164561379cf287cb63becaab84ac2d9d85d39c5`
 
 ## Judgement calls
 
