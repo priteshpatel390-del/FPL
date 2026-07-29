@@ -145,11 +145,13 @@ test('outcome records are deterministic, immutable and tamper-evident',async()=>
 
 test('records exclude Team ID, manager names, leagues, configuration and secrets',async()=>{
   setup(1); S.teamId='1234567';
-  const payload=(await collectOutcomePayload({managerRef,gameweek:1,event:event(),fixturesPayload:[fixture()],livePayload:{elements:[player(1)]},startedAt:1,completedAt:2})).payload;
-  const text=JSON.stringify(payload);
-  assert.equal(text.includes('1234567'),false);
-  assert.equal(/managerName|leagueId|oddsKey|apiKey/.test(text),false);
+  const first=(await collectOutcomePayload({managerRef,gameweek:1,event:event(),fixturesPayload:[fixture()],livePayload:{elements:[player(1)]},startedAt:1,completedAt:2})).payload;
+  S.teamId='7654321';
+  const second=(await collectOutcomePayload({managerRef,gameweek:1,event:event(),fixturesPayload:[fixture()],livePayload:{elements:[player(1)]},startedAt:1,completedAt:2})).payload;
+  assert.deepEqual(second,first);
+  assert.equal(/teamId|entryId|managerName|leagueId|oddsKey|apiKey/.test(JSON.stringify(first)),false);
 });
+
 
 test('due Gameweeks are selected only after their official deadlines',()=>{
   const events=[{id:1,deadline_time:'2026-08-01T10:00:00Z'},{id:2,deadline_time:'2026-08-08T10:00:00Z'}];

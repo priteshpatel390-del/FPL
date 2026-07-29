@@ -202,10 +202,11 @@ function outcomeHashMaterial(record){
 }
 async function finaliseOutcomeRecord(payload,{previousRecord=null}={},cryptoImpl=globalThis.crypto){
   assertEvidenceSafe(payload);
-  const outcomeDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);
-  if(previousRecord?.identity?.outcomeDataHash===outcomeDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};
+  const candidateDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);
+  if(previousRecord?.identity?.outcomeDataHash===candidateDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};
   let status=payload.status;
-  if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==outcomeDataHash) status=OUTCOME_STATUSES.CORRECTED;
+  if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==candidateDataHash) status=OUTCOME_STATUSES.CORRECTED;
+  const outcomeDataHash=status===payload.status?candidateDataHash:await sha256Hex(stableStringify(outcomeDataMaterial({...payload,status})),cryptoImpl);
   const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1;
   const rootOutcomeId=previousRecord?.identity?.rootOutcomeId||`outcome-${payload.season}-gw${payload.gameweek}`;
   const sectionHashes=await computeOutcomeSectionHashes({...payload,status},cryptoImpl);
