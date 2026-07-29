@@ -73,7 +73,7 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation: the highest-attention current state is visible globally and every active provider row, age, note and consequence is shown under More. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
 
 ## Build and deployment
-`node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json` and single-file `dist/index.html`. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts.
+`node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json`, single-file `dist/index.html` and a byte-identical root `index.html` deployment copy. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts, and the root deployment copy must match `dist/index.html` exactly.
 
 ## Security posture
 Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source and generated style attributes, forbids runtime style APIs at the DOM-helper boundary and removes both `style-src-attr` and `unsafe-inline` from the emitted policy. No provider, transport, storage, secret or FPL-write surface changed.

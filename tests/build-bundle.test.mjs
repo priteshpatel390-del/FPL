@@ -9,6 +9,10 @@ test('build output contains no raw ES-module import or export declarations', () 
   assert.match(bundle, /function projectXP\b/);
 });
 
+test('root deployment copy is byte-identical to dist/index.html', () => {
+  assert.deepEqual(readFileSync('index.html'), readFileSync('dist/index.html'));
+});
+
 test('bundler strips single-line imports and export lists', () => {
   const source = "import { alpha } from './a.mjs';\nconst value = alpha;\nexport { value };";
   assert.equal(stripModuleSyntax(source), 'const value = alpha;');

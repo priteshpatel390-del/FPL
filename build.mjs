@@ -88,4 +88,5 @@ mkdirSync('dist', { recursive: true });
 writeFileSync('dist/app.bundle.js', bundle);
 writeFileSync('dist/manifest.json', JSON.stringify(manifest, null, 2));
 writeFileSync('dist/index.html', html);
-console.log(`built dist/index.html (${html.length}b)  model ${modelVersion}  rules ${rulesVersion}  src ${sourceHash.slice(0,12)}  commit ${commit}`);
+writeFileSync('index.html', html);
+console.log(`built dist/index.html + index.html (${html.length}b)  model ${modelVersion}  rules ${rulesVersion}  src ${sourceHash.slice(0,12)}  commit ${commit}`);
