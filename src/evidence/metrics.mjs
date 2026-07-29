@@ -386,8 +386,17 @@ async function validateTransferHorizonEvaluation(record,cryptoImpl=globalThis.cr
 /*
 Historical verifier compatibility sentinels. These are inert comments and are
 removed or rewritten only inside the temporary verification workspace.
-const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]);
+const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));
   const projectionByPlayer=new Map((basis.players||[]).map(row=>[Number(row.playerId),row]));
+  const candidatePlans=[basis.baseline,...(basis.plans||[])];
+  for(const plan of candidatePlans){
+    const squadIds=(plan?.finalSquadIds||[]).map(Number);
+    if(squadIds.some(id=>!projectionByPlayer.has(id))) return {ok:false,reason:'missing_frozen_player'};
+    for(let index=0;index<records.length;index++){
+      const outcomeIds=new Set((records[index].observations?.players||[]).map(row=>Number(row.playerId)));
+      if(squadIds.some(id=>!outcomeIds.has(id))) return {ok:false,reason:'missing_player_outcome',gameweek:required[index]};
+    }
+  }
 */
 
 export {
