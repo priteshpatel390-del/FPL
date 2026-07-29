@@ -1,0 +1,52 @@
+diff --git a/README-BUILD.md b/README-BUILD.md
+index 3a327f5..eba66df 100644
+--- a/README-BUILD.md
++++ b/README-BUILD.md
+@@ -1,6 +1,6 @@
+ # Build & test
+-- `node build.mjs` — deterministic bundle: src/ modules → dist/app.bundle.js, dist/index.html, dist/manifest.json. Set `BUILD_COMMIT=<sha>` to stamp a commit id.
++- `node build.mjs` — deterministic bundle: src/ modules → dist/app.bundle.js, dist/index.html, dist/manifest.json, plus the byte-identical root index.html deployment copy. Set `BUILD_COMMIT=<sha>` to stamp a commit id.
+ - `./run-tests.sh` — builds, then runs all suites (node:test, zero dependencies).
+-- Deploy: upload dist/index.html to GitHub Pages as `index.html`.
++- Deploy: GitHub Pages serves the generated root `index.html`, which the build keeps byte-identical to `dist/index.html`.
+ - dist/ is a build artefact; src/ + tests/ are the canonical code.
+ - Golden regeneration (deliberate only): `UPDATE_GOLDEN=1 node --test tests/characterisation.test.mjs`.
+diff --git a/build.mjs b/build.mjs
+index cf12719..33f5a1e 100644
+--- a/build.mjs
++++ b/build.mjs
+@@ -88,4 +88,5 @@ mkdirSync('dist', { recursive: true });
+ writeFileSync('dist/app.bundle.js', bundle);
+ writeFileSync('dist/manifest.json', JSON.stringify(manifest, null, 2));
+ writeFileSync('dist/index.html', html);
+-console.log(`built dist/index.html (${html.length}b)  model ${modelVersion}  rules ${rulesVersion}  src ${sourceHash.slice(0,12)}  commit ${commit}`);
++writeFileSync('index.html', html);
++console.log(`built dist/index.html + index.html (${html.length}b)  model ${modelVersion}  rules ${rulesVersion}  src ${sourceHash.slice(0,12)}  commit ${commit}`);
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 3fae9a3..46a17be 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -73,7 +73,7 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
+ Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation: the highest-attention current state is visible globally and every active provider row, age, note and consequence is shown under More. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
+ 
+ ## Build and deployment
+-`node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json` and single-file `dist/index.html`. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts.
++`node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json`, single-file `dist/index.html` and a byte-identical root `index.html` deployment copy. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts, and the root deployment copy must match `dist/index.html` exactly.
+ 
+ ## Security posture
+ Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source and generated style attributes, forbids runtime style APIs at the DOM-helper boundary and removes both `style-src-attr` and `unsafe-inline` from the emitted policy. No provider, transport, storage, secret or FPL-write surface changed.
+diff --git a/tests/build-bundle.test.mjs b/tests/build-bundle.test.mjs
+index d7e662b..e4b9b2c 100644
+--- a/tests/build-bundle.test.mjs
++++ b/tests/build-bundle.test.mjs
+@@ -9,6 +9,10 @@ test('build output contains no raw ES-module import or export declarations', ()
+   assert.match(bundle, /function projectXP\b/);
+ });
+ 
++test('root deployment copy is byte-identical to dist/index.html', () => {
++  assert.deepEqual(readFileSync('index.html'), readFileSync('dist/index.html'));
++});
++
+ test('bundler strips single-line imports and export lists', () => {
+   const source = "import { alpha } from './a.mjs';\nconst value = alpha;\nexport { value };";
+   assert.equal(stripModuleSyntax(source), 'const value = alpha;');
