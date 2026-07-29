@@ -9,7 +9,7 @@ const FIXTURE_STAT_IDENTIFIERS = new Set([
 ]);
 const outcomeIsObj = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const outcomeIsFiniteNumber = value => typeof value === 'number' && Number.isFinite(value);
-const outcomeIsInteger = value => Number.outcomeIsInteger(Number(value));
+const outcomeIsInteger = value => Number.isInteger(Number(value));
 const outcomeAsInteger = value => outcomeIsInteger(value) ? Number(value) : null;
 const outcomeAsBoolean = value => typeof value === 'boolean' ? value : null;
 const outcomeIssue = (endpoint,code,severity='partial',count=1,extra={}) => ({provider:'fpl',endpoint,code,severity,count,...extra});
