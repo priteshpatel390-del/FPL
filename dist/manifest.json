@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "b26694e2cf4ff5523b00cf4d434c746b15a376a3e9437d5e7348e2e220c165af",
-  "commit": "e84e7f1bf05ed1f3e574f78101e4a6e413273306",
+  "sourceHash": "174b4eb8af9215f8583a075ab77ab9ad753e25788b25a31d74a8b7bf2b70f266",
+  "commit": "e6693e9183eebfd4d5219445ac3b226988d11bdd",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -35,12 +35,14 @@
     "src/ui/decision-preview.mjs",
     "src/evidence/snapshot.mjs",
     "src/evidence/outcome.mjs",
+    "src/evidence/metrics.mjs",
     "src/ui/views.mjs",
     "src/ui/transfer-optimiser-view.mjs",
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
     "src/ui/security-wiring.mjs",
     "src/ui/evidence.mjs",
-    "src/ui/outcomes.mjs"
+    "src/ui/outcomes.mjs",
+    "src/ui/metrics.mjs"
   ]
 }
