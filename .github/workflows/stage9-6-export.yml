@@ -1,0 +1,28 @@
+name: Stage 9.6 repository export
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.head_ref == 'agent/stage9-6-style-csp-polish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-6-style-csp-polish
+          fetch-depth: 0
+      - name: Package repository
+        run: |
+          tar --exclude=.git --exclude=.github/workflows/stage9-6-export.yml -czf /tmp/fpl-stage9-6-source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fpl-stage9-6-source
+          path: /tmp/fpl-stage9-6-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
