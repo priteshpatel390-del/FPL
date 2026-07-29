@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-29.
-Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, DECISIONS.md.
+Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
 ## Completed
 - **Stage 1 — Characterisation and audit** · DONE.
@@ -25,50 +25,33 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Reserve-goalkeeper handling, ordered legal auto-subs and captain-to-vice fallback.
   - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
 - **Checkpoint 9.1 — App shell and primary navigation** · DONE and merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.
-  - Four primary destinations: Team, Players, Transfers and More.
-  - Team is the default landing screen; existing supporting tools are regrouped under More.
-  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
 - **Checkpoint 9.2 — Team pitch and shirts** · DONE and merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`.
-  - Portrait pitch, repository-owned CSS shirts, captain/vice treatment and preserved bench order.
-  - Verified source `38bb08e2e8f903deeb39dc4e1a4db070da4d4870`: **288/288 tests passed** with deterministic builds.
 - **Checkpoint 9.3 — Player detail and uncertainty** · DONE and merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.
-  - Accessible mobile bottom sheet and desktop side panel with expected minutes and approved uncertainty presentation.
-  - Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed** with deterministic builds.
 - **Checkpoint 9.4 — Temporary decision previews** · DONE and merged through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b7112fd4a8c8`.
-  - Session-only optimiser-plan and captain/vice previews with stale-state invalidation and no persistence.
-  - Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed** with deterministic builds.
-
 - **Checkpoint 9.5 — More, Settings and Provider Health** · DONE and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`.
-  - Settings and global/full Provider Health presentation with unchanged provider behaviour.
-  - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed** with deterministic builds.
 - **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish** · DONE and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`.
-  - All source and generated style attributes/runtime style APIs are removed and guarded.
-  - `style-src-attr` and every `unsafe-inline` token are removed from the emitted CSP.
-  - Representative mobile and desktop browser review passed with no console errors.
-  - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed**, successful build, deterministic two-build comparison and build-identity check.
-  - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
+  - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed** with deterministic exact-identity builds; generated deployables `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
 - **Stage 10.1 — Deadline-safe snapshot foundation** · DONE and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`.
-  - Silent approved-source startup/foreground verification, one consistent render and non-blocking automatic eligible evidence capture.
-  - Strict provider allowlist, immutable anonymised records, deterministic hashes and recovery-only imports.
-  - Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passed**, successful production build and deterministic build identity; generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`.
-
+  - Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passed** with deterministic exact-identity builds; generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`.
 - **Stage 10.2 — Official outcome collection** · DONE and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`.
   - Automatic Official FPL player, fixture and optional public manager outcomes with immutable provisional/complete/corrected revisions.
-  - Strict snapshot matching, correction monitoring, bounded recovery storage and recovery-only imports.
-  - Verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376 tests passed**, successful production build and byte-identical exact-identity builds; generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`.
+  - Verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376 tests passed** with byte-identical exact-identity builds; generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`.
 
 ## Current
-- **Stage 10.3 — Metrics** · investigation and exact-scope approval only; no implementation has begun.
-- Planned metrics remain descriptive and deterministic: player points, minutes, uncertainty, squad, captaincy, bench and transfers.
-- No composite score, model update, threshold, calibration claim or retrospective recommendation is approved.
+- **Stage 10.3 — Metrics** · owner-approved and implemented on `agent/stage10-3-metrics`; final exact-contract verification, documentation closeout and owner review remain.
+- Draft PR #31 is open and must not merge before explicit owner approval.
+- Scope remains descriptive and deterministic: player points, fixture-level minutes, uncertainty, frozen squad, captaincy, bench and frozen transfer-plan evaluation.
+- No composite score, model update, threshold change, calibration claim or retrospective recommendation is included.
 
 ## Upcoming
-1. Present the exact Stage 10.3 metric definitions, inputs, exclusions, matching rules, sample safeguards and tests.
-2. Obtain explicit owner approval for the Stage 10.3 implementation scope.
-3. Implement Stage 10.3 on a separate branch without changing production formulas or beginning Stage 10.4.
+1. Complete the final full-suite and deterministic exact-identity verification after the public metric-field contract correction.
+2. Record the exact verified source, generated commit and test count across repository documentation.
+3. Remove the temporary verification workflow and present draft PR #31 for owner review.
+4. Merge only after explicit owner approval.
+5. Begin Stage 10.4 only in a separate chat and scope after Stage 10.3 merge.
 
 ## Current blockers
-1. Stage 10.3 exact metric scope and approval are not yet recorded.
+1. Stage 10.3 final verification and owner review remain open.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+4. Prospective sample size begins at zero; Stage 10.3 infrastructure does not establish model accuracy or calibration.
