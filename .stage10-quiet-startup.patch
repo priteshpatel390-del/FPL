@@ -1,0 +1,150 @@
+diff --git a/app.html b/app.html
+--- a/app.html
++++ b/app.html
+@@ -25,18 +25,15 @@ body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
+ body.startup-pending{overflow:hidden}
+ .startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+ .startup-gate[hidden]{display:none}
+-.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:12px}
++.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
+ .startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
+ .startup-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B9C9BF}
+-.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:8px 0 4px;overflow:hidden}
++.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:10px 0 0;overflow:hidden}
+ .startup-pitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.34)}
+ .startup-pitch:after{content:"";position:absolute;width:20px;height:20px;border:1px solid rgba(255,255,255,.34);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+ .startup-ball{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);left:14px;top:23px;animation:startup-scan 1.7s ease-in-out infinite alternate}
+-.startup-title{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:19px;font-weight:800;margin-top:4px}
+-.startup-detail{max-width:310px;color:#C9D6CE;font-size:12px;line-height:1.5;min-height:36px}
+-.startup-note{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8FA79A;margin-top:8px}
+ @keyframes startup-scan{to{transform:translateX(48px)}}
+ @media(prefers-reduced-motion:reduce){.startup-ball{animation:none;left:38px}}
+ h1,h2,h3{font-family:'Bricolage Grotesque','Public Sans',sans-serif;margin:0;letter-spacing:-.02em;font-weight:800}
+@@ -401,14 +398,11 @@
+ <body class="startup-pending" aria-busy="true">
+ 
+-<section class="startup-gate" id="startupGate" role="status" aria-live="polite" aria-labelledby="startupTitle">
++<section class="startup-gate" id="startupGate" role="status" aria-label="Opening Teamsheet">
+   <div class="startup-card">
+     <div class="startup-wordmark">TEAMSHEET</div>
+     <div class="startup-sub">FPL decision desk</div>
+     <div class="startup-pitch" aria-hidden="true"><span class="startup-ball"></span></div>
+-    <div class="startup-title" id="startupTitle">Loading verified data</div>
+-    <div class="startup-detail" id="startupDetail">Preparing the last accepted dataset as a safe fallback.</div>
+-    <div class="startup-note">Approved sources · automatic checks · one consistent update</div>
+   </div>
+ </section>
+ 
+diff --git a/src/main.mjs b/src/main.mjs
+--- a/src/main.mjs
++++ b/src/main.mjs
+@@ -231,13 +231,8 @@ function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
+   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
+ }
+ function setStartupPhase(key){
+-  if(typeof document==='undefined') return;
+-  const copy=STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
+-  const title=$('startupTitle'), detail=$('startupDetail');
+-  if(title) title.textContent=copy[0];
+-  if(detail) detail.textContent=copy[1];
++  return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
+ }
+ function setStartupGateVisible(visible){
+   if(typeof document==='undefined') return;
+@@ -281,10 +276,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
+       });
+       if(report.criticalReady){
+         lastVerifiedRefreshAt=nowFn();
+-        setStartupPhase('evidence');
+-        await dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
+-        setStartupPhase('ready');
+         document.body?.classList?.remove('data-restricted');
++        void dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
+       }else{
+         setStartupPhase('restricted');
+         document.body?.classList?.add('data-restricted');
+diff --git a/tests/startup-refresh.test.mjs b/tests/startup-refresh.test.mjs
+--- a/tests/startup-refresh.test.mjs
++++ b/tests/startup-refresh.test.mjs
+@@ -5,7 +5,6 @@ import assert from 'node:assert/strict';
+ import { readFileSync } from 'node:fs';
+ import {
+   VERIFIED_REFRESH_MIN_AGE_MS,
+-  STARTUP_PHASE_COPY,
+   shouldRefreshVerifiedData,
+   dispatchVerifiedData
+ } from '../src/main.mjs';
+@@ -15,13 +14,14 @@ const VIEWS_SOURCE=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
+ const EVIDENCE_SOURCE=readFileSync(new URL('../src/ui/evidence.mjs',import.meta.url),'utf8');
+ 
+-test('startup gate is minimalist, visible by default and carries honest verification phases',()=>{
++test('startup gate is silent, minimalist and visible by default',()=>{
+   assert.match(APP_HTML,/<body class="startup-pending" aria-busy="true">/);
+-  assert.match(APP_HTML,/id="startupGate"[^>]*role="status"/);
+-  assert.match(APP_HTML,/id="startupTitle">Loading verified data/);
+-  assert.match(APP_HTML,/Approved sources · automatic checks · one consistent update/);
+-  assert.deepEqual(STARTUP_PHASE_COPY.ready,['Ready','Latest verified data available.']);
+-  assert.match(STARTUP_PHASE_COPY.restricted[1],/recommendations remain unavailable/);
++  assert.match(APP_HTML,/id="startupGate"[^>]*role="status"[^>]*aria-label="Opening Teamsheet"/);
++  assert.match(APP_HTML,/class="startup-wordmark">TEAMSHEET/);
++  assert.match(APP_HTML,/class="startup-pitch"/);
++  assert.doesNotMatch(APP_HTML,/startupTitle|startupDetail|startup-note/);
++  assert.doesNotMatch(APP_HTML,/Loading verified data|Checking official FPL|Approved sources · automatic checks/);
+ });
+@@ -41,7 +41,9 @@ test('startup and foreground paths use the same deferred verified refresh',()=>{
+   assert.match(MAIN_SOURCE,/document\.addEventListener\('visibilitychange',refreshIfDue\)/);
+ });
+ 
+-test('verified-data event waits for automatic evidence work before startup completes',async()=>{
++test('automatic evidence is dispatched without extending startup loading',async()=>{
++  assert.match(MAIN_SOURCE,/void dispatchVerifiedData\(\{reason,verifiedAt:lastVerifiedRefreshAt,source:report\.source\}\)/);
++  assert.doesNotMatch(MAIN_SOURCE,/await dispatchVerifiedData/);
+   const previousDocument=globalThis.document;
+   const previousCustomEvent=globalThis.CustomEvent;
+   let completed=false;
+diff --git a/docs/STAGE10-ITEM1.md b/docs/STAGE10-ITEM1.md
+--- a/docs/STAGE10-ITEM1.md
++++ b/docs/STAGE10-ITEM1.md
+@@ -14,10 +14,10 @@ Status: **implemented and locally verified on draft PR #27; owner review and physical iPhone acceptance pending.** Approved 29 July 2026.
+ - Random anonymous manager reference; FPL Team ID, manager name, league identifiers, config and secrets excluded.
+ - Bounded local recovery: three metadata rows and two compressed full records, verified writes, quota recovery and explicit delete/reset.
+ - Complete unencrypted JSON export/import.
+-- Minimalist startup verification gate with plain-English phases; the app opens only after Official FPL and approved optional providers resolve to a verified live/cache/fallback/disabled state.
++- Silent minimalist startup gate showing only the Teamsheet identity and restrained loader; provider and update details remain off-screen unless a genuine failure blocks safe use.
+ - Automatic refresh at startup and when the page returns to the foreground after ten minutes, with intermediate renders suppressed and one consistent final update.
+-- Automatic eligible evidence capture after verification, with duplicate suppression across open, due-soon, ideal and final windows.
++- Automatic eligible evidence capture is dispatched after verification without extending the startup gate, with duplicate suppression across open, due-soon, ideal and final windows.
+ - Compact global status and phone-first More > Deadline evidence surface; export/restore/delete are subordinate recovery controls and no routine user action is required.
+@@ -35,6 +35,6 @@ In the repository execution environment, the resulting synthetic benchmark captured 620 players with 5,000 samples each in approximately 2.8–3.5 seconds. Canonical JSON was about 2.2 MB and its browser-local gzip recovery representation about 153 KB. Projection work yields to the browser every 20 players. Physical iPhone startup timing, foreground refresh, automatic capture and recovery restore remain an explicit owner acceptance gate.
+ - Focused evidence tests cover deadline boundaries, timing grades, provider cutoff, hashes/tampering, deadline changes, privacy, chunking, compression, bounded storage, quota failure, import and delete/reset.
+ 
+ ## Remaining acceptance gate
+-Open the review deployment on Pritesh’s iPhone and verify: status readability, capture progress, no unacceptable interaction lock, JSON download, JSON re-import, local delete/reset and no console-visible error. Stage 10.1 must remain draft until this check is reported.
++Open the review deployment on Pritesh’s iPhone and verify: the silent loader is visually clean and brief, the app opens without waiting for evidence capture, foreground refresh causes no unacceptable interaction lock, recovery controls work and no console-visible error occurs. Stage 10.1 must remain draft until this check is reported.
+ 
+ - The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.
+diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -9,11 +9,12 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
+ ### Added
+ - Immutable anonymised pre-deadline evidence with official FPL deadline timing, network-clock grades, deterministic whole-record/section hashes and verified JSON import/export.
+ - All-player projections, expected minutes, live uncertainty summaries, provider/source provenance and available squad/decision/optimiser evidence.
+-- Minimalist startup verification screen, automatic app-open/foreground refresh, one-shot verified rendering and automatic eligible evidence capture.
++- Silent minimalist startup verification screen, automatic app-open/foreground refresh, one-shot verified rendering and automatic eligible evidence capture.
+ - Compact phone-first evidence status plus bounded compressed local recovery with explicit export/restore/delete controls.
+ - Focused deadline, tamper, privacy, chunking, compression, quota and storage tests.
+ ### Changed
+ - Startup and foreground refresh now await every approved provider state before one final render; no intermediate mixed dataset is exposed.
++- Eligible evidence capture starts automatically after verified data is ready but no longer holds the startup screen open.
+ - Runtime provider identity is allowlisted; restored JSON is recovery-only and cannot become official evidence.
+ - Monte Carlo fixture components are precomputed once per player/fixture and summary-only callers omit raw arrays; the approved 5,000 samples and outputs remain unchanged.
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -29,7 +29,7 @@ Stage 10.1 verified source `73cdca817f7070a745fb642e1070d77a6bdaca9b`: **349/349 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
+ 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
+ 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
+ 19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
+-20. `startup-refresh.test.mjs` — minimalist startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, awaited automatic evidence and recovery-only UI wiring.
++20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
