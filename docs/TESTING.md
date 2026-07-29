@@ -5,7 +5,7 @@ Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 10.1 verified source `09dc35a5aa71e493233e7b6d8cacca92b60abb48`: **337/337 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
+Stage 10.1 verified source `37fd95efa853fb3e208aa49fa49f7d62aa06ff61`: **338/338 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -39,7 +39,7 @@ Stages 8–9.6 change no deterministic projection formula and require no golden 
 ## Required checks before completion
 1. Run `./run-tests.sh` with every committed test green and no golden regeneration.
 2. Build twice with the same exact source commit in `BUILD_COMMIT`.
-3. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte.
+3. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte, then verify the generated root `index.html` deployment copy is identical to `dist/index.html`.
 4. Independently verify CSP/build identity through the committed security tests and emitted manifest.
 5. Confirm `BUILD_INFO`, manifest module order, source hash, commit identity and generated files agree.
 6. Commit verified generated artefacts.
