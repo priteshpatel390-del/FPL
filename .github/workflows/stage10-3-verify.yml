@@ -1,9 +1,6 @@
 name: Stage 10.3 verify
 
 on:
-  push:
-    branches:
-      - agent/stage10-3-metrics
   pull_request:
     branches:
       - main
@@ -48,6 +45,10 @@ jobs:
               "return canonicalise({activeXI:active,scoringXI,usedBenchIds:used,replacements,basePoints,autoSubContribution:"
           )
           metrics = metrics.replace("legal=legalXIIds(multiplierXI,positions)", "legal=legalXIIds(reconstructed.activeXI,positions)")
+          metrics = metrics.replace(
+              "return canonicalise({captainId:Number(captainId)||null,viceId:Number(viceId)||null,effectiveCaptainId:effective,viceTookOver:effective===Number(viceId),doubledContribution:",
+              "return canonicalise({captainId:Number(captainId)||null,viceCaptainId:Number(viceId)||null,effectiveCaptainId:effective,viceTookOver:effective===Number(viceId),doubledContribution:"
+          )
           metrics = metrics.replace(
               "const selectedKey=sortedNumbers(starters).join(','),realisedOrder=alternatives.slice().sort((a,b)=>b.realisedPoints-a.realisedPoints||a.playerIds.join(',').localeCompare(b.playerIds.join(','))),selectedRank=Math.max(0,realisedOrder.findIndex(row=>row.playerIds.join(',')===selectedKey))+1;",
               "const selectedKey=sortedNumbers(starters).join(','),realisedOrder=alternatives.slice().sort((a,b)=>b.realisedPoints-a.realisedPoints||a.playerIds.join(',').localeCompare(b.playerIds.join(','))),selectedIndex=realisedOrder.findIndex(row=>row.playerIds.join(',')===selectedKey),selectedRank=selectedIndex>=0?selectedIndex+1:null;"
@@ -108,6 +109,10 @@ jobs:
           }
           for old, new in rename.items():
               metrics = re.sub(rf'\b{re.escape(old)}\b', new, metrics)
+          metrics = metrics.replace(
+              "function evaluationFinite(value){ const n=Number(value); return Number.isFinite(n)?n:null; }",
+              "function evaluationFinite(value){ if(value===null||value===undefined||value==='') return null; const n=Number(value); return Number.isFinite(n)?n:null; }"
+          )
           metrics_path.write_text(metrics)
 
           tests_path = Path('tests/metrics.test.mjs')
@@ -158,19 +163,24 @@ jobs:
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
-          ./run-tests.sh | tee stage10-3-tests.log
+          set -o pipefail
+          ./run-tests.sh 2>&1 | tee stage10-3-tests.log
 
       - name: Verify deterministic exact-identity builds
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
           mkdir -p /tmp/stage10-3-first
-          cp dist/index.html dist/app.bundle.js dist/manifest.json index.html /tmp/stage10-3-first/
+          cp dist/index.html /tmp/stage10-3-first/dist-index.html
+          cp dist/app.bundle.js /tmp/stage10-3-first/app.bundle.js
+          cp dist/manifest.json /tmp/stage10-3-first/manifest.json
+          cp index.html /tmp/stage10-3-first/root-index.html
           node build.mjs
-          cmp /tmp/stage10-3-first/index.html dist/index.html
+          cmp /tmp/stage10-3-first/dist-index.html dist/index.html
           cmp /tmp/stage10-3-first/app.bundle.js dist/app.bundle.js
           cmp /tmp/stage10-3-first/manifest.json dist/manifest.json
-          cmp /tmp/stage10-3-first/index.html index.html
+          cmp /tmp/stage10-3-first/root-index.html index.html
+          cmp dist/index.html index.html
           test "$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).commit")" = "${BUILD_COMMIT}"
 
       - name: Commit generated artefacts
