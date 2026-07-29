@@ -1,11 +1,11 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
+Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 10.2 verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Owner approval passed and PR #29 merged at `4b1b2acf9bda81afb63414dd41b509e80b3945c7` with generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`. The previous Stage 10.1 baseline was 349/349 at source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`.
+Stage 10.3 verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 passing tests**, successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. Generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. Draft PR #32 awaits owner review and explicit merge approval. The previous Stage 10.2 baseline was 376/376 at source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -30,11 +30,13 @@ Stage 10.2 verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376
 20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
 21. `outcome-collection.test.mjs` — Stage 10.2 endpoint validation, blank/double/postponed Gameweeks, delayed checking, corrections, squad facts, snapshot-safe records and tamper detection.
 22. `outcome-storage.test.mjs` — immutable revision pointers, recovery-only imports, journal recovery, bounds, quota failure, cadence and deletion isolation.
+23. `metrics.test.mjs` — exact player/minutes/probability/interval calculations; zero and signed errors; Pearson/Spearman ties and zero variance; approved error/price/season boundaries; singles, doubles and postponements; legal automatic substitutions, goalkeeper and captain fallback; authoritative joins, corrections, tamper detection, non-mutation, segmentation, frozen transfer horizons, public record-field contracts and static no-model-recomputation guards.
+24. `metrics-storage.test.mjs` — verified compressed metric writes, deterministic metadata, current/superseded revision pointers, correction retention, interrupted-write journal recovery, tamper rejection, bounds, quota failure and deletion isolation from source evidence.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
 
-Stages 8–9.6 change no deterministic projection formula and require no golden regeneration.
+Stages 8–10.3 change no deterministic projection formula and require no golden regeneration. Stage 10.3 adds downstream evaluation and presentation only.
 
 ## Harness
 `tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. Characterisation therefore exercises the production bundling path rather than a separate test-only implementation.
@@ -49,12 +51,27 @@ Stages 8–9.6 change no deterministic projection formula and require no golden 
 7. Remove temporary verification workflows before merge.
 
 ## Philosophy
-Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 8 probability coverage must be evaluated prospectively during 2026/27 before any calibration claim.
+Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 10 metrics must remain descriptive until enough genuine prospective observations exist.
 
 ## Stage 10.1 evidence tests
 `evidence-snapshot.test.mjs` covers canonical JSON, SHA-256, secret rejection, every approved deadline boundary, same-origin clock evidence, client-only/conflict/late grades, provider cutoffs, immutable identity, section tampering, deadline revisions, official selection, privacy, all-player output shape, chunked collection and bundle/UI wiring.
 
-`evidence-storage.test.mjs` covers random stable anonymous references, gzip/plain recovery encoding, three-row metadata/two-record bounds, verified reload, recovery-import segregation, quota failure surfacing and explicit delete/reset. `startup-refresh.test.mjs` covers the automatic verified-data gate and foreground trigger contracts. Existing simulation, scoring and golden tests guard the performance refactor against model-output changes. Final verification requires `./run-tests.sh`, two byte-identical builds with the exact source commit and manifest/build identity checks.
+`evidence-storage.test.mjs` covers random stable anonymous references, gzip/plain recovery encoding, three-row metadata/two-record bounds, verified reload, recovery-import segregation, quota failure surfacing and explicit delete/reset. `startup-refresh.test.mjs` covers the automatic verified-data gate and foreground trigger contracts.
 
 ## Stage 10.2 outcome verification
-Verified baseline: **376/376 passing tests**, successful production build, byte-identical two-build comparison, exact build identity and root/deployable equality. Outcome tests cover strict player/fixture identity, blank and double Gameweeks, postponed fixtures, delayed bonus/data checking, provisional-to-complete and corrected revisions, snapshot matching boundaries, no-snapshot collection, manager availability, recovery imports, tamper detection, bounded storage, quota/interruption recovery, automatic startup/foreground checks and non-blocking access. Existing tests and goldens remain unchanged. The verified item merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`.
+The Stage 10.2 baseline was **376/376 passing tests**, successful production build, byte-identical two-build comparison, exact build identity and root/deployable equality. Outcome tests cover strict player/fixture identity, blank and double Gameweeks, postponed fixtures, delayed bonus/data checking, provisional-to-complete and corrected revisions, snapshot matching boundaries, no-snapshot collection, manager availability, recovery imports, tamper detection, bounded storage, quota/interruption recovery, automatic startup/foreground checks and non-blocking access.
+
+## Stage 10.3 metric verification
+The final Stage 10.3 run completed **397/397 tests**, zero failures and zero skipped. It directly verifies:
+
+- prediction-minus-outcome formula conventions and approved public field names;
+- fixture-level minutes/probability evaluation and fail-closed ambiguous doubles;
+- immutable correction revisions and exact snapshot/outcome linking;
+- legal goalkeeper/outfield substitutions, captain fallback and descriptive oracle labelling;
+- frozen transfer plans versus the exact zero-transfer baseline, with hits subtracted and roll value retained only as context;
+- sample-warning boundaries, including provider comparisons requiring both 100 observations and five Gameweeks;
+- deterministic ordering, canonical hashes, storage journals and source-record non-mutation;
+- absence of production projection/minutes/simulation/optimiser calls from the metric engine;
+- successful build, byte-identical exact-identity rebuild and root/deployable equality.
+
+Verified source: `3eaae862b8a8277e450af062ff4bcecd15b12f3f`. Verified generated artefacts: `8c4b60a367b9858146b42ff8710d888856462c21`.
