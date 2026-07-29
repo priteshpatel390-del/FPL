@@ -9,7 +9,7 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 - Immutable provisional, complete and corrected revisions with deterministic section/data/content hashes.
 - Strict duplicate-player and conflicting-fixture quarantine, official `data_checked` finalisation and correction monitoring.
 - Bounded compressed storage, interrupted-write recovery, complete JSON export/restore and recovery-only imports.
-- Focused outcome collection/storage suites; full baseline **__TEST_COUNT__/__TEST_COUNT__ passing**.
+- Focused outcome collection/storage suites; full baseline **376/376 passing**.
 ### Unchanged
 - No model formula, calibration, provider blend, captaincy, squad, optimiser or Stage 10.3 metric change.
 

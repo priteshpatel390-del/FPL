@@ -39,7 +39,7 @@ Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 
 ## Completed, current and next
 Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints and Stage 10.1 deadline-safe snapshot foundation.
 
-Current: Stage 10.2 — Official outcome collection is implemented and verified on branch `agent/stage10-2-official-outcomes`; draft pull-request review and owner approval remain. The verified baseline is **__TEST_COUNT__/__TEST_COUNT__ tests passing** with deterministic exact-identity builds.
+Current: Stage 10.2 — Official outcome collection is implemented and verified on branch `agent/stage10-2-official-outcomes`; draft pull-request review and owner approval remain. The verified baseline is **376/376 tests passing** with deterministic exact-identity builds.
 
 Next: review Stage 10.2 on iPhone, approve or request corrections, and merge only after explicit approval. Stage 10.3 metrics remain a separate investigation/design gate after merge. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved.
 

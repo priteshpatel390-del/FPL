@@ -36,7 +36,7 @@ No new provider, authentication, FPL write action, transfer-history archive or a
 Every accepted revision is immutable. Identical rechecks update check metadata without creating duplicate full records.
 
 ## Verification
-- Full suite: **__TEST_COUNT__/__TEST_COUNT__ passing**.
+- Full suite: **376/376 passing**.
 - Production build succeeded.
 - Two exact-identity builds were byte-identical.
 - Root `index.html` matched `dist/index.html` exactly.

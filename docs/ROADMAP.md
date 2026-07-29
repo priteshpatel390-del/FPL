@@ -55,7 +55,7 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 ## Current
 - **Stage 10.2 — Official outcome collection** · implemented and verified on branch `agent/stage10-2-official-outcomes`; draft pull-request review and owner approval pending.
 - Official FPL player, fixture and optional public manager outcomes are automatic, immutable, correction-aware and non-blocking.
-- Verified baseline: **__TEST_COUNT__/__TEST_COUNT__ tests passing** with successful production and byte-identical exact-identity builds.
+- Verified baseline: **376/376 tests passing** with successful production and byte-identical exact-identity builds.
 - No Stage 10.3 metrics or projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
 
 ## Upcoming
