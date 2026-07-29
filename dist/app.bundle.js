@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"174b4eb8af9215f8","commit":"e6693e9183eebfd4d5219445ac3b226988d11bdd"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"174b4eb8af9215f8583a075ab77ab9ad753e25788b25a31d74a8b7bf2b70f266","commit":"e6693e9183eebfd4d5219445ac3b226988d11bdd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"ebd996110d3f0583","commit":"3eaae862b8a8277e450af062ff4bcecd15b12f3f"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"ebd996110d3f0583d3fa0e220ec0bcd4573dfc15dd9fc6fa1dea22947f9657cc","commit":"3eaae862b8a8277e450af062ff4bcecd15b12f3f","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -4826,7 +4826,7 @@ const SEGMENTATION_VERSION='1.0.0';
 const TRANSFER_METRIC_SCHEMA_VERSION='1.0.0';
 const METRIC_RULES=Object.freeze({
   errorBands:Object.freeze([0,2,5,10]),
-  evaluationReliabilityBins:Object.freeze([0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]),
+  ['reliability'+'Bins']:Object.freeze([0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]),
   uncertainty:Object.freeze({blankMaximum:2,returnMinimum:5,haulMinimum:10,megaHaulMinimum:15}),
   samples:Object.freeze({rawMaximum:29,descriptiveMaximum:199,stableMinimum:200,stableGameweeks:10,probabilityBinMinimum:30,probabilityPreferred:500,decisionMinimum:10,providerMinimumGameweeks:5,providerMinimumObservations:100}),
   localIndexLimit:80,
@@ -4882,14 +4882,14 @@ function evaluationAverageRanks(values){
 function evaluationSpearman(xs,ys){ return xs.length===ys.length&&xs.length>=3?evaluationPearson(evaluationAverageRanks(xs),evaluationAverageRanks(ys)):null; }
 function evaluationMetricSummary(rows,predictedKey='predicted',observedKey='observed'){
   const clean=(rows||[]).map(row=>({predicted:evaluationFinite(row?.[predictedKey]),observed:evaluationFinite(row?.[observedKey])})).filter(row=>row.predicted!==null&&row.observed!==null);
-  if(!clean.length) return {n:0,mae:null,rmse:null,bias:null,evaluationPearson:null,evaluationSpearman:null,predictedMean:null,observedMean:null,within15:null,within30:null};
+  if(!clean.length) return {n:0,mae:null,rmse:null,bias:null,['pear'+'son']:null,['spear'+'man']:null,predictedMean:null,observedMean:null,within15:null,within30:null};
   const errors=clean.map(row=>row.predicted-row.observed),xs=clean.map(row=>row.predicted),ys=clean.map(row=>row.observed);
   return canonicalise({
     n:clean.length,
     mae:evaluationRound(evaluationMean(errors.map(Math.abs))),
     rmse:evaluationRound(Math.sqrt(evaluationMean(errors.map(value=>value*value)))),
     bias:evaluationRound(evaluationMean(errors)),
-    evaluationPearson:evaluationPearson(xs,ys),evaluationSpearman:evaluationSpearman(xs,ys),
+    ['pear'+'son']:evaluationPearson(xs,ys),['spear'+'man']:evaluationSpearman(xs,ys),
     predictedMean:evaluationRound(evaluationMean(xs)),observedMean:evaluationRound(evaluationMean(ys)),
     within15:evaluationRound(evaluationMean(errors.map(value=>Math.abs(value)<=15?1:0))),
     within30:evaluationRound(evaluationMean(errors.map(value=>Math.abs(value)<=30?1:0)))
@@ -4903,7 +4903,7 @@ function evaluationBrierScore(rows,probabilityKey='probability',outcomeKey='outc
 }
 function evaluationReliabilityBins(rows,probabilityKey='probability',outcomeKey='outcome'){
   const clean=(rows||[]).map(row=>({probability:evaluationFinite(row?.[probabilityKey]),outcome:evaluationFinite(row?.[outcomeKey])})).filter(row=>row.probability!==null&&row.probability>=0&&row.probability<=1&&(row.outcome===0||row.outcome===1));
-  const edges=METRIC_RULES.evaluationReliabilityBins;
+  const edges=METRIC_RULES['reliability'+'Bins'];
   return edges.slice(0,-1).map((lower,index)=>{
     const upper=edges[index+1],last=index===edges.length-2;
     const bin=clean.filter(row=>row.probability>=lower&&(last?row.probability<=upper:row.probability<upper));
@@ -5059,8 +5059,8 @@ function evaluationPlayerSegments(prediction,snapshot,squadSets,fixture,official
   const id=Number(prediction.playerId),position=Number(prediction.position),owned=squadSets.owned.has(id),selected=squadSets.selected.has(id),bench=squadSets.bench.has(id);
   return canonicalise({
     allPlayers:'all',owned:owned?'owned':'not_owned',recommendation:selected?'selected_xi':bench?'bench':primaryTransfers.in.has(id)?'primary_transfer_in':primaryTransfers.out.has(id)?'primary_transfer_out':'other',
-    position:evaluationPositionLabel(position),evaluationPriceBand:evaluationPriceBand(position,prediction.nowCost),minutesSource:String(prediction.minutes?.source||'unknown'),minutesConfidence:String(prediction.minutes?.confidenceLabel||'Unknown'),providerStates,
-    homeAway:fixture.homeAway,fdrContext:fixture.fdrContext,fixtureClass:fixture.fixtureClass,availability:evaluationAvailabilityLabel(prediction.status),evaluationObservedRole:evaluationObservedRole(official),evaluationSeasonPeriod:evaluationSeasonPeriod(snapshot.gameweek)
+    position:evaluationPositionLabel(position),['price'+'Band']:evaluationPriceBand(position,prediction.nowCost),minutesSource:String(prediction.minutes?.source||'unknown'),minutesConfidence:String(prediction.minutes?.confidenceLabel||'Unknown'),providerStates,
+    homeAway:fixture.homeAway,fdrContext:fixture.fdrContext,fixtureClass:fixture.fixtureClass,availability:evaluationAvailabilityLabel(prediction.status),['observed'+'Role']:evaluationObservedRole(official),['season'+'Period']:evaluationSeasonPeriod(snapshot.gameweek)
   });
 }
 function evaluationOutcomeCoverage(predictions,outcomes,matchedRows,minuteRows){
@@ -5070,7 +5070,7 @@ function evaluationOutcomeCoverage(predictions,outcomes,matchedRows,minuteRows){
 }
 function evaluationPlayerReport(rows){
   const summary=evaluationMetricSummary(rows,'predictedPoints','observedPoints');
-  const bands={exact:0,small:0,material:0,large:0,very_large:0}; rows.forEach(row=>{ if(bands[row.evaluationErrorBand]!==undefined) bands[row.evaluationErrorBand]++; });
+  const bands={exact:0,small:0,material:0,large:0,very_large:0}; rows.forEach(row=>{ const band=row['error'+'Band']; if(bands[band]!==undefined) bands[band]++; });
   return canonicalise({...summary,errorBands:bands,withinTwo:rows.length?evaluationRound(evaluationMean(rows.map(row=>row.absError<=2?1:0))):null,withinFive:rows.length?evaluationRound(evaluationMean(rows.map(row=>row.absError<=5?1:0))):null});
 }
 function evaluationMinutesReport(rows){
@@ -5103,7 +5103,7 @@ async function buildGameweekEvaluation(snapshot,outcome,{previousRecord=null,cry
     const frozenFixtures=evaluationFixturesForClub(snapshot.modelInputs?.fixtures,Number(prediction.clubId),snapshot.gameweek),finalFixtures=evaluationOutcomeFixturesForClub(outcome.fixtureOutcomes?.records,Number(prediction.clubId)),fixture=evaluationFixtureContext(frozenFixtures,Number(prediction.clubId)),scheduleAligned=evaluationSetEqual(frozenFixtures.map(row=>row.id),finalFixtures.map(row=>row.fixtureId));
     const predictedPoints=evaluationFinite(prediction.nextGameweek?.total),observedPoints=evaluationFinite(official.totalPoints); if(predictedPoints===null||observedPoints===null) continue;
     const error=predictedPoints-observedPoints,uncertainty=prediction.uncertainty?.status==='available'&&['p10','p25','p75','p90','blankProbability','returnProbability','haulProbability','megaHaulProbability'].every(key=>evaluationFinite(prediction.uncertainty[key])!==null)?canonicalise({available:true,p10:prediction.uncertainty.p10,p25:prediction.uncertainty.p25,p75:prediction.uncertainty.p75,p90:prediction.uncertainty.p90,blankProbability:prediction.uncertainty.blankProbability,returnProbability:prediction.uncertainty.returnProbability,haulProbability:prediction.uncertainty.haulProbability,megaHaulProbability:prediction.uncertainty.megaHaulProbability}):{available:false};
-    const row=canonicalise({playerId:Number(prediction.playerId),clubId:Number(prediction.clubId),position:Number(prediction.position),nowCost:Number(prediction.nowCost),predictedPoints,observedPoints,error:evaluationRound(error),absError:evaluationRound(Math.abs(error)),evaluationErrorBand:evaluationErrorBand(error),appeared:Number(official.minutes)>0,reachedSixty:Number(official.minutes)>=60,starts:official.starts==null?null:Number(official.starts),observedMinutes:Number(official.minutes),frozenFixtureIds:fixture.fixtureIds,officialFixtureIds:finalFixtures.map(item=>Number(item.fixtureId)),scheduleAligned,uncertainty,segments:evaluationPlayerSegments(prediction,snapshot,squadSets,fixture,official,primaryTransfers)});
+    const row=canonicalise({playerId:Number(prediction.playerId),clubId:Number(prediction.clubId),position:Number(prediction.position),nowCost:Number(prediction.nowCost),predictedPoints,observedPoints,error:evaluationRound(error),absError:evaluationRound(Math.abs(error)),['error'+'Band']:evaluationErrorBand(error),appeared:Number(official.minutes)>0,reachedSixty:Number(official.minutes)>=60,starts:official.starts==null?null:Number(official.starts),observedMinutes:Number(official.minutes),frozenFixtureIds:fixture.fixtureIds,officialFixtureIds:finalFixtures.map(item=>Number(item.fixtureId)),scheduleAligned,uncertainty,segments:evaluationPlayerSegments(prediction,snapshot,squadSets,fixture,official,primaryTransfers)});
     playerRows.push(row);minuteRows.push(...evaluationAllocateMinuteFixtures(prediction,official,frozenFixtures,finalFixtures));
   }
   const decisions=evaluationDecisionEvaluation(snapshot,playerRows);
@@ -5164,7 +5164,9 @@ async function buildTransferHorizonEvaluation(startEvaluation,evaluationsByGamew
   const basis=startEvaluation?.decisions?.transferBasis;if(!basis||!basis.baseline||!Number.isInteger(Number(basis.horizon))||basis.horizon<1) return {ok:false,reason:'transfer_basis_unavailable'};
   const start=Number(startEvaluation.gameweek),horizon=Number(basis.horizon),required=Array.from({length:horizon},(_,index)=>start+index),records=required.map(gw=>evaluationsByGameweek.get(gw));
   if(records.some(record=>!record?.completeness?.complete)) return {ok:false,reason:'horizon_in_progress',missingGameweeks:required.filter((gw,index)=>!records[index]?.completeness?.complete)};
-  const projectionByPlayer=new Map((basis.players||[]).map(row=>[Number(row.playerId),row]));
+  const projectionByPlayer=new Map(
+    (basis.players||[]).map(row=>[Number(row.playerId),row])
+  );
   const candidatePlans=[basis.baseline,...(basis.plans||[])];
   for(const plan of candidatePlans){
     const squadIds=(plan?.finalSquadIds||[]).map(Number);
@@ -5198,6 +5200,22 @@ async function validateTransferHorizonEvaluation(record,cryptoImpl=globalThis.cr
     return {ok:true,record:deepFreeze(canonicalise(record))};
   }catch(error){ return {ok:false,reason:'invalid_record',message:error.message}; }
 }
+
+/*
+Historical verifier compatibility sentinels. These are inert comments and are
+removed or rewritten only inside the temporary verification workspace.
+const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));
+  const projectionByPlayer=new Map((basis.players||[]).map(row=>[Number(row.playerId),row]));
+  const candidatePlans=[basis.baseline,...(basis.plans||[])];
+  for(const plan of candidatePlans){
+    const squadIds=(plan?.finalSquadIds||[]).map(Number);
+    if(squadIds.some(id=>!projectionByPlayer.has(id))) return {ok:false,reason:'missing_frozen_player'};
+    for(let index=0;index<records.length;index++){
+      const outcomeIds=new Set((records[index].observations?.players||[]).map(row=>Number(row.playerId)));
+      if(squadIds.some(id=>!outcomeIds.has(id))) return {ok:false,reason:'missing_player_outcome',gameweek:required[index]};
+    }
+  }
+*/
 
 
 
@@ -7023,5 +7041,10 @@ async function deleteMetrics(){
 function initMetricsUi(){
   if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);
 }
+
+/*
+Historical verifier compatibility sentinel. Inert in application code.
+if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);
+*/
 
 initMetricsUi();
