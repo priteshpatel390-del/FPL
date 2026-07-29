@@ -1,6 +1,6 @@
 # KNOWN_LIMITATIONS.md
 Purpose: single register of every current limitation. Audience: all sessions.
-Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
+Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
@@ -13,7 +13,7 @@ Last updated: 2026-07-28. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | BUILD-1 | Custom bundler could leave parts of multi-line module declarations in production output | Complete static import/export declarations are stripped and surviving module syntax is rejected | Stage 5 review | **CLOSED 2026-07-28** |
 | RET-1 | `Retry-After` is not honoured | Fixed capped backoff may retry sooner than a provider requests | Serverless reconsideration | Open (accepted) |
 | RET-2 | No transport-level per-provider circuit breaker | Pooled outages can issue more doomed requests than ideal | Future provider hardening only with separate approval | Open |
-| HEALTH-1 | Provider Health is session-scoped | No multi-session incident history | No planned stage | Accepted |
+| HEALTH-1 | Provider Health is session-scoped | No multi-session incident history; compact global status and full More detail reflect only the current session | No planned stage | Accepted |
 | VAL-2 | Understat values are structurally but not range validated | Nonsense numeric values could pass structure checks | Future provider hardening | Open |
 | VAL-3 | Archive CSV validates headers but not every row width | Stage 7 replay rejects and counts malformed required values instead of manufacturing defaults | Stage 7 | **CLOSED and verified 2026-07-28** |
 | MIN-1 | Expected minutes = season minutes ÷ current GW | Replaced by tiered current-season histories with aggregate/prior fallback | Stage 4 | **CLOSED 2026-07-28** |

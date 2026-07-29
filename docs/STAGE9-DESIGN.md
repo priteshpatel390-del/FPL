@@ -77,13 +77,14 @@ Explicit exclusions: no football-pitch redesign, club shirts, player detail shee
 - Add temporary transfer-plan preview on the pitch.
 - Add temporary captain and vice-captain previews.
 - Keep previews clearly separated from model recommendations and persisted state.
-- **Implemented and verified on draft PR #23:** session-only state, optimiser-final-squad agreement, captain/vice role swapping, model comparison, explicit clearing and stale-preview invalidation; no formula or persistence change.
+- **Implemented, verified and merged through PR #23:** session-only state, optimiser-final-squad agreement, captain/vice role swapping, model comparison, explicit clearing and stale-preview invalidation; no formula or persistence change.
 
 ### 9.5 — More, Settings and Provider Health
 
 - Move setup and provider controls into Settings.
 - Add compact global Provider Health and full detail under More.
 - Preserve all existing fallback and security behaviour.
+- **Implemented and verified on draft PR #24:** Settings hierarchy, compact global state, full current-session provider rows and accessible jump-to-detail interaction; no provider, fallback, storage or security behaviour changed.
 
 ### 9.6 — Style migration, CSP and final polish
 

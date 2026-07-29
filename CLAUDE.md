@@ -1,5 +1,5 @@
 # CLAUDE.md — onboarding for every future development session
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-07-28.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-07-29.
 
 ## Owner
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 9.3 is merged into `main` through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`. Checkpoint 9.4 — Temporary decision previews is implemented and verified on draft PR #23 from branch `agent/stage9-4-decision-previews`. Transfer plans can be previewed on the Team pitch, and captain/vice-captain choices can be previewed without writing to storage or changing the real squad. Preview state is session-only, clearly labelled, and invalidates when the squad or optimiser inputs/results change. Verified source `849ff757c68c35e92744dc96efc34848110fa19e` passes **304/304** tests with deterministic builds; generated artefacts are committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No projection, expected-minutes, best-XI, captain-ranking, optimiser, provider, storage or security behaviour changed. Owner review and explicit merge approval remain required before checkpoint 9.5.
+Stage 9.4 is merged into `main` through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b7112fd4a8c8`. Checkpoint 9.5 — More, Settings and Provider Health is implemented and verified on draft PR #24 from branch `agent/stage9-5-settings-provider-health`. Team/setup and optional provider controls now sit in a clearly labelled Settings area under More; Provider Health remains globally visible in compact form and opens full current-session detail under More. Verified source `da8258df25e196af1f1521c025edefde23612abd` passes **310/310** tests with deterministic builds; generated artefacts are committed at `5401f2882f72b70c7034157c2e3a686dab966c64`. Provider states, transports, retries, cache/fallback behaviour, odds-key controls, storage and every model formula remain unchanged. Owner review and explicit merge approval remain required before checkpoint 9.6.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.

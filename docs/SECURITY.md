@@ -1,6 +1,6 @@
 # SECURITY.md
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
-Last updated: 2026-07-28. Related: STAGE3-DESIGN.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
+Last updated: 2026-07-29. Related: STAGE3-DESIGN.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
 
 ## Current architecture
 Static single-file application on GitHub Pages. Stage 3 security hardening is complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`. The verified Stage 3 baseline was 210 passing tests with deterministic two-build output.
@@ -9,7 +9,7 @@ Static single-file application on GitHub Pages. Stage 3 security hardening is co
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
 - Provider and user strings render through DOM builders; AI output uses the restricted Markdown AST.
 - External payloads are validated at provider boundaries and transient failures use bounded retry.
-- Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable.
+- Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable through a compact global status and full current-session detail under More; Stage 9.5 changes presentation only.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:

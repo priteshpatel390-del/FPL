@@ -11,6 +11,15 @@ import { clearXP } from './model/xp.mjs';
 import { HEALTH_STATES, healthRows, markLive, markCached, markFallback, markPartial, markUnavailable } from './providers/registry.mjs';
 
 const HEALTH_LABELS = {fpl:'FPL', understat:'Understat', odds:'Odds', archive:'Archive'};
+const HEALTH_PRIORITY = [
+  HEALTH_STATES.UNAVAILABLE,
+  HEALTH_STATES.FALLBACK,
+  HEALTH_STATES.PARTIAL,
+  HEALTH_STATES.STALE,
+  HEALTH_STATES.CACHED,
+  HEALTH_STATES.DISABLED,
+  HEALTH_STATES.LIVE
+];
 function ageLabel(ms){
   if(ms == null) return '';
   const mins = Math.floor(ms / 60000);
@@ -20,27 +29,55 @@ function ageLabel(ms){
   if(hours < 48) return hours + 'h ago';
   return Math.floor(hours / 24) + 'd ago';
 }
+function providerHealthFlagClass(state){
+  if(state === HEALTH_STATES.LIVE) return 'rise';
+  if(state === HEALTH_STATES.CACHED || state === HEALTH_STATES.STALE || state === HEALTH_STATES.PARTIAL) return 'doubt';
+  if(state === HEALTH_STATES.FALLBACK || state === HEALTH_STATES.UNAVAILABLE) return 'out';
+  return 'dark';
+}
+function providerHealthCompactModel(rows = []){
+  if(!rows.length) return {
+    label:'Waiting',
+    state:'Waiting',
+    ariaLabel:'Provider Health: waiting for first data load'
+  };
+  const allLive = rows.every(row => row.state === HEALTH_STATES.LIVE);
+  const worst = HEALTH_PRIORITY.map(state => rows.find(row => row.state === state)).find(Boolean) || rows[0];
+  const detail = rows.map(row => `${HEALTH_LABELS[row.provider] || row.provider} ${row.state}`).join(', ');
+  return {
+    label:allLive ? 'All live' : worst.state,
+    state:allLive ? HEALTH_STATES.LIVE : worst.state,
+    ariaLabel:`Provider Health: ${detail}. Open full detail.`
+  };
+}
 function renderProviderHealth(){
-  const setup = $('setupPanel');
-  if(!setup) return;
-  let box = $('providerHealth');
-  if(!box){
-    box = document.createElement('div'); box.id = 'providerHealth'; box.className = 'note plain';
-    box.style.marginTop = '10px';
-    const status = $('srcStatus');
-    if(status && status.parentNode) status.parentNode.insertBefore(box, status.nextSibling);
-    else setup.appendChild(box);
-  }
-  box.textContent = '';
-  const title = document.createElement('b'); title.textContent = 'Provider health'; box.appendChild(title);
+  const compact = $('providerHealthCompact');
+  const detail = $('providerHealthRows');
   const rows = healthRows({seasonLive:S.seasonLive});
-  if(!rows.length){ box.appendChild(document.createTextNode(' — waiting for first data load.')); return; }
-  rows.forEach(h => {
-    const line = document.createElement('div'); line.className = 'status'; line.style.marginTop = '5px';
-    const age = h.lastSuccess ? ' · ' + ageLabel(h.ageMs) : '';
-    line.textContent = `${HEALTH_LABELS[h.provider] || h.provider}: ${h.state}${age}${h.consequence ? ' — ' + h.consequence : h.note ? ' — ' + h.note : ''}`;
-    box.appendChild(line);
-  });
+  const compactModel = providerHealthCompactModel(rows);
+
+  if(compact){
+    setChildren(compact,
+      document.createTextNode('Data '),
+      el('span',{class:`flag ${providerHealthFlagClass(compactModel.state)}`},compactModel.label));
+    compact.setAttribute('aria-label',compactModel.ariaLabel);
+    compact.dataset.healthState = String(compactModel.state).toLowerCase();
+  }
+
+  if(!detail) return;
+  if(!rows.length){
+    setChildren(detail,el('div',{class:'note plain'},el('b',{},'Waiting for first data load.'),' Provider states will appear here as each source answers or falls back.'));
+    return;
+  }
+
+  setChildren(detail,rows.map(h => {
+    const age = h.lastSuccess ? `Last successful ${ageLabel(h.ageMs)}` : 'No successful response this session';
+    return el('article',{class:'note plain'},
+      el('div',{},el('b',{},HEALTH_LABELS[h.provider] || h.provider),el('span',{class:`flag ${providerHealthFlagClass(h.state)}`},h.state)),
+      el('div',{class:'status'},age),
+      h.note ? el('div',{},h.note) : null,
+      h.consequence ? el('div',{class:'status'},`Impact: ${h.consequence}`) : null);
+  }));
 }
 
 async function loadAll(){
@@ -128,4 +165,4 @@ async function loadAll(){
   }
 }
 
-export { loadAll, renderProviderHealth, ageLabel };
+export { loadAll, renderProviderHealth, ageLabel, providerHealthFlagClass, providerHealthCompactModel };

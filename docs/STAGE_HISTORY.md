@@ -1,11 +1,16 @@
 # STAGE_HISTORY.md — engineering diary
-Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
+Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-29.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, AUDIT.md.
 
-## Stage 9.4 — Temporary decision previews (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+## Stage 9.5 — More, Settings and Provider Health (IMPLEMENTED AND VERIFIED 2026-07-29; awaiting merge)
+Reframed the existing setup surface as a clear Settings area under More and added a compact Provider Health control to the global header. Activating the compact control opens More and focuses a full detail panel showing every active provider's existing seven-state value, last-success age, note and consequence. The compact label deterministically surfaces the most consequential present state without creating a synthetic score.
+
+The implementation is presentation-only. Provider registry transitions, staleness thresholds, transports, retries, validation, caches, fallbacks, odds-key hygiene and persisted configuration remain unchanged. Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Generated artefacts were committed at `5401f2882f72b70c7034157c2e3a686dab966c64`. Six focused tests cover compact modelling, age labels, state priority, palette reuse and shell wiring. Browser screenshot regression remains deferred to checkpoint 9.6.
+
+## Stage 9.4 — Temporary decision previews (MERGED 2026-07-29)
 Added session-only transfer-plan and captain/vice previews while keeping the real squad, model recommendations and persisted state authoritative. Exact optimiser plans are applied to cloned squad entries and checked against `finalSquadIds`; the resulting temporary squad uses the unchanged `bestXI()` for pitch presentation. Preview captaincy remains distinct, supports role swapping and shows its uplift separately from the base XI score.
 
-Preview state is invalidated by real-squad changes and by optimiser input or result changes. Review caught and fixed two stale-state gaps before completion: optimiser result values were added to the signature, and captain-only previews now clear when optimiser context changes. Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Generated artefacts were committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No formula, storage, provider, security or FPL-write behaviour changed.
+Preview state is invalidated by real-squad changes and by optimiser input or result changes. Review caught and fixed two stale-state gaps before completion: optimiser result values were added to the signature, and captain-only previews now clear when optimiser context changes. Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Generated artefacts were committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No formula, storage, provider, security or FPL-write behaviour changed. Merged through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b7112fd4a8c8`.
 
 ## Stage 9.3 — Player detail and uncertainty (MERGED 2026-07-28)
 Replaced the legacy inline Players-table drawer with an accessible mobile bottom sheet and desktop side panel. The detail surface composes existing expected-points, expected-minutes and Stage 8 simulation outputs into a decision summary, compact P25–P75 range, expanded P10–P90 detail, outcome probabilities and the preserved scoring-component explanation. Pitch players and squad/player rows open the same surface; Escape closes it and focus returns to the trigger.

@@ -1,5 +1,5 @@
 # ROADMAP.md — living roadmap
-Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-28.
+Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-29.
 Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, DECISIONS.md.
 
 ## Completed
@@ -34,22 +34,24 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Checkpoint 9.3 — Player detail and uncertainty** · DONE and merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.
   - Accessible mobile bottom sheet and desktop side panel with expected minutes and approved uncertainty presentation.
   - Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed** with deterministic builds.
+- **Checkpoint 9.4 — Temporary decision previews** · DONE and merged through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b7112fd4a8c8`.
+  - Session-only optimiser-plan and captain/vice previews with stale-state invalidation and no persistence.
+  - Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed** with deterministic builds.
 
 ## Current
 - **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
-- **Checkpoint 9.4 — Temporary decision previews** · implemented and verified on draft PR #23; owner review and explicit merge approval remain.
-  - Exact optimiser plans can be previewed on the Team pitch without mutating the real squad.
-  - Captain and vice-captain previews remain distinct, session-only and visibly separate from model recommendations.
-  - Squad or optimiser input/result changes clear stale preview state.
-  - Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, successful build, deterministic two-build comparison and build-identity check.
-  - Verified generated deployables committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`.
+- **Checkpoint 9.5 — More, Settings and Provider Health** · implemented and verified on draft PR #24; owner review and explicit merge approval remain.
+  - Existing team/setup and optional provider controls now sit in a clearly labelled Settings area under More.
+  - A compact global Provider Health control opens full current-session provider state, age, note and consequence detail under More.
+  - Existing seven-state logic, fallbacks, transports, retries, cache behaviour and security controls are unchanged.
+  - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Verified generated deployables committed at `5401f2882f72b70c7034157c2e3a686dab966c64`.
 
 ## Upcoming
-1. **Checkpoint 9.5 — Settings and Provider Health integration**.
-2. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+1. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
 
 ## Current blockers
-1. Owner review and explicit merge approval for Stage 9.4 draft PR #23.
+1. Owner review and explicit merge approval for Stage 9.5 draft PR #24.
 2. Browser-level visual regression tooling is not yet present; final mobile/desktop appearance still needs human review.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZSdnokhlnj9+TN0K1jh+F7F5ofW6hXvtW2RocWl1wXw='; style-src-elem 'sha256-HHTyFmjljNk+Yx0+fKuodnyGGjiq2WhoNGyqeKybusU=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YIxA30dX21+MncFAxqBO7HDm1qaz8ZM5XXX6hPTmva4='; style-src-elem 'sha256-HHTyFmjljNk+Yx0+fKuodnyGGjiq2WhoNGyqeKybusU=' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -497,8 +497,8 @@ body.player-detail-open{overflow:hidden}
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"bea7b5c744c351f3","commit":"849ff757c68c35e92744dc96efc34848110fa19e"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"bea7b5c744c351f314d566bfa392278b7ca54d97af74e6c7ad743e654cdc821b","commit":"849ff757c68c35e92744dc96efc34848110fa19e","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"15d6e7911adb1818","commit":"da8258df25e196af1f1521c025edefde23612abd"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"15d6e7911adb1818d11381da1e4b61030aab5cb1b5f4c8054bf86ca823f05267","commit":"da8258df25e196af1f1521c025edefde23612abd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3390,6 +3390,15 @@ async function runBacktest(){
 /* ===== src/main.mjs ===== */
 
 const HEALTH_LABELS = {fpl:'FPL', understat:'Understat', odds:'Odds', archive:'Archive'};
+const HEALTH_PRIORITY = [
+  HEALTH_STATES.UNAVAILABLE,
+  HEALTH_STATES.FALLBACK,
+  HEALTH_STATES.PARTIAL,
+  HEALTH_STATES.STALE,
+  HEALTH_STATES.CACHED,
+  HEALTH_STATES.DISABLED,
+  HEALTH_STATES.LIVE
+];
 function ageLabel(ms){
   if(ms == null) return '';
   const mins = Math.floor(ms / 60000);
@@ -3399,27 +3408,55 @@ function ageLabel(ms){
   if(hours < 48) return hours + 'h ago';
   return Math.floor(hours / 24) + 'd ago';
 }
+function providerHealthFlagClass(state){
+  if(state === HEALTH_STATES.LIVE) return 'rise';
+  if(state === HEALTH_STATES.CACHED || state === HEALTH_STATES.STALE || state === HEALTH_STATES.PARTIAL) return 'doubt';
+  if(state === HEALTH_STATES.FALLBACK || state === HEALTH_STATES.UNAVAILABLE) return 'out';
+  return 'dark';
+}
+function providerHealthCompactModel(rows = []){
+  if(!rows.length) return {
+    label:'Waiting',
+    state:'Waiting',
+    ariaLabel:'Provider Health: waiting for first data load'
+  };
+  const allLive = rows.every(row => row.state === HEALTH_STATES.LIVE);
+  const worst = HEALTH_PRIORITY.map(state => rows.find(row => row.state === state)).find(Boolean) || rows[0];
+  const detail = rows.map(row => `${HEALTH_LABELS[row.provider] || row.provider} ${row.state}`).join(', ');
+  return {
+    label:allLive ? 'All live' : worst.state,
+    state:allLive ? HEALTH_STATES.LIVE : worst.state,
+    ariaLabel:`Provider Health: ${detail}. Open full detail.`
+  };
+}
 function renderProviderHealth(){
-  const setup = $('setupPanel');
-  if(!setup) return;
-  let box = $('providerHealth');
-  if(!box){
-    box = document.createElement('div'); box.id = 'providerHealth'; box.className = 'note plain';
-    box.style.marginTop = '10px';
-    const status = $('srcStatus');
-    if(status && status.parentNode) status.parentNode.insertBefore(box, status.nextSibling);
-    else setup.appendChild(box);
-  }
-  box.textContent = '';
-  const title = document.createElement('b'); title.textContent = 'Provider health'; box.appendChild(title);
+  const compact = $('providerHealthCompact');
+  const detail = $('providerHealthRows');
   const rows = healthRows({seasonLive:S.seasonLive});
-  if(!rows.length){ box.appendChild(document.createTextNode(' — waiting for first data load.')); return; }
-  rows.forEach(h => {
-    const line = document.createElement('div'); line.className = 'status'; line.style.marginTop = '5px';
-    const age = h.lastSuccess ? ' · ' + ageLabel(h.ageMs) : '';
-    line.textContent = `${HEALTH_LABELS[h.provider] || h.provider}: ${h.state}${age}${h.consequence ? ' — ' + h.consequence : h.note ? ' — ' + h.note : ''}`;
-    box.appendChild(line);
-  });
+  const compactModel = providerHealthCompactModel(rows);
+
+  if(compact){
+    setChildren(compact,
+      document.createTextNode('Data '),
+      el('span',{class:`flag ${providerHealthFlagClass(compactModel.state)}`},compactModel.label));
+    compact.setAttribute('aria-label',compactModel.ariaLabel);
+    compact.dataset.healthState = String(compactModel.state).toLowerCase();
+  }
+
+  if(!detail) return;
+  if(!rows.length){
+    setChildren(detail,el('div',{class:'note plain'},el('b',{},'Waiting for first data load.'),' Provider states will appear here as each source answers or falls back.'));
+    return;
+  }
+
+  setChildren(detail,rows.map(h => {
+    const age = h.lastSuccess ? `Last successful ${ageLabel(h.ageMs)}` : 'No successful response this session';
+    return el('article',{class:'note plain'},
+      el('div',{},el('b',{},HEALTH_LABELS[h.provider] || h.provider),el('span',{class:`flag ${providerHealthFlagClass(h.state)}`},h.state)),
+      el('div',{class:'status'},age),
+      h.note ? el('div',{},h.note) : null,
+      h.consequence ? el('div',{class:'status'},`Impact: ${h.consequence}`) : null);
+  }));
 }
 
 async function loadAll(){
@@ -3510,7 +3547,7 @@ async function loadAll(){
 
 
 /* ===== src/ui/app-shell.mjs ===== */
-// Stage 9.1 — app shell and primary navigation only.
+// Stage 9 app shell — primary navigation plus More/Settings integration.
 // Reorganises existing views without changing their rendering or model behaviour.
 
 function setupAppShell(){
@@ -3522,6 +3559,7 @@ function setupAppShell(){
 
   const nav = document.querySelector('nav.tabs');
   const main = document.querySelector('main');
+  const header = document.querySelector('header');
   const teamView = document.getElementById('view-squad');
   const playersView = document.getElementById('view-players');
   const transfersView = document.getElementById('view-transfers');
@@ -3570,9 +3608,36 @@ function setupAppShell(){
   heading.textContent = 'More';
   const hint = document.createElement('p');
   hint.className = 'hint';
-  hint.textContent = 'Fixtures, setup, provider controls, mini-league tools and Ask remain available here.';
+  hint.textContent = 'Provider detail, Settings, fixtures, mini-league tools and Ask live here.';
   moreHeader.append(eyebrow, heading, hint);
   moreView.appendChild(moreHeader);
+
+  const healthPanel = document.createElement('section');
+  healthPanel.id = 'providerHealthDetail';
+  healthPanel.className = 'panel';
+  healthPanel.tabIndex = -1;
+  const healthEyebrow = document.createElement('span');
+  healthEyebrow.className = 'eyebrow';
+  healthEyebrow.textContent = 'Data status';
+  const healthHeading = document.createElement('h2');
+  healthHeading.textContent = 'Provider Health';
+  const healthHint = document.createElement('p');
+  healthHint.className = 'hint';
+  healthHint.textContent = 'Which data source is active, how fresh it is and what any fallback changes.';
+  const healthRowsNode = document.createElement('div');
+  healthRowsNode.id = 'providerHealthRows';
+  healthPanel.append(healthEyebrow, healthHeading, healthHint, healthRowsNode);
+  moreView.appendChild(healthPanel);
+
+  if(setupPanel){
+    const setupEyebrow = setupPanel.querySelector('.eyebrow');
+    const setupHeading = setupPanel.querySelector('h2');
+    const setupHint = setupPanel.querySelector('.hint');
+    if(setupEyebrow) setupEyebrow.textContent = 'Settings';
+    if(setupHeading){ setupHeading.id = 'settingsTitle'; setupHeading.textContent = 'Team and data settings'; }
+    if(setupHint) setupHint.textContent = 'Connect your team, set transfer context and manage optional provider controls.';
+    setupPanel.setAttribute('aria-labelledby','settingsTitle');
+  }
 
   [setupPanel, fixturesView, leagueView, askView].filter(Boolean).forEach(section => {
     section.classList.remove('view');
@@ -3580,6 +3645,28 @@ function setupAppShell(){
     moreView.appendChild(section);
   });
   main.appendChild(moreView);
+
+  if(header && !document.getElementById('providerHealthCompact')){
+    const compact = document.createElement('button');
+    compact.id = 'providerHealthCompact';
+    compact.type = 'button';
+    compact.className = 'chip';
+    compact.setAttribute('aria-controls','providerHealthDetail');
+    compact.setAttribute('aria-label','Provider Health: waiting for first data load');
+    compact.append(document.createTextNode('Data '));
+    const waiting = document.createElement('span');
+    waiting.className = 'flag dark';
+    waiting.textContent = 'Waiting';
+    compact.appendChild(waiting);
+    compact.addEventListener('click', () => {
+      moreTab.click();
+      setTimeout(() => {
+        if(typeof healthPanel.scrollIntoView === 'function') healthPanel.scrollIntoView({block:'start'});
+        if(typeof healthPanel.focus === 'function') healthPanel.focus({preventScroll:true});
+      }, 0);
+    });
+    header.appendChild(compact);
+  }
 
   tabs.forEach(tab => tab.remove());
   [teamTab, playersTab, transfersTab, moreTab].forEach(tab => nav.appendChild(tab));
