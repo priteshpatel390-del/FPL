@@ -217,6 +217,23 @@ body.player-detail-open{overflow:hidden}
   @keyframes playerDetailInSide{from{transform:translateX(24px);opacity:.7}to{transform:none;opacity:1}}
 }
 
+/* temporary decision previews */
+.decision-preview-banner,.decision-preview-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #B9D3C0;border-radius:14px;background:#F1F8F3;padding:12px 13px;margin:10px 0}
+.decision-preview-banner strong,.decision-preview-controls strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;margin-top:2px}
+.decision-preview-banner p,.decision-preview-controls p{font-size:11px;color:var(--ink-soft);margin:4px 0 0;line-height:1.4}
+.decision-preview-copy{min-width:0}
+.decision-preview-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;flex:0 0 auto}
+.decision-preview-actions .active{background:var(--pitch);border-color:var(--pitch);color:#fff}
+.selection-help{width:100%;font-weight:700;color:var(--pitch)!important}
+.pitch-player.selection-target .pitch-copy{outline:2px dashed rgba(255,255,255,.9);outline-offset:2px}
+.pitch-player.selection-target:hover .pitch-copy{transform:translateY(-1px)}
+.pitch-player.incoming .pitch-copy{box-shadow:0 0 0 2px #B7F51B,0 4px 10px rgba(7,27,17,.2)}
+.incoming-badge{position:absolute;left:-8px;top:-7px;z-index:4;border-radius:999px;background:#B7F51B;color:#102816;border:2px solid #fff;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;padding:3px 4px}
+.captain-badge.preview{background:#fff;color:var(--pitch);border:2px solid var(--pitch);box-shadow:0 0 0 2px #fff}
+.preview-plan-action.selected{background:var(--pitch);border-color:var(--pitch);color:#fff}
+.preview-plan-row{background:#F1F8F3}
+@media(max-width:600px){.decision-preview-banner,.decision-preview-controls{align-items:stretch;flex-direction:column}.decision-preview-actions{justify-content:flex-start;width:100%}.decision-preview-actions .btn{flex:1 1 auto}}
+
 /* team pitch */
 .team-summary{display:grid;grid-template-columns:minmax(116px,.9fr) 1.7fr;gap:8px;margin-bottom:12px}
 .team-score{background:var(--ink);color:#fff;border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;justify-content:center}

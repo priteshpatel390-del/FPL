@@ -2,16 +2,20 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-28.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, AUDIT.md.
 
-## Stage 9.3 — Player detail and uncertainty (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+## Stage 9.4 — Temporary decision previews (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
+Added session-only transfer-plan and captain/vice previews while keeping the real squad, model recommendations and persisted state authoritative. Exact optimiser plans are applied to cloned squad entries and checked against `finalSquadIds`; the resulting temporary squad uses the unchanged `bestXI()` for pitch presentation. Preview captaincy remains distinct, supports role swapping and shows its uplift separately from the base XI score.
+
+Preview state is invalidated by real-squad changes and by optimiser input or result changes. Review caught and fixed two stale-state gaps before completion: optimiser result values were added to the signature, and captain-only previews now clear when optimiser context changes. Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Generated artefacts were committed at `ed275d2a148d90d09836199f8d1485394d72b6f5`. No formula, storage, provider, security or FPL-write behaviour changed.
+
+## Stage 9.3 — Player detail and uncertainty (MERGED 2026-07-28)
 Replaced the legacy inline Players-table drawer with an accessible mobile bottom sheet and desktop side panel. The detail surface composes existing expected-points, expected-minutes and Stage 8 simulation outputs into a decision summary, compact P25–P75 range, expanded P10–P90 detail, outcome probabilities and the preserved scoring-component explanation. Pitch players and squad/player rows open the same surface; Escape closes it and focus returns to the trigger.
 
 Pritesh approved presentation-only spread labels: Tight ≤2.0, Moderate >2.0–5.0 and Wide >5.0 points. Labels are suppressed in pre-season and for reduced-quality inputs. Review caught and corrected a wording defect where a 50% officially doubtful player could have appeared “Unavailable”; official doubtful status now remains Doubtful without changing the availability factor used by the model.
 
-Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Verified generated artefacts were committed at `ae7f7f35bd69c17686e776b97d416d4be56ae8df`. No projection, expected-minutes, simulation, captaincy, squad or optimiser formula changed. PR #20 remains unmerged pending owner approval.
+Verified source `40dde666fc776e0fdcf1bab6c8dad30138825d08`: **295/295 tests passed**, production build succeeded, two builds were byte-identical and build identity passed. Verified generated artefacts were committed at `ae7f7f35bd69c17686e776b97d416d4be56ae8df`. No projection, expected-minutes, simulation, captaincy, squad or optimiser formula changed. Merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.
 
 ## Stage 9.2 — Team pitch and shirts (MERGED 2026-07-28)
 Added the portrait pitch, repository-owned CSS shirts, captain/vice treatment and narrow-iPhone summary polish while preserving the existing model-selected XI and bench order. Verified 288/288 tests and deterministic builds; merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`.
-
 
 ## Stage 7 — Walk-forward backtest (IMPLEMENTED AND VERIFIED 2026-07-28; awaiting merge)
 Replaced the misleading live backtest presentation with a deterministic deadline-information-only walk-forward framework. The evaluator enforces chronological train/calibration/holdout separation, rejects future-information leakage and conflicting duplicates, calculates MAE, RMSE, bias and Pearson correlation, supports position/Gameweek/prediction-band segmentation and compares named ablations only on identical holdout keys.
@@ -114,7 +118,6 @@ optimisation formula changed.
 Objective: repository becomes source of truth; conversation becomes disposable. Changes: /docs
 system (12 files) + CLAUDE.md; no code. Lessons: a several-hundred-turn founding conversation is a
 liability; decision records should have started at turn one.
-
 
 ## Stage 8 — Uncertainty and squad simulation
 - Approved design recorded in `docs/STAGE8-DESIGN.md`.

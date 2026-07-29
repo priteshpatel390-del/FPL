@@ -70,13 +70,14 @@ Explicit exclusions: no football-pitch redesign, club shirts, player detail shee
 
 - Add mobile bottom-sheet and desktop side-panel player detail.
 - Present expected minutes, confidence and approved uncertainty ranges.
-- **Implemented and verified on draft PR #20:** accessible dialog behaviour, preserved projection breakdown, exact approved labels and pre-season/reduced-quality safeguards; no model formula changed.
+- **Implemented, verified and merged through PR #20:** accessible dialog behaviour, preserved projection breakdown, exact approved labels and pre-season/reduced-quality safeguards; no model formula changed.
 
 ### 9.4 — Temporary decision previews
 
 - Add temporary transfer-plan preview on the pitch.
 - Add temporary captain and vice-captain previews.
 - Keep previews clearly separated from model recommendations and persisted state.
+- **Implemented and verified on draft PR #23:** session-only state, optimiser-final-squad agreement, captain/vice role swapping, model comparison, explicit clearing and stale-preview invalidation; no formula or persistence change.
 
 ### 9.5 — More, Settings and Provider Health
 

@@ -3,6 +3,14 @@ import { $, num, el, setChildren } from '../util.mjs';
 import { xpOf } from '../model/xp.mjs';
 import { mySquad } from '../squad.mjs';
 import { optimiseTransfers } from '../model/transfers.mjs';
+import {
+  decisionPreviewSquadSignature,
+  decisionPreviewPlanSignature,
+  decisionPreviewOptimiserSignature,
+  decisionPreviewSnapshot,
+  decisionPreviewSyncOptimiser,
+  decisionPreviewSelectTransfer
+} from './decision-preview.mjs';
 
 // Stage 6 replacement for the legacy isolated-swap renderer. The bundler places
 // this declaration after views.mjs so renderAll resolves to this implementation.
@@ -34,6 +42,11 @@ function renderTransfers(){
     return;
   }
   const plans=result.plans||[];
+  const squadSignature=decisionPreviewSquadSignature(squad);
+  const optimiserSignature=decisionPreviewOptimiserSignature({squadSignature,horizon,bank,freeTransfers,plans});
+  const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
+  if(previewCleared && typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+  const previewState=decisionPreviewSnapshot();
   const best=plans[0];
   const nodes=[];
   if(!best||best.transferCount===0){
@@ -44,11 +57,21 @@ function renderTransfers(){
     if(best.warnings.length) nodes.push(el('div',{class:'note bad'},best.warnings.join(' · ')));
   }
   const table=el('table',{class:'data'});
-  const head=el('thead',{},el('tr',{},...['Plan','Moves','Gross gain','Hit','Roll','Net','Bank','Next FT'].map(x=>el('th',{},x))));
+  const head=el('thead',{},el('tr',{},...['Plan','Moves','Gross gain','Hit','Roll','Net','Bank','Next FT','Preview'].map(x=>el('th',{},x))));
   const body=el('tbody');
   plans.slice(0,maxResults).forEach((plan,i)=>{
     const label=plan.transferCount===0?'Roll':plan.transfers.map(t=>`${S.byId[t.outPlayerId]?.web_name||t.outPlayerId} → ${S.byId[t.inPlayerId]?.web_name||t.inPlayerId}`).join('; ');
-    body.appendChild(el('tr',{},
+    const selected=!!previewState.transfer&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan);
+    const action=el('button',{type:'button',class:`btn ghost sm preview-plan-action${selected?' selected':''}`,
+      'aria-label':plan.transferCount===0?'Use current squad on Team pitch':`Preview transfer plan ${i+1} on Team pitch`,
+      onclick:()=>{
+        decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);
+        if(typeof document!=='undefined'){
+          document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+          document.querySelector('nav.tabs .tab[data-view="squad"]')?.click();
+        }
+      }},plan.transferCount===0?'Use current squad':selected?'Previewing':'Preview on pitch');
+    body.appendChild(el('tr',{class:selected?'preview-plan-row':''},
       el('td',{},i===0?el('b',{},label):label),
       el('td',{class:'num'},String(plan.transferCount)),
       el('td',{class:'num'},`${plan.grossGain>=0?'+':''}${plan.grossGain.toFixed(1)}`),
@@ -56,7 +79,8 @@ function renderTransfers(){
       el('td',{class:'num'},`${(plan.rollDifference*0.5).toFixed(1)}`),
       el('td',{class:'num'},`${plan.netGain>=0?'+':''}${plan.netGain.toFixed(1)}`),
       el('td',{class:'num'},`£${(plan.bankAfter/10).toFixed(1)}m`),
-      el('td',{class:'num'},String(plan.freeTransfersNextGW))));
+      el('td',{class:'num'},String(plan.freeTransfersNextGW)),
+      el('td',{},action)));
   });
   table.append(head,body);
   nodes.push(el('div',{class:'scroll'},table));

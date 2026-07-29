@@ -132,7 +132,7 @@ No scoring, projection, calibration or optimisation code was touched.
 Reason: API, provider and user strings were interpolated into `innerHTML`, allowing names or notes to
 be interpreted as markup. Approach: shared `el()` and `setChildren()` primitives convert every
 non-node child to a text node. The complete approved inventory—gameweek/source status, ticker,
-players and breakdowns, squad/captaincy, transfers, leagues, manual squad/search, core errors and
+players and breakdowns, squad/captain/best-XI, transfers, leagues, manual squad/search, core errors and
 backtest output—uses real DOM nodes while retaining its existing classes, semantics and listeners.
 Ask output is deliberately excluded and restored to the Stage 3.4 baseline; AI/Markdown policy is a
 separate Stage 3.6 decision after design approval. Alternatives rejected: generic HTML sanitisation
@@ -141,10 +141,11 @@ the approved construction model), and bundling CSP/AI/key work (stage-discipline
 Consequences: XSS-1 is closed for API/provider/user rendering; five adversarial tests and a static
 sink inventory guard the boundary. No model formula, provider behaviour, dependency or layout changed.
 
-
 **D-18 · 2026-07-28 · Accepted · Deterministic seeded uncertainty and legal squad simulation (Stage 8)**
 Reason: expected points alone hide non-appearance risk, tail outcomes, auto-subs and captain fallback. Approach: a separate seeded Monte Carlo layer reconstructs five minutes states from pStart/pAppear/p60/expMin, samples approved scoring components, reports percentiles and explicit blank/return/haul thresholds, and simulates legal bench/captain mechanics. Deterministic projectXP, calibration and transfer objectives remain unchanged. Detailed pre-season simulation is disabled rather than manufactured. Consequences: equal inputs produce equal outputs; uncertainty remains conditional on the current model and requires prospective calibration before accuracy claims.
 
-
 **D-19 · 2026-07-28 · Accepted · Stage 9.3 uncertainty labels are presentation-only absolute widths**
 Reason: percentage spreads behave poorly when a player median is near zero, while absolute FPL-point widths remain understandable and comparable. Pritesh approved Tight ≤2.0 points, Moderate >2.0–5.0 points and Wide >5.0 points. Labels are suppressed when detailed simulation is unavailable in pre-season or input quality is reduced; the UI states that simulations are model-conditional and not externally calibrated. Consequences: `ui/player-detail.mjs` owns only the presentation categorisation. Stage 8 sampling, percentiles, probability thresholds, expected-minutes logic, projections, captaincy, squad selection and optimisation remain unchanged.
+
+**D-20 · 2026-07-28 · Accepted · Session-only decision previews (Stage 9.4)**
+Reason: the owner needs to inspect optimiser and captaincy alternatives without changing the model recommendation, saved squad or FPL account. Approach: `ui/decision-preview.mjs` stores temporary state only in module memory, applies exact optimiser `finalSquadIds` to cloned squad entries, routes the clone through unchanged `bestXI()`, and keeps model captaincy visible beside any preview. Squad signatures and optimiser input/result signatures invalidate stale state. Consequences: refresh clears previews; no storage write or FPL submission exists; changing transfer context clears custom captaincy; formulas and persisted data remain unchanged.
