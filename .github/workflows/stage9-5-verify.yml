@@ -25,6 +25,8 @@ jobs:
           test -f tools/stage9-5-finalise.z.b64.01
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          echo 'edcbf28b9ce0202249ec95bd8bf57bc5cb3b48dc6eeaea93b07f77e4c9fbc2cb  tools/stage9-5-finalise.z.b64.00' | sha256sum -c -
+          echo '40b30546252197fe3b2b93109769ffc30fe0f8fcfebbaa8196c4807bd619a0b2  tools/stage9-5-finalise.z.b64.01' | sha256sum -c -
           cat tools/stage9-5-finalise.z.b64.00 tools/stage9-5-finalise.z.b64.01 | tr -d '\n' > /tmp/stage9-5-finalise.z.b64
           echo '2fd9269179274cdc7fe2781bbd3a8968cc99f435642790d245de15359c52f349  /tmp/stage9-5-finalise.z.b64' | sha256sum -c -
           python - <<'PY'
