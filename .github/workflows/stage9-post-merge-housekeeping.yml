@@ -1,0 +1,110 @@
+name: Stage 9 post-merge housekeeping
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.head_ref == 'agent/stage9-post-merge-housekeeping'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-post-merge-housekeeping
+          fetch-depth: 0
+      - name: Update records and verify final documentation commit
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'missing expected block in {path}: {old[:80]!r}')
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected one block in {path}, found {text.count(old)}')
+              p.write_text(text.replace(old, new))
+
+          replace('CLAUDE.md',
+          "Stage 9.5 is merged into `main` through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`. Checkpoint 9.6 — Style migration, CSP and final polish is implemented and verified on draft PR #25 from branch `agent/stage9-6-style-csp-polish`. Static and generated presentation now uses classes, safe element attributes, native progress elements and SVG geometry rather than style attributes; the CSP no longer permits `style-src-attr` or any `unsafe-inline`. Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes **313/313** tests with deterministic builds; generated artefacts are committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. Mobile and desktop browser review passed with no console errors and zero application-created style attributes. Every model, provider, storage and optimiser rule remains unchanged. Owner review and explicit merge approval remain required before Stage 9 is complete.",
+          "Stage 9 is complete and merged into `main` through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`. The final verified Stage 9 source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes **313/313** tests with deterministic builds; generated artefacts are committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. Static and generated presentation is class-only at the style boundary, the CSP contains neither `style-src-attr` nor `unsafe-inline`, and representative mobile/desktop browser review passed. Every model, provider, storage and optimiser rule remains unchanged. The next checkpoint is **Stage 10 — Prospective Live-Season Validation**, at investigation and design approval only; no Stage 10 implementation or model change has begun.")
+
+          replace('docs/PROJECT_CONTEXT.md',
+          "- Stages 1–8 and Stage 9 checkpoints 9.1–9.5 are complete and merged.\n- Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.\n- Stage 9.6 — Style migration, CSP and final polish is implemented and verified on draft PR #25 with 313 passing tests, deterministic builds, zero inline style attributes and browser-reviewed mobile/desktop layouts; owner review and explicit merge approval remain required.",
+          "- Stages 1–9 are complete and merged.\n- Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.\n- Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.")
+          replace('docs/PROJECT_CONTEXT.md',
+          "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and Stage 9 checkpoints 9.1–9.5.\n\nCurrent: Stage 9.6 implementation and owner review on draft PR #25. The application is class-only at the style-attribute boundary, the CSP concession is removed and final mobile/desktop review has passed.\n\nNext after Stage 9.6 merge: Stage 9 is complete; operational focus moves to live-season prospective logging and evidence-led future roadmap decisions.",
+          "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and all six Stage 9 UI-integration checkpoints.\n\nCurrent: Stage 10 — Prospective Live-Season Validation is at investigation and design approval only. The required design covers deadline-safe frozen snapshots, post-Gameweek outcomes, deterministic metrics, provider/fallback evidence, storage/export and a phone-first operating workflow.\n\nNext: approve the Stage 10 design and checkpoint sequence before creating any implementation branch. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved.")
+
+          roadmap = Path('docs/ROADMAP.md')
+          text = roadmap.read_text()
+          old = "- **Checkpoint 9.5 — More, Settings and Provider Health** · DONE and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`.\n  - Settings and global/full Provider Health presentation with unchanged provider behaviour.\n  - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed** with deterministic builds.\n\n## Current\n- **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.\n- **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish** · implemented and verified on draft PR #25; owner review and explicit merge approval remain.\n  - All source and generated style attributes/runtime style APIs are removed and guarded.\n  - `style-src-attr` and every `unsafe-inline` token are removed from the emitted CSP.\n  - Mobile and desktop browser review passed with no console errors and zero application-created style attributes.\n  - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed**, successful build, deterministic two-build comparison and build-identity check.\n  - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.\n\n## Upcoming\n1. Merge checkpoint 9.6 after owner approval, completing Stage 9.\n2. Begin prospective 2026/27 logging and evidence-led operational review from live GW1.\n\n## Current blockers\n1. Owner review and explicit merge approval for Stage 9.6 draft PR #25.\n2. A persistent screenshot-regression suite is still absent; Stage 9.6 completed manual browser review but future visual changes still need human device checks.\n3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.\n4. Live-season prospective data requirements begin with GW1 on 21 August 2026."
+          new = "- **Checkpoint 9.5 — More, Settings and Provider Health** · DONE and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`.\n  - Settings and global/full Provider Health presentation with unchanged provider behaviour.\n  - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed** with deterministic builds.\n- **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish** · DONE and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`.\n  - All source and generated style attributes/runtime style APIs are removed and guarded.\n  - `style-src-attr` and every `unsafe-inline` token are removed from the emitted CSP.\n  - Representative mobile and desktop browser review passed with no console errors.\n  - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed**, successful build, deterministic two-build comparison and build-identity check.\n  - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.\n\n## Current\n- **Stage 10 — Prospective Live-Season Validation** · investigation and design approval checkpoint.\n- No Stage 10 implementation, schema, storage or model change has begun.\n- The proposed design must define immutable pre-deadline snapshots, post-Gameweek outcomes, leakage controls, deterministic metrics, provider/fallback evidence, export/storage and a phone-first operating workflow.\n\n## Upcoming\n1. Investigate and approve the complete Stage 10 design and checkpoint sequence.\n2. After explicit approval, implement Stage 10.1 as a separate branch and draft PR.\n3. Begin deadline-safe prospective evidence capture before live GW1 on 21 August 2026.\n\n## Current blockers\n1. Stage 10 design decisions and checkpoint sequence require owner approval before implementation.\n2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.\n3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.\n4. Live-season prospective data requirements begin with GW1 on 21 August 2026."
+          if old not in text or text.count(old) != 1:
+              raise SystemExit('ROADMAP closeout block missing or duplicated')
+          roadmap.write_text(text.replace(old, new))
+
+          replace('docs/STAGE9-DESIGN.md',
+          "- Inline style attributes will be removed and the CSP tightened during the final Stage 9 checkpoint, not opportunistically in earlier checkpoints.",
+          "- Stage 9.6 removed inline style attributes and runtime style APIs, then tightened the CSP after source, build and deployable verification.")
+          replace('docs/STAGE9-DESIGN.md',
+          "- **Implemented and verified on draft PR #25:** class-only/static-attribute presentation, progress/SVG dynamic visuals, DOM/build fail-closed guards, CSP concession removal and representative mobile/desktop browser review; verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes 313/313 tests with deterministic builds.",
+          "- **Implemented, verified and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`:** class-only/static-attribute presentation, progress/SVG dynamic visuals, DOM/build fail-closed guards, CSP concession removal and representative mobile/desktop browser review; verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes 313/313 tests with deterministic builds.")
+
+          replace('docs/STAGE9-6-SCOPE.md',
+          "Status: approved by Pritesh through the Stage 9 design; implemented and verified on draft PR #25 on 29 July 2026.",
+          "Status: implemented, verified and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439` on 29 July 2026; Stage 9 is complete.")
+
+          replace('docs/STAGE_HISTORY.md',
+          "## Stage 9.6 — Style migration, CSP and final polish (IMPLEMENTED AND VERIFIED 2026-07-29; awaiting merge)",
+          "## Stage 9.6 — Style migration, CSP and final polish (MERGED 2026-07-29)")
+          replace('docs/STAGE_HISTORY.md',
+          "Generated artefacts were committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. No model, provider, storage, secret or optimiser behaviour changed.",
+          "Generated artefacts were committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. No model, provider, storage, secret or optimiser behaviour changed. Merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing Stage 9.")
+
+          replace('docs/CHANGELOG.md',
+          "- Implemented and verified on draft PR #25; awaiting owner review and explicit merge approval.",
+          "- Merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`; Stage 9 is complete.")
+
+          replace('docs/DECISIONS.md',
+          "Last updated: 2026-07-28. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.",
+          "Last updated: 2026-07-29. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.")
+          PY
+          rm -f .github/workflows/stage9-post-merge-housekeeping.yml
+          git add CLAUDE.md docs .github/workflows/stage9-post-merge-housekeeping.yml
+          git commit -m 'Close Stage 9 records and set Stage 10 checkpoint'
+          source_sha=$(git rev-parse HEAD)
+          export BUILD_COMMIT="$source_sha"
+          ./run-tests.sh | tee /tmp/stage9-housekeeping-tests.log
+          pass_count=$(grep -E '^# pass ' /tmp/stage9-housekeeping-tests.log | tail -1 | awk '{print $3}')
+          fail_count=$(grep -E '^# fail ' /tmp/stage9-housekeeping-tests.log | tail -1 | awk '{print $3}')
+          test "$pass_count" = '313'
+          test "$fail_count" = '0'
+          mkdir -p /tmp/stage9-housekeeping-first
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-housekeeping-first/
+          node build.mjs
+          cmp /tmp/stage9-housekeeping-first/index.html dist/index.html
+          cmp /tmp/stage9-housekeeping-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage9-housekeeping-first/manifest.json dist/manifest.json
+          node - "$source_sha" <<'NODE'
+          const fs=require('node:fs');
+          const source=process.argv[2];
+          const manifest=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
+          const bundle=fs.readFileSync('dist/app.bundle.js','utf8');
+          const html=fs.readFileSync('dist/index.html','utf8');
+          if(manifest.commit!==source) throw new Error(`manifest identity ${manifest.commit} != ${source}`);
+          if(!bundle.includes(`\"commit\":\"${source}\"`)) throw new Error('bundle identity missing');
+          if(!html.includes(`\"commit\":\"${source}\"`)) throw new Error('html identity missing');
+          NODE
+          git checkout -- dist
+          test -z "$(git status --porcelain)"
+          git push origin HEAD:agent/stage9-post-merge-housekeeping
