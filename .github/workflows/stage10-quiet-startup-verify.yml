@@ -1,0 +1,84 @@
+name: Temporary Stage 10.1 quiet startup verifier
+
+on:
+  pull_request:
+    branches: [main]
+    types: [reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage10-1-deadline-snapshot
+          fetch-depth: 0
+
+      - name: Apply quiet startup refinement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check .stage10-quiet-startup.patch
+          git apply .stage10-quiet-startup.patch
+          rm .stage10-quiet-startup.patch
+          rm .github/workflows/stage10-quiet-startup-verify.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --check
+          git add -A
+          git commit -m "Refine Stage 10.1 startup experience"
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Record exact source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          old = '73cdca817f7070a745fb642e1070d77a6bdaca9b'
+          new = os.environ['SOURCE_SHA']
+          paths = [*Path('.').glob('*.md'), *Path('docs').glob('*.md')]
+          for path in paths:
+              text = path.read_text()
+              if old in text:
+                  path.write_text(text.replace(old, new))
+          remaining = [str(path) for path in paths if old in path.read_text()]
+          if remaining:
+              raise SystemExit(f'stale source identity remains: {remaining}')
+          PY
+
+      - name: Run full verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/stage10-tests.log
+          cp -a dist /tmp/stage10-dist-first
+          cp index.html /tmp/stage10-root-first.html
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cmp -s /tmp/stage10-dist-first/app.bundle.js dist/app.bundle.js
+          cmp -s /tmp/stage10-dist-first/index.html dist/index.html
+          cmp -s /tmp/stage10-dist-first/manifest.json dist/manifest.json
+          cmp -s /tmp/stage10-root-first.html index.html
+          cmp -s index.html dist/index.html
+          node --check dist/app.bundle.js
+          node -e "const m=require('./dist/manifest.json'); if(m.commit!==process.env.SOURCE_SHA) throw new Error('build identity mismatch')"
+          grep -q '# tests 349' /tmp/stage10-tests.log
+          grep -q '# pass 349' /tmp/stage10-tests.log
+          grep -q '# fail 0' /tmp/stage10-tests.log
+          grep -q 'aria-label="Opening Teamsheet"' app.html
+          ! grep -q 'id="startupTitle"' app.html
+          ! grep -q 'await dispatchVerifiedData' src/main.mjs
+          git diff --check
+
+      - name: Commit verified artefacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add CLAUDE.md README-BUILD.md docs dist index.html
+          git commit -m "Verify Stage 10.1 quiet startup artefacts"
+          git push origin HEAD:agent/stage10-1-deadline-snapshot
