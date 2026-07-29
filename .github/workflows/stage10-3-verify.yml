@@ -1,0 +1,90 @@
+name: Stage 10.3 verify
+
+on:
+  push:
+    branches:
+      - agent/stage10-3-metrics
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage10-3-metrics
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Apply integration corrections
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          metrics = Path('src/evidence/metrics.mjs')
+          text = metrics.read_text()
+          bad = "const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]);"
+          good = "const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));"
+          if bad not in text:
+              raise SystemExit('expected metrics syntax target not found')
+          metrics.write_text(text.replace(bad, good))
+
+          ui = Path('src/ui/metrics.mjs')
+          text = ui.read_text()
+          old = "if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);"
+          new = "if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);"
+          if old not in text:
+              raise SystemExit('expected metric UI trigger target not found')
+          ui.write_text(text.replace(old, new))
+          PY
+          node --check src/evidence/metrics.mjs
+          node --check src/ui/metrics.mjs
+
+      - name: Commit source corrections
+        id: source
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/evidence/metrics.mjs src/ui/metrics.mjs
+          git commit -m 'Fix Stage 10.3 metric integration'
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Run complete suite
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        run: |
+          ./run-tests.sh | tee stage10-3-tests.log
+
+      - name: Verify deterministic exact-identity builds
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        run: |
+          mkdir -p /tmp/stage10-3-first
+          cp dist/index.html dist/app.bundle.js dist/manifest.json index.html /tmp/stage10-3-first/
+          node build.mjs
+          cmp /tmp/stage10-3-first/index.html dist/index.html
+          cmp /tmp/stage10-3-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage10-3-first/manifest.json dist/manifest.json
+          cmp /tmp/stage10-3-first/index.html index.html
+          test "$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).commit")" = "${BUILD_COMMIT}"
+
+      - name: Commit generated artefacts
+        run: |
+          git add dist/app.bundle.js dist/manifest.json dist/index.html index.html
+          git commit -m 'Build Stage 10.3 deployable'
+          git push origin HEAD:agent/stage10-3-metrics
+
+      - name: Upload verification log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage10-3-verification
+          path: stage10-3-tests.log
+          if-no-files-found: ignore
