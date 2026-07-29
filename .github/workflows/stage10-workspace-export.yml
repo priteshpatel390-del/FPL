@@ -1,6 +1,9 @@
 name: Temporary Stage 10 workspace export
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - agent/stage10-1-deadline-snapshot
