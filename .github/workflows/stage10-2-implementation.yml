@@ -1,4 +1,4 @@
-# verification trigger: pull-request synchronize
+# verification trigger: corrected build-order anchor
 name: Stage 10.2 implementation runner
 
 on:
@@ -32,6 +32,13 @@ jobs:
           set -euo pipefail
           cat .stage10-2-payload.part* > .stage10-2-payload.b64
           base64 -d .stage10-2-payload.b64 | gzip -d > .stage10-2-apply.py
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('.stage10-2-apply.py')
+          text=path.read_text()
+          text=text.replace("\\n    'src/evidence/snapshot.mjs'","\\n  'src/evidence/snapshot.mjs'")
+          path.write_text(text)
+          PY
           python .stage10-2-apply.py
           rm -f .stage10-2-payload.part* .stage10-2-payload.b64 .stage10-2-apply.py .github/workflows/stage10-2-implementation.yml
           git config user.name "github-actions[bot]"
