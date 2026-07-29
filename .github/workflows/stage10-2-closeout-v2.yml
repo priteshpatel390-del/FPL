@@ -1,0 +1,146 @@
+name: Stage 10.2 post-merge closeout v2
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stage10-2-post-merge-closeout-v2
+  cancel-in-progress: false
+
+jobs:
+  closeout-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/stage10-2-post-merge-closeout
+
+      - name: Apply canonical closeout
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          MERGE='4b1b2acf9bda81afb63414dd41b509e80b3945c7'
+          SOURCE='e84e7f1bf05ed1f3e574f78101e4a6e413273306'
+          ARTEFACTS='9d81210b493ab40a542c50709733b14e448a481c'
+
+          def sub(name, pattern, replacement, flags=0):
+              path=Path(name)
+              text=path.read_text()
+              updated,count=re.subn(pattern,replacement,text,count=1,flags=flags)
+              if count != 1:
+                  raise SystemExit(f'{name}: closeout pattern matched {count}: {pattern[:80]!r}')
+              path.write_text(updated)
+
+          sub('CLAUDE.md',r'(?s)(## Current checkpoint\n).*?(?=\n\n## Non-negotiable rules)',
+              r'''\1Stage 10.2 — Official outcome collection is complete and merged through PR #29 at `'''+MERGE+r'''` after owner approval. Official FPL player, fixture and optional manager outcomes are collected automatically after access, stored as immutable provisional/complete/corrected revisions and linked strictly to eligible Stage 10.1 snapshots. Verified source `'''+SOURCE+r'''` passes **376/376 tests** with deterministic exact-identity builds; generated artefacts are committed at `'''+ARTEFACTS+r'''`. The next checkpoint is **Stage 10.3 — Metrics**, at investigation and exact-scope approval only; no Stage 10.3 implementation has begun.''')
+
+          sub('docs/PROJECT_CONTEXT.md',r'^- Stages 1–9 and Stage 10\.1 are complete and merged\..*$',
+              '- Stages 1–9, Stage 10.1 and Stage 10.2 are complete and merged. The complete Stage 10 design is owner-approved.',re.M)
+          sub('docs/PROJECT_CONTEXT.md',r'(^- Stage 10\.1 merged through PR #27.*$)',
+              r'''\1
+- Stage 10.2 merged through PR #29 at `'''+MERGE+r'''` after owner approval. Automatic Official FPL player, fixture and optional public manager outcomes are immutable, correction-aware, non-blocking and strictly linked to eligible Stage 10.1 snapshots. Verified source `'''+SOURCE+r'''` passes **376/376 tests** with byte-identical exact-identity builds; generated artefacts are committed at `'''+ARTEFACTS+r'''`.''',re.M)
+          sub('docs/PROJECT_CONTEXT.md',r'(?s)Completed:.*?(?=\n\n## Major risks)',
+              '''Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints, Stage 10.1 deadline-safe snapshot foundation and Stage 10.2 official outcome collection.
+
+Current: Stage 10.3 — Metrics is the next investigation and exact-scope approval checkpoint. No Stage 10.3 implementation has begun.
+
+Next: define the deterministic player, minutes, uncertainty, squad, captaincy, bench and transfer evaluation contracts; document sample safeguards and fallback behaviour; then obtain explicit owner approval before implementation. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved.''')
+
+          sub('docs/ROADMAP.md',r'\n## Current\n',
+              '''
+- **Stage 10.2 — Official outcome collection** · DONE and merged through PR #29 at `'''+MERGE+'''`.
+  - Automatic Official FPL player, fixture and optional public manager outcomes with immutable provisional/complete/corrected revisions.
+  - Strict snapshot matching, correction monitoring, bounded recovery storage and recovery-only imports.
+  - Verified source `'''+SOURCE+'''`: **376/376 tests passed**, successful production build and byte-identical exact-identity builds; generated artefacts `'''+ARTEFACTS+'''`.
+
+## Current
+''')
+          sub('docs/ROADMAP.md',r'(?s)## Current\n.*?(?=\n## Upcoming)',
+              '''## Current
+- **Stage 10.3 — Metrics** · investigation and exact-scope approval only; no implementation has begun.
+- Planned metrics remain descriptive and deterministic: player points, minutes, uncertainty, squad, captaincy, bench and transfers.
+- No composite score, model update, threshold, calibration claim or retrospective recommendation is approved.
+''')
+          sub('docs/ROADMAP.md',r'(?s)## Upcoming\n.*?(?=\n## Current blockers)',
+              '''## Upcoming
+1. Present the exact Stage 10.3 metric definitions, inputs, exclusions, matching rules, sample safeguards and tests.
+2. Obtain explicit owner approval for the Stage 10.3 implementation scope.
+3. Implement Stage 10.3 on a separate branch without changing production formulas or beginning Stage 10.4.
+''')
+          sub('docs/ROADMAP.md',r'(?s)## Current blockers\n.*$',
+              '''## Current blockers
+1. Stage 10.3 exact metric scope and approval are not yet recorded.
+2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
+3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+''')
+
+          sub('docs/STAGE10-DESIGN.md',r'^Status:.*$',
+              'Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 is complete and merged through PR #29 at `'+MERGE+'`; Stage 10.3 metrics is the next separately scoped investigation and approval checkpoint.',re.M)
+          sub('docs/STAGE10-DESIGN.md',r'(Automatic work starts after the verified main render, never delays app access, checks provisional outcomes every fifteen minutes while visible, checks completed outcomes daily for fourteen days and catches up six missed Gameweeks per trigger\. Squad outcomes remain optional and non-blocking\. Stage 10\.2 records facts only: transfer identities, realised recommendation metrics and every Stage 10\.3 evaluation remain excluded\.)',
+              r'''\1 The implementation was owner-approved and merged through PR #29 at `'''+MERGE+r'''`; verified source `'''+SOURCE+r'''` passes **376/376 tests** with generated artefacts at `'''+ARTEFACTS+r'''`.''')
+
+          sub('docs/STAGE10-ITEM2.md',r'^Status:.*$',
+              'Status: **complete and merged through PR #29 at `'+MERGE+'` after owner approval.** Approved and accepted 29 July 2026.',re.M)
+          sub('docs/STAGE10-ITEM2.md',r'(- Existing tests were not weakened or regenerated\.)',
+              r'''\1
+- Verified source: `'''+SOURCE+r'''`; generated artefacts: `'''+ARTEFACTS+r'''`.
+- Merged through PR #29 at `'''+MERGE+r'''` after owner approval.''')
+
+          sub('docs/CHANGELOG.md',r'## \[Stage 10\.2\] — 2026-07-29 — Official outcome collection \(draft review\)',
+              '## [Stage 10.2] — 2026-07-29 — Official outcome collection')
+          sub('docs/CHANGELOG.md',r'(### Unchanged\n- No model formula, calibration, provider blend, captaincy, squad, optimiser or Stage 10\.3 metric change\.)',
+              r'''\1
+### Status
+- Merged through PR #29 at `'''+MERGE+r'''` after owner approval; verified source `'''+SOURCE+r'''`, generated artefacts `'''+ARTEFACTS+r'''`.''')
+
+          sub('docs/STAGE_HISTORY.md',r'## Stage 10\.2 — Official outcome collection \(DRAFT REVIEW 2026-07-29\)',
+              '## Stage 10.2 — Official outcome collection (MERGED 2026-07-29)')
+          sub('docs/STAGE_HISTORY.md',r'The full suite passes \*\*376/376\*\* with deterministic exact-identity builds\. No Stage 10\.3 metric, model formula, provider, authentication, backend or FPL write action is included\. The branch remains under owner review and must not merge without explicit approval\.',
+              'The full suite passes **376/376** with deterministic exact-identity builds. No Stage 10.3 metric, model formula, provider, authentication, backend or FPL write action is included. Pritesh approved the completed item on 29 July 2026; verified source `'+SOURCE+'` and generated artefacts `'+ARTEFACTS+'` merged through PR #29 at `'+MERGE+'`.')
+
+          sub('docs/TESTING.md',r'^Stage 10\.1 verified source.*$',
+              'Stage 10.2 verified source `'+SOURCE+'`: **376/376 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Owner approval passed and PR #29 merged at `'+MERGE+'` with generated artefacts `'+ARTEFACTS+'`. The previous Stage 10.1 baseline was 349/349 at source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`.',re.M)
+          sub('docs/TESTING.md',r'(Verified baseline: \*\*376/376 passing tests\*\*.*?Existing tests and goldens remain unchanged\.)',
+              r'''\1 The verified item merged through PR #29 at `'''+MERGE+r'''`.''')
+
+          names=['CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ROADMAP.md','docs/STAGE10-DESIGN.md','docs/STAGE10-ITEM2.md','docs/CHANGELOG.md','docs/STAGE_HISTORY.md','docs/TESTING.md']
+          for name in names:
+              path=Path(name)
+              path.write_text(path.read_text().rstrip()+'\n')
+          PY
+          rm -f .github/workflows/stage10-2-closeout-v2.yml
+          git diff --check
+          EXPECTED=$(printf '%s\n' .github/workflows/stage10-2-closeout-v2.yml CLAUDE.md docs/CHANGELOG.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/STAGE10-DESIGN.md docs/STAGE10-ITEM2.md docs/STAGE_HISTORY.md docs/TESTING.md | sort)
+          ACTUAL=$(git diff --name-only | sort)
+          test "$ACTUAL" = "$EXPECTED"
+
+      - name: Verify unchanged application baseline
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT=e84e7f1bf05ed1f3e574f78101e4a6e413273306 ./run-tests.sh | tee /tmp/stage10-2-closeout.log
+          test "$(awk '/^# tests /{print $3}' /tmp/stage10-2-closeout.log | tail -1)" = "376"
+          test "$(awk '/^# fail /{print $3}' /tmp/stage10-2-closeout.log | tail -1)" = "0"
+          git diff --exit-code -- app.html build.mjs src tests dist index.html
+          git diff --check
+
+      - name: Commit verified closeout
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Record Stage 10.2 post-merge closeout"
+          git push origin HEAD
+          echo "Closeout commit: $(git rev-parse HEAD)"
+          echo "Tests: 376/376"
