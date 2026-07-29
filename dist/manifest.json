@@ -1,13 +1,14 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "fee29e1625bcf6849411a1e1f18c85a2525db8eb47a80d8492a996013e535523",
-  "commit": "eb3497ec405d6c7b8ce09105614fcb8280abc34b",
+  "sourceHash": "b26694e2cf4ff5523b00cf4d434c746b15a376a3e9437d5e7348e2e220c165af",
+  "commit": "e84e7f1bf05ed1f3e574f78101e4a6e413273306",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
     "src/providers/retry.mjs",
     "src/providers/validate.mjs",
+    "src/providers/outcome-validate.mjs",
     "src/state.mjs",
     "src/storage.mjs",
     "src/providers/registry.mjs",
@@ -33,11 +34,13 @@
     "src/ui/player-detail.mjs",
     "src/ui/decision-preview.mjs",
     "src/evidence/snapshot.mjs",
+    "src/evidence/outcome.mjs",
     "src/ui/views.mjs",
     "src/ui/transfer-optimiser-view.mjs",
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
     "src/ui/security-wiring.mjs",
-    "src/ui/evidence.mjs"
+    "src/ui/evidence.mjs",
+    "src/ui/outcomes.mjs"
   ]
 }

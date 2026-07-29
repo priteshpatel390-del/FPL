@@ -80,3 +80,6 @@ Stage 10.1 observes this model; it does not alter it. For every player it stores
 The simulation implementation precomputes invariant fixture component expectations before sampling. This removes repeated deterministic work only: random seed, minutes states, Poisson/Bernoulli draws, scoring rules and summary thresholds are unchanged. Prospective outcomes are required before any calibration or accuracy conclusion.
 
 The Stage 10.1 startup amendment changes only when a fully validated provider state becomes visible. It does not change any projection component, expected-minutes input, blend weight, simulation draw, captaincy choice or optimiser objective.
+
+## Stage 10.2 outcome interaction
+Stage 10.2 observes Official FPL results after the relevant deadline and does not feed them into runtime projections, expected minutes, calibration, uncertainty, captaincy, squad selection or transfers. Outcome records link to, but never rewrite, the frozen Stage 10.1 snapshot. Any evaluation, threshold, calibration or formula consequence belongs to a separately approved Stage 10.3 or later item.

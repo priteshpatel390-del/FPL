@@ -44,6 +44,9 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | EVID-2 | Local evidence can be cleared and JSON exports are unencrypted | The owner must export and retain files safely; bounded compressed local copies are recovery only | Stage 10.4 operating workflow | Open (accepted) |
 | EVID-3 | Physical iPhone capture/export/import acceptance | Owner accepted the silent loader and startup behaviour; local-preview chrome was distinguished from app UI | Stage 10.1 review | **CLOSED 2026-07-29** |
 | EVID-4 | Prospective sample size begins at zero | No validation or calibration claim is possible until enough live Gameweeks and observations are collected | Stage 10.2–10.5 | Open (expected) |
+| OUTCOME-1 | Static GitHub Pages cannot collect while the app is fully closed or suspended | Missed Gameweeks are collected when Teamsheet next opens; guaranteed closed-app timing needs a separately approved backend | Future serverless only with separate approval | Open (accepted) |
+| OUTCOME-2 | Official FPL live and manager endpoints are undocumented | Schema drift can delay collection; strict validators quarantine ambiguity rather than manufacturing facts | Stage 10.2 operations | Open (accepted) |
+| OUTCOME-3 | Manager outcome may be unavailable while global player/fixture facts are complete | Squad evaluation coverage can be lower than player coverage without blocking the factual Gameweek outcome | Stage 10.3 reporting | Open (accepted) |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
@@ -52,3 +55,10 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 - GitHub Pages and iPhone Safari cannot reliably wake a fully closed or suspended app. Automatic work begins on startup or foreground return; guaranteed closed-app scheduling requires a later server-side design.
 - Foreground verification temporarily makes decision controls inert to prevent mixed-state use. Existing verified content remains visible.
 - Recovery imports are deliberately non-official. They restore owner-controlled records but cannot establish authorship or external timestamp notarisation.
+
+## Stage 10.2 outcome limitations
+- Outcome collection starts only after the verified app becomes usable and cannot wake a fully closed iPhone app.
+- A record is not final merely because fixtures say `finished`; official event `data_checked` and complete validated player data are required.
+- Corrections are monitored daily for fourteen days and by later app openings, but there is no guaranteed server-side polling.
+- Bounded local storage is recovery rather than a permanent archive. Complete exports are unencrypted.
+- Infrastructure completion is not evidence that the model is accurate or calibrated.

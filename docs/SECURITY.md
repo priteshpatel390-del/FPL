@@ -68,3 +68,8 @@ The startup screen is an orchestration gate, not a security theatre animation: a
 Runtime Provider Health rejects unknown provider identities. Imported evidence must contain exactly the approved provider set and pass schema, privacy, timing and hash checks. Even then, imports are labelled `recovery_import` and local metadata forces `officialEligible=false`; self-consistent third-party JSON therefore cannot silently become official evidence or model input.
 
 This does not authenticate the author of an exported JSON file and is not an external timestamp signature. The safety property is narrower: imported files cannot affect recommendations and cannot become the local official prospective record.
+
+## Stage 10.2 outcome security
+Outcome records are allowlist-built and reuse the Stage 10 secret/personal-identifier rejection boundary. They exclude API keys, raw configuration, manager names, league identifiers, raw provider responses and the FPL Team ID. The Team ID is used transiently only to request the optional public manager outcome; persisted endpoint labels use `[redacted]`.
+
+Whole-record, official-data and section SHA-256 hashes detect storage or import tampering. Imported outcome JSON is schema/hash checked but marked `recovery_import`, is never current, and cannot silently supersede a locally collected official revision. Outcome collection adds no CSP origin, authentication cookie, FPL write action or server code. Exports remain complete unencrypted owner-controlled files.

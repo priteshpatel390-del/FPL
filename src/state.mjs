@@ -28,7 +28,7 @@ function slim(boot, fixtures){
   return {
     at: Date.now(),
     events: boot.events.map(e => ({id:e.id, deadline_time:e.deadline_time, is_current:e.is_current,
-      is_next:e.is_next, finished:e.finished, name:e.name})),
+      is_next:e.is_next, finished:e.finished, data_checked:e.data_checked, name:e.name})),
     teams: boot.teams.map(t => ({id:t.id, name:t.name, short_name:t.short_name,
       strength_attack_home:t.strength_attack_home, strength_attack_away:t.strength_attack_away,
       strength_defence_home:t.strength_defence_home, strength_defence_away:t.strength_defence_away})),

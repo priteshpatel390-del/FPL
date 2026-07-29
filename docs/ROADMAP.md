@@ -53,16 +53,18 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passed**, successful production build and deterministic build identity; generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`.
 
 ## Current
-- **Stage 10.2 — Official outcome collection** · investigation and exact-scope confirmation only; no implementation has begun.
-- Stage 10.1 remains formula-neutral: no projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
+- **Stage 10.2 — Official outcome collection** · implemented and verified on branch `agent/stage10-2-official-outcomes`; draft pull-request review and owner approval pending.
+- Official FPL player, fixture and optional public manager outcomes are automatic, immutable, correction-aware and non-blocking.
+- Verified baseline: **376/376 tests passing** with successful production and byte-identical exact-identity builds.
+- No Stage 10.3 metrics or projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
 
 ## Upcoming
-1. Present the Stage 10.2 outcome schema, official FPL source fields, collection timing, validation, fallback, storage and tests.
-2. Obtain explicit owner approval for the exact Stage 10.2 implementation scope.
-3. Implement Stage 10.2 on a separate branch without beginning Stage 10.3 metrics.
+1. Complete owner review and physical iPhone acceptance of Stage 10.2.
+2. Merge Stage 10.2 only after explicit approval.
+3. Begin Stage 10.3 metrics as a separate investigation/design checkpoint after merge.
 
 ## Current blockers
-1. Stage 10.2 exact implementation scope and approval are not yet recorded.
+1. Stage 10.2 requires owner review and physical iPhone acceptance before merge.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
