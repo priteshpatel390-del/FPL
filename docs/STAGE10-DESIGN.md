@@ -1,5 +1,5 @@
 # STAGE10-DESIGN.md — Prospective Live-Season Validation
-Status: owner-approved on 2026-07-29. Stage 10.1 implementation is on draft PR #27 and remains unmerged.
+Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 official outcome collection is the next separately scoped checkpoint.
 Related: PROJECTION_MODEL.md, TESTING.md, DATA_SOURCES.md, SECURITY.md, KNOWN_LIMITATIONS.md.
 
 ## Objective

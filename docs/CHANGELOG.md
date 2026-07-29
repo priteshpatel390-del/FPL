@@ -3,7 +3,7 @@ Purpose: professional change record (Keep a Changelog conventions). Audience: al
 Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 
 
-## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation (draft)
+## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation
 ### Added
 - Immutable anonymised pre-deadline evidence with official FPL deadline timing, network-clock grades, deterministic whole-record/section hashes and verified JSON import/export.
 - All-player projections, expected minutes, live uncertainty summaries, provider/source provenance and available squad/decision/optimiser evidence.
@@ -19,10 +19,12 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 ### Verification
 - Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 passing**, successful production build, byte-identical two-build output and exact build identity. The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.
 - Synthetic 620-player/5,000-sample capture: roughly 2.8–3.5 seconds; canonical JSON about 2.2 MB and local gzip recovery about 153 KB.
-- Physical iPhone startup, foreground refresh, automatic capture and recovery-restore acceptance remain the draft-PR gate before merge.
+- Physical iPhone acceptance passed for the silent loader and non-blocking startup path; the local-preview white strip was identified as viewer chrome rather than app UI.
 ### Unchanged
 - No projection, expected-minutes, scoring, fixture, simulation distribution, captaincy, squad, provider blend, calibration or optimiser objective changed.
 - No retrospective accuracy or probability-calibration claim.
+### Status
+- Merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.1 is complete.
 
 ## [Stage 9.6] — 2026-07-29 — Style migration, CSP and final polish
 ### Added

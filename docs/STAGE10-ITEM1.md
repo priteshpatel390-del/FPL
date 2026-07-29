@@ -1,6 +1,6 @@
 # Stage 10.1 — Deadline-safe snapshot foundation
 
-Status: **implemented and locally verified on draft PR #27; owner review and physical iPhone acceptance pending.** Approved 29 July 2026.
+Status: **complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444` after owner iPhone acceptance.** Approved and accepted 29 July 2026.
 
 ## Scope delivered
 - Versioned immutable `preDeadlineSnapshot` records.
@@ -22,7 +22,7 @@ Status: **implemented and locally verified on draft PR #27; owner review and phy
 ## Performance decision
 The first 620-player live-season benchmark exposed an unacceptable runtime above three minutes because invariant fixture components were recalculated inside every Monte Carlo sample. The implementation now precomputes those components once per player/fixture. This is a performance-only refactor: seed, sample count, distributions, scoring and summaries remain unchanged and the full golden suite remains green.
 
-In the repository execution environment, the resulting synthetic benchmark captured 620 players with 5,000 samples each in approximately 2.8–3.5 seconds. Canonical JSON was about 2.2 MB and its browser-local gzip recovery representation about 153 KB. Projection work yields to the browser every 20 players. Physical iPhone startup timing, foreground refresh, automatic capture and recovery restore remain an explicit owner acceptance gate.
+In the repository execution environment, the resulting synthetic benchmark captured 620 players with 5,000 samples each in approximately 2.8–3.5 seconds. Canonical JSON was about 2.2 MB and its browser-local gzip recovery representation about 153 KB. Projection work yields to the browser every 20 players. Pritesh accepted the silent loader and startup behaviour on a physical iPhone; the apparent white top strip in the downloaded review file was confirmed as the iOS/ChatGPT local-file preview container rather than Teamsheet presentation.
 
 ## Deliberate exclusions
 No closed-app/background service, outcome ingestion, metrics, CSV/season bundle, public/private hosted archive, serverless timestamp, Google Sheets integration or model update. No projection, expected-minutes, scoring, fixture, simulation, captaincy, squad or optimiser formula changes.
@@ -32,7 +32,9 @@ No closed-app/background service, outcome ingestion, metrics, CSV/season bundle,
 - Production build succeeds, two builds are byte-identical and the manifest/deployable record the exact source commit.
 - Focused evidence tests cover deadline boundaries, timing grades, provider cutoff, hashes/tampering, deadline changes, privacy, chunking, compression, bounded storage, quota failure, import and delete/reset.
 
-## Remaining acceptance gate
-Open the review deployment on Pritesh’s iPhone and verify: the silent loader is visually clean and brief, the app opens without waiting for evidence capture, foreground refresh causes no unacceptable interaction lock, recovery controls work and no console-visible error occurs. Stage 10.1 must remain draft until this check is reported.
-
+## Completion record
+- Owner iPhone acceptance recorded 29 July 2026.
+- Merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`.
+- Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`; generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`.
 - The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.
+- Stage 10.2 is the next separately scoped checkpoint; no outcome collection or metrics implementation is included here.
