@@ -1,0 +1,56 @@
+name: Temporary Stage 10.1 closeout push verifier
+
+on:
+  push:
+    branches: [agent/stage10-1-post-merge-closeout]
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage10-1-post-merge-closeout
+          fetch-depth: 0
+
+      - name: Apply canonical closeout updates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/stage10-1-closeout.yml').read_text()
+          start = source.index("          python - <<'PY'\n") + len("          python - <<'PY'\n")
+          end = source.index("\n          PY\n", start)
+          code = textwrap.dedent(source[start:end])
+          exec(compile(code, 'stage10-1-closeout', 'exec'), {})
+          PY
+
+          rm .github/workflows/stage10-1-closeout.yml
+          rm .github/workflows/stage10-1-closeout-push.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --check
+          git add CLAUDE.md docs .github/workflows/stage10-1-closeout.yml .github/workflows/stage10-1-closeout-push.yml
+          git commit -m "Close out Stage 10.1 documentation"
+
+      - name: Run full verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT=eb3497ec405d6c7b8ce09105614fcb8280abc34b ./run-tests.sh | tee /tmp/stage10-closeout-tests.log
+          grep -q '# tests 349' /tmp/stage10-closeout-tests.log
+          grep -q '# pass 349' /tmp/stage10-closeout-tests.log
+          grep -q '# fail 0' /tmp/stage10-closeout-tests.log
+          git diff --exit-code -- dist index.html
+          git diff --check
+          test -z "$(git status --short)"
+
+      - name: Publish documentation closeout
+        shell: bash
+        run: git push origin HEAD:agent/stage10-1-post-merge-closeout
