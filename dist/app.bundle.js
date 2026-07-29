@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"af407d38a39244c6","commit":"37fd95efa853fb3e208aa49fa49f7d62aa06ff61"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"af407d38a39244c66e4ad99a040cf032b5772e136151df1f6690f4ad92b0b165","commit":"37fd95efa853fb3e208aa49fa49f7d62aa06ff61","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"a39d9a488d68768c","commit":"73cdca817f7070a745fb642e1070d77a6bdaca9b"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"a39d9a488d68768cccf18620744f4689b80992c11ac4a38477c9d5a171649114","commit":"73cdca817f7070a745fb642e1070d77a6bdaca9b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -836,6 +836,14 @@ async function cacheGet(key, season){
 // what consequence follows when a provider is degraded.
 const scale = ['low','medium','high']; // documentation of the vocabulary
 
+const APPROVED_PROVIDER_NAMES = Object.freeze(['fpl','understat','odds','archive']);
+const APPROVED_PROVIDER_SOURCES = Object.freeze({
+  fpl:Object.freeze({label:'Official FPL',authority:'official',purpose:'players, teams, fixtures, deadlines, squads and outcomes'}),
+  understat:Object.freeze({label:'Understat',authority:'approved_secondary',purpose:'team-level rolling xG only'}),
+  odds:Object.freeze({label:'The Odds API',authority:'approved_secondary',purpose:'validated EPL market context'}),
+  archive:Object.freeze({label:'Teamsheet archive',authority:'approved_archive',purpose:'versioned historical replay and calibration inputs'})
+});
+
 const PROVIDER_QUALITY = {
   fpl: {
     dataAuthority:'high',
@@ -882,6 +890,7 @@ function thresholdFor(name, context = {}){
 }
 
 function setHealth(name, state, {note='', consequence='', lastSuccess=null, at=Date.now(), detail=null} = {}){
+  if(!APPROVED_PROVIDER_NAMES.includes(name)) throw new Error(`Provider ${name} is not approved`);
   const previous = health[name] || {};
   const usingFallback = state === HEALTH_STATES.FALLBACK;
   const ok = [HEALTH_STATES.LIVE, HEALTH_STATES.CACHED, HEALTH_STATES.STALE,
@@ -951,10 +960,33 @@ function getHealth(name, context = {}, now = Date.now()){
 }
 
 function healthRows(context = {}, now = Date.now()){
-  return ['fpl','understat','odds','archive']
+  return APPROVED_PROVIDER_NAMES
     .map(name => getHealth(name, context, now))
     .filter(Boolean)
     .map(h => ({...h, ageMs:h.lastSuccess ? Math.max(0, now - h.lastSuccess) : null, thresholdMs:thresholdFor(h.provider,context)}));
+}
+
+
+function providerTrustError(rows, {requireAll=true} = {}){
+  if(!Array.isArray(rows)) return 'provider_schema';
+  const allowedStates = new Set(Object.values(HEALTH_STATES));
+  const seen = new Set();
+  for(const row of rows){
+    const name = row?.provider;
+    if(!APPROVED_PROVIDER_NAMES.includes(name)) return 'provider_unapproved';
+    if(seen.has(name)) return 'provider_duplicate';
+    seen.add(name);
+    if(!allowedStates.has(row?.state)) return 'provider_state';
+    if(typeof row?.included !== 'boolean' || typeof row?.didAffectModel !== 'boolean') return 'provider_usage';
+    if(row.didAffectModel !== row.included) return 'provider_usage';
+    if(!Number.isInteger(row?.acceptedRecordCount) || row.acceptedRecordCount < 0) return 'provider_counts';
+    if(!Number.isInteger(row?.rejectedRecordCount) || row.rejectedRecordCount < 0) return 'provider_counts';
+    for(const key of ['recordedAt','lastSuccessAt']){
+      if(row?.[key] !== null && !Number.isFinite(Date.parse(row?.[key]))) return 'provider_time';
+    }
+  }
+  if(requireAll && (seen.size !== APPROVED_PROVIDER_NAMES.length || APPROVED_PROVIDER_NAMES.some(name=>!seen.has(name)))) return 'provider_missing';
+  return null;
 }
 
 function healthSummary(context = {}, now = Date.now()){
@@ -2913,6 +2945,21 @@ const HEALTH_PRIORITY = [
   HEALTH_STATES.DISABLED,
   HEALTH_STATES.LIVE
 ];
+const VERIFIED_REFRESH_MIN_AGE_MS = 10 * 60 * 1000;
+const STARTUP_PHASE_COPY = Object.freeze({
+  cache:['Loading verified data','Preparing the last accepted dataset as a safe fallback.'],
+  fpl:['Checking official FPL','Validating players, teams, fixtures and the current deadline.'],
+  team:['Checking your team','Validating the latest available squad and chip context.'],
+  providers:['Checking supporting sources','Resolving every approved provider to a verified state.'],
+  model:['Updating decisions','Recalculating projections and recommendations as one consistent dataset.'],
+  evidence:['Securing deadline evidence','Saving an eligible pre-deadline record automatically when required.'],
+  ready:['Ready','Latest verified data available.'],
+  restricted:['Limited mode','Official FPL data could not be verified, so recommendations remain unavailable.']
+});
+let verifiedRefreshPromise = null;
+let lastVerifiedRefreshAt = 0;
+let verifiedRefreshTriggersInstalled = false;
+
 function ageLabel(ms){
   if(ms == null) return '';
   const mins = Math.floor(ms / 60000);
@@ -2973,21 +3020,37 @@ function renderProviderHealth(){
   }));
 }
 
+function reportLoadPhase(options,key){
+  const copy=STARTUP_PHASE_COPY[key]||[key,''];
+  if(typeof options.onPhase==='function') options.onPhase({key,title:copy[0],detail:copy[1]});
+}
+function renderVerifiedState(){
+  clearXP();
+  renderProviderHealth();
+  renderAll();
+}
+
 async function loadAll(options = {}){
   const st = $('status');
+  const deferRender = Boolean(options.deferRender);
+  const renderIntermediate = () => { if(!deferRender){ renderProviderHealth(); renderAll(); } };
+  reportLoadPhase(options,'cache');
   const cached = await sget(K_CACHE);
+  let cacheAccepted = false;
   if(cached && !S.boot){
     if(hydrate(cached).ok){
+      cacheAccepted = true;
       markCached('fpl', cached.at, 'saved season snapshot', 'refreshing live feed');
-      st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
-      renderProviderHealth(); renderAll();
-    } else {
+      if(st) st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
+      renderIntermediate();
+    } else if(st) {
       st.textContent = 'Your saved copy of the season data could not be read — fetching a fresh one…';
     }
-  } else {
+  } else if(st) {
     st.textContent = 'Fetching season data…';
   }
   try{
+    reportLoadPhase(options,'fpl');
     const [boot, fixtures] = await Promise.all([api('/bootstrap-static/'), api('/fixtures/')]);
     const bs = bootstrapStructure(boot);
     const fixturesOk = Array.isArray(fixtures);
@@ -3006,15 +3069,16 @@ async function loadAll(options = {}){
     else markLive('fpl', S.source || 'live feed', 'core season data current', d.at);
     clearXP();
 
+    reportLoadPhase(options,'team');
     S.teamId = $('teamId').value.replace(/\D/g,'');
     S.entry = null; S.picks = null; S.chipsUsed = [];
     if(S.teamId){
-      st.textContent = 'Fetching your team…';
+      if(st) st.textContent = 'Fetching your team…';
       const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
       recordIssues('fpl', '/entry/', entryV.issues);
       S.entry = entryV.value;
       if(!S.entry){
-        st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
+        if(st) st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
       } else {
         if(S.currentGW){
           const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true}));
@@ -3029,34 +3093,144 @@ async function loadAll(options = {}){
           $('bankIn').value = (S.entry.last_deadline_bank/10).toFixed(1);
       }
     }
-    if(S.entry || !S.teamId)
-      st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+    if(S.entry || !S.teamId){
+      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+    }
     await saveCfg();
-    renderProviderHealth(); renderAll();
-    const optionalLoads = Promise.allSettled([loadUnderstat(), loadOdds(), loadMinuteHistories()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
-    if(options.awaitOptional) await optionalLoads;
+
+    reportLoadPhase(options,'providers');
+    const optionalResults = await Promise.allSettled([loadUnderstat(), loadOdds(), loadMinuteHistories()]);
+    if(!getHealth('understat',{seasonLive:S.seasonLive})) markUnavailable('understat','verification did not resolve','FPL strength ratings used');
+    if(!getHealth('odds',{seasonLive:S.seasonLive})) markDisabled('odds','no approved market input active','internal team model active');
+    if(!getHealth('archive',{seasonLive:S.seasonLive})){
+      if(S.calib) markCached('archive',null,'saved versioned calibration active','position correction active');
+      else markDisabled('archive','no archive calibration active','uncalibrated model outputs shown');
+    }
+    reportLoadPhase(options,'model');
+    renderVerifiedState();
+    return {
+      ok:true,
+      criticalReady:true,
+      source:'live',
+      cacheAccepted,
+      optionalResults,
+      verifiedAt:Date.now()
+    };
   }catch(err){
     await saveCfg();
     const shape = !!(err && err.feedShape);
     if(S.boot){
       markFallback('fpl', shape ? 'live feed shape unusable' : 'live feed unreachable', 'saved season snapshot remains active');
-      st.textContent = (shape
+      if(st) st.textContent = (shape
         ? 'The season feed came back in an unexpected format — still showing saved data from '
         : 'Live feed unreachable — still showing saved data from ') +
         new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
     } else if(shape){
       markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
-      st.textContent = 'Season data could not be read.';
+      if(st) st.textContent = 'Season data could not be read.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
         "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
       markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
-      st.textContent = 'Data feed unreachable.';
+      if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
         'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.'));
     }
-    renderProviderHealth();
+    reportLoadPhase(options,'model');
+    if(S.boot) renderVerifiedState();
+    else renderProviderHealth();
+    return {
+      ok:Boolean(S.boot),
+      criticalReady:Boolean(S.boot),
+      source:S.boot?'verified_cache':'unavailable',
+      cacheAccepted:Boolean(S.boot),
+      optionalResults:[],
+      verifiedAt:S.boot?Date.now():null,
+      error:err
+    };
   }
+}
+
+function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
+  return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
+}
+function setStartupPhase(key){
+  if(typeof document==='undefined') return;
+  const copy=STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
+  const title=$('startupTitle'), detail=$('startupDetail');
+  if(title) title.textContent=copy[0];
+  if(detail) detail.textContent=copy[1];
+}
+function setStartupGateVisible(visible){
+  if(typeof document==='undefined') return;
+  const gate=$('startupGate');
+  if(gate) gate.hidden=!visible;
+  document.body?.classList?.toggle('startup-pending',visible);
+  document.body?.setAttribute?.('aria-busy',visible?'true':'false');
+}
+function setRefreshInteractionLock(locked,{startup=false}={}){
+  if(typeof document==='undefined') return;
+  document.body?.classList?.toggle('data-refreshing',locked);
+  const main=document.querySelector?.('main');
+  const nav=document.querySelector?.('nav.tabs');
+  if(!startup){
+    if(main) main.inert=locked;
+    if(nav) nav.inert=locked;
+  }
+  const compact=$('providerHealthCompact');
+  if(locked&&compact){
+    setChildren(compact,document.createTextNode('Data '),el('span',{class:'flag info'},'Checking'));
+    compact.setAttribute('aria-label','Data refresh in progress. Previously verified data remains visible.');
+  }
+}
+async function dispatchVerifiedData(detail){
+  if(typeof document==='undefined'||typeof document.dispatchEvent!=='function'||typeof CustomEvent!=='function') return [];
+  const pending=[];
+  const eventDetail={...detail,waitUntil(promise){ pending.push(Promise.resolve(promise)); }};
+  document.dispatchEvent(new CustomEvent('teamsheet:data-verified',{detail:eventDetail}));
+  return Promise.allSettled(pending);
+}
+async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
+  if(verifiedRefreshPromise) return verifiedRefreshPromise;
+  if(!force&&!shouldRefreshVerifiedData(lastVerifiedRefreshAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_verified'};
+  verifiedRefreshPromise=(async()=>{
+    if(startup) setStartupGateVisible(true);
+    setRefreshInteractionLock(true,{startup});
+    setStartupPhase('cache');
+    try{
+      const report=await loadAll({
+        awaitOptional:true,
+        deferRender:true,
+        onPhase:phase=>setStartupPhase(phase.key)
+      });
+      if(report.criticalReady){
+        lastVerifiedRefreshAt=nowFn();
+        setStartupPhase('evidence');
+        await dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
+        setStartupPhase('ready');
+        document.body?.classList?.remove('data-restricted');
+      }else{
+        setStartupPhase('restricted');
+        document.body?.classList?.add('data-restricted');
+      }
+      return report;
+    }finally{
+      setRefreshInteractionLock(false,{startup});
+      if(startup) setStartupGateVisible(false);
+    }
+  })();
+  try{ return await verifiedRefreshPromise; }
+  finally{ verifiedRefreshPromise=null; }
+}
+function installVerifiedRefreshTriggers(){
+  if(verifiedRefreshTriggersInstalled||typeof document==='undefined') return;
+  verifiedRefreshTriggersInstalled=true;
+  const refreshIfDue=()=>{
+    if(document.visibilityState&&document.visibilityState!=='visible') return;
+    if(shouldRefreshVerifiedData(lastVerifiedRefreshAt)) runVerifiedRefresh({reason:'foreground'});
+  };
+  document.addEventListener('visibilitychange',refreshIfDue);
+  globalThis.window?.addEventListener?.('pageshow',refreshIfDue);
 }
 
 
@@ -3124,7 +3298,7 @@ function setupAppShell(){
   heading.textContent = 'More';
   const hint = document.createElement('p');
   hint.className = 'hint';
-  hint.textContent = 'Validation evidence, provider detail, Settings, fixtures, mini-league tools and Ask live here.';
+  hint.textContent = 'Automatic evidence, provider detail, Settings, fixtures, mini-league tools and Ask live here.';
   moreHeader.append(eyebrow, heading, hint);
   moreView.appendChild(moreHeader);
 
@@ -3716,7 +3890,7 @@ function providerEvidence(now){
   if(!byName.fpl){
     byName.fpl = {provider:'fpl',state:S.boot?HEALTH_STATES.CACHED:HEALTH_STATES.UNAVAILABLE,note:'runtime health record missing',consequence:'',lastSuccess:S.cachedAt||null,at:now,ageMs:S.cachedAt?Math.max(0,now-S.cachedAt):null};
   }
-  return ['fpl','understat','odds','archive'].map(name => {
+  return APPROVED_PROVIDER_NAMES.map(name => {
     const included=providerIncluded(name);
     const row = byName[name] || (included
       ? {provider:name,state:HEALTH_STATES.CACHED,note:'saved model input active',consequence:'affects current projections',lastSuccess:null,at:now,ageMs:null,thresholdMs:null}
@@ -4066,6 +4240,8 @@ function recordShapeError(record){
   if(!iso(record.deadlineTime)) return 'deadline';
   if(!record.build||typeof record.build!=='object'||!record.versions||typeof record.versions!=='object') return 'build_identity';
   if(!Array.isArray(record.providers)||!Array.isArray(record.retries)||!Array.isArray(record.issues)) return 'provider_schema';
+  const providerError=providerTrustError(record.providers);
+  if(providerError) return providerError;
   if(!record.modelInputs||typeof record.modelInputs!=='object'||!record.outputs||typeof record.outputs!=='object'||!Array.isArray(record.outputs.players)) return 'payload_schema';
   if(!record.completeness||typeof record.completeness.complete!=='boolean') return 'completeness_schema';
   if(!record.timing||!['network_attested','client_recorded','clock_conflict','late'].includes(record.timing.grade)||typeof record.timing.officialEligible!=='boolean'||!Array.isArray(record.timing.reasons)) return 'timing_schema';
@@ -4120,7 +4296,8 @@ function selectOfficialSnapshot(records,gameweek,deadlineTime=null){
     .filter(record=>record?.deadlineTime===activeDeadline&&record?.timing?.officialEligible&&record?.completeness?.complete)
     .sort((a,b)=>Date.parse(b.timing.referenceCompletedAt)-Date.parse(a.timing.referenceCompletedAt)||String(a.identity.snapshotId).localeCompare(String(b.identity.snapshotId)))[0]||null;
 }
-function compactSnapshotMetadata(record){
+function compactSnapshotMetadata(record,{origin='local_capture'}={}){
+  const trustedLocal=origin==='local_capture';
   return canonicalise({
     snapshotId:record.identity.snapshotId,
     contentHash:record.identity.contentHash,
@@ -4129,15 +4306,17 @@ function compactSnapshotMetadata(record){
     deadlineTime:record.deadlineTime,
     capturedAt:record.timing.captureCompletedAt,
     timingGrade:record.timing.grade,
-    officialEligible:Boolean(record.timing.officialEligible),
+    origin,
+    recordOfficialEligible:Boolean(record.timing.officialEligible),
+    officialEligible:Boolean(trustedLocal&&record.timing.officialEligible),
     complete:Boolean(record.completeness.complete),
     buildCommit:record.build?.commit||'unversioned',
     modelVersion:record.versions?.model,
     rulesVersion:record.versions?.rules
   });
 }
-function boundedSnapshotIndex(existing,record){
-  const metadata = compactSnapshotMetadata(record);
+function boundedSnapshotIndex(existing,record,options={}){
+  const metadata = compactSnapshotMetadata(record,options);
   const rows = [metadata,...(Array.isArray(existing)?existing:[]).filter(row=>row.snapshotId!==metadata.snapshotId)]
     .sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)||a.snapshotId.localeCompare(b.snapshotId));
   return rows.slice(0,EVIDENCE_RULES.localIndexLimit);
@@ -4839,7 +5018,7 @@ const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); 
 // data load must never lose them
 ['teamId','leagueId'].forEach(id => $(id).addEventListener('input', debounce(saveCfg, 300)));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
-$('loadBtn').addEventListener('click', loadAll);
+$('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
 $('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
@@ -4873,7 +5052,8 @@ document.addEventListener('click', e => {
   S.manual = (await sget(K_SQUAD)) || [];
   S.leagues = (await sget('fpl:leagues')) || [];
   renderLeagueChips();
-  loadAll();
+  await runVerifiedRefresh({reason:'startup',startup:true,force:true});
+  installVerifiedRefreshTriggers();
 })();
 
 
@@ -5145,6 +5325,8 @@ const K_EVIDENCE_MANAGER = 'fpl:evidence-manager-ref';
 const K_EVIDENCE_INDEX = 'fpl:evidence-index';
 const K_EVIDENCE_PREFIX = 'fpl:evidence:snapshot:';
 const MAX_EVIDENCE_IMPORT_BYTES = 25 * 1024 * 1024;
+const EVIDENCE_ORIGINS = Object.freeze({LOCAL:'local_capture',RECOVERY:'recovery_import'});
+const AUTO_CAPTURE_PRIORITY = Object.freeze({open:1,due_soon:2,ideal:3,final_window:4});
 let activeEvidenceRecord = null;
 let evidenceBusy = false;
 let evidenceRenderSequence = 0;
@@ -5216,6 +5398,15 @@ function normaliseEvidenceIndex(value){
     /^[0-9a-f]{64}$/.test(row.contentHash||'')&&
     Number.isInteger(row.gameweek)&&row.gameweek>=1&&row.gameweek<=38&&
     Number.isFinite(Date.parse(row.capturedAt))&&Number.isFinite(Date.parse(row.deadlineTime)))
+    .map(row=>{
+      const origin=Object.values(EVIDENCE_ORIGINS).includes(row.origin)?row.origin:EVIDENCE_ORIGINS.RECOVERY;
+      return {
+        ...row,
+        origin,
+        recordOfficialEligible:row.recordOfficialEligible===undefined?Boolean(row.officialEligible):Boolean(row.recordOfficialEligible),
+        officialEligible:origin===EVIDENCE_ORIGINS.LOCAL&&Boolean(row.officialEligible)
+      };
+    })
     .sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)||a.snapshotId.localeCompare(b.snapshotId))
     .slice(0,EVIDENCE_RULES.localIndexLimit);
 }
@@ -5234,11 +5425,12 @@ async function loadEvidenceRecord(snapshotId){
     return checked.ok ? checked.record : null;
   }catch(error){ return null; }
 }
-async function storeEvidenceRecord(record){
+async function storeEvidenceRecord(record,{origin=EVIDENCE_ORIGINS.LOCAL}={}){
+  if(!Object.values(EVIDENCE_ORIGINS).includes(origin)) throw new Error('Evidence origin is not supported');
   const checked = await validateSnapshotRecord(record);
   if(!checked.ok) throw new Error(`Evidence record rejected: ${checked.reason}`);
   const existing = await loadEvidenceIndex();
-  const nextIndex = boundedSnapshotIndex(existing,checked.record);
+  const nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
   const keep = new Set(nextIndex.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
   const knownIds = new Set(existing.map(row=>row.snapshotId).concat(checked.record.identity.snapshotId));
   const toDelete = [...knownIds].filter(snapshotId=>!keep.has(snapshotId));
@@ -5298,12 +5490,12 @@ function minutesLabel(ms){
 }
 function windowCopy(windowState){
   const labels={
-    unavailable:['Waiting for season data','Load data before capturing evidence.'],
-    too_early:['Capture not open yet',`The evidence window opens 24 hours before the deadline.`],
-    open:['Capture window open','Refresh and freeze before the final hour.'],
-    due_soon:['Evidence due soon','The deadline is within one hour.'],
-    ideal:['Ideal capture window','Freeze the final decision state now.'],
-    final_window:['Final safe window','Capture now; the two-minute safety cutoff is close.'],
+    unavailable:['Waiting for season data','Automatic evidence starts after verified data is available.'],
+    too_early:['Evidence not due yet',`Automatic capture opens 24 hours before the deadline.`],
+    open:['Automatic evidence armed','The next verified refresh will secure a pre-deadline record.'],
+    due_soon:['Automatic evidence due soon','Teamsheet will secure the latest verified decision state.'],
+    ideal:['Ideal automatic window','The latest verified state will be secured without user action.'],
+    final_window:['Final automatic window','Teamsheet will fail closed at the two-minute safety cutoff.'],
     safety_cutoff:['Safety cutoff reached','A new snapshot cannot qualify as the official pre-deadline record.'],
     closed:['Deadline passed','Missed snapshots are not backfilled.']
   };
@@ -5361,7 +5553,7 @@ async function renderEvidenceStatus(){
   const capture=$('captureEvidenceBtn');
   if(capture){
     capture.disabled=evidenceBusy||!['open','due_soon','ideal','final_window'].includes(state.state);
-    capture.textContent=evidenceBusy?'Refreshing and freezing…':'Refresh & freeze';
+    capture.textContent=evidenceBusy?'Securing evidence…':'Diagnostic capture';
   }
   const exportButton=$('exportEvidenceBtn');
   if(exportButton) exportButton.disabled=!(activeEvidenceRecord||latest);
@@ -5369,7 +5561,7 @@ async function renderEvidenceStatus(){
   if(history){
     if(!index.length) setChildren(history,el('div',{class:'status'},'No evidence snapshots saved on this device.'));
     else setChildren(history,index.map(row=>el('article',{class:'note plain'},
-      el('div',{},el('b',{},`GW${row.gameweek} · ${row.officialEligible?'Official-eligible':'Recorded only'}`),el('span',{class:`flag ${evidenceFlagClass(row.timingGrade)}`},row.timingGrade.replaceAll('_',' '))),
+      el('div',{},el('b',{},`GW${row.gameweek} · ${row.origin===EVIDENCE_ORIGINS.RECOVERY?'Recovery only':row.officialEligible?'Official-eligible':'Recorded only'}`),el('span',{class:`flag ${evidenceFlagClass(row.timingGrade)}`},row.timingGrade.replaceAll('_',' '))),
       el('div',{class:'status'},`${new Date(row.capturedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${row.snapshotId}`))));
   }
 }
@@ -5381,27 +5573,44 @@ async function latestEvidenceRecord(){
   activeEvidenceRecord=await loadEvidenceRecord(latestId);
   return activeEvidenceRecord;
 }
-async function captureEvidence(){
-  if(evidenceBusy) return;
+async function captureEvidence({automatic=false}={}){
+  if(evidenceBusy) return null;
   evidenceBusy=true; await renderEvidenceStatus();
   const message=$('evidenceMessage');
   try{
-    if(message) message.textContent='Refreshing FPL and optional providers before the freeze…';
-    await loadAll({awaitOptional:true});
     const managerRef=await evidenceManagerRef();
     const horizon=Math.max(1,Math.min(8,Math.trunc(num($('trHorizon')?.value)||6)));
-    if(message) message.textContent='Freezing model outputs and checking deadline evidence…';
+    if(message) message.textContent=automatic?'Securing verified deadline evidence…':'Freezing the current verified state…';
     const record=await capturePreDeadlineSnapshot({managerRef,horizon});
-    await storeEvidenceRecord(record);
+    await storeEvidenceRecord(record,{origin:EVIDENCE_ORIGINS.LOCAL});
     if(message) message.textContent=record.timing.officialEligible
-      ? `Saved ${record.identity.snapshotId}. Network-attested and eligible to be the official GW${record.gameweek} snapshot.`
-      : `Saved ${record.identity.snapshotId}, but it is recorded-only: ${record.timing.reasons.join(', ').replaceAll('_',' ')}.`;
+      ? `Evidence secured automatically for GW${record.gameweek}.`
+      : `Evidence recorded for GW${record.gameweek}, but it cannot qualify officially: ${record.timing.reasons.join(', ').replaceAll('_',' ')}.`;
+    return record;
   }catch(error){
     if(message) message.textContent=`Evidence capture failed: ${error.message}`;
+    return null;
   }finally{
     evidenceBusy=false; await renderEvidenceStatus();
   }
 }
+function captureWindowPriority(deadlineTime,capturedAt=Date.now()){
+  const state=deadlineWindow(deadlineTime,capturedAt).state;
+  return AUTO_CAPTURE_PRIORITY[state]||0;
+}
+async function maybeAutoCaptureEvidence({reason='verified_refresh'}={}){
+  const deadline=currentDeadline();
+  if(!deadline||!S.boot||evidenceBusy) return {captured:false,reason:'not_ready'};
+  const priority=captureWindowPriority(deadline,Date.now());
+  if(!priority) return {captured:false,reason:'outside_window'};
+  const index=await loadEvidenceIndex();
+  const existing=index.find(row=>row.origin===EVIDENCE_ORIGINS.LOCAL&&Number(row.gameweek)===Number(S.nextGW)&&row.deadlineTime===new Date(deadline).toISOString()&&row.officialEligible);
+  const existingPriority=existing?captureWindowPriority(deadline,Date.parse(existing.capturedAt)):0;
+  if(existing&&existingPriority>=priority) return {captured:false,reason:'equivalent_or_better_exists',snapshotId:existing.snapshotId};
+  const record=await captureEvidence({automatic:true});
+  return record?{captured:true,reason,snapshotId:record.identity.snapshotId}:{captured:false,reason:'capture_failed'};
+}
+
 async function exportLatestEvidence(){
   const message=$('evidenceMessage');
   try{
@@ -5428,8 +5637,8 @@ async function importEvidenceFile(file){
     const parsed=JSON.parse(await file.text());
     const checked=await validateSnapshotRecord(parsed);
     if(!checked.ok) throw new Error(`record rejected (${checked.reason})`);
-    await storeEvidenceRecord(checked.record);
-    if(message) message.textContent=`Imported and verified ${checked.record.identity.snapshotId}.`;
+    await storeEvidenceRecord(checked.record,{origin:EVIDENCE_ORIGINS.RECOVERY});
+    if(message) message.textContent=`Imported ${checked.record.identity.snapshotId} as recovery-only evidence. It cannot become the official prospective record.`;
   }catch(error){ if(message) message.textContent=`Import failed: ${error.message}`; }
   finally{ await renderEvidenceStatus(); }
 }
@@ -5444,6 +5653,10 @@ function initEvidenceUi(){
     const file=event.target.files?.[0]; importEvidenceFile(file); event.target.value='';
   });
   document.addEventListener('teamsheet:data-rendered',renderEvidenceStatus);
+  document.addEventListener('teamsheet:data-verified',event=>{
+    const task=maybeAutoCaptureEvidence({reason:event.detail?.reason||'verified_refresh'});
+    if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);
+  });
   renderEvidenceStatus();
   setInterval(renderEvidenceStatus,60*1000);
 }

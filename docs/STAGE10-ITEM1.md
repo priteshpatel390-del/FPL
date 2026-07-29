@@ -28,7 +28,7 @@ In the repository execution environment, the resulting synthetic benchmark captu
 No closed-app/background service, outcome ingestion, metrics, CSV/season bundle, public/private hosted archive, serverless timestamp, Google Sheets integration or model update. No projection, expected-minutes, scoring, fixture, simulation, captaincy, squad or optimiser formula changes.
 
 ## Verification
-- Verified source `__SOURCE_SHA__`: full `./run-tests.sh` **349/349 passing**.
+- Verified source `73cdca817f7070a745fb642e1070d77a6bdaca9b`: full `./run-tests.sh` **349/349 passing**.
 - Production build succeeds, two builds are byte-identical and the manifest/deployable record the exact source commit.
 - Focused evidence tests cover deadline boundaries, timing grades, provider cutoff, hashes/tampering, deadline changes, privacy, chunking, compression, bounded storage, quota failure, import and delete/reset.
 

@@ -5,7 +5,7 @@ Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 10.1 verified source `__SOURCE_SHA__`: **349/349 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
+Stage 10.1 verified source `73cdca817f7070a745fb642e1070d77a6bdaca9b`: **349/349 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
