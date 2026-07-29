@@ -13,17 +13,16 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 6 — Transfer optimiser** · DONE and merged through PR #14 at `df9bb72cb2167a092acbfbe0300c3be21caea155`.
   - Exact 0–3 transfer plans with mandatory zero-transfer baseline.
   - Complete squad legality, pooled affordability, free-transfer/hit handling and per-Gameweek legal best-XI scoring.
-  - Verified source commit `5181299c8773c118220bdd8c18e80eb053eaf592`: **254/254 tests passed** and deterministic two-build comparison passed.
+  - Verified source `5181299c8773c118220bdd8c18e80eb053eaf592`: **254/254 tests passed** with deterministic builds.
 - **Stage 7 — Walk-forward backtest** · DONE and merged through PR #15 at `78b42e09d2ad3b8338b587ba2b89e815cfc0c45a`.
   - Deadline-safe chronological train/calibration/holdout folds and fold-only calibration.
   - Immutable pinned historical archive with runtime SHA-256 verification.
-  - Honest replay limitations and deterministic outputs.
-  - Verified baseline: **274/274 tests passed**, successful build, deterministic two-build comparison and build-identity checks.
+  - Verified baseline: **274/274 tests passed** with deterministic builds.
 - **Stage 8 — Uncertainty and squad simulation** · DONE and merged through PR #16 at `b0f6e1683b1bdb38c9cb233024a8d0bfd652caa8`.
   - Deterministic seeded player and legal squad simulations.
   - P10/P25/median/P75/P90 plus blank/return/haul probabilities.
   - Reserve-goalkeeper handling, ordered legal auto-subs and captain-to-vice fallback.
-  - Verified baseline: **284/284 tests passed**, successful build and deterministic build checks.
+  - Verified baseline: **284/284 tests passed** with deterministic builds.
 - **Checkpoint 9.1 — App shell and primary navigation** · DONE and merged through PR #17 at `9f4333e3f2e8d71d02355389f8c7d2115d3d17e4`.
 - **Checkpoint 9.2 — Team pitch and shirts** · DONE and merged through PR #18 at `4cbbe588697845677e6aef5992e15f13f47c6281`.
 - **Checkpoint 9.3 — Player detail and uncertainty** · DONE and merged through PR #20 at `eb636d023bed6706f46f5a03366485ede9b15c89`.
@@ -38,20 +37,18 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376 tests passed** with byte-identical exact-identity builds; generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`.
 
 ## Current
-- **Stage 10.3 — Metrics** · owner-approved and implemented on `agent/stage10-3-metrics`; final exact-contract verification, documentation closeout and owner review remain.
-- Draft PR #31 is open and must not merge before explicit owner approval.
-- Scope remains descriptive and deterministic: player points, fixture-level minutes, uncertainty, frozen squad, captaincy, bench and frozen transfer-plan evaluation.
+- **Stage 10.3 — Metrics** · implemented and verified on `agent/stage10-3-metrics`; draft PR #32 awaits owner review and explicit merge approval.
+- Immutable player, fixture-minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations are descriptive only.
+- Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 tests passed** with byte-identical exact-identity builds; generated artefacts `8c4b60a367b9858146b42ff8710d888856462c21`.
 - No composite score, model update, threshold change, calibration claim or retrospective recommendation is included.
 
 ## Upcoming
-1. Complete the final full-suite and deterministic exact-identity verification after the public metric-field contract correction.
-2. Record the exact verified source, generated commit and test count across repository documentation.
-3. Remove the temporary verification workflow and present draft PR #31 for owner review.
-4. Merge only after explicit owner approval.
-5. Begin Stage 10.4 only in a separate chat and scope after Stage 10.3 merge.
+1. Owner review of draft PR #32.
+2. Merge only after explicit owner approval.
+3. Begin Stage 10.4 — Operating review/export only in a separate scoped chat after Stage 10.3 merge.
 
 ## Current blockers
-1. Stage 10.3 final verification and owner review remain open.
+1. Stage 10.3 owner review and merge approval remain open.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Prospective sample size begins at zero; Stage 10.3 infrastructure does not establish model accuracy or calibration.
