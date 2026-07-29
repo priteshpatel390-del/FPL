@@ -1,0 +1,170 @@
+name: Temporary Stage 10.1 post-merge closeout
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage10-1-post-merge-closeout
+          fetch-depth: 0
+
+      - name: Record accepted Stage 10.1 status
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          MERGE = 'da76c81f552fd9da5c518e73ccc0fbe966c74444'
+          SOURCE = 'eb3497ec405d6c7b8ce09105614fcb8280abc34b'
+          ARTEFACT = '1259e7b5f7505d3330c772e89c77720251552287'
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'expected text missing in {path}: {old[:90]!r}')
+              p.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'CLAUDE.md',
+              "Stage 10 design is owner-approved. Stage 10.1 — Deadline-safe snapshot foundation is amended and locally verified on draft PR #27 from branch `agent/stage10-1-deadline-snapshot`; it is not merged. Startup now gates access behind an automatic approved-source refresh, provider/schema/freshness checks, one final consistent render and automatic eligible deadline evidence. Recovery imports are segregated and cannot become official evidence. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with a successful production build, byte-identical two-build output and exact build identity. Physical iPhone startup, foreground refresh and evidence-recovery acceptance remain the final review gate. No model formula, provider blend, calibration, captaincy, squad or optimiser objective changed.",
+              f"Stage 10.1 — Deadline-safe snapshot foundation is complete and merged through PR #27 at `{MERGE}` after owner acceptance on iPhone. Startup silently verifies the approved source set, presents one consistent dataset and dispatches eligible deadline evidence without delaying access; recovery imports remain non-official. Verified source `{SOURCE}` passes **349/349 tests** with a successful production build, byte-identical two-build output and exact build identity; generated artefacts are committed at `{ARTEFACT}`. The next checkpoint is **Stage 10.2 — Official outcome collection**, at investigation and exact-scope confirmation only; no Stage 10.2 implementation has begun. No model formula, provider blend, calibration, captaincy, squad or optimiser objective changed."
+          )
+
+          replace_once(
+              'docs/PROJECT_CONTEXT.md',
+              "- Stages 1–9 are complete and merged. The complete Stage 10 design is owner-approved.\n- Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.\n- Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.\n- Stage 10.1 is amended on draft PR #27. Startup automatically refreshes and validates the four approved sources before one consistent render; foreground returns repeat the check when due, eligible evidence is captured automatically, and recovery imports cannot become official. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with byte-identical builds and exact build identity; owner review and physical iPhone acceptance remain pending.",
+              f"- Stages 1–9 and Stage 10.1 are complete and merged. The complete Stage 10 design is owner-approved.\n- Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.\n- Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.\n- Stage 10.1 merged through PR #27 at `{MERGE}` after physical iPhone acceptance. Startup automatically refreshes and validates the four approved sources before one consistent render; foreground returns repeat the check when due, eligible evidence is captured automatically without delaying access, and recovery imports cannot become official. Verified source `{SOURCE}` passes **349/349 tests** with byte-identical builds and exact build identity; generated artefacts are committed at `{ARTEFACT}`."
+          )
+          replace_once(
+              'docs/PROJECT_CONTEXT.md',
+              "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and all six Stage 9 UI-integration checkpoints.\n\nCurrent: Stage 10.1 — Deadline-safe snapshot foundation is amended on draft PR #27. It adds immutable anonymised pre-deadline records plus a minimalist startup verification gate, automatic app-open/foreground refresh, approved-source enforcement, deferred one-shot rendering, automatic eligible capture and recovery-only imports. It does not change model behaviour.\n\nNext: owner review and physical iPhone acceptance of Stage 10.1, followed only after merge by Stage 10.2 official outcomes. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved.",
+              "Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints and Stage 10.1 deadline-safe snapshot foundation.\n\nCurrent: Stage 10.2 — Official outcome collection is the next investigation and exact-scope confirmation checkpoint. No Stage 10.2 implementation has begun.\n\nNext: document the official outcome schema, source validation, timing, fallback and storage boundaries, then obtain explicit approval before implementation. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved."
+          )
+
+          roadmap = Path('docs/ROADMAP.md')
+          text = roadmap.read_text()
+          marker = '## Current\n'
+          if marker not in text:
+              raise SystemExit('ROADMAP current marker missing')
+          head = text.split(marker, 1)[0].rstrip() + '\n'
+          tail = f"""
+- **Stage 10.1 — Deadline-safe snapshot foundation** · DONE and merged through PR #27 at `{MERGE}`.
+  - Silent approved-source startup/foreground verification, one consistent render and non-blocking automatic eligible evidence capture.
+  - Strict provider allowlist, immutable anonymised records, deterministic hashes and recovery-only imports.
+  - Verified source `{SOURCE}`: **349/349 tests passed**, successful production build and deterministic build identity; generated artefacts `{ARTEFACT}`.
+
+## Current
+- **Stage 10.2 — Official outcome collection** · investigation and exact-scope confirmation only; no implementation has begun.
+- Stage 10.1 remains formula-neutral: no projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
+
+## Upcoming
+1. Present the Stage 10.2 outcome schema, official FPL source fields, collection timing, validation, fallback, storage and tests.
+2. Obtain explicit owner approval for the exact Stage 10.2 implementation scope.
+3. Implement Stage 10.2 on a separate branch without beginning Stage 10.3 metrics.
+
+## Current blockers
+1. Stage 10.2 exact implementation scope and approval are not yet recorded.
+2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
+3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
+""".lstrip()
+          roadmap.write_text(head + tail)
+
+          replace_once(
+              'docs/STAGE10-ITEM1.md',
+              "Status: **implemented and locally verified on draft PR #27; owner review and physical iPhone acceptance pending.** Approved 29 July 2026.",
+              f"Status: **complete and merged through PR #27 at `{MERGE}` after owner iPhone acceptance.** Approved and accepted 29 July 2026."
+          )
+          replace_once(
+              'docs/STAGE10-ITEM1.md',
+              "In the repository execution environment, the resulting synthetic benchmark captured 620 players with 5,000 samples each in approximately 2.8–3.5 seconds. Canonical JSON was about 2.2 MB and its browser-local gzip recovery representation about 153 KB. Projection work yields to the browser every 20 players. Physical iPhone startup timing, foreground refresh, automatic capture and recovery restore remain an explicit owner acceptance gate.",
+              "In the repository execution environment, the resulting synthetic benchmark captured 620 players with 5,000 samples each in approximately 2.8–3.5 seconds. Canonical JSON was about 2.2 MB and its browser-local gzip recovery representation about 153 KB. Projection work yields to the browser every 20 players. Pritesh accepted the silent loader and startup behaviour on a physical iPhone; the apparent white top strip in the downloaded review file was confirmed as the iOS/ChatGPT local-file preview container rather than Teamsheet presentation."
+          )
+          replace_once(
+              'docs/STAGE10-ITEM1.md',
+              "## Remaining acceptance gate\nOpen the review deployment on Pritesh’s iPhone and verify: the silent loader is visually clean and brief, the app opens without waiting for evidence capture, foreground refresh causes no unacceptable interaction lock, recovery controls work and no console-visible error occurs. Stage 10.1 must remain draft until this check is reported.\n\n- The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.",
+              f"## Completion record\n- Owner iPhone acceptance recorded 29 July 2026.\n- Merged through PR #27 at `{MERGE}`.\n- Verified source `{SOURCE}`; generated artefacts `{ARTEFACT}`.\n- The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.\n- Stage 10.2 is the next separately scoped checkpoint; no outcome collection or metrics implementation is included here."
+          )
+
+          replace_once('docs/CHANGELOG.md', '## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation (draft)', '## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation')
+          replace_once(
+              'docs/CHANGELOG.md',
+              "- Physical iPhone startup, foreground refresh, automatic capture and recovery-restore acceptance remain the draft-PR gate before merge.\n### Unchanged\n- No projection, expected-minutes, scoring, fixture, simulation distribution, captaincy, squad, provider blend, calibration or optimiser objective changed.\n- No retrospective accuracy or probability-calibration claim.",
+              f"- Physical iPhone acceptance passed for the silent loader and non-blocking startup path; the local-preview white strip was identified as viewer chrome rather than app UI.\n### Unchanged\n- No projection, expected-minutes, scoring, fixture, simulation distribution, captaincy, squad, provider blend, calibration or optimiser objective changed.\n- No retrospective accuracy or probability-calibration claim.\n### Status\n- Merged through PR #27 at `{MERGE}`; Stage 10.1 is complete."
+          )
+
+          replace_once(
+              'docs/STAGE_HISTORY.md',
+              '## Stage 10.1 — Deadline-safe snapshot foundation (DRAFT PR #27; owner/device review pending)',
+              '## Stage 10.1 — Deadline-safe snapshot foundation (MERGED 2026-07-29)'
+          )
+          replace_once(
+              'docs/STAGE_HISTORY.md',
+              "The first 620-player benchmark exposed a runtime above three minutes. Review preserved the approved 5,000 samples and removed repeated invariant fixture calculations, reducing the synthetic run to roughly 2.8–3.5 seconds in the repository environment. A later owner-approved amendment adds a minimalist startup gate, automatic startup/ten-minute foreground verification, a closed four-provider allowlist, deferred one-shot rendering, automatic eligible evidence capture and recovery-only imports. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes 349/349 tests with a successful production build, byte-identical two-build output and exact build identity. Physical iPhone startup/foreground/recovery acceptance remains pending. No formula, provider blend, calibration, captaincy, squad or optimiser objective changed. The work remains unmerged on draft PR #27 pending owner/device review.",
+              f"The first 620-player benchmark exposed a runtime above three minutes. Review preserved the approved 5,000 samples and removed repeated invariant fixture calculations, reducing the synthetic run to roughly 2.8–3.5 seconds in the repository environment. A later owner-approved amendment added a silent minimalist startup gate, automatic startup/ten-minute foreground verification, a closed four-provider allowlist, deferred one-shot rendering, non-blocking automatic eligible evidence capture and recovery-only imports. Verified source `{SOURCE}` passes 349/349 tests with a successful production build, byte-identical two-build output and exact build identity. Pritesh accepted the physical iPhone behaviour on 29 July 2026; the downloaded-file white top strip was confirmed as preview-container chrome, not Teamsheet UI. No formula, provider blend, calibration, captaincy, squad or optimiser objective changed. Merged through PR #27 at `{MERGE}` with generated artefacts `{ARTEFACT}`."
+          )
+
+          replace_once(
+              'docs/TESTING.md',
+              "Stage 10.1 verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.",
+              f"Stage 10.1 verified source `{SOURCE}`: **349/349 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance passed and PR #27 merged at `{MERGE}` with generated artefacts `{ARTEFACT}`. The previous merged Stage 9 baseline was 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`."
+          )
+
+          replace_once(
+              'docs/KNOWN_LIMITATIONS.md',
+              "| EVID-3 | Physical iPhone capture/export/import has not yet been accepted | Structural phone-first UI and synthetic performance are verified, but Stage 10.1 cannot be called complete until owner device review | Stage 10.1 review | Open |",
+              "| EVID-3 | Physical iPhone capture/export/import acceptance | Owner accepted the silent loader and startup behaviour; local-preview chrome was distinguished from app UI | Stage 10.1 review | **CLOSED 2026-07-29** |"
+          )
+
+          stale = [
+              'draft PR #27',
+              'DRAFT PR #27',
+              'owner review and physical iPhone acceptance pending',
+              'Physical iPhone acceptance remains pending on draft PR #27',
+              'Stage 10.1 must remain draft',
+              'The work remains unmerged on draft PR #27',
+              'Stage 10.1 cannot be called complete until owner device review',
+          ]
+          hits = []
+          for path in [Path('CLAUDE.md'), *Path('docs').glob('*.md')]:
+              text = path.read_text()
+              for phrase in stale:
+                  if phrase in text:
+                      hits.append(f'{path}: {phrase}')
+          if hits:
+              raise SystemExit('stale Stage 10.1 status remains:\n' + '\n'.join(hits))
+          PY
+
+          rm .github/workflows/stage10-1-closeout.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --check
+          git add CLAUDE.md docs .github/workflows/stage10-1-closeout.yml
+          git commit -m "Close out Stage 10.1 documentation"
+
+      - name: Run full verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT=eb3497ec405d6c7b8ce09105614fcb8280abc34b ./run-tests.sh | tee /tmp/stage10-closeout-tests.log
+          grep -q '# tests 349' /tmp/stage10-closeout-tests.log
+          grep -q '# pass 349' /tmp/stage10-closeout-tests.log
+          grep -q '# fail 0' /tmp/stage10-closeout-tests.log
+          git diff --exit-code -- dist index.html
+          git diff --check
+          test -z "$(git status --short)"
+
+      - name: Publish documentation closeout
+        shell: bash
+        run: git push origin HEAD:agent/stage10-1-post-merge-closeout
