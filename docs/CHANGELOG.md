@@ -3,7 +3,7 @@ Purpose: professional change record (Keep a Changelog conventions). Audience: al
 Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 
 
-## [Stage 10.2] — 2026-07-29 — Official outcome collection (draft review)
+## [Stage 10.2] — 2026-07-29 — Official outcome collection
 ### Added
 - Automatic Official FPL player, fixture and optional manager outcome collection after app access.
 - Immutable provisional, complete and corrected revisions with deterministic section/data/content hashes.
@@ -12,6 +12,8 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 - Focused outcome collection/storage suites; full baseline **376/376 passing**.
 ### Unchanged
 - No model formula, calibration, provider blend, captaincy, squad, optimiser or Stage 10.3 metric change.
+### Status
+- Merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7` after owner approval; verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`, generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`.
 
 
 ## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation

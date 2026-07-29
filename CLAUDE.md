@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 10.2 — Official outcome collection is implemented and verified on branch `agent/stage10-2-official-outcomes`, with **376/376 tests passing**, deterministic exact-identity builds and a draft pull-request review gate. Official FPL player, fixture and optional manager outcomes are collected automatically after access, stored as immutable provisional/complete/corrected revisions and linked strictly to eligible Stage 10.1 snapshots. No Stage 10.3 metric or model, provider-blend, calibration, captaincy, squad or optimiser change is included.
+Stage 10.2 — Official outcome collection is complete and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7` after owner approval. Official FPL player, fixture and optional manager outcomes are collected automatically after access, stored as immutable provisional/complete/corrected revisions and linked strictly to eligible Stage 10.1 snapshots. Verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306` passes **376/376 tests** with deterministic exact-identity builds; generated artefacts are committed at `9d81210b493ab40a542c50709733b14e448a481c`. The next checkpoint is **Stage 10.3 — Metrics**, at investigation and exact-scope approval only; no Stage 10.3 implementation has begun.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
@@ -43,5 +43,3 @@ Stage 10.2 — Official outcome collection is implemented and verified on branch
 
 ## Completion report for every item
 Report what changed, what deliberately did not change, exact test count/result, build and reproducibility evidence, documentation updates, judgement calls, remaining limitations, branch/commit and draft PR link.
-
-

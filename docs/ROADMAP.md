@@ -52,19 +52,23 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Strict provider allowlist, immutable anonymised records, deterministic hashes and recovery-only imports.
   - Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passed**, successful production build and deterministic build identity; generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`.
 
+- **Stage 10.2 — Official outcome collection** · DONE and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`.
+  - Automatic Official FPL player, fixture and optional public manager outcomes with immutable provisional/complete/corrected revisions.
+  - Strict snapshot matching, correction monitoring, bounded recovery storage and recovery-only imports.
+  - Verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376 tests passed**, successful production build and byte-identical exact-identity builds; generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`.
+
 ## Current
-- **Stage 10.2 — Official outcome collection** · implemented and verified on branch `agent/stage10-2-official-outcomes`; draft pull-request review and owner approval pending.
-- Official FPL player, fixture and optional public manager outcomes are automatic, immutable, correction-aware and non-blocking.
-- Verified baseline: **376/376 tests passing** with successful production and byte-identical exact-identity builds.
-- No Stage 10.3 metrics or projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
+- **Stage 10.3 — Metrics** · investigation and exact-scope approval only; no implementation has begun.
+- Planned metrics remain descriptive and deterministic: player points, minutes, uncertainty, squad, captaincy, bench and transfers.
+- No composite score, model update, threshold, calibration claim or retrospective recommendation is approved.
 
 ## Upcoming
-1. Complete owner review and physical iPhone acceptance of Stage 10.2.
-2. Merge Stage 10.2 only after explicit approval.
-3. Begin Stage 10.3 metrics as a separate investigation/design checkpoint after merge.
+1. Present the exact Stage 10.3 metric definitions, inputs, exclusions, matching rules, sample safeguards and tests.
+2. Obtain explicit owner approval for the Stage 10.3 implementation scope.
+3. Implement Stage 10.3 on a separate branch without changing production formulas or beginning Stage 10.4.
 
 ## Current blockers
-1. Stage 10.2 requires owner review and physical iPhone acceptance before merge.
+1. Stage 10.3 exact metric scope and approval are not yet recorded.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.

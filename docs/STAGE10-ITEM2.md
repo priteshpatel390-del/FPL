@@ -1,6 +1,6 @@
 # Stage 10.2 — Official Outcome Collection
 
-Status: **implemented and verified on branch `agent/stage10-2-official-outcomes`; draft pull request and owner review pending.** Approved 29 July 2026.
+Status: **complete and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7` after owner approval.** Approved and accepted 29 July 2026.
 
 ## Objective
 Collect immutable Official FPL facts after each Gameweek so a later Stage 10.3 item can compare them with the correct frozen pre-deadline snapshot. This item records outcomes only and calculates no model-evaluation metric.
@@ -41,6 +41,8 @@ Every accepted revision is immutable. Identical rechecks update check metadata w
 - Two exact-identity builds were byte-identical.
 - Root `index.html` matched `dist/index.html` exactly.
 - Existing tests were not weakened or regenerated.
+- Verified source: `e84e7f1bf05ed1f3e574f78101e4a6e413273306`; generated artefacts: `9d81210b493ab40a542c50709733b14e448a481c`.
+- Merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7` after owner approval.
 
 ## Deliberately unchanged
 No projection, expected-minutes, scoring, fixture-strength, calibration, simulation, captaincy, best-XI, squad-selection, transfer-optimiser, provider-blend or FPL-account behaviour changed. No Stage 10.3 metric or retrospective recommendation was implemented.
