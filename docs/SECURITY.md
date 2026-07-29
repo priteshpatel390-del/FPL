@@ -10,6 +10,7 @@ Static single-file application on GitHub Pages. Stage 3 security hardening is co
 - Provider and user strings render through DOM builders; AI output uses the restricted Markdown AST.
 - External payloads are validated at provider boundaries and transient failures use bounded retry.
 - Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable through a compact global status and full current-session detail under More; Stage 9.5 changes presentation only.
+- Stage 9.6 forbids style attributes/runtime style APIs and removes the related CSP concession without changing provider, storage or model behaviour.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:
@@ -32,14 +33,14 @@ same-origin code. Server-side environment storage remains deferred until the ser
 ## Content Security Policy
 `build.mjs` emits a deterministic meta CSP whose SHA-256 hashes match the exact single inline script
 and single inline style block. The build re-extracts the final HTML and independently verifies both
-hashes before writing a deployable.
+hashes before writing a deployable. The build also rejects static `style=` attributes, runtime style APIs and any generated style attribute before output is accepted.
 
 Policy shape:
 
 - `default-src 'none'`
 - hash-only `script-src`
 - hash-only inline style element plus `https://fonts.googleapis.com`
-- `style-src-attr 'unsafe-inline'` as the sole approved concession until Stage 9
+- no `style-src-attr` directive and no `unsafe-inline` token
 - `font-src https://fonts.gstatic.com`
 - explicit `connect-src` allow-list for FPL, relays, Understat, Odds, archive and Claude preview
 - `img-src 'self' data:`

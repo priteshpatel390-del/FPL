@@ -38,20 +38,25 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Session-only optimiser-plan and captain/vice previews with stale-state invalidation and no persistence.
   - Verified source `849ff757c68c35e92744dc96efc34848110fa19e`: **304/304 tests passed** with deterministic builds.
 
+- **Checkpoint 9.5 — More, Settings and Provider Health** · DONE and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`.
+  - Settings and global/full Provider Health presentation with unchanged provider behaviour.
+  - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed** with deterministic builds.
+
 ## Current
 - **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
-- **Checkpoint 9.5 — More, Settings and Provider Health** · implemented and verified on draft PR #24; owner review and explicit merge approval remain.
-  - Existing team/setup and optional provider controls now sit in a clearly labelled Settings area under More.
-  - A compact global Provider Health control opens full current-session provider state, age, note and consequence detail under More.
-  - Existing seven-state logic, fallbacks, transports, retries, cache behaviour and security controls are unchanged.
-  - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed**, successful build, deterministic two-build comparison and build-identity check.
-  - Verified generated deployables committed at `5401f2882f72b70c7034157c2e3a686dab966c64`.
+- **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish** · implemented and verified on draft PR #25; owner review and explicit merge approval remain.
+  - All source and generated style attributes/runtime style APIs are removed and guarded.
+  - `style-src-attr` and every `unsafe-inline` token are removed from the emitted CSP.
+  - Mobile and desktop browser review passed with no console errors and zero application-created style attributes.
+  - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed**, successful build, deterministic two-build comparison and build-identity check.
+  - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
 
 ## Upcoming
-1. **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish**.
+1. Merge checkpoint 9.6 after owner approval, completing Stage 9.
+2. Begin prospective 2026/27 logging and evidence-led operational review from live GW1.
 
 ## Current blockers
-1. Owner review and explicit merge approval for Stage 9.5 draft PR #24.
-2. Browser-level visual regression tooling is not yet present; final mobile/desktop appearance still needs human review.
+1. Owner review and explicit merge approval for Stage 9.6 draft PR #25.
+2. A persistent screenshot-regression suite is still absent; Stage 9.6 completed manual browser review but future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.

@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 9.4 is merged into `main` through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b7112fd4a8c8`. Checkpoint 9.5 — More, Settings and Provider Health is implemented and verified on draft PR #24 from branch `agent/stage9-5-settings-provider-health`. Team/setup and optional provider controls now sit in a clearly labelled Settings area under More; Provider Health remains globally visible in compact form and opens full current-session detail under More. Verified source `da8258df25e196af1f1521c025edefde23612abd` passes **310/310** tests with deterministic builds; generated artefacts are committed at `5401f2882f72b70c7034157c2e3a686dab966c64`. Provider states, transports, retries, cache/fallback behaviour, odds-key controls, storage and every model formula remain unchanged. Owner review and explicit merge approval remain required before checkpoint 9.6.
+Stage 9.5 is merged into `main` through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`. Checkpoint 9.6 — Style migration, CSP and final polish is implemented and verified on draft PR #25 from branch `agent/stage9-6-style-csp-polish`. Static and generated presentation now uses classes, safe element attributes, native progress elements and SVG geometry rather than style attributes; the CSP no longer permits `style-src-attr` or any `unsafe-inline`. Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes **313/313** tests with deterministic builds; generated artefacts are committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. Mobile and desktop browser review passed with no console errors and zero application-created style attributes. Every model, provider, storage and optimiser rule remains unchanged. Owner review and explicit merge approval remain required before Stage 9 is complete.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
@@ -38,7 +38,7 @@ Stage 9.4 is merged into `main` through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b
 - Odds key is masked, omitted when empty, one-action forgettable and scrubbed from diagnostics.
 - Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
 - The custom bundler strips complete static import/export declarations and fails if raw module syntax survives.
-- `style-src-attr 'unsafe-inline'` remains an explicit Stage 9 concession until checkpoint 9.6.
+- Style attributes and runtime style APIs are forbidden by DOM helpers, source guards and deployable tests; CSP permits only the hash-locked style element and approved Google Fonts stylesheet.
 - Meta `frame-ancestors` is ineffective on Pages; a hashed frame-buster compensates until serverless headers.
 
 ## Completion report for every item

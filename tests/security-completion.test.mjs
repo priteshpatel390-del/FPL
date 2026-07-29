@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { scrubOddsSecret, forgetOddsKey } from '../src/providers/odds.mjs';
 import { S } from '../src/state.mjs';
@@ -64,11 +64,11 @@ test('CSP hashes independently match the exact emitted inline script and style',
   assert.ok(policy.includes(`style-src-elem '${sha256(styles[0][1])}'`));
 });
 
-test('CSP retains only the approved inline-style concession and provider origins', () => {
+test('CSP removes every unsafe-inline concession and retains provider origins', () => {
   const policy = /Content-Security-Policy"\s+content="([^"]+)"/.exec(html())?.[1] || '';
   assert.ok(policy.includes("default-src 'none'"));
-  assert.ok(policy.includes("style-src-attr 'unsafe-inline'"));
-  assert.equal(policy.includes("script-src 'unsafe-inline'"),false);
+  assert.equal(policy.includes("'unsafe-inline'"),false);
+  assert.equal(policy.includes('style-src-attr'),false);
   for(const origin of [
     'https://fantasy.premierleague.com','https://api.allorigins.win','https://corsproxy.io',
     'https://api.codetabs.com','https://thingproxy.freeboard.io','https://understat.com',
@@ -78,6 +78,37 @@ test('CSP retains only the approved inline-style concession and provider origins
   assert.ok(policy.includes("base-uri 'none'"));
   assert.ok(policy.includes("form-action 'self'"));
   assert.ok(policy.includes("frame-ancestors 'none'"));
+});
+
+
+test('source and generated deployable contain no inline style attributes or runtime style APIs', () => {
+  const sourceFiles = ['app.html'];
+  const walk = dir => {
+    for(const entry of readdirSync(dir,{withFileTypes:true})){
+      const path = `${dir}/${entry.name}`;
+      if(entry.isDirectory()) walk(path);
+      else if(/\.(?:mjs|js|html)$/.test(entry.name)) sourceFiles.push(path);
+    }
+  };
+  walk('src');
+  for(const path of sourceFiles){
+    const source = readFileSync(path,'utf8');
+    assert.doesNotMatch(source,/\sstyle\s*=/i,path);
+    assert.doesNotMatch(source,/\bstyle\s*:/,path);
+    assert.doesNotMatch(source,/\.style(?:\.|\[|\s*=)/,path);
+    assert.doesNotMatch(source,/setAttribute\(\s*['"]style/,path);
+    assert.doesNotMatch(source,/\bcssText\b/,path);
+  }
+  assert.doesNotMatch(html(),/\sstyle\s*=/i);
+  assert.doesNotMatch(bundle(),/\.style(?:\.|\[|\s*=)/);
+});
+
+test('dynamic visual geometry uses style-free progress and SVG attributes', () => {
+  const views = readFileSync('src/ui/views.mjs','utf8');
+  assert.match(views,/elNode\('progress'/);
+  assert.match(views,/svgNode\('svg'/);
+  assert.match(views,/teamPitchPaletteClass/);
+  assert.doesNotMatch(views,/style:/);
 });
 
 test('frame-buster and current Stage 3 modules are inside the single hashed bundle', () => {

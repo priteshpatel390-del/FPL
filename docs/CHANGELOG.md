@@ -2,6 +2,26 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 
+## [Stage 9.6] — 2026-07-29 — Style migration, CSP and final polish
+### Added
+- Static utility and club-palette classes replacing fixed and generated style attributes.
+- Native progress elements for projection bars and namespace-correct SVG geometry for uncertainty ranges.
+- Fail-closed DOM-helper, source, build and deployable guards against style attributes and runtime style APIs.
+- Three focused regression additions covering deterministic palette classes and the tightened style/CSP boundary.
+### Changed
+- Removed `style-src-attr` and every `unsafe-inline` token from the emitted CSP while retaining the exact-hash-locked style element.
+- Completed responsive/touch/accessibility polish and representative mobile/desktop browser review with no console errors.
+### Verification
+- Verified source commit `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
+- Full suite: **313/313 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
+- Source and deployed HTML contain zero application-created style attributes.
+### Unchanged
+- No projection, expected-minutes, scoring, simulation, best-XI, captaincy, optimiser, provider, storage or odds-key behaviour changed.
+### Status
+- Implemented and verified on draft PR #25; awaiting owner review and explicit merge approval.
+
 ## [Stage 9.5] — 2026-07-29 — More, Settings and Provider Health
 ### Added
 - Compact globally visible Provider Health status that opens the full detail surface under More.
@@ -19,7 +39,7 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 - No provider state, transport, retry, cache, fallback, odds-key, storage, security or model behaviour changed.
 - No inline-style migration or CSP tightening; those remain checkpoint 9.6.
 ### Status
-- Implemented and verified on draft PR #24; awaiting owner review and explicit merge approval.
+- Merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`.
 
 ## [Stage 9.4] — 2026-07-28 — Temporary decision previews
 ### Added

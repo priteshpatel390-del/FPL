@@ -151,10 +151,10 @@ async function runBacktest(){
     const body=el('tbody');
     rows.forEach(row=>body.appendChild(el('tr',{},...row.map((value,index)=>el('td',index?{class:'num'}:{},value)))));
     setChildren(out,[
-      el('div',{class:'kpis',style:{marginTop:'10px'}},
+      el('div',{class:'kpis mt-10'},
         kpi('Season',ARCHIVE_DATASET.season),kpi('Folds',evaluation.folds.length),
         kpi('Holdout rows',raw?.n??0),kpi('Malformed rows',replay.malformedRows)),
-      el('div',{class:'scroll'},el('table',{class:'data',style:{minWidth:'520px'}},
+      el('div',{class:'scroll'},el('table',{class:'data data-compact'},
         el('thead',{},el('tr',{},...['Variant','n','MAE','RMSE','Bias','r'].map((value,index)=>el('th',index?{class:'num'}:{},value)))),body)),
       el('div',{class:'note good'},el('b',{},'Deadline-safe evaluation complete.'),
         ' Every holdout prediction uses only earlier Gameweeks, and fold calibration is fitted only on the immediately preceding calibration window.'),

@@ -24,7 +24,7 @@ export function loadApp(fieldValues = {}) {
 
   globalThis.document = { getElementById: id => made[id] || (made[id] = mk(id)),
     querySelectorAll: () => [], addEventListener(){}, createElement: tag => mk('x', tag),
-    createTextNode: text => ({nodeType:3, textContent:String(text), parentNode:null}) };
+    createElementNS: (_namespace, tag) => mk('x', tag), createTextNode: text => ({nodeType:3, textContent:String(text), parentNode:null}) };
   globalThis.window = { scrollTo(){} };
   globalThis.localStorage = { _d:{}, getItem(k){ return this._d[k] ?? null; },
     setItem(k,v){ this._d[k]=v; }, removeItem(k){ delete this._d[k]; } };

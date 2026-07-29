@@ -42,13 +42,23 @@ function teamPitchNormaliseCode(team){
     .toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3) || 'CLB';
 }
 
+function teamPitchFallbackIndex(team, code = teamPitchNormaliseCode(team)){
+  let seed = Number(team?.id) || 0;
+  for(const ch of code) seed = ((seed * 31) + ch.charCodeAt(0)) >>> 0;
+  return seed % TEAM_PITCH_FALLBACKS.length;
+}
+
 function teamPitchPalette(team){
   const code = teamPitchNormaliseCode(team);
   const preset = TEAM_PITCH_PRESETS[code];
   if(preset) return {code, ...preset};
-  let seed = Number(team?.id) || 0;
-  for(const ch of code) seed = ((seed * 31) + ch.charCodeAt(0)) >>> 0;
-  return {code, ...TEAM_PITCH_FALLBACKS[seed % TEAM_PITCH_FALLBACKS.length]};
+  return {code, ...TEAM_PITCH_FALLBACKS[teamPitchFallbackIndex(team, code)]};
+}
+
+function teamPitchPaletteClass(team){
+  const code = teamPitchNormaliseCode(team);
+  if(TEAM_PITCH_PRESETS[code]) return `shirt-palette-${code.toLowerCase()}`;
+  return `shirt-palette-fallback-${teamPitchFallbackIndex(team, code) + 1}`;
 }
 
 function teamPitchLines(starters){
@@ -69,4 +79,4 @@ function teamPitchCaptaincy(ranked){
   return {captainId:ids[0] ?? null, viceId:ids[1] ?? null};
 }
 
-export { TEAM_PITCH_PATTERNS, teamPitchNormaliseCode, teamPitchPalette, teamPitchLines, teamPitchCaptaincy };
+export { TEAM_PITCH_PATTERNS, teamPitchNormaliseCode, teamPitchPalette, teamPitchPaletteClass, teamPitchLines, teamPitchCaptaincy };
