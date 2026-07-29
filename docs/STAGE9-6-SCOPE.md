@@ -1,6 +1,6 @@
 # Stage 9.6 — Style migration, CSP and final polish
 
-Status: approved by Pritesh through the Stage 9 design; implemented and verified on draft PR #25 on 29 July 2026.
+Status: implemented, verified and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439` on 29 July 2026; Stage 9 is complete.
 
 ## Scope
 
