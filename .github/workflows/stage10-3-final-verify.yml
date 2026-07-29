@@ -1,9 +1,9 @@
 name: Stage 10.3 final verify
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - agent/stage10-3-metrics
   workflow_dispatch:
 
 permissions:
