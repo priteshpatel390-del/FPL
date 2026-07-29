@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"a39d9a488d68768c","commit":"73cdca817f7070a745fb642e1070d77a6bdaca9b"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"a39d9a488d68768cccf18620744f4689b80992c11ac4a38477c9d5a171649114","commit":"73cdca817f7070a745fb642e1070d77a6bdaca9b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fee29e1625bcf684","commit":"eb3497ec405d6c7b8ce09105614fcb8280abc34b"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fee29e1625bcf6849411a1e1f18c85a2525db8eb47a80d8492a996013e535523","commit":"eb3497ec405d6c7b8ce09105614fcb8280abc34b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3155,11 +3155,7 @@ function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFI
   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
 }
 function setStartupPhase(key){
-  if(typeof document==='undefined') return;
-  const copy=STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
-  const title=$('startupTitle'), detail=$('startupDetail');
-  if(title) title.textContent=copy[0];
-  if(detail) detail.textContent=copy[1];
+  return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
 }
 function setStartupGateVisible(visible){
   if(typeof document==='undefined') return;
@@ -3205,10 +3201,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       });
       if(report.criticalReady){
         lastVerifiedRefreshAt=nowFn();
-        setStartupPhase('evidence');
-        await dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
-        setStartupPhase('ready');
         document.body?.classList?.remove('data-restricted');
+        void dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
       }else{
         setStartupPhase('restricted');
         document.body?.classList?.add('data-restricted');

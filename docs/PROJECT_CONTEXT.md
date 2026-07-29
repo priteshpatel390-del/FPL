@@ -11,7 +11,7 @@ Audience: anyone joining the project. Last updated: 2026-07-29. Related: ARCHITE
 - Stages 1–9 are complete and merged. The complete Stage 10 design is owner-approved.
 - Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.
 - Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.
-- Stage 10.1 is amended on draft PR #27. Startup automatically refreshes and validates the four approved sources before one consistent render; foreground returns repeat the check when due, eligible evidence is captured automatically, and recovery imports cannot become official. Verified source `73cdca817f7070a745fb642e1070d77a6bdaca9b` passes **349/349 tests** with byte-identical builds and exact build identity; owner review and physical iPhone acceptance remain pending.
+- Stage 10.1 is amended on draft PR #27. Startup automatically refreshes and validates the four approved sources before one consistent render; foreground returns repeat the check when due, eligible evidence is captured automatically, and recovery imports cannot become official. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with byte-identical builds and exact build identity; owner review and physical iPhone acceptance remain pending.
 - The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities

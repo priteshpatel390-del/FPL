@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-qfeLhgJQdxX06IAi8mRZtJp3YCpgjy09I9e1VzHzkjw='; style-src-elem 'sha256-xFnNw0nzh7sLxf6517eMDMrO6mASEwdxZh+hk0He93s=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-td2jxN2hurMaCcjLJCQvMDQHZsQ3pW+GpIkd2fh6P9s='; style-src-elem 'sha256-iTAG/iudplmBmloeN3DronybfdnEvKnSMaLEwFTbhss=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,16 +24,13 @@ body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-u
 body.startup-pending{overflow:hidden}
 .startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
 .startup-gate[hidden]{display:none}
-.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:12px}
+.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
 .startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
 .startup-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B9C9BF}
-.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:8px 0 4px;overflow:hidden}
+.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:10px 0 0;overflow:hidden}
 .startup-pitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.34)}
 .startup-pitch:after{content:"";position:absolute;width:20px;height:20px;border:1px solid rgba(255,255,255,.34);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
 .startup-ball{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);left:14px;top:23px;animation:startup-scan 1.7s ease-in-out infinite alternate}
-.startup-title{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:19px;font-weight:800;margin-top:4px}
-.startup-detail{max-width:310px;color:#C9D6CE;font-size:12px;line-height:1.5;min-height:36px}
-.startup-note{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8FA79A;margin-top:8px}
 @keyframes startup-scan{to{transform:translateX(48px)}}
 @media(prefers-reduced-motion:reduce){.startup-ball{animation:none;left:38px}}
 h1,h2,h3{font-family:'Bricolage Grotesque','Public Sans',sans-serif;margin:0;letter-spacing:-.02em;font-weight:800}
@@ -401,14 +398,11 @@ button,input,select,textarea{touch-action:manipulation}
 </head>
 <body class="startup-pending" aria-busy="true">
 
-<section class="startup-gate" id="startupGate" role="status" aria-live="polite" aria-labelledby="startupTitle">
+<section class="startup-gate" id="startupGate" role="status" aria-label="Opening Teamsheet">
   <div class="startup-card">
     <div class="startup-wordmark">TEAMSHEET</div>
     <div class="startup-sub">FPL decision desk</div>
     <div class="startup-pitch" aria-hidden="true"><span class="startup-ball"></span></div>
-    <div class="startup-title" id="startupTitle">Loading verified data</div>
-    <div class="startup-detail" id="startupDetail">Preparing the last accepted dataset as a safe fallback.</div>
-    <div class="startup-note">Approved sources · automatic checks · one consistent update</div>
   </div>
 </section>
 
@@ -613,8 +607,8 @@ button,input,select,textarea{touch-action:manipulation}
   <button class="tab" role="tab" data-view="ask" aria-selected="false"><span class="ic">✎</span>Ask</button>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"a39d9a488d68768c","commit":"73cdca817f7070a745fb642e1070d77a6bdaca9b"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"a39d9a488d68768cccf18620744f4689b80992c11ac4a38477c9d5a171649114","commit":"73cdca817f7070a745fb642e1070d77a6bdaca9b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fee29e1625bcf684","commit":"eb3497ec405d6c7b8ce09105614fcb8280abc34b"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fee29e1625bcf6849411a1e1f18c85a2525db8eb47a80d8492a996013e535523","commit":"eb3497ec405d6c7b8ce09105614fcb8280abc34b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3770,11 +3764,7 @@ function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFI
   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
 }
 function setStartupPhase(key){
-  if(typeof document==='undefined') return;
-  const copy=STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
-  const title=$('startupTitle'), detail=$('startupDetail');
-  if(title) title.textContent=copy[0];
-  if(detail) detail.textContent=copy[1];
+  return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
 }
 function setStartupGateVisible(visible){
   if(typeof document==='undefined') return;
@@ -3820,10 +3810,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       });
       if(report.criticalReady){
         lastVerifiedRefreshAt=nowFn();
-        setStartupPhase('evidence');
-        await dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
-        setStartupPhase('ready');
         document.body?.classList?.remove('data-restricted');
+        void dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
       }else{
         setStartupPhase('restricted');
         document.body?.classList?.add('data-restricted');
