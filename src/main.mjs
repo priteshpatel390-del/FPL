@@ -1,14 +1,14 @@
 import { S } from './state.mjs';
 import { $, num, el, setChildren } from './util.mjs';
 import { api } from './providers/transport.mjs';
-import { sget, sset, saveCfg, K_CFG, K_CACHE, K_CAL } from './storage.mjs';
+import { sget, sset, saveCfg, K_CACHE } from './storage.mjs';
 import { slim, hydrate, recordIssues } from './state.mjs';
 import { bootstrapStructure, validateEntry, validatePicks, validateHistory } from './providers/validate.mjs';
 import { loadUnderstat } from './providers/understat.mjs';
 import { loadOdds } from './providers/odds.mjs';
 import { loadMinuteHistories } from './providers/minutes-history.mjs';
 import { clearXP } from './model/xp.mjs';
-import { HEALTH_STATES, healthRows, markLive, markCached, markFallback, markPartial, markUnavailable } from './providers/registry.mjs';
+import { HEALTH_STATES, healthRows, getHealth, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable } from './providers/registry.mjs';
 
 const HEALTH_LABELS = {fpl:'FPL', understat:'Understat', odds:'Odds', archive:'Archive'};
 const HEALTH_PRIORITY = [
@@ -20,6 +20,21 @@ const HEALTH_PRIORITY = [
   HEALTH_STATES.DISABLED,
   HEALTH_STATES.LIVE
 ];
+const VERIFIED_REFRESH_MIN_AGE_MS = 10 * 60 * 1000;
+const STARTUP_PHASE_COPY = Object.freeze({
+  cache:['Loading verified data','Preparing the last accepted dataset as a safe fallback.'],
+  fpl:['Checking official FPL','Validating players, teams, fixtures and the current deadline.'],
+  team:['Checking your team','Validating the latest available squad and chip context.'],
+  providers:['Checking supporting sources','Resolving every approved provider to a verified state.'],
+  model:['Updating decisions','Recalculating projections and recommendations as one consistent dataset.'],
+  evidence:['Securing deadline evidence','Saving an eligible pre-deadline record automatically when required.'],
+  ready:['Ready','Latest verified data available.'],
+  restricted:['Limited mode','Official FPL data could not be verified, so recommendations remain unavailable.']
+});
+let verifiedRefreshPromise = null;
+let lastVerifiedRefreshAt = 0;
+let verifiedRefreshTriggersInstalled = false;
+
 function ageLabel(ms){
   if(ms == null) return '';
   const mins = Math.floor(ms / 60000);
@@ -80,21 +95,37 @@ function renderProviderHealth(){
   }));
 }
 
-async function loadAll(){
+function reportLoadPhase(options,key){
+  const copy=STARTUP_PHASE_COPY[key]||[key,''];
+  if(typeof options.onPhase==='function') options.onPhase({key,title:copy[0],detail:copy[1]});
+}
+function renderVerifiedState(){
+  clearXP();
+  renderProviderHealth();
+  renderAll();
+}
+
+async function loadAll(options = {}){
   const st = $('status');
+  const deferRender = Boolean(options.deferRender);
+  const renderIntermediate = () => { if(!deferRender){ renderProviderHealth(); renderAll(); } };
+  reportLoadPhase(options,'cache');
   const cached = await sget(K_CACHE);
+  let cacheAccepted = false;
   if(cached && !S.boot){
     if(hydrate(cached).ok){
+      cacheAccepted = true;
       markCached('fpl', cached.at, 'saved season snapshot', 'refreshing live feed');
-      st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
-      renderProviderHealth(); renderAll();
-    } else {
+      if(st) st.textContent = 'Showing saved data from ' + new Date(cached.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ' — refreshing…';
+      renderIntermediate();
+    } else if(st) {
       st.textContent = 'Your saved copy of the season data could not be read — fetching a fresh one…';
     }
-  } else {
+  } else if(st) {
     st.textContent = 'Fetching season data…';
   }
   try{
+    reportLoadPhase(options,'fpl');
     const [boot, fixtures] = await Promise.all([api('/bootstrap-static/'), api('/fixtures/')]);
     const bs = bootstrapStructure(boot);
     const fixturesOk = Array.isArray(fixtures);
@@ -113,15 +144,16 @@ async function loadAll(){
     else markLive('fpl', S.source || 'live feed', 'core season data current', d.at);
     clearXP();
 
+    reportLoadPhase(options,'team');
     S.teamId = $('teamId').value.replace(/\D/g,'');
     S.entry = null; S.picks = null; S.chipsUsed = [];
     if(S.teamId){
-      st.textContent = 'Fetching your team…';
+      if(st) st.textContent = 'Fetching your team…';
       const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
       recordIssues('fpl', '/entry/', entryV.issues);
       S.entry = entryV.value;
       if(!S.entry){
-        st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
+        if(st) st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
       } else {
         if(S.currentGW){
           const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true}));
@@ -136,33 +168,152 @@ async function loadAll(){
           $('bankIn').value = (S.entry.last_deadline_bank/10).toFixed(1);
       }
     }
-    if(S.entry || !S.teamId)
-      st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+    if(S.entry || !S.teamId){
+      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+    }
     await saveCfg();
-    renderProviderHealth(); renderAll();
-    Promise.all([loadUnderstat(), loadOdds(), loadMinuteHistories()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
+
+    reportLoadPhase(options,'providers');
+    const optionalResults = await Promise.allSettled([loadUnderstat(), loadOdds(), loadMinuteHistories()]);
+    if(!getHealth('understat',{seasonLive:S.seasonLive})) markUnavailable('understat','verification did not resolve','FPL strength ratings used');
+    if(!getHealth('odds',{seasonLive:S.seasonLive})) markDisabled('odds','no approved market input active','internal team model active');
+    if(!getHealth('archive',{seasonLive:S.seasonLive})){
+      if(S.calib) markCached('archive',null,'saved versioned calibration active','position correction active');
+      else markDisabled('archive','no archive calibration active','uncalibrated model outputs shown');
+    }
+    reportLoadPhase(options,'model');
+    renderVerifiedState();
+    return {
+      ok:true,
+      criticalReady:true,
+      source:'live',
+      cacheAccepted,
+      optionalResults,
+      verifiedAt:Date.now()
+    };
   }catch(err){
     await saveCfg();
     const shape = !!(err && err.feedShape);
     if(S.boot){
       markFallback('fpl', shape ? 'live feed shape unusable' : 'live feed unreachable', 'saved season snapshot remains active');
-      st.textContent = (shape
+      if(st) st.textContent = (shape
         ? 'The season feed came back in an unexpected format — still showing saved data from '
         : 'Live feed unreachable — still showing saved data from ') +
         new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
     } else if(shape){
       markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
-      st.textContent = 'Season data could not be read.';
+      if(st) st.textContent = 'Season data could not be read.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
         "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
       markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
-      st.textContent = 'Data feed unreachable.';
+      if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
         'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.'));
     }
-    renderProviderHealth();
+    reportLoadPhase(options,'model');
+    if(S.boot) renderVerifiedState();
+    else renderProviderHealth();
+    return {
+      ok:Boolean(S.boot),
+      criticalReady:Boolean(S.boot),
+      source:S.boot?'verified_cache':'unavailable',
+      cacheAccepted:Boolean(S.boot),
+      optionalResults:[],
+      verifiedAt:S.boot?Date.now():null,
+      error:err
+    };
   }
 }
 
-export { loadAll, renderProviderHealth, ageLabel, providerHealthFlagClass, providerHealthCompactModel };
+function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
+  return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
+}
+function setStartupPhase(key){
+  return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
+}
+function setStartupGateVisible(visible){
+  if(typeof document==='undefined') return;
+  const gate=$('startupGate');
+  if(gate) gate.hidden=!visible;
+  document.body?.classList?.toggle('startup-pending',visible);
+  document.body?.setAttribute?.('aria-busy',visible?'true':'false');
+}
+function setRefreshInteractionLock(locked,{startup=false}={}){
+  if(typeof document==='undefined') return;
+  document.body?.classList?.toggle('data-refreshing',locked);
+  const main=document.querySelector?.('main');
+  const nav=document.querySelector?.('nav.tabs');
+  if(!startup){
+    if(main) main.inert=locked;
+    if(nav) nav.inert=locked;
+  }
+  const compact=$('providerHealthCompact');
+  if(locked&&compact){
+    setChildren(compact,document.createTextNode('Data '),el('span',{class:'flag info'},'Checking'));
+    compact.setAttribute('aria-label','Data refresh in progress. Previously verified data remains visible.');
+  }
+}
+async function dispatchVerifiedData(detail){
+  if(typeof document==='undefined'||typeof document.dispatchEvent!=='function'||typeof CustomEvent!=='function') return [];
+  const pending=[];
+  const eventDetail={...detail,waitUntil(promise){ pending.push(Promise.resolve(promise)); }};
+  document.dispatchEvent(new CustomEvent('teamsheet:data-verified',{detail:eventDetail}));
+  return Promise.allSettled(pending);
+}
+async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
+  if(verifiedRefreshPromise) return verifiedRefreshPromise;
+  if(!force&&!shouldRefreshVerifiedData(lastVerifiedRefreshAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_verified'};
+  verifiedRefreshPromise=(async()=>{
+    if(startup) setStartupGateVisible(true);
+    setRefreshInteractionLock(true,{startup});
+    setStartupPhase('cache');
+    try{
+      const report=await loadAll({
+        awaitOptional:true,
+        deferRender:true,
+        onPhase:phase=>setStartupPhase(phase.key)
+      });
+      if(report.criticalReady){
+        lastVerifiedRefreshAt=nowFn();
+        document.body?.classList?.remove('data-restricted');
+        void dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
+      }else{
+        setStartupPhase('restricted');
+        document.body?.classList?.add('data-restricted');
+      }
+      return report;
+    }finally{
+      setRefreshInteractionLock(false,{startup});
+      if(startup) setStartupGateVisible(false);
+    }
+  })();
+  try{ return await verifiedRefreshPromise; }
+  finally{ verifiedRefreshPromise=null; }
+}
+function installVerifiedRefreshTriggers(){
+  if(verifiedRefreshTriggersInstalled||typeof document==='undefined') return;
+  verifiedRefreshTriggersInstalled=true;
+  const refreshIfDue=()=>{
+    if(document.visibilityState&&document.visibilityState!=='visible') return;
+    if(shouldRefreshVerifiedData(lastVerifiedRefreshAt)) runVerifiedRefresh({reason:'foreground'});
+  };
+  document.addEventListener('visibilitychange',refreshIfDue);
+  globalThis.window?.addEventListener?.('pageshow',refreshIfDue);
+}
+
+export {
+  loadAll,
+  renderProviderHealth,
+  ageLabel,
+  providerHealthFlagClass,
+  providerHealthCompactModel,
+  VERIFIED_REFRESH_MIN_AGE_MS,
+  STARTUP_PHASE_COPY,
+  shouldRefreshVerifiedData,
+  setStartupPhase,
+  setStartupGateVisible,
+  dispatchVerifiedData,
+  runVerifiedRefresh,
+  installVerifiedRefreshTriggers
+};

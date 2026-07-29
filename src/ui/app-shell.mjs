@@ -18,6 +18,7 @@ function setupAppShell(){
   const leagueView = document.getElementById('view-league');
   const askView = document.getElementById('view-ask');
   const setupPanel = document.getElementById('setupPanel');
+  const evidencePanel = document.getElementById('evidencePanel');
 
   if(!nav || !main || !teamView || !playersView || !transfersView || !fixturesView) return;
 
@@ -59,7 +60,7 @@ function setupAppShell(){
   heading.textContent = 'More';
   const hint = document.createElement('p');
   hint.className = 'hint';
-  hint.textContent = 'Provider detail, Settings, fixtures, mini-league tools and Ask live here.';
+  hint.textContent = 'Automatic evidence, provider detail, Settings, fixtures, mini-league tools and Ask live here.';
   moreHeader.append(eyebrow, heading, hint);
   moreView.appendChild(moreHeader);
 
@@ -90,7 +91,7 @@ function setupAppShell(){
     setupPanel.setAttribute('aria-labelledby','settingsTitle');
   }
 
-  [setupPanel, fixturesView, leagueView, askView].filter(Boolean).forEach(section => {
+  [evidencePanel, setupPanel, fixturesView, leagueView, askView].filter(Boolean).forEach(section => {
     section.classList.remove('view');
     section.hidden = false;
     moreView.appendChild(section);

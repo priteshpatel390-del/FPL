@@ -660,6 +660,8 @@ function renderAll(){
   setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
   if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
   renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual();
+  if(typeof document!=='undefined' && typeof document.dispatchEvent==='function' && typeof CustomEvent==='function')
+    document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
 }
 
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
@@ -689,7 +691,7 @@ const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); 
 // data load must never lose them
 ['teamId','leagueId'].forEach(id => $(id).addEventListener('input', debounce(saveCfg, 300)));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
-$('loadBtn').addEventListener('click', loadAll);
+$('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
 $('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
@@ -723,5 +725,6 @@ document.addEventListener('click', e => {
   S.manual = (await sget(K_SQUAD)) || [];
   S.leagues = (await sget('fpl:leagues')) || [];
   renderLeagueChips();
-  loadAll();
+  await runVerifiedRefresh({reason:'startup',startup:true,force:true});
+  installVerifiedRefreshTriggers();
 })();

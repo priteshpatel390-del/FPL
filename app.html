@@ -20,6 +20,18 @@
 html,body{margin:0;padding:0}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
+body.startup-pending{overflow:hidden}
+.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+.startup-gate[hidden]{display:none}
+.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
+.startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
+.startup-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B9C9BF}
+.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:10px 0 0;overflow:hidden}
+.startup-pitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.34)}
+.startup-pitch:after{content:"";position:absolute;width:20px;height:20px;border:1px solid rgba(255,255,255,.34);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.startup-ball{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);left:14px;top:23px;animation:startup-scan 1.7s ease-in-out infinite alternate}
+@keyframes startup-scan{to{transform:translateX(48px)}}
+@media(prefers-reduced-motion:reduce){.startup-ball{animation:none;left:38px}}
 h1,h2,h3{font-family:'Bricolage Grotesque','Public Sans',sans-serif;margin:0;letter-spacing:-.02em;font-weight:800}
 h3{font-size:14px}
 .mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
@@ -334,9 +346,14 @@ body.player-detail-open{overflow:hidden}
 .transfer-net.positive{color:var(--pitch)}.transfer-net.negative{color:var(--claret)}
 .chip-remove{padding:6px 9px;color:var(--claret)}.muted{color:var(--ink-soft)}
 .data-compact{min-width:520px}
-#providerHealthCompact{margin-top:10px;min-height:38px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff}
-#providerHealthCompact:hover{background:rgba(255,255,255,.16);color:#fff}
-#providerHealthDetail{scroll-margin-top:12px}
+#providerHealthCompact,#evidenceCompact{margin-top:10px;min-height:38px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff}
+#providerHealthCompact:hover,#evidenceCompact:hover{background:rgba(255,255,255,.16);color:#fff}
+#providerHealthDetail,#evidencePanel{scroll-margin-top:12px}
+.evidence-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.evidence-actions .btn{flex:1 1 150px}
+.evidence-message{min-height:18px;margin-top:8px;overflow-wrap:anywhere}
+#evidenceHistory .note{margin:8px 0}
+#evidenceHistory .note>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 button,input,select,textarea{touch-action:manipulation}
 .btn{min-height:44px}.btn.sm{min-height:36px}.chip{min-height:36px}.tab{min-height:52px}
 /* repository-owned shirt palettes: static classes replace inline CSS variables */
@@ -378,7 +395,15 @@ button,input,select,textarea{touch-action:manipulation}
 
 </style>
 </head>
-<body>
+<body class="startup-pending" aria-busy="true">
+
+<section class="startup-gate" id="startupGate" role="status" aria-label="Opening Teamsheet">
+  <div class="startup-card">
+    <div class="startup-wordmark">TEAMSHEET</div>
+    <div class="startup-sub">FPL decision desk</div>
+    <div class="startup-pitch" aria-hidden="true"><span class="startup-ball"></span></div>
+  </div>
+</section>
 
 <header>
   <div class="masthead">
@@ -419,6 +444,29 @@ button,input,select,textarea{touch-action:manipulation}
         </div>
         <p class="hint m-hint-top">The backtest downloads last season's real gameweek data, replays this app's exact formulas against it, reports accuracy, and applies per-position corrections to every projection. Run it once; it's saved.</p>
         <div id="btOut"></div>
+      </div>
+    </details>
+  </section>
+
+
+  <!-- VALIDATION EVIDENCE -->
+  <section class="panel" id="evidencePanel" tabindex="-1" aria-labelledby="evidenceTitle">
+    <span class="eyebrow">Automatic validation</span>
+    <h2 id="evidenceTitle">Deadline evidence</h2>
+    <p class="hint">Teamsheet automatically secures a verified pre-deadline record after approved data has refreshed. No routine action is required.</p>
+    <div class="note plain" id="evidenceStatus"><b>Waiting for season data</b> Evidence will be handled automatically after verification.</div>
+    <p class="status" id="evidenceDeadline">Deadline unavailable.</p>
+    <p class="status evidence-message" id="evidenceMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
+    <details class="mt-12">
+      <summary>Saved evidence and recovery controls</summary>
+      <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
+      <p class="hint m-hint-top">These controls are for backup recovery and diagnostics only. Imported files cannot become official prospective evidence.</p>
+      <div class="evidence-actions">
+        <button class="btn ghost" id="exportEvidenceBtn" disabled>Export latest JSON</button>
+        <button class="btn ghost" id="importEvidenceBtn">Restore backup JSON</button>
+        <button class="btn ghost" id="captureEvidenceBtn" disabled>Diagnostic capture</button>
+        <button class="btn ghost" id="deleteEvidenceBtn">Delete local evidence</button>
+        <input type="file" id="evidenceImport" accept="application/json,.json" hidden>
       </div>
     </details>
   </section>

@@ -2,6 +2,28 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 
+
+## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation (draft)
+### Added
+- Immutable anonymised pre-deadline evidence with official FPL deadline timing, network-clock grades, deterministic whole-record/section hashes and verified JSON import/export.
+- All-player projections, expected minutes, live uncertainty summaries, provider/source provenance and available squad/decision/optimiser evidence.
+- Silent minimalist startup verification screen, automatic app-open/foreground refresh, one-shot verified rendering and automatic eligible evidence capture.
+- Compact phone-first evidence status plus bounded compressed local recovery with explicit export/restore/delete controls.
+- Focused deadline, tamper, privacy, chunking, compression, quota and storage tests.
+### Changed
+- Startup and foreground refresh now await every approved provider state before one final render; no intermediate mixed dataset is exposed.
+- Eligible evidence capture starts automatically after verified data is ready but no longer holds the startup screen open.
+- Runtime provider identity is allowlisted; restored JSON is recovery-only and cannot become official evidence.
+- Monte Carlo fixture components are precomputed once per player/fixture and summary-only callers omit raw arrays; the approved 5,000 samples and outputs remain unchanged.
+- `connect-src` permits same-origin timing evidence; the bundler injects script content through a callback to prevent replacement-string byte corruption.
+### Verification
+- Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 passing**, successful production build, byte-identical two-build output and exact build identity. The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.
+- Synthetic 620-player/5,000-sample capture: roughly 2.8–3.5 seconds; canonical JSON about 2.2 MB and local gzip recovery about 153 KB.
+- Physical iPhone startup, foreground refresh, automatic capture and recovery-restore acceptance remain the draft-PR gate before merge.
+### Unchanged
+- No projection, expected-minutes, scoring, fixture, simulation distribution, captaincy, squad, provider blend, calibration or optimiser objective changed.
+- No retrospective accuracy or probability-calibration claim.
+
 ## [Stage 9.6] — 2026-07-29 — Style migration, CSP and final polish
 ### Added
 - Static utility and club-palette classes replacing fixed and generated style attributes.

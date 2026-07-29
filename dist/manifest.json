@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "c272f031a174e31bb437371f23b9d0f7f700120953e6b1fc850f2978e81c6b3b",
-  "commit": "4a4b14c1d0f422088c080e714ee259efbd7cc39d",
+  "sourceHash": "fee29e1625bcf6849411a1e1f18c85a2525db8eb47a80d8492a996013e535523",
+  "commit": "eb3497ec405d6c7b8ce09105614fcb8280abc34b",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -32,10 +32,12 @@
     "src/ui/team-pitch.mjs",
     "src/ui/player-detail.mjs",
     "src/ui/decision-preview.mjs",
+    "src/evidence/snapshot.mjs",
     "src/ui/views.mjs",
     "src/ui/transfer-optimiser-view.mjs",
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
-    "src/ui/security-wiring.mjs"
+    "src/ui/security-wiring.mjs",
+    "src/ui/evidence.mjs"
   ]
 }

@@ -7,7 +7,8 @@ const S = {
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
   dataIssues:[],
   retryStats:{},
-  minuteHistory:{}
+  minuteHistory:{},
+  lastOptimiser:null
 };
 
 /* ---------------------------------------------------------------------

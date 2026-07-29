@@ -72,3 +72,11 @@ A repository-owned seeded PRNG makes equal inputs deterministic. Appearance is r
 Poisson and shrinkage constants remain judgement-based. Bonus is empirical rather than match-relative BPS simulation. Player attacking events are not strictly allocated from a full simulated team score. Tactical substitutions, detailed match state and second-yellow overlap are not fully modelled. Defensive-contribution history begins in 2025/26. Historical provider gaps prevent full retrospective probability calibration.
 
 No prediction-accuracy or probability-calibration improvement is claimed. Prospective 2026/27 observations are required before such claims.
+
+
+## Stage 10 snapshot interaction
+Stage 10.1 observes this model; it does not alter it. For every player it stores the existing next-Gameweek component projection, horizon totals, expected-minutes outputs and deterministic live-season uncertainty summary. The raw Monte Carlo arrays are discarded after summarisation, while the unchanged 5,000 sample count, seed and percentiles/probabilities are retained.
+
+The simulation implementation precomputes invariant fixture component expectations before sampling. This removes repeated deterministic work only: random seed, minutes states, Poisson/Bernoulli draws, scoring rules and summary thresholds are unchanged. Prospective outcomes are required before any calibration or accuracy conclusion.
+
+The Stage 10.1 startup amendment changes only when a fully validated provider state becomes visible. It does not change any projection component, expected-minutes input, blend weight, simulation draw, captaincy choice or optimiser objective.

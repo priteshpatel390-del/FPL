@@ -5,7 +5,7 @@ Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 9.6 verified branch baseline: **313/313 passing tests**, successful production build, deterministic two-build comparison and exact build-identity checks. Verified source is `4a4b14c1d0f422088c080e714ee259efbd7cc39d`; generated artefacts are committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. Source and deployable scans confirm no style attributes/runtime style APIs, no `style-src-attr` and no `unsafe-inline`.
+Stage 10.1 verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -26,6 +26,8 @@ Stage 9.6 verified branch baseline: **313/313 passing tests**, successful produc
 16. `provider-health-ui.test.mjs` — Stage 9.5 compact age/status modelling, deterministic highest-attention state, status palette mapping and Settings/full-detail wiring.
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
+19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
+20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
@@ -38,7 +40,7 @@ Stages 8–9.6 change no deterministic projection formula and require no golden 
 ## Required checks before completion
 1. Run `./run-tests.sh` with every committed test green and no golden regeneration.
 2. Build twice with the same exact source commit in `BUILD_COMMIT`.
-3. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte.
+3. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte, then verify the generated root `index.html` deployment copy is identical to `dist/index.html`.
 4. Independently verify CSP/build identity through the committed security tests and emitted manifest.
 5. Confirm `BUILD_INFO`, manifest module order, source hash, commit identity and generated files agree.
 6. Commit verified generated artefacts.
@@ -46,3 +48,8 @@ Stages 8–9.6 change no deterministic projection formula and require no golden 
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 8 probability coverage must be evaluated prospectively during 2026/27 before any calibration claim.
+
+## Stage 10.1 evidence tests
+`evidence-snapshot.test.mjs` covers canonical JSON, SHA-256, secret rejection, every approved deadline boundary, same-origin clock evidence, client-only/conflict/late grades, provider cutoffs, immutable identity, section tampering, deadline revisions, official selection, privacy, all-player output shape, chunked collection and bundle/UI wiring.
+
+`evidence-storage.test.mjs` covers random stable anonymous references, gzip/plain recovery encoding, three-row metadata/two-record bounds, verified reload, recovery-import segregation, quota failure surfacing and explicit delete/reset. `startup-refresh.test.mjs` covers the automatic verified-data gate and foreground trigger contracts. Existing simulation, scoring and golden tests guard the performance refactor against model-output changes. Final verification requires `./run-tests.sh`, two byte-identical builds with the exact source commit and manifest/build identity checks.

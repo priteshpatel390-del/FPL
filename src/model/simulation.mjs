@@ -105,7 +105,7 @@ function simulatePlayerFixture(player,fixture,rng,options={}){
   const distribution = options.distribution || buildMinutesDistribution(mins);
   const sampled = sampleMinutes(distribution,rng);
   if(sampled.minutes <= 0) return {points:0,minutes:0,appeared:false,reached60:false,state:sampled.state};
-  const {expected,parts} = componentMeans(player,fixture);
+  const {expected,parts} = options.components || componentMeans(player,fixture);
   const appearMean = num(parts['Appearance']);
   const baseAppearance = sampled.minutes >= 60 ? 2 : 1;
   let points = baseAppearance;
@@ -148,17 +148,19 @@ function simulatePlayerGameweek(player,gw,options={}){
   }
   const seed = options.seed ?? createSeed(SIMULATION_RULES.version,player.id,gw,sampleCount,fixtures.map(f => f.fixture?.id || `${f.fixture?.team_h}-${f.fixture?.team_a}`).join(','));
   const rng = createRng(seed), mins = minutesEstimate(player), distribution = buildMinutesDistribution(mins), samples=[], appearanceSamples=[];
+  const contexts=fixtures.map(fixture=>({fixture,components:componentMeans(player,fixture)}));
   for(let i=0;i<sampleCount;i++){
     let total = 0, appeared = false;
-    for(const fixture of fixtures){
-      const outcome=simulatePlayerFixture(player,fixture,rng,{minutes:mins,distribution});
+    for(const context of contexts){
+      const outcome=simulatePlayerFixture(player,context.fixture,rng,{minutes:mins,distribution,components:context.components});
       total += outcome.points;
       appeared = appeared || outcome.appeared;
     }
     samples.push(total);
     appearanceSamples.push(appeared);
   }
-  return {available:true,samples,appearanceSamples,seed,quality:distribution.quality,appearanceProbability:mins.pAppear,sixtyProbability:mins.p60,...summariseSamples(samples)};
+  const summary=summariseSamples(samples), includeSamples=options.includeSamples!==false;
+  return {available:true,samples:includeSamples?samples:[],appearanceSamples:includeSamples?appearanceSamples:[],sampleCount,seed,quality:distribution.quality,appearanceProbability:mins.pAppear,sixtyProbability:mins.p60,...summary};
 }
 
 export { hashSeed, createSeed, createRng, poisson, bernoulli, buildMinutesDistribution, sampleMinutes, percentile, summariseSamples, simulatePlayerFixture, simulatePlayerGameweek };

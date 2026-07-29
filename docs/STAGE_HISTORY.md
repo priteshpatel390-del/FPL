@@ -2,6 +2,12 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-29.
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, AUDIT.md.
 
+
+## Stage 10.1 — Deadline-safe snapshot foundation (DRAFT PR #27; owner/device review pending)
+The owner approved the complete Stage 10 design and 10.1–10.5 sequence. Stage 10.1 adds immutable anonymised pre-deadline records, official-deadline timing/leakage controls, provider/source provenance, all-player projections/minutes/uncertainty summaries, available squad/decision/optimiser context, whole-record and section hashes, bounded compressed local recovery and complete JSON export/import.
+
+The first 620-player benchmark exposed a runtime above three minutes. Review preserved the approved 5,000 samples and removed repeated invariant fixture calculations, reducing the synthetic run to roughly 2.8–3.5 seconds in the repository environment. A later owner-approved amendment adds a minimalist startup gate, automatic startup/ten-minute foreground verification, a closed four-provider allowlist, deferred one-shot rendering, automatic eligible evidence capture and recovery-only imports. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes 349/349 tests with a successful production build, byte-identical two-build output and exact build identity. Physical iPhone startup/foreground/recovery acceptance remains pending. No formula, provider blend, calibration, captaincy, squad or optimiser objective changed. The work remains unmerged on draft PR #27 pending owner/device review.
+
 ## Stage 9.6 — Style migration, CSP and final polish (MERGED 2026-07-29)
 Removed every static and generated style attribute and runtime style API from the production boundary. Fixed presentation now uses utility and club-palette classes; projection component bars use native progress elements; uncertainty geometry uses namespace-correct SVG attributes. The shared DOM helper rejects style input and the build fails closed if source or generated deployables contain style attributes/runtime style APIs.
 

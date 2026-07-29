@@ -49,17 +49,18 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
 
 ## Current
-- **Stage 10 — Prospective Live-Season Validation** · investigation and design approval checkpoint.
-- No Stage 10 implementation, schema, storage or model change has begun.
-- The proposed design must define immutable pre-deadline snapshots, post-Gameweek outcomes, leakage controls, deterministic metrics, provider/fallback evidence, export/storage and a phone-first operating workflow.
+- **Stage 10.1 — Deadline-safe snapshot foundation** · amended and locally verified on draft PR #27; owner review and physical iPhone startup/foreground/recovery acceptance pending.
+- Approved scope: immutable all-player pre-deadline records plus automatic approved-source startup/foreground verification, one consistent final render, automatic eligible capture, deterministic hashes and non-official recovery restore.
+- Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passing**, successful production build, byte-identical two-build output and exact build identity.
+- No projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
 
 ## Upcoming
-1. Investigate and approve the complete Stage 10 design and checkpoint sequence.
-2. After explicit approval, implement Stage 10.1 as a separate branch and draft PR.
-3. Begin deadline-safe prospective evidence capture before live GW1 on 21 August 2026.
+1. Complete owner review and the physical iPhone capture/export/import acceptance check for Stage 10.1.
+2. Merge Stage 10.1 only after explicit owner approval.
+3. Begin separately scoped Stage 10.2 official-outcome collection before evaluating any prospective metrics.
 
 ## Current blockers
-1. Stage 10 design decisions and checkpoint sequence require owner approval before implementation.
+1. Stage 10.1 requires owner review and physical iPhone acceptance before merge.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.

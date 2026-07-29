@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  APPROVED_PROVIDER_NAMES, APPROVED_PROVIDER_SOURCES, providerTrustError,
   HEALTH_STATES, HEALTH_THRESHOLDS_MS, resetHealth, markLive, markCached,
   markFallback, markPartial, markDisabled, markUnavailable, markHealth,
   getHealth, healthRows, thresholdFor
@@ -8,10 +9,31 @@ import {
 
 test.beforeEach(() => resetHealth());
 
+test('approved provider registry is closed and names only repository-reviewed sources', () => {
+  assert.deepEqual(APPROVED_PROVIDER_NAMES,['fpl','understat','odds','archive']);
+  assert.equal(APPROVED_PROVIDER_SOURCES.fpl.authority,'official');
+  assert.equal(APPROVED_PROVIDER_SOURCES.understat.purpose,'team-level rolling xG only');
+});
+
+test('provider trust validation rejects unknown and malformed provenance', () => {
+  const at=new Date(1000).toISOString();
+  const row=name=>({provider:name,state:name==='fpl'?'Live':'Disabled',included:name==='fpl',didAffectModel:name==='fpl',acceptedRecordCount:name==='fpl'?1:0,rejectedRecordCount:0,recordedAt:at,lastSuccessAt:name==='fpl'?at:null});
+  const approved=APPROVED_PROVIDER_NAMES.map(row);
+  assert.equal(providerTrustError(approved),null);
+  assert.equal(providerTrustError([...approved.slice(0,3),row('other')]),'provider_unapproved');
+  assert.equal(providerTrustError(approved.slice(0,3)),'provider_missing');
+  assert.equal(providerTrustError(approved.map((entry,index)=>index?entry:{...entry,didAffectModel:false})),'provider_usage');
+});
+
+
 test('exports the approved seven provider-health states', () => {
   assert.deepEqual(Object.values(HEALTH_STATES), [
     'Live','Cached','Stale','Fallback','Partial','Disabled','Unavailable'
   ]);
+});
+
+test('runtime health refuses providers outside the approved registry', () => {
+  assert.throws(()=>markLive('unknown-provider','nope'),/not approved/);
 });
 
 test('live success records lastSuccess and consequence', () => {

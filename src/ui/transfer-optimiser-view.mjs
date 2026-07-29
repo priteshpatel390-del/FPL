@@ -25,10 +25,12 @@ function renderTransfers(){
   const maxResults=Math.max(1,Math.min(20,Math.trunc(num($('trTop')?.value)||10)));
   const bank=Math.max(0,Math.round(num($('bankIn')?.value)*10));
   const freeTransfers=Math.max(0,Math.min(5,Math.trunc(num($('ftCount')?.value)||0)));
+  const squadSignature=decisionPreviewSquadSignature(squad);
   const result=optimiseTransfers({
     squad,players:S.boot?.elements||[],bank,freeTransfers,startGW:S.nextGW,horizon,maxResults,
     scorePlayer:(p,gw)=>xpOf(p,gw,1).total
   });
+  S.lastOptimiser={result,horizon,bank,freeTransfers,startGW:S.nextGW,squadSignature};
   if(result.status==='invalid-input'){
     setChildren(out,el('div',{class:'note bad'},el('b',{},'Squad cannot be optimised.'),` Fix: ${result.issues.join(', ')}.`));
     return;
@@ -42,7 +44,6 @@ function renderTransfers(){
     return;
   }
   const plans=result.plans||[];
-  const squadSignature=decisionPreviewSquadSignature(squad);
   const optimiserSignature=decisionPreviewOptimiserSignature({squadSignature,horizon,bank,freeTransfers,plans});
   const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
   if(previewCleared && typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
