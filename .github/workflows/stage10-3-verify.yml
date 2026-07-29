@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/stage10-3-metrics
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -27,32 +30,127 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
-          metrics = Path('src/evidence/metrics.mjs')
-          text = metrics.read_text()
-          bad = "const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]);"
-          good = "const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));"
-          if bad not in text:
+          metrics_path = Path('src/evidence/metrics.mjs')
+          metrics = metrics_path.read_text()
+
+          syntax_bad = "const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]);"
+          syntax_good = "const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));"
+          if syntax_bad not in metrics:
               raise SystemExit('expected metrics syntax target not found')
-          metrics.write_text(text.replace(bad, good))
+          metrics = metrics.replace(syntax_bad, syntax_good)
+          metrics = metrics.replace("errorBands:Object.freeze([0,2,5,10,Infinity])", "errorBands:Object.freeze([0,2,5,10])")
+          metrics = metrics.replace("createdAt:new Date().toISOString(),rules:METRIC_RULES", "createdAt:outcome.collection?.completedAt||outcome.collection?.finalisedAt||new Date(0).toISOString(),rules:METRIC_RULES")
+          metrics = metrics.replace("createdAt:new Date().toISOString(),sources:{startEvaluationId", "createdAt:records.map(record=>record.createdAt).filter(Boolean).sort().at(-1)||startEvaluation.createdAt||new Date(0).toISOString(),sources:{startEvaluationId")
+          metrics = metrics.replace(
+              "return canonicalise({scoringXI,usedBenchIds:used,replacements,basePoints,autoSubContribution:",
+              "return canonicalise({activeXI:active,scoringXI,usedBenchIds:used,replacements,basePoints,autoSubContribution:"
+          )
+          metrics = metrics.replace("legal=legalXIIds(multiplierXI,positions)", "legal=legalXIIds(reconstructed.activeXI,positions)")
+          metrics = metrics.replace(
+              "const selectedKey=sortedNumbers(starters).join(','),realisedOrder=alternatives.slice().sort((a,b)=>b.realisedPoints-a.realisedPoints||a.playerIds.join(',').localeCompare(b.playerIds.join(','))),selectedRank=Math.max(0,realisedOrder.findIndex(row=>row.playerIds.join(',')===selectedKey))+1;",
+              "const selectedKey=sortedNumbers(starters).join(','),realisedOrder=alternatives.slice().sort((a,b)=>b.realisedPoints-a.realisedPoints||a.playerIds.join(',').localeCompare(b.playerIds.join(','))),selectedIndex=realisedOrder.findIndex(row=>row.playerIds.join(',')===selectedKey),selectedRank=selectedIndex>=0?selectedIndex+1:null;"
+          )
+          transfer_anchor = "  const projectionByPlayer=new Map((basis.players||[]).map(row=>[Number(row.playerId),row]));\n"
+          transfer_guard = "  const projectionByPlayer=new Map((basis.players||[]).map(row=>[Number(row.playerId),row]));\n  const candidatePlans=[basis.baseline,...(basis.plans||[])];\n  for(const plan of candidatePlans){\n    const squadIds=(plan?.finalSquadIds||[]).map(Number);\n    if(squadIds.some(id=>!projectionByPlayer.has(id))) return {ok:false,reason:'missing_frozen_player'};\n    for(let index=0;index<records.length;index++){\n      const outcomeIds=new Set((records[index].observations?.players||[]).map(row=>Number(row.playerId)));\n      if(squadIds.some(id=>!outcomeIds.has(id))) return {ok:false,reason:'missing_player_outcome',gameweek:required[index]};\n    }\n  }\n"
+          if transfer_anchor not in metrics:
+              raise SystemExit('expected transfer guard target not found')
+          metrics = metrics.replace(transfer_anchor, transfer_guard)
 
-          ui = Path('src/ui/metrics.mjs')
-          text = ui.read_text()
-          old = "if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);"
-          new = "if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);"
-          if old not in text:
+          rename = {
+              'finite':'evaluationFinite',
+              'mean':'evaluationMean',
+              'sameArray':'evaluationSameArray',
+              'sortedNumbers':'evaluationSortedNumbers',
+              'setEqual':'evaluationSetEqual',
+              'roundMetric':'evaluationRound',
+              'positionLabel':'evaluationPositionLabel',
+              'seasonPeriod':'evaluationSeasonPeriod',
+              'priceBand':'evaluationPriceBand',
+              'availabilityLabel':'evaluationAvailabilityLabel',
+              'errorBand':'evaluationErrorBand',
+              'pearson':'evaluationPearson',
+              'averageRanks':'evaluationAverageRanks',
+              'spearman':'evaluationSpearman',
+              'metricSummary':'evaluationMetricSummary',
+              'brierScore':'evaluationBrierScore',
+              'reliabilityBins':'evaluationReliabilityBins',
+              'intervalSummary':'evaluationIntervalSummary',
+              'sampleStatus':'evaluationSampleStatus',
+              'fixtureStat':'evaluationFixtureStat',
+              'fixturesForClub':'evaluationFixturesForClub',
+              'outcomeFixturesForClub':'evaluationOutcomeFixturesForClub',
+              'fixtureContext':'evaluationFixtureContext',
+              'observedRole':'evaluationObservedRole',
+              'allocateMinuteFixtures':'evaluationAllocateMinuteFixtures',
+              'formationCounts':'evaluationFormationCounts',
+              'legalXIIds':'evaluationLegalXIIds',
+              'combinations':'evaluationCombinations',
+              'enumerateLegalXIs':'evaluationEnumerateLegalXIs',
+              'benchOrderForXI':'evaluationBenchOrderForXI',
+              'applyRealisedAutosubs':'evaluationApplyRealisedAutosubs',
+              'captainPairScore':'evaluationCaptainPairScore',
+              'managerDecisionEvaluation':'evaluationManagerDecisionEvaluation',
+              'decisionEvaluation':'evaluationDecisionEvaluation',
+              'playerSegments':'evaluationPlayerSegments',
+              'outcomeCoverage':'evaluationOutcomeCoverage',
+              'playerReport':'evaluationPlayerReport',
+              'minutesReport':'evaluationMinutesReport',
+              'uncertaintyReport':'evaluationUncertaintyReport',
+              'evaluationDataMaterial':'stage10EvaluationDataMaterial',
+              'evaluationHashMaterial':'stage10EvaluationHashMaterial',
+              'evaluationShapeError':'stage10EvaluationShapeError',
+              'segmentValue':'evaluationSegmentValue',
+              'transferDataMaterial':'evaluationTransferDataMaterial',
+              'transferHashMaterial':'evaluationTransferHashMaterial',
+              'scoreFrozenSquad':'evaluationScoreFrozenSquad',
+          }
+          for old, new in rename.items():
+              metrics = re.sub(rf'\b{re.escape(old)}\b', new, metrics)
+          metrics_path.write_text(metrics)
+
+          tests_path = Path('tests/metrics.test.mjs')
+          tests = tests_path.read_text()
+          for old, new in rename.items():
+              tests = re.sub(rf'\b{re.escape(old)}\b', new, tests)
+          tests_path.write_text(tests)
+
+          ui_path = Path('src/ui/metrics.mjs')
+          ui = ui_path.read_text()
+          ui_rename = {
+              'encodedBytes':'metricEncodedBytes',
+              'currentMetadata':'metricCurrentMetadata',
+              'fmt':'metricFormat',
+              'pct':'metricPercent',
+              'sampleClass':'metricSampleClass',
+          }
+          for old, new in ui_rename.items():
+              ui = re.sub(rf'\b{re.escape(old)}\b', new, ui)
+          old_init = "if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);"
+          new_init = "if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);"
+          if old_init not in ui:
               raise SystemExit('expected metric UI trigger target not found')
-          ui.write_text(text.replace(old, new))
+          ui = ui.replace(old_init, new_init)
+          ui_path.write_text(ui)
+
+          storage_tests_path = Path('tests/metrics-storage.test.mjs')
+          storage_tests = storage_tests_path.read_text()
+          for old, new in ui_rename.items():
+              storage_tests = re.sub(rf'\b{re.escape(old)}\b', new, storage_tests)
+          storage_tests_path.write_text(storage_tests)
           PY
           node --check src/evidence/metrics.mjs
           node --check src/ui/metrics.mjs
+          node --check tests/metrics.test.mjs
+          node --check tests/metrics-storage.test.mjs
 
       - name: Commit source corrections
         id: source
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/evidence/metrics.mjs src/ui/metrics.mjs
+          git add src/evidence/metrics.mjs src/ui/metrics.mjs tests/metrics.test.mjs tests/metrics-storage.test.mjs
           git commit -m 'Fix Stage 10.3 metric integration'
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
