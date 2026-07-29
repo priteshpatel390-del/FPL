@@ -51,7 +51,7 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 ## Current
 - **Stage 10.1 — Deadline-safe snapshot foundation** · implemented and locally verified on draft PR #27; owner review and physical iPhone acceptance pending.
 - Approved scope: immutable all-player pre-deadline records, official-deadline timing evidence, provider/source provenance, deterministic hashes, anonymised local recovery and JSON export/import.
-- Verified source `__SOURCE_SHA__`: **337/337 tests passing**, successful production build, byte-identical two-build output and exact build identity.
+- Verified source `09dc35a5aa71e493233e7b6d8cacca92b60abb48`: **337/337 tests passing**, successful production build, byte-identical two-build output and exact build identity.
 - No projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
 
 ## Upcoming

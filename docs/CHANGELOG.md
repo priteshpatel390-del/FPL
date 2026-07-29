@@ -14,7 +14,7 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 - Monte Carlo fixture components are precomputed once per player/fixture and summary-only callers omit raw arrays; the approved 5,000 samples and outputs remain unchanged.
 - `connect-src` permits same-origin timing evidence; the bundler injects script content through a callback to prevent replacement-string byte corruption.
 ### Verification
-- Verified source `__SOURCE_SHA__`: **337/337 passing**, successful production build, byte-identical two-build output and exact build identity.
+- Verified source `09dc35a5aa71e493233e7b6d8cacca92b60abb48`: **337/337 passing**, successful production build, byte-identical two-build output and exact build identity.
 - Synthetic 620-player/5,000-sample capture: roughly 2.8–3.5 seconds; canonical JSON about 2.2 MB and local gzip recovery about 153 KB.
 - Physical iPhone capture/export/import acceptance remains the draft-PR gate before merge.
 ### Unchanged
