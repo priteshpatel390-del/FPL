@@ -27,7 +27,7 @@ Stage 10.1 verified source `73cdca817f7070a745fb642e1070d77a6bdaca9b`: **349/349
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
 19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
-20. `startup-refresh.test.mjs` — minimalist startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, awaited automatic evidence and recovery-only UI wiring.
+20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.

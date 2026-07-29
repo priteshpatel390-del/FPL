@@ -7,11 +7,12 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 ### Added
 - Immutable anonymised pre-deadline evidence with official FPL deadline timing, network-clock grades, deterministic whole-record/section hashes and verified JSON import/export.
 - All-player projections, expected minutes, live uncertainty summaries, provider/source provenance and available squad/decision/optimiser evidence.
-- Minimalist startup verification screen, automatic app-open/foreground refresh, one-shot verified rendering and automatic eligible evidence capture.
+- Silent minimalist startup verification screen, automatic app-open/foreground refresh, one-shot verified rendering and automatic eligible evidence capture.
 - Compact phone-first evidence status plus bounded compressed local recovery with explicit export/restore/delete controls.
 - Focused deadline, tamper, privacy, chunking, compression, quota and storage tests.
 ### Changed
 - Startup and foreground refresh now await every approved provider state before one final render; no intermediate mixed dataset is exposed.
+- Eligible evidence capture starts automatically after verified data is ready but no longer holds the startup screen open.
 - Runtime provider identity is allowlisted; restored JSON is recovery-only and cannot become official evidence.
 - Monte Carlo fixture components are precomputed once per player/fixture and summary-only callers omit raw arrays; the approved 5,000 samples and outputs remain unchanged.
 - `connect-src` permits same-origin timing evidence; the bundler injects script content through a callback to prevent replacement-string byte corruption.

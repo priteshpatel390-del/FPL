@@ -12,9 +12,9 @@ Status: **implemented and locally verified on draft PR #27; owner review and phy
 - Random anonymous manager reference; FPL Team ID, manager name, league identifiers, config and secrets excluded.
 - Bounded local recovery: three metadata rows and two compressed full records, verified writes, quota recovery and explicit delete/reset.
 - Complete unencrypted JSON export/import.
-- Minimalist startup verification gate with plain-English phases; the app opens only after Official FPL and approved optional providers resolve to a verified live/cache/fallback/disabled state.
+- Silent minimalist startup gate showing only the Teamsheet identity and restrained loader; provider and update details remain off-screen unless a genuine failure blocks safe use.
 - Automatic refresh at startup and when the page returns to the foreground after ten minutes, with intermediate renders suppressed and one consistent final update.
-- Automatic eligible evidence capture after verification, with duplicate suppression across open, due-soon, ideal and final windows.
+- Automatic eligible evidence capture is dispatched after verification without extending the startup gate, with duplicate suppression across open, due-soon, ideal and final windows.
 - Compact global status and phone-first More > Deadline evidence surface; export/restore/delete are subordinate recovery controls and no routine user action is required.
 - Recovery imports are provider-allowlisted and stored as non-official `recovery_import` records.
 - Transfer evidence reuses the exact result already rendered for the same squad/horizon/bank/free-transfer context instead of rerunning the search.
@@ -33,6 +33,6 @@ No closed-app/background service, outcome ingestion, metrics, CSV/season bundle,
 - Focused evidence tests cover deadline boundaries, timing grades, provider cutoff, hashes/tampering, deadline changes, privacy, chunking, compression, bounded storage, quota failure, import and delete/reset.
 
 ## Remaining acceptance gate
-Open the review deployment on Pritesh’s iPhone and verify: status readability, capture progress, no unacceptable interaction lock, JSON download, JSON re-import, local delete/reset and no console-visible error. Stage 10.1 must remain draft until this check is reported.
+Open the review deployment on Pritesh’s iPhone and verify: the silent loader is visually clean and brief, the app opens without waiting for evidence capture, foreground refresh causes no unacceptable interaction lock, recovery controls work and no console-visible error occurs. Stage 10.1 must remain draft until this check is reported.
 
 - The generated root `index.html` deployment copy is byte-identical to `dist/index.html`.

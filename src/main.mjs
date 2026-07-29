@@ -230,11 +230,7 @@ function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFI
   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
 }
 function setStartupPhase(key){
-  if(typeof document==='undefined') return;
-  const copy=STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
-  const title=$('startupTitle'), detail=$('startupDetail');
-  if(title) title.textContent=copy[0];
-  if(detail) detail.textContent=copy[1];
+  return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
 }
 function setStartupGateVisible(visible){
   if(typeof document==='undefined') return;
@@ -280,10 +276,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       });
       if(report.criticalReady){
         lastVerifiedRefreshAt=nowFn();
-        setStartupPhase('evidence');
-        await dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
-        setStartupPhase('ready');
         document.body?.classList?.remove('data-restricted');
+        void dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
       }else{
         setStartupPhase('restricted');
         document.body?.classList?.add('data-restricted');
