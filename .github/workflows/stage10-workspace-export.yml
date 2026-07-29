@@ -1,11 +1,9 @@
 name: Temporary Stage 10 source verifier
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-    types:
-      - reopened
+      - agent/stage10-1-deadline-snapshot
 
 permissions:
   contents: write
@@ -16,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: agent/stage10-1-deadline-snapshot
           fetch-depth: 0
       - name: Detect complete payload
         id: payload
@@ -45,8 +42,9 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
+          import subprocess
           from pathlib import Path
-          source = Path('.git/refs/heads/' + Path('.git/HEAD').read_text().strip().split('/')[-1]).read_text().strip() if Path('.git/HEAD').read_text().startswith('ref:') else Path('.git/HEAD').read_text().strip()
+          source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           for path in [Path('CLAUDE.md'), *Path('docs').glob('*.md')]:
               text = path.read_text()
               if '__SOURCE_SHA__' in text:
