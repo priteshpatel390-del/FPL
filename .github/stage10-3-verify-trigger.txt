@@ -1,1 +1,0 @@
-Temporary Stage 10.3 verification trigger. Remove after the final successful run.
