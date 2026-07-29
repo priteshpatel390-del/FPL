@@ -30,34 +30,39 @@ jobs:
 
           outcome=Path('src/evidence/outcome.mjs')
           text=outcome.read_text()
-          old="""  const outcomeDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);
-          if(previousRecord?.identity?.outcomeDataHash===outcomeDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};
-          let status=payload.status;
-          if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==outcomeDataHash) status=OUTCOME_STATUSES.CORRECTED;
-          const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1;
-          """
-          new="""  const candidateDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);
-          if(previousRecord?.identity?.outcomeDataHash===candidateDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};
-          let status=payload.status;
-          if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==candidateDataHash) status=OUTCOME_STATUSES.CORRECTED;
-          const outcomeDataHash=status===payload.status?candidateDataHash:await sha256Hex(stableStringify(outcomeDataMaterial({...payload,status})),cryptoImpl);
-          const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1;
-          """
-          if old not in text:
-              raise SystemExit('Outcome correction anchor not found')
-          outcome.write_text(text.replace(old,new,1))
+          replacements=[
+            (
+              "  const outcomeDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);",
+              "  const candidateDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);"
+            ),
+            (
+              "  if(previousRecord?.identity?.outcomeDataHash===outcomeDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};",
+              "  if(previousRecord?.identity?.outcomeDataHash===candidateDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};"
+            ),
+            (
+              "  if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==outcomeDataHash) status=OUTCOME_STATUSES.CORRECTED;",
+              "  if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==candidateDataHash) status=OUTCOME_STATUSES.CORRECTED;"
+            )
+          ]
+          for old,new in replacements:
+              if text.count(old)!=1:
+                  raise SystemExit(f'Outcome correction line count was {text.count(old)}: {old[:60]}')
+              text=text.replace(old,new,1)
+          revision="  const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1;"
+          if text.count(revision)!=1:
+              raise SystemExit('Outcome revision anchor was not unique')
+          text=text.replace(revision,"  const outcomeDataHash=status===payload.status?candidateDataHash:await sha256Hex(stableStringify(outcomeDataMaterial({...payload,status})),cryptoImpl);\n"+revision,1)
+          outcome.write_text(text)
 
           test_path=Path('tests/outcome-collection.test.mjs')
           test_text=test_path.read_text()
-          old_test="""test('records exclude Team ID, manager names, leagues, configuration and secrets',async()=>{
-            setup(1); S.teamId='1234567';
-            const payload=(await collectOutcomePayload({managerRef,gameweek:1,event:event(),fixturesPayload:[fixture()],livePayload:{elements:[player(1)]},startedAt:1,completedAt:2})).payload;
-            const text=JSON.stringify(payload);
-            assert.equal(text.includes('1234567'),false);
-            assert.equal(/managerName|leagueId|oddsKey|apiKey/.test(text),false);
-          });
-          """.replace('            ','')
-          new_test="""test('records exclude Team ID, manager names, leagues, configuration and secrets',async()=>{
+          start="test('records exclude Team ID, manager names, leagues, configuration and secrets',async()=>{"
+          end="\n\ntest('due Gameweeks are selected only after their official deadlines'"
+          start_at=test_text.find(start)
+          end_at=test_text.find(end,start_at)
+          if start_at<0 or end_at<0:
+              raise SystemExit('Privacy test block was not found')
+          replacement="""test('records exclude Team ID, manager names, leagues, configuration and secrets',async()=>{
             setup(1); S.teamId='1234567';
             const first=(await collectOutcomePayload({managerRef,gameweek:1,event:event(),fixturesPayload:[fixture()],livePayload:{elements:[player(1)]},startedAt:1,completedAt:2})).payload;
             S.teamId='7654321';
@@ -66,9 +71,7 @@ jobs:
             assert.equal(/teamId|entryId|managerName|leagueId|oddsKey|apiKey/.test(JSON.stringify(first)),false);
           });
           """.replace('            ','')
-          if old_test not in test_text:
-              raise SystemExit('Privacy invariant anchor not found')
-          test_path.write_text(test_text.replace(old_test,new_test,1))
+          test_path.write_text(test_text[:start_at]+replacement+test_text[end_at:])
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
