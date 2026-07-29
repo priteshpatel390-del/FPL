@@ -1,6 +1,6 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-07-28. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
+Last updated: 2026-07-29. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives:

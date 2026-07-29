@@ -20,7 +20,7 @@ Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 ### Unchanged
 - No projection, expected-minutes, scoring, simulation, best-XI, captaincy, optimiser, provider, storage or odds-key behaviour changed.
 ### Status
-- Implemented and verified on draft PR #25; awaiting owner review and explicit merge approval.
+- Merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`; Stage 9 is complete.
 
 ## [Stage 9.5] — 2026-07-29 — More, Settings and Provider Health
 ### Added

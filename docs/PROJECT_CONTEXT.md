@@ -8,9 +8,9 @@ Audience: anyone joining the project. Last updated: 2026-07-29. Related: ARCHITE
 ## Current status
 - Live on GitHub Pages from repository `priteshpatel390-del/FPL`.
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
-- Stages 1–8 and Stage 9 checkpoints 9.1–9.5 are complete and merged.
+- Stages 1–9 are complete and merged.
 - Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.
-- Stage 9.6 — Style migration, CSP and final polish is implemented and verified on draft PR #25 with 313 passing tests, deterministic builds, zero inline style attributes and browser-reviewed mobile/desktop layouts; owner review and explicit merge approval remain required.
+- Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.
 - The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
@@ -36,11 +36,11 @@ The overriding principle is the simplest reliable data stack that supports good 
 Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 18 or newer runs the custom deterministic bundler and `node:test` suite. `node build.mjs` emits `dist/index.html`, the single deployable uploaded through the GitHub web interface. The custom bundler strips complete static module declarations, rejects surviving module syntax and embeds model, rules, source-hash and commit identity.
 
 ## Completed, current and next
-Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and Stage 9 checkpoints 9.1–9.5.
+Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and all six Stage 9 UI-integration checkpoints.
 
-Current: Stage 9.6 implementation and owner review on draft PR #25. The application is class-only at the style-attribute boundary, the CSP concession is removed and final mobile/desktop review has passed.
+Current: Stage 10 — Prospective Live-Season Validation is at investigation and design approval only. The required design covers deadline-safe frozen snapshots, post-Gameweek outcomes, deterministic metrics, provider/fallback evidence, storage/export and a phone-first operating workflow.
 
-Next after Stage 9.6 merge: Stage 9 is complete; operational focus moves to live-season prospective logging and evidence-led future roadmap decisions.
+Next: approve the Stage 10 design and checkpoint sequence before creating any implementation branch. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved.
 
 ## Major risks
 Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not fully proven out of sample; simulation probability calibration still prospective; and single-maintainer phone-first operations.

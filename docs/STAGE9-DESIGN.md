@@ -44,7 +44,7 @@ Setup and provider controls move out of the permanent top-level workflow and int
 ## Security and implementation boundaries
 
 - Existing DOM-builder and restricted-Markdown boundaries remain.
-- Inline style attributes will be removed and the CSP tightened during the final Stage 9 checkpoint, not opportunistically in earlier checkpoints.
+- Stage 9.6 removed inline style attributes and runtime style APIs, then tightened the CSP after source, build and deployable verification.
 - No new dependency, framework, provider or hosted service.
 - Generated `dist/` files remain build outputs and must never be edited manually.
 - The single-file GitHub Pages deployment workflow and deterministic build identity remain mandatory.
@@ -91,7 +91,7 @@ Explicit exclusions: no football-pitch redesign, club shirts, player detail shee
 - Remove inline style attributes.
 - Remove the `style-src-attr 'unsafe-inline'` concession after independent verification.
 - Complete responsive, accessibility, deterministic-build and deployable verification.
-- **Implemented and verified on draft PR #25:** class-only/static-attribute presentation, progress/SVG dynamic visuals, DOM/build fail-closed guards, CSP concession removal and representative mobile/desktop browser review; verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes 313/313 tests with deterministic builds.
+- **Implemented, verified and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`:** class-only/static-attribute presentation, progress/SVG dynamic visuals, DOM/build fail-closed guards, CSP concession removal and representative mobile/desktop browser review; verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes 313/313 tests with deterministic builds.
 
 ## Stage-wide explicit exclusions
 

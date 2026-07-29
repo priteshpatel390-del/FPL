@@ -41,22 +41,25 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Checkpoint 9.5 — More, Settings and Provider Health** · DONE and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`.
   - Settings and global/full Provider Health presentation with unchanged provider behaviour.
   - Verified source `da8258df25e196af1f1521c025edefde23612abd`: **310/310 tests passed** with deterministic builds.
-
-## Current
-- **Stage 9 — UI integration** · approved design in `docs/STAGE9-DESIGN.md`.
-- **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish** · implemented and verified on draft PR #25; owner review and explicit merge approval remain.
+- **Checkpoint 9.6 — Inline-style migration, CSP tightening and final UI polish** · DONE and merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`.
   - All source and generated style attributes/runtime style APIs are removed and guarded.
   - `style-src-attr` and every `unsafe-inline` token are removed from the emitted CSP.
-  - Mobile and desktop browser review passed with no console errors and zero application-created style attributes.
+  - Representative mobile and desktop browser review passed with no console errors.
   - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed**, successful build, deterministic two-build comparison and build-identity check.
   - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
 
+## Current
+- **Stage 10 — Prospective Live-Season Validation** · investigation and design approval checkpoint.
+- No Stage 10 implementation, schema, storage or model change has begun.
+- The proposed design must define immutable pre-deadline snapshots, post-Gameweek outcomes, leakage controls, deterministic metrics, provider/fallback evidence, export/storage and a phone-first operating workflow.
+
 ## Upcoming
-1. Merge checkpoint 9.6 after owner approval, completing Stage 9.
-2. Begin prospective 2026/27 logging and evidence-led operational review from live GW1.
+1. Investigate and approve the complete Stage 10 design and checkpoint sequence.
+2. After explicit approval, implement Stage 10.1 as a separate branch and draft PR.
+3. Begin deadline-safe prospective evidence capture before live GW1 on 21 August 2026.
 
 ## Current blockers
-1. Owner review and explicit merge approval for Stage 9.6 draft PR #25.
-2. A persistent screenshot-regression suite is still absent; Stage 9.6 completed manual browser review but future visual changes still need human device checks.
+1. Stage 10 design decisions and checkpoint sequence require owner approval before implementation.
+2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
