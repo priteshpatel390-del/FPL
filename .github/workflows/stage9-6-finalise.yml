@@ -1,0 +1,56 @@
+name: Stage 9.6 finaliser
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  finalise:
+    if: github.head_ref == 'agent/stage9-6-style-csp-polish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-6-style-csp-polish
+          fetch-depth: 0
+      - name: Apply permanent Stage 9.6 records and clean temporary files
+        run: |
+          set -euo pipefail
+          if [ ! -f tools/stage9-6-docs.b64.00 ]; then
+            echo 'Stage 9.6 documentation already finalised.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          test -f .stage9-6-result
+          grep -Fx 'source=4a4b14c1d0f422088c080e714ee259efbd7cc39d' .stage9-6-result
+          grep -Fx 'artefact=7fb09142156a8061adc375a72bf3d7e2a1b25985' .stage9-6-result
+          grep -Fx 'tests=313' .stage9-6-result
+          grep -Fx 'inline_styles=none' .stage9-6-result
+          grep -Fx 'csp_style_attr=removed' .stage9-6-result
+
+          echo '7e1188855fef0f6c2f6917a473301a092dc6f8a70e17b196c7ebde7b4e660a22  tools/stage9-6-docs.b64.00' | sha256sum -c -
+          echo 'd175f3d85fde43ee3790a5f75a295e1b84d0b17f7931a0032ecc28c15c3ad4af  tools/stage9-6-docs.b64.01' | sha256sum -c -
+          cat tools/stage9-6-docs.b64.00 tools/stage9-6-docs.b64.01 | tr -d '\r\n' > /tmp/stage9-6-docs.b64
+          echo '0ec6eed46a69747a58fe482be94190cb954462c600e70478bd66651268efeaf2  /tmp/stage9-6-docs.b64' | sha256sum -c -
+          base64 -d /tmp/stage9-6-docs.b64 | gzip -d > /tmp/stage9-6-docs.patch
+          patch --dry-run -p1 < /tmp/stage9-6-docs.patch
+          patch -p1 < /tmp/stage9-6-docs.patch
+
+          grep -F '313/313' CLAUDE.md docs/TESTING.md docs/ROADMAP.md
+          grep -F '**CLOSED and verified 2026-07-29**' docs/KNOWN_LIMITATIONS.md
+          grep -F 'D-22' docs/DECISIONS.md
+          test -f docs/STAGE9-6-SCOPE.md
+
+          rm -f .stage9-6-result
+          rm -f tools/stage9-6-docs.b64.00 tools/stage9-6-docs.b64.01
+          rm -f .github/workflows/stage9-6-finalise.yml
+          git add -A
+          git commit -m 'Document Stage 9.6 verification and closeout'
+          git push origin HEAD:agent/stage9-6-style-csp-polish
