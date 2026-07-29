@@ -1,6 +1,6 @@
 # Stage 9.5 — More, Settings and Provider Health
 
-Status: approved by Pritesh through the Stage 9 design; implemented and verified on draft PR #24 on 29 July 2026.
+Status: implemented, verified and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301` on 29 July 2026.
 
 ## Scope
 

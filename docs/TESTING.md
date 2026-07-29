@@ -5,7 +5,7 @@ Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 9.5 verified branch baseline: **310/310 passing tests**, successful production build, deterministic two-build comparison and exact build-identity checks. Verified source is `da8258df25e196af1f1521c025edefde23612abd`; generated artefacts are committed at `5401f2882f72b70c7034157c2e3a686dab966c64`.
+Stage 9.6 verified branch baseline: **313/313 passing tests**, successful production build, deterministic two-build comparison and exact build-identity checks. Verified source is `4a4b14c1d0f422088c080e714ee259efbd7cc39d`; generated artefacts are committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. Source and deployable scans confirm no style attributes/runtime style APIs, no `style-src-attr` and no `unsafe-inline`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -14,7 +14,7 @@ Stage 9.5 verified branch baseline: **310/310 passing tests**, successful produc
 4. Validation and schema suites — fixture identity, payload filtering and state integration.
 5. Retry and transport suites — bounded retry, endpoint scrubbing and metadata.
 6. Provider Health suite — seven-state vocabulary and transitions.
-7. Rendering, Markdown and security-completion suites — hostile input, secret handling and CSP.
+7. Rendering, Markdown and security-completion suites — hostile input, secret handling, class-only style boundaries, generated-deployable scans and CSP.
 8. `minutes-model.test.mjs` — Stage 4 denominators, histories, probabilities, shrinkage and invariants.
 9. `scoring-rules.test.mjs` — official rule configuration, Poisson groups, defensive thresholds, rare events, bonus denominator, penalty-role gating and genuine blank/double behaviour.
 10. `transfer-optimiser.test.mjs` — Stage 6 legality, affordability, hit accounting, search completeness and deterministic ordering.
@@ -24,12 +24,13 @@ Stage 9.5 verified branch baseline: **310/310 passing tests**, successful produc
 14. `player-detail.test.mjs` — Stage 9.3 spread thresholds, quality suppression, range geometry, official availability labels, dialog accessibility/focus and surface wiring.
 15. `decision-preview.test.mjs` — Stage 9.4 transfer-copy non-mutation, optimiser-final-squad agreement, captain/vice rules, stale-state invalidation, deterministic signatures, score separation and no-persistence wiring.
 16. `provider-health-ui.test.mjs` — Stage 9.5 compact age/status modelling, deterministic highest-attention state, status palette mapping and Settings/full-detail wiring.
-17. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
+17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
+18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
 
-Stages 8–9.5 change no deterministic projection formula and require no golden regeneration.
+Stages 8–9.6 change no deterministic projection formula and require no golden regeneration.
 
 ## Harness
 `tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. Characterisation therefore exercises the production bundling path rather than a separate test-only implementation.

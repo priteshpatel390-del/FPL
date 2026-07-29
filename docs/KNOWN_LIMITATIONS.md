@@ -36,8 +36,8 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | UST-1 | Pre-season Understat uses previous closing six matches | Early-season form may be mislabelled | Prospective validation | Open |
 | DC-1 | Defensive-contribution history starts in 2025/26 | No multi-season validation | Permanent | Accepted |
 | FRAME-1 | `frame-ancestors` is ineffective in meta CSP on GitHub Pages | Frame-buster is compensating control | Serverless | Accepted-temporary |
-| STYLE-1 | `style-src-attr 'unsafe-inline'` remains necessary | Style attributes are not hash-locked | Stage 9 class migration | Accepted-temporary |
-| UI-1 | No browser-level screenshot/visual-regression suite | Automated tests verify DOM structure, accessibility helpers and deterministic output, but final responsive appearance still requires human device review | Stage 9.6 | Open |
+| STYLE-1 | `style-src-attr 'unsafe-inline'` remained necessary | Replaced fixed/dynamic styles with classes, progress and SVG attributes; source/build/deployable guards reject style attributes and the CSP concession is removed | Stage 9.6 | **CLOSED and verified 2026-07-29** |
+| UI-1 | No persistent browser-level screenshot-regression suite | Stage 9.6 completed representative mobile/desktop browser review with no console errors, but future visual changes still require human device review | Future tooling only with separate approval | Open (accepted) |
 | PREVIEW-1 | Decision previews are intentionally session-only | Transfer/captain previews disappear on refresh and are not submitted to FPL; this prevents accidental persistence or account changes | By design | Accepted |
 | PREVIEW-2 | Transfer preview pitch is next-Gameweek only while optimiser gain can span several Gameweeks | The banner must be read alongside the pitch to distinguish next-GW XI score from multi-GW net gain | Stage 9.4 | Accepted-labelled |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |

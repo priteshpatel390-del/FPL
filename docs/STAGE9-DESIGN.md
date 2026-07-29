@@ -84,13 +84,14 @@ Explicit exclusions: no football-pitch redesign, club shirts, player detail shee
 - Move setup and provider controls into Settings.
 - Add compact global Provider Health and full detail under More.
 - Preserve all existing fallback and security behaviour.
-- **Implemented and verified on draft PR #24:** Settings hierarchy, compact global state, full current-session provider rows and accessible jump-to-detail interaction; no provider, fallback, storage or security behaviour changed.
+- **Implemented, verified and merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`:** Settings hierarchy, compact global state, full current-session provider rows and accessible jump-to-detail interaction; no provider, fallback, storage or security behaviour changed.
 
 ### 9.6 — Style migration, CSP and final polish
 
 - Remove inline style attributes.
 - Remove the `style-src-attr 'unsafe-inline'` concession after independent verification.
 - Complete responsive, accessibility, deterministic-build and deployable verification.
+- **Implemented and verified on draft PR #25:** class-only/static-attribute presentation, progress/SVG dynamic visuals, DOM/build fail-closed guards, CSP concession removal and representative mobile/desktop browser review; verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d` passes 313/313 tests with deterministic builds.
 
 ## Stage-wide explicit exclusions
 

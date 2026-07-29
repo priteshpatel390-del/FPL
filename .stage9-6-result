@@ -1,9 +1,0 @@
-status=0
-source=4a4b14c1d0f422088c080e714ee259efbd7cc39d
-artefact=7fb09142156a8061adc375a72bf3d7e2a1b25985
-tests=313
-deterministic=passed
-identity=passed
-inline_styles=none
-csp_style_attr=removed
-browser_review=passed
