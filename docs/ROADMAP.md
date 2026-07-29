@@ -47,20 +47,22 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Representative mobile and desktop browser review passed with no console errors.
   - Verified source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`: **313/313 tests passed**, successful build, deterministic two-build comparison and build-identity check.
   - Verified generated deployables committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`.
+- **Stage 10.1 — Deadline-safe snapshot foundation** · DONE and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`.
+  - Silent approved-source startup/foreground verification, one consistent render and non-blocking automatic eligible evidence capture.
+  - Strict provider allowlist, immutable anonymised records, deterministic hashes and recovery-only imports.
+  - Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passed**, successful production build and deterministic build identity; generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`.
 
 ## Current
-- **Stage 10.1 — Deadline-safe snapshot foundation** · amended and locally verified on draft PR #27; owner review and physical iPhone startup/foreground/recovery acceptance pending.
-- Approved scope: immutable all-player pre-deadline records plus automatic approved-source startup/foreground verification, one consistent final render, automatic eligible capture, deterministic hashes and non-official recovery restore.
-- Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b`: **349/349 tests passing**, successful production build, byte-identical two-build output and exact build identity.
-- No projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
+- **Stage 10.2 — Official outcome collection** · investigation and exact-scope confirmation only; no implementation has begun.
+- Stage 10.1 remains formula-neutral: no projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, provider-blend or optimiser-objective change.
 
 ## Upcoming
-1. Complete owner review and the physical iPhone capture/export/import acceptance check for Stage 10.1.
-2. Merge Stage 10.1 only after explicit owner approval.
-3. Begin separately scoped Stage 10.2 official-outcome collection before evaluating any prospective metrics.
+1. Present the Stage 10.2 outcome schema, official FPL source fields, collection timing, validation, fallback, storage and tests.
+2. Obtain explicit owner approval for the exact Stage 10.2 implementation scope.
+3. Implement Stage 10.2 on a separate branch without beginning Stage 10.3 metrics.
 
 ## Current blockers
-1. Stage 10.1 requires owner review and physical iPhone acceptance before merge.
+1. Stage 10.2 exact implementation scope and approval are not yet recorded.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Live-season prospective data requirements begin with GW1 on 21 August 2026.
