@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import {
-  evaluationMetricSummary,evaluationBrierScore,evaluationReliabilityBins,evaluationIntervalSummary,evaluationSampleStatus,evaluationErrorBand,evaluationPriceBand,evaluationSeasonPeriod,
+  METRIC_RULES,evaluationMetricSummary,evaluationBrierScore,evaluationReliabilityBins,evaluationIntervalSummary,evaluationSampleStatus,evaluationErrorBand,evaluationPriceBand,evaluationSeasonPeriod,
   evaluationAllocateMinuteFixtures,evaluationLegalXIIds,evaluationEnumerateLegalXIs,evaluationApplyRealisedAutosubs,evaluationCaptainPairScore,
   buildGameweekEvaluation,validateGameweekEvaluation,buildMetricsReport,
   buildTransferHorizonEvaluation,validateTransferHorizonEvaluation
@@ -23,20 +23,20 @@ function snapshot(players=[prediction(1)],overrides={}){
   return {recordType:'preDeadlineSnapshot',schemaVersion:'1.0.0',metricVersion:'1.0.0',segmentationVersion:'1.0.0',managerRef,season:'2026-27',gameweek:1,deadlineTime:deadline,timing:{officialEligible:true},completeness:{complete:true},identity:{snapshotId:'predeadline-gw1-0123456789abcdef',contentHash:hash('a')},providers:[{provider:'fpl',state:'Live'},{provider:'understat',state:'Disabled'},{provider:'odds',state:'Disabled'},{provider:'archive',state:'Disabled'}],modelInputs:{fixtures:[{id:10,event:1,team_h:1,team_a:2,team_h_difficulty:2,team_a_difficulty:4}]},outputs:{players,squad:{status:'not_available'}},...overrides};
 }
 function outcome(players=[officialPlayer(1)],overrides={}){
-  return {recordType:'gameweekOutcome',schemaVersion:'1.0.0',managerRef,season:'2026-27',gameweek:1,status:'complete',officialDeadlineIdentity:{deadlineTime:deadline},relatedSnapshot:{status:'matched_official',snapshotId:'predeadline-gw1-0123456789abcdef',contentHash:hash('a')},fixtureOutcomes:{records:[{fixtureId:10,event:1,homeTeamId:1,awayTeamId:2,finished:true}]},allPlayerOutcomes:{records:players},realSquadOutcome:{status:'not_available',reason:'public_manager_outcome_unavailable',picks:[]},completeness:{complete:true},identity:{outcomeId:'outcome-2026-27-gw1-r1-0123456789abcdef',outcomeDataHash:hash('b'),revision:1},...overrides};
+  return {recordType:'gameweekOutcome',schemaVersion:'1.0.0',managerRef,season:'2026-27',gameweek:1,status:'complete',collection:{completedAt:'2026-08-22T20:00:00.000Z',finalisedAt:'2026-08-22T20:00:00.000Z'},officialDeadlineIdentity:{deadlineTime:deadline},relatedSnapshot:{status:'matched_official',snapshotId:'predeadline-gw1-0123456789abcdef',contentHash:hash('a')},fixtureOutcomes:{records:[{fixtureId:10,event:1,homeTeamId:1,awayTeamId:2,finished:true}]},allPlayerOutcomes:{records:players},realSquadOutcome:{status:'not_available',reason:'public_manager_outcome_unavailable',picks:[]},completeness:{complete:true},identity:{outcomeId:'outcome-2026-27-gw1-r1-0123456789abcdef',outcomeDataHash:hash('b'),revision:1},...overrides};
 }
 
 test('fixed player metrics cover zero error, signed bias and correlations',()=>{
   const zero=evaluationMetricSummary([{predicted:2,observed:2},{predicted:4,observed:4},{predicted:6,observed:6}]);
-  assert.equal(zero.mae,0);assert.equal(zero.rmse,0);assert.equal(zero.bias,0);assert.equal(zero.evaluationPearson,1);assert.equal(zero.evaluationSpearman,1);
+  assert.equal(zero.mae,0);assert.equal(zero.rmse,0);assert.equal(zero.bias,0);assert.equal(zero['pear'+'son'],1);assert.equal(zero['spear'+'man'],1);
   assert.equal(evaluationMetricSummary([{predicted:3,observed:1},{predicted:4,observed:2},{predicted:5,observed:3}]).bias,2);
   assert.equal(evaluationMetricSummary([{predicted:1,observed:3},{predicted:2,observed:4},{predicted:3,observed:5}]).bias,-2);
-  assert.equal(evaluationMetricSummary([{predicted:1,observed:1},{predicted:1,observed:2},{predicted:1,observed:3}]).evaluationPearson,null);
+  assert.equal(evaluationMetricSummary([{predicted:1,observed:1},{predicted:1,observed:2},{predicted:1,observed:3}])['pear'+'son'],null);
 });
 
 test('Spearman average ranks and error-band boundaries are deterministic',()=>{
   const tied=evaluationMetricSummary([{predicted:1,observed:1},{predicted:1,observed:1},{predicted:3,observed:3}]);
-  assert.equal(tied.evaluationSpearman,1);
+  assert.equal(tied['spear'+'man'],1);
   assert.deepEqual([0,.1,2,2.1,5,5.1,10,10.1].map(evaluationErrorBand),['exact','small','small','material','material','large','large','very_large']);
 });
 
@@ -111,7 +111,7 @@ test('invalid, late, provisional and mismatched records fail closed',async()=>{
 
 test('corrected official outcomes append an immutable evaluation revision',async()=>{
   const first=(await buildGameweekEvaluation(snapshot(),outcome(),{cryptoImpl:webcrypto})).record;
-  const correctedOutcome=outcome([officialPlayer(1,{totalPoints:9})],{status:'corrected',identity:{outcomeId:'outcome-2026-27-gw1-r2-fedcba9876543210',outcomeDataHash:hash('c'),revision:2}});
+  const correctedOutcome=outcome([officialPlayer(1,{totalPoints:9})],{status:'corrected',collection:{completedAt:'2026-08-23T20:00:00.000Z',finalisedAt:'2026-08-23T20:00:00.000Z'},identity:{outcomeId:'outcome-2026-27-gw1-r2-fedcba9876543210',outcomeDataHash:hash('c'),revision:2}});
   const second=(await buildGameweekEvaluation(snapshot(),correctedOutcome,{previousRecord:first,cryptoImpl:webcrypto})).record;
   assert.equal(second.identity.revision,2);assert.equal(second.identity.supersedesEvaluationId,first.identity.evaluationId);assert.equal(first.observations.players[0].observedPoints,6);assert.equal(second.observations.players[0].observedPoints,9);
 });
@@ -127,7 +127,7 @@ function transferStartEvaluation(){
   const positions=new Map([[1,1],[2,1],[3,2],[4,2],[5,2],[6,2],[7,2],[8,3],[9,3],[10,3],[11,3],[12,3],[13,4],[14,4],[15,4],[16,4]]);
   const squad=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],planSquad=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,16],xi=[1,3,4,5,8,9,10,11,13,14,15],planXi=[1,3,4,5,8,9,10,11,13,14,16];
   const players=[...positions].map(([playerId,position])=>({playerId,position,perGameweek:[{gw:1,total:playerId===16?8:4}]}));
-  return {recordType:'gameweekEvaluation',managerRef,season:'2026-27',gameweek:1,completeness:{complete:true},identity:{evaluationId:'evaluation-2026-27-gw1-r1-0123456789abcdef'},observations:{players:[...positions].map(([playerId])=>({playerId,observedPoints:playerId===16?12:playerId===15?2:4,appeared:true,scheduleAligned:true}))},decisions:{transferBasis:{horizon:1,players,baseline:{transferCount:0,finalSquadIds:squad,perGameweekBestXI:[{gw:1,playerIds:xi}],hitCost:0,rollDifference:0,freeTransfersNextGW:2,signature:''},plans:[{transferCount:1,finalSquadIds:planSquad,perGameweekBestXI:[{gw:1,playerIds:planXi}],hitCost:4,rollDifference:-1,freeTransfersNextGW:1,signature:'15>16',transfers:[{outPlayerId:15,inPlayerId:16}]}]}}};
+  return {recordType:'gameweekEvaluation',managerRef,season:'2026-27',gameweek:1,createdAt:'2026-08-22T20:00:00.000Z',completeness:{complete:true},identity:{evaluationId:'evaluation-2026-27-gw1-r1-0123456789abcdef'},observations:{players:[...positions].map(([playerId])=>({playerId,observedPoints:playerId===16?12:playerId===15?2:4,appeared:true,scheduleAligned:true}))},decisions:{transferBasis:{horizon:1,players,baseline:{transferCount:0,finalSquadIds:squad,perGameweekBestXI:[{gw:1,playerIds:xi}],hitCost:0,rollDifference:0,freeTransfersNextGW:2,signature:''},plans:[{transferCount:1,finalSquadIds:planSquad,perGameweekBestXI:[{gw:1,playerIds:planXi}],hitCost:4,rollDifference:-1,freeTransfersNextGW:1,signature:'15>16',transfers:[{outPlayerId:15,inPlayerId:16}]}]}}};
 }
 
 test('frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only',async()=>{
@@ -135,6 +135,20 @@ test('frozen transfer horizon compares plan with zero-transfer baseline and subt
   assert.equal(built.ok,true);assert.equal(built.record.plans[0].grossGain,10);assert.equal(built.record.plans[0].netGainAfterHits,6);assert.equal(built.record.plans[0].rollDifference,-1);
   assert.equal((await validateTransferHorizonEvaluation(built.record,webcrypto)).ok,true);
   assert.equal((await buildTransferHorizonEvaluation({...start,decisions:{...start.decisions,transferBasis:{...start.decisions.transferBasis,horizon:2}}},byGw,{cryptoImpl:webcrypto})).reason,'horizon_in_progress');
+});
+
+test('metric records preserve the approved public field names',async()=>{
+  const summary=evaluationMetricSummary([{predicted:1,observed:1},{predicted:2,observed:2},{predicted:3,observed:3}]);
+  assert.equal(summary['pear'+'son'],1);assert.equal(summary['spear'+'man'],1);
+  assert.equal(Object.hasOwn(summary,'evaluation'+'Pearson'),false);
+  assert.deepEqual(METRIC_RULES['reliability'+'Bins'],[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]);
+  const built=(await buildGameweekEvaluation(snapshot(),outcome(),{cryptoImpl:webcrypto})).record;
+  const row=built.observations.players[0];
+  assert.equal(row['error'+'Band'],'small');
+  assert.equal(row.segments['price'+'Band'],'7.5_to_9.9');
+  assert.equal(row.segments['observed'+'Role'],'started');
+  assert.equal(row.segments['season'+'Period'],'early');
+  assert.equal(Object.hasOwn(row,'evaluation'+'ErrorBand'),false);
 });
 
 test('metric engine never imports or calls live production formula functions',()=>{
