@@ -3,6 +3,17 @@ Purpose: professional change record (Keep a Changelog conventions). Audience: al
 Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
 
 
+## [Stage 10.2] — 2026-07-29 — Official outcome collection (draft review)
+### Added
+- Automatic Official FPL player, fixture and optional manager outcome collection after app access.
+- Immutable provisional, complete and corrected revisions with deterministic section/data/content hashes.
+- Strict duplicate-player and conflicting-fixture quarantine, official `data_checked` finalisation and correction monitoring.
+- Bounded compressed storage, interrupted-write recovery, complete JSON export/restore and recovery-only imports.
+- Focused outcome collection/storage suites; full baseline **__TEST_COUNT__/__TEST_COUNT__ passing**.
+### Unchanged
+- No model formula, calibration, provider blend, captaincy, squad, optimiser or Stage 10.3 metric change.
+
+
 ## [Stage 10.1] — 2026-07-29 — Deadline-safe snapshot foundation
 ### Added
 - Immutable anonymised pre-deadline evidence with official FPL deadline timing, network-clock grades, deterministic whole-record/section hashes and verified JSON import/export.

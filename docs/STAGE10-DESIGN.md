@@ -101,9 +101,11 @@ The same cycle runs when the page returns to the foreground after ten minutes. P
 Evidence status remains subordinate under More. Export, restore and delete controls sit inside a recovery section. Restored JSON is hash/schema/provider checked but marked `recovery_import`; it cannot become the local official prospective record. No routine capture, import or verification action is required from the user.
 
 ## Stage 10.2 outcome design
-Outcome records will use official FPL fixture/player data where available and preserve provisional, final, corrected, incomplete and unavailable states. Planned fields include minutes, appearance, 60-minute threshold, goals, assists, clean sheets, goals conceded, saves, defensive contribution, bonus/BPS, cards, own goals, penalties and official points. Starts remain `null` unless an official source explicitly provides them.
+Implemented under the owner-approved Official FPL-only contract. `/event/{gw}/live/` supplies unique all-player Gameweek totals and per-fixture explanations; `/fixtures/?event={gw}` supplies assignment, scores and completion; the bootstrap event row supplies deadline, `finished` and `data_checked`. Optional public picks/history supply manager outcome facts without persisting Team ID. Starts remain `null` unless officially supplied; appearance and the 60-minute threshold are derived only from official minutes.
 
-Squad outcomes will capture picks, multipliers, captain/vice, bench order, chips, hits, auto-subs and official total. Teamsheet will independently reproduce squad scoring and compare it with the official result. Transfer outcomes compare the frozen recommendation with its frozen zero-transfer baseline over the approved horizon; roll value remains separate from realised points.
+Valid in-flight facts are immutable `provisional` revisions. A record becomes `complete` only when every currently assigned fixture is finished, the event is finished and data-checked, and player detail validates. Later changed complete facts append a `corrected` revision. Duplicate players and conflicting fixtures fail closed. Identical rechecks create no duplicate full record.
+
+Automatic work starts after the verified main render, never delays app access, checks provisional outcomes every fifteen minutes while visible, checks completed outcomes daily for fourteen days and catches up six missed Gameweeks per trigger. Squad outcomes remain optional and non-blocking. Stage 10.2 records facts only: transfer identities, realised recommendation metrics and every Stage 10.3 evaluation remain excluded.
 
 ## Stage 10.3 metric design
 No composite accuracy score is approved. Planned deterministic metrics are:

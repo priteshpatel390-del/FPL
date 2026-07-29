@@ -111,3 +111,14 @@ Runtime provider identity is closed to `fpl`, `understat`, `odds` and `archive`.
 On app startup and qualifying foreground return, Official FPL is refreshed and validated first; enabled supporting sources then settle through their existing validators, retry budgets, caches and fallbacks. No intermediate provider result is rendered. The app applies one complete verified state after all approved sources resolve. Optional unavailability never manufactures values; critical FPL failure uses an acceptable verified cache or disables recommendations.
 
 Backup JSON is not a football-data provider. Restored evidence is quarantined as recovery-only and cannot influence projections, recommendations or official prospective evaluation.
+
+## Stage 10.2 Official FPL outcome endpoints
+| Endpoint | Authority and purpose | Validation/finalisation | Storage |
+|---|---|---|---|
+| `/event/{gw}/live/` | Canonical all-player Gameweek totals and per-fixture explanation | Unique player IDs; finite allowlisted statistics; explanation fixture IDs must belong to the Gameweek | Normalised facts only; raw response discarded |
+| `/fixtures/?event={gw}` | Canonical fixture assignment, kickoff, score and completion | Official fixture ID; conflicting duplicates fail closed; every currently assigned fixture must finish | Normalised allowlisted fixture facts/statistics |
+| `/bootstrap-static/` event row | Deadline plus Gameweek `finished` and `data_checked` | Both completion flags required for a final record | Event identity and flags only |
+| `/entry/{id}/event/{gw}/picks/` | Optional official pick multipliers, captain/vice, bench, auto-subs, chip and manager summary | Duplicate picks fail closed; Team ID is redacted from evidence | Allowlisted outcome fields only |
+| `/entry/{id}/history/` | Optional summary cross-check and missed-Gameweek discovery | Unique Gameweek rows; conflicts keep the squad section partial | Current-row facts and chips only |
+
+No new provider is introduced. `/element-summary/{id}/` remains a bounded expected-minutes input and is not fanned out for outcome collection. Existing optional FPL retry limits and relay rules remain unchanged.

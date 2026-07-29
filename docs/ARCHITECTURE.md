@@ -13,7 +13,7 @@ src/
   util.mjs              shared parsing and DOM-builder primitives
   state.mjs             core state, bootstrap slimming/hydration, minute histories and last rendered optimiser result
   storage.mjs           configuration and cache envelopes
-  providers/            validation, transport, retry, health and optional data loaders
+  providers/            validation, transport, retry, health, outcome validation and optional data loaders
   model/
     fixtures.mjs        match context, fixture lists and run scoring
     minutes.mjs         pStart/pAppear/p60/expMin/confidence estimator
@@ -26,11 +26,13 @@ src/
     archive-replay.mjs  pinned historical replay
     backtest.mjs        historical evaluation utilities
   evidence/
-    snapshot.mjs        canonical Stage 10 records, deadline timing, hashes and validation
+    snapshot.mjs        canonical pre-deadline records, deadline timing, hashes and validation
+    outcome.mjs         canonical Official FPL outcome records, lifecycle, correction hashes and snapshot links
   squad.mjs             squad helpers and deterministic best-XI selection
   main.mjs              load orchestration; evidence capture can explicitly await optional providers
   ui/
-    evidence.mjs        phone-first capture/status, compressed local recovery and JSON import/export
+    evidence.mjs        phone-first snapshot capture/status, compressed local recovery and JSON import/export
+    outcomes.mjs        non-blocking outcome orchestration, bounded revisions and recovery-only restore
     ...                 app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
 tests/                  characterisation, model, simulation, provider, security, UI-helper and build tests
 docs/                   canonical project records
@@ -98,3 +100,11 @@ All-player live uncertainty retains the approved 5,000 samples. `simulation.mjs`
 `main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying `visibilitychange`/`pageshow` returns use the same path. Cached FPL data may be hydrated as a fallback, but rendering is deferred while fresh Official FPL, team context, Understat, odds and detailed minutes settle. Missing archive calibration is explicitly Disabled; active saved calibration is Cached. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture before the startup gate closes.
 
 The foreground path retains the previously rendered screen but sets decision surfaces inert until activation, preventing reads from partially mutated runtime state. This is an atomic presentation boundary rather than a new state-management framework. Provider transports, validators, retry budgets, caches and model consumers remain unchanged.
+
+
+## Stage 10.2 official-outcome boundary
+`providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL live player totals, filtered fixtures and optional public manager outcome responses. Duplicate player IDs and conflicting fixture identities fail closed rather than using the display-layer first-wins policy.
+
+`evidence/outcome.mjs` normalises allowlisted facts, requires every assigned fixture plus official event `finished` and `data_checked` before finalisation, links to the eligible Stage 10.1 snapshot without mutating it, and emits immutable provisional, complete or corrected revisions with deterministic section/data/content hashes.
+
+`ui/outcomes.mjs` runs after the main verified render. It deduplicates startup/foreground/visible checks, processes up to six missed Gameweeks sequentially, rechecks provisional outcomes every fifteen minutes while visible and completed outcomes daily for fourteen days, and keeps bounded gzip recovery plus recovery-only imports. Outcome work never blocks app access or writes into model state.
