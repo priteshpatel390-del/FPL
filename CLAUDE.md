@@ -39,7 +39,8 @@ Stage 10.2 — Official outcome collection is implemented and verified on branch
 - Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
 - The custom bundler strips complete static import/export declarations and fails if raw module syntax survives.
 - Style attributes and runtime style APIs are forbidden by DOM helpers, source guards and deployable tests; CSP permits only the hash-locked style element and approved Google Fonts stylesheet.
-- Meta `frame-ancestors` is ineffective on Pages; a hashed frame-buster compensates until serverless headers.
+- Meta `frame-ancestors` is ineffective in meta CSP on GitHub Pages; a hashed frame-buster compensates until serverless headers.
 
 ## Completion report for every item
 Report what changed, what deliberately did not change, exact test count/result, build and reproducibility evidence, documentation updates, judgement calls, remaining limitations, branch/commit and draft PR link.
+
