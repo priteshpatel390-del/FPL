@@ -1,4 +1,4 @@
-# verification trigger: corrected build-order anchor
+# verification trigger: normalised documentation EOF
 name: Stage 10.2 implementation runner
 
 on:
@@ -40,6 +40,15 @@ jobs:
           path.write_text(text)
           PY
           python .stage10-2-apply.py
+          python - <<'PY'
+          from pathlib import Path
+          for name in [
+              'docs/DATA_SOURCES.md','docs/DECISIONS.md','docs/KNOWN_LIMITATIONS.md',
+              'docs/PROJECTION_MODEL.md','docs/SECURITY.md','docs/TESTING.md'
+          ]:
+              path=Path(name)
+              path.write_text(path.read_text().rstrip()+'\n')
+          PY
           rm -f .stage10-2-payload.part* .stage10-2-payload.b64 .stage10-2-apply.py .github/workflows/stage10-2-implementation.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
