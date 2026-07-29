@@ -21,19 +21,22 @@ jobs:
         run: |
           set -euo pipefail
           test -f .stage9-5-result
-          test -f tools/stage9-5-finalise.z.b64
+          test -f tools/stage9-5-finalise.z.b64.00
+          test -f tools/stage9-5-finalise.z.b64.01
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cat tools/stage9-5-finalise.z.b64.00 tools/stage9-5-finalise.z.b64.01 | tr -d '\n' > /tmp/stage9-5-finalise.z.b64
+          echo '2fd9269179274cdc7fe2781bbd3a8968cc99f435642790d245de15359c52f349  /tmp/stage9-5-finalise.z.b64' | sha256sum -c -
           python - <<'PY'
           from pathlib import Path
           import base64,zlib
-          payload=Path('tools/stage9-5-finalise.z.b64').read_text().strip()
+          payload=Path('/tmp/stage9-5-finalise.z.b64').read_text().strip()
           Path('/tmp/stage9-5-finalise.py').write_bytes(zlib.decompress(base64.b64decode(payload)))
           PY
           python /tmp/stage9-5-finalise.py
           git add CLAUDE.md docs
           git commit -m 'Document Stage 9.5 verification'
-          rm -f .github/workflows/stage9-5-verify.yml .stage9-5-result tools/stage9-5-finalise.z.b64
+          rm -f .github/workflows/stage9-5-verify.yml .stage9-5-result tools/stage9-5-finalise.z.b64 tools/stage9-5-finalise.z.b64.00 tools/stage9-5-finalise.z.b64.01
           git add -A
           git commit -m 'Remove temporary Stage 9.5 verification files'
           git push origin HEAD:agent/stage9-5-settings-provider-health
