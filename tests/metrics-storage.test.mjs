@@ -4,7 +4,7 @@ import { webcrypto } from 'node:crypto';
 import { buildGameweekEvaluation, METRIC_RULES } from '../src/evidence/metrics.mjs';
 import {
   K_METRIC_INDEX,K_METRIC_PREFIX,K_METRIC_JOURNAL,normaliseMetricIndex,loadMetricIndex,loadMetricRecord,
-  storeMetricRecord,recoverMetricJournal,clearMetricStorage,currentMetadata
+  storeMetricRecord,recoverMetricJournal,clearMetricStorage,metricCurrentMetadata
 } from '../src/ui/metrics.mjs';
 import { rawEvidenceSet,rawEvidenceGet,encodeEvidenceRecord } from '../src/ui/evidence.mjs';
 
@@ -25,12 +25,12 @@ async function record(points=6,previous=null){return (await buildGameweekEvaluat
 test('metric storage verifies, reloads and keeps one current revision',async()=>{
   reset();const first=await record();const stored=await storeMetricRecord(first);assert.equal(stored.stored,true);
   assert.equal((await loadMetricRecord(first.identity.evaluationId)).identity.contentHash,first.identity.contentHash);
-  const index=await loadMetricIndex();assert.equal(index.length,1);assert.equal(index[0].current,true);assert.equal(currentMetadata(index,'2026-27|gw1').recordId,first.identity.evaluationId);
+  const index=await loadMetricIndex();assert.equal(index.length,1);assert.equal(index[0].current,true);assert.equal(metricCurrentMetadata(index,'2026-27|gw1').recordId,first.identity.evaluationId);
 });
 
 test('identical metrics deduplicate while corrections retain immutable superseded data',async()=>{
   reset();const first=await record();await storeMetricRecord(first);assert.equal((await storeMetricRecord(first)).stored,false);
-  const second=await record(9,first);await storeMetricRecord(second);const index=await loadMetricIndex();assert.equal(index.filter(row=>row.current).length,1);assert.equal(currentMetadata(index,'2026-27|gw1').recordId,second.identity.evaluationId);
+  const second=await record(9,first);await storeMetricRecord(second);const index=await loadMetricIndex();assert.equal(index.filter(row=>row.current).length,1);assert.equal(metricCurrentMetadata(index,'2026-27|gw1').recordId,second.identity.evaluationId);
   assert.equal((await loadMetricRecord(first.identity.evaluationId)).observations.players[0].observedPoints,6);
 });
 

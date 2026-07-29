@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import {
-  metricSummary,brierScore,reliabilityBins,intervalSummary,sampleStatus,errorBand,priceBand,seasonPeriod,
-  allocateMinuteFixtures,legalXIIds,enumerateLegalXIs,applyRealisedAutosubs,captainPairScore,
+  evaluationMetricSummary,evaluationBrierScore,evaluationReliabilityBins,evaluationIntervalSummary,evaluationSampleStatus,evaluationErrorBand,evaluationPriceBand,evaluationSeasonPeriod,
+  evaluationAllocateMinuteFixtures,evaluationLegalXIIds,evaluationEnumerateLegalXIs,evaluationApplyRealisedAutosubs,evaluationCaptainPairScore,
   buildGameweekEvaluation,validateGameweekEvaluation,buildMetricsReport,
   buildTransferHorizonEvaluation,validateTransferHorizonEvaluation
 } from '../src/evidence/metrics.mjs';
@@ -27,70 +27,70 @@ function outcome(players=[officialPlayer(1)],overrides={}){
 }
 
 test('fixed player metrics cover zero error, signed bias and correlations',()=>{
-  const zero=metricSummary([{predicted:2,observed:2},{predicted:4,observed:4},{predicted:6,observed:6}]);
-  assert.equal(zero.mae,0);assert.equal(zero.rmse,0);assert.equal(zero.bias,0);assert.equal(zero.pearson,1);assert.equal(zero.spearman,1);
-  assert.equal(metricSummary([{predicted:3,observed:1},{predicted:4,observed:2},{predicted:5,observed:3}]).bias,2);
-  assert.equal(metricSummary([{predicted:1,observed:3},{predicted:2,observed:4},{predicted:3,observed:5}]).bias,-2);
-  assert.equal(metricSummary([{predicted:1,observed:1},{predicted:1,observed:2},{predicted:1,observed:3}]).pearson,null);
+  const zero=evaluationMetricSummary([{predicted:2,observed:2},{predicted:4,observed:4},{predicted:6,observed:6}]);
+  assert.equal(zero.mae,0);assert.equal(zero.rmse,0);assert.equal(zero.bias,0);assert.equal(zero.evaluationPearson,1);assert.equal(zero.evaluationSpearman,1);
+  assert.equal(evaluationMetricSummary([{predicted:3,observed:1},{predicted:4,observed:2},{predicted:5,observed:3}]).bias,2);
+  assert.equal(evaluationMetricSummary([{predicted:1,observed:3},{predicted:2,observed:4},{predicted:3,observed:5}]).bias,-2);
+  assert.equal(evaluationMetricSummary([{predicted:1,observed:1},{predicted:1,observed:2},{predicted:1,observed:3}]).evaluationPearson,null);
 });
 
 test('Spearman average ranks and error-band boundaries are deterministic',()=>{
-  const tied=metricSummary([{predicted:1,observed:1},{predicted:1,observed:1},{predicted:3,observed:3}]);
-  assert.equal(tied.spearman,1);
-  assert.deepEqual([0,.1,2,2.1,5,5.1,10,10.1].map(errorBand),['exact','small','small','material','material','large','large','very_large']);
+  const tied=evaluationMetricSummary([{predicted:1,observed:1},{predicted:1,observed:1},{predicted:3,observed:3}]);
+  assert.equal(tied.evaluationSpearman,1);
+  assert.deepEqual([0,.1,2,2.1,5,5.1,10,10.1].map(evaluationErrorBand),['exact','small','small','material','material','large','large','very_large']);
 });
 
 test('Brier, reliability and interval calculations use approved inclusive rules',()=>{
-  assert.equal(brierScore([{probability:.8,outcome:1},{probability:.2,outcome:0}]).brier,.04);
-  const bins=reliabilityBins(Array.from({length:30},()=>({probability:.95,outcome:1})));
+  assert.equal(evaluationBrierScore([{probability:.8,outcome:1},{probability:.2,outcome:0}]).brier,.04);
+  const bins=evaluationReliabilityBins(Array.from({length:30},()=>({probability:.95,outcome:1})));
   assert.equal(bins[9].observedFrequency,1);
-  assert.equal(reliabilityBins(Array.from({length:29},()=>({probability:.95,outcome:1})))[9].observedFrequency,null);
-  const interval=intervalSummary([{lower:1,upper:5,observed:1},{lower:2,upper:4,observed:5}],'lower','upper');
+  assert.equal(evaluationReliabilityBins(Array.from({length:29},()=>({probability:.95,outcome:1})))[9].observedFrequency,null);
+  const interval=evaluationIntervalSummary([{lower:1,upper:5,observed:1},{lower:2,upper:4,observed:5}],'lower','upper');
   assert.equal(interval.coverage,.5);assert.equal(interval.width,3);
 });
 
 test('sample safeguards enforce exact boundaries and provider AND rule',()=>{
-  assert.equal(sampleStatus(29,9).level,'raw_only');
-  assert.equal(sampleStatus(30,9).level,'descriptive');
-  assert.equal(sampleStatus(199,20).level,'descriptive');
-  assert.equal(sampleStatus(200,9).level,'descriptive');
-  assert.equal(sampleStatus(200,10).level,'potentially_stable');
-  assert.equal(sampleStatus(100,4,{kind:'provider'}).level,'raw_only');
-  assert.equal(sampleStatus(99,5,{kind:'provider'}).level,'raw_only');
-  assert.equal(sampleStatus(100,5,{kind:'provider'}).level,'descriptive');
+  assert.equal(evaluationSampleStatus(29,9).level,'raw_only');
+  assert.equal(evaluationSampleStatus(30,9).level,'descriptive');
+  assert.equal(evaluationSampleStatus(199,20).level,'descriptive');
+  assert.equal(evaluationSampleStatus(200,9).level,'descriptive');
+  assert.equal(evaluationSampleStatus(200,10).level,'potentially_stable');
+  assert.equal(evaluationSampleStatus(100,4,{kind:'provider'}).level,'raw_only');
+  assert.equal(evaluationSampleStatus(99,5,{kind:'provider'}).level,'raw_only');
+  assert.equal(evaluationSampleStatus(100,5,{kind:'provider'}).level,'descriptive');
 });
 
 test('approved season periods and position-aware price bands are exact',()=>{
-  assert.deepEqual([0,1,6,7,12,13,38].map(seasonPeriod),['pre-season','early','early','transition','transition','mature','mature']);
-  assert.equal(priceBand(2,44),'up_to_4.4');assert.equal(priceBand(2,45),'4.5_to_5.4');assert.equal(priceBand(3,100),'10.0_plus');assert.equal(priceBand(4,95),'9.5_plus');
+  assert.deepEqual([0,1,6,7,12,13,38].map(evaluationSeasonPeriod),['pre-season','early','early','transition','transition','mature','mature']);
+  assert.equal(evaluationPriceBand(2,44),'up_to_4.4');assert.equal(evaluationPriceBand(2,45),'4.5_to_5.4');assert.equal(evaluationPriceBand(3,100),'10.0_plus');assert.equal(evaluationPriceBand(4,95),'9.5_plus');
 });
 
 test('minutes allocation handles singles, doubles, missing starts and postponed fixtures',()=>{
   const p=prediction(1);
-  const single=allocateMinuteFixtures(p,officialPlayer(1,{minutes:72,starts:null,perFixture:[]}),[{id:10}], [{fixtureId:10}]);
+  const single=evaluationAllocateMinuteFixtures(p,officialPlayer(1,{minutes:72,starts:null,perFixture:[]}),[{id:10}], [{fixtureId:10}]);
   assert.equal(single[0].observedMinutes,72);assert.equal(single[0].started,null);
-  const double=allocateMinuteFixtures(p,officialPlayer(1,{minutes:90,starts:1,perFixture:[{fixtureId:10,officialStats:[{identifier:'minutes',value:90,points:0},{identifier:'starts',value:1,points:0}]}]}),[{id:10},{id:11}],[{fixtureId:10},{fixtureId:11}]);
+  const double=evaluationAllocateMinuteFixtures(p,officialPlayer(1,{minutes:90,starts:1,perFixture:[{fixtureId:10,officialStats:[{identifier:'minutes',value:90,points:0},{identifier:'starts',value:1,points:0}]}]}),[{id:10},{id:11}],[{fixtureId:10},{fixtureId:11}]);
   assert.deepEqual(double.map(row=>row.observedMinutes),[90,0]);assert.deepEqual(double.map(row=>row.started),[1,0]);
-  const unallocatable=allocateMinuteFixtures(p,officialPlayer(1,{minutes:120,starts:2,perFixture:[{fixtureId:10,officialStats:[{identifier:'minutes',value:70,points:0}]}]}),[{id:10},{id:11}],[{fixtureId:10},{fixtureId:11}]);
+  const unallocatable=evaluationAllocateMinuteFixtures(p,officialPlayer(1,{minutes:120,starts:2,perFixture:[{fixtureId:10,officialStats:[{identifier:'minutes',value:70,points:0}]}]}),[{id:10},{id:11}],[{fixtureId:10},{fixtureId:11}]);
   assert.equal(unallocatable[1].observedMinutes,null);
-  const postponed=allocateMinuteFixtures(p,officialPlayer(1,{minutes:0,starts:0,perFixture:[]}),[{id:10}],[]);
+  const postponed=evaluationAllocateMinuteFixtures(p,officialPlayer(1,{minutes:0,starts:0,perFixture:[]}),[{id:10}],[]);
   assert.equal(postponed[0].observedMinutes,0);assert.equal(postponed[0].scheduleAligned,false);
 });
 
 test('legal substitutions respect goalkeeper and minimum formation constraints',()=>{
   const positions=new Map([[1,1],[2,1],[3,2],[4,2],[5,2],[6,2],[7,2],[8,3],[9,3],[10,3],[11,3],[12,3],[13,4],[14,4],[15,4]]);
   const starters=[1,3,4,5,8,9,10,11,13,14,15],bench=[2,6,7,12];
-  assert.equal(legalXIIds(starters,positions),true);assert.ok(enumerateLegalXIs([...starters,...bench],positions).length>0);
+  assert.equal(evaluationLegalXIIds(starters,positions),true);assert.ok(evaluationEnumerateLegalXIs([...starters,...bench],positions).length>0);
   const outcomes=new Map([...positions.keys()].map(id=>[id,{points:id,appeared:true}]));outcomes.set(1,{points:0,appeared:false});outcomes.set(3,{points:0,appeared:false});
-  const result=applyRealisedAutosubs(starters,bench,positions,outcomes);
+  const result=evaluationApplyRealisedAutosubs(starters,bench,positions,outcomes);
   assert.deepEqual(result.replacements,[{playerIn:2,playerOut:1},{playerIn:6,playerOut:3}]);
   assert.ok(result.scoringXI.includes(2));assert.ok(result.scoringXI.includes(6));
 });
 
 test('captain non-appearance uses vice and neither appearance gives no doubled points',()=>{
   const outcomes=new Map([[1,{points:10,appeared:false}],[2,{points:7,appeared:true}]]);
-  assert.deepEqual(captainPairScore(1,2,outcomes),{captainId:1,doubledContribution:7,effectiveCaptainId:2,viceCaptainId:2,viceTookOver:true});
-  outcomes.set(2,{points:7,appeared:false});assert.equal(captainPairScore(1,2,outcomes).doubledContribution,0);
+  assert.deepEqual(evaluationCaptainPairScore(1,2,outcomes),{captainId:1,doubledContribution:7,effectiveCaptainId:2,viceCaptainId:2,viceTookOver:true});
+  outcomes.set(2,{points:7,appeared:false});assert.equal(evaluationCaptainPairScore(1,2,outcomes).doubledContribution,0);
 });
 
 test('authoritative evaluation joins exact IDs, preserves source records and validates hashes',async()=>{
