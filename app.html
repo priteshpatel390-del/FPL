@@ -20,6 +20,21 @@
 html,body{margin:0;padding:0}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
+body.startup-pending{overflow:hidden}
+.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+.startup-gate[hidden]{display:none}
+.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:12px}
+.startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
+.startup-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B9C9BF}
+.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:8px 0 4px;overflow:hidden}
+.startup-pitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.34)}
+.startup-pitch:after{content:"";position:absolute;width:20px;height:20px;border:1px solid rgba(255,255,255,.34);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.startup-ball{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);left:14px;top:23px;animation:startup-scan 1.7s ease-in-out infinite alternate}
+.startup-title{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:19px;font-weight:800;margin-top:4px}
+.startup-detail{max-width:310px;color:#C9D6CE;font-size:12px;line-height:1.5;min-height:36px}
+.startup-note{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8FA79A;margin-top:8px}
+@keyframes startup-scan{to{transform:translateX(48px)}}
+@media(prefers-reduced-motion:reduce){.startup-ball{animation:none;left:38px}}
 h1,h2,h3{font-family:'Bricolage Grotesque','Public Sans',sans-serif;margin:0;letter-spacing:-.02em;font-weight:800}
 h3{font-size:14px}
 .mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
@@ -383,7 +398,18 @@ button,input,select,textarea{touch-action:manipulation}
 
 </style>
 </head>
-<body>
+<body class="startup-pending" aria-busy="true">
+
+<section class="startup-gate" id="startupGate" role="status" aria-live="polite" aria-labelledby="startupTitle">
+  <div class="startup-card">
+    <div class="startup-wordmark">TEAMSHEET</div>
+    <div class="startup-sub">FPL decision desk</div>
+    <div class="startup-pitch" aria-hidden="true"><span class="startup-ball"></span></div>
+    <div class="startup-title" id="startupTitle">Loading verified data</div>
+    <div class="startup-detail" id="startupDetail">Preparing the last accepted dataset as a safe fallback.</div>
+    <div class="startup-note">Approved sources · automatic checks · one consistent update</div>
+  </div>
+</section>
 
 <header>
   <div class="masthead">
@@ -431,22 +457,23 @@ button,input,select,textarea{touch-action:manipulation}
 
   <!-- VALIDATION EVIDENCE -->
   <section class="panel" id="evidencePanel" tabindex="-1" aria-labelledby="evidenceTitle">
-    <span class="eyebrow">Prospective validation</span>
+    <span class="eyebrow">Automatic validation</span>
     <h2 id="evidenceTitle">Deadline evidence</h2>
-    <p class="hint">Freeze the exact model, provider and decision state before each FPL deadline. Snapshots are anonymised, hash-verified and exported as unencrypted JSON files that you control.</p>
-    <div class="note plain" id="evidenceStatus"><b>Waiting for season data</b> Load data before capturing evidence.</div>
+    <p class="hint">Teamsheet automatically secures a verified pre-deadline record after approved data has refreshed. No routine action is required.</p>
+    <div class="note plain" id="evidenceStatus"><b>Waiting for season data</b> Evidence will be handled automatically after verification.</div>
     <p class="status" id="evidenceDeadline">Deadline unavailable.</p>
-    <div class="evidence-actions">
-      <button class="btn" id="captureEvidenceBtn" disabled>Refresh &amp; freeze</button>
-      <button class="btn ghost" id="exportEvidenceBtn" disabled>Export latest JSON</button>
-      <button class="btn ghost" id="importEvidenceBtn">Import JSON</button>
-      <button class="btn ghost" id="deleteEvidenceBtn">Delete local evidence</button>
-      <input type="file" id="evidenceImport" accept="application/json,.json" hidden>
-    </div>
-    <p class="status evidence-message" id="evidenceMessage">The capture window opens 24 hours before the deadline and closes at the two-minute safety cutoff.</p>
+    <p class="status evidence-message" id="evidenceMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
     <details class="mt-12">
-      <summary>Saved evidence on this device</summary>
+      <summary>Saved evidence and recovery controls</summary>
       <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
+      <p class="hint m-hint-top">These controls are for backup recovery and diagnostics only. Imported files cannot become official prospective evidence.</p>
+      <div class="evidence-actions">
+        <button class="btn ghost" id="exportEvidenceBtn" disabled>Export latest JSON</button>
+        <button class="btn ghost" id="importEvidenceBtn">Restore backup JSON</button>
+        <button class="btn ghost" id="captureEvidenceBtn" disabled>Diagnostic capture</button>
+        <button class="btn ghost" id="deleteEvidenceBtn">Delete local evidence</button>
+        <input type="file" id="evidenceImport" accept="application/json,.json" hidden>
+      </div>
     </details>
   </section>
 

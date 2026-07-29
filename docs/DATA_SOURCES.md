@@ -103,3 +103,11 @@ and digit runs collapsed to `{id}` (so twenty rivals cannot create twenty keys).
 A pre-deadline record stores the normalized FPL, Understat, odds, archive-calibration and detailed-minutes inputs that actually affected its outputs, plus Provider Health state, age, threshold, consequence, accepted/rejected counts and retry/validation summaries. It does not store provider keys, raw configuration or account identifiers.
 
 The same-origin GitHub Pages response `Date` header is sampled before and after capture solely as deadline-timing evidence. It is not a model provider, is not blended into projections and is not an external timestamp authority. If it is unavailable, conflicts with the device clock by more than 60 seconds or completes inside the two-minute cutoff, the record remains exportable but cannot become official.
+
+
+## Automatic approved-source startup gate (Stage 10.1 amendment)
+Runtime provider identity is closed to `fpl`, `understat`, `odds` and `archive`. Provider Health refuses any unregistered name, and evidence import requires one unique provenance row for every approved provider with a valid known state and usage/count/timestamp fields. This is a trust boundary, not a recommendation to add more feeds.
+
+On app startup and qualifying foreground return, Official FPL is refreshed and validated first; enabled supporting sources then settle through their existing validators, retry budgets, caches and fallbacks. No intermediate provider result is rendered. The app applies one complete verified state after all approved sources resolve. Optional unavailability never manufactures values; critical FPL failure uses an acceptable verified cache or disables recommendations.
+
+Backup JSON is not a football-data provider. Restored evidence is quarantined as recovery-only and cannot influence projections, recommendations or official prospective evaluation.

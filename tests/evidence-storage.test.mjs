@@ -24,7 +24,7 @@ function payload(gameweek,capturedAt){
     build:{modelVersion:'2.4.0',rulesVersion:'2026-27.3',sourceHash:'abc',commit:'def',moduleOrder:[]},
     versions:{model:'2.4.0',rules:'2026-27.3',simulation:'1.0.0',snapshot:SNAPSHOT_SCHEMA_VERSION},
     rules:{fpl:{season:'2026-27'},minutes:{},scoring:{},transfer:{},simulation:{version:'1.0.0'},odds:{},fixture:{baseGoals:1.42,homeTilt:1.1}},
-    providers:[{provider:'fpl',state:'Live',included:true,recordedAt:new Date(capturedAt-1000).toISOString(),lastSuccessAt:new Date(capturedAt-1000).toISOString(),ageMs:0,thresholdMs:null,note:'',consequence:''}],
+    providers:['fpl','understat','odds','archive'].map(name=>({provider:name,state:name==='fpl'?'Live':'Disabled',included:name==='fpl',didAffectModel:name==='fpl',acceptedRecordCount:name==='fpl'?1:0,rejectedRecordCount:0,recordedAt:new Date(capturedAt-1000).toISOString(),lastSuccessAt:name==='fpl'?new Date(capturedAt-1000).toISOString():null,ageMs:name==='fpl'?0:null,thresholdMs:null,note:'',consequence:''})),
     completeness:{complete:true,sections:{coreInputs:'complete',playerProjections:'complete'},fatalFplIssue:false,playerCount:1,expectedPlayerCount:1},
     capture:{startedAt:new Date(capturedAt-2000).toISOString(),projectionStartedAt:new Date(capturedAt-1500).toISOString(),projectionCompletedAt:new Date(capturedAt-1000).toISOString(),horizon:1},
     modelInputs:{players:[{id:1}],teams:[],events:[],fixtures:[],minuteHistory:{},calibration:null,understat:null,odds:null},
@@ -75,6 +75,15 @@ test('evidence writes surface storage failures rather than silently claiming suc
 });
 
 
+test('restored evidence is retained as recovery-only and cannot become official locally',async()=>{
+  const item=await record(4,deadline+4*86400000-25*60000);
+  await evidence.storeEvidenceRecord(item,{origin:evidence.EVIDENCE_ORIGINS.RECOVERY});
+  const row=(await evidence.loadEvidenceIndex()).find(entry=>entry.snapshotId===item.identity.snapshotId);
+  assert.equal(row.origin,evidence.EVIDENCE_ORIGINS.RECOVERY);
+  assert.equal(row.recordOfficialEligible,true);
+  assert.equal(row.officialEligible,false);
+});
+
 test('local evidence can be deleted without touching exported files',async()=>{
   const item=await record(5,deadline-20*60000);
   await evidence.storeEvidenceRecord(item);
@@ -86,6 +95,20 @@ test('local evidence can be deleted without touching exported files',async()=>{
   assert.equal(await evidence.rawEvidenceGet(evidence.K_EVIDENCE_MANAGER),null);
 });
 
+
+test('legacy metadata without an origin fails closed as recovery-only',async()=>{
+  const item=await record(6,deadline+6*86400000-20*60000);
+  const row={
+    snapshotId:item.identity.snapshotId,contentHash:item.identity.contentHash,gameweek:item.gameweek,season:item.season,
+    deadlineTime:item.deadlineTime,capturedAt:item.timing.captureCompletedAt,timingGrade:item.timing.grade,
+    officialEligible:true,complete:true,buildCommit:item.build.commit,modelVersion:item.versions.model,rulesVersion:item.versions.rules
+  };
+  localStorage.setItem(evidence.K_EVIDENCE_INDEX,JSON.stringify([row]));
+  const migrated=(await evidence.loadEvidenceIndex())[0];
+  assert.equal(migrated.origin,evidence.EVIDENCE_ORIGINS.RECOVERY);
+  assert.equal(migrated.recordOfficialEligible,true);
+  assert.equal(migrated.officialEligible,false);
+});
 
 test('corrupt local metadata is ignored and orphaned recovery records are removable',async()=>{
   localStorage.setItem(evidence.K_EVIDENCE_INDEX,JSON.stringify([{snapshotId:'bad',gameweek:99}]));

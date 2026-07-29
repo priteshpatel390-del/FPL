@@ -691,7 +691,7 @@ const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); 
 // data load must never lose them
 ['teamId','leagueId'].forEach(id => $(id).addEventListener('input', debounce(saveCfg, 300)));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
-$('loadBtn').addEventListener('click', loadAll);
+$('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
 $('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
@@ -725,5 +725,6 @@ document.addEventListener('click', e => {
   S.manual = (await sget(K_SQUAD)) || [];
   S.leagues = (await sget('fpl:leagues')) || [];
   renderLeagueChips();
-  loadAll();
+  await runVerifiedRefresh({reason:'startup',startup:true,force:true});
+  installVerifiedRefreshTriggers();
 })();

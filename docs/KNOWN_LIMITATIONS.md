@@ -46,3 +46,9 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | EVID-4 | Prospective sample size begins at zero | No validation or calibration claim is possible until enough live Gameweeks and observations are collected | Stage 10.2–10.5 | Open (expected) |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
+
+## Stage 10.1 automatic refresh limitations
+- “Latest” means the latest data that passed approved validation. It does not guarantee every optional provider is live.
+- GitHub Pages and iPhone Safari cannot reliably wake a fully closed or suspended app. Automatic work begins on startup or foreground return; guaranteed closed-app scheduling requires a later server-side design.
+- Foreground verification temporarily makes decision controls inert to prevent mixed-state use. Existing verified content remains visible.
+- Recovery imports are deliberately non-official. They restore owner-controlled records but cannot establish authorship or external timestamp notarisation.

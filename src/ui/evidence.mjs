@@ -1,6 +1,5 @@
 import { S } from '../state.mjs';
 import { $, num, el, setChildren } from '../util.mjs';
-import { loadAll } from '../main.mjs';
 import {
   EVIDENCE_RULES,
   stableStringify,
@@ -14,6 +13,8 @@ const K_EVIDENCE_MANAGER = 'fpl:evidence-manager-ref';
 const K_EVIDENCE_INDEX = 'fpl:evidence-index';
 const K_EVIDENCE_PREFIX = 'fpl:evidence:snapshot:';
 const MAX_EVIDENCE_IMPORT_BYTES = 25 * 1024 * 1024;
+const EVIDENCE_ORIGINS = Object.freeze({LOCAL:'local_capture',RECOVERY:'recovery_import'});
+const AUTO_CAPTURE_PRIORITY = Object.freeze({open:1,due_soon:2,ideal:3,final_window:4});
 let activeEvidenceRecord = null;
 let evidenceBusy = false;
 let evidenceRenderSequence = 0;
@@ -85,6 +86,15 @@ function normaliseEvidenceIndex(value){
     /^[0-9a-f]{64}$/.test(row.contentHash||'')&&
     Number.isInteger(row.gameweek)&&row.gameweek>=1&&row.gameweek<=38&&
     Number.isFinite(Date.parse(row.capturedAt))&&Number.isFinite(Date.parse(row.deadlineTime)))
+    .map(row=>{
+      const origin=Object.values(EVIDENCE_ORIGINS).includes(row.origin)?row.origin:EVIDENCE_ORIGINS.RECOVERY;
+      return {
+        ...row,
+        origin,
+        recordOfficialEligible:row.recordOfficialEligible===undefined?Boolean(row.officialEligible):Boolean(row.recordOfficialEligible),
+        officialEligible:origin===EVIDENCE_ORIGINS.LOCAL&&Boolean(row.officialEligible)
+      };
+    })
     .sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)||a.snapshotId.localeCompare(b.snapshotId))
     .slice(0,EVIDENCE_RULES.localIndexLimit);
 }
@@ -103,11 +113,12 @@ async function loadEvidenceRecord(snapshotId){
     return checked.ok ? checked.record : null;
   }catch(error){ return null; }
 }
-async function storeEvidenceRecord(record){
+async function storeEvidenceRecord(record,{origin=EVIDENCE_ORIGINS.LOCAL}={}){
+  if(!Object.values(EVIDENCE_ORIGINS).includes(origin)) throw new Error('Evidence origin is not supported');
   const checked = await validateSnapshotRecord(record);
   if(!checked.ok) throw new Error(`Evidence record rejected: ${checked.reason}`);
   const existing = await loadEvidenceIndex();
-  const nextIndex = boundedSnapshotIndex(existing,checked.record);
+  const nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
   const keep = new Set(nextIndex.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
   const knownIds = new Set(existing.map(row=>row.snapshotId).concat(checked.record.identity.snapshotId));
   const toDelete = [...knownIds].filter(snapshotId=>!keep.has(snapshotId));
@@ -167,12 +178,12 @@ function minutesLabel(ms){
 }
 function windowCopy(windowState){
   const labels={
-    unavailable:['Waiting for season data','Load data before capturing evidence.'],
-    too_early:['Capture not open yet',`The evidence window opens 24 hours before the deadline.`],
-    open:['Capture window open','Refresh and freeze before the final hour.'],
-    due_soon:['Evidence due soon','The deadline is within one hour.'],
-    ideal:['Ideal capture window','Freeze the final decision state now.'],
-    final_window:['Final safe window','Capture now; the two-minute safety cutoff is close.'],
+    unavailable:['Waiting for season data','Automatic evidence starts after verified data is available.'],
+    too_early:['Evidence not due yet',`Automatic capture opens 24 hours before the deadline.`],
+    open:['Automatic evidence armed','The next verified refresh will secure a pre-deadline record.'],
+    due_soon:['Automatic evidence due soon','Teamsheet will secure the latest verified decision state.'],
+    ideal:['Ideal automatic window','The latest verified state will be secured without user action.'],
+    final_window:['Final automatic window','Teamsheet will fail closed at the two-minute safety cutoff.'],
     safety_cutoff:['Safety cutoff reached','A new snapshot cannot qualify as the official pre-deadline record.'],
     closed:['Deadline passed','Missed snapshots are not backfilled.']
   };
@@ -230,7 +241,7 @@ async function renderEvidenceStatus(){
   const capture=$('captureEvidenceBtn');
   if(capture){
     capture.disabled=evidenceBusy||!['open','due_soon','ideal','final_window'].includes(state.state);
-    capture.textContent=evidenceBusy?'Refreshing and freezing…':'Refresh & freeze';
+    capture.textContent=evidenceBusy?'Securing evidence…':'Diagnostic capture';
   }
   const exportButton=$('exportEvidenceBtn');
   if(exportButton) exportButton.disabled=!(activeEvidenceRecord||latest);
@@ -238,7 +249,7 @@ async function renderEvidenceStatus(){
   if(history){
     if(!index.length) setChildren(history,el('div',{class:'status'},'No evidence snapshots saved on this device.'));
     else setChildren(history,index.map(row=>el('article',{class:'note plain'},
-      el('div',{},el('b',{},`GW${row.gameweek} · ${row.officialEligible?'Official-eligible':'Recorded only'}`),el('span',{class:`flag ${evidenceFlagClass(row.timingGrade)}`},row.timingGrade.replaceAll('_',' '))),
+      el('div',{},el('b',{},`GW${row.gameweek} · ${row.origin===EVIDENCE_ORIGINS.RECOVERY?'Recovery only':row.officialEligible?'Official-eligible':'Recorded only'}`),el('span',{class:`flag ${evidenceFlagClass(row.timingGrade)}`},row.timingGrade.replaceAll('_',' '))),
       el('div',{class:'status'},`${new Date(row.capturedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${row.snapshotId}`))));
   }
 }
@@ -250,27 +261,44 @@ async function latestEvidenceRecord(){
   activeEvidenceRecord=await loadEvidenceRecord(latestId);
   return activeEvidenceRecord;
 }
-async function captureEvidence(){
-  if(evidenceBusy) return;
+async function captureEvidence({automatic=false}={}){
+  if(evidenceBusy) return null;
   evidenceBusy=true; await renderEvidenceStatus();
   const message=$('evidenceMessage');
   try{
-    if(message) message.textContent='Refreshing FPL and optional providers before the freeze…';
-    await loadAll({awaitOptional:true});
     const managerRef=await evidenceManagerRef();
     const horizon=Math.max(1,Math.min(8,Math.trunc(num($('trHorizon')?.value)||6)));
-    if(message) message.textContent='Freezing model outputs and checking deadline evidence…';
+    if(message) message.textContent=automatic?'Securing verified deadline evidence…':'Freezing the current verified state…';
     const record=await capturePreDeadlineSnapshot({managerRef,horizon});
-    await storeEvidenceRecord(record);
+    await storeEvidenceRecord(record,{origin:EVIDENCE_ORIGINS.LOCAL});
     if(message) message.textContent=record.timing.officialEligible
-      ? `Saved ${record.identity.snapshotId}. Network-attested and eligible to be the official GW${record.gameweek} snapshot.`
-      : `Saved ${record.identity.snapshotId}, but it is recorded-only: ${record.timing.reasons.join(', ').replaceAll('_',' ')}.`;
+      ? `Evidence secured automatically for GW${record.gameweek}.`
+      : `Evidence recorded for GW${record.gameweek}, but it cannot qualify officially: ${record.timing.reasons.join(', ').replaceAll('_',' ')}.`;
+    return record;
   }catch(error){
     if(message) message.textContent=`Evidence capture failed: ${error.message}`;
+    return null;
   }finally{
     evidenceBusy=false; await renderEvidenceStatus();
   }
 }
+function captureWindowPriority(deadlineTime,capturedAt=Date.now()){
+  const state=deadlineWindow(deadlineTime,capturedAt).state;
+  return AUTO_CAPTURE_PRIORITY[state]||0;
+}
+async function maybeAutoCaptureEvidence({reason='verified_refresh'}={}){
+  const deadline=currentDeadline();
+  if(!deadline||!S.boot||evidenceBusy) return {captured:false,reason:'not_ready'};
+  const priority=captureWindowPriority(deadline,Date.now());
+  if(!priority) return {captured:false,reason:'outside_window'};
+  const index=await loadEvidenceIndex();
+  const existing=index.find(row=>row.origin===EVIDENCE_ORIGINS.LOCAL&&Number(row.gameweek)===Number(S.nextGW)&&row.deadlineTime===new Date(deadline).toISOString()&&row.officialEligible);
+  const existingPriority=existing?captureWindowPriority(deadline,Date.parse(existing.capturedAt)):0;
+  if(existing&&existingPriority>=priority) return {captured:false,reason:'equivalent_or_better_exists',snapshotId:existing.snapshotId};
+  const record=await captureEvidence({automatic:true});
+  return record?{captured:true,reason,snapshotId:record.identity.snapshotId}:{captured:false,reason:'capture_failed'};
+}
+
 async function exportLatestEvidence(){
   const message=$('evidenceMessage');
   try{
@@ -297,8 +325,8 @@ async function importEvidenceFile(file){
     const parsed=JSON.parse(await file.text());
     const checked=await validateSnapshotRecord(parsed);
     if(!checked.ok) throw new Error(`record rejected (${checked.reason})`);
-    await storeEvidenceRecord(checked.record);
-    if(message) message.textContent=`Imported and verified ${checked.record.identity.snapshotId}.`;
+    await storeEvidenceRecord(checked.record,{origin:EVIDENCE_ORIGINS.RECOVERY});
+    if(message) message.textContent=`Imported ${checked.record.identity.snapshotId} as recovery-only evidence. It cannot become the official prospective record.`;
   }catch(error){ if(message) message.textContent=`Import failed: ${error.message}`; }
   finally{ await renderEvidenceStatus(); }
 }
@@ -313,6 +341,10 @@ function initEvidenceUi(){
     const file=event.target.files?.[0]; importEvidenceFile(file); event.target.value='';
   });
   document.addEventListener('teamsheet:data-rendered',renderEvidenceStatus);
+  document.addEventListener('teamsheet:data-verified',event=>{
+    const task=maybeAutoCaptureEvidence({reason:event.detail?.reason||'verified_refresh'});
+    if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);
+  });
   renderEvidenceStatus();
   setInterval(renderEvidenceStatus,60*1000);
 }
@@ -324,6 +356,8 @@ export {
   K_EVIDENCE_INDEX,
   K_EVIDENCE_PREFIX,
   MAX_EVIDENCE_IMPORT_BYTES,
+  EVIDENCE_ORIGINS,
+  AUTO_CAPTURE_PRIORITY,
   normaliseEvidenceIndex,
   bytesToBase64,
   base64ToBytes,
@@ -336,6 +370,8 @@ export {
   loadEvidenceIndex,
   loadEvidenceRecord,
   storeEvidenceRecord,
+  captureWindowPriority,
+  maybeAutoCaptureEvidence,
   clearEvidenceStorage,
   evidenceFileName,
   renderEvidenceStatus,

@@ -60,7 +60,7 @@ function setupAppShell(){
   heading.textContent = 'More';
   const hint = document.createElement('p');
   hint.className = 'hint';
-  hint.textContent = 'Validation evidence, provider detail, Settings, fixtures, mini-league tools and Ask live here.';
+  hint.textContent = 'Automatic evidence, provider detail, Settings, fixtures, mini-league tools and Ask live here.';
   moreHeader.append(eyebrow, heading, hint);
   moreView.appendChild(moreHeader);
 

@@ -25,7 +25,8 @@ import { resetHealth, markLive } from '../src/providers/registry.mjs';
 
 const deadline = Date.parse('2026-08-15T10:00:00.000Z');
 const network = at => ({status:'available',serverAt:at,clientMidpointAt:at,skewMs:0,requestStartedAt:at-20,responseReceivedAt:at+20,roundTripMs:40,source:'same_origin_http_date'});
-const provider = (name,at,included=true) => ({provider:name,state:'Live',included,recordedAt:new Date(at).toISOString(),lastSuccessAt:new Date(at).toISOString(),ageMs:0,thresholdMs:null,note:'',consequence:''});
+const provider = (name,at,included=true) => ({provider:name,state:included?'Live':'Disabled',included,didAffectModel:included,acceptedRecordCount:included?1:0,rejectedRecordCount:0,recordedAt:new Date(at).toISOString(),lastSuccessAt:included?new Date(at).toISOString():null,ageMs:included?0:null,thresholdMs:null,note:'',consequence:''});
+const approvedProviders = at => ['fpl','understat','odds','archive'].map(name=>provider(name,at,name==='fpl'));
 function payload(overrides={}){
   return {
     recordType:'preDeadlineSnapshot',
@@ -39,7 +40,7 @@ function payload(overrides={}){
     build:{modelVersion:'2.4.0',rulesVersion:'2026-27.3',sourceHash:'abc',commit:'def',moduleOrder:[]},
     versions:{model:'2.4.0',rules:'2026-27.3',simulation:'1.0.0',snapshot:SNAPSHOT_SCHEMA_VERSION},
     rules:{fpl:{season:'2026-27'},minutes:{},scoring:{},transfer:{},simulation:{version:'1.0.0'},odds:{},fixture:{baseGoals:1.42,homeTilt:1.1}},
-    providers:[provider('fpl',deadline-30*60*1000)],
+    providers:approvedProviders(deadline-30*60*1000),
     completeness:{complete:true,sections:{coreInputs:'complete',playerProjections:'complete'},fatalFplIssue:false,playerCount:1,expectedPlayerCount:1},
     capture:{startedAt:new Date(deadline-31*60*1000).toISOString(),projectionStartedAt:new Date(deadline-30*60*1000).toISOString(),projectionCompletedAt:new Date(deadline-29*60*1000).toISOString(),horizon:6},
     modelInputs:{players:[{id:1}],teams:[],events:[],fixtures:[],minuteHistory:{},calibration:null,understat:null,odds:null},
@@ -70,6 +71,20 @@ test('Stage 10.1 evidence safety rejects manager and configuration identifiers',
   assert.throws(()=>assertEvidenceSafe({leagueId:'456'}),/secret_key/);
   assert.throws(()=>assertEvidenceSafe({managerName:'Private manager'}),/secret_key/);
   assert.doesNotThrow(()=>assertEvidenceSafe({clubId:1,managerRef:'mgr-0123456789abcdef0123456789abcdef'}));
+});
+
+test('evidence import rejects unknown, duplicate or missing providers',async()=>{
+  const completed=deadline-20*60*1000;
+  const base=await finaliseSnapshotRecord(payload(),{
+    captureStartedAt:completed-1000,captureCompletedAt:completed,
+    networkBefore:network(completed-900),networkAfter:network(completed)
+  });
+  const unknown=JSON.parse(JSON.stringify(base)); unknown.providers[0].provider='unapproved-feed';
+  assert.equal((await validateSnapshotRecord(unknown)).reason,'provider_unapproved');
+  const duplicate=JSON.parse(JSON.stringify(base)); duplicate.providers[1].provider='fpl';
+  assert.equal((await validateSnapshotRecord(duplicate)).reason,'provider_duplicate');
+  const missing=JSON.parse(JSON.stringify(base)); missing.providers.pop();
+  assert.equal((await validateSnapshotRecord(missing)).reason,'provider_missing');
 });
 
 test('deadline window applies the approved 24-hour, one-hour and two-minute boundaries',()=>{

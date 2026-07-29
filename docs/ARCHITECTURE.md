@@ -92,3 +92,9 @@ Capture uses the official FPL event deadline, samples the same-origin HTTP `Date
 All-player live uncertainty retains the approved 5,000 samples. `simulation.mjs` now precomputes invariant player/fixture expected components once before the sample loop and can omit raw arrays from a caller that needs summaries only; default callers and all formulas remain unchanged. Snapshot projection work yields every 20 players. A matching optimiser result already rendered for the same squad, horizon, bank and free-transfer context is reused rather than recomputed.
 
 `ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive.
+
+
+## Stage 10.1 verified-startup orchestration
+`main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying `visibilitychange`/`pageshow` returns use the same path. Cached FPL data may be hydrated as a fallback, but rendering is deferred while fresh Official FPL, team context, Understat, odds and detailed minutes settle. Missing archive calibration is explicitly Disabled; active saved calibration is Cached. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture before the startup gate closes.
+
+The foreground path retains the previously rendered screen but sets decision surfaces inert until activation, preventing reads from partially mutated runtime state. This is an atomic presentation boundary rather than a new state-management framework. Provider transports, validators, retry budgets, caches and model consumers remain unchanged.

@@ -78,7 +78,7 @@ Canonical evidence is a user-controlled JSON file. The browser keeps only a boun
 - verified writes and surfaced quota/storage failures;
 - a delete control for all local evidence and the anonymous device reference.
 
-Imported JSON is limited to 25 MB, schema checked and hash verified. Exports are intentionally unencrypted; the UI states this. Stage 10.1 introduces no database, public evidence repository, private-repository automation, serverless service or Google Sheets authentication. Derived CSV and season bundles belong to later checkpoints.
+Imported JSON is limited to 25 MB, schema checked, hash verified and restricted to the four approved provider identities. It is stored as recovery-only evidence and cannot become official locally. Exports are intentionally unencrypted; the UI states this. Stage 10.1 introduces no database, public evidence repository, private-repository automation, serverless service or Google Sheets authentication. Derived CSV and season bundles belong to later checkpoints.
 
 ## Security and privacy
 Evidence is built from an allowlisted shape rather than serialising `S`, saved configuration or arbitrary DOM state. It rejects secret/key/token fields and values, FPL Team ID, entry ID, league ID, manager name, email and phone fields. Provider endpoints redact entry and league identifiers. The Odds API key and Anthropic material can never enter evidence.
@@ -86,15 +86,19 @@ Evidence is built from an allowlisted shape rather than serialising `S`, saved c
 The manager reference is 128 random bits generated on-device and is not derived from an FPL identifier. Exported JSON remains the owner's responsibility once downloaded. The existing DOM-builder, restricted-Markdown and hash-based CSP boundaries remain unchanged; `connect-src 'self'` is added solely for the same-origin clock request.
 
 ## Phone-first workflow
-The global header shows a compact Evidence status that opens **More → Deadline evidence**. The operating flow is:
+The normal user does not manage evidence or provider files. On startup Teamsheet shows a minimalist verification screen while it:
 
-1. open the capture window;
-2. press **Refresh & freeze**;
-3. wait while core and optional providers settle and all-player projections are frozen in yieldable batches;
-4. confirm whether the record is official-eligible or recorded-only;
-5. export the JSON file.
+1. prepares the last accepted FPL snapshot as a safe fallback;
+2. refreshes Official FPL and every enabled approved supporting source;
+3. validates source identity, schema, freshness, completeness and provider consequence;
+4. resolves every approved source to a known Provider Health state;
+5. recalculates projections and recommendations without rendering intermediate mixed state;
+6. applies the complete verified dataset in one final render;
+7. automatically captures eligible deadline evidence and deduplicates by progressively better capture window.
 
-Import, export, local-history and delete controls remain subordinate to the decision screens. The interface does not become a large analytics dashboard.
+The same cycle runs when the page returns to the foreground after ten minutes. Previously verified content stays visible, but decision controls are temporarily inert until the staged refresh completes. Official FPL is critical; optional providers may resolve to verified cached/fallback/disabled states. The promise is the latest **verified data available**, not that every external provider is always live.
+
+Evidence status remains subordinate under More. Export, restore and delete controls sit inside a recovery section. Restored JSON is hash/schema/provider checked but marked `recovery_import`; it cannot become the local official prospective record. No routine capture, import or verification action is required from the user.
 
 ## Stage 10.2 outcome design
 Outcome records will use official FPL fixture/player data where available and preserve provisional, final, corrected, incomplete and unavailable states. Planned fields include minutes, appearance, 60-minute threshold, goals, assists, clean sheets, goals conceded, saves, defensive contribution, bonus/BPS, cards, own goals, penalties and official points. Starts remain `null` unless an official source explicitly provides them.

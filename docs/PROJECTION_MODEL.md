@@ -78,3 +78,5 @@ No prediction-accuracy or probability-calibration improvement is claimed. Prospe
 Stage 10.1 observes this model; it does not alter it. For every player it stores the existing next-Gameweek component projection, horizon totals, expected-minutes outputs and deterministic live-season uncertainty summary. The raw Monte Carlo arrays are discarded after summarisation, while the unchanged 5,000 sample count, seed and percentiles/probabilities are retained.
 
 The simulation implementation precomputes invariant fixture component expectations before sampling. This removes repeated deterministic work only: random seed, minutes states, Poisson/Bernoulli draws, scoring rules and summary thresholds are unchanged. Prospective outcomes are required before any calibration or accuracy conclusion.
+
+The Stage 10.1 startup amendment changes only when a fully validated provider state becomes visible. It does not change any projection component, expected-minutes input, blend weight, simulation draw, captaincy choice or optimiser objective.

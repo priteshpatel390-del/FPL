@@ -4,7 +4,7 @@ import {
   MODEL_VERSION, RULES_VERSION, FPL_RULES, MINUTES_RULES, SCORING_RULES,
   TRANSFER_RULES, SIMULATION_RULES, ODDS_RULES, BASE_GOALS, HOME_TILT
 } from '../config.mjs';
-import { healthRows, HEALTH_STATES } from '../providers/registry.mjs';
+import { APPROVED_PROVIDER_NAMES, healthRows, HEALTH_STATES, providerTrustError } from '../providers/registry.mjs';
 import { minutesEstimate } from '../model/minutes.mjs';
 import { projectXP, xpOf } from '../model/scoring.mjs';
 import { teamFixtures } from '../model/fixtures.mjs';
@@ -186,7 +186,7 @@ function providerEvidence(now){
   if(!byName.fpl){
     byName.fpl = {provider:'fpl',state:S.boot?HEALTH_STATES.CACHED:HEALTH_STATES.UNAVAILABLE,note:'runtime health record missing',consequence:'',lastSuccess:S.cachedAt||null,at:now,ageMs:S.cachedAt?Math.max(0,now-S.cachedAt):null};
   }
-  return ['fpl','understat','odds','archive'].map(name => {
+  return APPROVED_PROVIDER_NAMES.map(name => {
     const included=providerIncluded(name);
     const row = byName[name] || (included
       ? {provider:name,state:HEALTH_STATES.CACHED,note:'saved model input active',consequence:'affects current projections',lastSuccess:null,at:now,ageMs:null,thresholdMs:null}
@@ -536,6 +536,8 @@ function recordShapeError(record){
   if(!iso(record.deadlineTime)) return 'deadline';
   if(!record.build||typeof record.build!=='object'||!record.versions||typeof record.versions!=='object') return 'build_identity';
   if(!Array.isArray(record.providers)||!Array.isArray(record.retries)||!Array.isArray(record.issues)) return 'provider_schema';
+  const providerError=providerTrustError(record.providers);
+  if(providerError) return providerError;
   if(!record.modelInputs||typeof record.modelInputs!=='object'||!record.outputs||typeof record.outputs!=='object'||!Array.isArray(record.outputs.players)) return 'payload_schema';
   if(!record.completeness||typeof record.completeness.complete!=='boolean') return 'completeness_schema';
   if(!record.timing||!['network_attested','client_recorded','clock_conflict','late'].includes(record.timing.grade)||typeof record.timing.officialEligible!=='boolean'||!Array.isArray(record.timing.reasons)) return 'timing_schema';
@@ -590,7 +592,8 @@ function selectOfficialSnapshot(records,gameweek,deadlineTime=null){
     .filter(record=>record?.deadlineTime===activeDeadline&&record?.timing?.officialEligible&&record?.completeness?.complete)
     .sort((a,b)=>Date.parse(b.timing.referenceCompletedAt)-Date.parse(a.timing.referenceCompletedAt)||String(a.identity.snapshotId).localeCompare(String(b.identity.snapshotId)))[0]||null;
 }
-function compactSnapshotMetadata(record){
+function compactSnapshotMetadata(record,{origin='local_capture'}={}){
+  const trustedLocal=origin==='local_capture';
   return canonicalise({
     snapshotId:record.identity.snapshotId,
     contentHash:record.identity.contentHash,
@@ -599,15 +602,17 @@ function compactSnapshotMetadata(record){
     deadlineTime:record.deadlineTime,
     capturedAt:record.timing.captureCompletedAt,
     timingGrade:record.timing.grade,
-    officialEligible:Boolean(record.timing.officialEligible),
+    origin,
+    recordOfficialEligible:Boolean(record.timing.officialEligible),
+    officialEligible:Boolean(trustedLocal&&record.timing.officialEligible),
     complete:Boolean(record.completeness.complete),
     buildCommit:record.build?.commit||'unversioned',
     modelVersion:record.versions?.model,
     rulesVersion:record.versions?.rules
   });
 }
-function boundedSnapshotIndex(existing,record){
-  const metadata = compactSnapshotMetadata(record);
+function boundedSnapshotIndex(existing,record,options={}){
+  const metadata = compactSnapshotMetadata(record,options);
   const rows = [metadata,...(Array.isArray(existing)?existing:[]).filter(row=>row.snapshotId!==metadata.snapshotId)]
     .sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)||a.snapshotId.localeCompare(b.snapshotId));
   return rows.slice(0,EVIDENCE_RULES.localIndexLimit);

@@ -11,7 +11,7 @@ Audience: anyone joining the project. Last updated: 2026-07-29. Related: ARCHITE
 - Stages 1–9 are complete and merged. The complete Stage 10 design is owner-approved.
 - Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.
 - Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.
-- Stage 10.1 is implemented on draft PR #27. Verified source `37fd95efa853fb3e208aa49fa49f7d62aa06ff61` passes **338/338 tests** with byte-identical builds and exact build identity; owner review and physical iPhone acceptance remain pending.
+- Stage 10.1 is amended on draft PR #27. Startup automatically refreshes and validates the four approved sources before one consistent render; foreground returns repeat the check when due, eligible evidence is captured automatically, and recovery imports cannot become official. Verified source `__SOURCE_SHA__` passes **349/349 tests** with byte-identical builds and exact build identity; owner review and physical iPhone acceptance remain pending.
 - The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
 ## Goals and priorities
@@ -39,7 +39,7 @@ Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 
 ## Completed, current and next
 Completed: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation and all six Stage 9 UI-integration checkpoints.
 
-Current: Stage 10.1 — Deadline-safe snapshot foundation is implemented on draft PR #27. It adds immutable anonymised pre-deadline records, timing/leakage controls, provider provenance, deterministic hashes, bounded compressed local recovery and JSON export/import. It does not change model behaviour.
+Current: Stage 10.1 — Deadline-safe snapshot foundation is amended on draft PR #27. It adds immutable anonymised pre-deadline records plus a minimalist startup verification gate, automatic app-open/foreground refresh, approved-source enforcement, deferred one-shot rendering, automatic eligible capture and recovery-only imports. It does not change model behaviour.
 
 Next: owner review and physical iPhone acceptance of Stage 10.1, followed only after merge by Stage 10.2 official outcomes. Formula, provider and calibration changes remain outside scope unless separately evidenced and approved.
 
