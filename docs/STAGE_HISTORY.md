@@ -3,10 +3,10 @@ Purpose: permanent per-stage record. Audience: retrospective/context. Last updat
 Related: STAGE1.md, STAGE2.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, AUDIT.md.
 
 
-## Stage 10.2 — Official outcome collection (DRAFT REVIEW 2026-07-29)
+## Stage 10.2 — Official outcome collection (MERGED 2026-07-29)
 Pritesh approved the exact Official FPL-only design. The implementation collects all-player live totals, filtered fixture outcomes and optional public manager facts after the main app is usable; requires official `finished` plus `data_checked`; appends immutable provisional/complete/corrected revisions; links strictly to eligible deadline snapshots; and stores bounded compressed recovery with imports forced non-current. Duplicate players and conflicting fixtures fail closed.
 
-The full suite passes **376/376** with deterministic exact-identity builds. No Stage 10.3 metric, model formula, provider, authentication, backend or FPL write action is included. The branch remains under owner review and must not merge without explicit approval.
+The full suite passes **376/376** with deterministic exact-identity builds. No Stage 10.3 metric, model formula, provider, authentication, backend or FPL write action is included. Pritesh approved the completed item on 29 July 2026; verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306` and generated artefacts `9d81210b493ab40a542c50709733b14e448a481c` merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`.
 
 
 ## Stage 10.1 — Deadline-safe snapshot foundation (MERGED 2026-07-29)

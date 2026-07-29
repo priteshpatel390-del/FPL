@@ -1,5 +1,5 @@
 # STAGE10-DESIGN.md — Prospective Live-Season Validation
-Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 official outcome collection is the next separately scoped checkpoint.
+Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 is complete and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`; Stage 10.3 metrics is the next separately scoped investigation and approval checkpoint.
 Related: PROJECTION_MODEL.md, TESTING.md, DATA_SOURCES.md, SECURITY.md, KNOWN_LIMITATIONS.md.
 
 ## Objective
@@ -105,7 +105,7 @@ Implemented under the owner-approved Official FPL-only contract. `/event/{gw}/li
 
 Valid in-flight facts are immutable `provisional` revisions. A record becomes `complete` only when every currently assigned fixture is finished, the event is finished and data-checked, and player detail validates. Later changed complete facts append a `corrected` revision. Duplicate players and conflicting fixtures fail closed. Identical rechecks create no duplicate full record.
 
-Automatic work starts after the verified main render, never delays app access, checks provisional outcomes every fifteen minutes while visible, checks completed outcomes daily for fourteen days and catches up six missed Gameweeks per trigger. Squad outcomes remain optional and non-blocking. Stage 10.2 records facts only: transfer identities, realised recommendation metrics and every Stage 10.3 evaluation remain excluded.
+Automatic work starts after the verified main render, never delays app access, checks provisional outcomes every fifteen minutes while visible, checks completed outcomes daily for fourteen days and catches up six missed Gameweeks per trigger. Squad outcomes remain optional and non-blocking. Stage 10.2 records facts only: transfer identities, realised recommendation metrics and every Stage 10.3 evaluation remain excluded. The implementation was owner-approved and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`; verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306` passes **376/376 tests** with generated artefacts at `9d81210b493ab40a542c50709733b14e448a481c`.
 
 ## Stage 10.3 metric design
 No composite accuracy score is approved. Planned deterministic metrics are:
