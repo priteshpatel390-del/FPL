@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TEAM_PITCH_PATTERNS, teamPitchPalette, teamPitchLines, teamPitchCaptaincy } from '../src/ui/team-pitch.mjs';
+import { TEAM_PITCH_PATTERNS, teamPitchPalette, teamPitchPaletteClass, teamPitchLines, teamPitchCaptaincy } from '../src/ui/team-pitch.mjs';
 
 test('pitch lines preserve every starter once in football visual order', () => {
   const starters = [
@@ -31,4 +31,11 @@ test('unknown club palette falls back deterministically to an approved pattern',
   assert.deepEqual(a,b);
   assert.ok(TEAM_PITCH_PATTERNS.includes(a.pattern));
   assert.match(a.primary,/^#[0-9A-F]{6}$/i);
+});
+
+
+test('shirt palette classes are stable for known and fallback clubs', () => {
+  assert.equal(teamPitchPaletteClass({id:1,short_name:'ARS'}),'shirt-palette-ars');
+  assert.equal(teamPitchPaletteClass({id:77,short_name:'XYZ'}),teamPitchPaletteClass({id:77,short_name:'XYZ'}));
+  assert.match(teamPitchPaletteClass({id:77,short_name:'XYZ'}),/^shirt-palette-fallback-[1-6]$/);
 });

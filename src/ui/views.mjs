@@ -1,5 +1,6 @@
 // Views import broadly; the bundler flattens everything into one scope.
 const elNode = el;
+const svgNode = svgEl;
 const flagNodes = p => {
   const nodes = [];
   if(['i','u','s','n'].includes(p.status)) nodes.push(elNode('span',{class:'flag out'},p.status==='s'?'SUSP':'OUT'));
@@ -38,7 +39,7 @@ function renderTicker(){
         : multToDiff(lens === 'defence' ? g.ctx.def : g.ctx.atk));
       const contents = [];
       games.forEach((g,i) => {
-        if(i) contents.push(elNode('hr',{style:{border:'0',height:'1px',background:'rgba(255,255,255,.45)',width:'80%',margin:'2px 0'}}));
+        if(i) contents.push(elNode('hr',{class:'fixture-divider'}));
         contents.push(g.opp.short_name,elNode('small',{},`${g.home?'H':'A'} · ${diffs[i]}`));
       });
       row.appendChild(elNode('td',{},elNode('div',{class:`cell d${diffs[0]}${games.length > 1 ? ' dbl' : ''}`},contents)));
@@ -116,17 +117,17 @@ function breakdownNode(p, x, span){
     .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]));
   const max = Math.max(...entries.map(([,v]) => Math.abs(v)), 0.01);
   const nodes = [elNode('b',{},p.web_name),` — ${fmt1(x.total)} projected points over ${span} gameweek${span>1?'s':''} (${x.games} fixture${x.games===1?'':'s'})`];
-  if(p.news) nodes.push(elNode('div',{style:{marginTop:'6px',color:'var(--claret)'}},p.news,' ',elNode('span',{class:'flag dark'},newsAge(p))));
+  if(p.news) nodes.push(elNode('div',{class:'breakdown-news'},p.news,' ',elNode('span',{class:'flag dark'},newsAge(p))));
   const bars = elNode('div',{class:'bars'});
   entries.forEach(([k,v]) => {
-    bars.appendChild(elNode('div',{class:'bar'},elNode('span',{},k),elNode('span',{class:'track'},elNode('span',{class:`fill ${v<0?'neg':''}`,style:{width:`${Math.abs(v)/max*100}%`}})),elNode('span',{class:'v'},`${v>0?'+':''}${fmt1(v)}`)));
+    bars.appendChild(elNode('div',{class:'bar'},elNode('span',{},k),elNode('progress',{class:`projection-progress${v<0?' neg':''}`,max:'100',value:(Math.abs(v)/max*100).toFixed(2),'aria-label':`${k} ${v>0?'+':''}${fmt1(v)}`}),elNode('span',{class:'v'},`${v>0?'+':''}${fmt1(v)}`)));
   });
   nodes.push(bars);
   const runs = teamFixtures(p.team, clamp(parseInt($('fxFrom').value)||S.nextGW,1,38), span);
   const fx = runs.map((g,i) => g.length ? g.map(o => `${o.opp.short_name}(${o.home?'H':'A'})`).join('+') : 'blank').join(' · ');
-  nodes.push(elNode('div',{style:{marginTop:'8px',color:'var(--ink-soft)'}},elNode('b',{},'Fixtures:'),` ${fx}`));
+  nodes.push(elNode('div',{class:'breakdown-meta breakdown-meta-primary'},elNode('b',{},'Fixtures:'),` ${fx}`));
   const mo = priceMomentum(p);
-  if(mo) nodes.push(elNode('div',{style:{marginTop:'4px',color:'var(--ink-soft)'}},elNode('b',{},'Price:'),` heavy net transfers ${mo==='rising'?'in — a rise looks likely':'out — a fall looks likely'}.`));
+  if(mo) nodes.push(elNode('div',{class:'breakdown-meta'},elNode('b',{},'Price:'),` heavy net transfers ${mo==='rising'?'in — a rise looks likely':'out — a fall looks likely'}.`));
   return nodes;
 }
 
@@ -144,12 +145,11 @@ function playerDetailPercent(value){ return `${Math.round(clamp(num(value),0,1)*
 function openPlayerDetailView(p,from,span,trigger){
   const team=S.teams[p.team], x=xpOf(p,from,span), next=xpOf(p,S.nextGW,1);
   const mins=minutesEstimate(p), simulation=simulatePlayerGameweek(p,S.nextGW);
-  const palette=teamPitchPalette(team), detail=[];
+  const palette=teamPitchPalette(team), paletteClass=teamPitchPaletteClass(team), detail=[];
   const fixtures=teamFixtures(p.team,S.nextGW,1)[0]||[];
   const fixtureLabel=fixtures.length?fixtures.map(g=>`${g.opp.short_name} ${g.home?'H':'A'}`).join(' + '):'Blank';
-  const paletteStyle=`--shirt-primary:${palette.primary};--shirt-secondary:${palette.secondary};--shirt-accent:${palette.accent};--shirt-ink:${palette.ink}`;
   const identity=elNode('div',{class:'player-detail-identity'},
-    elNode('span',{class:`club-shirt detail-shirt pattern-${palette.pattern}`,style:paletteStyle,'aria-hidden':'true'},
+    elNode('span',{class:`club-shirt detail-shirt pattern-${palette.pattern} ${paletteClass}`,'aria-hidden':'true'},
       elNode('span',{class:'club-shirt-code'},palette.code)),
     elNode('div',{class:'player-detail-identity-copy'},
       elNode('div',{class:'player-detail-name'},p.web_name,flagNodes(p)),
@@ -186,9 +186,11 @@ function openPlayerDetailView(p,from,span,trigger){
       elNode('div',{class:'player-detail-range-head'},
         elNode('div',{},elNode('span',{class:'eyebrow'},'Likely middle range'),elNode('strong',{},`${fmt1(simulation.p25)}–${fmt1(simulation.p75)} pts`)),
         spread.label?elNode('span',{class:`range-label ${spread.label.toLowerCase()}`},`${spread.label} range`):null),
-      elNode('div',{class:'player-detail-range-track','aria-label':`P10 ${fmt1(low)}, P25 ${fmt1(simulation.p25)}, median ${fmt1(simulation.median)}, P75 ${fmt1(simulation.p75)}, P90 ${fmt1(high)}`},
-        elNode('span',{class:'player-detail-range-core',style:{left:`${left}%`,right:`${100-right}%`}}),
-        elNode('span',{class:'player-detail-range-median',style:{left:`${middle}%`}})),
+      elNode('div',{class:'player-detail-range-track',role:'img','aria-label':`P10 ${fmt1(low)}, P25 ${fmt1(simulation.p25)}, median ${fmt1(simulation.median)}, P75 ${fmt1(simulation.p75)}, P90 ${fmt1(high)}`},
+        svgNode('svg',{class:'player-detail-range-svg',viewBox:'0 0 100 12','aria-hidden':'true',focusable:'false'},
+          svgNode('line',{class:'player-detail-range-rail',x1:'0',y1:'6',x2:'100',y2:'6'}),
+          svgNode('line',{class:'player-detail-range-core',x1:left.toFixed(2),y1:'6',x2:right.toFixed(2),y2:'6'}),
+          svgNode('line',{class:'player-detail-range-median',x1:middle.toFixed(2),y1:'1',x2:middle.toFixed(2),y2:'11'}))),
       elNode('div',{class:'player-detail-range-scale'},elNode('span',{},`P10 ${fmt1(low)}`),elNode('span',{},`P90 ${fmt1(high)}`))));
     if(spread.quality==='reduced')
       uncertaintyNodes.push(noteNode('bad',elNode('b',{},'Reduced input quality.'),' The numeric range is shown, but the Tight/Moderate/Wide label is suppressed because the minutes inputs required bounding.'));
@@ -286,13 +288,12 @@ function renderSquad(){
     return games.length ? games.map(g=>`${g.opp.short_name} ${g.home?'H':'A'}`).join(' + ') : 'Blank';
   };
   const playerNode=(slot,benchIndex=null)=>{
-    const p=slot.p, team=S.teams[p.team], palette=teamPitchPalette(team);
+    const p=slot.p, team=S.teams[p.team], palette=teamPitchPalette(team), paletteClass=teamPitchPaletteClass(team);
     const role=p.id===effectiveCaptaincy.captainId?'captain':p.id===effectiveCaptaincy.viceId?'vice':null;
     const bad=availability(p)<1, incoming=incomingIds.has(Number(p.id));
     const selectable=benchIndex==null&&!!previewState.selectionMode;
     const fixture=fixtureLabel(p), projected=fmt1(xpOf(p,gw,1).total);
     const label=benchIndex==null?p.web_name:`${benchIndex}. ${p.web_name}`;
-    const style=`--shirt-primary:${palette.primary};--shirt-secondary:${palette.secondary};--shirt-accent:${palette.accent};--shirt-ink:${palette.ink}`;
     return elNode('button',{type:'button',class:`pitch-player${benchIndex==null?'':' bench-player'}${bad?' warn':''}${incoming?' incoming':''}${selectable?' selection-target':''}`,
       onclick:event=>{
         if(selectable){ decisionPreviewChooseRole(previewState.selectionMode,p.id,xiIds); renderSquad(); }
@@ -300,7 +301,7 @@ function renderSquad(){
       },
       'aria-label':selectable?`Select ${label} as ${previewState.selectionMode==='captain'?'captain':'vice-captain'}`:`${label}, ${fixture}, ${projected} expected points${role==='captain'?', captain':role==='vice'?', vice-captain':''}${incoming?', incoming transfer preview':''}`},
       elNode('div',{class:'shirt-wrap'},
-        elNode('span',{class:`club-shirt pattern-${palette.pattern}`,style,'aria-hidden':'true'},elNode('span',{class:'club-shirt-code'},palette.code)),
+        elNode('span',{class:`club-shirt pattern-${palette.pattern} ${paletteClass}`,'aria-hidden':'true'},elNode('span',{class:'club-shirt-code'},palette.code)),
         role?elNode('span',{class:`captain-badge${role==='vice'?' vice':''}${effectiveCaptaincy.isPreview?' preview':''}`},role==='captain'?'C':'VC'):null,
         incoming?elNode('span',{class:'incoming-badge'},'IN'):null),
       elNode('div',{class:'pitch-copy'},elNode('div',{class:'pitch-name'},label),elNode('div',{class:'pitch-meta'},fixture),elNode('div',{class:'pitch-xp'},`${projected} xP`)));
@@ -387,7 +388,7 @@ function renderTransfers(){
       elNode('td',{},elNode('span',{class:'pname'},m.out.p.web_name),elNode('span',{class:'pmeta'},`${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP`)),
       elNode('td',{},elNode('span',{class:'pname'},m.inP.web_name,flagNodes(m.inP)),elNode('span',{class:'pmeta'},`${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP`)),
       cell(`${m.cost>0?'+':''}${fmt1(m.cost)}`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${m.gain>4?'hot':''}`},`+${fmt1(m.gain)}`)),
-      elNode('td',{class:'num',style:{color:net>0?'var(--pitch)':'var(--claret)'}},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
+      elNode('td',{class:`num transfer-net ${net>0?'positive':'negative'}`},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
   });
   nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Out'),head('In'),head('Cost £m','num'),head('Gain','num'),head('After −4','num'),head('Verdict'))),tbody)));
   nodes.push(noteNode('plain','A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.'));
@@ -408,8 +409,7 @@ function renderLeagueChips(){
   setChildren(el, S.leagues.flatMap((l,i) => {
     const label = l.name || l.id;
     return [elNode('button', {class:'chip', dataset:{lg:i}}, label),
-      elNode('button', {class:'chip', dataset:{lgrm:i}, 'aria-label':`Remove ${label}`,
-        style:{padding:'6px 9px', color:'var(--claret)'}}, '×')];
+      elNode('button', {class:'chip chip-remove', dataset:{lgrm:i}, 'aria-label':`Remove ${label}`}, '×')];
   }));
   el.querySelectorAll('[data-lg]').forEach(b => b.addEventListener('click', () => {
     const l = S.leagues[+b.dataset.lg];
@@ -483,12 +483,12 @@ async function compareLeague(){
 
     const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v)), nodes=[];
     nodes.push(elNode('div',{class:'kpis'},kpi('Rivals read',counted),kpi('My rank',(st.standings.results.find(r=>String(r.entry)===String(S.teamId))||{}).rank??'—'),kpi('Unique to me',myOnly.length)),
-      elNode('p',{class:'status',style:{marginBottom:'12px'}},`${st.league.name} · effective ownership = owned % + captained %.`),elNode('h3',{},"Biggest threats you don't own"));
+      elNode('p',{class:'status mb-12'},`${st.league.name} · effective ownership = owned % + captained %.`),elNode('h3',{},"Biggest threats you don't own"));
     const threatBody=elNode('tbody');
     threats.forEach(r=>threatBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name,flagNodes(r.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[r.p.element_type]||''),` ${S.teams[r.p.team]?.short_name||''} · £${(r.p.now_cost/10).toFixed(1)}m`)),cell(`${r.own.toFixed(0)}%`,'num'),cell(`${r.cap.toFixed(0)}%`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${r.eo>80?'hot':''}`},`${r.eo.toFixed(0)}%`)),cell(fmt1(r.xp),'num'))));
     nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Owned','num'),head('Capt','num'),head('EO','num'),head('xP 6GW','num'))),threatBody)));
     if(!threats.length) nodes.push(noteNode('good',"Nothing widely owned that you're missing — you're covered on the template."));
-    nodes.push(elNode('h3',{style:{marginTop:'18px'}},'Your differentials'));
+    nodes.push(elNode('h3',{class:'mt-18'},'Your differentials'));
     if(diffs.length){ const diffBody=elNode('tbody'); diffs.forEach(r=>diffBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name),elNode('span',{class:'pmeta'},S.teams[r.p.team]?.short_name||'')),cell(`${r.own.toFixed(0)}%`,'num'),cell(fmt1(r.xp),'num')))); nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Rival own','num'),head('xP 6GW','num'))),diffBody))); }
     if(myOnly.length) nodes.push(noteNode('',elNode('b',{},'Owned by nobody else in the league:'),` ${myOnly.map(p=>p.web_name).join(', ')}. These are where you win or lose the league.`));
     setChildren(el,nodes);
@@ -604,7 +604,7 @@ function renderManual(){
     const p = S.byId[m.id];
     if(!p) return null;
     return elNode('span', {class:'pill'}, p.web_name, ' ',
-      elNode('span', {class:'mono', style:{color:'var(--ink-soft)'}}, S.posName[p.element_type]||''),
+      elNode('span', {class:'mono muted'}, S.posName[p.element_type]||''),
       elNode('button', {dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
   }));
   const counts = {1:0,2:0,3:0,4:0};
@@ -718,7 +718,7 @@ document.addEventListener('click', e => {
   const cal = await sget(K_CAL);
   if(cal){
     S.calib = cal.calib; S.backtest = cal.backtest;
-    setChildren($('btOut'),elNode('div',{class:'note good',style:{marginTop:'8px'}},`Calibration from ${cal.backtest?.season} is active (r ${cal.backtest?.r}, ±${cal.backtest?.maeGW} pts/GW). Re-run any time.`));
+    setChildren($('btOut'),elNode('div',{class:'note good mt-8'},`Calibration from ${cal.backtest?.season} is active (r ${cal.backtest?.r}, ±${cal.backtest?.maeGW} pts/GW). Re-run any time.`));
   }
   S.manual = (await sget(K_SQUAD)) || [];
   S.leagues = (await sget('fpl:leagues')) || [];

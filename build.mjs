@@ -25,6 +25,8 @@ const sourceHasher = createHash('sha256');
 let bundle = '';
 for (const path of ORDER) {
   const raw = readFileSync(path, 'utf8');
+  if(/\bstyle\s*:/.test(raw) || /\.style(?:\.|\[|\s*=)/.test(raw) || /setAttribute\(\s*['\"]style/.test(raw) || /\bcssText\b/.test(raw))
+    throw new Error(`Inline style API is forbidden in ${path}; use the hash-locked stylesheet`);
   sourceHasher.update(path).update('\0').update(raw);
   bundle += `\n/* ===== ${path} ===== */\n` + stripModuleSyntax(raw) + '\n';
 }
@@ -43,6 +45,7 @@ bundle = `/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: so
 
 const sha256Csp = value => 'sha256-' + createHash('sha256').update(value, 'utf8').digest('base64');
 const template = readFileSync('app.html', 'utf8');
+if(/\sstyle\s*=/.test(template)) throw new Error('Inline style attribute remains in app.html');
 const styleMatches = [...template.matchAll(/<style>([\s\S]*?)<\/style>/g)];
 if(styleMatches.length !== 1) throw new Error(`CSP build requires exactly one inline style block; found ${styleMatches.length}`);
 const styleContent = styleMatches[0][1];
@@ -53,7 +56,6 @@ const csp = [
   "default-src 'none'",
   `script-src '${scriptHash}'`,
   `style-src-elem '${styleHash}' https://fonts.googleapis.com`,
-  "style-src-attr 'unsafe-inline'",
   'font-src https://fonts.gstatic.com',
   'connect-src https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com',
   "img-src 'self' data:",
@@ -77,7 +79,9 @@ const verifiedScriptHash = sha256Csp(emittedScripts[0][1]);
 const verifiedStyleHash = sha256Csp(emittedStyles[0][1]);
 if(!emittedCsp.includes(`script-src '${verifiedScriptHash}'`)) throw new Error('CSP script hash does not match emitted script bytes');
 if(!emittedCsp.includes(`style-src-elem '${verifiedStyleHash}'`)) throw new Error('CSP style hash does not match emitted style bytes');
-if(emittedCsp.includes("script-src 'unsafe-inline'")) throw new Error('CSP must not allow broad inline script execution');
+if(emittedCsp.includes("'unsafe-inline'")) throw new Error('CSP must not allow unsafe-inline for scripts or styles');
+if(emittedCsp.includes('style-src-attr')) throw new Error('CSP must not include a style-src-attr concession');
+if(/\sstyle\s*=/.test(html)) throw new Error('Generated deployable contains an inline style attribute');
 
 mkdirSync('dist', { recursive: true });
 writeFileSync('dist/app.bundle.js', bundle);
