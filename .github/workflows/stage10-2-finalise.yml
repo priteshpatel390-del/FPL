@@ -22,6 +22,44 @@ jobs:
           fetch-depth: 0
           ref: agent/stage10-2-official-outcomes
 
+      - name: Apply focused integrity corrections
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          outcome=Path('src/evidence/outcome.mjs')
+          text=outcome.read_text()
+          old="""  const outcomeDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);
+            if(previousRecord?.identity?.outcomeDataHash===outcomeDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};
+            let status=payload.status;
+            if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==outcomeDataHash) status=OUTCOME_STATUSES.CORRECTED;
+            const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1;
+          """.replace('            ','  ')
+          new="""  const candidateDataHash=await sha256Hex(stableStringify(outcomeDataMaterial(payload)),cryptoImpl);
+            if(previousRecord?.identity?.outcomeDataHash===candidateDataHash&&previousRecord.status===payload.status) return {unchanged:true,record:previousRecord};
+            let status=payload.status;
+            if([OUTCOME_STATUSES.COMPLETE,OUTCOME_STATUSES.CORRECTED].includes(previousRecord?.status)&&payload.status===OUTCOME_STATUSES.COMPLETE&&previousRecord.identity?.outcomeDataHash!==candidateDataHash) status=OUTCOME_STATUSES.CORRECTED;
+            const outcomeDataHash=status===payload.status?candidateDataHash:await sha256Hex(stableStringify(outcomeDataMaterial({...payload,status})),cryptoImpl);
+            const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1;
+          """.replace('            ','  ')
+          if old not in text:
+              raise SystemExit('Outcome correction anchor not found')
+          outcome.write_text(text.replace(old,new,1))
+
+          test_path=Path('tests/outcome-collection.test.mjs')
+          test_text=test_path.read_text()
+          old_test="setup(1); S.teamId='1234567';"
+          if old_test not in test_text:
+              raise SystemExit('Privacy sentinel anchor not found')
+          test_path.write_text(test_text.replace(old_test,"setup(1); S.teamId='9988776655';",1))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/evidence/outcome.mjs tests/outcome-collection.test.mjs
+          git diff --cached --check
+          git commit -m "Fix Stage 10.2 outcome integrity checks"
+
       - name: Full Stage 10.2 verification
         run: |
           set -euo pipefail
@@ -55,12 +93,9 @@ jobs:
           print('\n'.join(changed))
           PY
           rm -f .github/workflows/stage10-2-finalise.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
           git commit -m "Record Stage 10.2 verification baseline"
-          git push origin HEAD
 
       - name: Final exact-identity verification
         run: |
@@ -85,7 +120,7 @@ jobs:
           grep -Fq "\"commit\": \"$FINAL_SOURCE_SHA\"" dist/manifest.json
           git diff --check
 
-      - name: Commit verified generated artefacts
+      - name: Commit and publish verified generated artefacts
         run: |
           set -euo pipefail
           git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
