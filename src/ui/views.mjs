@@ -660,6 +660,8 @@ function renderAll(){
   setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
   if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
   renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual();
+  if(typeof document!=='undefined' && typeof document.dispatchEvent==='function' && typeof CustomEvent==='function')
+    document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
 }
 
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }

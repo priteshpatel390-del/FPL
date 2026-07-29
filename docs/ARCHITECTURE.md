@@ -11,7 +11,7 @@ run-tests.sh            production build + complete node:test suite
 src/
   config.mjs            model/rules versions and FPL, minutes, scoring, transfer, simulation, odds rules
   util.mjs              shared parsing and DOM-builder primitives
-  state.mjs             core state, bootstrap slimming/hydration, minute histories
+  state.mjs             core state, bootstrap slimming/hydration, minute histories and last rendered optimiser result
   storage.mjs           configuration and cache envelopes
   providers/            validation, transport, retry, health and optional data loaders
   model/
@@ -25,9 +25,13 @@ src/
     walk-forward.mjs    chronological evaluation and fold-only calibration
     archive-replay.mjs  pinned historical replay
     backtest.mjs        historical evaluation utilities
+  evidence/
+    snapshot.mjs        canonical Stage 10 records, deadline timing, hashes and validation
   squad.mjs             squad helpers and deterministic best-XI selection
-  main.mjs              load orchestration
-  ui/                    app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
+  main.mjs              load orchestration; evidence capture can explicitly await optional providers
+  ui/
+    evidence.mjs        phone-first capture/status, compressed local recovery and JSON import/export
+    ...                 app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
 tests/                  characterisation, model, simulation, provider, security, UI-helper and build tests
 docs/                   canonical project records
 dist/                   generated deployable; never hand-edit
@@ -79,3 +83,12 @@ Characterisation tests execute the built production bundle. Direct imports cover
 
 ## Future serverless architecture
 Static UI shape can remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
+
+## Stage 10 prospective-evidence boundary
+`evidence/snapshot.mjs` reads the already validated runtime state and existing model functions, then emits an explicit allowlisted record. It never serialises `S` or configuration wholesale. Every record includes exact build/model/rules identity, canonical inputs and outputs, provider consequences, whole-record SHA-256 and section/provider hashes. Import recomputes those hashes and fails closed on tampering or an unknown schema.
+
+Capture uses the official FPL event deadline, samples the same-origin HTTP `Date` before and after collection and applies the approved 24-hour/60-minute/20–10-minute/two-minute timing policy. The CSP therefore permits same-origin `connect-src` in addition to the established provider allowlist. This is timing evidence, not external timestamp notarisation.
+
+All-player live uncertainty retains the approved 5,000 samples. `simulation.mjs` now precomputes invariant player/fixture expected components once before the sample loop and can omit raw arrays from a caller that needs summaries only; default callers and all formulas remain unchanged. Snapshot projection work yields every 20 players. A matching optimiser result already rendered for the same squad, horizon, bank and free-transfer context is reused rather than recomputed.
+
+`ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive.

@@ -5,7 +5,7 @@ Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md.
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 9.6 verified branch baseline: **313/313 passing tests**, successful production build, deterministic two-build comparison and exact build-identity checks. Verified source is `4a4b14c1d0f422088c080e714ee259efbd7cc39d`; generated artefacts are committed at `7fb09142156a8061adc375a72bf3d7e2a1b25985`. Source and deployable scans confirm no style attributes/runtime style APIs, no `style-src-attr` and no `unsafe-inline`.
+Stage 10.1 verified source `__SOURCE_SHA__`: **337/337 passing tests**, successful production build, byte-identical two-build artefact verification and exact build identity. Physical iPhone acceptance remains pending on draft PR #27. The merged Stage 9 baseline remains 313/313 at source `4a4b14c1d0f422088c080e714ee259efbd7cc39d`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -26,6 +26,7 @@ Stage 9.6 verified branch baseline: **313/313 passing tests**, successful produc
 16. `provider-health-ui.test.mjs` — Stage 9.5 compact age/status modelling, deterministic highest-attention state, status palette mapping and Settings/full-detail wiring.
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
+19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict import validation, privacy, chunking, compression, bounded recovery, quota failures and delete/reset.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
@@ -46,3 +47,8 @@ Stages 8–9.6 change no deterministic projection formula and require no golden 
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 8 probability coverage must be evaluated prospectively during 2026/27 before any calibration claim.
+
+## Stage 10.1 evidence tests
+`evidence-snapshot.test.mjs` covers canonical JSON, SHA-256, secret rejection, every approved deadline boundary, same-origin clock evidence, client-only/conflict/late grades, provider cutoffs, immutable identity, section tampering, deadline revisions, official selection, privacy, all-player output shape, chunked collection and bundle/UI wiring.
+
+`evidence-storage.test.mjs` covers random stable anonymous references, gzip/plain recovery encoding, three-row metadata/two-record bounds, verified reload, quota failure surfacing and explicit delete/reset. Existing simulation, scoring and golden tests guard the performance refactor against model-output changes. Final verification requires `./run-tests.sh`, two byte-identical builds with the exact source commit and manifest/build identity checks.

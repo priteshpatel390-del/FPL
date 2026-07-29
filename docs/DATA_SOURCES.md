@@ -97,3 +97,9 @@ Metadata: each call writes `{provider, endpoint, attempts, finalStatus,
 retryable, exhausted, budgetExceeded}` to `S.retryStats`, keyed by provider and
 a normalised endpoint — query strings stripped (so the odds key cannot appear)
 and digit runs collapsed to `{id}` (so twenty rivals cannot create twenty keys).
+
+
+## Stage 10 evidence provenance
+A pre-deadline record stores the normalized FPL, Understat, odds, archive-calibration and detailed-minutes inputs that actually affected its outputs, plus Provider Health state, age, threshold, consequence, accepted/rejected counts and retry/validation summaries. It does not store provider keys, raw configuration or account identifiers.
+
+The same-origin GitHub Pages response `Date` header is sampled before and after capture solely as deadline-timing evidence. It is not a model provider, is not blended into projections and is not an external timestamp authority. If it is unavailable, conflicts with the device clock by more than 60 seconds or completes inside the two-minute cutoff, the record remains exportable but cannot become official.

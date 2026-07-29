@@ -122,7 +122,7 @@ export function healthRows(context = {}, now = Date.now()){
   return ['fpl','understat','odds','archive']
     .map(name => getHealth(name, context, now))
     .filter(Boolean)
-    .map(h => ({...h, ageMs:h.lastSuccess ? Math.max(0, now - h.lastSuccess) : null}));
+    .map(h => ({...h, ageMs:h.lastSuccess ? Math.max(0, now - h.lastSuccess) : null, thresholdMs:thresholdFor(h.provider,context)}));
 }
 
 export function healthSummary(context = {}, now = Date.now()){

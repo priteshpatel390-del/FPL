@@ -42,7 +42,7 @@ Policy shape:
 - hash-only inline style element plus `https://fonts.googleapis.com`
 - no `style-src-attr` directive and no `unsafe-inline` token
 - `font-src https://fonts.gstatic.com`
-- explicit `connect-src` allow-list for FPL, relays, Understat, Odds, archive and Claude preview
+- explicit `connect-src` allow-list for same-origin timing evidence, FPL, relays, Understat, Odds, archive and Claude preview
 - `img-src 'self' data:`
 - `object-src 'none'`, `base-uri 'none'`, `form-action 'self'`
 - `frame-ancestors 'none'` retained for future header migration
@@ -54,3 +54,9 @@ accepted-temporary limitation.
 ## Deferred triggers
 Serverless proxies, environment-held secrets, origin checks, server rate limiting, real CSP headers
 and hosted Anthropic support remain deferred until hosted AI is required under D-08.
+
+
+## Stage 10 evidence security
+Evidence construction is allowlist-only and rejects secret-shaped keys or values before finalisation. It never serialises configuration or core state wholesale. Numeric entry and league identifiers are redacted from retry/issue endpoints; FPL Team ID, manager name and league IDs are omitted. A random 128-bit device-local reference is used instead.
+
+Imported JSON is accepted only after schema, section-hash, whole-record-hash and snapshot-ID verification. Browser recovery records use built-in gzip where available, but exports are deliberately complete unencrypted JSON and must be handled as user-controlled files. A visible delete action removes local records and the anonymous reference; it cannot remove files already exported by the browser.

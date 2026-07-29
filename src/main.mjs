@@ -80,7 +80,7 @@ function renderProviderHealth(){
   }));
 }
 
-async function loadAll(){
+async function loadAll(options = {}){
   const st = $('status');
   const cached = await sget(K_CACHE);
   if(cached && !S.boot){
@@ -140,7 +140,8 @@ async function loadAll(){
       st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
     await saveCfg();
     renderProviderHealth(); renderAll();
-    Promise.all([loadUnderstat(), loadOdds(), loadMinuteHistories()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
+    const optionalLoads = Promise.allSettled([loadUnderstat(), loadOdds(), loadMinuteHistories()]).then(() => { clearXP(); renderProviderHealth(); renderAll(); });
+    if(options.awaitOptional) await optionalLoads;
   }catch(err){
     await saveCfg();
     const shape = !!(err && err.feedShape);
