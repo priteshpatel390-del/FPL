@@ -1,6 +1,25 @@
 # CHANGELOG.md
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
-Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
+Last updated: 2026-07-29. Related: STAGE_HISTORY.md for engineering detail.
+
+## [Stage 9.5] — 2026-07-29 — More, Settings and Provider Health
+### Added
+- Compact globally visible Provider Health status that opens the full detail surface under More.
+- Full current-session provider rows showing the existing state, last-success age, note and fallback consequence.
+- Six focused tests covering compact age/status modelling, deterministic state priority, palette mapping and shell wiring.
+### Changed
+- Existing team connection, transfer context and optional provider controls are now clearly presented as Settings under More.
+- Provider Health presentation moved out of the legacy setup note without changing its seven-state registry or transitions.
+### Verification
+- Verified source commit `da8258df25e196af1f1521c025edefde23612abd`.
+- Full suite: **310/310 passing**.
+- Production build succeeded; deterministic two-build comparison and exact build-identity checks passed.
+- Verified generated artefacts committed at `5401f2882f72b70c7034157c2e3a686dab966c64`.
+### Unchanged
+- No provider state, transport, retry, cache, fallback, odds-key, storage, security or model behaviour changed.
+- No inline-style migration or CSP tightening; those remain checkpoint 9.6.
+### Status
+- Implemented and verified on draft PR #24; awaiting owner review and explicit merge approval.
 
 ## [Stage 9.4] — 2026-07-28 — Temporary decision previews
 ### Added
@@ -20,7 +39,7 @@ Last updated: 2026-07-28. Related: STAGE_HISTORY.md for engineering detail.
 - No projection, expected-minutes, best-XI, captain-ranking, optimiser, provider, storage, security or FPL-account behaviour changed.
 - No preview state is persisted or submitted to FPL.
 ### Status
-- Implemented and verified on draft PR #23; awaiting owner review and explicit merge approval.
+- Merged through PR #23 at `5e62f2f65d6e21d86ca3f0ef8dd0b7112fd4a8c8`.
 
 ## [Stage 9.3] — 2026-07-28 — Player detail and uncertainty
 ### Added
