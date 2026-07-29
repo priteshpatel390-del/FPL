@@ -1,9 +1,11 @@
 name: Temporary Stage 10 source verifier
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/stage10-1-deadline-snapshot
+      - main
+    types:
+      - reopened
 
 permissions:
   contents: write
@@ -14,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: agent/stage10-1-deadline-snapshot
           fetch-depth: 0
       - name: Detect complete payload
         id: payload
