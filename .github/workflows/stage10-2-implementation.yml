@@ -1,3 +1,4 @@
+# verification trigger: pull-request synchronize
 name: Stage 10.2 implementation runner
 
 on:
