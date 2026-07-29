@@ -17,8 +17,9 @@ const ORDER = [
   'src/model/squad-simulation.mjs', 'src/model/transfers.mjs', 'src/model/walk-forward.mjs',
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
-  'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/ui/views.mjs', 'src/ui/transfer-optimiser-view.mjs', 'src/ui/backtest-copy.mjs',
-  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs',
+  'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs',
+  'src/ui/views.mjs', 'src/ui/transfer-optimiser-view.mjs', 'src/ui/backtest-copy.mjs',
+  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
@@ -74,7 +75,7 @@ const emittedScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/scrip
 const emittedStyles = [...html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)];
 const emittedCsp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)">/.exec(html)?.[1];
 if(emittedScripts.length !== 1) throw new Error(`CSP verification requires exactly one inline script; found ${emittedScripts.length}`);
-if(emittedStyles.length !== 1) throw new Error(`CSP verification requires exactly one inline style; found ${emittedStyles.length}`);
+if(emittedStyles.length !== 1) throw new Error(`CSP verification requires exactly one inline style block; found ${emittedStyles.length}`);
 if(!emittedCsp) throw new Error('CSP verification could not find the emitted policy');
 const verifiedScriptHash = sha256Csp(emittedScripts[0][1]);
 const verifiedStyleHash = sha256Csp(emittedStyles[0][1]);
