@@ -1,0 +1,57 @@
+name: Stage 9.5 verifier
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.head_ref == 'agent/stage9-5-settings-provider-health'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage9-5-settings-provider-health
+          fetch-depth: 0
+      - name: Verify, build and record
+        run: |
+          set -euo pipefail
+          if [ -f .stage9-5-result ]; then
+            echo 'Stage 9.5 verification already recorded.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          source_sha=$(git rev-parse HEAD)
+          export BUILD_COMMIT="$source_sha"
+          ./run-tests.sh | tee /tmp/stage9-5-tests.log
+          pass_count=$(grep -E '^# pass ' /tmp/stage9-5-tests.log | tail -1 | awk '{print $3}')
+          fail_count=$(grep -E '^# fail ' /tmp/stage9-5-tests.log | tail -1 | awk '{print $3}')
+          test "$fail_count" = '0'
+          mkdir -p /tmp/stage9-5-first
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage9-5-first/
+          node build.mjs
+          cmp /tmp/stage9-5-first/index.html dist/index.html
+          cmp /tmp/stage9-5-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage9-5-first/manifest.json dist/manifest.json
+          node - "$source_sha" <<'NODE'
+          const fs=require('node:fs');
+          const source=process.argv[2];
+          const manifest=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
+          const bundle=fs.readFileSync('dist/app.bundle.js','utf8');
+          const html=fs.readFileSync('dist/index.html','utf8');
+          if(manifest.commit!==source) throw new Error(`manifest identity ${manifest.commit} != ${source}`);
+          if(!bundle.includes(`\"commit\":\"${source}\"`)) throw new Error('bundle identity missing');
+          if(!html.includes(`\"commit\":\"${source}\"`)) throw new Error('html identity missing');
+          NODE
+          git add dist/index.html dist/app.bundle.js dist/manifest.json
+          git commit -m 'Commit verified Stage 9.5 deployables'
+          artifact_sha=$(git rev-parse HEAD)
+          printf 'status=0\nsource=%s\nartefact=%s\ntests=%s\ndeterministic=passed\nidentity=passed\n' "$source_sha" "$artifact_sha" "$pass_count" > .stage9-5-result
+          git add .stage9-5-result
+          git commit -m 'Record Stage 9.5 verification result'
+          git push origin HEAD:agent/stage9-5-settings-provider-health
