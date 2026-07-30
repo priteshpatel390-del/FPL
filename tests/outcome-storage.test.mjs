@@ -118,3 +118,16 @@ test('delete removes outcome records but leaves shared deadline-evidence identit
   assert.equal(await loadOutcomeRecord(record.identity.outcomeId),null);
   assert.equal(await rawEvidenceGet('fpl:evidence-manager-ref'),managerRef);
 });
+
+// Stage 10.5 outcome journal reconciliation
+
+test('Stage 10.5 outcome journal recovery leaves exactly one current local revision',async()=>{
+  reset();const first=await recordFor();await storeOutcomeRecord(first);const second=await recordFor(1,9,first);
+  await rawEvidenceSet(K_OUTCOME_PREFIX+second.identity.outcomeId,await encodeEvidenceRecord(second));
+  await rawEvidenceSet(K_OUTCOME_JOURNAL,JSON.stringify({recordType:'gameweekOutcome',recordId:second.identity.outcomeId,contentHash:second.identity.contentHash,logicalKey:second.identity.logicalKey,origin:OUTCOME_ORIGINS.LOCAL,priorCurrentId:first.identity.outcomeId,phase:'payload_verified',startedAt:new Date().toISOString()}));
+  await recoverOutcomeJournal();const index=await loadOutcomeIndex();assert.equal(index.filter(row=>row.current).length,1);assert.equal(currentLocalMetadata(index,1).outcomeId,second.identity.outcomeId);
+});
+
+test('Stage 10.5 malformed outcome journal fails closed without promoting a record',async()=>{
+  reset();await rawEvidenceSet(K_OUTCOME_JOURNAL,'{"recordType":"gameweekOutcome"}');await recoverOutcomeJournal();assert.deepEqual(await loadOutcomeIndex(),[]);assert.equal(await rawEvidenceGet(K_OUTCOME_JOURNAL),null);
+});

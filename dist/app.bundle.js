@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d1773a1ae9e36ae2","commit":"1eca9a8817da41597d0632c819142237d31627fb"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d1773a1ae9e36ae28adef232148a3f7e315f21baf989e03e0158c9beefe729ed","commit":"1eca9a8817da41597d0632c819142237d31627fb","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"3efb94912e21be8e","commit":"0302c54e3eb1d77657b3d892bebb33c90438fa92"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40","commit":"0302c54e3eb1d77657b3d892bebb33c90438fa92","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3967,6 +3967,7 @@ function canonicalise(value){
   if(typeof value === 'object'){
     const out = {};
     Object.keys(value).sort().forEach(key => {
+      if(['__proto__','prototype','constructor'].includes(key)) throw new Error(`Evidence records cannot contain unsafe object key: ${key}`);
       if(value[key] !== undefined) out[key] = canonicalise(value[key]);
     });
     return out;
@@ -4067,25 +4068,34 @@ async function sampleNetworkClock({fetchFn=globalThis.fetch,locationHref=globalT
   }
 }
 
-function safeEndpoint(value){
-  return String(value||'').replace(/\/entry\/\d+/g,'/entry/[redacted]').replace(/\/leagues-classic\/\d+/g,'/leagues-classic/[redacted]').slice(0,160);
+function safeEvidenceText(value,maxLength=160){
+  let text=String(value??'');
+  try{text=decodeURIComponent(text);}catch(error){}
+  text=text
+    .replace(/(?:sk|ant)-[A-Za-z0-9_-]{8,}/gi,'[redacted]')
+    .replace(/(?:api[_-]?key|authorization|access[_-]?token|refresh[_-]?token)\s*[:=]\s*[^\s,;]+/gi,'[redacted]')
+    .replace(/\/entry\/\d+/gi,'/entry/[redacted]')
+    .replace(/\/leagues-classic\/\d+/gi,'/leagues-classic/[redacted]')
+    .replace(/[?#][^\s]*/g,'');
+  return text.slice(0,Math.max(0,Number(maxLength)||160));
 }
+function safeEvidenceEndpoint(value){ return safeEvidenceText(value,160); }
 function safeIssue(issue){
   return canonicalise({
     provider:String(issue?.provider||''),
-    endpoint:safeEndpoint(issue?.endpoint),
+    endpoint:safeEvidenceEndpoint(issue?.endpoint),
     code:String(issue?.code||''),
     severity:String(issue?.severity||''),
     count:Number.isFinite(Number(issue?.count)) ? Number(issue.count) : 1,
-    received:issue?.received == null ? null : String(issue.received).slice(0,80)
+    received:issue?.received == null ? null : safeEvidenceText(issue.received,80)
   });
 }
 function safeRetry(record){
   return canonicalise({
     provider:String(record?.provider||''),
-    endpoint:safeEndpoint(record?.endpoint),
+    endpoint:safeEvidenceEndpoint(record?.endpoint),
     attempts:Math.max(0,Math.trunc(num(record?.attempts))),
-    outcome:String(record?.outcome||record?.status||'').slice(0,80),
+    outcome:safeEvidenceText(record?.outcome||record?.status||'',80),
     usedFallback:Boolean(record?.usedFallback),
     completedAt:Number.isFinite(Number(record?.completedAt||record?.at)) ? Number(record.completedAt||record.at) : null
   });
@@ -4573,9 +4583,9 @@ function outcomeIso(value){
 function outcomeSafeRetryRows(){
   return Object.values(S.retryStats||{}).filter(row=>row?.provider==='fpl').map(row=>canonicalise({
     provider:'fpl',
-    endpoint:String(row?.endpoint||'').replace(/\/entry\/\d+/g,'/entry/[redacted]').replace(/\d+/g,'{id}').slice(0,160),
+    endpoint:safeEvidenceEndpoint(String(row?.endpoint||'').replace(/\d+/g,'{id}')),
     attempts:Number.isInteger(Number(row?.attempts))?Number(row.attempts):0,
-    finalStatus:String(row?.finalStatus||row?.outcome||''),
+    finalStatus:safeEvidenceText(row?.finalStatus||row?.outcome||'',80),
     exhausted:Boolean(row?.exhausted),
     budgetExceeded:Boolean(row?.budgetExceeded)
   })).sort((a,b)=>a.endpoint.localeCompare(b.endpoint));
@@ -5123,11 +5133,17 @@ async function buildGameweekEvaluation(snapshot,outcome,{previousRecord=null,cry
   const record=canonicalise({...draft,identity:{...draft.identity,contentHash,evaluationId}});assertEvidenceSafe(record);return {ok:true,unchanged:false,record:deepFreeze(record)};
 }
 function stage10EvaluationShapeError(record){
+  const keys=['completeness','coverage','createdAt','deadlineTime','decisions','gameweek','identity','managerRef','metricVersion','observations','recordType','reports','rules','schemaVersion','season','segmentationVersion','sources'].sort();
   if(!record||record.recordType!=='gameweekEvaluation') return 'record_type';
   if(record.schemaVersion!==METRIC_SCHEMA_VERSION||record.metricVersion!==METRIC_VERSION||record.segmentationVersion!==SEGMENTATION_VERSION) return 'version';
+  if(stableStringify(Object.keys(record).sort())!==stableStringify(keys)) return 'top_level_schema';
   if(!/^mgr-[0-9a-f]{32}$/.test(record.managerRef||'')) return 'manager_ref';
-  if(!/^evaluation-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(record.identity?.evaluationId||'')) return 'identity';
-  if(!Array.isArray(record.observations?.players)||!Array.isArray(record.observations?.minuteFixtures)) return 'observations';
+  if(!/^\d{4}-\d{2}$/.test(record.season||'')||!Number.isInteger(record.gameweek)||record.gameweek<1||record.gameweek>38) return 'identity';
+  if(!record.identity||record.identity.logicalKey!==`${record.season}|gw${record.gameweek}`||!Number.isInteger(record.identity.revision)||record.identity.revision<1) return 'identity';
+  if(!/^evaluation-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(record.identity.evaluationId||'')) return 'identity';
+  if(!/^[0-9a-f]{64}$/.test(record.identity.contentHash||'')||!/^[0-9a-f]{64}$/.test(record.identity.metricDataHash||'')) return 'identity';
+  if(!record.identity.sectionHashes||typeof record.identity.sectionHashes!=='object') return 'identity';
+  if(!record.sources||typeof record.sources!=='object'||!Array.isArray(record.observations?.players)||!Array.isArray(record.observations?.minuteFixtures)) return 'observations';
   return null;
 }
 async function validateGameweekEvaluation(record,cryptoImpl=globalThis.crypto){
@@ -5188,12 +5204,22 @@ async function buildTransferHorizonEvaluation(startEvaluation,evaluationsByGamew
   const payload=canonicalise({recordType:'transferHorizonEvaluation',schemaVersion:TRANSFER_METRIC_SCHEMA_VERSION,metricVersion:METRIC_VERSION,managerRef:startEvaluation.managerRef,season:startEvaluation.season,startGameweek:start,horizon,createdAt:records.map(record=>record.createdAt).filter(Boolean).sort().at(-1)||startEvaluation.createdAt||new Date(0).toISOString(),sources:{startEvaluationId:startEvaluation.identity.evaluationId,gameweekEvaluationIds:records.map(record=>record.identity.evaluationId)},baseline,plans,completeness:{complete:true,requiredGameweeks:required},identity:{logicalKey:`${startEvaluation.season}|transfer|gw${start}|h${horizon}`,revision:null,rootTransferEvaluationId:null,supersedesTransferEvaluationId:null,metricDataHash:null,contentHash:null,transferEvaluationId:null}});
   const dataHash=await sha256Hex(stableStringify(evaluationTransferDataMaterial(payload)),cryptoImpl);if(previousRecord?.identity?.metricDataHash===dataHash) return {ok:true,unchanged:true,record:previousRecord};
   const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1,root=previousRecord?.identity?.rootTransferEvaluationId||`transfer-evaluation-${payload.season}-gw${start}-h${horizon}`,draft=canonicalise({...payload,identity:{...payload.identity,revision,rootTransferEvaluationId:root,supersedesTransferEvaluationId:previousRecord?.identity?.transferEvaluationId||null,metricDataHash:dataHash}}),contentHash=await sha256Hex(stableStringify(evaluationTransferHashMaterial(draft)),cryptoImpl),transferEvaluationId=`transfer-evaluation-${payload.season}-gw${start}-h${horizon}-r${revision}-${contentHash.slice(0,16)}`;
-  return {ok:true,unchanged:false,record:deepFreeze(canonicalise({...draft,identity:{...draft.identity,contentHash,transferEvaluationId}}))};
+  const record=canonicalise({...draft,identity:{...draft.identity,contentHash,transferEvaluationId}});assertEvidenceSafe(record);return {ok:true,unchanged:false,record:deepFreeze(record)};
 }
 async function validateTransferHorizonEvaluation(record,cryptoImpl=globalThis.crypto){
   try{
-    if(!record||record.recordType!=='transferHorizonEvaluation'||record.schemaVersion!==TRANSFER_METRIC_SCHEMA_VERSION) return {ok:false,reason:'record_type'};
+    const keys=['baseline','completeness','createdAt','horizon','identity','managerRef','metricVersion','plans','recordType','schemaVersion','season','sources','startGameweek'].sort();
+    if(!record||record.recordType!=='transferHorizonEvaluation') return {ok:false,reason:'record_type'};
+    if(record.schemaVersion!==TRANSFER_METRIC_SCHEMA_VERSION||record.metricVersion!==METRIC_VERSION) return {ok:false,reason:'version'};
+    if(stableStringify(Object.keys(record).sort())!==stableStringify(keys)) return {ok:false,reason:'top_level_schema'};
+    if(!/^mgr-[0-9a-f]{32}$/.test(record.managerRef||'')) return {ok:false,reason:'manager_ref'};
+    if(!/^\d{4}-\d{2}$/.test(record.season||'')||!Number.isInteger(record.startGameweek)||record.startGameweek<1||record.startGameweek>38||!Number.isInteger(record.horizon)||record.horizon<1) return {ok:false,reason:'identity'};
+    const expectedLogicalKey=`${record.season}|transfer|gw${record.startGameweek}|h${record.horizon}`;
+    if(record.identity?.logicalKey!==expectedLogicalKey||!Number.isInteger(record.identity?.revision)||record.identity.revision<1) return {ok:false,reason:'identity'};
     if(!/^transfer-evaluation-\d{4}-\d{2}-gw\d+-h\d+-r\d+-[0-9a-f]{16}$/.test(record.identity?.transferEvaluationId||'')) return {ok:false,reason:'identity'};
+    if(!/^[0-9a-f]{64}$/.test(record.identity?.contentHash||'')||!/^[0-9a-f]{64}$/.test(record.identity?.metricDataHash||'')) return {ok:false,reason:'identity'};
+    if(!record.sources||typeof record.sources!=='object'||!Array.isArray(record.sources.gameweekEvaluationIds)||!Array.isArray(record.plans)) return {ok:false,reason:'sources'};
+    assertEvidenceSafe(record);
     const dataHash=await sha256Hex(stableStringify(evaluationTransferDataMaterial(record)),cryptoImpl);if(dataHash!==record.identity.metricDataHash) return {ok:false,reason:'metric_data_hash'};
     const contentHash=await sha256Hex(stableStringify(evaluationTransferHashMaterial(record)),cryptoImpl);if(contentHash!==record.identity.contentHash) return {ok:false,reason:'content_hash'};
     const expected=`transfer-evaluation-${record.season}-gw${record.startGameweek}-h${record.horizon}-r${record.identity.revision}-${contentHash.slice(0,16)}`;if(record.identity.transferEvaluationId!==expected) return {ok:false,reason:'evaluation_id'};
@@ -5534,7 +5560,7 @@ async function validateOperatingReviewBundle(bundle,cryptoImpl=globalThis.crypto
 }
 function reviewCsvTextValue(value){
   const text=String(value??''),candidate=text.replace(/^[ \u00a0]+/,'');
-  return /^[=+\-@\t\r]/.test(candidate)?`'${text}`:text;
+  return /^[=+\-@\t\r\n\f\v]/.test(candidate)?`'${text}`:text;
 }
 function reviewCsvCell(value){
   if(value===null||value===undefined) return '';
@@ -6633,14 +6659,98 @@ if(oddsFieldForSecurity){
 }
 
 
+/* ===== src/ui/evidence-recovery.mjs ===== */
+
+const STAGE10_JOURNAL_PHASES=Object.freeze(['prepared','payload_verified','index_committed']);
+const STAGE10_DIAGNOSTIC_LIMIT=20;
+let stage10DiagnosticRows=[];
+
+function stage10SafeText(value,maxLength=180){
+  let text=String(value??'');
+  try{text=decodeURIComponent(text);}catch(error){}
+  text=text
+    .replace(/(?:sk|ant)-[A-Za-z0-9_-]{8,}/gi,'[redacted]')
+    .replace(/(?:api[_-]?key|authorization|access[_-]?token|refresh[_-]?token)\s*[:=]\s*[^\s,;]+/gi,'[redacted]')
+    .replace(/\/entry\/\d+/gi,'/entry/[redacted]')
+    .replace(/\/leagues-classic\/\d+/gi,'/leagues-classic/[redacted]')
+    .replace(/[?#][^\s]*/g,'');
+  return text.slice(0,Math.max(0,Number(maxLength)||180));
+}
+function recordStage10Diagnostic(code,{recordType=null,recordId=null,severity='warning',message=null,at=Date.now()}={}){
+  const row=canonicalise({code:String(code||'unknown'),recordType:recordType==null?null:String(recordType),recordId:recordId==null?null:String(recordId).slice(0,120),severity:['info','warning','error'].includes(severity)?severity:'warning',message:message==null?null:stage10SafeText(message),at:new Date(at).toISOString()});
+  const key=`${row.code}|${row.recordType||''}|${row.recordId||''}`;
+  stage10DiagnosticRows=[row,...stage10DiagnosticRows.filter(item=>`${item.code}|${item.recordType||''}|${item.recordId||''}`!==key)].slice(0,STAGE10_DIAGNOSTIC_LIMIT);
+  return row;
+}
+function stage10Diagnostics(){return stage10DiagnosticRows.slice();}
+function clearStage10Diagnostics(){stage10DiagnosticRows=[];}
+function stage10DiagnosticMessage(code){
+  const messages={
+    storage_unavailable:'Persistent browser storage is unavailable. Export any accessible records before closing Teamsheet.',
+    storage_full:'Browser storage is full. Existing verified records were preserved where possible.',
+    index_corrupt:'Saved evidence metadata could not be read. Full records were not trusted or promoted automatically.',
+    payload_corrupt:'A saved evidence record failed decompression, schema or hash verification and was not used.',
+    journal_corrupt:'An interrupted-write journal was malformed and could not be trusted.',
+    recovery_completed:'An interrupted verified write was recovered safely.',
+    recovery_only:'A restored record remains recovery-only and cannot become official or current.',
+    unsupported_version:'A record uses an unsupported schema or metric version and was not migrated.',
+    download_requested:'The browser download was requested. Confirm the file appears in Files or Downloads.'
+  };
+  return messages[code]||'Stage 10 evidence needs attention. No unsafe record was used.';
+}
+function stage10Journal({recordType,recordId,contentHash,logicalKey=null,origin,priorCurrentId=null,phase='prepared',startedAt=new Date().toISOString()}={}){
+  if(!['preDeadlineSnapshot','gameweekOutcome','gameweekEvaluation','transferHorizonEvaluation'].includes(recordType)) throw new Error('Stage 10 journal record type is not supported');
+  if(typeof recordId!=='string'||!recordId||!/^[-a-z0-9|]+$/i.test(recordId)) throw new Error('Stage 10 journal record ID is invalid');
+  if(!/^[0-9a-f]{64}$/.test(contentHash||'')) throw new Error('Stage 10 journal content hash is invalid');
+  if(!STAGE10_JOURNAL_PHASES.includes(phase)) throw new Error('Stage 10 journal phase is invalid');
+  if(!['local_capture','local_collection','local_derivation','recovery_import'].includes(origin)) throw new Error('Stage 10 journal origin is invalid');
+  return canonicalise({recordType,recordId,contentHash,logicalKey:logicalKey==null?null:String(logicalKey),origin,priorCurrentId:priorCurrentId==null?null:String(priorCurrentId),phase,startedAt:new Date(startedAt).toISOString()});
+}
+function parseStage10Journal(raw){
+  try{
+    const value=typeof raw==='string'?JSON.parse(raw):raw;
+    if(!value||typeof value!=='object'||Array.isArray(value)) return null;
+    const exact=['contentHash','logicalKey','origin','phase','priorCurrentId','recordId','recordType','startedAt'].sort();
+    if(JSON.stringify(Object.keys(value).sort())!==JSON.stringify(exact)) return null;
+    return stage10Journal(value);
+  }catch(error){return null;}
+}
+function reconcileLocalCurrentRows(rows,{logicalKey,recordId,idKey='recordId',origin='local_collection'}={}){
+  return (Array.isArray(rows)?rows:[]).map(row=>{
+    if(!row||typeof row!=='object') return row;
+    if(row.origin!=='recovery_import'&&row.origin===origin&&row.logicalKey===logicalKey) return {...row,current:row[idKey]===recordId};
+    if(row.origin==='recovery_import'&&row.current) return {...row,current:false};
+    return row;
+  });
+}
+
+
+
+/* ===== src/ui/download.mjs ===== */
+const STAGE10_DOWNLOAD_REVOKE_DELAY_MS=30*1000;
+function requestStage10Download(filename,text,type,{documentImpl=globalThis.document,urlImpl=globalThis.URL,BlobImpl=globalThis.Blob,setTimeoutImpl=globalThis.setTimeout}={}){
+  if(!documentImpl?.createElement||!documentImpl?.body||!urlImpl?.createObjectURL||typeof BlobImpl!=='function') throw new Error('Browser download support is unavailable');
+  const blob=new BlobImpl([String(text)],{type:String(type||'application/octet-stream')}),url=urlImpl.createObjectURL(blob),anchor=documentImpl.createElement('a');
+  anchor.href=url;anchor.download=String(filename);anchor.rel='noopener';documentImpl.body.appendChild(anchor);anchor.click();anchor.remove();
+  setTimeoutImpl(()=>urlImpl.revokeObjectURL(url),STAGE10_DOWNLOAD_REVOKE_DELAY_MS);
+  return {filename:String(filename),requested:true,bytes:typeof TextEncoder!=='undefined'?new TextEncoder().encode(String(text)).length:String(text).length*2};
+}
+function stage10DownloadRequestedMessage(filename){return `Download requested — confirm ${String(filename)} appears in Files or Downloads.`;}
+
+
 /* ===== src/ui/evidence.mjs ===== */
 
 const K_EVIDENCE_MANAGER = 'fpl:evidence-manager-ref';
 const K_EVIDENCE_INDEX = 'fpl:evidence-index';
 const K_EVIDENCE_PREFIX = 'fpl:evidence:snapshot:';
+const K_EVIDENCE_JOURNAL = 'fpl:evidence:pending:v1';
 const MAX_EVIDENCE_IMPORT_BYTES = 25 * 1024 * 1024;
 const EVIDENCE_ORIGINS = Object.freeze({LOCAL:'local_capture',RECOVERY:'recovery_import'});
 const AUTO_CAPTURE_PRIORITY = Object.freeze({open:1,due_soon:2,ideal:3,final_window:4});
+const AUTO_CAPTURE_RETRY_MS=5*60*1000;
+const AUTO_CAPTURE_MAX_ATTEMPTS=3;
+let autoCaptureVerifiedAt=0;
+const autoCaptureAttempts=new Map();
 let activeEvidenceRecord = null;
 let evidenceBusy = false;
 let evidenceRenderSequence = 0;
@@ -6659,9 +6769,14 @@ function base64ToBytes(value){
 async function encodeEvidenceRecord(record){
   const text=stableStringify(record);
   if(typeof CompressionStream!=='function') return text;
-  const stream=new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
-  const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
-  return `gzip-base64:${bytesToBase64(bytes)}`;
+  try{
+    const stream=new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+    const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
+    return `gzip-base64:${bytesToBase64(bytes)}`;
+  }catch(error){
+    recordStage10Diagnostic('compression_fallback',{recordType:record?.recordType,recordId:record?.identity?.snapshotId||record?.identity?.outcomeId||record?.identity?.evaluationId||record?.identity?.transferEvaluationId,severity:'warning',message:'Native compression failed; canonical plain JSON was stored instead.'});
+    return text;
+  }
 }
 async function decodeEvidenceRecord(value){
   const text=String(value||'');
@@ -6728,7 +6843,7 @@ async function loadEvidenceIndex(){
   const raw = await rawEvidenceGet(K_EVIDENCE_INDEX);
   if(!raw) return [];
   try{ return normaliseEvidenceIndex(JSON.parse(raw)); }
-  catch(error){ return []; }
+  catch(error){recordStage10Diagnostic('index_corrupt',{recordType:'preDeadlineSnapshot',severity:'error',message:error.message});return [];}
 }
 async function loadEvidenceRecord(snapshotId){
   if(!snapshotId) return null;
@@ -6736,32 +6851,62 @@ async function loadEvidenceRecord(snapshotId){
   if(!raw) return null;
   try{
     const checked = await validateSnapshotRecord(JSON.parse(await decodeEvidenceRecord(raw)));
-    return checked.ok ? checked.record : null;
-  }catch(error){ return null; }
+    if(!checked.ok){recordStage10Diagnostic(checked.reason==='schema_version'?'unsupported_version':'payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:snapshotId,severity:'error',message:checked.reason});return null;}
+    return checked.record;
+  }catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:snapshotId,severity:'error',message:error.message});return null;}
+}
+async function writeEvidenceJournal(record,origin,phase){
+  const journal=stage10Journal({recordType:'preDeadlineSnapshot',recordId:record.identity.snapshotId,contentHash:record.identity.contentHash,logicalKey:record.identity.duplicateKey,origin,phase});
+  await rawEvidenceSet(K_EVIDENCE_JOURNAL,stableStringify(journal));
+  return journal;
+}
+async function recoverEvidenceJournal(){
+  const raw=await rawEvidenceGet(K_EVIDENCE_JOURNAL);if(!raw)return false;
+  const journal=parseStage10Journal(raw);
+  if(!journal||journal.recordType!=='preDeadlineSnapshot'){
+    recordStage10Diagnostic('journal_corrupt',{recordType:'preDeadlineSnapshot',severity:'error'});await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});return true;
+  }
+  const index=await loadEvidenceIndex(),record=await loadEvidenceRecord(journal.recordId);
+  if(record&&record.identity.contentHash===journal.contentHash){
+    const origin=journal.origin===EVIDENCE_ORIGINS.LOCAL?EVIDENCE_ORIGINS.LOCAL:EVIDENCE_ORIGINS.RECOVERY;
+    const next=boundedSnapshotIndex(index,record,{origin}),keep=new Set(next.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
+    await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(next));
+    for(const row of index){if(!keep.has(row.snapshotId))await rawEvidenceDelete(K_EVIDENCE_PREFIX+row.snapshotId).catch(()=>{});}
+    activeEvidenceRecord=record;recordStage10Diagnostic('recovery_completed',{recordType:'preDeadlineSnapshot',recordId:journal.recordId,severity:'info'});
+  }else{
+    if(!index.some(row=>row.snapshotId===journal.recordId))await rawEvidenceDelete(K_EVIDENCE_PREFIX+journal.recordId).catch(()=>{});
+    recordStage10Diagnostic('payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:journal.recordId,severity:'error'});
+  }
+  await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});return true;
 }
 async function storeEvidenceRecord(record,{origin=EVIDENCE_ORIGINS.LOCAL}={}){
   if(!Object.values(EVIDENCE_ORIGINS).includes(origin)) throw new Error('Evidence origin is not supported');
   const checked = await validateSnapshotRecord(record);
   if(!checked.ok) throw new Error(`Evidence record rejected: ${checked.reason}`);
-  const existing = await loadEvidenceIndex();
-  const nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
+  const existing = await loadEvidenceIndex(),nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
   const keep = new Set(nextIndex.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
   const knownIds = new Set(existing.map(row=>row.snapshotId).concat(checked.record.identity.snapshotId));
   const toDelete = [...knownIds].filter(snapshotId=>!keep.has(snapshotId));
-  if(keep.has(checked.record.identity.snapshotId)){
-    const key=K_EVIDENCE_PREFIX+checked.record.identity.snapshotId;
-    const encoded=await encodeEvidenceRecord(checked.record);
-    try{ await rawEvidenceSet(key,encoded); }
-    catch(firstError){
-      for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId);
+  await writeEvidenceJournal(checked.record,origin,'prepared');
+  try{
+    if(keep.has(checked.record.identity.snapshotId)){
+      const key=K_EVIDENCE_PREFIX+checked.record.identity.snapshotId,encoded=await encodeEvidenceRecord(checked.record);
       try{ await rawEvidenceSet(key,encoded); }
-      catch(secondError){ throw new Error(`Evidence storage failed after recovery: ${secondError.message}`); }
+      catch(firstError){
+        for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId).catch(()=>{});
+        try{ await rawEvidenceSet(key,encoded); }
+        catch(secondError){recordStage10Diagnostic('storage_full',{recordType:'preDeadlineSnapshot',recordId:checked.record.identity.snapshotId,severity:'error',message:secondError.message});throw new Error(`Evidence storage failed after recovery: ${secondError.message}`);}
+      }
+      const verified=await loadEvidenceRecord(checked.record.identity.snapshotId);if(!verified||verified.identity.contentHash!==checked.record.identity.contentHash)throw new Error('Evidence storage verification failed');
     }
-  }
-  for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId);
-  await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(nextIndex));
-  activeEvidenceRecord = checked.record;
-  return nextIndex;
+    await writeEvidenceJournal(checked.record,origin,'payload_verified');
+    await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(nextIndex));
+    await writeEvidenceJournal(checked.record,origin,'index_committed');
+    for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId).catch(()=>{});
+    activeEvidenceRecord = checked.record;
+    await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});
+    return nextIndex;
+  }catch(error){if(/quota|storage|space|full/i.test(error.message))recordStage10Diagnostic('storage_full',{recordType:'preDeadlineSnapshot',recordId:checked.record.identity.snapshotId,severity:'error',message:error.message});throw error;}
 }
 async function clearEvidenceStorage(){
   const existing=await loadEvidenceIndex();
@@ -6775,6 +6920,7 @@ async function clearEvidenceStorage(){
     for(const key of orphanKeys) await rawEvidenceDelete(key);
   }
   await rawEvidenceDelete(K_EVIDENCE_INDEX);
+  await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});
   await rawEvidenceDelete(K_EVIDENCE_MANAGER);
   activeEvidenceRecord=null;
   return true;
@@ -6783,12 +6929,7 @@ function evidenceFileName(record){
   return `teamsheet-${record.season}-gw${record.gameweek}-predeadline-${record.identity.snapshotId.slice(-16)}.json`;
 }
 function downloadEvidence(record){
-  const blob = new Blob([stableStringify(record)+'\n'],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href=url; anchor.download=evidenceFileName(record); anchor.rel='noopener';
-  document.body.appendChild(anchor); anchor.click(); anchor.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),0);
+  const filename=evidenceFileName(record);requestStage10Download(filename,stableStringify(record)+'\n','application/json');return filename;
 }
 function currentDeadline(){
   const event = S.boot?.events?.find(row=>Number(row.id)===Number(S.nextGW));
@@ -6835,9 +6976,23 @@ function ensureEvidenceCompact(){
   button.addEventListener('click',openEvidencePanel);
   header.appendChild(button);
 }
+function ensureStage10OperationsUi(){
+  const panel=$('evidencePanel');if(!panel||$('stage10Operations'))return;
+  panel.appendChild(el('details',{class:'mt-12',id:'stage10Operations'},
+    el('summary',{},'Live-season checklist and recovery'),
+    el('div',{class:'mt-10'},
+      el('p',{class:'hint'},'Before each deadline, confirm Official-eligible evidence and request the snapshot JSON. After a complete or corrected outcome, request the weekly operating-review JSON and confirm it appears in Files or Downloads.'),
+      el('p',{class:'hint'},'Restored JSON remains recovery-only. Never clear browser data until durable files have been checked. Google Sheets import remains manual.'),
+      el('div',{id:'stage10Diagnostics'},el('div',{class:'status'},'No recovery warning is active.')))));
+}
+function renderStage10Diagnostics(){
+  const node=$('stage10Diagnostics');if(!node)return;const rows=stage10Diagnostics();
+  if(!rows.length){setChildren(node,el('div',{class:'status'},'No recovery warning is active.'));return;}
+  setChildren(node,rows.slice(0,5).map(row=>el('article',{class:`note ${row.severity==='error'?'bad':'plain'}`},el('b',{},row.code.replaceAll('_',' ')),el('div',{class:'status'},stage10DiagnosticMessage(row.code)),row.recordId?el('div',{class:'status mono'},row.recordId):null)));
+}
 async function renderEvidenceStatus(){
   const sequence=++evidenceRenderSequence;
-  ensureEvidenceCompact();
+  ensureEvidenceCompact();ensureStage10OperationsUi();
   const deadline=currentDeadline();
   const state=deadline?deadlineWindow(deadline):{state:'unavailable',remainingMs:null};
   const [title,detail]=windowCopy(state.state);
@@ -6872,6 +7027,7 @@ async function renderEvidenceStatus(){
   const exportButton=$('exportEvidenceBtn');
   if(exportButton) exportButton.disabled=!(activeEvidenceRecord||latest);
   const history=$('evidenceHistory');
+  renderStage10Diagnostics();
   if(history){
     if(!index.length) setChildren(history,el('div',{class:'status'},'No evidence snapshots saved on this device.'));
     else setChildren(history,index.map(row=>el('article',{class:'note plain'},
@@ -6912,17 +7068,21 @@ function captureWindowPriority(deadlineTime,capturedAt=Date.now()){
   const state=deadlineWindow(deadlineTime,capturedAt).state;
   return AUTO_CAPTURE_PRIORITY[state]||0;
 }
-async function maybeAutoCaptureEvidence({reason='verified_refresh'}={}){
+async function maybeAutoCaptureEvidence({reason='verified_refresh',verifiedAt=null}={}){
   const deadline=currentDeadline();
   if(!deadline||!S.boot||evidenceBusy) return {captured:false,reason:'not_ready'};
+  if(Number.isFinite(Number(verifiedAt))&&Number(verifiedAt)!==autoCaptureVerifiedAt){autoCaptureVerifiedAt=Number(verifiedAt);autoCaptureAttempts.clear();}
   const priority=captureWindowPriority(deadline,Date.now());
   if(!priority) return {captured:false,reason:'outside_window'};
   const index=await loadEvidenceIndex();
   const existing=index.find(row=>row.origin===EVIDENCE_ORIGINS.LOCAL&&Number(row.gameweek)===Number(S.nextGW)&&row.deadlineTime===new Date(deadline).toISOString()&&row.officialEligible);
   const existingPriority=existing?captureWindowPriority(deadline,Date.parse(existing.capturedAt)):0;
   if(existing&&existingPriority>=priority) return {captured:false,reason:'equivalent_or_better_exists',snapshotId:existing.snapshotId};
+  const key=`${new Date(deadline).toISOString()}|${priority}|${autoCaptureVerifiedAt}`;
+  const attempts=autoCaptureAttempts.get(key)||0;if(attempts>=AUTO_CAPTURE_MAX_ATTEMPTS)return {captured:false,reason:'retry_limit'};
+  autoCaptureAttempts.set(key,attempts+1);
   const record=await captureEvidence({automatic:true});
-  return record?{captured:true,reason,snapshotId:record.identity.snapshotId}:{captured:false,reason:'capture_failed'};
+  return record?{captured:true,reason,snapshotId:record.identity.snapshotId,attempt:attempts+1}:{captured:false,reason:'capture_failed',attempt:attempts+1};
 }
 
 async function exportLatestEvidence(){
@@ -6930,8 +7090,8 @@ async function exportLatestEvidence(){
   try{
     const record=await latestEvidenceRecord();
     if(!record) throw new Error('No saved snapshot is available');
-    downloadEvidence(record);
-    if(message) message.textContent=`Exported ${evidenceFileName(record)}.`;
+    const filename=downloadEvidence(record);recordStage10Diagnostic('download_requested',{recordType:'preDeadlineSnapshot',recordId:record.identity.snapshotId,severity:'info'});
+    if(message) message.textContent=stage10DownloadRequestedMessage(filename);
   }catch(error){ if(message) message.textContent=`Export failed: ${error.message}`; }
 }
 async function deleteEvidence(){
@@ -6968,11 +7128,12 @@ function initEvidenceUi(){
   });
   document.addEventListener('teamsheet:data-rendered',renderEvidenceStatus);
   document.addEventListener('teamsheet:data-verified',event=>{
-    const task=maybeAutoCaptureEvidence({reason:event.detail?.reason||'verified_refresh'});
+    const task=maybeAutoCaptureEvidence({reason:event.detail?.reason||'verified_refresh',verifiedAt:event.detail?.verifiedAt});
     if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);
   });
-  renderEvidenceStatus();
+  void recoverEvidenceJournal().then(renderEvidenceStatus);
   setInterval(renderEvidenceStatus,60*1000);
+  setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible')void maybeAutoCaptureEvidence({reason:'visible_retry'});},AUTO_CAPTURE_RETRY_MS);
 }
 
 initEvidenceUi();
@@ -7011,19 +7172,12 @@ function normaliseOutcomeIndex(value){
     .slice(0,OUTCOME_RULES.localIndexLimit);
 }
 async function loadOutcomeIndex(){
-  const raw=await rawEvidenceGet(K_OUTCOME_INDEX);
-  if(!raw) return [];
-  try{ return normaliseOutcomeIndex(JSON.parse(raw)); }
-  catch(error){ return []; }
+  const raw=await rawEvidenceGet(K_OUTCOME_INDEX);if(!raw)return [];
+  try{return normaliseOutcomeIndex(JSON.parse(raw));}catch(error){recordStage10Diagnostic('index_corrupt',{recordType:'gameweekOutcome',severity:'error',message:error.message});return [];}
 }
 async function loadOutcomeRecord(outcomeId){
-  if(!outcomeId) return null;
-  const raw=await rawEvidenceGet(K_OUTCOME_PREFIX+outcomeId);
-  if(!raw) return null;
-  try{
-    const checked=await validateOutcomeRecord(JSON.parse(await decodeEvidenceRecord(raw)));
-    return checked.ok?checked.record:null;
-  }catch(error){ return null; }
+  if(!outcomeId)return null;const raw=await rawEvidenceGet(K_OUTCOME_PREFIX+outcomeId);if(!raw)return null;
+  try{const checked=await validateOutcomeRecord(JSON.parse(await decodeEvidenceRecord(raw)));if(!checked.ok){recordStage10Diagnostic(checked.reason==='schema_version'?'unsupported_version':'payload_corrupt',{recordType:'gameweekOutcome',recordId:outcomeId,severity:'error',message:checked.reason});return null;}return checked.record;}catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'gameweekOutcome',recordId:outcomeId,severity:'error',message:error.message});return null;}
 }
 function compactOutcomeMetadata(record,{origin=OUTCOME_ORIGINS.LOCAL,current=true,hasFullRecord=true,lastCheckedAt=null}={}){
   return {
@@ -7094,13 +7248,14 @@ async function storeOutcomeRecord(record,{origin=OUTCOME_ORIGINS.LOCAL}={}){
   let index=await loadOutcomeIndex();
   const same=index.find(row=>row.origin===origin&&row.logicalKey===checked.record.identity.logicalKey&&row.outcomeDataHash===checked.record.identity.outcomeDataHash&&row.status===checked.record.status);
   if(same) return {index,stored:false,metadata:same};
+  const priorCurrent=index.find(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===checked.record.identity.logicalKey&&row.current)?.outcomeId||null;
   if(origin===OUTCOME_ORIGINS.LOCAL){
     index=index.map(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===checked.record.identity.logicalKey?{...row,current:false}:row);
   }
   const metadata=compactOutcomeMetadata(checked.record,{origin,current:origin===OUTCOME_ORIGINS.LOCAL,hasFullRecord:true});
   index=normaliseOutcomeIndex([metadata,...index.filter(row=>row.outcomeId!==metadata.outcomeId)]);
   const encoded=await encodeEvidenceRecord(checked.record);
-  await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify({outcomeId:metadata.outcomeId,contentHash:metadata.contentHash,startedAt:new Date().toISOString()}));
+  await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'prepared'})));
   try{
     try{ await rawEvidenceSet(K_OUTCOME_PREFIX+metadata.outcomeId,encoded); }
     catch(firstError){
@@ -7110,29 +7265,32 @@ async function storeOutcomeRecord(record,{origin=OUTCOME_ORIGINS.LOCAL}={}){
     }
     const verified=await loadOutcomeRecord(metadata.outcomeId);
     if(!verified||verified.identity.contentHash!==metadata.contentHash) throw new Error('Outcome storage verification failed');
+    await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'payload_verified'})));
     index=await enforceOutcomeBounds(index);
+    await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'index_committed'})));
     return {index,stored:true,metadata};
   }finally{
     await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});
   }
 }
 async function recoverOutcomeJournal(){
-  const raw=await rawEvidenceGet(K_OUTCOME_JOURNAL);
-  if(!raw) return false;
-  try{
-    const journal=JSON.parse(raw);
-    const record=await loadOutcomeRecord(journal.outcomeId);
-    if(record&&record.identity.contentHash===journal.contentHash){
-      const index=await loadOutcomeIndex();
-      if(!index.some(row=>row.outcomeId===journal.outcomeId)){
-        await rawEvidenceSet(K_OUTCOME_INDEX,stableStringify(normaliseOutcomeIndex([compactOutcomeMetadata(record),...index])));
-      }
-    }else if(journal.outcomeId){
-      await removeOutcomePayload(journal.outcomeId);
-    }
-  }catch(error){}
-  await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});
-  return true;
+  const raw=await rawEvidenceGet(K_OUTCOME_JOURNAL);if(!raw)return false;let journal=parseStage10Journal(raw);
+  if(!journal){
+    try{const legacy=JSON.parse(raw),keys=['contentHash','outcomeId','startedAt'].sort();if(legacy&&typeof legacy==='object'&&!Array.isArray(legacy)&&stableStringify(Object.keys(legacy).sort())===stableStringify(keys)&&/^outcome-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(legacy.outcomeId||'')&&/^[0-9a-f]{64}$/.test(legacy.contentHash||'')){const candidate=await loadOutcomeRecord(legacy.outcomeId);if(candidate)journal=stage10Journal({recordType:'gameweekOutcome',recordId:legacy.outcomeId,contentHash:legacy.contentHash,logicalKey:candidate.identity.logicalKey,origin:OUTCOME_ORIGINS.LOCAL,priorCurrentId:null,phase:'payload_verified',startedAt:legacy.startedAt});}}catch(error){}
+  }
+  if(!journal||journal.recordType!=='gameweekOutcome'){recordStage10Diagnostic('journal_corrupt',{recordType:'gameweekOutcome',severity:'error'});await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});return true;}
+  const record=await loadOutcomeRecord(journal.recordId),index=await loadOutcomeIndex();
+  if(record&&record.identity.contentHash===journal.contentHash){
+    const origin=journal.origin===OUTCOME_ORIGINS.LOCAL?OUTCOME_ORIGINS.LOCAL:OUTCOME_ORIGINS.RECOVERY;
+    const metadata=compactOutcomeMetadata(record,{origin,current:origin===OUTCOME_ORIGINS.LOCAL});
+    let next=normaliseOutcomeIndex([metadata,...index.filter(row=>row.outcomeId!==metadata.outcomeId)]);
+    next=reconcileLocalCurrentRows(next,{logicalKey:metadata.logicalKey,recordId:metadata.outcomeId,idKey:'outcomeId',origin:OUTCOME_ORIGINS.LOCAL});
+    await enforceOutcomeBounds(next);recordStage10Diagnostic('recovery_completed',{recordType:'gameweekOutcome',recordId:journal.recordId,severity:'info'});
+  }else{
+    if(!index.some(row=>row.outcomeId===journal.recordId))await removeOutcomePayload(journal.recordId).catch(()=>{});
+    recordStage10Diagnostic('payload_corrupt',{recordType:'gameweekOutcome',recordId:journal.recordId,severity:'error'});
+  }
+  await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});return true;
 }
 async function clearOutcomeStorage(){
   const index=await loadOutcomeIndex();
@@ -7186,12 +7344,7 @@ async function latestOutcomeRecord(){
 function outcomeFileName(record){
   return `teamsheet-${record.season}-gw${record.gameweek}-outcome-r${record.identity.revision}-${record.identity.contentHash.slice(0,16)}.json`;
 }
-function downloadOutcome(record){
-  const blob=new Blob([stableStringify(record)+'\n'],{type:'application/json'});
-  const url=URL.createObjectURL(blob),anchor=document.createElement('a');
-  anchor.href=url; anchor.download=outcomeFileName(record); anchor.rel='noopener';
-  document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(()=>URL.revokeObjectURL(url),0);
-}
+function downloadOutcome(record){const filename=outcomeFileName(record);requestStage10Download(filename,stableStringify(record)+'\n','application/json');return filename;}
 function ensureOutcomeUi(){
   if(typeof document==='undefined'||$('outcomeStatus')) return;
   const details=$('evidenceHistory')?.parentElement;
@@ -7240,6 +7393,10 @@ async function renderOutcomeStatus(){
   }
   const exportButton=$('exportOutcomeBtn'); if(exportButton) exportButton.disabled=!index.some(row=>row.hasFullRecord);
 }
+async function dispatchOutcomeStored(outcomeId){
+  if(typeof document==='undefined'||typeof document.dispatchEvent!=='function'||typeof CustomEvent!=='function')return [];
+  const pending=[],detail={outcomeId,waitUntil(promise){pending.push(Promise.resolve(promise));}};document.dispatchEvent(new CustomEvent('teamsheet:outcome-stored',{detail}));return Promise.allSettled(pending);
+}
 async function collectOneOutcome(gameweek,{trigger,historyPayload,nowFn=Date.now}={}){
   const index=await loadOutcomeIndex();
   const metadata=currentLocalMetadata(index,gameweek);
@@ -7254,7 +7411,7 @@ async function collectOneOutcome(gameweek,{trigger,historyPayload,nowFn=Date.now
   });
   if(result.ok){
     if(result.unchanged) await touchOutcomeCheck(gameweek,nowFn());
-    else await storeOutcomeRecord(result.record,{origin:OUTCOME_ORIGINS.LOCAL});
+    else {const stored=await storeOutcomeRecord(result.record,{origin:OUTCOME_ORIGINS.LOCAL});if(stored.stored)await dispatchOutcomeStored(result.record.identity.outcomeId);}
   }
   return result;
 }
@@ -7282,7 +7439,7 @@ async function runOutcomeCollection({trigger='automatic',force=false,nowFn=Date.
 }
 async function exportLatestOutcome(){
   const message=$('outcomeMessage');
-  try{ const record=await latestOutcomeRecord(); if(!record) throw new Error('No saved outcome is available'); downloadOutcome(record); if(message) message.textContent=`Exported ${outcomeFileName(record)}.`; }
+  try{ const record=await latestOutcomeRecord(); if(!record) throw new Error('No saved outcome is available'); const filename=downloadOutcome(record); recordStage10Diagnostic('download_requested',{recordType:'gameweekOutcome',recordId:record.identity.outcomeId,severity:'info'}); if(message) message.textContent=stage10DownloadRequestedMessage(filename); }
   catch(error){ if(message) message.textContent=`Outcome export failed: ${error.message}`; }
 }
 async function importOutcomeFile(file){
@@ -7352,16 +7509,16 @@ function normaliseMetricIndex(value){
     .slice(0,METRIC_RULES.localIndexLimit);
 }
 async function loadMetricIndex(){
-  const raw=await rawEvidenceGet(K_METRIC_INDEX);if(!raw) return [];
-  try{return normaliseMetricIndex(JSON.parse(raw));}catch(error){return [];}
+  const raw=await rawEvidenceGet(K_METRIC_INDEX);if(!raw)return [];
+  try{return normaliseMetricIndex(JSON.parse(raw));}catch(error){recordStage10Diagnostic('index_corrupt',{recordType:'gameweekEvaluation',severity:'error',message:error.message});return [];}
 }
 async function validateMetricRecord(record){
   return record?.recordType==='gameweekEvaluation'?validateGameweekEvaluation(record):
     record?.recordType==='transferHorizonEvaluation'?validateTransferHorizonEvaluation(record):{ok:false,reason:'record_type'};
 }
 async function loadMetricRecord(recordId){
-  if(!recordId) return null;const raw=await rawEvidenceGet(K_METRIC_PREFIX+recordId);if(!raw) return null;
-  try{const checked=await validateMetricRecord(JSON.parse(await decodeEvidenceRecord(raw)));return checked.ok?checked.record:null;}catch(error){return null;}
+  if(!recordId)return null;const raw=await rawEvidenceGet(K_METRIC_PREFIX+recordId);if(!raw)return null;
+  try{const checked=await validateMetricRecord(JSON.parse(await decodeEvidenceRecord(raw)));if(!checked.ok){recordStage10Diagnostic(checked.reason==='version'?'unsupported_version':'payload_corrupt',{recordType:'gameweekEvaluation',recordId,severity:'error',message:checked.reason});return null;}return checked.record;}catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'gameweekEvaluation',recordId,severity:'error',message:error.message});return null;}
 }
 function compactMetricMetadata(record,{current=true,hasFullRecord=true}={}){
   return {recordId:metricId(record),recordType:record.recordType,logicalKey:metricLogicalKey(record),season:record.season,gameweek:metricGameweek(record),horizon:record.horizon??null,revision:Number(record.identity?.revision)||1,contentHash:record.identity?.contentHash||'',createdAt:metricCollectedAt(record),current:Boolean(current),hasFullRecord:Boolean(hasFullRecord)};
@@ -7387,19 +7544,34 @@ async function storeMetricRecord(record){
   const checked=await validateMetricRecord(record);if(!checked.ok) throw new Error(`Metric record rejected: ${checked.reason}`);
   const id=metricId(checked.record),logicalKey=metricLogicalKey(checked.record);let index=await loadMetricIndex();
   const same=index.find(row=>row.logicalKey===logicalKey&&row.contentHash===checked.record.identity.contentHash);if(same) return {stored:false,index,metadata:same};
+  const priorCurrent=index.find(row=>row.logicalKey===logicalKey&&row.current)?.recordId||null;
   index=index.map(row=>row.logicalKey===logicalKey?{...row,current:false}:row);
   const metadata=compactMetricMetadata(checked.record),encoded=await encodeEvidenceRecord(checked.record);
   index=normaliseMetricIndex([metadata,...index.filter(row=>row.recordId!==id)]);
-  await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify({recordId:id,contentHash:metadata.contentHash,startedAt:new Date().toISOString()}));
+  await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'prepared'})));
   try{
     try{await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}catch(firstError){for(const row of index.filter(item=>!item.current&&item.hasFullRecord)) await removeMetricPayload(row.recordId);await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}
     const verified=await loadMetricRecord(id);if(!verified||verified.identity.contentHash!==metadata.contentHash) throw new Error('Metric storage verification failed');
-    index=await enforceMetricBounds(index);return {stored:true,index,metadata};
+    await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'payload_verified'})));
+    index=await enforceMetricBounds(index);
+    await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'index_committed'})));return {stored:true,index,metadata};
   }finally{await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});}
 }
 async function recoverMetricJournal(){
-  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw) return false;
-  try{const journal=JSON.parse(raw),record=await loadMetricRecord(journal.recordId);if(record&&record.identity.contentHash===journal.contentHash){const index=await loadMetricIndex();if(!index.some(row=>row.recordId===journal.recordId)) await rawEvidenceSet(K_METRIC_INDEX,stableStringify(normaliseMetricIndex([compactMetricMetadata(record),...index])));}else if(journal.recordId) await removeMetricPayload(journal.recordId);}catch(error){}
+  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw)return false;let journal=parseStage10Journal(raw);
+  if(!journal){
+    try{const legacy=JSON.parse(raw),keys=['contentHash','recordId','startedAt'].sort();if(legacy&&typeof legacy==='object'&&!Array.isArray(legacy)&&stableStringify(Object.keys(legacy).sort())===stableStringify(keys)&&typeof legacy.recordId==='string'&&/^[0-9a-f]{64}$/.test(legacy.contentHash||'')){const candidate=await loadMetricRecord(legacy.recordId);if(candidate)journal=stage10Journal({recordType:candidate.recordType,recordId:legacy.recordId,contentHash:legacy.contentHash,logicalKey:metricLogicalKey(candidate),origin:'local_derivation',priorCurrentId:null,phase:'payload_verified',startedAt:legacy.startedAt});}}catch(error){}
+  }
+  if(!journal||!['gameweekEvaluation','transferHorizonEvaluation'].includes(journal.recordType)){recordStage10Diagnostic('journal_corrupt',{recordType:'gameweekEvaluation',severity:'error'});await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});return true;}
+  const record=await loadMetricRecord(journal.recordId),index=await loadMetricIndex();
+  if(record&&record.identity.contentHash===journal.contentHash){
+    const metadata=compactMetricMetadata(record),logicalKey=metricLogicalKey(record);let next=normaliseMetricIndex([metadata,...index.filter(row=>row.recordId!==metadata.recordId)]);
+    next=reconcileLocalCurrentRows(next.map(row=>({...row,origin:'local_derivation'})),{logicalKey,recordId:metadata.recordId,idKey:'recordId',origin:'local_derivation'}).map(({origin,...row})=>row);
+    await enforceMetricBounds(next);recordStage10Diagnostic('recovery_completed',{recordType:record.recordType,recordId:journal.recordId,severity:'info'});
+  }else{
+    if(!index.some(row=>row.recordId===journal.recordId))await removeMetricPayload(journal.recordId).catch(()=>{});
+    recordStage10Diagnostic('payload_corrupt',{recordType:journal.recordType,recordId:journal.recordId,severity:'error'});
+  }
   await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});return true;
 }
 async function clearMetricStorage(){
@@ -7479,10 +7651,7 @@ let reviewUiBundleScope=null;
 function reviewUiFormat(value,digits=2){return value==null||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits);}
 function reviewUiPercent(value){return value==null||!Number.isFinite(Number(value))?'—':`${(Number(value)*100).toFixed(1)}%`;}
 function reviewUiKpi(label,value){return el('div',{class:'kpi'},el('div',{class:'k'},label),el('div',{class:'v'},String(value)));}
-function reviewUiDownload(filename,text,type){
-  const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),anchor=document.createElement('a');
-  anchor.href=url;anchor.download=filename;anchor.rel='noopener';document.body.appendChild(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),0);
-}
+function reviewUiDownload(filename,text,type){return requestStage10Download(filename,text,type);}
 async function reviewUiFullMetricRecords(){
   const index=await loadMetricIndex(),records=[];
   for(const row of index.filter(item=>item.hasFullRecord)){
@@ -7617,13 +7786,13 @@ async function reviewUiRender(){
   }catch(error){if(status)setChildren(status,el('b',{},'Operating review unavailable'),document.createTextNode(` ${error.message}`));if(summary)setChildren(summary);if(details)setChildren(details);}
 }
 async function reviewUiExportJson(){
-  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=serialiseOperatingReviewBundle(bundle);reviewUiDownload(`teamsheet-${bundle.scope.season}-${bundle.scope.label}-operating-review.json`,output.text,'application/json');if(message)message.textContent=`Downloaded ${bundle.identity.bundleId}.`; }catch(error){if(message)message.textContent=`JSON export failed: ${error.message}`;}
+  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=serialiseOperatingReviewBundle(bundle);const filename=`teamsheet-${bundle.scope.season}-${bundle.scope.label}-operating-review.json`;reviewUiDownload(filename,output.text,'application/json');recordStage10Diagnostic('download_requested',{recordType:'operatingReviewBundle',recordId:bundle.identity.bundleId,severity:'info'});if(message)message.textContent=stage10DownloadRequestedMessage(filename); }catch(error){if(message)message.textContent=`JSON export failed: ${error.message}`;}
 }
 async function reviewUiExportMarkdown(){
-  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=buildOperatingReviewMarkdown(bundle);reviewUiDownload(output.filename,output.text,'text/markdown;charset=utf-8');if(message)message.textContent=`Downloaded ${output.filename}.`; }catch(error){if(message)message.textContent=`Markdown export failed: ${error.message}`;}
+  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=buildOperatingReviewMarkdown(bundle);reviewUiDownload(output.filename,output.text,'text/markdown;charset=utf-8');recordStage10Diagnostic('download_requested',{recordType:'operatingReviewBundle',recordId:output.filename,severity:'info'});if(message)message.textContent=stage10DownloadRequestedMessage(output.filename); }catch(error){if(message)message.textContent=`Markdown export failed: ${error.message}`;}
 }
 async function reviewUiExportCsv(){
-  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const table=$('reviewCsvTable')?.value||REVIEW_RULES.csvTables[0],output=buildOperatingReviewCsv(bundle,table);reviewUiDownload(output.filename,output.text,'text/csv;charset=utf-8');if(message)message.textContent=`Downloaded ${output.filename} with ${output.rows} data row${output.rows===1?'':'s'}.`; }catch(error){if(message)message.textContent=`CSV export failed: ${error.message}`;}
+  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const table=$('reviewCsvTable')?.value||REVIEW_RULES.csvTables[0],output=buildOperatingReviewCsv(bundle,table);reviewUiDownload(output.filename,output.text,'text/csv;charset=utf-8');recordStage10Diagnostic('download_requested',{recordType:'operatingReviewBundle',recordId:output.filename,severity:'info'});if(message)message.textContent=`${stage10DownloadRequestedMessage(output.filename)} ${output.rows} data row${output.rows===1?'':'s'} prepared.`; }catch(error){if(message)message.textContent=`CSV export failed: ${error.message}`;}
 }
 function initOperatingReviewUi(){
   if(typeof document==='undefined') return;reviewUiEnsure();document.addEventListener('teamsheet:outcome-stored',()=>setTimeout(()=>void reviewUiRender(),0));document.addEventListener('teamsheet:data-rendered',reviewUiRender);document.addEventListener('teamsheet:data-verified',()=>setTimeout(()=>void reviewUiRender(),2500));document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible')void reviewUiRender();});void reviewUiRender();

@@ -43,9 +43,9 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified source `1eca9a8817da41597d0632c819142237d31627fb`: **413/413 tests passed** with exact-identity builds; generated artefacts `1af7dac5383c91e915587218e7551c2f619cec8f`.
 
 ## Current
-- **Stage 10.5 — Hardening and documentation** · investigation and exact-scope approval only; no implementation has begun.
-- Stage 10.4 is complete and merged through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after owner approval.
-- Production formulas, providers and automatic Google Sheets integration remain unchanged.
+- **Stage 10.5 — Hardening and documentation** · IMPLEMENTED AND VERIFIED on `agent/stage10-5-hardening-documentation` after owner approval; draft PR and physical iPhone acceptance remain pending.
+- Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92`: **428/428 tests passed** with byte-identical exact-identity builds.
+- Storage recovery, schema/security parity, bounded retry, honest downloads and live-season operations are hardened without model/provider changes.
 
 ## Upcoming
 1. Inspect the merged Stage 10.1–10.4 operational and recovery boundaries.

@@ -97,3 +97,6 @@ Consequences: no projection, minutes, scoring, fixture, uncertainty, captaincy, 
 - **Decision:** Google Sheets import remains manual and targets the live 2026/27 workbook only. Automatic sync, OAuth, backend and scheduling require a separate approved stage.
 - **Decision:** 10 MiB warning and 25 MiB hard rejection, with no silent truncation or splitting.
 - **Evidence:** source `1eca9a8817da41597d0632c819142237d31627fb`, generated `1af7dac5383c91e915587218e7551c2f619cec8f`, 413/413 tests, deterministic exact-identity builds.
+
+## D-Stage10.5 — Explicit recovery, no migration engine
+Approved 2026-07-30. Current version-1 Stage 10 records have no older supported schema requiring conversion. Unknown versions fail closed; immutable records are never silently repaired or rewritten. A future migration must be separately approved, deterministic, one-way, fixture-tested and preserve the original exact record. Snapshot retries are five-minute visible checks capped at three per verified dataset/window priority.

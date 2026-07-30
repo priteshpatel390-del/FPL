@@ -319,7 +319,7 @@ async function validateOperatingReviewBundle(bundle,cryptoImpl=globalThis.crypto
 }
 function reviewCsvTextValue(value){
   const text=String(value??''),candidate=text.replace(/^[ \u00a0]+/,'');
-  return /^[=+\-@\t\r]/.test(candidate)?`'${text}`:text;
+  return /^[=+\-@\t\r\n\f\v]/.test(candidate)?`'${text}`:text;
 }
 function reviewCsvCell(value){
   if(value===null||value===undefined) return '';

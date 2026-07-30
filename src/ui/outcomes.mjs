@@ -1,5 +1,7 @@
 import { S } from '../state.mjs';
 import { $, el, setChildren } from '../util.mjs';
+import { recordStage10Diagnostic, stage10Journal, parseStage10Journal, reconcileLocalCurrentRows } from './evidence-recovery.mjs';
+import { requestStage10Download, stage10DownloadRequestedMessage } from './download.mjs';
 import { api } from '../providers/transport.mjs';
 import {
   OUTCOME_RULES, captureGameweekOutcome, dueOutcomeGameweeks, validateOutcomeRecord
@@ -42,19 +44,12 @@ function normaliseOutcomeIndex(value){
     .slice(0,OUTCOME_RULES.localIndexLimit);
 }
 async function loadOutcomeIndex(){
-  const raw=await rawEvidenceGet(K_OUTCOME_INDEX);
-  if(!raw) return [];
-  try{ return normaliseOutcomeIndex(JSON.parse(raw)); }
-  catch(error){ return []; }
+  const raw=await rawEvidenceGet(K_OUTCOME_INDEX);if(!raw)return [];
+  try{return normaliseOutcomeIndex(JSON.parse(raw));}catch(error){recordStage10Diagnostic('index_corrupt',{recordType:'gameweekOutcome',severity:'error',message:error.message});return [];}
 }
 async function loadOutcomeRecord(outcomeId){
-  if(!outcomeId) return null;
-  const raw=await rawEvidenceGet(K_OUTCOME_PREFIX+outcomeId);
-  if(!raw) return null;
-  try{
-    const checked=await validateOutcomeRecord(JSON.parse(await decodeEvidenceRecord(raw)));
-    return checked.ok?checked.record:null;
-  }catch(error){ return null; }
+  if(!outcomeId)return null;const raw=await rawEvidenceGet(K_OUTCOME_PREFIX+outcomeId);if(!raw)return null;
+  try{const checked=await validateOutcomeRecord(JSON.parse(await decodeEvidenceRecord(raw)));if(!checked.ok){recordStage10Diagnostic(checked.reason==='schema_version'?'unsupported_version':'payload_corrupt',{recordType:'gameweekOutcome',recordId:outcomeId,severity:'error',message:checked.reason});return null;}return checked.record;}catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'gameweekOutcome',recordId:outcomeId,severity:'error',message:error.message});return null;}
 }
 function compactOutcomeMetadata(record,{origin=OUTCOME_ORIGINS.LOCAL,current=true,hasFullRecord=true,lastCheckedAt=null}={}){
   return {
@@ -125,13 +120,14 @@ async function storeOutcomeRecord(record,{origin=OUTCOME_ORIGINS.LOCAL}={}){
   let index=await loadOutcomeIndex();
   const same=index.find(row=>row.origin===origin&&row.logicalKey===checked.record.identity.logicalKey&&row.outcomeDataHash===checked.record.identity.outcomeDataHash&&row.status===checked.record.status);
   if(same) return {index,stored:false,metadata:same};
+  const priorCurrent=index.find(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===checked.record.identity.logicalKey&&row.current)?.outcomeId||null;
   if(origin===OUTCOME_ORIGINS.LOCAL){
     index=index.map(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===checked.record.identity.logicalKey?{...row,current:false}:row);
   }
   const metadata=compactOutcomeMetadata(checked.record,{origin,current:origin===OUTCOME_ORIGINS.LOCAL,hasFullRecord:true});
   index=normaliseOutcomeIndex([metadata,...index.filter(row=>row.outcomeId!==metadata.outcomeId)]);
   const encoded=await encodeEvidenceRecord(checked.record);
-  await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify({outcomeId:metadata.outcomeId,contentHash:metadata.contentHash,startedAt:new Date().toISOString()}));
+  await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'prepared'})));
   try{
     try{ await rawEvidenceSet(K_OUTCOME_PREFIX+metadata.outcomeId,encoded); }
     catch(firstError){
@@ -141,29 +137,32 @@ async function storeOutcomeRecord(record,{origin=OUTCOME_ORIGINS.LOCAL}={}){
     }
     const verified=await loadOutcomeRecord(metadata.outcomeId);
     if(!verified||verified.identity.contentHash!==metadata.contentHash) throw new Error('Outcome storage verification failed');
+    await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'payload_verified'})));
     index=await enforceOutcomeBounds(index);
+    await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'index_committed'})));
     return {index,stored:true,metadata};
   }finally{
     await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});
   }
 }
 async function recoverOutcomeJournal(){
-  const raw=await rawEvidenceGet(K_OUTCOME_JOURNAL);
-  if(!raw) return false;
-  try{
-    const journal=JSON.parse(raw);
-    const record=await loadOutcomeRecord(journal.outcomeId);
-    if(record&&record.identity.contentHash===journal.contentHash){
-      const index=await loadOutcomeIndex();
-      if(!index.some(row=>row.outcomeId===journal.outcomeId)){
-        await rawEvidenceSet(K_OUTCOME_INDEX,stableStringify(normaliseOutcomeIndex([compactOutcomeMetadata(record),...index])));
-      }
-    }else if(journal.outcomeId){
-      await removeOutcomePayload(journal.outcomeId);
-    }
-  }catch(error){}
-  await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});
-  return true;
+  const raw=await rawEvidenceGet(K_OUTCOME_JOURNAL);if(!raw)return false;let journal=parseStage10Journal(raw);
+  if(!journal){
+    try{const legacy=JSON.parse(raw),keys=['contentHash','outcomeId','startedAt'].sort();if(legacy&&typeof legacy==='object'&&!Array.isArray(legacy)&&stableStringify(Object.keys(legacy).sort())===stableStringify(keys)&&/^outcome-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(legacy.outcomeId||'')&&/^[0-9a-f]{64}$/.test(legacy.contentHash||'')){const candidate=await loadOutcomeRecord(legacy.outcomeId);if(candidate)journal=stage10Journal({recordType:'gameweekOutcome',recordId:legacy.outcomeId,contentHash:legacy.contentHash,logicalKey:candidate.identity.logicalKey,origin:OUTCOME_ORIGINS.LOCAL,priorCurrentId:null,phase:'payload_verified',startedAt:legacy.startedAt});}}catch(error){}
+  }
+  if(!journal||journal.recordType!=='gameweekOutcome'){recordStage10Diagnostic('journal_corrupt',{recordType:'gameweekOutcome',severity:'error'});await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});return true;}
+  const record=await loadOutcomeRecord(journal.recordId),index=await loadOutcomeIndex();
+  if(record&&record.identity.contentHash===journal.contentHash){
+    const origin=journal.origin===OUTCOME_ORIGINS.LOCAL?OUTCOME_ORIGINS.LOCAL:OUTCOME_ORIGINS.RECOVERY;
+    const metadata=compactOutcomeMetadata(record,{origin,current:origin===OUTCOME_ORIGINS.LOCAL});
+    let next=normaliseOutcomeIndex([metadata,...index.filter(row=>row.outcomeId!==metadata.outcomeId)]);
+    next=reconcileLocalCurrentRows(next,{logicalKey:metadata.logicalKey,recordId:metadata.outcomeId,idKey:'outcomeId',origin:OUTCOME_ORIGINS.LOCAL});
+    await enforceOutcomeBounds(next);recordStage10Diagnostic('recovery_completed',{recordType:'gameweekOutcome',recordId:journal.recordId,severity:'info'});
+  }else{
+    if(!index.some(row=>row.outcomeId===journal.recordId))await removeOutcomePayload(journal.recordId).catch(()=>{});
+    recordStage10Diagnostic('payload_corrupt',{recordType:'gameweekOutcome',recordId:journal.recordId,severity:'error'});
+  }
+  await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});return true;
 }
 async function clearOutcomeStorage(){
   const index=await loadOutcomeIndex();
@@ -217,12 +216,7 @@ async function latestOutcomeRecord(){
 function outcomeFileName(record){
   return `teamsheet-${record.season}-gw${record.gameweek}-outcome-r${record.identity.revision}-${record.identity.contentHash.slice(0,16)}.json`;
 }
-function downloadOutcome(record){
-  const blob=new Blob([stableStringify(record)+'\n'],{type:'application/json'});
-  const url=URL.createObjectURL(blob),anchor=document.createElement('a');
-  anchor.href=url; anchor.download=outcomeFileName(record); anchor.rel='noopener';
-  document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(()=>URL.revokeObjectURL(url),0);
-}
+function downloadOutcome(record){const filename=outcomeFileName(record);requestStage10Download(filename,stableStringify(record)+'\n','application/json');return filename;}
 function ensureOutcomeUi(){
   if(typeof document==='undefined'||$('outcomeStatus')) return;
   const details=$('evidenceHistory')?.parentElement;
@@ -271,6 +265,10 @@ async function renderOutcomeStatus(){
   }
   const exportButton=$('exportOutcomeBtn'); if(exportButton) exportButton.disabled=!index.some(row=>row.hasFullRecord);
 }
+async function dispatchOutcomeStored(outcomeId){
+  if(typeof document==='undefined'||typeof document.dispatchEvent!=='function'||typeof CustomEvent!=='function')return [];
+  const pending=[],detail={outcomeId,waitUntil(promise){pending.push(Promise.resolve(promise));}};document.dispatchEvent(new CustomEvent('teamsheet:outcome-stored',{detail}));return Promise.allSettled(pending);
+}
 async function collectOneOutcome(gameweek,{trigger,historyPayload,nowFn=Date.now}={}){
   const index=await loadOutcomeIndex();
   const metadata=currentLocalMetadata(index,gameweek);
@@ -285,7 +283,7 @@ async function collectOneOutcome(gameweek,{trigger,historyPayload,nowFn=Date.now
   });
   if(result.ok){
     if(result.unchanged) await touchOutcomeCheck(gameweek,nowFn());
-    else await storeOutcomeRecord(result.record,{origin:OUTCOME_ORIGINS.LOCAL});
+    else {const stored=await storeOutcomeRecord(result.record,{origin:OUTCOME_ORIGINS.LOCAL});if(stored.stored)await dispatchOutcomeStored(result.record.identity.outcomeId);}
   }
   return result;
 }
@@ -313,7 +311,7 @@ async function runOutcomeCollection({trigger='automatic',force=false,nowFn=Date.
 }
 async function exportLatestOutcome(){
   const message=$('outcomeMessage');
-  try{ const record=await latestOutcomeRecord(); if(!record) throw new Error('No saved outcome is available'); downloadOutcome(record); if(message) message.textContent=`Exported ${outcomeFileName(record)}.`; }
+  try{ const record=await latestOutcomeRecord(); if(!record) throw new Error('No saved outcome is available'); const filename=downloadOutcome(record); recordStage10Diagnostic('download_requested',{recordType:'gameweekOutcome',recordId:record.identity.outcomeId,severity:'info'}); if(message) message.textContent=stage10DownloadRequestedMessage(filename); }
   catch(error){ if(message) message.textContent=`Outcome export failed: ${error.message}`; }
 }
 async function importOutcomeFile(file){
@@ -364,5 +362,5 @@ export {
   K_OUTCOME_INDEX,K_OUTCOME_PREFIX,K_OUTCOME_JOURNAL,MAX_OUTCOME_IMPORT_BYTES,OUTCOME_ORIGINS,
   normaliseOutcomeIndex,loadOutcomeIndex,loadOutcomeRecord,compactOutcomeMetadata,storeOutcomeRecord,
   recoverOutcomeJournal,clearOutcomeStorage,currentLocalMetadata,touchOutcomeCheck,shouldCheckOutcome,
-  snapshotInputsForGameweek,latestOutcomeRecord,runOutcomeCollection,renderOutcomeStatus,initOutcomeUi
+  snapshotInputsForGameweek,latestOutcomeRecord,dispatchOutcomeStored,runOutcomeCollection,renderOutcomeStatus,initOutcomeUi
 };

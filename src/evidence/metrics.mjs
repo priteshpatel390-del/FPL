@@ -305,11 +305,17 @@ async function buildGameweekEvaluation(snapshot,outcome,{previousRecord=null,cry
   const record=canonicalise({...draft,identity:{...draft.identity,contentHash,evaluationId}});assertEvidenceSafe(record);return {ok:true,unchanged:false,record:deepFreeze(record)};
 }
 function stage10EvaluationShapeError(record){
+  const keys=['completeness','coverage','createdAt','deadlineTime','decisions','gameweek','identity','managerRef','metricVersion','observations','recordType','reports','rules','schemaVersion','season','segmentationVersion','sources'].sort();
   if(!record||record.recordType!=='gameweekEvaluation') return 'record_type';
   if(record.schemaVersion!==METRIC_SCHEMA_VERSION||record.metricVersion!==METRIC_VERSION||record.segmentationVersion!==SEGMENTATION_VERSION) return 'version';
+  if(stableStringify(Object.keys(record).sort())!==stableStringify(keys)) return 'top_level_schema';
   if(!/^mgr-[0-9a-f]{32}$/.test(record.managerRef||'')) return 'manager_ref';
-  if(!/^evaluation-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(record.identity?.evaluationId||'')) return 'identity';
-  if(!Array.isArray(record.observations?.players)||!Array.isArray(record.observations?.minuteFixtures)) return 'observations';
+  if(!/^\d{4}-\d{2}$/.test(record.season||'')||!Number.isInteger(record.gameweek)||record.gameweek<1||record.gameweek>38) return 'identity';
+  if(!record.identity||record.identity.logicalKey!==`${record.season}|gw${record.gameweek}`||!Number.isInteger(record.identity.revision)||record.identity.revision<1) return 'identity';
+  if(!/^evaluation-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(record.identity.evaluationId||'')) return 'identity';
+  if(!/^[0-9a-f]{64}$/.test(record.identity.contentHash||'')||!/^[0-9a-f]{64}$/.test(record.identity.metricDataHash||'')) return 'identity';
+  if(!record.identity.sectionHashes||typeof record.identity.sectionHashes!=='object') return 'identity';
+  if(!record.sources||typeof record.sources!=='object'||!Array.isArray(record.observations?.players)||!Array.isArray(record.observations?.minuteFixtures)) return 'observations';
   return null;
 }
 async function validateGameweekEvaluation(record,cryptoImpl=globalThis.crypto){
@@ -370,12 +376,22 @@ async function buildTransferHorizonEvaluation(startEvaluation,evaluationsByGamew
   const payload=canonicalise({recordType:'transferHorizonEvaluation',schemaVersion:TRANSFER_METRIC_SCHEMA_VERSION,metricVersion:METRIC_VERSION,managerRef:startEvaluation.managerRef,season:startEvaluation.season,startGameweek:start,horizon,createdAt:records.map(record=>record.createdAt).filter(Boolean).sort().at(-1)||startEvaluation.createdAt||new Date(0).toISOString(),sources:{startEvaluationId:startEvaluation.identity.evaluationId,gameweekEvaluationIds:records.map(record=>record.identity.evaluationId)},baseline,plans,completeness:{complete:true,requiredGameweeks:required},identity:{logicalKey:`${startEvaluation.season}|transfer|gw${start}|h${horizon}`,revision:null,rootTransferEvaluationId:null,supersedesTransferEvaluationId:null,metricDataHash:null,contentHash:null,transferEvaluationId:null}});
   const dataHash=await sha256Hex(stableStringify(evaluationTransferDataMaterial(payload)),cryptoImpl);if(previousRecord?.identity?.metricDataHash===dataHash) return {ok:true,unchanged:true,record:previousRecord};
   const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1,root=previousRecord?.identity?.rootTransferEvaluationId||`transfer-evaluation-${payload.season}-gw${start}-h${horizon}`,draft=canonicalise({...payload,identity:{...payload.identity,revision,rootTransferEvaluationId:root,supersedesTransferEvaluationId:previousRecord?.identity?.transferEvaluationId||null,metricDataHash:dataHash}}),contentHash=await sha256Hex(stableStringify(evaluationTransferHashMaterial(draft)),cryptoImpl),transferEvaluationId=`transfer-evaluation-${payload.season}-gw${start}-h${horizon}-r${revision}-${contentHash.slice(0,16)}`;
-  return {ok:true,unchanged:false,record:deepFreeze(canonicalise({...draft,identity:{...draft.identity,contentHash,transferEvaluationId}}))};
+  const record=canonicalise({...draft,identity:{...draft.identity,contentHash,transferEvaluationId}});assertEvidenceSafe(record);return {ok:true,unchanged:false,record:deepFreeze(record)};
 }
 async function validateTransferHorizonEvaluation(record,cryptoImpl=globalThis.crypto){
   try{
-    if(!record||record.recordType!=='transferHorizonEvaluation'||record.schemaVersion!==TRANSFER_METRIC_SCHEMA_VERSION) return {ok:false,reason:'record_type'};
+    const keys=['baseline','completeness','createdAt','horizon','identity','managerRef','metricVersion','plans','recordType','schemaVersion','season','sources','startGameweek'].sort();
+    if(!record||record.recordType!=='transferHorizonEvaluation') return {ok:false,reason:'record_type'};
+    if(record.schemaVersion!==TRANSFER_METRIC_SCHEMA_VERSION||record.metricVersion!==METRIC_VERSION) return {ok:false,reason:'version'};
+    if(stableStringify(Object.keys(record).sort())!==stableStringify(keys)) return {ok:false,reason:'top_level_schema'};
+    if(!/^mgr-[0-9a-f]{32}$/.test(record.managerRef||'')) return {ok:false,reason:'manager_ref'};
+    if(!/^\d{4}-\d{2}$/.test(record.season||'')||!Number.isInteger(record.startGameweek)||record.startGameweek<1||record.startGameweek>38||!Number.isInteger(record.horizon)||record.horizon<1) return {ok:false,reason:'identity'};
+    const expectedLogicalKey=`${record.season}|transfer|gw${record.startGameweek}|h${record.horizon}`;
+    if(record.identity?.logicalKey!==expectedLogicalKey||!Number.isInteger(record.identity?.revision)||record.identity.revision<1) return {ok:false,reason:'identity'};
     if(!/^transfer-evaluation-\d{4}-\d{2}-gw\d+-h\d+-r\d+-[0-9a-f]{16}$/.test(record.identity?.transferEvaluationId||'')) return {ok:false,reason:'identity'};
+    if(!/^[0-9a-f]{64}$/.test(record.identity?.contentHash||'')||!/^[0-9a-f]{64}$/.test(record.identity?.metricDataHash||'')) return {ok:false,reason:'identity'};
+    if(!record.sources||typeof record.sources!=='object'||!Array.isArray(record.sources.gameweekEvaluationIds)||!Array.isArray(record.plans)) return {ok:false,reason:'sources'};
+    assertEvidenceSafe(record);
     const dataHash=await sha256Hex(stableStringify(evaluationTransferDataMaterial(record)),cryptoImpl);if(dataHash!==record.identity.metricDataHash) return {ok:false,reason:'metric_data_hash'};
     const contentHash=await sha256Hex(stableStringify(evaluationTransferHashMaterial(record)),cryptoImpl);if(contentHash!==record.identity.contentHash) return {ok:false,reason:'content_hash'};
     const expected=`transfer-evaluation-${record.season}-gw${record.startGameweek}-h${record.horizon}-r${record.identity.revision}-${contentHash.slice(0,16)}`;if(record.identity.transferEvaluationId!==expected) return {ok:false,reason:'evaluation_id'};

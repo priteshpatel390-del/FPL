@@ -90,3 +90,11 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 - Transfer-horizon gains are not summed cumulatively because horizons can overlap and plans are alternatives.
 - Provider-state comparisons are observational, not causal. One Gameweek is never labelled calibrated/uncalibrated or accurate/inaccurate.
 - Static phone-first tests pass, but physical iPhone acceptance remains an owner review step before merge.
+
+## Stage 10.5 hardening limitations
+- Safari can acknowledge only that a download was requested; Pritesh must confirm the file in Files or Downloads.
+- Browser storage and exported JSON remain unencrypted and are not a permanent database.
+- Static GitHub Pages cannot perform guaranteed closed-app collection.
+- Recovery-only imports cannot become official/current or automatically recreate every local metric view.
+- No migration engine exists because no older supported Stage 10 schema currently requires one.
+- Stage 10 infrastructure completion does not establish prediction accuracy or calibration.
