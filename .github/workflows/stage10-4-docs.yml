@@ -1,0 +1,297 @@
+name: Stage 10.4 documentation closeout
+
+on:
+  pull_request:
+    branches: [agent/stage10-4-operating-review]
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage10-4-operating-review
+          fetch-depth: 0
+      - name: Update canonical Stage 10.4 records
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          SOURCE = '1eca9a8817da41597d0632c819142237d31627fb'
+          GENERATED = '1af7dac5383c91e915587218e7551c2f619cec8f'
+          SOURCE_HASH = 'd1773a1ae9e36ae28adef232148a3f7e315f21baf989e03e0158c9beefe729ed'
+
+          def read(path):
+              return Path(path).read_text()
+
+          def write(path, text):
+              Path(path).write_text(text.rstrip() + '\n')
+
+          def replace_exact(path, old, new):
+              text = read(path)
+              if text.count(old) != 1:
+                  raise SystemExit(f'{path}: expected one exact replacement, found {text.count(old)}')
+              write(path, text.replace(old, new))
+
+          def append_once(path, marker, block):
+              text = read(path)
+              if marker not in text:
+                  write(path, text + '\n' + block.strip() + '\n')
+
+          replace_exact('CLAUDE.md',
+          "Stage 10.3 — Metrics is complete and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval. Immutable correction-aware player, minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations are derived only from exact Stage 10.1/10.2 records and remain descriptive. Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with byte-identical exact-identity builds; generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. The next checkpoint is **Stage 10.4 — Operating review/export**, at investigation and exact-scope approval only; no Stage 10.4 implementation has begun.",
+          f"Stage 10.4 — Operating review/export is implemented and verified on draft PR #35 after explicit owner approval. It remains a downstream-only consumer of exact Stage 10.1–10.3 evidence and does not alter production formulas or providers. Verified source `{SOURCE}` passes **413/413 tests** with byte-identical exact-identity builds; generated artefacts are committed at `{GENERATED}` with source hash `{SOURCE_HASH}`. `main` remains at the merged Stage 10.3 baseline until Pritesh explicitly approves the Stage 10.4 merge. After merge, the next checkpoint is **Stage 10.5**, investigation and exact-scope approval only.")
+
+          roadmap_old = """## Current
+          - **Stage 10.4 — Operating review/export** · investigation and exact-scope approval only; no implementation has begun.
+          - Intended scope may organise weekly/cumulative summaries, completeness review and analysis-friendly exports from existing immutable evidence.
+          - No formula, threshold, provider, composite score, automatic model update or validation claim is approved.
+
+          ## Upcoming
+          1. Inspect the merged Stage 10.1–10.3 evidence and metric contracts.
+          2. Present the exact Stage 10.4 review surfaces, export schemas, retention rules, missing-data handling, phone-first workflow and tests.
+          3. Obtain explicit owner approval before implementation.
+          4. Implement only the approved Stage 10.4 scope on a separate branch.
+
+          ## Current blockers
+          1. Stage 10.4 exact scope and approval are not yet recorded.
+          2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
+          3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+          4. Prospective sample size begins at zero; Stage 10.3 infrastructure does not establish model accuracy or calibration.""".replace('          ','')
+          roadmap_new = f"""## Current
+          - **Stage 10.4 — Operating review/export** · IMPLEMENTED AND VERIFIED on draft PR #35; owner review and merge approval remain pending.
+          - Verified source `{SOURCE}`: **413/413 tests passed**, zero failures/skips, deterministic exact-identity builds; generated artefacts `{GENERATED}`.
+          - Weekly/cumulative reviews, hash-verifiable JSON, deterministic Markdown and eight individual CSV exports are downstream-only and descriptive.
+          - Google Sheets remains manual import into the live 2026/27 workbook; no OAuth, backend or automatic sync was introduced.
+
+          ## Upcoming
+          1. Complete owner review and physical iPhone acceptance of draft PR #35.
+          2. Merge only after Pritesh's explicit approval.
+          3. After merge, investigate and design Stage 10.5 separately; do not begin implementation without exact-scope approval.
+
+          ## Current blockers
+          1. Stage 10.4 is not merged until owner review, physical iPhone acceptance and explicit merge approval are complete.
+          2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
+          3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+          4. Prospective sample size begins at zero; Stage 10.4 reporting does not establish model accuracy or calibration.""".replace('          ','')
+          replace_exact('docs/ROADMAP.md', roadmap_old, roadmap_new)
+
+          replace_exact('docs/PROJECT_CONTEXT.md',
+          '- Stages 1–9 and Stage 10.1–10.3 are complete and merged. The complete Stage 10 design is owner-approved.',
+          '- Stages 1–9 and Stage 10.1–10.3 are complete and merged. Stage 10.4 is implemented and verified on draft PR #35 after explicit owner approval, but is not merged. The complete Stage 10 design is owner-approved.')
+          stage103 = '- Stage 10.3 merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval. It derives immutable correction-aware player, fixture-minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations only from exact Stage 10.1/10.2 records. Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with deterministic exact-identity builds; generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`.'
+          replace_exact('docs/PROJECT_CONTEXT.md', stage103, stage103 + f"\n- Stage 10.4 is implemented and verified on draft PR #35. It provides downstream-only weekly/cumulative operating review plus deterministic JSON, Markdown and eight CSV exports from exact Stage 10.1–10.3 evidence. Verified source `{SOURCE}` passes **413/413 tests** with exact-identity builds; generated artefacts `{GENERATED}` embed source hash `{SOURCE_HASH}`. No formula, provider or automatic Google Sheets integration changed.")
+          replace_exact('docs/PROJECT_CONTEXT.md',
+          'Completed and merged: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints, Stage 10.1 deadline-safe snapshot foundation, Stage 10.2 official outcome collection and Stage 10.3 metrics.\n\nCurrent: Stage 10.4 — Operating review/export is the next investigation and exact-scope approval checkpoint. No Stage 10.4 implementation has begun.\n\nNext: define the exact weekly/cumulative review surfaces, completeness checks, export schemas, retention rules and phone-first workflow. Production formulas, thresholds and validation claims remain outside scope unless separately evidenced and approved.',
+          f'Completed and merged: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints, Stage 10.1 deadline-safe snapshot foundation, Stage 10.2 official outcome collection and Stage 10.3 metrics.\n\nCurrent: Stage 10.4 — Operating review/export is implemented and verified on draft PR #35 at source `{SOURCE}` and generated commit `{GENERATED}`. Owner review, physical iPhone acceptance and explicit merge approval remain outstanding.\n\nNext after merge: investigate Stage 10.5 and present its exact scope, exclusions and approval gate. Production formulas, thresholds and validation claims remain outside scope unless separately evidenced and approved.')
+
+          replace_exact('docs/ARCHITECTURE.md',
+          '    metrics.mjs         immutable metric observations, exact joins, frozen decision evaluation and transfer horizons',
+          '    metrics.mjs         immutable metric observations, exact joins, frozen decision evaluation and transfer horizons\n    review.mjs          downstream weekly/cumulative operating review and deterministic export contracts')
+          replace_exact('docs/ARCHITECTURE.md',
+          '    metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting',
+          '    metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting\n    review.mjs          phone-first operating review controls and JSON/Markdown/CSV downloads')
+          replace_exact('docs/ARCHITECTURE.md',
+          'The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records. Metrics does not import or execute current scoring, minutes, simulation or optimiser functions and never writes into runtime model state.',
+          'The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records; review observes only stored snapshot, outcome, evaluation and transfer-horizon records. Metrics and review do not import or execute current scoring, minutes, simulation or optimiser functions and never write into runtime model state.')
+          replace_exact('docs/ARCHITECTURE.md',
+          'The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome and metric modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.',
+          'The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome, metric and review modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.')
+          append_once('docs/ARCHITECTURE.md', '## Stage 10.4 operating-review boundary', f"""
+          ## Stage 10.4 operating-review boundary
+          `evidence/review.mjs` validates retained Stage 10.1–10.3 records sequentially, selects only current evaluation revisions for analysis and retains known revision metadata for audit. Missing or pruned exact records make the review explicitly partial rather than being silently dropped. Unsupported source schemas fail closed.
+
+          Weekly review covers source identity, completeness, points, fixture-minutes, uncertainty, frozen XI/captaincy/bench/manager outcome, provider states, correction history and completed transfer horizons. Incomplete transfer horizons remain pending and expose no interim gain. Cumulative review presents all matched and schedule-aligned populations side by side and allows one approved segment dimension/value at a time. It creates no composite score, significance claim, calibration label or automatic model update.
+
+          The deterministic export boundary emits one hash-verifiable JSON evidence/review bundle, one Markdown review and eight individually selectable CSV tables. CSV is UTF-8 BOM + CRLF + RFC 4180, preserves numeric zero, leaves structural null blank and neutralises formula-like text including leading whitespace, tab and carriage return. Derived exports omit manager references; exact canonical source records remain unchanged inside JSON for hash verification. Exports warn above 10 MiB and fail above 25 MiB without truncation.
+
+          `ui/review.mjs` remains subordinate under More → Deadline evidence. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. Verified source `{SOURCE}` passes 413 tests with deterministic exact-identity builds.
+          """)
+
+          append_once('docs/DECISIONS.md', '## D-10.4 — Operating review and export', f"""
+          ## D-10.4 — Operating review and export
+          - **Decision:** Stage 10.4 is a pure downstream review/export layer over immutable Stage 10.1–10.3 records. It may not call production projection, expected-minutes, simulation, squad or optimiser functions.
+          - **Decision:** current evaluation revisions drive analysis; all known revision metadata remains auditable; missing/pruned exact records produce an explicit partial status.
+          - **Decision:** show all matched and schedule-aligned cumulative views side by side, with one selected segment at a time and existing descriptive sample safeguards.
+          - **Decision:** no composite score, significance claim, good/bad classification, calibration claim, causal provider claim or automatic model update.
+          - **Decision:** exports are deterministic JSON, Markdown and eight separate CSVs; no XLSX, ZIP or one-click multi-download.
+          - **Decision:** CSV is BOM/CRLF/RFC 4180, keeps numeric zero distinct from blank null and neutralises spreadsheet formulas while preserving genuine negative numbers.
+          - **Decision:** exact JSON source records retain canonical manager references for hash verification; derived review, Markdown and CSV omit them.
+          - **Decision:** Google Sheets import remains manual and targets the live 2026/27 workbook only. Automatic sync, OAuth, backend and scheduling require a separate approved stage.
+          - **Decision:** 10 MiB warning and 25 MiB hard rejection, with no silent truncation or splitting.
+          - **Evidence:** source `{SOURCE}`, generated `{GENERATED}`, 413/413 tests, deterministic exact-identity builds.
+          """)
+
+          append_once('docs/KNOWN_LIMITATIONS.md', '## Stage 10.4 operating-review limitations', """
+          ## Stage 10.4 operating-review limitations
+          - Review quality cannot exceed retained evidence quality. Pruned or missing exact snapshot/outcome/evaluation payloads are reported as partial and cannot be reconstructed.
+          - Local Stage 10 retention remains recovery-oriented rather than a permanent season archive; a season JSON bundle may therefore be partial on one device.
+          - Google Sheets import is manual. The app does not authenticate to Drive, select a workbook, append rows or run unattended exports.
+          - No XLSX or ZIP export exists. The eight CSV files are downloaded individually to avoid browser multi-download and mobile reliability problems.
+          - Exports above 25 MiB fail rather than truncate; no compression or automatic splitting is implemented.
+          - Transfer-horizon gains are not summed cumulatively because horizons can overlap and plans are alternatives.
+          - Provider-state comparisons are observational, not causal. One Gameweek is never labelled calibrated/uncalibrated or accurate/inaccurate.
+          - Static phone-first tests pass, but physical iPhone acceptance remains an owner review step before merge.
+          """)
+
+          append_once('docs/TESTING.md', '## Stage 10.4 review/export coverage', f"""
+          ## Stage 10.4 review/export coverage
+          Stage 10.4 adds `operating-review.test.mjs`, `cumulative-review.test.mjs`, `review-export.test.mjs`, `review-ui.test.mjs` and shared canonical evidence fixtures. Coverage includes correction chains, current-revision selection, pruned/missing exact records, unsupported schemas, incomplete transfer horizons, null minutes, schedule changes, one-segment limits, deterministic bundle hashes/bytes, all eight CSV contracts, formula-injection cases, manager-reference boundaries, Markdown wording, class-only CSP rules and downstream-only imports.
+
+          A synthetic 38-Gameweek × 700-player case exercises 26,600 player rows and equivalent fixture-minute rows with a 10-second ceiling. Source `{SOURCE}` ran `./run-tests.sh`: **413 tests passed, 0 failed, 0 skipped** in 4.58 seconds. A second build with the same `BUILD_COMMIT` was byte-identical for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`; root `index.html` matched the deployable exactly.
+          """)
+
+          append_once('docs/SECURITY.md', '## Stage 10.4 export security', """
+          ## Stage 10.4 export security
+          - Review input is allowlisted canonical Stage 10 evidence; arbitrary runtime state, provider payloads, configuration and secrets are never exported wholesale.
+          - The exact JSON bundle preserves canonical source records and their identities for verification. Derived summaries, Markdown and CSV omit `managerRef` and public Team ID remains redacted by the outcome contract.
+          - Every JSON bundle carries source-record hashes, manifest identity, review hash and bundle hash; import validation recomputes identity and fails closed.
+          - CSV cells are typed. Numeric negatives remain numeric; text beginning after leading whitespace with `=`, `+`, `-`, `@`, tab or carriage return is apostrophe-neutralised and RFC 4180 quoted where required.
+          - Stage 10.4 adds no network origin, OAuth flow, Drive token, backend, database, relay or scheduled job. Google Sheets remains a manual user-controlled import boundary.
+          - Export generation is on demand, not retained as another local copy, and rejects payloads above 25 MiB without partial output.
+          """)
+
+          append_once('docs/DATA_SOURCES.md', '## Stage 10.4 review/export sources', """
+          ## Stage 10.4 review/export sources
+          Stage 10.4 introduces no provider and fetches no new football data. Its only inputs are already-retained, hash-validated Stage 10.1 snapshots, Stage 10.2 Official FPL outcomes, Stage 10.3 Gameweek evaluations and completed transfer-horizon evaluations. Provider-state rows are historical provenance copied from the frozen snapshot and are not re-queried or reinterpreted causally.
+
+          The live Google Sheet is an optional manual destination for selected CSV imports, not a source of truth and not a runtime data source. The historical archive workbook remains separate and read-only. Any future automatic export must pin the exact live spreadsheet ID and requires a separately approved authentication, token-storage, scheduler and idempotency design.
+          """)
+
+          append_once('docs/STAGE10-DESIGN.md', '## Stage 10.4 verified implementation', f"""
+          ## Stage 10.4 verified implementation
+          The owner approved the exact operating-review/export scope on 30 July 2026. Draft PR #35 implements it without changing projection, expected-minutes, scoring, fixture, uncertainty, squad, captaincy, transfer-optimiser or provider behaviour. Source `{SOURCE}` passes 413/413 tests with deterministic exact-identity builds; generated artefacts are `{GENERATED}`. Physical iPhone acceptance and explicit merge approval remain outstanding. Stage 10.5 remains a separate investigation/design checkpoint.
+          """)
+
+          append_once('docs/CHANGELOG.md', '## 2026-07-30 — Stage 10.4 operating review/export', f"""
+          ## 2026-07-30 — Stage 10.4 operating review/export
+          - Implemented downstream weekly and cumulative operating review from exact Stage 10.1–10.3 evidence.
+          - Added deterministic hash-verifiable JSON, descriptive Markdown and eight individual RFC 4180 CSV exports.
+          - Added explicit correction/pruning/missing-record handling, schedule-aligned views, transfer-horizon pending rules and provider/revision audit.
+          - Added spreadsheet-formula protection, manager-reference boundaries, 10/25 MiB size policy and manual-only live Google Sheets boundary.
+          - Added phone-first UI under Deadline evidence and 16 tests, bringing the verified suite to **413/413 passed**.
+          - Verified source `{SOURCE}` and generated artefacts `{GENERATED}` with byte-identical rebuilds. Draft PR #35 awaits owner review and explicit merge approval.
+          """)
+
+          item4 = f"""# STAGE10-ITEM4.md — Operating review/export
+          Purpose: authoritative implementation and verification record for Stage 10.4. Last updated: 2026-07-30.
+
+          ## Status
+          **Implemented and verified on draft PR #35; not merged.** Exact scope was approved by Pritesh before implementation. Physical iPhone acceptance and explicit merge approval remain required.
+
+          - Base `main`: `ccfd06a9380714ac987934b5bfd03adba38a2875`
+          - Branch: `agent/stage10-4-operating-review`
+          - Verified source: `{SOURCE}`
+          - Generated artefacts: `{GENERATED}`
+          - Embedded source hash: `{SOURCE_HASH}`
+          - Tests: **413 passed, 0 failed, 0 skipped**
+
+          ## Approved purpose
+          Turn immutable Stage 10.1–10.3 evidence into a practical weekly and season operating review, plus deterministic analysis-friendly exports, without changing any production model or provider behaviour.
+
+          ## Implemented files
+          - `src/evidence/review.mjs` — source validation, current-revision selection, weekly/cumulative derivation, deterministic JSON/Markdown/CSV contracts, hashes and size limits.
+          - `src/ui/review.mjs` — phone-first on-demand controls under More → Deadline evidence.
+          - `build.mjs` — fixed review module order.
+          - `tests/review-fixtures.mjs`
+          - `tests/operating-review.test.mjs`
+          - `tests/cumulative-review.test.mjs`
+          - `tests/review-export.test.mjs`
+          - `tests/review-ui.test.mjs`
+          - Generated `dist/app.bundle.js`, `dist/manifest.json`, `dist/index.html` and root `index.html`.
+
+          ## Weekly review
+          Weekly review is keyed to a current `gameweekEvaluation` revision and exposes source IDs/hashes/revisions, completeness and warnings, player points, fixture-minutes, uncertainty, frozen squad/XI, captaincy, bench and optional manager outcome, provider states, corrections and completed transfer horizons.
+
+          Player detail sorts absolute error descending then player ID. Missing or unallocatable minutes remain null, never manufactured zero. The hindsight optimum is labelled **Hindsight oracle (descriptive only)**. An incomplete transfer horizon reports required/missing Gameweeks and exposes no interim gain.
+
+          ## Cumulative review
+          Cumulative review selects only current evaluation revisions and presents:
+          - all matched observations;
+          - schedule-aligned observations;
+          - one selected approved segment dimension/value at a time;
+          - Gameweek coverage/missingness trend;
+          - existing raw-only/descriptive/potentially-stable sample wording;
+          - correction/revision audit and observational provider-state context.
+
+          It does not aggregate overlapping transfer-horizon gains, create a composite score, classify performance as good/bad, claim significance or calibration, infer provider causality or update the model.
+
+          ## Export contract
+          1. Hash-verifiable JSON evidence/review bundle containing exact retained source records, source manifest, weekly reviews, cumulative review and bundle/review hashes.
+          2. Deterministic Markdown review.
+          3. Eight individually selectable CSV files: `gameweeks`, `players`, `minute_fixtures`, `squad_decisions`, `transfer_horizons`, `transfer_horizon_gameweeks`, `provider_states`, `revisions`.
+
+          Filenames are deterministic and zero-pad Gameweek. No click timestamp is included. CSV is UTF-8 BOM, CRLF and RFC 4180 with fixed columns and deterministic rows. Null is blank; numeric zero remains `0`. Formula-like text is neutralised while genuine negative numbers remain numeric.
+
+          ## Evidence and revision behaviour
+          Exact retained records remain authoritative. Analysis uses current evaluation revisions only. Known superseded revision metadata remains visible. Missing/pruned exact records make the bundle and affected reviews explicitly partial. Unsupported source schemas fail closed; migration is not silently attempted.
+
+          ## Google Sheets boundary
+          Stage 10.4 performs manual download/import only. The intended destination is the live `Teamsheet — Live Gameweek Log 2026/27` workbook; the historical archive remains separate and read-only. The app stores no spreadsheet ID, OAuth token or Drive credential and performs no unattended append.
+
+          ## Security and privacy
+          - Allowlisted Stage 10 fields only; no wholesale app state, configuration, secret or raw provider response.
+          - Derived review, Markdown and CSV omit manager references.
+          - Exact canonical JSON source records remain unchanged for hash verification.
+          - Spreadsheet-formula injection is tested for `=`, `+`, `-`, `@`, tab, carriage return and leading whitespace.
+          - No new CSP origin, relay, backend, database, scheduler or authentication flow.
+
+          ## Storage and performance
+          Review/export is generated on demand and is not retained as an additional local record. A warning is returned above 10 MiB and export fails above 25 MiB; no silent truncation, ZIP, compression or automatic splitting is provided. A synthetic 38 × 700 case covers 26,600 player rows and equivalent fixture-minute rows under a 10-second test ceiling.
+
+          ## Failure behaviour
+          - Invalid/tampered source: exclude and mark partial; never recompute from current model code.
+          - Provisional outcome: no authoritative evaluation.
+          - Pruned full revision: retain metadata and mark partial.
+          - Incomplete transfer horizon: pending only; no partial gain.
+          - Unknown schema: fail closed and report; migration belongs to a later approved item.
+          - Over 25 MiB: reject the requested export; never truncate.
+
+          ## Verification evidence
+          GitHub Actions materialised the final source by immutable Git blob identity, verified final source SHA-256 values, ran `./run-tests.sh`, rebuilt with the same `BUILD_COMMIT`, compared all generated bytes and confirmed root `index.html` equals `dist/index.html`.
+
+          - Test runner: 413 tests, 413 passed, 0 failed/cancelled/skipped/todo; 4.58 seconds.
+          - Build output: 509,268-byte `dist/index.html`; model `2.4.0`; rules `2026-27.3`.
+          - Exact-identity comparison: `dist/index.html`, `dist/app.bundle.js`, `dist/manifest.json` byte-identical across both builds.
+          - Manifest commit: `{SOURCE}`; source hash: `{SOURCE_HASH}`.
+
+          ## Deliberately unchanged
+          Projection, expected-minutes, scoring, calibration, fixtures, uncertainty simulation, squad selection, captaincy, transfer optimisation, provider transport/validation, source allowlists, storage limits for earlier evidence stages, primary navigation and deployment hosting.
+
+          ## Remaining limitations and review gate
+          Local evidence retention can make a season bundle partial. CSVs are individual downloads; no XLSX/ZIP/direct Sheets sync exists. Provider comparisons remain observational. Prospective sample size begins at zero. Static phone-first checks pass, but physical iPhone acceptance has not yet been recorded.
+
+          PR #35 must remain draft and unmerged until Pritesh reviews the UI/exports, completes physical iPhone acceptance and explicitly approves merge.
+          """.replace('          ','')
+          Path('docs/STAGE10-ITEM4.md').write_text(item4.rstrip() + '\n')
+
+          required = {
+              'CLAUDE.md': ['413/413 tests', 'Stage 10.5'],
+              'docs/ROADMAP.md': ['IMPLEMENTED AND VERIFIED', 'draft PR #35'],
+              'docs/PROJECT_CONTEXT.md': ['Stage 10.4 is implemented and verified'],
+              'docs/ARCHITECTURE.md': ['Stage 10.4 operating-review boundary'],
+              'docs/DECISIONS.md': ['D-10.4'],
+              'docs/KNOWN_LIMITATIONS.md': ['Stage 10.4 operating-review limitations'],
+              'docs/TESTING.md': ['Stage 10.4 review/export coverage'],
+              'docs/SECURITY.md': ['Stage 10.4 export security'],
+              'docs/DATA_SOURCES.md': ['Stage 10.4 review/export sources'],
+              'docs/STAGE10-DESIGN.md': ['Stage 10.4 verified implementation'],
+              'docs/CHANGELOG.md': ['Stage 10.4 operating review/export'],
+              'docs/STAGE10-ITEM4.md': ['413 passed', 'Physical iPhone acceptance'],
+          }
+          for path, markers in required.items():
+              text = read(path)
+              for marker in markers:
+                  assert marker in text, f'{path}: missing {marker}'
+          PY
+          rm .github/workflows/stage10-4-docs.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A CLAUDE.md docs .github/workflows/stage10-4-docs.yml
+          git commit -m "Document Stage 10.4 verified implementation"
+          git push origin HEAD:agent/stage10-4-operating-review
