@@ -21,13 +21,29 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64, gzip
-          files = {
-            '.stage10-4-payload/review-mjs.b64': 'src/evidence/review.mjs',
-            '.stage10-4-payload/review-ui-mjs.b64': 'src/ui/review.mjs',
+          import base64, gzip, hashlib
+
+          review_parts = [
+            '.stage10-4-payload/review-mjs.part-01',
+            '.stage10-4-payload/review-mjs.part-02',
+            '.stage10-4-payload/review-mjs.part-03',
+            '.stage10-4-payload/review-mjs.part-04-01',
+            '.stage10-4-payload/review-mjs.part-04-02',
+            '.stage10-4-payload/review-mjs.part-04-03',
+            '.stage10-4-payload/review-mjs.part-05-01',
+            '.stage10-4-payload/review-mjs.part-05-02',
+          ]
+          review_encoded = ''.join(Path(path).read_text().strip() for path in review_parts)
+          ui_encoded = Path('.stage10-4-payload/review-ui-mjs.b64').read_text().strip()
+          assert hashlib.sha256(review_encoded.encode()).hexdigest() == 'a92ae37a514f977374522587b759849998f3973be35f83649bc592bfb66094a3'
+          assert hashlib.sha256(ui_encoded.encode()).hexdigest() == '781eaea5bff62ee410bb58c81253e98a119c00cfad6a3b9b525bcd5072f66c60'
+          sources = {
+            'src/evidence/review.mjs': gzip.decompress(base64.b64decode(review_encoded)),
+            'src/ui/review.mjs': gzip.decompress(base64.b64decode(ui_encoded)),
           }
-          for source, target in files.items():
-              data = gzip.decompress(base64.b64decode(Path(source).read_text().strip()))
+          assert hashlib.sha256(sources['src/evidence/review.mjs']).hexdigest() == '644db0e09fd2c70cf6d058cbce19904a4de68c7b234b641b073a77246e986742'
+          assert hashlib.sha256(sources['src/ui/review.mjs']).hexdigest() == '58ea57d93f14d36e78560b6e0673c28a6cb4e1dec34d0455d8aa4069bb83c6d8'
+          for target, data in sources.items():
               path = Path(target)
               path.parent.mkdir(parents=True, exist_ok=True)
               path.write_bytes(data)
