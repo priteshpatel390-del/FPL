@@ -4,19 +4,28 @@ on:
   push:
     branches:
       - agent/stage10-4-operating-review-export
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   implement:
-    if: ${{ !contains(github.event.head_commit.message, '[stage10-4-bot]') }}
+    if: ${{ github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[stage10-4-bot]') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
+      - name: Check out implementation branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: agent/stage10-4-operating-review-export
 
       - name: Set up Node
         uses: actions/setup-node@v4
