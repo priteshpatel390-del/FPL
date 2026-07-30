@@ -45,7 +45,7 @@ test('all approved tidy CSV tables produce explicit row units',async()=>{
 
 test('Markdown and filenames are deterministic and carry integrity warnings',async()=>{
   const bundle=await buildOperatingReviewBundle({profile:'weekly_evidence',fromGameweek:1,toGameweek:1,snapshots:[reviewSnapshot()],outcomes:[reviewOutcome()],evaluations:[reviewEvaluation()],cryptoImpl:webcrypto});
-  const markdown=buildOperatingReviewMarkdown(bundle);assert.match(markdown,/Descriptive evidence only/);assert.match(markdown,/Hindsight oracle/);assert.match(markdown,/Bundle SHA-256/);assert.equal(operatingReviewFileName(bundle,'json'),'teamsheet-2026-27-gw01-gw01-weekly_evidence-v1.json');
+  const markdown=buildOperatingReviewMarkdown(bundle);assert.match(markdown,/Descriptive evidence only/);assert.match(markdown,/Hindsight oracle/);assert.match(markdown,/Bundle SHA-256/);assert.equal(operatingReviewFileName(bundle,'json'),'teamsheet-2026-27-gw01-weekly-evidence-v1.json');
 });
 
 test('size guard warns at 10 MB, rejects above 25 MB and source has no model recomputation path',()=>{
