@@ -84,3 +84,6 @@ Hindsight comparisons are labelled and have no recommendation pathway. No compos
 - CSV cells are typed. Numeric negatives remain numeric; text beginning after leading whitespace with `=`, `+`, `-`, `@`, tab or carriage return is apostrophe-neutralised and RFC 4180 quoted where required.
 - Stage 10.4 adds no network origin, OAuth flow, Drive token, backend, database, relay or scheduled job. Google Sheets remains a manual user-controlled import boundary.
 - Export generation is on demand, not retained as another local copy, and rejects payloads above 25 MiB without partial output.
+
+## Stage 10.5 storage and import hardening
+Untrusted JSON now rejects prototype-bearing keys before canonicalisation. Metric and transfer validators enforce supported versions, exact public shapes, identity consistency and forbidden-evidence checks. Diagnostic text strips queries/fragments, numeric manager/league paths and raw or encoded secret-shaped values. Phase journals may complete only a hash-verified local transaction; imports and unproven orphans remain recovery-only. CSV text beginning with line-feed and other formula-control prefixes is neutralised while genuine numeric negatives remain numeric.

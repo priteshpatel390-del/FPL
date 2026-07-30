@@ -1,5 +1,7 @@
 import { S } from '../state.mjs';
 import { $, num, el, setChildren } from '../util.mjs';
+import { recordStage10Diagnostic, stage10Diagnostics, stage10DiagnosticMessage, stage10Journal, parseStage10Journal } from './evidence-recovery.mjs';
+import { requestStage10Download, stage10DownloadRequestedMessage } from './download.mjs';
 import {
   EVIDENCE_RULES,
   stableStringify,
@@ -12,9 +14,14 @@ import {
 const K_EVIDENCE_MANAGER = 'fpl:evidence-manager-ref';
 const K_EVIDENCE_INDEX = 'fpl:evidence-index';
 const K_EVIDENCE_PREFIX = 'fpl:evidence:snapshot:';
+const K_EVIDENCE_JOURNAL = 'fpl:evidence:pending:v1';
 const MAX_EVIDENCE_IMPORT_BYTES = 25 * 1024 * 1024;
 const EVIDENCE_ORIGINS = Object.freeze({LOCAL:'local_capture',RECOVERY:'recovery_import'});
 const AUTO_CAPTURE_PRIORITY = Object.freeze({open:1,due_soon:2,ideal:3,final_window:4});
+const AUTO_CAPTURE_RETRY_MS=5*60*1000;
+const AUTO_CAPTURE_MAX_ATTEMPTS=3;
+let autoCaptureVerifiedAt=0;
+const autoCaptureAttempts=new Map();
 let activeEvidenceRecord = null;
 let evidenceBusy = false;
 let evidenceRenderSequence = 0;
@@ -33,9 +40,14 @@ function base64ToBytes(value){
 async function encodeEvidenceRecord(record){
   const text=stableStringify(record);
   if(typeof CompressionStream!=='function') return text;
-  const stream=new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
-  const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
-  return `gzip-base64:${bytesToBase64(bytes)}`;
+  try{
+    const stream=new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+    const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
+    return `gzip-base64:${bytesToBase64(bytes)}`;
+  }catch(error){
+    recordStage10Diagnostic('compression_fallback',{recordType:record?.recordType,recordId:record?.identity?.snapshotId||record?.identity?.outcomeId||record?.identity?.evaluationId||record?.identity?.transferEvaluationId,severity:'warning',message:'Native compression failed; canonical plain JSON was stored instead.'});
+    return text;
+  }
 }
 async function decodeEvidenceRecord(value){
   const text=String(value||'');
@@ -102,7 +114,7 @@ async function loadEvidenceIndex(){
   const raw = await rawEvidenceGet(K_EVIDENCE_INDEX);
   if(!raw) return [];
   try{ return normaliseEvidenceIndex(JSON.parse(raw)); }
-  catch(error){ return []; }
+  catch(error){recordStage10Diagnostic('index_corrupt',{recordType:'preDeadlineSnapshot',severity:'error',message:error.message});return [];}
 }
 async function loadEvidenceRecord(snapshotId){
   if(!snapshotId) return null;
@@ -110,32 +122,62 @@ async function loadEvidenceRecord(snapshotId){
   if(!raw) return null;
   try{
     const checked = await validateSnapshotRecord(JSON.parse(await decodeEvidenceRecord(raw)));
-    return checked.ok ? checked.record : null;
-  }catch(error){ return null; }
+    if(!checked.ok){recordStage10Diagnostic(checked.reason==='schema_version'?'unsupported_version':'payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:snapshotId,severity:'error',message:checked.reason});return null;}
+    return checked.record;
+  }catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:snapshotId,severity:'error',message:error.message});return null;}
+}
+async function writeEvidenceJournal(record,origin,phase){
+  const journal=stage10Journal({recordType:'preDeadlineSnapshot',recordId:record.identity.snapshotId,contentHash:record.identity.contentHash,logicalKey:record.identity.duplicateKey,origin,phase});
+  await rawEvidenceSet(K_EVIDENCE_JOURNAL,stableStringify(journal));
+  return journal;
+}
+async function recoverEvidenceJournal(){
+  const raw=await rawEvidenceGet(K_EVIDENCE_JOURNAL);if(!raw)return false;
+  const journal=parseStage10Journal(raw);
+  if(!journal||journal.recordType!=='preDeadlineSnapshot'){
+    recordStage10Diagnostic('journal_corrupt',{recordType:'preDeadlineSnapshot',severity:'error'});await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});return true;
+  }
+  const index=await loadEvidenceIndex(),record=await loadEvidenceRecord(journal.recordId);
+  if(record&&record.identity.contentHash===journal.contentHash){
+    const origin=journal.origin===EVIDENCE_ORIGINS.LOCAL?EVIDENCE_ORIGINS.LOCAL:EVIDENCE_ORIGINS.RECOVERY;
+    const next=boundedSnapshotIndex(index,record,{origin}),keep=new Set(next.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
+    await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(next));
+    for(const row of index){if(!keep.has(row.snapshotId))await rawEvidenceDelete(K_EVIDENCE_PREFIX+row.snapshotId).catch(()=>{});}
+    activeEvidenceRecord=record;recordStage10Diagnostic('recovery_completed',{recordType:'preDeadlineSnapshot',recordId:journal.recordId,severity:'info'});
+  }else{
+    if(!index.some(row=>row.snapshotId===journal.recordId))await rawEvidenceDelete(K_EVIDENCE_PREFIX+journal.recordId).catch(()=>{});
+    recordStage10Diagnostic('payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:journal.recordId,severity:'error'});
+  }
+  await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});return true;
 }
 async function storeEvidenceRecord(record,{origin=EVIDENCE_ORIGINS.LOCAL}={}){
   if(!Object.values(EVIDENCE_ORIGINS).includes(origin)) throw new Error('Evidence origin is not supported');
   const checked = await validateSnapshotRecord(record);
   if(!checked.ok) throw new Error(`Evidence record rejected: ${checked.reason}`);
-  const existing = await loadEvidenceIndex();
-  const nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
+  const existing = await loadEvidenceIndex(),nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
   const keep = new Set(nextIndex.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
   const knownIds = new Set(existing.map(row=>row.snapshotId).concat(checked.record.identity.snapshotId));
   const toDelete = [...knownIds].filter(snapshotId=>!keep.has(snapshotId));
-  if(keep.has(checked.record.identity.snapshotId)){
-    const key=K_EVIDENCE_PREFIX+checked.record.identity.snapshotId;
-    const encoded=await encodeEvidenceRecord(checked.record);
-    try{ await rawEvidenceSet(key,encoded); }
-    catch(firstError){
-      for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId);
+  await writeEvidenceJournal(checked.record,origin,'prepared');
+  try{
+    if(keep.has(checked.record.identity.snapshotId)){
+      const key=K_EVIDENCE_PREFIX+checked.record.identity.snapshotId,encoded=await encodeEvidenceRecord(checked.record);
       try{ await rawEvidenceSet(key,encoded); }
-      catch(secondError){ throw new Error(`Evidence storage failed after recovery: ${secondError.message}`); }
+      catch(firstError){
+        for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId).catch(()=>{});
+        try{ await rawEvidenceSet(key,encoded); }
+        catch(secondError){recordStage10Diagnostic('storage_full',{recordType:'preDeadlineSnapshot',recordId:checked.record.identity.snapshotId,severity:'error',message:secondError.message});throw new Error(`Evidence storage failed after recovery: ${secondError.message}`);}
+      }
+      const verified=await loadEvidenceRecord(checked.record.identity.snapshotId);if(!verified||verified.identity.contentHash!==checked.record.identity.contentHash)throw new Error('Evidence storage verification failed');
     }
-  }
-  for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId);
-  await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(nextIndex));
-  activeEvidenceRecord = checked.record;
-  return nextIndex;
+    await writeEvidenceJournal(checked.record,origin,'payload_verified');
+    await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(nextIndex));
+    await writeEvidenceJournal(checked.record,origin,'index_committed');
+    for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId).catch(()=>{});
+    activeEvidenceRecord = checked.record;
+    await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});
+    return nextIndex;
+  }catch(error){if(/quota|storage|space|full/i.test(error.message))recordStage10Diagnostic('storage_full',{recordType:'preDeadlineSnapshot',recordId:checked.record.identity.snapshotId,severity:'error',message:error.message});throw error;}
 }
 async function clearEvidenceStorage(){
   const existing=await loadEvidenceIndex();
@@ -149,6 +191,7 @@ async function clearEvidenceStorage(){
     for(const key of orphanKeys) await rawEvidenceDelete(key);
   }
   await rawEvidenceDelete(K_EVIDENCE_INDEX);
+  await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});
   await rawEvidenceDelete(K_EVIDENCE_MANAGER);
   activeEvidenceRecord=null;
   return true;
@@ -157,12 +200,7 @@ function evidenceFileName(record){
   return `teamsheet-${record.season}-gw${record.gameweek}-predeadline-${record.identity.snapshotId.slice(-16)}.json`;
 }
 function downloadEvidence(record){
-  const blob = new Blob([stableStringify(record)+'\n'],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href=url; anchor.download=evidenceFileName(record); anchor.rel='noopener';
-  document.body.appendChild(anchor); anchor.click(); anchor.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),0);
+  const filename=evidenceFileName(record);requestStage10Download(filename,stableStringify(record)+'\n','application/json');return filename;
 }
 function currentDeadline(){
   const event = S.boot?.events?.find(row=>Number(row.id)===Number(S.nextGW));
@@ -209,9 +247,23 @@ function ensureEvidenceCompact(){
   button.addEventListener('click',openEvidencePanel);
   header.appendChild(button);
 }
+function ensureStage10OperationsUi(){
+  const panel=$('evidencePanel');if(!panel||$('stage10Operations'))return;
+  panel.appendChild(el('details',{class:'mt-12',id:'stage10Operations'},
+    el('summary',{},'Live-season checklist and recovery'),
+    el('div',{class:'mt-10'},
+      el('p',{class:'hint'},'Before each deadline, confirm Official-eligible evidence and request the snapshot JSON. After a complete or corrected outcome, request the weekly operating-review JSON and confirm it appears in Files or Downloads.'),
+      el('p',{class:'hint'},'Restored JSON remains recovery-only. Never clear browser data until durable files have been checked. Google Sheets import remains manual.'),
+      el('div',{id:'stage10Diagnostics'},el('div',{class:'status'},'No recovery warning is active.')))));
+}
+function renderStage10Diagnostics(){
+  const node=$('stage10Diagnostics');if(!node)return;const rows=stage10Diagnostics();
+  if(!rows.length){setChildren(node,el('div',{class:'status'},'No recovery warning is active.'));return;}
+  setChildren(node,rows.slice(0,5).map(row=>el('article',{class:`note ${row.severity==='error'?'bad':'plain'}`},el('b',{},row.code.replaceAll('_',' ')),el('div',{class:'status'},stage10DiagnosticMessage(row.code)),row.recordId?el('div',{class:'status mono'},row.recordId):null)));
+}
 async function renderEvidenceStatus(){
   const sequence=++evidenceRenderSequence;
-  ensureEvidenceCompact();
+  ensureEvidenceCompact();ensureStage10OperationsUi();
   const deadline=currentDeadline();
   const state=deadline?deadlineWindow(deadline):{state:'unavailable',remainingMs:null};
   const [title,detail]=windowCopy(state.state);
@@ -246,6 +298,7 @@ async function renderEvidenceStatus(){
   const exportButton=$('exportEvidenceBtn');
   if(exportButton) exportButton.disabled=!(activeEvidenceRecord||latest);
   const history=$('evidenceHistory');
+  renderStage10Diagnostics();
   if(history){
     if(!index.length) setChildren(history,el('div',{class:'status'},'No evidence snapshots saved on this device.'));
     else setChildren(history,index.map(row=>el('article',{class:'note plain'},
@@ -286,17 +339,21 @@ function captureWindowPriority(deadlineTime,capturedAt=Date.now()){
   const state=deadlineWindow(deadlineTime,capturedAt).state;
   return AUTO_CAPTURE_PRIORITY[state]||0;
 }
-async function maybeAutoCaptureEvidence({reason='verified_refresh'}={}){
+async function maybeAutoCaptureEvidence({reason='verified_refresh',verifiedAt=null}={}){
   const deadline=currentDeadline();
   if(!deadline||!S.boot||evidenceBusy) return {captured:false,reason:'not_ready'};
+  if(Number.isFinite(Number(verifiedAt))&&Number(verifiedAt)!==autoCaptureVerifiedAt){autoCaptureVerifiedAt=Number(verifiedAt);autoCaptureAttempts.clear();}
   const priority=captureWindowPriority(deadline,Date.now());
   if(!priority) return {captured:false,reason:'outside_window'};
   const index=await loadEvidenceIndex();
   const existing=index.find(row=>row.origin===EVIDENCE_ORIGINS.LOCAL&&Number(row.gameweek)===Number(S.nextGW)&&row.deadlineTime===new Date(deadline).toISOString()&&row.officialEligible);
   const existingPriority=existing?captureWindowPriority(deadline,Date.parse(existing.capturedAt)):0;
   if(existing&&existingPriority>=priority) return {captured:false,reason:'equivalent_or_better_exists',snapshotId:existing.snapshotId};
+  const key=`${new Date(deadline).toISOString()}|${priority}|${autoCaptureVerifiedAt}`;
+  const attempts=autoCaptureAttempts.get(key)||0;if(attempts>=AUTO_CAPTURE_MAX_ATTEMPTS)return {captured:false,reason:'retry_limit'};
+  autoCaptureAttempts.set(key,attempts+1);
   const record=await captureEvidence({automatic:true});
-  return record?{captured:true,reason,snapshotId:record.identity.snapshotId}:{captured:false,reason:'capture_failed'};
+  return record?{captured:true,reason,snapshotId:record.identity.snapshotId,attempt:attempts+1}:{captured:false,reason:'capture_failed',attempt:attempts+1};
 }
 
 async function exportLatestEvidence(){
@@ -304,8 +361,8 @@ async function exportLatestEvidence(){
   try{
     const record=await latestEvidenceRecord();
     if(!record) throw new Error('No saved snapshot is available');
-    downloadEvidence(record);
-    if(message) message.textContent=`Exported ${evidenceFileName(record)}.`;
+    const filename=downloadEvidence(record);recordStage10Diagnostic('download_requested',{recordType:'preDeadlineSnapshot',recordId:record.identity.snapshotId,severity:'info'});
+    if(message) message.textContent=stage10DownloadRequestedMessage(filename);
   }catch(error){ if(message) message.textContent=`Export failed: ${error.message}`; }
 }
 async function deleteEvidence(){
@@ -342,11 +399,12 @@ function initEvidenceUi(){
   });
   document.addEventListener('teamsheet:data-rendered',renderEvidenceStatus);
   document.addEventListener('teamsheet:data-verified',event=>{
-    const task=maybeAutoCaptureEvidence({reason:event.detail?.reason||'verified_refresh'});
+    const task=maybeAutoCaptureEvidence({reason:event.detail?.reason||'verified_refresh',verifiedAt:event.detail?.verifiedAt});
     if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);
   });
-  renderEvidenceStatus();
+  void recoverEvidenceJournal().then(renderEvidenceStatus);
   setInterval(renderEvidenceStatus,60*1000);
+  setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible')void maybeAutoCaptureEvidence({reason:'visible_retry'});},AUTO_CAPTURE_RETRY_MS);
 }
 
 initEvidenceUi();
@@ -355,9 +413,12 @@ export {
   K_EVIDENCE_MANAGER,
   K_EVIDENCE_INDEX,
   K_EVIDENCE_PREFIX,
+  K_EVIDENCE_JOURNAL,
   MAX_EVIDENCE_IMPORT_BYTES,
   EVIDENCE_ORIGINS,
   AUTO_CAPTURE_PRIORITY,
+  AUTO_CAPTURE_RETRY_MS,
+  AUTO_CAPTURE_MAX_ATTEMPTS,
   normaliseEvidenceIndex,
   bytesToBase64,
   base64ToBytes,
@@ -370,6 +431,7 @@ export {
   loadEvidenceIndex,
   loadEvidenceRecord,
   storeEvidenceRecord,
+  recoverEvidenceJournal,
   captureWindowPriority,
   maybeAutoCaptureEvidence,
   clearEvidenceStorage,

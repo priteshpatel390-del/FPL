@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 10.4 — Operating review/export is complete and merged through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after explicit owner approval. It remains a downstream-only consumer of exact Stage 10.1–10.3 evidence and does not alter production formulas or providers. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes **413/413 tests** with byte-identical exact-identity builds; generated artefacts are committed at `1af7dac5383c91e915587218e7551c2f619cec8f` with source hash `d1773a1ae9e36ae28adef232148a3f7e315f21baf989e03e0158c9beefe729ed`. The next checkpoint is **Stage 10.5 — Hardening and documentation**, investigation and exact-scope approval only; no Stage 10.5 implementation has begun.
+Stage 10.5 — Hardening and documentation is implemented and verified on branch `agent/stage10-5-hardening-documentation` after explicit owner approval. Verified source `__SOURCE_COMMIT__` passes **__TEST_COUNT__/__TEST_COUNT__ tests** with deterministic exact-identity builds. The draft PR and physical iPhone acceptance remain the merge gate. No model, provider, backend or automatic Google Sheets behaviour changed.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.

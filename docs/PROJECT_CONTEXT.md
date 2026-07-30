@@ -52,3 +52,6 @@ Public relay dependence for some provider traffic; undocumented FPL schema drift
 
 ## Known assumptions
 The public FPL API and pinned vaastav archive remain available; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger; detailed Stage 8 simulation remains disabled in pre-season rather than manufacturing precise distributions; and local evidence storage remains recovery rather than a permanent archive.
+
+## Stage 10.5 implementation candidate
+Stage 10.5 is implemented and verified on `agent/stage10-5-hardening-documentation` at source `__SOURCE_COMMIT__`. It hardens browser recovery, version/import security, bounded snapshot retry, honest downloads and owner operations only. Draft PR review and physical iPhone acceptance remain required before merge. Stage 10 completion still means infrastructure complete while prospective validation remains in progress.

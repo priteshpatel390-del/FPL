@@ -53,3 +53,16 @@ test('quota failures are surfaced and deletion is isolated from source evidence'
   reset();const first=await record();globalThis.localStorage.fail=true;await assert.rejects(()=>storeMetricRecord(first),/quota/);globalThis.localStorage.fail=false;
   await storeMetricRecord(first);await rawEvidenceSet('fpl:evidence-manager-ref',managerRef);await rawEvidenceSet('fpl:evidence-outcome:index:v1','source');await clearMetricStorage();assert.deepEqual(await loadMetricIndex(),[]);assert.equal(await loadMetricRecord(first.identity.evaluationId),null);assert.equal(await rawEvidenceGet('fpl:evidence-manager-ref'),managerRef);assert.equal(await rawEvidenceGet('fpl:evidence-outcome:index:v1'),'source');assert.equal(await rawEvidenceGet(K_METRIC_INDEX),null);
 });
+
+// Stage 10.5 metric journal reconciliation
+
+test('Stage 10.5 metric journal recovery leaves exactly one current revision',async()=>{
+  reset();const first=await record();await storeMetricRecord(first);const second=await record(9,first);
+  await rawEvidenceSet(K_METRIC_PREFIX+second.identity.evaluationId,await encodeEvidenceRecord(second));
+  await rawEvidenceSet(K_METRIC_JOURNAL,JSON.stringify({recordType:'gameweekEvaluation',recordId:second.identity.evaluationId,contentHash:second.identity.contentHash,logicalKey:second.identity.logicalKey,origin:'local_derivation',priorCurrentId:first.identity.evaluationId,phase:'payload_verified',startedAt:new Date().toISOString()}));
+  await recoverMetricJournal();const index=await loadMetricIndex();assert.equal(index.filter(row=>row.current).length,1);assert.equal(metricCurrentMetadata(index,'2026-27|gw1').recordId,second.identity.evaluationId);
+});
+
+test('Stage 10.5 malformed metric journal fails closed',async()=>{
+  reset();await rawEvidenceSet(K_METRIC_JOURNAL,'{"recordId":"bad"}');await recoverMetricJournal();assert.deepEqual(await loadMetricIndex(),[]);assert.equal(await rawEvidenceGet(K_METRIC_JOURNAL),null);
+});

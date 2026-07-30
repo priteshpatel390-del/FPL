@@ -1,4 +1,5 @@
 import { $, el, setChildren } from '../util.mjs';
+import { recordStage10Diagnostic, stage10Journal, parseStage10Journal, reconcileLocalCurrentRows } from './evidence-recovery.mjs';
 import { stableStringify } from '../evidence/snapshot.mjs';
 import {
   METRIC_RULES, buildGameweekEvaluation, validateGameweekEvaluation, buildMetricsReport,
@@ -29,16 +30,16 @@ function normaliseMetricIndex(value){
     .slice(0,METRIC_RULES.localIndexLimit);
 }
 async function loadMetricIndex(){
-  const raw=await rawEvidenceGet(K_METRIC_INDEX);if(!raw) return [];
-  try{return normaliseMetricIndex(JSON.parse(raw));}catch(error){return [];}
+  const raw=await rawEvidenceGet(K_METRIC_INDEX);if(!raw)return [];
+  try{return normaliseMetricIndex(JSON.parse(raw));}catch(error){recordStage10Diagnostic('index_corrupt',{recordType:'gameweekEvaluation',severity:'error',message:error.message});return [];}
 }
 async function validateMetricRecord(record){
   return record?.recordType==='gameweekEvaluation'?validateGameweekEvaluation(record):
     record?.recordType==='transferHorizonEvaluation'?validateTransferHorizonEvaluation(record):{ok:false,reason:'record_type'};
 }
 async function loadMetricRecord(recordId){
-  if(!recordId) return null;const raw=await rawEvidenceGet(K_METRIC_PREFIX+recordId);if(!raw) return null;
-  try{const checked=await validateMetricRecord(JSON.parse(await decodeEvidenceRecord(raw)));return checked.ok?checked.record:null;}catch(error){return null;}
+  if(!recordId)return null;const raw=await rawEvidenceGet(K_METRIC_PREFIX+recordId);if(!raw)return null;
+  try{const checked=await validateMetricRecord(JSON.parse(await decodeEvidenceRecord(raw)));if(!checked.ok){recordStage10Diagnostic(checked.reason==='version'?'unsupported_version':'payload_corrupt',{recordType:'gameweekEvaluation',recordId,severity:'error',message:checked.reason});return null;}return checked.record;}catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'gameweekEvaluation',recordId,severity:'error',message:error.message});return null;}
 }
 function compactMetricMetadata(record,{current=true,hasFullRecord=true}={}){
   return {recordId:metricId(record),recordType:record.recordType,logicalKey:metricLogicalKey(record),season:record.season,gameweek:metricGameweek(record),horizon:record.horizon??null,revision:Number(record.identity?.revision)||1,contentHash:record.identity?.contentHash||'',createdAt:metricCollectedAt(record),current:Boolean(current),hasFullRecord:Boolean(hasFullRecord)};
@@ -67,16 +68,28 @@ async function storeMetricRecord(record){
   index=index.map(row=>row.logicalKey===logicalKey?{...row,current:false}:row);
   const metadata=compactMetricMetadata(checked.record),encoded=await encodeEvidenceRecord(checked.record);
   index=normaliseMetricIndex([metadata,...index.filter(row=>row.recordId!==id)]);
-  await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify({recordId:id,contentHash:metadata.contentHash,startedAt:new Date().toISOString()}));
+  const priorCurrent=index.find(row=>row.logicalKey===logicalKey&&row.current)?.recordId||null;
+  await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'prepared'})));
   try{
     try{await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}catch(firstError){for(const row of index.filter(item=>!item.current&&item.hasFullRecord)) await removeMetricPayload(row.recordId);await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}
     const verified=await loadMetricRecord(id);if(!verified||verified.identity.contentHash!==metadata.contentHash) throw new Error('Metric storage verification failed');
-    index=await enforceMetricBounds(index);return {stored:true,index,metadata};
+    await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'payload_verified'})));
+    index=await enforceMetricBounds(index);
+    await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'index_committed'})));return {stored:true,index,metadata};
   }finally{await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});}
 }
 async function recoverMetricJournal(){
-  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw) return false;
-  try{const journal=JSON.parse(raw),record=await loadMetricRecord(journal.recordId);if(record&&record.identity.contentHash===journal.contentHash){const index=await loadMetricIndex();if(!index.some(row=>row.recordId===journal.recordId)) await rawEvidenceSet(K_METRIC_INDEX,stableStringify(normaliseMetricIndex([compactMetricMetadata(record),...index])));}else if(journal.recordId) await removeMetricPayload(journal.recordId);}catch(error){}
+  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw)return false;const journal=parseStage10Journal(raw);
+  if(!journal||!['gameweekEvaluation','transferHorizonEvaluation'].includes(journal.recordType)){recordStage10Diagnostic('journal_corrupt',{recordType:'gameweekEvaluation',severity:'error'});await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});return true;}
+  const record=await loadMetricRecord(journal.recordId),index=await loadMetricIndex();
+  if(record&&record.identity.contentHash===journal.contentHash){
+    const metadata=compactMetricMetadata(record),logicalKey=metricLogicalKey(record);let next=normaliseMetricIndex([metadata,...index.filter(row=>row.recordId!==metadata.recordId)]);
+    next=reconcileLocalCurrentRows(next.map(row=>({...row,origin:'local_derivation'})),{logicalKey,recordId:metadata.recordId,idKey:'recordId',origin:'local_derivation'}).map(({origin,...row})=>row);
+    await enforceMetricBounds(next);recordStage10Diagnostic('recovery_completed',{recordType:record.recordType,recordId:journal.recordId,severity:'info'});
+  }else{
+    if(!index.some(row=>row.recordId===journal.recordId))await removeMetricPayload(journal.recordId).catch(()=>{});
+    recordStage10Diagnostic('payload_corrupt',{recordType:journal.recordType,recordId:journal.recordId,severity:'error'});
+  }
   await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});return true;
 }
 async function clearMetricStorage(){

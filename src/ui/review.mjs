@@ -1,4 +1,6 @@
 import { $, el, setChildren } from '../util.mjs';
+import { recordStage10Diagnostic } from './evidence-recovery.mjs';
+import { requestStage10Download, stage10DownloadRequestedMessage } from './download.mjs';
 import {
   REVIEW_RULES, buildOperatingReviewBundle, serialiseOperatingReviewBundle,
   buildOperatingReviewCsv, buildOperatingReviewMarkdown
@@ -14,10 +16,7 @@ let reviewUiBundleScope=null;
 function reviewUiFormat(value,digits=2){return value==null||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits);}
 function reviewUiPercent(value){return value==null||!Number.isFinite(Number(value))?'—':`${(Number(value)*100).toFixed(1)}%`;}
 function reviewUiKpi(label,value){return el('div',{class:'kpi'},el('div',{class:'k'},label),el('div',{class:'v'},String(value)));}
-function reviewUiDownload(filename,text,type){
-  const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),anchor=document.createElement('a');
-  anchor.href=url;anchor.download=filename;anchor.rel='noopener';document.body.appendChild(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),0);
-}
+function reviewUiDownload(filename,text,type){return requestStage10Download(filename,text,type);}
 async function reviewUiFullMetricRecords(){
   const index=await loadMetricIndex(),records=[];
   for(const row of index.filter(item=>item.hasFullRecord)){
@@ -152,13 +151,13 @@ async function reviewUiRender(){
   }catch(error){if(status)setChildren(status,el('b',{},'Operating review unavailable'),document.createTextNode(` ${error.message}`));if(summary)setChildren(summary);if(details)setChildren(details);}
 }
 async function reviewUiExportJson(){
-  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=serialiseOperatingReviewBundle(bundle);reviewUiDownload(`teamsheet-${bundle.scope.season}-${bundle.scope.label}-operating-review.json`,output.text,'application/json');if(message)message.textContent=`Downloaded ${bundle.identity.bundleId}.`; }catch(error){if(message)message.textContent=`JSON export failed: ${error.message}`;}
+  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=serialiseOperatingReviewBundle(bundle);const filename=`teamsheet-${bundle.scope.season}-${bundle.scope.label}-operating-review.json`;reviewUiDownload(filename,output.text,'application/json');recordStage10Diagnostic('download_requested',{recordType:'operatingReviewBundle',recordId:bundle.identity.bundleId,severity:'info'});if(message)message.textContent=stage10DownloadRequestedMessage(filename); }catch(error){if(message)message.textContent=`JSON export failed: ${error.message}`;}
 }
 async function reviewUiExportMarkdown(){
-  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=buildOperatingReviewMarkdown(bundle);reviewUiDownload(output.filename,output.text,'text/markdown;charset=utf-8');if(message)message.textContent=`Downloaded ${output.filename}.`; }catch(error){if(message)message.textContent=`Markdown export failed: ${error.message}`;}
+  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const output=buildOperatingReviewMarkdown(bundle);reviewUiDownload(output.filename,output.text,'text/markdown;charset=utf-8');recordStage10Diagnostic('download_requested',{recordType:'operatingReviewBundle',recordId:output.filename,severity:'info'});if(message)message.textContent=stage10DownloadRequestedMessage(output.filename); }catch(error){if(message)message.textContent=`Markdown export failed: ${error.message}`;}
 }
 async function reviewUiExportCsv(){
-  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const table=$('reviewCsvTable')?.value||REVIEW_RULES.csvTables[0],output=buildOperatingReviewCsv(bundle,table);reviewUiDownload(output.filename,output.text,'text/csv;charset=utf-8');if(message)message.textContent=`Downloaded ${output.filename} with ${output.rows} data row${output.rows===1?'':'s'}.`; }catch(error){if(message)message.textContent=`CSV export failed: ${error.message}`;}
+  const message=$('reviewMessage');try{const bundle=await reviewUiLoadBundle($('reviewScope')?.value||'season');if(!bundle)throw new Error('No operating review is available');const table=$('reviewCsvTable')?.value||REVIEW_RULES.csvTables[0],output=buildOperatingReviewCsv(bundle,table);reviewUiDownload(output.filename,output.text,'text/csv;charset=utf-8');recordStage10Diagnostic('download_requested',{recordType:'operatingReviewBundle',recordId:output.filename,severity:'info'});if(message)message.textContent=`${stage10DownloadRequestedMessage(output.filename)} ${output.rows} data row${output.rows===1?'':'s'} prepared.`; }catch(error){if(message)message.textContent=`CSV export failed: ${error.message}`;}
 }
 function initOperatingReviewUi(){
   if(typeof document==='undefined') return;reviewUiEnsure();document.addEventListener('teamsheet:outcome-stored',()=>setTimeout(()=>void reviewUiRender(),0));document.addEventListener('teamsheet:data-rendered',reviewUiRender);document.addEventListener('teamsheet:data-verified',()=>setTimeout(()=>void reviewUiRender(),2500));document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible')void reviewUiRender();});void reviewUiRender();

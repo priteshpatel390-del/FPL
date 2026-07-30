@@ -117,3 +117,33 @@ test('corrupt local metadata is ignored and orphaned recovery records are remova
   await evidence.clearEvidenceStorage();
   assert.equal(localStorage.getItem(evidence.K_EVIDENCE_PREFIX+'orphan'),null);
 });
+
+// Stage 10.5 snapshot journal recovery
+
+test('Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write',async()=>{
+  globalThis.localStorage.data={};
+  const item=await record(7,deadline+7*86400000-18*60000);
+  await evidence.rawEvidenceSet(evidence.K_EVIDENCE_PREFIX+item.identity.snapshotId,await evidence.encodeEvidenceRecord(item));
+  await evidence.rawEvidenceSet(evidence.K_EVIDENCE_JOURNAL,JSON.stringify({recordType:'preDeadlineSnapshot',recordId:item.identity.snapshotId,contentHash:item.identity.contentHash,logicalKey:item.identity.duplicateKey,origin:evidence.EVIDENCE_ORIGINS.LOCAL,priorCurrentId:null,phase:'payload_verified',startedAt:new Date().toISOString()}));
+  assert.deepEqual(await evidence.loadEvidenceIndex(),[]);
+  await evidence.recoverEvidenceJournal();
+  const recovered=await evidence.loadEvidenceIndex();
+  assert.equal(recovered[0].snapshotId,item.identity.snapshotId);
+  assert.equal(recovered[0].officialEligible,true);
+  assert.equal(await evidence.rawEvidenceGet(evidence.K_EVIDENCE_JOURNAL),null);
+});
+
+test('Stage 10.5 malformed snapshot journal fails closed and is cleared',async()=>{
+  globalThis.localStorage.data={};
+  await evidence.rawEvidenceSet(evidence.K_EVIDENCE_JOURNAL,'{"recordId":"untrusted"}');
+  await evidence.recoverEvidenceJournal();
+  assert.equal(await evidence.rawEvidenceGet(evidence.K_EVIDENCE_JOURNAL),null);
+  assert.deepEqual(await evidence.loadEvidenceIndex(),[]);
+});
+
+test('Stage 10.5 compression failure falls back to canonical plain JSON',async()=>{
+  const original=globalThis.CompressionStream;
+  globalThis.CompressionStream=class{constructor(){throw new Error('compression unavailable');}};
+  try{const item=await record(8,deadline+8*86400000-18*60000);const encoded=await evidence.encodeEvidenceRecord(item);assert.ok(encoded.startsWith('{'));}
+  finally{globalThis.CompressionStream=original;}
+});

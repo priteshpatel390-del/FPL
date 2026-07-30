@@ -2,7 +2,7 @@ import { S } from '../state.mjs';
 import { api } from '../providers/transport.mjs';
 import { FPL_RULES, MODEL_VERSION, RULES_VERSION, SIMULATION_RULES } from '../config.mjs';
 import {
-  canonicalise, stableStringify, sha256Hex, deepFreeze, assertEvidenceSafe, selectOfficialSnapshot
+  canonicalise, stableStringify, sha256Hex, deepFreeze, assertEvidenceSafe, selectOfficialSnapshot, safeEvidenceEndpoint, safeEvidenceText
 } from './snapshot.mjs';
 import {
   validateOutcomeFixtures, validateOutcomeLive, validateOutcomePicks, validateOutcomeHistory
@@ -32,9 +32,9 @@ function outcomeIso(value){
 function outcomeSafeRetryRows(){
   return Object.values(S.retryStats||{}).filter(row=>row?.provider==='fpl').map(row=>canonicalise({
     provider:'fpl',
-    endpoint:String(row?.endpoint||'').replace(/\/entry\/\d+/g,'/entry/[redacted]').replace(/\d+/g,'{id}').slice(0,160),
+    endpoint:safeEvidenceEndpoint(String(row?.endpoint||'').replace(/\d+/g,'{id}')),
     attempts:Number.isInteger(Number(row?.attempts))?Number(row.attempts):0,
-    finalStatus:String(row?.finalStatus||row?.outcome||''),
+    finalStatus:safeEvidenceText(row?.finalStatus||row?.outcome||'',80),
     exhausted:Boolean(row?.exhausted),
     budgetExceeded:Boolean(row?.budgetExceeded)
   })).sort((a,b)=>a.endpoint.localeCompare(b.endpoint));

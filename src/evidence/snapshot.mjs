@@ -40,6 +40,7 @@ function canonicalise(value){
   if(typeof value === 'object'){
     const out = {};
     Object.keys(value).sort().forEach(key => {
+      if(['__proto__','prototype','constructor'].includes(key)) throw new Error(`Evidence records cannot contain unsafe object key: ${key}`);
       if(value[key] !== undefined) out[key] = canonicalise(value[key]);
     });
     return out;
@@ -140,25 +141,34 @@ async function sampleNetworkClock({fetchFn=globalThis.fetch,locationHref=globalT
   }
 }
 
-function safeEndpoint(value){
-  return String(value||'').replace(/\/entry\/\d+/g,'/entry/[redacted]').replace(/\/leagues-classic\/\d+/g,'/leagues-classic/[redacted]').slice(0,160);
+function safeEvidenceText(value,maxLength=160){
+  let text=String(value??'');
+  try{text=decodeURIComponent(text);}catch(error){}
+  text=text
+    .replace(/(?:sk|ant)-[A-Za-z0-9_-]{8,}/gi,'[redacted]')
+    .replace(/(?:api[_-]?key|authorization|access[_-]?token|refresh[_-]?token)\s*[:=]\s*[^\s,;]+/gi,'[redacted]')
+    .replace(/\/entry\/\d+/gi,'/entry/[redacted]')
+    .replace(/\/leagues-classic\/\d+/gi,'/leagues-classic/[redacted]')
+    .replace(/[?#][^\s]*/g,'');
+  return text.slice(0,Math.max(0,Number(maxLength)||160));
 }
+function safeEvidenceEndpoint(value){ return safeEvidenceText(value,160); }
 function safeIssue(issue){
   return canonicalise({
     provider:String(issue?.provider||''),
-    endpoint:safeEndpoint(issue?.endpoint),
+    endpoint:safeEvidenceEndpoint(issue?.endpoint),
     code:String(issue?.code||''),
     severity:String(issue?.severity||''),
     count:Number.isFinite(Number(issue?.count)) ? Number(issue.count) : 1,
-    received:issue?.received == null ? null : String(issue.received).slice(0,80)
+    received:issue?.received == null ? null : safeEvidenceText(issue.received,80)
   });
 }
 function safeRetry(record){
   return canonicalise({
     provider:String(record?.provider||''),
-    endpoint:safeEndpoint(record?.endpoint),
+    endpoint:safeEvidenceEndpoint(record?.endpoint),
     attempts:Math.max(0,Math.trunc(num(record?.attempts))),
-    outcome:String(record?.outcome||record?.status||'').slice(0,80),
+    outcome:safeEvidenceText(record?.outcome||record?.status||'',80),
     usedFallback:Boolean(record?.usedFallback),
     completedAt:Number.isFinite(Number(record?.completedAt||record?.at)) ? Number(record.completedAt||record.at) : null
   });
@@ -629,6 +639,8 @@ export {
   deepFreeze,
   findForbiddenEvidence,
   assertEvidenceSafe,
+  safeEvidenceText,
+  safeEvidenceEndpoint,
   deadlineWindow,
   sampleNetworkClock,
   collectPreDeadlinePayload,
