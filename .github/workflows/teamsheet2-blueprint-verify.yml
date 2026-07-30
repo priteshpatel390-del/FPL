@@ -1,9 +1,9 @@
 name: Teamsheet 2.0 Blueprint Verification
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/teamsheet2-blueprint-integration
+      - main
 
 permissions:
   contents: read
