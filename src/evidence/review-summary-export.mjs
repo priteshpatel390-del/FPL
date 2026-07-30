@@ -24,9 +24,9 @@ function buildOperatingReviewMarkdown(bundle){
   }
   return lines.join('\n').trimEnd()+'\n';
 }
-function operatingReviewFileStem(bundle){ return `teamsheet-${bundle.scope.season}-gw${String(bundle.scope.fromGameweek).padStart(2,'0')}-gw${String(bundle.scope.toGameweek).padStart(2,'0')}`; }
+function operatingReviewFileStem(bundle){ const from=String(bundle.scope.fromGameweek).padStart(2,'0'),to=String(bundle.scope.toGameweek).padStart(2,'0');return bundle.scope.fromGameweek===bundle.scope.toGameweek?`teamsheet-${bundle.scope.season}-gw${from}`:`teamsheet-${bundle.scope.season}-gw${from}-gw${to}`; }
 function operatingReviewFileName(bundle,format,tableName=null){
-  const stem=operatingReviewFileStem(bundle); if(format==='json') return `${stem}-${bundle.profile}-v1.json`; if(format==='markdown') return `${stem}-${bundle.profile}-v1.md`; if(format==='csv'&&tableName) return `${stem}-${tableName.replaceAll('_','-')}-v1.csv`; throw new Error('Export filename format is not supported');
+  const stem=operatingReviewFileStem(bundle),profile=bundle.profile.replaceAll('_','-'); if(format==='json') return `${stem}-${profile}-v1.json`; if(format==='markdown') return `${stem}-${profile}-v1.md`; if(format==='csv'&&tableName) return `${stem}-${tableName.replaceAll('_','-')}-v1.csv`; throw new Error('Export filename format is not supported');
 }
 function operatingReviewUtf8Bytes(value){ return typeof TextEncoder!=='undefined'?new TextEncoder().encode(String(value)).length:String(value).length*2; }
 function assessOperatingReviewExport(value){
