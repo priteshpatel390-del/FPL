@@ -40,18 +40,18 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
   - Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 tests passed** with byte-identical exact-identity builds; generated artefacts `8c4b60a367b9858146b42ff8710d888856462c21`.
 
 ## Current
-- **Stage 10.4 — Operating review/export** · investigation and exact-scope approval only; no implementation has begun.
-- Intended scope may organise weekly/cumulative summaries, completeness review and analysis-friendly exports from existing immutable evidence.
-- No formula, threshold, provider, composite score, automatic model update or validation claim is approved.
+- **Stage 10.4 — Operating review/export** · IMPLEMENTED AND VERIFIED on draft PR #35; owner review and merge approval remain pending.
+- Verified source `1eca9a8817da41597d0632c819142237d31627fb`: **413/413 tests passed**, zero failures/skips, deterministic exact-identity builds; generated artefacts `1af7dac5383c91e915587218e7551c2f619cec8f`.
+- Weekly/cumulative reviews, hash-verifiable JSON, deterministic Markdown and eight individual CSV exports are downstream-only and descriptive.
+- Google Sheets remains manual import into the live 2026/27 workbook; no OAuth, backend or automatic sync was introduced.
 
 ## Upcoming
-1. Inspect the merged Stage 10.1–10.3 evidence and metric contracts.
-2. Present the exact Stage 10.4 review surfaces, export schemas, retention rules, missing-data handling, phone-first workflow and tests.
-3. Obtain explicit owner approval before implementation.
-4. Implement only the approved Stage 10.4 scope on a separate branch.
+1. Complete owner review and physical iPhone acceptance of draft PR #35.
+2. Merge only after Pritesh's explicit approval.
+3. After merge, investigate and design Stage 10.5 separately; do not begin implementation without exact-scope approval.
 
 ## Current blockers
-1. Stage 10.4 exact scope and approval are not yet recorded.
-2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
+1. Stage 10.4 is not merged until owner review, physical iPhone acceptance and explicit merge approval are complete.
+2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-4. Prospective sample size begins at zero; Stage 10.3 infrastructure does not establish model accuracy or calibration.
+4. Prospective sample size begins at zero; Stage 10.4 reporting does not establish model accuracy or calibration.

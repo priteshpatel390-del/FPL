@@ -80,3 +80,13 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 - Confidence intervals, clustered resampling, multiple-comparison control and statistical significance remain separately scoped future work.
 - Metric records are bounded browser recovery, not a permanent database or externally authenticated archive.
 - Stage 10.3 implementation and 397 passing tests prove contract integrity, not prediction accuracy or probability calibration.
+
+## Stage 10.4 operating-review limitations
+- Review quality cannot exceed retained evidence quality. Pruned or missing exact snapshot/outcome/evaluation payloads are reported as partial and cannot be reconstructed.
+- Local Stage 10 retention remains recovery-oriented rather than a permanent season archive; a season JSON bundle may therefore be partial on one device.
+- Google Sheets import is manual. The app does not authenticate to Drive, select a workbook, append rows or run unattended exports.
+- No XLSX or ZIP export exists. The eight CSV files are downloaded individually to avoid browser multi-download and mobile reliability problems.
+- Exports above 25 MiB fail rather than truncate; no compression or automatic splitting is implemented.
+- Transfer-horizon gains are not summed cumulatively because horizons can overlap and plans are alternatives.
+- Provider-state comparisons are observational, not causal. One Gameweek is never labelled calibrated/uncalibrated or accurate/inaccurate.
+- Static phone-first tests pass, but physical iPhone acceptance remains an owner review step before merge.

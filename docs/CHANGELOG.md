@@ -33,3 +33,10 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 
 ### Status
 - Merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval.
+## 2026-07-30 — Stage 10.4 operating review/export
+- Implemented downstream weekly and cumulative operating review from exact Stage 10.1–10.3 evidence.
+- Added deterministic hash-verifiable JSON, descriptive Markdown and eight individual RFC 4180 CSV exports.
+- Added explicit correction/pruning/missing-record handling, schedule-aligned views, transfer-horizon pending rules and provider/revision audit.
+- Added spreadsheet-formula protection, manager-reference boundaries, 10/25 MiB size policy and manual-only live Google Sheets boundary.
+- Added phone-first UI under Deadline evidence and 16 tests, bringing the verified suite to **413/413 passed**.
+- Verified source `1eca9a8817da41597d0632c819142237d31627fb` and generated artefacts `1af7dac5383c91e915587218e7551c2f619cec8f` with byte-identical rebuilds. Draft PR #35 awaits owner review and explicit merge approval.
