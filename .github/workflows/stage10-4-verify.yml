@@ -21,24 +21,17 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64, gzip, hashlib
+          import base64, gzip, hashlib, subprocess
 
-          review_parts = [
-            '.stage10-4-payload/review-mjs.part-01',
-            '.stage10-4-payload/review-mjs.part-02',
-            '.stage10-4-payload/review-mjs.part-03',
-            '.stage10-4-payload/review-mjs.part-04-01',
-            '.stage10-4-payload/review-mjs.part-04-02',
-            '.stage10-4-payload/review-mjs.part-04-03',
-            '.stage10-4-payload/review-mjs.part-05-01',
-            '.stage10-4-payload/review-mjs.part-05-02',
-          ]
-          review_encoded = ''.join(Path(path).read_text().strip() for path in review_parts)
-          ui_encoded = Path('.stage10-4-payload/review-ui-mjs.b64').read_text().strip()
-          assert hashlib.sha256(review_encoded.encode()).hexdigest() == 'a92ae37a514f977374522587b759849998f3973be35f83649bc592bfb66094a3'
-          assert hashlib.sha256(ui_encoded.encode()).hexdigest() == '781eaea5bff62ee410bb58c81253e98a119c00cfad6a3b9b525bcd5072f66c60'
+          review_encoded = subprocess.check_output(['git','cat-file','blob','4f8db72010b4f988c0bef7a66816b955905b6f50'], text=True).strip()
+          ui_encoded = subprocess.check_output(['git','cat-file','blob','3bf95665669af92338a239b12d32bd90a67fae86'], text=True).strip()
+          review = gzip.decompress(base64.b64decode(review_encoded)).decode()
+          old = '/[",\\r\\n]/.test(text)'
+          new = '/[",\\r\\n\\t]/.test(text)'
+          assert review.count(old) == 1
+          review = review.replace(old,new)
           sources = {
-            'src/evidence/review.mjs': gzip.decompress(base64.b64decode(review_encoded)),
+            'src/evidence/review.mjs': review.encode(),
             'src/ui/review.mjs': gzip.decompress(base64.b64decode(ui_encoded)),
           }
           assert hashlib.sha256(sources['src/evidence/review.mjs']).hexdigest() == '644db0e09fd2c70cf6d058cbce19904a4de68c7b234b641b073a77246e986742'
