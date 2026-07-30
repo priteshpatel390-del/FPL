@@ -1,4 +1,4 @@
-name: Stage 10.5 diagnostic test capture
+name: Stage 10.5 focused failure capture
 on:
   push:
     branches:
@@ -16,7 +16,7 @@ jobs:
         with:
           ref: agent/stage10-5-hardening-documentation
           fetch-depth: 0
-      - name: Capture complete failing output
+      - name: Capture failed TAP blocks
         shell: bash
         run: |
           set +e
@@ -25,12 +25,23 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           {
-            echo "Stage 10.5 diagnostic test capture."
+            echo "Stage 10.5 focused failure capture."
             echo "Exit status: $STATUS"
             echo
-            cat /tmp/stage10-5-tests.log
+            echo "--- summary ---"
+            tail -12 /tmp/stage10-5-tests.log
+            echo
+            echo "--- failed test names ---"
+            grep -n '^not ok ' /tmp/stage10-5-tests.log || true
+            echo
+            echo "--- failed TAP blocks ---"
+            awk '
+              /^not ok / { capture=1 }
+              capture { print }
+              capture && /^  \.\.\.$/ { print ""; capture=0 }
+            ' /tmp/stage10-5-tests.log
           } > .stage10-5/failure.txt
           git add .stage10-5/failure.txt
-          git commit -m "Capture Stage 10.5 failing assertions"
+          git commit -m "Capture focused Stage 10.5 failures"
           git push origin HEAD:agent/stage10-5-hardening-documentation
           exit $STATUS
