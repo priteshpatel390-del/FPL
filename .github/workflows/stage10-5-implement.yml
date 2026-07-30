@@ -1,0 +1,122 @@
+name: Stage 10.5 implementation and verification
+on:
+  push:
+    branches:
+      - agent/stage10-5-hardening-documentation
+    paths:
+      - .github/workflows/stage10-5-implement.yml
+permissions:
+  contents: write
+jobs:
+  implement-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stage10-5-hardening-documentation
+          fetch-depth: 0
+      - name: Apply approved Stage 10.5 scope
+        id: apply
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python .stage10-5/apply.py 2>&1 | tee /tmp/stage10-5-apply.log
+      - name: Commit source and tests
+        id: source
+        if: steps.apply.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build.mjs src tests docs CLAUDE.md
+          git commit -m "Implement Stage 10.5 hardening"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Full suite and deterministic builds
+        id: verify
+        if: steps.apply.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          SOURCE_SHA="${{ steps.source.outputs.sha }}"
+          rm -rf /tmp/stage10-5-build-a /tmp/stage10-5-build-b
+          mkdir -p /tmp/stage10-5-build-a /tmp/stage10-5-build-b
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh 2>&1 | tee /tmp/stage10-5-tests.log
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage10-5-build-a/
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs 2>&1 | tee /tmp/stage10-5-build-b.log
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage10-5-build-b/
+          cmp /tmp/stage10-5-build-a/index.html /tmp/stage10-5-build-b/index.html
+          cmp /tmp/stage10-5-build-a/app.bundle.js /tmp/stage10-5-build-b/app.bundle.js
+          cmp /tmp/stage10-5-build-a/manifest.json /tmp/stage10-5-build-b/manifest.json
+          cmp index.html dist/index.html
+          TESTS=$(sed -n 's/^# tests //p' /tmp/stage10-5-tests.log | tail -1)
+          PASS=$(sed -n 's/^# pass //p' /tmp/stage10-5-tests.log | tail -1)
+          FAIL=$(sed -n 's/^# fail //p' /tmp/stage10-5-tests.log | tail -1)
+          SKIP=$(sed -n 's/^# skipped //p' /tmp/stage10-5-tests.log | tail -1)
+          test -n "$TESTS" && test "$TESTS" = "$PASS" && test "${FAIL:-0}" = "0" && test "${SKIP:-0}" = "0"
+          SOURCE_HASH=$(node -e "const m=JSON.parse(require('fs').readFileSync('dist/manifest.json'));process.stdout.write(m.sourceHash)")
+          MANIFEST_COMMIT=$(node -e "const m=JSON.parse(require('fs').readFileSync('dist/manifest.json'));process.stdout.write(m.commit)")
+          test "$MANIFEST_COMMIT" = "$SOURCE_SHA"
+          HTML_BYTES=$(wc -c < dist/index.html | tr -d ' ')
+          echo "tests=$TESTS" >> "$GITHUB_OUTPUT"
+          echo "source_hash=$SOURCE_HASH" >> "$GITHUB_OUTPUT"
+          echo "html_bytes=$HTML_BYTES" >> "$GITHUB_OUTPUT"
+      - name: Publish verified candidate
+        if: steps.apply.outcome == 'success' && steps.verify.outcome == 'success'
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          TESTS: ${{ steps.verify.outputs.tests }}
+          SOURCE_HASH: ${{ steps.verify.outputs.source_hash }}
+          HTML_BYTES: ${{ steps.verify.outputs.html_bytes }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          replacements={
+            '__SOURCE_COMMIT__':os.environ['SOURCE_SHA'],
+            '__TEST_COUNT__':os.environ['TESTS'],
+            '__SOURCE_HASH__':os.environ['SOURCE_HASH'],
+            '__HTML_BYTES__':os.environ['HTML_BYTES']
+          }
+          for name in ['CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ROADMAP.md','docs/TESTING.md','docs/STAGE10-DESIGN.md','docs/STAGE10-ITEM5.md']:
+            p=Path(name);text=p.read_text()
+            for old,new in replacements.items():text=text.replace(old,new)
+            p.write_text(text)
+          PY
+          rm .github/workflows/stage10-5-implement.yml
+          rm -rf .stage10-5
+          git add -A
+          git commit -m "Verify Stage 10.5 hardening"
+          GENERATED_SHA=$(git rev-parse HEAD)
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          p=Path('docs/STAGE10-ITEM5.md')
+          p.write_text(p.read_text().replace('__GENERATED_COMMIT__',os.environ['GENERATED_SHA']))
+          PY
+          git add docs/STAGE10-ITEM5.md
+          git commit -m "Document Stage 10.5 verification"
+          git push origin HEAD:agent/stage10-5-hardening-documentation
+        env:
+          GENERATED_SHA: ${{ env.GENERATED_SHA }}
+      - name: Publish failure record
+        if: steps.apply.outcome != 'success' || steps.verify.outcome != 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --hard HEAD
+          {
+            echo "Stage 10.5 workflow failed."
+            echo "Apply outcome: ${{ steps.apply.outcome }}"
+            echo "Verify outcome: ${{ steps.verify.outcome }}"
+            echo
+            echo "--- apply log ---"
+            cat /tmp/stage10-5-apply.log 2>/dev/null || true
+            echo
+            echo "--- test log tail ---"
+            tail -200 /tmp/stage10-5-tests.log 2>/dev/null || true
+          } > .stage10-5/failure.txt
+          git add .stage10-5/failure.txt
+          git commit -m "Record Stage 10.5 verification failure"
+          git push origin HEAD:agent/stage10-5-hardening-documentation
+          exit 1
