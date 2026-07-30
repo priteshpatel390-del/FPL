@@ -41,19 +41,21 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 10.4 — Operating review/export** · DONE and merged through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after owner approval.
   - Downstream weekly/cumulative review with deterministic JSON, Markdown and eight CSV exports.
   - Verified source `1eca9a8817da41597d0632c819142237d31627fb`: **413/413 tests passed** with exact-identity builds; generated artefacts `1af7dac5383c91e915587218e7551c2f619cec8f`.
+- **Stage 10.5 — Hardening and documentation** · DONE and merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after owner approval.
+  - Transactional recovery, schema/import security, bounded deadline retry, honest downloads and live-season operations.
+  - Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92`: **428/428 tests passed** with deterministic exact-identity builds; generated artefacts `421e532629cbd1b82b19b3ea349ab23571221f00`. Physical iPhone acceptance was not independently recorded.
 
 ## Current
-- **Stage 10.5 — Hardening and documentation** · IMPLEMENTED AND VERIFIED on `agent/stage10-5-hardening-documentation` after owner approval; draft PR and physical iPhone acceptance remain pending.
-- Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92`: **428/428 tests passed** with byte-identical exact-identity builds.
-- Storage recovery, schema/security parity, bounded retry, honest downloads and live-season operations are hardened without model/provider changes.
+- **Live-season readiness and prospective validation** · Stage 10 collection and evaluation infrastructure is complete. Genuine pre-deadline evidence collection begins with the 2026/27 season.
+- Stage 10.5 merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92`; verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with deterministic exact-identity builds. Physical iPhone acceptance was not independently recorded.
 
 ## Upcoming
-1. Inspect the merged Stage 10.1–10.4 operational and recovery boundaries.
-2. Present the exact Stage 10.5 failure-recovery, migration, security-review and operational-guidance scope and exclusions.
-3. Obtain explicit owner approval before implementation.
+1. Complete one physical iPhone pre-season rehearsal of cold-open recovery, deadline capture and JSON/Markdown/CSV downloads.
+2. Operate the pre-deadline snapshot workflow at each deadline and verify durable owner-controlled exports.
+3. Collect official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until the approved sample safeguards are met.
+4. Define any Stage 11 scope separately after live operational evidence exposes a real need.
 
 ## Current blockers
-1. Stage 10.5 exact scope and approval are not yet recorded.
-2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
-3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-4. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
+1. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
+2. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+3. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.

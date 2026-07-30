@@ -2,6 +2,15 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for engineering detail.
 
+## 2026-07-30 — Stage 10.5 hardening and documentation
+- Added transactional snapshot recovery and consistent outcome/metric journal reconciliation.
+- Added strict import/version/object-key validation, safer diagnostics and stronger spreadsheet-formula protection.
+- Added bounded visible-page deadline retry, honest download wording and phone-first live-season/disaster-recovery guidance.
+- Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` with **428/428 tests passed**, zero failures and zero skipped, plus deterministic exact-identity builds.
+- Generated artefacts `421e532629cbd1b82b19b3ea349ab23571221f00` embed source hash `3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40`.
+- Merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after owner approval. Physical iPhone acceptance was not independently recorded.
+- No production formula, provider, backend, automatic Google Sheets or later-stage behaviour changed; prospective validation remains in progress.
+
 ## [Stage 10.3] — 2026-07-30 — Metrics
 ### Added
 - Immutable, correction-aware `gameweekEvaluation` and frozen `transferHorizonEvaluation` records.

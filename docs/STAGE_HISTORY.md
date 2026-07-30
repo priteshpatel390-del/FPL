@@ -2,6 +2,11 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-30.
 Related: stage design and item records, ROADMAP.md, DECISIONS.md, CHANGELOG.md, AUDIT.md.
 
+## Stage 10.5 — Hardening and documentation (MERGED 2026-07-30)
+Pritesh approved the exact recovery, security-parity, bounded-retry, honest-download and operational-guidance scope before implementation. The item adds transactional snapshot recovery, consistent outcome/metric journal handling, strict import/version/object-key validation, safer diagnostics and spreadsheet exports, bounded deadline retry and a phone-first live-season runbook. It does not change any projection, expected-minutes, scoring, calibration, fixture, uncertainty, squad, captaincy, transfer-optimiser, provider or Google Sheets behaviour.
+
+Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests**, zero failures and zero skipped, with deterministic exact-identity builds. Generated artefacts are `421e532629cbd1b82b19b3ea349ab23571221f00` with source hash `3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40`. PR #45 merged at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after explicit owner approval. Physical iPhone acceptance was not independently recorded; prospective validation remains in progress.
+
 ## Stage 10.4 — Operating review/export (MERGED 2026-07-30)
 Pritesh approved the exact downstream operating-review/export scope before implementation. The item adds weekly and cumulative review over immutable Stage 10.1–10.3 evidence, deterministic hash-verifiable JSON and Markdown, and eight individual RFC 4180 CSV exports. It does not change production projection, expected-minutes, scoring, fixture, uncertainty, squad, captaincy, transfer-optimiser or provider behaviour. Google Sheets remains manual import only.
 
