@@ -2,9 +2,10 @@
 Purpose: authoritative implementation and verification record for Stage 10.5. Last updated: 2026-07-30.
 
 ## Status
-Implemented and verified on branch `agent/stage10-5-hardening-documentation` after explicit owner approval. Draft PR and physical iPhone acceptance remain required before merge.
+Complete and merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after explicit owner approval. Physical iPhone acceptance was not independently recorded.
 
 - Base main: `8ee46fb7b82e2c32484beaff34989ff766a3215f`
+- Merge commit: `0605ba5a02c49a5b599eba1ed00c443fa1889c92`
 - Verified source: `0302c54e3eb1d77657b3d892bebb33c90438fa92`
 - Generated/verification commit: `421e532629cbd1b82b19b3ea349ab23571221f00`
 - Tests: **428 passed, 0 failed, 0 skipped**
