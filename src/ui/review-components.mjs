@@ -78,4 +78,4 @@ function reviewUiSeasonContent(review){
   return content;
 }
 
-export { reviewUiWeeklyContent,reviewUiSeasonContent };
+export { reviewUiDownload,reviewUiWeeklyContent,reviewUiSeasonContent };
