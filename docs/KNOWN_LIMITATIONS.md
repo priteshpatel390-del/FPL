@@ -1,6 +1,6 @@
 # KNOWN_LIMITATIONS.md
 Purpose: single register of every current limitation. Audience: all sessions.
-Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
+Last updated: 2026-07-30. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
@@ -38,8 +38,14 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | FRAME-1 | `frame-ancestors` is ineffective in meta CSP on GitHub Pages | Frame-buster is compensating control | Serverless | Accepted-temporary |
 | STYLE-1 | `style-src-attr 'unsafe-inline'` remained necessary | Replaced fixed/dynamic styles with classes, progress and SVG attributes; source/build/deployable guards reject style attributes and the CSP concession is removed | Stage 9.6 | **CLOSED and verified 2026-07-29** |
 | UI-1 | No persistent browser-level screenshot-regression suite | Stage 9.6 completed representative mobile/desktop browser review with no console errors, but future visual changes still require human device review | Future tooling only with separate approval | Open (accepted) |
+| UI-2 | The implemented primary navigation remains Team, Players, Transfers and More | The approved Teamsheet 2.0 Team/Transfers/Mini Leagues/Settings architecture is documented but not yet implemented | Teamsheet 2.0.1 | Open (expected) |
+| UI-3 | Current Settings and supporting tools remain distributed through the Stage 9 More hierarchy | Research, evidence, diagnostics and help are not yet organised into the approved five-section Settings menu | Teamsheet 2.0.1 and 2.0.6 | Open (expected) |
+| UI-4 | The Team screen does not yet provide the complete approved decision-home summary | The pitch foundation exists, but team projection, primary risk and deadline action are not yet unified into one decision surface | Teamsheet 2.0.2 | Open (expected) |
 | PREVIEW-1 | Decision previews are intentionally session-only | Transfer/captain previews disappear on refresh and are not submitted to FPL; this prevents accidental persistence or account changes | By design | Accepted |
 | PREVIEW-2 | Transfer preview pitch is next-Gameweek only while optimiser gain can span several Gameweeks | The banner must be read alongside the pitch to distinguish next-GW XI score from multi-GW net gain | Stage 9.4 | Accepted-labelled |
+| ML-1 | Mini Leagues is not yet a flagship primary destination | Global and private-league performance, movement and tactical explanation remain limited and secondary | Teamsheet 2.0.4–2.0.5 | Open (expected) |
+| RANK-1 | Projected final Gameweek score and rank movement are not yet designed or validated | Teamsheet must not manufacture live-rank precision or blur projection with confirmed Official FPL results | Teamsheet 2.0.4 only after separate design | Open (expected) |
+| STRAT-1 | No protect, balanced or chase Mini-League strategy model is approved | League position may be described, but it cannot silently alter production recommendations | Separate design and explicit approval | Open (gated) |
 | EVID-1 | Browser timing evidence is not externally notarised | Same-origin HTTP `Date` plus clock-skew checks support leakage review but cannot prove capture time to an independent third party | Future serverless only with separate approval | Open (accepted) |
 | EVID-2 | Local evidence can be cleared and JSON exports are unencrypted | The owner must export and retain files safely; bounded compressed local copies are recovery only | Stage 10.4 operating workflow | Open (accepted) |
 | EVID-3 | Physical iPhone capture/export/import acceptance | Owner accepted the silent loader and startup behaviour; local-preview chrome was distinguished from app UI | Stage 10.1 review | **CLOSED 2026-07-29** |
@@ -55,6 +61,15 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | METRIC-6 | The legal-XI oracle uses realised outcomes | It is a descriptive hindsight upper bound from the same frozen squad, not a recommendation available before the deadline | By design | Accepted-labelled |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
+
+## Teamsheet 2.0 migration limitations
+- The approved blueprint is product direction, not implemented behaviour.
+- Stage 9 remains the current application structure until Teamsheet 2.0.1 is separately designed, approved, implemented and merged.
+- No new projection, captaincy, optimiser, Mini-League strategy or rank model is authorised by the blueprint.
+- The migration must preserve verified engineering and existing access to every current functional surface.
+- Provider Health retains all seven states. Only its future placement and warning hierarchy are approved for later design.
+- Official results and projected values require explicit separation in future rank and Mini-League work.
+- Low ownership alone must not be presented as a positive differential recommendation.
 
 ## Stage 10.1 automatic refresh limitations
 - “Latest” means the latest data that passed approved validation. It does not guarantee every optional provider is live.
