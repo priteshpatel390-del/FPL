@@ -1,5 +1,5 @@
 # STAGE10-DESIGN.md — Prospective Live-Season Validation
-Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 is complete and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`; Stage 10.3 is complete and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997`. Stage 10.4 has not begun.
+Status: owner-approved on 2026-07-29. Stage 10.1 merged through PR #27; Stage 10.2 through PR #29; Stage 10.3 through PR #32; Stage 10.4 through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after owner approval. Stage 10.5 is the next investigation and exact-scope approval checkpoint.
 Related: STAGE10-ITEM1.md, STAGE10-ITEM2.md, STAGE10-ITEM3.md, PROJECTION_MODEL.md, TESTING.md, DATA_SOURCES.md, SECURITY.md, KNOWN_LIMITATIONS.md.
 
 ## Objective
@@ -193,4 +193,4 @@ Stage 10.3 acceptance evidence is:
 
 Even after Stage 10.5, the correct wording is: **Stage 10 collection and evaluation infrastructure is complete; prospective model validation remains in progress.**
 ## Stage 10.4 verified implementation
-The owner approved the exact operating-review/export scope on 30 July 2026. Draft PR #35 implements it without changing projection, expected-minutes, scoring, fixture, uncertainty, squad, captaincy, transfer-optimiser or provider behaviour. Source `1eca9a8817da41597d0632c819142237d31627fb` passes 413/413 tests with deterministic exact-identity builds; generated artefacts are `1af7dac5383c91e915587218e7551c2f619cec8f`. Physical iPhone acceptance and explicit merge approval remain outstanding. Stage 10.5 remains a separate investigation/design checkpoint.
+The owner approved the exact operating-review/export scope on 30 July 2026. PR #35 merged at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` without changing projection, expected-minutes, scoring, fixture, uncertainty, squad, captaincy, transfer-optimiser or provider behaviour. Source `1eca9a8817da41597d0632c819142237d31627fb` passes 413/413 tests with deterministic exact-identity builds; generated artefacts are `1af7dac5383c91e915587218e7551c2f619cec8f`. Physical iPhone acceptance was not independently recorded. Stage 10.5 remains a separate investigation/design checkpoint.

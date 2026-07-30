@@ -38,20 +38,22 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 10.3 — Metrics** · DONE and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval.
   - Immutable player, fixture-minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations remain descriptive only.
   - Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 tests passed** with byte-identical exact-identity builds; generated artefacts `8c4b60a367b9858146b42ff8710d888856462c21`.
+- **Stage 10.4 — Operating review/export** · DONE and merged through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after owner approval.
+  - Downstream weekly/cumulative review with deterministic JSON, Markdown and eight CSV exports.
+  - Verified source `1eca9a8817da41597d0632c819142237d31627fb`: **413/413 tests passed** with exact-identity builds; generated artefacts `1af7dac5383c91e915587218e7551c2f619cec8f`.
 
 ## Current
-- **Stage 10.4 — Operating review/export** · IMPLEMENTED AND VERIFIED on draft PR #35; owner review and merge approval remain pending.
-- Verified source `1eca9a8817da41597d0632c819142237d31627fb`: **413/413 tests passed**, zero failures/skips, deterministic exact-identity builds; generated artefacts `1af7dac5383c91e915587218e7551c2f619cec8f`.
-- Weekly/cumulative reviews, hash-verifiable JSON, deterministic Markdown and eight individual CSV exports are downstream-only and descriptive.
-- Google Sheets remains manual import into the live 2026/27 workbook; no OAuth, backend or automatic sync was introduced.
+- **Stage 10.5 — Hardening and documentation** · investigation and exact-scope approval only; no implementation has begun.
+- Stage 10.4 is complete and merged through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after owner approval.
+- Production formulas, providers and automatic Google Sheets integration remain unchanged.
 
 ## Upcoming
-1. Complete owner review and physical iPhone acceptance of draft PR #35.
-2. Merge only after Pritesh's explicit approval.
-3. After merge, investigate and design Stage 10.5 separately; do not begin implementation without exact-scope approval.
+1. Inspect the merged Stage 10.1–10.4 operational and recovery boundaries.
+2. Present the exact Stage 10.5 failure-recovery, migration, security-review and operational-guidance scope and exclusions.
+3. Obtain explicit owner approval before implementation.
 
 ## Current blockers
-1. Stage 10.4 is not merged until owner review, physical iPhone acceptance and explicit merge approval are complete.
+1. Stage 10.5 exact scope and approval are not yet recorded.
 2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-4. Prospective sample size begins at zero; Stage 10.4 reporting does not establish model accuracy or calibration.
+4. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.

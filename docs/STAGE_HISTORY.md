@@ -2,6 +2,11 @@
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-30.
 Related: stage design and item records, ROADMAP.md, DECISIONS.md, CHANGELOG.md, AUDIT.md.
 
+## Stage 10.4 — Operating review/export (MERGED 2026-07-30)
+Pritesh approved the exact downstream operating-review/export scope before implementation. The item adds weekly and cumulative review over immutable Stage 10.1–10.3 evidence, deterministic hash-verifiable JSON and Markdown, and eight individual RFC 4180 CSV exports. It does not change production projection, expected-minutes, scoring, fixture, uncertainty, squad, captaincy, transfer-optimiser or provider behaviour. Google Sheets remains manual import only.
+
+Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes **413/413 tests**, zero failures and zero skipped, with byte-identical exact-identity builds. Generated artefacts are `1af7dac5383c91e915587218e7551c2f619cec8f`. PR #35 merged at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after explicit owner approval. Physical iPhone acceptance was not independently recorded; prospective validation remains in progress.
+
 ## Stage 10.3 — Metrics (MERGED 2026-07-30)
 Pritesh approved the exact Stage 10.3 decision paper before implementation. Work began from main commit `fedf8430ab79bcd40261ab2bb71bd67b0d8c4547` on `agent/stage10-3-metrics` and remained isolated from main.
 
