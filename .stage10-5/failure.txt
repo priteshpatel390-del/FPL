@@ -1,22 +1,208 @@
 Stage 10.5 workflow failed.
-Apply outcome: failure
-Verify outcome: skipped
+Apply outcome: success
+Verify outcome: failure
 
 --- apply log ---
-Traceback (most recent call last):
-  File "/home/runner/work/FPL/FPL/.stage10-5/apply.py", line 126, in <module>
-    regex_once('src/evidence/snapshot.mjs',
-  File "/home/runner/work/FPL/FPL/.stage10-5/apply.py", line 23, in regex_once
-    next_text, count = re.subn(pattern, replacement, text, count=1, flags=flags)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/re/__init__.py", line 197, in subn
-    return _compile(pattern, flags).subn(repl, string, count)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/re/__init__.py", line 334, in _compile_template
-    return _sre.template(pattern, _parser.parse_template(repl, pattern))
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/re/_parser.py", line 1075, in parse_template
-    raise s.error('bad escape %s' % this, len(this)) from None
-re.error: bad escape \s at position 280 (line 6, column 79)
+Stage 10.5 source transformations applied successfully
 
 --- test log tail ---
+ok 397 - direct import: bestXI legality and sellPrice rounding
+  ---
+  duration_ms: 2.506952
+  type: 'test'
+  ...
+# Subtest: direct import: odds maths invertible
+ok 398 - direct import: odds maths invertible
+  ---
+  duration_ms: 0.173436
+  type: 'test'
+  ...
+# Subtest: direct import: computeBacktest recovers planted biases with provenance
+ok 399 - direct import: computeBacktest recovers planted biases with provenance
+  ---
+  duration_ms: 19.797484
+  type: 'test'
+  ...
+# Subtest: direct import: cache envelope invalidates on schema/season change
+ok 400 - direct import: cache envelope invalidates on schema/season change
+  ---
+  duration_ms: 0.84344
+  type: 'test'
+  ...
+# Subtest: direct import: registry carries six quality attributes per provider
+ok 401 - direct import: registry carries six quality attributes per provider
+  ---
+  duration_ms: 0.315433
+  type: 'test'
+  ...
+# Subtest: direct import: ODDS_RULES defined before any formula change
+ok 402 - direct import: ODDS_RULES defined before any formula change
+  ---
+  duration_ms: 0.271954
+  type: 'test'
+  ...
+# Subtest: direct import: escapeHTML neutralises the usual suspects
+ok 403 - direct import: escapeHTML neutralises the usual suspects
+  ---
+  duration_ms: 0.401091
+  type: 'test'
+  ...
+# Subtest: validation: exact duplicates collapse to the first occurrence
+ok 404 - validation: exact duplicates collapse to the first occurrence
+  ---
+  duration_ms: 1.748996
+  type: 'test'
+  ...
+# Subtest: validation: genuine doubles survive — distinct ids, same teams and gameweek
+ok 405 - validation: genuine doubles survive — distinct ids, same teams and gameweek
+  ---
+  duration_ms: 0.649376
+  type: 'test'
+  ...
+# Subtest: validation: genuine doubles survive when rows carry no id (composite distinct)
+ok 406 - validation: genuine doubles survive when rows carry no id (composite distinct)
+  ---
+  duration_ms: 0.130318
+  type: 'test'
+  ...
+# Subtest: validation: conflicting duplicate keeps the first and names the offending fields
+ok 407 - validation: conflicting duplicate keeps the first and names the offending fields
+  ---
+  duration_ms: 0.257773
+  type: 'test'
+  ...
+# Subtest: validation: a conflict is partial, never fatal — the app still loads
+ok 408 - validation: a conflict is partial, never fatal — the app still loads
+  ---
+  duration_ms: 0.219999
+  type: 'test'
+  ...
+# Subtest: validation: rows with no safe identity are excluded and reported
+ok 409 - validation: rows with no safe identity are excluded and reported
+  ---
+  duration_ms: 0.113503
+  type: 'test'
+  ...
+# Subtest: validation: identity is never invented for an id-less row with a null event
+ok 410 - validation: identity is never invented for an id-less row with a null event
+  ---
+  duration_ms: 0.166332
+  type: 'test'
+  ...
+# Subtest: validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
+ok 411 - validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
+  ---
+  duration_ms: 0.147011
+  type: 'test'
+  ...
+# Subtest: validation: started/finished differences are immaterial, not a conflict
+ok 412 - validation: started/finished differences are immaterial, not a conflict
+  ---
+  duration_ms: 0.280598
+  type: 'test'
+  ...
+# Subtest: validation: a non-array payload is fatal and yields an empty fixture list
+ok 413 - validation: a non-array payload is fatal and yields an empty fixture list
+  ---
+  duration_ms: 0.406002
+  type: 'test'
+  ...
+# Subtest: validation: the input array and its rows are never mutated
+ok 414 - validation: the input array and its rows are never mutated
+  ---
+  duration_ms: 0.206899
+  type: 'test'
+  ...
+# Subtest: validation: issueSummary is payload-free and safe to render
+ok 415 - validation: issueSummary is payload-free and safe to render
+  ---
+  duration_ms: 0.212123
+  type: 'test'
+  ...
+# Subtest: dataset pin requires immutable reference and SHA-256 checksum
+ok 416 - dataset pin requires immutable reference and SHA-256 checksum
+  ---
+  duration_ms: 1.948214
+  type: 'test'
+  ...
+# Subtest: observations are sorted deterministically and identical duplicates collapse
+ok 417 - observations are sorted deterministically and identical duplicates collapse
+  ---
+  duration_ms: 0.946494
+  type: 'test'
+  ...
+# Subtest: conflicting duplicate observations fail closed
+ok 418 - conflicting duplicate observations fail closed
+  ---
+  duration_ms: 0.370151
+  type: 'test'
+  ...
+# Subtest: future information is rejected
+ok 419 - future information is rejected
+  ---
+  duration_ms: 0.145715
+  type: 'test'
+  ...
+# Subtest: walk-forward fold boundaries are chronological and separated
+ok 420 - walk-forward fold boundaries are chronological and separated
+  ---
+  duration_ms: 0.549806
+  type: 'test'
+  ...
+# Subtest: position calibration is fitted only from supplied rows and bounded
+ok 421 - position calibration is fitted only from supplied rows and bounded
+  ---
+  duration_ms: 0.199115
+  type: 'test'
+  ...
+# Subtest: calibration application creates an isolated named variant
+ok 422 - calibration application creates an isolated named variant
+  ---
+  duration_ms: 0.206404
+  type: 'test'
+  ...
+# Subtest: metric summary calculates deterministic MAE RMSE bias and correlation
+ok 423 - metric summary calculates deterministic MAE RMSE bias and correlation
+  ---
+  duration_ms: 0.333352
+  type: 'test'
+  ...
+# Subtest: segmented metrics expose position gameweek variant and prediction bands
+ok 424 - segmented metrics expose position gameweek variant and prediction bands
+  ---
+  duration_ms: 7.538175
+  type: 'test'
+  ...
+# Subtest: ablation comparison requires identical holdout keys
+ok 425 - ablation comparison requires identical holdout keys
+  ---
+  duration_ms: 1.758278
+  type: 'test'
+  ...
+# Subtest: stable result serialisation is key ordered and rounds finite numbers
+ok 426 - stable result serialisation is key ordered and rounds finite numbers
+  ---
+  duration_ms: 0.232918
+  type: 'test'
+  ...
+# Subtest: full evaluation preserves supplied ablations when fold calibration is disabled
+ok 427 - full evaluation preserves supplied ablations when fold calibration is disabled
+  ---
+  duration_ms: 1.69078
+  type: 'test'
+  ...
+# Subtest: raw-only evaluation emits train-only fold calibration
+ok 428 - raw-only evaluation emits train-only fold calibration
+  ---
+  duration_ms: 1.498361
+  type: 'test'
+  ...
+1..428
+# tests 428
+# suites 0
+# pass 415
+# fail 13
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4346.443308
