@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "d1773a1ae9e36ae28adef232148a3f7e315f21baf989e03e0158c9beefe729ed",
-  "commit": "1eca9a8817da41597d0632c819142237d31627fb",
+  "sourceHash": "3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40",
+  "commit": "0302c54e3eb1d77657b3d892bebb33c90438fa92",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -42,6 +42,8 @@
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
     "src/ui/security-wiring.mjs",
+    "src/ui/evidence-recovery.mjs",
+    "src/ui/download.mjs",
     "src/ui/evidence.mjs",
     "src/ui/outcomes.mjs",
     "src/ui/metrics.mjs",

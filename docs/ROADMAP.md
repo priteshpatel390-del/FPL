@@ -44,7 +44,7 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 
 ## Current
 - **Stage 10.5 — Hardening and documentation** · IMPLEMENTED AND VERIFIED on `agent/stage10-5-hardening-documentation` after owner approval; draft PR and physical iPhone acceptance remain pending.
-- Verified source `__SOURCE_COMMIT__`: **__TEST_COUNT__/__TEST_COUNT__ tests passed** with byte-identical exact-identity builds.
+- Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92`: **428/428 tests passed** with byte-identical exact-identity builds.
 - Storage recovery, schema/security parity, bounded retry, honest downloads and live-season operations are hardened without model/provider changes.
 
 ## Upcoming

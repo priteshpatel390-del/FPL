@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 10.5 — Hardening and documentation is implemented and verified on branch `agent/stage10-5-hardening-documentation` after explicit owner approval. Verified source `__SOURCE_COMMIT__` passes **__TEST_COUNT__/__TEST_COUNT__ tests** with deterministic exact-identity builds. The draft PR and physical iPhone acceptance remain the merge gate. No model, provider, backend or automatic Google Sheets behaviour changed.
+Stage 10.5 — Hardening and documentation is implemented and verified on branch `agent/stage10-5-hardening-documentation` after explicit owner approval. Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with deterministic exact-identity builds. The draft PR and physical iPhone acceptance remain the merge gate. No model, provider, backend or automatic Google Sheets behaviour changed.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
