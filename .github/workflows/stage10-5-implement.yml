@@ -16,6 +16,17 @@ jobs:
         with:
           ref: agent/stage10-5-hardening-documentation
           fetch-depth: 0
+      - name: Correct temporary transformation helper
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.stage10-5/apply.py')
+          text=p.read_text()
+          old="next_text, count = re.subn(pattern, replacement, text, count=1, flags=flags)"
+          new="next_text, count = re.subn(pattern, lambda _match: replacement, text, count=1, flags=flags)"
+          if text.count(old)!=1: raise SystemExit('temporary helper anchor mismatch')
+          p.write_text(text.replace(old,new,1))
+          PY
       - name: Apply approved Stage 10.5 scope
         id: apply
         continue-on-error: true
