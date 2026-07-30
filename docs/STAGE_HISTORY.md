@@ -1,6 +1,17 @@
 # STAGE_HISTORY.md — engineering diary
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-30.
-Related: stage design and item records, ROADMAP.md, DECISIONS.md, CHANGELOG.md, AUDIT.md.
+Related: stage design and item records, TEAMSHEET2-PRODUCT-BLUEPRINT.md, ROADMAP.md, DECISIONS.md, CHANGELOG.md, AUDIT.md.
+
+## Teamsheet 2.0 Product Blueprint — documentation integration (2026-07-30)
+Pritesh approved the canonical Teamsheet 2.0 product direction after a repository audit and product review. The blueprint reframes Teamsheet as a team-first, decision-first, explainable and mobile-first application centred on the manager's complete 15-player squad.
+
+The approved future primary navigation is Team, Transfers, Mini Leagues and Settings. More is replaced by Settings; Players leaves primary navigation; replacement discovery moves into Transfers; advanced player and fixture research moves under Settings → Research Tools. Mini Leagues becomes a flagship destination covering global FPL and private-league performance. Doing nothing and rolling a transfer remain valid recommendations. Official outcomes and projections must remain clearly separate.
+
+The blueprint supersedes the Stage 9 information architecture for future development, but Stage 9 remains the accurate historical approval and engineering record. Existing pitch, shirts, player detail, decision previews, best-XI, captaincy, transfer optimiser, provider/security boundaries, Stage 10 evidence infrastructure, deterministic build and test coverage are preserved as the migration foundation.
+
+The approved migration checkpoints are Teamsheet 2.0.1 Navigation and Settings architecture; 2.0.2 Team decision home; 2.0.3 Transfer decision experience; 2.0.4 Global rank and Mini-League foundation; 2.0.5 Mini-League intelligence; 2.0.6 Research, evidence and diagnostics organisation; and 2.0.7 Final mobile polish and acceptance. Every checkpoint requires separate design, approval, testing, review and deployment.
+
+This repository item is documentation-only. It changes no application source, generated deployable, projection, expected-minutes, scoring, fixture, uncertainty, captaincy, squad, transfer-optimiser, provider, evidence or Mini-League calculation. Teamsheet 2.0.1 implementation was not started.
 
 ## Stage 10.5 — Hardening and documentation (MERGED 2026-07-30)
 Pritesh approved the exact recovery, security-parity, bounded-retry, honest-download and operational-guidance scope before implementation. The item adds transactional snapshot recovery, consistent outcome/metric journal handling, strict import/version/object-key validation, safer diagnostics and spreadsheet exports, bounded deadline retry and a phone-first live-season runbook. It does not change any projection, expected-minutes, scoring, calibration, fixture, uncertainty, squad, captaincy, transfer-optimiser, provider or Google Sheets behaviour.
