@@ -6,7 +6,7 @@ Implemented and verified on branch `agent/stage10-5-hardening-documentation` aft
 
 - Base main: `8ee46fb7b82e2c32484beaff34989ff766a3215f`
 - Verified source: `0302c54e3eb1d77657b3d892bebb33c90438fa92`
-- Generated/verification commit: `__GENERATED_COMMIT__`
+- Generated/verification commit: `421e532629cbd1b82b19b3ea349ab23571221f00`
 - Tests: **428 passed, 0 failed, 0 skipped**
 - Embedded source hash: `3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40`
 - Production HTML: `530187` bytes
