@@ -1,11 +1,11 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-29. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-07-30. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 10.3 verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 passing tests**, successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. Generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. Draft PR #32 awaits owner review and explicit merge approval. The previous Stage 10.2 baseline was 376/376 at source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`.
+Stage 10.3 verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 passing tests**, successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. Generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. The item merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval. The previous Stage 10.2 baseline was 376/376 at source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -74,4 +74,4 @@ The final Stage 10.3 run completed **397/397 tests**, zero failures and zero ski
 - absence of production projection/minutes/simulation/optimiser calls from the metric engine;
 - successful build, byte-identical exact-identity rebuild and root/deployable equality.
 
-Verified source: `3eaae862b8a8277e450af062ff4bcecd15b12f3f`. Verified generated artefacts: `8c4b60a367b9858146b42ff8710d888856462c21`.
+Verified source: `3eaae862b8a8277e450af062ff4bcecd15b12f3f`. Verified generated artefacts: `8c4b60a367b9858146b42ff8710d888856462c21`. Merge commit: `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997`.
