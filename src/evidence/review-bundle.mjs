@@ -8,35 +8,35 @@ import {
 import { buildWeeklyOperatingReview } from './review-weekly.mjs';
 import { buildSeasonOperatingReview } from './review-season.mjs';
 
-function operatingReviewManifestEntry(record,{current=true,fullRecordAvailable=true,origin='local'}={}){
+function operatingReviewManifestEntry(record,{current=true,fullRecordAvailable=true,origin='local',includedInBundle=true}={}){
   const id=operatingReviewRecordId(record),type=record?.recordType;
   return canonicalise({
     recordType:type,recordId:id,logicalKey:operatingReviewLogicalKey(record),rootRecordId:record?.identity?.rootOutcomeId||record?.identity?.rootEvaluationId||record?.identity?.rootTransferEvaluationId||id,
     season:record?.season||null,gameweek:Number(record?.gameweek??record?.startGameweek)||null,horizon:record?.horizon??null,
     schemaVersion:record?.schemaVersion||null,metricVersion:record?.metricVersion||null,segmentationVersion:record?.segmentationVersion||null,
     revision:operatingReviewRevision(record),current:Boolean(current),status:record?.status||record?.completeness?.status||null,origin,fullRecordAvailable:Boolean(fullRecordAvailable),
-    contentHash:record?.identity?.contentHash||null,dataHash:record?.identity?.outcomeDataHash||record?.identity?.metricDataHash||null,
+    includedInBundle:Boolean(includedInBundle),contentHash:record?.identity?.contentHash||null,dataHash:record?.identity?.outcomeDataHash||record?.identity?.metricDataHash||null,
     supersedesRecordId:record?.identity?.supersedesOutcomeId||record?.identity?.supersedesEvaluationId||record?.identity?.supersedesTransferEvaluationId||null,
     recordedAt:operatingReviewRecordTime(record),availabilityReason:fullRecordAvailable?null:'full_record_pruned'
   });
 }
-function operatingReviewMetadataManifestEntry(row,fullIds){
+function operatingReviewMetadataManifestEntry(row,fullIds,includedIds){
   const id=operatingReviewMetadataRecordId(row),type=operatingReviewMetadataType(row);
   return canonicalise({
     recordType:type,recordId:id,logicalKey:row?.logicalKey||row?.rootOutcomeId||id,rootRecordId:row?.rootOutcomeId||id,
     season:row?.season||null,gameweek:operatingReviewMetadataGameweek(row),horizon:row?.horizon??null,schemaVersion:null,metricVersion:null,segmentationVersion:null,
     revision:Math.max(1,Number(row?.revision)||1),current:row?.current!==false,status:row?.status||row?.timingGrade||null,origin:row?.origin||'local',
-    fullRecordAvailable:fullIds.has(id),contentHash:row?.contentHash||null,dataHash:row?.outcomeDataHash||null,supersedesRecordId:null,
+    fullRecordAvailable:fullIds.has(id),includedInBundle:includedIds.has(id),contentHash:row?.contentHash||null,dataHash:row?.outcomeDataHash||null,supersedesRecordId:null,
     recordedAt:operatingReviewMetadataTime(row),availabilityReason:fullIds.has(id)?null:'full_record_pruned'
   });
 }
-function operatingReviewBuildManifest(records,metadataRows){
-  const fullIds=new Set((records||[]).map(operatingReviewRecordId).filter(Boolean)),entries=new Map();
-  for(const record of records||[]) entries.set(operatingReviewRecordId(record),operatingReviewManifestEntry(record));
+function operatingReviewBuildManifest(records,metadataRows,includedRecords=records){
+  const fullIds=new Set((records||[]).map(operatingReviewRecordId).filter(Boolean)),includedIds=new Set((includedRecords||[]).map(operatingReviewRecordId).filter(Boolean)),entries=new Map();
+  for(const record of records||[]) entries.set(operatingReviewRecordId(record),operatingReviewManifestEntry(record,{includedInBundle:includedIds.has(operatingReviewRecordId(record))}));
   for(const row of metadataRows||[]){
     const id=operatingReviewMetadataRecordId(row); if(!id) continue;
-    const existing=entries.get(id),metadata=operatingReviewMetadataManifestEntry(row,fullIds);
-    entries.set(id,existing?canonicalise({...existing,current:metadata.current,origin:metadata.origin,fullRecordAvailable:true}):metadata);
+    const existing=entries.get(id),metadata=operatingReviewMetadataManifestEntry(row,fullIds,includedIds);
+    entries.set(id,existing?canonicalise({...existing,current:metadata.current,origin:metadata.origin,fullRecordAvailable:true,includedInBundle:metadata.includedInBundle}):metadata);
   }
   return [...entries.values()].sort((a,b)=>String(a.recordType).localeCompare(String(b.recordType))||String(a.logicalKey).localeCompare(String(b.logicalKey))||a.revision-b.revision||String(a.recordId).localeCompare(String(b.recordId)));
 }
@@ -75,27 +75,29 @@ async function buildOperatingReviewBundle({
   const scopedSnapshots=operatingReviewSortRecords(snapshots.filter(filterRecord)),scopedOutcomes=operatingReviewSortRecords(outcomes.filter(filterRecord)),scopedEvaluations=operatingReviewSortRecords(evaluations.filter(filterRecord)),scopedTransfers=operatingReviewSortRecords(transferEvaluations.filter(filterRecord));
   const currentOutcomeIds=new Set(outcomeMetadata.filter(row=>row.origin==='local_collection'&&row.current!==false).map(row=>row.outcomeId));
   const currentMetricIds=new Set(metricMetadata.filter(row=>row.current!==false).map(row=>row.recordId));
-  const currentOutcomes=currentOutcomeIds.size?scopedOutcomes.filter(record=>currentOutcomeIds.has(record.identity?.outcomeId)):operatingReviewCurrentRecords(scopedOutcomes,'gameweekOutcome');
-  const currentEvaluations=currentMetricIds.size?scopedEvaluations.filter(record=>currentMetricIds.has(record.identity?.evaluationId)):operatingReviewCurrentRecords(scopedEvaluations,'gameweekEvaluation');
-  const currentTransfers=currentMetricIds.size?scopedTransfers.filter(record=>currentMetricIds.has(record.identity?.transferEvaluationId)):operatingReviewCurrentRecords(scopedTransfers,'transferHorizonEvaluation');
-  const weeklyReviews=scopeGameweeks.map(gameweek=>{
+  const currentOutcomes=outcomeMetadata.length?scopedOutcomes.filter(record=>currentOutcomeIds.has(record.identity?.outcomeId)):operatingReviewCurrentRecords(scopedOutcomes,'gameweekOutcome');
+  const currentEvaluations=metricMetadata.length?scopedEvaluations.filter(record=>currentMetricIds.has(record.identity?.evaluationId)):operatingReviewCurrentRecords(scopedEvaluations,'gameweekEvaluation');
+  const currentTransfers=metricMetadata.length?scopedTransfers.filter(record=>currentMetricIds.has(record.identity?.transferEvaluationId)):operatingReviewCurrentRecords(scopedTransfers,'transferHorizonEvaluation');
+  const fullWeeklyReviews=scopeGameweeks.map(gameweek=>{
     const metadataBySnapshot=new Map(snapshotMetadata.filter(row=>Number(row.gameweek)===gameweek).map(row=>[row.snapshotId,row]));
     const snapshot=scopedSnapshots.filter(row=>Number(row.gameweek)===gameweek).sort((a,b)=>{const am=metadataBySnapshot.get(a.identity?.snapshotId),bm=metadataBySnapshot.get(b.identity?.snapshotId),local=Number(bm?.origin==='local_capture')-Number(am?.origin==='local_capture');if(local)return local;const official=Number(Boolean(bm?.officialEligible))-Number(Boolean(am?.officialEligible));if(official)return official;return Date.parse(operatingReviewRecordTime(b))-Date.parse(operatingReviewRecordTime(a));})[0]||null;
     const outcome=currentOutcomes.find(row=>Number(row.gameweek)===gameweek)||null,evaluation=currentEvaluations.find(row=>Number(row.gameweek)===gameweek)||null;
     return buildWeeklyOperatingReview({gameweek,snapshot,snapshotMetadata:snapshotMetadata.filter(row=>Number(row.gameweek)===gameweek),outcome,outcomeMetadata:outcomeMetadata.filter(row=>Number(row.gameweek)===gameweek),evaluation,transferEvaluations:currentTransfers,availableEvaluationGameweeks:currentEvaluations.map(row=>row.gameweek),revisionRows:allMetadata});
   });
-  const manifest=operatingReviewBuildManifest([...scopedSnapshots,...scopedOutcomes,...scopedEvaluations,...scopedTransfers],allMetadata.filter(row=>Number(row.gameweek)>=resolvedFrom&&Number(row.gameweek)<=resolvedTo));
+  const weeklyReviews=profile==='season_review'?fullWeeklyReviews.map(review=>canonicalise({...review,players:[],minuteFixtures:[],rowDetailsOmitted:true})):fullWeeklyReviews;
+  const availableRecords=[...scopedSnapshots,...scopedOutcomes,...scopedEvaluations,...scopedTransfers],includedRecords=[...scopedSnapshots,...(profile==='weekly_evidence'?scopedOutcomes:[]),...scopedEvaluations,...scopedTransfers];
+  const manifest=operatingReviewBuildManifest(availableRecords,allMetadata.filter(row=>Number(row.gameweek)>=resolvedFrom&&Number(row.gameweek)<=resolvedTo),includedRecords);
   const missingFullRecordIds=manifest.filter(row=>!row.fullRecordAvailable).map(row=>row.recordId),missingEvaluationGameweeks=scopeGameweeks.filter(gameweek=>!currentEvaluations.some(row=>Number(row.gameweek)===gameweek));
   const selectedSeason=String(season||currentEvaluations[0]?.season||currentOutcomes[0]?.season||scopedSnapshots[0]?.season||'');
   const draft=canonicalise({
     recordType:'operatingReviewBundle',schemaVersion:OPERATING_REVIEW_SCHEMA_VERSION,exportFormatVersion:OPERATING_EXPORT_FORMAT_VERSION,reviewVersion:OPERATING_REVIEW_VERSION,
-    profile,scope:{season:selectedSeason,fromGameweek:resolvedFrom,toGameweek:resolvedTo,gameweeks:scopeGameweeks,currentRevisionPolicy:'highest_valid_revision',includeSupersededMetadata:true,includeAvailableSupersededRecords:true},
+    profile,scope:{season:selectedSeason,fromGameweek:resolvedFrom,toGameweek:resolvedTo,gameweeks:scopeGameweeks,currentRevisionPolicy:'local_current_pointer_else_highest_valid_revision',includeSupersededMetadata:true,includeAvailableSupersededRecords:true},
     evidenceThrough:operatingReviewEvidenceThrough([...scopedSnapshots,...scopedOutcomes,...scopedEvaluations,...scopedTransfers]),
     build:{commits:operatingReviewUnique([...scopedSnapshots,...scopedOutcomes,...scopedEvaluations,...scopedTransfers].map(row=>row.build?.commit)),sourceHashes:operatingReviewUnique([...scopedSnapshots,...scopedOutcomes,...scopedEvaluations,...scopedTransfers].map(row=>row.build?.sourceHash))},
     versions:operatingReviewVersionSets([...scopedSnapshots,...scopedOutcomes,...scopedEvaluations,...scopedTransfers]),
-    completeness:{status:missingFullRecordIds.length||missingEvaluationGameweeks.length?'partial':'complete',missingFullRecordIds,missingEvaluationGameweeks,pendingTransferHorizons:weeklyReviews.filter(row=>row.transferHorizon?.status==='in_progress').map(row=>row.gameweek)},
+    completeness:{status:missingFullRecordIds.length||missingEvaluationGameweeks.length?'partial':'complete',missingFullRecordIds,profileExcludedRecordIds:manifest.filter(row=>row.fullRecordAvailable&&!row.includedInBundle).map(row=>row.recordId),missingEvaluationGameweeks,pendingTransferHorizons:weeklyReviews.filter(row=>row.transferHorizon?.status==='in_progress').map(row=>row.gameweek)},
     manifest:{records:manifest},
-    records:{snapshots:scopedSnapshots,outcomes:scopedOutcomes,gameweekEvaluations:scopedEvaluations,transferHorizonEvaluations:scopedTransfers},
+    records:{snapshots:scopedSnapshots,outcomes:profile==='weekly_evidence'?scopedOutcomes:[],gameweekEvaluations:scopedEvaluations,transferHorizonEvaluations:scopedTransfers},
     weeklyReviews,cumulativeReview:buildSeasonOperatingReview(currentEvaluations,currentTransfers),
     identity:{manifestHash:null,reviewDataHash:null,contentHash:null,bundleId:null}
   });
