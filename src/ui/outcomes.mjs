@@ -120,13 +120,13 @@ async function storeOutcomeRecord(record,{origin=OUTCOME_ORIGINS.LOCAL}={}){
   let index=await loadOutcomeIndex();
   const same=index.find(row=>row.origin===origin&&row.logicalKey===checked.record.identity.logicalKey&&row.outcomeDataHash===checked.record.identity.outcomeDataHash&&row.status===checked.record.status);
   if(same) return {index,stored:false,metadata:same};
+  const priorCurrent=index.find(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===checked.record.identity.logicalKey&&row.current)?.outcomeId||null;
   if(origin===OUTCOME_ORIGINS.LOCAL){
     index=index.map(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===checked.record.identity.logicalKey?{...row,current:false}:row);
   }
   const metadata=compactOutcomeMetadata(checked.record,{origin,current:origin===OUTCOME_ORIGINS.LOCAL,hasFullRecord:true});
   index=normaliseOutcomeIndex([metadata,...index.filter(row=>row.outcomeId!==metadata.outcomeId)]);
   const encoded=await encodeEvidenceRecord(checked.record);
-  const priorCurrent=index.find(row=>row.origin===OUTCOME_ORIGINS.LOCAL&&row.logicalKey===metadata.logicalKey&&row.current)?.outcomeId||null;
   await rawEvidenceSet(K_OUTCOME_JOURNAL,stableStringify(stage10Journal({recordType:'gameweekOutcome',recordId:metadata.outcomeId,contentHash:metadata.contentHash,logicalKey:metadata.logicalKey,origin,priorCurrentId:priorCurrent,phase:'prepared'})));
   try{
     try{ await rawEvidenceSet(K_OUTCOME_PREFIX+metadata.outcomeId,encoded); }
@@ -146,7 +146,10 @@ async function storeOutcomeRecord(record,{origin=OUTCOME_ORIGINS.LOCAL}={}){
   }
 }
 async function recoverOutcomeJournal(){
-  const raw=await rawEvidenceGet(K_OUTCOME_JOURNAL);if(!raw)return false;const journal=parseStage10Journal(raw);
+  const raw=await rawEvidenceGet(K_OUTCOME_JOURNAL);if(!raw)return false;let journal=parseStage10Journal(raw);
+  if(!journal){
+    try{const legacy=JSON.parse(raw),keys=['contentHash','outcomeId','startedAt'].sort();if(legacy&&typeof legacy==='object'&&!Array.isArray(legacy)&&stableStringify(Object.keys(legacy).sort())===stableStringify(keys)&&/^outcome-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(legacy.outcomeId||'')&&/^[0-9a-f]{64}$/.test(legacy.contentHash||'')){const candidate=await loadOutcomeRecord(legacy.outcomeId);if(candidate)journal=stage10Journal({recordType:'gameweekOutcome',recordId:legacy.outcomeId,contentHash:legacy.contentHash,logicalKey:candidate.identity.logicalKey,origin:OUTCOME_ORIGINS.LOCAL,priorCurrentId:null,phase:'payload_verified',startedAt:legacy.startedAt});}}catch(error){}
+  }
   if(!journal||journal.recordType!=='gameweekOutcome'){recordStage10Diagnostic('journal_corrupt',{recordType:'gameweekOutcome',severity:'error'});await rawEvidenceDelete(K_OUTCOME_JOURNAL).catch(()=>{});return true;}
   const record=await loadOutcomeRecord(journal.recordId),index=await loadOutcomeIndex();
   if(record&&record.identity.contentHash===journal.contentHash){

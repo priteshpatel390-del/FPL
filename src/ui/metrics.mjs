@@ -65,10 +65,10 @@ async function storeMetricRecord(record){
   const checked=await validateMetricRecord(record);if(!checked.ok) throw new Error(`Metric record rejected: ${checked.reason}`);
   const id=metricId(checked.record),logicalKey=metricLogicalKey(checked.record);let index=await loadMetricIndex();
   const same=index.find(row=>row.logicalKey===logicalKey&&row.contentHash===checked.record.identity.contentHash);if(same) return {stored:false,index,metadata:same};
+  const priorCurrent=index.find(row=>row.logicalKey===logicalKey&&row.current)?.recordId||null;
   index=index.map(row=>row.logicalKey===logicalKey?{...row,current:false}:row);
   const metadata=compactMetricMetadata(checked.record),encoded=await encodeEvidenceRecord(checked.record);
   index=normaliseMetricIndex([metadata,...index.filter(row=>row.recordId!==id)]);
-  const priorCurrent=index.find(row=>row.logicalKey===logicalKey&&row.current)?.recordId||null;
   await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify(stage10Journal({recordType:checked.record.recordType,recordId:id,contentHash:metadata.contentHash,logicalKey,origin:'local_derivation',priorCurrentId:priorCurrent,phase:'prepared'})));
   try{
     try{await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}catch(firstError){for(const row of index.filter(item=>!item.current&&item.hasFullRecord)) await removeMetricPayload(row.recordId);await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}
@@ -79,7 +79,10 @@ async function storeMetricRecord(record){
   }finally{await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});}
 }
 async function recoverMetricJournal(){
-  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw)return false;const journal=parseStage10Journal(raw);
+  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw)return false;let journal=parseStage10Journal(raw);
+  if(!journal){
+    try{const legacy=JSON.parse(raw),keys=['contentHash','recordId','startedAt'].sort();if(legacy&&typeof legacy==='object'&&!Array.isArray(legacy)&&stableStringify(Object.keys(legacy).sort())===stableStringify(keys)&&typeof legacy.recordId==='string'&&/^[0-9a-f]{64}$/.test(legacy.contentHash||'')){const candidate=await loadMetricRecord(legacy.recordId);if(candidate)journal=stage10Journal({recordType:candidate.recordType,recordId:legacy.recordId,contentHash:legacy.contentHash,logicalKey:metricLogicalKey(candidate),origin:'local_derivation',priorCurrentId:null,phase:'payload_verified',startedAt:legacy.startedAt});}}catch(error){}
+  }
   if(!journal||!['gameweekEvaluation','transferHorizonEvaluation'].includes(journal.recordType)){recordStage10Diagnostic('journal_corrupt',{recordType:'gameweekEvaluation',severity:'error'});await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});return true;}
   const record=await loadMetricRecord(journal.recordId),index=await loadMetricIndex();
   if(record&&record.identity.contentHash===journal.contentHash){

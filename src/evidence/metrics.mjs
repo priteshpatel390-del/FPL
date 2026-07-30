@@ -305,7 +305,7 @@ async function buildGameweekEvaluation(snapshot,outcome,{previousRecord=null,cry
   const record=canonicalise({...draft,identity:{...draft.identity,contentHash,evaluationId}});assertEvidenceSafe(record);return {ok:true,unchanged:false,record:deepFreeze(record)};
 }
 function stage10EvaluationShapeError(record){
-  const keys=['completeness','createdAt','deadlineTime','decisions','gameweek','identity','managerRef','metricVersion','observations','recordType','reports','rules','schemaVersion','season','segmentationVersion','sources'].sort();
+  const keys=['completeness','coverage','createdAt','deadlineTime','decisions','gameweek','identity','managerRef','metricVersion','observations','recordType','reports','rules','schemaVersion','season','segmentationVersion','sources'].sort();
   if(!record||record.recordType!=='gameweekEvaluation') return 'record_type';
   if(record.schemaVersion!==METRIC_SCHEMA_VERSION||record.metricVersion!==METRIC_VERSION||record.segmentationVersion!==SEGMENTATION_VERSION) return 'version';
   if(stableStringify(Object.keys(record).sort())!==stableStringify(keys)) return 'top_level_schema';
