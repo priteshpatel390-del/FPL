@@ -42,15 +42,18 @@ jobs:
 
       - name: Verify deterministic exact-identity build
         run: |
-          mkdir -p /tmp/stage10-closeout/build1
+          mkdir -p /tmp/stage10-closeout/build1/dist
           BUILD_COMMIT=0302c54e3eb1d77657b3d892bebb33c90438fa92 node build.mjs
           git diff --exit-code -- index.html dist/index.html dist/app.bundle.js dist/manifest.json
-          cp index.html dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage10-closeout/build1/
+          cp index.html /tmp/stage10-closeout/build1/index.html
+          cp dist/index.html /tmp/stage10-closeout/build1/dist/index.html
+          cp dist/app.bundle.js /tmp/stage10-closeout/build1/dist/app.bundle.js
+          cp dist/manifest.json /tmp/stage10-closeout/build1/dist/manifest.json
           BUILD_COMMIT=0302c54e3eb1d77657b3d892bebb33c90438fa92 node build.mjs
           cmp index.html /tmp/stage10-closeout/build1/index.html
-          cmp dist/index.html /tmp/stage10-closeout/build1/index.html
-          cmp dist/app.bundle.js /tmp/stage10-closeout/build1/app.bundle.js
-          cmp dist/manifest.json /tmp/stage10-closeout/build1/manifest.json
+          cmp dist/index.html /tmp/stage10-closeout/build1/dist/index.html
+          cmp dist/app.bundle.js /tmp/stage10-closeout/build1/dist/app.bundle.js
+          cmp dist/manifest.json /tmp/stage10-closeout/build1/dist/manifest.json
           git diff --exit-code -- index.html dist/index.html dist/app.bundle.js dist/manifest.json
 
       - name: Remove temporary verification workflow
