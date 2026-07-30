@@ -1,21 +1,20 @@
 name: Stage 10.4 verification
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [agent/stage10-4-operating-review]
 
 permissions:
   contents: write
 
 jobs:
   verify:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
       - name: Materialise approved source
         run: |
@@ -58,4 +57,4 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Build Stage 10.4 deployable"
           fi
-          git push origin "HEAD:${{ github.head_ref }}"
+          git push origin "HEAD:${{ github.ref_name }}"
