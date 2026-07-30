@@ -2,12 +2,13 @@
 Purpose: authoritative implementation and verification record for Stage 10.4. Last updated: 2026-07-30.
 
 ## Status
-**Implemented and verified on draft PR #35; not merged.** Exact scope was approved by Pritesh before implementation. Physical iPhone acceptance and explicit merge approval remain required.
+**Complete and merged through PR #35 at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after explicit owner approval.** Exact scope was approved by Pritesh before implementation. Physical iPhone acceptance was not independently recorded.
 
 - Base `main`: `ccfd06a9380714ac987934b5bfd03adba38a2875`
 - Branch: `agent/stage10-4-operating-review`
 - Verified source: `1eca9a8817da41597d0632c819142237d31627fb`
 - Generated artefacts: `1af7dac5383c91e915587218e7551c2f619cec8f`
+- Merge commit: `6a96096cfa59fd3476aa89c191cc8ca6400d358b`
 - Embedded source hash: `d1773a1ae9e36ae28adef232148a3f7e315f21baf989e03e0158c9beefe729ed`
 - Tests: **413 passed, 0 failed, 0 skipped**
 
@@ -83,7 +84,5 @@ GitHub Actions materialised the final source by immutable Git blob identity, ver
 ## Deliberately unchanged
 Projection, expected-minutes, scoring, calibration, fixtures, uncertainty simulation, squad selection, captaincy, transfer optimisation, provider transport/validation, source allowlists, storage limits for earlier evidence stages, primary navigation and deployment hosting.
 
-## Remaining limitations and review gate
-Local evidence retention can make a season bundle partial. CSVs are individual downloads; no XLSX/ZIP/direct Sheets sync exists. Provider comparisons remain observational. Prospective sample size begins at zero. Static phone-first checks pass, but physical iPhone acceptance has not yet been recorded.
-
-PR #35 must remain draft and unmerged until Pritesh reviews the UI/exports, completes physical iPhone acceptance and explicitly approves merge.
+## Remaining limitations
+Local evidence retention can make a season bundle partial. CSVs are individual downloads; no XLSX/ZIP/direct Sheets sync exists. Provider comparisons remain observational. Prospective sample size begins at zero. Static phone-first checks pass, but physical iPhone acceptance was not independently recorded. PR #35 merged at `6a96096cfa59fd3476aa89c191cc8ca6400d358b` after explicit owner approval.
