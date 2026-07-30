@@ -1,6 +1,6 @@
 # Stage 10.3 — Metrics
 
-Status: **implemented and verified on `agent/stage10-3-metrics`; draft PR #32 awaits owner review and explicit merge approval.** Approved by Pritesh on 29 July 2026.
+Status: **complete and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997`.** Approved by Pritesh on 30 July 2026.
 
 Related: `STAGE10-DESIGN.md`, `STAGE10-ITEM1.md`, `STAGE10-ITEM2.md`, `PROJECTION_MODEL.md`, `TESTING.md`, `KNOWN_LIMITATIONS.md`.
 
@@ -85,6 +85,7 @@ No significance, confidence interval, validated-accuracy or calibrated-probabili
 - Root `index.html` matched `dist/index.html` exactly.
 - Manifest and deployable embed source commit `3eaae862b8a8277e450af062ff4bcecd15b12f3f`.
 - Verified generated artefacts commit: `8c4b60a367b9858146b42ff8710d888856462c21`.
+- Merge commit: `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997`.
 - Existing model and characterisation tests were not weakened or regenerated.
 
 ## Files changed
@@ -112,6 +113,6 @@ No projection, expected-minutes, scoring, calibration, fixture, uncertainty, cap
 - Local browser storage remains recovery rather than a permanent archive.
 - The historical r=0.80 result remains method-flattered and is not a live validation benchmark.
 
-## Review gate
+## Next checkpoint
 
-Draft PR #32 must remain unmerged until Pritesh reviews the implementation and explicitly approves the merge. Stage 10.4 remains a separate future scope.
+Stage 10.4 — Operating review/export remains a separate future scope. Investigation and exact-scope approval must happen before implementation.

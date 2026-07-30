@@ -1,5 +1,5 @@
 # ROADMAP.md — living roadmap
-Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-29.
+Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-30.
 Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
 ## Completed
@@ -35,20 +35,23 @@ Related: STAGE_HISTORY.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md,
 - **Stage 10.2 — Official outcome collection** · DONE and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`.
   - Automatic Official FPL player, fixture and optional public manager outcomes with immutable provisional/complete/corrected revisions.
   - Verified source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`: **376/376 tests passed** with byte-identical exact-identity builds; generated artefacts `9d81210b493ab40a542c50709733b14e448a481c`.
+- **Stage 10.3 — Metrics** · DONE and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval.
+  - Immutable player, fixture-minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations remain descriptive only.
+  - Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 tests passed** with byte-identical exact-identity builds; generated artefacts `8c4b60a367b9858146b42ff8710d888856462c21`.
 
 ## Current
-- **Stage 10.3 — Metrics** · implemented and verified on `agent/stage10-3-metrics`; draft PR #32 awaits owner review and explicit merge approval.
-- Immutable player, fixture-minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations are descriptive only.
-- Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 tests passed** with byte-identical exact-identity builds; generated artefacts `8c4b60a367b9858146b42ff8710d888856462c21`.
-- No composite score, model update, threshold change, calibration claim or retrospective recommendation is included.
+- **Stage 10.4 — Operating review/export** · investigation and exact-scope approval only; no implementation has begun.
+- Intended scope may organise weekly/cumulative summaries, completeness review and analysis-friendly exports from existing immutable evidence.
+- No formula, threshold, provider, composite score, automatic model update or validation claim is approved.
 
 ## Upcoming
-1. Owner review of draft PR #32.
-2. Merge only after explicit owner approval.
-3. Begin Stage 10.4 — Operating review/export only in a separate scoped chat after Stage 10.3 merge.
+1. Inspect the merged Stage 10.1–10.3 evidence and metric contracts.
+2. Present the exact Stage 10.4 review surfaces, export schemas, retention rules, missing-data handling, phone-first workflow and tests.
+3. Obtain explicit owner approval before implementation.
+4. Implement only the approved Stage 10.4 scope on a separate branch.
 
 ## Current blockers
-1. Stage 10.3 owner review and merge approval remain open.
+1. Stage 10.4 exact scope and approval are not yet recorded.
 2. A persistent screenshot-regression suite is absent; future visual changes still need human device checks.
 3. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 4. Prospective sample size begins at zero; Stage 10.3 infrastructure does not establish model accuracy or calibration.

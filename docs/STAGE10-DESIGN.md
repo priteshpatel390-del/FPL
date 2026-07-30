@@ -1,5 +1,5 @@
 # STAGE10-DESIGN.md — Prospective Live-Season Validation
-Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 is complete and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`; Stage 10.3 is implemented and verified on draft PR #32. Stage 10.4 has not begun.
+Status: owner-approved on 2026-07-29. Stage 10.1 is complete and merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`; Stage 10.2 is complete and merged through PR #29 at `4b1b2acf9bda81afb63414dd41b509e80b3945c7`; Stage 10.3 is complete and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997`. Stage 10.4 has not begun.
 Related: STAGE10-ITEM1.md, STAGE10-ITEM2.md, STAGE10-ITEM3.md, PROJECTION_MODEL.md, TESTING.md, DATA_SOURCES.md, SECURITY.md, KNOWN_LIMITATIONS.md.
 
 ## Objective
@@ -135,7 +135,7 @@ Corrected outcomes append corrected evaluation revisions. Identical source data 
 
 The mobile-first UI reports player, minutes and uncertainty summaries, coverage/missingness, frozen decisions and completed transfer horizons. It does not use good/bad accuracy colouring, a composite grade or automatic model updates.
 
-Verified Stage 10.3 source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with byte-identical exact-identity builds. Generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. Draft PR #32 awaits owner review and explicit merge approval.
+Verified Stage 10.3 source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with byte-identical exact-identity builds. Generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. The item merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval.
 
 ## Segmentation and sample safeguards
 Approved segments include all/schedule-aligned players, owned and frozen role, primary transfer in/out, position, position-aware frozen-price band, expected-minutes source/confidence, provider state, venue/FDR context, blank/single/double Gameweek, frozen availability, observed role and season period.
@@ -189,6 +189,6 @@ Stage 10.3 acceptance evidence is:
 - successful production build and byte-identical exact-identity rebuild;
 - root/deployable equality and exact build commit identity;
 - verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` and generated artefacts `8c4b60a367b9858146b42ff8710d888856462c21`;
-- draft PR #32 remains unmerged until owner approval.
+- merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval.
 
 Even after Stage 10.5, the correct wording is: **Stage 10 collection and evaluation infrastructure is complete; prospective model validation remains in progress.**

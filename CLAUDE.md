@@ -1,5 +1,5 @@
 # CLAUDE.md — onboarding for every future development session
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-07-29.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-07-30.
 
 ## Owner
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
@@ -16,7 +16,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 10.3 — Metrics is implemented and verified on `agent/stage10-3-metrics`. Immutable correction-aware player, minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations are derived only from exact Stage 10.1/10.2 records and remain descriptive. Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with byte-identical exact-identity builds; generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. Draft PR #32 awaits owner review and explicit merge approval. Stage 10.4 has not begun.
+Stage 10.3 — Metrics is complete and merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval. Immutable correction-aware player, minutes, uncertainty, frozen-squad, captaincy, bench and frozen-transfer evaluations are derived only from exact Stage 10.1/10.2 records and remain descriptive. Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with byte-identical exact-identity builds; generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. The next checkpoint is **Stage 10.4 — Operating review/export**, at investigation and exact-scope approval only; no Stage 10.4 implementation has begun.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
