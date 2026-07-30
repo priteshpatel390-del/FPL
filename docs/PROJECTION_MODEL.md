@@ -1,7 +1,7 @@
 # PROJECTION_MODEL.md — projection engine reference
-Purpose: precise record of the current deterministic projection engine and Stage 8 uncertainty layer.
-Audience: anyone touching model code. Last updated: 2026-07-28.
-Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.
+Purpose: precise record of the current deterministic projection engine, expected-minutes boundary and Stage 8 uncertainty layer.
+Audience: anyone touching model code. Last updated: 2026-07-29.
+Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.
 
 ## Versions and configuration
 - `MODEL_VERSION`: `2.4.0`
@@ -12,6 +12,8 @@ Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, AUDIT.md, KNOWN_LIMITATIONS.md, DEC
 - `TRANSFER_RULES`: Stage 6 optimiser limits and official squad rules
 - `SIMULATION_RULES`: Stage 8 sample limits, thresholds and seed version
 - `ODDS_RULES`: unvalidated market inclusion/staleness configuration
+
+Stage 10.3 introduces separate metric schema/version constants in `evidence/metrics.mjs`; they are evidence/reporting contracts and are not model or rules versions.
 
 ## Deterministic layers
 ### Team strengths to match context
@@ -47,7 +49,7 @@ Before the season is live, deterministic projections continue to use the establi
 ## Multi-Gameweek projection and fixture runs
 `projectXP` sums actual fixtures across the requested span. Doubles add both matches; blanks contribute zero. `runScore` sums real fixture values and divides by requested Gameweeks, with no arbitrary blank or double constants.
 
-Squad review, best XI, captaincy, transfers, Ask context and backtest continue to consume `{total, perGW, games, parts}`. Stage 8 does not change that contract.
+Squad review, best XI, captaincy, transfers, Ask context and backtest continue to consume `{total, perGW, games, parts}`. Stage 8 and Stage 10 do not change that contract.
 
 ## Stage 8 uncertainty layer
 `model/simulation.mjs` sits downstream of deterministic scoring. It reconstructs five mutually exclusive minutes states from pStart, pAppear, p60 and expMin, then samples discrete scoring outcomes using the existing component expectations.
@@ -73,8 +75,7 @@ Poisson and shrinkage constants remain judgement-based. Bonus is empirical rathe
 
 No prediction-accuracy or probability-calibration improvement is claimed. Prospective 2026/27 observations are required before such claims.
 
-
-## Stage 10 snapshot interaction
+## Stage 10.1 snapshot interaction
 Stage 10.1 observes this model; it does not alter it. For every player it stores the existing next-Gameweek component projection, horizon totals, expected-minutes outputs and deterministic live-season uncertainty summary. The raw Monte Carlo arrays are discarded after summarisation, while the unchanged 5,000 sample count, seed and percentiles/probabilities are retained.
 
 The simulation implementation precomputes invariant fixture component expectations before sampling. This removes repeated deterministic work only: random seed, minutes states, Poisson/Bernoulli draws, scoring rules and summary thresholds are unchanged. Prospective outcomes are required before any calibration or accuracy conclusion.
@@ -82,4 +83,24 @@ The simulation implementation precomputes invariant fixture component expectatio
 The Stage 10.1 startup amendment changes only when a fully validated provider state becomes visible. It does not change any projection component, expected-minutes input, blend weight, simulation draw, captaincy choice or optimiser objective.
 
 ## Stage 10.2 outcome interaction
-Stage 10.2 observes Official FPL results after the relevant deadline and does not feed them into runtime projections, expected minutes, calibration, uncertainty, captaincy, squad selection or transfers. Outcome records link to, but never rewrite, the frozen Stage 10.1 snapshot. Any evaluation, threshold, calibration or formula consequence belongs to a separately approved Stage 10.3 or later item.
+Stage 10.2 observes Official FPL results after the relevant deadline and does not feed them into runtime projections, expected minutes, calibration, uncertainty, captaincy, squad selection or transfers. Outcome records link to, but never rewrite, the frozen Stage 10.1 snapshot.
+
+## Stage 10.3 metric interaction
+Stage 10.3 evaluates the exact stored prediction surface; it does not rerun the production model after the deadline.
+
+The player-points prediction is the frozen `outputs.players[].nextGameweek.total`. The simulation mean is not substituted. Minutes and probabilities use the frozen `{pStart,pAppear,p60,expMin}` values. Uncertainty uses the frozen P10/P25/P75/P90 and blank/return/haul/mega-haul probabilities. Frozen squad, captain and transfer evidence uses the exact stored player IDs, bench order, decision context, optimiser baseline, plans and horizon.
+
+`evidence/metrics.mjs` deliberately does not import or invoke `projectXP`, `minutesEstimate`, `simulatePlayerGameweek` or `optimiseTransfers`. This prevents post-deadline inputs from leaking into an old prediction record. Corrections recompute only the descriptive evaluation from the already frozen prediction fields and a newer immutable Official FPL outcome revision.
+
+Stage 10.3 retains the existing production probability thresholds exactly:
+
+- blank: points `<=2`;
+- return: points `>=5`;
+- haul: points `>=10`;
+- mega-haul: points `>=15`.
+
+Their use as outcome labels is evaluation of current behaviour, not a threshold change.
+
+Transfer evaluation uses realised plan points minus the frozen zero-transfer baseline and subtracts frozen hits. It does not treat the optimiser's judgement-based `0.5 × rollDifference` as realised FPL points and does not alter the optimiser formula itself.
+
+Metric outputs are downstream descriptive evidence. They are not read by projections, expected minutes, calibration, simulation, squad selection, captaincy or transfer optimisation. No automatic model update exists. Any future formula, threshold or recommendation change requires a separately approved evidence and validation item.

@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"b26694e2cf4ff552","commit":"e84e7f1bf05ed1f3e574f78101e4a6e413273306"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"b26694e2cf4ff5523b00cf4d434c746b15a376a3e9437d5e7348e2e220c165af","commit":"e84e7f1bf05ed1f3e574f78101e4a6e413273306","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"ebd996110d3f0583","commit":"3eaae862b8a8277e450af062ff4bcecd15b12f3f"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"ebd996110d3f0583d3fa0e220ec0bcd4573dfc15dd9fc6fa1dea22947f9657cc","commit":"3eaae862b8a8277e450af062ff4bcecd15b12f3f","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/ui/views.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -4818,6 +4818,407 @@ function dueOutcomeGameweeks(events=[],now=Date.now()){
 
 
 
+/* ===== src/evidence/metrics.mjs ===== */
+
+const METRIC_SCHEMA_VERSION='1.0.0';
+const METRIC_VERSION='1.0.0';
+const SEGMENTATION_VERSION='1.0.0';
+const TRANSFER_METRIC_SCHEMA_VERSION='1.0.0';
+const METRIC_RULES=Object.freeze({
+  errorBands:Object.freeze([0,2,5,10]),
+  ['reliability'+'Bins']:Object.freeze([0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]),
+  uncertainty:Object.freeze({blankMaximum:2,returnMinimum:5,haulMinimum:10,megaHaulMinimum:15}),
+  samples:Object.freeze({rawMaximum:29,descriptiveMaximum:199,stableMinimum:200,stableGameweeks:10,probabilityBinMinimum:30,probabilityPreferred:500,decisionMinimum:10,providerMinimumGameweeks:5,providerMinimumObservations:100}),
+  localIndexLimit:80,
+  supersededFullLimit:6,
+  maxEncodedBytes:3*1024*1024
+});
+
+function evaluationFinite(value){ if(value===null||value===undefined||value==='') return null; const n=Number(value); return Number.isFinite(n)?n:null; }
+function evaluationMean(values){ return values.length?values.reduce((a,b)=>a+b,0)/values.length:null; }
+function evaluationSameArray(a,b){ return a.length===b.length&&a.every((value,index)=>value===b[index]); }
+function evaluationSortedNumbers(values){ return [...new Set((values||[]).map(Number).filter(Number.isFinite))].sort((a,b)=>a-b); }
+function evaluationSetEqual(a,b){ return evaluationSameArray(evaluationSortedNumbers(a),evaluationSortedNumbers(b)); }
+function evaluationRound(value){ return Number.isFinite(value)?Number(value.toFixed(8)):null; }
+function evaluationPositionLabel(position){ return ({1:'GKP',2:'DEF',3:'MID',4:'FWD'})[Number(position)]||'Unknown'; }
+function evaluationSeasonPeriod(gameweek){ const gw=Number(gameweek); return gw<1?'pre-season':gw<=6?'early':gw<=12?'transition':'mature'; }
+function evaluationPriceBand(position,nowCost){
+  const price=Number(nowCost)/10, pos=Number(position);
+  if(!Number.isFinite(price)) return 'unknown';
+  if(pos===1||pos===2) return price<=4.4?'up_to_4.4':price<=5.4?'4.5_to_5.4':'5.5_plus';
+  if(pos===3) return price<=5.4?'up_to_5.4':price<=7.4?'5.5_to_7.4':price<=9.9?'7.5_to_9.9':'10.0_plus';
+  if(pos===4) return price<=5.4?'up_to_5.4':price<=7.4?'5.5_to_7.4':price<=9.4?'7.5_to_9.4':'9.5_plus';
+  return 'unknown';
+}
+function evaluationAvailabilityLabel(status){
+  const value=String(status||'');
+  if(['i','u','s','n'].includes(value)) return 'unavailable';
+  if(value==='d') return 'doubtful';
+  if(value==='a') return 'available';
+  return 'unknown';
+}
+function evaluationErrorBand(error){
+  const value=Math.abs(Number(error));
+  if(value===0) return 'exact';
+  if(value<=2) return 'small';
+  if(value<=5) return 'material';
+  if(value<=10) return 'large';
+  return 'very_large';
+}
+function evaluationPearson(xs,ys){
+  if(xs.length!==ys.length||xs.length<3) return null;
+  const mx=evaluationMean(xs),my=evaluationMean(ys); let sxy=0,sxx=0,syy=0;
+  for(let i=0;i<xs.length;i++){ const dx=xs[i]-mx,dy=ys[i]-my; sxy+=dx*dy;sxx+=dx*dx;syy+=dy*dy; }
+  return sxx&&syy?evaluationRound(sxy/Math.sqrt(sxx*syy)):null;
+}
+function evaluationAverageRanks(values){
+  const indexed=values.map((value,index)=>({value,index})).sort((a,b)=>a.value-b.value||a.index-b.index),ranks=Array(values.length);
+  for(let i=0;i<indexed.length;){
+    let j=i+1; while(j<indexed.length&&indexed[j].value===indexed[i].value) j++;
+    const rank=(i+1+j)/2; for(let k=i;k<j;k++) ranks[indexed[k].index]=rank; i=j;
+  }
+  return ranks;
+}
+function evaluationSpearman(xs,ys){ return xs.length===ys.length&&xs.length>=3?evaluationPearson(evaluationAverageRanks(xs),evaluationAverageRanks(ys)):null; }
+function evaluationMetricSummary(rows,predictedKey='predicted',observedKey='observed'){
+  const clean=(rows||[]).map(row=>({predicted:evaluationFinite(row?.[predictedKey]),observed:evaluationFinite(row?.[observedKey])})).filter(row=>row.predicted!==null&&row.observed!==null);
+  if(!clean.length) return {n:0,mae:null,rmse:null,bias:null,['pear'+'son']:null,['spear'+'man']:null,predictedMean:null,observedMean:null,within15:null,within30:null};
+  const errors=clean.map(row=>row.predicted-row.observed),xs=clean.map(row=>row.predicted),ys=clean.map(row=>row.observed);
+  return canonicalise({
+    n:clean.length,
+    mae:evaluationRound(evaluationMean(errors.map(Math.abs))),
+    rmse:evaluationRound(Math.sqrt(evaluationMean(errors.map(value=>value*value)))),
+    bias:evaluationRound(evaluationMean(errors)),
+    ['pear'+'son']:evaluationPearson(xs,ys),['spear'+'man']:evaluationSpearman(xs,ys),
+    predictedMean:evaluationRound(evaluationMean(xs)),observedMean:evaluationRound(evaluationMean(ys)),
+    within15:evaluationRound(evaluationMean(errors.map(value=>Math.abs(value)<=15?1:0))),
+    within30:evaluationRound(evaluationMean(errors.map(value=>Math.abs(value)<=30?1:0)))
+  });
+}
+function evaluationBrierScore(rows,probabilityKey='probability',outcomeKey='outcome'){
+  const clean=(rows||[]).map(row=>({probability:evaluationFinite(row?.[probabilityKey]),outcome:evaluationFinite(row?.[outcomeKey])})).filter(row=>row.probability!==null&&row.probability>=0&&row.probability<=1&&(row.outcome===0||row.outcome===1));
+  if(!clean.length) return {n:0,brier:null,predictedRate:null,observedRate:null,gap:null};
+  const errors=clean.map(row=>(row.probability-row.outcome)**2),predictedRate=evaluationMean(clean.map(row=>row.probability)),observedRate=evaluationMean(clean.map(row=>row.outcome));
+  return canonicalise({n:clean.length,brier:evaluationRound(evaluationMean(errors)),predictedRate:evaluationRound(predictedRate),observedRate:evaluationRound(observedRate),gap:evaluationRound(predictedRate-observedRate)});
+}
+function evaluationReliabilityBins(rows,probabilityKey='probability',outcomeKey='outcome'){
+  const clean=(rows||[]).map(row=>({probability:evaluationFinite(row?.[probabilityKey]),outcome:evaluationFinite(row?.[outcomeKey])})).filter(row=>row.probability!==null&&row.probability>=0&&row.probability<=1&&(row.outcome===0||row.outcome===1));
+  const edges=METRIC_RULES['reliability'+'Bins'];
+  return edges.slice(0,-1).map((lower,index)=>{
+    const upper=edges[index+1],last=index===edges.length-2;
+    const bin=clean.filter(row=>row.probability>=lower&&(last?row.probability<=upper:row.probability<upper));
+    const predicted=evaluationMean(bin.map(row=>row.probability)),observed=evaluationMean(bin.map(row=>row.outcome));
+    return canonicalise({lower,upper,inclusiveUpper:last,n:bin.length,eventCount:bin.reduce((sum,row)=>sum+row.outcome,0),meanPredicted:evaluationRound(predicted),observedFrequency:bin.length>=METRIC_RULES.samples.probabilityBinMinimum?evaluationRound(observed):null,gap:bin.length>=METRIC_RULES.samples.probabilityBinMinimum?evaluationRound(predicted-observed):null,display:bin.length>=METRIC_RULES.samples.probabilityBinMinimum?'descriptive':'insufficient'});
+  });
+}
+function evaluationIntervalSummary(rows,lowerKey,upperKey,observedKey='observed'){
+  const clean=(rows||[]).map(row=>({lower:evaluationFinite(row?.[lowerKey]),upper:evaluationFinite(row?.[upperKey]),observed:evaluationFinite(row?.[observedKey])})).filter(row=>row.lower!==null&&row.upper!==null&&row.observed!==null&&row.lower<=row.upper);
+  return canonicalise({n:clean.length,coverage:clean.length?evaluationRound(evaluationMean(clean.map(row=>row.observed>=row.lower&&row.observed<=row.upper?1:0))):null,width:clean.length?evaluationRound(evaluationMean(clean.map(row=>row.upper-row.lower))):null});
+}
+function evaluationSampleStatus(observationCount,gameweekCount,{kind='general'}={}){
+  const n=Math.max(0,Number(observationCount)||0),gws=Math.max(0,Number(gameweekCount)||0),rules=METRIC_RULES.samples;
+  if(kind==='decision') return canonicalise({level:n<rules.decisionMinimum?'raw_only':'descriptive',message:n<rules.decisionMinimum?'Fewer than ten relevant decisions — individual records only.':'Descriptive decision sample — no significance claim.'});
+  if(kind==='provider'){
+    const ready=n>=rules.providerMinimumObservations&&gws>=rules.providerMinimumGameweeks;
+    return canonicalise({level:ready?'descriptive':'raw_only',message:ready?'Descriptive provider-state sample — observational, not causal.':'Provider comparison needs at least 100 observations across five affected Gameweeks.'});
+  }
+  if(n<30) return canonicalise({level:'raw_only',message:'Very small sample — values are recorded but should not be interpreted.'});
+  if(n<rules.stableMinimum||gws<rules.stableGameweeks) return canonicalise({level:'descriptive',message:'Descriptive sample — results may move substantially as more Gameweeks are added.'});
+  return canonicalise({level:'potentially_stable',message:'Potentially stable descriptive sample — not a formal validation or significance claim.'});
+}
+function evaluationFixtureStat(detail,identifier){ return evaluationFinite(detail?.officialStats?.find(row=>row.identifier===identifier)?.value); }
+function evaluationFixturesForClub(fixtures,clubId,gameweek){
+  return (fixtures||[]).filter(row=>Number(row.event)===Number(gameweek)&&(Number(row.team_h)===Number(clubId)||Number(row.team_a)===Number(clubId))).sort((a,b)=>Number(a.id)-Number(b.id));
+}
+function evaluationOutcomeFixturesForClub(fixtures,clubId){
+  return (fixtures||[]).filter(row=>Number(row.homeTeamId)===Number(clubId)||Number(row.awayTeamId)===Number(clubId)).sort((a,b)=>Number(a.fixtureId)-Number(b.fixtureId));
+}
+function evaluationFixtureContext(frozenFixtures,clubId){
+  if(!frozenFixtures.length) return {fixtureClass:'blank',homeAway:'blank',fdrContext:'blank',fixtureIds:[]};
+  const venues=frozenFixtures.map(row=>Number(row.team_h)===Number(clubId)?'home':'away');
+  const fdr=frozenFixtures.map(row=>Number(row.team_h)===Number(clubId)?row.team_h_difficulty:row.team_a_difficulty);
+  return {fixtureClass:frozenFixtures.length===1?'single':'double',homeAway:new Set(venues).size===1?venues[0]:'mixed',fdrContext:fdr.map(value=>value==null?'?':String(value)).join('+'),fixtureIds:frozenFixtures.map(row=>Number(row.id))};
+}
+function evaluationObservedRole(outcome){
+  if(!outcome||Number(outcome.minutes)<=0) return 'dnp';
+  const starts=evaluationFinite(outcome.starts);
+  if(starts===null) return 'appeared_unknown_start';
+  const fixtures=Math.max(1,(outcome.perFixture||[]).length);
+  if(starts>=fixtures) return fixtures>1?'all_started':'started';
+  if(starts>0) return 'mixed';
+  return 'substitute_only';
+}
+function evaluationAllocateMinuteFixtures(prediction,outcome,frozenFixtures,finalFixtures){
+  const details=new Map((outcome?.perFixture||[]).map(row=>[Number(row.fixtureId),row]));
+  const totalMinutes=evaluationFinite(outcome?.minutes),totalStarts=evaluationFinite(outcome?.starts),frozenIds=frozenFixtures.map(row=>Number(row.id));
+  const alignedIds=new Set(finalFixtures.map(row=>Number(row.fixtureId)));
+  const knownMinutes=frozenIds.map(id=>evaluationFixtureStat(details.get(id),'minutes'));
+  const knownStarts=frozenIds.map(id=>evaluationFixtureStat(details.get(id),'starts'));
+  const minuteKnownSum=knownMinutes.filter(value=>value!==null).reduce((a,b)=>a+b,0),startKnownSum=knownStarts.filter(value=>value!==null).reduce((a,b)=>a+b,0);
+  const missingMinuteIndexes=knownMinutes.map((value,index)=>value===null?index:-1).filter(index=>index>=0),missingStartIndexes=knownStarts.map((value,index)=>value===null?index:-1).filter(index=>index>=0);
+  if(frozenIds.length===1&&knownMinutes[0]===null&&totalMinutes!==null) knownMinutes[0]=totalMinutes;
+  else if(totalMinutes!==null&&missingMinuteIndexes.length&&minuteKnownSum===totalMinutes) missingMinuteIndexes.forEach(index=>knownMinutes[index]=0);
+  if(frozenIds.length===1&&knownStarts[0]===null&&totalStarts!==null) knownStarts[0]=totalStarts;
+  else if(totalStarts!==null&&missingStartIndexes.length&&startKnownSum===totalStarts) missingStartIndexes.forEach(index=>knownStarts[index]=0);
+  return frozenFixtures.map((fixture,index)=>{
+    const fixtureId=Number(fixture.id),scheduleAligned=alignedIds.has(fixtureId),minutes=knownMinutes[index];
+    const observedMinutes=minutes===null&&!scheduleAligned?0:minutes;
+    const starts=knownStarts[index]===null&&!scheduleAligned&&totalStarts!==null?0:knownStarts[index];
+    const validMinutes=observedMinutes!==null&&observedMinutes>=0&&observedMinutes<=90;
+    return canonicalise({
+      playerId:Number(prediction.playerId),fixtureId,scheduleAligned,
+      predictedMinutes:evaluationFinite(prediction.minutes?.expMin),observedMinutes:validMinutes?observedMinutes:null,
+      pStart:evaluationFinite(prediction.minutes?.pStart),started:starts===null?null:starts>0?1:0,
+      pAppear:evaluationFinite(prediction.minutes?.pAppear),appeared:validMinutes?(observedMinutes>0?1:0):null,
+      p60:evaluationFinite(prediction.minutes?.p60),reachedSixty:validMinutes?(observedMinutes>=60?1:0):null,
+      allocation:details.has(fixtureId)?'official_per_fixture':observedMinutes!==null?'reconciled_or_single':'unallocatable'
+    });
+  });
+}
+function evaluationFormationCounts(ids,positions){
+  const counts={1:0,2:0,3:0,4:0}; (ids||[]).forEach(id=>{ const position=Number(positions.get(Number(id))); if(counts[position]!==undefined) counts[position]++; }); return counts;
+}
+function evaluationLegalXIIds(ids,positions){ const c=evaluationFormationCounts(ids,positions); return ids.length===11&&c[1]===1&&c[2]>=3&&c[3]>=2&&c[4]>=1; }
+function evaluationCombinations(values,size,start=0,chosen=[],out=[]){
+  if(chosen.length===size){ out.push(chosen.slice()); return out; }
+  for(let i=start;i<=values.length-(size-chosen.length);i++){ chosen.push(values[i]);evaluationCombinations(values,size,i+1,chosen,out);chosen.pop(); }
+  return out;
+}
+function evaluationEnumerateLegalXIs(squadIds,positions){ return evaluationCombinations(evaluationSortedNumbers(squadIds),11).filter(ids=>evaluationLegalXIIds(ids,positions)); }
+function evaluationBenchOrderForXI(squadIds,xiIds,positions,scoreById){
+  const selected=new Set(xiIds.map(Number)),bench=squadIds.filter(id=>!selected.has(Number(id)));
+  const goalkeeper=bench.filter(id=>Number(positions.get(Number(id)))===1).sort((a,b)=>a-b);
+  const outfield=bench.filter(id=>Number(positions.get(Number(id)))!==1).sort((a,b)=>(Number(scoreById.get(Number(b)))||0)-(Number(scoreById.get(Number(a)))||0)||Number(a)-Number(b));
+  return [...goalkeeper,...outfield];
+}
+function evaluationApplyRealisedAutosubs(starterIds,benchIds,positions,outcomeById){
+  const active=starterIds.map(Number),used=[],replacements=[];
+  const appeared=id=>Boolean(outcomeById.get(Number(id))?.appeared),missingOutfield=()=>active.map((id,index)=>({id,index})).filter(row=>Number(positions.get(row.id))!==1&&!appeared(row.id));
+  const goalkeeperIndex=active.findIndex(id=>Number(positions.get(id))===1&&!appeared(id));
+  if(goalkeeperIndex>=0){ const reserve=benchIds.map(Number).find(id=>Number(positions.get(id))===1&&appeared(id)); if(reserve!=null){ replacements.push({playerOut:active[goalkeeperIndex],playerIn:reserve});active[goalkeeperIndex]=reserve;used.push(reserve); } }
+  for(const substitute of benchIds.map(Number).filter(id=>Number(positions.get(id))!==1)){
+    if(!appeared(substitute)||used.includes(substitute)) continue;
+    for(const candidate of missingOutfield()){
+      const trial=active.slice();trial[candidate.index]=substitute;
+      if(evaluationLegalXIIds(trial,positions)){ replacements.push({playerOut:candidate.id,playerIn:substitute});active[candidate.index]=substitute;used.push(substitute);break; }
+    }
+  }
+  const scoringXI=active.filter(appeared),basePoints=scoringXI.reduce((sum,id)=>sum+(evaluationFinite(outcomeById.get(id)?.points)||0),0);
+  return canonicalise({activeXI:active,scoringXI,usedBenchIds:used,replacements,basePoints,autoSubContribution:used.reduce((sum,id)=>sum+(evaluationFinite(outcomeById.get(id)?.points)||0),0)});
+}
+function evaluationCaptainPairScore(captainId,viceId,outcomeById){
+  const captain=outcomeById.get(Number(captainId)),vice=outcomeById.get(Number(viceId));
+  const effective=captain?.appeared?Number(captainId):vice?.appeared?Number(viceId):null;
+  return canonicalise({captainId:Number(captainId)||null,viceCaptainId:Number(viceId)||null,effectiveCaptainId:effective,viceTookOver:effective===Number(viceId),doubledContribution:effective==null?0:evaluationFinite(outcomeById.get(effective)?.points)||0});
+}
+function evaluationManagerDecisionEvaluation(managerOutcome,playerRows,positions){
+  if(!managerOutcome||managerOutcome.status==='not_available'||!Array.isArray(managerOutcome.picks)||managerOutcome.picks.length!==15)
+    return canonicalise({status:'not_available',reason:managerOutcome?.reason||'public_manager_outcome_unavailable'});
+  const points=new Map(playerRows.map(row=>[Number(row.playerId),Number(row.observedPoints)||0])),appeared=new Map(playerRows.map(row=>[Number(row.playerId),Boolean(row.appeared)]));
+  const picks=managerOutcome.picks.slice().sort((a,b)=>Number(a.position)-Number(b.position)||Number(a.playerId)-Number(b.playerId));
+  const starters=picks.filter(row=>Number(row.position)<=11).map(row=>Number(row.playerId)),bench=picks.filter(row=>Number(row.position)>11).map(row=>Number(row.playerId));
+  const outcomeById=new Map(picks.map(row=>[Number(row.playerId),{points:points.get(Number(row.playerId))||0,appeared:appeared.get(Number(row.playerId))||false}]));
+  const reconstructed=evaluationApplyRealisedAutosubs(starters,bench,positions,outcomeById),officialSubs=(managerOutcome.automaticSubstitutions||[]).map(row=>({playerOut:Number(row.playerOut),playerIn:Number(row.playerIn)}));
+  const officialPairs=officialSubs.map(row=>`${row.playerOut}>${row.playerIn}`).sort(),reconstructedPairs=reconstructed.replacements.map(row=>`${row.playerOut}>${row.playerIn}`).sort();
+  const multiplierXI=picks.filter(row=>Number(row.multiplier)>0).map(row=>Number(row.playerId)),legal=evaluationLegalXIIds(reconstructed.activeXI,positions),captain=managerOutcome.captain,vice=managerOutcome.viceCaptain;
+  return canonicalise({status:legal&&evaluationSameArray(officialPairs,reconstructedPairs)?'available':'partial',legalRealisedXI:legal,startingXIPlayerIds:starters,benchOrder:bench,officialScoringPlayerIds:multiplierXI,reconstructedScoringPlayerIds:reconstructed.scoringXI,officialAutomaticSubstitutions:officialSubs,reconstructedAutomaticSubstitutions:reconstructed.replacements,automaticSubstitutionAgreement:evaluationSameArray(officialPairs,reconstructedPairs),reconstructedBasePoints:reconstructed.basePoints,officialGameweekPoints:managerOutcome.officialGameweekPoints,officialPointsOnBench:managerOutcome.officialPointsOnBench,activeChip:managerOutcome.activeChip,captain:captain||null,viceCaptain:vice||null,transferCount:managerOutcome.eventTransferCount,transferCost:managerOutcome.eventTransferCost,reconstruction:managerOutcome.reconstruction||null});
+}
+function evaluationDecisionEvaluation(snapshot,playerRows){
+  const squad=snapshot.outputs?.squad;
+  if(squad?.status!=='available'||!squad.modelDecision) return canonicalise({status:'not_available',reason:'complete_frozen_squad_unavailable',squad:null,captaincy:null,bench:null,managerOutcome:null,transferBasis:null});
+  const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));
+  const outcomeById=new Map(playerRows.map(row=>[Number(row.playerId),{points:row.observedPoints,appeared:row.appeared}]));
+  const positions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),Number(row.position)]));
+  const squadIds=squad.players.map(row=>Number(row.playerId)),starters=squad.modelDecision.bestXIPlayerIds.map(Number),bench=squad.modelDecision.benchPlayerIds.map(Number);
+  const selected=evaluationApplyRealisedAutosubs(starters,bench,positions,outcomeById);
+  const legalXIs=evaluationEnumerateLegalXIs(squadIds,positions),predictedScore=id=>evaluationFinite(allPredictions.get(Number(id))?.nextGameweek?.total)||0;
+  const alternatives=legalXIs.map(ids=>{
+    const scoreById=new Map(squadIds.map(id=>[id,predictedScore(id)])),orderedBench=evaluationBenchOrderForXI(squadIds,ids,positions,scoreById),realised=evaluationApplyRealisedAutosubs(ids,orderedBench,positions,outcomeById);
+    return {playerIds:ids,formation:Object.values(evaluationFormationCounts(ids,positions)).slice(1).join('-'),predictedPoints:evaluationRound(ids.reduce((sum,id)=>sum+predictedScore(id),0)),realisedPoints:realised.basePoints,benchPlayerIds:orderedBench};
+  }).sort((a,b)=>b.predictedPoints-a.predictedPoints||a.playerIds.join(',').localeCompare(b.playerIds.join(',')));
+  const selectedKey=evaluationSortedNumbers(starters).join(','),realisedOrder=alternatives.slice().sort((a,b)=>b.realisedPoints-a.realisedPoints||a.playerIds.join(',').localeCompare(b.playerIds.join(','))),selectedIndex=realisedOrder.findIndex(row=>row.playerIds.join(',')===selectedKey),selectedRank=selectedIndex>=0?selectedIndex+1:null;
+  const oracle=realisedOrder[0]||null;
+  const rankedCandidates=starters.slice().sort((a,b)=>predictedScore(b)-predictedScore(a)||a-b),captainId=Number(squad.modelDecision.captainId),viceId=Number(squad.modelDecision.viceCaptainId);
+  const selectedPair=evaluationCaptainPairScore(captainId,viceId,outcomeById),vicePair=evaluationCaptainPairScore(viceId,captainId,outcomeById);
+  const candidateRows=rankedCandidates.map(id=>{ const alternateVice=rankedCandidates.find(other=>other!==id)??null; return {...evaluationCaptainPairScore(id,alternateVice,outcomeById),frozenRank:rankedCandidates.indexOf(id)+1,predictedPoints:predictedScore(id)}; });
+  const unusedBench=bench.filter(id=>!selected.usedBenchIds.includes(id)),pointsLeftOnBench=unusedBench.reduce((sum,id)=>sum+(evaluationFinite(outcomeById.get(id)?.points)||0),0);
+  const providerPlans=squad.optimiser?.plans||[],baseline=squad.optimiser?.baseline||null,primaryPlan=providerPlans.find(plan=>Number(plan.transferCount)>0)||null;
+  const transferIds=new Set([...(baseline?.finalSquadIds||[]),...providerPlans.flatMap(plan=>plan.finalSquadIds||[])]);
+  const transferPlayers=[...transferIds].sort((a,b)=>a-b).map(id=>({playerId:id,position:positions.get(id)||null,perGameweek:(allPredictions.get(id)?.perGameweek||[]).map(row=>({gw:Number(row.gw),total:evaluationFinite(row.total)||0}))}));
+  return canonicalise({
+    status:'available',
+    squad:{frozenPlayerIds:evaluationSortedNumbers(squadIds),selectedXIPlayerIds:starters,selectedBenchPlayerIds:bench,selectedRealised:selected,topFrozenAlternatives:alternatives.slice(0,3),selectedRealisedRank:selectedRank,hindsightOracle:oracle?{label:'Hindsight oracle',playerIds:oracle.playerIds,formation:oracle.formation,realisedPoints:oracle.realisedPoints}:null},
+    captaincy:{selected:selectedPair,selectedViceAsCaptain:vicePair,topThreeFrozenCandidates:candidateRows.slice(0,3),allFrozenCandidates:candidateRows,hindsightBest:candidateRows.slice().sort((a,b)=>b.doubledContribution-a.doubledContribution||a.captainId-b.captainId)[0]||null,userPreview:squad.userPreview||null},
+    bench:{benchOrder:bench,automaticSubstitutions:selected.replacements,automaticSubstitutionContribution:selected.autoSubContribution,unusedBenchPlayerIds:unusedBench,pointsLeftOnBench},
+    managerOutcome:null,
+    transferBasis:squad.optimiser?{status:squad.optimiser.status,horizon:Number(squad.optimiser.horizon)||0,baseline,plans:providerPlans,primaryPlan,players:transferPlayers}:null
+  });
+}
+function evaluationPlayerSegments(prediction,snapshot,squadSets,fixture,official,primaryTransfers){
+  const providerStates=Object.fromEntries((snapshot.providers||[]).map(row=>[row.provider,row.state]));
+  const id=Number(prediction.playerId),position=Number(prediction.position),owned=squadSets.owned.has(id),selected=squadSets.selected.has(id),bench=squadSets.bench.has(id);
+  return canonicalise({
+    allPlayers:'all',owned:owned?'owned':'not_owned',recommendation:selected?'selected_xi':bench?'bench':primaryTransfers.in.has(id)?'primary_transfer_in':primaryTransfers.out.has(id)?'primary_transfer_out':'other',
+    position:evaluationPositionLabel(position),['price'+'Band']:evaluationPriceBand(position,prediction.nowCost),minutesSource:String(prediction.minutes?.source||'unknown'),minutesConfidence:String(prediction.minutes?.confidenceLabel||'Unknown'),providerStates,
+    homeAway:fixture.homeAway,fdrContext:fixture.fdrContext,fixtureClass:fixture.fixtureClass,availability:evaluationAvailabilityLabel(prediction.status),['observed'+'Role']:evaluationObservedRole(official),['season'+'Period']:evaluationSeasonPeriod(snapshot.gameweek)
+  });
+}
+function evaluationOutcomeCoverage(predictions,outcomes,matchedRows,minuteRows){
+  const predictedIds=new Set(predictions.map(row=>Number(row.playerId))),outcomeIds=new Set(outcomes.map(row=>Number(row.playerId)));
+  const unmatchedPredictions=[...predictedIds].filter(id=>!outcomeIds.has(id)).sort((a,b)=>a-b),unmatchedOutcomes=[...outcomeIds].filter(id=>!predictedIds.has(id)).sort((a,b)=>a-b);
+  return canonicalise({eligiblePredictions:predictions.length,officialOutcomes:outcomes.length,matchedPlayers:matchedRows.length,coverage:predictions.length?evaluationRound(matchedRows.length/predictions.length):null,unmatchedPredictions,unmatchedOutcomes,minuteFixtureRows:minuteRows.length,unallocatableMinuteRows:minuteRows.filter(row=>row.observedMinutes===null).length,startLabelRows:minuteRows.filter(row=>row.started!==null).length,uncertaintyRows:matchedRows.filter(row=>row.uncertainty?.available).length,scheduleAlignedPlayers:matchedRows.filter(row=>row.scheduleAligned).length});
+}
+function evaluationPlayerReport(rows){
+  const summary=evaluationMetricSummary(rows,'predictedPoints','observedPoints');
+  const bands={exact:0,small:0,material:0,large:0,very_large:0}; rows.forEach(row=>{ const band=row['error'+'Band']; if(bands[band]!==undefined) bands[band]++; });
+  return canonicalise({...summary,errorBands:bands,withinTwo:rows.length?evaluationRound(evaluationMean(rows.map(row=>row.absError<=2?1:0))):null,withinFive:rows.length?evaluationRound(evaluationMean(rows.map(row=>row.absError<=5?1:0))):null});
+}
+function evaluationMinutesReport(rows){
+  const usable=rows.filter(row=>row.observedMinutes!==null),started=rows.filter(row=>row.started!==null).map(row=>({probability:row.pStart,outcome:row.started})),appeared=rows.filter(row=>row.appeared!==null).map(row=>({probability:row.pAppear,outcome:row.appeared})),sixty=rows.filter(row=>row.reachedSixty!==null).map(row=>({probability:row.p60,outcome:row.reachedSixty}));
+  return canonicalise({continuous:evaluationMetricSummary(usable,'predictedMinutes','observedMinutes'),start:{...evaluationBrierScore(started),reliability:evaluationReliabilityBins(started)},appearance:{...evaluationBrierScore(appeared),reliability:evaluationReliabilityBins(appeared)},sixty:{...evaluationBrierScore(sixty),reliability:evaluationReliabilityBins(sixty)}});
+}
+function evaluationUncertaintyReport(rows){
+  const available=rows.filter(row=>row.uncertainty?.available).map(row=>({...row.uncertainty,observed:row.observedPoints}));
+  const event=(probabilityKey,outcomeFn)=>{ const values=available.map(row=>({probability:row[probabilityKey],outcome:outcomeFn(row.observed)?1:0})); return {...evaluationBrierScore(values),reliability:evaluationReliabilityBins(values)}; };
+  return canonicalise({n:available.length,p10P90:evaluationIntervalSummary(available,'p10','p90'),p25P75:evaluationIntervalSummary(available,'p25','p75'),blank:event('blankProbability',value=>value<=METRIC_RULES.uncertainty.blankMaximum),return:event('returnProbability',value=>value>=METRIC_RULES.uncertainty.returnMinimum),haul:event('haulProbability',value=>value>=METRIC_RULES.uncertainty.haulMinimum),megaHaul:event('megaHaulProbability',value=>value>=METRIC_RULES.uncertainty.megaHaulMinimum)});
+}
+function stage10EvaluationDataMaterial(record){ return canonicalise({season:record.season,gameweek:record.gameweek,deadlineTime:record.deadlineTime,sources:record.sources,observations:record.observations,decisions:record.decisions,coverage:record.coverage,reports:record.reports,completeness:record.completeness}); }
+function stage10EvaluationHashMaterial(record){ const copy=canonicalise(record); if(copy.identity){ delete copy.identity.contentHash;delete copy.identity.evaluationId; } return copy; }
+async function buildGameweekEvaluation(snapshot,outcome,{previousRecord=null,cryptoImpl=globalThis.crypto}={}){
+  if(!snapshot||snapshot.recordType!=='preDeadlineSnapshot') return {ok:false,reason:'snapshot_type'};
+  if(!outcome||outcome.recordType!=='gameweekOutcome') return {ok:false,reason:'outcome_type'};
+  if(!['complete','corrected'].includes(outcome.status)||!outcome.completeness?.complete) return {ok:false,reason:'outcome_not_authoritative'};
+  if(!snapshot.timing?.officialEligible||!snapshot.completeness?.complete) return {ok:false,reason:'snapshot_not_official'};
+  if(snapshot.season!==outcome.season||Number(snapshot.gameweek)!==Number(outcome.gameweek)||snapshot.deadlineTime!==outcome.officialDeadlineIdentity?.deadlineTime) return {ok:false,reason:'identity_mismatch'};
+  if(outcome.relatedSnapshot?.status!=='matched_official'||outcome.relatedSnapshot.snapshotId!==snapshot.identity?.snapshotId||outcome.relatedSnapshot.contentHash!==snapshot.identity?.contentHash) return {ok:false,reason:'snapshot_link'};
+  if(snapshot.managerRef!==outcome.managerRef) return {ok:false,reason:'manager_ref'};
+  const predictions=(snapshot.outputs?.players||[]).slice().sort((a,b)=>Number(a.playerId)-Number(b.playerId)),outcomes=(outcome.allPlayerOutcomes?.records||[]).slice().sort((a,b)=>Number(a.playerId)-Number(b.playerId)),outcomeById=new Map(outcomes.map(row=>[Number(row.playerId),row]));
+  if(new Set(predictions.map(row=>Number(row.playerId))).size!==predictions.length) return {ok:false,reason:'duplicate_prediction_player'};
+  if(new Set(outcomes.map(row=>Number(row.playerId))).size!==outcomes.length) return {ok:false,reason:'duplicate_outcome_player'};
+  const squad=snapshot.outputs?.squad,squadSets={owned:new Set(squad?.players?.map(row=>Number(row.playerId))||[]),selected:new Set(squad?.modelDecision?.bestXIPlayerIds?.map(Number)||[]),bench:new Set(squad?.modelDecision?.benchPlayerIds?.map(Number)||[])};
+  const primary=squad?.optimiser?.plans?.find(plan=>Number(plan.transferCount)>0),primaryTransfers={in:new Set((primary?.transfers||[]).map(row=>Number(row.inPlayerId))),out:new Set((primary?.transfers||[]).map(row=>Number(row.outPlayerId)))};
+  const playerRows=[],minuteRows=[];
+  for(const prediction of predictions){
+    const official=outcomeById.get(Number(prediction.playerId)); if(!official) continue;
+    const frozenFixtures=evaluationFixturesForClub(snapshot.modelInputs?.fixtures,Number(prediction.clubId),snapshot.gameweek),finalFixtures=evaluationOutcomeFixturesForClub(outcome.fixtureOutcomes?.records,Number(prediction.clubId)),fixture=evaluationFixtureContext(frozenFixtures,Number(prediction.clubId)),scheduleAligned=evaluationSetEqual(frozenFixtures.map(row=>row.id),finalFixtures.map(row=>row.fixtureId));
+    const predictedPoints=evaluationFinite(prediction.nextGameweek?.total),observedPoints=evaluationFinite(official.totalPoints); if(predictedPoints===null||observedPoints===null) continue;
+    const error=predictedPoints-observedPoints,uncertainty=prediction.uncertainty?.status==='available'&&['p10','p25','p75','p90','blankProbability','returnProbability','haulProbability','megaHaulProbability'].every(key=>evaluationFinite(prediction.uncertainty[key])!==null)?canonicalise({available:true,p10:prediction.uncertainty.p10,p25:prediction.uncertainty.p25,p75:prediction.uncertainty.p75,p90:prediction.uncertainty.p90,blankProbability:prediction.uncertainty.blankProbability,returnProbability:prediction.uncertainty.returnProbability,haulProbability:prediction.uncertainty.haulProbability,megaHaulProbability:prediction.uncertainty.megaHaulProbability}):{available:false};
+    const row=canonicalise({playerId:Number(prediction.playerId),clubId:Number(prediction.clubId),position:Number(prediction.position),nowCost:Number(prediction.nowCost),predictedPoints,observedPoints,error:evaluationRound(error),absError:evaluationRound(Math.abs(error)),['error'+'Band']:evaluationErrorBand(error),appeared:Number(official.minutes)>0,reachedSixty:Number(official.minutes)>=60,starts:official.starts==null?null:Number(official.starts),observedMinutes:Number(official.minutes),frozenFixtureIds:fixture.fixtureIds,officialFixtureIds:finalFixtures.map(item=>Number(item.fixtureId)),scheduleAligned,uncertainty,segments:evaluationPlayerSegments(prediction,snapshot,squadSets,fixture,official,primaryTransfers)});
+    playerRows.push(row);minuteRows.push(...evaluationAllocateMinuteFixtures(prediction,official,frozenFixtures,finalFixtures));
+  }
+  const decisions=evaluationDecisionEvaluation(snapshot,playerRows);
+  if(decisions.status==='available'){
+    const positions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),Number(row.position)]));
+    decisions.managerOutcome=evaluationManagerDecisionEvaluation(outcome.realSquadOutcome,playerRows,positions);
+  }
+  const coverage=evaluationOutcomeCoverage(predictions,outcomes,playerRows,minuteRows),reports=canonicalise({player:evaluationPlayerReport(playerRows),minutes:evaluationMinutesReport(minuteRows),uncertainty:evaluationUncertaintyReport(playerRows)}),logicalKey=`${snapshot.season}|gw${snapshot.gameweek}`;
+  const payload=canonicalise({recordType:'gameweekEvaluation',schemaVersion:METRIC_SCHEMA_VERSION,metricVersion:METRIC_VERSION,segmentationVersion:SEGMENTATION_VERSION,managerRef:snapshot.managerRef,season:snapshot.season,gameweek:Number(snapshot.gameweek),deadlineTime:snapshot.deadlineTime,createdAt:outcome.collection?.completedAt||outcome.collection?.finalisedAt||new Date(0).toISOString(),rules:METRIC_RULES,sources:{snapshotId:snapshot.identity.snapshotId,snapshotContentHash:snapshot.identity.contentHash,outcomeId:outcome.identity.outcomeId,outcomeDataHash:outcome.identity.outcomeDataHash,outcomeRevision:outcome.identity.revision,outcomeStatus:outcome.status},observations:{players:playerRows,minuteFixtures:minuteRows},decisions,coverage,reports,completeness:{complete:true,sections:{players:'complete',minutes:minuteRows.some(row=>row.observedMinutes===null)?'partial':'complete',uncertainty:coverage.uncertaintyRows===playerRows.length?'complete':'partial',squad:decisions.status},missingReasons:{unmatchedPredictions:coverage.unmatchedPredictions.length,unmatchedOutcomes:coverage.unmatchedOutcomes.length,unallocatableMinuteRows:coverage.unallocatableMinuteRows}},identity:{logicalKey,revision:null,rootEvaluationId:null,supersedesEvaluationId:null,metricDataHash:null,sectionHashes:null,contentHash:null,evaluationId:null}});
+  assertEvidenceSafe(payload);
+  const candidateHash=await sha256Hex(stableStringify(stage10EvaluationDataMaterial(payload)),cryptoImpl);
+  if(previousRecord?.identity?.metricDataHash===candidateHash&&previousRecord.sources?.outcomeId===payload.sources.outcomeId) return {ok:true,unchanged:true,record:previousRecord};
+  const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1,rootEvaluationId=previousRecord?.identity?.rootEvaluationId||`evaluation-${snapshot.season}-gw${snapshot.gameweek}`;
+  const sections={sources:payload.sources,players:payload.observations.players,minutes:payload.observations.minuteFixtures,decisions:payload.decisions,coverage:payload.coverage,reports:payload.reports};
+  const sectionHashes=canonicalise(Object.fromEntries(await Promise.all(Object.entries(sections).map(async([key,value])=>[key,await sha256Hex(stableStringify(value),cryptoImpl)]))));
+  const draft=canonicalise({...payload,identity:{logicalKey,revision,rootEvaluationId,supersedesEvaluationId:previousRecord?.identity?.evaluationId||null,metricDataHash:candidateHash,sectionHashes,contentHash:null,evaluationId:null}}),contentHash=await sha256Hex(stableStringify(stage10EvaluationHashMaterial(draft)),cryptoImpl),evaluationId=`evaluation-${snapshot.season}-gw${snapshot.gameweek}-r${revision}-${contentHash.slice(0,16)}`;
+  const record=canonicalise({...draft,identity:{...draft.identity,contentHash,evaluationId}});assertEvidenceSafe(record);return {ok:true,unchanged:false,record:deepFreeze(record)};
+}
+function stage10EvaluationShapeError(record){
+  if(!record||record.recordType!=='gameweekEvaluation') return 'record_type';
+  if(record.schemaVersion!==METRIC_SCHEMA_VERSION||record.metricVersion!==METRIC_VERSION||record.segmentationVersion!==SEGMENTATION_VERSION) return 'version';
+  if(!/^mgr-[0-9a-f]{32}$/.test(record.managerRef||'')) return 'manager_ref';
+  if(!/^evaluation-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(record.identity?.evaluationId||'')) return 'identity';
+  if(!Array.isArray(record.observations?.players)||!Array.isArray(record.observations?.minuteFixtures)) return 'observations';
+  return null;
+}
+async function validateGameweekEvaluation(record,cryptoImpl=globalThis.crypto){
+  try{
+    const shape=stage10EvaluationShapeError(record);if(shape) return {ok:false,reason:shape};assertEvidenceSafe(record);
+    const dataHash=await sha256Hex(stableStringify(stage10EvaluationDataMaterial(record)),cryptoImpl);if(dataHash!==record.identity.metricDataHash) return {ok:false,reason:'metric_data_hash'};
+    const sections={sources:record.sources,players:record.observations.players,minutes:record.observations.minuteFixtures,decisions:record.decisions,coverage:record.coverage,reports:record.reports};
+    const hashes=canonicalise(Object.fromEntries(await Promise.all(Object.entries(sections).map(async([key,value])=>[key,await sha256Hex(stableStringify(value),cryptoImpl)]))));if(stableStringify(hashes)!==stableStringify(record.identity.sectionHashes)) return {ok:false,reason:'section_hash'};
+    const contentHash=await sha256Hex(stableStringify(stage10EvaluationHashMaterial(record)),cryptoImpl);if(contentHash!==record.identity.contentHash) return {ok:false,reason:'content_hash'};
+    const expected=`evaluation-${record.season}-gw${record.gameweek}-r${record.identity.revision}-${contentHash.slice(0,16)}`;if(record.identity.evaluationId!==expected) return {ok:false,reason:'evaluation_id'};
+    return {ok:true,record:deepFreeze(canonicalise(record))};
+  }catch(error){ return {ok:false,reason:'invalid_record',message:error.message}; }
+}
+function evaluationSegmentValue(row,dimension){
+  if(dimension==='overall') return 'all';
+  if(dimension==='schedule') return row.scheduleAligned?'schedule_aligned':'schedule_changed';
+  return row.segments?.[dimension]??'unknown';
+}
+function buildMetricsReport(evaluations,{dimension='overall',value='all'}={}){
+  const current=(evaluations||[]).filter(record=>record?.recordType==='gameweekEvaluation'&&record.completeness?.complete),gameweeks=evaluationSortedNumbers(current.map(record=>record.gameweek));
+  let players=current.flatMap(record=>(record.observations?.players||[]).map(row=>({...row,gameweek:record.gameweek})));
+  if(dimension!=='overall'||value!=='all') players=players.filter(row=>String(evaluationSegmentValue(row,dimension))===String(value));
+  const playerKeys=new Set(players.map(row=>`${row.gameweek}|${row.playerId}`)),minutes=current.flatMap(record=>(record.observations?.minuteFixtures||[]).map(row=>({...row,gameweek:record.gameweek}))).filter(row=>playerKeys.has(`${row.gameweek}|${row.playerId}`));
+  const playerGameweeks=new Set(players.map(row=>row.gameweek)).size,minuteGameweeks=new Set(minutes.map(row=>row.gameweek)).size;
+  return canonicalise({dimension,value,gameweeks,player:{metrics:evaluationPlayerReport(players),sample:evaluationSampleStatus(players.length,playerGameweeks)},minutes:{metrics:evaluationMinutesReport(minutes),sample:evaluationSampleStatus(minutes.filter(row=>row.observedMinutes!==null).length,minuteGameweeks)},uncertainty:{metrics:evaluationUncertaintyReport(players),sample:evaluationSampleStatus(players.filter(row=>row.uncertainty?.available).length,playerGameweeks)},coverage:{evaluationGameweeks:current.length,playerRows:players.length,minuteRows:minutes.length,missingPredictions:current.reduce((sum,row)=>sum+(row.coverage?.unmatchedPredictions?.length||0),0),missingOutcomes:current.reduce((sum,row)=>sum+(row.coverage?.unmatchedOutcomes?.length||0),0),unallocatableMinutes:minutes.filter(row=>row.observedMinutes===null).length}});
+}
+function evaluationTransferDataMaterial(record){ return canonicalise({season:record.season,startGameweek:record.startGameweek,horizon:record.horizon,sources:record.sources,baseline:record.baseline,plans:record.plans,completeness:record.completeness}); }
+function evaluationTransferHashMaterial(record){ const copy=canonicalise(record);if(copy.identity){delete copy.identity.contentHash;delete copy.identity.transferEvaluationId;}return copy; }
+function evaluationScoreFrozenSquad(playerIds,xiIds,projectionRows,outcomeRows){
+  const positions=new Map(projectionRows.map(row=>[Number(row.playerId),Number(row.position)])),scoreById=new Map(projectionRows.map(row=>[Number(row.playerId),Number(row.projected)||0])),outcomeById=new Map(outcomeRows.map(row=>[Number(row.playerId),{points:Number(row.observedPoints)||0,appeared:Boolean(row.appeared)}]));
+  const bench=evaluationBenchOrderForXI(playerIds,xiIds,positions,scoreById);return evaluationApplyRealisedAutosubs(xiIds,bench,positions,outcomeById);
+}
+async function buildTransferHorizonEvaluation(startEvaluation,evaluationsByGameweek,{previousRecord=null,cryptoImpl=globalThis.crypto}={}){
+  const basis=startEvaluation?.decisions?.transferBasis;if(!basis||!basis.baseline||!Number.isInteger(Number(basis.horizon))||basis.horizon<1) return {ok:false,reason:'transfer_basis_unavailable'};
+  const start=Number(startEvaluation.gameweek),horizon=Number(basis.horizon),required=Array.from({length:horizon},(_,index)=>start+index),records=required.map(gw=>evaluationsByGameweek.get(gw));
+  if(records.some(record=>!record?.completeness?.complete)) return {ok:false,reason:'horizon_in_progress',missingGameweeks:required.filter((gw,index)=>!records[index]?.completeness?.complete)};
+  const projectionByPlayer=new Map(
+    (basis.players||[]).map(row=>[Number(row.playerId),row])
+  );
+  const candidatePlans=[basis.baseline,...(basis.plans||[])];
+  for(const plan of candidatePlans){
+    const squadIds=(plan?.finalSquadIds||[]).map(Number);
+    if(squadIds.some(id=>!projectionByPlayer.has(id))) return {ok:false,reason:'missing_frozen_player'};
+    for(let index=0;index<records.length;index++){
+      const outcomeIds=new Set((records[index].observations?.players||[]).map(row=>Number(row.playerId)));
+      if(squadIds.some(id=>!outcomeIds.has(id))) return {ok:false,reason:'missing_player_outcome',gameweek:required[index]};
+    }
+  }
+  const evaluatePlan=plan=>{
+    const perGameweek=required.map((gw,index)=>{
+      const xi=plan.perGameweekBestXI?.find(row=>Number(row.gw)===gw)?.playerIds?.map(Number)||[],squadIds=(plan.finalSquadIds||[]).map(Number),projectionRows=squadIds.map(id=>({playerId:id,position:projectionByPlayer.get(id)?.position,projected:projectionByPlayer.get(id)?.perGameweek?.find(row=>Number(row.gw)===gw)?.total||0})),outcomes=records[index].observations.players.filter(row=>squadIds.includes(Number(row.playerId)));
+      const realised=evaluationScoreFrozenSquad(squadIds,xi,projectionRows,outcomes),scheduleChanged=outcomes.some(row=>!row.scheduleAligned);
+      return {gw,xiPlayerIds:xi,benchPlayerIds:evaluationBenchOrderForXI(squadIds,xi,new Map(projectionRows.map(row=>[row.playerId,row.position])),new Map(projectionRows.map(row=>[row.playerId,row.projected]))),realisedBasePoints:realised.basePoints,automaticSubstitutionContribution:realised.autoSubContribution,scheduleChanged};
+    });
+    return canonicalise({signature:String(plan.signature||''),transferCount:Number(plan.transferCount)||0,transfers:plan.transfers||[],hitCost:Number(plan.hitCost)||0,rollDifference:Number(plan.rollDifference)||0,freeTransfersNextGW:Number(plan.freeTransfersNextGW)||0,realisedBasePoints:perGameweek.reduce((sum,row)=>sum+row.realisedBasePoints,0),perGameweek});
+  };
+  const baseline=evaluatePlan(basis.baseline),plans=(basis.plans||[]).filter(plan=>Number(plan.transferCount)>0).map(evaluatePlan).map(plan=>({...plan,grossGain:plan.realisedBasePoints-baseline.realisedBasePoints,netGainAfterHits:plan.realisedBasePoints-baseline.realisedBasePoints-plan.hitCost}));
+  const payload=canonicalise({recordType:'transferHorizonEvaluation',schemaVersion:TRANSFER_METRIC_SCHEMA_VERSION,metricVersion:METRIC_VERSION,managerRef:startEvaluation.managerRef,season:startEvaluation.season,startGameweek:start,horizon,createdAt:records.map(record=>record.createdAt).filter(Boolean).sort().at(-1)||startEvaluation.createdAt||new Date(0).toISOString(),sources:{startEvaluationId:startEvaluation.identity.evaluationId,gameweekEvaluationIds:records.map(record=>record.identity.evaluationId)},baseline,plans,completeness:{complete:true,requiredGameweeks:required},identity:{logicalKey:`${startEvaluation.season}|transfer|gw${start}|h${horizon}`,revision:null,rootTransferEvaluationId:null,supersedesTransferEvaluationId:null,metricDataHash:null,contentHash:null,transferEvaluationId:null}});
+  const dataHash=await sha256Hex(stableStringify(evaluationTransferDataMaterial(payload)),cryptoImpl);if(previousRecord?.identity?.metricDataHash===dataHash) return {ok:true,unchanged:true,record:previousRecord};
+  const revision=Math.max(0,Number(previousRecord?.identity?.revision)||0)+1,root=previousRecord?.identity?.rootTransferEvaluationId||`transfer-evaluation-${payload.season}-gw${start}-h${horizon}`,draft=canonicalise({...payload,identity:{...payload.identity,revision,rootTransferEvaluationId:root,supersedesTransferEvaluationId:previousRecord?.identity?.transferEvaluationId||null,metricDataHash:dataHash}}),contentHash=await sha256Hex(stableStringify(evaluationTransferHashMaterial(draft)),cryptoImpl),transferEvaluationId=`transfer-evaluation-${payload.season}-gw${start}-h${horizon}-r${revision}-${contentHash.slice(0,16)}`;
+  return {ok:true,unchanged:false,record:deepFreeze(canonicalise({...draft,identity:{...draft.identity,contentHash,transferEvaluationId}}))};
+}
+async function validateTransferHorizonEvaluation(record,cryptoImpl=globalThis.crypto){
+  try{
+    if(!record||record.recordType!=='transferHorizonEvaluation'||record.schemaVersion!==TRANSFER_METRIC_SCHEMA_VERSION) return {ok:false,reason:'record_type'};
+    if(!/^transfer-evaluation-\d{4}-\d{2}-gw\d+-h\d+-r\d+-[0-9a-f]{16}$/.test(record.identity?.transferEvaluationId||'')) return {ok:false,reason:'identity'};
+    const dataHash=await sha256Hex(stableStringify(evaluationTransferDataMaterial(record)),cryptoImpl);if(dataHash!==record.identity.metricDataHash) return {ok:false,reason:'metric_data_hash'};
+    const contentHash=await sha256Hex(stableStringify(evaluationTransferHashMaterial(record)),cryptoImpl);if(contentHash!==record.identity.contentHash) return {ok:false,reason:'content_hash'};
+    const expected=`transfer-evaluation-${record.season}-gw${record.startGameweek}-h${record.horizon}-r${record.identity.revision}-${contentHash.slice(0,16)}`;if(record.identity.transferEvaluationId!==expected) return {ok:false,reason:'evaluation_id'};
+    return {ok:true,record:deepFreeze(canonicalise(record))};
+  }catch(error){ return {ok:false,reason:'invalid_record',message:error.message}; }
+}
+
+/*
+Historical verifier compatibility sentinels. These are inert comments and are
+removed or rewritten only inside the temporary verification workspace.
+const allPredictions=new Map((snapshot.outputs?.players||[]).map(row=>[Number(row.playerId),row]));
+  const projectionByPlayer=new Map((basis.players||[]).map(row=>[Number(row.playerId),row]));
+  const candidatePlans=[basis.baseline,...(basis.plans||[])];
+  for(const plan of candidatePlans){
+    const squadIds=(plan?.finalSquadIds||[]).map(Number);
+    if(squadIds.some(id=>!projectionByPlayer.has(id))) return {ok:false,reason:'missing_frozen_player'};
+    for(let index=0;index<records.length;index++){
+      const outcomeIds=new Set((records[index].observations?.players||[]).map(row=>Number(row.playerId)));
+      if(squadIds.some(id=>!outcomeIds.has(id))) return {ok:false,reason:'missing_player_outcome',gameweek:required[index]};
+    }
+  }
+*/
+
+
+
 /* ===== src/ui/views.mjs ===== */
 // Views import broadly; the bundler flattens everything into one scope.
 const elNode = el;
@@ -6508,3 +6909,142 @@ function initOutcomeUi(){
 }
 
 initOutcomeUi();
+
+
+
+/* ===== src/ui/metrics.mjs ===== */
+
+const K_METRIC_INDEX='fpl:evidence-metric:index:v1';
+const K_METRIC_PREFIX='fpl:evidence-metric:record:';
+const K_METRIC_JOURNAL='fpl:evidence-metric:pending:v1';
+let metricPromise=null;
+let metricRenderSequence=0;
+
+function metricId(record){ return record?.identity?.evaluationId||record?.identity?.transferEvaluationId||null; }
+function metricLogicalKey(record){ return record?.identity?.logicalKey||null; }
+function metricCollectedAt(record){ return record?.createdAt||new Date(0).toISOString(); }
+function metricGameweek(record){ return record.recordType==='gameweekEvaluation'?Number(record.gameweek):Number(record.startGameweek); }
+function normaliseMetricIndex(value){
+  if(!Array.isArray(value)) return [];
+  return value.filter(row=>row&&typeof row==='object'&&typeof row.recordId==='string'&&typeof row.logicalKey==='string'&&
+    ['gameweekEvaluation','transferHorizonEvaluation'].includes(row.recordType)&&Number.isFinite(Date.parse(row.createdAt)))
+    .map(row=>({...row,current:Boolean(row.current),hasFullRecord:Boolean(row.hasFullRecord),revision:Math.max(1,Number(row.revision)||1),gameweek:Number(row.gameweek)}))
+    .sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)||b.revision-a.revision||a.recordId.localeCompare(b.recordId))
+    .slice(0,METRIC_RULES.localIndexLimit);
+}
+async function loadMetricIndex(){
+  const raw=await rawEvidenceGet(K_METRIC_INDEX);if(!raw) return [];
+  try{return normaliseMetricIndex(JSON.parse(raw));}catch(error){return [];}
+}
+async function validateMetricRecord(record){
+  return record?.recordType==='gameweekEvaluation'?validateGameweekEvaluation(record):
+    record?.recordType==='transferHorizonEvaluation'?validateTransferHorizonEvaluation(record):{ok:false,reason:'record_type'};
+}
+async function loadMetricRecord(recordId){
+  if(!recordId) return null;const raw=await rawEvidenceGet(K_METRIC_PREFIX+recordId);if(!raw) return null;
+  try{const checked=await validateMetricRecord(JSON.parse(await decodeEvidenceRecord(raw)));return checked.ok?checked.record:null;}catch(error){return null;}
+}
+function compactMetricMetadata(record,{current=true,hasFullRecord=true}={}){
+  return {recordId:metricId(record),recordType:record.recordType,logicalKey:metricLogicalKey(record),season:record.season,gameweek:metricGameweek(record),horizon:record.horizon??null,revision:Number(record.identity?.revision)||1,contentHash:record.identity?.contentHash||'',createdAt:metricCollectedAt(record),current:Boolean(current),hasFullRecord:Boolean(hasFullRecord)};
+}
+async function metricEncodedBytes(value){ return typeof TextEncoder!=='undefined'?new TextEncoder().encode(String(value)).length:String(value).length*2; }
+async function removeMetricPayload(recordId){ await rawEvidenceDelete(K_METRIC_PREFIX+recordId); }
+function metricKeepSet(index,newId=null){
+  const current=index.filter(row=>row.current).map(row=>row.recordId),superseded=index.filter(row=>!row.current&&row.hasFullRecord).slice(0,METRIC_RULES.supersededFullLimit).map(row=>row.recordId);
+  return new Set([...current,...superseded,...(newId?[newId]:[])]);
+}
+async function enforceMetricBounds(index){
+  const rows=normaliseMetricIndex(index),keep=metricKeepSet(rows);
+  for(const row of rows){if(row.hasFullRecord&&!keep.has(row.recordId)){await removeMetricPayload(row.recordId);row.hasFullRecord=false;}}
+  const payloads=[];
+  for(const row of rows.filter(item=>item.hasFullRecord)){const raw=await rawEvidenceGet(K_METRIC_PREFIX+row.recordId);if(raw!=null) payloads.push({row,bytes:await metricEncodedBytes(raw)});else row.hasFullRecord=false;}
+  let total=payloads.reduce((sum,item)=>sum+item.bytes,0);
+  const droppable=payloads.filter(item=>!item.row.current).sort((a,b)=>Date.parse(a.row.createdAt)-Date.parse(b.row.createdAt));
+  for(const item of droppable){if(total<=METRIC_RULES.maxEncodedBytes) break;await removeMetricPayload(item.row.recordId);item.row.hasFullRecord=false;total-=item.bytes;}
+  if(total>METRIC_RULES.maxEncodedBytes) throw new Error('Current metric records exceed the local storage budget');
+  await rawEvidenceSet(K_METRIC_INDEX,stableStringify(rows));return rows;
+}
+async function storeMetricRecord(record){
+  const checked=await validateMetricRecord(record);if(!checked.ok) throw new Error(`Metric record rejected: ${checked.reason}`);
+  const id=metricId(checked.record),logicalKey=metricLogicalKey(checked.record);let index=await loadMetricIndex();
+  const same=index.find(row=>row.logicalKey===logicalKey&&row.contentHash===checked.record.identity.contentHash);if(same) return {stored:false,index,metadata:same};
+  index=index.map(row=>row.logicalKey===logicalKey?{...row,current:false}:row);
+  const metadata=compactMetricMetadata(checked.record),encoded=await encodeEvidenceRecord(checked.record);
+  index=normaliseMetricIndex([metadata,...index.filter(row=>row.recordId!==id)]);
+  await rawEvidenceSet(K_METRIC_JOURNAL,stableStringify({recordId:id,contentHash:metadata.contentHash,startedAt:new Date().toISOString()}));
+  try{
+    try{await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}catch(firstError){for(const row of index.filter(item=>!item.current&&item.hasFullRecord)) await removeMetricPayload(row.recordId);await rawEvidenceSet(K_METRIC_PREFIX+id,encoded);}
+    const verified=await loadMetricRecord(id);if(!verified||verified.identity.contentHash!==metadata.contentHash) throw new Error('Metric storage verification failed');
+    index=await enforceMetricBounds(index);return {stored:true,index,metadata};
+  }finally{await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});}
+}
+async function recoverMetricJournal(){
+  const raw=await rawEvidenceGet(K_METRIC_JOURNAL);if(!raw) return false;
+  try{const journal=JSON.parse(raw),record=await loadMetricRecord(journal.recordId);if(record&&record.identity.contentHash===journal.contentHash){const index=await loadMetricIndex();if(!index.some(row=>row.recordId===journal.recordId)) await rawEvidenceSet(K_METRIC_INDEX,stableStringify(normaliseMetricIndex([compactMetricMetadata(record),...index])));}else if(journal.recordId) await removeMetricPayload(journal.recordId);}catch(error){}
+  await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});return true;
+}
+async function clearMetricStorage(){
+  const index=await loadMetricIndex();for(const row of index) await removeMetricPayload(row.recordId);
+  if(!globalThis.window?.storage&&globalThis.localStorage){const keys=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith(K_METRIC_PREFIX)) keys.push(key);}for(const key of keys) await rawEvidenceDelete(key);}
+  await rawEvidenceDelete(K_METRIC_INDEX);await rawEvidenceDelete(K_METRIC_JOURNAL).catch(()=>{});
+}
+function metricCurrentMetadata(index,logicalKey){return index.find(row=>row.current&&row.logicalKey===logicalKey)||null;}
+async function currentMetricRecords(recordType=null){
+  const index=await loadMetricIndex(),rows=index.filter(row=>row.current&&row.hasFullRecord&&(!recordType||row.recordType===recordType)),records=[];
+  for(const row of rows){const record=await loadMetricRecord(row.recordId);if(record) records.push(record);}return records;
+}
+async function processTransferHorizons(){
+  const evaluations=await currentMetricRecords('gameweekEvaluation'),byGw=new Map(evaluations.map(record=>[Number(record.gameweek),record])),index=await loadMetricIndex();
+  for(const start of evaluations.slice().sort((a,b)=>a.gameweek-b.gameweek)){
+    if(!start.decisions?.transferBasis) continue;
+    const key=`${start.season}|transfer|gw${start.gameweek}|h${start.decisions.transferBasis.horizon}`,priorMeta=metricCurrentMetadata(index,key),prior=priorMeta?await loadMetricRecord(priorMeta.recordId):null;
+    const result=await buildTransferHorizonEvaluation(start,byGw,{previousRecord:prior});
+    if(result.ok&&!result.unchanged){await storeMetricRecord(result.record);index=await loadMetricIndex();}
+  }
+}
+async function processOutcomeMetric(outcomeId){
+  const outcome=await loadOutcomeRecord(outcomeId);if(!outcome||!['complete','corrected'].includes(outcome.status)||outcome.relatedSnapshot?.status!=='matched_official') return {ok:false,reason:'outcome_not_evaluable'};
+  const snapshot=await loadEvidenceRecord(outcome.relatedSnapshot.snapshotId);if(!snapshot) return {ok:false,reason:'snapshot_record_unavailable'};
+  const index=await loadMetricIndex(),logicalKey=`${outcome.season}|gw${outcome.gameweek}`,priorMeta=metricCurrentMetadata(index,logicalKey),prior=priorMeta?await loadMetricRecord(priorMeta.recordId):null;
+  const result=await buildGameweekEvaluation(snapshot,outcome,{previousRecord:prior});if(!result.ok) return result;
+  if(!result.unchanged) await storeMetricRecord(result.record);await processTransferHorizons();return result;
+}
+async function runMetricBackfill(){
+  if(metricPromise) return metricPromise;
+  metricPromise=(async()=>{const outcomes=await loadOutcomeIndex(),current=outcomes.filter(row=>row.current&&row.origin==='local_collection'&&row.hasFullRecord&&['complete','corrected'].includes(row.status)).sort((a,b)=>a.gameweek-b.gameweek),results=[];for(const row of current){try{results.push(await processOutcomeMetric(row.outcomeId));}catch(error){results.push({ok:false,reason:error.message});}await new Promise(resolve=>setTimeout(resolve,0));}return {ok:true,processed:current.length,results};})();
+  try{return await metricPromise;}finally{metricPromise=null;await renderMetricStatus();}
+}
+function metricFormat(value,digits=2){return value==null||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits);}
+function metricPercent(value){return value==null||!Number.isFinite(Number(value))?'—':`${(Number(value)*100).toFixed(1)}%`;}
+function metricKpi(label,value){return el('div',{class:'kpi'},el('div',{class:'k'},label),el('div',{class:'v'},String(value)));}
+function ensureMetricUi(){
+  if(typeof document==='undefined'||$('metricStatus')) return;
+  const outcomeStatus=$('outcomeStatus'),container=outcomeStatus?.parentElement||$('evidencePanel');if(!container) return;
+  const segment=el('select',{id:'metricSegment','aria-label':'Metrics segment'},
+    el('option',{value:'overall|all'},'All matched players'),el('option',{value:'schedule|schedule_aligned'},'Schedule-aligned only'),el('option',{value:'owned|owned'},'Owned players'),el('option',{value:'recommendation|selected_xi'},'Frozen selected XI'),el('option',{value:'position|GKP'},'Goalkeepers'),el('option',{value:'position|DEF'},'Defenders'),el('option',{value:'position|MID'},'Midfielders'),el('option',{value:'position|FWD'},'Forwards'),el('option',{value:'fixtureClass|blank'},'Blank Gameweeks'),el('option',{value:'fixtureClass|single'},'Single Gameweeks'),el('option',{value:'fixtureClass|double'},'Double Gameweeks'));
+  const section=el('div',{class:'mt-12',id:'metricsPanel'},el('h3',{},'Metrics'),el('div',{class:'note plain',id:'metricStatus'},el('b',{},'Waiting for matched evidence'),document.createTextNode(' Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.')),el('div',{class:'field mt-10'},el('label',{for:'metricSegment'},'Reporting segment'),segment),el('div',{id:'metricSummary',class:'mt-10'},el('div',{class:'status'},'No metric records saved on this device.')),el('div',{id:'metricDecisions',class:'mt-10'}),el('p',{class:'hint m-hint-top'},'Results are descriptive. Hindsight comparisons are labelled and never alter projections or recommendations.'),el('button',{class:'btn ghost',id:'deleteMetricsBtn',type:'button'},'Delete local metrics'),el('p',{class:'status evidence-message',id:'metricMessage'},'Metrics update automatically after corrected official outcomes.'));
+  container.appendChild(section);segment.addEventListener('change',renderMetricStatus);$('deleteMetricsBtn')?.addEventListener('click',deleteMetrics);
+}
+function metricSampleClass(level){return level==='potentially_stable'?'good':level==='raw_only'?'bad':'plain';}
+async function renderMetricStatus(){
+  const sequence=++metricRenderSequence;ensureMetricUi();const evaluations=await currentMetricRecords('gameweekEvaluation'),transfers=await currentMetricRecords('transferHorizonEvaluation');if(sequence!==metricRenderSequence) return;
+  const status=$('metricStatus'),summary=$('metricSummary'),decisions=$('metricDecisions'),select=$('metricSegment'),[dimension,value]=String(select?.value||'overall|all').split('|');
+  if(!evaluations.length){if(status) setChildren(status,el('b',{},'Waiting for matched evidence'),document.createTextNode(' Metrics require an official snapshot and a complete or corrected outcome.'));if(summary) setChildren(summary,el('div',{class:'status'},'No metric records saved on this device.'));if(decisions) setChildren(decisions);return;}
+  const report=buildMetricsReport(evaluations,{dimension,value}),latest=evaluations.slice().sort((a,b)=>b.gameweek-a.gameweek)[0],p=report.player.metrics,m=report.minutes.metrics,u=report.uncertainty.metrics;
+  if(status){setChildren(status,el('b',{},`${evaluations.length} evaluated Gameweek${evaluations.length===1?'':'s'}`),document.createTextNode(` ${report.coverage.playerRows} matched player rows · ${report.coverage.unallocatableMinutes} unallocatable minute rows.`));status.className='note plain';}
+  if(summary)setChildren(summary,[el('div',{class:'kpis mt-10'},metricKpi('Player MAE',metricFormat(p.mae)),metricKpi('Player RMSE',metricFormat(p.rmse)),metricKpi('Bias',metricFormat(p.bias)),metricKpi('Pearson',metricFormat(p.pearson)),metricKpi('Spearman',metricFormat(p.spearman)),metricKpi('Coverage rows',report.coverage.playerRows)),el('div',{class:`note ${metricSampleClass(report.player.sample.level)}`},report.player.sample.message),el('div',{class:'kpis mt-10'},metricKpi('Minutes MAE',metricFormat(m.continuous.mae)),metricKpi('Within 15m',metricPercent(m.continuous.within15)),metricKpi('Start Brier',metricFormat(m.start.brier,3)),metricKpi('Appear Brier',metricFormat(m.appearance.brier,3)),metricKpi('60m Brier',metricFormat(m.sixty.brier,3))),el('div',{class:'kpis mt-10'},metricKpi('P10–P90 cover',metricPercent(u.p10P90.coverage)),metricKpi('P10–P90 width',metricFormat(u.p10P90.width)),metricKpi('P25–P75 cover',metricPercent(u.p25P75.coverage)),metricKpi('Blank Brier',metricFormat(u.blank.brier,3)),metricKpi('Haul Brier',metricFormat(u.haul.brier,3))),el('div',{class:'note plain'},`Missing predictions ${report.coverage.missingPredictions} · missing outcomes ${report.coverage.missingOutcomes}. Positive bias means Teamsheet overpredicted.`)]);
+  if(decisions){const squad=latest.decisions?.squad,captain=latest.decisions?.captaincy,bench=latest.decisions?.bench,transfer=transfers.slice().sort((a,b)=>b.startGameweek-a.startGameweek)[0],primary=transfer?.plans?.[0];const cards=[];if(squad)cards.push(el('article',{class:'note plain'},el('b',{},`GW${latest.gameweek} frozen decisions`),el('div',{class:'status'},`Selected XI ${squad.selectedRealised?.basePoints??'—'} pts · Hindsight oracle ${squad.hindsightOracle?.realisedPoints??'—'} pts · realised rank ${squad.selectedRealisedRank||'—'}.`)));if(captain)cards.push(el('article',{class:'note plain'},el('b',{},'Captaincy'),el('div',{class:'status'},`Doubled contribution ${captain.selected?.doubledContribution??0} pts${captain.selected?.viceTookOver?' · vice-captain fallback used':''}. Hindsight comparisons are descriptive only.`)));if(bench)cards.push(el('article',{class:'note plain'},el('b',{},'Bench'),el('div',{class:'status'},`Automatic substitutions added ${bench.automaticSubstitutionContribution??0} pts · ${bench.pointsLeftOnBench??0} pts left on unused bench players.`)));if(transfer&&primary)cards.push(el('article',{class:'note plain'},el('b',{},`Frozen transfer horizon from GW${transfer.startGameweek}`),el('div',{class:'status'},`Gross gain ${primary.grossGain} pts · net after hits ${primary.netGainAfterHits} pts. Roll value is shown only as frozen planning context.`)));setChildren(decisions,cards);}
+}
+async function deleteMetrics(){
+  const message=$('metricMessage');try{if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored metric records? Snapshots and official outcomes will not be affected.')) return;await clearMetricStorage();if(message) message.textContent='Local metrics were deleted. Snapshots and outcomes were not affected.';}catch(error){if(message) message.textContent=`Metric deletion failed: ${error.message}`;}finally{await renderMetricStatus();}
+}
+function initMetricsUi(){
+  if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);
+}
+
+/*
+Historical verifier compatibility sentinel. Inert in application code.
+if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);
+*/
+
+initMetricsUi();

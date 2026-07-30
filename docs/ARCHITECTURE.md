@@ -28,13 +28,15 @@ src/
   evidence/
     snapshot.mjs        canonical pre-deadline records, deadline timing, hashes and validation
     outcome.mjs         canonical Official FPL outcome records, lifecycle, correction hashes and snapshot links
+    metrics.mjs         immutable metric observations, exact joins, frozen decision evaluation and transfer horizons
   squad.mjs             squad helpers and deterministic best-XI selection
   main.mjs              load orchestration; evidence capture can explicitly await optional providers
   ui/
     evidence.mjs        phone-first snapshot capture/status, compressed local recovery and JSON import/export
     outcomes.mjs        non-blocking outcome orchestration, bounded revisions and recovery-only restore
+    metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting
     ...                 app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
-tests/                  characterisation, model, simulation, provider, security, UI-helper and build tests
+tests/                  characterisation, model, simulation, provider, security, evidence, metric and build tests
 docs/                   canonical project records
 dist/                   generated deployable; never hand-edit
 ```
@@ -46,8 +48,12 @@ Configuration and state feed providers, storage and model modules. Official FPL 
 
 Minutes never imports scoring. Scoring may reuse exported minutes helpers. Simulation imports both but neither imports simulation, preventing cycles.
 
+The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records. Metrics does not import or execute current scoring, minutes, simulation or optimiser functions and never writes into runtime model state.
+
 ## Build boundary
-The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` is bundled before the views and owns only session-scoped preview state and pure transformation helpers. `ui/views.mjs` composes those helpers with existing model outputs. Direct ES imports remain the source/test contract. The build rejects surviving module syntax and requires unique top-level names in the flattened scope.
+The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome and metric modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.
+
+`ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` owns temporary transfer/captain preview state. `ui/views.mjs` composes those helpers with existing model outputs. Dynamic projection bars use native progress elements and uncertainty geometry uses namespace-correct SVG attributes. `util.mjs` rejects style attributes and runtime style objects.
 
 ## Expected-minutes boundary
 `model/minutes.mjs` returns `{pStart,pAppear,p60,expMin,confidence,confidenceLabel,source}`. Completed team fixtures are the aggregate denominator; detailed histories use recency weighting and shrinkage. Official availability is applied once.
@@ -56,55 +62,52 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 `FPL_RULES` records official 2026/27 point values. `SCORING_RULES` records judgement-based priors. `scoring.mjs` owns deterministic expectations for appearance, goals, assists, clean sheets, goals conceded, saves, defensive contributions, bonus and rare events. No full match-relative BPS simulation is attempted.
 
 ## Stage 8 uncertainty boundary
-`SIMULATION_RULES` versions the uncertainty contract. `simulation.mjs` provides:
-
-- deterministic FNV-style seed hashing and a repository-owned PRNG;
-- five-state minutes reconstruction from pStart/pAppear/p60/expMin;
-- bounded discrete sampling of approved scoring components;
-- independent appearance samples so zero-point appearances remain appearances;
-- P10, P25, median, P75 and P90 summaries;
-- blank, return, haul and mega-haul probabilities;
-- fail-closed pre-season behaviour.
+`SIMULATION_RULES` versions the uncertainty contract. `simulation.mjs` provides deterministic seed hashing, a repository-owned PRNG, five-state minutes reconstruction, bounded discrete sampling, independent appearance samples, P10/P25/median/P75/P90 summaries, blank/return/haul/mega-haul probabilities and fail-closed pre-season behaviour.
 
 `squad-simulation.mjs` validates legal starting formations, processes the reserve goalkeeper separately, respects outfield bench order, preserves minimum formation rules and applies captain-to-vice fallback. Equal inputs and seeds produce equal outputs.
 
 ## Stage 9 UI boundary
-`ui/app-shell.mjs` owns the four primary destinations, constructs the More/Settings hierarchy and provides the globally visible compact Provider Health control plus its full-detail destination. `ui/team-pitch.mjs` owns deterministic visual grouping and repository-owned shirt palette classes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns temporary transfer/captain preview state, exact application of optimiser `finalSquadIds`, role swapping and stale-preview invalidation. `ui/views.mjs` renders either the real squad or a derived preview copy through the existing `bestXI()` and captain-ranking functions. Dynamic projection bars use native progress elements and uncertainty geometry uses namespace-correct SVG attributes. `util.mjs` rejects style attributes and runtime style objects. The real squad, persisted configuration and model recommendation remain unchanged.
+`ui/app-shell.mjs` owns the four primary destinations, constructs the More/Settings hierarchy and provides globally visible Provider Health. `ui/team-pitch.mjs` owns visual grouping and shirt palette classes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns session-scoped preview state and stale invalidation. The real squad, persisted configuration and model recommendation remain unchanged.
 
 ## Provider Health and storage
-Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation: the highest-attention current state is visible globally and every active provider row, age, note and consequence is shown under More. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
+Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
 
 ## Build and deployment
 `node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json`, single-file `dist/index.html` and a byte-identical root `index.html` deployment copy. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts, and the root deployment copy must match `dist/index.html` exactly.
 
 ## Security posture
-Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source and generated style attributes, forbids runtime style APIs at the DOM-helper boundary and removes both `style-src-attr` and `unsafe-inline` from the emitted policy. No provider, transport, storage, secret or FPL-write surface changed.
+Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source/generated style attributes, forbids runtime style APIs and removes both `style-src-attr` and `unsafe-inline`. Stage 10 metric records reuse allowlist construction, forbidden-secret checks, canonical hashes and recovery-only storage boundaries.
 
 ## Testing
-Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 8 adds player-simulation and squad-simulation suites. Stage 9.2 covers formation grouping and shirt palettes; Stage 9.3 covers player-detail and uncertainty presentation; Stage 9.4 covers safe decision previews; Stage 9.5 covers Settings/Provider Health; Stage 9.6 adds class-only palette determinism plus source, DOM-helper, CSP and generated-deployable guards against style attributes and runtime style APIs. Build tests directly exercise module stripping. Goldens may change only for approved user-visible consequences and final verification runs without regeneration.
+Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 10.3 adds pure metric and storage suites covering exact calculations, identity/revision rules, blank/double/postponed fixtures, fixture-minute allocation, legal automatic substitutions, captain fallback, frozen transfer horizons, sample safeguards, deterministic serialisation, tamper detection and non-mutation. Existing production formula and golden suites remain unchanged.
 
 ## Future serverless architecture
 Static UI shape can remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
 
 ## Stage 10 prospective-evidence boundary
-`evidence/snapshot.mjs` reads the already validated runtime state and existing model functions, then emits an explicit allowlisted record. It never serialises `S` or configuration wholesale. Every record includes exact build/model/rules identity, canonical inputs and outputs, provider consequences, whole-record SHA-256 and section/provider hashes. Import recomputes those hashes and fails closed on tampering or an unknown schema.
+`evidence/snapshot.mjs` reads already validated runtime state and existing model functions, then emits an explicit allowlisted record. It never serialises `S` or configuration wholesale. Every record includes exact build/model/rules identity, canonical inputs and outputs, provider consequences, whole-record SHA-256 and section/provider hashes. Import recomputes those hashes and fails closed on tampering or an unknown schema.
 
-Capture uses the official FPL event deadline, samples the same-origin HTTP `Date` before and after collection and applies the approved 24-hour/60-minute/20–10-minute/two-minute timing policy. The CSP therefore permits same-origin `connect-src` in addition to the established provider allowlist. This is timing evidence, not external timestamp notarisation.
-
-All-player live uncertainty retains the approved 5,000 samples. `simulation.mjs` now precomputes invariant player/fixture expected components once before the sample loop and can omit raw arrays from a caller that needs summaries only; default callers and all formulas remain unchanged. Snapshot projection work yields every 20 players. A matching optimiser result already rendered for the same squad, horizon, bank and free-transfer context is reused rather than recomputed.
+Capture uses the official FPL event deadline, samples same-origin HTTP `Date` before and after collection and applies the approved timing policy. This is timing evidence, not external timestamp notarisation. All-player live uncertainty retains 5,000 samples; invariant component reuse is performance-only.
 
 `ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive.
 
-
 ## Stage 10.1 verified-startup orchestration
-`main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying `visibilitychange`/`pageshow` returns use the same path. Cached FPL data may be hydrated as a fallback, but rendering is deferred while fresh Official FPL, team context, Understat, odds and detailed minutes settle. Missing archive calibration is explicitly Disabled; active saved calibration is Cached. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture before the startup gate closes.
+`main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying foreground returns use the same path. Cached FPL data may be hydrated as fallback, but rendering is deferred while approved sources settle. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture.
 
-The foreground path retains the previously rendered screen but sets decision surfaces inert until activation, preventing reads from partially mutated runtime state. This is an atomic presentation boundary rather than a new state-management framework. Provider transports, validators, retry budgets, caches and model consumers remain unchanged.
-
+The foreground path retains previously rendered content but makes decision surfaces inert until activation, preventing reads from partially mutated runtime state. Provider transports, validators, retry budgets, caches and model consumers remain unchanged.
 
 ## Stage 10.2 official-outcome boundary
-`providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL live player totals, filtered fixtures and optional public manager outcome responses. Duplicate player IDs and conflicting fixture identities fail closed rather than using the display-layer first-wins policy.
+`providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL player totals, filtered fixtures and optional manager outcomes. Duplicate player IDs and conflicting fixture identities fail closed.
 
-`evidence/outcome.mjs` normalises allowlisted facts, requires every assigned fixture plus official event `finished` and `data_checked` before finalisation, links to the eligible Stage 10.1 snapshot without mutating it, and emits immutable provisional, complete or corrected revisions with deterministic section/data/content hashes.
+`evidence/outcome.mjs` normalises allowlisted facts, requires every assigned fixture plus official event `finished` and `data_checked` before finalisation, links to the eligible Stage 10.1 snapshot without mutating it and emits immutable provisional, complete or corrected revisions with deterministic hashes.
 
-`ui/outcomes.mjs` runs after the main verified render. It deduplicates startup/foreground/visible checks, processes up to six missed Gameweeks sequentially, rechecks provisional outcomes every fifteen minutes while visible and completed outcomes daily for fourteen days, and keeps bounded gzip recovery plus recovery-only imports. Outcome work never blocks app access or writes into model state.
+`ui/outcomes.mjs` runs after the verified render, deduplicates checks, processes missed Gameweeks sequentially and retains bounded gzip recovery. Outcome work never blocks access or writes into model state.
+
+## Stage 10.3 metric boundary
+`evidence/metrics.mjs` accepts only an officially eligible complete snapshot and a complete/corrected linked outcome with exact season, Gameweek, deadline, manager reference, snapshot ID and hash agreement. It creates immutable `gameweekEvaluation` revisions and later `transferHorizonEvaluation` revisions when every frozen horizon Gameweek is authoritative.
+
+Player points remain player–Gameweek observations. Minutes/probability evaluation uses player–fixture opportunities, preserving doubles without comparing a per-fixture prediction against a two-fixture total. Missing start facts and unallocatable Double Gameweek minutes are excluded only from their affected denominator and remain visible as coverage reasons.
+
+Frozen squad evaluation enumerates legal XIs, applies official-style goalkeeper and ordered outfield automatic substitutions, applies captain-to-vice fallback and labels the realised optimum from the same frozen 15 as a descriptive hindsight oracle. Frozen transfer plans are compared with the stored zero-transfer baseline over the exact stored horizon; realised net gain subtracts hits but not the optimiser's judgement-based roll value.
+
+`ui/metrics.mjs` stores hash-verified compressed evaluation records with a journal, current pointers and bounded superseded revisions. It backfills from locally authoritative outcomes, processes corrections idempotently and renders descriptive metrics under Deadline evidence. It does not create a composite score, classify accuracy as good/bad or alter any recommendation.

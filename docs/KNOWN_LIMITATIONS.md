@@ -46,7 +46,13 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 | EVID-4 | Prospective sample size begins at zero | No validation or calibration claim is possible until enough live Gameweeks and observations are collected | Stage 10.2–10.5 | Open (expected) |
 | OUTCOME-1 | Static GitHub Pages cannot collect while the app is fully closed or suspended | Missed Gameweeks are collected when Teamsheet next opens; guaranteed closed-app timing needs a separately approved backend | Future serverless only with separate approval | Open (accepted) |
 | OUTCOME-2 | Official FPL live and manager endpoints are undocumented | Schema drift can delay collection; strict validators quarantine ambiguity rather than manufacturing facts | Stage 10.2 operations | Open (accepted) |
-| OUTCOME-3 | Manager outcome may be unavailable while global player/fixture facts are complete | Squad evaluation coverage can be lower than player coverage without blocking the factual Gameweek outcome | Stage 10.3 reporting | Open (accepted) |
+| OUTCOME-3 | Manager outcome may be unavailable while global player/fixture facts are complete | Squad, captain and bench coverage can be lower than player coverage without blocking global metrics | Stage 10.3 reporting | Open (accepted) |
+| METRIC-1 | Prospective metric samples begin at zero | Early values are volatile and must remain raw-only or descriptive under the approved sample warnings | Stage 10.3+ operations | Open (expected) |
+| METRIC-2 | Blank Gameweek zeroes can flatter all-player metrics | All-player results may look better because many structurally blank rows have easy zero outcomes; schedule-aligned and fixture-class segments must remain visible | Stage 10.3 reporting | Accepted-labelled |
+| METRIC-3 | Official starts and Double Gameweek per-fixture minutes may be incomplete | Start Brier and fixture-minutes coverage can be lower than player-points coverage; ambiguous rows fail closed rather than being inferred | Stage 10.3 reporting | Open (accepted) |
+| METRIC-4 | Actual manager transfer identities are not stored | Stage 10.3 can evaluate frozen optimiser plans but cannot calculate realised gain for the manager's actual transfers | Future collection only with separate approval | Open (accepted) |
+| METRIC-5 | Provider-state comparisons are observational and clustered | Hundreds of player rows can share one Gameweek/provider event, so association cannot establish causal provider value | Future formal inference only with separate approval | Open (accepted) |
+| METRIC-6 | The legal-XI oracle uses realised outcomes | It is a descriptive hindsight upper bound from the same frozen squad, not a recommendation available before the deadline | By design | Accepted-labelled |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
@@ -62,3 +68,15 @@ Last updated: 2026-07-29. Related: AUDIT.md, ROADMAP.md, SECURITY.md.
 - Corrections are monitored daily for fourteen days and by later app openings, but there is no guaranteed server-side polling.
 - Bounded local storage is recovery rather than a permanent archive. Complete exports are unencrypted.
 - Infrastructure completion is not evidence that the model is accurate or calibrated.
+
+## Stage 10.3 metric limitations
+- Player and probability results begin with very small, clustered samples. The interface shows raw-only, descriptive or potentially-stable wording but never a formal significance claim.
+- All-player results must be read beside schedule-aligned and blank/single/double segments because structural blank zeroes can flatter error metrics.
+- Start facts are used only where Official FPL supplies them. Double Gameweek fixture minutes are included only where they can be allocated and reconciled safely.
+- Missing manager outcomes reduce squad/captain/bench coverage without blocking global player evaluation.
+- Actual manager transfer identities are unavailable; only frozen optimiser plans can be evaluated against their frozen zero-transfer baseline.
+- Hindsight oracle and alternative comparisons are descriptive only and must not be presented as retrospective recommendations.
+- Provider-state comparisons are observational and cannot prove causal value or uptime quality.
+- Confidence intervals, clustered resampling, multiple-comparison control and statistical significance remain separately scoped future work.
+- Metric records are bounded browser recovery, not a permanent database or externally authenticated archive.
+- Stage 10.3 implementation and 397 passing tests prove contract integrity, not prediction accuracy or probability calibration.
