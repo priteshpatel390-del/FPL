@@ -122,3 +122,8 @@ Backup JSON is not a football-data provider. Restored evidence is quarantined as
 | `/entry/{id}/history/` | Optional summary cross-check and missed-Gameweek discovery | Unique Gameweek rows; conflicts keep the squad section partial | Current-row facts and chips only |
 
 No new provider is introduced. `/element-summary/{id}/` remains a bounded expected-minutes input and is not fanned out for outcome collection. Existing optional FPL retry limits and relay rules remain unchanged.
+
+## Stage 10.4 review/export sources
+Stage 10.4 introduces no provider and fetches no new football data. Its only inputs are already-retained, hash-validated Stage 10.1 snapshots, Stage 10.2 Official FPL outcomes, Stage 10.3 Gameweek evaluations and completed transfer-horizon evaluations. Provider-state rows are historical provenance copied from the frozen snapshot and are not re-queried or reinterpreted causally.
+
+The live Google Sheet is an optional manual destination for selected CSV imports, not a source of truth and not a runtime data source. The historical archive workbook remains separate and read-only. Any future automatic export must pin the exact live spreadsheet ID and requires a separately approved authentication, token-storage, scheduler and idempotency design.

@@ -192,3 +192,5 @@ Stage 10.3 acceptance evidence is:
 - merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval.
 
 Even after Stage 10.5, the correct wording is: **Stage 10 collection and evaluation infrastructure is complete; prospective model validation remains in progress.**
+## Stage 10.4 verified implementation
+The owner approved the exact operating-review/export scope on 30 July 2026. Draft PR #35 implements it without changing projection, expected-minutes, scoring, fixture, uncertainty, squad, captaincy, transfer-optimiser or provider behaviour. Source `1eca9a8817da41597d0632c819142237d31627fb` passes 413/413 tests with deterministic exact-identity builds; generated artefacts are `1af7dac5383c91e915587218e7551c2f619cec8f`. Physical iPhone acceptance and explicit merge approval remain outstanding. Stage 10.5 remains a separate investigation/design checkpoint.

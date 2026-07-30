@@ -76,3 +76,11 @@ Metric storage uses compressed verified writes, an interrupted-write journal, cu
 The metric engine never serialises configuration, API keys, account identifiers or arbitrary model state. It does not fetch providers, add a network origin or execute post-deadline production projection/minutes/simulation/optimiser functions. It reads only frozen allowlisted fields and writes only downstream descriptive evidence. Metrics cannot alter recommendations, calibration, model state or FPL account state.
 
 Hindsight comparisons are labelled and have no recommendation pathway. No composite score or automatic model-update channel exists. The 397-test verification demonstrates deterministic contract integrity, not external authorship, timestamp notarisation, prediction accuracy or probability calibration.
+
+## Stage 10.4 export security
+- Review input is allowlisted canonical Stage 10 evidence; arbitrary runtime state, provider payloads, configuration and secrets are never exported wholesale.
+- The exact JSON bundle preserves canonical source records and their identities for verification. Derived summaries, Markdown and CSV omit `managerRef` and public Team ID remains redacted by the outcome contract.
+- Every JSON bundle carries source-record hashes, manifest identity, review hash and bundle hash; import validation recomputes identity and fails closed.
+- CSV cells are typed. Numeric negatives remain numeric; text beginning after leading whitespace with `=`, `+`, `-`, `@`, tab or carriage return is apostrophe-neutralised and RFC 4180 quoted where required.
+- Stage 10.4 adds no network origin, OAuth flow, Drive token, backend, database, relay or scheduled job. Google Sheets remains a manual user-controlled import boundary.
+- Export generation is on demand, not retained as another local copy, and rejects payloads above 25 MiB without partial output.

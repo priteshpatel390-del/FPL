@@ -85,3 +85,15 @@ Approach: `evidence/metrics.mjs` joins only a complete officially eligible local
 Corrections append immutable evaluation revisions. Metric storage is compressed, hash-verified, journal-protected and bounded. Early samples display raw-only/descriptive/potentially-stable warnings; provider comparison requires both 100 observations and five affected Gameweeks. The metric engine does not import or execute production projection, expected-minutes, simulation or optimiser functions.
 
 Consequences: no projection, minutes, scoring, fixture, uncertainty, captaincy, squad or transfer formula/threshold changes; no composite score, significance claim, automatic calibration or model update. Actual manager transfer identities are excluded because Stage 10.2 does not store them. Provider comparisons are observational, not causal. The historical r=0.80 remains method-flattered. Verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f` passes **397/397 tests** with generated artefacts at `8c4b60a367b9858146b42ff8710d888856462c21`.
+
+## D-10.4 — Operating review and export
+- **Decision:** Stage 10.4 is a pure downstream review/export layer over immutable Stage 10.1–10.3 records. It may not call production projection, expected-minutes, simulation, squad or optimiser functions.
+- **Decision:** current evaluation revisions drive analysis; all known revision metadata remains auditable; missing/pruned exact records produce an explicit partial status.
+- **Decision:** show all matched and schedule-aligned cumulative views side by side, with one selected segment at a time and existing descriptive sample safeguards.
+- **Decision:** no composite score, significance claim, good/bad classification, calibration claim, causal provider claim or automatic model update.
+- **Decision:** exports are deterministic JSON, Markdown and eight separate CSVs; no XLSX, ZIP or one-click multi-download.
+- **Decision:** CSV is BOM/CRLF/RFC 4180, keeps numeric zero distinct from blank null and neutralises spreadsheet formulas while preserving genuine negative numbers.
+- **Decision:** exact JSON source records retain canonical manager references for hash verification; derived review, Markdown and CSV omit them.
+- **Decision:** Google Sheets import remains manual and targets the live 2026/27 workbook only. Automatic sync, OAuth, backend and scheduling require a separate approved stage.
+- **Decision:** 10 MiB warning and 25 MiB hard rejection, with no silent truncation or splitting.
+- **Evidence:** source `1eca9a8817da41597d0632c819142237d31627fb`, generated `1af7dac5383c91e915587218e7551c2f619cec8f`, 413/413 tests, deterministic exact-identity builds.

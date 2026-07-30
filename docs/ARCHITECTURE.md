@@ -29,12 +29,14 @@ src/
     snapshot.mjs        canonical pre-deadline records, deadline timing, hashes and validation
     outcome.mjs         canonical Official FPL outcome records, lifecycle, correction hashes and snapshot links
     metrics.mjs         immutable metric observations, exact joins, frozen decision evaluation and transfer horizons
+    review.mjs          downstream weekly/cumulative operating review and deterministic export contracts
   squad.mjs             squad helpers and deterministic best-XI selection
   main.mjs              load orchestration; evidence capture can explicitly await optional providers
   ui/
     evidence.mjs        phone-first snapshot capture/status, compressed local recovery and JSON import/export
     outcomes.mjs        non-blocking outcome orchestration, bounded revisions and recovery-only restore
     metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting
+    review.mjs          phone-first operating review controls and JSON/Markdown/CSV downloads
     ...                 app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
 tests/                  characterisation, model, simulation, provider, security, evidence, metric and build tests
 docs/                   canonical project records
@@ -48,10 +50,10 @@ Configuration and state feed providers, storage and model modules. Official FPL 
 
 Minutes never imports scoring. Scoring may reuse exported minutes helpers. Simulation imports both but neither imports simulation, preventing cycles.
 
-The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records. Metrics does not import or execute current scoring, minutes, simulation or optimiser functions and never writes into runtime model state.
+The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records; review observes only stored snapshot, outcome, evaluation and transfer-horizon records. Metrics and review do not import or execute current scoring, minutes, simulation or optimiser functions and never write into runtime model state.
 
 ## Build boundary
-The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome and metric modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.
+The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome, metric and review modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.
 
 `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` owns temporary transfer/captain preview state. `ui/views.mjs` composes those helpers with existing model outputs. Dynamic projection bars use native progress elements and uncertainty geometry uses namespace-correct SVG attributes. `util.mjs` rejects style attributes and runtime style objects.
 
@@ -111,3 +113,12 @@ Player points remain player–Gameweek observations. Minutes/probability evaluat
 Frozen squad evaluation enumerates legal XIs, applies official-style goalkeeper and ordered outfield automatic substitutions, applies captain-to-vice fallback and labels the realised optimum from the same frozen 15 as a descriptive hindsight oracle. Frozen transfer plans are compared with the stored zero-transfer baseline over the exact stored horizon; realised net gain subtracts hits but not the optimiser's judgement-based roll value.
 
 `ui/metrics.mjs` stores hash-verified compressed evaluation records with a journal, current pointers and bounded superseded revisions. It backfills from locally authoritative outcomes, processes corrections idempotently and renders descriptive metrics under Deadline evidence. It does not create a composite score, classify accuracy as good/bad or alter any recommendation.
+
+## Stage 10.4 operating-review boundary
+`evidence/review.mjs` validates retained Stage 10.1–10.3 records sequentially, selects only current evaluation revisions for analysis and retains known revision metadata for audit. Missing or pruned exact records make the review explicitly partial rather than being silently dropped. Unsupported source schemas fail closed.
+
+Weekly review covers source identity, completeness, points, fixture-minutes, uncertainty, frozen XI/captaincy/bench/manager outcome, provider states, correction history and completed transfer horizons. Incomplete transfer horizons remain pending and expose no interim gain. Cumulative review presents all matched and schedule-aligned populations side by side and allows one approved segment dimension/value at a time. It creates no composite score, significance claim, calibration label or automatic model update.
+
+The deterministic export boundary emits one hash-verifiable JSON evidence/review bundle, one Markdown review and eight individually selectable CSV tables. CSV is UTF-8 BOM + CRLF + RFC 4180, preserves numeric zero, leaves structural null blank and neutralises formula-like text including leading whitespace, tab and carriage return. Derived exports omit manager references; exact canonical source records remain unchanged inside JSON for hash verification. Exports warn above 10 MiB and fail above 25 MiB without truncation.
+
+`ui/review.mjs` remains subordinate under More → Deadline evidence. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes 413 tests with deterministic exact-identity builds.
