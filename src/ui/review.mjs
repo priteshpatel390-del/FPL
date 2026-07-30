@@ -120,7 +120,7 @@ async function reviewUiExport(){
     if(message)message.textContent='Preparing deterministic review export…';const bundle=await reviewUiBundleForSelection(),type=$('reviewExportType')?.value||'json';let text,fileName,mimeType;
     if(type==='json'){text=stableStringify(bundle)+'\n';fileName=operatingReviewFileName(bundle,'json');mimeType='application/json';}
     else if(type==='markdown'){text=buildOperatingReviewMarkdown(bundle);fileName=operatingReviewFileName(bundle,'markdown');mimeType='text/markdown;charset=utf-8';}
-    else{const csv=buildOperatingReviewCsv(bundle,type);text=csv.text;fileName=operatingReviewFileName(bundle,'csv',type);mimeType=csv.mimeType;}
+    else{const inputs=await reviewUiLoadInputs();const csv=buildOperatingReviewCsv(bundle,type,{snapshots:inputs.snapshots,evaluations:inputs.allMetricRecords.filter(row=>row.recordType==='gameweekEvaluation')});text=csv.text;fileName=operatingReviewFileName(bundle,'csv',type);mimeType=csv.mimeType;}
     const size=assessOperatingReviewExport(text);if(!size.allowed)throw new Error('export exceeds the 25 MB safety limit; choose one Gameweek or a smaller table');
     if(size.warning&&typeof globalThis.confirm==='function'&&!globalThis.confirm(`This export is ${(size.bytes/1024/1024).toFixed(1)} MB. Continue?`)){if(message)message.textContent='Export cancelled.';return;}
     reviewUiDownload(text,fileName,mimeType);if(message)message.textContent=`Exported ${fileName}. Generated files are not retained by Teamsheet.`;
