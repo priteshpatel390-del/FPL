@@ -2,6 +2,16 @@
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for engineering detail.
 
+## 2026-07-30 — Teamsheet 2.0 Product Blueprint integration
+- Added the owner-approved canonical `TEAMSHEET2-PRODUCT-BLUEPRINT.md`.
+- Recorded Teamsheet as a team-first, decision-first, explainable and mobile-first FPL product centred on the complete 15-player squad.
+- Approved future primary navigation as Team, Transfers, Mini Leagues and Settings; More is replaced by Settings and Players leaves primary navigation.
+- Defined the approved Settings sections, Team and Transfers decision questions, global/private Mini-League vision and progressive-disclosure UX standards.
+- Recorded migration checkpoints Teamsheet 2.0.1–2.0.7, each requiring separate design, approval, testing, review and deployment.
+- Updated onboarding, project context, architecture reference, decisions, roadmap, limitations and stage history.
+- Clarified that the blueprint supersedes Stage 9 information architecture for future development while preserving Stage 9 engineering and historical records.
+- No application, generated deployable, formula, optimiser, provider, evidence, security or Mini-League calculation changed. Teamsheet 2.0.1 implementation was not started.
+
 ## 2026-07-30 — Stage 10.5 hardening and documentation
 - Added transactional snapshot recovery and consistent outcome/metric journal reconciliation.
 - Added strict import/version/object-key validation, safer diagnostics and stronger spreadsheet-formula protection.

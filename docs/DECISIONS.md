@@ -1,6 +1,6 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-07-29. Related: PROJECT_CONTEXT.md, ROADMAP.md. Status values: Accepted/Superseded.
+Last updated: 2026-07-30. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives: Netlify Drop, Cloudflare Pages (deferred, see D-08), Claude-artifact-only (blocked network). Consequences: no server code, no headers (frame-ancestors ineffective), meta-CSP only, relays needed.
@@ -100,3 +100,10 @@ Consequences: no projection, minutes, scoring, fixture, uncertainty, captaincy, 
 
 ## D-Stage10.5 — Explicit recovery, no migration engine
 Approved 2026-07-30. Current version-1 Stage 10 records have no older supported schema requiring conversion. Unknown versions fail closed; immutable records are never silently repaired or rewritten. A future migration must be separately approved, deterministic, one-way, fixture-tested and preserve the original exact record. Snapshot retries are five-minute visible checks capped at three per verified dataset/window priority.
+
+**D-28 · 2026-07-30 · Accepted · Teamsheet 2.0 team-first product blueprint and incremental migration**
+Reason: the verified application had accumulated strong model, provider, evidence and UI foundations, but its Stage 9 information architecture remained tool-oriented and did not consistently centre the manager's complete team, weekly decisions or Mini-League competition.
+
+Approach: adopt `TEAMSHEET2-PRODUCT-BLUEPRINT.md` as the authoritative future product direction. Teamsheet becomes explicitly team-first, decision-first, explainable, mobile-first and progressively disclosed. Primary navigation becomes Team, Transfers, Mini Leagues and Settings. More is replaced by Settings; Players leaves primary navigation; replacement discovery moves into Transfers; advanced exploration moves to Settings → Research Tools. Mini Leagues becomes a flagship destination. Doing nothing and rolling remain valid recommendations. Official results and projections remain distinct. The migration proceeds through independently designed and approved checkpoints 2.0.1–2.0.7.
+
+Consequences: the Stage 9 information architecture is superseded for future development, but its historical decisions and engineering foundation remain valid. This decision changes no application code, formula, provider, Provider Health state, evidence contract, framework, build or deployment boundary. Teamsheet 2.0.1 — Navigation and Settings architecture is the next separate design and approval gate. Any protect, balanced or chase strategy model, projected-rank model or formula change requires its own explicit approval.

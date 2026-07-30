@@ -10,13 +10,14 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 3. `docs/DECISIONS.md`
 4. `docs/ROADMAP.md`
 5. `docs/KNOWN_LIMITATIONS.md`
-6. The current stage design document
-7. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
-8. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
-9. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
+6. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
+7. The current checkpoint design document
+8. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
+9. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
+10. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Stage 10.5 — Hardening and documentation is complete and merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after explicit owner approval. Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with deterministic exact-identity builds; generated artefacts are committed at `421e532629cbd1b82b19b3ea349ab23571221f00` with source hash `3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40`. Physical iPhone acceptance was not independently recorded. Stage 10 collection and evaluation infrastructure is complete; prospective model validation remains in progress.
+The owner-approved Teamsheet 2.0 Product Blueprint is the authoritative direction for future product work. It supersedes the Stage 9 information architecture for future development while preserving the Stage 9 engineering foundation and historical record. The next development checkpoint is **Teamsheet 2.0.1 — Navigation and Settings architecture**, which requires a separate design and explicit owner approval before implementation. Stage 10 collection and evaluation infrastructure remains complete; prospective validation is still in progress. The recorded verified baseline is **428/428 tests** with deterministic exact-identity builds and root/deployable equality.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
@@ -31,6 +32,7 @@ Stage 10.5 — Hardening and documentation is complete and merged through PR #45
 - Understat remains team-level only.
 - No new provider without an approved validation and ablation plan.
 - Stage discipline: inspect → scope/exclusions → owner approval where required → branch → implementation → full verification → docs → draft PR → owner review → merge only with explicit approval.
+- Teamsheet 2.0 checkpoints remain independently designed, approved, tested, reviewed and deployable. Do not silently pull later checkpoints forward.
 
 ## Current security and build posture
 - Provider/user rendering uses DOM builders.

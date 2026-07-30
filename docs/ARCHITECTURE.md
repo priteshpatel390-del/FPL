@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last updated: 2026-07-29. Related: PROJECT_CONTEXT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last updated: 2026-07-30. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -69,7 +69,9 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 `squad-simulation.mjs` validates legal starting formations, processes the reserve goalkeeper separately, respects outfield bench order, preserves minimum formation rules and applies captain-to-vice fallback. Equal inputs and seeds produce equal outputs.
 
 ## Stage 9 UI boundary
-`ui/app-shell.mjs` owns the four primary destinations, constructs the More/Settings hierarchy and provides globally visible Provider Health. `ui/team-pitch.mjs` owns visual grouping and shirt palette classes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns session-scoped preview state and stale invalidation. The real squad, persisted configuration and model recommendation remain unchanged.
+`ui/app-shell.mjs` owns the implemented four primary destinations, constructs the More/Settings hierarchy and provides globally visible Provider Health. `ui/team-pitch.mjs` owns visual grouping and shirt palette classes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns session-scoped preview state and stale invalidation. The real squad, persisted configuration and model recommendation remain unchanged.
+
+The owner-approved `TEAMSHEET2-PRODUCT-BLUEPRINT.md` supersedes the Stage 9 information architecture for future product development, but it changes no technical boundary by itself. Navigation and Settings changes begin only through the separately designed and approved Teamsheet 2.0.1 checkpoint. Stage 9 remains the valid historical record and engineering foundation.
 
 ## Provider Health and storage
 Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
@@ -121,7 +123,7 @@ Weekly review covers source identity, completeness, points, fixture-minutes, unc
 
 The deterministic export boundary emits one hash-verifiable JSON evidence/review bundle, one Markdown review and eight individually selectable CSV tables. CSV is UTF-8 BOM + CRLF + RFC 4180, preserves numeric zero, leaves structural null blank and neutralises formula-like text including leading whitespace, tab and carriage return. Derived exports omit manager references; exact canonical source records remain unchanged inside JSON for hash verification. Exports warn above 10 MiB and fail above 25 MiB without truncation.
 
-`ui/review.mjs` remains subordinate under More → Deadline evidence. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes 413 tests with deterministic exact-identity builds.
+`ui/review.mjs` remains subordinate under the implemented More → Deadline evidence route. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. Future relocation under Settings → Evidence & Performance is a Teamsheet 2.0 product migration, not an architecture change. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes 413 tests with deterministic exact-identity builds.
 
 ## Stage 10.5 recovery architecture
 Stage 10 storage uses verified payload writes, phase journals, index/current-pointer commitment and bounded pruning. Recovery trusts local origin only when a valid journal links the candidate ID and hash; unproven or imported records remain recovery-only. Shared diagnostics expose corruption/storage states without raw payloads, URLs or secrets. Downloads are owner-controlled browser requests rather than acknowledged durable backups.

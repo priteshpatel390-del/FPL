@@ -1,14 +1,19 @@
 # PROJECT_CONTEXT.md
 Purpose: master overview — the first document any new developer or session reads after CLAUDE.md.
-Audience: anyone joining the project. Last updated: 2026-07-30. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md.
+Audience: anyone joining the project. Last updated: 2026-07-30. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 ## What this is
-**Teamsheet — FPL Decision Desk.** A single-file, mobile-first web app that helps one manager, Pritesh, make Fantasy Premier League decisions: fixture difficulty, projected points, squad review, best XI, captaincy, transfer costing, mini-league effective ownership and on-device prospective model evaluation.
+**Teamsheet — FPL Decision Desk.** A single-file, mobile-first web app that helps Fantasy Premier League managers maximise the performance of their own complete 15-player squad through intelligent, explainable, team-level recommendations.
+
+Teamsheet is team-first rather than player-first and decision-first rather than data-first. Its primary purpose is to answer the manager's weekly questions about the best XI, captaincy, bench, transfers, rank and Mini-League position. Advanced research, evidence and diagnostics remain available progressively without dominating the ordinary workflow.
+
+The owner-approved canonical product direction is `TEAMSHEET2-PRODUCT-BLUEPRINT.md`.
 
 ## Current status
 - Live on GitHub Pages from repository `priteshpatel390-del/FPL`.
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
 - Stages 1–9 and Stage 10.1–10.5 are complete and merged. Stage 10.5 merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after explicit owner approval. The complete Stage 10 design is owner-approved and its collection/evaluation infrastructure is complete.
+- The Teamsheet 2.0 Product Blueprint was approved by Pritesh on 30 July 2026. It supersedes the Stage 9 information architecture for future development while preserving the Stage 9 engineering foundation and historical record.
 - Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.
 - Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.
 - Stage 10.1 merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444` after physical iPhone acceptance. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with exact-identity builds; generated artefacts are committed at `1259e7b5f7505d3330c772e89c77720251552287`.
@@ -18,7 +23,27 @@ Audience: anyone joining the project. Last updated: 2026-07-30. Related: ARCHITE
 - Stage 10.5 merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92`. It hardens transactional recovery, schema/import security, bounded deadline retry, honest downloads and live-season operations without changing production formulas or providers. Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with deterministic exact-identity builds; generated artefacts are `421e532629cbd1b82b19b3ea349ab23571221f00` with source hash `3efb94912e21be8ee8aaa29b4834d992c485e36ed9c70e9a8e88fbbe5f598a40`. Physical iPhone acceptance was not independently recorded.
 - The historical 2025/26 aggregate r=0.80 result is method-flattered and must not be presented as validated out-of-sample accuracy.
 
-## Goals and priorities
+## Product vision and principles
+1. Optimise and explain the complete 15-player team rather than isolated players.
+2. Lead with the decision and reveal advanced data progressively.
+3. Treat doing nothing and rolling a transfer as valid recommendations.
+4. Make every primary screen answer one main user question.
+5. Separate confirmed Official FPL results from projected values.
+6. Make Mini Leagues a flagship destination covering global and private-league performance.
+7. Preserve honest uncertainty and known limitations.
+8. Deliver a polished, fast football application rather than a technical dashboard.
+
+## Approved future information architecture
+The Teamsheet 2.0 primary navigation is:
+
+1. **Team**
+2. **Transfers**
+3. **Mini Leagues**
+4. **Settings**
+
+The existing Players destination leaves primary navigation. Player replacement discovery moves into Transfers; advanced player and fixture exploration moves under Settings → Research Tools. More is replaced by an organised Settings menu. This direction is approved but not yet implemented.
+
+## Engineering goals and priorities
 1. Reliable expected-points projections.
 2. Accurate expected minutes.
 3. Sound clean-sheet and attacking probabilities.
@@ -26,16 +51,17 @@ Audience: anyone joining the project. Last updated: 2026-07-30. Related: ARCHITE
 5. Sustainable, legal data collection.
 6. Graceful fallback.
 7. Avoid unnecessary complexity and noisy data.
+8. Preserve verified engineering while migrating the product incrementally.
 
-The overriding principle is the simplest reliable data stack that supports good decisions, not the largest feature set.
+The overriding principle is the simplest reliable data stack that supports good team decisions, not the largest feature set.
 
 ## Design philosophy
-- Each stage is isolated, tested, reviewable and deployable.
+- Each checkpoint is isolated, approved where required, tested, reviewable and deployable.
 - Known limitations are documented rather than hidden.
 - Formula changes require prior review and explicit approval.
 - No prediction-improvement claim without genuine holdout evidence.
 - Mobile-first operation is mandatory because the owner primarily uses an iPhone.
-- Stage 9 presentation should remain minimalist, polished and football-first: decisions lead, secondary diagnostics stay subordinate.
+- The Teamsheet 2.0 blueprint supersedes Stage 9 information architecture for future work, while Stage 9 remains the valid historical engineering record.
 - Stage 10 metrics remain descriptive until sufficient genuinely pre-deadline observations exist.
 
 ## Platform, stack and deployment
@@ -44,15 +70,28 @@ Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 
 ## Completed, current and next
 Completed and merged: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints and Stage 10.1–10.5 prospective-validation infrastructure.
 
-Current: pre-season operational readiness and prospective 2026/27 evidence collection. Stage 10 infrastructure is complete; accuracy and calibration validation remain in progress.
+Approved product direction: Teamsheet 2.0 Product Blueprint and migration checkpoints 2.0.1–2.0.7.
 
-Next: complete one physical iPhone rehearsal before GW1, then operate the deadline-safe snapshot, outcome, metric and export workflow each Gameweek. Any Stage 11 scope requires separate investigation, design and owner approval.
+Current operational work: pre-season readiness and prospective 2026/27 evidence collection. Stage 10 infrastructure is complete; accuracy and calibration validation remain in progress.
+
+Next development item: **Teamsheet 2.0.1 — Navigation and Settings architecture.** Investigation, exact design, exclusions and explicit owner approval are required before implementation. No Teamsheet 2.0.1 code is authorised by the blueprint integration item.
+
+## Teamsheet 2.0 migration checkpoints
+1. Teamsheet 2.0.1 — Navigation and Settings architecture.
+2. Teamsheet 2.0.2 — Team decision home.
+3. Teamsheet 2.0.3 — Transfer decision experience.
+4. Teamsheet 2.0.4 — Global rank and Mini-League foundation.
+5. Teamsheet 2.0.5 — Mini-League intelligence.
+6. Teamsheet 2.0.6 — Research, evidence and diagnostics organisation.
+7. Teamsheet 2.0.7 — Final mobile polish and acceptance.
+
+Every checkpoint remains independently designed, approved, tested, reviewed and deployable.
 
 ## Major risks
-Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven prospectively; simulation probability calibration still prospective; small and clustered early samples; and single-maintainer phone-first operations.
+Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven prospectively; simulation probability calibration still prospective; small and clustered early samples; projected rank and Mini-League intelligence not yet designed; and single-maintainer phone-first operations.
 
 ## Known assumptions
-The public FPL API and pinned vaastav archive remain available; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger; detailed Stage 8 simulation remains disabled in pre-season rather than manufacturing precise distributions; and local evidence storage remains recovery rather than a permanent archive.
+The public FPL API and pinned vaastav archive remain available; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger; detailed Stage 8 simulation remains disabled in pre-season rather than manufacturing precise distributions; local evidence storage remains recovery rather than a permanent archive; and Teamsheet 2.0 will preserve the existing framework-free deterministic foundation unless separately approved evidence justifies a change.
 
-## Stage 10.5 completion
-Stage 10.5 merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after explicit owner approval. Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with deterministic exact-identity builds; generated artefacts are `421e532629cbd1b82b19b3ea349ab23571221f00`. It hardens browser recovery, version/import security, bounded snapshot retry, honest downloads and owner operations only. Physical iPhone acceptance was not independently recorded. No Stage 11 scope is yet approved, and prospective validation remains in progress.
+## Approval and implementation boundary
+The Teamsheet 2.0 Product Blueprint records approved product direction only. It does not implement the new navigation, screens, rank intelligence, strategy models or Settings organisation. Teamsheet 2.0.1 is the next separate design and approval gate. Prospective validation remains in progress, and the recorded verified engineering baseline remains **428/428 tests** with deterministic exact-identity builds.
