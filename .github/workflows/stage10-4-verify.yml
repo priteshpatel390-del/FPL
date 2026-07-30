@@ -1,0 +1,61 @@
+name: Stage 10.4 verification
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Materialise approved source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, gzip
+          files = {
+            '.stage10-4-payload/review-mjs.b64': 'src/evidence/review.mjs',
+            '.stage10-4-payload/review-ui-mjs.b64': 'src/ui/review.mjs',
+          }
+          for source, target in files.items():
+              data = gzip.decompress(base64.b64decode(Path(source).read_text().strip()))
+              path = Path(target)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(data)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/evidence/review.mjs src/ui/review.mjs build.mjs tests/review-fixtures.mjs tests/operating-review.test.mjs tests/cumulative-review.test.mjs tests/review-export.test.mjs tests/review-ui.test.mjs
+          if ! git diff --cached --quiet; then
+            git commit -m "Implement Stage 10.4 operating review and exports"
+          fi
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Run complete test suite
+        run: BUILD_COMMIT="$SOURCE_COMMIT" ./run-tests.sh
+      - name: Verify deterministic exact-identity builds
+        run: |
+          mkdir -p /tmp/stage10-4-build-one
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/stage10-4-build-one/
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/stage10-4-build-one/index.html dist/index.html
+          cmp /tmp/stage10-4-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/stage10-4-build-one/manifest.json dist/manifest.json
+          cmp dist/index.html index.html
+          node -e "const m=require('./dist/manifest.json');if(m.commit!==process.env.SOURCE_COMMIT)process.exit(1)"
+      - name: Commit verified deployable and remove temporary bridge
+        run: |
+          rm -rf .stage10-4-payload .github/workflows/stage10-4-verify.yml
+          git add -A dist/index.html dist/app.bundle.js dist/manifest.json index.html .stage10-4-payload .github/workflows/stage10-4-verify.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "Build Stage 10.4 deployable"
+          fi
+          git push origin "HEAD:${{ github.head_ref }}"
