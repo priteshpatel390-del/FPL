@@ -87,7 +87,7 @@ jobs:
           rm -rf .stage10-5
           git add -A
           git commit -m "Verify Stage 10.5 hardening"
-          GENERATED_SHA=$(git rev-parse HEAD)
+          export GENERATED_SHA=$(git rev-parse HEAD)
           python - <<'PY'
           from pathlib import Path
           import os
@@ -97,8 +97,6 @@ jobs:
           git add docs/STAGE10-ITEM5.md
           git commit -m "Document Stage 10.5 verification"
           git push origin HEAD:agent/stage10-5-hardening-documentation
-        env:
-          GENERATED_SHA: ${{ env.GENERATED_SHA }}
       - name: Publish failure record
         if: steps.apply.outcome != 'success' || steps.verify.outcome != 'success'
         run: |
