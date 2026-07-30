@@ -2,7 +2,7 @@
 
 Status: **approved implementation candidate on `agent/stage10-4-operating-review-export`; full repository verification, generated artefacts, physical iPhone acceptance and owner merge approval remain pending.**
 
-Focused Stage 10.4 harness: **12/12 tests passing**, zero failures and zero skipped. This focused result verifies the new review/export logic in isolation; it is not a substitute for `./run-tests.sh`, the production build or deterministic exact-identity rebuild.
+Focused Stage 10.4 harness: **16/16 tests passing**, zero failures and zero skipped. This focused result verifies the new review/export logic in isolation; it is not a substitute for `./run-tests.sh`, the production build or deterministic exact-identity rebuild.
 
 ## Objective
 
@@ -14,7 +14,8 @@ Turn immutable Stage 10.1 snapshots, Stage 10.2 Official FPL outcomes and Stage 
 - A one-Gameweek review covering snapshot/outcome/evaluation status, completeness, points, minutes, uncertainty, frozen XI, captaincy, bench, transfer horizons, Provider Health, corrections and warnings.
 - A cumulative season review with separate overall and schedule-aligned evidence, one approved segment at a time, coverage/missingness trends, provider-state context and non-summed frozen transfer horizons.
 - Current-revision analytical selection with correction-aware revision manifests and explicit pruned-record reporting.
-- Hash-linked weekly and season JSON bundles containing exact available validated Stage 10 source records plus derived reviews.
+- Hash-linked weekly JSON evidence bundles containing exact available validated Stage 10 source records plus derived reviews.
+- Compact season JSON review bundles containing retained snapshots, completed transfer horizons, the full source manifest, weekly/cumulative summaries and hashes; raw outcome/evaluation row payloads remain manifest-referenced rather than duplicated.
 - Deterministic Markdown summaries.
 - Eight tidy CSV exports: Gameweeks, Players, Minute Fixtures, Squad Decisions, Transfer Horizons, Transfer Horizon Gameweeks, Provider States and Revisions.
 - RFC 4180 CSV, UTF-8 BOM, CRLF line endings, fixed columns and deterministic row ordering.
@@ -64,7 +65,7 @@ The weekly review exposes:
 
 ### JSON
 
-`operatingReviewBundle` schema `1.0.0` includes:
+`operatingReviewBundle` schema `1.0.0` has two deterministic profiles. `weekly_evidence` embeds available snapshot, outcome, evaluation and transfer evidence for the selected Gameweek. `season_review` keeps the full source manifest and compact reviews while omitting duplicated raw outcome/evaluation row payloads; tidy CSV generation reads the same validated locally available evaluation records referenced by that manifest. Both profiles include:
 
 - profile and Gameweek scope;
 - deterministic evidence-through timestamp derived from included records;
@@ -79,7 +80,7 @@ The weekly review exposes:
 
 ### CSV
 
-All tables carry applicable source bundle, source record and version identifiers. JSON `null` becomes an empty CSV field; genuine zero remains numeric zero. Arrays and objects use canonical JSON text. Text beginning, after leading whitespace, with `=`, `+`, `-` or `@`, or beginning with tab/carriage return, is prefixed with an apostrophe before RFC 4180 quoting.
+All tables carry applicable source bundle, source record and version identifiers. JSON `null` becomes an empty CSV field; genuine zero remains numeric zero. Arrays and objects use canonical JSON text. Text beginning, after leading whitespace, with `=`, `+`, `-` or `@`, or beginning with tab, carriage return or line feed, is prefixed with an apostrophe before RFC 4180 quoting.
 
 ### Markdown
 
@@ -112,7 +113,7 @@ No projection, expected-minutes, scoring, calibration, fixture, uncertainty, cap
 Completed before the candidate commit:
 
 - JavaScript syntax checks for the new evidence, UI and test modules;
-- focused Stage 10.4 harness: **12/12 passing**;
+- focused Stage 10.4 harness: **16/16 passing**;
 - static guards confirming no `projectXP`, `minutesEstimate`, `simulatePlayerGameweek` or `optimiseTransfers` path;
 - static guards confirming no runtime style API or inline-style use in the new UI module;
 - recovery-only snapshot labelling and local-current revision-pointer tests.
@@ -124,7 +125,7 @@ Still required before completion:
 - deterministic JSON, CSV, Markdown, ordering, filenames and hashes;
 - blank/single/double/postponed schedule behaviour inherited from exact Stage 10.3 rows;
 - CSV injection and privacy rejection;
-- 38-Gameweek synthetic export/size boundaries;
+- 38-Gameweek synthetic export/size boundaries, including 26,600 player rows;
 - mobile UI wiring and class-only presentation;
 - successful production build;
 - two byte-identical exact-identity builds;
@@ -133,7 +134,7 @@ Still required before completion:
 ## Remaining limitations
 
 - Browser storage cannot manufacture or restore a full snapshot already pruned or never captured.
-- A season raw-evidence bundle can be partial even when cumulative metric records remain usable.
+- A season review bundle can be partial when referenced source payloads were pruned or never captured, even when cumulative metric records remain usable. Raw all-season outcome/evaluation payloads are intentionally not duplicated into the compact season JSON profile.
 - Manager transfer identities remain unavailable.
 - Starts and Double Gameweek minute allocation can remain missing.
 - Static GitHub Pages cannot export while the app is closed or suspended.
