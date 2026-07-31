@@ -1,0 +1,75 @@
+name: Teamsheet 2.0.1 iPhone preview
+
+on:
+  push:
+    branches:
+      - teamsheet-2.0.1-navigation-settings
+    paths:
+      - .github/workflows/teamsheet-2.0.1-pages-preview.yml
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: teamsheet-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}preview/teamsheet-2.0.1/
+    steps:
+      - name: Check out preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: teamsheet-2.0.1-navigation-settings
+          fetch-depth: 0
+
+      - name: Assemble first-party Pages site
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIEW_COMMIT="$(git rev-parse HEAD)"
+          MAIN_COMMIT="$(git rev-parse origin/main)"
+          mkdir -p _site/preview/teamsheet-2.0.1
+          git show origin/main:index.html > _site/index.html
+          cp index.html _site/preview/teamsheet-2.0.1/index.html
+          touch _site/.nojekyll
+          cat > _site/robots.txt <<'TXT'
+          User-agent: *
+          Disallow: /FPL/preview/
+          TXT
+          printf 'preview_commit=%s\nmain_commit=%s\n' "$PREVIEW_COMMIT" "$MAIN_COMMIT" > _site/preview/teamsheet-2.0.1/build.txt
+          cmp _site/index.html <(git show origin/main:index.html)
+          cmp _site/preview/teamsheet-2.0.1/index.html index.html
+          grep -F '#/fixtures' _site/preview/teamsheet-2.0.1/index.html
+          grep -F '#/leagues' _site/preview/teamsheet-2.0.1/index.html
+          grep -F '#/settings' _site/preview/teamsheet-2.0.1/index.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy preview
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Remove temporary deployment workflow
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/teamsheet-2.0.1-pages-preview.yml
+          git config user.name 'Teamsheet Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Remove temporary Teamsheet 2.0.1 preview workflow'
+          git push origin HEAD:teamsheet-2.0.1-navigation-settings
