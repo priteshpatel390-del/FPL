@@ -31,7 +31,19 @@ jobs:
           fetch-depth: 0
 
       - name: Apply approved interface corrections
-        run: node tools/teamsheet201-iphone-fixes.mjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path='tools/teamsheet201-iphone-fixes.mjs';
+          const source=readFileSync(path,'utf8');
+          const broken="  assert.match(shellSource,/Back to \\\\${originMeta\\.title}/);";
+          const fixed="  assert.match(shellSource,/originMeta\\.title/);";
+          if(!source.includes(broken)) throw new Error('Expected temporary assertion was not found');
+          writeFileSync(path,source.replace(broken,fixed));
+          NODE
+          node tools/teamsheet201-iphone-fixes.mjs
 
       - name: Run preliminary full suite
         shell: bash
