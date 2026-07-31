@@ -90,7 +90,7 @@ Stage 10.5 adds deterministic fault-injection coverage for snapshot/outcome/metr
 ## Teamsheet 2.0.1 navigation verification
 The Teamsheet 2.0.1 baseline is **445/445 tests** with zero failures and zero skipped. Coverage verifies the exact five-destination order, URL aliases and safe fallback, browser-history wiring, `aria-current`, static link semantics, no account/key/evidence identities in routes, free transfers and bank on Team, Player Explorer under Research Tools, purpose-led Settings sections, direct evidence/provider shortcuts and Ask Teamsheet as a global/Team action rather than a sixth tab.
 
-Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. Physical owner acceptance remains required before merge, with the complete end-to-end pre-season rehearsal deferred to Teamsheet 2.0.7.
+Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. PR #48 is merged; its historical physical findings remain recorded, while populated-data transport is tracked separately and the complete end-to-end rehearsal remains deferred to Teamsheet 2.0.7.
 
 ## Teamsheet 2.0.1 physical-review regression coverage
 

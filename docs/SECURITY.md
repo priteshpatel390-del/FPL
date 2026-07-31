@@ -9,7 +9,7 @@ Static single-file application on GitHub Pages. Stage 3 security hardening is co
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
 - Provider and user strings render through DOM builders; AI output uses the restricted Markdown AST.
 - External payloads are validated at provider boundaries and transient failures use bounded retry.
-- Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable through a compact global status and full current-session detail under More; Stage 9.5 changes presentation only.
+- Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable; full current-session detail is organised under Settings → Data & Diagnostics. The navigation placement changes presentation only.
 - Stage 9.6 forbids style attributes/runtime style APIs and removes the related CSP concession without changing provider, storage or model behaviour.
 - Stage 10 snapshot, outcome and metric records use allowlisted shapes, canonical finite JSON, immutable revisions and deterministic SHA-256 verification.
 

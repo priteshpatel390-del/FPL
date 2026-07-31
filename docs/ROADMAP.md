@@ -98,8 +98,8 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 6. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
 7. Projected live rank, projected rival outcomes and protect/balanced/chase strategy logic require separate designs and explicit approval.
 
-## Teamsheet 2.0.1 physical iPhone follow-up
+## Post-merge Teamsheet 2.0.1 investigations
 
-- **Approved interface correction:** global Ask composer, stable dock/icons, focus presentation and simplified Settings back hierarchy.
-- **Investigation only:** non-blocking foreground refresh, reliable populated preview transport, and authoritative read-only bank/free-transfer retrieval.
-- **Merge gate:** full tests/build/reproducibility, refreshed preview, repeat physical iPhone review, populated-data acceptance and explicit owner approval.
+- The global Ask composer, stable dock/icons, focus presentation and simplified Settings hierarchy were merged through PR #48.
+- Non-blocking foreground refresh, reliable populated Official FPL transport and authoritative read-only bank/free-transfer retrieval remain separately gated investigations.
+- These unresolved data/account items do not reopen the completed 2.0.1 navigation scope.
