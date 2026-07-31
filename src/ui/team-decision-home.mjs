@@ -17,6 +17,7 @@ import {
 
 const TEAM_DECISION_HOME_VERSION = '2.0.2';
 const TEAM_DECISION_UNAVAILABLE = new Set(['i','u','s','n']);
+const TEAM_DECISION_BENCH_LABELS = Object.freeze(['GK','1st sub','2nd sub','3rd sub']);
 
 function teamDecisionForecast(xiTotal, captainXp){
   const base = Number.isFinite(Number(xiTotal)) ? Number(xiTotal) : 0;
@@ -97,6 +98,28 @@ function teamDecisionCloseCaptainCopy(firstName,secondName,gap){
   return `${firstName} and ${secondName} are separated by ${Number(gap).toFixed(1)} projected points. This is a close model call; ownership is context only and does not create a protect or chase recommendation.`;
 }
 
+function teamDecisionBenchLabel(index){
+  return TEAM_DECISION_BENCH_LABELS[Number(index)]||`Sub ${Number(index)+1}`;
+}
+
+function teamDecisionRelabelBench(stage){
+  if(!stage?.querySelectorAll) return;
+  const players=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
+  players.forEach((player,index)=>{
+    const label=teamDecisionBenchLabel(index);
+    const nameNode=player.querySelector('.pitch-name');
+    if(nameNode){
+      const playerName=String(nameNode.textContent||'').replace(/^\d+\.\s*/, '');
+      nameNode.textContent=`${label} · ${playerName}`;
+    }
+    const aria=player.getAttribute('aria-label');
+    if(aria){
+      const detail=aria.replace(/^\d+\.\s*/, '');
+      player.setAttribute('aria-label',`${label}, ${detail}`);
+    }
+  });
+}
+
 function teamDecisionPlaceholderPlayer(label='—'){
   return el('div',{class:'pitch-player team-home-placeholder-player','aria-hidden':'true'},
     el('div',{class:'shirt-wrap'},
@@ -113,7 +136,7 @@ function teamDecisionPlaceholderStage(gw,message){
     el('div',{class:'pitch-formation'},line(4,3),line(3,4),line(2,3),line(1,1)));
   const bench=el('section',{class:'team-bench','aria-label':'Bench unavailable'},
     el('div',{class:'bench-head'},el('strong',{},'Bench'),el('span',{},'Auto-sub order')),
-    el('div',{class:'bench-grid'},Array.from({length:4},(_,index)=>teamDecisionPlaceholderPlayer(String(index+1)))));
+    el('div',{class:'bench-grid'},Array.from({length:4},(_,index)=>teamDecisionPlaceholderPlayer(teamDecisionBenchLabel(index)))));
   return el('div',{class:'team-stage'},pitch,bench);
 }
 
@@ -297,7 +320,7 @@ function teamDecisionEnhanceRenderedTeam(){
   previewState=decisionPreviewSnapshot();
   const previewActive=Boolean(previewState.transfer||effectiveCaptaincy.isPreview);
   const action=teamDecisionAction({hasSquad:true,deadlinePassed:deadline.passed,previewActive,riskKind:risk.kind});
-  const bench=xi.bench.map((slot,index)=>`${index+1} ${slot.p.web_name}`).join(' · ');
+  const bench=xi.bench.map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
   const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank,ft,bank});
@@ -307,6 +330,7 @@ function teamDecisionEnhanceRenderedTeam(){
   const previewBanner=children.find(node=>node.classList?.contains('decision-preview-banner'))||null;
   const controls=children.find(node=>node.classList?.contains('decision-preview-controls'))||null;
   const stage=children.find(node=>node.classList?.contains('team-stage'))||null;
+  teamDecisionRelabelBench(stage);
   const captainHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim()==='Captaincy ranking')||null;
   const captainGrid=captainHeading?.nextElementSibling?.classList?.contains('capgrid')?captainHeading.nextElementSibling:null;
   const allHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim().startsWith('All 15'))||null;
@@ -345,10 +369,13 @@ teamDecisionInstall();
 
 export {
   TEAM_DECISION_HOME_VERSION,
+  TEAM_DECISION_BENCH_LABELS,
   teamDecisionForecast,
   teamDecisionSquadReady,
   teamDecisionSourceLabel,
   teamDecisionRisk,
   teamDecisionAction,
-  teamDecisionCloseCaptainCopy
+  teamDecisionCloseCaptainCopy,
+  teamDecisionBenchLabel,
+  teamDecisionRelabelBench
 };
