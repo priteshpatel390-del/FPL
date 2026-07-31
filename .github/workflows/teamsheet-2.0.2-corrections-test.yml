@@ -24,50 +24,60 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run complete test suite and deterministic build
-        shell: bash
-        env:
-          BUILD_COMMIT: 50d5aff2650398560b17a4c80487e273ca3d3be7
-        run: |
-          set -euo pipefail
-          ./run-tests.sh | tee /tmp/teamsheet-corrections.log
-          TEST_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
-          PASS_COUNT="$(awk '/^# pass /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
-          FAIL_COUNT="$(awk '/^# fail /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
-          SKIP_COUNT="$(awk '/^# skipped /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
-          test -n "$TEST_COUNT"
-          test "$PASS_COUNT" = "$TEST_COUNT"
-          test "$FAIL_COUNT" = "0"
-          test "$SKIP_COUNT" = "0"
-          mkdir -p /tmp/teamsheet-build-one
-          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-one/
-          node build.mjs
-          cmp /tmp/teamsheet-build-one/index.html dist/index.html
-          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
-          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
-          cmp dist/index.html index.html
-          mkdir -p .verification
-          node - <<'NODE'
-          const fs=require('node:fs');
-          const crypto=require('node:crypto');
-          const log=fs.readFileSync('/tmp/teamsheet-corrections.log','utf8');
-          const value=name=>Number((new RegExp(`^# ${name} (\\d+)$`,'m').exec(log)||[])[1]||0);
-          const sha=path=>crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex');
-          const manifest=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
-          fs.writeFileSync('.verification/teamsheet-2.0.2-corrections.json',JSON.stringify({
-            sourceCommit:process.env.BUILD_COMMIT,
-            tests:value('tests'),pass:value('pass'),fail:value('fail'),skipped:value('skipped'),
-            modelVersion:manifest.modelVersion,rulesVersion:manifest.rulesVersion,sourceHash:manifest.sourceHash,
-            deterministic:true,rootMatchesDist:true,
-            indexSha256:sha('dist/index.html'),bundleSha256:sha('dist/app.bundle.js'),manifestSha256:sha('dist/manifest.json')
-          },null,2)+'\n');
-          NODE
-      - name: Publish verification evidence
+      - name: Record workflow start
         shell: bash
         run: |
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          mkdir -p .verification
+          printf '{"status":"running","trigger":"%s"}\n' "$GITHUB_SHA" > .verification/teamsheet-2.0.2-corrections-probe.json
+          git add .verification/teamsheet-2.0.2-corrections-probe.json
+          git commit -m "Record Teamsheet 2.0.2 verification start"
+          git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
+      - name: Run complete test suite and deterministic build
+        id: verify
+        shell: bash
+        env:
+          BUILD_COMMIT: 50d5aff2650398560b17a4c80487e273ca3d3be7
+        run: |
+          set +e
+          ./run-tests.sh > /tmp/teamsheet-corrections.log 2>&1
+          STATUS=$?
+          cat /tmp/teamsheet-corrections.log
+          TEST_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          PASS_COUNT="$(awk '/^# pass /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          FAIL_COUNT="$(awk '/^# fail /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          SKIP_COUNT="$(awk '/^# skipped /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          DETERMINISTIC=false
+          ROOT_MATCH=false
+          if [ "$STATUS" -eq 0 ] && [ -n "$TEST_COUNT" ] && [ "$PASS_COUNT" = "$TEST_COUNT" ] && [ "$FAIL_COUNT" = "0" ] && [ "$SKIP_COUNT" = "0" ]; then
+            mkdir -p /tmp/teamsheet-build-one
+            cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-one/
+            node build.mjs
+            if cmp /tmp/teamsheet-build-one/index.html dist/index.html && cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js && cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json; then DETERMINISTIC=true; else STATUS=1; fi
+            if cmp dist/index.html index.html; then ROOT_MATCH=true; else STATUS=1; fi
+          fi
+          export STATUS TEST_COUNT PASS_COUNT FAIL_COUNT SKIP_COUNT DETERMINISTIC ROOT_MATCH
+          mkdir -p .verification
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const crypto=require('node:crypto');
+          const exists=path=>fs.existsSync(path);
+          const sha=path=>exists(path)?crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex'):null;
+          const manifest=exists('dist/manifest.json')?JSON.parse(fs.readFileSync('dist/manifest.json','utf8')):{};
+          const tail=fs.readFileSync('/tmp/teamsheet-corrections.log','utf8').split('\n').slice(-80).join('\n');
+          fs.writeFileSync('.verification/teamsheet-2.0.2-corrections.json',JSON.stringify({
+            status:Number(process.env.STATUS)===0?'passed':'failed',
+            sourceCommit:process.env.BUILD_COMMIT,
+            tests:Number(process.env.TEST_COUNT||0),pass:Number(process.env.PASS_COUNT||0),fail:Number(process.env.FAIL_COUNT||0),skipped:Number(process.env.SKIP_COUNT||0),
+            modelVersion:manifest.modelVersion||null,rulesVersion:manifest.rulesVersion||null,sourceHash:manifest.sourceHash||null,
+            deterministic:process.env.DETERMINISTIC==='true',rootMatchesDist:process.env.ROOT_MATCH==='true',
+            indexSha256:sha('dist/index.html'),bundleSha256:sha('dist/app.bundle.js'),manifestSha256:sha('dist/manifest.json'),
+            logTail:tail
+          },null,2)+'\n');
+          NODE
           git add .verification/teamsheet-2.0.2-corrections.json
           git commit -m "Record Teamsheet 2.0.2 correction verification"
           git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
+          exit "$STATUS"
