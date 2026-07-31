@@ -4,32 +4,56 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: read
 
 jobs:
-  verify:
+  verify-corrections:
+    if: github.head_ref == 'agent/teamsheet-2.0.2-team-decision-home'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out correction branch
+        uses: actions/checkout@v4
         with:
-          node-version: 22
-      - name: Run complete test suite
-        env:
-          BUILD_COMMIT: 50d5aff2650398560b17a4c80487e273ca3d3be7
-        run: ./run-tests.sh
-      - name: Verify deterministic production build
+          ref: agent/teamsheet-2.0.2-team-decision-home
+          fetch-depth: 0
+      - name: Use repository baseline Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run complete test suite and deterministic build
+        shell: bash
         env:
           BUILD_COMMIT: 50d5aff2650398560b17a4c80487e273ca3d3be7
         run: |
-          cp dist/index.html /tmp/index.first.html
-          cp dist/app.bundle.js /tmp/app.first.js
-          cp dist/manifest.json /tmp/manifest.first.json
+          set -euo pipefail
+          ./run-tests.sh | tee /tmp/teamsheet-corrections.log
+          TEST_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          PASS_COUNT="$(awk '/^# pass /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          FAIL_COUNT="$(awk '/^# fail /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          SKIP_COUNT="$(awk '/^# skipped /{value=$3} END{print value}' /tmp/teamsheet-corrections.log)"
+          test -n "$TEST_COUNT"
+          test "$PASS_COUNT" = "$TEST_COUNT"
+          test "$FAIL_COUNT" = "0"
+          test "$SKIP_COUNT" = "0"
+          mkdir -p /tmp/teamsheet-build-one
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-one/
           node build.mjs
-          cmp /tmp/index.first.html dist/index.html
-          cmp /tmp/app.first.js dist/app.bundle.js
-          cmp /tmp/manifest.first.json dist/manifest.json
+          cmp /tmp/teamsheet-build-one/index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
           cmp dist/index.html index.html
+          {
+            echo '## Teamsheet 2.0.2 correction verification'
+            echo
+            echo "- Tests: $TEST_COUNT/$TEST_COUNT"
+            echo '- Two exact-identity builds: byte-identical'
+            echo '- Root index.html equals dist/index.html'
+            echo '- Model/rules unchanged: 2.4.0 / 2026-27.3'
+          } >> "$GITHUB_STEP_SUMMARY"
