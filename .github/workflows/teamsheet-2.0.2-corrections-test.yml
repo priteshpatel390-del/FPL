@@ -3,9 +3,11 @@ name: Finalise Teamsheet 2.0.2 corrections
 on:
   pull_request:
     branches:
-      - main
+      - agent/teamsheet-2.0.2-team-decision-home
     types:
-      - ready_for_review
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
@@ -16,7 +18,7 @@ concurrency:
 
 jobs:
   finalise:
-    if: github.event.pull_request.head.ref == 'agent/teamsheet-2.0.2-team-decision-home'
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
