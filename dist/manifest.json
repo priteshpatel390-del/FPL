@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "87026e8b7a085b05f2031329ee81685e08b519631b247db66c9dc5dda19ec8d4",
-  "commit": "081d71cd774bef76fed689165107b5f7fc9d2a2d",
+  "sourceHash": "c94150da5d5f0fd9839aaab64adb576d4c6fd4bae0618d6e9705956e2cc260ee",
+  "commit": "f0ca01317b4a9bb9749b807d41c3cc0451d4d128",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -38,6 +38,7 @@
     "src/evidence/metrics.mjs",
     "src/evidence/review.mjs",
     "src/ui/views.mjs",
+    "src/ui/team-decision-home.mjs",
     "src/ui/transfer-optimiser-view.mjs",
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
