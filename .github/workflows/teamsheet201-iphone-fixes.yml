@@ -37,11 +37,13 @@ jobs:
           node <<'NODE'
           import { readFileSync, writeFileSync } from 'node:fs';
           const path='tools/teamsheet201-iphone-fixes.mjs';
-          const source=readFileSync(path,'utf8');
+          let source=readFileSync(path,'utf8');
           const broken="  assert.match(shellSource,/Back to \\\\${originMeta\\.title}/);";
           const fixed="  assert.match(shellSource,/originMeta\\.title/);";
           if(!source.includes(broken)) throw new Error('Expected temporary assertion was not found');
-          writeFileSync(path,source.replace(broken,fixed));
+          source=source.replace(broken,fixed);
+          source=source.replace("assert(!appHtml.includes('providerHealthCompact'), 'Provider compact CSS remained');\n",'');
+          writeFileSync(path,source);
           NODE
           node tools/teamsheet201-iphone-fixes.mjs
 
