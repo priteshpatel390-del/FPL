@@ -1,0 +1,116 @@
+name: Teamsheet 2.0.2 startup copy correction
+
+on:
+  push:
+    branches:
+      - agent/teamsheet-2.0.2-team-decision-home
+
+permissions:
+  contents: write
+
+jobs:
+  correct-copy:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.2-team-decision-home
+          fetch-depth: 0
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Apply approved startup wording
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/ui/team-decision-home.mjs')
+          source = source_path.read_text()
+          replacements = {
+              "pitch.setAttribute('aria-label','Preparing the Team decision pitch');": "pitch.setAttribute('aria-label','Loading your team');",
+              "if(sub) sub.textContent='Preparing your decision home';": "if(sub) sub.textContent='Loading your team';",
+          }
+          for old, new in replacements.items():
+              if source.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one occurrence of: {old}')
+              source = source.replace(old, new)
+          source_path.write_text(source)
+
+          test_path = Path('tests/team-decision-home.test.mjs')
+          tests = test_path.read_text()
+          needle = r"  assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);" + "\n"
+          inserted = (
+              r"  assert.match(source,/sub\.textContent='Loading your team'/);" + "\n"
+              + r"  assert.doesNotMatch(source,/Preparing your decision home/);" + "\n"
+              + needle
+          )
+          if tests.count(needle) != 1:
+              raise SystemExit('Could not locate the Team presentation-only assertion boundary')
+          test_path.write_text(tests.replace(needle, inserted))
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/ui/team-decision-home.mjs tests/team-decision-home.test.mjs
+          git commit -m "Clarify Team startup copy"
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Run full verification and deterministic build check
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Node $(node --version)"
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html > /tmp/build-one.sha
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html > /tmp/build-two.sha
+          diff -u /tmp/build-one.sha /tmp/build-two.sha
+          cmp -s index.html dist/index.html
+
+      - name: Commit verified deployables and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Publish verified Team startup copy"
+          echo "GENERATED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+          rm .github/workflows/teamsheet-2.0.2-startup-copy.yml
+          git add -u .github/workflows/teamsheet-2.0.2-startup-copy.yml
+          git commit -m "Remove temporary Team startup copy workflow"
+          FINAL_SHA=$(git rev-parse HEAD)
+          echo "FINAL_SHA=$FINAL_SHA" >> "$GITHUB_ENV"
+          git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
+
+      - name: Refresh physical iPhone preview routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -B teamsheet-2.0.1-pages-preview "$FINAL_SHA"
+          mkdir -p preview/teamsheet-2.0.1 preview/teamsheet-2.0.2
+          cp index.html preview/teamsheet-2.0.1/index.html
+          cp index.html preview/teamsheet-2.0.2/index.html
+          git add preview/teamsheet-2.0.1/index.html preview/teamsheet-2.0.2/index.html
+          git commit -m "Refresh Teamsheet 2.0.2 iPhone preview"
+          git push --force origin HEAD:teamsheet-2.0.1-pages-preview
+
+      - name: Write verification summary
+        shell: bash
+        run: |
+          {
+            echo "### Teamsheet 2.0.2 startup copy correction"
+            echo "- Source commit: $SOURCE_SHA"
+            echo "- Generated commit: $GENERATED_SHA"
+            echo "- Final review head: $FINAL_SHA"
+            echo "- Full suite passed"
+            echo "- Deterministic two-build comparison passed"
+            echo "- Root and deployable HTML are identical"
+            echo "- Both iPhone preview routes refreshed"
+          } >> "$GITHUB_STEP_SUMMARY"
