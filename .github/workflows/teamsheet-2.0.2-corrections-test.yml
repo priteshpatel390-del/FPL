@@ -1,11 +1,11 @@
 name: Finalise Teamsheet 2.0.2 corrections
 
 on:
-  push:
-    branches:
-      - agent/teamsheet-2.0.2-team-decision-home
+  pull_request:
+    types: [synchronize]
     paths:
       - .github/teamsheet-2.0.2-corrections-trigger
+      - .github/workflows/teamsheet-2.0.2-corrections-test.yml
 
 permissions:
   contents: write
@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   finalise:
+    if: github.event.pull_request.head.ref == 'agent/teamsheet-2.0.2-team-decision-home'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
