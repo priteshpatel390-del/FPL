@@ -1,0 +1,91 @@
+name: Finalise Teamsheet 2.0.2 corrections
+
+on:
+  pull_request:
+    branches:
+      - agent/teamsheet-2.0.2-team-decision-home
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teamsheet-2.0.2-correction-finalisation
+  cancel-in-progress: false
+
+jobs:
+  finalise:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.2-team-decision-home
+          fetch-depth: 0
+
+      - name: Use repository baseline Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Remove temporary verification evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Teamsheet Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          rm -rf .verification
+          rm -f .github/teamsheet-2.0.2-corrections-trigger
+          rm -f .github/workflows/teamsheet-2.0.2-corrections-test.yml
+          git add -A
+          git commit -m 'Remove temporary Teamsheet 2.0.2 verification evidence'
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Run exact-identity full verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT="$SOURCE_COMMIT" ./run-tests.sh | tee /tmp/teamsheet-final.log
+          TEST_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          PASS_COUNT="$(awk '/^# pass /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          FAIL_COUNT="$(awk '/^# fail /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          SKIP_COUNT="$(awk '/^# skipped /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          test "$TEST_COUNT" = '459'
+          test "$PASS_COUNT" = "$TEST_COUNT"
+          test "$FAIL_COUNT" = '0'
+          test "$SKIP_COUNT" = '0'
+          mkdir -p /tmp/teamsheet-build-one
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-one/
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/teamsheet-build-one/index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          grep -F "$SOURCE_COMMIT" dist/manifest.json
+          grep -F '"modelVersion": "2.4.0"' dist/manifest.json
+          grep -F '"rulesVersion": "2026-27.3"' dist/manifest.json
+          echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
+
+      - name: Publish verified build and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
+          git commit -m 'Publish verified Teamsheet 2.0.2 correction build'
+          GENERATED_COMMIT="$(git rev-parse HEAD)"
+          rm -f .github/workflows/stage10-4-verify.yml
+          git add -A
+          git commit -m "Complete Teamsheet 2.0.2 correction verification
+
+Verified source: $SOURCE_COMMIT
+Generated commit: $GENERATED_COMMIT
+Tests: $TEST_COUNT/$TEST_COUNT
+Two exact-identity builds: byte-identical
+Root index.html equals dist/index.html
+Model/rules unchanged: 2.4.0 / 2026-27.3"
+          git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
