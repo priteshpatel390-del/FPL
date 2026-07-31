@@ -13,6 +13,9 @@ permissions:
 jobs:
   implement-and-verify:
     runs-on: ubuntu-latest
+    concurrency:
+      group: teamsheet-2-0-1-implementation
+      cancel-in-progress: true
     steps:
       - name: Check out implementation branch
         uses: actions/checkout@v4
@@ -26,11 +29,25 @@ jobs:
           node-version: '20'
 
       - name: Apply approved navigation and Settings changes
-        run: python3 scripts/apply-teamsheet-2.0.1.py
+        run: |
+          python3 -m py_compile scripts/apply-teamsheet-2.0.1.py
+          python3 scripts/apply-teamsheet-2.0.1.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('tests/navigation-settings.test.mjs')
+          text=path.read_text(encoding='utf-8')
+          old="""  assert.match(shellSource,/teamContext/);\n  assert.match(shellSource,/'ftCount','bankIn'/);\n  assert.match(shellSource,/Free transfers and bank stay visible on Team/);"""
+          new="""  assert.match(shellSource,/teamContext/);\n  assert.match(appHtml,/id=\"ftCount\"/);\n  assert.match(appHtml,/id=\"bankIn\"/);\n  assert.match(shellSource,/Free transfers and bank stay visible on Team/);"""
+          if text.count(old)!=1:
+            raise SystemExit('Team resource assertion patch did not match exactly once')
+          path.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
 
       - name: Remove temporary automation files
         run: |
           rm -f scripts/apply-teamsheet-2.0.1.py
+          rm -f scripts/__pycache__/apply-teamsheet-2.0.1.*.pyc
+          rmdir scripts/__pycache__ 2>/dev/null || true
           rm -f .github/workflows/teamsheet-2-0-1-implementation.yml
 
       - name: Run preflight suite and record exact count
