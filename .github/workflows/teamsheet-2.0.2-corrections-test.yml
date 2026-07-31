@@ -1,0 +1,38 @@
+name: Teamsheet 2.0.2 corrections test
+
+on:
+  push:
+    branches:
+      - agent/teamsheet-2.0.2-team-decision-home
+    paths:
+      - .github/workflows/teamsheet-2.0.2-corrections-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run complete test suite
+        env:
+          BUILD_COMMIT: 50d5aff2650398560b17a4c80487e273ca3d3be7
+        run: ./run-tests.sh
+      - name: Verify deterministic production build
+        env:
+          BUILD_COMMIT: 50d5aff2650398560b17a4c80487e273ca3d3be7
+        run: |
+          cp dist/index.html /tmp/index.first.html
+          cp dist/app.bundle.js /tmp/app.first.js
+          cp dist/manifest.json /tmp/manifest.first.json
+          node build.mjs
+          cmp /tmp/index.first.html dist/index.html
+          cmp /tmp/app.first.js dist/app.bundle.js
+          cmp /tmp/manifest.first.json dist/manifest.json
+          cmp dist/index.html index.html
+          git diff --exit-code -- dist/index.html dist/app.bundle.js dist/manifest.json index.html
