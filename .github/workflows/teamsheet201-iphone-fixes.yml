@@ -1,0 +1,115 @@
+name: Teamsheet 2.0.1 iPhone review fixes
+
+on:
+  push:
+    branches:
+      - teamsheet-2.0.1-navigation-settings
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teamsheet201-iphone-fixes
+  cancel-in-progress: false
+
+jobs:
+  implement-and-verify:
+    if: github.event_name == 'push' || github.head_ref == 'teamsheet-2.0.1-navigation-settings'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: teamsheet-2.0.1-navigation-settings
+          fetch-depth: 0
+
+      - name: Apply approved interface corrections
+        run: node tools/teamsheet201-iphone-fixes.mjs
+
+      - name: Run preliminary full suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./run-tests.sh | tee /tmp/teamsheet-preliminary.log
+          TEST_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-preliminary.log)"
+          test -n "$TEST_COUNT"
+          echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
+          git restore dist index.html
+          node - "$TEST_COUNT" <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const count=process.argv[2];
+          const paths=['CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ROADMAP.md','docs/TESTING.md','docs/TEAMSHEET2-ITEM1.md'];
+          for(const path of paths){
+            const source=readFileSync(path,'utf8');
+            writeFileSync(path,source.replaceAll('__TEST_COUNT__',count));
+          }
+          NODE
+
+      - name: Commit verified source and documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Teamsheet Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add CLAUDE.md app.html src/ui/app-shell.mjs src/ui/evidence.mjs tests/navigation-settings.test.mjs tests/provider-health-ui.test.mjs docs
+          git commit -m 'Address Teamsheet 2.0.1 physical iPhone review'
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Run exact-identity full verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT="$SOURCE_COMMIT" ./run-tests.sh | tee /tmp/teamsheet-final.log
+          FINAL_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          test "$FINAL_COUNT" = "$TEST_COUNT"
+          mkdir -p /tmp/teamsheet-build-one
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-one/
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/teamsheet-build-one/index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
+          cp dist/index.html index.html
+          cmp index.html dist/index.html
+          grep -F "$SOURCE_COMMIT" dist/manifest.json
+          grep -F '"modelVersion": "2.4.0"' dist/manifest.json
+          grep -F '"rulesVersion": "2026-27.3"' dist/manifest.json
+
+      - name: Publish generated deployables
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
+          git commit -m 'Publish verified Teamsheet 2.0.1 iPhone review build'
+          echo "BUILD_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Remove temporary implementation tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f tools/teamsheet201-iphone-fixes.mjs .github/workflows/teamsheet201-iphone-fixes.yml
+          git add -A
+          git commit -m 'Remove temporary Teamsheet 2.0.1 iPhone review tooling'
+          git push origin HEAD:teamsheet-2.0.1-navigation-settings
+          echo "FINAL_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Verification summary
+        shell: bash
+        run: |
+          {
+            echo '## Teamsheet 2.0.1 iPhone review verification'
+            echo
+            echo "- Tests: $TEST_COUNT/$TEST_COUNT"
+            echo "- Verified source commit: $SOURCE_COMMIT"
+            echo "- Generated build commit: $BUILD_COMMIT"
+            echo "- Final cleanup head: $FINAL_HEAD"
+            echo '- Two exact-identity builds: byte-identical'
+            echo '- Root index.html equals dist/index.html'
+            echo '- Model/rules unchanged: 2.4.0 / 2026-27.3'
+          } >> "$GITHUB_STEP_SUMMARY"
