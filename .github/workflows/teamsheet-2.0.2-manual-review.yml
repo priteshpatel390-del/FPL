@@ -1,0 +1,478 @@
+name: Teamsheet 2.0.2 manual fallback review
+
+on:
+  push:
+    branches:
+      - agent/teamsheet-2.0.2-team-decision-home
+
+permissions:
+  contents: write
+
+jobs:
+  correct-and-preview:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.2-team-decision-home
+          fetch-depth: 0
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Apply approved production presentation correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/ui/team-decision-home.mjs')
+          source = source_path.read_text()
+
+          old_action = """function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+            if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
+            if(!hasSquad) return 'Connect a Team ID or complete a legal manual 15-player squad to calculate the decision home.';
+            if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
+            if(riskKind==='data-unavailable'||riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
+            if(riskKind.includes('unavailable')||riskKind.includes('doubtful')) return 'Review the affected player. Open Transfers if a replacement is needed, then set the final XI, captaincy and bench in Official FPL.';
+            return 'Review and set this XI, captaincy and bench in Official FPL. Use Transfers for the separate roll-or-transfer decision.';
+          }"""
+          new_action = """function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+            if(riskKind==='data-unavailable') return 'Official FPL season data is unavailable. Manual squad editing also needs the verified player list, so retry the data load before building a squad.';
+            if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
+            if(!hasSquad) return 'Enter your Team ID in Team setup below, or open Settings → Team & Account to build a manual squad.';
+            if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
+            if(riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
+            if(riskKind.includes('unavailable')||riskKind.includes('doubtful')) return 'Review the affected player. Open Transfers if a replacement is needed, then set the final XI, captaincy and bench in Official FPL.';
+            return 'Review and set this XI, captaincy and bench in Official FPL. Use Transfers for the separate roll-or-transfer decision.';
+          }"""
+          if source.count(old_action) != 1:
+              raise SystemExit('Could not locate the exact Team deadline-action function')
+          source = source.replace(old_action, new_action)
+
+          marker = "function teamDecisionSetupShell(){\n"
+          helper = """function teamDecisionUpdateManualAvailability(){
+            const available=Boolean(S.boot);
+            const manualToggle=$('useManual'),manualSearch=$('pSearch'),manualLink=$('manualSquadLink');
+            if(manualToggle){
+              manualToggle.disabled=!available;
+              manualToggle.setAttribute('aria-describedby','manualModeAvailability manualEditorAvailability');
+            }
+            if(manualSearch){
+              manualSearch.disabled=!available;
+              manualSearch.setAttribute('aria-describedby','manualEditorAvailability');
+            }
+            ['manualModeAvailability','manualEditorAvailability'].map(id=>$(id)).filter(Boolean).forEach(node=>{
+              node.textContent=available
+                ? 'Manual squad editing is available in Settings → Team & Account.'
+                : 'Manual squad editing is unavailable until verified Official FPL player data loads.';
+            });
+            if(manualLink) manualLink.hidden=!available;
+          }
+
+          """
+          if source.count(marker) != 1 or 'function teamDecisionUpdateManualAvailability' in source:
+              raise SystemExit('Could not insert the manual-availability presenter safely')
+          source = source.replace(marker, helper + marker)
+
+          old_shell = """    relabel('ftCount','Free transfers (manual)');
+              relabel('bankIn','Bank £m (manual)');
+              teamView.insertBefore(context,out.nextSibling);
+            }
+            let support=$('teamHomeSupport');"""
+          new_shell = """    relabel('ftCount','Free transfers (manual)');
+              relabel('bankIn','Bank £m (manual)');
+              const manualToggle=$('useManual'),manualCopy=manualToggle?.parentElement;
+              const manualText=Array.from(manualCopy?.childNodes||[]).find(node=>node.nodeType===3);
+              if(manualText) manualText.nodeValue=' Use my manually entered squad';
+              const manualStatus=el('p',{id:'manualModeAvailability',class:'status'});
+              const manualLink=el('a',{id:'manualSquadLink',class:'btn ghost sm',href:'#/settings/team-account'},'Open manual squad editor');
+              context.append(manualStatus,manualLink);
+              teamView.insertBefore(context,out.nextSibling);
+            }
+            teamDecisionUpdateManualAvailability();
+            let support=$('teamHomeSupport');"""
+          if source.count(old_shell) != 1:
+              raise SystemExit('Could not locate Team setup shell insertion point')
+          source = source.replace(old_shell, new_shell)
+
+          old_enhance = """function teamDecisionEnhanceRenderedTeam(){
+            if(typeof document==='undefined') return;
+            const out=$('squadOut'),support=$('teamHomeSupport');"""
+          new_enhance = """function teamDecisionEnhanceRenderedTeam(){
+            if(typeof document==='undefined') return;
+            teamDecisionUpdateManualAvailability();
+            const out=$('squadOut'),support=$('teamHomeSupport');"""
+          if source.count(old_enhance) != 1:
+              raise SystemExit('Could not locate Team renderer enhancement entry')
+          source = source.replace(old_enhance, new_enhance)
+          source_path.write_text(source)
+
+          app_path = Path('app.html')
+          app = app_path.read_text()
+          old_empty = 'Load your team ID above, or build your 15 by hand below.'
+          new_empty = 'Enter your Team ID in Team setup below. Manual squad editing will become available after the verified player list loads.'
+          if app.count(old_empty) != 1:
+              raise SystemExit('Could not locate the misleading empty-state copy')
+          app_path.write_text(app.replace(old_empty, new_empty))
+
+          shell_path = Path('src/ui/app-shell.mjs')
+          shell = shell_path.read_text()
+          old_panel = """  const manualPanel=teamsheetElement('section',{class:'panel'},
+              teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
+              teamsheetElement('h2',{},'Manual squad'),
+              teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled.'));"""
+          new_panel = """  const manualPanel=teamsheetElement('section',{class:'panel'},
+              teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
+              teamsheetElement('h2',{},'Manual squad'),
+              teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled. The verified Official FPL player list is required.'),
+              teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));"""
+          if shell.count(old_panel) != 1:
+              raise SystemExit('Could not locate the Settings manual panel')
+          shell_path.write_text(shell.replace(old_panel, new_panel))
+
+          test_path = Path('tests/team-decision-home.test.mjs')
+          tests = test_path.read_text()
+          old_action_test = """  assert.match(teamDecisionAction({hasSquad:true,previewActive:true}),/user preview/);
+            assert.match(teamDecisionAction({hasSquad:true,deadlinePassed:true}),/deadline has passed/);
+            assert.doesNotMatch(teamDecisionAction({hasSquad:true}),/submitted|changed your FPL/i);"""
+          new_action_test = """  assert.match(teamDecisionAction({hasSquad:true,previewActive:true}),/user preview/);
+            assert.match(teamDecisionAction({hasSquad:true,deadlinePassed:true}),/deadline has passed/);
+            assert.match(teamDecisionAction({hasSquad:false,riskKind:'data-unavailable'}),/Manual squad editing also needs the verified player list/);
+            assert.doesNotMatch(teamDecisionAction({hasSquad:false,riskKind:'data-unavailable'}),/complete a legal manual|build your 15/i);
+            assert.doesNotMatch(teamDecisionAction({hasSquad:true}),/submitted|changed your FPL/i);"""
+          if tests.count(old_action_test) != 1:
+              raise SystemExit('Could not locate deadline-action assertions')
+          tests = tests.replace(old_action_test, new_action_test)
+          old_wiring = """  assert.match(source,/sub\\.textContent='Loading your team'/);
+            assert.doesNotMatch(source,/Preparing your decision home/);
+            assert.doesNotMatch(source,/optimiseTransfers\\(|simulatePlayerGameweek\\(|localStorage|sessionStorage|sset\\(/);"""
+          new_wiring = """  assert.match(source,/sub\\.textContent='Loading your team'/);
+            assert.doesNotMatch(source,/Preparing your decision home/);
+            assert.match(source,/manualToggle\\.disabled=!available/);
+            assert.match(source,/Manual squad editing is unavailable until verified Official FPL player data loads/);
+            assert.doesNotMatch(app,/Load your team ID above|build your 15 by hand below/);
+            assert.doesNotMatch(source,/optimiseTransfers\\(|simulatePlayerGameweek\\(|localStorage|sessionStorage|sset\\(/);"""
+          if tests.count(old_wiring) != 1:
+              raise SystemExit('Could not locate production-wiring assertions')
+          test_path.write_text(tests.replace(old_wiring, new_wiring))
+          PY
+
+          cat > docs/TEAMSHEET2-MANUAL-FALLBACK-INVESTIGATION.md <<'EOF'
+          # Teamsheet 2.0 — Manual squad fallback investigation
+
+          Status: **Investigation and design only. No provider, catalogue or transport implementation is approved by this document.**
+
+          ## Outcome
+
+          The current manual squad editor is not a first-run offline fallback. It stores a compact list of Official FPL player IDs and bought prices, but it relies on the verified `/bootstrap-static/` player catalogue to resolve each ID into a current player name, club, position, price and status. Player search also reads that same catalogue. When core Official FPL season data is unavailable and no verified cache exists, the editor cannot safely create or render a squad.
+
+          Teamsheet 2.0.2 now states this limitation plainly and disables the unavailable controls. A fictional sample-squad route exists only for physical layout review. It is not production data, is storage-isolated, cannot become evidence and must never be offered as an FPL recommendation.
+
+          ## Existing behaviour and evidence
+
+          - Core bootstrap and fixtures are the only critical provider payloads.
+          - A previously verified cache can keep the application usable, with age and fallback labelling.
+          - On a first load with no acceptable cache, player identities, teams, positions, prices and fixtures are unavailable.
+          - Manual records alone are insufficient because they intentionally do not duplicate the changing season catalogue.
+          - The player search fails closed when `S.boot` is unavailable; this prevents fabricated or stale player identities.
+
+          ## Options
+
+          ### A. Same-origin Official FPL transport
+
+          Add a small serverless read-only proxy for the existing Official FPL endpoints. This is the recommended primary remedy because it repairs the authoritative source rather than creating a parallel player truth.
+
+          Approval evidence required:
+
+          - exact endpoints and allowlisted fields;
+          - no FPL write or authentication capability;
+          - origin controls, rate limits, timeouts and cache policy;
+          - schema validation identical to the browser path;
+          - outage and stale-cache behaviour;
+          - privacy treatment for Team IDs;
+          - deployment, monitoring and rollback plan;
+          - transport and security regression tests.
+
+          Trade-off: this introduces hosted infrastructure and operational responsibility, which the current static architecture deliberately avoids.
+
+          ### B. Bundled Official FPL player catalogue
+
+          Ship a pinned build-time catalogue derived from a validated Official FPL bootstrap snapshot. This could permit first-run manual player selection when live transport is down.
+
+          Approval evidence required:
+
+          - provenance, season identity, generation command and source hash;
+          - allowlisted fields only: player ID, display name, club, position, price and official availability where justified;
+          - expiry/staleness labelling and deterministic update process;
+          - validation against the live schema and duplicate/identity checks;
+          - clear separation between catalogue browsing and recommendation readiness;
+          - no fixtures or projections manufactured from a stale catalogue;
+          - licensing, repository-size and release-maintenance assessment;
+          - tests proving stale catalogue data cannot be labelled live or official-current.
+
+          Trade-off: it can enable editing, but it cannot by itself support trustworthy forecasts because fixtures, deadlines, prices and availability can change.
+
+          ### C. Existing verified cache only
+
+          Preserve the current cached bootstrap and fixtures after a successful prior session. This already provides the safest zero-infrastructure fallback and should remain the first fallback tier.
+
+          Limitation: it cannot help a new device or a cleared browser before its first successful verified load.
+
+          ## Rejected shortcuts
+
+          - Do not invent players or use the sample review fixture in production.
+          - Do not scrape an unapproved third-party player list.
+          - Do not treat saved manual IDs as enough to calculate a squad when the current catalogue and fixtures are absent.
+          - Do not silently label stale catalogue values as current Official FPL data.
+          - Do not add another provider without approved purpose, fields, reliability, validation, fallback, security and tests.
+
+          ## Recommendation
+
+          Investigate option A first: a same-origin, read-only Official FPL transport for the existing endpoints and validators. Option B may be considered as a separately approved editing-only fallback after the serverless design, but it must not unlock forecasts without verified fixtures and deadline context. Option C remains the immediate runtime fallback.
+
+          ## Next approval gate
+
+          Before implementation, present the selected option with exact inputs, source and field allowlist, reliability target, cache/expiry policy, failure states, security boundary, privacy treatment, validation plan, tests, deployment impact and rollback. Model, fixture, captaincy, squad-selection and transfer calculations remain out of scope.
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          item = Path('docs/TEAMSHEET2-ITEM2.md')
+          text = item.read_text()
+          section = """
+
+          ## Physical iPhone review findings
+
+          - Startup wording was simplified to `Loading your team`.
+          - A first-run Official FPL transport failure correctly withheld recommendations, but exposed that the manual editor also requires the verified player catalogue.
+          - Team and Settings now disable and explain unavailable manual controls instead of presenting them as an independent fallback.
+          - A fictional, storage-isolated sample route is used only to review the populated layout. It is not part of the production deployable or recommendation data.
+          - Production fallback options and their separate approval gate are recorded in `TEAMSHEET2-MANUAL-FALLBACK-INVESTIGATION.md`.
+          """
+          if '## Physical iPhone review findings' not in text:
+              item.write_text(text.rstrip() + section + '\n')
+
+          limitations = Path('docs/KNOWN_LIMITATIONS.md')
+          text = limitations.read_text()
+          row = "| MANUAL-1 | Manual squad editing requires the verified Official FPL player catalogue | First-run core-data failure means player search and saved-ID resolution cannot operate; controls are now disabled and honestly labelled, while production remedies remain separately gated | Manual fallback investigation | Open (design gate) |"
+          if 'MANUAL-1' not in text:
+              anchor = '| ACCOUNT-1 |'
+              idx = text.find(anchor)
+              if idx == -1:
+                  limitations.write_text(text.rstrip() + '\n' + row + '\n')
+              else:
+                  line_end = text.find('\n', idx)
+                  limitations.write_text(text[:line_end+1] + row + '\n' + text[line_end+1:])
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.html src/ui/app-shell.mjs src/ui/team-decision-home.mjs tests/team-decision-home.test.mjs docs/TEAMSHEET2-MANUAL-FALLBACK-INVESTIGATION.md docs/TEAMSHEET2-ITEM2.md docs/KNOWN_LIMITATIONS.md
+          git commit -m "Clarify manual squad fallback"
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Run full verification and deterministic build check
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Node $(node --version)"
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          grep -E "tests [0-9]+|pass [0-9]+|fail 0" /tmp/teamsheet-tests.log | tail -n 6 || true
+          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html > /tmp/build-one.sha
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html > /tmp/build-two.sha
+          diff -u /tmp/build-one.sha /tmp/build-two.sha
+          cmp -s index.html dist/index.html
+
+      - name: Commit verified deployables and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Publish verified manual fallback wording"
+          echo "GENERATED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+          rm .github/workflows/teamsheet-2.0.2-manual-review.yml
+          git add -u .github/workflows/teamsheet-2.0.2-manual-review.yml
+          git commit -m "Remove temporary manual review workflow"
+          FINAL_SHA=$(git rev-parse HEAD)
+          echo "FINAL_SHA=$FINAL_SHA" >> "$GITHUB_ENV"
+          git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
+
+      - name: Refresh normal and sample iPhone previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -B teamsheet-2.0.1-pages-preview "$FINAL_SHA"
+          mkdir -p preview/teamsheet-2.0.1 preview/teamsheet-2.0.2 preview/teamsheet-2.0.2-sample
+          cp index.html preview/teamsheet-2.0.1/index.html
+          cp index.html preview/teamsheet-2.0.2/index.html
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, re
+
+          html = Path('index.html').read_text()
+          match = re.search(r'<script>([\s\S]*?)</script>', html)
+          if not match:
+              raise SystemExit('Could not find the generated application script')
+
+          prelude = r'''
+          (()=>{
+            const SAMPLE_PREFIX='teamsheet:sample-review:';
+            if(globalThis.Storage&&globalThis.localStorage){
+              const proto=Storage.prototype;
+              const originalGet=proto.getItem,originalSet=proto.setItem,originalRemove=proto.removeItem;
+              proto.getItem=function(key){return originalGet.call(this,SAMPLE_PREFIX+String(key));};
+              proto.setItem=function(key,value){return originalSet.call(this,SAMPLE_PREFIX+String(key),String(value));};
+              proto.removeItem=function(key){return originalRemove.call(this,SAMPLE_PREFIX+String(key));};
+            }
+
+            const teams=[
+              ['North FC','NTH'],['River FC','RIV'],['City FC','CTY'],['Park FC','PRK'],['United FC','UTD'],
+              ['Vale FC','VAL'],['Harbour FC','HBR'],['Athletic FC','ATH'],['County FC','COU'],['Rovers FC','ROV']
+            ].map(([name,short_name],index)=>({
+              id:index+1,name,short_name,
+              strength_attack_home:1000+(index%3)*25,strength_attack_away:985+(index%3)*20,
+              strength_defence_home:1000-(index%3)*20,strength_defence_away:1010-(index%3)*15
+            }));
+            const element_types=[
+              {id:1,singular_name_short:'GKP',singular_name:'Goalkeeper'},
+              {id:2,singular_name_short:'DEF',singular_name:'Defender'},
+              {id:3,singular_name_short:'MID',singular_name:'Midfielder'},
+              {id:4,singular_name_short:'FWD',singular_name:'Forward'}
+            ];
+            const makePlayer=(id,web_name,team,element_type,now_cost,ep_next,selected_by_percent)=>({
+              id,web_name,team,element_type,now_cost,total_points:0,form:'0.0',points_per_game:'0.0',selected_by_percent:String(selected_by_percent),
+              minutes:0,starts:0,goals_scored:0,assists:0,clean_sheets:0,saves:0,bonus:0,bps:0,
+              expected_goals_per_90:element_type===4?0.48:element_type===3?0.30:0.05,
+              expected_assists_per_90:element_type===3?0.28:element_type===4?0.16:0.06,
+              expected_goal_involvements_per_90:element_type===4?0.64:element_type===3?0.58:0.11,
+              expected_goals_conceded_per_90:1.25,defensive_contribution:0,defensive_contribution_per_90:0,
+              status:'a',chance_of_playing_next_round:100,news:'',news_added:null,cost_change_event:0,cost_change_start:0,
+              transfers_in_event:0,transfers_out_event:0,penalties_order:null,direct_freekicks_order:null,
+              corners_and_indirect_freekicks_order:null,ep_next:String(ep_next),yellow_cards:0,red_cards:0,own_goals:0,
+              penalties_missed:0,penalties_saved:0
+            });
+            const players=[
+              makePlayer(101,'Keeper One',1,1,55,4.8,18),makePlayer(102,'Keeper Two',6,1,45,3.6,9),
+              makePlayer(201,'Defender One',2,2,70,5.7,35),makePlayer(202,'Defender Two',3,2,60,5.1,25),
+              makePlayer(203,'Defender Three',4,2,55,4.8,20),makePlayer(204,'Defender Four',7,2,50,4.4,15),
+              makePlayer(205,'Defender Five',8,2,45,3.9,10),
+              makePlayer(301,'Midfielder One',1,3,125,7.9,48),makePlayer(302,'Midfielder Two',5,3,100,6.6,32),
+              makePlayer(303,'Midfielder Three',6,3,85,5.8,24),makePlayer(304,'Midfielder Four',9,3,70,5.0,17),
+              makePlayer(305,'Midfielder Five',10,3,55,4.1,8),
+              makePlayer(401,'Forward One',2,4,140,8.1,52),makePlayer(402,'Forward Two',4,4,95,6.0,27),
+              makePlayer(403,'Forward Three',8,4,65,4.5,12)
+            ];
+            const events=Array.from({length:6},(_,index)=>({
+              id:index+1,name:`Gameweek ${index+1}`,deadline_time:new Date(Date.UTC(2026,7,15+index*7,10,0,0)).toISOString(),
+              is_current:index===0,is_next:false,finished:false,data_checked:false
+            }));
+            const pairings=[
+              [[1,10],[2,9],[3,8],[4,7],[5,6]],
+              [[1,9],[10,8],[2,7],[3,6],[4,5]],
+              [[1,8],[9,7],[10,6],[2,5],[3,4]],
+              [[1,7],[8,6],[9,5],[10,4],[2,3]],
+              [[1,6],[7,5],[8,4],[9,3],[10,2]],
+              [[1,5],[6,4],[7,3],[8,2],[9,10]]
+            ];
+            let fixtureId=1;
+            const fixtures=pairings.flatMap((round,roundIndex)=>round.map(([team_h,team_a],matchIndex)=>({
+              id:fixtureId++,event:roundIndex+1,team_h,team_a,team_h_difficulty:3,team_a_difficulty:3,
+              kickoff_time:new Date(Date.UTC(2026,7,15+roundIndex*7,12+matchIndex,0,0)).toISOString(),
+              started:false,finished:false,provisional_start_time:false
+            })));
+            const bootstrap={events,teams,element_types,elements:players};
+            const squadIds=[101,201,202,203,204,301,302,303,304,401,402,102,205,305,403];
+            const picks={
+              active_chip:null,
+              automatic_subs:[],
+              entry_history:{event:1,points:0,total_points:0,rank:0,rank_sort:0,overall_rank:0,bank:15,value:1000,event_transfers:0,event_transfers_cost:0,points_on_bench:0},
+              picks:squadIds.map((element,index)=>({
+                element,position:index+1,multiplier:index===5?2:1,is_captain:index===5,is_vice_captain:index===6
+              }))
+            };
+            const entry={name:'Sample Review Squad',summary_overall_rank:0,last_deadline_bank:15};
+            const respond=data=>Promise.resolve(new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}}));
+            globalThis.fetch=(input)=>{
+              const raw=String(typeof input==='string'?input:input?.url||'');
+              let url=raw;
+              try{url=decodeURIComponent(raw);}catch(_error){}
+              if(url.includes('/bootstrap-static/')) return respond(bootstrap);
+              if(url.includes('/fixtures/')) return respond(fixtures);
+              if(/\/entry\/\d+\/event\/\d+\/picks\//.test(url)) return respond(picks);
+              if(/\/entry\/\d+\/history\//.test(url)) return respond({current:[],past:[],chips:[]});
+              if(/\/entry\/\d+\/?(?:$|[?&#])/.test(url)) return respond(entry);
+              if(/\/element-summary\/\d+\//.test(url)) return respond({history:[],fixtures:[],history_past:[]});
+              return Promise.resolve(new Response('',{status:404,statusText:'External providers are disabled in the sample review'}));
+            };
+
+            ['fpl:cache','fpl:squad','fpl:calib','fpl:minutes-history'].forEach(key=>localStorage.removeItem(key));
+            localStorage.setItem('fpl:config',JSON.stringify({teamId:'999999',ft:1,bank:1.5,leagueId:'',useManual:false,useUstat:false}));
+
+            const markSample=()=>{
+              document.body?.setAttribute('data-sample-review','true');
+              const main=document.querySelector('main');
+              if(main&&!document.getElementById('sampleReviewBanner')){
+                const banner=document.createElement('aside');
+                banner.id='sampleReviewBanner';
+                banner.className='note bad';
+                banner.setAttribute('role','status');
+                const strong=document.createElement('strong');
+                strong.textContent='Sample review data — layout only.';
+                banner.append(strong,document.createTextNode(' This is not your FPL team. Player names, projections, deadline and recommendations are fictional and must not be used for a decision.'));
+                main.insertBefore(banner,main.firstChild);
+              }
+              const source=document.querySelector('.team-home-chip.source');
+              if(source) source.textContent='Sample review squad';
+              const eyebrow=document.querySelector('.team-home-header .eyebrow');
+              if(eyebrow) eyebrow.textContent='Sample layout review';
+            };
+            document.addEventListener('teamsheet:data-rendered',markSample);
+            document.addEventListener('DOMContentLoaded',markSample);
+            setTimeout(markSample,0);
+          })();
+          '''.strip()
+
+          old_script = match.group(1)
+          new_script = '\n' + prelude + '\n' + old_script.lstrip('\n')
+          html = html[:match.start(1)] + new_script + html[match.end(1):]
+          digest = base64.b64encode(hashlib.sha256(new_script.encode('utf-8')).digest()).decode('ascii')
+          html, count = re.subn(r"script-src 'sha256-[^']+'", f"script-src 'sha256-{digest}'", html, count=1)
+          if count != 1:
+              raise SystemExit('Could not update sample CSP script hash')
+          html = html.replace('<title>Teamsheet — FPL decisions</title>', '<title>Teamsheet — sample layout review</title>\n<meta name="robots" content="noindex,nofollow">', 1)
+          verify = re.search(r'<script>([\s\S]*?)</script>', html)
+          actual = base64.b64encode(hashlib.sha256(verify.group(1).encode('utf-8')).digest()).decode('ascii')
+          if f"script-src 'sha256-{actual}'" not in html:
+              raise SystemExit('Sample CSP verification failed')
+          Path('preview/teamsheet-2.0.2-sample/index.html').write_text(html)
+          PY
+
+          git add preview/teamsheet-2.0.1/index.html preview/teamsheet-2.0.2/index.html preview/teamsheet-2.0.2-sample/index.html
+          git commit -m "Refresh Teamsheet 2.0.2 review previews"
+          git push --force origin HEAD:teamsheet-2.0.1-pages-preview
+
+      - name: Write verification summary
+        shell: bash
+        run: |
+          {
+            echo "### Teamsheet 2.0.2 manual fallback review"
+            echo "- Corrected source: $SOURCE_SHA"
+            echo "- Generated artefacts: $GENERATED_SHA"
+            echo "- Final PR head: $FINAL_SHA"
+            echo "- Full suite passed"
+            echo "- Deterministic two-build comparison passed"
+            echo "- Root and deployable HTML are identical"
+            echo "- Normal review routes refreshed"
+            echo "- Storage-isolated fictional sample route published"
+            echo "- No provider, catalogue or model implementation added"
+          } >> "$GITHUB_STEP_SUMMARY"
