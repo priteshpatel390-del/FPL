@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   TEAM_DECISION_HOME_VERSION,
+  TEAM_DECISION_BENCH_LABELS,
   teamDecisionForecast,
   teamDecisionSquadReady,
   teamDecisionSourceLabel,
   teamDecisionRisk,
   teamDecisionAction,
-  teamDecisionCloseCaptainCopy
+  teamDecisionCloseCaptainCopy,
+  teamDecisionBenchLabel
 } from '../src/ui/team-decision-home.mjs';
 import { HEALTH_STATES } from '../src/providers/registry.mjs';
 
@@ -33,6 +35,11 @@ test('only a complete legal FPL squad can produce the decision home',()=>{
   assert.equal(teamDecisionSquadReady(legalSquad().slice(0,14)),false);
   const illegal=legalSquad(); illegal[14]=player(99,3);
   assert.equal(teamDecisionSquadReady(illegal),false);
+});
+
+test('bench labels distinguish the reserve goalkeeper from ordered outfield substitutes',()=>{
+  assert.deepEqual(TEAM_DECISION_BENCH_LABELS,['GK','1st sub','2nd sub','3rd sub']);
+  assert.deepEqual(Array.from({length:4},(_,index)=>teamDecisionBenchLabel(index)),['GK','1st sub','2nd sub','3rd sub']);
 });
 
 test('source wording separates Official FPL, manual and verified fallback states',()=>{
@@ -77,6 +84,7 @@ test('production wiring wraps the verified renderer without changing model modul
   const source=readFileSync(new URL('../src/ui/team-decision-home.mjs',import.meta.url),'utf8');
   const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
   const app=readFileSync(new URL('../app.html',import.meta.url),'utf8');
+  const bundle=readFileSync(new URL('../dist/app.bundle.js',import.meta.url),'utf8');
   assert.match(source,/const legacyRenderSquad=renderSquad/);
   assert.match(source,/legacyRenderSquad\(\)/);
   assert.match(source,/teamDecisionPlaceholderStage/);
@@ -88,6 +96,8 @@ test('production wiring wraps the verified renderer without changing model modul
   assert.doesNotMatch(source,/Preparing your decision home/);
   assert.match(source,/manualToggle\.disabled=!available/);
   assert.match(source,/Manual squad editing is unavailable until verified Official FPL player data loads/);
+  assert.match(source,/teamDecisionRelabelBench\(stage\)/);
+  assert.match(bundle,/\['GK','1st sub','2nd sub','3rd sub'\]/);
   assert.doesNotMatch(app,/Load your team ID above|build your 15 by hand below/);
   assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);
 });
