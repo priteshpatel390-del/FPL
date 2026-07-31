@@ -1,20 +1,17 @@
 name: Teamsheet 2.0.2 corrections test
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
+      - agent/teamsheet-2.0.2-team-decision-home
+    paths:
+      - .github/teamsheet-2.0.2-corrections-trigger
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify-corrections:
-    if: github.head_ref == 'agent/teamsheet-2.0.2-team-decision-home'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -49,11 +46,28 @@ jobs:
           cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
           cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
           cmp dist/index.html index.html
-          {
-            echo '## Teamsheet 2.0.2 correction verification'
-            echo
-            echo "- Tests: $TEST_COUNT/$TEST_COUNT"
-            echo '- Two exact-identity builds: byte-identical'
-            echo '- Root index.html equals dist/index.html'
-            echo '- Model/rules unchanged: 2.4.0 / 2026-27.3'
-          } >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p .verification
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const crypto=require('node:crypto');
+          const log=fs.readFileSync('/tmp/teamsheet-corrections.log','utf8');
+          const value=name=>Number((new RegExp(`^# ${name} (\\d+)$`,'m').exec(log)||[])[1]||0);
+          const sha=path=>crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex');
+          const manifest=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
+          fs.writeFileSync('.verification/teamsheet-2.0.2-corrections.json',JSON.stringify({
+            sourceCommit:process.env.BUILD_COMMIT,
+            tests:value('tests'),pass:value('pass'),fail:value('fail'),skipped:value('skipped'),
+            modelVersion:manifest.modelVersion,rulesVersion:manifest.rulesVersion,sourceHash:manifest.sourceHash,
+            deterministic:true,rootMatchesDist:true,
+            indexSha256:sha('dist/index.html'),bundleSha256:sha('dist/app.bundle.js'),manifestSha256:sha('dist/manifest.json')
+          },null,2)+'\n');
+          NODE
+      - name: Publish verification evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .verification/teamsheet-2.0.2-corrections.json
+          git commit -m "Record Teamsheet 2.0.2 correction verification"
+          git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
