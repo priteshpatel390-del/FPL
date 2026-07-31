@@ -1,5 +1,5 @@
 # ROADMAP.md — living roadmap
-Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-30.
+Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-31.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
 ## Completed
@@ -46,46 +46,58 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
   - Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92`: **428/428 tests passed** with deterministic exact-identity builds; generated artefacts `421e532629cbd1b82b19b3ea349ab23571221f00`. Physical iPhone acceptance was not independently recorded.
 - **Teamsheet 2.0 Product Blueprint** · APPROVED by Pritesh on 30 July 2026 and recorded in `TEAMSHEET2-PRODUCT-BLUEPRINT.md`.
   - Establishes team-first, decision-first, explainable and mobile-first product direction.
-  - Approves Team, Transfers, Mini Leagues and Settings as future primary navigation.
+  - Originally approved Team, Transfers, Mini Leagues and Settings; owner-approved 2.0.1 amendments implement Team, Transfers, Fixtures, Leagues and Settings.
   - Supersedes the Stage 9 information architecture for future development while preserving the Stage 9 engineering foundation and historical record.
   - Defines independently gated migration checkpoints 2.0.1–2.0.7 and authorises no application implementation by itself.
 
 ## Current
-- **Live-season readiness and prospective validation** · Stage 10 collection and evaluation infrastructure is complete. Genuine pre-deadline evidence collection begins with the 2026/27 season.
-- The recorded verified engineering baseline is **428/428 tests** with deterministic exact-identity builds and root/deployable equality.
-- **Teamsheet 2.0.1 — Navigation and Settings architecture** is the next development checkpoint, currently at the design and approval gate. No implementation is authorised yet.
+- **Teamsheet 2.0.1 — Navigation and Settings architecture** · IMPLEMENTED AND VERIFIED FOR REVIEW.
+  - Primary navigation: Team, Transfers, Fixtures, Leagues and Settings.
+  - Hash routes support direct opening, refresh and browser Back/Forward.
+  - Free transfers and bank remain on Team; Ask Teamsheet is a prominent Team/global action.
+  - Existing functional surfaces are preserved under purpose-led Settings routes.
+  - Verified baseline: **445/445 tests**, deterministic exact-identity builds and root/deployable equality.
+- **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
+- The next development checkpoint is **Teamsheet 2.0.2 — Team decision home**, requiring separate investigation, design and explicit approval.
 
 ## Teamsheet 2.0 migration sequence
-1. **Teamsheet 2.0.1 — Navigation and Settings architecture**
-   - Replace primary navigation with Team, Transfers, Mini Leagues and Settings.
-   - Remove Players from primary navigation and replace More with the approved organised Settings hierarchy.
-   - Preserve access to all existing functional surfaces.
+1. **Teamsheet 2.0.1 — Navigation and Settings architecture** · COMPLETE FOR REVIEW.
+   - Team, Transfers, Fixtures, Leagues and Settings.
+   - Player Explorer under Settings; Ask Teamsheet as a global/Team action.
+   - URL routing, browser history, focus and responsive navigation.
 2. **Teamsheet 2.0.2 — Team decision home**
    - Make the pitch immediately visible and add XI, captaincy, bench, projection, risk and deadline-action summaries.
 3. **Teamsheet 2.0.3 — Transfer decision experience**
    - Lead with roll/transfer/hit guidance, preserve the zero-transfer baseline and explain whole-squad consequences.
-4. **Teamsheet 2.0.4 — Global rank and Mini-League foundation**
+4. **Teamsheet 2.0.4 — Global rank and Leagues foundation**
    - Establish confirmed global and private-league performance, movement and comparison foundations.
-5. **Teamsheet 2.0.5 — Mini-League intelligence**
+5. **Teamsheet 2.0.5 — League intelligence**
    - Add supported rival exposure, overlap, differential and tactical insight; strategy modelling remains separately gated.
-6. **Teamsheet 2.0.6 — Research, evidence and diagnostics organisation**
-   - Complete the approved Settings sections and relocate persistent healthy Provider Health from the main header.
+6. **Teamsheet 2.0.6 — Research, evidence and diagnostics completion**
+   - Complete remaining content organisation and relocate persistent healthy Provider Health from the main header.
 7. **Teamsheet 2.0.7 — Final mobile polish and acceptance**
-   - Complete hierarchy, performance, accessibility and physical-device acceptance.
+   - Complete hierarchy, performance, accessibility, full pre-season rehearsal and physical-device acceptance.
 
 Every checkpoint requires its own investigation, exact scope, exclusions, owner approval where required, branch, complete verification, documentation and draft PR.
 
 ## Upcoming
-1. Design Teamsheet 2.0.1 from the approved blueprint and current implementation, with explicit scope and exclusions.
-2. Obtain Pritesh's explicit approval before Teamsheet 2.0.1 implementation.
-3. Complete one physical iPhone pre-season rehearsal of cold-open recovery, deadline capture and JSON/Markdown/CSV downloads.
-4. Operate the pre-deadline snapshot workflow at each deadline and verify durable owner-controlled exports.
+1. Owner review and merge decision for Teamsheet 2.0.1.
+2. Design Teamsheet 2.0.2 without pulling forward Transfers, rank or League intelligence.
+3. Operate pre-deadline snapshots and durable owner-controlled exports during the 2026/27 season.
+4. Complete checkpoint-specific iPhone checks and the final Teamsheet 2.0.7 end-to-end rehearsal.
 5. Collect official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until approved sample safeguards are met.
 
 ## Current blockers and gates
-1. Teamsheet 2.0.1 has no approved implementation design yet.
+1. Teamsheet 2.0.2 has no approved implementation design.
 2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
-3. Physical iPhone Stage 10.5/pre-season rehearsal evidence is not independently recorded.
-4. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-5. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
-6. Projected live rank, projected rival outcomes and protect/balanced/chase strategy logic require separate designs and explicit approval.
+3. Teamsheet 2.0.1 automated checks cannot independently prove physical iPhone rendering; owner device acceptance remains required before merge.
+4. The old standalone Stage 10.5 rehearsal gate is superseded by checkpoint-specific checks and final 2.0.7 rehearsal; its historical record remains intact.
+5. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+6. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
+7. Projected live rank, projected rival outcomes and protect/balanced/chase strategy logic require separate designs and explicit approval.
+
+## Teamsheet 2.0.1 physical iPhone follow-up
+
+- **Approved interface correction:** global Ask composer, stable dock/icons, focus presentation and simplified Settings back hierarchy.
+- **Investigation only:** non-blocking foreground refresh, reliable populated preview transport, and authoritative read-only bank/free-transfer retrieval.
+- **Merge gate:** full tests/build/reproducibility, refreshed preview, repeat physical iPhone review, populated-data acceptance and explicit owner approval.

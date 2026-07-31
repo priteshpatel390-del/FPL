@@ -235,17 +235,11 @@ function evidenceFlagClass(state){
   return 'out';
 }
 function openEvidencePanel(){
-  document.querySelector('nav.tabs .tab[data-view="more"]')?.click();
-  const panel=$('evidencePanel');
-  setTimeout(()=>{ panel?.scrollIntoView?.({block:'start'}); panel?.focus?.({preventScroll:true}); },0);
+  if(typeof globalThis.__teamsheetNavigate==='function') globalThis.__teamsheetNavigate('#/settings/evidence');
+  else if(globalThis.location) globalThis.location.hash='#/settings/evidence';
 }
 function ensureEvidenceCompact(){
-  const header=document.querySelector('header');
-  if(!header||$('evidenceCompact')) return;
-  const button=el('button',{id:'evidenceCompact',type:'button',class:'chip','aria-controls':'evidencePanel','aria-label':'Validation evidence status'},
-    'Evidence ',el('span',{class:'flag dark'},'Waiting'));
-  button.addEventListener('click',openEvidencePanel);
-  header.appendChild(button);
+  $('evidenceCompact')?.remove?.();
 }
 function ensureStage10OperationsUi(){
   const panel=$('evidencePanel');if(!panel||$('stage10Operations'))return;
