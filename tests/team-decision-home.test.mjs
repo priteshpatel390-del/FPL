@@ -68,6 +68,8 @@ test('clear Team state does not pretend the transfer optimiser has recommended a
 test('deadline actions remain advisory and distinguish user previews',()=>{
   assert.match(teamDecisionAction({hasSquad:true,previewActive:true}),/user preview/);
   assert.match(teamDecisionAction({hasSquad:true,deadlinePassed:true}),/deadline has passed/);
+  assert.match(teamDecisionAction({hasSquad:false,riskKind:'data-unavailable'}),/Manual squad editing also needs the verified player list/);
+  assert.doesNotMatch(teamDecisionAction({hasSquad:false,riskKind:'data-unavailable'}),/complete a legal manual|build your 15/i);
   assert.doesNotMatch(teamDecisionAction({hasSquad:true}),/submitted|changed your FPL/i);
 });
 
@@ -84,5 +86,8 @@ test('production wiring wraps the verified renderer without changing model modul
   assert.match(app,/Teamsheet 2\.0\.2 — pitch-first Team decision home/);
   assert.match(source,/sub\.textContent='Loading your team'/);
   assert.doesNotMatch(source,/Preparing your decision home/);
+  assert.match(source,/manualToggle\.disabled=!available/);
+  assert.match(source,/Manual squad editing is unavailable until verified Official FPL player data loads/);
+  assert.doesNotMatch(app,/Load your team ID above|build your 15 by hand below/);
   assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);
 });

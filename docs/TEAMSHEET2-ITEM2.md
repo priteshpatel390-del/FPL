@@ -57,3 +57,12 @@ No projection, expected-minutes, fixture, captaincy, bench, squad, simulation, o
 - Root `index.html` identical to `dist/index.html`.
 - Model/rules remain `2.4.0` / `2026-27.3`.
 - Physical populated/unconnected/loading iPhone acceptance remains required before merge.
+
+## Physical iPhone review findings
+
+- Startup wording was simplified to `Loading your team`.
+- A first-run Official FPL transport failure correctly withheld recommendations, but exposed that the manual editor also requires the verified player catalogue.
+- Team and Settings now disable and explain unavailable manual controls instead of presenting them as an independent fallback.
+- A fictional, storage-isolated sample route is used only to review the populated layout. It is not part of the production deployable or recommendation data.
+- Production fallback options and their separate approval gate are recorded in `TEAMSHEET2-MANUAL-FALLBACK-INVESTIGATION.md`.
+

@@ -84,10 +84,11 @@ function teamDecisionRisk({dataState='',captain=null,starters=[],blankIds=[],clo
 }
 
 function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+  if(riskKind==='data-unavailable') return 'Official FPL season data is unavailable. Manual squad editing also needs the verified player list, so retry the data load before building a squad.';
   if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
-  if(!hasSquad) return 'Connect a Team ID or complete a legal manual 15-player squad to calculate the decision home.';
+  if(!hasSquad) return 'Enter your Team ID in Team setup below, or open Settings → Team & Account to build a manual squad.';
   if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
-  if(riskKind==='data-unavailable'||riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
+  if(riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
   if(riskKind.includes('unavailable')||riskKind.includes('doubtful')) return 'Review the affected player. Open Transfers if a replacement is needed, then set the final XI, captaincy and bench in Official FPL.';
   return 'Review and set this XI, captaincy and bench in Official FPL. Use Transfers for the separate roll-or-transfer decision.';
 }
@@ -180,6 +181,25 @@ function teamDecisionSetupStartup(){
   if(sub) sub.textContent='Loading your team';
 }
 
+function teamDecisionUpdateManualAvailability(){
+  const available=Boolean(S.boot);
+  const manualToggle=$('useManual'),manualSearch=$('pSearch'),manualLink=$('manualSquadLink');
+  if(manualToggle){
+    manualToggle.disabled=!available;
+    manualToggle.setAttribute('aria-describedby','manualModeAvailability manualEditorAvailability');
+  }
+  if(manualSearch){
+    manualSearch.disabled=!available;
+    manualSearch.setAttribute('aria-describedby','manualEditorAvailability');
+  }
+  ['manualModeAvailability','manualEditorAvailability'].map(id=>$(id)).filter(Boolean).forEach(node=>{
+    node.textContent=available
+      ? 'Manual squad editing is available in Settings → Team & Account.'
+      : 'Manual squad editing is unavailable until verified Official FPL player data loads.';
+  });
+  if(manualLink) manualLink.hidden=!available;
+}
+
 function teamDecisionSetupShell(){
   if(typeof document==='undefined') return null;
   const teamView=$('view-squad'),out=$('squadOut'),context=$('teamContext');
@@ -198,8 +218,15 @@ function teamDecisionSetupShell(){
     };
     relabel('ftCount','Free transfers (manual)');
     relabel('bankIn','Bank £m (manual)');
+    const manualToggle=$('useManual'),manualCopy=manualToggle?.parentElement;
+    const manualText=Array.from(manualCopy?.childNodes||[]).find(node=>node.nodeType===3);
+    if(manualText) manualText.nodeValue=' Use my manually entered squad';
+    const manualStatus=el('p',{id:'manualModeAvailability',class:'status'});
+    const manualLink=el('a',{id:'manualSquadLink',class:'btn ghost sm',href:'#/settings/team-account'},'Open manual squad editor');
+    context.append(manualStatus,manualLink);
     teamView.insertBefore(context,out.nextSibling);
   }
+  teamDecisionUpdateManualAvailability();
   let support=$('teamHomeSupport');
   if(!support){
     support=el('div',{id:'teamHomeSupport',class:'team-home-support-host'});
@@ -211,6 +238,7 @@ function teamDecisionSetupShell(){
 
 function teamDecisionEnhanceRenderedTeam(){
   if(typeof document==='undefined') return;
+  teamDecisionUpdateManualAvailability();
   const out=$('squadOut'),support=$('teamHomeSupport');
   if(!out||!support) return;
   const realSquad=mySquad();

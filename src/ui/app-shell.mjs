@@ -210,7 +210,8 @@ function setupAppShell(){
   const manualPanel=teamsheetElement('section',{class:'panel'},
     teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
     teamsheetElement('h2',{},'Manual squad'),
-    teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled.'));
+    teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled. The verified Official FPL player list is required.'),
+    teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));
   if(manualWrap){
     manualWrap.open=true;
     manualPanel.appendChild(manualWrap);

@@ -66,6 +66,7 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | REFRESH-1 | Qualifying foreground return temporarily locks the app while a complete verified provider cycle settles | Trust consistency is preserved, but switching apps repeatedly feels frozen; non-blocking atomic refresh requires separate security design | Separate approved investigation | Open (gated) |
 | FPL-1 | The first-party Pages preview could not load core Official FPL data through the public relay cascade | Populated squad, transfer, fixture, player and league iPhone acceptance is blocked | Separate transport investigation | Open (acceptance blocker) |
 | ACCOUNT-1 | Bank and available free transfers remain manual inputs rather than proven authoritative account values | Values can be entered but are not yet verified from the connected FPL account; no inference may be labelled authoritative | Separate data/security design | Open (gated) |
+| MANUAL-1 | Manual squad editing requires the verified Official FPL player catalogue | First-run core-data failure means player search and saved-ID resolution cannot operate; controls are now disabled and honestly labelled, while production remedies remain separately gated | Manual fallback investigation | Open (design gate) |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
 ## Teamsheet 2.0 migration limitations
