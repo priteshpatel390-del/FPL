@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "50d5aff2650398560b17a4c80487e273ca3d3be7",
+  "tests": 459,
+  "pass": 459,
+  "fail": 0,
+  "skipped": 0,
+  "modelVersion": "2.4.0",
+  "rulesVersion": "2026-27.3",
+  "sourceHash": "ecd84afea843f212bdf1a504dc71e0a4da98ac7600ffa72819a07d97cf289aa0",
+  "deterministic": true,
+  "rootMatchesDist": true,
+  "indexSha256": "2582791bfbf5f5d8692da9b78f7cd928bef817e5819bcadd21c1eda9a759f516",
+  "bundleSha256": "332e51dad284ff681e9ee1345f505e010299d03da869f3dc9eeb245ad35ee72f",
+  "manifestSha256": "63929f40b50da67d7ea1c60d2cd6098f5433a99ba55ef478af164e65c30240dd"
+}
