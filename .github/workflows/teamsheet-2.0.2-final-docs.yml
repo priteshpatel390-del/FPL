@@ -1,3 +1,4 @@
+# Branch-only temporary workflow; removes itself after successful verification.
 name: Teamsheet 2.0.2 final documentation verification
 
 on:
