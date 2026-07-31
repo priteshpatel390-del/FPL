@@ -1,0 +1,115 @@
+name: Finalise verified Teamsheet 2.0.2 build
+
+on:
+  pull_request:
+    branches:
+      - agent/teamsheet-2.0.2-team-decision-home
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teamsheet-2.0.2-finalise
+  cancel-in-progress: false
+
+jobs:
+  finalise:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/teamsheet-2.0.2-publish-trigger'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.2-team-decision-home
+          fetch-depth: 0
+
+      - name: Use repository baseline Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Assert exact approved source plus this temporary verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERIFIED_SOURCE='50d5aff2650398560b17a4c80487e273ca3d3be7'
+          WORKFLOW='.github/workflows/teamsheet-2.0.2-finalise.yml'
+          test -f "$WORKFLOW"
+          test "$(git diff --name-only "$VERIFIED_SOURCE" HEAD)" = "$WORKFLOW"
+          test -z "$(git status --porcelain)"
+          echo "VERIFIED_SOURCE=$VERIFIED_SOURCE" >> "$GITHUB_ENV"
+          echo "WORKFLOW=$WORKFLOW" >> "$GITHUB_ENV"
+
+      - name: Run full verification and deterministic builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT="$VERIFIED_SOURCE" ./run-tests.sh | tee /tmp/teamsheet-final.log
+          TEST_COUNT="$(awk '/^# tests /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          PASS_COUNT="$(awk '/^# pass /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          FAIL_COUNT="$(awk '/^# fail /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          CANCELLED_COUNT="$(awk '/^# cancelled /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          SKIP_COUNT="$(awk '/^# skipped /{value=$3} END{print value}' /tmp/teamsheet-final.log)"
+          test "$TEST_COUNT" = '459'
+          test "$PASS_COUNT" = '459'
+          test "$FAIL_COUNT" = '0'
+          test "${CANCELLED_COUNT:-0}" = '0'
+          test "$SKIP_COUNT" = '0'
+
+          printf '%s  %s\n' \
+            '2582791bfbf5f5d8692da9b78f7cd928bef817e5819bcadd21c1eda9a759f516' 'dist/index.html' \
+            '332e51dad284ff681e9ee1345f505e010299d03da869f3dc9eeb245ad35ee72f' 'dist/app.bundle.js' \
+            '63929f40b50da67d7ea1c60d2cd6098f5433a99ba55ef478af164e65c30240dd' 'dist/manifest.json' \
+            | sha256sum --check --strict
+          cmp index.html dist/index.html
+
+          mkdir -p /tmp/teamsheet-build-one
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/teamsheet-build-one/
+          BUILD_COMMIT="$VERIFIED_SOURCE" node build.mjs
+          cmp /tmp/teamsheet-build-one/index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+
+          printf '%s  %s\n' \
+            '2582791bfbf5f5d8692da9b78f7cd928bef817e5819bcadd21c1eda9a759f516' 'dist/index.html' \
+            '332e51dad284ff681e9ee1345f505e010299d03da869f3dc9eeb245ad35ee72f' 'dist/app.bundle.js' \
+            '63929f40b50da67d7ea1c60d2cd6098f5433a99ba55ef478af164e65c30240dd' 'dist/manifest.json' \
+            | sha256sum --check --strict
+          grep -F '"sourceHash": "ecd84afea843f212bdf1a504dc71e0a4da98ac7600ffa72819a07d97cf289aa0"' dist/manifest.json
+          grep -F '"commit": "50d5aff2650398560b17a4c80487e273ca3d3be7"' dist/manifest.json
+          grep -F '"modelVersion": "2.4.0"' dist/manifest.json
+          grep -F '"rulesVersion": "2026-27.3"' dist/manifest.json
+
+      - name: Publish exact deployables and remove verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "$WORKFLOW"
+          ACTUAL="$(git status --short | awk '{print $2}' | sort)"
+          EXPECTED="$(printf '%s\n' \
+            "$WORKFLOW" \
+            'dist/app.bundle.js' \
+            'dist/index.html' \
+            'dist/manifest.json' \
+            'index.html' | sort)"
+          test "$ACTUAL" = "$EXPECTED"
+          git config user.name 'Teamsheet Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add "$WORKFLOW" dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Publish verified Teamsheet 2.0.2 correction build
+
+Verified source: $VERIFIED_SOURCE
+Tests: 459/459
+Two exact-identity builds: byte-identical
+Root index.html equals dist/index.html
+Source hash: ecd84afea843f212bdf1a504dc71e0a4da98ac7600ffa72819a07d97cf289aa0
+Model/rules unchanged: 2.4.0 / 2026-27.3"
+          git push origin HEAD:agent/teamsheet-2.0.2-team-decision-home
