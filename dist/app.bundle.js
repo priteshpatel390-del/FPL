@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"99514ffdf16ca2d6","commit":"66a5091881ea9dd62a551627a3176b073e319877"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"99514ffdf16ca2d6ec3c37be86cf86d4163d3bc4dcc97f6d9e94185873ca6d2b","commit":"66a5091881ea9dd62a551627a3176b073e319877","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"5b634f57697306ae","commit":"a52125b89127d8ac1a194b191bc03cd34dd5b99b"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"5b634f57697306ae55ecbbdca8686639205569f9f5d5f906e61e5924a1f5543d","commit":"a52125b89127d8ac1a194b191bc03cd34dd5b99b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3671,7 +3671,8 @@ function setupAppShell(){
   const manualPanel=teamsheetElement('section',{class:'panel'},
     teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
     teamsheetElement('h2',{},'Manual squad'),
-    teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled.'));
+    teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled. The verified Official FPL player list is required.'),
+    teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));
   if(manualWrap){
     manualWrap.open=true;
     manualPanel.appendChild(manualWrap);
@@ -6691,10 +6692,11 @@ function teamDecisionRisk({dataState='',captain=null,starters=[],blankIds=[],clo
 }
 
 function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+  if(riskKind==='data-unavailable') return 'Official FPL season data is unavailable. Manual squad editing also needs the verified player list, so retry the data load before building a squad.';
   if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
-  if(!hasSquad) return 'Connect a Team ID or complete a legal manual 15-player squad to calculate the decision home.';
+  if(!hasSquad) return 'Enter your Team ID in Team setup below, or open Settings → Team & Account to build a manual squad.';
   if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
-  if(riskKind==='data-unavailable'||riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
+  if(riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
   if(riskKind.includes('unavailable')||riskKind.includes('doubtful')) return 'Review the affected player. Open Transfers if a replacement is needed, then set the final XI, captaincy and bench in Official FPL.';
   return 'Review and set this XI, captaincy and bench in Official FPL. Use Transfers for the separate roll-or-transfer decision.';
 }
@@ -6787,6 +6789,25 @@ function teamDecisionSetupStartup(){
   if(sub) sub.textContent='Loading your team';
 }
 
+function teamDecisionUpdateManualAvailability(){
+  const available=Boolean(S.boot);
+  const manualToggle=$('useManual'),manualSearch=$('pSearch'),manualLink=$('manualSquadLink');
+  if(manualToggle){
+    manualToggle.disabled=!available;
+    manualToggle.setAttribute('aria-describedby','manualModeAvailability manualEditorAvailability');
+  }
+  if(manualSearch){
+    manualSearch.disabled=!available;
+    manualSearch.setAttribute('aria-describedby','manualEditorAvailability');
+  }
+  ['manualModeAvailability','manualEditorAvailability'].map(id=>$(id)).filter(Boolean).forEach(node=>{
+    node.textContent=available
+      ? 'Manual squad editing is available in Settings → Team & Account.'
+      : 'Manual squad editing is unavailable until verified Official FPL player data loads.';
+  });
+  if(manualLink) manualLink.hidden=!available;
+}
+
 function teamDecisionSetupShell(){
   if(typeof document==='undefined') return null;
   const teamView=$('view-squad'),out=$('squadOut'),context=$('teamContext');
@@ -6805,8 +6826,15 @@ function teamDecisionSetupShell(){
     };
     relabel('ftCount','Free transfers (manual)');
     relabel('bankIn','Bank £m (manual)');
+    const manualToggle=$('useManual'),manualCopy=manualToggle?.parentElement;
+    const manualText=Array.from(manualCopy?.childNodes||[]).find(node=>node.nodeType===3);
+    if(manualText) manualText.nodeValue=' Use my manually entered squad';
+    const manualStatus=el('p',{id:'manualModeAvailability',class:'status'});
+    const manualLink=el('a',{id:'manualSquadLink',class:'btn ghost sm',href:'#/settings/team-account'},'Open manual squad editor');
+    context.append(manualStatus,manualLink);
     teamView.insertBefore(context,out.nextSibling);
   }
+  teamDecisionUpdateManualAvailability();
   let support=$('teamHomeSupport');
   if(!support){
     support=el('div',{id:'teamHomeSupport',class:'team-home-support-host'});
@@ -6818,6 +6846,7 @@ function teamDecisionSetupShell(){
 
 function teamDecisionEnhanceRenderedTeam(){
   if(typeof document==='undefined') return;
+  teamDecisionUpdateManualAvailability();
   const out=$('squadOut'),support=$('teamHomeSupport');
   if(!out||!support) return;
   const realSquad=mySquad();
