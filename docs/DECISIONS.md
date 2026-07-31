@@ -122,3 +122,10 @@ Consequences: fixture, league, provider, evidence and model behaviour remain unc
 - Preserve programmatic route-heading focus but suppress the visible focus outline on non-interactive headings.
 - Use one arrow-only Settings back control without duplicate Settings labels.
 - Treat foreground refresh, populated-preview transport and authoritative bank/free-transfer retrieval as separate investigation gates; this approval does not authorise their implementation.
+
+**D-30 · 2026-07-31 · Accepted · Teamsheet 2.0.2 pitch-first Team decision home**
+Reason: the verified Team route had a strong pitch, best-XI, captaincy, bench and preview foundation, but setup, forecast and warning blocks pushed the pitch down and no-squad states removed it entirely. Existing copy also overstated the transfer conclusion and inferred protect/chase captain strategy from ownership.
+
+Approach: wrap the unchanged Team renderer with a presentation-only decision hierarchy. Show provenance, recommended XI/captain/vice/bench, explicit base-XI and captain-uplift forecast, one material risk, advisory deadline action and the immediate pitch. Preserve a labelled placeholder pitch when a legal 15 is unavailable. Move setup and supporting detail below the immediate decision. Treat close captaincy as model uncertainty; ownership remains context only. Direct the separate roll/transfer decision to Transfers.
+
+Consequences: no projection, expected-minutes, fixture, squad, captaincy, bench, simulation, optimiser, rank, league, provider, authentication, refresh, persistence, route or player-detail behaviour changes. D-21's historical More placement is superseded by D-29's Settings architecture; its provider-state principle remains valid. Verified baseline: **454/454 tests**, deterministic exact-identity builds, root/deployable equality, model `2.4.0`, rules `2026-27.3`.

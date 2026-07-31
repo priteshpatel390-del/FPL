@@ -125,7 +125,7 @@ Weekly review covers source identity, completeness, points, fixture-minutes, unc
 
 The deterministic export boundary emits one hash-verifiable JSON evidence/review bundle, one Markdown review and eight individually selectable CSV tables. CSV is UTF-8 BOM + CRLF + RFC 4180, preserves numeric zero, leaves structural null blank and neutralises formula-like text including leading whitespace, tab and carriage return. Derived exports omit manager references; exact canonical source records remain unchanged inside JSON for hash verification. Exports warn above 10 MiB and fail above 25 MiB without truncation.
 
-`ui/review.mjs` remains subordinate under the implemented More → Deadline evidence route. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. Future relocation under Settings → Evidence & Performance is a Teamsheet 2.0 product migration, not an architecture change. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes 413 tests with deterministic exact-identity builds.
+`ui/review.mjs` remains subordinate under Settings → Evidence & Performance. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. Future relocation under Settings → Evidence & Performance is a Teamsheet 2.0 product migration, not an architecture change. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes 413 tests with deterministic exact-identity builds.
 
 ## Stage 10.5 recovery architecture
 Stage 10 storage uses verified payload writes, phase journals, index/current-pointer commitment and bounded pruning. Recovery trusts local origin only when a valid journal links the candidate ID and hash; unproven or imported records remain recovery-only. Shared diagnostics expose corruption/storage states without raw payloads, URLs or secrets. Downloads are owner-controlled browser requests rather than acknowledged durable backups.
@@ -133,3 +133,11 @@ Stage 10 storage uses verified payload writes, phase journals, index/current-poi
 ## Teamsheet 2.0.1 iPhone shell amendment
 
 The global shell owns one persistent Ask composer, one fixed five-column safe-area navigation dock, controlled SVG navigation icons, route focus presentation and keyboard-viewport recovery. Data and Evidence remain full Settings destinations rather than global header controls. Provider transport and foreground-refresh orchestration are unchanged.
+
+## Teamsheet 2.0.2 Team decision-home boundary
+
+`ui/team-decision-home.mjs` wraps the existing verified `renderSquad()` output and reorganises its already-calculated nodes. It consumes unchanged `mySquad()`, `bestXI()`, `xpOf()`, team-pitch captaincy and session-preview contracts. It adds no football formula and does not invoke the transfer optimiser or simulation engine.
+
+The wrapper requires a complete legal 15 before exposing a recommendation; otherwise it renders a labelled decorative pitch placeholder. Connected/manual/cache/preview provenance, base-XI xP, captain uplift, total including captain, one presentation-priority risk and an advisory deadline action are explicit. Team setup remains after the immediate pitch, while captaincy and all-15 research are collapsed progressively.
+
+The existing Stage 10.1 verified startup and foreground interaction lock are unchanged. Official FPL transport reliability, authoritative bank/free-transfer retrieval and atomic non-blocking foreground refresh remain separately gated.

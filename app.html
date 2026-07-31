@@ -424,6 +424,52 @@ h2[tabindex="-1"]:focus{outline:none}
   .player-detail-range{padding:11px}.player-detail-range-head{align-items:flex-start;flex-direction:column}.range-label{align-self:flex-start}
 }
 
+/* Teamsheet 2.0.2 — pitch-first Team decision home */
+#view-squad>.hint{margin:3px 0 8px}
+.team-home-header{display:grid;gap:7px;margin:2px 0 10px}
+.team-home-header h3{font-size:19px}
+.team-home-chips{display:flex;gap:6px;flex-wrap:wrap}
+.team-home-chip{display:inline-flex;align-items:center;min-height:26px;padding:4px 8px;border:1px solid var(--line);border-radius:20px;background:#F7F9F5;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.15}
+.team-home-chip.source{background:#EAF0EB;color:var(--pitch)}
+.team-home-chip.deadline{background:#FCF8EF;color:#745614}
+.team-home-chip.official{background:#E5EEF5;color:var(--info)}
+.team-home-chip.manual{background:#F2EDEE;color:var(--claret)}
+.team-home-decision{display:grid;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px}
+.team-home-row{display:grid;grid-template-columns:minmax(92px,112px) minmax(0,1fr);gap:9px;padding:9px 11px;border-bottom:1px solid #EDEFEA;align-items:start}
+.team-home-row:last-of-type{border-bottom:0}
+.team-home-row-label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.team-home-row-value{font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
+.team-home-row.risk-blocking{background:#FBF0F2}.team-home-row.risk-warning{background:#FCF8EF}.team-home-row.risk-clear{background:#EFF6F1}
+.team-home-row.deadline-action{background:#F7F9F5}
+.team-home-advisory{margin:0;padding:7px 11px;border-top:1px solid var(--line);font-size:10px}
+.team-home-ready .team-stage{margin-top:8px}
+.team-home-ready .pitch-player{min-height:76px}
+.team-home-ready .pitch-name{font-size:10px}
+.team-home-ready .pitch-meta{font-size:8px}
+.team-home-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+.team-home-actions .btn{text-align:center;text-decoration:none;display:grid;place-items:center}
+.team-home-support-host{margin-top:12px}
+.team-home-support{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:11px 13px;margin-bottom:10px}
+.team-home-support>summary{min-height:44px;display:flex;align-items:center;color:var(--ink);font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800}
+.team-home-support-body{padding-top:7px}
+.team-home-support-body>.section-title:first-child{margin-top:0}
+.team-home-placeholder{filter:saturate(.55);opacity:.92}
+.team-home-placeholder-player{pointer-events:none;min-height:70px}
+.team-home-placeholder-player .pitch-copy{background:rgba(255,255,255,.8)}
+.team-home-placeholder-player .club-shirt{opacity:.68}
+.team-startup-lineup{width:132px;height:176px;display:grid;grid-template-rows:repeat(4,1fr);align-items:center;padding:13px 10px;margin-top:4px}
+.team-startup-row{display:flex;justify-content:space-evenly;align-items:center;color:rgba(255,255,255,.72);font-size:13px;line-height:1}
+.team-startup-row span{display:grid;place-items:center;width:16px;height:16px;border:1px solid rgba(255,255,255,.46);border-radius:50%;font-size:0}
+.team-startup-row span:after{content:'';width:7px;height:9px;border-radius:3px;background:rgba(255,255,255,.45)}
+#teamContext{margin-top:12px;margin-bottom:0}
+@media(max-width:420px){
+  .team-home-row{grid-template-columns:86px minmax(0,1fr);padding:8px 9px;gap:7px}
+  .team-home-row-value{font-size:12px}
+  .team-home-actions{grid-template-columns:1fr}
+  .team-home-ready .pitch-name{font-size:10px}.team-home-ready .pitch-meta{font-size:8px}.team-home-ready .pitch-xp{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.team-startup-lineup *{animation:none;transition:none}}
+
 </style>
 </head>
 <body class="startup-pending" aria-busy="true">
