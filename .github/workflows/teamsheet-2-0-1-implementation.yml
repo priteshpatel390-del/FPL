@@ -1,0 +1,110 @@
+name: Teamsheet 2.0.1 implementation
+
+on:
+  push:
+    branches:
+      - teamsheet-2.0.1-navigation-settings
+    paths:
+      - .github/workflows/teamsheet-2-0-1-implementation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: teamsheet-2.0.1-navigation-settings
+          fetch-depth: 0
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Apply approved navigation and Settings changes
+        run: python3 scripts/apply-teamsheet-2.0.1.py
+
+      - name: Remove temporary automation files
+        run: |
+          rm -f scripts/apply-teamsheet-2.0.1.py
+          rm -f .github/workflows/teamsheet-2-0-1-implementation.yml
+
+      - name: Run preflight suite and record exact count
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./run-tests.sh
+          if ! ./run-tests.sh > preflight.log 2>&1; then
+            cat preflight.log
+            exit 1
+          fi
+          cat preflight.log
+          TEST_COUNT="$(awk '/^# tests /{print $3}' preflight.log | tail -1)"
+          if [[ -z "$TEST_COUNT" ]]; then
+            echo 'Could not determine test count.'
+            exit 1
+          fi
+          python3 - "$TEST_COUNT" <<'PY'
+          from pathlib import Path
+          import sys
+          count=sys.argv[1]
+          paths=[
+            Path('CLAUDE.md'),
+            Path('docs/PROJECT_CONTEXT.md'),
+            Path('docs/ROADMAP.md'),
+            Path('docs/TESTING.md')
+          ]
+          for path in paths:
+            text=path.read_text(encoding='utf-8')
+            if '__TEST_COUNT__' not in text:
+              raise SystemExit(f'{path}: missing test-count placeholder')
+            path.write_text(text.replace('__TEST_COUNT__',count),encoding='utf-8')
+          Path('/tmp/teamsheet-test-count').write_text(count,encoding='utf-8')
+          PY
+          rm -f preflight.log
+          git checkout -- dist index.html
+
+      - name: Commit reviewed source, tests and documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Teamsheet Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git diff --check
+          git add -A
+          git commit -m 'Implement Teamsheet 2.0.1 navigation and settings'
+          git rev-parse HEAD > /tmp/teamsheet-source-commit
+
+      - name: Verify exact source commit and deterministic build
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_COMMIT="$(cat /tmp/teamsheet-source-commit)"
+          TEST_COUNT="$(cat /tmp/teamsheet-test-count)"
+          BUILD_COMMIT="$SOURCE_COMMIT" ./run-tests.sh | tee final-test.log
+          FINAL_COUNT="$(awk '/^# tests /{print $3}' final-test.log | tail -1)"
+          test "$FINAL_COUNT" = "$TEST_COUNT"
+          mkdir -p /tmp/teamsheet-build-one
+          cp dist/index.html /tmp/teamsheet-build-one/index.html
+          cp dist/app.bundle.js /tmp/teamsheet-build-one/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-build-one/manifest.json
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/teamsheet-build-one/index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
+          cmp dist/index.html index.html
+          grep -F "\"commit\": \"$SOURCE_COMMIT\"" dist/manifest.json
+          rm -f final-test.log
+
+      - name: Commit generated deployables and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist index.html
+          git diff --cached --quiet || git commit -m 'Build Teamsheet 2.0.1 deployables'
+          git status --short
+          git push origin HEAD:teamsheet-2.0.1-navigation-settings
