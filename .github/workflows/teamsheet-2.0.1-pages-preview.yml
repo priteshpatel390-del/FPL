@@ -6,6 +6,13 @@ on:
       - teamsheet-2.0.1-navigation-settings
     paths:
       - .github/workflows/teamsheet-2.0.1-pages-preview.yml
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
@@ -18,6 +25,7 @@ concurrency:
 
 jobs:
   deploy-preview:
+    if: github.event_name == 'push' || github.head_ref == 'teamsheet-2.0.1-navigation-settings'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
