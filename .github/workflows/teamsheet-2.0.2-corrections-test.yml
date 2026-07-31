@@ -1,19 +1,11 @@
 name: Finalise Teamsheet 2.0.2 corrections
 
 on:
-  push:
-    branches:
-      - agent/teamsheet-2.0.2-team-decision-home
-    paths:
-      - .github/teamsheet-2.0.2-corrections-trigger
-      - .github/workflows/teamsheet-2.0.2-corrections-test.yml
   pull_request:
     branches:
       - main
     types:
-      - opened
-      - synchronize
-      - reopened
+      - ready_for_review
 
 permissions:
   contents: write
@@ -24,7 +16,7 @@ concurrency:
 
 jobs:
   finalise:
-    if: github.head_ref == 'agent/teamsheet-2.0.2-team-decision-home' || github.ref_name == 'agent/teamsheet-2.0.2-team-decision-home'
+    if: github.event.pull_request.head.ref == 'agent/teamsheet-2.0.2-team-decision-home'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -39,7 +31,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Finalise source documentation and remove temporary evidence
+      - name: Remove temporary verification evidence
         shell: bash
         run: |
           set -euo pipefail
@@ -47,61 +39,8 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           rm -rf .verification
           rm -f .github/teamsheet-2.0.2-corrections-trigger
-          node - <<'NODE'
-          const {readFileSync,writeFileSync}=require('node:fs');
-          const replace=(path,mutate)=>{
-            const before=readFileSync(path,'utf8');
-            const after=mutate(before);
-            if(after===before) throw new Error(`No documentation change applied to ${path}`);
-            writeFileSync(path,after);
-          };
-          const updateCount=text=>text.replaceAll('454/454','459/459');
-          replace('CLAUDE.md',updateCount);
-          replace('docs/PROJECT_CONTEXT.md',updateCount);
-          replace('docs/ROADMAP.md',updateCount);
-          replace('docs/TESTING.md',text=>{
-            let next=updateCount(text);
-            next=next.replace(
-              "27. `team-decision-home.test.mjs` — legal-squad gating, Official/manual/cache provenance, explicit base-XI/captain forecast, risk priority, advisory deadline actions, neutral close-captaincy wording, placeholder pitch and presentation-only wiring.",
-              "27. `team-decision-home.test.mjs` — legal-squad gating, Official/manual/cache provenance, explicit base-XI/captain forecast, risk priority, advisory deadline actions, neutral close-captaincy wording, placeholder pitch, explicit reserve-goalkeeper/outfield-sub labels and presentation-only wiring.\n28. `transfer-optimiser-view.test.mjs` — committed iPhone select changes, stale-preview clearing, redraw deduplication and preservation of the existing optimiser boundary."
-            );
-            next=next.replace(
-              'Coverage verifies legal-15 gating, immediate placeholder/connected pitch structure, explicit provenance, base XI plus captain uplift arithmetic, deterministic material-risk priority, advisory/no-submission deadline wording, preview distinction, neutral ownership context, preserved routes and absence of model/optimiser/persistence calls from the presentation wrapper.',
-              'Coverage verifies legal-15 gating, immediate placeholder/connected pitch structure, explicit provenance, base XI plus captain uplift arithmetic, deterministic material-risk priority, advisory/no-submission deadline wording, preview distinction, neutral ownership context, explicit GK/1st/2nd/3rd-sub presentation, committed transfer-control refresh, preserved routes and absence of model/optimiser/persistence changes.'
-            );
-            return next;
-          });
-          replace('docs/TEAMSHEET2-ITEM2.md',text=>{
-            let next=updateCount(text);
-            next=next.replace(
-              '- Existing legal best XI, captain, vice-captain, bench order and session previews are preserved.',
-              '- Existing legal best XI, captain, vice-captain, bench order and session previews are preserved. The reserve goalkeeper is labelled `GK`; the ordered outfield bench is labelled `1st sub`, `2nd sub` and `3rd sub`.'
-            );
-            next=next.replace(
-              '- A fictional, storage-isolated sample route is used only to review the populated layout. It is not part of the production deployable or recommendation data.',
-              '- A fictional, storage-isolated sample route is used only to review the populated layout. It is not part of the production deployable or recommendation data.\n- Physical review exposed that the correctly ordered reserve goalkeeper was visually numbered as the first substitute. Presentation now distinguishes `GK` from the three ordered outfield substitutes without changing automatic-substitution logic.\n- Committed iPhone changes to the Transfer planner horizon or result-count dropdown now clear any stale user comparison and immediately redraw the existing optimiser output. Identical inputs and optimiser calculations are unchanged.'
-            );
-            return next;
-          });
-          replace('docs/CHANGELOG.md',text=>{
-            let next=updateCount(text);
-            next=next.replace(
-              '- Preserved all model, provider, preview, route, persistence and security contracts.',
-              '- Preserved all model, provider, preview, route, persistence and security contracts.\n- Corrected bench presentation to label the reserve goalkeeper as `GK` and the ordered outfield bench as `1st sub`, `2nd sub` and `3rd sub`.\n- Added committed-selection refresh wiring for the Transfer planner dropdowns so iPhone changes immediately redraw results and invalidate stale previews without changing optimiser calculations.'
-            );
-            return next;
-          });
-          replace('docs/ARCHITECTURE.md',text=>text.replace(
-            'The existing Stage 10.1 verified startup and foreground interaction lock are unchanged. Official FPL transport reliability, authoritative bank/free-transfer retrieval and atomic non-blocking foreground refresh remain separately gated.',
-            'The existing Stage 10.1 verified startup and foreground interaction lock are unchanged. Bench presentation labels the separately handled reserve goalkeeper as `GK` and the existing ordered outfield bench as `1st sub`, `2nd sub` and `3rd sub`; no selection or automatic-substitution rule moves into the UI. The Transfer planner listens for committed select changes, clears stale session previews and reruns the unchanged optimiser once per effective setting change. Official FPL transport reliability, authoritative bank/free-transfer retrieval and atomic non-blocking foreground refresh remain separately gated.'
-          ));
-          for(const path of ['CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ROADMAP.md','docs/TESTING.md','docs/TEAMSHEET2-ITEM2.md','docs/CHANGELOG.md']){
-            const text=readFileSync(path,'utf8');
-            if(text.includes('454/454')) throw new Error(`${path} still contains the superseded 454-test baseline`);
-          }
-          NODE
           git add -A
-          git commit -m 'Finalise Teamsheet 2.0.2 iPhone corrections'
+          git commit -m 'Remove temporary Teamsheet 2.0.2 verification evidence'
           echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Run exact-identity full verification
@@ -129,21 +68,16 @@ jobs:
           grep -F '"rulesVersion": "2026-27.3"' dist/manifest.json
           echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
 
-      - name: Publish verified generated files
+      - name: Publish verified build and remove temporary workflow
         shell: bash
         run: |
           set -euo pipefail
           git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
           git commit -m 'Publish verified Teamsheet 2.0.2 correction build'
-          echo "GENERATED_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-
-      - name: Remove temporary workflow and publish final branch
-        shell: bash
-        run: |
-          set -euo pipefail
+          GENERATED_COMMIT="$(git rev-parse HEAD)"
           rm -f .github/workflows/teamsheet-2.0.2-corrections-test.yml
           git add -A
-          git commit -m "Complete Teamsheet 2.0.2 correction review
+          git commit -m "Complete Teamsheet 2.0.2 correction verification
 
 Verified source: $SOURCE_COMMIT
 Generated commit: $GENERATED_COMMIT
