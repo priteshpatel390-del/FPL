@@ -82,5 +82,7 @@ test('production wiring wraps the verified renderer without changing model modul
   assert.match(source,/User-entered squad|Official FPL public picks/);
   assert.match(build,/src\/ui\/team-decision-home\.mjs/);
   assert.match(app,/Teamsheet 2\.0\.2 — pitch-first Team decision home/);
+  assert.match(source,/sub\.textContent='Loading your team'/);
+  assert.doesNotMatch(source,/Preparing your decision home/);
   assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);
 });

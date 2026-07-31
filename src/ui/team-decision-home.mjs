@@ -172,12 +172,12 @@ function teamDecisionSetupStartup(){
   const pitch=document.querySelector('#startupGate .startup-pitch');
   if(!pitch) return;
   pitch.classList.add('team-startup-lineup');
-  pitch.setAttribute('aria-label','Preparing the Team decision pitch');
+  pitch.setAttribute('aria-label','Loading your team');
   const rows=[3,4,3,1].map((count,index)=>el('div',{class:`team-startup-row row-${index+1}`},
     Array.from({length:count},()=>el('span',{'aria-hidden':'true'},'○'))));
   setChildren(pitch,rows);
   const sub=document.querySelector('#startupGate .startup-sub');
-  if(sub) sub.textContent='Preparing your decision home';
+  if(sub) sub.textContent='Loading your team';
 }
 
 function teamDecisionSetupShell(){
