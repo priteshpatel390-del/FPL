@@ -3,7 +3,7 @@ name: Teamsheet 2.0.2 final documentation verification
 
 on:
   pull_request:
-    types: [synchronize]
+    types: [opened, reopened, synchronize]
     branches: [main]
 
 permissions:
