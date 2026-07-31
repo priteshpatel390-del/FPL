@@ -1,6 +1,6 @@
 # TEAMSHEET2-PRODUCT-BLUEPRINT.md — Canonical Product Blueprint
 
-Status: **Approved by Pritesh on 30 July 2026.** This document is the authoritative product direction for future Teamsheet 2.0 work.
+Status: **Approved by Pritesh on 30 July 2026; navigation amendments approved 31 July 2026.** This document is the authoritative product direction for Teamsheet 2.0 work.
 
 Purpose: define the product vision, information architecture, decision philosophy, user experience standards and incremental migration checkpoints for Teamsheet — FPL Decision Desk.
 
@@ -116,10 +116,11 @@ After official checking, Teamsheet separates confirmed outcomes from forecasts, 
 
 1. **Team**
 2. **Transfers**
-3. **Mini Leagues**
-4. **Settings**
+3. **Fixtures**
+4. **Leagues**
+5. **Settings**
 
-This structure supersedes the Stage 9 primary information architecture for future development. Stage 9 remains the accurate historical design and engineering record for the work completed at that time.
+This owner-approved 31 July 2026 amendment recognises fixtures as an everyday FPL decision surface and uses the shorter Leagues label for mobile navigation. Ask Teamsheet is a prominent global and Team action with its own route rather than a sixth bottom tab. Players leaves primary navigation and More is replaced by Settings.
 
 ### 5.2 Team
 
@@ -133,7 +134,7 @@ The Team destination should answer:
 - What is the most important risk?
 - What must I do before the deadline?
 
-The pitch is the dominant visual and appears immediately. Setup states should preserve the pitch and explain the next connection step rather than replacing the product with a form.
+The pitch is the dominant visual and appears immediately. Free transfers and bank remain visible because they directly affect weekly decisions. Setup states should preserve the pitch and explain the next connection step rather than replacing the product with a form.
 
 ### 5.3 Transfers
 
@@ -149,7 +150,11 @@ The zero-transfer baseline remains visible and meaningful. Player replacement di
 
 No optimiser objective or formula is changed by this blueprint.
 
-### 5.4 Mini Leagues
+### 5.4 Fixtures
+
+Fixtures is a primary destination because fixture runs, blanks, doubles, difficulty lenses and swing windows are routinely used to plan FPL decisions. The destination supports Team and Transfers without changing fixture calculations.
+
+### 5.5 Leagues
 
 Mini Leagues is a flagship primary destination, not a secondary item under More or Settings.
 
@@ -160,24 +165,23 @@ It contains two connected areas:
 
 The destination should lead with the user's competitive position, movement and drivers, then progressively reveal rival and differential detail.
 
-### 5.5 Settings
+### 5.6 Settings
 
 Settings replaces More and is an organised menu, not one long scrolling page.
 
 #### Team & Account
 
-- FPL Team ID
-- free transfers
-- bank
 - manual squad
-- saved Mini Leagues
+- account and connection guidance
+- saved-league guidance and links
 
 #### Research Tools
 
 - player explorer
-- fixture explorer
 - watchlist or shortlist
 - detailed comparisons
+
+Fixture exploration is a primary Fixtures destination rather than a hidden research tool.
 
 #### Evidence & Performance
 
@@ -393,13 +397,15 @@ Teamsheet 2.0 evolves incrementally from the verified engineering foundation. Ev
 
 ### Teamsheet 2.0.1 — Navigation and Settings architecture
 
-- Replace primary navigation with Team, Transfers, Mini Leagues and Settings.
-- Remove Players from primary navigation.
-- Replace More with the approved organised Settings hierarchy.
-- Preserve access to every existing functional surface.
+- Replace primary navigation with Team, Transfers, Fixtures, Leagues and Settings.
+- Remove Players from primary navigation and replace More with the organised Settings hierarchy.
+- Keep Team ID, free transfers and bank visible on Team.
+- Make Ask Teamsheet a prominent Team/global action with its own route.
+- Add hash routing, browser history, deep links, focus and legacy aliases.
+- Preserve access to every existing functional surface without changing formulas or providers.
 - Record and test navigation, focus, responsive and no-regression behaviour.
 
-This checkpoint requires a separate design and explicit approval before implementation.
+This checkpoint was explicitly approved on 31 July 2026.
 
 ### Teamsheet 2.0.2 — Team decision home
 

@@ -1,11 +1,11 @@
 # TESTING.md
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-30. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-07-31. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Stage 10.3 verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397 passing tests**, successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. Generated artefacts are committed at `8c4b60a367b9858146b42ff8710d888856462c21`. The item merged through PR #32 at `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997` after owner approval. The previous Stage 10.2 baseline was 376/376 at source `e84e7f1bf05ed1f3e574f78101e4a6e413273306`.
+Teamsheet 2.0.1 verification completes **440/440 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. It changes navigation and presentation only; model/provider correctness continues to rely on the preserved suites and the Stage 10.5 428-test baseline.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -33,6 +33,7 @@ Stage 10.3 verified source `3eaae862b8a8277e450af062ff4bcecd15b12f3f`: **397/397
 23. `metrics.test.mjs` — exact player/minutes/probability/interval calculations; zero and signed errors; Pearson/Spearman ties and zero variance; approved error/price/season boundaries; singles, doubles and postponements; legal automatic substitutions, goalkeeper and captain fallback; authoritative joins, corrections, tamper detection, non-mutation, segmentation, frozen transfer horizons, public record-field contracts and static no-model-recomputation guards.
 24. `metrics-storage.test.mjs` — verified compressed metric writes, deterministic metadata, current/superseded revision pointers, correction retention, interrupted-write journal recovery, tamper rejection, bounds, quota failure and deletion isolation from source evidence.
 25. `stage10-hardening.test.mjs` — dangerous-key rejection, diagnostic redaction, strict journals/current reconciliation, transfer-version parity, line-feed spreadsheet protection, honest download requests and bounded retry/orchestration wiring.
+26. `navigation-settings.test.mjs` — primary order, hash normalisation, legacy aliases, safe fallback, Settings hierarchy, Team resource relocation, Fixtures/Leagues promotion, Ask Teamsheet access, shortcut routes and removal of legacy click-to-hide navigation.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
@@ -83,3 +84,9 @@ A synthetic 38-Gameweek × 700-player case exercises 26,600 player rows and equi
 
 ## Stage 10.5 hardening verification
 Stage 10.5 adds deterministic fault-injection coverage for snapshot/outcome/metric journals, corrupt journals, duplicate-current reconciliation, compression fallback, dangerous JSON keys, version parity, diagnostic redaction, line-feed formula injection, bounded automatic retry, immediate outcome-to-metric orchestration and honest delayed-cleanup downloads. Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with byte-identical exact-identity builds and root/deployable equality.
+
+
+## Teamsheet 2.0.1 navigation verification
+The Teamsheet 2.0.1 baseline is **440/440 tests** with zero failures and zero skipped. Coverage verifies the exact five-destination order, URL aliases and safe fallback, browser-history wiring, `aria-current`, static link semantics, no account/key/evidence identities in routes, free transfers and bank on Team, Player Explorer under Research Tools, purpose-led Settings sections, direct evidence/provider shortcuts and Ask Teamsheet as a global/Team action rather than a sixth tab.
+
+Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. Physical owner acceptance remains required before merge, with the complete end-to-end pre-season rehearsal deferred to Teamsheet 2.0.7.

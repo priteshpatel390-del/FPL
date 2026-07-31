@@ -45,11 +45,12 @@ test('provider health state classes reuse the established status palette',()=>{
   assert.equal(providerHealthFlagClass(HEALTH_STATES.DISABLED),'dark');
 });
 
-test('app shell exposes global compact health and full More detail inside Settings flow',()=>{
+test('app shell exposes global compact health and full Settings data detail',()=>{
   const source=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
   assert.match(source,/providerHealthCompact/);
   assert.match(source,/providerHealthDetail/);
   assert.match(source,/providerHealthRows/);
-  assert.match(source,/Team and data settings/);
-  assert.match(source,/moreTab\.click\(\)/);
+  assert.match(source,/#\/settings\/data/);
+  assert.match(source,/__teamsheetNavigate/);
+  assert.doesNotMatch(source,/moreTab\.click\(\)/);
 });

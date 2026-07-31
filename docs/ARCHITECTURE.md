@@ -68,10 +68,12 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 
 `squad-simulation.mjs` validates legal starting formations, processes the reserve goalkeeper separately, respects outfield bench order, preserves minimum formation rules and applies captain-to-vice fallback. Equal inputs and seeds produce equal outputs.
 
-## Stage 9 UI boundary
-`ui/app-shell.mjs` owns the implemented four primary destinations, constructs the More/Settings hierarchy and provides globally visible Provider Health. `ui/team-pitch.mjs` owns visual grouping and shirt palette classes. `ui/player-detail.mjs` owns accessible detail-panel behaviour. `ui/decision-preview.mjs` owns session-scoped preview state and stale invalidation. The real squad, persisted configuration and model recommendation remain unchanged.
+## Teamsheet 2.0.1 UI and routing boundary
+`ui/app-shell.mjs` owns the implemented Team, Transfers, Fixtures, Leagues and Settings primary destinations, the secondary Ask Teamsheet route, hash normalisation, legacy aliases, browser history, active-link state, route focus and the five-section Settings hierarchy. The old direct click-to-hide navigation in `ui/views.mjs` is removed.
 
-The owner-approved `TEAMSHEET2-PRODUCT-BLUEPRINT.md` supersedes the Stage 9 information architecture for future product development, but it changes no technical boundary by itself. Navigation and Settings changes begin only through the separately designed and approved Teamsheet 2.0.1 checkpoint. Stage 9 remains the valid historical record and engineering foundation.
+Existing functional nodes are relocated rather than cloned: weekly Team ID/free-transfer/bank context moves into Team; Player Explorer moves under Settings → Research Tools; evidence/outcomes/metrics/review remain under Settings → Evidence & Performance; Provider Health and optional provider/calibration controls live under Settings → Data & Diagnostics; the existing League comparison and Fixtures ticker become primary destinations. Ask Teamsheet remains functionally unchanged and is linked globally and from Team.
+
+The router stores no account, provider-key or evidence identity in the URL. It does not own model state, provider state or persisted configuration. Player detail remains an accessible dialog rather than a URL route. The owner-approved Teamsheet 2.0.1 boundary changes presentation and navigation only.
 
 ## Provider Health and storage
 Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.

@@ -566,7 +566,7 @@ ${buildContext()}`;
     // frontend. Claude's artifact preview provides the only approved keyless
     // path. Static hosted builds stop before making any Anthropic request.
     if(!window.storage){
-      S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, the Ask tab is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+      S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
       renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
     }
     const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
@@ -666,20 +666,8 @@ function renderAll(){
 
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
-document.querySelectorAll('.tab').forEach((t, i, all) => {
-  t.addEventListener('click', () => {
-    all.forEach(x => x.setAttribute('aria-selected', x === t));
-    document.querySelectorAll('.view').forEach(v => v.hidden = v.id !== 'view-' + t.dataset.view);
-    window.scrollTo({top:0, behavior:'smooth'});
-  });
-  t.addEventListener('keydown', e => {
-    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    e.preventDefault();
-    const next = all[(i + (e.key === 'ArrowRight' ? 1 : all.length-1)) % all.length];
-    next.focus(); next.click();
-  });
-});
-document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => { $('q').value = c.dataset.q; ask(); }));
+// Teamsheet 2.0.1: app-shell.mjs owns hash routing, history and focus.
+document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { $('q').value = c.dataset.q; ask(); }));
 document.addEventListener('teamsheet:preview-change',()=>renderSquad());
 
 const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);

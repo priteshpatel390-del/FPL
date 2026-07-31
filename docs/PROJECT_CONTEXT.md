@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 Purpose: master overview — the first document any new developer or session reads after CLAUDE.md.
-Audience: anyone joining the project. Last updated: 2026-07-30. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
+Audience: anyone joining the project. Last updated: 2026-07-31. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 ## What this is
 **Teamsheet — FPL Decision Desk.** A single-file, mobile-first web app that helps Fantasy Premier League managers maximise the performance of their own complete 15-player squad through intelligent, explainable, team-level recommendations.
@@ -13,7 +13,8 @@ The owner-approved canonical product direction is `TEAMSHEET2-PRODUCT-BLUEPRINT.
 - Live on GitHub Pages from repository `priteshpatel390-del/FPL`.
 - The 2026/27 season starts 21 August 2026; the app remains in pre-season mode until live GW1 data exists.
 - Stages 1–9 and Stage 10.1–10.5 are complete and merged. Stage 10.5 merged through PR #45 at `0605ba5a02c49a5b599eba1ed00c443fa1889c92` after explicit owner approval. The complete Stage 10 design is owner-approved and its collection/evaluation infrastructure is complete.
-- The Teamsheet 2.0 Product Blueprint was approved by Pritesh on 30 July 2026. It supersedes the Stage 9 information architecture for future development while preserving the Stage 9 engineering foundation and historical record.
+- The Teamsheet 2.0 Product Blueprint was approved by Pritesh on 30 July 2026. Owner-approved 2.0.1 amendments on 31 July 2026 add Fixtures as a primary destination, shorten Mini Leagues to Leagues, keep free transfers and bank on Team, and promote Ask Teamsheet as a global/Team action.
+- Teamsheet 2.0.1 implements hash routing, browser history/deep links, Team/Transfers/Fixtures/Leagues/Settings navigation and the five-section Settings hierarchy without changing formulas or providers. Verified baseline: **440/440 tests** with deterministic exact-identity builds and root/deployable equality.
 - Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.
 - Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.
 - Stage 10.1 merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444` after physical iPhone acceptance. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with exact-identity builds; generated artefacts are committed at `1259e7b5f7505d3330c772e89c77720251552287`.
@@ -33,15 +34,16 @@ The owner-approved canonical product direction is `TEAMSHEET2-PRODUCT-BLUEPRINT.
 7. Preserve honest uncertainty and known limitations.
 8. Deliver a polished, fast football application rather than a technical dashboard.
 
-## Approved future information architecture
-The Teamsheet 2.0 primary navigation is:
+## Implemented Teamsheet 2.0 information architecture
+The primary navigation is:
 
 1. **Team**
 2. **Transfers**
-3. **Mini Leagues**
-4. **Settings**
+3. **Fixtures**
+4. **Leagues**
+5. **Settings**
 
-The existing Players destination leaves primary navigation. Player replacement discovery moves into Transfers; advanced player and fixture exploration moves under Settings → Research Tools. More is replaced by an organised Settings menu. This direction is approved but not yet implemented.
+Players is available under Settings → Research Tools rather than primary navigation. More is replaced by an organised Settings menu. Ask Teamsheet is a prominent Team and global action with its own route. Free transfers and bank remain visible on Team.
 
 ## Engineering goals and priorities
 1. Reliable expected-points projections.
@@ -74,7 +76,7 @@ Approved product direction: Teamsheet 2.0 Product Blueprint and migration checkp
 
 Current operational work: pre-season readiness and prospective 2026/27 evidence collection. Stage 10 infrastructure is complete; accuracy and calibration validation remain in progress.
 
-Next development item: **Teamsheet 2.0.1 — Navigation and Settings architecture.** Investigation, exact design, exclusions and explicit owner approval are required before implementation. No Teamsheet 2.0.1 code is authorised by the blueprint integration item.
+Next development item: **Teamsheet 2.0.2 — Team decision home.** Teamsheet 2.0.1 is implemented and verified; later work remains separately gated and must not be pulled forward.
 
 ## Teamsheet 2.0 migration checkpoints
 1. Teamsheet 2.0.1 — Navigation and Settings architecture.
@@ -94,4 +96,4 @@ Public relay dependence for some provider traffic; undocumented FPL schema drift
 The public FPL API and pinned vaastav archive remain available; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger; detailed Stage 8 simulation remains disabled in pre-season rather than manufacturing precise distributions; local evidence storage remains recovery rather than a permanent archive; and Teamsheet 2.0 will preserve the existing framework-free deterministic foundation unless separately approved evidence justifies a change.
 
 ## Approval and implementation boundary
-The Teamsheet 2.0 Product Blueprint records approved product direction only. It does not implement the new navigation, screens, rank intelligence, strategy models or Settings organisation. Teamsheet 2.0.1 is the next separate design and approval gate. Prospective validation remains in progress, and the recorded verified engineering baseline remains **428/428 tests** with deterministic exact-identity builds.
+Teamsheet 2.0.1 implements only the approved navigation, routing and Settings relocation. It does not change recommendation formulas, provider behaviour, global rank, league intelligence, player detail or the Team/Transfers decision designs. Teamsheet 2.0.2 is the next separate design and approval gate. Prospective validation remains in progress, and the verified engineering baseline is **440/440 tests** with deterministic exact-identity builds.
