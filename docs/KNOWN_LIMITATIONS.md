@@ -61,6 +61,10 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | METRIC-5 | Provider-state comparisons are observational and clustered | Hundreds of player rows can share one Gameweek/provider event, so association cannot establish causal provider value | Future formal inference only with separate approval | Open (accepted) |
 | METRIC-6 | The legal-XI oracle uses realised outcomes | It is a descriptive hindsight upper bound from the same frozen squad, not a recommendation available before the deadline | By design | Accepted-labelled |
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
+| UI-6 | First Teamsheet 2.0.1 physical iPhone review found dock, icon, focus and Settings-header defects | Approved interface corrections are implemented on the draft branch; a repeat physical review is still required | Teamsheet 2.0.1 review | Open (retest gate) |
+| REFRESH-1 | Qualifying foreground return temporarily locks the app while a complete verified provider cycle settles | Trust consistency is preserved, but switching apps repeatedly feels frozen; non-blocking atomic refresh requires separate security design | Separate approved investigation | Open (gated) |
+| FPL-1 | The first-party Pages preview could not load core Official FPL data through the public relay cascade | Populated squad, transfer, fixture, player and league iPhone acceptance is blocked | Separate transport investigation | Open (acceptance blocker) |
+| ACCOUNT-1 | Bank and available free transfers remain manual inputs rather than proven authoritative account values | Values can be entered but are not yet verified from the connected FPL account; no inference may be labelled authoritative | Separate data/security design | Open (gated) |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
 ## Teamsheet 2.0 migration limitations

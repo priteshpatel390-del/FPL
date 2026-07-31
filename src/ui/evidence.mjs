@@ -239,12 +239,7 @@ function openEvidencePanel(){
   else if(globalThis.location) globalThis.location.hash='#/settings/evidence';
 }
 function ensureEvidenceCompact(){
-  const header=document.querySelector('header');
-  if(!header||$('evidenceCompact')) return;
-  const button=el('button',{id:'evidenceCompact',type:'button',class:'chip','aria-controls':'evidencePanel','aria-label':'Validation evidence status'},
-    'Evidence ',el('span',{class:'flag dark'},'Waiting'));
-  button.addEventListener('click',openEvidencePanel);
-  ($('headerActions')||header).appendChild(button);
+  $('evidenceCompact')?.remove?.();
 }
 function ensureStage10OperationsUi(){
   const panel=$('evidencePanel');if(!panel||$('stage10Operations'))return;

@@ -389,31 +389,37 @@ button,input,select,textarea{touch-action:manipulation}
 .shirt-palette-fallback-6{--shirt-primary:#A13A2A;--shirt-secondary:#F5E7D4;--shirt-accent:#152A40;--shirt-ink:#FFFFFF}
 
 
-/* Teamsheet 2.0.1 — route hierarchy, five-tab navigation and Settings menu */
-.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-#providerHealthCompact,#evidenceCompact,#askTeamsheetCompact{margin-top:10px;min-height:38px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff;text-decoration:none}
-#providerHealthCompact:hover,#evidenceCompact:hover,#askTeamsheetCompact:hover{background:rgba(255,255,255,.16);color:#fff}
+/* Teamsheet 2.0.1 — route hierarchy, stable iPhone dock and global Ask composer */
+html{min-height:100%;min-height:100dvh}
+body{min-height:100%;min-height:100dvh;padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+.global-ask{position:relative;width:min(100%,620px);margin-top:12px}
+.global-ask input{width:100%;min-height:48px;padding:10px 52px 10px 15px;border:1px solid rgba(255,255,255,.32);border-radius:24px;background:rgba(255,255,255,.12);color:#fff;font-size:15px;box-shadow:none}
+.global-ask input::placeholder{color:#C7D3CC}.global-ask input:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
+.global-ask-send{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
+.global-ask-send:disabled{background:rgba(255,255,255,.18);color:#AEBBB4;cursor:default}.global-ask-send:not(:disabled):active{transform:translateY(-50%) scale(.96)}
+nav.tabs{position:fixed;inset:auto 0 0 0;z-index:1000;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));min-height:calc(64px + env(safe-area-inset-bottom,0px));padding:4px 4px env(safe-area-inset-bottom,0px);box-sizing:border-box;transform:translate3d(0,0,0);backface-visibility:hidden;isolation:isolate}
+.tab{height:56px;min-width:0;padding:6px 2px;justify-content:center;box-sizing:border-box;text-decoration:none}
+.tab .ic{display:grid;place-items:center;width:22px;height:22px;font-size:0;line-height:1}.nav-icon{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+html.keyboard-open nav.tabs{opacity:0;visibility:hidden;pointer-events:none}
+h2[tabindex="-1"]:focus{outline:none}
 .team-context{border:1px solid var(--line);border-radius:var(--r);background:#F7F9F5;padding:14px;margin:14px 0}
 .team-context-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
 .team-context-head h3{font-size:16px}.team-context-head>.status{max-width:300px;text-align:right}
-.ask-callout{border:1px solid #E3D3D7;border-radius:var(--r);background:#F7EEF0;padding:14px;margin:0 0 14px;display:flex;gap:14px;align-items:center;justify-content:space-between}
-.ask-callout p{margin:4px 0 0;color:var(--ink-soft);font-size:13px}.ask-callout .btn{flex:0 0 auto;text-decoration:none}
 .settings-header{margin-bottom:12px}.settings-grid{display:grid;gap:10px}
 .settings-card{display:grid;grid-template-columns:40px minmax(0,1fr) 18px;align-items:center;gap:10px;min-height:82px;padding:14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);color:var(--ink);text-decoration:none}
 .settings-card:hover{background:#F7F9F5;border-color:#BFC7BC}.settings-card:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .settings-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#EAF0EB;color:var(--pitch);font-size:19px;font-weight:800}
 .settings-card-copy{min-width:0}.settings-card h3{font-size:15px;margin:0}.settings-card-description{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:2px}
 .settings-card-arrow{font-size:25px;color:var(--ink-soft)}
-.route-header{margin-bottom:12px}.route-header h2{font-size:20px;margin-top:5px}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
-.route-back{display:inline-flex;min-height:44px;align-items:center;color:var(--claret);font-weight:700;text-decoration:none;margin:0 0 6px}
-.route-back:hover{text-decoration:underline}
+.route-header{position:relative;margin-bottom:12px;padding-top:2px}.route-header h2{font-size:20px;margin-top:0}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
+.route-back{display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0 0 4px;color:var(--claret);font-size:27px;font-weight:700;line-height:1;text-decoration:none;border-radius:50%}
+.route-back:hover{background:#F7EEF0;text-decoration:none}.route-back:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .settings-subview>.panel:last-child{margin-bottom:0}
 @media(min-width:720px){.settings-grid{grid-template-columns:1fr 1fr}.settings-card:last-child{grid-column:1/-1}}
-
 @media(max-width:520px){
   main{padding:12px}.panel{padding:14px}.row{align-items:stretch}.row>label.fld{flex:1 1 135px}
-  nav.tabs{padding-left:2px;padding-right:2px}.tab{font-size:9px;padding-left:0;padding-right:0}.tab .ic{font-size:15px}
-  .team-context-head>.status{text-align:left}.ask-callout{align-items:stretch;flex-direction:column}.ask-callout .btn{text-align:center}
+  .tab{font-size:9px}.tab-label{max-width:68px}
+  .team-context-head>.status{text-align:left}.global-ask{width:100%}
   .row>.btn:not(.sm){flex:1 1 100%}.bar{grid-template-columns:minmax(86px,112px) 1fr 42px;gap:6px}
   .player-detail-range{padding:11px}.player-detail-range-head{align-items:flex-start;flex-direction:column}.range-label{align-self:flex-start}
 }
@@ -623,11 +629,11 @@ button,input,select,textarea{touch-action:manipulation}
 </aside>
 
 <nav class="tabs" aria-label="Primary">
-  <a class="tab" href="#/team"><span class="ic" aria-hidden="true">◈</span><span class="tab-label">Team</span></a>
-  <a class="tab" href="#/transfers"><span class="ic" aria-hidden="true">⇄</span><span class="tab-label">Transfers</span></a>
-  <a class="tab" href="#/fixtures"><span class="ic" aria-hidden="true">▦</span><span class="tab-label">Fixtures</span></a>
-  <a class="tab" href="#/leagues"><span class="ic" aria-hidden="true">⚑</span><span class="tab-label">Leagues</span></a>
-  <a class="tab" href="#/settings"><span class="ic" aria-hidden="true">⚙</span><span class="tab-label">Settings</span></a>
+  <a class="tab" href="#/team"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 19 8 12 13 5 8Z"></path><path d="m5 12 7 5 7-5"></path><path d="m5 16 7 5 7-5"></path></svg></span><span class="tab-label">Team</span></a>
+  <a class="tab" href="#/transfers"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h13"></path><path d="m14 4 3 3-3 3"></path><path d="M20 17H7"></path><path d="m10 14-3 3 3 3"></path></svg></span><span class="tab-label">Transfers</span></a>
+  <a class="tab" href="#/fixtures"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 17h2M14 17h2"></path></svg></span><span class="tab-label">Fixtures</span></a>
+  <a class="tab" href="#/leagues"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 21V4"></path><path d="M6 5h11l-2 4 2 4H6"></path></svg></span><span class="tab-label">Leagues</span></a>
+  <a class="tab" href="#/settings"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></span><span class="tab-label">Settings</span></a>
 </nav>
 <script src="app.js"></script>
 </body>

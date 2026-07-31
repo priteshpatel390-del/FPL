@@ -114,3 +114,11 @@ Reason: the manager needs weekly resources and fixtures immediately available, L
 Approach: primary navigation is Team, Transfers, Fixtures, Leagues and Settings. Free transfers and bank remain visible on Team. Players moves to Settings → Research Tools. Ask Teamsheet is a full `#/ask` destination reached from Team and a global header action rather than a sixth bottom tab. A central hash router owns route normalisation, legacy aliases, browser history, active navigation, title, focus and safe fallback. Existing stateful DOM nodes move into the five Settings categories without cloning. The historical Stage 10.5 physical rehearsal remains recorded, but its outstanding standalone rehearsal gate is superseded by checkpoint-level iPhone checks and final 2.0.7 acceptance.
 
 Consequences: fixture, league, provider, evidence and model behaviour remain unchanged. Hashes are used because direct path routes can fail on static GitHub Pages. URLs contain no account IDs, keys or evidence identities. Player-detail URL routing, Team/Transfers redesign, rank intelligence and Mini-League strategy remain excluded and separately gated.
+
+## Teamsheet 2.0.1 physical-review decisions — 31 July 2026
+
+- Use one compact Ask Teamsheet field with an internal claret upward arrow on every route; do not use separate Data, Evidence or Ask header pills.
+- Use a fixed five-column iPhone safe-area dock with controlled monochrome SVG icons.
+- Preserve programmatic route-heading focus but suppress the visible focus outline on non-interactive headings.
+- Use one arrow-only Settings back control without duplicate Settings labels.
+- Treat foreground refresh, populated-preview transport and authoritative bank/free-transfer retrieval as separate investigation gates; this approval does not authorise their implementation.

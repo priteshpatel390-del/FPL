@@ -56,7 +56,7 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
   - Hash routes support direct opening, refresh and browser Back/Forward.
   - Free transfers and bank remain on Team; Ask Teamsheet is a prominent Team/global action.
   - Existing functional surfaces are preserved under purpose-led Settings routes.
-  - Verified baseline: **440/440 tests**, deterministic exact-identity builds and root/deployable equality.
+  - Verified baseline: **445/445 tests**, deterministic exact-identity builds and root/deployable equality.
 - **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
 - The next development checkpoint is **Teamsheet 2.0.2 — Team decision home**, requiring separate investigation, design and explicit approval.
 
@@ -95,3 +95,9 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 5. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 6. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
 7. Projected live rank, projected rival outcomes and protect/balanced/chase strategy logic require separate designs and explicit approval.
+
+## Teamsheet 2.0.1 physical iPhone follow-up
+
+- **Approved interface correction:** global Ask composer, stable dock/icons, focus presentation and simplified Settings back hierarchy.
+- **Investigation only:** non-blocking foreground refresh, reliable populated preview transport, and authoritative read-only bank/free-transfer retrieval.
+- **Merge gate:** full tests/build/reproducibility, refreshed preview, repeat physical iPhone review, populated-data acceptance and explicit owner approval.

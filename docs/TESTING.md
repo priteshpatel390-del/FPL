@@ -5,7 +5,7 @@ Last updated: 2026-07-31. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Teamsheet 2.0.1 verification completes **440/440 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. It changes navigation and presentation only; model/provider correctness continues to rely on the preserved suites and the Stage 10.5 428-test baseline.
+Teamsheet 2.0.1 verification completes **445/445 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. It changes navigation and presentation only; model/provider correctness continues to rely on the preserved suites and the Stage 10.5 428-test baseline.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -87,6 +87,10 @@ Stage 10.5 adds deterministic fault-injection coverage for snapshot/outcome/metr
 
 
 ## Teamsheet 2.0.1 navigation verification
-The Teamsheet 2.0.1 baseline is **440/440 tests** with zero failures and zero skipped. Coverage verifies the exact five-destination order, URL aliases and safe fallback, browser-history wiring, `aria-current`, static link semantics, no account/key/evidence identities in routes, free transfers and bank on Team, Player Explorer under Research Tools, purpose-led Settings sections, direct evidence/provider shortcuts and Ask Teamsheet as a global/Team action rather than a sixth tab.
+The Teamsheet 2.0.1 baseline is **445/445 tests** with zero failures and zero skipped. Coverage verifies the exact five-destination order, URL aliases and safe fallback, browser-history wiring, `aria-current`, static link semantics, no account/key/evidence identities in routes, free transfers and bank on Team, Player Explorer under Research Tools, purpose-led Settings sections, direct evidence/provider shortcuts and Ask Teamsheet as a global/Team action rather than a sixth tab.
 
 Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. Physical owner acceptance remains required before merge, with the complete end-to-end pre-season rehearsal deferred to Teamsheet 2.0.7.
+
+## Teamsheet 2.0.1 physical-review regression coverage
+
+The navigation suite now verifies the persistent global Ask composer and internal arrow, absence of global Data/Evidence pills, controlled SVG dock icons, one fixed five-column safe-area contract, keyboard visual-viewport recovery, invisible focus presentation for programmatically focused headings, and arrow-only Settings subsection navigation. Automated checks still cannot prove physical iPhone placement or populated FPL behaviour.

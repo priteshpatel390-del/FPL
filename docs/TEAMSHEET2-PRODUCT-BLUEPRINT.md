@@ -517,3 +517,7 @@ This blueprint does not authorise:
 18. The Stage 9 information architecture is superseded for future development, while the Stage 9 engineering foundation and historical record remain valid.
 19. Existing verified model, provider, evidence, security, build and deployment work should be preserved unless a later approved item explicitly changes it.
 20. This blueprint records product direction only and authorises no application implementation.
+
+## 2.0.1 physical-review amendment — 31 July 2026
+
+The global shell uses one compact Ask Teamsheet composer at the top of every destination, with an internal claret upward-arrow send control. Data and Evidence are Settings content, not global header controls. The five primary destinations share one fixed safe-area dock and controlled monochrome icons. These presentation decisions do not authorise changes to provider transport, foreground refresh trust boundaries or account-derived bank/free-transfer data.

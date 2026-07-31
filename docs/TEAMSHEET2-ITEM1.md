@@ -14,14 +14,14 @@ Teamsheet now has five primary destinations:
 4. Leagues
 5. Settings
 
-Players leaves primary navigation. More is removed. Ask Teamsheet remains a full destination but is reached through prominent Team and global actions rather than a cramped sixth bottom tab.
+Players leaves primary navigation. More is removed. Ask Teamsheet remains a full destination but is reached through one compact global composer rather than a cramped sixth bottom tab.
 
 ## Owner-approved amendments to the original blueprint
 
 - Free transfers and bank are core weekly FPL information and remain visible on Team.
 - Fixtures is a primary destination because fixture runs, blanks, doubles and swings are routinely used by an FPL manager.
 - The shorter primary label is Leagues; the underlying product area remains focused on FPL mini leagues.
-- Ask Teamsheet is regularly used and must be accessible from Team and the global header.
+- Ask Teamsheet is regularly used and is available as the same compact text field at the top of every route, with an internal claret upward-arrow send control.
 - The old standalone Stage 10.5 physical rehearsal is superseded by checkpoint-specific iPhone checks and a final Teamsheet 2.0 end-to-end rehearsal.
 
 ## Route contract
@@ -59,7 +59,7 @@ The router owns active-screen visibility, `aria-current`, document title, top-of
 - manual-mode switch
 - load/source/chip status
 - existing squad pitch and recommendations
-- prominent Ask Teamsheet action
+- persistent global Ask Teamsheet composer
 
 This checkpoint does not redesign the Team decision home; that remains 2.0.2.
 
@@ -89,7 +89,7 @@ Existing stateful controls are moved as DOM nodes rather than cloned. Their IDs,
 
 ### Ask Teamsheet
 
-Ask Teamsheet remains `#/ask`. It is linked from Team and the header. Its provider and hosted-build limitation are unchanged.
+Ask Teamsheet remains `#/ask`. The persistent shell composer carries a question into the full route and records an accessible return destination. Data and Evidence no longer occupy the global header; their detail remains under Settings. Ask provider and hosted-build limitations are unchanged.
 
 ## Explicit exclusions
 
@@ -107,11 +107,11 @@ Ask Teamsheet remains `#/ask`. It is linked from Team and the header. Its provid
 ## Accessibility and mobile contract
 
 - primary navigation is a labelled navigation landmark using real links and `aria-current`;
-- all five labels remain visible at narrow iPhone widths;
+- all five labels share one fixed safe-area dock and controlled monochrome SVG icons at narrow iPhone widths;
 - touch targets retain the existing minimum sizes and safe-area padding;
-- Settings subroutes provide a clear back link;
+- Settings subroutes provide one arrow-only accessible back link;
 - browser Back/Forward and deep links work;
-- route headings receive focus after user navigation;
+- route headings receive programmatic focus after user navigation without a visible outline on non-interactive headings;
 - inactive routes are hidden from interaction and assistive technology;
 - player-detail dialog focus and Escape behaviour remain unchanged.
 
@@ -120,3 +120,7 @@ Physical-device evidence remains an owner acceptance step. Automated tests canno
 ## Verification
 
 Completion requires the full existing suite plus route, hierarchy, relocation and shortcut tests; a production build; two byte-identical builds using the same exact source commit; root/deployable equality; CSP/build-identity verification; updated canonical documentation; a separate branch and draft PR.
+
+## Physical iPhone review amendment
+
+The first physical review is recorded in `docs/TEAMSHEET2-ITEM1-IPHONE-REVIEW.md`. Interface corrections are part of 2.0.1. Foreground-refresh behaviour, populated-preview transport, and authoritative read-only bank/free-transfer values remain separately gated investigation items. The current manual bank and free-transfer controls are deliberately unchanged by this interface patch.

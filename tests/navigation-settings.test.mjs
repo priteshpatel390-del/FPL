@@ -7,6 +7,11 @@ const shellSource=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url
 const appHtml=readFileSync(new URL('../app.html',import.meta.url),'utf8');
 const viewsSource=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
 const evidenceSource=readFileSync(new URL('../src/ui/evidence.mjs',import.meta.url),'utf8');
+const navStart=appHtml.indexOf('<nav class="tabs"');
+const navEnd=appHtml.indexOf('</nav>',navStart);
+const staticNav=navStart>=0&&navEnd>=0?appHtml.slice(navStart,navEnd+6):'';
+const includesAll=(source,values)=>values.forEach(value=>assert.equal(source.includes(value),true,`Missing ${value}`));
+const excludesAll=(source,values)=>values.forEach(value=>assert.equal(source.includes(value),false,`Unexpected ${value}`));
 
 test('primary navigation follows the approved five-destination order',()=>{
   assert.deepEqual(TEAMSHEET_PRIMARY_ROUTES.map(item=>item.label),['Team','Transfers','Fixtures','Leagues','Settings']);
@@ -26,68 +31,77 @@ test('unknown and empty destinations fail safely to Team',()=>{
 });
 
 test('Settings subroutes keep Settings as the active primary destination',()=>{
-  assert.deepEqual(teamsheetRouteMeta('#/settings/evidence'),{
-    route:'#/settings/evidence',title:'Evidence & Performance',primary:'settings',settings:'evidence'
-  });
+  assert.deepEqual(teamsheetRouteMeta('#/settings/evidence'),{route:'#/settings/evidence',title:'Evidence & Performance',primary:'settings',settings:'evidence'});
   assert.equal(teamsheetRouteMeta('#/ask').primary,null);
 });
 
 test('route addresses never encode account, provider-key or evidence identities',()=>{
-  const routes=TEAMSHEET_PRIMARY_ROUTES.map(item=>item.route).concat([
-    '#/ask','#/settings/team-account','#/settings/research/players','#/settings/evidence','#/settings/data','#/settings/help'
-  ]);
-  routes.forEach(route=>assert.doesNotMatch(route,/teamId|leagueId|odds|key|record|snapshot|manager/i));
+  const routes=TEAMSHEET_PRIMARY_ROUTES.map(item=>item.route).concat(['#/ask','#/settings/team-account','#/settings/research/players','#/settings/evidence','#/settings/data','#/settings/help']);
+  for(const route of routes){
+    for(const forbidden of ['teamId','leagueId','odds','key','record','snapshot','manager']) assert.equal(route.toLowerCase().includes(forbidden.toLowerCase()),false);
+  }
 });
 
-test('static deployable navigation uses links and omits Players, More and Ask as bottom tabs',()=>{
-  const nav=/<nav class="tabs"[\s\S]*?<\/nav>/.exec(appHtml)?.[0]||'';
-  assert.match(nav,/aria-label="Primary"/);
-  assert.match(nav,/href="#\/team"/);
-  assert.match(nav,/href="#\/fixtures"/);
-  assert.match(nav,/href="#\/leagues"/);
-  assert.doesNotMatch(nav,/>Players</);
-  assert.doesNotMatch(nav,/>More</);
-  assert.doesNotMatch(nav,/>Ask</);
-  assert.doesNotMatch(nav,/role="tablist"|role="tab"/);
+test('static deployable navigation uses exactly five real links',()=>{
+  assert.equal(staticNav.includes('aria-label="Primary"'),true);
+  assert.equal((staticNav.match(/class="tab"/g)||[]).length,5);
+  includesAll(staticNav,['href="#/team"','href="#/transfers"','href="#/fixtures"','href="#/leagues"','href="#/settings"']);
+  excludesAll(staticNav,['>Players<','>More<','>Ask<','role="tablist"','role="tab"']);
+});
+
+test('bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs',()=>{
+  assert.equal((staticNav.match(/class="nav-icon"/g)||[]).length,5);
+  assert.equal(shellSource.includes("createElementNS('http://www.w3.org/2000/svg','svg')"),true);
+  excludesAll(staticNav,['⚙','◈','⇄','▦','⚑']);
+  assert.equal(shellSource.includes("icon:'⚙'"),false);
 });
 
 test('router owns history and active navigation instead of legacy click-to-hide wiring',()=>{
-  assert.match(shellSource,/addEventListener\?\.\('hashchange'/);
-  assert.match(shellSource,/replaceState/);
-  assert.match(shellSource,/aria-current/);
-  assert.doesNotMatch(viewsSource,/document\.querySelectorAll\('\.tab'\)/);
-  assert.doesNotMatch(viewsSource,/behavior:'smooth'/);
+  includesAll(shellSource,["'hashchange'",'replaceState','aria-current']);
+  excludesAll(viewsSource,["document.querySelectorAll('.tab')","behavior:'smooth'"]);
 });
 
-test('Team keeps free transfers and bank in the visible weekly context',()=>{
-  assert.match(shellSource,/teamContext/);
-  assert.match(appHtml,/id="ftCount"/);
-  assert.match(appHtml,/id="bankIn"/);
-  assert.match(shellSource,/Free transfers and bank stay visible on Team/);
+test('global Ask Teamsheet composer replaces header Data and Evidence controls',()=>{
+  includesAll(shellSource,['askTeamsheetGlobalInput','askTeamsheetGlobalSend',"placeholder:'Ask Teamsheet…'","'aria-label':'Send question'","'↑'"]);
+  excludesAll(shellSource,['providerHealthCompact','askTeamsheetCompact','askCallout','headerActions']);
+  assert.equal(evidenceSource.includes("$('evidenceCompact')?.remove?.()"),true);
 });
 
-test('Settings is an organised five-section menu rather than a long More page',()=>{
-  ['Team & Account','Research Tools','Evidence & Performance','Data & Diagnostics','Help & About']
-    .forEach(label=>assert.match(shellSource,new RegExp(label.replace('&','&'))));
-  assert.doesNotMatch(shellSource,/id:'view-more'|>More</);
+test('global Ask carries the typed question into the full Ask route and preserves origin',()=>{
+  includesAll(shellSource,['fullQuestion.value=question','askView.dataset.originRoute=origin','originMeta.title',"document.getElementById('askBtn')?.click?.()"]);
 });
 
-test('Fixtures and Leagues remain primary while Player Explorer moves under Research Tools',()=>{
-  assert.match(shellSource,/#\/fixtures/);
-  assert.match(shellSource,/#\/leagues/);
-  assert.match(shellSource,/#\/settings\/research\/players/);
-  assert.match(shellSource,/playersView\.classList\.remove\('view'\)/);
+test('Settings headings retain programmatic focus without a visible blue outline',()=>{
+  assert.equal(shellSource.includes("heading?.setAttribute?.('tabindex','-1')"),true);
+  assert.equal(appHtml.includes('h2[tabindex="-1"]:focus{outline:none}'),true);
 });
 
-test('Ask Teamsheet is a prominent global and Team action without becoming a sixth bottom tab',()=>{
-  assert.match(shellSource,/askTeamsheetCompact/);
-  assert.match(shellSource,/askCallout/);
-  assert.match(shellSource,/#\/ask/);
-  assert.equal(TEAMSHEET_PRIMARY_ROUTES.length,5);
+test('Settings subsections use one accessible arrow-only back control',()=>{
+  assert.equal(shellSource.includes("'aria-label':'Back to Settings'"),true);
+  excludesAll(shellSource,['← Settings',"teamsheetRouteHeader('Settings'","teamsheetRouteHeader('Settings · Research Tools'"]);
 });
 
-test('evidence and Provider Health shortcuts enter their exact Settings routes',()=>{
-  assert.match(evidenceSource,/#\/settings\/evidence/);
-  assert.match(shellSource,/#\/settings\/data/);
-  assert.doesNotMatch(evidenceSource,/data-view="more"/);
+test('iPhone dock has one fixed safe-area grid and keyboard recovery contract',()=>{
+  includesAll(appHtml,['nav.tabs{position:fixed;inset:auto 0 0 0','grid-template-columns:repeat(5,minmax(0,1fr))','env(safe-area-inset-bottom,0px)','html.keyboard-open nav.tabs']);
+  assert.equal(shellSource.includes('visualViewport'),true);
+});
+
+test('Team keeps the current free-transfer and bank controls pending the separate FPL authority gate',()=>{
+  assert.equal(shellSource.includes('teamContext'),true);
+  includesAll(appHtml,['id="ftCount"','id="bankIn"']);
+});
+
+test('Settings remains an organised five-section menu',()=>{
+  includesAll(shellSource,['Team & Account','Research Tools','Evidence & Performance','Data & Diagnostics','Help & About']);
+  excludesAll(shellSource,["id:'view-more'",'>More<']);
+});
+
+test('Fixtures and Leagues remain primary while Player Explorer stays under Research Tools',()=>{
+  includesAll(shellSource,['#/fixtures','#/leagues','#/settings/research/players',"playersView.classList.remove('view')"]);
+});
+
+test('Evidence and Provider Health detail remain available through Settings only',()=>{
+  assert.equal(evidenceSource.includes('#/settings/evidence'),true);
+  includesAll(shellSource,['#/settings/data','providerHealthDetail']);
+  assert.equal(evidenceSource.includes('data-view="more"'),false);
 });

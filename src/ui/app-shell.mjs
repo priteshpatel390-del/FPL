@@ -2,11 +2,11 @@
 // Reorganises existing DOM nodes without changing model, provider or persistence behaviour.
 
 const TEAMSHEET_PRIMARY_ROUTES = Object.freeze([
-  Object.freeze({route:'#/team',key:'team',icon:'◈',label:'Team'}),
-  Object.freeze({route:'#/transfers',key:'transfers',icon:'⇄',label:'Transfers'}),
-  Object.freeze({route:'#/fixtures',key:'fixtures',icon:'▦',label:'Fixtures'}),
-  Object.freeze({route:'#/leagues',key:'leagues',icon:'⚑',label:'Leagues'}),
-  Object.freeze({route:'#/settings',key:'settings',icon:'⚙',label:'Settings'})
+  Object.freeze({route:'#/team',key:'team',icon:'team',label:'Team'}),
+  Object.freeze({route:'#/transfers',key:'transfers',icon:'transfers',label:'Transfers'}),
+  Object.freeze({route:'#/fixtures',key:'fixtures',icon:'fixtures',label:'Fixtures'}),
+  Object.freeze({route:'#/leagues',key:'leagues',icon:'leagues',label:'Leagues'}),
+  Object.freeze({route:'#/settings',key:'settings',icon:'settings',label:'Settings'})
 ]);
 
 const TEAMSHEET_ROUTE_ALIASES = Object.freeze({
@@ -82,13 +82,33 @@ function teamsheetElement(tag,attributes={},...children){
   return node;
 }
 
-function teamsheetRouteHeader(eyebrow,title,hint){
-  const header=teamsheetElement('div',{class:'route-header'},
-    teamsheetElement('a',{class:'route-back',href:'#/settings'},'← Settings'),
-    teamsheetElement('span',{class:'eyebrow'},eyebrow),
+function teamsheetNavIcon(name){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','nav-icon');
+  svg.setAttribute('viewBox','0 0 24 24');
+  svg.setAttribute('aria-hidden','true');
+  svg.setAttribute('focusable','false');
+  const shapes={
+    team:[['path',{d:'M12 3 19 8 12 13 5 8Z'}],['path',{d:'m5 12 7 5 7-5'}],['path',{d:'m5 16 7 5 7-5'}]],
+    transfers:[['path',{d:'M4 7h13'}],['path',{d:'m14 4 3 3-3 3'}],['path',{d:'M20 17H7'}],['path',{d:'m10 14-3 3 3 3'}]],
+    fixtures:[['rect',{x:'4',y:'5',width:'16',height:'15',rx:'2'}],['path',{d:'M8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 17h2M14 17h2'}]],
+    leagues:[['path',{d:'M6 21V4'}],['path',{d:'M6 5h11l-2 4 2 4H6'}]],
+    settings:[['circle',{cx:'12',cy:'12',r:'3'}],['path',{d:'M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1'}]]
+  };
+  (shapes[name]||shapes.team).forEach(([tag,attrs])=>{
+    const shape=document.createElementNS('http://www.w3.org/2000/svg',tag);
+    Object.entries(attrs).forEach(([key,value])=>shape.setAttribute(key,value));
+    svg.appendChild(shape);
+  });
+  return svg;
+}
+
+function teamsheetRouteHeader(title,hint){
+  return teamsheetElement('div',{class:'route-header'},
+    teamsheetElement('a',{class:'route-back',href:'#/settings','aria-label':'Back to Settings'},
+      teamsheetElement('span',{'aria-hidden':'true'},'←')),
     teamsheetElement('h2',{tabindex:'-1'},title),
     teamsheetElement('p',{class:'hint'},hint));
-  return header;
 }
 
 function teamsheetSettingsCard(route,icon,title,copy){
@@ -128,7 +148,7 @@ function setupAppShell(){
   nav.setAttribute('aria-label','Primary');
   const navLinks=TEAMSHEET_PRIMARY_ROUTES.map(item=>{
     const link=teamsheetElement('a',{class:'tab',href:item.route,'data-primary':item.key},
-      teamsheetElement('span',{class:'ic','aria-hidden':'true'},item.icon),
+      teamsheetElement('span',{class:'ic','aria-hidden':'true'},teamsheetNavIcon(item.icon)),
       teamsheetElement('span',{class:'tab-label'},item.label));
     nav.appendChild(link);
     return link;
@@ -151,14 +171,6 @@ function setupAppShell(){
   if(squadOut) teamView.insertBefore(teamContext,squadOut);
   else teamView.appendChild(teamContext);
 
-  const askCallout=teamsheetElement('aside',{class:'ask-callout','aria-labelledby':'askCalloutTitle'},
-    teamsheetElement('div',{},
-      teamsheetElement('span',{class:'eyebrow'},'Regular decision support'),
-      teamsheetElement('h3',{id:'askCalloutTitle'},'Ask Teamsheet'),
-      teamsheetElement('p',{},'Ask about captaincy, transfers, injuries, rotation or chip timing using your current squad context.')),
-    teamsheetElement('a',{class:'btn claret',href:'#/ask'},'Ask Teamsheet'));
-  if(teamContext.nextSibling) teamView.insertBefore(askCallout,teamContext.nextSibling);
-  else teamView.appendChild(askCallout);
 
   const fixturesHeading=fixturesView.querySelector('h2');
   if(fixturesHeading) fixturesHeading.textContent='Fixtures';
@@ -176,7 +188,9 @@ function setupAppShell(){
   const askEyebrow=askView.querySelector('.eyebrow');
   if(askHeading) askHeading.textContent='Ask Teamsheet';
   if(askEyebrow) askEyebrow.textContent='Decision assistant';
-  askView.insertBefore(teamsheetElement('a',{class:'route-back',href:'#/team'},'← Team'),askView.firstChild);
+  const askRouteBack=teamsheetElement('a',{id:'askRouteBack',class:'route-back',href:'#/team','aria-label':'Back to Team'},
+    teamsheetElement('span',{'aria-hidden':'true'},'←'));
+  askView.insertBefore(askRouteBack,askView.firstChild);
 
   const settingsView=teamsheetElement('section',{id:'view-settings',class:'view settings-view',hidden:'hidden'});
   const settingsHeader=teamsheetElement('div',{class:'panel settings-header'},
@@ -192,7 +206,7 @@ function setupAppShell(){
   settingsView.append(settingsHeader,settingsLanding);
 
   const settingsTeam=teamsheetElement('section',{id:'settings-team-account',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Settings','Team & Account','Manual squad controls live here. Team ID, free transfers and bank remain visible on Team because they directly affect weekly decisions.'));
+    teamsheetRouteHeader('Team & Account','Manual squad controls live here. Team ID, free transfers and bank remain visible on Team because they directly affect weekly decisions.'));
   const manualPanel=teamsheetElement('section',{class:'panel'},
     teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
     teamsheetElement('h2',{},'Manual squad'),
@@ -204,13 +218,13 @@ function setupAppShell(){
   settingsTeam.appendChild(manualPanel);
 
   const settingsResearch=teamsheetElement('section',{id:'settings-research-players',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Settings · Research Tools','Player Explorer','Research individual projections without restoring Players to primary navigation.'));
+    teamsheetRouteHeader('Player Explorer','Research individual projections without restoring Players to primary navigation.'));
   playersView.classList.remove('view');
   playersView.hidden=false;
   settingsResearch.appendChild(playersView);
 
   const settingsEvidence=teamsheetElement('section',{id:'settings-evidence',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Settings','Evidence & Performance','Prospective records, official outcomes, descriptive metrics, operating review and owner-controlled exports.'));
+    teamsheetRouteHeader('Evidence & Performance','Prospective records, official outcomes, descriptive metrics, operating review and owner-controlled exports.'));
   evidencePanel.hidden=false;
   settingsEvidence.appendChild(evidencePanel);
 
@@ -226,11 +240,11 @@ function setupAppShell(){
   if(setupHeading) setupHeading.textContent='Optional data and calibration';
   if(setupHint) setupHint.textContent='Manage optional provider inputs and the existing historical calibration control.';
   const settingsData=teamsheetElement('section',{id:'settings-data',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Settings','Data & Diagnostics','Provider status, optional source controls and calibration detail.'));
+    teamsheetRouteHeader('Data & Diagnostics','Provider status, optional source controls and calibration detail.'));
   settingsData.append(healthPanel,setupPanel);
 
   const settingsHelp=teamsheetElement('section',{id:'settings-help',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Settings','Help & About','Plain-English guidance about recommendations, limitations, privacy and this build.'),
+    teamsheetRouteHeader('Help & About','Plain-English guidance about recommendations, limitations, privacy and this build.'),
     teamsheetElement('section',{class:'panel'},
       teamsheetElement('span',{class:'eyebrow'},'About Teamsheet'),
       teamsheetElement('h2',{},'FPL Decision Desk'),
@@ -246,20 +260,44 @@ function setupAppShell(){
   [settingsTeam,settingsResearch,settingsEvidence,settingsData,settingsHelp].forEach(section=>settingsView.appendChild(section));
   main.appendChild(settingsView);
 
-  const headerActions=header?teamsheetElement('div',{id:'headerActions',class:'header-actions'}):null;
-  if(headerActions) header.appendChild(headerActions);
-  if(headerActions&&!document.getElementById('providerHealthCompact')){
-    const compact=teamsheetElement('button',{id:'providerHealthCompact',type:'button',class:'chip','aria-controls':'providerHealthDetail','aria-label':'Provider Health: waiting for first data load'},
-      'Data ',teamsheetElement('span',{class:'flag dark'},'Waiting'));
-    compact.addEventListener('click',()=>{
-      globalThis.__teamsheetNavigate?.('#/settings/data');
-      setTimeout(()=>healthPanel.focus?.({preventScroll:true}),0);
+  const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
+  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet'}):null;
+  const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
+    teamsheetElement('span',{'aria-hidden':'true'},'↑')):null;
+  if(globalAsk&&globalAskInput&&globalAskSend){
+    globalAsk.append(globalAskInput,globalAskSend);
+    header.appendChild(globalAsk);
+    globalAskInput.addEventListener('input',()=>{ globalAskSend.disabled=!globalAskInput.value.trim(); });
+    globalAsk.addEventListener('submit',event=>{
+      event.preventDefault();
+      const question=globalAskInput.value.trim();
+      if(!question) return;
+      const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
+      const origin=current==='#/ask'?'#/team':current;
+      const originMeta=teamsheetRouteMeta(origin);
+      askRouteBack.setAttribute('href',origin);
+      askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
+      askView.dataset.originRoute=origin;
+      const fullQuestion=document.getElementById('q');
+      if(fullQuestion) fullQuestion.value=question;
+      navigateTeamsheetRoute('#/ask');
+      setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
+      globalAskInput.value='';
+      globalAskSend.disabled=true;
     });
-    headerActions.appendChild(compact);
   }
-  if(headerActions){
-    headerActions.appendChild(teamsheetElement('a',{id:'askTeamsheetCompact',class:'chip',href:'#/ask','aria-label':'Open Ask Teamsheet'},'Ask Teamsheet'));
-  }
+
+  const updateKeyboardState=()=>{
+    const viewport=globalThis.visualViewport;
+    const keyboardOpen=Boolean(viewport&&globalThis.innerHeight-viewport.height>160);
+    document.documentElement.classList.toggle('keyboard-open',keyboardOpen);
+  };
+  globalThis.visualViewport?.addEventListener?.('resize',updateKeyboardState);
+  globalThis.visualViewport?.addEventListener?.('scroll',updateKeyboardState);
+  globalThis.addEventListener?.('pageshow',updateKeyboardState);
+  document.addEventListener?.('focusin',updateKeyboardState);
+  document.addEventListener?.('focusout',()=>setTimeout(updateKeyboardState,0));
+  updateKeyboardState();
 
   const topLevelViews=[teamView,transfersView,fixturesView,leaguesView,settingsView,askView];
   const settingsSubviews=new Map([
@@ -300,6 +338,7 @@ function setupAppShell(){
     if(focus){
       const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):(routeNodes.get(route)||teamView);
       const heading=activeNode.querySelector('h2');
+      heading?.setAttribute?.('tabindex','-1');
       heading?.focus?.({preventScroll:true});
     }
     document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary}}));
