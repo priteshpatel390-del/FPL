@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"5b634f57697306ae","commit":"a52125b89127d8ac1a194b191bc03cd34dd5b99b"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"5b634f57697306ae55ecbbdca8686639205569f9f5d5f906e61e5924a1f5543d","commit":"a52125b89127d8ac1a194b191bc03cd34dd5b99b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"4ae27c9b5a0de799","commit":"b08b2e5641bf04c4b358fb70612dcdba0c2856dd"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"4ae27c9b5a0de799ccc3f4a3a0f8406f76df05f574de7246d7c2aceb04005e6f","commit":"b08b2e5641bf04c4b358fb70612dcdba0c2856dd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -6625,6 +6625,7 @@ document.addEventListener('click', e => {
 
 const TEAM_DECISION_HOME_VERSION = '2.0.2';
 const TEAM_DECISION_UNAVAILABLE = new Set(['i','u','s','n']);
+const TEAM_DECISION_BENCH_LABELS = Object.freeze(['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
 
 function teamDecisionForecast(xiTotal, captainXp){
   const base = Number.isFinite(Number(xiTotal)) ? Number(xiTotal) : 0;
@@ -6705,6 +6706,28 @@ function teamDecisionCloseCaptainCopy(firstName,secondName,gap){
   return `${firstName} and ${secondName} are separated by ${Number(gap).toFixed(1)} projected points. This is a close model call; ownership is context only and does not create a protect or chase recommendation.`;
 }
 
+function teamDecisionBenchLabel(index){
+  return TEAM_DECISION_BENCH_LABELS[Number(index)]||`Sub ${Number(index)+1}`;
+}
+
+function teamDecisionRelabelBench(stage){
+  if(!stage?.querySelectorAll) return;
+  const players=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
+  players.forEach((player,index)=>{
+    const label=teamDecisionBenchLabel(index);
+    const nameNode=player.querySelector('.pitch-name');
+    if(nameNode){
+      const playerName=String(nameNode.textContent||'').replace(/^\d+\.\s*/, '');
+      nameNode.textContent=`${label} · ${playerName}`;
+    }
+    const aria=player.getAttribute('aria-label');
+    if(aria){
+      const detail=aria.replace(/^\d+\.\s*/, '');
+      player.setAttribute('aria-label',`${label}, ${detail}`);
+    }
+  });
+}
+
 function teamDecisionPlaceholderPlayer(label='—'){
   return el('div',{class:'pitch-player team-home-placeholder-player','aria-hidden':'true'},
     el('div',{class:'shirt-wrap'},
@@ -6721,7 +6744,7 @@ function teamDecisionPlaceholderStage(gw,message){
     el('div',{class:'pitch-formation'},line(4,3),line(3,4),line(2,3),line(1,1)));
   const bench=el('section',{class:'team-bench','aria-label':'Bench unavailable'},
     el('div',{class:'bench-head'},el('strong',{},'Bench'),el('span',{},'Auto-sub order')),
-    el('div',{class:'bench-grid'},Array.from({length:4},(_,index)=>teamDecisionPlaceholderPlayer(String(index+1)))));
+    el('div',{class:'bench-grid'},Array.from({length:4},(_,index)=>teamDecisionPlaceholderPlayer(teamDecisionBenchLabel(index)))));
   return el('div',{class:'team-stage'},pitch,bench);
 }
 
@@ -6905,7 +6928,7 @@ function teamDecisionEnhanceRenderedTeam(){
   previewState=decisionPreviewSnapshot();
   const previewActive=Boolean(previewState.transfer||effectiveCaptaincy.isPreview);
   const action=teamDecisionAction({hasSquad:true,deadlinePassed:deadline.passed,previewActive,riskKind:risk.kind});
-  const bench=xi.bench.map((slot,index)=>`${index+1} ${slot.p.web_name}`).join(' · ');
+  const bench=xi.bench.map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
   const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank,ft,bank});
@@ -6915,6 +6938,7 @@ function teamDecisionEnhanceRenderedTeam(){
   const previewBanner=children.find(node=>node.classList?.contains('decision-preview-banner'))||null;
   const controls=children.find(node=>node.classList?.contains('decision-preview-controls'))||null;
   const stage=children.find(node=>node.classList?.contains('team-stage'))||null;
+  teamDecisionRelabelBench(stage);
   const captainHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim()==='Captaincy ranking')||null;
   const captainGrid=captainHeading?.nextElementSibling?.classList?.contains('capgrid')?captainHeading.nextElementSibling:null;
   const allHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim().startsWith('All 15'))||null;
@@ -6955,9 +6979,33 @@ teamDecisionInstall();
 
 /* ===== src/ui/transfer-optimiser-view.mjs ===== */
 
+const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trHorizon','trTop']);
+let transferPlannerRenderedControlSignature = null;
+
+function transferPlannerControlSignature(horizonValue='',topValue=''){
+  return `${String(horizonValue)}|${String(topValue)}`;
+}
+
+function transferPlannerCurrentControlSignature(){
+  return transferPlannerControlSignature($('trHorizon')?.value,$('trTop')?.value);
+}
+
+function transferPlannerRefreshRequired(renderedSignature,currentSignature){
+  return renderedSignature!==currentSignature;
+}
+
+function transferPlannerHasActivePreview(preview={}){
+  return Boolean(preview.transfer||preview.captainId!=null||preview.viceId!=null||preview.selectionMode!=null);
+}
+
+function transferPlannerDispatchPreviewChange(){
+  if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+}
+
 // Stage 6 replacement for the legacy isolated-swap renderer. The bundler places
 // this declaration after views.mjs so renderAll resolves to this implementation.
 function renderTransfers(){
+  transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
   const out=$('transferOut');
   const squad=mySquad();
   if(!squad.length){
@@ -6989,7 +7037,7 @@ function renderTransfers(){
   const plans=result.plans||[];
   const optimiserSignature=decisionPreviewOptimiserSignature({squadSignature,horizon,bank,freeTransfers,plans});
   const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
-  if(previewCleared && typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+  if(previewCleared) transferPlannerDispatchPreviewChange();
   const previewState=decisionPreviewSnapshot();
   const best=plans[0];
   const nodes=[];
@@ -7011,7 +7059,7 @@ function renderTransfers(){
       onclick:()=>{
         decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);
         if(typeof document!=='undefined'){
-          document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+          transferPlannerDispatchPreviewChange();
           document.querySelector('nav.tabs .tab[data-view="squad"]')?.click();
         }
       }},plan.transferCount===0?'Use current squad':selected?'Previewing':'Preview on pitch');
@@ -7034,6 +7082,28 @@ function renderTransfers(){
     : 'Affordability uses the recorded purchase prices for this squad.'));
   setChildren(out,nodes);
 }
+
+function transferPlannerRefreshCommittedSelection(){
+  const currentSignature=transferPlannerCurrentControlSignature();
+  if(!transferPlannerRefreshRequired(transferPlannerRenderedControlSignature,currentSignature)) return false;
+  const preview=decisionPreviewSnapshot();
+  decisionPreviewClearTransfer();
+  if(transferPlannerHasActivePreview(preview)) transferPlannerDispatchPreviewChange();
+  renderTransfers();
+  return true;
+}
+
+function installTransferPlannerCommittedControlRefresh(){
+  if(typeof document==='undefined') return;
+  TRANSFER_PLANNER_COMMITTED_CONTROL_IDS.forEach(id=>{
+    const control=$(id);
+    if(!control||control.dataset.committedRefreshInstalled==='true') return;
+    control.dataset.committedRefreshInstalled='true';
+    control.addEventListener('change',transferPlannerRefreshCommittedSelection);
+  });
+}
+
+installTransferPlannerCommittedControlRefresh();
 
 
 

@@ -49,12 +49,19 @@ The route leads with:
 
 No projection, expected-minutes, fixture, captaincy, bench, squad, simulation, optimiser, rank, league, provider, authentication, bank/free-transfer authority, foreground-refresh, persistence, route, player-detail, framework or dependency behaviour changes.
 
+## Bench labelling
+
+The bench presents `Reserve goalkeeper`, `1st sub`, `2nd sub` and `3rd sub`. The label is applied to the rendered bench name and its accessible label only. Squad selection, substitution ordering, bench calculation and optimiser behaviour are unchanged.
+
 ## Verification
 
-- `./run-tests.sh`: **454/454 tests passing**.
+Finalised at source commit `b08b2e5641bf04c4b358fb70612dcdba0c2856dd`.
+
+- `./run-tests.sh`: **459 tests, 459 passed, 0 failed, 0 cancelled, 0 skipped**.
 - Production build successful under the exact verified source commit.
-- Two same-identity builds byte-identical for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`.
+- Two same-identity builds byte-identical for `index.html`, `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`.
 - Root `index.html` identical to `dist/index.html`.
+- Source hash `4ae27c9b5a0de799ccc3f4a3a0f8406f76df05f574de7246d7c2aceb04005e6f`, independently recomputed outside the build.
 - Model/rules remain `2.4.0` / `2026-27.3`.
 - Physical populated/unconnected/loading iPhone acceptance remains required before merge.
 
