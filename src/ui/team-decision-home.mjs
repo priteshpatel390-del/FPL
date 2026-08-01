@@ -17,7 +17,7 @@ import {
 
 const TEAM_DECISION_HOME_VERSION = '2.0.2';
 const TEAM_DECISION_UNAVAILABLE = new Set(['i','u','s','n']);
-const TEAM_DECISION_BENCH_LABELS = Object.freeze(['GK','1st sub','2nd sub','3rd sub']);
+const TEAM_DECISION_BENCH_LABELS = Object.freeze(['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
 
 function teamDecisionForecast(xiTotal, captainXp){
   const base = Number.isFinite(Number(xiTotal)) ? Number(xiTotal) : 0;

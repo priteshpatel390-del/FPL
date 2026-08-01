@@ -38,8 +38,8 @@ test('only a complete legal FPL squad can produce the decision home',()=>{
 });
 
 test('bench labels distinguish the reserve goalkeeper from ordered outfield substitutes',()=>{
-  assert.deepEqual(TEAM_DECISION_BENCH_LABELS,['GK','1st sub','2nd sub','3rd sub']);
-  assert.deepEqual(Array.from({length:4},(_,index)=>teamDecisionBenchLabel(index)),['GK','1st sub','2nd sub','3rd sub']);
+  assert.deepEqual(TEAM_DECISION_BENCH_LABELS,['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
+  assert.deepEqual(Array.from({length:4},(_,index)=>teamDecisionBenchLabel(index)),['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
 });
 
 test('source wording separates Official FPL, manual and verified fallback states',()=>{
@@ -97,7 +97,7 @@ test('production wiring wraps the verified renderer without changing model modul
   assert.match(source,/manualToggle\.disabled=!available/);
   assert.match(source,/Manual squad editing is unavailable until verified Official FPL player data loads/);
   assert.match(source,/teamDecisionRelabelBench\(stage\)/);
-  assert.match(bundle,/\['GK','1st sub','2nd sub','3rd sub'\]/);
+  assert.match(bundle,/\['Reserve goalkeeper','1st sub','2nd sub','3rd sub'\]/);
   assert.doesNotMatch(app,/Load your team ID above|build your 15 by hand below/);
   assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);
 });
