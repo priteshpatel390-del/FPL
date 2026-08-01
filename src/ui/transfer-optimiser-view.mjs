@@ -9,12 +9,37 @@ import {
   decisionPreviewOptimiserSignature,
   decisionPreviewSnapshot,
   decisionPreviewSyncOptimiser,
-  decisionPreviewSelectTransfer
+  decisionPreviewSelectTransfer,
+  decisionPreviewClearTransfer
 } from './decision-preview.mjs';
+
+const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trHorizon','trTop']);
+let transferPlannerRenderedControlSignature = null;
+
+function transferPlannerControlSignature(horizonValue='',topValue=''){
+  return `${String(horizonValue)}|${String(topValue)}`;
+}
+
+function transferPlannerCurrentControlSignature(){
+  return transferPlannerControlSignature($('trHorizon')?.value,$('trTop')?.value);
+}
+
+function transferPlannerRefreshRequired(renderedSignature,currentSignature){
+  return renderedSignature!==currentSignature;
+}
+
+function transferPlannerHasActivePreview(preview={}){
+  return Boolean(preview.transfer||preview.captainId!=null||preview.viceId!=null||preview.selectionMode!=null);
+}
+
+function transferPlannerDispatchPreviewChange(){
+  if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+}
 
 // Stage 6 replacement for the legacy isolated-swap renderer. The bundler places
 // this declaration after views.mjs so renderAll resolves to this implementation.
 function renderTransfers(){
+  transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
   const out=$('transferOut');
   const squad=mySquad();
   if(!squad.length){
@@ -46,7 +71,7 @@ function renderTransfers(){
   const plans=result.plans||[];
   const optimiserSignature=decisionPreviewOptimiserSignature({squadSignature,horizon,bank,freeTransfers,plans});
   const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
-  if(previewCleared && typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+  if(previewCleared) transferPlannerDispatchPreviewChange();
   const previewState=decisionPreviewSnapshot();
   const best=plans[0];
   const nodes=[];
@@ -68,7 +93,7 @@ function renderTransfers(){
       onclick:()=>{
         decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);
         if(typeof document!=='undefined'){
-          document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+          transferPlannerDispatchPreviewChange();
           document.querySelector('nav.tabs .tab[data-view="squad"]')?.click();
         }
       }},plan.transferCount===0?'Use current squad':selected?'Previewing':'Preview on pitch');
@@ -92,4 +117,34 @@ function renderTransfers(){
   setChildren(out,nodes);
 }
 
-export { renderTransfers };
+function transferPlannerRefreshCommittedSelection(){
+  const currentSignature=transferPlannerCurrentControlSignature();
+  if(!transferPlannerRefreshRequired(transferPlannerRenderedControlSignature,currentSignature)) return false;
+  const preview=decisionPreviewSnapshot();
+  decisionPreviewClearTransfer();
+  if(transferPlannerHasActivePreview(preview)) transferPlannerDispatchPreviewChange();
+  renderTransfers();
+  return true;
+}
+
+function installTransferPlannerCommittedControlRefresh(){
+  if(typeof document==='undefined') return;
+  TRANSFER_PLANNER_COMMITTED_CONTROL_IDS.forEach(id=>{
+    const control=$(id);
+    if(!control||control.dataset.committedRefreshInstalled==='true') return;
+    control.dataset.committedRefreshInstalled='true';
+    control.addEventListener('change',transferPlannerRefreshCommittedSelection);
+  });
+}
+
+installTransferPlannerCommittedControlRefresh();
+
+export {
+  TRANSFER_PLANNER_COMMITTED_CONTROL_IDS,
+  transferPlannerControlSignature,
+  transferPlannerRefreshRequired,
+  transferPlannerHasActivePreview,
+  transferPlannerRefreshCommittedSelection,
+  installTransferPlannerCommittedControlRefresh,
+  renderTransfers
+};

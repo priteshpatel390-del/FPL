@@ -409,6 +409,8 @@ This checkpoint was explicitly approved on 31 July 2026.
 
 ### Teamsheet 2.0.2 — Team decision home
 
+Implementation status: **owner-approved presentation scope implemented and verified for review on 31 July 2026.** Existing decision calculations and separately gated data/account/refresh work remain unchanged.
+
 - Make the pitch immediately visible in connected and unconnected states.
 - Add concise best-XI, captaincy, bench, forecast, risk and deadline-action summaries.
 - Preserve existing best-XI, captaincy, squad and preview logic.

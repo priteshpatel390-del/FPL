@@ -263,7 +263,7 @@ function renderSquad(){
   const blanks=squad.filter(({p})=>(teamFixtures(p.team,gw,1)[0]||[]).length===0);
   if(blanks.length) problems.push([elNode('b',{},blanks.map(b=>b.p.web_name).join(', ')),` ${blanks.length>1?'have':'has'} no fixture in GW${gw}`]);
   if(problems.length){ const n=noteNode('bad',elNode('b',{},'Needs attention')); problems.forEach(p=>n.append(elNode('br'),...p)); nodes.push(n); }
-  else nodes.push(noteNode('good','No injuries, suspensions, blanks or price falls in your 15. Nothing forces a transfer this week.'));
+  else nodes.push(noteNode('good','No injuries, suspensions or blanks were found in your 15. Use Transfers for the separate roll or transfer decision.'));
 
   const capRank=xi.xi.map(s=>({s,x:xpOf(s.p,gw,1).total,own:num(s.p.selected_by_percent)})).sort((a,b)=>b.x-a.x);
   const captaincy=teamPitchCaptaincy(capRank);
@@ -327,7 +327,7 @@ function renderSquad(){
         elNode('div',{class:'capbody'},elNode('span',{class:'pname'},c.s.p.web_name,flagNodes(c.s.p)),elNode('div',{class:'why'},why)),
         elNode('span',{class:`xp ${i===0?'hot':''}`},fmt1(c.x*2))));
     });
-    if(c2&&(c1.x-c2.x)<.6){ const safer=c1.own>=c2.own?c1:c2; nodes.push(noteNode('',`${c1.s.p.web_name} and ${c2.s.p.web_name} are within half a point — effectively a coin toss. ${safer.s.p.web_name} is the higher-owned pick at ${safer.own}%, so it protects your rank; the other is the rank-climbing play.`)); }
+    if(c2&&(c1.x-c2.x)<.6){ nodes.push(noteNode('',teamDecisionCloseCaptainCopy(c1.s.p.web_name,c2.s.p.web_name,c1.x-c2.x))); }
   }
   nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
   const tbody=elNode('tbody');

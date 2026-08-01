@@ -1,6 +1,6 @@
 # TEAMSHEET2-ITEM1-IPHONE-REVIEW.md — Physical iPhone review follow-up
 
-Status: **Owner findings recorded 31 July 2026. Interface corrections approved for implementation; data/security items remain investigation only.**
+Status: **Owner findings recorded and approved interface corrections merged through PR #48 on 31 July 2026. Data/security items remain separately gated.**
 
 ## Physical evidence
 
@@ -31,6 +31,6 @@ The preview reached explicit restricted mode after Official FPL relay requests f
 
 The owner requires both values to be read-only and authoritative from the connected FPL account. The current application retains manual fields. The repository has not yet proven a public Official FPL response that reliably supplies the manager's current available free transfers and bank without authentication or inference. No guessed or derived value may be labelled authoritative. Endpoint, authentication, privacy, fallback and transfer-planner consequences require a separate proposal and approval.
 
-## Remaining acceptance gate
+## Post-merge status
 
-The corrected preview must be reviewed again on the physical iPhone. Full 2.0.1 acceptance also remains blocked until a populated first-party preview permits review of the squad, player, transfer, fixture and league surfaces.
+The approved dock, icon, focus, Ask and Settings-hierarchy corrections are merged. Populated Official FPL acceptance remains blocked by FPL-1 and is not evidence that PR #48 failed its approved navigation scope. Foreground refresh and authoritative bank/free-transfer behaviour remain separate investigations.

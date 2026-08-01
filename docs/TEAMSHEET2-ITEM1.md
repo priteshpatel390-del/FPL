@@ -1,6 +1,6 @@
 # TEAMSHEET2-ITEM1.md — Navigation and Settings Architecture
 
-Status: **Approved by Pritesh on 31 July 2026 and implemented for review.**
+Status: **Approved by Pritesh, implemented and merged through PR #48 on 31 July 2026.**
 
 Purpose: record the exact Teamsheet 2.0.1 behaviour, exclusions, route contract, relocation map and verification requirements.
 
