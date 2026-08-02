@@ -38,15 +38,16 @@ jobs:
           cat scripts/teamsheet-2.0.3-bootstrap/apply.part-* > /tmp/apply-teamsheet-2.0.3.mjs
           node --check /tmp/apply-teamsheet-2.0.3.mjs
           node /tmp/apply-teamsheet-2.0.3.mjs
-          # Correct bootstrap transcription and align the existing preview contract with the approved CTA.
+          # Correct bootstrap transcriptions and align the existing preview contract with the approved CTA.
           sed -i 's/assert\.catch/assert.match/g' tests/transfer-optimiser-view.test.mjs
+          sed -i 's/transferPlannnerRefreshRequired/transferPlannerRefreshRequired/g' tests/transfer-optimiser-view.test.mjs
           node <<'NODE'
           import { readFileSync, writeFileSync } from 'node:fs';
 
           const viewsPath='src/ui/views.mjs';
           let views=readFileSync(viewsPath,'utf8');
           const marker='/* ---------------------------------------------------------------------\n   VIEW — MINI-LEAGUE';
-          const declaration="/* renderTransfers is implemented by transfer-optimiser-view.mjs, loaded later by build.mjs. */\nfunction renderTransfers(){}\n\n";
+          const declaration="/* renderTransfers is implemented by transfer-optimiser-view.mjs, loaded later by build.mjs. */\nvar renderTransfers;\n\n";
           if(!views.includes(declaration)){
             if(!views.includes(marker)) throw new Error('Mini-League marker missing while adding transfer forward declaration');
             views=views.replace(marker,declaration+marker);
@@ -85,9 +86,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add scripts/teamsheet-2.0.3-diagnostics/precommit-tests.log
-          git commit -m "Record Teamsheet 2.0.3 verifier failure"
-          TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
-          git push origin "HEAD:${TARGET_BRANCH}"
+          if git diff --cached --quiet; then
+            echo "Diagnostic output is unchanged."
+          else
+            git commit -m "Record Teamsheet 2.0.3 verifier failure"
+            TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+            git push origin "HEAD:${TARGET_BRANCH}"
+          fi
 
       - name: Finalise test-count documentation
         if: success()
