@@ -58,3 +58,12 @@ Public endpoint failure degrades per rival. A prior valid current-session record
 ## Acceptance limitations
 
 Automated source and build verification cannot establish physical iPhone Safari layout, VoiceOver reading order or live populated-data availability. Those checks must be reported only when separately performed.
+
+## Review refinements
+
+- Rivals not yet requested are labelled `not loaded`, not `incomplete`.
+- A comparison-set change invalidates late aggregate results and clears the busy state immediately.
+- The selection identity is deterministic regardless of rival ordering.
+- A direct `#/leagues/exposure` load hands focus to the exposure heading after the dynamically built section is rendered.
+- Automated tests exercise concurrency two, cache/no-preload source contracts and selection-key race invalidation.
+

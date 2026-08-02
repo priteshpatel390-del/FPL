@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { S } from '../src/state.mjs';
 import { MAX_COMPARISON_RIVALS, normaliseMiniLeagueState, migrateMiniLeagueState } from '../src/ui/mini-leagues-state.mjs';
-import { miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSummary } from '../src/ui/mini-leagues-view.mjs';
+import { miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSelectionKey, miniLeagueExposureSummary } from '../src/ui/mini-leagues-view.mjs';
+import { pool } from '../src/providers/transport.mjs';
 
 const byId=Object.fromEntries(Array.from({length:30},(_,i)=>[i+1,{id:i+1,web_name:`P${i+1}`}]))
 const picks=(ids,{captain=ids[0],vice=ids[1],active_chip=null}={})=>({
@@ -94,3 +95,41 @@ test('stale rival records remain visible but are excluded from the fresh aggrega
   assert.equal(summary.staleCount,1);
   assert.equal(summary.rows.some(row=>row.id===16),false);
 });
+
+test('selection keys invalidate late results independently of rival ordering',()=>{
+  const first=miniLeagueExposureSelectionKey([{id:'3'},{id:'1'},{id:'2'}]);
+  const reordered=miniLeagueExposureSelectionKey([{id:'2'},{id:'3'},{id:'1'}]);
+  const changed=miniLeagueExposureSelectionKey([{id:'1'},{id:'2'},{id:'4'}]);
+  assert.equal(first,'1|2|3');
+  assert.equal(reordered,first);
+  assert.notEqual(changed,first);
+});
+
+test('the selected-rival request pool never exceeds concurrency two',async()=>{
+  let active=0,maxActive=0;
+  const result=await pool([1,2,3,4,5],async value=>{
+    active++; maxActive=Math.max(maxActive,active);
+    await new Promise(resolve=>setTimeout(resolve,2));
+    active--; return value*2;
+  },2);
+  assert.deepEqual(result,[2,4,6,8,10]);
+  assert.equal(maxActive,2);
+});
+
+test('unrequested rivals are separate from fetched incomplete records',()=>{
+  S.byId=byId;
+  const own=Array.from({length:15},(_,i)=>({p:byId[i+1],position:i+1}));
+  const summary=miniLeagueExposureSummary(own,[
+    {rival:{id:'1',name:'Not loaded'},picks:null,unrequested:true},
+    {rival:{id:'2',name:'Incomplete'},picks:{active_chip:null,picks:picks(Array.from({length:14},(_,i)=>i+1)).picks}}
+  ],{byId});
+  assert.equal(summary.notLoadedCount,1);
+  assert.equal(summary.incompleteCount,1);
+  assert.deepEqual(summary.statuses.map(item=>item.status),['not_loaded','incomplete']);
+});
+
+test('request-race and deep-link focus contracts remain explicit in source',()=>{
+  const view=readFileSync(new URL('../src/ui/mini-leagues-view.mjs',import.meta.url),'utf8');
+  for(const required of ['miniLeagueExposureSelectionKey(group)','currentKey!==selectionKey',"miniLeagueSetBusy($('leagueExposureOut'),false)","initialRoute==='#/leagues/exposure'", "querySelector?.('h2')?.focus?.({preventScroll:true})", "if(existing&&!force) return {record:existing,issues:[]}"]) assert.equal(view.includes(required),true,required);
+});
+

@@ -74,12 +74,15 @@ function miniLeagueExposureLabel(count,total){
   if(count>=2) return 'Multiple selected rivals';
   return 'One selected rival';
 }
+function miniLeagueExposureSelectionKey(rivals=[]){
+  return (Array.isArray(rivals)?rivals:[]).map(row=>miniLeagueId(row?.id??row?.entry)).filter(Boolean).sort().join('|');
+}
 function miniLeagueExposureSummary(ownSquad,records,{byId=S.byId}={}){
   const own=miniLeaguePickFacts(ownSquad,{byId});
   const statuses=[]; const included=[];
   (Array.isArray(records)?records:[]).forEach(record=>{
     const facts=record?.picks?miniLeaguePickFacts(record.picks.picks,{byId,activeChip:record.picks.active_chip}):miniLeaguePickFacts([],{byId});
-    const status=record?.error?'unavailable':record?.stale?'stale':facts.complete?'complete':'incomplete';
+    const status=record?.unrequested?'not_loaded':record?.error?'unavailable':record?.stale?'stale':facts.complete?'complete':'incomplete';
     const item={...record,facts,status}; statuses.push(item); if(status==='complete') included.push(item);
   });
   const owners=new Map();
@@ -120,6 +123,7 @@ function miniLeagueExposureSummary(ownSquad,records,{byId=S.byId}={}){
     completeCount:included.length,
     staleCount:statuses.filter(item=>item.status==='stale').length,
     incompleteCount:statuses.filter(item=>item.status==='incomplete').length,
+    notLoadedCount:statuses.filter(item=>item.status==='not_loaded').length,
     unavailableCount:statuses.filter(item=>item.status==='unavailable').length
   };
 }
@@ -178,7 +182,7 @@ async function miniLeagueToggleExposureRival(leagueId,rival){
   if(index>=0) current.splice(index,1);
   else if(current.length>=MAX_COMPARISON_RIVALS){ miniLeagueAnnounce(`Choose no more than ${MAX_COMPARISON_RIVALS} rivals for one exposure comparison.`); return false; }
   else current.push({id:rival.id,name:rival.name});
-  await setMiniLeagueComparisonRivals(leagueId,current); miniLeagueExposureRequest++; delete S.miniLeagueData.exposure[leagueId]; renderMiniLeagues();
+  await setMiniLeagueComparisonRivals(leagueId,current); miniLeagueExposureRequest++; miniLeagueSetBusy($('leagueExposureOut'),false); delete S.miniLeagueData.exposure[leagueId]; renderMiniLeagues();
   miniLeagueAnnounce(index>=0?`${rival.name} removed from selected rivals.`:`${rival.name} added to selected rivals.`);
   return index<0;
 }
@@ -261,14 +265,14 @@ async function loadMiniLeagueRival({force=false}={}){
 async function loadMiniLeagueExposure({force=false}={}){
   const league=selectedMiniLeague(),group=league?miniLeagueComparisonRivals(league.id):[];
   if(!league||!S.currentGW||!group.length) return [];
-  const token=++miniLeagueExposureRequest,selectionKey=group.map(row=>row.id).sort().join('|');
+  const token=++miniLeagueExposureRequest,selectionKey=miniLeagueExposureSelectionKey(group);
   miniLeagueSetBusy($('leagueExposureOut'),true); miniLeagueAnnounce(`Loading public squads for ${group.length} selected rival${group.length===1?'':'s'}.`);
   const results=await pool(group,async row=>{
     const rival=miniLeagueRivalIdentity(league.id,row.id,miniLeagueSelectedData())||{...row,row:null,membershipVerified:false};
     return fetchMiniLeagueRivalRecord(league,rival,{force,endpoint:'/entry/event/picks/ (selected rivals)'});
   },2);
   if(token!==miniLeagueExposureRequest) return results;
-  const currentKey=miniLeagueComparisonRivals(league.id).map(row=>row.id).sort().join('|');
+  const currentKey=miniLeagueExposureSelectionKey(miniLeagueComparisonRivals(league.id));
   if(currentKey!==selectionKey) return results;
   recordIssues('fpl','/entry/event/picks/ (selected rivals)',collapseIssues(results.flatMap(result=>result?.issues||[])));
   S.miniLeagueData.exposure[league.id]={selectionKey,updatedAt:Date.now()};
@@ -364,7 +368,7 @@ function renderMiniLeagueExposure(){
   if(!league){ setChildren(out,miniLeagueEmpty('Choose a Mini League','Select a league before choosing rivals.',miniLeagueLink('Choose league','#/leagues/manage','btn'))); return; }
   if(!data){ setChildren(out,miniLeagueEmpty('Load standings first','Teamsheet needs the selected league context before suggesting nearby rivals.',miniLeagueLink('Back to League','#/leagues','btn'))); return; }
   const group=miniLeagueComparisonRivals(league.id),selectedIds=new Set(group.map(row=>row.id)),candidates=miniLeagueExposureCandidates(data);
-  const candidateList=el('section',{class:'league-section'},el('div',{class:'league-section-head'},el('h3',{},`Selected rivals · ${group.length}/${MAX_COMPARISON_RIVALS}`),group.length?miniLeagueButton('Clear',{'aria-label':'Clear selected rivals',onclick:async()=>{await clearMiniLeagueComparisonRivals(league.id);miniLeagueExposureRequest++;delete S.miniLeagueData.exposure[league.id];renderMiniLeagues();miniLeagueAnnounce('Selected rival group cleared.');}}):null),
+  const candidateList=el('section',{class:'league-section'},el('div',{class:'league-section-head'},el('h3',{},`Selected rivals · ${group.length}/${MAX_COMPARISON_RIVALS}`),group.length?miniLeagueButton('Clear',{'aria-label':'Clear selected rivals',onclick:async()=>{await clearMiniLeagueComparisonRivals(league.id);miniLeagueExposureRequest++;miniLeagueSetBusy($('leagueExposureOut'),false);delete S.miniLeagueData.exposure[league.id];renderMiniLeagues();miniLeagueAnnounce('Selected rival group cleared.');}}):null),
     candidates.length?el('div',{class:'league-rival-list'},candidates.map(candidate=>{
       const selected=selectedIds.has(candidate.id);
       return el('article',{class:'league-rival-card'},el('div',{class:'league-rival-copy'},el('strong',{},candidate.name),el('span',{},candidate.row?`${miniLeagueOrdinal(candidate.row.rank)} · ${candidate.row.total??'—'} points`:candidate.reason),el('small',{},candidate.membershipVerified?candidate.reason:'Not present in loaded standings; membership and rank unverified')),
@@ -384,10 +388,12 @@ function renderMiniLeagueExposure(){
     el('div',{class:'league-comparison-facts'},
       el('div',{},el('span',{},'Selected'),el('strong',{},String(group.length))),
       el('div',{},el('span',{},'Complete fresh squads'),el('strong',{},String(summary.completeCount))),
+      el('div',{},el('span',{},'Not loaded'),el('strong',{},String(summary.notLoadedCount))),
       el('div',{},el('span',{},'Incomplete'),el('strong',{},String(summary.incompleteCount))),
       el('div',{},el('span',{},'Unavailable or stale'),el('strong',{},String(summary.unavailableCount+summary.staleCount)))),
     !summary.own.complete?el('div',{class:'note plain'},`Your current comparison squad contains ${summary.own.count} of 15 resolved players. Aggregate exposure remains unavailable until the user squad is complete.`):null,
     summary.staleCount?el('div',{class:'note plain'},`${summary.staleCount} stale rival squad${summary.staleCount===1?' is':'s are'} visible but excluded from the fresh aggregate.`):null,
+    summary.notLoadedCount?el('div',{class:'note plain'},`${summary.notLoadedCount} selected rival${summary.notLoadedCount===1?' has':'s have'} not been loaded yet.`):null,
     summary.incompleteCount||summary.unavailableCount?el('div',{class:'note plain'},'Incomplete and unavailable rivals are listed below and excluded from aggregate denominators.'):null);
   if(!summary.own.complete||!summary.total){
     const states=el('section',{class:'league-player-differences'},el('h3',{},'Rival data status'),el('ul',{},summary.statuses.map(item=>el('li',{},`${item.rival.name}: ${item.status}`))));
@@ -427,7 +433,9 @@ async function initMiniLeagues(legacyConfig={}){
   $('leagueManageForm')?.addEventListener('submit',async event=>{event.preventDefault();const id=miniLeagueId($('leagueId')?.value),name=$('leagueName')?.value?.trim()||'';if(!id){miniLeagueAnnounce("Add a valid league ID first — it is the number in the league's URL.");return;}await upsertMiniLeague(id,name,{select:true});if($('leagueId'))$('leagueId').value='';if($('leagueName'))$('leagueName').value='';renderMiniLeagues();miniLeagueNavigate('#/leagues');});
   document.addEventListener('teamsheet:route-change',event=>{const route=event.detail?.route||'#/leagues';if(!route.startsWith('#/leagues')) return;renderMiniLeagues(route);if(selectedMiniLeague()&&!miniLeagueSelectedData()) void loadMiniLeagueStandings();if(route==='#/leagues/rival') void loadMiniLeagueRival();});
   document.addEventListener('teamsheet:data-rendered',async()=>{await mergeDiscoveredMiniLeagues(S.entry);renderMiniLeagues();const route=globalThis.location?.hash||'';if(route.startsWith('#/leagues')&&selectedMiniLeague()) void loadMiniLeagueStandings({force:true});});
-  renderMiniLeagues();
+  const initialRoute=globalThis.location?.hash||'#/leagues';
+  renderMiniLeagues(initialRoute);
+  if(initialRoute==='#/leagues/exposure') $('leagueExposure')?.querySelector?.('h2')?.focus?.({preventScroll:true});
 }
 
-export { MINI_LEAGUE_PAGE_SIZE, miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSummary, miniLeagueStatusCopy, initMiniLeagues, renderMiniLeagues, renderLeagueChips, loadMiniLeagueStandings, loadNextMiniLeagueStandingsPage, loadMiniLeagueRival, loadMiniLeagueExposure };
+export { MINI_LEAGUE_PAGE_SIZE, miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSelectionKey, miniLeagueExposureSummary, miniLeagueStatusCopy, initMiniLeagues, renderMiniLeagues, renderLeagueChips, loadMiniLeagueStandings, loadNextMiniLeagueStandingsPage, loadMiniLeagueRival, loadMiniLeagueExposure };
