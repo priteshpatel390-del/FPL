@@ -86,5 +86,6 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Added official position/movement, points gaps, targeted/incremental standings and one-selected-rival public picks comparison.
 - Removed automatic top-N squad fan-out and unsupported threat/differential strategy wording.
 - Added strict displayed-field validation, stale/incomplete states and mobile/accessibility contracts.
+- Applied the owner-approved compact mobile hierarchy, added breathing room below the position card and made standings rows full-row touch/keyboard actions with a quiet `Open ›` affordance.
 - No provider, model, rank-prediction, strategy, Team or Transfers calculation changed.
 - Current source suite: 491/491 passing tests; exact build finalisation and device acceptance pending.

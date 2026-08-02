@@ -6,7 +6,7 @@ Status: **Owner-approved implementation completed and verified for draft PR revi
 
 Leagues is now an official competitive-context destination rather than a sampled ownership report. It answers where the connected manager stands in a selected public classic league, the official points gaps immediately above and below, which nearby or pinned rivals deserve factual comparison, and how one selected public rival's squad/captain differs.
 
-The first screen does not present a dense full table. It leads with league identity, Official FPL status, current position/points, supplied movement, nearest gaps, up to three rival cards and direct links to standings, Team and Transfers.
+The first screen does not present a dense full table. It leads with a compact league identity and status card, current position/points, supplied movement, deliberately separated nearest-gap cards, up to three nearby rival rows and direct links to standings and league management.
 
 ## Implemented scope
 
@@ -47,6 +47,8 @@ League and manager identifiers are absent from routes and Stage 10 evidence. Per
 ## Accessibility and mobile contract
 
 - no horizontally scrolling technical table on the landing or rival screen;
+- owner-approved compact hierarchy keeps rank, points and movement together while giving the supporting Above / You / Below cards deliberate breathing room;
+- standings managers are full-row touch and keyboard targets with a quiet trailing `Open ›` affordance instead of repeated Compare buttons;
 - stacked responsive cards and standings rows at iPhone widths;
 - 44px primary controls, wrapping league/manager names and 200% text support target;
 - programmatic route-heading focus and browser Back/Forward through the central router;

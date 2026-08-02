@@ -57,7 +57,7 @@ test('mobile layout avoids the generic horizontally scrolling data table',()=>{
 test('League accessibility has route focus, live status and named back controls',()=>{
   includesAll(app,['id="leagueLiveStatus" aria-live="polite"','aria-label="Back to Leagues"','<h2 tabindex="-1">League table</h2>','<h2 tabindex="-1">Rival comparison</h2>']);
   includesAll(shell,['data-league-route','heading?.focus?.({preventScroll:true})']);
-  includesAll(view,["'aria-label':`${mine?'Your team, ':''}",'Your team','Loading ${league.name||\'selected league\'} standings']);
+  includesAll(view,["'aria-label':`${mine?'Your team, ':'Open rival comparison, '}","role:'button'","tabindex:'0'","event.key==='Enter'||event.key===' '",'Your team','Loading ${league.name||\'selected league\'} standings']);
 });
 
 
@@ -67,9 +67,25 @@ test('standings and rival requests invalidate independently and failed empty rec
 });
 
 test('narrow League header stacks the picker and the dark hero keeps refresh readable',()=>{
-  includesAll(app,['.league-topbar{align-items:stretch;flex-direction:column}', '.league-picker{max-width:none;width:100%}', '.league-hero .btn.ghost{color:#fff', '.league-hero>.flag{justify-self:start}']);
+  includesAll(app,['@media(max-width:520px){.league-topbar{grid-template-columns:1fr;align-items:stretch}', '.league-picker{max-width:none;width:100%}', '.league-hero .btn.ghost{color:#fff', '.league-position-line{display:flex']);
   includesAll(shell,['Official position, points gaps and factual public-squad comparisons. Projected rank and protect/chase strategy are not included.']);
   excludesAll(shell,['Rank movement and deeper league intelligence arrive in later Teamsheet 2.0 checkpoints.']);
+});
+
+
+test('owner-approved compact League hierarchy keeps primary context visible without duplicate landing actions',()=>{
+  const landing=view.slice(view.indexOf('function renderMiniLeagueLanding'),view.indexOf('function renderMiniLeagueRivalCard'));
+  includesAll(app,['.league-position-line{display:flex','.league-status-row{display:flex','.league-gap-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px','#leagueLandingOut>.league-section,#leagueLandingOut>.league-actions{margin-top:9px']);
+  includesAll(landing,['league-position-line','league-status-row',"miniLeagueLink('View standings','#/leagues/standings','btn')","miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost')"]);
+  excludesAll(landing,["miniLeagueLink('Review Team'","miniLeagueLink('Review Transfers'"]);
+});
+
+test('standings use full-row touch and keyboard actions with a quiet trailing affordance',()=>{
+  const standingsStart=view.indexOf('function renderMiniLeagueStandings');
+  const standings=view.slice(standingsStart,view.indexOf('function renderMiniLeagueRival(){',standingsStart));
+  includesAll(app,['.league-standing-row.interactive{cursor:pointer','.league-standing-row.interactive:focus-visible','.league-standing-action{justify-self:end']);
+  includesAll(standings,["class:`league-standing-row${mine?' mine':' interactive'}`","role:'button'","tabindex:'0'","event.key==='Enter'||event.key===' '","class:'league-standing-action'","class:'chev'",'Open']);
+  excludesAll(standings,["miniLeagueButton('Compare'"]);
 });
 
 test('new modules are in the deterministic bundle before the startup view',()=>{

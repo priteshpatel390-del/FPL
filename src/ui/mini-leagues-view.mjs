@@ -128,20 +128,21 @@ function renderMiniLeagueLanding(){
   if(!data){ setChildren(out,miniLeagueEmpty('Ready to check your league','Teamsheet will load official position, gaps and nearby rivals without scanning every squad.',miniLeagueButton('Load standings',{onclick:()=>loadMiniLeagueStandings({force:true})}))); return; }
   const membership=miniLeagueMembership(league.id),nearest=miniLeagueNearestRows(data.rows,S.teamId); const user=nearest.user;
   const rank=user?.rank??membership?.entry_rank??null,total=user?.total??S.entry?.summary_overall_points??null,last=user?.last_rank??membership?.entry_last_rank??null,movement=miniLeagueMovement(rank,last);
-  const hero=el('section',{class:'league-hero','aria-label':`${data.league.name} official position`},
-    el('div',{class:'league-hero-head'},el('div',{},el('span',{class:'eyebrow'},status.label),el('h3',{},data.league.name)),miniLeagueButton('Refresh',{onclick:()=>loadMiniLeagueStandings({force:true})})),
-    rank!==null?el('div',{class:'league-position'},el('strong',{},miniLeagueOrdinal(rank)),el('span',{},total!==null?`${total} points`:'Official points unavailable')):el('div',{class:'league-position'},el('strong',{},'Position unavailable'),el('span',{},'Your connected team was not found on the loaded standings pages.')),
-    el('p',{class:'league-status-copy'},status.copy),
-    el('p',{class:'league-status-copy'},miniLeagueAgeLabel(data.updatedAt)),
-    data.stale?el('div',{class:'note plain'},'Refresh failed. Showing the last standings loaded in this session; this view may be out of date.'):null,
-    el('span',{class:`flag ${movement.direction==='up'?'rise':movement.direction==='down'?'fall':'dark'}`},movement.label));
-  const gaps=el('div',{class:'league-gap-grid'},
+  const statusSummary=!S.seasonLive?'No completed Gameweek yet':status.provisional?'Scores and positions may still change':'Confirmed after official FPL checks';
+const position=rank!==null?el('div',{class:'league-position'},el('strong',{},miniLeagueOrdinal(rank)),el('span',{},total!==null?`${total} points`:'Official points unavailable')):el('div',{class:'league-position'},el('strong',{},'Position unavailable'),el('span',{},'Your connected team was not found on the loaded standings pages.'));
+const movementFlag=el('span',{class:`flag ${movement.direction==='up'?'rise':movement.direction==='down'?'fall':'dark'}`},movement.label);
+const hero=el('section',{class:'league-hero','aria-label':`${data.league.name} official position`},
+  el('div',{class:'league-hero-head'},el('div',{},el('span',{class:'eyebrow'},status.label),el('h3',{},data.league.name)),miniLeagueButton('Refresh',{onclick:()=>loadMiniLeagueStandings({force:true})})),
+  el('div',{class:'league-position-line'},position,movementFlag),
+  el('div',{class:'league-status-row'},el('span',{},statusSummary),el('span',{},miniLeagueAgeLabel(data.updatedAt))),
+  data.stale?el('div',{class:'note plain'},'Refresh failed. Showing the last standings loaded in this session; this view may be out of date.'):null);
+const gaps=el('div',{class:'league-gap-grid'},
     el('div',{class:'league-gap'},el('span',{},'Above'),el('strong',{},nearest.above&&user?`${miniLeagueGap(user,nearest.above)} pts`:'—'),nearest.above?el('small',{},miniLeagueManagerName(nearest.above)):null),
     el('div',{class:'league-gap current'},el('span',{},'You'),el('strong',{},total??'—'),el('small',{},rank!==null?miniLeagueOrdinal(rank):'Not located')),
     el('div',{class:'league-gap'},el('span',{},'Below'),el('strong',{},nearest.below&&user?`${miniLeagueGap(user,nearest.below)} pts`:'—'),nearest.below?el('small',{},miniLeagueManagerName(nearest.below)):null));
   const rivals=miniLeagueSuggestedRivals(data); const rivalSection=el('section',{class:'league-section'},el('div',{class:'league-section-head'},el('h3',{},'Nearest rivals'),miniLeagueLink('View standings','#/leagues/standings','league-text-link')),
     rivals.length?el('div',{class:'league-rival-list'},rivals.map(row=>renderMiniLeagueRivalCard(row,user,data.league.id))):el('p',{class:'status'},'No nearby rival rows were available on the loaded standings pages.'));
-  const actions=el('div',{class:'league-actions'},miniLeagueLink('View standings','#/leagues/standings','btn'),miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost'),miniLeagueLink('Review Team','#/team','btn ghost'),miniLeagueLink('Review Transfers','#/transfers','btn ghost'));
+  const actions=el('div',{class:'league-actions'},miniLeagueLink('View standings','#/leagues/standings','btn'),miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost'));
   setChildren(out,hero,gaps,rivalSection,actions);
 }
 function renderMiniLeagueRivalCard(row,user,leagueId){
@@ -155,9 +156,12 @@ function renderMiniLeagueStandings(){
   const rows=data.rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank));
   setChildren(out,el('div',{class:'league-standings-list'},rows.map(row=>{
     const mine=String(row.entry)===String(S.teamId); const movement=miniLeagueMovement(row.rank,row.last_rank);
-    return el('article',{class:`league-standing-row${mine?' mine':''}`,'aria-label':`${mine?'Your team, ':''}${miniLeagueOrdinal(row.rank)}, ${miniLeagueManagerName(row)}, ${row.total??'points unavailable'} points, ${movement.label}`},
+    const open=async()=>{await selectMiniLeagueRival(data.league.id,{id:row.entry,name:miniLeagueManagerName(row)});miniLeagueNavigate('#/leagues/rival');};
+    const attrs={class:`league-standing-row${mine?' mine':' interactive'}`,'aria-label':`${mine?'Your team, ':'Open rival comparison, '}${miniLeagueOrdinal(row.rank)}, ${miniLeagueManagerName(row)}, ${row.total??'points unavailable'} points, ${movement.label}`};
+    if(!mine) Object.assign(attrs,{role:'button',tabindex:'0',onclick:open,onkeydown:event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}}});
+    return el('article',attrs,
       el('span',{class:'league-standing-rank'},miniLeagueOrdinal(row.rank)),el('span',{class:'league-standing-name'},el('strong',{},miniLeagueManagerName(row)),el('small',{},row.player_name&&row.player_name!==row.entry_name?row.player_name:movement.label)),el('span',{class:'league-standing-points'},row.total??'—'),
-      mine?el('span',{class:'flag info'},'Your team'):miniLeagueButton('Compare',{onclick:async()=>{await selectMiniLeagueRival(data.league.id,{id:row.entry,name:miniLeagueManagerName(row)});miniLeagueNavigate('#/leagues/rival');}}));
+      mine?el('span',{class:'flag info'},'Your team'):el('span',{class:'league-standing-action','aria-hidden':'true'},'Open',el('span',{class:'chev'},'›')));
   })),data.browseHasNext?el('div',{class:'mt-12'},miniLeagueButton('Load more standings',{onclick:()=>loadNextMiniLeagueStandingsPage()})):null,
     data.hasNext?el('p',{class:'status mt-12'},'More standings exist. Teamsheet loads them only when requested and does not scan every rival squad.'):null);
 }
