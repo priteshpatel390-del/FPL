@@ -19,7 +19,8 @@ jobs:
         env:
           BUILD_COMMIT: aef1ae2328068fae95559632db5f74f4a2854a1a
         run: |
-          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          git merge-base --is-ancestor "$BUILD_COMMIT" HEAD
+          test "$(git diff --name-only "$BUILD_COMMIT"..HEAD)" = ".github/workflows/finalise-2.0.4.yml"
           ./run-tests.sh
           mkdir -p /tmp/build-one/dist
           cp index.html /tmp/build-one/index.html
