@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 
-> **Teamsheet 2.0.3 roadmap update:** Transfers decision workspace implemented on the draft branch and verified at 458/458 tests. Next checkpoint: **Teamsheet 2.0.4 — Mini Leagues decision experience**. No later checkpoint work was pulled forward.
+> **Teamsheet 2.0.3 roadmap update:** Transfers decision workspace implemented on the draft branch and verified at 467/467 tests. Next checkpoint: **Teamsheet 2.0.4 — Mini Leagues decision experience**. No later checkpoint work was pulled forward.
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-31.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 

@@ -52,4 +52,4 @@ Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 test
 
 ## Teamsheet 2.0.3 — Transfers Decision Workspace
 
-Implemented the owner-approved transfer presentation/state checkpoint on a dedicated draft branch. The existing exact optimiser remains authoritative. Verification: 458/458 tests, deterministic builds and root/deployable equality. Merge remains subject to owner approval.
+Implemented the owner-approved transfer presentation/state checkpoint on a dedicated draft branch. The existing exact optimiser remains authoritative. Verification: 467/467 tests, deterministic builds and root/deployable equality. Merge remains subject to owner approval.

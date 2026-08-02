@@ -24,7 +24,7 @@ Transfers now presents a mobile-first decision workspace rather than a wide tech
 
 ## Verification
 
-- `./run-tests.sh`: **458/458 tests passed**.
+- `./run-tests.sh`: **467/467 tests passed**.
 - Production build executed with the verified source commit identity.
 - Two production builds were byte-identical.
 - Root `index.html` matched `dist/index.html`.
