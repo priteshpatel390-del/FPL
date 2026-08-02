@@ -92,4 +92,4 @@ The full existing model, provider, evidence, security, build, Team and Transfers
 - Rival public picks may be absent or incomplete.
 - Physical iPhone layout, text scaling, one-handed use and Safari Back behaviour require owner review.
 - VoiceOver reading order, focus restoration and live-region behaviour require owner review.
-- Verified source `70d70055775fb92a47d42f0dd513980fd879a404` completed 493/493 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`.
+- Verified source `70d70055775fb92a47d42f0dd513980fd879a404` completed 493/493 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`. Source hash `4455339527e59f25a722ab93ecfe6266f9349fa7963f22cc4af4aff7fa7a1f21`; root/dist HTML SHA-256 `12d5202a56269218fb9ac68500dd7965272a496bdca81c888a1422285fa31c65`; bundle SHA-256 `c3850974233089828774d9afc8776045203e3c2a2c6ab54ac866fd6d0ad2428c`; manifest SHA-256 `a4bd1a851788761332d8d194d5519e732cf8b5fc58702c321fecf0911ee2dbde`.
