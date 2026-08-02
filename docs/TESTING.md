@@ -1,8 +1,8 @@
 # TESTING.md
 
-> **Teamsheet 2.0.4 source baseline:** 493/493 tests pass through `./run-tests.sh`. New contracts cover versioned League state migration, official entry/standings field validation, ID-free subroutes, targeted large-league pagination, selected-rival set comparison, stale/incomplete wording, mobile/accessibility structure and prevention of unsupported projected-rank or strategy claims. Exact-identity rebuild evidence is recorded in `TEAMSHEET2-ITEM4.md` before final review.
+> **Teamsheet 2.0.4 merged baseline:** 493/493 tests passed through `./run-tests.sh` before merge through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. New contracts cover versioned League state migration, official entry/standings field validation, ID-free subroutes, targeted large-league pagination, selected-rival set comparison, stale/incomplete wording, mobile/accessibility structure and prevention of unsupported projected-rank or strategy claims. Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-07-31. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-08-02. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
@@ -107,7 +107,7 @@ Completion also requires two byte-identical builds using the exact verified sour
 
 ## Teamsheet 2.0.4 Mini-League verification
 
-The current source suite is **493/493 passing tests**. Coverage includes:
+Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. The verified source suite is **493/493 passing tests**. Coverage includes:
 - deterministic migration from `fpl:config.leagueId` and `fpl:leagues` into version-1 minimal state;
 - deduplicated league records and five-rival pin cap;
 - public classic-league discovery and strict displayed-field validation;
@@ -120,4 +120,4 @@ The current source suite is **493/493 passing tests**. Coverage includes:
 - iPhone-width wrapping/touch-target structure, route focus, live regions and reduced motion;
 - deterministic bundle ordering and unchanged model/rules boundaries.
 
-Automated tests do not prove real Official FPL availability, physical iPhone density or VoiceOver reading order. Those remain explicit acceptance gates.
+Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Automated tests do not prove real Official FPL availability, physical iPhone density or VoiceOver reading order. Physical testing of the actual repository build on an iPhone was not separately performed, VoiceOver acceptance was not performed, and live populated-data acceptance was not performed. The approved sample preview established design direction but was not equivalent to full repository-device acceptance.
