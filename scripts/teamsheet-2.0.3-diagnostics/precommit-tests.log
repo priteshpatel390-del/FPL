@@ -1,0 +1,3184 @@
+built dist/index.html + index.html (591085b)  model 2.4.0  rules 2026-27.3  src bd69dbe63c99  commit unversioned
+TAP version 13
+# Subtest: SEC-3: legacy claudeKey is removed and the scrubbed config is persisted
+not ok 1 - SEC-3: legacy claudeKey is removed and the scrubbed config is persisted
+  ---
+  duration_ms: 20.482275
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:9:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:10:17)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: SEC-3: saveCfg never writes an Anthropic key field
+not ok 2 - SEC-3: saveCfg never writes an Anthropic key field
+  ---
+  duration_ms: 17.404633
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:18:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:19:22)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: SEC-3: hosted Ask fails fast and never contacts Anthropic
+not ok 3 - SEC-3: hosted Ask fails fast and never contacts Anthropic
+  ---
+  duration_ms: 4.362675
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:30:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:31:32)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: SEC-3: Claude preview request is keyless and contains no dangerous browser-access header
+not ok 4 - SEC-3: Claude preview request is keyless and contains no dangerous browser-access header
+  ---
+  duration_ms: 3.533934
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:42:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:43:32)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: SEC-3: source UI and built output contain no Anthropic key affordance or keyed request path
+ok 5 - SEC-3: source UI and built output contain no Anthropic key affordance or keyed request path
+  ---
+  duration_ms: 5.075599
+  type: 'test'
+  ...
+# Subtest: archive pin uses an immutable final-season commit
+ok 6 - archive pin uses an immutable final-season commit
+  ---
+  duration_ms: 0.965958
+  type: 'test'
+  ...
+# Subtest: archive parser handles quoted commas deterministically
+ok 7 - archive parser handles quoted commas deterministically
+  ---
+  duration_ms: 0.766044
+  type: 'test'
+  ...
+# Subtest: SHA-256 is calculated from exact archive text
+ok 8 - SHA-256 is calculated from exact archive text
+  ---
+  duration_ms: 7.60915
+  type: 'test'
+  ...
+# Subtest: replay predictions use only earlier gameweeks
+ok 9 - replay predictions use only earlier gameweeks
+  ---
+  duration_ms: 1.669614
+  type: 'test'
+  ...
+# Subtest: double-gameweek rows aggregate to one player-gameweek observation
+ok 10 - double-gameweek rows aggregate to one player-gameweek observation
+  ---
+  duration_ms: 0.59834
+  type: 'test'
+  ...
+# Subtest: malformed archive rows are counted rather than manufactured
+ok 11 - malformed archive rows are counted rather than manufactured
+  ---
+  duration_ms: 1.151194
+  type: 'test'
+  ...
+# Subtest: archive replay produces raw and train-only fold-calibrated holdouts
+ok 12 - archive replay produces raw and train-only fold-calibrated holdouts
+  ---
+  duration_ms: 31.192799
+  type: 'test'
+  ...
+# Subtest: build output contains no raw ES-module import or export declarations
+ok 13 - build output contains no raw ES-module import or export declarations
+  ---
+  duration_ms: 6.549207
+  type: 'test'
+  ...
+# Subtest: root deployment copy is byte-identical to dist/index.html
+ok 14 - root deployment copy is byte-identical to dist/index.html
+  ---
+  duration_ms: 1.703267
+  type: 'test'
+  ...
+# Subtest: bundler strips single-line imports and export lists
+ok 15 - bundler strips single-line imports and export lists
+  ---
+  duration_ms: 0.78004
+  type: 'test'
+  ...
+# Subtest: bundler strips multi-line named imports as one declaration
+ok 16 - bundler strips multi-line named imports as one declaration
+  ---
+  duration_ms: 0.316752
+  type: 'test'
+  ...
+# Subtest: bundler strips default plus multi-line named imports
+ok 17 - bundler strips default plus multi-line named imports
+  ---
+  duration_ms: 0.318306
+  type: 'test'
+  ...
+# Subtest: bundler strips multi-line export lists and re-export lists
+ok 18 - bundler strips multi-line export lists and re-export lists
+  ---
+  duration_ms: 0.268913
+  type: 'test'
+  ...
+# Subtest: bundler rejects unterminated module declarations
+ok 19 - bundler rejects unterminated module declarations
+  ---
+  duration_ms: 0.830314
+  type: 'test'
+  ...
+# Subtest: bundler rejects unsupported surviving module syntax
+ok 20 - bundler rejects unsupported surviving module syntax
+  ---
+  duration_ms: 0.405059
+  type: 'test'
+  ...
+# <anonymous_script>:6545
+#     runBacktest, rememberLeague, renderLeagueChips, renderTicker, renderPlayers, renderSquad, renderTransfers,
+#                                                                                               ^
+# ReferenceError: renderTransfers is not defined
+#     at eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+#     at eval (<anonymous>)
+#     at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+#     at file:///home/runner/work/FPL/FPL/tests/characterisation.test.mjs:18:15
+#     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+#     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+#     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+# Node.js v22.23.1
+# Subtest: tests/characterisation.test.mjs
+not ok 4 - tests/characterisation.test.mjs
+  ---
+  duration_ms: 69.530738
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/characterisation.test.mjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: cumulative review presents overall and schedule-aligned samples side by side
+ok 22 - cumulative review presents overall and schedule-aligned samples side by side
+  ---
+  duration_ms: 75.185443
+  type: 'test'
+  ...
+# Subtest: cumulative review uses only the current correction revision
+ok 23 - cumulative review uses only the current correction revision
+  ---
+  duration_ms: 37.856054
+  type: 'test'
+  ...
+# Subtest: one selected segment is reported without arbitrary subgroup cross-products
+ok 24 - one selected segment is reported without arbitrary subgroup cross-products
+  ---
+  duration_ms: 18.373206
+  type: 'test'
+  ...
+# Subtest: full-season 38 Gameweeks by 700 players remains practical for on-demand review
+ok 25 - full-season 38 Gameweeks by 700 players remains practical for on-demand review
+  ---
+  duration_ms: 840.631978
+  type: 'test'
+  ...
+# Subtest: transfer preview creates the optimiser final squad without mutating the real squad
+ok 26 - transfer preview creates the optimiser final squad without mutating the real squad
+  ---
+  duration_ms: 3.36631
+  type: 'test'
+  ...
+# Subtest: transfer preview fails closed when final squad identity disagrees with the optimiser
+ok 27 - transfer preview fails closed when final squad identity disagrees with the optimiser
+  ---
+  duration_ms: 0.291255
+  type: 'test'
+  ...
+# Subtest: captain and vice selections remain distinct and selecting the opposite role swaps them
+ok 28 - captain and vice selections remain distinct and selecting the opposite role swaps them
+  ---
+  duration_ms: 0.313657
+  type: 'test'
+  ...
+# Subtest: bench players cannot be selected for captaincy preview
+ok 29 - bench players cannot be selected for captaincy preview
+  ---
+  duration_ms: 0.148297
+  type: 'test'
+  ...
+# Subtest: squad or optimiser changes clear stale transfer preview state
+ok 30 - squad or optimiser changes clear stale transfer preview state
+  ---
+  duration_ms: 0.531094
+  type: 'test'
+  ...
+# Subtest: changed optimiser inputs also clear captain-only preview state
+ok 31 - changed optimiser inputs also clear captain-only preview state
+  ---
+  duration_ms: 0.162515
+  type: 'test'
+  ...
+# Subtest: optimiser signatures include result changes as well as transfer identities
+ok 32 - optimiser signatures include result changes as well as transfer identities
+  ---
+  duration_ms: 0.442518
+  type: 'test'
+  ...
+# Subtest: captain preview total keeps base XI score separate from the captain uplift
+ok 33 - captain preview total keeps base XI score separate from the captain uplift
+  ---
+  duration_ms: 0.255278
+  type: 'test'
+  ...
+# Subtest: preview implementation is session-only and wired to accessible controls
+not ok 34 - preview implementation is session-only and wired to accessible controls
+  ---
+  duration_ms: 2.917641
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/decision-preview.test.mjs:104:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Preview on pitch/. Input:
+    
+    "import { S } from '../state.mjs';\n" +
+      "import { $, el, setChildren } from '../util.mjs';\n" +
+      "import { xpOf } from '../model/xp.mjs';\n" +
+      "import { mySquad } from '../squad.mjs';\n" +
+      "import { optimiseTransfers } from '../model/transfers.mjs';\n" +
+      "import { saveCfg } from '../storage.mjs';\n" +
+      'import {\n' +
+      '  decisionPreviewSquadSignature,\n' +
+      '  decisionPreviewPlanSignature,\n' +
+      '  decisionPreviewOptimiserSignature,\n' +
+      '  decisionPreviewSnapshot,\n' +
+      '  decisionPreviewSyncOptimiser,\n' +
+      '  decisionPreviewSelectTransfer,\n' +
+      '  decisionPreviewClearTransfer\n' +
+      "} from './decision-preview.mjs';\n" +
+      '\n' +
+      "const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trFtCount','trBankIn','trHorizon','trTop']);\n" +
+      'const TRANSFER_PRESENTATION_STATES = Object.freeze({\n' +
+      "  TRANSFER_FIRST:'transfer-first',\n" +
+      "  BASELINE_FIRST:'baseline-first',\n" +
+      "  BASELINE_ONLY:'baseline-only',\n" +
+      "  UNAVAILABLE:'unavailable'\n" +
+      '});\n' +
+      'let transferPlannerRenderedControlSignature = null;\n' +
+      '\n' +
+      'function transferPlannerControlSignature(...values){\n' +
+      "  return values.map(value=>String(value ?? '')).join('|');\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerCurrentControlSignature(){\n' +
+      '  return transferPlannerControlSignature(\n' +
+      "    $('trFtCount')?.value,\n" +
+      "    $('trBankIn')?.value,\n" +
+      "    $('trHorizon')?.value,\n" +
+      "    $('trTop')?.value\n" +
+      '  );\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerRefreshRequired(renderedSignature,currentSignature){\n' +
+      '  return renderedSignature!==currentSignature;\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerHasActivePreview(preview={}){\n' +
+      '  return Boolean(preview.transfer||preview.captainId!=null||preview.viceId!=null||preview.selectionMode!=null);\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerDispatchPreviewChange(){\n' +
+      "  if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerReadAssumptions(ftRaw,bankRaw){\n' +
+      '  const issues=[];\n' +
+      "  const ftText=String(ftRaw ?? '').trim();\n" +
+      "  const bankText=String(bankRaw ?? '').trim();\n" +
+      '  const ft=Number(ftText);\n' +
+      '  const bankMillions=Number(bankText);\n' +
+      '\n' +
+      "  if(!ftText) issues.push('Enter your current free transfers.');\n" +
+      "  else if(!Number.isInteger(ft)||ft<0||ft>5) issues.push('Free transfers must be a whole number from 0 to 5.');\n" +
+      '\n' +
+      "  if(!bankText) issues.push('Enter your bank balance.');\n" +
+      "  else if(!Number.isFinite(bankMillions)||bankMillions<0) issues.push('Bank must be a non-negative amount.');\n" +
+      "  else if(Math.abs(bankMillions*10-Math.round(bankMillions*10))>1e-8) issues.push('Bank must use £0.1m steps.');\n" +
+      '\n' +
+      '  return {\n' +
+      '    valid:issues.length===0,\n' +
+      '    issues,\n' +
+      '    freeTransfers:Number.isInteger(ft)&&ft>=0&&ft<=5?ft:null,\n' +
+      '    bankMillions:Number.isFinite(bankMillions)&&bankMillions>=0?bankMillions:null,\n' +
+      '    bankTenths:Number.isFinite(bankMillions)&&bankMillions>=0?Math.round(bankMillions*10):null\n' +
+      '  };\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerPresentationState(plans=[]){\n' +
+      '  const source=Array.isArray(plans)?plans:[];\n' +
+      '  const baseline=source.find(plan=>Number(plan?.transferCount)===0);\n' +
+      '  if(!baseline) return TRANSFER_PRESENTATION_STATES.UNAVAILABLE;\n' +
+      '  const alternatives=source.filter(plan=>Number(plan?.transferCount)>0);\n' +
+      '  if(!alternatives.length) return TRANSFER_PRESENTATION_STATES.BASELINE_ONLY;\n' +
+      '  return Number(source[0]?.transferCount)===0\n' +
+      '    ? TRANSFER_PRESENTATION_STATES.BASELINE_FIRST\n' +
+      '    : TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST;\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerNoTransferCopy(baseline={},alternativesCount=0,rankedFirst=false){\n' +
+      '  const before=Math.max(0,Math.trunc(Number(baseline.freeTransfersBefore)||0));\n' +
+      '  const next=Math.max(0,Math.trunc(Number(baseline.freeTransfersNextGW)||0));\n' +
+      "  let ftEffect=`Keep ${next} free transfer${next===1?'':'s'} for next Gameweek.`;\n" +
+      "  if(before>=5&&next>=5) ftEffect='No additional free transfer rolls while you are at the 5 FT cap.';\n" +
+      '  else if(next>before&&before>0) ftEffect=`Roll one FT and move to ${next} free transfers next Gameweek.`;\n' +
+      "  else if(next>before) ftEffect=`Make no transfer and move to ${next} free transfer${next===1?'':'s'} next Gameweek.`;\n" +
+      '\n' +
+      "  let comparison='This is the required zero-transfer comparison.';\n" +
+      '  if(alternativesCount===0)\n' +
+      "    comparison='No comparable legal transfer plan was returned, so this is not evidence that making no transfer is optimal.';\n" +
+      '  else if(rankedFirst)\n' +
+      "    comparison='This baseline ranks above every returned legal 1–3 transfer plan under the current assumptions.';\n" +
+      '  else\n' +
+      "    comparison='This is the benchmark used to judge every returned transfer plan.';\n" +
+      '\n' +
+      "  return {headline:'Make no transfer',ftEffect,comparison};\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerNetLabel(value){\n' +
+      '  const n=Number(value)||0;\n' +
+      "  if(Math.abs(n)<0.05) return 'Level net model comparison';\n" +
+      "  return `${n>0?'+':'−'}${Math.abs(n).toFixed(1)} net model ${n>0?'advantage':'disadvantage'}`;\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerPlanNames(plan={},byId={}){\n' +
+      '  return (plan.transfers||[]).map(move=>({\n' +
+      '    outName:byId[move.outPlayerId]?.web_name||String(move.outPlayerId),\n' +
+      '    inName:byId[move.inPlayerId]?.web_name||String(move.inPlayerId),\n' +
+      '    outPlayerId:Number(move.outPlayerId),\n' +
+      '    inPlayerId:Number(move.inPlayerId)\n' +
+      '  }));\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerFormatDeadline(){\n' +
+      '  const event=S.boot?.events?.find(item=>Number(item.id)===Number(S.nextGW));\n' +
+      "  if(!event?.deadline_time) return `GW${S.nextGW||'—'} deadline unavailable`;\n" +
+      '  const deadline=new Date(event.deadline_time);\n' +
+      '  const hours=(deadline-Date.now())/3600000;\n' +
+      "  const stamp=deadline.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});\n" +
+      '  if(hours<0) return `${stamp} · passed`;\n' +
+      '  if(hours<48) return `${stamp} · ${Math.floor(hours)}h ${Math.max(0,Math.floor((hours%1)*60))}m`;\n' +
+      '  return `${stamp} · ${Math.floor(hours/24)}d`;\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerSourceLabel(){\n' +
+      "  if(S.cachedAt) return 'Verified saved FPL data';\n" +
+      '  if(S.source) return `FPL ${S.source}`;\n' +
+      "  return 'Verified FPL data';\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerMoveList(plan){\n' +
+      '  const moves=transferPlannerPlanNames(plan,S.byId);\n' +
+      "  return el('div',{class:'transfer-moves'},moves.map(move=>\n" +
+      "    el('div',{class:'transfer-move'},\n" +
+      "      el('div',{class:'transfer-player transfer-player-out'},el('span',{class:'transfer-kicker'},'Out'),el('strong',{},move.outName)),\n" +
+      "      el('span',{class:'transfer-arrow','aria-hidden':'true'},'→'),\n" +
+      "      el('div',{class:'transfer-player transfer-player-in'},el('span',{class:'transfer-kicker'},'In'),el('strong',{},move.inName))\n" +
+      '    )));\n' +
+      '}\n' +
+      '\n' +
+      "function transferPlannerMetric(label,value,meta=''){\n" +
+      "  return el('div',{class:'transfer-metric'},\n" +
+      "    el('span',{class:'transfer-metric-label'},label),\n" +
+      "    el('strong',{},value),\n" +
+      "    meta?el('span',{class:'transfer-metric-meta'},meta):null);\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerPlanContext(plan,horizon){\n' +
+      '  const first=plan.perGameweekBestXI?.[0];\n' +
+      "  if(!first) return 'Next-Gameweek XI consequence unavailable.';\n" +
+      '  const incoming=new Set((plan.transfers||[]).map(move=>Number(move.inPlayerId)));\n' +
+      '  const firstIds=(first.playerIds||[]).map(Number);\n' +
+      '  const starters=firstIds.filter(id=>incoming.has(id)).map(id=>S.byId[id]?.web_name||String(id));\n' +
+      '  const benched=[...incoming].filter(id=>!firstIds.includes(id)).map(id=>S.byId[id]?.web_name||String(id));\n' +
+      '  const parts=[`GW${first.gw} formation ${first.formation}`];\n' +
+      "  if(starters.length) parts.push(`${starters.join(', ')} projected in the XI`);\n" +
+      "  if(benched.length) parts.push(`${benched.join(', ')} projected on the bench`);\n" +
+      '  parts.push(`the ${horizon}-GW comparison does not include captain doubling or bench points`);\n' +
+      "  return parts.join(' · ');\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerCautions(plan,pricingMode){\n' +
+      '  const cautions=[];\n' +
+      "  if(pricingMode==='estimated') cautions.push('Affordability is estimated because verified purchase prices are unavailable. Confirm the move inside FPL.');\n" +
+      "  else cautions.push('Affordability uses the recorded squad purchase prices.');\n" +
+      '  (plan?.warnings||[]).forEach(warning=>cautions.push(warning));\n' +
+      "  if(!(plan?.warnings||[]).length) cautions.push('No incoming availability warning was returned; still check the latest team news before confirming.');\n" +
+      '  return cautions;\n' +
+      '}\n' +
+      '\n' +
+      'function transferPlannerDetails(plan,horizon){\n' +
+      '  const rollAdjustment=(Number(plan.rollDifference)||0)*0.5;\n' +
+      "  return el('details',{class:'transfer-details'},\n" +
+      "    el('summary',{},'Review details'),\n" +
+      "    el('div',{class:'transfer-details-body'},\n" +
+      "      el('div',{class:'transfer-metrics'},\n" +
+      "        transferPlannerMetric('Gross XI gain',`${Number(plan.grossGain)>=0?'+':''}${Number(plan.grossGain||0).toFixed(1)}`,'Best legal XI across the selected horizon'),\n" +
+      "        transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,'Actual FPL transfer deduction'),\n" +
+      "        transferPlannerMetric('FT adjustment',`${rollAdjustment>=0?'+':''}${rollAdjustment.toFixed(1)}`,'Decision utility, not an FPL score'),\n" +
+      "        transferPlannerMetric('Net comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,'Gross gain minus hit plus FT utility')),\n" +
+      "      el('p',{class:'transfer-explainer'},transferPlannerPlanContext(plan,horizon))));\n" +
+      '}\n' +
+      '\n' +
+      'function transferPlannerPreviewButton(plan,index,squad,optimiserSignature,horizon,selected){\n' +
+      "  return el('button',{\n" +
+      "    type:'button',\n" +
+      "    class:`btn transfer-preview-action${selected?' selected':''}`,\n" +
+      "    'aria-label':`Preview transfer plan ${index+1} on the Team pitch`,\n" +
+      '    onclick:()=>{\n' +
+      '      decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);\n' +
+      '      transferPlannerDispatchPreviewChange();\n' +
+      "      globalThis.__teamsheetNavigate?.('#/team');\n" +
+      '    }\n' +
+      "  },selected?'Previewing on Team':'Preview on Team');\n" +
+      '}\n' +
+      '\n' +
+      "function transferPlannerPlanCard(plan,{title,index,squad,optimiserSignature,horizon,selected,primary=false,pricingMode='exact'}){\n" +
+      '  const moves=transferPlannerPlanNames(plan,S.byId);\n' +
+      '  const cautionItems=transferPlannerCautions(plan,pricingMode);\n' +
+      "  return el('article',{class:`transfer-card transfer-plan-card${primary?' primary':''}`},\n" +
+      "    el('div',{class:'transfer-card-head'},\n" +
+      "      el('div',{},el('span',{class:'eyebrow'},title),el('h3',{},moves.map(move=>`${move.outName} → ${move.inName}`).join(' · '))),\n" +
+      "      el('span',{class:'transfer-rank'},`#${index+1}`)),\n" +
+      '    transferPlannerMoveList(plan),\n' +
+      "    el('div',{class:'transfer-metrics tra"... 12187 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    import { S } from '../state.mjs';
+    import { $, el, setChildren } from '../util.mjs';
+    import { xpOf } from '../model/xp.mjs';
+    import { mySquad } from '../squad.mjs';
+    import { optimiseTransfers } from '../model/transfers.mjs';
+    import { saveCfg } from '../storage.mjs';
+    import {
+      decisionPreviewSquadSignature,
+      decisionPreviewPlanSignature,
+      decisionPreviewOptimiserSignature,
+      decisionPreviewSnapshot,
+      decisionPreviewSyncOptimiser,
+      decisionPreviewSelectTransfer,
+      decisionPreviewClearTransfer
+    } from './decision-preview.mjs';
+    
+    const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trFtCount','trBankIn','trHorizon','trTop']);
+    const TRANSFER_PRESENTATION_STATES = Object.freeze({
+      TRANSFER_FIRST:'transfer-first',
+      BASELINE_FIRST:'baseline-first',
+      BASELINE_ONLY:'baseline-only',
+      UNAVAILABLE:'unavailable'
+    });
+    let transferPlannerRenderedControlSignature = null;
+    
+    function transferPlannerControlSignature(...values){
+      return values.map(value=>String(value ?? '')).join('|');
+    }
+    
+    function transferPlannerCurrentControlSignature(){
+      return transferPlannerControlSignature(
+        $('trFtCount')?.value,
+        $('trBankIn')?.value,
+        $('trHorizon')?.value,
+        $('trTop')?.value
+      );
+    }
+    
+    function transferPlannerRefreshRequired(renderedSignature,currentSignature){
+      return renderedSignature!==currentSignature;
+    }
+    
+    function transferPlannerHasActivePreview(preview={}){
+      return Boolean(preview.transfer||preview.captainId!=null||preview.viceId!=null||preview.selectionMode!=null);
+    }
+    
+    function transferPlannerDispatchPreviewChange(){
+      if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+    }
+    
+    function transferPlannerReadAssumptions(ftRaw,bankRaw){
+      const issues=[];
+      const ftText=String(ftRaw ?? '').trim();
+      const bankText=String(bankRaw ?? '').trim();
+      const ft=Number(ftText);
+      const bankMillions=Number(bankText);
+    
+      if(!ftText) issues.push('Enter your current free transfers.');
+      else if(!Number.isInteger(ft)||ft<0||ft>5) issues.push('Free transfers must be a whole number from 0 to 5.');
+    
+      if(!bankText) issues.push('Enter your bank balance.');
+      else if(!Number.isFinite(bankMillions)||bankMillions<0) issues.push('Bank must be a non-negative amount.');
+      else if(Math.abs(bankMillions*10-Math.round(bankMillions*10))>1e-8) issues.push('Bank must use £0.1m steps.');
+    
+      return {
+        valid:issues.length===0,
+        issues,
+        freeTransfers:Number.isInteger(ft)&&ft>=0&&ft<=5?ft:null,
+        bankMillions:Number.isFinite(bankMillions)&&bankMillions>=0?bankMillions:null,
+        bankTenths:Number.isFinite(bankMillions)&&bankMillions>=0?Math.round(bankMillions*10):null
+      };
+    }
+    
+    function transferPlannerPresentationState(plans=[]){
+      const source=Array.isArray(plans)?plans:[];
+      const baseline=source.find(plan=>Number(plan?.transferCount)===0);
+      if(!baseline) return TRANSFER_PRESENTATION_STATES.UNAVAILABLE;
+      const alternatives=source.filter(plan=>Number(plan?.transferCount)>0);
+      if(!alternatives.length) return TRANSFER_PRESENTATION_STATES.BASELINE_ONLY;
+      return Number(source[0]?.transferCount)===0
+        ? TRANSFER_PRESENTATION_STATES.BASELINE_FIRST
+        : TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST;
+    }
+    
+    function transferPlannerNoTransferCopy(baseline={},alternativesCount=0,rankedFirst=false){
+      const before=Math.max(0,Math.trunc(Number(baseline.freeTransfersBefore)||0));
+      const next=Math.max(0,Math.trunc(Number(baseline.freeTransfersNextGW)||0));
+      let ftEffect=`Keep ${next} free transfer${next===1?'':'s'} for next Gameweek.`;
+      if(before>=5&&next>=5) ftEffect='No additional free transfer rolls while you are at the 5 FT cap.';
+      else if(next>before&&before>0) ftEffect=`Roll one FT and move to ${next} free transfers next Gameweek.`;
+      else if(next>before) ftEffect=`Make no transfer and move to ${next} free transfer${next===1?'':'s'} next Gameweek.`;
+    
+      let comparison='This is the required zero-transfer comparison.';
+      if(alternativesCount===0)
+        comparison='No comparable legal transfer plan was returned, so this is not evidence that making no transfer is optimal.';
+      else if(rankedFirst)
+        comparison='This baseline ranks above every returned legal 1–3 transfer plan under the current assumptions.';
+      else
+        comparison='This is the benchmark used to judge every returned transfer plan.';
+    
+      return {headline:'Make no transfer',ftEffect,comparison};
+    }
+    
+    function transferPlannerNetLabel(value){
+      const n=Number(value)||0;
+      if(Math.abs(n)<0.05) return 'Level net model comparison';
+      return `${n>0?'+':'−'}${Math.abs(n).toFixed(1)} net model ${n>0?'advantage':'disadvantage'}`;
+    }
+    
+    function transferPlannerPlanNames(plan={},byId={}){
+      return (plan.transfers||[]).map(move=>({
+        outName:byId[move.outPlayerId]?.web_name||String(move.outPlayerId),
+        inName:byId[move.inPlayerId]?.web_name||String(move.inPlayerId),
+        outPlayerId:Number(move.outPlayerId),
+        inPlayerId:Number(move.inPlayerId)
+      }));
+    }
+    
+    function transferPlannerFormatDeadline(){
+      const event=S.boot?.events?.find(item=>Number(item.id)===Number(S.nextGW));
+      if(!event?.deadline_time) return `GW${S.nextGW||'—'} deadline unavailable`;
+      const deadline=new Date(event.deadline_time);
+      const hours=(deadline-Date.now())/3600000;
+      const stamp=deadline.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      if(hours<0) return `${stamp} · passed`;
+      if(hours<48) return `${stamp} · ${Math.floor(hours)}h ${Math.max(0,Math.floor((hours%1)*60))}m`;
+      return `${stamp} · ${Math.floor(hours/24)}d`;
+    }
+    
+    function transferPlannerSourceLabel(){
+      if(S.cachedAt) return 'Verified saved FPL data';
+      if(S.source) return `FPL ${S.source}`;
+      return 'Verified FPL data';
+    }
+    
+    function transferPlannerMoveList(plan){
+      const moves=transferPlannerPlanNames(plan,S.byId);
+      return el('div',{class:'transfer-moves'},moves.map(move=>
+        el('div',{class:'transfer-move'},
+          el('div',{class:'transfer-player transfer-player-out'},el('span',{class:'transfer-kicker'},'Out'),el('strong',{},move.outName)),
+          el('span',{class:'transfer-arrow','aria-hidden':'true'},'→'),
+          el('div',{class:'transfer-player transfer-player-in'},el('span',{class:'transfer-kicker'},'In'),el('strong',{},move.inName))
+        )));
+    }
+    
+    function transferPlannerMetric(label,value,meta=''){
+      return el('div',{class:'transfer-metric'},
+        el('span',{class:'transfer-metric-label'},label),
+        el('strong',{},value),
+        meta?el('span',{class:'transfer-metric-meta'},meta):null);
+    }
+    
+    function transferPlannerPlanContext(plan,horizon){
+      const first=plan.perGameweekBestXI?.[0];
+      if(!first) return 'Next-Gameweek XI consequence unavailable.';
+      const incoming=new Set((plan.transfers||[]).map(move=>Number(move.inPlayerId)));
+      const firstIds=(first.playerIds||[]).map(Number);
+      const starters=firstIds.filter(id=>incoming.has(id)).map(id=>S.byId[id]?.web_name||String(id));
+      const benched=[...incoming].filter(id=>!firstIds.includes(id)).map(id=>S.byId[id]?.web_name||String(id));
+      const parts=[`GW${first.gw} formation ${first.formation}`];
+      if(starters.length) parts.push(`${starters.join(', ')} projected in the XI`);
+      if(benched.length) parts.push(`${benched.join(', ')} projected on the bench`);
+      parts.push(`the ${horizon}-GW comparison does not include captain doubling or bench points`);
+      return parts.join(' · ');
+    }
+    
+    function transferPlannerCautions(plan,pricingMode){
+      const cautions=[];
+      if(pricingMode==='estimated') cautions.push('Affordability is estimated because verified purchase prices are unavailable. Confirm the move inside FPL.');
+      else cautions.push('Affordability uses the recorded squad purchase prices.');
+      (plan?.warnings||[]).forEach(warning=>cautions.push(warning));
+      if(!(plan?.warnings||[]).length) cautions.push('No incoming availability warning was returned; still check the latest team news before confirming.');
+      return cautions;
+    }
+    
+    function transferPlannerDetails(plan,horizon){
+      const rollAdjustment=(Number(plan.rollDifference)||0)*0.5;
+      return el('details',{class:'transfer-details'},
+        el('summary',{},'Review details'),
+        el('div',{class:'transfer-details-body'},
+          el('div',{class:'transfer-metrics'},
+            transferPlannerMetric('Gross XI gain',`${Number(plan.grossGain)>=0?'+':''}${Number(plan.grossGain||0).toFixed(1)}`,'Best legal XI across the selected horizon'),
+            transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,'Actual FPL transfer deduction'),
+            transferPlannerMetric('FT adjustment',`${rollAdjustment>=0?'+':''}${rollAdjustment.toFixed(1)}`,'Decision utility, not an FPL score'),
+            transferPlannerMetric('Net comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,'Gross gain minus hit plus FT utility')),
+          el('p',{class:'transfer-explainer'},transferPlannerPlanContext(plan,horizon))));
+    }
+    
+    function transferPlannerPreviewButton(plan,index,squad,optimiserSignature,horizon,selected){
+      return el('button',{
+        type:'button',
+        class:`btn transfer-preview-action${selected?' selected':''}`,
+        'aria-label':`Preview transfer plan ${index+1} on the Team pitch`,
+        onclick:()=>{
+          decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);
+          transferPlannerDispatchPreviewChange();
+          globalThis.__teamsheetNavigate?.('#/team');
+        }
+      },selected?'Previewing on Team':'Preview on Team');
+    }
+    
+    function transferPlannerPlanCard(plan,{title,index,squad,optimiserSignature,horizon,selected,primary=false,pricingMode='exact'}){
+      const moves=transferPlannerPlanNames(plan,S.byId);
+      const cautionItems=transferPlannerCautions(plan,pricingMode);
+      return el('article',{class:`transfer-card transfer-plan-card${primary?' primary':''}`},
+        el('div',{class:'transfer-card-head'},
+          el('div',{},el('span',{class:'eyebrow'},title),el('h3',{},moves.map(move=>`${move.outName} → ${move.inName}`).join(' · '))),
+          el('span',{class:'transfer-rank'},`#${index+1}`)),
+        transferPlannerMoveList(plan),
+        el('div',{class:'transfer-metrics transfer-metrics-summary'},
+          transferPlannerMetric('Net model comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,`vs no transfer over ${horizon} GW${horizon===1?'':'s'}`),
+          transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,plan.hitCost?'Paid transfer cost':'No points deduction'),
+          transferPlannerMetric('Bank after',`£${(Number(plan.bankAfter||0)/10).toFixed(1)}m`),
+          transferPlannerMetric('Next GW',`${Number(plan.freeTransfersNextGW)||0} FT`)),
+        el('p',{class:'transfer-why'},el('b',{},'Why shown: '),primary
+          ? 'Highest net comparison returned under these planning assumptions.'
+          : 'Next highest returned legal option under these planning assumptions.'),
+        el('div',{class:'transfer-caution'},
+          el('strong',{},'Known cautions'),
+          el('ul',{},cautionItems.map(item=>el('li',{},item)))),
+        transferPlannerDetails(plan,horizon),
+        el('div',{class:'transfer-actions'},
+          transferPlannerPreviewButton(plan,index,squad,optimiserSignature,horizon,selected)));
+    }
+    
+    function transferPlannerBaselineCard(baseline,{alternativesCount,rankedFirst,primary=false}){
+      const copy=transferPlannerNoTransferCopy(baseline,alternativesCount,rankedFirst);
+      return el('article',{class:`transfer-card transfer-baseline-card${primary?' primary':''}`},
+        el('span',{class:'eyebrow'},rankedFirst?'Highest-ranked decision':'Required comparison'),
+        el('h3',{},copy.headline),
+        el('p',{class:'transfer-card-lead'},copy.comparison),
+        el('div',{class:'transfer-metrics transfer-metrics-summary'},
+          transferPlannerMetric('Net comparison','0.0','The benchmark'),
+          transferPlannerMetric('Hit','−0','No points deduction'),
+          transferPlannerMetric('Bank after',`£${(Number(baseline.bankAfter||0)/10).toFixed(1)}m`),
+          transferPlannerMetric('Next GW',`${Number(baseline.freeTransfersNextGW)||0} FT`)),
+        el('p',{class:'transfer-ft-effect'},copy.ftEffect));
+    }
+    
+    function transferPlannerDecisionHero(state,baseline,topAlternative,horizon){
+      let eyebrow='Decision status',title='No verified comparison',detail='Teamsheet cannot rank a transfer decision yet.',metric='—',hit='—';
+      if(state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST&&topAlternative){
+        const moves=transferPlannerPlanNames(topAlternative,S.byId);
+        eyebrow='Highest-ranked decision';
+        title=moves.map(move=>`${move.outName} → ${move.inName}`).join(' · ');
+        detail='This transfer plan ranks above making no transfer under the current assumptions.';
+        metric=transferPlannerNetLabel(topAlternative.netGain);
+        hit=`${Number(topAlternative.hitCost)||0}-point hit`;
+      }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST){
+        eyebrow='Highest-ranked decision';
+        title='Make no transfer';
+        detail='The zero-transfer baseline ranks above the returned legal transfer plans.';
+        metric='Baseline ranks first';
+        hit='No hit';
+      }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY){
+        eyebrow='Comparison incomplete';
+        title='Make no transfer is the only legal comparison';
+        detail='No transfer alternative was returned, so Teamsheet is not calling this optimal.';
+        metric='Baseline only';
+        hit='No hit';
+      }
+      return el('section',{class:`transfer-decision-hero state-${state}`,'aria-labelledby':'transferDecisionTitle'},
+        el('span',{class:'eyebrow'},eyebrow),
+        el('h3',{id:'transferDecisionTitle'},title),
+        el('p',{},detail),
+        el('div',{class:'transfer-hero-facts'},
+          el('span',{},metric),
+          el('span',{},hit),
+          el('span',{},`${horizon} GW${horizon===1?'':'s'}`)));
+    }
+    
+    function transferPlannerContext(){
+      return el('div',{class:'transfer-context-chips','aria-label':'Transfer comparison context'},
+        el('span',{class:'transfer-context-chip'},`GW${S.nextGW||'—'}`),
+        el('span',{class:'transfer-context-chip deadline'},transferPlannerFormatDeadline()),
+        el('span',{class:'transfer-context-chip source'},transferPlannerSourceLabel()));
+    }
+    
+    function transferPlannerBlocking(out,title,detail){
+      S.lastOptimiser=null;
+      setChildren(out,transferPlannerContext(),el('div',{class:'note bad',role:'alert'},el('b',{},title),` ${detail}`));
+    }
+    
+    function transferPlannerSyncVisibleAssumptions(){
+      const pairs=[['trFtCount','ftCount'],['trBankIn','bankIn']];
+      pairs.forEach(([visibleId,canonicalId])=>{
+        const visible=$(visibleId),canonical=$(canonicalId);
+        if(!visible||!canonical||document.activeElement===visible) return;
+        visible.value=canonical.value;
+      });
+    }
+    
+    function transferPlannerMarkUpdating(){
+      const out=$('transferOut'),status=$('transferStatus');
+      if(out) out.setAttribute('aria-busy','true');
+      if(status) status.textContent='Updating transfer comparison…';
+    }
+    
+    function renderTransfers(){
+      const out=$('transferOut');
+      if(!out) return;
+      transferPlannerSyncVisibleAssumptions();
+      transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
+      transferPlannerMarkUpdating();
+    
+      try{
+        if(!S.boot){
+          transferPlannerBlocking(out,'Verified player data is unavailable.','Refresh from Settings before using transfer comparisons.');
+          return;
+        }
+        const squad=mySquad();
+        if(squad.length!==15){
+          transferPlannerBlocking(out,'A complete 15-player squad is required.','Load your team or finish the manual squad in Team setup.');
+          return;
+        }
+    
+        const assumptions=transferPlannerReadAssumptions($('trFtCount')?.value,$('trBankIn')?.value);
+        if(!assumptions.valid){
+          transferPlannerBlocking(out,'Check the planning assumptions.',assumptions.issues.join(' '));
+          return;
+        }
+    
+        const horizon=Math.max(1,Math.min(8,Math.trunc(Number($('trHorizon')?.value)||6)));
+        const maxResults=Math.max(1,Math.min(20,Math.trunc(Number($('trTop')?.value)||8)));
+        const squadSignature=decisionPreviewSquadSignature(squad);
+        const result=optimiseTransfers({
+          squad,
+          players:S.boot.elements||[],
+          bank:assumptions.bankTenths,
+          freeTransfers:assumptions.freeTransfers,
+          startGW:S.nextGW,
+          horizon,
+          maxResults,
+          scorePlayer:(player,gw)=>xpOf(player,gw,1).total
+        });
+        S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
+    
+        if(result.status==='invalid-input'){
+          transferPlannerBlocking(out,'Squad cannot be compared.',`Fix the squad before continuing: ${(result.issues||[]).join(', ')}.`);
+          return;
+        }
+        if(result.status==='projection-unavailable'){
+          transferPlannerBlocking(out,'Projections are unavailable.','No transfer recommendation can be made from an unverified comparison.');
+          return;
+        }
+        if(result.status==='search-incomplete'){
+          transferPlannerBlocking(out,'Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
+          return;
+        }
+    
+        const plans=result.plans||[];
+        const state=transferPlannerPresentationState(plans);
+        const baseline=plans.find(plan=>Number(plan.transferCount)===0);
+        if(!baseline){
+          transferPlannerBlocking(out,'No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
+          return;
+        }
+    
+        const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
+        const topAlternative=alternatives[0]||null;
+        const optimiserSignature=decisionPreviewOptimiserSignature({
+          squadSignature,
+          horizon,
+          bank:assumptions.bankTenths,
+          freeTransfers:assumptions.freeTransfers,
+          plans
+        });
+        const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
+        if(previewCleared) transferPlannerDispatchPreviewChange();
+        const previewState=decisionPreviewSnapshot();
+        const nodes=[
+          transferPlannerContext(),
+          transferPlannerDecisionHero(state,baseline,topAlternative,horizon),
+          el('div',{class:'transfer-card-stack'},
+            transferPlannerBaselineCard(baseline,{
+              alternativesCount:alternatives.length,
+              rankedFirst:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST,
+              primary:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST||state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY
+            }),
+            topAlternative?transferPlannerPlanCard(topAlternative,{
+              title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
+              index:plans.indexOf(topAlternative),
+              squad,
+              optimiserSignature,
+              horizon,
+              selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
+              primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
+              pricingMode:result.pricingMode
+            }):null)
+        ];
+    
+        const otherAlternatives=alternatives.slice(1,4);
+        if(otherAlternatives.length){
+          nodes.push(el('details',{class:'transfer-alternatives'},
+            el('summary',{},`Other legal options (${otherAlternatives.length})`),
+            el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
+              title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
+              index:plans.indexOf(plan),
+              squad,
+              optimiserSignature,
+              horizon,
+              selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
+              primary:false,
+              pricingMode:result.pricingMode
+            })))));
+        }
+    
+        nodes.push(el('p',{class:'transfer-disclaimer'},
+          'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points.'));
+        setChildren(out,nodes);
+      }finally{
+        out.setAttribute('aria-busy','false');
+        const status=$('transferStatus');
+        if(status) status.textContent='Transfer comparison updated.';
+      }
+    }
+    
+    function transferPlannerClearPreview(){
+      const preview=decisionPreviewSnapshot();
+      decisionPreviewClearTransfer();
+      if(transferPlannerHasActivePreview(preview)) transferPlannerDispatchPreviewChange();
+    }
+    
+    function transferPlannerRefreshCommittedSelection(){
+      const currentSignature=transferPlannerCurrentControlSignature();
+      if(!transferPlannerRefreshRequired(transferPlannerRenderedControlSignature,currentSignature)) return false;
+      transferPlannerClearPreview();
+      void saveCfg();
+      renderTransfers();
+      return true;
+    }
+    
+    function transferPlannerMirrorAssumption(visibleId,canonicalId){
+      const visible=$(visibleId),canonical=$(canonicalId);
+      if(!visible||!canonical||visible.dataset.assumptionMirrorInstalled==='true') return;
+      visible.dataset.assumptionMirrorInstalled='true';
+      visible.addEventListener('input',()=>{
+        transferPlannerMarkUpdating();
+        transferPlannerClearPreview();
+        canonical.value=visible.value;
+        canonical.dispatchEvent(new Event('input',{bubbles:true}));
+      });
+    }
+    
+    function installTransferPlannerCommittedControlRefresh(){
+      if(typeof document==='undefined') return;
+      transferPlannerSyncVisibleAssumptions();
+      transferPlannerMirrorAssumption('trFtCount','ftCount');
+      transferPlannerMirrorAssumption('trBankIn','bankIn');
+    
+      ['trHorizon','trTop'].forEach(id=>{
+        const control=$(id);
+        if(!control||control.dataset.committedRefreshInstalled==='true') return;
+        control.dataset.committedRefreshInstalled='true';
+        control.addEventListener('input',transferPlannerMarkUpdating);
+        control.addEventListener('change',transferPlannerRefreshCommittedSelection);
+      });
+    }
+    
+    installTransferPlannerCommittedControlRefresh();
+    
+    export {
+      TRANSFER_PLANNER_COMMITTED_CONTROL_IDS,
+      TRANSFER_PRESENTATION_STATES,
+      transferPlannerControlSignature,
+      transferPlannerRefreshRequired,
+      transferPlannerHasActivePreview,
+      transferPlannerReadAssumptions,
+      transferPlannerPresentationState,
+      transferPlannerNoTransferCopy,
+      transferPlannerNetLabel,
+      transferPlannerPlanNames,
+      transferPlannerRefreshCommittedSelection,
+      installTransferPlannerCommittedControlRefresh,
+      renderTransfers
+    };
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/decision-preview.test.mjs:113:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Stage 10.1 canonical JSON is deterministic and rejects non-finite numbers
+ok 35 - Stage 10.1 canonical JSON is deterministic and rejects non-finite numbers
+  ---
+  duration_ms: 2.904316
+  type: 'test'
+  ...
+# Subtest: Stage 10.1 SHA-256 is stable
+ok 36 - Stage 10.1 SHA-256 is stable
+  ---
+  duration_ms: 10.493419
+  type: 'test'
+  ...
+# Subtest: Stage 10.1 evidence safety rejects secret fields and values
+ok 37 - Stage 10.1 evidence safety rejects secret fields and values
+  ---
+  duration_ms: 0.99931
+  type: 'test'
+  ...
+# Subtest: Stage 10.1 evidence safety rejects manager and configuration identifiers
+ok 38 - Stage 10.1 evidence safety rejects manager and configuration identifiers
+  ---
+  duration_ms: 0.530102
+  type: 'test'
+  ...
+# Subtest: evidence import rejects unknown, duplicate or missing providers
+ok 39 - evidence import rejects unknown, duplicate or missing providers
+  ---
+  duration_ms: 11.894792
+  type: 'test'
+  ...
+# Subtest: deadline window applies the approved 24-hour, one-hour and two-minute boundaries
+ok 40 - deadline window applies the approved 24-hour, one-hour and two-minute boundaries
+  ---
+  duration_ms: 0.42754
+  type: 'test'
+  ...
+# Subtest: same-origin HTTP Date sampling records round-trip and skew evidence
+ok 41 - same-origin HTTP Date sampling records round-trip and skew evidence
+  ---
+  duration_ms: 0.706452
+  type: 'test'
+  ...
+# Subtest: network-attested complete captures before the cutoff are official-eligible
+ok 42 - network-attested complete captures before the cutoff are official-eligible
+  ---
+  duration_ms: 0.295945
+  type: 'test'
+  ...
+# Subtest: client-only time is retained but cannot become the official snapshot
+ok 43 - client-only time is retained but cannot become the official snapshot
+  ---
+  duration_ms: 0.674021
+  type: 'test'
+  ...
+# Subtest: clock conflicts, safety-cutoff captures and late included providers fail closed
+ok 44 - clock conflicts, safety-cutoff captures and late included providers fail closed
+  ---
+  duration_ms: 0.997627
+  type: 'test'
+  ...
+# Subtest: final records are immutable, hash-verifiable and tamper-evident
+ok 45 - final records are immutable, hash-verifiable and tamper-evident
+  ---
+  duration_ms: 15.873706
+  type: 'test'
+  ...
+# Subtest: import validation rejects unknown top-level fields and invalid manager references
+ok 46 - import validation rejects unknown top-level fields and invalid manager references
+  ---
+  duration_ms: 4.120692
+  type: 'test'
+  ...
+# Subtest: official snapshot selection keeps the latest eligible complete capture only
+ok 47 - official snapshot selection keeps the latest eligible complete capture only
+  ---
+  duration_ms: 10.479824
+  type: 'test'
+  ...
+# Subtest: deadline revisions prevent an older deadline snapshot from being selected as official
+ok 48 - deadline revisions prevent an older deadline snapshot from being selected as official
+  ---
+  duration_ms: 6.820956
+  type: 'test'
+  ...
+# Subtest: section hashes identify output tampering before the whole-record hash check
+ok 49 - section hashes identify output tampering before the whole-record hash check
+  ---
+  duration_ms: 8.253297
+  type: 'test'
+  ...
+# Subtest: bounded local metadata keeps three newest unique snapshots
+ok 50 - bounded local metadata keeps three newest unique snapshots
+  ---
+  duration_ms: 17.370961
+  type: 'test'
+  ...
+# Subtest: a collected snapshot freezes model outputs without exporting the manager Team ID or name
+ok 51 - a collected snapshot freezes model outputs without exporting the manager Team ID or name
+  ---
+  duration_ms: 4.869333
+  type: 'test'
+  ...
+# Subtest: chunked collection preserves projections while yielding between player batches
+ok 52 - chunked collection preserves projections while yielding between player batches
+  ---
+  duration_ms: 3.240004
+  type: 'test'
+  ...
+# Subtest: Stage 10.1 UI and deterministic bundle order include the evidence surface
+ok 53 - Stage 10.1 UI and deterministic bundle order include the evidence surface
+  ---
+  duration_ms: 4.412008
+  type: 'test'
+  ...
+# Subtest: local recovery encoding compresses and restores a verified evidence record
+ok 54 - local recovery encoding compresses and restores a verified evidence record
+  ---
+  duration_ms: 84.074227
+  type: 'test'
+  ...
+# Subtest: evidence manager reference is random, anonymised and stable on the device
+ok 55 - evidence manager reference is random, anonymised and stable on the device
+  ---
+  duration_ms: 1.034766
+  type: 'test'
+  ...
+# Subtest: evidence storage keeps three metadata rows and only two full recovery records
+ok 56 - evidence storage keeps three metadata rows and only two full recovery records
+  ---
+  duration_ms: 75.026087
+  type: 'test'
+  ...
+# Subtest: evidence writes surface storage failures rather than silently claiming success
+ok 57 - evidence writes surface storage failures rather than silently claiming success
+  ---
+  duration_ms: 0.837327
+  type: 'test'
+  ...
+# Subtest: restored evidence is retained as recovery-only and cannot become official locally
+ok 58 - restored evidence is retained as recovery-only and cannot become official locally
+  ---
+  duration_ms: 28.438053
+  type: 'test'
+  ...
+# Subtest: local evidence can be deleted without touching exported files
+ok 59 - local evidence can be deleted without touching exported files
+  ---
+  duration_ms: 20.828201
+  type: 'test'
+  ...
+# Subtest: legacy metadata without an origin fails closed as recovery-only
+ok 60 - legacy metadata without an origin fails closed as recovery-only
+  ---
+  duration_ms: 5.128327
+  type: 'test'
+  ...
+# Subtest: corrupt local metadata is ignored and orphaned recovery records are removable
+ok 61 - corrupt local metadata is ignored and orphaned recovery records are removable
+  ---
+  duration_ms: 0.542906
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write
+ok 62 - Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write
+  ---
+  duration_ms: 17.606822
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 malformed snapshot journal fails closed and is cleared
+ok 63 - Stage 10.5 malformed snapshot journal fails closed and is cleared
+  ---
+  duration_ms: 0.816437
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 compression failure falls back to canonical plain JSON
+ok 64 - Stage 10.5 compression failure falls back to canonical plain JSON
+  ---
+  duration_ms: 14.283111
+  type: 'test'
+  ...
+# Subtest: allows only absolute HTTP and HTTPS links
+ok 65 - allows only absolute HTTP and HTTPS links
+  ---
+  duration_ms: 3.128656
+  type: 'test'
+  ...
+# Subtest: rejects encoded, entity-obscured and control-character schemes
+ok 66 - rejects encoded, entity-obscured and control-character schemes
+  ---
+  duration_ms: 6.477974
+  type: 'test'
+  ...
+# Subtest: raw HTML and handler-shaped text remain text tokens
+ok 67 - raw HTML and handler-shaped text remain text tokens
+  ---
+  duration_ms: 1.002506
+  type: 'test'
+  ...
+# Subtest: hostile Markdown links lose the link but keep their label
+ok 68 - hostile Markdown links lose the link but keep their label
+  ---
+  duration_ms: 0.655997
+  type: 'test'
+  ...
+# Subtest: restricted blocks include only headings, lists and paragraphs
+ok 69 - restricted blocks include only headings, lists and paragraphs
+  ---
+  duration_ms: 10.167118
+  type: 'test'
+  ...
+# Subtest: nested and unbalanced HTML cannot create an executable structure
+ok 70 - nested and unbalanced HTML cannot create an executable structure
+  ---
+  duration_ms: 0.423663
+  type: 'test'
+  ...
+# Subtest: input is bounded deterministically
+ok 71 - input is bounded deterministically
+  ---
+  duration_ms: 62.866107
+  type: 'test'
+  ...
+# Subtest: bundled renderer contains the DOM-only sanitised replacement
+ok 72 - bundled renderer contains the DOM-only sanitised replacement
+  ---
+  duration_ms: 0.83307
+  type: 'test'
+  ...
+# Subtest: metric storage verifies, reloads and keeps one current revision
+ok 73 - metric storage verifies, reloads and keeps one current revision
+  ---
+  duration_ms: 104.287971
+  type: 'test'
+  ...
+# Subtest: identical metrics deduplicate while corrections retain immutable superseded data
+ok 74 - identical metrics deduplicate while corrections retain immutable superseded data
+  ---
+  duration_ms: 54.392951
+  type: 'test'
+  ...
+# Subtest: interrupted metric writes recover through the journal
+ok 75 - interrupted metric writes recover through the journal
+  ---
+  duration_ms: 25.451514
+  type: 'test'
+  ...
+# Subtest: tampered metric records fail validation on reload
+ok 76 - tampered metric records fail validation on reload
+  ---
+  duration_ms: 24.662647
+  type: 'test'
+  ...
+# Subtest: metric metadata is deterministic and bounded
+ok 77 - metric metadata is deterministic and bounded
+  ---
+  duration_ms: 5.41382
+  type: 'test'
+  ...
+# Subtest: quota failures are surfaced and deletion is isolated from source evidence
+ok 78 - quota failures are surfaced and deletion is isolated from source evidence
+  ---
+  duration_ms: 25.462507
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 metric journal recovery leaves exactly one current revision
+ok 79 - Stage 10.5 metric journal recovery leaves exactly one current revision
+  ---
+  duration_ms: 23.445981
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 malformed metric journal fails closed
+ok 80 - Stage 10.5 malformed metric journal fails closed
+  ---
+  duration_ms: 0.39535
+  type: 'test'
+  ...
+# Subtest: fixed player metrics cover zero error, signed bias and correlations
+ok 81 - fixed player metrics cover zero error, signed bias and correlations
+  ---
+  duration_ms: 1.916707
+  type: 'test'
+  ...
+# Subtest: Spearman average ranks and error-band boundaries are deterministic
+ok 82 - Spearman average ranks and error-band boundaries are deterministic
+  ---
+  duration_ms: 0.937475
+  type: 'test'
+  ...
+# Subtest: Brier, reliability and interval calculations use approved inclusive rules
+ok 83 - Brier, reliability and interval calculations use approved inclusive rules
+  ---
+  duration_ms: 1.019729
+  type: 'test'
+  ...
+# Subtest: sample safeguards enforce exact boundaries and provider AND rule
+ok 84 - sample safeguards enforce exact boundaries and provider AND rule
+  ---
+  duration_ms: 1.002737
+  type: 'test'
+  ...
+# Subtest: approved season periods and position-aware price bands are exact
+ok 85 - approved season periods and position-aware price bands are exact
+  ---
+  duration_ms: 0.212568
+  type: 'test'
+  ...
+# Subtest: minutes allocation handles singles, doubles, missing starts and postponed fixtures
+ok 86 - minutes allocation handles singles, doubles, missing starts and postponed fixtures
+  ---
+  duration_ms: 0.8553
+  type: 'test'
+  ...
+# Subtest: legal substitutions respect goalkeeper and minimum formation constraints
+ok 87 - legal substitutions respect goalkeeper and minimum formation constraints
+  ---
+  duration_ms: 4.362084
+  type: 'test'
+  ...
+# Subtest: captain non-appearance uses vice and neither appearance gives no doubled points
+ok 88 - captain non-appearance uses vice and neither appearance gives no doubled points
+  ---
+  duration_ms: 0.24048
+  type: 'test'
+  ...
+# Subtest: authoritative evaluation joins exact IDs, preserves source records and validates hashes
+ok 89 - authoritative evaluation joins exact IDs, preserves source records and validates hashes
+  ---
+  duration_ms: 43.990631
+  type: 'test'
+  ...
+# Subtest: invalid, late, provisional and mismatched records fail closed
+ok 90 - invalid, late, provisional and mismatched records fail closed
+  ---
+  duration_ms: 0.905194
+  type: 'test'
+  ...
+# Subtest: corrected official outcomes append an immutable evaluation revision
+ok 91 - corrected official outcomes append an immutable evaluation revision
+  ---
+  duration_ms: 32.66955
+  type: 'test'
+  ...
+# Subtest: cumulative reporting filters scheduled and owned segments without hiding missingness
+ok 92 - cumulative reporting filters scheduled and owned segments without hiding missingness
+  ---
+  duration_ms: 10.985121
+  type: 'test'
+  ...
+# Subtest: frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only
+ok 93 - frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only
+  ---
+  duration_ms: 5.912295
+  type: 'test'
+  ...
+# Subtest: metric records preserve the approved public field names
+ok 94 - metric records preserve the approved public field names
+  ---
+  duration_ms: 8.691386
+  type: 'test'
+  ...
+# Subtest: metric engine never imports or calls live production formula functions
+ok 95 - metric engine never imports or calls live production formula functions
+  ---
+  duration_ms: 0.844901
+  type: 'test'
+  ...
+# Subtest: aggregate denominator uses completed team matches
+ok 96 - aggregate denominator uses completed team matches
+  ---
+  duration_ms: 1.86501
+  type: 'test'
+  ...
+# Subtest: stable starter produces coherent high-role outputs
+ok 97 - stable starter produces coherent high-role outputs
+  ---
+  duration_ms: 1.387566
+  type: 'test'
+  ...
+# Subtest: regular substitute separates appearance from start probability
+ok 98 - regular substitute separates appearance from start probability
+  ---
+  duration_ms: 0.552805
+  type: 'test'
+  ...
+# Subtest: rotation sequence lowers role stability confidence
+ok 99 - rotation sequence lowers role stability confidence
+  ---
+  duration_ms: 0.503984
+  type: 'test'
+  ...
+# Subtest: doubtful availability is applied exactly once
+ok 100 - doubtful availability is applied exactly once
+  ---
+  duration_ms: 1.305643
+  type: 'test'
+  ...
+# Subtest: injured and suspended players return zero outputs
+ok 101 - injured and suspended players return zero outputs
+  ---
+  duration_ms: 1.276509
+  type: 'test'
+  ...
+# Subtest: limited history remains shrunk toward aggregate evidence
+ok 102 - limited history remains shrunk toward aggregate evidence
+  ---
+  duration_ms: 0.251972
+  type: 'test'
+  ...
+# Subtest: logical invariants hold for hostile numeric inputs
+ok 103 - logical invariants hold for hostile numeric inputs
+  ---
+  duration_ms: 0.409436
+  type: 'test'
+  ...
+# Subtest: element-summary validation drops malformed rows without payload leakage
+ok 104 - element-summary validation drops malformed rows without payload leakage
+  ---
+  duration_ms: 0.785591
+  type: 'test'
+  ...
+# Subtest: element-summary unusable structure is fatal
+ok 105 - element-summary unusable structure is fatal
+  ---
+  duration_ms: 0.634166
+  type: 'test'
+  ...
+# Subtest: primary navigation follows the approved five-destination order
+ok 106 - primary navigation follows the approved five-destination order
+  ---
+  duration_ms: 2.72486
+  type: 'test'
+  ...
+# Subtest: legacy hashes resolve to the new information architecture
+ok 107 - legacy hashes resolve to the new information architecture
+  ---
+  duration_ms: 0.29385
+  type: 'test'
+  ...
+# Subtest: unknown and empty destinations fail safely to Team
+ok 108 - unknown and empty destinations fail safely to Team
+  ---
+  duration_ms: 0.217337
+  type: 'test'
+  ...
+# Subtest: Settings subroutes keep Settings as the active primary destination
+ok 109 - Settings subroutes keep Settings as the active primary destination
+  ---
+  duration_ms: 0.258323
+  type: 'test'
+  ...
+# Subtest: route addresses never encode account, provider-key or evidence identities
+ok 110 - route addresses never encode account, provider-key or evidence identities
+  ---
+  duration_ms: 0.296945
+  type: 'test'
+  ...
+# Subtest: static deployable navigation uses exactly five real links
+ok 111 - static deployable navigation uses exactly five real links
+  ---
+  duration_ms: 0.207899
+  type: 'test'
+  ...
+# Subtest: bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs
+ok 112 - bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs
+  ---
+  duration_ms: 0.237054
+  type: 'test'
+  ...
+# Subtest: router owns history and active navigation instead of legacy click-to-hide wiring
+ok 113 - router owns history and active navigation instead of legacy click-to-hide wiring
+  ---
+  duration_ms: 0.179275
+  type: 'test'
+  ...
+# Subtest: global Ask Teamsheet composer replaces header Data and Evidence controls
+ok 114 - global Ask Teamsheet composer replaces header Data and Evidence controls
+  ---
+  duration_ms: 0.40063
+  type: 'test'
+  ...
+# Subtest: global Ask carries the typed question into the full Ask route and preserves origin
+ok 115 - global Ask carries the typed question into the full Ask route and preserves origin
+  ---
+  duration_ms: 0.403115
+  type: 'test'
+  ...
+# Subtest: Settings headings retain programmatic focus without a visible blue outline
+ok 116 - Settings headings retain programmatic focus without a visible blue outline
+  ---
+  duration_ms: 0.200976
+  type: 'test'
+  ...
+# Subtest: Settings subsections use one accessible arrow-only back control
+ok 117 - Settings subsections use one accessible arrow-only back control
+  ---
+  duration_ms: 0.120336
+  type: 'test'
+  ...
+# Subtest: iPhone dock has one fixed safe-area grid and keyboard recovery contract
+ok 118 - iPhone dock has one fixed safe-area grid and keyboard recovery contract
+  ---
+  duration_ms: 0.167153
+  type: 'test'
+  ...
+# Subtest: Team keeps the current free-transfer and bank controls pending the separate FPL authority gate
+ok 119 - Team keeps the current free-transfer and bank controls pending the separate FPL authority gate
+  ---
+  duration_ms: 0.138699
+  type: 'test'
+  ...
+# Subtest: Settings remains an organised five-section menu
+ok 120 - Settings remains an organised five-section menu
+  ---
+  duration_ms: 0.095849
+  type: 'test'
+  ...
+# Subtest: Fixtures and Leagues remain primary while Player Explorer stays under Research Tools
+ok 121 - Fixtures and Leagues remain primary while Player Explorer stays under Research Tools
+  ---
+  duration_ms: 0.079599
+  type: 'test'
+  ...
+# Subtest: Evidence and Provider Health detail remain available through Settings only
+ok 122 - Evidence and Provider Health detail remain available through Settings only
+  ---
+  duration_ms: 0.100538
+  type: 'test'
+  ...
+# Subtest: operating-review bundle is deterministic, exact and hash-verifiable
+ok 123 - operating-review bundle is deterministic, exact and hash-verifiable
+  ---
+  duration_ms: 175.33177
+  type: 'test'
+  ...
+# Subtest: missing exact sources and pruned revision metadata are explicit partial evidence
+ok 124 - missing exact sources and pruned revision metadata are explicit partial evidence
+  ---
+  duration_ms: 45.228659
+  type: 'test'
+  ...
+# Subtest: weekly review keeps incomplete transfer horizons pending without interim gain
+ok 125 - weekly review keeps incomplete transfer horizons pending without interim gain
+  ---
+  duration_ms: 0.532186
+  type: 'test'
+  ...
+# Subtest: unsupported source schemas fail closed and exports are bounded
+ok 126 - unsupported source schemas fail closed and exports are bounded
+  ---
+  duration_ms: 31.78158
+  type: 'test'
+  ...
+# Subtest: Stage 10.2 fixture validator preserves genuine doubles and exact fixture identity
+ok 127 - Stage 10.2 fixture validator preserves genuine doubles and exact fixture identity
+  ---
+  duration_ms: 2.724989
+  type: 'test'
+  ...
+# Subtest: Stage 10.2 conflicting duplicate fixtures fail closed
+ok 128 - Stage 10.2 conflicting duplicate fixtures fail closed
+  ---
+  duration_ms: 0.484257
+  type: 'test'
+  ...
+# Subtest: Stage 10.2 duplicate players are quarantined rather than first-wins
+ok 129 - Stage 10.2 duplicate players are quarantined rather than first-wins
+  ---
+  duration_ms: 0.943986
+  type: 'test'
+  ...
+# Subtest: official starts remain null when the live endpoint does not provide them
+ok 130 - official starts remain null when the live endpoint does not provide them
+  ---
+  duration_ms: 0.298118
+  type: 'test'
+  ...
+# Subtest: manager validators retain only factual picks, auto-subs and Gameweek summaries
+ok 131 - manager validators retain only factual picks, auto-subs and Gameweek summaries
+  ---
+  duration_ms: 0.718154
+  type: 'test'
+  ...
+# Subtest: complete outcome requires all fixtures, event finished and data_checked
+ok 132 - complete outcome requires all fixtures, event finished and data_checked
+  ---
+  duration_ms: 17.940786
+  type: 'test'
+  ...
+# Subtest: finished alone is insufficient while official data checking is delayed
+ok 133 - finished alone is insufficient while official data checking is delayed
+  ---
+  duration_ms: 2.019911
+  type: 'test'
+  ...
+# Subtest: postponed or unfinished fixtures keep the Gameweek provisional
+ok 134 - postponed or unfinished fixtures keep the Gameweek provisional
+  ---
+  duration_ms: 2.000524
+  type: 'test'
+  ...
+# Subtest: blank Gameweeks can complete without manufacturing fixtures
+ok 135 - blank Gameweeks can complete without manufacturing fixtures
+  ---
+  duration_ms: 2.253268
+  type: 'test'
+  ...
+# Subtest: double Gameweek player detail must reconcile with aggregate points
+ok 136 - double Gameweek player detail must reconcile with aggregate points
+  ---
+  duration_ms: 2.747703
+  type: 'test'
+  ...
+# Subtest: unreconciled per-fixture points keep a record provisional
+ok 137 - unreconciled per-fixture points keep a record provisional
+  ---
+  duration_ms: 6.291227
+  type: 'test'
+  ...
+# Subtest: squad outcome applies official multipliers without changing the frozen decision record
+ok 138 - squad outcome applies official multipliers without changing the frozen decision record
+  ---
+  duration_ms: 0.506488
+  type: 'test'
+  ...
+# Subtest: provisional-to-complete and complete-to-corrected transitions append immutable revisions
+ok 139 - provisional-to-complete and complete-to-corrected transitions append immutable revisions
+  ---
+  duration_ms: 18.658811
+  type: 'test'
+  ...
+# Subtest: identical official facts do not create a duplicate revision
+ok 140 - identical official facts do not create a duplicate revision
+  ---
+  duration_ms: 8.524504
+  type: 'test'
+  ...
+# Subtest: outcome records are deterministic, immutable and tamper-evident
+ok 141 - outcome records are deterministic, immutable and tamper-evident
+  ---
+  duration_ms: 14.335311
+  type: 'test'
+  ...
+# Subtest: records exclude Team ID, manager names, leagues, configuration and secrets
+ok 142 - records exclude Team ID, manager names, leagues, configuration and secrets
+  ---
+  duration_ms: 7.542362
+  type: 'test'
+  ...
+# Subtest: due Gameweeks are selected only after their official deadlines
+ok 143 - due Gameweeks are selected only after their official deadlines
+  ---
+  duration_ms: 0.34726
+  type: 'test'
+  ...
+# Subtest: outcome storage verifies, reloads and marks one current local revision
+ok 144 - outcome storage verifies, reloads and marks one current local revision
+  ---
+  duration_ms: 84.102191
+  type: 'test'
+  ...
+# Subtest: same official outcome is deduplicated without another stored revision
+ok 145 - same official outcome is deduplicated without another stored revision
+  ---
+  duration_ms: 14.259838
+  type: 'test'
+  ...
+# Subtest: new local revision supersedes the earlier current pointer without mutating it
+ok 146 - new local revision supersedes the earlier current pointer without mutating it
+  ---
+  duration_ms: 45.460552
+  type: 'test'
+  ...
+# Subtest: recovery imports remain non-current and cannot replace a local official outcome
+ok 147 - recovery imports remain non-current and cannot replace a local official outcome
+  ---
+  duration_ms: 50.192948
+  type: 'test'
+  ...
+# Subtest: interrupted verified writes recover an orphan record through the journal
+ok 148 - interrupted verified writes recover an orphan record through the journal
+  ---
+  duration_ms: 10.036213
+  type: 'test'
+  ...
+# Subtest: tampered stored records fail validation on reload
+ok 149 - tampered stored records fail validation on reload
+  ---
+  duration_ms: 18.042361
+  type: 'test'
+  ...
+# Subtest: metadata remains bounded to fifty rows
+ok 150 - metadata remains bounded to fifty rows
+  ---
+  duration_ms: 1.097163
+  type: 'test'
+  ...
+# Subtest: quota failures are surfaced and do not claim a successful write
+ok 151 - quota failures are surfaced and do not claim a successful write
+  ---
+  duration_ms: 21.249767
+  type: 'test'
+  ...
+# Subtest: provisional outcomes recheck after fifteen minutes while complete records use the correction cadence
+ok 152 - provisional outcomes recheck after fifteen minutes while complete records use the correction cadence
+  ---
+  duration_ms: 0.712864
+  type: 'test'
+  ...
+# Subtest: delete removes outcome records but leaves shared deadline-evidence identity untouched
+ok 153 - delete removes outcome records but leaves shared deadline-evidence identity untouched
+  ---
+  duration_ms: 11.098862
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 outcome journal recovery leaves exactly one current local revision
+ok 154 - Stage 10.5 outcome journal recovery leaves exactly one current local revision
+  ---
+  duration_ms: 15.38829
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 malformed outcome journal fails closed without promoting a record
+ok 155 - Stage 10.5 malformed outcome journal fails closed without promoting a record
+  ---
+  duration_ms: 0.315601
+  type: 'test'
+  ...
+# Subtest: approved uncertainty labels use exact 2.0 and 5.0 point boundaries
+ok 156 - approved uncertainty labels use exact 2.0 and 5.0 point boundaries
+  ---
+  duration_ms: 2.221718
+  type: 'test'
+  ...
+# Subtest: unavailable and reduced-quality simulations suppress descriptive labels
+ok 157 - unavailable and reduced-quality simulations suppress descriptive labels
+  ---
+  duration_ms: 1.263404
+  type: 'test'
+  ...
+# Subtest: official doubtful status stays doubtful regardless of percentage
+ok 158 - official doubtful status stays doubtful regardless of percentage
+  ---
+  duration_ms: 0.266308
+  type: 'test'
+  ...
+# Subtest: range marker positions are deterministic and bounded
+ok 159 - range marker positions are deterministic and bounded
+  ---
+  duration_ms: 0.236382
+  type: 'test'
+  ...
+# Subtest: dialog controller opens accessibly, closes on Escape and restores focus
+ok 160 - dialog controller opens accessibly, closes on Escape and restores focus
+  ---
+  duration_ms: 1.188244
+  type: 'test'
+  ...
+# Subtest: template provides mobile bottom sheet and desktop side panel semantics
+ok 161 - template provides mobile bottom sheet and desktop side panel semantics
+  ---
+  duration_ms: 1.340068
+  type: 'test'
+  ...
+# Subtest: player surfaces open the new detail view without the legacy inline drawer
+ok 162 - player surfaces open the new detail view without the legacy inline drawer
+  ---
+  duration_ms: 0.704008
+  type: 'test'
+  ...
+# Subtest: provider health age labels remain compact and deterministic
+ok 163 - provider health age labels remain compact and deterministic
+  ---
+  duration_ms: 1.448561
+  type: 'test'
+  ...
+# Subtest: compact provider health waits honestly before the first response
+ok 164 - compact provider health waits honestly before the first response
+  ---
+  duration_ms: 1.04746
+  type: 'test'
+  ...
+# Subtest: compact provider health reports all-live without inventing a score
+ok 165 - compact provider health reports all-live without inventing a score
+  ---
+  duration_ms: 0.462105
+  type: 'test'
+  ...
+# Subtest: compact provider health surfaces the most consequential existing state
+ok 166 - compact provider health surfaces the most consequential existing state
+  ---
+  duration_ms: 0.237585
+  type: 'test'
+  ...
+# Subtest: provider health state classes reuse the established status palette
+ok 167 - provider health state classes reuse the established status palette
+  ---
+  duration_ms: 0.277169
+  type: 'test'
+  ...
+# Subtest: Provider Health detail remains under Settings without a global header pill
+ok 168 - Provider Health detail remains under Settings without a global header pill
+  ---
+  duration_ms: 0.728393
+  type: 'test'
+  ...
+# Subtest: approved provider registry is closed and names only repository-reviewed sources
+ok 169 - approved provider registry is closed and names only repository-reviewed sources
+  ---
+  duration_ms: 5.841964
+  type: 'test'
+  ...
+# Subtest: provider trust validation rejects unknown and malformed provenance
+ok 170 - provider trust validation rejects unknown and malformed provenance
+  ---
+  duration_ms: 1.978611
+  type: 'test'
+  ...
+# Subtest: exports the approved seven provider-health states
+ok 171 - exports the approved seven provider-health states
+  ---
+  duration_ms: 0.435956
+  type: 'test'
+  ...
+# Subtest: runtime health refuses providers outside the approved registry
+ok 172 - runtime health refuses providers outside the approved registry
+  ---
+  duration_ms: 0.938005
+  type: 'test'
+  ...
+# Subtest: live success records lastSuccess and consequence
+ok 173 - live success records lastSuccess and consequence
+  ---
+  duration_ms: 0.81769
+  type: 'test'
+  ...
+# Subtest: fresh cached FPL data becomes stale after the context-specific threshold
+ok 174 - fresh cached FPL data becomes stale after the context-specific threshold
+  ---
+  duration_ms: 0.637443
+  type: 'test'
+  ...
+# Subtest: FPL uses the shorter stale threshold during live gameweeks
+ok 175 - FPL uses the shorter stale threshold during live gameweeks
+  ---
+  duration_ms: 2.236295
+  type: 'test'
+  ...
+# Subtest: Understat and odds use their approved provider-specific thresholds
+ok 176 - Understat and odds use their approved provider-specific thresholds
+  ---
+  duration_ms: 0.312214
+  type: 'test'
+  ...
+# Subtest: disabled is a neutral user choice and never mutates into stale
+ok 177 - disabled is a neutral user choice and never mutates into stale
+  ---
+  duration_ms: 0.483104
+  type: 'test'
+  ...
+# Subtest: fallback and unavailable remain distinct
+ok 178 - fallback and unavailable remain distinct
+  ---
+  duration_ms: 0.513371
+  type: 'test'
+  ...
+# Subtest: partial preserves a usable success timestamp
+ok 179 - partial preserves a usable success timestamp
+  ---
+  duration_ms: 3.381809
+  type: 'test'
+  ...
+# Subtest: legacy boolean health calls map safely onto the richer model
+ok 180 - legacy boolean health calls map safely onto the richer model
+  ---
+  duration_ms: 0.385802
+  type: 'test'
+  ...
+# Subtest: healthRows reports stable provider order and calculated age
+ok 181 - healthRows reports stable provider order and calculated age
+  ---
+  duration_ms: 2.64496
+  type: 'test'
+  ...
+# Subtest: XSS-1: hostile team, player and provider values are inert across core rendering
+not ok 182 - XSS-1: hostile team, player and provider values are inert across core rendering
+  ---
+  duration_ms: 19.388957
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:19:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:20:17)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: XSS-1: hostile entry and saved-league names render as text nodes
+not ok 183 - XSS-1: hostile entry and saved-league names render as text nodes
+  ---
+  duration_ms: 16.153602
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:29:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:30:17)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: XSS-1: manual squad pills and player-search results keep hostile names inert
+not ok 184 - XSS-1: manual squad pills and player-search results keep hostile names inert
+  ---
+  duration_ms: 4.641737
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:37:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:38:17)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: XSS-1: squad, captain and transfer rendering keep hostile player text inert
+not ok 185 - XSS-1: squad, captain and transfer rendering keep hostile player text inert
+  ---
+  duration_ms: 5.25214
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:45:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:46:17)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: XSS-1: approved Stage 3.5 source has no innerHTML sink outside the excluded Ask renderer
+ok 186 - XSS-1: approved Stage 3.5 source has no innerHTML sink outside the excluded Ask renderer
+  ---
+  duration_ms: 1.10627
+  type: 'test'
+  ...
+# Subtest: resilience: corrupted cache JSON reads as null, not a crash
+ok 187 - resilience: corrupted cache JSON reads as null, not a crash
+  ---
+  duration_ms: 1.67253
+  type: 'test'
+  ...
+# Subtest: resilience: missing optional player fields default safely
+ok 188 - resilience: missing optional player fields default safely
+  ---
+  duration_ms: 3.641906
+  type: 'test'
+  ...
+# Subtest: resilience: malformed provider responses do not poison state
+ok 189 - resilience: malformed provider responses do not poison state
+  ---
+  duration_ms: 1.388188
+  type: 'test'
+  ...
+# Subtest: resilience: odds provider outage → no data, fallback note, key never relayed
+not ok 190 - resilience: odds provider outage → no data, fallback note, key never relayed
+  ---
+  duration_ms: 15.368513
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/resilience.test.mjs:47:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/resilience.test.mjs:48:32)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)
+ok 191 - resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)
+  ---
+  duration_ms: 1.102403
+  type: 'test'
+  ...
+# Subtest: resilience: unmapped team name returns null and blend degrades cleanly
+ok 192 - resilience: unmapped team name returns null and blend degrades cleanly
+  ---
+  duration_ms: 0.479357
+  type: 'test'
+  ...
+# Subtest: resilience: HTML escaping covers quotes, tags and ampersands
+ok 193 - resilience: HTML escaping covers quotes, tags and ampersands
+  ---
+  duration_ms: 0.243687
+  type: 'test'
+  ...
+# Subtest: resilience: bench handling — keeper cannot be outfield sub and vice versa
+ok 194 - resilience: bench handling — keeper cannot be outfield sub and vice versa
+  ---
+  duration_ms: 2.881412
+  type: 'test'
+  ...
+# Subtest: transport: a healthy endpoint is fetched once and never retried
+ok 195 - transport: a healthy endpoint is fetched once and never retried
+  ---
+  duration_ms: 3.038036
+  type: 'test'
+  ...
+# Subtest: transport: a transient outage is retried and can recover
+ok 196 - transport: a transient outage is retried and can recover
+  ---
+  duration_ms: 243.494871
+  type: 'test'
+  ...
+# Subtest: transport: exhausted retries throw the original error for core data
+ok 197 - transport: exhausted retries throw the original error for core data
+  ---
+  duration_ms: 548.413291
+  type: 'test'
+  ...
+# Subtest: transport: a network failure is transient and retried
+ok 198 - transport: a network failure is transient and retried
+  ---
+  duration_ms: 540.475384
+  type: 'test'
+  ...
+# Subtest: transport: a 404 across all relays is permanent — one cascade only
+ok 199 - transport: a 404 across all relays is permanent — one cascade only
+  ---
+  duration_ms: 1.17028
+  type: 'test'
+  ...
+# Subtest: transport: malformed JSON is not retried
+ok 200 - transport: malformed JSON is not retried
+  ---
+  duration_ms: 0.737901
+  type: 'test'
+  ...
+# Subtest: transport: a provider "not found" reply short-circuits without retrying
+ok 201 - transport: a provider "not found" reply short-circuits without retrying
+  ---
+  duration_ms: 0.277278
+  type: 'test'
+  ...
+# Subtest: transport: an optional endpoint returns null after retries are exhausted
+ok 202 - transport: an optional endpoint returns null after retries are exhausted
+  ---
+  duration_ms: 181.73746
+  type: 'test'
+  ...
+# Subtest: transport: core data keeps a larger allowance than optional data
+ok 203 - transport: core data keeps a larger allowance than optional data
+  ---
+  duration_ms: 911.638874
+  type: 'test'
+  ...
+# Subtest: transport: fetchVia retries transient failures then degrades to null
+ok 204 - transport: fetchVia retries transient failures then degrades to null
+  ---
+  duration_ms: 158.763677
+  type: 'test'
+  ...
+# Subtest: transport: fetchVia recovers when a retry succeeds
+ok 205 - transport: fetchVia recovers when a retry succeeds
+  ---
+  duration_ms: 261.559464
+  type: 'test'
+  ...
+# Subtest: transport: retry metadata is keyed by normalised endpoint, not manager id
+ok 206 - transport: retry metadata is keyed by normalised endpoint, not manager id
+  ---
+  duration_ms: 0.535762
+  type: 'test'
+  ...
+# Subtest: transport: no metadata value ever contains a raw payload
+ok 207 - transport: no metadata value ever contains a raw payload
+  ---
+  duration_ms: 0.243155
+  type: 'test'
+  ...
+# Subtest: retry: immediate success makes exactly one attempt and never sleeps
+ok 208 - retry: immediate success makes exactly one attempt and never sleeps
+  ---
+  duration_ms: 1.96106
+  type: 'test'
+  ...
+# Subtest: retry: success after one retry
+ok 209 - retry: success after one retry
+  ---
+  duration_ms: 0.45402
+  type: 'test'
+  ...
+# Subtest: retry: success after multiple retries
+ok 210 - retry: success after multiple retries
+  ---
+  duration_ms: 0.317815
+  type: 'test'
+  ...
+# Subtest: retry: exhausted retries stop at the attempt ceiling and report it
+ok 211 - retry: exhausted retries stop at the attempt ceiling and report it
+  ---
+  duration_ms: 0.325059
+  type: 'test'
+  ...
+# Subtest: retry: attempts are clamped — no policy can authorise an unbounded loop
+ok 212 - retry: attempts are clamped — no policy can authorise an unbounded loop
+  ---
+  duration_ms: 0.783025
+  type: 'test'
+  ...
+# Subtest: retry: the elapsed-time budget stops slow failures being retried
+ok 213 - retry: the elapsed-time budget stops slow failures being retried
+  ---
+  duration_ms: 0.399818
+  type: 'test'
+  ...
+# Subtest: retry: a fast-failing provider still gets its full allowance
+ok 214 - retry: a fast-failing provider still gets its full allowance
+  ---
+  duration_ms: 0.502851
+  type: 'test'
+  ...
+# Subtest: retry: retryable HTTP statuses are retried
+ok 215 - retry: retryable HTTP statuses are retried
+  ---
+  duration_ms: 0.578152
+  type: 'test'
+  ...
+# Subtest: retry: non-retryable HTTP statuses fail on the first attempt
+ok 216 - retry: non-retryable HTTP statuses fail on the first attempt
+  ---
+  duration_ms: 0.810066
+  type: 'test'
+  ...
+# Subtest: retry: a malformed payload is never retried
+ok 217 - retry: a malformed payload is never retried
+  ---
+  duration_ms: 0.617976
+  type: 'test'
+  ...
+# Subtest: retry: a schema validation failure is never retried
+ok 218 - retry: a schema validation failure is never retried
+  ---
+  duration_ms: 0.380823
+  type: 'test'
+  ...
+# Subtest: retry: a timeout is treated as transient and retried
+ok 219 - retry: a timeout is treated as transient and retried
+  ---
+  duration_ms: 1.631313
+  type: 'test'
+  ...
+# Subtest: retry: backoff grows exponentially, is capped, and is deterministic
+ok 220 - retry: backoff grows exponentially, is capped, and is deterministic
+  ---
+  duration_ms: 0.293449
+  type: 'test'
+  ...
+# Subtest: retry: jitter always lands inside the half-to-full band
+ok 221 - retry: jitter always lands inside the half-to-full band
+  ---
+  duration_ms: 0.259936
+  type: 'test'
+  ...
+# Subtest: retry: the same inputs always produce the same delay sequence
+ok 222 - retry: the same inputs always produce the same delay sequence
+  ---
+  duration_ms: 0.418383
+  type: 'test'
+  ...
+# Subtest: retry: endpoint labels drop query strings so an API key can never leak
+ok 223 - retry: endpoint labels drop query strings so an API key can never leak
+  ---
+  duration_ms: 0.334416
+  type: 'test'
+  ...
+# Subtest: retry: endpoint labels collapse ids so metadata cannot grow per manager
+ok 224 - retry: endpoint labels collapse ids so metadata cannot grow per manager
+  ---
+  duration_ms: 0.134321
+  type: 'test'
+  ...
+# Subtest: retry: the record carries exactly the fields the health model will consume
+ok 225 - retry: the record carries exactly the fields the health model will consume
+  ---
+  duration_ms: 0.214171
+  type: 'test'
+  ...
+# Subtest: retry: every shipped provider policy is bounded and conservative
+ok 226 - retry: every shipped provider policy is bounded and conservative
+  ---
+  duration_ms: 0.226354
+  type: 'test'
+  ...
+# Subtest: retry: an unknown provider falls back to a real policy rather than undefined
+ok 227 - retry: an unknown provider falls back to a real policy rather than undefined
+  ---
+  duration_ms: 0.1232
+  type: 'test'
+  ...
+# Subtest: the approved eight CSV tables and deterministic filenames are exact
+ok 228 - the approved eight CSV tables and deterministic filenames are exact
+  ---
+  duration_ms: 90.597888
+  type: 'test'
+  ...
+# Subtest: CSV preserves numeric zero, leaves null blank and blocks spreadsheet formulas
+ok 229 - CSV preserves numeric zero, leaves null blank and blocks spreadsheet formulas
+  ---
+  duration_ms: 0.497
+  type: 'test'
+  ...
+# Subtest: analysis exports omit manager reference while exact JSON sources remain intact
+ok 230 - analysis exports omit manager reference while exact JSON sources remain intact
+  ---
+  duration_ms: 36.939476
+  type: 'test'
+  ...
+# Subtest: Markdown uses descriptive wording and labels the Hindsight oracle fully
+ok 231 - Markdown uses descriptive wording and labels the Hindsight oracle fully
+  ---
+  duration_ms: 24.894481
+  type: 'test'
+  ...
+# Subtest: operating review remains subordinate, phone-first and manual-Sheets only
+ok 232 - operating review remains subordinate, phone-first and manual-Sheets only
+  ---
+  duration_ms: 1.186581
+  type: 'test'
+  ...
+# Subtest: review engine is downstream-only and does not call production model functions
+ok 233 - review engine is downstream-only and does not call production model functions
+  ---
+  duration_ms: 1.157687
+  type: 'test'
+  ...
+# Subtest: build order places review after metrics and UI review after metric storage
+ok 234 - build order places review after metrics and UI review after metric storage
+  ---
+  duration_ms: 0.276107
+  type: 'test'
+  ...
+# Subtest: review source preserves the class-only CSP boundary
+ok 235 - review source preserves the class-only CSP boundary
+  ---
+  duration_ms: 0.661678
+  type: 'test'
+  ...
+# Subtest: hydrate: a valid snapshot loads clean and reports no issues
+ok 236 - hydrate: a valid snapshot loads clean and reports no issues
+  ---
+  duration_ms: 3.274177
+  type: 'test'
+  ...
+# Subtest: hydrate: a fatal cached snapshot is refused and does NOT poison existing state
+ok 237 - hydrate: a fatal cached snapshot is refused and does NOT poison existing state
+  ---
+  duration_ms: 0.45433
+  type: 'test'
+  ...
+# Subtest: hydrate: a non-object cached payload is fatal without throwing
+ok 238 - hydrate: a non-object cached payload is fatal without throwing
+  ---
+  duration_ms: 0.456144
+  type: 'test'
+  ...
+# Subtest: hydrate: a fatal fixtures payload blocks the load rather than loading half of it
+ok 239 - hydrate: a fatal fixtures payload blocks the load rather than loading half of it
+  ---
+  duration_ms: 0.345617
+  type: 'test'
+  ...
+# Subtest: hydrate: partial row damage still loads, keeping every valid row
+ok 240 - hydrate: partial row damage still loads, keeping every valid row
+  ---
+  duration_ms: 0.31514
+  type: 'test'
+  ...
+# Subtest: hydrate: fixture and bootstrap issues are reported together on one load
+ok 241 - hydrate: fixture and bootstrap issues are reported together on one load
+  ---
+  duration_ms: 0.408534
+  type: 'test'
+  ...
+# Subtest: hydrate: resets issues each load so stale reports do not accumulate
+ok 242 - hydrate: resets issues each load so stale reports do not accumulate
+  ---
+  duration_ms: 0.335828
+  type: 'test'
+  ...
+# Subtest: recordIssues: optional-provider reports are idempotent across repeat loads
+ok 243 - recordIssues: optional-provider reports are idempotent across repeat loads
+  ---
+  duration_ms: 0.297737
+  type: 'test'
+  ...
+# Subtest: schema/bootstrap: a valid payload passes clean and preserves unknown fields
+ok 244 - schema/bootstrap: a valid payload passes clean and preserves unknown fields
+  ---
+  duration_ms: 2.582563
+  type: 'test'
+  ...
+# Subtest: schema/bootstrap: a non-object top-level payload is fatal
+ok 245 - schema/bootstrap: a non-object top-level payload is fatal
+  ---
+  duration_ms: 0.47572
+  type: 'test'
+  ...
+# Subtest: schema/bootstrap: a missing required collection is fatal and names the fields
+ok 246 - schema/bootstrap: a missing required collection is fatal and names the fields
+  ---
+  duration_ms: 0.280806
+  type: 'test'
+  ...
+# Subtest: schema/bootstrap: invalid and duplicate rows are dropped, valid rows retained
+ok 247 - schema/bootstrap: invalid and duplicate rows are dropped, valid rows retained
+  ---
+  duration_ms: 0.460191
+  type: 'test'
+  ...
+# Subtest: schema/bootstrap: the provider payload is never mutated
+ok 248 - schema/bootstrap: the provider payload is never mutated
+  ---
+  duration_ms: 0.320028
+  type: 'test'
+  ...
+# Subtest: schema/bootstrap: bootstrapStructure is fatal-only and does not filter rows
+ok 249 - schema/bootstrap: bootstrapStructure is fatal-only and does not filter rows
+  ---
+  duration_ms: 0.254917
+  type: 'test'
+  ...
+# Subtest: schema/entry: valid entry passes; a null (not found) is not a failure
+ok 250 - schema/entry: valid entry passes; a null (not found) is not a failure
+  ---
+  duration_ms: 0.317254
+  type: 'test'
+  ...
+# Subtest: schema/entry: non-object is fatal; a missing name degrades to partial
+ok 251 - schema/entry: non-object is fatal; a missing name degrades to partial
+  ---
+  duration_ms: 0.217036
+  type: 'test'
+  ...
+# Subtest: schema/picks: a valid payload passes and tolerates unknown fields
+ok 252 - schema/picks: a valid payload passes and tolerates unknown fields
+  ---
+  duration_ms: 0.487372
+  type: 'test'
+  ...
+# Subtest: schema/picks: non-object and missing picks[] are both fatal
+ok 253 - schema/picks: non-object and missing picks[] are both fatal
+  ---
+  duration_ms: 0.488385
+  type: 'test'
+  ...
+# Subtest: schema/picks: mixed rows — invalid dropped, first of a duplicate element kept
+ok 254 - schema/picks: mixed rows — invalid dropped, first of a duplicate element kept
+  ---
+  duration_ms: 0.353291
+  type: 'test'
+  ...
+# Subtest: schema/picks: the rival endpoint label is carried through onto the issues
+ok 255 - schema/picks: the rival endpoint label is carried through onto the issues
+  ---
+  duration_ms: 0.134532
+  type: 'test'
+  ...
+# Subtest: schema/history: chips absent is legitimate, not an issue
+ok 256 - schema/history: chips absent is legitimate, not an issue
+  ---
+  duration_ms: 1.008848
+  type: 'test'
+  ...
+# Subtest: schema/history: a wrong-typed chips field degrades to an empty list, reported
+ok 257 - schema/history: a wrong-typed chips field degrades to an empty list, reported
+  ---
+  duration_ms: 0.138249
+  type: 'test'
+  ...
+# Subtest: schema/history: invalid chip rows are dropped, valid ones retained
+ok 258 - schema/history: invalid chip rows are dropped, valid ones retained
+  ---
+  duration_ms: 0.138599
+  type: 'test'
+  ...
+# Subtest: schema/standings: valid payload passes; missing results[] is fatal
+ok 259 - schema/standings: valid payload passes; missing results[] is fatal
+  ---
+  duration_ms: 0.232815
+  type: 'test'
+  ...
+# Subtest: schema/standings: invalid and duplicate rows are partial, valid rows survive
+ok 260 - schema/standings: invalid and duplicate rows are partial, valid rows survive
+  ---
+  duration_ms: 0.202158
+  type: 'test'
+  ...
+# Subtest: schema/understat: valid map passes; unusable teams are dropped as partial
+ok 261 - schema/understat: valid map passes; unusable teams are dropped as partial
+  ---
+  duration_ms: 0.274023
+  type: 'test'
+  ...
+# Subtest: schema/understat: no usable teams is fatal so the FPL-ratings fallback engages
+ok 262 - schema/understat: no usable teams is fatal so the FPL-ratings fallback engages
+  ---
+  duration_ms: 0.130645
+  type: 'test'
+  ...
+# Subtest: schema/odds: valid array passes; bad events dropped without killing the feed
+ok 263 - schema/odds: valid array passes; bad events dropped without killing the feed
+  ---
+  duration_ms: 0.23461
+  type: 'test'
+  ...
+# Subtest: schema/odds: a non-array payload is fatal and yields no events
+ok 264 - schema/odds: a non-array payload is fatal and yields no events
+  ---
+  duration_ms: 0.125535
+  type: 'test'
+  ...
+# Subtest: schema/archive: a valid header passes; missing columns are fatal and named
+ok 265 - schema/archive: a valid header passes; missing columns are fatal and named
+  ---
+  duration_ms: 0.357599
+  type: 'test'
+  ...
+# Subtest: schema/issues: pooled fan-out collapses to one issue per provider+endpoint+code
+ok 266 - schema/issues: pooled fan-out collapses to one issue per provider+endpoint+code
+  ---
+  duration_ms: 0.318055
+  type: 'test'
+  ...
+# Subtest: schema/issues: summaries stay payload-free across every endpoint
+ok 267 - schema/issues: summaries stay payload-free across every endpoint
+  ---
+  duration_ms: 0.488514
+  type: 'test'
+  ...
+# Subtest: schema/issues: every issue carries the machine-readable identity fields
+ok 268 - schema/issues: every issue carries the machine-readable identity fields
+  ---
+  duration_ms: 0.17661
+  type: 'test'
+  ...
+# Subtest: Stage 8 model and rules versions are explicit
+ok 269 - Stage 8 model and rules versions are explicit
+  ---
+  duration_ms: 2.402797
+  type: 'test'
+  ...
+# Subtest: Poisson tail handles zero and threshold bounds
+ok 270 - Poisson tail handles zero and threshold bounds
+  ---
+  duration_ms: 0.378378
+  type: 'test'
+  ...
+# Subtest: save groups are stepped rather than lambda divided by three
+ok 271 - save groups are stepped rather than lambda divided by three
+  ---
+  duration_ms: 0.194965
+  type: 'test'
+  ...
+# Subtest: goals-conceded groups apply negative points per complete pair
+ok 272 - goals-conceded groups apply negative points per complete pair
+  ---
+  duration_ms: 0.137317
+  type: 'test'
+  ...
+# Subtest: defensive-contribution threshold remains bounded by two points
+ok 273 - defensive-contribution threshold remains bounded by two points
+  ---
+  duration_ms: 0.261589
+  type: 'test'
+  ...
+# Subtest: rare-event shrinkage remains finite with no player exposure
+ok 274 - rare-event shrinkage remains finite with no player exposure
+  ---
+  duration_ms: 0.24551
+  type: 'test'
+  ...
+# Subtest: goalkeeper scoring exposes stepped saves and conceded parts
+ok 275 - goalkeeper scoring exposes stepped saves and conceded parts
+  ---
+  duration_ms: 2.001005
+  type: 'test'
+  ...
+# Subtest: outfield scoring exposes explicit disciplinary components
+ok 276 - outfield scoring exposes explicit disciplinary components
+  ---
+  duration_ms: 0.547063
+  type: 'test'
+  ...
+# Subtest: penalty role gates unlisted takers to the population prior
+ok 277 - penalty role gates unlisted takers to the population prior
+  ---
+  duration_ms: 0.634367
+  type: 'test'
+  ...
+# Subtest: bonus uses awarded bonus per appearance without fixture multiplier
+ok 278 - bonus uses awarded bonus per appearance without fixture multiplier
+  ---
+  duration_ms: 1.396804
+  type: 'test'
+  ...
+# Subtest: aggregate bonus appearances reuse the Stage 4 appearance estimate
+ok 279 - aggregate bonus appearances reuse the Stage 4 appearance estimate
+  ---
+  duration_ms: 0.408855
+  type: 'test'
+  ...
+# Subtest: defensive contributions use appearance probability rather than p60 eligibility
+ok 280 - defensive contributions use appearance probability rather than p60 eligibility
+  ---
+  duration_ms: 0.36351
+  type: 'test'
+  ...
+# Subtest: fixture run score gives a genuine blank zero and a double both fixtures
+ok 281 - fixture run score gives a genuine blank zero and a double both fixtures
+  ---
+  duration_ms: 0.535793
+  type: 'test'
+  ...
+# Subtest: rare-rate helper uses position population shrinkage
+ok 282 - rare-rate helper uses position population shrinkage
+  ---
+  duration_ms: 0.172613
+  type: 'test'
+  ...
+# Subtest: SEC-1: odds key is direct-only; failures degrade to internal model, never relay
+not ok 283 - SEC-1: odds key is direct-only; failures degrade to internal model, never relay
+  ---
+  duration_ms: 13.503432
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/sec1.test.mjs:8:1'
+  failureType: 'testCodeFailure'
+  error: 'renderTransfers is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    eval (eval at loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12), <anonymous>:6545:95)
+    eval (<anonymous>)
+    loadApp (file:///home/runner/work/FPL/FPL/tests/harness.mjs:39:12)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/sec1.test.mjs:9:32)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: odds secret scrubber removes raw and encoded key material plus apiKey values
+ok 284 - odds secret scrubber removes raw and encoded key material plus apiKey values
+  ---
+  duration_ms: 1.175059
+  type: 'test'
+  ...
+# Subtest: forget odds key clears field, storage property and active odds state
+ok 285 - forget odds key clears field, storage property and active odds state
+  ---
+  duration_ms: 1.077958
+  type: 'test'
+  ...
+# Subtest: storage source omits an empty odds key rather than persisting an empty secret
+ok 286 - storage source omits an empty odds key rather than persisting an empty secret
+  ---
+  duration_ms: 0.230211
+  type: 'test'
+  ...
+# Subtest: built UI masks the key and provides the one-action forget control
+ok 287 - built UI masks the key and provides the one-action forget control
+  ---
+  duration_ms: 2.708359
+  type: 'test'
+  ...
+# Subtest: CSP hashes independently match the exact emitted inline script and style
+ok 288 - CSP hashes independently match the exact emitted inline script and style
+  ---
+  duration_ms: 5.339063
+  type: 'test'
+  ...
+# Subtest: CSP removes every unsafe-inline concession and retains provider origins
+ok 289 - CSP removes every unsafe-inline concession and retains provider origins
+  ---
+  duration_ms: 2.784331
+  type: 'test'
+  ...
+# Subtest: source and generated deployable contain no inline style attributes or runtime style APIs
+ok 290 - source and generated deployable contain no inline style attributes or runtime style APIs
+  ---
+  duration_ms: 9.000806
+  type: 'test'
+  ...
+# Subtest: dynamic visual geometry uses style-free progress and SVG attributes
+ok 291 - dynamic visual geometry uses style-free progress and SVG attributes
+  ---
+  duration_ms: 0.305241
+  type: 'test'
+  ...
+# Subtest: frame-buster and current Stage 3 modules are inside the single hashed bundle
+ok 292 - frame-buster and current Stage 3 modules are inside the single hashed bundle
+  ---
+  duration_ms: 2.042804
+  type: 'test'
+  ...
+# Subtest: generated artefacts contain no planted odds secret
+ok 293 - generated artefacts contain no planted odds secret
+  ---
+  duration_ms: 4.011197
+  type: 'test'
+  ...
+# Subtest: seeded RNG is deterministic and bounded
+ok 294 - seeded RNG is deterministic and bounded
+  ---
+  duration_ms: 2.253888
+  type: 'test'
+  ...
+# Subtest: minutes distribution preserves approved marginals
+ok 295 - minutes distribution preserves approved marginals
+  ---
+  duration_ms: 0.617756
+  type: 'test'
+  ...
+# Subtest: sampled minutes converge to expected minutes
+ok 296 - sampled minutes converge to expected minutes
+  ---
+  duration_ms: 23.859374
+  type: 'test'
+  ...
+# Subtest: inconsistent minutes are bounded and labelled reduced
+ok 297 - inconsistent minutes are bounded and labelled reduced
+  ---
+  duration_ms: 0.266319
+  type: 'test'
+  ...
+# Subtest: summary thresholds and percentile order are stable
+ok 298 - summary thresholds and percentile order are stable
+  ---
+  duration_ms: 0.632404
+  type: 'test'
+  ...
+# Subtest: Poisson sampler handles zero and remains deterministic
+ok 299 - Poisson sampler handles zero and remains deterministic
+  ---
+  duration_ms: 0.553686
+  type: 'test'
+  ...
+# Subtest: legal XI enforces official formation minimums
+ok 300 - legal XI enforces official formation minimums
+  ---
+  duration_ms: 2.06264
+  type: 'test'
+  ...
+# Subtest: reserve goalkeeper only replaces a missing goalkeeper
+ok 301 - reserve goalkeeper only replaces a missing goalkeeper
+  ---
+  duration_ms: 0.730547
+  type: 'test'
+  ...
+# Subtest: outfield bench order is respected while preserving formation
+ok 302 - outfield bench order is respected while preserving formation
+  ---
+  duration_ms: 0.260748
+  type: 'test'
+  ...
+# Subtest: captain falls to vice only when captain does not appear
+ok 303 - captain falls to vice only when captain does not appear
+  ---
+  duration_ms: 0.260718
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 rejects prototype-bearing JSON keys before canonicalisation
+ok 304 - Stage 10.5 rejects prototype-bearing JSON keys before canonicalisation
+  ---
+  duration_ms: 1.975988
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 diagnostic redaction removes secrets, queries and account identifiers
+ok 305 - Stage 10.5 diagnostic redaction removes secrets, queries and account identifiers
+  ---
+  duration_ms: 1.162806
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 journals are strict and current pointers reconcile deterministically
+ok 306 - Stage 10.5 journals are strict and current pointers reconcile deterministically
+  ---
+  duration_ms: 1.096672
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 diagnostics are bounded and owner-safe
+ok 307 - Stage 10.5 diagnostics are bounded and owner-safe
+  ---
+  duration_ms: 1.133892
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 transfer records reject version mismatch and forbidden evidence
+ok 308 - Stage 10.5 transfer records reject version mismatch and forbidden evidence
+  ---
+  duration_ms: 3.456128
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 CSV neutralises line-feed formula text without changing numeric negatives
+ok 309 - Stage 10.5 CSV neutralises line-feed formula text without changing numeric negatives
+  ---
+  duration_ms: 0.300001
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 download helper reports only a request and delays URL cleanup
+ok 310 - Stage 10.5 download helper reports only a request and delays URL cleanup
+  ---
+  duration_ms: 0.70002
+  type: 'test'
+  ...
+# Subtest: Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads
+ok 311 - Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads
+  ---
+  duration_ms: 0.407964
+  type: 'test'
+  ...
+# Subtest: startup gate is silent, minimalist and visible by default
+ok 312 - startup gate is silent, minimalist and visible by default
+  ---
+  duration_ms: 1.338565
+  type: 'test'
+  ...
+# Subtest: foreground refresh is due only after the approved verification age
+ok 313 - foreground refresh is due only after the approved verification age
+  ---
+  duration_ms: 0.199924
+  type: 'test'
+  ...
+# Subtest: startup and foreground paths use the same deferred verified refresh
+ok 314 - startup and foreground paths use the same deferred verified refresh
+  ---
+  duration_ms: 0.284482
+  type: 'test'
+  ...
+# Subtest: automatic evidence is dispatched without extending startup loading
+ok 315 - automatic evidence is dispatched without extending startup loading
+  ---
+  duration_ms: 0.381574
+  type: 'test'
+  ...
+# Subtest: evidence is automatic and backup import is segregated from official records
+ok 316 - evidence is automatic and backup import is segregated from official records
+  ---
+  duration_ms: 0.183504
+  type: 'test'
+  ...
+# Subtest: Team decision home is versioned as the approved checkpoint
+ok 317 - Team decision home is versioned as the approved checkpoint
+  ---
+  duration_ms: 1.760936
+  type: 'test'
+  ...
+# Subtest: forecast keeps starting-XI points and captain uplift explicit
+ok 318 - forecast keeps starting-XI points and captain uplift explicit
+  ---
+  duration_ms: 0.768558
+  type: 'test'
+  ...
+# Subtest: only a complete legal FPL squad can produce the decision home
+ok 319 - only a complete legal FPL squad can produce the decision home
+  ---
+  duration_ms: 0.447097
+  type: 'test'
+  ...
+# Subtest: bench labels distinguish the reserve goalkeeper from ordered outfield substitutes
+ok 320 - bench labels distinguish the reserve goalkeeper from ordered outfield substitutes
+  ---
+  duration_ms: 0.188823
+  type: 'test'
+  ...
+# Subtest: source wording separates Official FPL, manual and verified fallback states
+ok 321 - source wording separates Official FPL, manual and verified fallback states
+  ---
+  duration_ms: 33.936836
+  type: 'test'
+  ...
+# Subtest: risk priority protects data integrity, captaincy and selected starters in that order
+ok 322 - risk priority protects data integrity, captaincy and selected starters in that order
+  ---
+  duration_ms: 0.470661
+  type: 'test'
+  ...
+# Subtest: close captaincy is uncertainty context, not protect or chase strategy
+ok 323 - close captaincy is uncertainty context, not protect or chase strategy
+  ---
+  duration_ms: 0.281888
+  type: 'test'
+  ...
+# Subtest: clear Team state does not pretend the transfer optimiser has recommended a roll
+ok 324 - clear Team state does not pretend the transfer optimiser has recommended a roll
+  ---
+  duration_ms: 0.299751
+  type: 'test'
+  ...
+# Subtest: deadline actions remain advisory and distinguish user previews
+ok 325 - deadline actions remain advisory and distinguish user previews
+  ---
+  duration_ms: 0.46505
+  type: 'test'
+  ...
+# Subtest: production wiring wraps the verified renderer without changing model modules or routes
+ok 326 - production wiring wraps the verified renderer without changing model modules or routes
+  ---
+  duration_ms: 3.15804
+  type: 'test'
+  ...
+# Subtest: pitch lines preserve every starter once in football visual order
+ok 327 - pitch lines preserve every starter once in football visual order
+  ---
+  duration_ms: 1.519424
+  type: 'test'
+  ...
+# Subtest: captaincy uses the first two distinct ranked starters
+ok 328 - captaincy uses the first two distinct ranked starters
+  ---
+  duration_ms: 0.215223
+  type: 'test'
+  ...
+# Subtest: known club palette is repository owned and stable
+ok 329 - known club palette is repository owned and stable
+  ---
+  duration_ms: 0.327814
+  type: 'test'
+  ...
+# Subtest: unknown club palette falls back deterministically to an approved pattern
+ok 330 - unknown club palette falls back deterministically to an approved pattern
+  ---
+  duration_ms: 1.221907
+  type: 'test'
+  ...
+# Subtest: shirt palette classes are stable for known and fallback clubs
+ok 331 - shirt palette classes are stable for known and fallback clubs
+  ---
+  duration_ms: 0.327884
+  type: 'test'
+  ...
+# file:///home/runner/work/FPL/FPL/tests/transfer-optimiser-view.test.mjs:8
+#   transferPlannnerRefreshRequired,
+#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# SyntaxError: The requested module '../src/ui/transfer-optimiser-view.mjs' does not provide an export named 'transferPlannnerRefreshRequired'
+#     at ModuleJob._instantiate (node:internal/modules/esm/module_job:226:21)
+#     at async ModuleJob.run (node:internal/modules/esm/module_job:335:5)
+#     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+#     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+# Node.js v22.23.1
+# Subtest: tests/transfer-optimiser-view.test.mjs
+not ok 37 - tests/transfer-optimiser-view.test.mjs
+  ---
+  duration_ms: 47.565381
+  type: 'test'
+  location: '/home/runner/work/FPL/FPL/tests/transfer-optimiser-view.test.mjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: Stage 6 rules are explicit and versioned
+ok 333 - Stage 6 rules are explicit and versioned
+  ---
+  duration_ms: 1.604534
+  type: 'test'
+  ...
+# Subtest: selling price keeps half of rises rounded down
+ok 334 - selling price keeps half of rises rounded down
+  ---
+  duration_ms: 0.30468
+  type: 'test'
+  ...
+# Subtest: missing and null purchase prices use current price in estimated mode
+ok 335 - missing and null purchase prices use current price in estimated mode
+  ---
+  duration_ms: 0.193432
+  type: 'test'
+  ...
+# Subtest: free-transfer and hit formulas cover ordinary plans
+ok 336 - free-transfer and hit formulas cover ordinary plans
+  ---
+  duration_ms: 0.27825
+  type: 'test'
+  ...
+# Subtest: full squad legality enforces 15 distinct players and exact quotas
+ok 337 - full squad legality enforces 15 distinct players and exact quotas
+  ---
+  duration_ms: 0.585827
+  type: 'test'
+  ...
+# Subtest: best XI selects a legal formation deterministically
+ok 338 - best XI selects a legal formation deterministically
+  ---
+  duration_ms: 0.850843
+  type: 'test'
+  ...
+# Subtest: zero-transfer baseline is always present and can win
+ok 339 - zero-transfer baseline is always present and can win
+  ---
+  duration_ms: 4.397571
+  type: 'test'
+  ...
+# Subtest: estimated affordability is labelled and never treats null as a zero purchase price
+ok 340 - estimated affordability is labelled and never treats null as a zero purchase price
+  ---
+  duration_ms: 2.518994
+  type: 'test'
+  ...
+# Subtest: shared bank is applied once across a coordinated plan
+ok 341 - shared bank is applied once across a coordinated plan
+  ---
+  duration_ms: 11.272707
+  type: 'test'
+  ...
+# Subtest: unavailable purchases are excluded while doubtful purchases remain eligible
+ok 342 - unavailable purchases are excluded while doubtful purchases remain eligible
+  ---
+  duration_ms: 1.782896
+  type: 'test'
+  ...
+# Subtest: production search agrees with an independent exhaustive reference
+ok 343 - production search agrees with an independent exhaustive reference
+  ---
+  duration_ms: 5.482761
+  type: 'test'
+  ...
+# Subtest: safe affordability pruning cannot remove the exhaustive optimum
+ok 344 - safe affordability pruning cannot remove the exhaustive optimum
+  ---
+  duration_ms: 1.120437
+  type: 'test'
+  ...
+# Subtest: an evaluation ceiling fails closed instead of claiming a partial optimum
+ok 345 - an evaluation ceiling fails closed instead of claiming a partial optimum
+  ---
+  duration_ms: 0.427751
+  type: 'test'
+  ...
+# Subtest: direct import: fixture model strength ordering
+ok 346 - direct import: fixture model strength ordering
+  ---
+  duration_ms: 1.326633
+  type: 'test'
+  ...
+# Subtest: direct import: projection archetypes sane and parts sum
+ok 347 - direct import: projection archetypes sane and parts sum
+  ---
+  duration_ms: 2.742372
+  type: 'test'
+  ...
+# Subtest: direct import: availability scale
+ok 348 - direct import: availability scale
+  ---
+  duration_ms: 0.174246
+  type: 'test'
+  ...
+# Subtest: direct import: bestXI legality and sellPrice rounding
+ok 349 - direct import: bestXI legality and sellPrice rounding
+  ---
+  duration_ms: 2.784962
+  type: 'test'
+  ...
+# Subtest: direct import: odds maths invertible
+ok 350 - direct import: odds maths invertible
+  ---
+  duration_ms: 0.218419
+  type: 'test'
+  ...
+# Subtest: direct import: computeBacktest recovers planted biases with provenance
+ok 351 - direct import: computeBacktest recovers planted biases with provenance
+  ---
+  duration_ms: 23.613404
+  type: 'test'
+  ...
+# Subtest: direct import: cache envelope invalidates on schema/season change
+ok 352 - direct import: cache envelope invalidates on schema/season change
+  ---
+  duration_ms: 1.067729
+  type: 'test'
+  ...
+# Subtest: direct import: registry carries six quality attributes per provider
+ok 353 - direct import: registry carries six quality attributes per provider
+  ---
+  duration_ms: 0.383397
+  type: 'test'
+  ...
+# Subtest: direct import: ODDS_RULES defined before any formula change
+ok 354 - direct import: ODDS_RULES defined before any formula change
+  ---
+  duration_ms: 0.424875
+  type: 'test'
+  ...
+# Subtest: direct import: escapeHTML neutralises the usual suspects
+ok 355 - direct import: escapeHTML neutralises the usual suspects
+  ---
+  duration_ms: 0.453839
+  type: 'test'
+  ...
+# Subtest: validation: exact duplicates collapse to the first occurrence
+ok 356 - validation: exact duplicates collapse to the first occurrence
+  ---
+  duration_ms: 2.168789
+  type: 'test'
+  ...
+# Subtest: validation: genuine doubles survive — distinct ids, same teams and gameweek
+ok 357 - validation: genuine doubles survive — distinct ids, same teams and gameweek
+  ---
+  duration_ms: 0.827819
+  type: 'test'
+  ...
+# Subtest: validation: genuine doubles survive when rows carry no id (composite distinct)
+ok 358 - validation: genuine doubles survive when rows carry no id (composite distinct)
+  ---
+  duration_ms: 0.178905
+  type: 'test'
+  ...
+# Subtest: validation: conflicting duplicate keeps the first and names the offending fields
+ok 359 - validation: conflicting duplicate keeps the first and names the offending fields
+  ---
+  duration_ms: 0.298298
+  type: 'test'
+  ...
+# Subtest: validation: a conflict is partial, never fatal — the app still loads
+ok 360 - validation: a conflict is partial, never fatal — the app still loads
+  ---
+  duration_ms: 0.341799
+  type: 'test'
+  ...
+# Subtest: validation: rows with no safe identity are excluded and reported
+ok 361 - validation: rows with no safe identity are excluded and reported
+  ---
+  duration_ms: 0.173966
+  type: 'test'
+  ...
+# Subtest: validation: identity is never invented for an id-less row with a null event
+ok 362 - validation: identity is never invented for an id-less row with a null event
+  ---
+  duration_ms: 0.249426
+  type: 'test'
+  ...
+# Subtest: validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
+ok 363 - validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
+  ---
+  duration_ms: 0.17056
+  type: 'test'
+  ...
+# Subtest: validation: started/finished differences are immaterial, not a conflict
+ok 364 - validation: started/finished differences are immaterial, not a conflict
+  ---
+  duration_ms: 0.401161
+  type: 'test'
+  ...
+# Subtest: validation: a non-array payload is fatal and yields an empty fixture list
+ok 365 - validation: a non-array payload is fatal and yields an empty fixture list
+  ---
+  duration_ms: 0.570437
+  type: 'test'
+  ...
+# Subtest: validation: the input array and its rows are never mutated
+ok 366 - validation: the input array and its rows are never mutated
+  ---
+  duration_ms: 0.241703
+  type: 'test'
+  ...
+# Subtest: validation: issueSummary is payload-free and safe to render
+ok 367 - validation: issueSummary is payload-free and safe to render
+  ---
+  duration_ms: 0.280044
+  type: 'test'
+  ...
+# Subtest: dataset pin requires immutable reference and SHA-256 checksum
+ok 368 - dataset pin requires immutable reference and SHA-256 checksum
+  ---
+  duration_ms: 2.102776
+  type: 'test'
+  ...
+# Subtest: observations are sorted deterministically and identical duplicates collapse
+ok 369 - observations are sorted deterministically and identical duplicates collapse
+  ---
+  duration_ms: 1.077887
+  type: 'test'
+  ...
+# Subtest: conflicting duplicate observations fail closed
+ok 370 - conflicting duplicate observations fail closed
+  ---
+  duration_ms: 0.437929
+  type: 'test'
+  ...
+# Subtest: future information is rejected
+ok 371 - future information is rejected
+  ---
+  duration_ms: 0.206857
+  type: 'test'
+  ...
+# Subtest: walk-forward fold boundaries are chronological and separated
+ok 372 - walk-forward fold boundaries are chronological and separated
+  ---
+  duration_ms: 0.628547
+  type: 'test'
+  ...
+# Subtest: position calibration is fitted only from supplied rows and bounded
+ok 373 - position calibration is fitted only from supplied rows and bounded
+  ---
+  duration_ms: 0.259666
+  type: 'test'
+  ...
+# Subtest: calibration application creates an isolated named variant
+ok 374 - calibration application creates an isolated named variant
+  ---
+  duration_ms: 0.279113
+  type: 'test'
+  ...
+# Subtest: metric summary calculates deterministic MAE RMSE bias and correlation
+ok 375 - metric summary calculates deterministic MAE RMSE bias and correlation
+  ---
+  duration_ms: 0.415377
+  type: 'test'
+  ...
+# Subtest: segmented metrics expose position gameweek variant and prediction bands
+ok 376 - segmented metrics expose position gameweek variant and prediction bands
+  ---
+  duration_ms: 8.333076
+  type: 'test'
+  ...
+# Subtest: ablation comparison requires identical holdout keys
+ok 377 - ablation comparison requires identical holdout keys
+  ---
+  duration_ms: 1.889045
+  type: 'test'
+  ...
+# Subtest: stable result serialisation is key ordered and rounds finite numbers
+ok 378 - stable result serialisation is key ordered and rounds finite numbers
+  ---
+  duration_ms: 0.272159
+  type: 'test'
+  ...
+# Subtest: full evaluation preserves supplied ablations when fold calibration is disabled
+ok 379 - full evaluation preserves supplied ablations when fold calibration is disabled
+  ---
+  duration_ms: 2.031843
+  type: 'test'
+  ...
+# Subtest: raw-only evaluation emits train-only fold calibration
+ok 380 - raw-only evaluation emits train-only fold calibration
+  ---
+  duration_ms: 1.620884
+  type: 'test'
+  ...
+1..380
+# tests 380
+# suites 0
+# pass 367
+# fail 13
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4464.287898
