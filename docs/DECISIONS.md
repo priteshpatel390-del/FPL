@@ -1,6 +1,6 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-07-30. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
+Last updated: 2026-08-02. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives: Netlify Drop, Cloudflare Pages (deferred, see D-08), Claude-artifact-only (blocked network). Consequences: no server code, no headers (frame-ancestors ineffective), meta-CSP only, relays needed.
@@ -145,3 +145,12 @@ Reason: the previous Leagues route sampled the top 10–30 managers, fanned out 
 Approach: use only existing public Official FPL entry, classic standings and picks endpoints. Persist minimal league/rival choices under a versioned local state contract; keep fetched standings and squads session-only. Present official current position, supplied movement, simple points gaps, nearby standings and one selected rival's captaincy/squad overlap. Use semantic `#/leagues/*` routes without identifiers. Remove unsupported threat, covered-template and win/lose claims. Large leagues use targeted and user-requested pages rather than automatic full scans.
 
 Consequences: no provider, origin, authentication, projected-rank model, effective-ownership model, differential score, protect/balanced/chase strategy or Team/Transfers/model calculation changes. 2.0.5 remains the separate intelligence gate. Physical iPhone and VoiceOver acceptance remain required before merge.
+
+**D-33 · 2026-08-02 · Accepted · Explicit selected-rival factual exposure without strategy modelling**
+
+Reason: the merged 2.0.4 foundation could compare one public rival accurately, but it did not show which exact squad, captain and chip differences recur across the small set of managers the user actually cares about. A full-league scan, ownership percentage or tactical label would overstate partial public data and create unacceptable phone, relay and privacy costs.
+
+Approach: add ID-free `#/leagues/exposure` for no more than five explicitly selected rivals. Public current-Gameweek picks load only after a user action, with concurrency two and current-session reuse. Aggregate player/captain/vice/chip counts include only fresh complete 15-player squads; not-loaded, incomplete, unavailable and stale records remain explicit. Counts are labelled as selected-rival facts, not whole-league ownership. Version-2 local state persists only the explicit IDs and labels. Optional Official FPL context fields are validated before aggregation, and invalid context degrades without discarding otherwise valid ownership.
+
+Consequences: no provider, origin, authentication, full-league fan-out, projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy, differential recommendation, protect/balanced/chase logic or Team/Transfers/model calculation change. Physical iPhone, VoiceOver and live populated-data acceptance remain separate review gates. The implementation must not merge without explicit owner approval.
+

@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 
-> **Teamsheet 2.0.4 roadmap update:** the official Mini-League foundation is complete and merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. Its verified baseline is 493/493 tests with deterministic exact-identity builds and root/deployable equality. It adds official position/movement, gaps, nearby standings, primary/saved leagues and factual selected-rival comparison without projected rank or strategy logic. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance. The next checkpoint is **Teamsheet 2.0.5 — Mini-League Intelligence**.
+> **Teamsheet 2.0.5 roadmap update:** the owner-approved selected-rival factual-intelligence scope is implemented on `agent/teamsheet-2.0.5-mini-league-intelligence` for review and is not merged. It adds an ID-free on-demand exposure route, explicit maximum-five rival groups, concurrency two, complete/fresh selected-rival counts, version-2 minimal choice persistence and optional-field validation without a provider, projection, simulation, effective-ownership or strategy model. Verification targets 510/510 tests, deterministic exact-identity builds and root/deployable equality. Physical iPhone, VoiceOver and live populated-data acceptance remain unperformed. After review and merge, **Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation** is next.
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-02.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
@@ -65,10 +65,13 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
   - Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance.
 
 ## Current
-- **Teamsheet 2.0.5 — Mini-League Intelligence** · INVESTIGATION AND DESIGN GATE.
-  - Build on the merged factual Mini-League foundation.
-  - Define evidence-supported multi-rival exposure and factual significance without prediction or strategy overclaiming.
-  - Projected rank, projected rival scores, remaining-player simulation, effective-ownership strategy and protect/balanced/chase recommendations remain separately gated and unapproved.
+- **Teamsheet 2.0.5 — Mini-League Intelligence** · OWNER-APPROVED, IMPLEMENTED AND VERIFIED FOR REVIEW; NOT MERGED.
+  - Explicit maximum-five selected-rival groups and ID-free `#/leagues/exposure`.
+  - Public picks load only on user request, with concurrency two and current-session reuse.
+  - Aggregate counts include only fresh complete 15-player squads; stale, incomplete, unavailable and not-loaded states remain explicit.
+  - Exact player, captain, vice and chip counts describe selected rivals only, never the whole league or an outcome prediction.
+  - Version-2 persistence stores choices only; fetched standings, picks and derivations remain session-only.
+  - Projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy and protect/balanced/chase recommendations remain separately gated and unapproved.
 - **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
 
 ## Teamsheet 2.0 migration sequence
@@ -84,8 +87,8 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
 4. **Teamsheet 2.0.4 — Mini Leagues foundation** · COMPLETE AND MERGED.
    - Establishes confirmed private-league position, movement, gaps, nearby standings and factual rival comparison.
    - Global/projected rank calculation remains excluded and unimplemented.
-5. **Teamsheet 2.0.5 — Mini-League Intelligence** · CURRENT DESIGN GATE.
-   - Assess supported rival exposure, overlap and factual difference context; strategy modelling remains separately gated.
+5. **Teamsheet 2.0.5 — Mini-League Intelligence** · IMPLEMENTED FOR REVIEW; NOT MERGED.
+   - Adds selected-rival factual exposure, exact complete/fresh counts and honest partial states; strategy modelling remains separately gated.
 6. **Teamsheet 2.0.6 — Research, evidence and diagnostics completion**
    - Complete remaining content organisation and relocate persistent healthy Provider Health from the main header.
 7. **Teamsheet 2.0.7 — Final mobile polish and acceptance**
@@ -94,15 +97,16 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
 Every checkpoint requires its own investigation, exact scope, exclusions, owner approval where required, branch, complete verification, documentation and draft PR.
 
 ## Upcoming
-1. Complete the Teamsheet 2.0.5 investigation, design and explicit approval proposal without implementing unapproved projected or strategic intelligence.
-2. Operate pre-deadline snapshots and durable owner-controlled exports during the 2026/27 season.
-3. Complete checkpoint-specific iPhone checks and the final Teamsheet 2.0.7 end-to-end rehearsal.
-4. Collect official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until approved sample safeguards are met.
+1. Review and, only after explicit owner approval, merge Teamsheet 2.0.5 without adding projected or strategic intelligence.
+2. Begin Teamsheet 2.0.6 investigation and design after 2.0.5 merges.
+3. Operate pre-deadline snapshots and durable owner-controlled exports during the 2026/27 season.
+4. Complete checkpoint-specific iPhone checks and the final Teamsheet 2.0.7 end-to-end rehearsal.
+5. Collect official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until approved sample safeguards are met.
 
 ## Current blockers and gates
-1. Teamsheet 2.0.5 implementation has no approved design and must not begin before explicit owner approval.
+1. Teamsheet 2.0.5 is implemented for review but must not merge without explicit owner approval.
 2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
-3. Teamsheet 2.0.4 automated checks did not independently prove physical iPhone density, Safari interaction, VoiceOver reading order or live populated-data behaviour; the approved sample preview was directional only.
+3. Teamsheet 2.0.5 automated checks do not independently prove physical iPhone density, Safari interaction, VoiceOver reading order or live populated-data behaviour; those checks remain unperformed.
 4. The old standalone Stage 10.5 rehearsal gate is superseded by checkpoint-specific checks and final 2.0.7 rehearsal; its historical record remains intact.
 5. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 6. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.

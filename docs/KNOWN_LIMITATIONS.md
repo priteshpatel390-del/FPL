@@ -45,7 +45,8 @@ Last updated: 2026-08-02. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | PREVIEW-1 | Decision previews are intentionally session-only | Transfer/captain previews disappear on refresh and are not submitted to FPL; this prevents accidental persistence or account changes | By design | Accepted |
 | PREVIEW-2 | Transfer preview pitch is next-Gameweek only while optimiser gain can span several Gameweeks | The banner must be read alongside the pitch to distinguish next-GW XI score from multi-GW net gain | Stage 9.4 | Accepted-labelled |
 | ML-1 | Leagues exposed only a top-N sampled ownership comparison | Replaced by the official 2.0.4 foundation: primary league, current position/movement, points gaps, nearby standings and selected-rival factual comparison | Teamsheet 2.0.4 | **CLOSED and merged 2026-08-02 through PR #59** |
-| ML-2 | No approved Mini-League intelligence or tactical recommendation model | 2.0.4 describes official facts and exact squad differences only; it does not rank meaningful differentials or alter Team/Transfers advice | Teamsheet 2.0.5 / separate model gate | Open (expected) |
+| ML-2 | No approved tactical Mini-League recommendation model | 2.0.5 adds exact selected-rival factual exposure only; it does not predict outcomes, rank meaningful differentials or alter Team/Transfers advice | Separate model gate | Open (gated) |
+| ML-3 | Teamsheet 2.0.5 physical iPhone, VoiceOver and live populated-data acceptance is not recorded | Automated source, calculation, route, privacy and build contracts cannot prove real Safari density, assistive reading order or public-endpoint availability | Teamsheet 2.0.5 review / 2.0.7 | Open (acceptance gate) |
 | RANK-1 | Projected final Gameweek score and rank movement are not yet designed or validated | Teamsheet must not manufacture live-rank precision or blur projection with confirmed Official FPL results | Separate design and explicit approval | Open (expected) |
 | STRAT-1 | No protect, balanced or chase Mini-League strategy model is approved | League position may be described, but it cannot silently alter production recommendations | Separate design and explicit approval | Open (gated) |
 | EVID-1 | Browser timing evidence is not externally notarised | Same-origin HTTP `Date` plus clock-skew checks support leakage review but cannot prove capture time to an independent third party | Future serverless only with separate approval | Open (accepted) |
@@ -71,7 +72,7 @@ Last updated: 2026-08-02. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
 ## Teamsheet 2.0 migration limitations
-- Teamsheet 2.0.1–2.0.4 implement the approved navigation, Team, Transfers and factual Mini-League foundations; projected rank, Mini-League intelligence and strategic recommendation work remain separately gated product direction.
+- Teamsheet 2.0.1–2.0.5 implement the approved navigation, Team, Transfers, factual Mini-League foundation and selected-rival factual exposure. Projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy and tactical recommendation work remain separately gated.
 - The Stage 9 engineering foundation remains valid, while its primary information architecture is superseded.
 - No new projection, captaincy, optimiser, Mini-League strategy or rank model is authorised by the blueprint.
 - The migration must preserve verified engineering and existing access to every current functional surface.
