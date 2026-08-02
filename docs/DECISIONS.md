@@ -137,3 +137,11 @@ Consequences: no projection, expected-minutes, fixture, squad, captaincy, bench,
 **Reason:** The previous wide table obscured the decision and could overstate incomplete evidence. This change improves interpretation without changing any calculation.
 
 **Boundary:** No transfer, projection, squad, provider, rank or Mini-League formula changes. Physical iPhone and VoiceOver acceptance remains separate.
+
+**D-32 · 2026-08-02 · Accepted · Teamsheet 2.0.4 official Mini-League foundation with ID-free routes**
+
+Reason: the previous Leagues route sampled the top 10–30 managers, fanned out public picks requests and labelled threshold-based ownership tables as threats/differentials. It did not reliably answer the manager's official position, movement, nearest gaps or selected-rival context and could overstate an incomplete sample.
+
+Approach: use only existing public Official FPL entry, classic standings and picks endpoints. Persist minimal league/rival choices under a versioned local state contract; keep fetched standings and squads session-only. Present official current position, supplied movement, simple points gaps, nearby standings and one selected rival's captaincy/squad overlap. Use semantic `#/leagues/*` routes without identifiers. Remove unsupported threat, covered-template and win/lose claims. Large leagues use targeted and user-requested pages rather than automatic full scans.
+
+Consequences: no provider, origin, authentication, projected-rank model, effective-ownership model, differential score, protect/balanced/chase strategy or Team/Transfers/model calculation changes. 2.0.5 remains the separate intelligence gate. Physical iPhone and VoiceOver acceptance remain required before merge.

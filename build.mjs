@@ -9,7 +9,7 @@ import { stripModuleSyntax, assertNoModuleSyntax } from './build-utils.mjs';
 
 const ORDER = [
   'src/config.mjs', 'src/util.mjs', 'src/providers/retry.mjs', 'src/providers/validate.mjs', 'src/providers/outcome-validate.mjs',
-  'src/state.mjs', 'src/storage.mjs',
+  'src/state.mjs', 'src/storage.mjs', 'src/ui/mini-leagues-state.mjs',
   'src/providers/registry.mjs', 'src/providers/transport.mjs', 'src/providers/common.mjs',
   'src/providers/understat.mjs', 'src/providers/odds.mjs', 'src/providers/minutes-history.mjs',
   'src/model/fixtures.mjs', 'src/model/minutes.mjs', 'src/model/scoring-rules.mjs',
@@ -18,7 +18,7 @@ const ORDER = [
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
   'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
-  'src/ui/transfer-optimiser-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/backtest-copy.mjs',
+  'src/ui/transfer-optimiser-view.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/backtest-copy.mjs',
   'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.

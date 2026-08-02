@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 
-> **Teamsheet 2.0.3 roadmap update:** Transfers decision workspace implemented on the draft branch and verified at 467/467 tests. Next checkpoint: **Teamsheet 2.0.4 — Mini Leagues decision experience**. No later checkpoint work was pulled forward.
+> **Teamsheet 2.0.4 roadmap update:** the official Mini-League foundation is implemented on its dedicated branch and currently passes 491/491 tests. It adds official position/movement, gaps, nearby standings, primary/pinned leagues and factual selected-rival comparison without projected rank or strategy logic. Next checkpoint after review/merge: **Teamsheet 2.0.5 — Mini-League intelligence**.
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-31.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
@@ -54,14 +54,17 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
 
 ## Current
 - **Teamsheet 2.0.1 — Navigation and Settings architecture** · MERGED through PR #48 at `0ed9c89c63852fe9d97d0e1ffcc64660228aeb7b`.
-- **Teamsheet 2.0.2 — Team decision home** · IMPLEMENTED AND VERIFIED FOR OWNER REVIEW.
-  - Pitch remains immediate in connected, unconnected, incomplete and unavailable states.
-  - Existing XI, captaincy, bench, deterministic forecast and session previews are presented through one concise decision hierarchy.
-  - Official/manual/cache/preview provenance, one material risk and advisory deadline action are explicit.
-  - No formula, provider, refresh, authentication, bank/free-transfer authority, route or persistence change.
-  - Verified baseline: **454/454 tests**, deterministic exact-identity builds and root/deployable equality.
+- **Teamsheet 2.0.2 — Team decision home** · MERGED through PR #49 at `d01e6a36af47f8ce7962820f36174274af382493`; final verified source 459/459 tests.
+- **Teamsheet 2.0.3 — Transfers Decision Workspace** · MERGED through PR #55 at `c82a883f3ae8eebc8a3017e9181748e562dd9ba8`; 467/467 tests, deterministic builds and owner iPhone visual acceptance. VoiceOver was not performed.
+- **Teamsheet 2.0.4 — Mini Leagues** · IMPLEMENTED ON THE APPROVED BRANCH FOR REVIEW.
+  - Primary/saved league selection and deterministic legacy migration.
+  - Official current position, supplied movement and simple points gaps.
+  - Targeted nearby standings with user-requested pagination.
+  - Pinned rivals and one-rival-at-a-time public picks comparison.
+  - Exact squad overlap, captain/vice/active-chip context and honest incomplete/stale states.
+  - No projected rank, differential scoring, protect/chase strategy, provider or model change.
+  - Current source baseline: **491/491 tests**.
 - **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
-- The next development checkpoint is **Teamsheet 2.0.3 — Transfer decision experience**, requiring separate investigation, design and explicit approval.
 
 ## Teamsheet 2.0 migration sequence
 1. **Teamsheet 2.0.1 — Navigation and Settings architecture** · COMPLETE AND MERGED.
@@ -71,10 +74,11 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
 2. **Teamsheet 2.0.2 — Team decision home** · COMPLETE FOR OWNER REVIEW.
    - Pitch-first connected/setup/degraded states with unchanged XI, captaincy, bench and projection logic.
    - Concise forecast, one material risk, advisory deadline action and progressive detail.
-3. **Teamsheet 2.0.3 — Transfer decision experience**
-   - Lead with roll/transfer/hit guidance, preserve the zero-transfer baseline and explain whole-squad consequences.
-4. **Teamsheet 2.0.4 — Global rank and Leagues foundation**
-   - Establish confirmed global and private-league performance, movement and comparison foundations.
+3. **Teamsheet 2.0.3 — Transfer decision experience** · COMPLETE AND MERGED.
+   - Leads with the zero-transfer baseline, honest model comparison and whole-squad consequences.
+4. **Teamsheet 2.0.4 — Mini Leagues foundation** · IMPLEMENTED FOR REVIEW.
+   - Establishes confirmed private-league position, movement, gaps, nearby standings and factual rival comparison.
+   - Global/projected rank calculation remains excluded and unimplemented.
 5. **Teamsheet 2.0.5 — League intelligence**
    - Add supported rival exposure, overlap, differential and tactical insight; strategy modelling remains separately gated.
 6. **Teamsheet 2.0.6 — Research, evidence and diagnostics completion**

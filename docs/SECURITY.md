@@ -87,3 +87,9 @@ Hindsight comparisons are labelled and have no recommendation pathway. No compos
 
 ## Stage 10.5 storage and import hardening
 Untrusted JSON now rejects prototype-bearing keys before canonicalisation. Metric and transfer validators enforce supported versions, exact public shapes, identity consistency and forbidden-evidence checks. Diagnostic text strips queries/fragments, numeric manager/league paths and raw or encoded secret-shaped values. Phase journals may complete only a hash-verified local transaction; imports and unproven orphans remain recovery-only. CSV text beginning with line-feed and other formula-control prefixes is neutralised while genuine numeric negatives remain numeric.
+
+## Teamsheet 2.0.4 League privacy boundary
+
+FPL league and manager identifiers are public endpoint identifiers but reveal user-specific competitive relationships when stored together. Teamsheet therefore keeps them out of hash routes, page titles, Provider Health detail, retry issue text and Stage 10 evidence. Versioned local persistence contains only selected/saved league IDs and labels plus selected/pinned rival IDs and labels. Official standings, scores and rival squads are session-only.
+
+Requests remain read-only through the existing Official FPL transport. No cookie, OAuth flow, FPL password, private login, new origin or API key is introduced. Endpoint diagnostics continue to normalise digit runs and strip query strings. Removing a saved league also removes its selected/pinned rival state; it does not attempt to alter Official FPL.

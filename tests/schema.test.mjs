@@ -167,7 +167,7 @@ test('schema/history: invalid chip rows are dropped, valid ones retained', () =>
 
 test('schema/standings: valid payload passes; missing results[] is fatal', () => {
   const good = { league: { name: 'Work League' },
-    standings: { results: [{ entry: 11, rank: 1 }, { entry: 12, rank: 2 }] } };
+    standings: { has_next:false, results: [{ entry: 11, rank: 1, total:100, entry_name:'Alpha', player_name:'Alex' }, { entry: 12, rank: 2, total:99, entry_name:'Beta', player_name:'Bea' }] } };
   assert.deepEqual(validateStandings(good).issues, []);
   assert.equal(validateStandings(good).value.standings.results.length, 2);
   assert.deepEqual(fatalOf(validateStandings({ league: {} })), ['standings_missing_results']);
@@ -175,8 +175,10 @@ test('schema/standings: valid payload passes; missing results[] is fatal', () =>
 });
 
 test('schema/standings: invalid and duplicate rows are partial, valid rows survive', () => {
-  const first = { entry: 11, rank: 1 };
-  const payload = { standings: { results: [first, null, { rank: 3 }, { entry: 11, rank: 9 }, { entry: 12 }] } };
+  const first = { entry: 11, rank: 1, total:100, entry_name:'Alpha', player_name:'Alex' };
+  const duplicate = { entry: 11, rank: 9, total:90, entry_name:'Duplicate', player_name:'Drew' };
+  const second = { entry: 12, rank: 2, total:99, entry_name:'Beta', player_name:'Bea' };
+  const payload = { league:{name:'Work League'}, standings: { has_next:false, results: [first, null, { rank: 3 }, duplicate, second] } };
   const before = JSON.stringify(payload);
   const r = validateStandings(payload);
   assert.deepEqual(r.value.standings.results.map(x => x.entry), [11, 12]);

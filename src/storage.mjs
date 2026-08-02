@@ -38,7 +38,6 @@ function currentConfig(){
     teamId: $('teamId').value.replace(/\D/g,''),
     ft: num($('ftCount').value),
     bank: num($('bankIn').value),
-    leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
     useUstat: $('useUstat').checked,
     transferHorizon: Number($('trHorizon')?.value || 6),

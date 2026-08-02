@@ -163,6 +163,7 @@ async function loadAll(options = {}){
         const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
         recordIssues('fpl', '/entry/history/', histV.issues);
         const hist = histV.value;
+        S.history = hist;
         if(hist && hist.chips) S.chipsUsed = hist.chips.map(c => `${c.name} (GW${c.event})`);
         if(S.entry.last_deadline_bank != null && !num($('bankIn').value))
           $('bankIn').value = (S.entry.last_deadline_bank/10).toFixed(1);

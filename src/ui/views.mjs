@@ -340,108 +340,6 @@ function renderSquad(){
 }
 
 /* ---------------------------------------------------------------------
-   VIEW — MINI-LEAGUE
-   --------------------------------------------------------------------- */
-/* ---------------------------------------------------------------------
-   SAVED LEAGUES — multiple mini-leagues as one-tap buttons. Comparing a
-   new ID saves it automatically; the name comes from the API if none given.
-   --------------------------------------------------------------------- */
-S.leagues = [];
-async function saveLeagues(){ await sset('fpl:leagues', S.leagues); }
-function renderLeagueChips(){
-  const el = $('leagueChips');
-  setChildren(el, S.leagues.flatMap((l,i) => {
-    const label = l.name || l.id;
-    return [elNode('button', {class:'chip', dataset:{lg:i}}, label),
-      elNode('button', {class:'chip chip-remove', dataset:{lgrm:i}, 'aria-label':`Remove ${label}`}, '×')];
-  }));
-  el.querySelectorAll('[data-lg]').forEach(b => b.addEventListener('click', () => {
-    const l = S.leagues[+b.dataset.lg];
-    $('leagueId').value = l.id; $('leagueName').value = l.name || '';
-    compareLeague();
-  }));
-  el.querySelectorAll('[data-lgrm]').forEach(b => b.addEventListener('click', async () => {
-    S.leagues.splice(+b.dataset.lgrm, 1);
-    await saveLeagues(); renderLeagueChips();
-  }));
-}
-async function rememberLeague(id, name){
-  const existing = S.leagues.find(l => l.id === id);
-  if(existing){ if(name) existing.name = name; }
-  else S.leagues.push({id, name: name || ''});
-  await saveLeagues(); renderLeagueChips();
-}
-
-async function compareLeague(){
-  const el = $('leagueOut'), id = $('leagueId').value.replace(/\D/g,'');
-  if(!id){ setChildren(el,noteNode('bad',"Add a league ID first — it's the number in your league's URL.")); return; }
-  if(!S.seasonLive || !S.currentGW){
-    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},"Rival squads aren't published yet"),"FPL only exposes other managers' picks once a gameweek has finished. This comes alive after GW1."));
-    return;
-  }
-  setChildren(el,elNode('p',{class:'status'},elNode('span',{class:'spinner'}),'Reading the league…'));
-  await saveCfg();
-  try{
-    const stV = validateStandings(await api('/leagues-classic/'+id+'/standings/', {optional:true}));
-    recordIssues('fpl', '/leagues-classic/standings/', stV.issues);
-    const st = stV.value;
-    if(!st || !st.standings){ setChildren(el,noteNode('bad',`League ${id} not found, or it's private.`)); return; }
-    await rememberLeague(id, $('leagueName').value.trim() || st.league?.name || '');
-    const n = +$('lgN').value;
-    const rivals = st.standings.results.slice(0, n).filter(r => String(r.entry) !== String(S.teamId));
-    setChildren(el,elNode('p',{class:'status'},elNode('span',{class:'spinner'}),`Reading ${rivals.length} rival squads…`));
-    const rawPicks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
-    // D-14: each rival squad is validated individually; issues are collapsed so
-    // 20 bad responses cannot flood S.dataIssues with near-identical entries.
-    const rivalIssues = [];
-    const picks = rawPicks.map(pk => {
-      const v = validatePicks(pk, '/entry/event/picks/ (rival)');
-      if(v.issues.length) rivalIssues.push(...v.issues);
-      return v.value;
-    });
-    recordIssues('fpl', '/entry/event/picks/ (rival)', collapseIssues(rivalIssues));
-
-    const own = {}, cap = {};
-    let counted = 0;
-    picks.forEach(pk => {
-      if(!pk || !pk.picks) return;
-      counted++;
-      pk.picks.forEach(x => {
-        own[x.element] = (own[x.element]||0) + 1;
-        if(x.is_captain) cap[x.element] = (cap[x.element]||0) + 1;
-      });
-    });
-    if(!counted){ setChildren(el,noteNode('bad','Could not read any rival squads — the relays may be rate limiting. Try a smaller number of rivals.')); return; }
-
-    const mine = new Set(mySquad().map(s => s.p.id));
-    const gw = S.nextGW;
-    const rows = Object.keys(own).map(pid => {
-      const p = S.byId[pid]; if(!p) return null;
-      const o = own[pid]/counted*100, c = (cap[pid]||0)/counted*100;
-      return {p, own:o, cap:c, eo:o + c, mine:mine.has(+pid), xp:xpOf(p, gw, 6).total};
-    }).filter(Boolean);
-
-    const threats = rows.filter(r => !r.mine && r.own >= 35).sort((a,b) => b.eo - a.eo).slice(0,10);
-    const diffs   = rows.filter(r =>  r.mine && r.own <= 25).sort((a,b) => b.xp - a.xp).slice(0,10);
-    const myOnly  = [...mine].filter(x => !own[x]).map(x => S.byId[x]).filter(Boolean);
-
-    const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v)), nodes=[];
-    nodes.push(elNode('div',{class:'kpis'},kpi('Rivals read',counted),kpi('My rank',(st.standings.results.find(r=>String(r.entry)===String(S.teamId))||{}).rank??'—'),kpi('Unique to me',myOnly.length)),
-      elNode('p',{class:'status mb-12'},`${st.league.name} · effective ownership = owned % + captained %.`),elNode('h3',{},"Biggest threats you don't own"));
-    const threatBody=elNode('tbody');
-    threats.forEach(r=>threatBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name,flagNodes(r.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[r.p.element_type]||''),` ${S.teams[r.p.team]?.short_name||''} · £${(r.p.now_cost/10).toFixed(1)}m`)),cell(`${r.own.toFixed(0)}%`,'num'),cell(`${r.cap.toFixed(0)}%`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${r.eo>80?'hot':''}`},`${r.eo.toFixed(0)}%`)),cell(fmt1(r.xp),'num'))));
-    nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Owned','num'),head('Capt','num'),head('EO','num'),head('xP 6GW','num'))),threatBody)));
-    if(!threats.length) nodes.push(noteNode('good',"Nothing widely owned that you're missing — you're covered on the template."));
-    nodes.push(elNode('h3',{class:'mt-18'},'Your differentials'));
-    if(diffs.length){ const diffBody=elNode('tbody'); diffs.forEach(r=>diffBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name),elNode('span',{class:'pmeta'},S.teams[r.p.team]?.short_name||'')),cell(`${r.own.toFixed(0)}%`,'num'),cell(fmt1(r.xp),'num')))); nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Rival own','num'),head('xP 6GW','num'))),diffBody))); }
-    if(myOnly.length) nodes.push(noteNode('',elNode('b',{},'Owned by nobody else in the league:'),` ${myOnly.map(p=>p.web_name).join(', ')}. These are where you win or lose the league.`));
-    setChildren(el,nodes);
-  }catch(e){
-    setChildren(el,noteNode('bad',"Couldn't read that league — the relays may be busy. Try again, or reduce the number of rivals."));
-  }
-}
-
-/* ---------------------------------------------------------------------
    VIEW — ASK
    --------------------------------------------------------------------- */
 function md(t){
@@ -603,7 +501,7 @@ function renderAll(){
   setChildren($('srcStatus'),srcBits.map(s=>elNode('div',{},s)));
   setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
   if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
-  renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual();
+  renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual(); renderMiniLeagues();
   if(typeof document!=='undefined' && typeof document.dispatchEvent==='function' && typeof CustomEvent==='function')
     document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
 }
@@ -618,12 +516,10 @@ const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); 
 ['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
-// the team and league IDs must persist the moment they're typed — a failed
-// data load must never lose them
-['teamId','leagueId'].forEach(id => $(id).addEventListener('input', debounce(saveCfg, 300)));
+// The Team ID persists as it is typed; Mini-League choices use their own versioned state.
+$('teamId').addEventListener('input', debounce(saveCfg, 300));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
 $('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
-$('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
 // The low-value odds key remains client-side temporarily (D-08); save it on
@@ -645,7 +541,6 @@ document.addEventListener('click', e => {
     if(cfg.bank != null) $('bankIn').value = cfg.bank;
     if(cfg.transferHorizon != null) $('trHorizon').value = String(cfg.transferHorizon);
     if(cfg.transferResults != null) $('trTop').value = String(cfg.transferResults);
-    if(cfg.leagueId) $('leagueId').value = cfg.leagueId;
     if(cfg.useManual) $('useManual').checked = true;
     if(cfg.oddsKey) $('oddsKey').value = cfg.oddsKey;
     if(cfg.useUstat === false) $('useUstat').checked = false;
@@ -656,8 +551,7 @@ document.addEventListener('click', e => {
     setChildren($('btOut'),elNode('div',{class:'note good mt-8'},`Calibration from ${cal.backtest?.season} is active (r ${cal.backtest?.r}, ±${cal.backtest?.maeGW} pts/GW). Re-run any time.`));
   }
   S.manual = (await sget(K_SQUAD)) || [];
-  S.leagues = (await sget('fpl:leagues')) || [];
-  renderLeagueChips();
+  await initMiniLeagues(cfg||{});
   await runVerifiedRefresh({reason:'startup',startup:true,force:true});
   installVerifiedRefreshTriggers();
 })();

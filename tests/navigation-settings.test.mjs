@@ -28,6 +28,7 @@ test('legacy hashes resolve to the new information architecture',()=>{
 test('unknown and empty destinations fail safely to Team',()=>{
   assert.equal(normaliseTeamsheetRoute(''),'#/team');
   assert.equal(normaliseTeamsheetRoute('#/not-a-real-screen'),'#/team');
+  assert.equal(normaliseTeamsheetRoute('#/leagues/not-a-real-screen'),'#/leagues');
 });
 
 test('Settings subroutes keep Settings as the active primary destination',()=>{
@@ -104,4 +105,13 @@ test('Evidence and Provider Health detail remain available through Settings only
   assert.equal(evidenceSource.includes('#/settings/evidence'),true);
   includesAll(shellSource,['#/settings/data','providerHealthDetail']);
   assert.equal(evidenceSource.includes('data-view="more"'),false);
+});
+
+
+test('League subroutes are ID-free and keep Leagues active',()=>{
+  for(const route of ['#/leagues/standings','#/leagues/rival','#/leagues/manage']){
+    assert.equal(normaliseTeamsheetRoute(route),route);
+    assert.equal(teamsheetRouteMeta(route).primary,'leagues');
+    for(const forbidden of ['leagueId','managerId','entryId']) assert.equal(route.includes(forbidden),false);
+  }
 });

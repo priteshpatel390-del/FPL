@@ -44,7 +44,8 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | UI-4 | The Team screen did not provide the complete approved decision-home summary | Pitch-first hierarchy, XI/captain/bench forecast, one material risk, deadline action and honest setup/degraded states are implemented without calculation changes | Teamsheet 2.0.2 | **CLOSED and verified 2026-07-31** |
 | PREVIEW-1 | Decision previews are intentionally session-only | Transfer/captain previews disappear on refresh and are not submitted to FPL; this prevents accidental persistence or account changes | By design | Accepted |
 | PREVIEW-2 | Transfer preview pitch is next-Gameweek only while optimiser gain can span several Gameweeks | The banner must be read alongside the pitch to distinguish next-GW XI score from multi-GW net gain | Stage 9.4 | Accepted-labelled |
-| ML-1 | Leagues is now a primary destination but still exposes only the existing comparison foundation | Global/private performance, movement and tactical explanation remain incomplete and must not be manufactured | Teamsheet 2.0.4–2.0.5 | Open (expected) |
+| ML-1 | Leagues exposed only a top-N sampled ownership comparison | Replaced by the official 2.0.4 foundation: primary league, current position/movement, points gaps, nearby standings and selected-rival factual comparison | Teamsheet 2.0.4 | **CLOSED on implementation branch; acceptance pending** |
+| ML-2 | No approved Mini-League intelligence or tactical recommendation model | 2.0.4 describes official facts and exact squad differences only; it does not rank meaningful differentials or alter Team/Transfers advice | Teamsheet 2.0.5 / separate model gate | Open (expected) |
 | RANK-1 | Projected final Gameweek score and rank movement are not yet designed or validated | Teamsheet must not manufacture live-rank precision or blur projection with confirmed Official FPL results | Teamsheet 2.0.4 only after separate design | Open (expected) |
 | STRAT-1 | No protect, balanced or chase Mini-League strategy model is approved | League position may be described, but it cannot silently alter production recommendations | Separate design and explicit approval | Open (gated) |
 | EVID-1 | Browser timing evidence is not externally notarised | Same-origin HTTP `Date` plus clock-skew checks support leakage review but cannot prove capture time to an independent third party | Future serverless only with separate approval | Open (accepted) |
@@ -121,6 +122,15 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - No migration engine exists because no older supported Stage 10 schema currently requires one.
 - Stage 10 infrastructure completion does not establish prediction accuracy or calibration.
 
-## Teamsheet 2.0.3 acceptance gate
+## Teamsheet 2.0.4 acceptance gate
 
-Physical iPhone and VoiceOver acceptance is not yet recorded. Automated contracts cover hierarchy, assumptions, wording, routing, accessibility and build integrity; physical one-handed use, text scaling and VoiceOver order still require owner review. Public FPL transport limitation FPL-1 can still block populated-data acceptance.
+Automated contracts cover League state migration, official-data validation, ID-free routes, standings/rival states, honest wording, mobile layout and build integrity. Physical iPhone and VoiceOver acceptance for 2.0.4 are not yet recorded. Public FPL transport limitation FPL-1 can still block populated-data acceptance. Teamsheet 2.0.3 iPhone visual acceptance passed before merge; VoiceOver acceptance was not performed.
+
+## Teamsheet 2.0.4 Mini-League limitations
+- Official FPL entry, standings and picks endpoints are undocumented; strict field validation may reduce coverage when schemas drift.
+- Only classic public league membership is discovered. Private/authenticated access remains excluded.
+- Large leagues are not scanned in full. Teamsheet loads page 1, pages around the official manager rank and additional sequential pages only when requested.
+- Rival public picks are loaded one selected manager at a time and may be unavailable or incomplete.
+- Fetched standings and rival squads are session-only. A failed refresh may retain the last session result with explicit stale wording; a page reload refetches public data.
+- Points gaps and squad overlap are factual derivations. They do not establish projected rank, captaincy gain, meaningful differential quality or protect/chase strategy.
+- League/member identifiers remain local but are necessarily sent to Official FPL/public relays for the requested read-only endpoint. They are omitted from routes, rendered diagnostics and Stage 10 evidence.
