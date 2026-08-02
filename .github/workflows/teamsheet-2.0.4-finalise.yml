@@ -1,0 +1,164 @@
+name: Finalise Teamsheet 2.0.4
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.4-mini-leagues
+          fetch-depth: 0
+
+      - name: Verify exact source
+        env:
+          BUILD_COMMIT: aef1ae2328068fae95559632db5f74f4a2854a1a
+        run: |
+          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          ./run-tests.sh
+          mkdir -p /tmp/build-one/dist
+          cp index.html /tmp/build-one/index.html
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/build-one/dist/
+          node build.mjs
+          cmp /tmp/build-one/index.html index.html
+          cmp /tmp/build-one/dist/index.html dist/index.html
+          cmp /tmp/build-one/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/build-one/dist/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          git diff --check
+          sha256sum index.html dist/index.html dist/app.bundle.js dist/manifest.json
+
+      - name: Update canonical documentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path): return Path(path).read_text()
+          def write(path, text): Path(path).write_text(text)
+          def append_once(path, marker, text):
+              current = read(path)
+              if marker not in current:
+                  write(path, current.rstrip() + "\n\n" + text.strip() + "\n")
+
+          p='CLAUDE.md'; t=read(p)
+          t=re.sub(r'## Current checkpoint\n.*?\n\n## Non-negotiable rules', '''## Current checkpoint
+Teamsheet 2.0.4 — Mini Leagues is implemented on the owner-approved official-data boundary. Leagues now provides a primary league, official standings and movement, nearby-rival gaps, pinned rivals and one-rival-at-a-time factual squad/captain comparison. No projected-rank, strategy, provider or football-model logic changed. The next separately designed checkpoint is **Teamsheet 2.0.5 — Mini-League intelligence**. The verified source baseline is **491/491 tests** with deterministic exact-identity builds and root/deployable equality.
+
+## Non-negotiable rules''', t, count=1, flags=re.S)
+          write(p,t)
+
+          p='docs/PROJECT_CONTEXT.md'; t=read(p)
+          t=re.sub(r'^> \*\*Teamsheet 2\.0\.3 current status:.*$', '> **Teamsheet 2.0.4 current status:** the owner-approved Mini Leagues foundation is implemented and verified at 491/491 tests. Official current standings, movement, gaps and factual selected-rival comparison are separated from unsupported projections. The next checkpoint is Teamsheet 2.0.5 — Mini-League intelligence.', t, count=1, flags=re.M)
+          t=t.replace('Next development item: **Teamsheet 2.0.3 — Transfer decision experience.**', 'Next development item: **Teamsheet 2.0.5 — Mini-League intelligence.**')
+          write(p,t)
+
+          p='docs/ROADMAP.md'; t=read(p)
+          t=re.sub(r'^> \*\*Teamsheet 2\.0\.3 roadmap update:.*$', '> **Teamsheet 2.0.4 roadmap update:** Mini Leagues foundation implemented and verified at 491/491 tests. Next checkpoint: **Teamsheet 2.0.5 — Mini-League intelligence**.', t, count=1, flags=re.M)
+          append_once(p,'## Teamsheet 2.0.4 completion','''## Teamsheet 2.0.4 completion
+- **Teamsheet 2.0.4 — Mini Leagues foundation** · IMPLEMENTED AND VERIFIED FOR OWNER REVIEW.
+- Official FPL league discovery/manual selection, primary-league persistence, paginated standings, supplied movement, point gaps, nearby/pinned rivals and selected-rival public squad comparison.
+- No projected rank, rival forecast, tactical differential score, protect/chase strategy, provider addition or model/optimiser change.
+- Verified source `aef1ae2328068fae95559632db5f74f4a2854a1a`: **491/491 tests**, two byte-identical exact-identity builds and root/deployable equality.
+- Next separately gated checkpoint: **Teamsheet 2.0.5 — Mini-League intelligence**.''')
+
+          p='docs/TEAMSHEET2-ITEM2.md'; t=read(p)
+          t=t.replace('Status: **Owner-approved implementation completed on the dedicated 2.0.2 branch; awaiting physical iPhone review and merge approval.**','Status: **Implemented, physically reviewed and merged through PR #49.**')
+          write(p,t)
+          p='docs/TEAMSHEET2-ITEM3.md'; t=read(p)
+          t=t.replace('Status: implemented on the owner-approved draft branch; not merged.','Status: **Implemented, physically reviewed and squash-merged through PR #55 on 2 August 2026. VoiceOver acceptance was not performed.**')
+          write(p,t)
+
+          append_once('docs/ARCHITECTURE.md','## Teamsheet 2.0.4 Mini-League boundary','''## Teamsheet 2.0.4 Mini-League boundary
+`ui/mini-leagues-state.mjs` owns the versioned `fpl:mini-leagues` preference record and one-way migration from the legacy configured/saved league values. Only identifiers, local labels, selected league/rival and pinned rivals persist; standings and rival squads remain session-only.
+
+`ui/mini-leagues-view.mjs` owns `#/leagues`, `#/leagues/standings`, `#/leagues/rival` and `#/leagues/manage`. It consumes validated existing Official FPL entry, classic-standings and public-picks responses through the existing transport. Page 1, the connected manager's neighbourhood and adjacent pages load before optional sequential expansion. Rival picks load one selected rival at a time. Official position/movement and factual squad differences are not blended with projected rank or strategy logic.''')
+
+          append_once('docs/DATA_SOURCES.md','## Teamsheet 2.0.4 Official FPL league fields','''## Teamsheet 2.0.4 Official FPL league fields
+No provider or origin is added. Existing Official FPL responses now validate the allowlisted fields required for the League experience: entry classic-league membership/current and previous rank; league name; standings entry identity, rank, previous rank, total and event total; pagination; and public picks captain, vice, multiplier and active chip. Missing optional values remain unavailable rather than being manufactured. Rival squads are fetched only on explicit comparison and are not persisted.''')
+
+          append_once('docs/SECURITY.md','## Teamsheet 2.0.4 League privacy boundary','''## Teamsheet 2.0.4 League privacy boundary
+League and manager identifiers are public FPL identifiers but still expose competitive relationships. They remain out of hash routes, document titles, diagnostics, Stage 10 evidence and exports. Local persistence is limited to selected/saved/pinned identifiers and labels. Standings and rival picks are session-only. No authentication cookie, private login, API key, new origin or write action is introduced.''')
+
+          append_once('docs/DECISIONS.md','**D-32 · 2026-08-02 · Accepted · Official-data Mini-League foundation**','''**D-32 · 2026-08-02 · Accepted · Official-data Mini-League foundation**
+Reason: the existing Leagues screen sampled leading rivals and used unsupported threat/differential conclusions instead of answering the manager's position, gaps and immediate competition.
+
+Approach: establish one primary league, ID-free semantic subroutes, validated Official FPL standings and movement, nearby/pinned rivals, simple official-points gap arithmetic and one-rival-at-a-time public squad/captain comparison. Persist preferences only. Remove tactical claims and automatic top-30 rival fan-out.
+
+Consequences: no projected rank, rival forecast, meaningful-differential score, protect/balanced/chase strategy, provider, model, captaincy, squad or optimiser change. Teamsheet 2.0.5 remains the separate intelligence gate.''')
+
+          append_once('docs/KNOWN_LIMITATIONS.md','## Teamsheet 2.0.4 acceptance gate','''## Teamsheet 2.0.4 acceptance gate
+- Official FPL entry, standings and picks endpoints remain undocumented; field-level validators fail closed or partially degrade.
+- Public relay limitation FPL-1 can still block populated League use.
+- Standings/picks are session-only and cannot refresh while the static app is closed.
+- No projected rank, rival outcome, tactical differential score or protect/chase strategy exists.
+- Low ownership and factual squad difference are not recommendations.
+- Automated and synthetic-browser checks cannot prove physical iPhone layout, live populated accuracy or VoiceOver order. Physical iPhone and VoiceOver acceptance remain owner review gates.''')
+
+          append_once('docs/TESTING.md','## Teamsheet 2.0.4 Mini-League verification','''## Teamsheet 2.0.4 Mini-League verification
+Verified source `aef1ae2328068fae95559632db5f74f4a2854a1a` completes **491/491 tests** with zero failures, cancellations or skips. New coverage includes route/subroute fallback and focus, legacy-state migration, primary/pinned league state, standings field validation and pagination, adjacent-user neighbourhoods, sequential large-league expansion, selected-rival request races, stale-session fallback, exact squad overlap/differences, captain/vice/chip context, honest wording, ID privacy and absence of model/optimiser calls. Two exact-identity builds are byte-identical; root `index.html` equals `dist/index.html`. Synthetic 390×844 browser rehearsal reported no runtime or console errors; this is not physical-iPhone, VoiceOver or live-data evidence.''')
+
+          append_once('docs/CHANGELOG.md','## 2026-08-02 — Teamsheet 2.0.4 Mini Leagues','''## 2026-08-02 — Teamsheet 2.0.4 Mini Leagues
+- Replaced the sampled ownership report with an official Mini-League position and rival-comparison foundation.
+- Added primary/saved leagues, ID-free League subroutes, official standings/movement/gaps, nearby and pinned rivals, and factual public squad/captain comparison.
+- Added versioned local preference migration, field-level validation, session-only data and stale/degraded states.
+- Removed unsupported threat/differential conclusions and automatic top-30 rival-picks fan-out.
+- No football calculation, provider, security origin, model or rules version changed.
+- Verification: 491/491 tests and deterministic exact-identity builds.''')
+
+          item='''# Teamsheet 2.0.4 — Mini Leagues
+
+Status: **Owner-approved implementation completed and verified for review. Not merged.**
+
+## Outcome
+Leagues now answers where the connected manager stands in a chosen FPL mini league, who is immediately around them and what factual captain/squad differences are available publicly. It no longer presents sampled ownership thresholds as tactical threats or recommended differentials.
+
+## Delivered scope
+- Primary League landing plus `#/leagues/standings`, `#/leagues/rival` and `#/leagues/manage`.
+- League discovery from the existing public entry response and manual league-ID fallback.
+- Versioned local saved/primary league state, selected rival and up to five pinned rivals; deterministic migration from legacy values.
+- Official current position, total points, supplied movement and simple official-points gaps.
+- Paginated standings centred around the manager, adjacent-page support and sequential load-more behaviour.
+- Suggested nearby rivals and selected-rival public captain, vice, active chip, exact squad overlap and player set differences.
+- Stale in-session fallback, request-race protection, honest pre-season/live/completed/unavailable states.
+- Mobile-first cards, long-name wrapping, 44px controls, route focus, live-region announcements, colour-independent movement and reduced-motion support.
+
+## Data and calculation boundary
+Only existing Official FPL entry, classic standings and public picks endpoints are used through the existing validated relay transport. Gaps are direct subtraction of official totals; squad comparison is set intersection/difference of official player IDs. No projected rank, rival score forecast, effective-ownership strategy, meaningful-differential score, chip strategy, protect/balanced/chase logic or recommendation-engine input was added.
+
+No projection, expected-minutes, scoring, fixture, captaincy, squad, simulation, transfer, rank, Mini-League strategy, provider or security calculation changed. Model/rules remain `2.4.0` / `2026-27.3`.
+
+## Persistence and privacy
+Only league/rival identifiers and user labels persist under `fpl:mini-leagues` version 1. Standings and rival squads remain session-only. Identifiers are excluded from routes, titles, diagnostics, Stage 10 evidence and exports. No authentication or private FPL login is introduced.
+
+## Verification
+- Source commit: `aef1ae2328068fae95559632db5f74f4a2854a1a`.
+- `./run-tests.sh`: **491 tests passed**, zero failed/cancelled/skipped.
+- Two exact-identity builds byte-identical.
+- Root `index.html` equals `dist/index.html`.
+- Independent source hash: `0b478ffa17f3d03d33f6040c6c0512c5e16a09506bfa92327c6eff75bd8b5014`.
+- Synthetic Official-FPL-shaped 390×844 browser rehearsal: landing, standings and rival routes completed without runtime/console errors.
+
+## Remaining acceptance and limitations
+Physical iPhone, VoiceOver and live populated-data acceptance have not been performed. Public FPL relay availability can still prevent populated use. Official endpoints remain undocumented. This checkpoint does not authorise 2.0.5 intelligence or strategy work.
+
+## Next gate
+Teamsheet 2.0.5 — Mini-League intelligence requires separate investigation, design and explicit approval. No merge without owner approval.
+'''
+          write('docs/TEAMSHEET2-ITEM4.md', item)
+          PY
+
+      - name: Commit verified finalisation
+        run: |
+          rm .github/workflows/teamsheet-2.0.4-finalise.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalise Teamsheet 2.0.4 deployables"
+          git push origin HEAD:agent/teamsheet-2.0.4-mini-leagues
