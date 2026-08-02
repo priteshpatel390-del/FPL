@@ -1,0 +1,6 @@
+md','## Teamsheet 2.0.3 — Transfers Decision Workspace',
+`## Teamsheet 2.0.3 — Transfers Decision Workspace
+
+Implemented the owner-approved transfer presentation/state checkpoint on a dedicated draft branch. The existing exact optimiser remains authoritative. Verification: {{TEST_COUNT}}/{{TEST_COUNT}} tests, deterministic builds and root/deployable equality. Merge remains subject to owner approval.`);
+
+console.log('Applied Teamsheet 2.0.3 patch to the approved source, test and canonical-document boundary.');
