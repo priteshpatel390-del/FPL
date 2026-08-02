@@ -1,16 +1,15 @@
 name: Teamsheet 2.0.3 implementation
 
 on:
-  push:
-    branches:
-      - agent/teamsheet-2.0.3-transfers-decision-workspace
   pull_request:
     branches:
       - main
     types:
-      - opened
-      - synchronize
       - reopened
+
+concurrency:
+  group: teamsheet-2.0.3-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -24,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ github.head_ref }}
 
       - name: Use repository Node baseline
         uses: actions/setup-node@v4
@@ -38,7 +37,6 @@ jobs:
           cat scripts/teamsheet-2.0.3-bootstrap/apply.part-* > /tmp/apply-teamsheet-2.0.3.mjs
           node --check /tmp/apply-teamsheet-2.0.3.mjs
           node /tmp/apply-teamsheet-2.0.3.mjs
-          # Correct bootstrap transcriptions and align the existing preview contract with the approved CTA.
           sed -i 's/assert\.catch/assert.match/g' tests/transfer-optimiser-view.test.mjs
           sed -i 's/transferPlannnerRefreshRequired/transferPlannerRefreshRequired/g' tests/transfer-optimiser-view.test.mjs
           node <<'NODE'
@@ -76,23 +74,23 @@ jobs:
           echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
           exit "$TEST_STATUS"
 
-      - name: Publish failure diagnostic only
+      - name: Publish unique failure diagnostic only
         if: failure() && steps.precommit_tests.outcome == 'failure'
         shell: bash
         run: |
           set -euo pipefail
+          TARGET_BRANCH="${GITHUB_HEAD_REF}"
+          cp /tmp/teamsheet-precommit-tests.log "/tmp/precommit-tests-${GITHUB_RUN_ID}.log"
+          git fetch origin "$TARGET_BRANCH"
+          git reset --hard "origin/$TARGET_BRANCH"
+          git clean -fd
           mkdir -p scripts/teamsheet-2.0.3-diagnostics
-          cp /tmp/teamsheet-precommit-tests.log scripts/teamsheet-2.0.3-diagnostics/precommit-tests.log
+          cp "/tmp/precommit-tests-${GITHUB_RUN_ID}.log" "scripts/teamsheet-2.0.3-diagnostics/precommit-tests-${GITHUB_RUN_ID}.log"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/teamsheet-2.0.3-diagnostics/precommit-tests.log
-          if git diff --cached --quiet; then
-            echo "Diagnostic output is unchanged."
-          else
-            git commit -m "Record Teamsheet 2.0.3 verifier failure"
-            TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
-            git push origin "HEAD:${TARGET_BRANCH}"
-          fi
+          git add "scripts/teamsheet-2.0.3-diagnostics/precommit-tests-${GITHUB_RUN_ID}.log"
+          git commit -m "Record Teamsheet 2.0.3 verifier failure ${GITHUB_RUN_ID}"
+          git push origin "HEAD:${TARGET_BRANCH}"
 
       - name: Finalise test-count documentation
         if: success()
@@ -154,8 +152,7 @@ jobs:
           set -euo pipefail
           git add docs/TEAMSHEET2-ITEM3.md index.html dist/index.html dist/app.bundle.js dist/manifest.json
           git commit -m "Finalise Teamsheet 2.0.3 deployables"
-          TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
-          git push origin "HEAD:${TARGET_BRANCH}"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
 
       - name: Verification summary
         shell: bash
