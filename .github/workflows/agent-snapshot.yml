@@ -16,6 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.4-mini-leagues
+      - name: Record branch identity
+        run: |
+          echo "HEAD=$(git rev-parse HEAD)"
+          echo "TREE=$(git rev-parse HEAD^{tree})"
       - name: Create repository archive
         run: tar --exclude=.git -czf /tmp/repository-snapshot.tar.gz .
       - uses: actions/upload-artifact@v4
