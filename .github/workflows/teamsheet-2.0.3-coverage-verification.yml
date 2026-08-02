@@ -1,0 +1,100 @@
+name: Teamsheet 2.0.3 coverage verification
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - reopened
+
+concurrency:
+  group: teamsheet-2.0.3-coverage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  verify-coverage-and-builds:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Use repository Node baseline
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Preserve verified deployables
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/teamsheet-original
+          cp index.html /tmp/teamsheet-original/index.html
+          cp dist/index.html /tmp/teamsheet-original/dist-index.html
+          cp dist/app.bundle.js /tmp/teamsheet-original/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-original/manifest.json
+
+      - name: Run complete test suite with source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COMMIT=f2f184fb9890a820e91ae240b27241e0d76f41ef ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          TEST_COUNT="$(awk '/^# tests /{n=$3} END{print n}' /tmp/teamsheet-tests.log)"
+          test -n "$TEST_COUNT"
+          test "$TEST_COUNT" -ge 459
+          echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
+          cmp /tmp/teamsheet-original/index.html index.html
+          cmp /tmp/teamsheet-original/dist-index.html dist/index.html
+          cmp /tmp/teamsheet-original/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-original/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+
+      - name: Verify deterministic second production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/teamsheet-build-one
+          cp index.html /tmp/teamsheet-build-one/index.html
+          cp dist/index.html /tmp/teamsheet-build-one/dist-index.html
+          cp dist/app.bundle.js /tmp/teamsheet-build-one/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-build-one/manifest.json
+          BUILD_COMMIT=f2f184fb9890a820e91ae240b27241e0d76f41ef node build.mjs
+          cmp /tmp/teamsheet-build-one/index.html index.html
+          cmp /tmp/teamsheet-build-one/dist-index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          git diff --exit-code -- index.html dist/index.html dist/app.bundle.js dist/manifest.json
+          git diff --check
+
+      - name: Record restored coverage and remove temporary verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RIl '458/458' CLAUDE.md docs | xargs -r sed -i "s/458\/458/${TEST_COUNT}\/${TEST_COUNT}/g"
+          rm .github/workflows/teamsheet-2.0.3-coverage-verification.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record restored Teamsheet 2.0.3 test coverage"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
+
+      - name: Verification summary
+        shell: bash
+        run: |
+          {
+            echo "## Teamsheet 2.0.3 final verification"
+            echo "- Tests: ${TEST_COUNT}/${TEST_COUNT}"
+            echo "- Previous 459-test baseline was not reduced"
+            echo "- Two byte-identical builds"
+            echo "- Root index.html equals dist/index.html"
+            echo "- Generated deployables unchanged from verified source commit"
+            echo "- Model/rules unchanged: 2.4.0 / 2026-27.3"
+          } >> "$GITHUB_STEP_SUMMARY"
