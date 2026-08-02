@@ -142,3 +142,17 @@ No provider or network origin is added. The existing Official FPL endpoints are 
 | `/entry/{id}/event/{gw}/picks/` | `picks[].{element,position,multiplier,is_captain,is_vice_captain}`, `active_chip` | On-demand selected-rival squad, captaincy and exact set comparison. No league-wide fan-out. |
 
 League names/IDs, selected rivals and pins persist locally under `fpl:mini-leagues` version 1. Standings, points and rival squads are session-only and are not model inputs, Stage 10 evidence or exports. Public endpoint failure preserves only a clearly labelled in-session stale result where one exists; no value is manufactured.
+
+## Teamsheet 2.0.5 selected-rival exposure contract
+
+No provider, origin or endpoint family is added. The existing Official FPL standings and current-Gameweek picks endpoints support an explicitly selected group of at most five rivals.
+
+- Rival picks load only after an explicit user action.
+- At most two logical rival requests run concurrently.
+- Current-session results are reused by league, rival and Gameweek.
+- Aggregate squad exposure includes only fresh records with 15 unique, resolved players in positions 1–15.
+- Incomplete, unavailable and stale records remain visible but are excluded from the default denominator.
+- Counts are labelled as selected-rival facts rather than whole-league ownership or effective ownership.
+- Optional `entry_rank`, `entry_last_rank`, `last_rank`, `event_total`, `multiplier`, captain, vice-captain and active-chip fields are validated before aggregation. Invalid optional context degrades to unavailable without discarding otherwise valid player ownership.
+- Standings, picks and derived exposure remain session-only. Only the explicit selected rival IDs and labels persist under `fpl:mini-leagues` version 2.
+

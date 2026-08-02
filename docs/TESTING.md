@@ -121,3 +121,21 @@ Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a5
 - deterministic bundle ordering and unchanged model/rules boundaries.
 
 Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Automated tests do not prove real Official FPL availability, physical iPhone density or VoiceOver reading order. Physical testing of the actual repository build on an iPhone was not separately performed, VoiceOver acceptance was not performed, and live populated-data acceptance was not performed. The approved sample preview established design direction but was not equivalent to full repository-device acceptance.
+
+## Teamsheet 2.0.5 Mini-League intelligence verification contract
+
+The approved 2.0.5 implementation must verify:
+
+- deterministic version-1 to version-2 Mini-League state migration;
+- an explicit maximum-five selected-rival group with no automatic picks requests;
+- two-request maximum concurrency and current-session reuse;
+- exact set arithmetic and selected-rival owner/captain/vice/chip counts;
+- aggregate denominators containing only complete, fresh 15-player squads;
+- stale, incomplete, unavailable and outside-loaded-standings behaviour;
+- optional Official FPL rank, Gameweek-total, multiplier, captain, vice and chip validation;
+- ID-free `#/leagues/exposure` routing, history and focus contracts;
+- privacy boundaries keeping fetched standings and picks session-only;
+- accessibility and narrow-screen source contracts;
+- absence of projection, scoring, simulation, rank and transfer-optimiser calls;
+- full `./run-tests.sh`, two exact-identity production builds, root/deployable equality and `git diff --check`.
+

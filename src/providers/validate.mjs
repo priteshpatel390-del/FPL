@@ -228,11 +228,26 @@ function validateEntry(payload) {
     } else {
       const filtered = filterRows(payload.leagues.classic,
         row => isObj(row) && isId(row.id) && typeof row.name === 'string', row => String(row.id));
+      const numericLike = item => isNum(item) || (typeof item === 'string' && item.trim() !== '' && Number.isFinite(Number(item)));
+      let invalidOptional = 0;
+      const classic = filtered.kept.map(row => {
+        let next = row;
+        for (const field of ['entry_rank', 'entry_last_rank']) {
+          if (row[field] !== undefined && row[field] !== null && !numericLike(row[field])) {
+            if (next === row) next = { ...row };
+            delete next[field]; invalidOptional++;
+          }
+        }
+        return next;
+      });
       if (filtered.invalid)
         issues.push(mkIssue('fpl', '/entry/', 'entry_invalid_classic_leagues', 'partial', filtered.invalid));
       if (filtered.duplicate)
         issues.push(mkIssue('fpl', '/entry/', 'entry_duplicate_classic_leagues', 'partial', filtered.duplicate));
-      value = { ...payload, leagues: { ...payload.leagues, classic: filtered.kept } };
+      if (invalidOptional)
+        issues.push(mkIssue('fpl', '/entry/', 'entry_invalid_classic_league_fields', 'partial', invalidOptional,
+          { fields: ['entry_rank', 'entry_last_rank'] }));
+      value = { ...payload, leagues: { ...payload.leagues, classic } };
     }
   }
   return { value, issues };
@@ -252,13 +267,48 @@ function validatePicks(payload, endpoint = '/entry/event/picks/') {
       'fatal', 1, { fields: ['picks'] })] };
 
   const issues = [];
+  const integerLike = value => (isNum(value) || (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)))) && Number.isInteger(Number(value));
   const { kept, invalid, duplicate } = filterRows(payload.picks,
-    r => isObj(r) && isId(r.element) && isId(r.position), r => String(r.element));
+    row => isObj(row) && isId(row.element) && integerLike(row.position) && Number(row.position) >= 1 && Number(row.position) <= 15,
+    row => String(row.element));
+  let invalidOptional = 0;
+  const picks = kept.map(row => {
+    let next = row;
+    const remove = field => { if (next === row) next = { ...row }; delete next[field]; invalidOptional++; };
+    if (row.multiplier !== undefined && (!integerLike(row.multiplier) || Number(row.multiplier) < 0 || Number(row.multiplier) > 3)) remove('multiplier');
+    if (row.is_captain !== undefined && typeof row.is_captain !== 'boolean') remove('is_captain');
+    if (row.is_vice_captain !== undefined && typeof row.is_vice_captain !== 'boolean') remove('is_vice_captain');
+    return next;
+  });
+  const positions = new Set(); let duplicatePositions = 0;
+  for (const row of picks) {
+    const key = Number(row.position);
+    if (positions.has(key)) duplicatePositions++; else positions.add(key);
+  }
+  const captains = picks.filter(row => row.is_captain === true || Number(row.multiplier) > 1).length;
+  const viceCaptains = picks.filter(row => row.is_vice_captain === true).length;
   if (invalid)
     issues.push(mkIssue('fpl', endpoint, 'picks_invalid_rows', 'partial', invalid));
   if (duplicate)
     issues.push(mkIssue('fpl', endpoint, 'picks_duplicate_element', 'partial', duplicate));
-  return { value: { ...payload, picks: kept }, issues };
+  if (duplicatePositions)
+    issues.push(mkIssue('fpl', endpoint, 'picks_duplicate_position', 'partial', duplicatePositions));
+  if (invalidOptional)
+    issues.push(mkIssue('fpl', endpoint, 'picks_invalid_optional_fields', 'partial', invalidOptional,
+      { fields: ['multiplier', 'is_captain', 'is_vice_captain'] }));
+  if (picks.length === 15 && captains !== 1)
+    issues.push(mkIssue('fpl', endpoint, 'picks_invalid_captain_count', 'partial', 1));
+  if (picks.length === 15 && viceCaptains !== 1)
+    issues.push(mkIssue('fpl', endpoint, 'picks_invalid_vice_count', 'partial', 1));
+
+  let value = { ...payload, picks };
+  if (payload.active_chip !== undefined && payload.active_chip !== null &&
+      (typeof payload.active_chip !== 'string' || !payload.active_chip.trim() || payload.active_chip.length > 40)) {
+    value = { ...value }; delete value.active_chip;
+    issues.push(mkIssue('fpl', endpoint, 'picks_invalid_active_chip', 'partial', 1,
+      { fields: ['active_chip'] }));
+  }
+  return { value, issues };
 }
 
 /* ---- FPL /entry/{id}/history/ ----------------------------------------
@@ -300,21 +350,35 @@ function validateStandings(payload) {
   const issues = [];
   const numericLike = value => isNum(value) || (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
   const { kept, invalid, duplicate } = filterRows(payload.standings.results,
-    r => isObj(r) && isId(r.entry) && numericLike(r.rank) && numericLike(r.total) &&
-      typeof r.entry_name === 'string' && typeof r.player_name === 'string', r => String(r.entry));
+    row => isObj(row) && isId(row.entry) && numericLike(row.rank) && numericLike(row.total) &&
+      typeof row.entry_name === 'string' && typeof row.player_name === 'string', row => String(row.entry));
+  let invalidOptional = 0;
+  const results = kept.map(row => {
+    let next = row;
+    for (const field of ['last_rank', 'event_total']) {
+      if (row[field] !== undefined && row[field] !== null && !numericLike(row[field])) {
+        if (next === row) next = { ...row };
+        delete next[field]; invalidOptional++;
+      }
+    }
+    return next;
+  });
   if (invalid)
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_rows',
       'partial', invalid));
   if (duplicate)
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_duplicate_entry',
       'partial', duplicate));
+  if (invalidOptional)
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_optional_fields',
+      'partial', invalidOptional, { fields: ['last_rank', 'event_total'] }));
   if (!isObj(payload.league) || typeof payload.league.name !== 'string')
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_missing_league_name',
       'partial', 1, { fields: ['league.name'] }));
   if (payload.standings.has_next !== undefined && typeof payload.standings.has_next !== 'boolean')
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_pagination',
       'partial', 1, { fields: ['standings.has_next'] }));
-  return { value: { ...payload, standings: { ...payload.standings, results: kept,
+  return { value: { ...payload, standings: { ...payload.standings, results,
     has_next: typeof payload.standings.has_next === 'boolean' ? payload.standings.has_next : false } }, issues };
 }
 

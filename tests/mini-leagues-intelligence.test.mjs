@@ -87,7 +87,7 @@ test('source keeps exposure on demand, concurrency bounded and model-free',()=>{
 test('stale rival records remain visible but are excluded from the fresh aggregate',()=>{
   S.byId=byId;
   const own=Array.from({length:15},(_,i)=>({p:byId[i+1],position:i+1}));
-  const fresh=rival(1,'Fresh',picks(Array.from({length:15},(_,i)=>i+1));
+  const fresh=rival(1,'Fresh',picks(Array.from({length:15},(_,i)=>i+1)));
   const stale=rival(2,'Stale',picks([...Array.from({length:14},(_,i)=>i+1),16]),{stale:true});
   const summary=miniLeagueExposureSummary(own,[fresh,stale],{byId});
   assert.equal(summary.total,1);

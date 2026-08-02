@@ -12,20 +12,21 @@ const excludesAll=(source,values)=>values.forEach(value=>assert.equal(source.inc
 
 test('Leagues has separate landing, standings, rival and manage surfaces',()=>{
   includesAll(app,['id="leagueLanding"','id="leagueStandings"','id="leagueRival"','id="leagueManage"','data-league-route="#/leagues/standings"','data-league-route="#/leagues/rival"']);
+  includesAll(view,["id:'leagueExposure'","'data-league-route':'#/leagues/exposure'"]);
   excludesAll(app,['id="lgN"','id="lgBtn"','id="leagueOut"','Top 30','effective ownership against your rivals']);
 });
 
 test('League subroutes remain semantic and identifiers stay in local state',()=>{
-  includesAll(shell,["'#/leagues/standings'","'#/leagues/rival'","'#/leagues/manage'","route.startsWith('#/leagues')"]);
+  includesAll(shell,["'#/leagues/standings'","'#/leagues/rival'","'#/leagues/exposure'","'#/leagues/manage'","route.startsWith('#/leagues')"]);
   excludesAll(shell,[':leagueId',':managerId','leagueId/rival','managerId']);
-  includesAll(state,["'fpl:mini-leagues'",'MINI_LEAGUE_STATE_VERSION = 1','selectedLeagueId','selectedRivalByLeague','pinnedRivals']);
+  includesAll(state,["'fpl:mini-leagues'",'MINI_LEAGUE_STATE_VERSION = 2','selectedLeagueId','selectedRivalByLeague','comparisonRivalsByLeague','pinnedRivals']);
 });
 
 test('League persistence stores choices only, not standings or rival squads',()=>{
   const persisted=state.slice(state.indexOf('function emptyMiniLeagueState'),state.indexOf('function normaliseMiniLeagueState'));
-  includesAll(persisted,['selectedLeagueId','selectedRivalByLeague','saved','pinnedRivals']);
+  includesAll(persisted,['selectedLeagueId','selectedRivalByLeague','comparisonRivalsByLeague','saved','pinnedRivals']);
   excludesAll(persisted,['standings','picks','points','captain']);
-  assert.equal(view.includes('S.miniLeagueData={standings:{},rivals:{}}'),true);
+  assert.equal(view.includes('S.miniLeagueData={standings:{},rivals:{},exposure:{}}'),true);
 });
 
 test('large leagues use targeted pages and explicit incremental loading',()=>{
@@ -34,12 +35,12 @@ test('large leagues use targeted pages and explicit incremental loading',()=>{
 });
 
 test('rival comparison loads one selected public squad and uses exact sets',()=>{
-  includesAll(view,['miniLeagueSelectedRivalId','/entry/${rivalId}/event/${S.currentGW}/picks/','miniLeagueCompareSquads','Only in your squad',"Only in this rival's squad"]);
+  includesAll(view,['miniLeagueSelectedRivalId','/entry/${rival.id}/event/${S.currentGW}/picks/','miniLeagueCompareSquads','Only in your squad',"Only in this rival's squad"]);
   excludesAll(view,['effective ownership','own >= 35','own <= 25','xpOf(','optimiseTransfers(']);
 });
 
 test('official, provisional, stale and incomplete wording is explicit',()=>{
-  includesAll(view,['Official FPL — provisional','Official FPL — GW${S.currentGW} complete','Refresh failed. Showing the last standings loaded in this session','Comparison uses ${comparison.rivalCount} of 15 published picks','public squad is not available']);
+  includesAll(view,['Official FPL — provisional','Official FPL — GW${S.currentGW} complete','Refresh failed. Showing the last standings loaded in this session','Comparison uses ${facts.count} of 15 validated published picks','public squad is not available']);
   excludesAll(view,['accuracy','confidence score','projected rank','likely rank']);
 });
 
@@ -68,7 +69,7 @@ test('standings and rival requests invalidate independently and failed empty rec
 
 test('narrow League header stacks the picker and the dark hero keeps refresh readable',()=>{
   includesAll(app,['@media(max-width:520px){.league-topbar{grid-template-columns:1fr;align-items:stretch}', '.league-picker{max-width:none;width:100%}', '.league-hero .btn.ghost{color:#fff', '.league-position-line{display:flex']);
-  includesAll(shell,['Official position, points gaps and factual public-squad comparisons. Projected rank and protect/chase strategy are not included.']);
+  includesAll(shell,['Official position, points gaps, pairwise comparisons and on-demand selected-rival exposure. Projected rank and protect/chase strategy are not included.']);
   excludesAll(shell,['Rank movement and deeper league intelligence arrive in later Teamsheet 2.0 checkpoints.']);
 });
 
@@ -94,3 +95,19 @@ test('new modules are in the deterministic bundle before the startup view',()=>{
   const viewsIndex=build.indexOf("'src/ui/views.mjs'");
   assert.ok(stateIndex>0&&viewIndex>stateIndex&&viewsIndex>viewIndex);
 });
+
+test('Mini-League intelligence adds an ID-free on-demand exposure route',()=>{
+  includesAll(shell,['#/leagues/exposure',"{title:'Rival exposure',primary:'leagues'}"]);
+  includesAll(view,["id:'leagueExposure'","'data-league-route':'#/leagues/exposure'",'MAX_COMPARISON_RIVALS','loadMiniLeagueExposure','pool(group,async row=>','},2)','selected rivals only','No public squad request is made until you press Load rival exposure']);
+  includesAll(state,['MINI_LEAGUE_STATE_VERSION = 2','comparisonRivalsByLeague','MAX_COMPARISON_RIVALS = 5']);
+  const routeHandler=view.slice(view.indexOf("document.addEventListener('teamsheet:route-change'"),view.indexOf("document.addEventListener('teamsheet:data-rendered'"));
+  excludesAll(routeHandler,['loadMiniLeagueExposure']);
+  excludesAll(view,['projected rival score','projected league position','must protect','must chase','effective ownership','optimiseTransfers(','xpOf(']);
+});
+
+test('exposure persistence stores only explicit rival choices while fetched squads remain session-only',()=>{
+  includesAll(state,['comparisonRivalsByLeague','setMiniLeagueComparisonRivals','clearMiniLeagueComparisonRivals']);
+  includesAll(view,['S.miniLeagueData={standings:{},rivals:{},exposure:{}}','excluded from aggregate denominators','membership and rank cannot be confirmed']);
+  excludesAll(state,['event_total','active_chip','captainCount','public picks']);
+});
+
