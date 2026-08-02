@@ -1,6 +1,6 @@
 # Teamsheet 2.0.4 — Mini Leagues
 
-Status: **Owner-approved implementation completed on the dedicated branch; draft PR review, exact build finalisation, physical iPhone and VoiceOver acceptance remain outstanding.**
+Status: **Owner-approved implementation completed and verified for draft PR review. Not merged. Physical iPhone and VoiceOver acceptance remain outstanding.**
 
 ## Outcome
 
@@ -90,4 +90,4 @@ The full existing model, provider, evidence, security, build, Team and Transfers
 - Rival public picks may be absent or incomplete.
 - Physical iPhone layout, text scaling, one-handed use and Safari Back behaviour require owner review.
 - VoiceOver reading order, focus restoration and live-region behaviour require owner review.
-- Exact source/deployable commit identities, two-build byte equality and generated hashes are recorded during finalisation before this PR is ready for merge.
+- Verified source `aef1ae2328068fae95559632db5f74f4a2854a1a` completed 491/491 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`.

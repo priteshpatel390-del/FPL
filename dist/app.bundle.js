@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"b27a7e614fcef87e","commit":"f2f184fb9890a820e91ae240b27241e0d76f41ef"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"b27a7e614fcef87e96a66371100e9ad328b0db532bed2c8d771cb0fb7a8f011b","commit":"f2f184fb9890a820e91ae240b27241e0d76f41ef","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"0b478ffa17f3d03d","commit":"aef1ae2328068fae95559632db5f74f4a2854a1a"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"0b478ffa17f3d03d33f6040c6c0512c5e16a09506bfa92327c6eff75bd8b5014","commit":"aef1ae2328068fae95559632db5f74f4a2854a1a","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -509,7 +509,23 @@ function validateEntry(payload) {
   if (typeof payload.name !== 'string')
     issues.push(mkIssue('fpl', '/entry/', 'entry_missing_field', 'partial', 1,
       { fields: ['name'] }));
-  return { value: payload, issues };
+  let value = payload;
+  if (payload.leagues !== undefined && payload.leagues !== null) {
+    if (!isObj(payload.leagues) || !Array.isArray(payload.leagues.classic)) {
+      issues.push(mkIssue('fpl', '/entry/', 'entry_classic_leagues_not_array', 'partial', 1,
+        { fields: ['leagues.classic'] }));
+      value = { ...payload, leagues: { ...(isObj(payload.leagues) ? payload.leagues : {}), classic: [] } };
+    } else {
+      const filtered = filterRows(payload.leagues.classic,
+        row => isObj(row) && isId(row.id) && typeof row.name === 'string', row => String(row.id));
+      if (filtered.invalid)
+        issues.push(mkIssue('fpl', '/entry/', 'entry_invalid_classic_leagues', 'partial', filtered.invalid));
+      if (filtered.duplicate)
+        issues.push(mkIssue('fpl', '/entry/', 'entry_duplicate_classic_leagues', 'partial', filtered.duplicate));
+      value = { ...payload, leagues: { ...payload.leagues, classic: filtered.kept } };
+    }
+  }
+  return { value, issues };
 }
 
 /* ---- FPL /entry/{id}/event/{gw}/picks/ (own AND rival) ----------------
@@ -572,15 +588,24 @@ function validateStandings(payload) {
       'standings_missing_results', 'fatal', 1, { fields: ['standings.results'] })] };
 
   const issues = [];
+  const numericLike = value => isNum(value) || (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
   const { kept, invalid, duplicate } = filterRows(payload.standings.results,
-    r => isObj(r) && isId(r.entry), r => String(r.entry));
+    r => isObj(r) && isId(r.entry) && numericLike(r.rank) && numericLike(r.total) &&
+      typeof r.entry_name === 'string' && typeof r.player_name === 'string', r => String(r.entry));
   if (invalid)
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_rows',
       'partial', invalid));
   if (duplicate)
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_duplicate_entry',
       'partial', duplicate));
-  return { value: { ...payload, standings: { ...payload.standings, results: kept } }, issues };
+  if (!isObj(payload.league) || typeof payload.league.name !== 'string')
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_missing_league_name',
+      'partial', 1, { fields: ['league.name'] }));
+  if (payload.standings.has_next !== undefined && typeof payload.standings.has_next !== 'boolean')
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_pagination',
+      'partial', 1, { fields: ['standings.has_next'] }));
+  return { value: { ...payload, standings: { ...payload.standings, results: kept,
+    has_next: typeof payload.standings.has_next === 'boolean' ? payload.standings.has_next : false } }, issues };
 }
 
 /* ---- Understat (post-parse) ------------------------------------------
@@ -1035,7 +1060,6 @@ function currentConfig(){
     teamId: $('teamId').value.replace(/\D/g,''),
     ft: num($('ftCount').value),
     bank: num($('bankIn').value),
-    leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
     useUstat: $('useUstat').checked,
     transferHorizon: Number($('trHorizon')?.value || 6),
@@ -1058,6 +1082,141 @@ async function cacheGet(key, season){
   if(season && env.season && env.season !== season) return null;
   return env.payload ?? null;
 }
+
+
+/* ===== src/ui/mini-leagues-state.mjs ===== */
+
+const MINI_LEAGUE_STATE_VERSION = 1;
+const K_MINI_LEAGUES = 'fpl:mini-leagues';
+const K_LEGACY_LEAGUES = 'fpl:leagues';
+const MAX_PINNED_RIVALS = 5;
+
+function miniLeagueId(value){
+  const id=String(value??'').replace(/\D/g,'');
+  return id && id.length<=12 && Number(id)>0 ? id : '';
+}
+function miniLeagueText(value,max=100){ return typeof value==='string' ? value.trim().slice(0,max) : ''; }
+function miniLeagueRecord(value={}){
+  const id=miniLeagueId(value.id??value.leagueId);
+  if(!id) return null;
+  return {id,name:miniLeagueText(value.name??value.localName,100),primary:Boolean(value.primary)};
+}
+function miniLeagueRivalRecord(value={}){
+  const id=miniLeagueId(value.id??value.entry);
+  if(!id) return null;
+  return {id,name:miniLeagueText(value.name??value.entry_name??value.player_name,100)};
+}
+function uniqueLeagueRecords(values=[]){
+  const map=new Map();
+  values.forEach(value=>{
+    const row=miniLeagueRecord(value); if(!row) return;
+    const previous=map.get(row.id);
+    if(previous) map.set(row.id,{...previous,name:previous.name||row.name,primary:previous.primary||row.primary});
+    else map.set(row.id,row);
+  });
+  return [...map.values()];
+}
+function emptyMiniLeagueState(){
+  return {version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId:'',selectedRivalByLeague:{},saved:[],pinnedRivals:{}};
+}
+function normaliseMiniLeagueState(value={}){
+  const base=emptyMiniLeagueState();
+  if(!value||typeof value!=='object'||Array.isArray(value)) return base;
+  const saved=uniqueLeagueRecords(value.saved);
+  let selectedLeagueId=miniLeagueId(value.selectedLeagueId);
+  if(selectedLeagueId&&!saved.some(row=>row.id===selectedLeagueId)) saved.unshift({id:selectedLeagueId,name:'',primary:false});
+  if(!selectedLeagueId) selectedLeagueId=saved.find(row=>row.primary)?.id||saved[0]?.id||'';
+  const selectedRivalByLeague={};
+  for(const [leagueId,rivalId] of Object.entries(value.selectedRivalByLeague||{})){
+    const lid=miniLeagueId(leagueId),rid=miniLeagueId(rivalId); if(lid&&rid) selectedRivalByLeague[lid]=rid;
+  }
+  const pinnedRivals={};
+  for(const [leagueId,rivals] of Object.entries(value.pinnedRivals||{})){
+    const lid=miniLeagueId(leagueId); if(!lid||!Array.isArray(rivals)) continue;
+    const rows=[]; const seen=new Set();
+    rivals.forEach(value=>{ const row=miniLeagueRivalRecord(value); if(row&&!seen.has(row.id)&&rows.length<MAX_PINNED_RIVALS){seen.add(row.id);rows.push(row);} });
+    if(rows.length) pinnedRivals[lid]=rows;
+  }
+  if(saved.some(row=>row.primary)){
+    let seenPrimary=false;
+    saved.forEach(row=>{ if(row.primary&&!seenPrimary) seenPrimary=true; else row.primary=false; });
+  }
+  return {version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId,selectedRivalByLeague,saved,pinnedRivals};
+}
+function entryClassicLeagues(entry=S.entry){
+  const rows=entry?.leagues?.classic;
+  if(!Array.isArray(rows)) return [];
+  return uniqueLeagueRecords(rows.map(row=>({id:row.id,name:row.name,primary:false})));
+}
+function migrateMiniLeagueState({stored,legacyConfig,legacyLeagues,entry}={}){
+  if(stored?.version===MINI_LEAGUE_STATE_VERSION) return normaliseMiniLeagueState(stored);
+  const discovered=entryClassicLeagues(entry);
+  const saved=uniqueLeagueRecords([...(Array.isArray(legacyLeagues)?legacyLeagues:[]),...discovered]);
+  const legacySelected=miniLeagueId(legacyConfig?.leagueId);
+  if(legacySelected&&!saved.some(row=>row.id===legacySelected)) saved.unshift({id:legacySelected,name:'',primary:false});
+  return normaliseMiniLeagueState({version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId:legacySelected||saved[0]?.id||'',saved});
+}
+function syncMiniLeagueAlias(){ S.leagues=S.miniLeagues.saved; }
+async function persistMiniLeagueState(){
+  const state=normaliseMiniLeagueState(S.miniLeagues);
+  S.miniLeagues=state; syncMiniLeagueAlias(); await sset(K_MINI_LEAGUES,state); return state;
+}
+async function initMiniLeagueState(legacyConfig={}){
+  const stored=await sget(K_MINI_LEAGUES);
+  const legacyLeagues=await sget(K_LEGACY_LEAGUES);
+  S.miniLeagues=migrateMiniLeagueState({stored,legacyConfig,legacyLeagues,entry:S.entry});
+  syncMiniLeagueAlias(); await persistMiniLeagueState(); return S.miniLeagues;
+}
+async function mergeDiscoveredMiniLeagues(entry=S.entry){
+  const state=normaliseMiniLeagueState(S.miniLeagues);
+  const discovered=entryClassicLeagues(entry);
+  const names=new Map(discovered.map(row=>[row.id,row.name]));
+  state.saved=uniqueLeagueRecords([...state.saved,...discovered]).map(row=>({...row,name:row.name||names.get(row.id)||''}));
+  if(!state.selectedLeagueId) state.selectedLeagueId=state.saved.find(row=>row.primary)?.id||state.saved[0]?.id||'';
+  S.miniLeagues=state; return persistMiniLeagueState();
+}
+function selectedMiniLeague(){
+  const state=normaliseMiniLeagueState(S.miniLeagues);
+  return state.saved.find(row=>row.id===state.selectedLeagueId)||null;
+}
+function miniLeagueMembership(leagueId,entry=S.entry){
+  const id=miniLeagueId(leagueId);
+  return (entry?.leagues?.classic||[]).find(row=>miniLeagueId(row?.id)===id)||null;
+}
+async function upsertMiniLeague(id,name='',options={}){
+  id=miniLeagueId(id); if(!id) return null;
+  const state=normaliseMiniLeagueState(S.miniLeagues);
+  const existing=state.saved.find(row=>row.id===id);
+  if(existing){ if(miniLeagueText(name)) existing.name=miniLeagueText(name); }
+  else state.saved.push({id,name:miniLeagueText(name),primary:false});
+  if(options.primary){ state.saved.forEach(row=>row.primary=row.id===id); }
+  if(options.select!==false) state.selectedLeagueId=id;
+  S.miniLeagues=state; await persistMiniLeagueState(); return selectedMiniLeague();
+}
+async function rememberLeague(id,name){ return upsertMiniLeague(id,name,{select:true}); }
+async function selectMiniLeague(id){ return upsertMiniLeague(id,'',{select:true}); }
+async function removeMiniLeague(id){
+  id=miniLeagueId(id); const state=normaliseMiniLeagueState(S.miniLeagues);
+  state.saved=state.saved.filter(row=>row.id!==id); delete state.selectedRivalByLeague[id]; delete state.pinnedRivals[id];
+  if(state.selectedLeagueId===id) state.selectedLeagueId=state.saved.find(row=>row.primary)?.id||state.saved[0]?.id||'';
+  S.miniLeagues=state; return persistMiniLeagueState();
+}
+async function selectMiniLeagueRival(leagueId,rival){
+  const lid=miniLeagueId(leagueId),row=miniLeagueRivalRecord(rival); if(!lid||!row) return null;
+  const state=normaliseMiniLeagueState(S.miniLeagues); state.selectedRivalByLeague[lid]=row.id; S.miniLeagues=state; await persistMiniLeagueState(); return row;
+}
+async function togglePinnedMiniLeagueRival(leagueId,rival){
+  const lid=miniLeagueId(leagueId),row=miniLeagueRivalRecord(rival); if(!lid||!row) return false;
+  const state=normaliseMiniLeagueState(S.miniLeagues); const rows=state.pinnedRivals[lid]||[]; const index=rows.findIndex(item=>item.id===row.id);
+  if(index>=0) rows.splice(index,1); else if(rows.length<MAX_PINNED_RIVALS) rows.push(row); else return false;
+  if(rows.length) state.pinnedRivals[lid]=rows; else delete state.pinnedRivals[lid];
+  S.miniLeagues=state; await persistMiniLeagueState(); return index<0;
+}
+function miniLeagueSelectedRivalId(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).selectedRivalByLeague[miniLeagueId(leagueId)]||''; }
+function miniLeaguePinnedRivals(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).pinnedRivals[miniLeagueId(leagueId)]||[]; }
+
+S.miniLeagues=emptyMiniLeagueState();
+S.leagues=[];
 
 
 /* ===== src/providers/registry.mjs ===== */
@@ -3319,6 +3478,7 @@ async function loadAll(options = {}){
         const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
         recordIssues('fpl', '/entry/history/', histV.issues);
         const hist = histV.value;
+        S.history = hist;
         if(hist && hist.chips) S.chipsUsed = hist.chips.map(c => `${c.name} (GW${c.event})`);
         if(S.entry.last_deadline_bank != null && !num($('bankIn').value))
           $('bankIn').value = (S.entry.last_deadline_bank/10).toFixed(1);
@@ -3499,7 +3659,10 @@ const TEAMSHEET_VALID_ROUTES = new Set([
   '#/settings/research/players',
   '#/settings/evidence',
   '#/settings/data',
-  '#/settings/help'
+  '#/settings/help',
+  '#/leagues/standings',
+  '#/leagues/rival',
+  '#/leagues/manage'
 ]);
 
 function normaliseTeamsheetRoute(value=''){
@@ -3510,7 +3673,9 @@ function normaliseTeamsheetRoute(value=''){
   else if(!route.startsWith('#/')) route='#/'+route.replace(/^\/+/, '');
   route=route.replace(/\/+$/,'');
   if(Object.prototype.hasOwnProperty.call(TEAMSHEET_ROUTE_ALIASES,route)) return TEAMSHEET_ROUTE_ALIASES[route];
-  return TEAMSHEET_VALID_ROUTES.has(route)?route:'#/team';
+  if(TEAMSHEET_VALID_ROUTES.has(route)) return route;
+  if(route.startsWith('#/leagues/')) return '#/leagues';
+  return '#/team';
 }
 
 function teamsheetRouteMeta(value=''){
@@ -3520,6 +3685,9 @@ function teamsheetRouteMeta(value=''){
     '#/transfers':{title:'Transfers',primary:'transfers'},
     '#/fixtures':{title:'Fixtures',primary:'fixtures'},
     '#/leagues':{title:'Leagues',primary:'leagues'},
+    '#/leagues/standings':{title:'League table',primary:'leagues'},
+    '#/leagues/rival':{title:'Rival comparison',primary:'leagues'},
+    '#/leagues/manage':{title:'Manage leagues',primary:'leagues'},
     '#/settings':{title:'Settings',primary:'settings'},
     '#/settings/team-account':{title:'Team & Account',primary:'settings',settings:'team-account'},
     '#/settings/research/players':{title:'Player Explorer',primary:'settings',settings:'research-players'},
@@ -3642,7 +3810,7 @@ function setupAppShell(){
   const leaguesHint=leaguesView.querySelector('.hint');
   if(leaguesHeading) leaguesHeading.textContent='Leagues';
   if(leaguesEyebrow) leaguesEyebrow.textContent='Mini leagues';
-  if(leaguesHint) leaguesHint.textContent='Compare your squad with saved FPL mini leagues. Rank movement and deeper league intelligence arrive in later Teamsheet 2.0 checkpoints.';
+  if(leaguesHint) leaguesHint.textContent='Official position, points gaps and factual public-squad comparisons. Projected rank and protect/chase strategy are not included.';
   const playersHeading=playersView.querySelector('h2');
   const playersEyebrow=playersView.querySelector('.eyebrow');
   if(playersHeading) playersHeading.textContent='Player Explorer';
@@ -3786,7 +3954,7 @@ function setupAppShell(){
     if(globalThis.location?.hash!==route) globalThis.history?.replaceState?.(null,'',route);
 
     topLevelViews.forEach(view=>{
-      const active=route.startsWith('#/settings')?view===settingsView:view===routeNodes.get(route);
+      const active=route.startsWith('#/settings')?view===settingsView:route.startsWith('#/leagues')?view===leaguesView:view===routeNodes.get(route);
       view.hidden=!active;
       view.setAttribute('aria-hidden',active?'false':'true');
     });
@@ -3800,7 +3968,7 @@ function setupAppShell(){
     document.title=`${meta.title} — Teamsheet`;
     globalThis.scrollTo?.({top:0,left:0});
     if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):(routeNodes.get(route)||teamView);
+      const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
       const heading=activeNode.querySelector('h2');
       heading?.setAttribute?.('tabindex','-1');
       heading?.focus?.({preventScroll:true});
@@ -6347,6 +6515,213 @@ installTransferPlannerCommittedControlRefresh();
 
 
 
+/* ===== src/ui/mini-leagues-view.mjs ===== */
+
+const MINI_LEAGUE_PAGE_SIZE=50;
+let miniLeagueStandingsRequest=0;
+let miniLeagueRivalRequest=0;
+let miniLeagueReady=false;
+S.miniLeagueData={standings:{},rivals:{}};
+
+function miniLeagueNumber(value){ if(value===null||value===undefined||value==='') return null; const n=Number(value); return Number.isFinite(n)?n:null; }
+function miniLeagueOrdinal(value){
+  const n=miniLeagueNumber(value); if(n===null) return '—';
+  const v=Math.abs(Math.trunc(n)),mod100=v%100,suffix=mod100>=11&&mod100<=13?'th':v%10===1?'st':v%10===2?'nd':v%10===3?'rd':'th';
+  return `${v}${suffix}`;
+}
+function miniLeagueMovement(current,last){
+  const c=miniLeagueNumber(current),l=miniLeagueNumber(last);
+  if(c===null||l===null) return {delta:null,label:'Previous position unavailable',direction:'unknown'};
+  const delta=l-c;
+  if(delta>0) return {delta,label:`Up ${delta} place${delta===1?'':'s'}`,direction:'up'};
+  if(delta<0) return {delta,label:`Down ${Math.abs(delta)} place${delta===-1?'':'s'}`,direction:'down'};
+  return {delta:0,label:'No position change',direction:'same'};
+}
+function miniLeagueNearestRows(rows,userEntry){
+  const user=rows.find(row=>String(row.entry)===String(userEntry));
+  if(!user) return {user:null,above:null,below:null,leader:rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank))[0]||null};
+  const sorted=rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank)); const index=sorted.findIndex(row=>String(row.entry)===String(userEntry));
+  return {user,above:index>0?sorted[index-1]:null,below:index>=0&&index<sorted.length-1?sorted[index+1]:null,leader:sorted[0]||null};
+}
+function miniLeagueCompareSquads(ownSquad,rivalPicks){
+  const own=[...new Set((ownSquad||[]).map(row=>Number(row?.p?.id??row?.element)).filter(Number.isFinite))];
+  const rival=[...new Set((rivalPicks||[]).map(row=>Number(row?.element)).filter(Number.isFinite))];
+  const ownSet=new Set(own),rivalSet=new Set(rival);
+  return {overlap:own.filter(id=>rivalSet.has(id)),onlyOwn:own.filter(id=>!rivalSet.has(id)),onlyRival:rival.filter(id=>!ownSet.has(id)),ownCount:own.length,rivalCount:rival.length};
+}
+function miniLeagueStatusCopy(){
+  if(!S.seasonLive) return {label:'Pre-season',copy:'No completed Gameweek yet. Official standings and public rival squads will appear when FPL publishes them.',provisional:false};
+  const event=S.boot?.events?.find(row=>row.id===S.currentGW);
+  if(event?.finished&&event?.data_checked) return {label:`Official FPL — GW${S.currentGW} complete`,copy:'Scores and positions are confirmed by the latest checked Official FPL response.',provisional:false};
+  return {label:'Official FPL — provisional',copy:`Scores and positions may change while GW${S.currentGW||'—'} is live or awaiting final checks.`,provisional:true};
+}
+function miniLeagueAgeLabel(updatedAt){ const ms=Date.now()-Number(updatedAt||0); if(!Number.isFinite(ms)||ms<60000) return 'Updated now'; const mins=Math.floor(ms/60000); return mins<60?`Updated ${mins}m ago`:`Updated ${Math.floor(mins/60)}h ago`; }
+function miniLeagueGap(user,row){
+  const a=miniLeagueNumber(user?.total),b=miniLeagueNumber(row?.total); if(a===null||b===null) return null; return Math.abs(a-b);
+}
+function miniLeagueManagerName(row){ return row?.entry_name||row?.player_name||`Manager ${row?.entry||''}`; }
+function miniLeaguePlayerName(id){ return S.byId?.[id]?.web_name||`Player ${id}`; }
+function miniLeagueNavigate(route){ globalThis.__teamsheetNavigate?.(route); }
+function miniLeagueSelectedData(){ const league=selectedMiniLeague(); return league?S.miniLeagueData.standings[league.id]||null:null; }
+function miniLeagueSetBusy(node,busy){ if(node){node.setAttribute('aria-busy',busy?'true':'false');} }
+function miniLeagueAnnounce(text){ const node=$('leagueLiveStatus'); if(node) node.textContent=text; }
+
+function miniLeagueSuggestedRivals(data){
+  if(!data) return [];
+  const nearest=miniLeagueNearestRows(data.rows,S.teamId); const pinned=miniLeaguePinnedRivals(data.league.id);
+  const byId=new Map(data.rows.map(row=>[String(row.entry),row])); const out=[]; const seen=new Set([String(S.teamId)]);
+  const add=row=>{ if(!row||seen.has(String(row.entry))||out.length>=3) return; seen.add(String(row.entry)); out.push(row); };
+  pinned.forEach(item=>add(byId.get(String(item.id)))); add(nearest.above); add(nearest.below); add(nearest.leader);
+  return out;
+}
+function miniLeagueButton(label,attrs={}){ return el('button',{class:'btn ghost sm',type:'button',...attrs},label); }
+function miniLeagueLink(label,route,cls='btn ghost'){ return el('a',{class:cls,href:route},label); }
+function miniLeagueEmpty(title,copy,action){ return el('div',{class:'empty'},el('strong',{},title),copy,action?el('div',{class:'mt-12'},action):null); }
+
+async function loadMiniLeagueStandings({force=false}={}){
+  const league=selectedMiniLeague(); if(!league) return null;
+  const existing=S.miniLeagueData.standings[league.id]; if(existing&&!force) return existing;
+  const token=++miniLeagueStandingsRequest; miniLeagueAnnounce(`Loading ${league.name||'selected league'} standings.`); miniLeagueSetBusy($('leagueLandingOut'),true);
+  const membership=miniLeagueMembership(league.id); const rank=miniLeagueNumber(membership?.entry_rank); const pages=[1];
+  if(rank){ const rankPage=Math.ceil(rank/MINI_LEAGUE_PAGE_SIZE); pages.push(rankPage); if(rankPage>1) pages.push(rankPage-1); pages.push(rankPage+1); }
+  const responses=[]; const issues=[];
+  for(const page of [...new Set(pages)]){
+    const value=await api(`/leagues-classic/${league.id}/standings/?page_standings=${page}`,{optional:true});
+    const validated=validateStandings(value); issues.push(...validated.issues); if(validated.value) responses.push(validated.value);
+  }
+  if(token!==miniLeagueStandingsRequest) return null;
+  recordIssues('fpl','/leagues-classic/standings/',collapseIssues(issues));
+  if(!responses.length){
+    if(existing&&!existing.error&&Array.isArray(existing.rows)&&existing.rows.length){ S.miniLeagueData.standings[league.id]={...existing,stale:true,refreshError:true}; miniLeagueSetBusy($('leagueLandingOut'),false); renderMiniLeagues(); miniLeagueAnnounce('Refresh failed. Showing the last standings loaded in this session.'); return existing; }
+    S.miniLeagueData.standings[league.id]={league,error:'unavailable',updatedAt:Date.now(),rows:[],hasNext:false};
+    miniLeagueSetBusy($('leagueLandingOut'),false); renderMiniLeagues(); miniLeagueAnnounce('League standings are unavailable through the public FPL data used by Teamsheet.'); return null;
+  }
+  const map=new Map(); responses.flatMap(value=>value.standings.results).forEach(row=>map.set(String(row.entry),row));
+  const first=responses[0],resolvedName=league.name||first.league?.name||'';
+  if(resolvedName!==league.name) await upsertMiniLeague(league.id,resolvedName,{select:true});
+  const data={league:{id:league.id,name:resolvedName||`League ${league.id}`},rows:[...map.values()],hasNext:Boolean(first.standings?.has_next),browsePage:1,browseHasNext:Boolean(first.standings?.has_next),updatedAt:Date.now(),provisional:miniLeagueStatusCopy().provisional,stale:false,refreshError:false};
+  S.miniLeagueData.standings[league.id]=data; renderMiniLeagues(); miniLeagueSetBusy($('leagueLandingOut'),false);
+  const nearest=miniLeagueNearestRows(data.rows,S.teamId); miniLeagueAnnounce(nearest.user?`Standings loaded. Your position is ${miniLeagueOrdinal(nearest.user.rank)}.`:'Standings loaded. Your connected team was not found on the loaded pages.');
+  return data;
+}
+async function loadNextMiniLeagueStandingsPage(){
+  const league=selectedMiniLeague(),data=miniLeagueSelectedData(); if(!league||!data||!data.browseHasNext) return data;
+  const page=(data.browsePage||1)+1,token=++miniLeagueStandingsRequest; miniLeagueAnnounce(`Loading standings page ${page}.`);
+  const raw=await api(`/leagues-classic/${league.id}/standings/?page_standings=${page}`,{optional:true}); const validated=validateStandings(raw);
+  if(token!==miniLeagueStandingsRequest) return null; recordIssues('fpl','/leagues-classic/standings/',validated.issues);
+  if(!validated.value){ miniLeagueAnnounce('The next standings page is unavailable. Existing rows remain visible.'); return data; }
+  const map=new Map(data.rows.map(row=>[String(row.entry),row])); validated.value.standings.results.forEach(row=>map.set(String(row.entry),row));
+  Object.assign(data,{rows:[...map.values()],browsePage:page,browseHasNext:Boolean(validated.value.standings.has_next),updatedAt:Date.now(),stale:false,refreshError:false});
+  renderMiniLeagues('#/leagues/standings'); miniLeagueAnnounce(`Standings page ${page} loaded.`); return data;
+}
+async function loadMiniLeagueRival({force=false}={}){
+  const league=selectedMiniLeague(),data=miniLeagueSelectedData(); if(!league||!data||!S.currentGW) return null;
+  const rivalId=miniLeagueSelectedRivalId(league.id); if(!rivalId) return null;
+  const key=`${league.id}|${rivalId}|${S.currentGW}`; if(S.miniLeagueData.rivals[key]&&!force) return S.miniLeagueData.rivals[key];
+  const row=data.rows.find(item=>String(item.entry)===String(rivalId)); if(!row) return null;
+  const token=++miniLeagueRivalRequest; miniLeagueAnnounce(`Loading comparison with ${miniLeagueManagerName(row)}.`); miniLeagueSetBusy($('leagueRivalOut'),true);
+  const raw=await api(`/entry/${rivalId}/event/${S.currentGW}/picks/`,{optional:true,timeout:9000}); const validated=validatePicks(raw,'/entry/event/picks/ (selected rival)');
+  if(token!==miniLeagueRivalRequest) return null;
+  recordIssues('fpl','/entry/event/picks/ (selected rival)',validated.issues);
+  S.miniLeagueData.rivals[key]={row,picks:validated.value,updatedAt:Date.now(),error:validated.value?null:'unavailable'};
+  renderMiniLeagues('#/leagues/rival'); miniLeagueSetBusy($('leagueRivalOut'),false);
+  miniLeagueAnnounce(validated.value?`Rival comparison loaded for ${miniLeagueManagerName(row)}.`:`This rival's public squad is not available for the selected Gameweek.`);
+  return S.miniLeagueData.rivals[key];
+}
+
+function renderLeaguePickerSummary(){
+  const league=selectedMiniLeague(),button=$('leaguePickerButton'); if(!button) return;
+  button.textContent=league?.name||'Choose a league'; button.setAttribute('aria-label',league?`Change league. Current league ${league.name||league.id}`:'Choose a Mini League');
+}
+function renderMiniLeagueLanding(){
+  const out=$('leagueLandingOut'); if(!out) return; const league=selectedMiniLeague(),data=miniLeagueSelectedData(),status=miniLeagueStatusCopy(); renderLeaguePickerSummary();
+  if(!league){ setChildren(out,miniLeagueEmpty('Choose your Mini League','Select a public classic league from your connected FPL entry, or add its numeric league ID.',miniLeagueLink('Choose league','#/leagues/manage','btn'))); return; }
+  if(data?.error){ setChildren(out,miniLeagueEmpty('League standings unavailable','This league is unavailable through the public FPL data used by Teamsheet. Your saved league has not been removed.',miniLeagueButton('Try again',{onclick:()=>loadMiniLeagueStandings({force:true})}))); return; }
+  if(!data){ setChildren(out,miniLeagueEmpty('Ready to check your league','Teamsheet will load official position, gaps and nearby rivals without scanning every squad.',miniLeagueButton('Load standings',{onclick:()=>loadMiniLeagueStandings({force:true})}))); return; }
+  const membership=miniLeagueMembership(league.id),nearest=miniLeagueNearestRows(data.rows,S.teamId); const user=nearest.user;
+  const rank=user?.rank??membership?.entry_rank??null,total=user?.total??S.entry?.summary_overall_points??null,last=user?.last_rank??membership?.entry_last_rank??null,movement=miniLeagueMovement(rank,last);
+  const hero=el('section',{class:'league-hero','aria-label':`${data.league.name} official position`},
+    el('div',{class:'league-hero-head'},el('div',{},el('span',{class:'eyebrow'},status.label),el('h3',{},data.league.name)),miniLeagueButton('Refresh',{onclick:()=>loadMiniLeagueStandings({force:true})})),
+    rank!==null?el('div',{class:'league-position'},el('strong',{},miniLeagueOrdinal(rank)),el('span',{},total!==null?`${total} points`:'Official points unavailable')):el('div',{class:'league-position'},el('strong',{},'Position unavailable'),el('span',{},'Your connected team was not found on the loaded standings pages.')),
+    el('p',{class:'league-status-copy'},status.copy),
+    el('p',{class:'league-status-copy'},miniLeagueAgeLabel(data.updatedAt)),
+    data.stale?el('div',{class:'note plain'},'Refresh failed. Showing the last standings loaded in this session; this view may be out of date.'):null,
+    el('span',{class:`flag ${movement.direction==='up'?'rise':movement.direction==='down'?'fall':'dark'}`},movement.label));
+  const gaps=el('div',{class:'league-gap-grid'},
+    el('div',{class:'league-gap'},el('span',{},'Above'),el('strong',{},nearest.above&&user?`${miniLeagueGap(user,nearest.above)} pts`:'—'),nearest.above?el('small',{},miniLeagueManagerName(nearest.above)):null),
+    el('div',{class:'league-gap current'},el('span',{},'You'),el('strong',{},total??'—'),el('small',{},rank!==null?miniLeagueOrdinal(rank):'Not located')),
+    el('div',{class:'league-gap'},el('span',{},'Below'),el('strong',{},nearest.below&&user?`${miniLeagueGap(user,nearest.below)} pts`:'—'),nearest.below?el('small',{},miniLeagueManagerName(nearest.below)):null));
+  const rivals=miniLeagueSuggestedRivals(data); const rivalSection=el('section',{class:'league-section'},el('div',{class:'league-section-head'},el('h3',{},'Nearest rivals'),miniLeagueLink('View standings','#/leagues/standings','league-text-link')),
+    rivals.length?el('div',{class:'league-rival-list'},rivals.map(row=>renderMiniLeagueRivalCard(row,user,data.league.id))):el('p',{class:'status'},'No nearby rival rows were available on the loaded standings pages.'));
+  const actions=el('div',{class:'league-actions'},miniLeagueLink('View standings','#/leagues/standings','btn'),miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost'),miniLeagueLink('Review Team','#/team','btn ghost'),miniLeagueLink('Review Transfers','#/transfers','btn ghost'));
+  setChildren(out,hero,gaps,rivalSection,actions);
+}
+function renderMiniLeagueRivalCard(row,user,leagueId){
+  const gap=user?miniLeagueGap(user,row):null,movement=miniLeagueMovement(row.rank,row.last_rank); const pinned=miniLeaguePinnedRivals(leagueId).some(item=>item.id===String(row.entry));
+  return el('article',{class:'league-rival-card'},el('div',{class:'league-rival-copy'},el('strong',{},miniLeagueManagerName(row)),el('span',{},`${miniLeagueOrdinal(row.rank)} · ${row.total??'—'} points${gap!==null?` · ${gap} points ${Number(row.rank)<Number(user?.rank)?'above':'below'}`:''}`),el('small',{},movement.label)),
+    el('div',{class:'league-rival-actions'},miniLeagueButton(pinned?'Unpin':'Pin',{onclick:async()=>{await togglePinnedMiniLeagueRival(leagueId,{id:row.entry,name:miniLeagueManagerName(row)});renderMiniLeagues();}}),miniLeagueButton('Compare',{onclick:async()=>{await selectMiniLeagueRival(leagueId,{id:row.entry,name:miniLeagueManagerName(row)});miniLeagueNavigate('#/leagues/rival');}})));
+}
+function renderMiniLeagueStandings(){
+  const out=$('leagueStandingsOut'),data=miniLeagueSelectedData(); if(!out) return;
+  if(!data){ setChildren(out,miniLeagueEmpty('No standings loaded','Return to the League overview and load the selected league.',miniLeagueLink('Back to League','#/leagues','btn'))); return; }
+  const rows=data.rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank));
+  setChildren(out,el('div',{class:'league-standings-list'},rows.map(row=>{
+    const mine=String(row.entry)===String(S.teamId); const movement=miniLeagueMovement(row.rank,row.last_rank);
+    return el('article',{class:`league-standing-row${mine?' mine':''}`,'aria-label':`${mine?'Your team, ':''}${miniLeagueOrdinal(row.rank)}, ${miniLeagueManagerName(row)}, ${row.total??'points unavailable'} points, ${movement.label}`},
+      el('span',{class:'league-standing-rank'},miniLeagueOrdinal(row.rank)),el('span',{class:'league-standing-name'},el('strong',{},miniLeagueManagerName(row)),el('small',{},row.player_name&&row.player_name!==row.entry_name?row.player_name:movement.label)),el('span',{class:'league-standing-points'},row.total??'—'),
+      mine?el('span',{class:'flag info'},'Your team'):miniLeagueButton('Compare',{onclick:async()=>{await selectMiniLeagueRival(data.league.id,{id:row.entry,name:miniLeagueManagerName(row)});miniLeagueNavigate('#/leagues/rival');}}));
+  })),data.browseHasNext?el('div',{class:'mt-12'},miniLeagueButton('Load more standings',{onclick:()=>loadNextMiniLeagueStandingsPage()})):null,
+    data.hasNext?el('p',{class:'status mt-12'},'More standings exist. Teamsheet loads them only when requested and does not scan every rival squad.'):null);
+}
+function renderMiniLeagueRival(){
+  const out=$('leagueRivalOut'),league=selectedMiniLeague(),data=miniLeagueSelectedData(); if(!out) return;
+  if(!league||!data){ setChildren(out,miniLeagueEmpty('No rival selected','Load a league and choose a manager to compare.',miniLeagueLink('Back to League','#/leagues','btn'))); return; }
+  const rivalId=miniLeagueSelectedRivalId(league.id),row=data.rows.find(item=>String(item.entry)===String(rivalId));
+  if(!row){ setChildren(out,miniLeagueEmpty('Rival unavailable','The selected rival is not present in the loaded standings pages.',miniLeagueLink('View standings','#/leagues/standings','btn'))); return; }
+  const key=`${league.id}|${rivalId}|${S.currentGW}`,record=S.miniLeagueData.rivals[key];
+  if(!record){ setChildren(out,el('section',{class:'league-rival-summary'},el('h3',{},miniLeagueManagerName(row)),el('p',{},`${miniLeagueOrdinal(row.rank)} · ${row.total??'—'} points`),miniLeagueButton('Load public squad comparison',{onclick:()=>loadMiniLeagueRival({force:true})}))); return; }
+  if(record.error||!record.picks){ setChildren(out,miniLeagueEmpty('Rival squad unavailable',"This rival's public squad is not available for the selected Gameweek. Standings remain official and usable.",miniLeagueButton('Try again',{onclick:()=>loadMiniLeagueRival({force:true})}))); return; }
+  const comparison=miniLeagueCompareSquads(mySquad(),record.picks.picks),captain=record.picks.picks.find(item=>item.is_captain||Number(item.multiplier)>1),vice=record.picks.picks.find(item=>item.is_vice_captain),myCaptain=mySquad().find(item=>item.is_captain||Number(item.multiplier)>1);
+  const playerList=(title,ids)=>el('section',{class:'league-player-differences'},el('h3',{},title),ids.length?el('ul',{},ids.map(id=>el('li',{},miniLeaguePlayerName(id)))):el('p',{class:'status'},'None in the published comparison.'));
+  setChildren(out,el('section',{class:'league-rival-summary'},el('span',{class:'eyebrow'},'Official public picks'),el('h3',{},miniLeagueManagerName(row)),el('p',{},`${miniLeagueOrdinal(row.rank)} · ${row.total??'—'} points`),
+    el('div',{class:'league-comparison-facts'},el('div',{},el('span',{},'Squad overlap'),el('strong',{},`${comparison.overlap.length} of ${Math.max(comparison.ownCount,comparison.rivalCount,15)}`)),el('div',{},el('span',{},'Captain'),el('strong',{},captain?miniLeaguePlayerName(captain.element):'Unavailable')),el('div',{},el('span',{},'Captain context'),el('strong',{},captain&&myCaptain?Number(captain.element)===Number(myCaptain.p.id)?'Same captain':'Different captains':'Incomplete')),record.picks.active_chip?el('div',{},el('span',{},'Active chip'),el('strong',{},String(record.picks.active_chip))):null),
+    vice?el('p',{class:'status'},`Vice-captain: ${miniLeaguePlayerName(vice.element)}.`):null,
+    comparison.rivalCount<15?el('div',{class:'note plain'},`Comparison uses ${comparison.rivalCount} of 15 published picks. Missing players are excluded.`):null),
+    el('div',{class:'league-difference-grid'},playerList('Only in your squad',comparison.onlyOwn),playerList("Only in this rival's squad",comparison.onlyRival)),
+    el('div',{class:'note plain'},'These are factual squad differences, not transfer or differential recommendations. Low ownership alone is not a recommendation.'),
+    el('div',{class:'league-actions'},miniLeagueLink('Review captain on Team','#/team','btn'),miniLeagueLink('Review squad in Transfers','#/transfers','btn ghost')));
+}
+function renderLeagueManageList(){
+  const out=$('leagueManageList'); if(!out) return; const state=S.miniLeagues;
+  if(!state.saved.length){ setChildren(out,el('p',{class:'status'},'No saved leagues yet. Connect a public FPL team or add a league ID.')); return; }
+  setChildren(out,el('div',{class:'league-manage-list'},state.saved.map(row=>el('article',{class:`league-manage-row${row.id===state.selectedLeagueId?' selected':''}`},
+    el('div',{},el('strong',{},row.name||`League ${row.id}`),el('span',{class:'status'},row.primary?'Primary league':row.id===state.selectedLeagueId?'Currently selected':'Saved locally')),
+    el('div',{class:'league-manage-actions'},miniLeagueButton(row.id===state.selectedLeagueId?'Selected':'Select',{disabled:row.id===state.selectedLeagueId,onclick:async()=>{await selectMiniLeague(row.id);renderMiniLeagues();miniLeagueNavigate('#/leagues');}}),miniLeagueButton(row.primary?'Primary':'Make primary',{disabled:row.primary,onclick:async()=>{await upsertMiniLeague(row.id,row.name,{primary:true,select:true});renderMiniLeagues();}}),miniLeagueButton('Remove',{'aria-label':`Remove ${row.name||`league ${row.id}`}`,onclick:async()=>{await removeMiniLeague(row.id);delete S.miniLeagueData.standings[row.id];renderMiniLeagues();}}))))));
+}
+function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
+  if(!miniLeagueReady) return; renderLeaguePickerSummary(); renderLeagueManageList();
+  const sections=[['#/leagues',$('leagueLanding')],['#/leagues/standings',$('leagueStandings')],['#/leagues/rival',$('leagueRival')],['#/leagues/manage',$('leagueManage')]];
+  const resolved=sections.some(([key])=>key===route)?route:'#/leagues'; sections.forEach(([key,node])=>{if(node) node.hidden=key!==resolved;});
+  renderMiniLeagueLanding(); renderMiniLeagueStandings(); renderMiniLeagueRival();
+}
+function renderLeagueChips(){
+  if(Array.isArray(S.leagues)&&S.leagues!==S.miniLeagues.saved) S.miniLeagues={...S.miniLeagues,saved:S.leagues};
+  const legacy=$('leagueChips');
+  if(legacy) setChildren(legacy,(S.miniLeagues.saved||[]).map(row=>el('button',{class:'chip',type:'button'},row.name||row.id)));
+  renderLeagueManageList();
+}
+async function initMiniLeagues(legacyConfig={}){
+  await initMiniLeagueState(legacyConfig); miniLeagueReady=true;
+  const picker=$('leaguePickerButton'); picker?.addEventListener('click',()=>miniLeagueNavigate('#/leagues/manage'));
+  $('leagueRefreshButton')?.addEventListener('click',()=>loadMiniLeagueStandings({force:true}));
+  $('leagueManageForm')?.addEventListener('submit',async event=>{event.preventDefault();const id=miniLeagueId($('leagueId')?.value),name=$('leagueName')?.value?.trim()||'';if(!id){miniLeagueAnnounce("Add a valid league ID first — it is the number in the league's URL.");return;}await upsertMiniLeague(id,name,{select:true});if($('leagueId'))$('leagueId').value='';if($('leagueName'))$('leagueName').value='';renderMiniLeagues();miniLeagueNavigate('#/leagues');});
+  document.addEventListener('teamsheet:route-change',event=>{const route=event.detail?.route||'#/leagues';if(!route.startsWith('#/leagues')) return;renderMiniLeagues(route);if(selectedMiniLeague()&&!miniLeagueSelectedData()) void loadMiniLeagueStandings();if(route==='#/leagues/rival') void loadMiniLeagueRival();});
+  document.addEventListener('teamsheet:data-rendered',async()=>{await mergeDiscoveredMiniLeagues(S.entry);renderMiniLeagues();const route=globalThis.location?.hash||'';if(route.startsWith('#/leagues')&&selectedMiniLeague()) void loadMiniLeagueStandings({force:true});});
+  renderMiniLeagues();
+}
+
+
+
 /* ===== src/ui/views.mjs ===== */
 // Views import broadly; the bundler flattens everything into one scope.
 const elNode = el;
@@ -6690,108 +7065,6 @@ function renderSquad(){
 }
 
 /* ---------------------------------------------------------------------
-   VIEW — MINI-LEAGUE
-   --------------------------------------------------------------------- */
-/* ---------------------------------------------------------------------
-   SAVED LEAGUES — multiple mini-leagues as one-tap buttons. Comparing a
-   new ID saves it automatically; the name comes from the API if none given.
-   --------------------------------------------------------------------- */
-S.leagues = [];
-async function saveLeagues(){ await sset('fpl:leagues', S.leagues); }
-function renderLeagueChips(){
-  const el = $('leagueChips');
-  setChildren(el, S.leagues.flatMap((l,i) => {
-    const label = l.name || l.id;
-    return [elNode('button', {class:'chip', dataset:{lg:i}}, label),
-      elNode('button', {class:'chip chip-remove', dataset:{lgrm:i}, 'aria-label':`Remove ${label}`}, '×')];
-  }));
-  el.querySelectorAll('[data-lg]').forEach(b => b.addEventListener('click', () => {
-    const l = S.leagues[+b.dataset.lg];
-    $('leagueId').value = l.id; $('leagueName').value = l.name || '';
-    compareLeague();
-  }));
-  el.querySelectorAll('[data-lgrm]').forEach(b => b.addEventListener('click', async () => {
-    S.leagues.splice(+b.dataset.lgrm, 1);
-    await saveLeagues(); renderLeagueChips();
-  }));
-}
-async function rememberLeague(id, name){
-  const existing = S.leagues.find(l => l.id === id);
-  if(existing){ if(name) existing.name = name; }
-  else S.leagues.push({id, name: name || ''});
-  await saveLeagues(); renderLeagueChips();
-}
-
-async function compareLeague(){
-  const el = $('leagueOut'), id = $('leagueId').value.replace(/\D/g,'');
-  if(!id){ setChildren(el,noteNode('bad',"Add a league ID first — it's the number in your league's URL.")); return; }
-  if(!S.seasonLive || !S.currentGW){
-    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},"Rival squads aren't published yet"),"FPL only exposes other managers' picks once a gameweek has finished. This comes alive after GW1."));
-    return;
-  }
-  setChildren(el,elNode('p',{class:'status'},elNode('span',{class:'spinner'}),'Reading the league…'));
-  await saveCfg();
-  try{
-    const stV = validateStandings(await api('/leagues-classic/'+id+'/standings/', {optional:true}));
-    recordIssues('fpl', '/leagues-classic/standings/', stV.issues);
-    const st = stV.value;
-    if(!st || !st.standings){ setChildren(el,noteNode('bad',`League ${id} not found, or it's private.`)); return; }
-    await rememberLeague(id, $('leagueName').value.trim() || st.league?.name || '');
-    const n = +$('lgN').value;
-    const rivals = st.standings.results.slice(0, n).filter(r => String(r.entry) !== String(S.teamId));
-    setChildren(el,elNode('p',{class:'status'},elNode('span',{class:'spinner'}),`Reading ${rivals.length} rival squads…`));
-    const rawPicks = await pool(rivals, r => api(`/entry/${r.entry}/event/${S.currentGW}/picks/`, {optional:true, timeout:9000}), 4);
-    // D-14: each rival squad is validated individually; issues are collapsed so
-    // 20 bad responses cannot flood S.dataIssues with near-identical entries.
-    const rivalIssues = [];
-    const picks = rawPicks.map(pk => {
-      const v = validatePicks(pk, '/entry/event/picks/ (rival)');
-      if(v.issues.length) rivalIssues.push(...v.issues);
-      return v.value;
-    });
-    recordIssues('fpl', '/entry/event/picks/ (rival)', collapseIssues(rivalIssues));
-
-    const own = {}, cap = {};
-    let counted = 0;
-    picks.forEach(pk => {
-      if(!pk || !pk.picks) return;
-      counted++;
-      pk.picks.forEach(x => {
-        own[x.element] = (own[x.element]||0) + 1;
-        if(x.is_captain) cap[x.element] = (cap[x.element]||0) + 1;
-      });
-    });
-    if(!counted){ setChildren(el,noteNode('bad','Could not read any rival squads — the relays may be rate limiting. Try a smaller number of rivals.')); return; }
-
-    const mine = new Set(mySquad().map(s => s.p.id));
-    const gw = S.nextGW;
-    const rows = Object.keys(own).map(pid => {
-      const p = S.byId[pid]; if(!p) return null;
-      const o = own[pid]/counted*100, c = (cap[pid]||0)/counted*100;
-      return {p, own:o, cap:c, eo:o + c, mine:mine.has(+pid), xp:xpOf(p, gw, 6).total};
-    }).filter(Boolean);
-
-    const threats = rows.filter(r => !r.mine && r.own >= 35).sort((a,b) => b.eo - a.eo).slice(0,10);
-    const diffs   = rows.filter(r =>  r.mine && r.own <= 25).sort((a,b) => b.xp - a.xp).slice(0,10);
-    const myOnly  = [...mine].filter(x => !own[x]).map(x => S.byId[x]).filter(Boolean);
-
-    const kpi=(k,v)=>elNode('div',{class:'kpi'},elNode('div',{class:'k'},k),elNode('div',{class:'v'},v)), nodes=[];
-    nodes.push(elNode('div',{class:'kpis'},kpi('Rivals read',counted),kpi('My rank',(st.standings.results.find(r=>String(r.entry)===String(S.teamId))||{}).rank??'—'),kpi('Unique to me',myOnly.length)),
-      elNode('p',{class:'status mb-12'},`${st.league.name} · effective ownership = owned % + captained %.`),elNode('h3',{},"Biggest threats you don't own"));
-    const threatBody=elNode('tbody');
-    threats.forEach(r=>threatBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name,flagNodes(r.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[r.p.element_type]||''),` ${S.teams[r.p.team]?.short_name||''} · £${(r.p.now_cost/10).toFixed(1)}m`)),cell(`${r.own.toFixed(0)}%`,'num'),cell(`${r.cap.toFixed(0)}%`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${r.eo>80?'hot':''}`},`${r.eo.toFixed(0)}%`)),cell(fmt1(r.xp),'num'))));
-    nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Owned','num'),head('Capt','num'),head('EO','num'),head('xP 6GW','num'))),threatBody)));
-    if(!threats.length) nodes.push(noteNode('good',"Nothing widely owned that you're missing — you're covered on the template."));
-    nodes.push(elNode('h3',{class:'mt-18'},'Your differentials'));
-    if(diffs.length){ const diffBody=elNode('tbody'); diffs.forEach(r=>diffBody.appendChild(elNode('tr',{},elNode('td',{},elNode('span',{class:'pname'},r.p.web_name),elNode('span',{class:'pmeta'},S.teams[r.p.team]?.short_name||'')),cell(`${r.own.toFixed(0)}%`,'num'),cell(fmt1(r.xp),'num')))); nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('Rival own','num'),head('xP 6GW','num'))),diffBody))); }
-    if(myOnly.length) nodes.push(noteNode('',elNode('b',{},'Owned by nobody else in the league:'),` ${myOnly.map(p=>p.web_name).join(', ')}. These are where you win or lose the league.`));
-    setChildren(el,nodes);
-  }catch(e){
-    setChildren(el,noteNode('bad',"Couldn't read that league — the relays may be busy. Try again, or reduce the number of rivals."));
-  }
-}
-
-/* ---------------------------------------------------------------------
    VIEW — ASK
    --------------------------------------------------------------------- */
 function md(t){
@@ -6953,7 +7226,7 @@ function renderAll(){
   setChildren($('srcStatus'),srcBits.map(s=>elNode('div',{},s)));
   setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
   if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
-  renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual();
+  renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual(); renderMiniLeagues();
   if(typeof document!=='undefined' && typeof document.dispatchEvent==='function' && typeof CustomEvent==='function')
     document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
 }
@@ -6968,12 +7241,10 @@ const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); 
 ['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
-// the team and league IDs must persist the moment they're typed — a failed
-// data load must never lose them
-['teamId','leagueId'].forEach(id => $(id).addEventListener('input', debounce(saveCfg, 300)));
+// The Team ID persists as it is typed; Mini-League choices use their own versioned state.
+$('teamId').addEventListener('input', debounce(saveCfg, 300));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
 $('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
-$('lgBtn').addEventListener('click', compareLeague);
 $('askBtn').addEventListener('click', ask);
 $('btBtn').addEventListener('click', runBacktest);
 // The low-value odds key remains client-side temporarily (D-08); save it on
@@ -6995,7 +7266,6 @@ document.addEventListener('click', e => {
     if(cfg.bank != null) $('bankIn').value = cfg.bank;
     if(cfg.transferHorizon != null) $('trHorizon').value = String(cfg.transferHorizon);
     if(cfg.transferResults != null) $('trTop').value = String(cfg.transferResults);
-    if(cfg.leagueId) $('leagueId').value = cfg.leagueId;
     if(cfg.useManual) $('useManual').checked = true;
     if(cfg.oddsKey) $('oddsKey').value = cfg.oddsKey;
     if(cfg.useUstat === false) $('useUstat').checked = false;
@@ -7006,8 +7276,7 @@ document.addEventListener('click', e => {
     setChildren($('btOut'),elNode('div',{class:'note good mt-8'},`Calibration from ${cal.backtest?.season} is active (r ${cal.backtest?.r}, ±${cal.backtest?.maeGW} pts/GW). Re-run any time.`));
   }
   S.manual = (await sget(K_SQUAD)) || [];
-  S.leagues = (await sget('fpl:leagues')) || [];
-  renderLeagueChips();
+  await initMiniLeagues(cfg||{});
   await runVerifiedRefresh({reason:'startup',startup:true,force:true});
   installVerifiedRefreshTriggers();
 })();
