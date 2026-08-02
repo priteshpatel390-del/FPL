@@ -120,3 +120,7 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - Recovery-only imports cannot become official/current or automatically recreate every local metric view.
 - No migration engine exists because no older supported Stage 10 schema currently requires one.
 - Stage 10 infrastructure completion does not establish prediction accuracy or calibration.
+
+## Teamsheet 2.0.3 acceptance gate
+
+Physical iPhone and VoiceOver acceptance is not yet recorded. Automated contracts cover hierarchy, assumptions, wording, routing, accessibility and build integrity; physical one-handed use, text scaling and VoiceOver order still require owner review. Public FPL transport limitation FPL-1 can still block populated-data acceptance.

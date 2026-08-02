@@ -340,62 +340,6 @@ function renderSquad(){
 }
 
 /* ---------------------------------------------------------------------
-   VIEW — TRANSFER PLANNER
-   --------------------------------------------------------------------- */
-function renderTransfers(){
-  const el = $('transferOut');
-  const squad = mySquad();
-  if(!squad.length){
-    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},'No squad loaded'),'Add your 15 on the Squad tab — by hand is fine — and the planner will cost every swap.'));
-    return;
-  }
-  const span = +$('trHorizon').value, topN = +$('trTop').value;
-  const gw = S.nextGW, bank = num($('bankIn').value)*10, ft = num($('ftCount').value);
-  const mineIds = new Set(squad.map(s => s.p.id));
-  const teamCount = {};
-  squad.forEach(s => teamCount[s.p.team] = (teamCount[s.p.team]||0)+1);
-
-  const moves = [];
-  squad.forEach(out => {
-    const budget = sellPrice(out) + bank;
-    const outXP = xpOf(out.p, gw, span).total;
-    S.boot.elements.forEach(inP => {
-      if(mineIds.has(inP.id)) return;
-      if(inP.element_type !== out.p.element_type) return;
-      if(inP.now_cost > budget) return;
-      if(availability(inP) < 0.75) return;
-      const cnt = (teamCount[inP.team]||0) - (inP.team === out.p.team ? 1 : 0);
-      if(cnt >= 3) return;                                  // 3-per-club rule
-      const gain = xpOf(inP, gw, span).total - outXP;
-      if(gain <= 0) return;
-      moves.push({out, inP, gain, cost:(inP.now_cost - sellPrice(out))/10});
-    });
-  });
-  moves.sort((a,b) => b.gain - a.gain);
-
-  if(!moves.length){
-    setChildren(el,noteNode('good',elNode('b',{},'No upgrade found.'),` Nothing available within budget projects better than what you already own over the next ${span} gameweek${span>1?'s':''}. Roll the transfer.`));
-    return;
-  }
-  const best=moves[0], nodes=[];
-  const freeText=ft>=1?`You have ${ft} free transfer${ft>1?'s':''}, so this costs nothing.`:best.gain>4?'Even after a −4 this clears the bar.':`After a −4 it nets ${fmt1(best.gain-4)} — not worth it.`;
-  nodes.push(noteNode(best.gain>4?'good':'plain',elNode('b',{},'Top move:'),` ${best.out.p.web_name} → ${best.inP.web_name}, +${fmt1(best.gain)} projected points over ${span} GW${span>1?'s':''}. ${freeText}`));
-  if(ft>=2) nodes.push(noteNode('plain',`With ${ft} banked, the top ${Math.min(ft,5)} moves below can all be made free — but check they aren't two players from the same fixture swing.`));
-  const tbody=elNode('tbody');
-  moves.slice(0,topN).forEach(m=>{
-    const net=m.gain-4, verdict=m.gain>6?['rise','strong']:m.gain>4?['rise','worth a hit']:m.gain>1.5?['info','free only']:['dark','marginal'];
-    tbody.appendChild(elNode('tr',{},
-      elNode('td',{},elNode('span',{class:'pname'},m.out.p.web_name),elNode('span',{class:'pmeta'},`${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP`)),
-      elNode('td',{},elNode('span',{class:'pname'},m.inP.web_name,flagNodes(m.inP)),elNode('span',{class:'pmeta'},`${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP`)),
-      cell(`${m.cost>0?'+':''}${fmt1(m.cost)}`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${m.gain>4?'hot':''}`},`+${fmt1(m.gain)}`)),
-      elNode('td',{class:`num transfer-net ${net>0?'positive':'negative'}`},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
-  });
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Out'),head('In'),head('Cost £m','num'),head('Gain','num'),head('After −4','num'),head('Verdict'))),tbody)));
-  nodes.push(noteNode('plain','A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.'));
-  setChildren(el,nodes);
-}
-
-/* ---------------------------------------------------------------------
    VIEW — MINI-LEAGUE
    --------------------------------------------------------------------- */
 /* ---------------------------------------------------------------------
@@ -673,7 +617,6 @@ document.addEventListener('teamsheet:preview-change',()=>renderSquad());
 const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);
 ['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
-['trHorizon','trTop'].forEach(id => $(id).addEventListener('input', debounce(renderTransfers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
 // the team and league IDs must persist the moment they're typed — a failed
 // data load must never lose them
@@ -700,6 +643,8 @@ document.addEventListener('click', e => {
     if(cfg.teamId) $('teamId').value = cfg.teamId;
     if(cfg.ft != null) $('ftCount').value = cfg.ft;
     if(cfg.bank != null) $('bankIn').value = cfg.bank;
+    if(cfg.transferHorizon != null) $('trHorizon').value = String(cfg.transferHorizon);
+    if(cfg.transferResults != null) $('trTop').value = String(cfg.transferResults);
     if(cfg.leagueId) $('leagueId').value = cfg.leagueId;
     if(cfg.useManual) $('useManual').checked = true;
     if(cfg.oddsKey) $('oddsKey').value = cfg.oddsKey;

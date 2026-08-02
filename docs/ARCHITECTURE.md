@@ -141,3 +141,7 @@ The global shell owns one persistent Ask composer, one fixed five-column safe-ar
 The wrapper requires a complete legal 15 before exposing a recommendation; otherwise it renders a labelled decorative pitch placeholder. Connected/manual/cache/preview provenance, base-XI xP, captain uplift, total including captain, one presentation-priority risk and an advisory deadline action are explicit. Team setup remains after the immediate pitch, while captaincy and all-15 research are collapsed progressively.
 
 The existing Stage 10.1 verified startup and foreground interaction lock are unchanged. Official FPL transport reliability, authoritative bank/free-transfer retrieval and atomic non-blocking foreground refresh remain separately gated.
+
+## Teamsheet 2.0.3 transfer presentation boundary
+
+The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` owns assumptions synchronization, presentation states, preview invalidation and vertical decision cards. It consumes `optimiseTransfers()` without recalculating transfer values. `src/model/transfers.mjs` remains the sole calculation owner. Plans and previews are session-only; only free transfers, bank, horizon and result count persist.

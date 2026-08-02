@@ -129,3 +129,11 @@ Reason: the verified Team route had a strong pitch, best-XI, captaincy, bench an
 Approach: wrap the unchanged Team renderer with a presentation-only decision hierarchy. Show provenance, recommended XI/captain/vice/bench, explicit base-XI and captain-uplift forecast, one material risk, advisory deadline action and the immediate pitch. Preserve a labelled placeholder pitch when a legal 15 is unavailable. Move setup and supporting detail below the immediate decision. Treat close captaincy as model uncertainty; ownership remains context only. Direct the separate roll/transfer decision to Transfers.
 
 Consequences: no projection, expected-minutes, fixture, squad, captaincy, bench, simulation, optimiser, rank, league, provider, authentication, refresh, persistence, route or player-detail behaviour changes. D-21's historical More placement is superseded by D-29's Settings architecture; its provider-state principle remains valid. Verified baseline: **454/454 tests**, deterministic exact-identity builds, root/deployable equality, model `2.4.0`, rules `2026-27.3`.
+
+### D-31 — Transfer decisions use an explicit zero-transfer comparison
+
+**Decision:** Present the optimiser's required zero-transfer baseline as a first-class option, label net output as a model comparison, expose hit and free-transfer utility separately, and avoid claiming that making no transfer is optimal when no comparable legal plan was returned.
+
+**Reason:** The previous wide table obscured the decision and could overstate incomplete evidence. This change improves interpretation without changing any calculation.
+
+**Boundary:** No transfer, projection, squad, provider, rank or Mini-League formula changes. Physical iPhone and VoiceOver acceptance remains separate.

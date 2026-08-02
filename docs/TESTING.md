@@ -1,4 +1,6 @@
 # TESTING.md
+
+> **Teamsheet 2.0.3 verified branch baseline:** 458/458 tests passed through `./run-tests.sh`; two exact-identity production builds matched; root `index.html` equalled `dist/index.html`. New contracts cover explicit assumption validation, baseline/transfer presentation states, honest no-transfer wording, corrected result limits, central preview routing and removal of the technical transfer table.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-07-31. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 

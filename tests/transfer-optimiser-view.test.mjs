@@ -3,34 +3,36 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   TRANSFER_PLANNER_COMMITTED_CONTROL_IDS,
+  TRANSFER_PRESENTATION_STATES,
   transferPlannerControlSignature,
   transferPlannerRefreshRequired,
-  transferPlannerHasActivePreview
+  transferPlannerHasActivePreview,
+  transferPlannerReadAssumptions,
+  transferPlannerPresentationState,
+  transferPlannerNoTransferCopy,
+  transferPlannerNetLabel,
+  transferPlannerPlanNames
 } from '../src/ui/transfer-optimiser-view.mjs';
 
-test('committed transfer controls cover both planner dropdowns',()=>{
-  assert.deepEqual(TRANSFER_PLANNER_COMMITTED_CONTROL_IDS,['trHorizon','trTop']);
+test('committed transfer controls cover assumptions and display controls',()=>{
+  assert.deepEqual(TRANSFER_PLANNER_COMMITTED_CONTROL_IDS,['trFtCount','trBankIn','trHorizon','trTop']);
 });
 
-test('transfer planner refreshes only when the committed selection differs from the last render',()=>{
-  const previous=transferPlannerControlSignature('6','8');
-  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('6','8')),false);
-  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('3','8')),true);
-  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('6','15')),true);
+test('transfer planner signature changes for any committed assumption or display choice',()=>{
+  const previous=transferPlannerControlSignature('1','0.5','6','8');
+  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('1','0.5','6','8')),false);
+  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('2','0.5','6','8')),true);
+  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('1','0.6','6','8')),true);
+  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('1','0.5','3','8')),true);
+  assert.equal(transferPlannerRefreshRequired(previous,transferPlannerControlSignature('1','0.5','6','15')),true);
 });
 
-test('any active transfer or captaincy comparison is recognised before a committed refresh',()=>{
-  assert.equal(transferPlannerHasActivePreview({}),false);
-  assert.equal(transferPlannerHasActivePreview({transfer:{transferCount:1}}),true);
-  assert.equal(transferPlannerHasActivePreview({captainId:9}),true);
-  assert.equal(transferPlannerHasActivePreview({selectionMode:'vice'}),true);
-});
 
-test('production wiring listens for committed select changes, clears preview state and redraws',()=>{
-  const source=readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8');
-  const bundle=readFileSync(new URL('../dist/app.bundle.js',import.meta.url),'utf8');
-  assert.match(source,/control\.addEventListener\('change',transferPlannerRefreshCommittedSelection\)/);
-  assert.match(source,/decisionPreviewClearTransfer\(\);[\s\S]*renderTransfers\(\);/);
-  assert.match(source,/transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature\(\)/);
-  assert.match(bundle,/committedRefreshInstalled/);
+test('transfer renderer is bundled before the views startup boundary',()=>{
+  const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
+  const transferIndex=build.indexOf("'src/ui/transfer-optimiser-view.mjs'");
+  const viewsIndex=build.indexOf("'src/ui/views.mjs'");
+  assert.ok(transferIndex>=0);
+  assert.ok(viewsIndex>=0);
+  assert.ok(transferIndex<viewsIndex);
 });

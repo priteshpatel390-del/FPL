@@ -1,4 +1,14 @@
 # CHANGELOG.md
+
+## 2026-08-02 — Teamsheet 2.0.3: Transfers Decision Workspace
+
+- Replaced the wide transfer table with mobile decision cards.
+- Made the zero-transfer baseline, hits, FT utility and affordability limits explicit.
+- Added synchronized persisted transfer assumptions and corrected display limits to 8/15/20.
+- Repaired Team preview navigation through the central router.
+- Removed the stale isolated-swap renderer.
+- Added automated presentation, validation, routing and build contracts.
+- Left all transfer/model/provider/security calculations unchanged.
 Purpose: professional change record (Keep a Changelog conventions). Audience: all.
 Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for engineering detail.
 
