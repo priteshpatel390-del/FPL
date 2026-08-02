@@ -1,6 +1,6 @@
 # ROADMAP.md — living roadmap
 
-> **Teamsheet 2.0.4 roadmap update:** the official Mini-League foundation is implemented on its dedicated branch and currently passes 491/491 tests. It adds official position/movement, gaps, nearby standings, primary/pinned leagues and factual selected-rival comparison without projected rank or strategy logic. Next checkpoint after review/merge: **Teamsheet 2.0.5 — Mini-League intelligence**.
+> **Teamsheet 2.0.4 roadmap update:** the official Mini-League foundation is implemented on its dedicated branch and currently passes 493/493 tests. It adds official position/movement, gaps, nearby standings, primary/pinned leagues and factual selected-rival comparison without projected rank or strategy logic. Next checkpoint after review/merge: **Teamsheet 2.0.5 — Mini-League intelligence**.
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-07-31.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
@@ -63,7 +63,7 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
   - Pinned rivals and one-rival-at-a-time public picks comparison.
   - Exact squad overlap, captain/vice/active-chip context and honest incomplete/stale states.
   - No projected rank, differential scoring, protect/chase strategy, provider or model change.
-  - Current source baseline: **491/491 tests**.
+  - Current source baseline: **493/493 tests**.
 - **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
 
 ## Teamsheet 2.0 migration sequence

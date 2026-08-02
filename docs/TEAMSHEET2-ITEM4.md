@@ -59,7 +59,7 @@ League and manager identifiers are absent from routes and Stage 10 evidence. Per
 
 ## Tests
 
-Current source baseline: **491 tests, 491 passed, 0 failed, 0 cancelled, 0 skipped**.
+Current source baseline: **493 tests, 493 passed, 0 failed, 0 cancelled, 0 skipped**.
 
 New coverage is in:
 - `tests/mini-leagues.test.mjs`
@@ -92,4 +92,4 @@ The full existing model, provider, evidence, security, build, Team and Transfers
 - Rival public picks may be absent or incomplete.
 - Physical iPhone layout, text scaling, one-handed use and Safari Back behaviour require owner review.
 - VoiceOver reading order, focus restoration and live-region behaviour require owner review.
-- Verified source `aef1ae2328068fae95559632db5f74f4a2854a1a` completed 491/491 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`.
+- Verified source `70d70055775fb92a47d42f0dd513980fd879a404` completed 493/493 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`.

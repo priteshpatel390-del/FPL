@@ -1,6 +1,6 @@
 # TESTING.md
 
-> **Teamsheet 2.0.4 source baseline:** 491/491 tests pass through `./run-tests.sh`. New contracts cover versioned League state migration, official entry/standings field validation, ID-free subroutes, targeted large-league pagination, selected-rival set comparison, stale/incomplete wording, mobile/accessibility structure and prevention of unsupported projected-rank or strategy claims. Exact-identity rebuild evidence is recorded in `TEAMSHEET2-ITEM4.md` before final review.
+> **Teamsheet 2.0.4 source baseline:** 493/493 tests pass through `./run-tests.sh`. New contracts cover versioned League state migration, official entry/standings field validation, ID-free subroutes, targeted large-league pagination, selected-rival set comparison, stale/incomplete wording, mobile/accessibility structure and prevention of unsupported projected-rank or strategy claims. Exact-identity rebuild evidence is recorded in `TEAMSHEET2-ITEM4.md` before final review.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-07-31. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
@@ -107,7 +107,7 @@ Completion also requires two byte-identical builds using the exact verified sour
 
 ## Teamsheet 2.0.4 Mini-League verification
 
-The current source suite is **491/491 passing tests**. Coverage includes:
+The current source suite is **493/493 passing tests**. Coverage includes:
 - deterministic migration from `fpl:config.leagueId` and `fpl:leagues` into version-1 minimal state;
 - deduplicated league records and five-rival pin cap;
 - public classic-league discovery and strict displayed-field validation;
