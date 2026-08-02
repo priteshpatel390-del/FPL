@@ -1,0 +1,89 @@
+name: Finalise Teamsheet 2.0.4 build identity
+
+on:
+  push:
+    branches:
+      - agent/teamsheet-2.0.4-mini-leagues
+    paths:
+      - .github/workflows/teamsheet-2.0.4-build-identity-finalise.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teamsheet-2.0.4-build-identity-finalise
+  cancel-in-progress: false
+
+jobs:
+  finalise:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_COMMIT: 70d70055775fb92a47d42f0dd513980fd879a404
+    steps:
+      - name: Check out approved branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.4-mini-leagues
+          fetch-depth: 0
+
+      - name: Re-run full test suite
+        shell: bash
+        run: |
+          ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          grep -Eq '(^|[^0-9])493([^0-9]|$)' /tmp/teamsheet-tests.log
+
+      - name: Build twice with verified source identity
+        shell: bash
+        run: |
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          mkdir -p /tmp/teamsheet-build-one/dist
+          cp index.html /tmp/teamsheet-build-one/index.html
+          cp dist/index.html /tmp/teamsheet-build-one/dist/index.html
+          cp dist/app.bundle.js /tmp/teamsheet-build-one/dist/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-build-one/dist/manifest.json
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/teamsheet-build-one/index.html index.html
+          cmp /tmp/teamsheet-build-one/dist/index.html dist/index.html
+          cmp /tmp/teamsheet-build-one/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-one/dist/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          git diff --check
+          echo "ROOT_HTML_SHA=$(sha256sum index.html | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "BUNDLE_SHA=$(sha256sum dist/app.bundle.js | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "MANIFEST_SHA=$(sha256sum dist/manifest.json | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "SOURCE_HASH=$(node -e \"console.log(JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).sourceHash)\")" >> "$GITHUB_ENV"
+          node -e "const m=JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8'));if(m.commit!==process.env.SOURCE_COMMIT)throw new Error('manifest commit mismatch')"
+
+      - name: Update verification record
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path=Path('docs/TEAMSHEET2-ITEM4.md')
+          text=path.read_text()
+          replacement=(
+              f"- Verified source `{os.environ['SOURCE_COMMIT']}` completed 493/493 tests. "
+              f"Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`. "
+              f"Source hash `{os.environ['SOURCE_HASH']}`; root/dist HTML SHA-256 `{os.environ['ROOT_HTML_SHA']}`; "
+              f"bundle SHA-256 `{os.environ['BUNDLE_SHA']}`; manifest SHA-256 `{os.environ['MANIFEST_SHA']}`."
+          )
+          text,count=re.subn(r'- Verified source `[^`]+` completed 493/493 tests\..*',replacement,text,count=1)
+          if count!=1:
+              raise SystemExit(f'Expected one verification line, found {count}')
+          path.write_text(text)
+          PY
+
+      - name: Commit deployables and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/teamsheet-2.0.4-build-identity-finalise.yml
+          git add -A
+          git diff --cached --check
+          git commit -m "Correct Mini Leagues build identity [build-identity-finalised]"
+          git push origin HEAD:agent/teamsheet-2.0.4-mini-leagues
