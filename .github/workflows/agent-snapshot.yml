@@ -17,9 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Create repository archive
-        run: tar --exclude=.git -czf repository-snapshot.tar.gz .
+        run: tar --exclude=.git -czf /tmp/repository-snapshot.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
           name: repository-snapshot
-          path: repository-snapshot.tar.gz
+          path: /tmp/repository-snapshot.tar.gz
           retention-days: 1
