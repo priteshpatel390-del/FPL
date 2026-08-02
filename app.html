@@ -540,6 +540,27 @@ h2[tabindex="-1"]:focus{outline:none}
   #transferOut{transition:none}
 }
 
+
+/* Teamsheet 2.0.4 — Mini Leagues official decision foundation */
+.league-view{display:grid;gap:10px}.league-route{display:grid;gap:10px}.league-route[hidden]{display:none}
+.league-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:9px}.league-picker{min-height:44px;max-width:240px;overflow-wrap:anywhere;text-align:left;padding:8px 11px}
+.league-hero{display:grid;gap:6px;padding:12px 13px;border-radius:13px;background:linear-gradient(145deg,#173B28,#10251A);color:#fff;box-shadow:var(--shadow)}
+.league-hero .eyebrow{color:#B9C9BF}.league-hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}.league-hero h3{font-size:17px;line-height:1.15;overflow-wrap:anywhere}.league-hero .btn.ghost{color:#fff;border-color:rgba(255,255,255,.56)}.league-hero .btn.ghost:hover{background:rgba(255,255,255,.12)}
+.league-position-line{display:flex;align-items:center;justify-content:space-between;gap:9px}.league-position{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}.league-position strong{font-family:'Bricolage Grotesque',sans-serif;font-size:30px;line-height:1}.league-position span{color:#D8E2DB;font-size:12px}.league-position-line>.flag{flex:0 0 auto;margin-left:0}
+.league-status-row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#D8E2DB;font-size:11px}.league-status-copy{margin:0;color:#D8E2DB;font-size:11px}.league-hero .note{margin:2px 0 0;padding:8px 10px;font-size:11px}
+.league-gap-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}.league-gap{display:grid;gap:1px;padding:8px 7px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:0;text-align:center}.league-gap.current{border-color:var(--pitch);background:#F5FAF6}.league-gap span,.league-gap small{font-size:10px;color:var(--ink-soft);overflow-wrap:anywhere;line-height:1.2}.league-gap strong{font-family:'IBM Plex Mono',monospace;font-size:14px}
+#leagueLandingOut>.league-section,#leagueLandingOut>.league-actions{margin-top:9px}.league-section{display:grid;gap:7px}.league-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.league-section-head h3{font-size:14px}.league-text-link{font-size:12px;font-weight:700}.league-rival-list,.league-manage-list,.league-standings-list{display:grid;gap:6px}
+.league-rival-card,.league-manage-row,.league-standing-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:0}.league-rival-copy,.league-manage-row>div:first-child,.league-standing-name{display:grid;gap:1px;min-width:0}.league-rival-copy strong,.league-manage-row strong,.league-standing-name strong{font-size:13px;line-height:1.2;overflow-wrap:anywhere}.league-rival-copy span,.league-rival-copy small,.league-standing-name small{font-size:10.5px;color:var(--ink-soft)}
+.league-rival-actions,.league-manage-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.league-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.league-actions .btn{text-align:center;min-height:44px;display:grid;place-items:center;text-decoration:none}
+.league-standing-row{grid-template-columns:42px minmax(0,1fr) 52px 56px;min-height:52px;padding:8px 9px}.league-standing-row.mine{border:2px solid var(--info);background:#F4F8FB}.league-standing-row.interactive{cursor:pointer}.league-standing-row.interactive:hover{background:#F7F9F5}.league-standing-row.interactive:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}.league-standing-rank,.league-standing-points{font-family:'IBM Plex Mono',monospace;font-weight:600}.league-standing-points{text-align:right}.league-standing-action{justify-self:end;display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--ink-soft);white-space:nowrap}.league-standing-action .chev{font-size:17px;line-height:1;color:var(--claret)}
+.league-rival-summary{display:grid;gap:9px}.league-comparison-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.league-comparison-facts>div{display:grid;gap:1px;padding:8px;border:1px solid var(--line);border-radius:9px}.league-comparison-facts span{font-size:10px;color:var(--ink-soft)}.league-comparison-facts strong{overflow-wrap:anywhere}
+.league-difference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.league-player-differences{padding:9px;border:1px solid var(--line);border-radius:10px;min-width:0}.league-player-differences ul{margin:6px 0 0;padding-left:18px}.league-player-differences li{overflow-wrap:anywhere}
+.league-manage-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}.league-manage-form input{width:100%;min-height:44px}.league-manage-row.selected{border-color:var(--pitch);background:#F5FAF6}
+#leagueLandingOut[aria-busy=true],#leagueRivalOut[aria-busy=true]{opacity:.72}
+@media(max-width:520px){.league-topbar{grid-template-columns:1fr;align-items:stretch}.league-picker{max-width:none;width:100%}.league-rival-card,.league-manage-row{grid-template-columns:1fr}.league-rival-actions,.league-manage-actions{justify-content:flex-start}.league-standing-row{grid-template-columns:38px minmax(0,1fr) 44px 52px}.league-difference-grid{grid-template-columns:1fr}.league-manage-form{grid-template-columns:1fr}.league-manage-form .btn{min-height:44px}.league-actions{grid-template-columns:1fr 1fr}}
+@media(max-width:350px){.league-gap-grid,.league-actions,.league-comparison-facts{grid-template-columns:1fr}.league-standing-row{grid-template-columns:34px minmax(0,1fr) 42px 30px}.league-standing-action{font-size:0}.league-standing-action .chev{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.league-view *{scroll-behavior:auto;transition:none}}
+
 </style>
 </head>
 <body class="startup-pending" aria-busy="true">
@@ -703,19 +724,36 @@ h2[tabindex="-1"]:focus{outline:none}
     <div id="transferOut" aria-busy="false"><div class="empty"><strong>No verified comparison yet</strong>Load a complete squad and verified FPL data to compare transfer decisions.</div></div>
   </section>
 
-  <!-- LEAGUE -->
-  <section class="view panel" id="view-league" hidden>
-    <span class="eyebrow">Rivals</span>
-    <h2>Leagues</h2>
-    <p class="hint">Who your rivals own that you don't, and where you're exposed. League ID is in the league URL. Saved leagues appear as buttons.</p>
-    <div id="leagueChips" class="chips mb-4"></div>
-    <div class="row mb-12">
-      <label class="fld field-league-id">Add league ID<input type="text" id="leagueId" inputmode="numeric" placeholder="123456"></label>
-      <label class="fld field-league-name">Name (optional)<input type="text" id="leagueName" placeholder="Work league"></label>
-      <label class="fld">Rivals<select id="lgN"><option value="10">Top 10</option><option value="20" selected>Top 20</option><option value="30">Top 30</option></select></label>
-      <button class="btn" id="lgBtn">Compare</button>
-    </div>
-    <div id="leagueOut"><div class="empty"><strong>Nothing compared yet</strong>Add a league ID to see effective ownership against your rivals.</div></div>
+  <!-- LEAGUES -->
+  <section class="view league-view" id="view-league" hidden>
+    <p class="status" id="leagueLiveStatus" aria-live="polite"></p>
+    <section class="panel league-route" id="leagueLanding" data-league-route="#/leagues">
+      <div class="league-topbar">
+        <div><span class="eyebrow">Competitive context</span><h2 tabindex="-1">Leagues</h2><p class="hint">Official position, points gaps and factual squad differences. No projected rank or protect/chase strategy is implied.</p></div>
+        <button class="btn ghost league-picker" id="leaguePickerButton" type="button">Choose a league</button>
+      </div>
+      <div id="leagueLandingOut" aria-busy="false"><div class="empty"><strong>Choose your Mini League</strong>Select a public classic league from your connected FPL entry, or add its numeric league ID.</div></div>
+    </section>
+    <section class="panel league-route" id="leagueStandings" data-league-route="#/leagues/standings" hidden>
+      <a class="route-back" href="#/leagues" aria-label="Back to Leagues"><span aria-hidden="true">←</span></a>
+      <span class="eyebrow">Official standings</span><h2 tabindex="-1">League table</h2><p class="hint">Nearby and loaded managers only. Large leagues are not scanned in full.</p>
+      <div id="leagueStandingsOut"></div>
+    </section>
+    <section class="panel league-route" id="leagueRival" data-league-route="#/leagues/rival" hidden>
+      <a class="route-back" href="#/leagues" aria-label="Back to Leagues"><span aria-hidden="true">←</span></a>
+      <span class="eyebrow">Factual comparison</span><h2 tabindex="-1">Rival comparison</h2><p class="hint">Public picks, captaincy and exact squad overlap. Differences are not recommendations.</p>
+      <div id="leagueRivalOut" aria-busy="false"></div>
+    </section>
+    <section class="panel league-route" id="leagueManage" data-league-route="#/leagues/manage" hidden>
+      <a class="route-back" href="#/leagues" aria-label="Back to Leagues"><span aria-hidden="true">←</span></a>
+      <span class="eyebrow">League selection</span><h2 tabindex="-1">Manage leagues</h2><p class="hint">Discovered public classic leagues and locally saved IDs. Identifiers stay out of the URL.</p>
+      <form class="league-manage-form" id="leagueManageForm">
+        <label class="fld">League ID<input type="text" id="leagueId" inputmode="numeric" autocomplete="off" placeholder="123456"></label>
+        <label class="fld">Local name (optional)<input type="text" id="leagueName" maxlength="100" placeholder="Work league"></label>
+        <button class="btn" type="submit">Add league</button>
+      </form>
+      <div id="leagueManageList" class="mt-12"></div>
+    </section>
   </section>
 
   <!-- ASK -->

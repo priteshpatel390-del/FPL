@@ -36,7 +36,10 @@ const TEAMSHEET_VALID_ROUTES = new Set([
   '#/settings/research/players',
   '#/settings/evidence',
   '#/settings/data',
-  '#/settings/help'
+  '#/settings/help',
+  '#/leagues/standings',
+  '#/leagues/rival',
+  '#/leagues/manage'
 ]);
 
 function normaliseTeamsheetRoute(value=''){
@@ -47,7 +50,9 @@ function normaliseTeamsheetRoute(value=''){
   else if(!route.startsWith('#/')) route='#/'+route.replace(/^\/+/, '');
   route=route.replace(/\/+$/,'');
   if(Object.prototype.hasOwnProperty.call(TEAMSHEET_ROUTE_ALIASES,route)) return TEAMSHEET_ROUTE_ALIASES[route];
-  return TEAMSHEET_VALID_ROUTES.has(route)?route:'#/team';
+  if(TEAMSHEET_VALID_ROUTES.has(route)) return route;
+  if(route.startsWith('#/leagues/')) return '#/leagues';
+  return '#/team';
 }
 
 function teamsheetRouteMeta(value=''){
@@ -57,6 +62,9 @@ function teamsheetRouteMeta(value=''){
     '#/transfers':{title:'Transfers',primary:'transfers'},
     '#/fixtures':{title:'Fixtures',primary:'fixtures'},
     '#/leagues':{title:'Leagues',primary:'leagues'},
+    '#/leagues/standings':{title:'League table',primary:'leagues'},
+    '#/leagues/rival':{title:'Rival comparison',primary:'leagues'},
+    '#/leagues/manage':{title:'Manage leagues',primary:'leagues'},
     '#/settings':{title:'Settings',primary:'settings'},
     '#/settings/team-account':{title:'Team & Account',primary:'settings',settings:'team-account'},
     '#/settings/research/players':{title:'Player Explorer',primary:'settings',settings:'research-players'},
@@ -179,7 +187,7 @@ function setupAppShell(){
   const leaguesHint=leaguesView.querySelector('.hint');
   if(leaguesHeading) leaguesHeading.textContent='Leagues';
   if(leaguesEyebrow) leaguesEyebrow.textContent='Mini leagues';
-  if(leaguesHint) leaguesHint.textContent='Compare your squad with saved FPL mini leagues. Rank movement and deeper league intelligence arrive in later Teamsheet 2.0 checkpoints.';
+  if(leaguesHint) leaguesHint.textContent='Official position, points gaps and factual public-squad comparisons. Projected rank and protect/chase strategy are not included.';
   const playersHeading=playersView.querySelector('h2');
   const playersEyebrow=playersView.querySelector('.eyebrow');
   if(playersHeading) playersHeading.textContent='Player Explorer';
@@ -323,7 +331,7 @@ function setupAppShell(){
     if(globalThis.location?.hash!==route) globalThis.history?.replaceState?.(null,'',route);
 
     topLevelViews.forEach(view=>{
-      const active=route.startsWith('#/settings')?view===settingsView:view===routeNodes.get(route);
+      const active=route.startsWith('#/settings')?view===settingsView:route.startsWith('#/leagues')?view===leaguesView:view===routeNodes.get(route);
       view.hidden=!active;
       view.setAttribute('aria-hidden',active?'false':'true');
     });
@@ -337,7 +345,7 @@ function setupAppShell(){
     document.title=`${meta.title} — Teamsheet`;
     globalThis.scrollTo?.({top:0,left:0});
     if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):(routeNodes.get(route)||teamView);
+      const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
       const heading=activeNode.querySelector('h2');
       heading?.setAttribute?.('tabindex','-1');
       heading?.focus?.({preventScroll:true});

@@ -219,7 +219,23 @@ function validateEntry(payload) {
   if (typeof payload.name !== 'string')
     issues.push(mkIssue('fpl', '/entry/', 'entry_missing_field', 'partial', 1,
       { fields: ['name'] }));
-  return { value: payload, issues };
+  let value = payload;
+  if (payload.leagues !== undefined && payload.leagues !== null) {
+    if (!isObj(payload.leagues) || !Array.isArray(payload.leagues.classic)) {
+      issues.push(mkIssue('fpl', '/entry/', 'entry_classic_leagues_not_array', 'partial', 1,
+        { fields: ['leagues.classic'] }));
+      value = { ...payload, leagues: { ...(isObj(payload.leagues) ? payload.leagues : {}), classic: [] } };
+    } else {
+      const filtered = filterRows(payload.leagues.classic,
+        row => isObj(row) && isId(row.id) && typeof row.name === 'string', row => String(row.id));
+      if (filtered.invalid)
+        issues.push(mkIssue('fpl', '/entry/', 'entry_invalid_classic_leagues', 'partial', filtered.invalid));
+      if (filtered.duplicate)
+        issues.push(mkIssue('fpl', '/entry/', 'entry_duplicate_classic_leagues', 'partial', filtered.duplicate));
+      value = { ...payload, leagues: { ...payload.leagues, classic: filtered.kept } };
+    }
+  }
+  return { value, issues };
 }
 
 /* ---- FPL /entry/{id}/event/{gw}/picks/ (own AND rival) ----------------
@@ -282,15 +298,24 @@ function validateStandings(payload) {
       'standings_missing_results', 'fatal', 1, { fields: ['standings.results'] })] };
 
   const issues = [];
+  const numericLike = value => isNum(value) || (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
   const { kept, invalid, duplicate } = filterRows(payload.standings.results,
-    r => isObj(r) && isId(r.entry), r => String(r.entry));
+    r => isObj(r) && isId(r.entry) && numericLike(r.rank) && numericLike(r.total) &&
+      typeof r.entry_name === 'string' && typeof r.player_name === 'string', r => String(r.entry));
   if (invalid)
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_rows',
       'partial', invalid));
   if (duplicate)
     issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_duplicate_entry',
       'partial', duplicate));
-  return { value: { ...payload, standings: { ...payload.standings, results: kept } }, issues };
+  if (!isObj(payload.league) || typeof payload.league.name !== 'string')
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_missing_league_name',
+      'partial', 1, { fields: ['league.name'] }));
+  if (payload.standings.has_next !== undefined && typeof payload.standings.has_next !== 'boolean')
+    issues.push(mkIssue('fpl', '/leagues-classic/standings/', 'standings_invalid_pagination',
+      'partial', 1, { fields: ['standings.has_next'] }));
+  return { value: { ...payload, standings: { ...payload.standings, results: kept,
+    has_next: typeof payload.standings.has_next === 'boolean' ? payload.standings.has_next : false } }, issues };
 }
 
 /* ---- Understat (post-parse) ------------------------------------------

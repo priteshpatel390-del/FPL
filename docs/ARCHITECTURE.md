@@ -145,3 +145,11 @@ The existing Stage 10.1 verified startup and foreground interaction lock are unc
 ## Teamsheet 2.0.3 transfer presentation boundary
 
 The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` owns assumptions synchronization, presentation states, preview invalidation and vertical decision cards. It consumes `optimiseTransfers()` without recalculating transfer values. `src/model/transfers.mjs` remains the sole calculation owner. Plans and previews are session-only; only free transfers, bank, horizon and result count persist.
+
+## Teamsheet 2.0.4 Mini-League boundary
+
+`src/ui/mini-leagues-state.mjs` owns version-1 local selection state only: selected league, saved/primary leagues, selected rival and at most five pinned rival identifiers per league. It migrates the previous `fpl:config.leagueId` and `fpl:leagues` records deterministically. Standings, points and rival squads remain session-only and are not written to persistent storage or Stage 10 evidence.
+
+`src/ui/mini-leagues-view.mjs` owns `#/leagues`, `#/leagues/standings`, `#/leagues/rival` and `#/leagues/manage`. Routes contain no league or manager identifier. The view consumes the existing Official FPL transport and validators, loads page 1 plus pages surrounding the manager's official membership rank, and loads further standings only on request. Rival public picks are fetched one selected manager at a time. Points gaps and squad overlap are simple arithmetic/set derivations from official fields; no rank prediction, differential score, protect/chase strategy or model recommendation is introduced.
+
+`validateEntry()` now filters public classic-league membership rows. `validateStandings()` requires the official rank, total, manager/team display names and validates pagination fields used by the UI. Missing or malformed rows degrade visibly. Existing provider retry, relay, security and core-data criticality are unchanged.

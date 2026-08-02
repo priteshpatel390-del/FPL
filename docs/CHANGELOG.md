@@ -78,3 +78,14 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Removed unsupported no-transfer and protect/rank-climbing wording.
 - Preserved all model, provider, preview, route, persistence and security contracts.
 - Verified **454/454 tests**, deterministic exact-identity builds and root/deployable equality.
+
+## 2026-08-02 — Teamsheet 2.0.4 Mini Leagues (implementation branch)
+- Replaced the sampled effective-ownership report with an Official FPL Mini-League foundation.
+- Added primary/saved leagues, deterministic legacy migration and minimal selected/pinned rival persistence.
+- Added ID-free League landing, standings, rival and manage routes.
+- Added official position/movement, points gaps, targeted/incremental standings and one-selected-rival public picks comparison.
+- Removed automatic top-N squad fan-out and unsupported threat/differential strategy wording.
+- Added strict displayed-field validation, stale/incomplete states and mobile/accessibility contracts.
+- Applied the owner-approved compact mobile hierarchy, added breathing room below the position card and made standings rows full-row touch/keyboard actions with a quiet `Open ›` affordance.
+- No provider, model, rank-prediction, strategy, Team or Transfers calculation changed.
+- Current source suite: 493/493 passing tests; exact build finalisation and device acceptance pending.

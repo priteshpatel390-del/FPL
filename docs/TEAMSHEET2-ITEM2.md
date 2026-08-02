@@ -1,6 +1,6 @@
 # TEAMSHEET2-ITEM2.md — Team Decision Home
 
-Status: **Owner-approved implementation completed on the dedicated 2.0.2 branch; awaiting physical iPhone review and merge approval.**
+Status: **Merged through PR #49 on 1 August 2026 at `d01e6a36af47f8ce7962820f36174274af382493`. Final verified source passed 459/459 tests with deterministic builds.**
 
 Purpose: record the exact Teamsheet 2.0.2 presentation boundary, behaviour, exclusions and verification requirements.
 

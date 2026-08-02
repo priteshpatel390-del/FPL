@@ -1,6 +1,6 @@
 # TESTING.md
 
-> **Teamsheet 2.0.3 verified branch baseline:** 467/467 tests passed through `./run-tests.sh`; two exact-identity production builds matched; root `index.html` equalled `dist/index.html`. New contracts cover explicit assumption validation, baseline/transfer presentation states, honest no-transfer wording, corrected result limits, central preview routing and removal of the technical transfer table.
+> **Teamsheet 2.0.4 source baseline:** 493/493 tests pass through `./run-tests.sh`. New contracts cover versioned League state migration, official entry/standings field validation, ID-free subroutes, targeted large-league pagination, selected-rival set comparison, stale/incomplete wording, mobile/accessibility structure and prevention of unsupported projected-rank or strategy claims. Exact-identity rebuild evidence is recorded in `TEAMSHEET2-ITEM4.md` before final review.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-07-31. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
@@ -37,6 +37,7 @@ Teamsheet 2.0.2 verification completes **454/454 passing tests**, a successful p
 25. `stage10-hardening.test.mjs` — dangerous-key rejection, diagnostic redaction, strict journals/current reconciliation, transfer-version parity, line-feed spreadsheet protection, honest download requests and bounded retry/orchestration wiring.
 26. `navigation-settings.test.mjs` — primary order, hash normalisation, legacy aliases, safe fallback, Settings hierarchy, Team resource relocation, Fixtures/Leagues promotion, Ask Teamsheet access, shortcut routes and removal of legacy click-to-hide navigation.
 27. `team-decision-home.test.mjs` — legal-squad gating, Official/manual/cache provenance, explicit base-XI/captain forecast, risk priority, advisory deadline actions, neutral close-captaincy wording, placeholder pitch and presentation-only wiring.
+28. `mini-leagues.test.mjs` and `mini-leagues-ui.test.mjs` — versioned migration, classic-league discovery, official movement/gap helpers, exact squad set comparison, ID-free routes, targeted/incremental pagination, selected-rival-only fetching, stale/incomplete wording, mobile layout, accessibility and no-strategy/model guards.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
@@ -103,3 +104,20 @@ The navigation suite now verifies the persistent global Ask composer and interna
 The Teamsheet 2.0.2 baseline is **454/454 tests** with zero failures and zero skipped. Coverage verifies legal-15 gating, immediate placeholder/connected pitch structure, explicit provenance, base XI plus captain uplift arithmetic, deterministic material-risk priority, advisory/no-submission deadline wording, preview distinction, neutral ownership context, preserved routes and absence of model/optimiser/persistence calls from the presentation wrapper.
 
 Completion also requires two byte-identical builds using the exact verified source commit, root/deployable equality and the existing CSP/build-identity suites. Automated checks cannot prove physical iPhone pitch position, text scaling, VoiceOver order or thumb comfort.
+
+## Teamsheet 2.0.4 Mini-League verification
+
+The current source suite is **493/493 passing tests**. Coverage includes:
+- deterministic migration from `fpl:config.leagueId` and `fpl:leagues` into version-1 minimal state;
+- deduplicated league records and five-rival pin cap;
+- public classic-league discovery and strict displayed-field validation;
+- ordinal/movement wording, nearest-above/below selection and exact squad set arithmetic;
+- pre-season, provisional and checked Official FPL labels;
+- semantic ID-free League landing/standings/rival/manage routes and League-active navigation;
+- page 1, pages around official rank and explicit load-more contracts without rival fan-out;
+- one selected public rival picks request, incomplete comparisons and stale session fallback;
+- absence of legacy threat/differential thresholds, projected-rank language and protect/chase logic;
+- iPhone-width wrapping/touch-target structure, route focus, live regions and reduced motion;
+- deterministic bundle ordering and unchanged model/rules boundaries.
+
+Automated tests do not prove real Official FPL availability, physical iPhone density or VoiceOver reading order. Those remain explicit acceptance gates.

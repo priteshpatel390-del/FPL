@@ -1,6 +1,6 @@
 # Teamsheet 2.0.3 — Transfers Decision Workspace
 
-Status: implemented on the owner-approved draft branch; not merged.
+Status: **Merged through PR #55 on 2 August 2026 at `c82a883f3ae8eebc8a3017e9181748e562dd9ba8`. Owner iPhone visual acceptance passed; VoiceOver acceptance was not performed.**
 
 Verified source commit: `f2f184fb9890a820e91ae240b27241e0d76f41ef`
 

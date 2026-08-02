@@ -130,3 +130,15 @@ The live Google Sheet is an optional manual destination for selected CSV imports
 
 ## Stage 10.5 data-source boundary
 Stage 10.5 changes no provider, transport, endpoint, validation threshold or source allowlist. Recovery and metrics operate only on existing validated immutable records. Google Sheets remains a manual analysis destination and is not a provider or authoritative evidence source.
+
+## Teamsheet 2.0.4 Official FPL League field contract
+
+No provider or network origin is added. The existing Official FPL endpoints are consumed more deliberately:
+
+| Endpoint | 2.0.4 fields used | Behaviour |
+|---|---|---|
+| `/entry/{id}/` | `name`, overall points/rank where supplied, `leagues.classic[].{id,name,entry_rank,entry_last_rank}` | Discover public classic leagues and locate the manager without scanning every page. Invalid membership rows are dropped and reported. |
+| `/leagues-classic/{id}/standings/?page_standings={page}` | `league.name`, `standings.results[].{entry,entry_name,player_name,rank,last_rank,total,event_total}`, `has_next` | Official current table, movement and simple points gaps. Page 1 and pages around the official rank load first; further pages are user requested. |
+| `/entry/{id}/event/{gw}/picks/` | `picks[].{element,position,multiplier,is_captain,is_vice_captain}`, `active_chip` | On-demand selected-rival squad, captaincy and exact set comparison. No league-wide fan-out. |
+
+League names/IDs, selected rivals and pins persist locally under `fpl:mini-leagues` version 1. Standings, points and rival squads are session-only and are not model inputs, Stage 10 evidence or exports. Public endpoint failure preserves only a clearly labelled in-session stale result where one exists; no value is manufactured.
