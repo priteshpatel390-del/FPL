@@ -40,7 +40,9 @@ function currentConfig(){
     bank: num($('bankIn').value),
     leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
-    useUstat: $('useUstat').checked
+    useUstat: $('useUstat').checked,
+    transferHorizon: Number($('trHorizon')?.value || 6),
+    transferResults: Number($('trTop')?.value || 8)
   };
   const oddsKey = $('oddsKey').value.trim();
   if(oddsKey) config.oddsKey = oddsKey;

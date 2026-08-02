@@ -49,3 +49,7 @@ The owner approved the complete Stage 10 design and sequence. Stage 10.1 added i
 The first 620-player benchmark exceeded three minutes. Review preserved 5,000 samples and removed repeated invariant fixture calculations, reducing the synthetic run to roughly 2.8–3.5 seconds. A later amendment added a silent startup gate, automatic startup/foreground verification, closed provider allowlist, one final render, non-blocking automatic capture and recovery-only imports. Pritesh accepted physical iPhone behaviour.
 
 Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with deterministic exact-identity builds. Generated artefacts `1259e7b5f7505d3330c772e89c77720251552287`; merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444`. No formula or optimiser objective changed.
+
+## Teamsheet 2.0.3 — Transfers Decision Workspace
+
+Implemented the owner-approved transfer presentation/state checkpoint on a dedicated draft branch. The existing exact optimiser remains authoritative. Verification: 467/467 tests, deterministic builds and root/deployable equality. Merge remains subject to owner approval.

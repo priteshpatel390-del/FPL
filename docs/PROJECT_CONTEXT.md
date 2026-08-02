@@ -1,4 +1,6 @@
 # PROJECT_CONTEXT.md
+
+> **Teamsheet 2.0.3 current status:** the owner-approved Transfers decision workspace is implemented on a draft branch with 467/467 passing tests and deterministic builds. The existing transfer optimiser, models, providers and security boundary are unchanged. The next separately designed checkpoint is Teamsheet 2.0.4 — Mini Leagues.
 Purpose: master overview — the first document any new developer or session reads after CLAUDE.md.
 Audience: anyone joining the project. Last updated: 2026-07-31. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 

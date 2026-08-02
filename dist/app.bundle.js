@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"4ae27c9b5a0de799","commit":"b08b2e5641bf04c4b358fb70612dcdba0c2856dd"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"4ae27c9b5a0de799ccc3f4a3a0f8406f76df05f574de7246d7c2aceb04005e6f","commit":"b08b2e5641bf04c4b358fb70612dcdba0c2856dd","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"b27a7e614fcef87e","commit":"f2f184fb9890a820e91ae240b27241e0d76f41ef"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"b27a7e614fcef87e96a66371100e9ad328b0db532bed2c8d771cb0fb7a8f011b","commit":"f2f184fb9890a820e91ae240b27241e0d76f41ef","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -1037,7 +1037,9 @@ function currentConfig(){
     bank: num($('bankIn').value),
     leagueId: $('leagueId').value.replace(/\D/g,''),
     useManual: $('useManual').checked,
-    useUstat: $('useUstat').checked
+    useUstat: $('useUstat').checked,
+    transferHorizon: Number($('trHorizon')?.value || 6),
+    transferResults: Number($('trTop')?.value || 8)
   };
   const oddsKey = $('oddsKey').value.trim();
   if(oddsKey) config.oddsKey = oddsKey;
@@ -5896,6 +5898,455 @@ function buildOperatingReviewMarkdown(bundle){
 
 
 
+/* ===== src/ui/transfer-optimiser-view.mjs ===== */
+
+const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trFtCount','trBankIn','trHorizon','trTop']);
+const TRANSFER_PRESENTATION_STATES = Object.freeze({
+  TRANSFER_FIRST:'transfer-first',
+  BASELINE_FIRST:'baseline-first',
+  BASELINE_ONLY:'baseline-only',
+  UNAVAILABLE:'unavailable'
+});
+let transferPlannerRenderedControlSignature = null;
+
+function transferPlannerControlSignature(...values){
+  return values.map(value=>String(value ?? '')).join('|');
+}
+
+function transferPlannerCurrentControlSignature(){
+  return transferPlannerControlSignature(
+    $('trFtCount')?.value,
+    $('trBankIn')?.value,
+    $('trHorizon')?.value,
+    $('trTop')?.value
+  );
+}
+
+function transferPlannerRefreshRequired(renderedSignature,currentSignature){
+  return renderedSignature!==currentSignature;
+}
+
+function transferPlannerHasActivePreview(preview={}){
+  return Boolean(preview.transfer||preview.captainId!=null||preview.viceId!=null||preview.selectionMode!=null);
+}
+
+function transferPlannerDispatchPreviewChange(){
+  if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
+}
+
+function transferPlannerReadAssumptions(ftRaw,bankRaw){
+  const issues=[];
+  const ftText=String(ftRaw ?? '').trim();
+  const bankText=String(bankRaw ?? '').trim();
+  const ft=Number(ftText);
+  const bankMillions=Number(bankText);
+
+  if(!ftText) issues.push('Enter your current free transfers.');
+  else if(!Number.isInteger(ft)||ft<0||ft>5) issues.push('Free transfers must be a whole number from 0 to 5.');
+
+  if(!bankText) issues.push('Enter your bank balance.');
+  else if(!Number.isFinite(bankMillions)||bankMillions<0) issues.push('Bank must be a non-negative amount.');
+  else if(Math.abs(bankMillions*10-Math.round(bankMillions*10))>1e-8) issues.push('Bank must use £0.1m steps.');
+
+  return {
+    valid:issues.length===0,
+    issues,
+    freeTransfers:Number.isInteger(ft)&&ft>=0&&ft<=5?ft:null,
+    bankMillions:Number.isFinite(bankMillions)&&bankMillions>=0?bankMillions:null,
+    bankTenths:Number.isFinite(bankMillions)&&bankMillions>=0?Math.round(bankMillions*10):null
+  };
+}
+
+function transferPlannerPresentationState(plans=[]){
+  const source=Array.isArray(plans)?plans:[];
+  const baseline=source.find(plan=>Number(plan?.transferCount)===0);
+  if(!baseline) return TRANSFER_PRESENTATION_STATES.UNAVAILABLE;
+  const alternatives=source.filter(plan=>Number(plan?.transferCount)>0);
+  if(!alternatives.length) return TRANSFER_PRESENTATION_STATES.BASELINE_ONLY;
+  return Number(source[0]?.transferCount)===0
+    ? TRANSFER_PRESENTATION_STATES.BASELINE_FIRST
+    : TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST;
+}
+
+function transferPlannerNoTransferCopy(baseline={},alternativesCount=0,rankedFirst=false){
+  const before=Math.max(0,Math.trunc(Number(baseline.freeTransfersBefore)||0));
+  const next=Math.max(0,Math.trunc(Number(baseline.freeTransfersNextGW)||0));
+  let ftEffect=`Keep ${next} free transfer${next===1?'':'s'} for next Gameweek.`;
+  if(before>=5&&next>=5) ftEffect='No additional free transfer rolls while you are at the 5 FT cap.';
+  else if(next>before&&before>0) ftEffect=`Roll one FT and move to ${next} free transfers next Gameweek.`;
+  else if(next>before) ftEffect=`Make no transfer and move to ${next} free transfer${next===1?'':'s'} next Gameweek.`;
+
+  let comparison='This is the required zero-transfer comparison.';
+  if(alternativesCount===0)
+    comparison='No comparable legal transfer plan was returned, so this is not evidence that making no transfer is optimal.';
+  else if(rankedFirst)
+    comparison='This baseline ranks above every returned legal 1–3 transfer plan under the current assumptions.';
+  else
+    comparison='This is the benchmark used to judge every returned transfer plan.';
+
+  return {headline:'Make no transfer',ftEffect,comparison};
+}
+
+function transferPlannerNetLabel(value){
+  const n=Number(value)||0;
+  if(Math.abs(n)<0.05) return 'Level net model comparison';
+  return `${n>0?'+':'−'}${Math.abs(n).toFixed(1)} net model ${n>0?'advantage':'disadvantage'}`;
+}
+
+function transferPlannerPlanNames(plan={},byId={}){
+  return (plan.transfers||[]).map(move=>({
+    outName:byId[move.outPlayerId]?.web_name||String(move.outPlayerId),
+    inName:byId[move.inPlayerId]?.web_name||String(move.inPlayerId),
+    outPlayerId:Number(move.outPlayerId),
+    inPlayerId:Number(move.inPlayerId)
+  }));
+}
+
+function transferPlannerFormatDeadline(){
+  const event=S.boot?.events?.find(item=>Number(item.id)===Number(S.nextGW));
+  if(!event?.deadline_time) return `GW${S.nextGW||'—'} deadline unavailable`;
+  const deadline=new Date(event.deadline_time);
+  const hours=(deadline-Date.now())/3600000;
+  const stamp=deadline.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(hours<0) return `${stamp} · passed`;
+  if(hours<48) return `${stamp} · ${Math.floor(hours)}h ${Math.max(0,Math.floor((hours%1)*60))}m`;
+  return `${stamp} · ${Math.floor(hours/24)}d`;
+}
+
+function transferPlannerSourceLabel(){
+  if(S.cachedAt) return 'Verified saved FPL data';
+  if(S.source) return `FPL ${S.source}`;
+  return 'Verified FPL data';
+}
+
+function transferPlannerMoveList(plan){
+  const moves=transferPlannerPlanNames(plan,S.byId);
+  return el('div',{class:'transfer-moves'},moves.map(move=>
+    el('div',{class:'transfer-move'},
+      el('div',{class:'transfer-player transfer-player-out'},el('span',{class:'transfer-kicker'},'Out'),el('strong',{},move.outName)),
+      el('span',{class:'transfer-arrow','aria-hidden':'true'},'→'),
+      el('div',{class:'transfer-player transfer-player-in'},el('span',{class:'transfer-kicker'},'In'),el('strong',{},move.inName))
+    )));
+}
+
+function transferPlannerMetric(label,value,meta=''){
+  return el('div',{class:'transfer-metric'},
+    el('span',{class:'transfer-metric-label'},label),
+    el('strong',{},value),
+    meta?el('span',{class:'transfer-metric-meta'},meta):null);
+}
+
+function transferPlannerPlanContext(plan,horizon){
+  const first=plan.perGameweekBestXI?.[0];
+  if(!first) return 'Next-Gameweek XI consequence unavailable.';
+  const incoming=new Set((plan.transfers||[]).map(move=>Number(move.inPlayerId)));
+  const firstIds=(first.playerIds||[]).map(Number);
+  const starters=firstIds.filter(id=>incoming.has(id)).map(id=>S.byId[id]?.web_name||String(id));
+  const benched=[...incoming].filter(id=>!firstIds.includes(id)).map(id=>S.byId[id]?.web_name||String(id));
+  const parts=[`GW${first.gw} formation ${first.formation}`];
+  if(starters.length) parts.push(`${starters.join(', ')} projected in the XI`);
+  if(benched.length) parts.push(`${benched.join(', ')} projected on the bench`);
+  parts.push(`the ${horizon}-GW comparison does not include captain doubling or bench points`);
+  return parts.join(' · ');
+}
+
+function transferPlannerCautions(plan,pricingMode){
+  const cautions=[];
+  if(pricingMode==='estimated') cautions.push('Affordability is estimated because verified purchase prices are unavailable. Confirm the move inside FPL.');
+  else cautions.push('Affordability uses the recorded squad purchase prices.');
+  (plan?.warnings||[]).forEach(warning=>cautions.push(warning));
+  if(!(plan?.warnings||[]).length) cautions.push('No incoming availability warning was returned; still check the latest team news before confirming.');
+  return cautions;
+}
+
+function transferPlannerDetails(plan,horizon){
+  const rollAdjustment=(Number(plan.rollDifference)||0)*0.5;
+  return el('details',{class:'transfer-details'},
+    el('summary',{},'Review details'),
+    el('div',{class:'transfer-details-body'},
+      el('div',{class:'transfer-metrics'},
+        transferPlannerMetric('Gross XI gain',`${Number(plan.grossGain)>=0?'+':''}${Number(plan.grossGain||0).toFixed(1)}`,'Best legal XI across the selected horizon'),
+        transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,'Actual FPL transfer deduction'),
+        transferPlannerMetric('FT adjustment',`${rollAdjustment>=0?'+':''}${rollAdjustment.toFixed(1)}`,'Decision utility, not an FPL score'),
+        transferPlannerMetric('Net comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,'Gross gain minus hit plus FT utility')),
+      el('p',{class:'transfer-explainer'},transferPlannerPlanContext(plan,horizon))));
+}
+
+function transferPlannerPreviewButton(plan,index,squad,optimiserSignature,horizon,selected){
+  return el('button',{
+    type:'button',
+    class:`btn transfer-preview-action${selected?' selected':''}`,
+    'aria-label':`Preview transfer plan ${index+1} on the Team pitch`,
+    onclick:()=>{
+      decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);
+      transferPlannerDispatchPreviewChange();
+      globalThis.__teamsheetNavigate?.('#/team');
+    }
+  },selected?'Previewing on Team':'Preview on Team');
+}
+
+function transferPlannerPlanCard(plan,{title,index,squad,optimiserSignature,horizon,selected,primary=false,pricingMode='exact'}){
+  const moves=transferPlannerPlanNames(plan,S.byId);
+  const cautionItems=transferPlannerCautions(plan,pricingMode);
+  return el('article',{class:`transfer-card transfer-plan-card${primary?' primary':''}`},
+    el('div',{class:'transfer-card-head'},
+      el('div',{},el('span',{class:'eyebrow'},title),el('h3',{},moves.map(move=>`${move.outName} → ${move.inName}`).join(' · '))),
+      el('span',{class:'transfer-rank'},`#${index+1}`)),
+    transferPlannerMoveList(plan),
+    el('div',{class:'transfer-metrics transfer-metrics-summary'},
+      transferPlannerMetric('Net model comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,`vs no transfer over ${horizon} GW${horizon===1?'':'s'}`),
+      transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,plan.hitCost?'Paid transfer cost':'No points deduction'),
+      transferPlannerMetric('Bank after',`£${(Number(plan.bankAfter||0)/10).toFixed(1)}m`),
+      transferPlannerMetric('Next GW',`${Number(plan.freeTransfersNextGW)||0} FT`)),
+    el('p',{class:'transfer-why'},el('b',{},'Why shown: '),primary
+      ? 'Highest net comparison returned under these planning assumptions.'
+      : 'Next highest returned legal option under these planning assumptions.'),
+    el('div',{class:'transfer-caution'},
+      el('strong',{},'Known cautions'),
+      el('ul',{},cautionItems.map(item=>el('li',{},item)))),
+    transferPlannerDetails(plan,horizon),
+    el('div',{class:'transfer-actions'},
+      transferPlannerPreviewButton(plan,index,squad,optimiserSignature,horizon,selected)));
+}
+
+function transferPlannerBaselineCard(baseline,{alternativesCount,rankedFirst,primary=false}){
+  const copy=transferPlannerNoTransferCopy(baseline,alternativesCount,rankedFirst);
+  return el('article',{class:`transfer-card transfer-baseline-card${primary?' primary':''}`},
+    el('span',{class:'eyebrow'},rankedFirst?'Highest-ranked decision':'Required comparison'),
+    el('h3',{},copy.headline),
+    el('p',{class:'transfer-card-lead'},copy.comparison),
+    el('div',{class:'transfer-metrics transfer-metrics-summary'},
+      transferPlannerMetric('Net comparison','0.0','The benchmark'),
+      transferPlannerMetric('Hit','−0','No points deduction'),
+      transferPlannerMetric('Bank after',`£${(Number(baseline.bankAfter||0)/10).toFixed(1)}m`),
+      transferPlannerMetric('Next GW',`${Number(baseline.freeTransfersNextGW)||0} FT`)),
+    el('p',{class:'transfer-ft-effect'},copy.ftEffect));
+}
+
+function transferPlannerDecisionHero(state,baseline,topAlternative,horizon){
+  let eyebrow='Decision status',title='No verified comparison',detail='Teamsheet cannot rank a transfer decision yet.',metric='—',hit='—';
+  if(state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST&&topAlternative){
+    const moves=transferPlannerPlanNames(topAlternative,S.byId);
+    eyebrow='Highest-ranked decision';
+    title=moves.map(move=>`${move.outName} → ${move.inName}`).join(' · ');
+    detail='This transfer plan ranks above making no transfer under the current assumptions.';
+    metric=transferPlannerNetLabel(topAlternative.netGain);
+    hit=`${Number(topAlternative.hitCost)||0}-point hit`;
+  }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST){
+    eyebrow='Highest-ranked decision';
+    title='Make no transfer';
+    detail='The zero-transfer baseline ranks above the returned legal transfer plans.';
+    metric='Baseline ranks first';
+    hit='No hit';
+  }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY){
+    eyebrow='Comparison incomplete';
+    title='Make no transfer is the only legal comparison';
+    detail='No transfer alternative was returned, so Teamsheet is not calling this optimal.';
+    metric='Baseline only';
+    hit='No hit';
+  }
+  return el('section',{class:`transfer-decision-hero state-${state}`,'aria-labelledby':'transferDecisionTitle'},
+    el('span',{class:'eyebrow'},eyebrow),
+    el('h3',{id:'transferDecisionTitle'},title),
+    el('p',{},detail),
+    el('div',{class:'transfer-hero-facts'},
+      el('span',{},metric),
+      el('span',{},hit),
+      el('span',{},`${horizon} GW${horizon===1?'':'s'}`)));
+}
+
+function transferPlannerContext(){
+  return el('div',{class:'transfer-context-chips','aria-label':'Transfer comparison context'},
+    el('span',{class:'transfer-context-chip'},`GW${S.nextGW||'—'}`),
+    el('span',{class:'transfer-context-chip deadline'},transferPlannerFormatDeadline()),
+    el('span',{class:'transfer-context-chip source'},transferPlannerSourceLabel()));
+}
+
+function transferPlannerBlocking(out,title,detail){
+  S.lastOptimiser=null;
+  setChildren(out,transferPlannerContext(),el('div',{class:'note bad',role:'alert'},el('b',{},title),` ${detail}`));
+}
+
+function transferPlannerSyncVisibleAssumptions(){
+  const pairs=[['trFtCount','ftCount'],['trBankIn','bankIn']];
+  pairs.forEach(([visibleId,canonicalId])=>{
+    const visible=$(visibleId),canonical=$(canonicalId);
+    if(!visible||!canonical||document.activeElement===visible) return;
+    visible.value=canonical.value;
+  });
+}
+
+function transferPlannerMarkUpdating(){
+  const out=$('transferOut'),status=$('transferStatus');
+  if(out) out.setAttribute('aria-busy','true');
+  if(status) status.textContent='Updating transfer comparison…';
+}
+
+function renderTransfers(){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPlannerSyncVisibleAssumptions();
+  transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
+  transferPlannerMarkUpdating();
+
+  try{
+    if(!S.boot){
+      transferPlannerBlocking(out,'Verified player data is unavailable.','Refresh from Settings before using transfer comparisons.');
+      return;
+    }
+    const squad=mySquad();
+    if(squad.length!==15){
+      transferPlannerBlocking(out,'A complete 15-player squad is required.','Load your team or finish the manual squad in Team setup.');
+      return;
+    }
+
+    const assumptions=transferPlannerReadAssumptions($('trFtCount')?.value,$('trBankIn')?.value);
+    if(!assumptions.valid){
+      transferPlannerBlocking(out,'Check the planning assumptions.',assumptions.issues.join(' '));
+      return;
+    }
+
+    const horizon=Math.max(1,Math.min(8,Math.trunc(Number($('trHorizon')?.value)||6)));
+    const maxResults=Math.max(1,Math.min(20,Math.trunc(Number($('trTop')?.value)||8)));
+    const squadSignature=decisionPreviewSquadSignature(squad);
+    const result=optimiseTransfers({
+      squad,
+      players:S.boot.elements||[],
+      bank:assumptions.bankTenths,
+      freeTransfers:assumptions.freeTransfers,
+      startGW:S.nextGW,
+      horizon,
+      maxResults,
+      scorePlayer:(player,gw)=>xpOf(player,gw,1).total
+    });
+    S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
+
+    if(result.status==='invalid-input'){
+      transferPlannerBlocking(out,'Squad cannot be compared.',`Fix the squad before continuing: ${(result.issues||[]).join(', ')}.`);
+      return;
+    }
+    if(result.status==='projection-unavailable'){
+      transferPlannerBlocking(out,'Projections are unavailable.','No transfer recommendation can be made from an unverified comparison.');
+      return;
+    }
+    if(result.status==='search-incomplete'){
+      transferPlannerBlocking(out,'Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
+      return;
+    }
+
+    const plans=result.plans||[];
+    const state=transferPlannerPresentationState(plans);
+    const baseline=plans.find(plan=>Number(plan.transferCount)===0);
+    if(!baseline){
+      transferPlannerBlocking(out,'No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
+      return;
+    }
+
+    const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
+    const topAlternative=alternatives[0]||null;
+    const optimiserSignature=decisionPreviewOptimiserSignature({
+      squadSignature,
+      horizon,
+      bank:assumptions.bankTenths,
+      freeTransfers:assumptions.freeTransfers,
+      plans
+    });
+    const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
+    if(previewCleared) transferPlannerDispatchPreviewChange();
+    const previewState=decisionPreviewSnapshot();
+    const nodes=[
+      transferPlannerContext(),
+      transferPlannerDecisionHero(state,baseline,topAlternative,horizon),
+      el('div',{class:'transfer-card-stack'},
+        transferPlannerBaselineCard(baseline,{
+          alternativesCount:alternatives.length,
+          rankedFirst:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST,
+          primary:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST||state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY
+        }),
+        topAlternative?transferPlannerPlanCard(topAlternative,{
+          title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
+          index:plans.indexOf(topAlternative),
+          squad,
+          optimiserSignature,
+          horizon,
+          selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
+          primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
+          pricingMode:result.pricingMode
+        }):null)
+    ];
+
+    const otherAlternatives=alternatives.slice(1,4);
+    if(otherAlternatives.length){
+      nodes.push(el('details',{class:'transfer-alternatives'},
+        el('summary',{},`Other legal options (${otherAlternatives.length})`),
+        el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
+          title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
+          index:plans.indexOf(plan),
+          squad,
+          optimiserSignature,
+          horizon,
+          selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
+          primary:false,
+          pricingMode:result.pricingMode
+        })))));
+    }
+
+    nodes.push(el('p',{class:'transfer-disclaimer'},
+      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points.'));
+    setChildren(out,nodes);
+  }finally{
+    out.setAttribute('aria-busy','false');
+    const status=$('transferStatus');
+    if(status) status.textContent='Transfer comparison updated.';
+  }
+}
+
+function transferPlannerClearPreview(){
+  const preview=decisionPreviewSnapshot();
+  decisionPreviewClearTransfer();
+  if(transferPlannerHasActivePreview(preview)) transferPlannerDispatchPreviewChange();
+}
+
+function transferPlannerRefreshCommittedSelection(){
+  const currentSignature=transferPlannerCurrentControlSignature();
+  if(!transferPlannerRefreshRequired(transferPlannerRenderedControlSignature,currentSignature)) return false;
+  transferPlannerClearPreview();
+  void saveCfg();
+  renderTransfers();
+  return true;
+}
+
+function transferPlannerMirrorAssumption(visibleId,canonicalId){
+  const visible=$(visibleId),canonical=$(canonicalId);
+  if(!visible||!canonical||visible.dataset.assumptionMirrorInstalled==='true') return;
+  visible.dataset.assumptionMirrorInstalled='true';
+  visible.addEventListener('input',()=>{
+    transferPlannerMarkUpdating();
+    transferPlannerClearPreview();
+    canonical.value=visible.value;
+    canonical.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+}
+
+function installTransferPlannerCommittedControlRefresh(){
+  if(typeof document==='undefined') return;
+  transferPlannerSyncVisibleAssumptions();
+  transferPlannerMirrorAssumption('trFtCount','ftCount');
+  transferPlannerMirrorAssumption('trBankIn','bankIn');
+
+  ['trHorizon','trTop'].forEach(id=>{
+    const control=$(id);
+    if(!control||control.dataset.committedRefreshInstalled==='true') return;
+    control.dataset.committedRefreshInstalled='true';
+    control.addEventListener('input',transferPlannerMarkUpdating);
+    control.addEventListener('change',transferPlannerRefreshCommittedSelection);
+  });
+}
+
+installTransferPlannerCommittedControlRefresh();
+
+
+
 /* ===== src/ui/views.mjs ===== */
 // Views import broadly; the bundler flattens everything into one scope.
 const elNode = el;
@@ -6239,62 +6690,6 @@ function renderSquad(){
 }
 
 /* ---------------------------------------------------------------------
-   VIEW — TRANSFER PLANNER
-   --------------------------------------------------------------------- */
-function renderTransfers(){
-  const el = $('transferOut');
-  const squad = mySquad();
-  if(!squad.length){
-    setChildren(el,elNode('div',{class:'empty'},elNode('strong',{},'No squad loaded'),'Add your 15 on the Squad tab — by hand is fine — and the planner will cost every swap.'));
-    return;
-  }
-  const span = +$('trHorizon').value, topN = +$('trTop').value;
-  const gw = S.nextGW, bank = num($('bankIn').value)*10, ft = num($('ftCount').value);
-  const mineIds = new Set(squad.map(s => s.p.id));
-  const teamCount = {};
-  squad.forEach(s => teamCount[s.p.team] = (teamCount[s.p.team]||0)+1);
-
-  const moves = [];
-  squad.forEach(out => {
-    const budget = sellPrice(out) + bank;
-    const outXP = xpOf(out.p, gw, span).total;
-    S.boot.elements.forEach(inP => {
-      if(mineIds.has(inP.id)) return;
-      if(inP.element_type !== out.p.element_type) return;
-      if(inP.now_cost > budget) return;
-      if(availability(inP) < 0.75) return;
-      const cnt = (teamCount[inP.team]||0) - (inP.team === out.p.team ? 1 : 0);
-      if(cnt >= 3) return;                                  // 3-per-club rule
-      const gain = xpOf(inP, gw, span).total - outXP;
-      if(gain <= 0) return;
-      moves.push({out, inP, gain, cost:(inP.now_cost - sellPrice(out))/10});
-    });
-  });
-  moves.sort((a,b) => b.gain - a.gain);
-
-  if(!moves.length){
-    setChildren(el,noteNode('good',elNode('b',{},'No upgrade found.'),` Nothing available within budget projects better than what you already own over the next ${span} gameweek${span>1?'s':''}. Roll the transfer.`));
-    return;
-  }
-  const best=moves[0], nodes=[];
-  const freeText=ft>=1?`You have ${ft} free transfer${ft>1?'s':''}, so this costs nothing.`:best.gain>4?'Even after a −4 this clears the bar.':`After a −4 it nets ${fmt1(best.gain-4)} — not worth it.`;
-  nodes.push(noteNode(best.gain>4?'good':'plain',elNode('b',{},'Top move:'),` ${best.out.p.web_name} → ${best.inP.web_name}, +${fmt1(best.gain)} projected points over ${span} GW${span>1?'s':''}. ${freeText}`));
-  if(ft>=2) nodes.push(noteNode('plain',`With ${ft} banked, the top ${Math.min(ft,5)} moves below can all be made free — but check they aren't two players from the same fixture swing.`));
-  const tbody=elNode('tbody');
-  moves.slice(0,topN).forEach(m=>{
-    const net=m.gain-4, verdict=m.gain>6?['rise','strong']:m.gain>4?['rise','worth a hit']:m.gain>1.5?['info','free only']:['dark','marginal'];
-    tbody.appendChild(elNode('tr',{},
-      elNode('td',{},elNode('span',{class:'pname'},m.out.p.web_name),elNode('span',{class:'pmeta'},`${S.teams[m.out.p.team]?.short_name||''} · ${fmt1(xpOf(m.out.p,gw,span).total)} xP`)),
-      elNode('td',{},elNode('span',{class:'pname'},m.inP.web_name,flagNodes(m.inP)),elNode('span',{class:'pmeta'},`${S.teams[m.inP.team]?.short_name||''} · ${fmt1(xpOf(m.inP,gw,span).total)} xP`)),
-      cell(`${m.cost>0?'+':''}${fmt1(m.cost)}`,'num'),elNode('td',{class:'num'},elNode('span',{class:`xp ${m.gain>4?'hot':''}`},`+${fmt1(m.gain)}`)),
-      elNode('td',{class:`num transfer-net ${net>0?'positive':'negative'}`},`${net>0?'+':''}${fmt1(net)}`),elNode('td',{},elNode('span',{class:`flag ${verdict[0]}`},verdict[1]))));
-  });
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Out'),head('In'),head('Cost £m','num'),head('Gain','num'),head('After −4','num'),head('Verdict'))),tbody)));
-  nodes.push(noteNode('plain','A hit only pays if the gain clears 4 points across the horizon you chose — over one gameweek that is a high bar, which is why most weeks the honest answer is to roll.'));
-  setChildren(el,nodes);
-}
-
-/* ---------------------------------------------------------------------
    VIEW — MINI-LEAGUE
    --------------------------------------------------------------------- */
 /* ---------------------------------------------------------------------
@@ -6572,7 +6967,6 @@ document.addEventListener('teamsheet:preview-change',()=>renderSquad());
 const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);
 ['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
-['trHorizon','trTop'].forEach(id => $(id).addEventListener('input', debounce(renderTransfers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
 // the team and league IDs must persist the moment they're typed — a failed
 // data load must never lose them
@@ -6599,6 +6993,8 @@ document.addEventListener('click', e => {
     if(cfg.teamId) $('teamId').value = cfg.teamId;
     if(cfg.ft != null) $('ftCount').value = cfg.ft;
     if(cfg.bank != null) $('bankIn').value = cfg.bank;
+    if(cfg.transferHorizon != null) $('trHorizon').value = String(cfg.transferHorizon);
+    if(cfg.transferResults != null) $('trTop').value = String(cfg.transferResults);
     if(cfg.leagueId) $('leagueId').value = cfg.leagueId;
     if(cfg.useManual) $('useManual').checked = true;
     if(cfg.oddsKey) $('oddsKey').value = cfg.oddsKey;
@@ -6974,136 +7370,6 @@ function teamDecisionInstall(){
 }
 
 teamDecisionInstall();
-
-
-
-/* ===== src/ui/transfer-optimiser-view.mjs ===== */
-
-const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trHorizon','trTop']);
-let transferPlannerRenderedControlSignature = null;
-
-function transferPlannerControlSignature(horizonValue='',topValue=''){
-  return `${String(horizonValue)}|${String(topValue)}`;
-}
-
-function transferPlannerCurrentControlSignature(){
-  return transferPlannerControlSignature($('trHorizon')?.value,$('trTop')?.value);
-}
-
-function transferPlannerRefreshRequired(renderedSignature,currentSignature){
-  return renderedSignature!==currentSignature;
-}
-
-function transferPlannerHasActivePreview(preview={}){
-  return Boolean(preview.transfer||preview.captainId!=null||preview.viceId!=null||preview.selectionMode!=null);
-}
-
-function transferPlannerDispatchPreviewChange(){
-  if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('teamsheet:preview-change'));
-}
-
-// Stage 6 replacement for the legacy isolated-swap renderer. The bundler places
-// this declaration after views.mjs so renderAll resolves to this implementation.
-function renderTransfers(){
-  transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
-  const out=$('transferOut');
-  const squad=mySquad();
-  if(!squad.length){
-    setChildren(out,el('div',{class:'empty'},el('strong',{},'No squad loaded'),'Add your 15 on the Squad tab before running the optimiser.'));
-    return;
-  }
-  const horizon=Math.max(1,Math.min(8,Math.trunc(num($('trHorizon')?.value)||6)));
-  const maxResults=Math.max(1,Math.min(20,Math.trunc(num($('trTop')?.value)||10)));
-  const bank=Math.max(0,Math.round(num($('bankIn')?.value)*10));
-  const freeTransfers=Math.max(0,Math.min(5,Math.trunc(num($('ftCount')?.value)||0)));
-  const squadSignature=decisionPreviewSquadSignature(squad);
-  const result=optimiseTransfers({
-    squad,players:S.boot?.elements||[],bank,freeTransfers,startGW:S.nextGW,horizon,maxResults,
-    scorePlayer:(p,gw)=>xpOf(p,gw,1).total
-  });
-  S.lastOptimiser={result,horizon,bank,freeTransfers,startGW:S.nextGW,squadSignature};
-  if(result.status==='invalid-input'){
-    setChildren(out,el('div',{class:'note bad'},el('b',{},'Squad cannot be optimised.'),` Fix: ${result.issues.join(', ')}.`));
-    return;
-  }
-  if(result.status==='projection-unavailable'){
-    setChildren(out,el('div',{class:'note bad'},'Projections are unavailable, so no transfer recommendation can be made.'));
-    return;
-  }
-  if(result.status==='search-incomplete'){
-    setChildren(out,el('div',{class:'note bad'},el('b',{},'Exact search did not complete.'),' No partial result is being presented as optimal. Keep the current squad and try a shorter horizon.'));
-    return;
-  }
-  const plans=result.plans||[];
-  const optimiserSignature=decisionPreviewOptimiserSignature({squadSignature,horizon,bank,freeTransfers,plans});
-  const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
-  if(previewCleared) transferPlannerDispatchPreviewChange();
-  const previewState=decisionPreviewSnapshot();
-  const best=plans[0];
-  const nodes=[];
-  if(!best||best.transferCount===0){
-    nodes.push(el('div',{class:'note good'},el('b',{},'Roll the transfer.'),' No legal 1–3 move plan beats the zero-transfer baseline after hits and the 0.5-point roll value.'));
-  }else{
-    const moveText=best.transfers.map(t=>`${S.byId[t.outPlayerId]?.web_name||t.outPlayerId} → ${S.byId[t.inPlayerId]?.web_name||t.inPlayerId}`).join(' · ');
-    nodes.push(el('div',{class:'note good'},el('b',{},'Top complete plan: '),moveText,` · net ${best.netGain>=0?'+':''}${best.netGain.toFixed(1)} points over ${horizon} GW${horizon>1?'s':''} · hit −${best.hitCost} · £${(best.bankAfter/10).toFixed(1)}m left · ${best.freeTransfersNextGW} FT next GW.`));
-    if(best.warnings.length) nodes.push(el('div',{class:'note bad'},best.warnings.join(' · ')));
-  }
-  const table=el('table',{class:'data'});
-  const head=el('thead',{},el('tr',{},...['Plan','Moves','Gross gain','Hit','Roll','Net','Bank','Next FT','Preview'].map(x=>el('th',{},x))));
-  const body=el('tbody');
-  plans.slice(0,maxResults).forEach((plan,i)=>{
-    const label=plan.transferCount===0?'Roll':plan.transfers.map(t=>`${S.byId[t.outPlayerId]?.web_name||t.outPlayerId} → ${S.byId[t.inPlayerId]?.web_name||t.inPlayerId}`).join('; ');
-    const selected=!!previewState.transfer&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan);
-    const action=el('button',{type:'button',class:`btn ghost sm preview-plan-action${selected?' selected':''}`,
-      'aria-label':plan.transferCount===0?'Use current squad on Team pitch':`Preview transfer plan ${i+1} on Team pitch`,
-      onclick:()=>{
-        decisionPreviewSelectTransfer({...plan,previewHorizon:horizon},squad,optimiserSignature);
-        if(typeof document!=='undefined'){
-          transferPlannerDispatchPreviewChange();
-          document.querySelector('nav.tabs .tab[data-view="squad"]')?.click();
-        }
-      }},plan.transferCount===0?'Use current squad':selected?'Previewing':'Preview on pitch');
-    body.appendChild(el('tr',{class:selected?'preview-plan-row':''},
-      el('td',{},i===0?el('b',{},label):label),
-      el('td',{class:'num'},String(plan.transferCount)),
-      el('td',{class:'num'},`${plan.grossGain>=0?'+':''}${plan.grossGain.toFixed(1)}`),
-      el('td',{class:'num'},`−${plan.hitCost}`),
-      el('td',{class:'num'},`${(plan.rollDifference*0.5).toFixed(1)}`),
-      el('td',{class:'num'},`${plan.netGain>=0?'+':''}${plan.netGain.toFixed(1)}`),
-      el('td',{class:'num'},`£${(plan.bankAfter/10).toFixed(1)}m`),
-      el('td',{class:'num'},String(plan.freeTransfersNextGW)),
-      el('td',{},action)));
-  });
-  table.append(head,body);
-  nodes.push(el('div',{class:'scroll'},table));
-  const estimated=squad.some(s=>s.bought==null);
-  nodes.push(el('div',{class:'note plain'},estimated
-    ? 'Affordability is estimated because the public picks feed does not expose purchase prices. Confirm the plan inside FPL before acting.'
-    : 'Affordability uses the recorded purchase prices for this squad.'));
-  setChildren(out,nodes);
-}
-
-function transferPlannerRefreshCommittedSelection(){
-  const currentSignature=transferPlannerCurrentControlSignature();
-  if(!transferPlannerRefreshRequired(transferPlannerRenderedControlSignature,currentSignature)) return false;
-  const preview=decisionPreviewSnapshot();
-  decisionPreviewClearTransfer();
-  if(transferPlannerHasActivePreview(preview)) transferPlannerDispatchPreviewChange();
-  renderTransfers();
-  return true;
-}
-
-function installTransferPlannerCommittedControlRefresh(){
-  if(typeof document==='undefined') return;
-  TRANSFER_PLANNER_COMMITTED_CONTROL_IDS.forEach(id=>{
-    const control=$(id);
-    if(!control||control.dataset.committedRefreshInstalled==='true') return;
-    control.dataset.committedRefreshInstalled='true';
-    control.addEventListener('change',transferPlannerRefreshCommittedSelection);
-  });
-}
-
-installTransferPlannerCommittedControlRefresh();
 
 
 

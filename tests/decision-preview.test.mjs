@@ -110,6 +110,6 @@ test('preview implementation is session-only and wired to accessible controls',(
   assert.match(views,/Choose vice-captain/);
   assert.match(views,/Clear preview/);
   assert.match(views,/bestXI\(squad,gw\)/);
-  assert.match(transfers,/Preview on pitch/);
-  assert.match(transfers,/Use current squad/);
+  assert.match(transfers,/Preview on Team/);
+  assert.match(transfers,/__teamsheetNavigate/);
 });

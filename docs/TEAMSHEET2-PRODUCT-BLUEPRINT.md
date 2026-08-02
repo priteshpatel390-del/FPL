@@ -523,3 +523,7 @@ This blueprint does not authorise:
 ## 2.0.1 physical-review amendment — 31 July 2026
 
 The global shell uses one compact Ask Teamsheet composer at the top of every destination, with an internal claret upward-arrow send control. Data and Evidence are Settings content, not global header controls. The five primary destinations share one fixed safe-area dock and controlled monochrome icons. These presentation decisions do not authorise changes to provider transport, foreground refresh trust boundaries or account-derived bank/free-transfer data.
+
+## 2.0.3 implementation note
+
+The approved Transfers checkpoint is implemented as a presentation/state migration only. It preserves the exact optimiser and introduces a mobile decision hierarchy: assumptions, verified context, highest-ranked decision, no-transfer baseline, best transfer alternative, progressive details and limited alternatives. Mini-League, rank, Team Home, player-detail, provider and model work remain outside this checkpoint.
