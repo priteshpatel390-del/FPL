@@ -1,5 +1,5 @@
 # CLAUDE.md — onboarding for every future development session
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-07-30.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-08-02.
 
 ## Owner
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
@@ -17,7 +17,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 10. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Teamsheet 2.0.4 — Mini Leagues is implemented on the owner-approved official-data and factual-comparison boundary: primary league selection, official position/movement, points gaps, nearby standings, pinned rivals, on-demand public picks, exact squad overlap and ID-free League subroutes. Projected rank, protect/chase strategy, differential scoring and every Team/Transfers/model calculation remain unchanged. The next separately designed checkpoint is **Teamsheet 2.0.5 — Mini-League intelligence**. Stage 10 collection and evaluation infrastructure remains complete; prospective validation is still in progress. The verified 2.0.4 source baseline is **493/493 tests** with deterministic exact-identity builds and root/deployable equality; physical iPhone and VoiceOver acceptance remain review gates.
+Teamsheet 2.0.4 — Mini Leagues is complete and merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92` on the owner-approved official-data and factual-comparison boundary: primary league selection, official position/movement, points gaps, nearby standings, pinned rivals, on-demand public picks, exact squad overlap and ID-free League subroutes. Projected rank, protect/chase strategy, differential scoring and every Team/Transfers/model calculation remain unchanged. The next separately designed checkpoint is **Teamsheet 2.0.5 — Mini-League Intelligence**. Stage 10 collection and evaluation infrastructure remains complete; prospective validation is still in progress. The verified 2.0.4 baseline is **493/493 tests** with deterministic exact-identity builds and root/deployable equality. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
