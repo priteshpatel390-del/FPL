@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/teamsheet-2.0.4-mini-leagues
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
