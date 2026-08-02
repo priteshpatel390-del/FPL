@@ -2,7 +2,7 @@
 
 Status: implemented on the owner-approved draft branch; not merged.
 
-Verified source commit: `{{SOURCE_SHA}}`
+Verified source commit: `f2f184fb9890a820e91ae240b27241e0d76f41ef`
 
 ## Outcome
 
