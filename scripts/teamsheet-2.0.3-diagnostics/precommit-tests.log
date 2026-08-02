@@ -3,1549 +3,1549 @@ TAP version 13
 # Subtest: SEC-3: legacy claudeKey is removed and the scrubbed config is persisted
 ok 1 - SEC-3: legacy claudeKey is removed and the scrubbed config is persisted
   ---
-  duration_ms: 21.787819
+  duration_ms: 21.454647
   type: 'test'
   ...
 # Subtest: SEC-3: saveCfg never writes an Anthropic key field
 ok 2 - SEC-3: saveCfg never writes an Anthropic key field
   ---
-  duration_ms: 17.557186
+  duration_ms: 17.983158
   type: 'test'
   ...
 # Subtest: SEC-3: hosted Ask fails fast and never contacts Anthropic
 ok 3 - SEC-3: hosted Ask fails fast and never contacts Anthropic
   ---
-  duration_ms: 14.505559
+  duration_ms: 23.930204
   type: 'test'
   ...
 # Subtest: SEC-3: Claude preview request is keyless and contains no dangerous browser-access header
 ok 4 - SEC-3: Claude preview request is keyless and contains no dangerous browser-access header
   ---
-  duration_ms: 8.080843
+  duration_ms: 12.238776
   type: 'test'
   ...
 # Subtest: SEC-3: source UI and built output contain no Anthropic key affordance or keyed request path
 ok 5 - SEC-3: source UI and built output contain no Anthropic key affordance or keyed request path
   ---
-  duration_ms: 5.276688
+  duration_ms: 7.892054
   type: 'test'
   ...
 # Subtest: archive pin uses an immutable final-season commit
 ok 6 - archive pin uses an immutable final-season commit
   ---
-  duration_ms: 1.409155
+  duration_ms: 0.965666
   type: 'test'
   ...
 # Subtest: archive parser handles quoted commas deterministically
 ok 7 - archive parser handles quoted commas deterministically
   ---
-  duration_ms: 1.150833
+  duration_ms: 0.770375
   type: 'test'
   ...
 # Subtest: SHA-256 is calculated from exact archive text
 ok 8 - SHA-256 is calculated from exact archive text
   ---
-  duration_ms: 11.752643
+  duration_ms: 7.313001
   type: 'test'
   ...
 # Subtest: replay predictions use only earlier gameweeks
 ok 9 - replay predictions use only earlier gameweeks
   ---
-  duration_ms: 2.92984
+  duration_ms: 1.688002
   type: 'test'
   ...
 # Subtest: double-gameweek rows aggregate to one player-gameweek observation
 ok 10 - double-gameweek rows aggregate to one player-gameweek observation
   ---
-  duration_ms: 0.976255
+  duration_ms: 0.602041
   type: 'test'
   ...
 # Subtest: malformed archive rows are counted rather than manufactured
 ok 11 - malformed archive rows are counted rather than manufactured
   ---
-  duration_ms: 1.451745
+  duration_ms: 1.151322
   type: 'test'
   ...
 # Subtest: archive replay produces raw and train-only fold-calibrated holdouts
 ok 12 - archive replay produces raw and train-only fold-calibrated holdouts
   ---
-  duration_ms: 133.577832
+  duration_ms: 33.440472
   type: 'test'
   ...
 # Subtest: build output contains no raw ES-module import or export declarations
 ok 13 - build output contains no raw ES-module import or export declarations
   ---
-  duration_ms: 5.424633
+  duration_ms: 6.326302
   type: 'test'
   ...
 # Subtest: root deployment copy is byte-identical to dist/index.html
 ok 14 - root deployment copy is byte-identical to dist/index.html
   ---
-  duration_ms: 1.498021
+  duration_ms: 2.49214
   type: 'test'
   ...
 # Subtest: bundler strips single-line imports and export lists
 ok 15 - bundler strips single-line imports and export lists
   ---
-  duration_ms: 0.808782
+  duration_ms: 0.775397
   type: 'test'
   ...
 # Subtest: bundler strips multi-line named imports as one declaration
 ok 16 - bundler strips multi-line named imports as one declaration
   ---
-  duration_ms: 0.307505
+  duration_ms: 0.25572
   type: 'test'
   ...
 # Subtest: bundler strips default plus multi-line named imports
 ok 17 - bundler strips default plus multi-line named imports
   ---
-  duration_ms: 0.312384
+  duration_ms: 0.321731
   type: 'test'
   ...
 # Subtest: bundler strips multi-line export lists and re-export lists
 ok 18 - bundler strips multi-line export lists and re-export lists
   ---
-  duration_ms: 0.322803
+  duration_ms: 0.263177
   type: 'test'
   ...
 # Subtest: bundler rejects unterminated module declarations
 ok 19 - bundler rejects unterminated module declarations
   ---
-  duration_ms: 1.570908
+  duration_ms: 0.741754
   type: 'test'
   ...
 # Subtest: bundler rejects unsupported surviving module syntax
 ok 20 - bundler rejects unsupported surviving module syntax
   ---
-  duration_ms: 0.413203
+  duration_ms: 0.354342
   type: 'test'
   ...
 # Subtest: stable: matchContext_strong_home
 ok 21 - stable: matchContext_strong_home
   ---
-  duration_ms: 4.285104
+  duration_ms: 4.44732
   type: 'test'
   ...
 # Subtest: stable: matchContext_weak_away
 ok 22 - stable: matchContext_weak_away
   ---
-  duration_ms: 0.282699
+  duration_ms: 0.283718
   type: 'test'
   ...
 # Subtest: stable: multToDiff_boundaries
 ok 23 - stable: multToDiff_boundaries
   ---
-  duration_ms: 0.159127
+  duration_ms: 0.163583
   type: 'test'
   ...
 # Subtest: stable: runScore_attack_t1
 ok 24 - stable: runScore_attack_t1
   ---
-  duration_ms: 0.153647
+  duration_ms: 0.155152
   type: 'test'
   ...
 # Subtest: stable: runScore_def_t1
 ok 25 - stable: runScore_def_t1
   ---
-  duration_ms: 0.228217
+  duration_ms: 0.178249
   type: 'test'
   ...
 # Subtest: stable: double_gw11_team5
 ok 26 - stable: double_gw11_team5
   ---
-  duration_ms: 0.154379
+  duration_ms: 0.189606
   type: 'test'
   ...
 # Subtest: stable: matchContext_with_ustat
 ok 27 - stable: matchContext_with_ustat
   ---
-  duration_ms: 0.239036
+  duration_ms: 0.246236
   type: 'test'
   ...
 # Subtest: stable: matchContext_with_odds_home
 ok 28 - stable: matchContext_with_odds_home
   ---
-  duration_ms: 0.195065
+  duration_ms: 0.161567
   type: 'test'
   ...
 # Subtest: stable: matchContext_with_odds_awayPerspective
 ok 29 - stable: matchContext_with_odds_awayPerspective
   ---
-  duration_ms: 0.557844
+  duration_ms: 0.570443
   type: 'test'
   ...
 # Subtest: stable: xp_eliteFWD
 ok 30 - stable: xp_eliteFWD
   ---
-  duration_ms: 0.594792
+  duration_ms: 0.610451
   type: 'test'
   ...
 # Subtest: stable: xp_goodFWD
 ok 31 - stable: xp_goodFWD
   ---
-  duration_ms: 0.243235
+  duration_ms: 0.241003
   type: 'test'
   ...
 # Subtest: stable: xp_budgetFWD
 ok 32 - stable: xp_budgetFWD
   ---
-  duration_ms: 0.192199
+  duration_ms: 0.153749
   type: 'test'
   ...
 # Subtest: stable: xp_eliteMID
 ok 33 - stable: xp_eliteMID
   ---
-  duration_ms: 0.130404
+  duration_ms: 0.131825
   type: 'test'
   ...
 # Subtest: stable: xp_dcMID
 ok 34 - stable: xp_dcMID
   ---
-  duration_ms: 0.127448
+  duration_ms: 0.144897
   type: 'test'
   ...
 # Subtest: stable: xp_eliteDEF
 ok 35 - stable: xp_eliteDEF
   ---
-  duration_ms: 0.110176
+  duration_ms: 0.120497
   type: 'test'
   ...
 # Subtest: stable: xp_weakDEF
 ok 36 - stable: xp_weakDEF
   ---
-  duration_ms: 0.103393
+  duration_ms: 0.115043
   type: 'test'
   ...
 # Subtest: stable: xp_eliteGKP
 ok 37 - stable: xp_eliteGKP
   ---
-  duration_ms: 0.109064
+  duration_ms: 0.111033
   type: 'test'
   ...
 # Subtest: stable: xp_busyGKP
 ok 38 - stable: xp_busyGKP
   ---
-  duration_ms: 0.119233
+  duration_ms: 0.105238
   type: 'test'
   ...
 # Subtest: stable: xp_injured_isZero
 ok 39 - stable: xp_injured_isZero
   ---
-  duration_ms: 0.108834
+  duration_ms: 0.100246
   type: 'test'
   ...
 # Subtest: stable: xp_doubt75_scaled
 ok 40 - stable: xp_doubt75_scaled
   ---
-  duration_ms: 0.100508
+  duration_ms: 0.098864
   type: 'test'
   ...
 # Subtest: stable: availability_states
 ok 41 - stable: availability_states
   ---
-  duration_ms: 0.118732
+  duration_ms: 0.140576
   type: 'test'
   ...
 # Subtest: stable: xp_eliteFWD_calibrated_ratio
 ok 42 - stable: xp_eliteFWD_calibrated_ratio
   ---
-  duration_ms: 0.092784
+  duration_ms: 0.098161
   type: 'test'
   ...
 # Subtest: stable: preseason_priceBaseline_ordering
 ok 43 - stable: preseason_priceBaseline_ordering
   ---
-  duration_ms: 0.089788
+  duration_ms: 0.087194
   type: 'test'
   ...
 # Subtest: stable: preseason_xp_eliteFWD
 ok 44 - stable: preseason_xp_eliteFWD
   ---
-  duration_ms: 0.092283
+  duration_ms: 0.090142
   type: 'test'
   ...
 # Subtest: stable: bestXI
 ok 45 - stable: bestXI
   ---
-  duration_ms: 0.104025
+  duration_ms: 0.133127
   type: 'test'
   ...
 # Subtest: stable: sellPrice_cases
 ok 46 - stable: sellPrice_cases
   ---
-  duration_ms: 0.144971
+  duration_ms: 0.115163
   type: 'test'
   ...
 # Subtest: stable: poisson_over25_at27
 ok 47 - stable: poisson_over25_at27
   ---
-  duration_ms: 0.091691
+  duration_ms: 0.096487
   type: 'test'
   ...
 # Subtest: stable: solveLambda_inverts
 ok 48 - stable: solveLambda_inverts
   ---
-  duration_ms: 0.102502
+  duration_ms: 0.08975
   type: 'test'
   ...
 # Subtest: stable: csv_quoted
 ok 49 - stable: csv_quoted
   ---
-  duration_ms: 0.115676
+  duration_ms: 0.103494
   type: 'test'
   ...
 # Subtest: stable: pearson_correlated
 ok 50 - stable: pearson_correlated
   ---
-  duration_ms: 0.110046
+  duration_ms: 0.115284
   type: 'test'
   ...
 # Subtest: stable: mapTeamName
 ok 51 - stable: mapTeamName
   ---
-  duration_ms: 0.136565
+  duration_ms: 0.131664
   type: 'test'
   ...
 # Subtest: stable: parseUnderstat_decodes
 ok 52 - stable: parseUnderstat_decodes
   ---
-  duration_ms: 0.128921
+  duration_ms: 0.10559
   type: 'test'
   ...
 # Subtest: stable: matchContext_strong_home present in golden
 ok 53 - stable: matchContext_strong_home present in golden
   ---
-  duration_ms: 0.241
+  duration_ms: 0.20754
   type: 'test'
   ...
 # Subtest: stable: matchContext_weak_away present in golden
 ok 54 - stable: matchContext_weak_away present in golden
   ---
-  duration_ms: 0.123722
+  duration_ms: 0.149918
   type: 'test'
   ...
 # Subtest: stable: multToDiff_boundaries present in golden
 ok 55 - stable: multToDiff_boundaries present in golden
   ---
-  duration_ms: 0.215764
+  duration_ms: 0.234998
   type: 'test'
   ...
 # Subtest: stable: runScore_attack_t1 present in golden
 ok 56 - stable: runScore_attack_t1 present in golden
   ---
-  duration_ms: 0.116087
+  duration_ms: 0.126191
   type: 'test'
   ...
 # Subtest: stable: runScore_def_t1 present in golden
 ok 57 - stable: runScore_def_t1 present in golden
   ---
-  duration_ms: 0.132097
+  duration_ms: 0.123564
   type: 'test'
   ...
 # Subtest: stable: double_gw11_team5 present in golden
 ok 58 - stable: double_gw11_team5 present in golden
   ---
-  duration_ms: 0.1011
+  duration_ms: 0.118141
   type: 'test'
   ...
 # Subtest: stable: matchContext_with_ustat present in golden
 ok 59 - stable: matchContext_with_ustat present in golden
   ---
-  duration_ms: 0.946851
+  duration_ms: 0.795297
   type: 'test'
   ...
 # Subtest: stable: matchContext_with_odds_home present in golden
 ok 60 - stable: matchContext_with_odds_home present in golden
   ---
-  duration_ms: 0.11228
+  duration_ms: 0.107504
   type: 'test'
   ...
 # Subtest: stable: matchContext_with_odds_awayPerspective present in golden
 ok 61 - stable: matchContext_with_odds_awayPerspective present in golden
   ---
-  duration_ms: 0.119203
+  duration_ms: 0.102272
   type: 'test'
   ...
 # Subtest: stable: xp_eliteFWD present in golden
 ok 62 - stable: xp_eliteFWD present in golden
   ---
-  duration_ms: 0.145251
+  duration_ms: 0.141768
   type: 'test'
   ...
 # Subtest: stable: xp_goodFWD present in golden
 ok 63 - stable: xp_goodFWD present in golden
   ---
-  duration_ms: 0.127628
+  duration_ms: 0.086032
   type: 'test'
   ...
 # Subtest: stable: xp_budgetFWD present in golden
 ok 64 - stable: xp_budgetFWD present in golden
   ---
-  duration_ms: 0.165761
+  duration_ms: 0.086994
   type: 'test'
   ...
 # Subtest: stable: xp_eliteMID present in golden
 ok 65 - stable: xp_eliteMID present in golden
   ---
-  duration_ms: 0.127048
+  duration_ms: 0.079285
   type: 'test'
   ...
 # Subtest: stable: xp_dcMID present in golden
 ok 66 - stable: xp_dcMID present in golden
   ---
-  duration_ms: 0.117049
+  duration_ms: 0.077631
   type: 'test'
   ...
 # Subtest: stable: xp_eliteDEF present in golden
 ok 67 - stable: xp_eliteDEF present in golden
   ---
-  duration_ms: 0.123871
+  duration_ms: 0.082843
   type: 'test'
   ...
 # Subtest: stable: xp_weakDEF present in golden
 ok 68 - stable: xp_weakDEF present in golden
   ---
-  duration_ms: 0.11748
+  duration_ms: 0.077159
   type: 'test'
   ...
 # Subtest: stable: xp_eliteGKP present in golden
 ok 69 - stable: xp_eliteGKP present in golden
   ---
-  duration_ms: 0.129502
+  duration_ms: 0.075876
   type: 'test'
   ...
 # Subtest: stable: xp_busyGKP present in golden
 ok 70 - stable: xp_busyGKP present in golden
   ---
-  duration_ms: 0.150282
+  duration_ms: 0.104316
   type: 'test'
   ...
 # Subtest: stable: xp_injured_isZero present in golden
 ok 71 - stable: xp_injured_isZero present in golden
   ---
-  duration_ms: 0.113743
+  duration_ms: 0.084398
   type: 'test'
   ...
 # Subtest: stable: xp_doubt75_scaled present in golden
 ok 72 - stable: xp_doubt75_scaled present in golden
   ---
-  duration_ms: 0.109275
+  duration_ms: 0.076769
   type: 'test'
   ...
 # Subtest: stable: availability_states present in golden
 ok 73 - stable: availability_states present in golden
   ---
-  duration_ms: 0.096691
+  duration_ms: 0.082734
   type: 'test'
   ...
 # Subtest: stable: xp_eliteFWD_calibrated_ratio present in golden
 ok 74 - stable: xp_eliteFWD_calibrated_ratio present in golden
   ---
-  duration_ms: 0.100138
+  duration_ms: 0.079285
   type: 'test'
   ...
 # Subtest: stable: preseason_priceBaseline_ordering present in golden
 ok 75 - stable: preseason_priceBaseline_ordering present in golden
   ---
-  duration_ms: 0.108443
+  duration_ms: 0.075195
   type: 'test'
   ...
 # Subtest: stable: preseason_xp_eliteFWD present in golden
 ok 76 - stable: preseason_xp_eliteFWD present in golden
   ---
-  duration_ms: 0.120355
+  duration_ms: 0.074102
   type: 'test'
   ...
 # Subtest: stable: bestXI present in golden
 ok 77 - stable: bestXI present in golden
   ---
-  duration_ms: 0.158105
+  duration_ms: 0.076428
   type: 'test'
   ...
 # Subtest: stable: sellPrice_cases present in golden
 ok 78 - stable: sellPrice_cases present in golden
   ---
-  duration_ms: 0.12338
+  duration_ms: 0.076378
   type: 'test'
   ...
 # Subtest: stable: poisson_over25_at27 present in golden
 ok 79 - stable: poisson_over25_at27 present in golden
   ---
-  duration_ms: 0.140493
+  duration_ms: 0.0815
   type: 'test'
   ...
 # Subtest: stable: solveLambda_inverts present in golden
 ok 80 - stable: solveLambda_inverts present in golden
   ---
-  duration_ms: 0.142257
+  duration_ms: 0.09353
   type: 'test'
   ...
 # Subtest: stable: csv_quoted present in golden
 ok 81 - stable: csv_quoted present in golden
   ---
-  duration_ms: 0.152325
+  duration_ms: 0.078213
   type: 'test'
   ...
 # Subtest: stable: pearson_correlated present in golden
 ok 82 - stable: pearson_correlated present in golden
   ---
-  duration_ms: 0.161202
+  duration_ms: 0.074804
   type: 'test'
   ...
 # Subtest: stable: mapTeamName present in golden
 ok 83 - stable: mapTeamName present in golden
   ---
-  duration_ms: 0.141815
+  duration_ms: 0.076589
   type: 'test'
   ...
 # Subtest: stable: parseUnderstat_decodes present in golden
 ok 84 - stable: parseUnderstat_decodes present in golden
   ---
-  duration_ms: 0.153477
+  duration_ms: 0.076227
   type: 'test'
   ...
 # Subtest: expectedToChange: MIN1_expectedMinutes_900min_gw10
 ok 85 - expectedToChange: MIN1_expectedMinutes_900min_gw10
   ---
-  duration_ms: 0.139009
+  duration_ms: 0.085299
   type: 'test'
   ...
 # Subtest: expectedToChange: MIN1_expectedMinutes_bencher_450min
 ok 86 - expectedToChange: MIN1_expectedMinutes_bencher_450min
   ---
-  duration_ms: 0.136054
+  duration_ms: 0.078493
   type: 'test'
   ...
 # Subtest: expectedToChange: DEN1_gamesPlayed_equals_currentGW
 ok 87 - expectedToChange: DEN1_gamesPlayed_equals_currentGW
   ---
-  duration_ms: 0.217506
+  duration_ms: 0.084939
   type: 'test'
   ...
 # Subtest: expectedToChange: SCOR1_gk_parts
 ok 88 - expectedToChange: SCOR1_gk_parts
   ---
-  duration_ms: 0.149249
+  duration_ms: 0.112577
   type: 'test'
   ...
 # Subtest: expectedToChange: SCOR2_bonus_eliteFWD
 ok 89 - expectedToChange: SCOR2_bonus_eliteFWD
   ---
-  duration_ms: 0.122088
+  duration_ms: 0.090964
   type: 'test'
   ...
 # Subtest: expectedToChange: FIX1_blank_penalty_probe
 ok 90 - expectedToChange: FIX1_blank_penalty_probe
   ---
-  duration_ms: 0.100447
+  duration_ms: 0.077831
   type: 'test'
   ...
 # Subtest: expectedToChange: MIN1_expectedMinutes_900min_gw10 present in golden
 ok 91 - expectedToChange: MIN1_expectedMinutes_900min_gw10 present in golden
   ---
-  duration_ms: 0.151253
+  duration_ms: 0.084508
   type: 'test'
   ...
 # Subtest: expectedToChange: MIN1_expectedMinutes_bencher_450min present in golden
 ok 92 - expectedToChange: MIN1_expectedMinutes_bencher_450min present in golden
   ---
-  duration_ms: 0.104625
+  duration_ms: 0.075666
   type: 'test'
   ...
 # Subtest: expectedToChange: DEN1_gamesPlayed_equals_currentGW present in golden
 ok 93 - expectedToChange: DEN1_gamesPlayed_equals_currentGW present in golden
   ---
-  duration_ms: 0.100038
+  duration_ms: 0.084448
   type: 'test'
   ...
 # Subtest: expectedToChange: SCOR1_gk_parts present in golden
 ok 94 - expectedToChange: SCOR1_gk_parts present in golden
   ---
-  duration_ms: 0.108192
+  duration_ms: 0.077411
   type: 'test'
   ...
 # Subtest: expectedToChange: SCOR2_bonus_eliteFWD present in golden
 ok 95 - expectedToChange: SCOR2_bonus_eliteFWD present in golden
   ---
-  duration_ms: 0.129943
+  duration_ms: 0.076248
   type: 'test'
   ...
 # Subtest: expectedToChange: FIX1_blank_penalty_probe present in golden
 ok 96 - expectedToChange: FIX1_blank_penalty_probe present in golden
   ---
-  duration_ms: 0.118832
+  duration_ms: 0.078193
   type: 'test'
   ...
 # Subtest: meta: expectedToChange keys carry audit issue ids
 ok 97 - meta: expectedToChange keys carry audit issue ids
   ---
-  duration_ms: 0.445483
+  duration_ms: 0.376887
   type: 'test'
   ...
 # Subtest: cumulative review presents overall and schedule-aligned samples side by side
 ok 98 - cumulative review presents overall and schedule-aligned samples side by side
   ---
-  duration_ms: 94.4946
+  duration_ms: 98.033554
   type: 'test'
   ...
 # Subtest: cumulative review uses only the current correction revision
 ok 99 - cumulative review uses only the current correction revision
   ---
-  duration_ms: 35.454305
+  duration_ms: 36.270192
   type: 'test'
   ...
 # Subtest: one selected segment is reported without arbitrary subgroup cross-products
 ok 100 - one selected segment is reported without arbitrary subgroup cross-products
   ---
-  duration_ms: 16.198976
+  duration_ms: 23.157697
   type: 'test'
   ...
 # Subtest: full-season 38 Gameweeks by 700 players remains practical for on-demand review
 ok 101 - full-season 38 Gameweeks by 700 players remains practical for on-demand review
   ---
-  duration_ms: 905.956996
+  duration_ms: 817.007364
   type: 'test'
   ...
 # Subtest: transfer preview creates the optimiser final squad without mutating the real squad
 ok 102 - transfer preview creates the optimiser final squad without mutating the real squad
   ---
-  duration_ms: 9.496752
+  duration_ms: 3.884485
   type: 'test'
   ...
 # Subtest: transfer preview fails closed when final squad identity disagrees with the optimiser
 ok 103 - transfer preview fails closed when final squad identity disagrees with the optimiser
   ---
-  duration_ms: 0.481431
+  duration_ms: 0.298795
   type: 'test'
   ...
 # Subtest: captain and vice selections remain distinct and selecting the opposite role swaps them
 ok 104 - captain and vice selections remain distinct and selecting the opposite role swaps them
   ---
-  duration_ms: 0.54564
+  duration_ms: 0.393187
   type: 'test'
   ...
 # Subtest: bench players cannot be selected for captaincy preview
 ok 105 - bench players cannot be selected for captaincy preview
   ---
-  duration_ms: 0.278832
+  duration_ms: 0.145638
   type: 'test'
   ...
 # Subtest: squad or optimiser changes clear stale transfer preview state
 ok 106 - squad or optimiser changes clear stale transfer preview state
   ---
-  duration_ms: 1.259265
+  duration_ms: 0.571365
   type: 'test'
   ...
 # Subtest: changed optimiser inputs also clear captain-only preview state
 ok 107 - changed optimiser inputs also clear captain-only preview state
   ---
-  duration_ms: 0.226293
+  duration_ms: 0.1669
   type: 'test'
   ...
 # Subtest: optimiser signatures include result changes as well as transfer identities
 ok 108 - optimiser signatures include result changes as well as transfer identities
   ---
-  duration_ms: 1.369835
+  duration_ms: 0.360296
   type: 'test'
   ...
 # Subtest: captain preview total keeps base XI score separate from the captain uplift
 ok 109 - captain preview total keeps base XI score separate from the captain uplift
   ---
-  duration_ms: 0.354113
+  duration_ms: 0.280239
   type: 'test'
   ...
 # Subtest: preview implementation is session-only and wired to accessible controls
 ok 110 - preview implementation is session-only and wired to accessible controls
   ---
-  duration_ms: 1.621963
+  duration_ms: 0.985714
   type: 'test'
   ...
 # Subtest: Stage 10.1 canonical JSON is deterministic and rejects non-finite numbers
 ok 111 - Stage 10.1 canonical JSON is deterministic and rejects non-finite numbers
   ---
-  duration_ms: 2.107772
+  duration_ms: 3.107313
   type: 'test'
   ...
 # Subtest: Stage 10.1 SHA-256 is stable
 ok 112 - Stage 10.1 SHA-256 is stable
   ---
-  duration_ms: 9.505428
+  duration_ms: 10.380325
   type: 'test'
   ...
 # Subtest: Stage 10.1 evidence safety rejects secret fields and values
 ok 113 - Stage 10.1 evidence safety rejects secret fields and values
   ---
-  duration_ms: 1.038492
+  duration_ms: 1.111394
   type: 'test'
   ...
 # Subtest: Stage 10.1 evidence safety rejects manager and configuration identifiers
 ok 114 - Stage 10.1 evidence safety rejects manager and configuration identifiers
   ---
-  duration_ms: 0.520875
+  duration_ms: 1.32497
   type: 'test'
   ...
 # Subtest: evidence import rejects unknown, duplicate or missing providers
 ok 115 - evidence import rejects unknown, duplicate or missing providers
   ---
-  duration_ms: 9.485489
+  duration_ms: 9.223981
   type: 'test'
   ...
 # Subtest: deadline window applies the approved 24-hour, one-hour and two-minute boundaries
 ok 116 - deadline window applies the approved 24-hour, one-hour and two-minute boundaries
   ---
-  duration_ms: 0.426388
+  duration_ms: 0.392265
   type: 'test'
   ...
 # Subtest: same-origin HTTP Date sampling records round-trip and skew evidence
 ok 117 - same-origin HTTP Date sampling records round-trip and skew evidence
   ---
-  duration_ms: 0.733632
+  duration_ms: 0.739099
   type: 'test'
   ...
 # Subtest: network-attested complete captures before the cutoff are official-eligible
 ok 118 - network-attested complete captures before the cutoff are official-eligible
   ---
-  duration_ms: 0.285294
+  duration_ms: 0.4307
   type: 'test'
   ...
 # Subtest: client-only time is retained but cannot become the official snapshot
 ok 119 - client-only time is retained but cannot become the official snapshot
   ---
-  duration_ms: 0.6681
+  duration_ms: 0.677406
   type: 'test'
   ...
 # Subtest: clock conflicts, safety-cutoff captures and late included providers fail closed
 ok 120 - clock conflicts, safety-cutoff captures and late included providers fail closed
   ---
-  duration_ms: 0.874636
+  duration_ms: 0.91055
   type: 'test'
   ...
 # Subtest: final records are immutable, hash-verifiable and tamper-evident
 ok 121 - final records are immutable, hash-verifiable and tamper-evident
   ---
-  duration_ms: 13.808124
+  duration_ms: 12.447741
   type: 'test'
   ...
 # Subtest: import validation rejects unknown top-level fields and invalid manager references
 ok 122 - import validation rejects unknown top-level fields and invalid manager references
   ---
-  duration_ms: 6.637604
+  duration_ms: 9.795095
   type: 'test'
   ...
 # Subtest: official snapshot selection keeps the latest eligible complete capture only
 ok 123 - official snapshot selection keeps the latest eligible complete capture only
   ---
-  duration_ms: 18.407107
+  duration_ms: 14.237483
   type: 'test'
   ...
 # Subtest: deadline revisions prevent an older deadline snapshot from being selected as official
 ok 124 - deadline revisions prevent an older deadline snapshot from being selected as official
   ---
-  duration_ms: 16.771807
+  duration_ms: 7.128804
   type: 'test'
   ...
 # Subtest: section hashes identify output tampering before the whole-record hash check
 ok 125 - section hashes identify output tampering before the whole-record hash check
   ---
-  duration_ms: 11.180089
+  duration_ms: 5.308609
   type: 'test'
   ...
 # Subtest: bounded local metadata keeps three newest unique snapshots
 ok 126 - bounded local metadata keeps three newest unique snapshots
   ---
-  duration_ms: 32.46267
+  duration_ms: 20.305152
   type: 'test'
   ...
 # Subtest: a collected snapshot freezes model outputs without exporting the manager Team ID or name
 ok 127 - a collected snapshot freezes model outputs without exporting the manager Team ID or name
   ---
-  duration_ms: 6.367249
+  duration_ms: 8.873456
   type: 'test'
   ...
 # Subtest: chunked collection preserves projections while yielding between player batches
 ok 128 - chunked collection preserves projections while yielding between player batches
   ---
-  duration_ms: 3.1654
+  duration_ms: 2.752912
   type: 'test'
   ...
 # Subtest: Stage 10.1 UI and deterministic bundle order include the evidence surface
 ok 129 - Stage 10.1 UI and deterministic bundle order include the evidence surface
   ---
-  duration_ms: 4.986866
+  duration_ms: 4.184466
   type: 'test'
   ...
 # Subtest: local recovery encoding compresses and restores a verified evidence record
 ok 130 - local recovery encoding compresses and restores a verified evidence record
   ---
-  duration_ms: 136.430877
+  duration_ms: 88.2571
   type: 'test'
   ...
 # Subtest: evidence manager reference is random, anonymised and stable on the device
 ok 131 - evidence manager reference is random, anonymised and stable on the device
   ---
-  duration_ms: 1.698967
+  duration_ms: 0.901829
   type: 'test'
   ...
 # Subtest: evidence storage keeps three metadata rows and only two full recovery records
 ok 132 - evidence storage keeps three metadata rows and only two full recovery records
   ---
-  duration_ms: 124.586526
+  duration_ms: 79.662669
   type: 'test'
   ...
 # Subtest: evidence writes surface storage failures rather than silently claiming success
 ok 133 - evidence writes surface storage failures rather than silently claiming success
   ---
-  duration_ms: 1.06416
+  duration_ms: 1.025763
   type: 'test'
   ...
 # Subtest: restored evidence is retained as recovery-only and cannot become official locally
 ok 134 - restored evidence is retained as recovery-only and cannot become official locally
   ---
-  duration_ms: 44.027211
+  duration_ms: 13.632297
   type: 'test'
   ...
 # Subtest: local evidence can be deleted without touching exported files
 ok 135 - local evidence can be deleted without touching exported files
   ---
-  duration_ms: 27.694685
+  duration_ms: 19.212271
   type: 'test'
   ...
 # Subtest: legacy metadata without an origin fails closed as recovery-only
 ok 136 - legacy metadata without an origin fails closed as recovery-only
   ---
-  duration_ms: 4.996424
+  duration_ms: 3.515759
   type: 'test'
   ...
 # Subtest: corrupt local metadata is ignored and orphaned recovery records are removable
 ok 137 - corrupt local metadata is ignored and orphaned recovery records are removable
   ---
-  duration_ms: 0.430595
+  duration_ms: 0.514426
   type: 'test'
   ...
 # Subtest: Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write
 ok 138 - Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write
   ---
-  duration_ms: 15.357392
+  duration_ms: 21.928651
   type: 'test'
   ...
 # Subtest: Stage 10.5 malformed snapshot journal fails closed and is cleared
 ok 139 - Stage 10.5 malformed snapshot journal fails closed and is cleared
   ---
-  duration_ms: 0.904602
+  duration_ms: 0.929607
   type: 'test'
   ...
 # Subtest: Stage 10.5 compression failure falls back to canonical plain JSON
 ok 140 - Stage 10.5 compression failure falls back to canonical plain JSON
   ---
-  duration_ms: 9.824795
+  duration_ms: 14.079014
   type: 'test'
   ...
 # Subtest: allows only absolute HTTP and HTTPS links
 ok 141 - allows only absolute HTTP and HTTPS links
   ---
-  duration_ms: 2.338223
+  duration_ms: 5.383573
   type: 'test'
   ...
 # Subtest: rejects encoded, entity-obscured and control-character schemes
 ok 142 - rejects encoded, entity-obscured and control-character schemes
   ---
-  duration_ms: 2.815605
+  duration_ms: 4.583725
   type: 'test'
   ...
 # Subtest: raw HTML and handler-shaped text remain text tokens
 ok 143 - raw HTML and handler-shaped text remain text tokens
   ---
-  duration_ms: 0.966758
+  duration_ms: 1.006897
   type: 'test'
   ...
 # Subtest: hostile Markdown links lose the link but keep their label
 ok 144 - hostile Markdown links lose the link but keep their label
   ---
-  duration_ms: 0.68438
+  duration_ms: 0.626942
   type: 'test'
   ...
 # Subtest: restricted blocks include only headings, lists and paragraphs
 ok 145 - restricted blocks include only headings, lists and paragraphs
   ---
-  duration_ms: 1.52934
+  duration_ms: 1.502356
   type: 'test'
   ...
 # Subtest: nested and unbalanced HTML cannot create an executable structure
 ok 146 - nested and unbalanced HTML cannot create an executable structure
   ---
-  duration_ms: 0.433361
+  duration_ms: 0.55981
   type: 'test'
   ...
 # Subtest: input is bounded deterministically
 ok 147 - input is bounded deterministically
   ---
-  duration_ms: 53.295134
+  duration_ms: 40.710055
   type: 'test'
   ...
 # Subtest: bundled renderer contains the DOM-only sanitised replacement
 ok 148 - bundled renderer contains the DOM-only sanitised replacement
   ---
-  duration_ms: 0.845912
+  duration_ms: 0.753454
   type: 'test'
   ...
 # Subtest: metric storage verifies, reloads and keeps one current revision
 ok 149 - metric storage verifies, reloads and keeps one current revision
   ---
-  duration_ms: 120.668651
+  duration_ms: 80.454052
   type: 'test'
   ...
 # Subtest: identical metrics deduplicate while corrections retain immutable superseded data
 ok 150 - identical metrics deduplicate while corrections retain immutable superseded data
   ---
-  duration_ms: 59.146348
+  duration_ms: 50.305398
   type: 'test'
   ...
 # Subtest: interrupted metric writes recover through the journal
 ok 151 - interrupted metric writes recover through the journal
   ---
-  duration_ms: 25.442894
+  duration_ms: 33.483427
   type: 'test'
   ...
 # Subtest: tampered metric records fail validation on reload
 ok 152 - tampered metric records fail validation on reload
   ---
-  duration_ms: 27.115382
+  duration_ms: 20.154118
   type: 'test'
   ...
 # Subtest: metric metadata is deterministic and bounded
 ok 153 - metric metadata is deterministic and bounded
   ---
-  duration_ms: 1.008526
+  duration_ms: 5.326283
   type: 'test'
   ...
 # Subtest: quota failures are surfaced and deletion is isolated from source evidence
 ok 154 - quota failures are surfaced and deletion is isolated from source evidence
   ---
-  duration_ms: 26.168912
+  duration_ms: 35.153896
   type: 'test'
   ...
 # Subtest: Stage 10.5 metric journal recovery leaves exactly one current revision
 ok 155 - Stage 10.5 metric journal recovery leaves exactly one current revision
   ---
-  duration_ms: 20.734726
+  duration_ms: 24.355483
   type: 'test'
   ...
 # Subtest: Stage 10.5 malformed metric journal fails closed
 ok 156 - Stage 10.5 malformed metric journal fails closed
   ---
-  duration_ms: 0.408364
+  duration_ms: 0.351555
   type: 'test'
   ...
 # Subtest: fixed player metrics cover zero error, signed bias and correlations
 ok 157 - fixed player metrics cover zero error, signed bias and correlations
   ---
-  duration_ms: 2.562382
+  duration_ms: 3.067345
   type: 'test'
   ...
 # Subtest: Spearman average ranks and error-band boundaries are deterministic
 ok 158 - Spearman average ranks and error-band boundaries are deterministic
   ---
-  duration_ms: 1.203611
+  duration_ms: 1.153578
   type: 'test'
   ...
 # Subtest: Brier, reliability and interval calculations use approved inclusive rules
 ok 159 - Brier, reliability and interval calculations use approved inclusive rules
   ---
-  duration_ms: 1.504293
+  duration_ms: 1.327216
   type: 'test'
   ...
 # Subtest: sample safeguards enforce exact boundaries and provider AND rule
 ok 160 - sample safeguards enforce exact boundaries and provider AND rule
   ---
-  duration_ms: 1.388197
+  duration_ms: 0.998727
   type: 'test'
   ...
 # Subtest: approved season periods and position-aware price bands are exact
 ok 161 - approved season periods and position-aware price bands are exact
   ---
-  duration_ms: 0.29407
+  duration_ms: 0.262776
   type: 'test'
   ...
 # Subtest: minutes allocation handles singles, doubles, missing starts and postponed fixtures
 ok 162 - minutes allocation handles singles, doubles, missing starts and postponed fixtures
   ---
-  duration_ms: 1.066375
+  duration_ms: 0.866622
   type: 'test'
   ...
 # Subtest: legal substitutions respect goalkeeper and minimum formation constraints
 ok 163 - legal substitutions respect goalkeeper and minimum formation constraints
   ---
-  duration_ms: 5.868285
+  duration_ms: 4.698699
   type: 'test'
   ...
 # Subtest: captain non-appearance uses vice and neither appearance gives no doubled points
 ok 164 - captain non-appearance uses vice and neither appearance gives no doubled points
   ---
-  duration_ms: 0.362088
+  duration_ms: 0.29239
   type: 'test'
   ...
 # Subtest: authoritative evaluation joins exact IDs, preserves source records and validates hashes
 ok 165 - authoritative evaluation joins exact IDs, preserves source records and validates hashes
   ---
-  duration_ms: 48.493156
+  duration_ms: 60.537919
   type: 'test'
   ...
 # Subtest: invalid, late, provisional and mismatched records fail closed
 ok 166 - invalid, late, provisional and mismatched records fail closed
   ---
-  duration_ms: 1.052348
+  duration_ms: 0.896766
   type: 'test'
   ...
 # Subtest: corrected official outcomes append an immutable evaluation revision
 ok 167 - corrected official outcomes append an immutable evaluation revision
   ---
-  duration_ms: 14.458401
+  duration_ms: 18.701434
   type: 'test'
   ...
 # Subtest: cumulative reporting filters scheduled and owned segments without hiding missingness
 ok 168 - cumulative reporting filters scheduled and owned segments without hiding missingness
   ---
-  duration_ms: 13.994082
+  duration_ms: 12.431761
   type: 'test'
   ...
 # Subtest: frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only
 ok 169 - frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only
   ---
-  duration_ms: 4.643725
+  duration_ms: 4.257844
   type: 'test'
   ...
 # Subtest: metric records preserve the approved public field names
 ok 170 - metric records preserve the approved public field names
   ---
-  duration_ms: 8.07892
+  duration_ms: 12.938348
   type: 'test'
   ...
 # Subtest: metric engine never imports or calls live production formula functions
 ok 171 - metric engine never imports or calls live production formula functions
   ---
-  duration_ms: 0.899333
+  duration_ms: 1.066884
   type: 'test'
   ...
 # Subtest: aggregate denominator uses completed team matches
 ok 172 - aggregate denominator uses completed team matches
   ---
-  duration_ms: 1.506268
+  duration_ms: 1.378852
   type: 'test'
   ...
 # Subtest: stable starter produces coherent high-role outputs
 ok 173 - stable starter produces coherent high-role outputs
   ---
-  duration_ms: 1.244528
+  duration_ms: 1.166359
   type: 'test'
   ...
 # Subtest: regular substitute separates appearance from start probability
 ok 174 - regular substitute separates appearance from start probability
   ---
-  duration_ms: 0.51866
+  duration_ms: 0.492522
   type: 'test'
   ...
 # Subtest: rotation sequence lowers role stability confidence
 ok 175 - rotation sequence lowers role stability confidence
   ---
-  duration_ms: 0.421287
+  duration_ms: 0.44725
   type: 'test'
   ...
 # Subtest: doubtful availability is applied exactly once
 ok 176 - doubtful availability is applied exactly once
   ---
-  duration_ms: 0.509783
+  duration_ms: 0.45917
   type: 'test'
   ...
 # Subtest: injured and suspended players return zero outputs
 ok 177 - injured and suspended players return zero outputs
   ---
-  duration_ms: 1.159979
+  duration_ms: 2.424925
   type: 'test'
   ...
 # Subtest: limited history remains shrunk toward aggregate evidence
 ok 178 - limited history remains shrunk toward aggregate evidence
   ---
-  duration_ms: 0.267861
+  duration_ms: 0.223229
   type: 'test'
   ...
 # Subtest: logical invariants hold for hostile numeric inputs
 ok 179 - logical invariants hold for hostile numeric inputs
   ---
-  duration_ms: 0.462495
+  duration_ms: 0.415442
   type: 'test'
   ...
 # Subtest: element-summary validation drops malformed rows without payload leakage
 ok 180 - element-summary validation drops malformed rows without payload leakage
   ---
-  duration_ms: 0.658371
+  duration_ms: 0.550284
   type: 'test'
   ...
 # Subtest: element-summary unusable structure is fatal
 ok 181 - element-summary unusable structure is fatal
   ---
-  duration_ms: 0.607857
+  duration_ms: 0.525012
   type: 'test'
   ...
 # Subtest: primary navigation follows the approved five-destination order
 ok 182 - primary navigation follows the approved five-destination order
   ---
-  duration_ms: 3.337562
+  duration_ms: 2.140922
   type: 'test'
   ...
 # Subtest: legacy hashes resolve to the new information architecture
 ok 183 - legacy hashes resolve to the new information architecture
   ---
-  duration_ms: 0.476421
+  duration_ms: 0.373117
   type: 'test'
   ...
 # Subtest: unknown and empty destinations fail safely to Team
 ok 184 - unknown and empty destinations fail safely to Team
   ---
-  duration_ms: 0.211886
+  duration_ms: 0.239878
   type: 'test'
   ...
 # Subtest: Settings subroutes keep Settings as the active primary destination
 ok 185 - Settings subroutes keep Settings as the active primary destination
   ---
-  duration_ms: 0.31569
+  duration_ms: 0.372867
   type: 'test'
   ...
 # Subtest: route addresses never encode account, provider-key or evidence identities
 ok 186 - route addresses never encode account, provider-key or evidence identities
   ---
-  duration_ms: 0.413994
+  duration_ms: 0.398966
   type: 'test'
   ...
 # Subtest: static deployable navigation uses exactly five real links
 ok 187 - static deployable navigation uses exactly five real links
   ---
-  duration_ms: 0.261289
+  duration_ms: 0.285864
   type: 'test'
   ...
 # Subtest: bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs
 ok 188 - bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs
   ---
-  duration_ms: 0.304479
+  duration_ms: 0.295863
   type: 'test'
   ...
 # Subtest: router owns history and active navigation instead of legacy click-to-hide wiring
 ok 189 - router owns history and active navigation instead of legacy click-to-hide wiring
   ---
-  duration_ms: 0.264094
+  duration_ms: 0.242053
   type: 'test'
   ...
 # Subtest: global Ask Teamsheet composer replaces header Data and Evidence controls
 ok 190 - global Ask Teamsheet composer replaces header Data and Evidence controls
   ---
-  duration_ms: 0.52411
+  duration_ms: 0.607676
   type: 'test'
   ...
 # Subtest: global Ask carries the typed question into the full Ask route and preserves origin
 ok 191 - global Ask carries the typed question into the full Ask route and preserves origin
   ---
-  duration_ms: 0.557863
+  duration_ms: 0.552553
   type: 'test'
   ...
 # Subtest: Settings headings retain programmatic focus without a visible blue outline
 ok 192 - Settings headings retain programmatic focus without a visible blue outline
   ---
-  duration_ms: 0.240741
+  duration_ms: 0.237194
   type: 'test'
   ...
 # Subtest: Settings subsections use one accessible arrow-only back control
 ok 193 - Settings subsections use one accessible arrow-only back control
   ---
-  duration_ms: 0.193652
+  duration_ms: 0.147867
   type: 'test'
   ...
 # Subtest: iPhone dock has one fixed safe-area grid and keyboard recovery contract
 ok 194 - iPhone dock has one fixed safe-area grid and keyboard recovery contract
   ---
-  duration_ms: 0.166111
+  duration_ms: 0.174065
   type: 'test'
   ...
 # Subtest: Team keeps the current free-transfer and bank controls pending the separate FPL authority gate
 ok 195 - Team keeps the current free-transfer and bank controls pending the separate FPL authority gate
   ---
-  duration_ms: 0.163496
+  duration_ms: 0.21371
   type: 'test'
   ...
 # Subtest: Settings remains an organised five-section menu
 ok 196 - Settings remains an organised five-section menu
   ---
-  duration_ms: 0.127439
+  duration_ms: 0.156573
   type: 'test'
   ...
 # Subtest: Fixtures and Leagues remain primary while Player Explorer stays under Research Tools
 ok 197 - Fixtures and Leagues remain primary while Player Explorer stays under Research Tools
   ---
-  duration_ms: 0.105286
+  duration_ms: 0.11226
   type: 'test'
   ...
 # Subtest: Evidence and Provider Health detail remain available through Settings only
 ok 198 - Evidence and Provider Health detail remain available through Settings only
   ---
-  duration_ms: 0.127548
+  duration_ms: 0.138949
   type: 'test'
   ...
 # Subtest: operating-review bundle is deterministic, exact and hash-verifiable
 ok 199 - operating-review bundle is deterministic, exact and hash-verifiable
   ---
-  duration_ms: 226.076508
+  duration_ms: 194.00531
   type: 'test'
   ...
 # Subtest: missing exact sources and pruned revision metadata are explicit partial evidence
 ok 200 - missing exact sources and pruned revision metadata are explicit partial evidence
   ---
-  duration_ms: 32.084062
+  duration_ms: 32.67466
   type: 'test'
   ...
 # Subtest: weekly review keeps incomplete transfer horizons pending without interim gain
 ok 201 - weekly review keeps incomplete transfer horizons pending without interim gain
   ---
-  duration_ms: 0.420428
+  duration_ms: 0.560528
   type: 'test'
   ...
 # Subtest: unsupported source schemas fail closed and exports are bounded
 ok 202 - unsupported source schemas fail closed and exports are bounded
   ---
-  duration_ms: 23.140198
+  duration_ms: 11.184487
   type: 'test'
   ...
 # Subtest: Stage 10.2 fixture validator preserves genuine doubles and exact fixture identity
 ok 203 - Stage 10.2 fixture validator preserves genuine doubles and exact fixture identity
   ---
-  duration_ms: 3.25138
+  duration_ms: 2.794604
   type: 'test'
   ...
 # Subtest: Stage 10.2 conflicting duplicate fixtures fail closed
 ok 204 - Stage 10.2 conflicting duplicate fixtures fail closed
   ---
-  duration_ms: 0.58272
+  duration_ms: 0.517728
   type: 'test'
   ...
 # Subtest: Stage 10.2 duplicate players are quarantined rather than first-wins
 ok 205 - Stage 10.2 duplicate players are quarantined rather than first-wins
   ---
-  duration_ms: 0.984621
+  duration_ms: 0.991854
   type: 'test'
   ...
 # Subtest: official starts remain null when the live endpoint does not provide them
 ok 206 - official starts remain null when the live endpoint does not provide them
   ---
-  duration_ms: 0.300302
+  duration_ms: 0.280815
   type: 'test'
   ...
 # Subtest: manager validators retain only factual picks, auto-subs and Gameweek summaries
 ok 207 - manager validators retain only factual picks, auto-subs and Gameweek summaries
   ---
-  duration_ms: 0.736206
+  duration_ms: 0.708004
   type: 'test'
   ...
 # Subtest: complete outcome requires all fixtures, event finished and data_checked
 ok 208 - complete outcome requires all fixtures, event finished and data_checked
   ---
-  duration_ms: 17.081697
+  duration_ms: 23.410722
   type: 'test'
   ...
 # Subtest: finished alone is insufficient while official data checking is delayed
 ok 209 - finished alone is insufficient while official data checking is delayed
   ---
-  duration_ms: 2.657651
+  duration_ms: 2.40199
   type: 'test'
   ...
 # Subtest: postponed or unfinished fixtures keep the Gameweek provisional
 ok 210 - postponed or unfinished fixtures keep the Gameweek provisional
   ---
-  duration_ms: 2.063759
+  duration_ms: 4.053978
   type: 'test'
   ...
 # Subtest: blank Gameweeks can complete without manufacturing fixtures
 ok 211 - blank Gameweeks can complete without manufacturing fixtures
   ---
-  duration_ms: 2.083597
+  duration_ms: 2.319446
   type: 'test'
   ...
 # Subtest: double Gameweek player detail must reconcile with aggregate points
 ok 212 - double Gameweek player detail must reconcile with aggregate points
   ---
-  duration_ms: 2.701723
+  duration_ms: 2.873271
   type: 'test'
   ...
 # Subtest: unreconciled per-fixture points keep a record provisional
 ok 213 - unreconciled per-fixture points keep a record provisional
   ---
-  duration_ms: 3.467104
+  duration_ms: 3.802227
   type: 'test'
   ...
 # Subtest: squad outcome applies official multipliers without changing the frozen decision record
 ok 214 - squad outcome applies official multipliers without changing the frozen decision record
   ---
-  duration_ms: 0.516426
+  duration_ms: 0.396291
   type: 'test'
   ...
 # Subtest: provisional-to-complete and complete-to-corrected transitions append immutable revisions
 ok 215 - provisional-to-complete and complete-to-corrected transitions append immutable revisions
   ---
-  duration_ms: 14.17472
+  duration_ms: 18.297492
   type: 'test'
   ...
 # Subtest: identical official facts do not create a duplicate revision
 ok 216 - identical official facts do not create a duplicate revision
   ---
-  duration_ms: 4.136517
+  duration_ms: 9.240835
   type: 'test'
   ...
 # Subtest: outcome records are deterministic, immutable and tamper-evident
 ok 217 - outcome records are deterministic, immutable and tamper-evident
   ---
-  duration_ms: 9.388016
+  duration_ms: 26.768291
   type: 'test'
   ...
 # Subtest: records exclude Team ID, manager names, leagues, configuration and secrets
 ok 218 - records exclude Team ID, manager names, leagues, configuration and secrets
   ---
-  duration_ms: 4.99414
+  duration_ms: 3.159105
   type: 'test'
   ...
 # Subtest: due Gameweeks are selected only after their official deadlines
 ok 219 - due Gameweeks are selected only after their official deadlines
   ---
-  duration_ms: 0.290294
+  duration_ms: 0.353591
   type: 'test'
   ...
 # Subtest: outcome storage verifies, reloads and marks one current local revision
 ok 220 - outcome storage verifies, reloads and marks one current local revision
   ---
-  duration_ms: 75.889508
+  duration_ms: 86.515807
   type: 'test'
   ...
 # Subtest: same official outcome is deduplicated without another stored revision
 ok 221 - same official outcome is deduplicated without another stored revision
   ---
-  duration_ms: 16.960621
+  duration_ms: 12.901157
   type: 'test'
   ...
 # Subtest: new local revision supersedes the earlier current pointer without mutating it
 ok 222 - new local revision supersedes the earlier current pointer without mutating it
   ---
-  duration_ms: 40.560828
+  duration_ms: 48.543023
   type: 'test'
   ...
 # Subtest: recovery imports remain non-current and cannot replace a local official outcome
 ok 223 - recovery imports remain non-current and cannot replace a local official outcome
   ---
-  duration_ms: 47.310103
+  duration_ms: 72.740717
   type: 'test'
   ...
 # Subtest: interrupted verified writes recover an orphan record through the journal
 ok 224 - interrupted verified writes recover an orphan record through the journal
   ---
-  duration_ms: 8.303476
+  duration_ms: 17.488141
   type: 'test'
   ...
 # Subtest: tampered stored records fail validation on reload
 ok 225 - tampered stored records fail validation on reload
   ---
-  duration_ms: 12.967582
+  duration_ms: 21.383162
   type: 'test'
   ...
 # Subtest: metadata remains bounded to fifty rows
 ok 226 - metadata remains bounded to fifty rows
   ---
-  duration_ms: 1.099507
+  duration_ms: 1.618255
   type: 'test'
   ...
 # Subtest: quota failures are surfaced and do not claim a successful write
 ok 227 - quota failures are surfaced and do not claim a successful write
   ---
-  duration_ms: 9.514154
+  duration_ms: 16.271877
   type: 'test'
   ...
 # Subtest: provisional outcomes recheck after fifteen minutes while complete records use the correction cadence
 ok 228 - provisional outcomes recheck after fifteen minutes while complete records use the correction cadence
   ---
-  duration_ms: 2.201998
+  duration_ms: 0.712733
   type: 'test'
   ...
 # Subtest: delete removes outcome records but leaves shared deadline-evidence identity untouched
 ok 229 - delete removes outcome records but leaves shared deadline-evidence identity untouched
   ---
-  duration_ms: 11.411883
+  duration_ms: 15.939456
   type: 'test'
   ...
 # Subtest: Stage 10.5 outcome journal recovery leaves exactly one current local revision
 ok 230 - Stage 10.5 outcome journal recovery leaves exactly one current local revision
   ---
-  duration_ms: 11.921886
+  duration_ms: 24.882801
   type: 'test'
   ...
 # Subtest: Stage 10.5 malformed outcome journal fails closed without promoting a record
 ok 231 - Stage 10.5 malformed outcome journal fails closed without promoting a record
   ---
-  duration_ms: 0.269525
+  duration_ms: 0.236682
   type: 'test'
   ...
 # Subtest: approved uncertainty labels use exact 2.0 and 5.0 point boundaries
 ok 232 - approved uncertainty labels use exact 2.0 and 5.0 point boundaries
   ---
-  duration_ms: 2.378158
+  duration_ms: 2.369439
   type: 'test'
   ...
 # Subtest: unavailable and reduced-quality simulations suppress descriptive labels
 ok 233 - unavailable and reduced-quality simulations suppress descriptive labels
   ---
-  duration_ms: 1.873434
+  duration_ms: 2.028813
   type: 'test'
   ...
 # Subtest: official doubtful status stays doubtful regardless of percentage
 ok 234 - official doubtful status stays doubtful regardless of percentage
   ---
-  duration_ms: 0.229379
+  duration_ms: 0.303667
   type: 'test'
   ...
 # Subtest: range marker positions are deterministic and bounded
 ok 235 - range marker positions are deterministic and bounded
   ---
-  duration_ms: 0.220372
+  duration_ms: 0.340837
   type: 'test'
   ...
 # Subtest: dialog controller opens accessibly, closes on Escape and restores focus
 ok 236 - dialog controller opens accessibly, closes on Escape and restores focus
   ---
-  duration_ms: 1.163556
+  duration_ms: 1.305901
   type: 'test'
   ...
 # Subtest: template provides mobile bottom sheet and desktop side panel semantics
 ok 237 - template provides mobile bottom sheet and desktop side panel semantics
   ---
-  duration_ms: 1.367678
+  duration_ms: 1.394366
   type: 'test'
   ...
 # Subtest: player surfaces open the new detail view without the legacy inline drawer
 ok 238 - player surfaces open the new detail view without the legacy inline drawer
   ---
-  duration_ms: 0.757227
+  duration_ms: 0.714186
   type: 'test'
   ...
 # Subtest: provider health age labels remain compact and deterministic
 ok 239 - provider health age labels remain compact and deterministic
   ---
-  duration_ms: 1.280255
+  duration_ms: 1.512247
   type: 'test'
   ...
 # Subtest: compact provider health waits honestly before the first response
 ok 240 - compact provider health waits honestly before the first response
   ---
-  duration_ms: 0.953042
+  duration_ms: 1.083987
   type: 'test'
   ...
 # Subtest: compact provider health reports all-live without inventing a score
 ok 241 - compact provider health reports all-live without inventing a score
   ---
-  duration_ms: 0.445042
+  duration_ms: 0.509783
   type: 'test'
   ...
 # Subtest: compact provider health surfaces the most consequential existing state
 ok 242 - compact provider health surfaces the most consequential existing state
   ---
-  duration_ms: 0.242164
+  duration_ms: 0.239788
   type: 'test'
   ...
 # Subtest: provider health state classes reuse the established status palette
 ok 243 - provider health state classes reuse the established status palette
   ---
-  duration_ms: 0.226163
+  duration_ms: 0.270817
   type: 'test'
   ...
 # Subtest: Provider Health detail remains under Settings without a global header pill
 ok 244 - Provider Health detail remains under Settings without a global header pill
   ---
-  duration_ms: 0.640939
+  duration_ms: 0.656878
   type: 'test'
   ...
 # Subtest: approved provider registry is closed and names only repository-reviewed sources
 ok 245 - approved provider registry is closed and names only repository-reviewed sources
   ---
-  duration_ms: 3.830003
+  duration_ms: 4.160627
   type: 'test'
   ...
 # Subtest: provider trust validation rejects unknown and malformed provenance
 ok 246 - provider trust validation rejects unknown and malformed provenance
   ---
-  duration_ms: 1.153918
+  duration_ms: 1.087714
   type: 'test'
   ...
 # Subtest: exports the approved seven provider-health states
 ok 247 - exports the approved seven provider-health states
   ---
-  duration_ms: 0.348342
+  duration_ms: 0.33708
   type: 'test'
   ...
 # Subtest: runtime health refuses providers outside the approved registry
 ok 248 - runtime health refuses providers outside the approved registry
   ---
-  duration_ms: 0.986355
+  duration_ms: 0.998297
   type: 'test'
   ...
 # Subtest: live success records lastSuccess and consequence
 ok 249 - live success records lastSuccess and consequence
   ---
-  duration_ms: 0.836925
+  duration_ms: 0.742528
   type: 'test'
   ...
 # Subtest: fresh cached FPL data becomes stale after the context-specific threshold
 ok 250 - fresh cached FPL data becomes stale after the context-specific threshold
   ---
-  duration_ms: 0.795788
+  duration_ms: 0.57814
   type: 'test'
   ...
 # Subtest: FPL uses the shorter stale threshold during live gameweeks
 ok 251 - FPL uses the shorter stale threshold during live gameweeks
   ---
-  duration_ms: 0.303558
+  duration_ms: 0.324116
   type: 'test'
   ...
 # Subtest: Understat and odds use their approved provider-specific thresholds
 ok 252 - Understat and odds use their approved provider-specific thresholds
   ---
-  duration_ms: 2.212448
+  duration_ms: 0.287788
   type: 'test'
   ...
 # Subtest: disabled is a neutral user choice and never mutates into stale
 ok 253 - disabled is a neutral user choice and never mutates into stale
   ---
-  duration_ms: 0.479978
+  duration_ms: 0.431957
   type: 'test'
   ...
 # Subtest: fallback and unavailable remain distinct
 ok 254 - fallback and unavailable remain distinct
   ---
-  duration_ms: 0.579163
+  duration_ms: 0.488103
   type: 'test'
   ...
 # Subtest: partial preserves a usable success timestamp
 ok 255 - partial preserves a usable success timestamp
   ---
-  duration_ms: 0.368209
+  duration_ms: 0.339996
   type: 'test'
   ...
 # Subtest: legacy boolean health calls map safely onto the richer model
 ok 256 - legacy boolean health calls map safely onto the richer model
   ---
-  duration_ms: 0.696042
+  duration_ms: 0.348481
   type: 'test'
   ...
 # Subtest: healthRows reports stable provider order and calculated age
 ok 257 - healthRows reports stable provider order and calculated age
   ---
-  duration_ms: 2.473185
+  duration_ms: 0.379029
   type: 'test'
   ...
 # Subtest: XSS-1: hostile team, player and provider values are inert across core rendering
 not ok 258 - XSS-1: hostile team, player and provider values are inert across core rendering
   ---
-  duration_ms: 311.750597
+  duration_ms: 156.892778
   type: 'test'
   location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:19:1'
   failureType: 'testCodeFailure'
@@ -1563,7 +1563,7 @@ not ok 258 - XSS-1: hostile team, player and provider values are inert across co
 # Subtest: XSS-1: hostile entry and saved-league names render as text nodes
 not ok 259 - XSS-1: hostile entry and saved-league names render as text nodes
   ---
-  duration_ms: 25.805542
+  duration_ms: 37.6592
   type: 'test'
   location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:29:1'
   failureType: 'testCodeFailure'
@@ -1583,13 +1583,13 @@ not ok 259 - XSS-1: hostile entry and saved-league names render as text nodes
 # Subtest: XSS-1: manual squad pills and player-search results keep hostile names inert
 ok 260 - XSS-1: manual squad pills and player-search results keep hostile names inert
   ---
-  duration_ms: 3.633365
+  duration_ms: 4.991861
   type: 'test'
   ...
 # Subtest: XSS-1: squad, captain and transfer rendering keep hostile player text inert
 not ok 261 - XSS-1: squad, captain and transfer rendering keep hostile player text inert
   ---
-  duration_ms: 11.472947
+  duration_ms: 18.187689
   type: 'test'
   location: '/home/runner/work/FPL/FPL/tests/rendering-security.test.mjs:45:1'
   failureType: 'testCodeFailure'
@@ -1608,1177 +1608,1177 @@ not ok 261 - XSS-1: squad, captain and transfer rendering keep hostile player te
 # Subtest: XSS-1: approved Stage 3.5 source has no innerHTML sink outside the excluded Ask renderer
 ok 262 - XSS-1: approved Stage 3.5 source has no innerHTML sink outside the excluded Ask renderer
   ---
-  duration_ms: 0.888141
+  duration_ms: 0.84514
   type: 'test'
   ...
 # Subtest: resilience: corrupted cache JSON reads as null, not a crash
 ok 263 - resilience: corrupted cache JSON reads as null, not a crash
   ---
-  duration_ms: 1.091141
+  duration_ms: 1.571067
   type: 'test'
   ...
 # Subtest: resilience: missing optional player fields default safely
 ok 264 - resilience: missing optional player fields default safely
   ---
-  duration_ms: 2.377637
+  duration_ms: 3.77133
   type: 'test'
   ...
 # Subtest: resilience: malformed provider responses do not poison state
 ok 265 - resilience: malformed provider responses do not poison state
   ---
-  duration_ms: 1.092233
+  duration_ms: 1.404125
   type: 'test'
   ...
 # Subtest: resilience: odds provider outage → no data, fallback note, key never relayed
 ok 266 - resilience: odds provider outage → no data, fallback note, key never relayed
   ---
-  duration_ms: 349.796843
+  duration_ms: 342.715682
   type: 'test'
   ...
 # Subtest: resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)
 ok 267 - resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)
   ---
-  duration_ms: 1.818831
+  duration_ms: 1.098774
   type: 'test'
   ...
 # Subtest: resilience: unmapped team name returns null and blend degrades cleanly
 ok 268 - resilience: unmapped team name returns null and blend degrades cleanly
   ---
-  duration_ms: 0.622755
+  duration_ms: 0.391662
   type: 'test'
   ...
 # Subtest: resilience: HTML escaping covers quotes, tags and ampersands
 ok 269 - resilience: HTML escaping covers quotes, tags and ampersands
   ---
-  duration_ms: 0.364281
+  duration_ms: 0.214451
   type: 'test'
   ...
 # Subtest: resilience: bench handling — keeper cannot be outfield sub and vice versa
 ok 270 - resilience: bench handling — keeper cannot be outfield sub and vice versa
   ---
-  duration_ms: 3.666587
+  duration_ms: 2.694577
   type: 'test'
   ...
 # Subtest: transport: a healthy endpoint is fetched once and never retried
 ok 271 - transport: a healthy endpoint is fetched once and never retried
   ---
-  duration_ms: 2.847926
+  duration_ms: 3.918686
   type: 'test'
   ...
 # Subtest: transport: a transient outage is retried and can recover
 ok 272 - transport: a transient outage is retried and can recover
   ---
-  duration_ms: 203.466431
+  duration_ms: 292.423617
   type: 'test'
   ...
 # Subtest: transport: exhausted retries throw the original error for core data
 ok 273 - transport: exhausted retries throw the original error for core data
   ---
-  duration_ms: 771.31338
+  duration_ms: 650.841524
   type: 'test'
   ...
 # Subtest: transport: a network failure is transient and retried
 ok 274 - transport: a network failure is transient and retried
   ---
-  duration_ms: 653.496777
+  duration_ms: 630.625273
   type: 'test'
   ...
 # Subtest: transport: a 404 across all relays is permanent — one cascade only
 ok 275 - transport: a 404 across all relays is permanent — one cascade only
   ---
-  duration_ms: 1.404086
+  duration_ms: 1.228777
   type: 'test'
   ...
 # Subtest: transport: malformed JSON is not retried
 ok 276 - transport: malformed JSON is not retried
   ---
-  duration_ms: 0.941631
+  duration_ms: 0.670564
   type: 'test'
   ...
 # Subtest: transport: a provider "not found" reply short-circuits without retrying
 ok 277 - transport: a provider "not found" reply short-circuits without retrying
   ---
-  duration_ms: 0.302917
+  duration_ms: 0.363188
   type: 'test'
   ...
 # Subtest: transport: an optional endpoint returns null after retries are exhausted
 ok 278 - transport: an optional endpoint returns null after retries are exhausted
   ---
-  duration_ms: 160.197773
+  duration_ms: 214.945554
   type: 'test'
   ...
 # Subtest: transport: core data keeps a larger allowance than optional data
 ok 279 - transport: core data keeps a larger allowance than optional data
   ---
-  duration_ms: 960.733856
+  duration_ms: 776.262962
   type: 'test'
   ...
 # Subtest: transport: fetchVia retries transient failures then degrades to null
 ok 280 - transport: fetchVia retries transient failures then degrades to null
   ---
-  duration_ms: 251.932493
+  duration_ms: 241.203737
   type: 'test'
   ...
 # Subtest: transport: fetchVia recovers when a retry succeeds
 ok 281 - transport: fetchVia recovers when a retry succeeds
   ---
-  duration_ms: 286.754679
+  duration_ms: 156.64207
   type: 'test'
   ...
 # Subtest: transport: retry metadata is keyed by normalised endpoint, not manager id
 ok 282 - transport: retry metadata is keyed by normalised endpoint, not manager id
   ---
-  duration_ms: 0.601906
+  duration_ms: 0.537254
   type: 'test'
   ...
 # Subtest: transport: no metadata value ever contains a raw payload
 ok 283 - transport: no metadata value ever contains a raw payload
   ---
-  duration_ms: 0.266909
+  duration_ms: 0.243465
   type: 'test'
   ...
 # Subtest: retry: immediate success makes exactly one attempt and never sleeps
 ok 284 - retry: immediate success makes exactly one attempt and never sleeps
   ---
-  duration_ms: 1.984451
+  duration_ms: 1.982145
   type: 'test'
   ...
 # Subtest: retry: success after one retry
 ok 285 - retry: success after one retry
   ---
-  duration_ms: 0.380021
+  duration_ms: 0.414184
   type: 'test'
   ...
 # Subtest: retry: success after multiple retries
 ok 286 - retry: success after multiple retries
   ---
-  duration_ms: 0.268822
+  duration_ms: 0.228086
   type: 'test'
   ...
 # Subtest: retry: exhausted retries stop at the attempt ceiling and report it
 ok 287 - retry: exhausted retries stop at the attempt ceiling and report it
   ---
-  duration_ms: 0.268793
+  duration_ms: 0.218508
   type: 'test'
   ...
 # Subtest: retry: attempts are clamped — no policy can authorise an unbounded loop
 ok 288 - retry: attempts are clamped — no policy can authorise an unbounded loop
   ---
-  duration_ms: 0.543095
+  duration_ms: 0.56198
   type: 'test'
   ...
 # Subtest: retry: the elapsed-time budget stops slow failures being retried
 ok 289 - retry: the elapsed-time budget stops slow failures being retried
   ---
-  duration_ms: 0.318045
+  duration_ms: 0.313105
   type: 'test'
   ...
 # Subtest: retry: a fast-failing provider still gets its full allowance
 ok 290 - retry: a fast-failing provider still gets its full allowance
   ---
-  duration_ms: 0.297156
+  duration_ms: 0.293509
   type: 'test'
   ...
 # Subtest: retry: retryable HTTP statuses are retried
 ok 291 - retry: retryable HTTP statuses are retried
   ---
-  duration_ms: 0.404667
+  duration_ms: 0.388597
   type: 'test'
   ...
 # Subtest: retry: non-retryable HTTP statuses fail on the first attempt
 ok 292 - retry: non-retryable HTTP statuses fail on the first attempt
   ---
-  duration_ms: 0.600913
+  duration_ms: 0.578221
   type: 'test'
   ...
 # Subtest: retry: a malformed payload is never retried
 ok 293 - retry: a malformed payload is never retried
   ---
-  duration_ms: 0.492452
+  duration_ms: 0.456353
   type: 'test'
   ...
 # Subtest: retry: a schema validation failure is never retried
 ok 294 - retry: a schema validation failure is never retried
   ---
-  duration_ms: 0.257672
+  duration_ms: 0.305351
   type: 'test'
   ...
 # Subtest: retry: a timeout is treated as transient and retried
 ok 295 - retry: a timeout is treated as transient and retried
   ---
-  duration_ms: 0.942593
+  duration_ms: 0.240569
   type: 'test'
   ...
 # Subtest: retry: backoff grows exponentially, is capped, and is deterministic
 ok 296 - retry: backoff grows exponentially, is capped, and is deterministic
   ---
-  duration_ms: 0.208019
+  duration_ms: 1.02203
   type: 'test'
   ...
 # Subtest: retry: jitter always lands inside the half-to-full band
 ok 297 - retry: jitter always lands inside the half-to-full band
   ---
-  duration_ms: 0.204683
+  duration_ms: 0.185537
   type: 'test'
   ...
 # Subtest: retry: the same inputs always produce the same delay sequence
 ok 298 - retry: the same inputs always produce the same delay sequence
   ---
-  duration_ms: 0.258754
+  duration_ms: 0.255557
   type: 'test'
   ...
 # Subtest: retry: endpoint labels drop query strings so an API key can never leak
 ok 299 - retry: endpoint labels drop query strings so an API key can never leak
   ---
-  duration_ms: 0.205664
+  duration_ms: 0.195826
   type: 'test'
   ...
 # Subtest: retry: endpoint labels collapse ids so metadata cannot grow per manager
 ok 300 - retry: endpoint labels collapse ids so metadata cannot grow per manager
   ---
-  duration_ms: 0.106359
+  duration_ms: 0.109245
   type: 'test'
   ...
 # Subtest: retry: the record carries exactly the fields the health model will consume
 ok 301 - retry: the record carries exactly the fields the health model will consume
   ---
-  duration_ms: 0.214942
+  duration_ms: 0.177191
   type: 'test'
   ...
 # Subtest: retry: every shipped provider policy is bounded and conservative
 ok 302 - retry: every shipped provider policy is bounded and conservative
   ---
-  duration_ms: 0.191308
+  duration_ms: 0.178333
   type: 'test'
   ...
 # Subtest: retry: an unknown provider falls back to a real policy rather than undefined
 ok 303 - retry: an unknown provider falls back to a real policy rather than undefined
   ---
-  duration_ms: 0.094447
+  duration_ms: 0.091781
   type: 'test'
   ...
 # Subtest: the approved eight CSV tables and deterministic filenames are exact
 ok 304 - the approved eight CSV tables and deterministic filenames are exact
   ---
-  duration_ms: 60.169015
+  duration_ms: 63.285004
   type: 'test'
   ...
 # Subtest: CSV preserves numeric zero, leaves null blank and blocks spreadsheet formulas
 ok 305 - CSV preserves numeric zero, leaves null blank and blocks spreadsheet formulas
   ---
-  duration_ms: 0.403289
+  duration_ms: 0.354042
   type: 'test'
   ...
 # Subtest: analysis exports omit manager reference while exact JSON sources remain intact
 ok 306 - analysis exports omit manager reference while exact JSON sources remain intact
   ---
-  duration_ms: 26.444427
+  duration_ms: 24.095482
   type: 'test'
   ...
 # Subtest: Markdown uses descriptive wording and labels the Hindsight oracle fully
 ok 307 - Markdown uses descriptive wording and labels the Hindsight oracle fully
   ---
-  duration_ms: 24.145509
+  duration_ms: 29.677683
   type: 'test'
   ...
 # Subtest: operating review remains subordinate, phone-first and manual-Sheets only
 ok 308 - operating review remains subordinate, phone-first and manual-Sheets only
   ---
-  duration_ms: 1.27277
+  duration_ms: 1.192779
   type: 'test'
   ...
 # Subtest: review engine is downstream-only and does not call production model functions
 ok 309 - review engine is downstream-only and does not call production model functions
   ---
-  duration_ms: 1.310762
+  duration_ms: 1.124242
   type: 'test'
   ...
 # Subtest: build order places review after metrics and UI review after metric storage
 ok 310 - build order places review after metrics and UI review after metric storage
   ---
-  duration_ms: 0.444782
+  duration_ms: 0.314458
   type: 'test'
   ...
 # Subtest: review source preserves the class-only CSP boundary
 ok 311 - review source preserves the class-only CSP boundary
   ---
-  duration_ms: 0.909681
+  duration_ms: 0.648623
   type: 'test'
   ...
 # Subtest: hydrate: a valid snapshot loads clean and reports no issues
 ok 312 - hydrate: a valid snapshot loads clean and reports no issues
   ---
-  duration_ms: 3.247224
+  duration_ms: 2.985992
   type: 'test'
   ...
 # Subtest: hydrate: a fatal cached snapshot is refused and does NOT poison existing state
 ok 313 - hydrate: a fatal cached snapshot is refused and does NOT poison existing state
   ---
-  duration_ms: 0.521617
+  duration_ms: 0.489395
   type: 'test'
   ...
 # Subtest: hydrate: a non-object cached payload is fatal without throwing
 ok 314 - hydrate: a non-object cached payload is fatal without throwing
   ---
-  duration_ms: 0.402878
+  duration_ms: 0.34809
   type: 'test'
   ...
 # Subtest: hydrate: a fatal fixtures payload blocks the load rather than loading half of it
 ok 315 - hydrate: a fatal fixtures payload blocks the load rather than loading half of it
   ---
-  duration_ms: 0.365636
+  duration_ms: 0.338192
   type: 'test'
   ...
 # Subtest: hydrate: partial row damage still loads, keeping every valid row
 ok 316 - hydrate: partial row damage still loads, keeping every valid row
   ---
-  duration_ms: 0.278309
+  duration_ms: 0.301153
   type: 'test'
   ...
 # Subtest: hydrate: fixture and bootstrap issues are reported together on one load
 ok 317 - hydrate: fixture and bootstrap issues are reported together on one load
   ---
-  duration_ms: 0.417823
+  duration_ms: 0.370303
   type: 'test'
   ...
 # Subtest: hydrate: resets issues each load so stale reports do not accumulate
 ok 318 - hydrate: resets issues each load so stale reports do not accumulate
   ---
-  duration_ms: 0.429112
+  duration_ms: 0.349122
   type: 'test'
   ...
 # Subtest: recordIssues: optional-provider reports are idempotent across repeat loads
 ok 319 - recordIssues: optional-provider reports are idempotent across repeat loads
   ---
-  duration_ms: 0.425015
+  duration_ms: 0.311322
   type: 'test'
   ...
 # Subtest: schema/bootstrap: a valid payload passes clean and preserves unknown fields
 ok 320 - schema/bootstrap: a valid payload passes clean and preserves unknown fields
   ---
-  duration_ms: 2.438273
+  duration_ms: 2.087512
   type: 'test'
   ...
 # Subtest: schema/bootstrap: a non-object top-level payload is fatal
 ok 321 - schema/bootstrap: a non-object top-level payload is fatal
   ---
-  duration_ms: 0.42763
+  duration_ms: 0.354173
   type: 'test'
   ...
 # Subtest: schema/bootstrap: a missing required collection is fatal and names the fields
 ok 322 - schema/bootstrap: a missing required collection is fatal and names the fields
   ---
-  duration_ms: 0.32146
+  duration_ms: 0.369281
   type: 'test'
   ...
 # Subtest: schema/bootstrap: invalid and duplicate rows are dropped, valid rows retained
 ok 323 - schema/bootstrap: invalid and duplicate rows are dropped, valid rows retained
   ---
-  duration_ms: 0.418674
+  duration_ms: 0.478594
   type: 'test'
   ...
 # Subtest: schema/bootstrap: the provider payload is never mutated
 ok 324 - schema/bootstrap: the provider payload is never mutated
   ---
-  duration_ms: 0.3446
+  duration_ms: 0.371083
   type: 'test'
   ...
 # Subtest: schema/bootstrap: bootstrapStructure is fatal-only and does not filter rows
 ok 325 - schema/bootstrap: bootstrapStructure is fatal-only and does not filter rows
   ---
-  duration_ms: 0.277657
+  duration_ms: 0.307214
   type: 'test'
   ...
 # Subtest: schema/entry: valid entry passes; a null (not found) is not a failure
 ok 326 - schema/entry: valid entry passes; a null (not found) is not a failure
   ---
-  duration_ms: 0.315281
+  duration_ms: 0.324617
   type: 'test'
   ...
 # Subtest: schema/entry: non-object is fatal; a missing name degrades to partial
 ok 327 - schema/entry: non-object is fatal; a missing name degrades to partial
   ---
-  duration_ms: 0.220281
+  duration_ms: 0.279393
   type: 'test'
   ...
 # Subtest: schema/picks: a valid payload passes and tolerates unknown fields
 ok 328 - schema/picks: a valid payload passes and tolerates unknown fields
   ---
-  duration_ms: 0.4815
+  duration_ms: 0.552132
   type: 'test'
   ...
 # Subtest: schema/picks: non-object and missing picks[] are both fatal
 ok 329 - schema/picks: non-object and missing picks[] are both fatal
   ---
-  duration_ms: 0.508086
+  duration_ms: 0.570858
   type: 'test'
   ...
 # Subtest: schema/picks: mixed rows — invalid dropped, first of a duplicate element kept
 ok 330 - schema/picks: mixed rows — invalid dropped, first of a duplicate element kept
   ---
-  duration_ms: 0.277768
+  duration_ms: 1.13931
   type: 'test'
   ...
 # Subtest: schema/picks: the rival endpoint label is carried through onto the issues
 ok 331 - schema/picks: the rival endpoint label is carried through onto the issues
   ---
-  duration_ms: 1.02223
+  duration_ms: 0.126006
   type: 'test'
   ...
 # Subtest: schema/history: chips absent is legitimate, not an issue
 ok 332 - schema/history: chips absent is legitimate, not an issue
   ---
-  duration_ms: 0.269814
+  duration_ms: 0.212217
   type: 'test'
   ...
 # Subtest: schema/history: a wrong-typed chips field degrades to an empty list, reported
 ok 333 - schema/history: a wrong-typed chips field degrades to an empty list, reported
   ---
-  duration_ms: 0.145014
+  duration_ms: 0.140753
   type: 'test'
   ...
 # Subtest: schema/history: invalid chip rows are dropped, valid ones retained
 ok 334 - schema/history: invalid chip rows are dropped, valid ones retained
   ---
-  duration_ms: 0.143932
+  duration_ms: 0.143699
   type: 'test'
   ...
 # Subtest: schema/standings: valid payload passes; missing results[] is fatal
 ok 335 - schema/standings: valid payload passes; missing results[] is fatal
   ---
-  duration_ms: 0.235576
+  duration_ms: 0.225262
   type: 'test'
   ...
 # Subtest: schema/standings: invalid and duplicate rows are partial, valid rows survive
 ok 336 - schema/standings: invalid and duplicate rows are partial, valid rows survive
   ---
-  duration_ms: 0.171518
+  duration_ms: 0.175959
   type: 'test'
   ...
 # Subtest: schema/understat: valid map passes; unusable teams are dropped as partial
 ok 337 - schema/understat: valid map passes; unusable teams are dropped as partial
   ---
-  duration_ms: 0.328974
+  duration_ms: 0.312063
   type: 'test'
   ...
 # Subtest: schema/understat: no usable teams is fatal so the FPL-ratings fallback engages
 ok 338 - schema/understat: no usable teams is fatal so the FPL-ratings fallback engages
   ---
-  duration_ms: 0.133384
+  duration_ms: 0.135172
   type: 'test'
   ...
 # Subtest: schema/odds: valid array passes; bad events dropped without killing the feed
 ok 339 - schema/odds: valid array passes; bad events dropped without killing the feed
   ---
-  duration_ms: 0.222595
+  duration_ms: 0.214922
   type: 'test'
   ...
 # Subtest: schema/odds: a non-array payload is fatal and yields no events
 ok 340 - schema/odds: a non-array payload is fatal and yields no events
   ---
-  duration_ms: 0.119561
+  duration_ms: 0.118181
   type: 'test'
   ...
 # Subtest: schema/archive: a valid header passes; missing columns are fatal and named
 ok 341 - schema/archive: a valid header passes; missing columns are fatal and named
   ---
-  duration_ms: 0.351271
+  duration_ms: 0.339124
   type: 'test'
   ...
 # Subtest: schema/issues: pooled fan-out collapses to one issue per provider+endpoint+code
 ok 342 - schema/issues: pooled fan-out collapses to one issue per provider+endpoint+code
   ---
-  duration_ms: 0.327721
+  duration_ms: 0.319368
   type: 'test'
   ...
 # Subtest: schema/issues: summaries stay payload-free across every endpoint
 ok 343 - schema/issues: summaries stay payload-free across every endpoint
   ---
-  duration_ms: 0.519173
+  duration_ms: 0.458658
   type: 'test'
   ...
 # Subtest: schema/issues: every issue carries the machine-readable identity fields
 ok 344 - schema/issues: every issue carries the machine-readable identity fields
   ---
-  duration_ms: 0.201379
+  duration_ms: 0.218659
   type: 'test'
   ...
 # Subtest: Stage 8 model and rules versions are explicit
 ok 345 - Stage 8 model and rules versions are explicit
   ---
-  duration_ms: 2.423779
+  duration_ms: 2.447706
   type: 'test'
   ...
 # Subtest: Poisson tail handles zero and threshold bounds
 ok 346 - Poisson tail handles zero and threshold bounds
   ---
-  duration_ms: 0.391288
+  duration_ms: 0.351958
   type: 'test'
   ...
 # Subtest: save groups are stepped rather than lambda divided by three
 ok 347 - save groups are stepped rather than lambda divided by three
   ---
-  duration_ms: 0.189589
+  duration_ms: 0.18186
   type: 'test'
   ...
 # Subtest: goals-conceded groups apply negative points per complete pair
 ok 348 - goals-conceded groups apply negative points per complete pair
   ---
-  duration_ms: 0.152897
+  duration_ms: 0.135533
   type: 'test'
   ...
 # Subtest: defensive-contribution threshold remains bounded by two points
 ok 349 - defensive-contribution threshold remains bounded by two points
   ---
-  duration_ms: 0.231529
+  duration_ms: 0.273261
   type: 'test'
   ...
 # Subtest: rare-event shrinkage remains finite with no player exposure
 ok 350 - rare-event shrinkage remains finite with no player exposure
   ---
-  duration_ms: 0.152356
+  duration_ms: 0.154218
   type: 'test'
   ...
 # Subtest: goalkeeper scoring exposes stepped saves and conceded parts
 ok 351 - goalkeeper scoring exposes stepped saves and conceded parts
   ---
-  duration_ms: 1.281606
+  duration_ms: 1.174225
   type: 'test'
   ...
 # Subtest: outfield scoring exposes explicit disciplinary components
 ok 352 - outfield scoring exposes explicit disciplinary components
   ---
-  duration_ms: 0.346082
+  duration_ms: 0.388446
   type: 'test'
   ...
 # Subtest: penalty role gates unlisted takers to the population prior
 ok 353 - penalty role gates unlisted takers to the population prior
   ---
-  duration_ms: 0.425375
+  duration_ms: 0.373388
   type: 'test'
   ...
 # Subtest: bonus uses awarded bonus per appearance without fixture multiplier
 ok 354 - bonus uses awarded bonus per appearance without fixture multiplier
   ---
-  duration_ms: 1.170049
+  duration_ms: 1.198942
   type: 'test'
   ...
 # Subtest: aggregate bonus appearances reuse the Stage 4 appearance estimate
 ok 355 - aggregate bonus appearances reuse the Stage 4 appearance estimate
   ---
-  duration_ms: 0.358093
+  duration_ms: 0.421749
   type: 'test'
   ...
 # Subtest: defensive contributions use appearance probability rather than p60 eligibility
 ok 356 - defensive contributions use appearance probability rather than p60 eligibility
   ---
-  duration_ms: 0.261269
+  duration_ms: 0.234128
   type: 'test'
   ...
 # Subtest: fixture run score gives a genuine blank zero and a double both fixtures
 ok 357 - fixture run score gives a genuine blank zero and a double both fixtures
   ---
-  duration_ms: 0.350109
+  duration_ms: 0.34273
   type: 'test'
   ...
 # Subtest: rare-rate helper uses position population shrinkage
 ok 358 - rare-rate helper uses position population shrinkage
   ---
-  duration_ms: 0.111418
+  duration_ms: 0.140223
   type: 'test'
   ...
 # Subtest: SEC-1: odds key is direct-only; failures degrade to internal model, never relay
 ok 359 - SEC-1: odds key is direct-only; failures degrade to internal model, never relay
   ---
-  duration_ms: 249.499932
+  duration_ms: 216.606735
   type: 'test'
   ...
 # Subtest: odds secret scrubber removes raw and encoded key material plus apiKey values
 ok 360 - odds secret scrubber removes raw and encoded key material plus apiKey values
   ---
-  duration_ms: 1.276799
+  duration_ms: 1.193762
   type: 'test'
   ...
 # Subtest: forget odds key clears field, storage property and active odds state
 ok 361 - forget odds key clears field, storage property and active odds state
   ---
-  duration_ms: 1.054434
+  duration_ms: 1.069119
   type: 'test'
   ...
 # Subtest: storage source omits an empty odds key rather than persisting an empty secret
 ok 362 - storage source omits an empty odds key rather than persisting an empty secret
   ---
-  duration_ms: 0.231599
+  duration_ms: 0.231984
   type: 'test'
   ...
 # Subtest: built UI masks the key and provides the one-action forget control
 ok 363 - built UI masks the key and provides the one-action forget control
   ---
-  duration_ms: 2.697439
+  duration_ms: 2.668469
   type: 'test'
   ...
 # Subtest: CSP hashes independently match the exact emitted inline script and style
 ok 364 - CSP hashes independently match the exact emitted inline script and style
   ---
-  duration_ms: 5.344613
+  duration_ms: 5.310708
   type: 'test'
   ...
 # Subtest: CSP removes every unsafe-inline concession and retains provider origins
 ok 365 - CSP removes every unsafe-inline concession and retains provider origins
   ---
-  duration_ms: 2.663192
+  duration_ms: 2.831493
   type: 'test'
   ...
 # Subtest: source and generated deployable contain no inline style attributes or runtime style APIs
 ok 366 - source and generated deployable contain no inline style attributes or runtime style APIs
   ---
-  duration_ms: 8.966918
+  duration_ms: 8.833234
   type: 'test'
   ...
 # Subtest: dynamic visual geometry uses style-free progress and SVG attributes
 ok 367 - dynamic visual geometry uses style-free progress and SVG attributes
   ---
-  duration_ms: 0.340783
+  duration_ms: 0.308416
   type: 'test'
   ...
 # Subtest: frame-buster and current Stage 3 modules are inside the single hashed bundle
 ok 368 - frame-buster and current Stage 3 modules are inside the single hashed bundle
   ---
-  duration_ms: 2.058363
+  duration_ms: 2.050704
   type: 'test'
   ...
 # Subtest: generated artefacts contain no planted odds secret
 ok 369 - generated artefacts contain no planted odds secret
   ---
-  duration_ms: 3.956648
+  duration_ms: 3.9849
   type: 'test'
   ...
 # Subtest: seeded RNG is deterministic and bounded
 ok 370 - seeded RNG is deterministic and bounded
   ---
-  duration_ms: 1.627819
+  duration_ms: 1.622884
   type: 'test'
   ...
 # Subtest: minutes distribution preserves approved marginals
 ok 371 - minutes distribution preserves approved marginals
   ---
-  duration_ms: 0.421599
+  duration_ms: 0.467214
   type: 'test'
   ...
 # Subtest: sampled minutes converge to expected minutes
 ok 372 - sampled minutes converge to expected minutes
   ---
-  duration_ms: 11.161671
+  duration_ms: 11.422835
   type: 'test'
   ...
 # Subtest: inconsistent minutes are bounded and labelled reduced
 ok 373 - inconsistent minutes are bounded and labelled reduced
   ---
-  duration_ms: 0.187315
+  duration_ms: 0.207287
   type: 'test'
   ...
 # Subtest: summary thresholds and percentile order are stable
 ok 374 - summary thresholds and percentile order are stable
   ---
-  duration_ms: 0.35674
+  duration_ms: 0.384388
   type: 'test'
   ...
 # Subtest: Poisson sampler handles zero and remains deterministic
 ok 375 - Poisson sampler handles zero and remains deterministic
   ---
-  duration_ms: 0.406584
+  duration_ms: 0.345475
   type: 'test'
   ...
 # Subtest: legal XI enforces official formation minimums
 ok 376 - legal XI enforces official formation minimums
   ---
-  duration_ms: 1.550699
+  duration_ms: 1.52948
   type: 'test'
   ...
 # Subtest: reserve goalkeeper only replaces a missing goalkeeper
 ok 377 - reserve goalkeeper only replaces a missing goalkeeper
   ---
-  duration_ms: 0.525164
+  duration_ms: 0.515324
   type: 'test'
   ...
 # Subtest: outfield bench order is respected while preserving formation
 ok 378 - outfield bench order is respected while preserving formation
   ---
-  duration_ms: 0.236147
+  duration_ms: 0.202097
   type: 'test'
   ...
 # Subtest: captain falls to vice only when captain does not appear
 ok 379 - captain falls to vice only when captain does not appear
   ---
-  duration_ms: 0.168603
+  duration_ms: 0.167874
   type: 'test'
   ...
 # Subtest: Stage 10.5 rejects prototype-bearing JSON keys before canonicalisation
 ok 380 - Stage 10.5 rejects prototype-bearing JSON keys before canonicalisation
   ---
-  duration_ms: 1.464425
+  duration_ms: 1.328123
   type: 'test'
   ...
 # Subtest: Stage 10.5 diagnostic redaction removes secrets, queries and account identifiers
 ok 381 - Stage 10.5 diagnostic redaction removes secrets, queries and account identifiers
   ---
-  duration_ms: 0.801569
+  duration_ms: 0.75975
   type: 'test'
   ...
 # Subtest: Stage 10.5 journals are strict and current pointers reconcile deterministically
 ok 382 - Stage 10.5 journals are strict and current pointers reconcile deterministically
   ---
-  duration_ms: 0.809953
+  duration_ms: 0.799054
   type: 'test'
   ...
 # Subtest: Stage 10.5 diagnostics are bounded and owner-safe
 ok 383 - Stage 10.5 diagnostics are bounded and owner-safe
   ---
-  duration_ms: 0.725141
+  duration_ms: 0.731026
   type: 'test'
   ...
 # Subtest: Stage 10.5 transfer records reject version mismatch and forbidden evidence
 ok 384 - Stage 10.5 transfer records reject version mismatch and forbidden evidence
   ---
-  duration_ms: 2.480173
+  duration_ms: 2.42289
   type: 'test'
   ...
 # Subtest: Stage 10.5 CSV neutralises line-feed formula text without changing numeric negatives
 ok 385 - Stage 10.5 CSV neutralises line-feed formula text without changing numeric negatives
   ---
-  duration_ms: 0.232111
+  duration_ms: 0.225762
   type: 'test'
   ...
 # Subtest: Stage 10.5 download helper reports only a request and delays URL cleanup
 ok 386 - Stage 10.5 download helper reports only a request and delays URL cleanup
   ---
-  duration_ms: 0.529992
+  duration_ms: 0.513009
   type: 'test'
   ...
 # Subtest: Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads
 ok 387 - Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads
   ---
-  duration_ms: 0.287514
+  duration_ms: 0.279112
   type: 'test'
   ...
 # Subtest: startup gate is silent, minimalist and visible by default
 ok 388 - startup gate is silent, minimalist and visible by default
   ---
-  duration_ms: 1.562408
+  duration_ms: 1.184043
   type: 'test'
   ...
 # Subtest: foreground refresh is due only after the approved verification age
 ok 389 - foreground refresh is due only after the approved verification age
   ---
-  duration_ms: 0.247667
+  duration_ms: 0.190797
   type: 'test'
   ...
 # Subtest: startup and foreground paths use the same deferred verified refresh
 ok 390 - startup and foreground paths use the same deferred verified refresh
   ---
-  duration_ms: 0.315922
+  duration_ms: 0.246891
   type: 'test'
   ...
 # Subtest: automatic evidence is dispatched without extending startup loading
 ok 391 - automatic evidence is dispatched without extending startup loading
   ---
-  duration_ms: 0.465974
+  duration_ms: 0.374791
   type: 'test'
   ...
 # Subtest: evidence is automatic and backup import is segregated from official records
 ok 392 - evidence is automatic and backup import is segregated from official records
   ---
-  duration_ms: 0.254809
+  duration_ms: 0.235089
   type: 'test'
   ...
 # Subtest: Team decision home is versioned as the approved checkpoint
 ok 393 - Team decision home is versioned as the approved checkpoint
   ---
-  duration_ms: 1.917466
+  duration_ms: 1.029866
   type: 'test'
   ...
 # Subtest: forecast keeps starting-XI points and captain uplift explicit
 ok 394 - forecast keeps starting-XI points and captain uplift explicit
   ---
-  duration_ms: 0.799084
+  duration_ms: 0.753138
   type: 'test'
   ...
 # Subtest: only a complete legal FPL squad can produce the decision home
 ok 395 - only a complete legal FPL squad can produce the decision home
   ---
-  duration_ms: 0.440681
+  duration_ms: 0.463777
   type: 'test'
   ...
 # Subtest: bench labels distinguish the reserve goalkeeper from ordered outfield substitutes
 ok 396 - bench labels distinguish the reserve goalkeeper from ordered outfield substitutes
   ---
-  duration_ms: 0.231971
+  duration_ms: 0.194653
   type: 'test'
   ...
 # Subtest: source wording separates Official FPL, manual and verified fallback states
 ok 397 - source wording separates Official FPL, manual and verified fallback states
   ---
-  duration_ms: 16.584906
+  duration_ms: 14.401053
   type: 'test'
   ...
 # Subtest: risk priority protects data integrity, captaincy and selected starters in that order
 ok 398 - risk priority protects data integrity, captaincy and selected starters in that order
   ---
-  duration_ms: 0.542502
+  duration_ms: 0.455021
   type: 'test'
   ...
 # Subtest: close captaincy is uncertainty context, not protect or chase strategy
 ok 399 - close captaincy is uncertainty context, not protect or chase strategy
   ---
-  duration_ms: 0.299764
+  duration_ms: 0.28932
   type: 'test'
   ...
 # Subtest: clear Team state does not pretend the transfer optimiser has recommended a roll
 ok 400 - clear Team state does not pretend the transfer optimiser has recommended a roll
   ---
-  duration_ms: 0.305354
+  duration_ms: 0.281256
   type: 'test'
   ...
 # Subtest: deadline actions remain advisory and distinguish user previews
 ok 401 - deadline actions remain advisory and distinguish user previews
   ---
-  duration_ms: 0.525364
+  duration_ms: 0.478464
   type: 'test'
   ...
 # Subtest: production wiring wraps the verified renderer without changing model modules or routes
 ok 402 - production wiring wraps the verified renderer without changing model modules or routes
   ---
-  duration_ms: 3.253835
+  duration_ms: 3.491818
   type: 'test'
   ...
 # Subtest: pitch lines preserve every starter once in football visual order
 ok 403 - pitch lines preserve every starter once in football visual order
   ---
-  duration_ms: 1.551109
+  duration_ms: 1.540099
   type: 'test'
   ...
 # Subtest: captaincy uses the first two distinct ranked starters
 ok 404 - captaincy uses the first two distinct ranked starters
   ---
-  duration_ms: 0.23801
+  duration_ms: 0.215853
   type: 'test'
   ...
 # Subtest: known club palette is repository owned and stable
 ok 405 - known club palette is repository owned and stable
   ---
-  duration_ms: 0.308549
+  duration_ms: 0.318205
   type: 'test'
   ...
 # Subtest: unknown club palette falls back deterministically to an approved pattern
 ok 406 - unknown club palette falls back deterministically to an approved pattern
   ---
-  duration_ms: 1.323207
+  duration_ms: 1.211164
   type: 'test'
   ...
 # Subtest: shirt palette classes are stable for known and fallback clubs
 ok 407 - shirt palette classes are stable for known and fallback clubs
   ---
-  duration_ms: 0.352774
+  duration_ms: 0.342972
   type: 'test'
   ...
 # Subtest: committed transfer controls cover assumptions and display controls
 ok 408 - committed transfer controls cover assumptions and display controls
   ---
-  duration_ms: 3.073812
+  duration_ms: 1.405437
   type: 'test'
   ...
 # Subtest: transfer planner signature changes for any committed assumption or display choice
 ok 409 - transfer planner signature changes for any committed assumption or display choice
   ---
-  duration_ms: 0.339972
+  duration_ms: 0.245138
   type: 'test'
   ...
 # Subtest: Stage 6 rules are explicit and versioned
 ok 410 - Stage 6 rules are explicit and versioned
   ---
-  duration_ms: 1.662627
+  duration_ms: 1.745714
   type: 'test'
   ...
 # Subtest: selling price keeps half of rises rounded down
 ok 411 - selling price keeps half of rises rounded down
   ---
-  duration_ms: 0.345652
+  duration_ms: 0.368309
   type: 'test'
   ...
 # Subtest: missing and null purchase prices use current price in estimated mode
 ok 412 - missing and null purchase prices use current price in estimated mode
   ---
-  duration_ms: 0.168754
+  duration_ms: 0.193521
   type: 'test'
   ...
 # Subtest: free-transfer and hit formulas cover ordinary plans
 ok 413 - free-transfer and hit formulas cover ordinary plans
   ---
-  duration_ms: 0.284509
+  duration_ms: 0.294791
   type: 'test'
   ...
 # Subtest: full squad legality enforces 15 distinct players and exact quotas
 ok 414 - full squad legality enforces 15 distinct players and exact quotas
   ---
-  duration_ms: 0.782156
+  duration_ms: 0.710458
   type: 'test'
   ...
 # Subtest: best XI selects a legal formation deterministically
 ok 415 - best XI selects a legal formation deterministically
   ---
-  duration_ms: 0.871496
+  duration_ms: 1.004729
   type: 'test'
   ...
 # Subtest: zero-transfer baseline is always present and can win
 ok 416 - zero-transfer baseline is always present and can win
   ---
-  duration_ms: 5.68117
+  duration_ms: 4.814531
   type: 'test'
   ...
 # Subtest: estimated affordability is labelled and never treats null as a zero purchase price
 ok 417 - estimated affordability is labelled and never treats null as a zero purchase price
   ---
-  duration_ms: 3.789324
+  duration_ms: 2.548254
   type: 'test'
   ...
 # Subtest: shared bank is applied once across a coordinated plan
 ok 418 - shared bank is applied once across a coordinated plan
   ---
-  duration_ms: 18.64324
+  duration_ms: 11.285539
   type: 'test'
   ...
 # Subtest: unavailable purchases are excluded while doubtful purchases remain eligible
 ok 419 - unavailable purchases are excluded while doubtful purchases remain eligible
   ---
-  duration_ms: 3.065589
+  duration_ms: 1.82393
   type: 'test'
   ...
 # Subtest: production search agrees with an independent exhaustive reference
 ok 420 - production search agrees with an independent exhaustive reference
   ---
-  duration_ms: 8.215414
+  duration_ms: 6.457144
   type: 'test'
   ...
 # Subtest: safe affordability pruning cannot remove the exhaustive optimum
 ok 421 - safe affordability pruning cannot remove the exhaustive optimum
   ---
-  duration_ms: 1.638957
+  duration_ms: 1.084287
   type: 'test'
   ...
 # Subtest: an evaluation ceiling fails closed instead of claiming a partial optimum
 ok 422 - an evaluation ceiling fails closed instead of claiming a partial optimum
   ---
-  duration_ms: 0.410671
+  duration_ms: 0.391402
   type: 'test'
   ...
 # Subtest: direct import: fixture model strength ordering
 ok 423 - direct import: fixture model strength ordering
   ---
-  duration_ms: 1.266501
+  duration_ms: 1.178833
   type: 'test'
   ...
 # Subtest: direct import: projection archetypes sane and parts sum
 ok 424 - direct import: projection archetypes sane and parts sum
   ---
-  duration_ms: 2.435007
+  duration_ms: 2.367606
   type: 'test'
   ...
 # Subtest: direct import: availability scale
 ok 425 - direct import: availability scale
   ---
-  duration_ms: 0.181115
+  duration_ms: 0.205184
   type: 'test'
   ...
 # Subtest: direct import: bestXI legality and sellPrice rounding
 ok 426 - direct import: bestXI legality and sellPrice rounding
   ---
-  duration_ms: 2.654056
+  duration_ms: 2.981143
   type: 'test'
   ...
 # Subtest: direct import: odds maths invertible
 ok 427 - direct import: odds maths invertible
   ---
-  duration_ms: 0.252945
+  duration_ms: 0.297405
   type: 'test'
   ...
 # Subtest: direct import: computeBacktest recovers planted biases with provenance
 ok 428 - direct import: computeBacktest recovers planted biases with provenance
   ---
-  duration_ms: 23.522841
+  duration_ms: 21.145001
   type: 'test'
   ...
 # Subtest: direct import: cache envelope invalidates on schema/season change
 ok 429 - direct import: cache envelope invalidates on schema/season change
   ---
-  duration_ms: 1.525086
+  duration_ms: 1.012512
   type: 'test'
   ...
 # Subtest: direct import: registry carries six quality attributes per provider
 ok 430 - direct import: registry carries six quality attributes per provider
   ---
-  duration_ms: 0.669586
+  duration_ms: 0.416108
   type: 'test'
   ...
 # Subtest: direct import: ODDS_RULES defined before any formula change
 ok 431 - direct import: ODDS_RULES defined before any formula change
   ---
-  duration_ms: 0.453453
+  duration_ms: 0.345406
   type: 'test'
   ...
 # Subtest: direct import: escapeHTML neutralises the usual suspects
 ok 432 - direct import: escapeHTML neutralises the usual suspects
   ---
-  duration_ms: 0.557568
+  duration_ms: 0.476831
   type: 'test'
   ...
 # Subtest: validation: exact duplicates collapse to the first occurrence
 ok 433 - validation: exact duplicates collapse to the first occurrence
   ---
-  duration_ms: 2.226116
+  duration_ms: 2.914199
   type: 'test'
   ...
 # Subtest: validation: genuine doubles survive — distinct ids, same teams and gameweek
 ok 434 - validation: genuine doubles survive — distinct ids, same teams and gameweek
   ---
-  duration_ms: 0.954246
+  duration_ms: 1.022882
   type: 'test'
   ...
 # Subtest: validation: genuine doubles survive when rows carry no id (composite distinct)
 ok 435 - validation: genuine doubles survive when rows carry no id (composite distinct)
   ---
-  duration_ms: 0.249028
+  duration_ms: 0.261478
   type: 'test'
   ...
 # Subtest: validation: conflicting duplicate keeps the first and names the offending fields
 ok 436 - validation: conflicting duplicate keeps the first and names the offending fields
   ---
-  duration_ms: 0.444077
+  duration_ms: 0.414655
   type: 'test'
   ...
 # Subtest: validation: a conflict is partial, never fatal — the app still loads
 ok 437 - validation: a conflict is partial, never fatal — the app still loads
   ---
-  duration_ms: 0.430284
+  duration_ms: 0.435404
   type: 'test'
   ...
 # Subtest: validation: rows with no safe identity are excluded and reported
 ok 438 - validation: rows with no safe identity are excluded and reported
   ---
-  duration_ms: 0.271838
+  duration_ms: 0.236573
   type: 'test'
   ...
 # Subtest: validation: identity is never invented for an id-less row with a null event
 ok 439 - validation: identity is never invented for an id-less row with a null event
   ---
-  duration_ms: 0.342456
+  duration_ms: 0.338392
   type: 'test'
   ...
 # Subtest: validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
 ok 440 - validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
   ---
-  duration_ms: 0.234885
+  duration_ms: 0.26242
   type: 'test'
   ...
 # Subtest: validation: started/finished differences are immaterial, not a conflict
 ok 441 - validation: started/finished differences are immaterial, not a conflict
   ---
-  duration_ms: 0.424264
+  duration_ms: 0.478214
   type: 'test'
   ...
 # Subtest: validation: a non-array payload is fatal and yields an empty fixture list
 ok 442 - validation: a non-array payload is fatal and yields an empty fixture list
   ---
-  duration_ms: 0.532586
+  duration_ms: 0.696783
   type: 'test'
   ...
 # Subtest: validation: the input array and its rows are never mutated
 ok 443 - validation: the input array and its rows are never mutated
   ---
-  duration_ms: 0.314569
+  duration_ms: 0.328985
   type: 'test'
   ...
 # Subtest: validation: issueSummary is payload-free and safe to render
 ok 444 - validation: issueSummary is payload-free and safe to render
   ---
-  duration_ms: 0.29158
+  duration_ms: 0.35321
   type: 'test'
   ...
 # Subtest: dataset pin requires immutable reference and SHA-256 checksum
 ok 445 - dataset pin requires immutable reference and SHA-256 checksum
   ---
-  duration_ms: 2.178595
+  duration_ms: 3.263453
   type: 'test'
   ...
 # Subtest: observations are sorted deterministically and identical duplicates collapse
 ok 446 - observations are sorted deterministically and identical duplicates collapse
   ---
-  duration_ms: 1.122158
+  duration_ms: 1.185105
   type: 'test'
   ...
 # Subtest: conflicting duplicate observations fail closed
 ok 447 - conflicting duplicate observations fail closed
   ---
-  duration_ms: 0.455427
+  duration_ms: 0.509492
   type: 'test'
   ...
 # Subtest: future information is rejected
 ok 448 - future information is rejected
   ---
-  duration_ms: 0.248178
+  duration_ms: 0.242643
   type: 'test'
   ...
 # Subtest: walk-forward fold boundaries are chronological and separated
 ok 449 - walk-forward fold boundaries are chronological and separated
   ---
-  duration_ms: 0.629189
+  duration_ms: 0.948123
   type: 'test'
   ...
 # Subtest: position calibration is fitted only from supplied rows and bounded
 ok 450 - position calibration is fitted only from supplied rows and bounded
   ---
-  duration_ms: 0.312065
+  duration_ms: 0.360064
   type: 'test'
   ...
 # Subtest: calibration application creates an isolated named variant
 ok 451 - calibration application creates an isolated named variant
   ---
-  duration_ms: 0.301236
+  duration_ms: 0.445413
   type: 'test'
   ...
 # Subtest: metric summary calculates deterministic MAE RMSE bias and correlation
 ok 452 - metric summary calculates deterministic MAE RMSE bias and correlation
   ---
-  duration_ms: 0.395045
+  duration_ms: 0.496037
   type: 'test'
   ...
 # Subtest: segmented metrics expose position gameweek variant and prediction bands
 ok 453 - segmented metrics expose position gameweek variant and prediction bands
   ---
-  duration_ms: 8.381664
+  duration_ms: 9.721422
   type: 'test'
   ...
 # Subtest: ablation comparison requires identical holdout keys
 ok 454 - ablation comparison requires identical holdout keys
   ---
-  duration_ms: 1.89587
+  duration_ms: 1.992404
   type: 'test'
   ...
 # Subtest: stable result serialisation is key ordered and rounds finite numbers
 ok 455 - stable result serialisation is key ordered and rounds finite numbers
   ---
-  duration_ms: 0.28517
+  duration_ms: 0.317413
   type: 'test'
   ...
 # Subtest: full evaluation preserves supplied ablations when fold calibration is disabled
 ok 456 - full evaluation preserves supplied ablations when fold calibration is disabled
   ---
-  duration_ms: 2.095546
+  duration_ms: 2.06971
   type: 'test'
   ...
 # Subtest: raw-only evaluation emits train-only fold calibration
 ok 457 - raw-only evaluation emits train-only fold calibration
   ---
-  duration_ms: 1.636614
+  duration_ms: 1.960324
   type: 'test'
   ...
 1..457
@@ -2789,4 +2789,4 @@ ok 457 - raw-only evaluation emits train-only fold calibration
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 5057.756829
+# duration_ms 4721.497669
