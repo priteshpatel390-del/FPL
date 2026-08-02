@@ -1,0 +1,22 @@
+name: Agent repository snapshot
+
+on:
+  push:
+    branches:
+      - agent/teamsheet-2.0.4-mini-leagues
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create repository archive
+        run: tar --exclude=.git -czf repository-snapshot.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repository-snapshot
+          path: repository-snapshot.tar.gz
+          retention-days: 1
