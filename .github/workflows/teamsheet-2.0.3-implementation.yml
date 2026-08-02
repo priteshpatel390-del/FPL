@@ -42,16 +42,39 @@ jobs:
           sed -i 's/assert\.catch/assert.match/g' tests/transfer-optimiser-view.test.mjs
 
       - name: Run pre-commit test baseline
+        id: precommit_tests
+        shell: bash
+        run: |
+          set -o pipefail
+          ./run-tests.sh 2>&1 | tee /tmp/teamsheet-precommit-tests.log
+          TEST_STATUS=${PIPESTATUS[0]}
+          TEST_COUNT="$(awk '/^# tests /{n=$3} END{print n}' /tmp/teamsheet-precommit-tests.log)"
+          echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
+          exit "$TEST_STATUS"
+
+      - name: Publish failure diagnostic only
+        if: failure() && steps.precommit_tests.outcome == 'failure'
         shell: bash
         run: |
           set -euo pipefail
-          ./run-tests.sh | tee /tmp/teamsheet-precommit-tests.log
-          TEST_COUNT="$(awk '/^# tests /{n=$3} END{print n}' /tmp/teamsheet-precommit-tests.log)"
-          if [[ -z "$TEST_COUNT" ]]; then
+          mkdir -p scripts/teamsheet-2.0.3-diagnostics
+          cp /tmp/teamsheet-precommit-tests.log scripts/teamsheet-2.0.3-diagnostics/precommit-tests.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/teamsheet-2.0.3-diagnostics/precommit-tests.log
+          git commit -m "Record Teamsheet 2.0.3 verifier failure"
+          TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          git push origin "HEAD:${TARGET_BRANCH}"
+
+      - name: Finalise test-count documentation
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${TEST_COUNT:-}" ]]; then
             echo "Could not determine test count" >&2
             exit 1
           fi
-          echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
           grep -RIl '{{TEST_COUNT}}' CLAUDE.md docs | xargs sed -i "s/{{TEST_COUNT}}/$TEST_COUNT/g"
 
       - name: Commit verified source boundary
@@ -60,7 +83,7 @@ jobs:
           set -euo pipefail
           git checkout -- index.html dist/index.html dist/app.bundle.js dist/manifest.json
           rm .github/workflows/teamsheet-2.0.3-implementation.yml
-          rm -rf scripts/teamsheet-2.0.3-bootstrap scripts/teamsheet-2.0.3-payload
+          rm -rf scripts/teamsheet-2.0.3-bootstrap scripts/teamsheet-2.0.3-payload scripts/teamsheet-2.0.3-diagnostics
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
