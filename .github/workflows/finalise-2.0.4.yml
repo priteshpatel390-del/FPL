@@ -1,0 +1,54 @@
+name: Finalise Teamsheet 2.0.4
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.4-mini-leagues
+          fetch-depth: 0
+      - name: Verify source and deterministic build
+        env:
+          BUILD_COMMIT: aef1ae2328068fae95559632db5f74f4a2854a1a
+        run: |
+          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          ./run-tests.sh
+          mkdir -p /tmp/build-one/dist
+          cp index.html /tmp/build-one/index.html
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/build-one/dist/
+          node build.mjs
+          cmp /tmp/build-one/index.html index.html
+          cmp /tmp/build-one/dist/index.html dist/index.html
+          cmp /tmp/build-one/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/build-one/dist/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          git diff --check
+          sha256sum index.html dist/index.html dist/app.bundle.js dist/manifest.json
+      - name: Record final evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('docs/TEAMSHEET2-ITEM4.md')
+          t=p.read_text()
+          t=t.replace('Status: **Owner-approved implementation completed on the dedicated branch; draft PR review, exact build finalisation, physical iPhone and VoiceOver acceptance remain outstanding.**','Status: **Owner-approved implementation completed and verified for draft PR review. Not merged. Physical iPhone and VoiceOver acceptance remain outstanding.**')
+          t=t.replace('- Exact source/deployable commit identities, two-build byte equality and generated hashes are recorded during finalisation before this PR is ready for merge.','- Verified source `aef1ae2328068fae95559632db5f74f4a2854a1a` completed 491/491 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`.')
+          p.write_text(t)
+          p=Path('CLAUDE.md'); t=p.read_text(); t=t.replace('The current 2.0.4 source baseline is **491/491 tests**; exact build identity and device acceptance remain completion gates.','The verified 2.0.4 source baseline is **491/491 tests** with deterministic exact-identity builds and root/deployable equality; physical iPhone and VoiceOver acceptance remain review gates.'); p.write_text(t)
+          p=Path('docs/TESTING.md'); t=p.read_text(); t=t.replace('Exact final source/deployable identity, two-build equality and generated hashes remain the finalisation gate before merge.','Verified source `aef1ae2328068fae95559632db5f74f4a2854a1a` has two byte-identical exact-identity builds and root/deployable equality.'); p.write_text(t)
+          PY
+      - name: Commit verified deployables
+        run: |
+          rm .github/workflows/finalise-2.0.4.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalise Teamsheet 2.0.4 deployables"
+          git push origin HEAD:agent/teamsheet-2.0.4-mini-leagues
