@@ -42,14 +42,14 @@ jobs:
           node <<'NODE'
           import { readFileSync, writeFileSync } from 'node:fs';
 
-          const viewsPath='src/ui/views.mjs';
-          let views=readFileSync(viewsPath,'utf8');
-          const marker='/* ---------------------------------------------------------------------\n   VIEW — MINI-LEAGUE';
-          const declaration="/* renderTransfers is implemented by transfer-optimiser-view.mjs, loaded later by build.mjs. */\nvar renderTransfers;\n\n";
-          if(!views.includes(declaration)){
-            if(!views.includes(marker)) throw new Error('Mini-League marker missing while adding transfer forward declaration');
-            views=views.replace(marker,declaration+marker);
-            writeFileSync(viewsPath,views);
+          const buildPath='build.mjs';
+          let build=readFileSync(buildPath,'utf8');
+          const oldOrder="'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/transfer-optimiser-view.mjs', 'src/ui/backtest-copy.mjs'";
+          const newOrder="'src/ui/transfer-optimiser-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/backtest-copy.mjs'";
+          if(!build.includes(newOrder)){
+            if(!build.includes(oldOrder)) throw new Error('Transfer/view bundle-order marker missing');
+            build=build.replace(oldOrder,newOrder);
+            writeFileSync(buildPath,build);
           }
 
           const previewTestPath='tests/decision-preview.test.mjs';
@@ -60,6 +60,14 @@ jobs:
             if(!previewTest.includes(oldContract)) throw new Error('Decision preview contract marker missing');
             previewTest=previewTest.replace(oldContract,newContract);
             writeFileSync(previewTestPath,previewTest);
+          }
+
+          const transferTestPath='tests/transfer-optimiser-view.test.mjs';
+          let transferTest=readFileSync(transferTestPath,'utf8');
+          const orderTestName='transfer renderer is bundled before the views startup boundary';
+          if(!transferTest.includes(orderTestName)){
+            transferTest += `\n\ntest('${orderTestName}',()=>{\n  const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');\n  const transferIndex=build.indexOf("'src/ui/transfer-optimiser-view.mjs'");\n  const viewsIndex=build.indexOf("'src/ui/views.mjs'");\n  assert.ok(transferIndex>=0);\n  assert.ok(viewsIndex>=0);\n  assert.ok(transferIndex<viewsIndex);\n});\n`;
+            writeFileSync(transferTestPath,transferTest);
           }
           NODE
 
