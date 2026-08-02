@@ -155,4 +155,3 @@ No provider, origin or endpoint family is added. The existing Official FPL stand
 - Counts are labelled as selected-rival facts rather than whole-league ownership or effective ownership.
 - Optional `entry_rank`, `entry_last_rank`, `last_rank`, `event_total`, `multiplier`, captain, vice-captain and active-chip fields are validated before aggregation. Invalid optional context degrades to unavailable without discarding otherwise valid player ownership.
 - Standings, picks and derived exposure remain session-only. Only the explicit selected rival IDs and labels persist under `fpl:mini-leagues` version 2.
-

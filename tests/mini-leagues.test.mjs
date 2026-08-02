@@ -92,4 +92,3 @@ test('version 1 state migrates to an empty explicit comparison group',()=>{
   assert.deepEqual(state.comparisonRivalsByLeague,{});
   assert.equal(MAX_COMPARISON_RIVALS,5);
 });
-

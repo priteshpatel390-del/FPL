@@ -132,4 +132,3 @@ test('request-race and deep-link focus contracts remain explicit in source',()=>
   const view=readFileSync(new URL('../src/ui/mini-leagues-view.mjs',import.meta.url),'utf8');
   for(const required of ['miniLeagueExposureSelectionKey(group)','currentKey!==selectionKey',"miniLeagueSetBusy($('leagueExposureOut'),false)","initialRoute==='#/leagues/exposure'", "querySelector?.('h2')?.focus?.({preventScroll:true})", "if(existing&&!force) return {record:existing,issues:[]}"]) assert.equal(view.includes(required),true,required);
 });
-

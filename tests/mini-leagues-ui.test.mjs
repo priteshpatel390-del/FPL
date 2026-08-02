@@ -110,4 +110,3 @@ test('exposure persistence stores only explicit rival choices while fetched squa
   includesAll(view,['S.miniLeagueData={standings:{},rivals:{},exposure:{}}','excluded from aggregate denominators','membership and rank cannot be confirmed']);
   excludesAll(state,['event_total','active_chip','captainCount','public picks']);
 });
-

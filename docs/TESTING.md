@@ -138,4 +138,3 @@ The approved 2.0.5 implementation must verify:
 - accessibility and narrow-screen source contracts;
 - absence of projection, scoring, simulation, rank and transfer-optimiser calls;
 - full `./run-tests.sh`, two exact-identity production builds, root/deployable equality and `git diff --check`.
-

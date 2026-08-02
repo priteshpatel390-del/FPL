@@ -99,4 +99,3 @@ Requests remain read-only through the existing Official FPL transport. No cookie
 The version-2 Mini-League state may persist an explicitly confirmed comparison group of no more than five public rival IDs and locally displayed labels. It does not persist standings, scores, public picks, captaincy, chip state or derived exposure.
 
 The new `#/leagues/exposure` route contains no league, manager, player, Team or Gameweek identifier. Public picks requests remain read-only through the existing Official FPL transport, use bounded concurrency and do not introduce authentication, cookies, account writes, a CSP origin or a provider. Raw rival identifiers remain excluded from Provider Health, Stage 10 evidence and endpoint diagnostics. Removing a league clears its selected comparison group locally.
-

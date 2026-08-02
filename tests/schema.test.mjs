@@ -340,4 +340,3 @@ test('schema/standings: malformed optional movement and Gameweek totals are remo
   assert.equal(r.value.standings.results[0].event_total,undefined);
   assert.equal(only(r,'standings_invalid_optional_fields').count,2);
 });
-

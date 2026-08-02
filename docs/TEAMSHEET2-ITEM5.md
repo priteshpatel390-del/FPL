@@ -1,9 +1,9 @@
 # Teamsheet 2.0.5 — Mini-League Intelligence
 
-Status: owner-approved implementation in review.  
-Approval: 2 August 2026.  
-Parent checkpoint: Teamsheet 2.0.4 — Mini Leagues.  
-Model version: `2.4.0`.  
+Status: owner-approved implementation in review.
+Approval: 2 August 2026.
+Parent checkpoint: Teamsheet 2.0.4 — Mini Leagues.
+Model version: `2.4.0`.
 Rules version: `2026-27.3`.
 
 ## Objective
@@ -66,4 +66,3 @@ Automated source and build verification cannot establish physical iPhone Safari 
 - The selection identity is deterministic regardless of rival ordering.
 - A direct `#/leagues/exposure` load hands focus to the exposure heading after the dynamically built section is rendered.
 - Automated tests exercise concurrency two, cache/no-preload source contracts and selection-key race invalidation.
-
