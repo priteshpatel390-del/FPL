@@ -1,6 +1,6 @@
 # Teamsheet 2.0.4 — Mini Leagues
 
-Status: **Owner-approved implementation completed and verified for draft PR review. Not merged. Physical iPhone and VoiceOver acceptance remain outstanding.**
+Status: **Complete and merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. Verified baseline: 493/493 tests, deterministic exact-identity builds and root/deployable equality.**
 
 ## Outcome
 
@@ -59,7 +59,7 @@ League and manager identifiers are absent from routes and Stage 10 evidence. Per
 
 ## Tests
 
-Current source baseline: **493 tests, 493 passed, 0 failed, 0 cancelled, 0 skipped**.
+Verified source baseline: **493 tests, 493 passed, 0 failed, 0 cancelled, 0 skipped**.
 
 New coverage is in:
 - `tests/mini-leagues.test.mjs`
@@ -68,6 +68,22 @@ New coverage is in:
 - expanded `tests/schema.test.mjs`
 
 The full existing model, provider, evidence, security, build, Team and Transfers suites remain enabled. No golden was regenerated and no test was deleted or weakened.
+
+## Merge and verification record
+
+- PR: #59.
+- Merge commit: `a2841b0831193f645548cfc4155809b82a520d92`.
+- Verified refined source commit: `70d70055775fb92a47d42f0dd513980fd879a404`.
+- Final implementation branch head: `75d46689a508b90066ed03859cd5adf83f467241`.
+- Full suite: 493/493 passed.
+- Two production builds were byte-identical.
+- Root `index.html` matched `dist/index.html`.
+- Model version remained `2.4.0`.
+- Rules version remained `2026-27.3`.
+- Source hash: `4455339527e59f25a722ab93ecfe6266f9349fa7963f22cc4af4aff7fa7a1f21`.
+- Root/dist HTML SHA-256: `12d5202a56269218fb9ac68500dd7965272a496bdca81c888a1422285fa31c65`.
+- Bundle SHA-256: `c3850974233089828774d9afc8776045203e3c2a2c6ab54ac866fd6d0ad2428c`.
+- Manifest SHA-256: `a4bd1a851788761332d8d194d5519e732cf8b5fc58702c321fecf0911ee2dbde`.
 
 ## Explicit exclusions
 
@@ -84,12 +100,19 @@ The full existing model, provider, evidence, security, build, Team and Transfers
 - no Team Home, Transfers or player-detail redesign;
 - no Stage 2.0.5 intelligence pulled forward.
 
-## Remaining acceptance and limitations
+## Remaining limitations and acceptance evidence
 
 - Public FPL transport limitation FPL-1 can block populated-data acceptance.
 - Official FPL schemas are undocumented and can reduce coverage under strict validation.
 - Large leagues are deliberately partial until the user requests more pages.
 - Rival public picks may be absent or incomplete.
-- Physical iPhone layout, text scaling, one-handed use and Safari Back behaviour require owner review.
-- VoiceOver reading order, focus restoration and live-region behaviour require owner review.
-- Verified source `70d70055775fb92a47d42f0dd513980fd879a404` completed 493/493 tests. Two exact-identity builds were byte-identical and root `index.html` equalled `dist/index.html`. Source hash `4455339527e59f25a722ab93ecfe6266f9349fa7963f22cc4af4aff7fa7a1f21`; root/dist HTML SHA-256 `12d5202a56269218fb9ac68500dd7965272a496bdca81c888a1422285fa31c65`; bundle SHA-256 `c3850974233089828774d9afc8776045203e3c2a2c6ab54ac866fd6d0ad2428c`; manifest SHA-256 `a4bd1a851788761332d8d194d5519e732cf8b5fc58702c321fecf0911ee2dbde`.
+- Physical testing of the actual repository build on an iPhone was not separately performed.
+- VoiceOver acceptance was not performed.
+- Live populated-data acceptance was not performed.
+- The approved sample preview established design direction but was not equivalent to full repository-device acceptance.
+
+These limitations do not reopen the successful merge record. They remain evidence and acceptance gaps for later checkpoint-specific review and the final Teamsheet 2.0.7 mobile acceptance stage.
+
+## Next checkpoint
+
+Teamsheet 2.0.5 — Mini-League Intelligence is the next separate investigation, design and approval gate. Projected rank, projected rival scores, remaining-player simulation, effective-ownership strategy and protect/balanced/chase recommendations remain unapproved.

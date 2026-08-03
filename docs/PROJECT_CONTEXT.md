@@ -1,8 +1,8 @@
 # PROJECT_CONTEXT.md
 
-> **Teamsheet 2.0.4 current status:** the owner-approved Mini Leagues foundation is implemented on its dedicated branch with 493/493 passing tests. It uses existing public Official FPL entry, standings and picks endpoints for official position, movement, gaps, nearby rivals and factual squad comparison. Projected rank, strategy logic, new providers and Team/Transfers calculations remain unchanged. The next separately designed checkpoint is Teamsheet 2.0.5 — Mini-League intelligence.
+> **Teamsheet 2.0.4 current status:** the owner-approved Mini Leagues foundation is complete and merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`, with 493/493 passing tests, deterministic exact-identity builds and root/deployable equality. It uses existing public Official FPL entry, standings and picks endpoints for official position, movement, gaps, nearby rivals and factual squad comparison. Projected rank, strategy logic, new providers and Team/Transfers calculations remain unchanged. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance. The next separately designed checkpoint is Teamsheet 2.0.5 — Mini-League Intelligence.
 Purpose: master overview — the first document any new developer or session reads after CLAUDE.md.
-Audience: anyone joining the project. Last updated: 2026-07-31. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
+Audience: anyone joining the project. Last updated: 2026-08-02. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 ## What this is
 **Teamsheet — FPL Decision Desk.** A single-file, mobile-first web app that helps Fantasy Premier League managers maximise the performance of their own complete 15-player squad through intelligent, explainable, team-level recommendations.
@@ -19,7 +19,7 @@ The owner-approved canonical product direction is `TEAMSHEET2-PRODUCT-BLUEPRINT.
 - Teamsheet 2.0.1 implements hash routing, browser history/deep links, Team/Transfers/Fixtures/Leagues/Settings navigation and the five-section Settings hierarchy without changing formulas or providers. Verified baseline: **445/445 tests** with deterministic exact-identity builds and root/deployable equality.
 - Teamsheet 2.0.2 implements the pitch-first Team decision home and is merged through PR #49 at `d01e6a36af47f8ce7962820f36174274af382493`. Its final verified source passed **459/459 tests** with deterministic exact-identity builds and root/deployable equality.
 - Teamsheet 2.0.3 implements the Transfers Decision Workspace and is merged through PR #55 at `c82a883f3ae8eebc8a3017e9181748e562dd9ba8`. Verified baseline: **467/467 tests**, deterministic builds, root/deployable equality and owner iPhone visual acceptance; VoiceOver acceptance remains unperformed.
-- Teamsheet 2.0.4 implements the official Mini-League foundation on the approved branch boundary: primary/saved leagues, ID-free subroutes, official position/movement, points gaps, nearby standings, pinned rivals and one-rival-at-a-time public squad comparison. Current source baseline: **493/493 tests**.
+- Teamsheet 2.0.4 implements the official Mini-League foundation and is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`: primary/saved leagues, ID-free subroutes, official position/movement, points gaps, nearby standings, pinned rivals and one-rival-at-a-time public squad comparison. Verified baseline: **493/493 tests** with deterministic exact-identity builds and root/deployable equality. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance.
 - Stage 9.5 merged through PR #24 at `a5ac5fcc12bb492948365851587d4e1cd2f30301`, adding Settings and globally visible Provider Health without changing provider behaviour.
 - Stage 9.6 merged through PR #25 at `c52f6f08f51bff5bfe7702bfec58265647afe439`, completing class-only presentation, CSP tightening and final responsive/accessibility review. The verified Stage 9 baseline is **313/313 tests passing** with deterministic builds.
 - Stage 10.1 merged through PR #27 at `da76c81f552fd9da5c518e73ccc0fbe966c74444` after physical iPhone acceptance. Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 tests** with exact-identity builds; generated artefacts are committed at `1259e7b5f7505d3330c772e89c77720251552287`.
@@ -75,13 +75,13 @@ The overriding principle is the simplest reliable data stack that supports good 
 Vanilla JavaScript ES modules, no framework and zero runtime dependencies. Node 18 or newer runs the custom deterministic bundler and `node:test` suite. `node build.mjs` emits `dist/index.html`, the single deployable uploaded through the GitHub web interface. The custom bundler strips complete static module declarations, rejects surviving module syntax and embeds model, rules, source-hash and commit identity.
 
 ## Completed, current and next
-Completed and merged: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints and Stage 10.1–10.5 prospective-validation infrastructure.
+Completed and merged: Stage 1 characterisation/audit, SEC-1, Stage 2 modularisation, repository handover, Stage 3 security/provider hardening, Stage 4 expected minutes, Stage 5 scoring corrections, Stage 6 transfer optimiser, Stage 7 walk-forward backtest, Stage 8 uncertainty/squad simulation, all six Stage 9 UI-integration checkpoints, Stage 10.1–10.5 prospective-validation infrastructure and Teamsheet 2.0.1–2.0.4.
 
 Approved product direction: Teamsheet 2.0 Product Blueprint and migration checkpoints 2.0.1–2.0.7.
 
 Current operational work: pre-season readiness and prospective 2026/27 evidence collection. Stage 10 infrastructure is complete; accuracy and calibration validation remain in progress.
 
-Current development item: **Teamsheet 2.0.4 — Mini Leagues** is implemented for review on its approved official-data boundary. The next separately gated item is **Teamsheet 2.0.5 — Mini-League intelligence**; projected rank, protect/chase strategy and recommendation changes remain unapproved.
+Current development item: **Teamsheet 2.0.5 — Mini-League Intelligence** is the next investigation, design and approval gate. Projected rank, projected rival scores, remaining-player simulation, protect/chase strategy and recommendation changes remain unapproved.
 
 ## Teamsheet 2.0 migration checkpoints
 1. Teamsheet 2.0.1 — Navigation and Settings architecture.
@@ -95,10 +95,10 @@ Current development item: **Teamsheet 2.0.4 — Mini Leagues** is implemented fo
 Every checkpoint remains independently designed, approved, tested, reviewed and deployable.
 
 ## Major risks
-Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven prospectively; simulation probability calibration still prospective; small and clustered early samples; projected rank and Mini-League intelligence not yet designed; and single-maintainer phone-first operations.
+Public relay dependence for some provider traffic; undocumented FPL schema drift; Understat scraping fragility and terms-of-service uncertainty; limited odds quota; model accuracy not yet proven prospectively; simulation probability calibration still prospective; small and clustered early samples; projected rank and strategic Mini-League intelligence not yet designed; and single-maintainer phone-first operations.
 
 ## Known assumptions
 The public FPL API and pinned vaastav archive remain available; the owner accepts the temporary client-side odds-key posture; Anthropic keys remain banned client-side; GitHub Pages remains the host until an approved serverless trigger; detailed Stage 8 simulation remains disabled in pre-season rather than manufacturing precise distributions; local evidence storage remains recovery rather than a permanent archive; and Teamsheet 2.0 will preserve the existing framework-free deterministic foundation unless separately approved evidence justifies a change.
 
 ## Approval and implementation boundary
-Teamsheet 2.0.4 changes League presentation, route/state and validation of already-used Official FPL fields only. It preserves projection, fixture, captaincy, squad, transfer, simulation, rank-prediction and strategy calculations. Teamsheet 2.0.5 is the next separate design and approval gate. Prospective validation remains in progress; the current source baseline is **493/493 tests**.
+Teamsheet 2.0.4 is complete and merged. It changed League presentation, route/state and validation of already-used Official FPL fields only, while preserving projection, fixture, captaincy, squad, transfer, simulation, rank-prediction and strategy calculations. Teamsheet 2.0.5 is the current separate design and approval gate. Prospective validation remains in progress; the verified source baseline is **493/493 tests**.

@@ -1,6 +1,6 @@
 # KNOWN_LIMITATIONS.md
 Purpose: single register of every current limitation. Audience: all sessions.
-Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
+Last updated: 2026-08-02. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
@@ -13,7 +13,7 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | BUILD-1 | Custom bundler could leave parts of multi-line module declarations in production output | Complete static import/export declarations are stripped and surviving module syntax is rejected | Stage 5 review | **CLOSED 2026-07-28** |
 | RET-1 | `Retry-After` is not honoured | Fixed capped backoff may retry sooner than a provider requests | Serverless reconsideration | Open (accepted) |
 | RET-2 | No transport-level per-provider circuit breaker | Pooled outages can issue more doomed requests than ideal | Future provider hardening only with separate approval | Open |
-| HEALTH-1 | Provider Health is session-scoped | No multi-session incident history; compact global status and full More detail reflect only the current session | No planned stage | Accepted |
+| HEALTH-1 | Provider Health is session-scoped | No multi-session incident history; compact global status and full Settings detail reflect only the current session | No planned stage | Accepted |
 | VAL-2 | Understat values are structurally but not range validated | Nonsense numeric values could pass structure checks | Future provider hardening | Open |
 | VAL-3 | Archive CSV validates headers but not every row width | Stage 7 replay rejects and counts malformed required values instead of manufacturing defaults | Stage 7 | **CLOSED and verified 2026-07-28** |
 | MIN-1 | Expected minutes = season minutes ÷ current GW | Replaced by tiered current-season histories with aggregate/prior fallback | Stage 4 | **CLOSED 2026-07-28** |
@@ -44,9 +44,9 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | UI-4 | The Team screen did not provide the complete approved decision-home summary | Pitch-first hierarchy, XI/captain/bench forecast, one material risk, deadline action and honest setup/degraded states are implemented without calculation changes | Teamsheet 2.0.2 | **CLOSED and verified 2026-07-31** |
 | PREVIEW-1 | Decision previews are intentionally session-only | Transfer/captain previews disappear on refresh and are not submitted to FPL; this prevents accidental persistence or account changes | By design | Accepted |
 | PREVIEW-2 | Transfer preview pitch is next-Gameweek only while optimiser gain can span several Gameweeks | The banner must be read alongside the pitch to distinguish next-GW XI score from multi-GW net gain | Stage 9.4 | Accepted-labelled |
-| ML-1 | Leagues exposed only a top-N sampled ownership comparison | Replaced by the official 2.0.4 foundation: primary league, current position/movement, points gaps, nearby standings and selected-rival factual comparison | Teamsheet 2.0.4 | **CLOSED on implementation branch; acceptance pending** |
+| ML-1 | Leagues exposed only a top-N sampled ownership comparison | Replaced by the official 2.0.4 foundation: primary league, current position/movement, points gaps, nearby standings and selected-rival factual comparison | Teamsheet 2.0.4 | **CLOSED and merged 2026-08-02 through PR #59** |
 | ML-2 | No approved Mini-League intelligence or tactical recommendation model | 2.0.4 describes official facts and exact squad differences only; it does not rank meaningful differentials or alter Team/Transfers advice | Teamsheet 2.0.5 / separate model gate | Open (expected) |
-| RANK-1 | Projected final Gameweek score and rank movement are not yet designed or validated | Teamsheet must not manufacture live-rank precision or blur projection with confirmed Official FPL results | Teamsheet 2.0.4 only after separate design | Open (expected) |
+| RANK-1 | Projected final Gameweek score and rank movement are not yet designed or validated | Teamsheet must not manufacture live-rank precision or blur projection with confirmed Official FPL results | Separate design and explicit approval | Open (expected) |
 | STRAT-1 | No protect, balanced or chase Mini-League strategy model is approved | League position may be described, but it cannot silently alter production recommendations | Separate design and explicit approval | Open (gated) |
 | EVID-1 | Browser timing evidence is not externally notarised | Same-origin HTTP `Date` plus clock-skew checks support leakage review but cannot prove capture time to an independent third party | Future serverless only with separate approval | Open (accepted) |
 | EVID-2 | Local evidence can be cleared and JSON exports are unencrypted | The owner must export and retain files safely; bounded compressed local copies are recovery only | Stage 10.4 operating workflow | Open (accepted) |
@@ -71,7 +71,7 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
 ## Teamsheet 2.0 migration limitations
-- Teamsheet 2.0.1 implements the approved navigation and Settings architecture; later Team, Transfers, rank and League intelligence remain product direction rather than implemented behaviour.
+- Teamsheet 2.0.1–2.0.4 implement the approved navigation, Team, Transfers and factual Mini-League foundations; projected rank, Mini-League intelligence and strategic recommendation work remain separately gated product direction.
 - The Stage 9 engineering foundation remains valid, while its primary information architecture is superseded.
 - No new projection, captaincy, optimiser, Mini-League strategy or rank model is authorised by the blueprint.
 - The migration must preserve verified engineering and existing access to every current functional surface.
@@ -112,7 +112,7 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - Exports above 25 MiB fail rather than truncate; no compression or automatic splitting is implemented.
 - Transfer-horizon gains are not summed cumulatively because horizons can overlap and plans are alternatives.
 - Provider-state comparisons are observational, not causal. One Gameweek is never labelled calibrated/uncalibrated or accurate/inaccurate.
-- Static phone-first tests pass, but physical iPhone acceptance remains an owner review step before merge. The old standalone Stage 10.5 rehearsal gate is superseded by checkpoint-specific checks and final Teamsheet 2.0.7 rehearsal.
+- Static phone-first tests pass, but physical iPhone acceptance was not separately recorded. The old standalone Stage 10.5 rehearsal gate is superseded by checkpoint-specific checks and final Teamsheet 2.0.7 rehearsal.
 
 ## Stage 10.5 hardening limitations
 - Safari can acknowledge only that a download was requested; Pritesh must confirm the file in Files or Downloads.
@@ -122,9 +122,9 @@ Last updated: 2026-07-31. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - No migration engine exists because no older supported Stage 10 schema currently requires one.
 - Stage 10 infrastructure completion does not establish prediction accuracy or calibration.
 
-## Teamsheet 2.0.4 acceptance gate
+## Teamsheet 2.0.4 acceptance evidence
 
-Automated contracts cover League state migration, official-data validation, ID-free routes, standings/rival states, honest wording, mobile layout and build integrity. Physical iPhone and VoiceOver acceptance for 2.0.4 are not yet recorded. Public FPL transport limitation FPL-1 can still block populated-data acceptance. Teamsheet 2.0.3 iPhone visual acceptance passed before merge; VoiceOver acceptance was not performed.
+Automated contracts cover League state migration, official-data validation, ID-free routes, standings/rival states, honest wording, mobile layout and build integrity. Teamsheet 2.0.4 is complete and merged through PR #59. Physical testing of the actual repository build on an iPhone was not separately performed, VoiceOver acceptance was not performed, and live populated-data acceptance was not performed. The approved sample preview established design direction but was not equivalent to full repository-device acceptance. Public FPL transport limitation FPL-1 can still block populated-data acceptance.
 
 ## Teamsheet 2.0.4 Mini-League limitations
 - Official FPL entry, standings and picks endpoints are undocumented; strict field validation may reduce coverage when schemas drift.
