@@ -39,6 +39,7 @@ const TEAMSHEET_VALID_ROUTES = new Set([
   '#/settings/help',
   '#/leagues/standings',
   '#/leagues/rival',
+  '#/leagues/exposure',
   '#/leagues/manage'
 ]);
 
@@ -64,6 +65,7 @@ function teamsheetRouteMeta(value=''){
     '#/leagues':{title:'Leagues',primary:'leagues'},
     '#/leagues/standings':{title:'League table',primary:'leagues'},
     '#/leagues/rival':{title:'Rival comparison',primary:'leagues'},
+    '#/leagues/exposure':{title:'Rival exposure',primary:'leagues'},
     '#/leagues/manage':{title:'Manage leagues',primary:'leagues'},
     '#/settings':{title:'Settings',primary:'settings'},
     '#/settings/team-account':{title:'Team & Account',primary:'settings',settings:'team-account'},
@@ -187,7 +189,7 @@ function setupAppShell(){
   const leaguesHint=leaguesView.querySelector('.hint');
   if(leaguesHeading) leaguesHeading.textContent='Leagues';
   if(leaguesEyebrow) leaguesEyebrow.textContent='Mini leagues';
-  if(leaguesHint) leaguesHint.textContent='Official position, points gaps and factual public-squad comparisons. Projected rank and protect/chase strategy are not included.';
+  if(leaguesHint) leaguesHint.textContent='Official position, points gaps, pairwise comparisons and on-demand selected-rival exposure. Projected rank and protect/chase strategy are not included.';
   const playersHeading=playersView.querySelector('h2');
   const playersEyebrow=playersView.querySelector('.eyebrow');
   if(playersHeading) playersHeading.textContent='Player Explorer';

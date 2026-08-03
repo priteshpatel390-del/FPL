@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last updated: 2026-07-30. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last updated: 2026-08-02. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -37,6 +37,8 @@ src/
     outcomes.mjs        non-blocking outcome orchestration, bounded revisions and recovery-only restore
     metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting
     review.mjs          phone-first operating review controls and JSON/Markdown/CSV downloads
+    mini-leagues-state.mjs versioned local League/rival choice state
+    mini-leagues-view.mjs standings, pairwise comparison and selected-rival exposure
     ...                 app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
 tests/                  characterisation, model, simulation, provider, security, evidence, metric and build tests
 docs/                   canonical project records
@@ -153,3 +155,13 @@ The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` ow
 `src/ui/mini-leagues-view.mjs` owns `#/leagues`, `#/leagues/standings`, `#/leagues/rival` and `#/leagues/manage`. Routes contain no league or manager identifier. The view consumes the existing Official FPL transport and validators, loads page 1 plus pages surrounding the manager's official membership rank, and loads further standings only on request. Rival public picks are fetched one selected manager at a time. Points gaps and squad overlap are simple arithmetic/set derivations from official fields; no rank prediction, differential score, protect/chase strategy or model recommendation is introduced.
 
 `validateEntry()` now filters public classic-league membership rows. `validateStandings()` requires the official rank, total, manager/team display names and validates pagination fields used by the UI. Missing or malformed rows degrade visibly. Existing provider retry, relay, security and core-data criticality are unchanged.
+
+## Teamsheet 2.0.5 selected-rival intelligence boundary
+
+`src/ui/mini-leagues-state.mjs` owns version-2 local choice state. It adds `comparisonRivalsByLeague`, capped at five minimal `{id,name}` records. Version-1 migration is deterministic and leaves the explicit comparison set empty; pinned rivals are suggestions rather than silent approval for public-picks requests. Removing a league removes its selected comparison group. Standings, scores, picks, captaincy, chips, freshness and derived exposure remain session-only.
+
+`src/ui/mini-leagues-view.mjs` owns ID-free `#/leagues/exposure` in addition to the 2.0.4 routes. Opening the route does not request rival squads. An explicit user action loads only the selected current-Gameweek public picks, with at most two logical requests concurrently and reuse by league/rival/Gameweek. A deterministic selection key prevents late requests from changing a newer comparison. Previous valid current-session data may remain visible as stale after refresh failure, but stale records are excluded from the default fresh aggregate.
+
+Aggregate exposure requires the user's squad and each included rival squad to contain 15 unique resolved player IDs in unique positions 1–15. Exact counts cover player ownership, captain, vice-captain and active-chip context across complete fresh selected rivals. Wording is `X of N loaded selected rivals`, never whole-league ownership, effective ownership, projected outcome or strategy advice. Not-loaded, incomplete, unavailable, stale and outside-loaded-standings states remain separate.
+
+`validateEntry()`, `validateStandings()` and `validatePicks()` validate the optional rank, current-Gameweek total, multiplier, captain, vice and chip fields used by the feature. Invalid optional context degrades to unknown while retaining otherwise valid ownership IDs. The existing Official FPL provider, transport, retry, security, CSP and criticality boundaries are unchanged. No scoring, projection, expected-minutes, fixture, squad, captaincy, simulation, rank or transfer-optimiser module is imported or modified.

@@ -93,3 +93,9 @@ Untrusted JSON now rejects prototype-bearing keys before canonicalisation. Metri
 FPL league and manager identifiers are public endpoint identifiers but reveal user-specific competitive relationships when stored together. Teamsheet therefore keeps them out of hash routes, page titles, Provider Health detail, retry issue text and Stage 10 evidence. Versioned local persistence contains only selected/saved league IDs and labels plus selected/pinned rival IDs and labels. Official standings, scores and rival squads are session-only.
 
 Requests remain read-only through the existing Official FPL transport. No cookie, OAuth flow, FPL password, private login, new origin or API key is introduced. Endpoint diagnostics continue to normalise digit runs and strip query strings. Removing a saved league also removes its selected/pinned rival state; it does not attempt to alter Official FPL.
+
+## Teamsheet 2.0.5 selected-rival privacy boundary
+
+The version-2 Mini-League state may persist an explicitly confirmed comparison group of no more than five public rival IDs and locally displayed labels. It does not persist standings, scores, public picks, captaincy, chip state or derived exposure.
+
+The new `#/leagues/exposure` route contains no league, manager, player, Team or Gameweek identifier. Public picks requests remain read-only through the existing Official FPL transport, use bounded concurrency and do not introduce authentication, cookies, account writes, a CSP origin or a provider. Raw rival identifiers remain excluded from Provider Health, Stage 10 evidence and endpoint diagnostics. Removing a league clears its selected comparison group locally.

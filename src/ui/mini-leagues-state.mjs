@@ -1,10 +1,11 @@
 import { S } from '../state.mjs';
 import { sget, sset } from '../storage.mjs';
 
-const MINI_LEAGUE_STATE_VERSION = 1;
+const MINI_LEAGUE_STATE_VERSION = 2;
 const K_MINI_LEAGUES = 'fpl:mini-leagues';
 const K_LEGACY_LEAGUES = 'fpl:leagues';
 const MAX_PINNED_RIVALS = 5;
+const MAX_COMPARISON_RIVALS = 5;
 
 function miniLeagueId(value){
   const id=String(value??'').replace(/\D/g,'');
@@ -31,8 +32,16 @@ function uniqueLeagueRecords(values=[]){
   });
   return [...map.values()];
 }
+function uniqueRivalRecords(values=[],limit=MAX_COMPARISON_RIVALS){
+  const rows=[]; const seen=new Set();
+  (Array.isArray(values)?values:[]).forEach(value=>{
+    const row=miniLeagueRivalRecord(value);
+    if(row&&!seen.has(row.id)&&rows.length<limit){seen.add(row.id);rows.push(row);}
+  });
+  return rows;
+}
 function emptyMiniLeagueState(){
-  return {version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId:'',selectedRivalByLeague:{},saved:[],pinnedRivals:{}};
+  return {version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId:'',selectedRivalByLeague:{},comparisonRivalsByLeague:{},saved:[],pinnedRivals:{}};
 }
 function normaliseMiniLeagueState(value={}){
   const base=emptyMiniLeagueState();
@@ -47,16 +56,19 @@ function normaliseMiniLeagueState(value={}){
   }
   const pinnedRivals={};
   for(const [leagueId,rivals] of Object.entries(value.pinnedRivals||{})){
-    const lid=miniLeagueId(leagueId); if(!lid||!Array.isArray(rivals)) continue;
-    const rows=[]; const seen=new Set();
-    rivals.forEach(value=>{ const row=miniLeagueRivalRecord(value); if(row&&!seen.has(row.id)&&rows.length<MAX_PINNED_RIVALS){seen.add(row.id);rows.push(row);} });
-    if(rows.length) pinnedRivals[lid]=rows;
+    const lid=miniLeagueId(leagueId); if(!lid) continue;
+    const rows=uniqueRivalRecords(rivals,MAX_PINNED_RIVALS); if(rows.length) pinnedRivals[lid]=rows;
+  }
+  const comparisonRivalsByLeague={};
+  for(const [leagueId,rivals] of Object.entries(value.comparisonRivalsByLeague||{})){
+    const lid=miniLeagueId(leagueId); if(!lid) continue;
+    const rows=uniqueRivalRecords(rivals,MAX_COMPARISON_RIVALS); if(rows.length) comparisonRivalsByLeague[lid]=rows;
   }
   if(saved.some(row=>row.primary)){
     let seenPrimary=false;
     saved.forEach(row=>{ if(row.primary&&!seenPrimary) seenPrimary=true; else row.primary=false; });
   }
-  return {version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId,selectedRivalByLeague,saved,pinnedRivals};
+  return {version:MINI_LEAGUE_STATE_VERSION,selectedLeagueId,selectedRivalByLeague,comparisonRivalsByLeague,saved,pinnedRivals};
 }
 function entryClassicLeagues(entry=S.entry){
   const rows=entry?.leagues?.classic;
@@ -65,6 +77,7 @@ function entryClassicLeagues(entry=S.entry){
 }
 function migrateMiniLeagueState({stored,legacyConfig,legacyLeagues,entry}={}){
   if(stored?.version===MINI_LEAGUE_STATE_VERSION) return normaliseMiniLeagueState(stored);
+  if(stored?.version===1) return normaliseMiniLeagueState({...stored,version:MINI_LEAGUE_STATE_VERSION,comparisonRivalsByLeague:{}});
   const discovered=entryClassicLeagues(entry);
   const saved=uniqueLeagueRecords([...(Array.isArray(legacyLeagues)?legacyLeagues:[]),...discovered]);
   const legacySelected=miniLeagueId(legacyConfig?.leagueId);
@@ -112,7 +125,7 @@ async function rememberLeague(id,name){ return upsertMiniLeague(id,name,{select:
 async function selectMiniLeague(id){ return upsertMiniLeague(id,'',{select:true}); }
 async function removeMiniLeague(id){
   id=miniLeagueId(id); const state=normaliseMiniLeagueState(S.miniLeagues);
-  state.saved=state.saved.filter(row=>row.id!==id); delete state.selectedRivalByLeague[id]; delete state.pinnedRivals[id];
+  state.saved=state.saved.filter(row=>row.id!==id); delete state.selectedRivalByLeague[id]; delete state.pinnedRivals[id]; delete state.comparisonRivalsByLeague[id];
   if(state.selectedLeagueId===id) state.selectedLeagueId=state.saved.find(row=>row.primary)?.id||state.saved[0]?.id||'';
   S.miniLeagues=state; return persistMiniLeagueState();
 }
@@ -127,9 +140,17 @@ async function togglePinnedMiniLeagueRival(leagueId,rival){
   if(rows.length) state.pinnedRivals[lid]=rows; else delete state.pinnedRivals[lid];
   S.miniLeagues=state; await persistMiniLeagueState(); return index<0;
 }
+async function setMiniLeagueComparisonRivals(leagueId,rivals){
+  const lid=miniLeagueId(leagueId); if(!lid) return [];
+  const state=normaliseMiniLeagueState(S.miniLeagues),rows=uniqueRivalRecords(rivals,MAX_COMPARISON_RIVALS);
+  if(rows.length) state.comparisonRivalsByLeague[lid]=rows; else delete state.comparisonRivalsByLeague[lid];
+  S.miniLeagues=state; await persistMiniLeagueState(); return rows;
+}
+async function clearMiniLeagueComparisonRivals(leagueId){ return setMiniLeagueComparisonRivals(leagueId,[]); }
 function miniLeagueSelectedRivalId(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).selectedRivalByLeague[miniLeagueId(leagueId)]||''; }
 function miniLeaguePinnedRivals(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).pinnedRivals[miniLeagueId(leagueId)]||[]; }
+function miniLeagueComparisonRivals(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).comparisonRivalsByLeague[miniLeagueId(leagueId)]||[]; }
 
 S.miniLeagues=emptyMiniLeagueState();
 S.leagues=[];
-export { MINI_LEAGUE_STATE_VERSION, K_MINI_LEAGUES, MAX_PINNED_RIVALS, miniLeagueId, miniLeagueRecord, miniLeagueRivalRecord, normaliseMiniLeagueState, entryClassicLeagues, migrateMiniLeagueState, initMiniLeagueState, mergeDiscoveredMiniLeagues, persistMiniLeagueState, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, rememberLeague, selectMiniLeague, removeMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, miniLeagueSelectedRivalId, miniLeaguePinnedRivals };
+export { MINI_LEAGUE_STATE_VERSION, K_MINI_LEAGUES, MAX_PINNED_RIVALS, MAX_COMPARISON_RIVALS, miniLeagueId, miniLeagueRecord, miniLeagueRivalRecord, uniqueRivalRecords, normaliseMiniLeagueState, entryClassicLeagues, migrateMiniLeagueState, initMiniLeagueState, mergeDiscoveredMiniLeagues, persistMiniLeagueState, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, rememberLeague, selectMiniLeague, removeMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, setMiniLeagueComparisonRivals, clearMiniLeagueComparisonRivals, miniLeagueSelectedRivalId, miniLeaguePinnedRivals, miniLeagueComparisonRivals };

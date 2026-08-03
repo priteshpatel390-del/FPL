@@ -297,3 +297,46 @@ test('schema/issues: every issue carries the machine-readable identity fields', 
     assert.equal(typeof i.count, 'number');
   }
 });
+
+/* ===================== Teamsheet 2.0.5 League optional facts ===================== */
+
+test('schema/entry: malformed optional league rank fields degrade to unavailable', () => {
+  const r=validateEntry({name:'Mine',leagues:{classic:[{id:1,name:'Friends',entry_rank:'bad',entry_last_rank:4}]}});
+  assert.equal(r.value.leagues.classic[0].entry_rank,undefined);
+  assert.equal(r.value.leagues.classic[0].entry_last_rank,4);
+  assert.equal(only(r,'entry_invalid_classic_league_fields').count,1);
+});
+
+test('schema/picks: optional captain, vice, multiplier and chip fields fail partial without losing ownership', () => {
+  const rows=Array.from({length:15},(_,i)=>pick(100+i,i+1,{
+    multiplier:i===0?'bad':1,
+    is_captain:i===0?'yes':i===1,
+    is_vice_captain:i===2?'yes':i===3
+  }));
+  const r=validatePicks({active_chip:{name:'wildcard'},picks:rows},'/entry/event/picks/ (selected rivals)');
+  assert.equal(r.value.picks.length,15);
+  assert.equal(r.value.picks[0].multiplier,undefined);
+  assert.equal(r.value.picks[0].is_captain,undefined);
+  assert.equal(r.value.picks[2].is_vice_captain,undefined);
+  assert.equal(Object.prototype.hasOwnProperty.call(r.value,'active_chip'),false);
+  assert.equal(partialOf(r).includes('picks_invalid_optional_fields'),true);
+  assert.equal(partialOf(r).includes('picks_invalid_active_chip'),true);
+});
+
+test('schema/picks: duplicate positions and ambiguous captain context are reported but player IDs remain', () => {
+  const rows=Array.from({length:15},(_,i)=>pick(200+i,i===14?14:i+1,{
+    multiplier:i<2?2:1,is_captain:i<2,is_vice_captain:i===2
+  }));
+  const r=validatePicks({active_chip:null,picks:rows});
+  assert.equal(r.value.picks.length,15);
+  assert.equal(partialOf(r).includes('picks_duplicate_position'),true);
+  assert.equal(partialOf(r).includes('picks_invalid_captain_count'),true);
+});
+
+test('schema/standings: malformed optional movement and Gameweek totals are removed', () => {
+  const good={entry:11,rank:1,total:100,last_rank:'bad',event_total:{},entry_name:'Alpha',player_name:'Alex'};
+  const r=validateStandings({league:{name:'Friends'},standings:{has_next:false,results:[good]}});
+  assert.equal(r.value.standings.results[0].last_rank,undefined);
+  assert.equal(r.value.standings.results[0].event_total,undefined);
+  assert.equal(only(r,'standings_invalid_optional_fields').count,2);
+});

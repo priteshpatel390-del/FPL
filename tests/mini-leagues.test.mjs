@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { S } from '../src/state.mjs';
-import { miniLeagueId, normaliseMiniLeagueState, migrateMiniLeagueState, entryClassicLeagues } from '../src/ui/mini-leagues-state.mjs';
+import { MINI_LEAGUE_STATE_VERSION, MAX_COMPARISON_RIVALS, miniLeagueId, normaliseMiniLeagueState, migrateMiniLeagueState, entryClassicLeagues } from '../src/ui/mini-leagues-state.mjs';
 import { miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeagueStatusCopy } from '../src/ui/mini-leagues-view.mjs';
 import { validateEntry, validateStandings } from '../src/providers/validate.mjs';
 
@@ -17,7 +17,7 @@ test('league identifiers are numeric, bounded and never manufactured',()=>{
 
 test('legacy saved leagues migrate deterministically with configured selection',()=>{
   const state=migrateMiniLeagueState({legacyConfig:{leagueId:'22'},legacyLeagues:[{id:'11',name:'Friends'},{id:'22',name:'Work'},{id:'11',name:'Duplicate'}]});
-  assert.equal(state.version,1);
+  assert.equal(state.version,MINI_LEAGUE_STATE_VERSION);
   assert.equal(state.selectedLeagueId,'22');
   assert.deepEqual(state.saved.map(x=>x.id),['11','22']);
   assert.equal(state.saved[0].name,'Friends');
@@ -84,4 +84,11 @@ test('source keeps official and factual boundaries and removes unsupported tacti
   const source=readFileSync(new URL('../src/ui/mini-leagues-view.mjs',import.meta.url),'utf8');
   for(const required of ['Official FPL — provisional','Load more standings','Refresh failed. Showing the last standings loaded in this session','Low ownership alone is not a recommendation','factual squad differences','#/leagues/standings','#/leagues/rival']) assert.equal(source.includes(required),true,required);
   for(const forbidden of ['covered on the template','win or lose the league','Biggest threats','projected league position','must chase','must protect']) assert.equal(source.includes(forbidden),false,forbidden);
+});
+
+test('version 1 state migrates to an empty explicit comparison group',()=>{
+  const state=migrateMiniLeagueState({stored:{version:1,selectedLeagueId:'7',saved:[{id:'7',name:'A'}],pinnedRivals:{7:[{id:'2',name:'Pinned'}]}}});
+  assert.equal(state.version,MINI_LEAGUE_STATE_VERSION);
+  assert.deepEqual(state.comparisonRivalsByLeague,{});
+  assert.equal(MAX_COMPARISON_RIVALS,5);
 });
