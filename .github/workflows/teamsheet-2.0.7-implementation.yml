@@ -128,3 +128,5 @@ jobs:
 
       - name: Push implementation branch
         run: git push origin HEAD:agent/teamsheet-2.0.7-final-mobile-polish
+
+# This second branch commit intentionally triggers the workflow after the file exists.
