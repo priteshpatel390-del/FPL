@@ -1,9 +1,9 @@
 name: Apply Teamsheet 2.0.6 source
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/teamsheet-2.0.6-settings-organisation
+      - main
 
 permissions:
   contents: write
@@ -66,4 +66,4 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Implement Teamsheet 2.0.6 settings organisation'
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin HEAD:${GITHUB_HEAD_REF}
