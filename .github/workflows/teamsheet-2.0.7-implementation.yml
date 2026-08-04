@@ -1,40 +1,41 @@
-name: Teamsheet 2.0.7 implementation
+name: Finalise Teamsheet 2.0.7
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/teamsheet-2.0.7-final-mobile-polish
+      - main
 
 permissions:
   contents: write
 
-concurrency:
-  group: teamsheet-2.0.7-implementation
-  cancel-in-progress: false
-
 jobs:
-  implement:
-    if: github.event.head_commit.message == 'Run Teamsheet 2.0.7 implementation'
+  finalise:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out branch
+        uses: actions/checkout@v4
         with:
-          ref: agent/teamsheet-2.0.7-final-mobile-polish
           fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Apply approved scope
         run: |
           base64 -d scripts/apply-teamsheet-2.0.7.mjs.gz.b64 | gunzip > /tmp/apply-teamsheet-2.0.7.mjs
           node /tmp/apply-teamsheet-2.0.7.mjs
 
-      - name: Commit source and tests
+      - name: Commit reviewed source and tests
         id: source
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "Teamsheet automation"
-          git config user.email "actions@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.html \
             src/main.mjs \
             src/ui/app-shell.mjs \
@@ -43,39 +44,52 @@ jobs:
             src/ui/mini-leagues-view.mjs \
             src/ui/transfer-optimiser-view.mjs \
             tests/final-mobile-polish.test.mjs
-          git commit -m "Implement Teamsheet 2.0.7 mobile polish"
+          git diff --cached --check
+          git commit -m 'Implement Teamsheet 2.0.7 mobile polish'
           SOURCE_SHA=$(git rev-parse HEAD)
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Run full verification
+      - name: Run complete test suite
         id: tests
         shell: bash
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
+          chmod +x ./run-tests.sh
           ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.log
           TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.log | tail -1)
           if [ -z "$TEST_COUNT" ]; then
-            echo "Could not determine passing test count" >&2
+            echo 'Could not determine passing test count' >&2
             exit 1
           fi
           echo "count=$TEST_COUNT" >> "$GITHUB_OUTPUT"
 
-      - name: Verify deterministic build and deployment identity
+      - name: Verify deterministic exact-identity production builds
         shell: bash
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
-          mkdir -p /tmp/teamsheet-first
-          cp dist/index.html /tmp/teamsheet-first/dist-index.html
-          cp dist/app.bundle.js /tmp/teamsheet-first/app.bundle.js
-          cp dist/manifest.json /tmp/teamsheet-first/manifest.json
+          rm -rf /tmp/teamsheet-build-one /tmp/teamsheet-build-two
+          mkdir -p /tmp/teamsheet-build-one /tmp/teamsheet-build-two
+
           node build.mjs
-          cmp /tmp/teamsheet-first/dist-index.html dist/index.html
-          cmp /tmp/teamsheet-first/app.bundle.js dist/app.bundle.js
-          cmp /tmp/teamsheet-first/manifest.json dist/manifest.json
+          cp index.html /tmp/teamsheet-build-one/index.html
+          cp dist/index.html /tmp/teamsheet-build-one/dist-index.html
+          cp dist/app.bundle.js /tmp/teamsheet-build-one/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-build-one/manifest.json
+
+          node build.mjs
+          cp index.html /tmp/teamsheet-build-two/index.html
+          cp dist/index.html /tmp/teamsheet-build-two/dist-index.html
+          cp dist/app.bundle.js /tmp/teamsheet-build-two/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-build-two/manifest.json
+
+          cmp /tmp/teamsheet-build-one/index.html /tmp/teamsheet-build-two/index.html
+          cmp /tmp/teamsheet-build-one/dist-index.html /tmp/teamsheet-build-two/dist-index.html
+          cmp /tmp/teamsheet-build-one/app.bundle.js /tmp/teamsheet-build-two/app.bundle.js
+          cmp /tmp/teamsheet-build-one/manifest.json /tmp/teamsheet-build-two/manifest.json
           cmp index.html dist/index.html
           node - <<'NODE'
           const fs=require('fs');
@@ -87,17 +101,18 @@ jobs:
           if(!/^[0-9a-f]{64}$/.test(manifest.sourceHash)) throw new Error('source hash missing');
           NODE
 
-      - name: Commit generated deployable
+      - name: Commit reviewed generated artefacts
         id: generated
         shell: bash
         run: |
           set -euo pipefail
           git add app.js dist/app.bundle.js dist/index.html dist/manifest.json index.html
-          git commit -m "Build Teamsheet 2.0.7 deployable"
+          git diff --cached --check
+          git commit -m 'Build Teamsheet 2.0.7 deployable'
           GENERATED_SHA=$(git rev-parse HEAD)
           echo "sha=$GENERATED_SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Finalise documentation and remove temporary workflow
+      - name: Finalise canonical documentation and remove temporary workflow
         shell: bash
         env:
           TEST_COUNT: ${{ steps.tests.outputs.count }}
@@ -121,7 +136,8 @@ jobs:
           PY
           rm -f scripts/apply-teamsheet-2.0.7.mjs.gz.b64 .github/workflows/teamsheet-2.0.7-implementation.yml
           git add CLAUDE.md docs scripts .github/workflows
-          git commit -m "Document Teamsheet 2.0.7 verification"
+          git diff --cached --check
+          git commit -m 'Document Teamsheet 2.0.7 verification'
 
-      - name: Push implementation branch
-        run: git push origin HEAD:agent/teamsheet-2.0.7-final-mobile-polish
+      - name: Push finalised implementation branch
+        run: git push origin HEAD:${GITHUB_HEAD_REF}
