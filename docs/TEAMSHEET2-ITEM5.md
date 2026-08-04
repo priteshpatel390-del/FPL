@@ -79,4 +79,4 @@ Physical testing of the actual merged repository build on an iPhone was not perf
 - Model version: `2.4.0`.
 - Rules version: `2026-27.3`.
 
-Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation was subsequently approved on 4 August 2026 and is implemented for review in draft PR #65. It remains unmerged.
+Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation was subsequently completed and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. Its verified baseline is **520 passed, 0 failed, 0 skipped** with deterministic builds and root/deployable equality. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain outstanding for Teamsheet 2.0.7.
