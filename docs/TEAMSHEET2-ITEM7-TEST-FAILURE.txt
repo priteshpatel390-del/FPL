@@ -1,0 +1,3696 @@
+built dist/index.html + index.html (683083b)  model 2.4.0  rules 2026-27.3  src 459405b4b64f  commit 0af9d89456a46057a923ba3210135f5e38386d6d
+TAP version 13
+# Subtest: SEC-3: legacy claudeKey is removed and the scrubbed config is persisted
+ok 1 - SEC-3: legacy claudeKey is removed and the scrubbed config is persisted
+  ---
+  duration_ms: 25.774141
+  ...
+# Subtest: SEC-3: saveCfg never writes an Anthropic key field
+ok 2 - SEC-3: saveCfg never writes an Anthropic key field
+  ---
+  duration_ms: 22.117376
+  ...
+# Subtest: SEC-3: hosted Ask fails fast and never contacts Anthropic
+not ok 3 - SEC-3: hosted Ask fails fast and never contacts Anthropic
+  ---
+  duration_ms: 8.36498
+  location: '/home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:30:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'content')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/anthropic-removal.test.mjs:38:33)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: SEC-3: Claude preview request is keyless and contains no dangerous browser-access header
+ok 4 - SEC-3: Claude preview request is keyless and contains no dangerous browser-access header
+  ---
+  duration_ms: 21.866321
+  ...
+# Subtest: SEC-3: source UI and built output contain no Anthropic key affordance or keyed request path
+ok 5 - SEC-3: source UI and built output contain no Anthropic key affordance or keyed request path
+  ---
+  duration_ms: 9.417019
+  ...
+# Subtest: archive pin uses an immutable final-season commit
+ok 6 - archive pin uses an immutable final-season commit
+  ---
+  duration_ms: 2.282826
+  ...
+# Subtest: archive parser handles quoted commas deterministically
+ok 7 - archive parser handles quoted commas deterministically
+  ---
+  duration_ms: 1.033872
+  ...
+# Subtest: SHA-256 is calculated from exact archive text
+ok 8 - SHA-256 is calculated from exact archive text
+  ---
+  duration_ms: 11.64986
+  ...
+# Subtest: replay predictions use only earlier gameweeks
+ok 9 - replay predictions use only earlier gameweeks
+  ---
+  duration_ms: 3.376848
+  ...
+# Subtest: double-gameweek rows aggregate to one player-gameweek observation
+ok 10 - double-gameweek rows aggregate to one player-gameweek observation
+  ---
+  duration_ms: 1.275884
+  ...
+# Subtest: malformed archive rows are counted rather than manufactured
+ok 11 - malformed archive rows are counted rather than manufactured
+  ---
+  duration_ms: 1.119931
+  ...
+# Subtest: archive replay produces raw and train-only fold-calibrated holdouts
+ok 12 - archive replay produces raw and train-only fold-calibrated holdouts
+  ---
+  duration_ms: 25.352472
+  ...
+# Subtest: build output contains no raw ES-module import or export declarations
+ok 13 - build output contains no raw ES-module import or export declarations
+  ---
+  duration_ms: 8.356827
+  ...
+# Subtest: root deployment copy is byte-identical to dist/index.html
+ok 14 - root deployment copy is byte-identical to dist/index.html
+  ---
+  duration_ms: 2.170978
+  ...
+# Subtest: bundler strips single-line imports and export lists
+ok 15 - bundler strips single-line imports and export lists
+  ---
+  duration_ms: 0.630481
+  ...
+# Subtest: bundler strips multi-line named imports as one declaration
+ok 16 - bundler strips multi-line named imports as one declaration
+  ---
+  duration_ms: 0.315291
+  ...
+# Subtest: bundler strips default plus multi-line named imports
+ok 17 - bundler strips default plus multi-line named imports
+  ---
+  duration_ms: 1.955338
+  ...
+# Subtest: bundler strips multi-line export lists and re-export lists
+ok 18 - bundler strips multi-line export lists and re-export lists
+  ---
+  duration_ms: 0.271184
+  ...
+# Subtest: bundler rejects unterminated module declarations
+ok 19 - bundler rejects unterminated module declarations
+  ---
+  duration_ms: 0.699884
+  ...
+# Subtest: bundler rejects unsupported surviving module syntax
+ok 20 - bundler rejects unsupported surviving module syntax
+  ---
+  duration_ms: 0.332937
+  ...
+# Subtest: stable: matchContext_strong_home
+ok 21 - stable: matchContext_strong_home
+  ---
+  duration_ms: 2.613999
+  ...
+# Subtest: stable: matchContext_weak_away
+ok 22 - stable: matchContext_weak_away
+  ---
+  duration_ms: 0.193909
+  ...
+# Subtest: stable: multToDiff_boundaries
+ok 23 - stable: multToDiff_boundaries
+  ---
+  duration_ms: 0.162823
+  ...
+# Subtest: stable: runScore_attack_t1
+ok 24 - stable: runScore_attack_t1
+  ---
+  duration_ms: 0.183754
+  ...
+# Subtest: stable: runScore_def_t1
+ok 25 - stable: runScore_def_t1
+  ---
+  duration_ms: 0.269763
+  ...
+# Subtest: stable: double_gw11_team5
+ok 26 - stable: double_gw11_team5
+  ---
+  duration_ms: 0.144866
+  ...
+# Subtest: stable: matchContext_with_ustat
+ok 27 - stable: matchContext_with_ustat
+  ---
+  duration_ms: 0.145086
+  ...
+# Subtest: stable: matchContext_with_odds_home
+ok 28 - stable: matchContext_with_odds_home
+  ---
+  duration_ms: 0.12758
+  ...
+# Subtest: stable: matchContext_with_odds_awayPerspective
+ok 29 - stable: matchContext_with_odds_awayPerspective
+  ---
+  duration_ms: 0.248731
+  ...
+# Subtest: stable: xp_eliteFWD
+ok 30 - stable: xp_eliteFWD
+  ---
+  duration_ms: 0.299287
+  ...
+# Subtest: stable: xp_goodFWD
+ok 31 - stable: xp_goodFWD
+  ---
+  duration_ms: 0.244565
+  ...
+# Subtest: stable: xp_budgetFWD
+ok 32 - stable: xp_budgetFWD
+  ---
+  duration_ms: 0.183594
+  ...
+# Subtest: stable: xp_eliteMID
+ok 33 - stable: xp_eliteMID
+  ---
+  duration_ms: 0.235802
+  ...
+# Subtest: stable: xp_dcMID
+ok 34 - stable: xp_dcMID
+  ---
+  duration_ms: 0.230985
+  ...
+# Subtest: stable: xp_eliteDEF
+ok 35 - stable: xp_eliteDEF
+  ---
+  duration_ms: 0.306607
+  ...
+# Subtest: stable: xp_weakDEF
+ok 36 - stable: xp_weakDEF
+  ---
+  duration_ms: 0.250544
+  ...
+# Subtest: stable: xp_eliteGKP
+ok 37 - stable: xp_eliteGKP
+  ---
+  duration_ms: 0.169873
+  ...
+# Subtest: stable: xp_busyGKP
+ok 38 - stable: xp_busyGKP
+  ---
+  duration_ms: 0.315251
+  ...
+# Subtest: stable: xp_injured_isZero
+ok 39 - stable: xp_injured_isZero
+  ---
+  duration_ms: 0.169042
+  ...
+# Subtest: stable: xp_doubt75_scaled
+ok 40 - stable: xp_doubt75_scaled
+  ---
+  duration_ms: 0.204535
+  ...
+# Subtest: stable: availability_states
+ok 41 - stable: availability_states
+  ---
+  duration_ms: 0.143875
+  ...
+# Subtest: stable: xp_eliteFWD_calibrated_ratio
+ok 42 - stable: xp_eliteFWD_calibrated_ratio
+  ---
+  duration_ms: 0.128873
+  ...
+# Subtest: stable: preseason_priceBaseline_ordering
+ok 43 - stable: preseason_priceBaseline_ordering
+  ---
+  duration_ms: 0.138126
+  ...
+# Subtest: stable: preseason_xp_eliteFWD
+ok 44 - stable: preseason_xp_eliteFWD
+  ---
+  duration_ms: 0.101792
+  ...
+# Subtest: stable: bestXI
+ok 45 - stable: bestXI
+  ---
+  duration_ms: 0.113139
+  ...
+# Subtest: stable: sellPrice_cases
+ok 46 - stable: sellPrice_cases
+  ---
+  duration_ms: 0.104666
+  ...
+# Subtest: stable: poisson_over25_at27
+ok 47 - stable: poisson_over25_at27
+  ---
+  duration_ms: 0.100339
+  ...
+# Subtest: stable: solveLambda_inverts
+ok 48 - stable: solveLambda_inverts
+  ---
+  duration_ms: 0.115432
+  ...
+# Subtest: stable: csv_quoted
+ok 49 - stable: csv_quoted
+  ---
+  duration_ms: 0.122283
+  ...
+# Subtest: stable: pearson_correlated
+ok 50 - stable: pearson_correlated
+  ---
+  duration_ms: 0.15382
+  ...
+# Subtest: stable: mapTeamName
+ok 51 - stable: mapTeamName
+  ---
+  duration_ms: 0.151696
+  ...
+# Subtest: stable: parseUnderstat_decodes
+ok 52 - stable: parseUnderstat_decodes
+  ---
+  duration_ms: 0.276633
+  ...
+# Subtest: stable: matchContext_strong_home present in golden
+ok 53 - stable: matchContext_strong_home present in golden
+  ---
+  duration_ms: 0.309862
+  ...
+# Subtest: stable: matchContext_weak_away present in golden
+ok 54 - stable: matchContext_weak_away present in golden
+  ---
+  duration_ms: 0.125277
+  ...
+# Subtest: stable: multToDiff_boundaries present in golden
+ok 55 - stable: multToDiff_boundaries present in golden
+  ---
+  duration_ms: 0.107661
+  ...
+# Subtest: stable: runScore_attack_t1 present in golden
+ok 56 - stable: runScore_attack_t1 present in golden
+  ---
+  duration_ms: 0.157415
+  ...
+# Subtest: stable: runScore_def_t1 present in golden
+ok 57 - stable: runScore_def_t1 present in golden
+  ---
+  duration_ms: 0.297243
+  ...
+# Subtest: stable: double_gw11_team5 present in golden
+ok 58 - stable: double_gw11_team5 present in golden
+  ---
+  duration_ms: 0.128852
+  ...
+# Subtest: stable: matchContext_with_ustat present in golden
+ok 59 - stable: matchContext_with_ustat present in golden
+  ---
+  duration_ms: 0.126088
+  ...
+# Subtest: stable: matchContext_with_odds_home present in golden
+ok 60 - stable: matchContext_with_odds_home present in golden
+  ---
+  duration_ms: 0.116644
+  ...
+# Subtest: stable: matchContext_with_odds_awayPerspective present in golden
+ok 61 - stable: matchContext_with_odds_awayPerspective present in golden
+  ---
+  duration_ms: 0.117725
+  ...
+# Subtest: stable: xp_eliteFWD present in golden
+ok 62 - stable: xp_eliteFWD present in golden
+  ---
+  duration_ms: 0.14771
+  ...
+# Subtest: stable: xp_goodFWD present in golden
+ok 63 - stable: xp_goodFWD present in golden
+  ---
+  duration_ms: 0.118958
+  ...
+# Subtest: stable: xp_budgetFWD present in golden
+ok 64 - stable: xp_budgetFWD present in golden
+  ---
+  duration_ms: 0.155612
+  ...
+# Subtest: stable: xp_eliteMID present in golden
+ok 65 - stable: xp_eliteMID present in golden
+  ---
+  duration_ms: 0.126449
+  ...
+# Subtest: stable: xp_dcMID present in golden
+ok 66 - stable: xp_dcMID present in golden
+  ---
+  duration_ms: 0.134871
+  ...
+# Subtest: stable: xp_eliteDEF present in golden
+ok 67 - stable: xp_eliteDEF present in golden
+  ---
+  duration_ms: 0.160619
+  ...
+# Subtest: stable: xp_weakDEF present in golden
+ok 68 - stable: xp_weakDEF present in golden
+  ---
+  duration_ms: 0.082173
+  ...
+# Subtest: stable: xp_eliteGKP present in golden
+ok 69 - stable: xp_eliteGKP present in golden
+  ---
+  duration_ms: 0.0666
+  ...
+# Subtest: stable: xp_busyGKP present in golden
+ok 70 - stable: xp_busyGKP present in golden
+  ---
+  duration_ms: 0.061171
+  ...
+# Subtest: stable: xp_injured_isZero present in golden
+ok 71 - stable: xp_injured_isZero present in golden
+  ---
+  duration_ms: 0.057836
+  ...
+# Subtest: stable: xp_doubt75_scaled present in golden
+ok 72 - stable: xp_doubt75_scaled present in golden
+  ---
+  duration_ms: 0.064576
+  ...
+# Subtest: stable: availability_states present in golden
+ok 73 - stable: availability_states present in golden
+  ---
+  duration_ms: 0.371514
+  ...
+# Subtest: stable: xp_eliteFWD_calibrated_ratio present in golden
+ok 74 - stable: xp_eliteFWD_calibrated_ratio present in golden
+  ---
+  duration_ms: 0.138556
+  ...
+# Subtest: stable: preseason_priceBaseline_ordering present in golden
+ok 75 - stable: preseason_priceBaseline_ordering present in golden
+  ---
+  duration_ms: 0.129623
+  ...
+# Subtest: stable: preseason_xp_eliteFWD present in golden
+ok 76 - stable: preseason_xp_eliteFWD present in golden
+  ---
+  duration_ms: 0.114281
+  ...
+# Subtest: stable: bestXI present in golden
+ok 77 - stable: bestXI present in golden
+  ---
+  duration_ms: 0.137905
+  ...
+# Subtest: stable: sellPrice_cases present in golden
+ok 78 - stable: sellPrice_cases present in golden
+  ---
+  duration_ms: 0.099208
+  ...
+# Subtest: stable: poisson_over25_at27 present in golden
+ok 79 - stable: poisson_over25_at27 present in golden
+  ---
+  duration_ms: 0.116383
+  ...
+# Subtest: stable: solveLambda_inverts present in golden
+ok 80 - stable: solveLambda_inverts present in golden
+  ---
+  duration_ms: 0.133479
+  ...
+# Subtest: stable: csv_quoted present in golden
+ok 81 - stable: csv_quoted present in golden
+  ---
+  duration_ms: 0.103855
+  ...
+# Subtest: stable: pearson_correlated present in golden
+ok 82 - stable: pearson_correlated present in golden
+  ---
+  duration_ms: 0.141371
+  ...
+# Subtest: stable: mapTeamName present in golden
+ok 83 - stable: mapTeamName present in golden
+  ---
+  duration_ms: 0.102904
+  ...
+# Subtest: stable: parseUnderstat_decodes present in golden
+ok 84 - stable: parseUnderstat_decodes present in golden
+  ---
+  duration_ms: 0.102403
+  ...
+# Subtest: expectedToChange: MIN1_expectedMinutes_900min_gw10
+ok 85 - expectedToChange: MIN1_expectedMinutes_900min_gw10
+  ---
+  duration_ms: 0.105017
+  ...
+# Subtest: expectedToChange: MIN1_expectedMinutes_bencher_450min
+ok 86 - expectedToChange: MIN1_expectedMinutes_bencher_450min
+  ---
+  duration_ms: 0.096704
+  ...
+# Subtest: expectedToChange: DEN1_gamesPlayed_equals_currentGW
+ok 87 - expectedToChange: DEN1_gamesPlayed_equals_currentGW
+  ---
+  duration_ms: 0.098647
+  ...
+# Subtest: expectedToChange: SCOR1_gk_parts
+ok 88 - expectedToChange: SCOR1_gk_parts
+  ---
+  duration_ms: 0.107149
+  ...
+# Subtest: expectedToChange: SCOR2_bonus_eliteFWD
+ok 89 - expectedToChange: SCOR2_bonus_eliteFWD
+  ---
+  duration_ms: 0.145948
+  ...
+# Subtest: expectedToChange: FIX1_blank_penalty_probe
+ok 90 - expectedToChange: FIX1_blank_penalty_probe
+  ---
+  duration_ms: 0.103054
+  ...
+# Subtest: expectedToChange: MIN1_expectedMinutes_900min_gw10 present in golden
+ok 91 - expectedToChange: MIN1_expectedMinutes_900min_gw10 present in golden
+  ---
+  duration_ms: 0.12726
+  ...
+# Subtest: expectedToChange: MIN1_expectedMinutes_bencher_450min present in golden
+ok 92 - expectedToChange: MIN1_expectedMinutes_bencher_450min present in golden
+  ---
+  duration_ms: 0.165807
+  ...
+# Subtest: expectedToChange: DEN1_gamesPlayed_equals_currentGW present in golden
+ok 93 - expectedToChange: DEN1_gamesPlayed_equals_currentGW present in golden
+  ---
+  duration_ms: 0.114691
+  ...
+# Subtest: expectedToChange: SCOR1_gk_parts present in golden
+ok 94 - expectedToChange: SCOR1_gk_parts present in golden
+  ---
+  duration_ms: 0.106058
+  ...
+# Subtest: expectedToChange: SCOR2_bonus_eliteFWD present in golden
+ok 95 - expectedToChange: SCOR2_bonus_eliteFWD present in golden
+  ---
+  duration_ms: 0.108131
+  ...
+# Subtest: expectedToChange: FIX1_blank_penalty_probe present in golden
+ok 96 - expectedToChange: FIX1_blank_penalty_probe present in golden
+  ---
+  duration_ms: 1.980635
+  ...
+# Subtest: meta: expectedToChange keys carry audit issue ids
+ok 97 - meta: expectedToChange keys carry audit issue ids
+  ---
+  duration_ms: 0.432155
+  ...
+# Subtest: cumulative review presents overall and schedule-aligned samples side by side
+ok 98 - cumulative review presents overall and schedule-aligned samples side by side
+  ---
+  duration_ms: 100.864554
+  ...
+# Subtest: cumulative review uses only the current correction revision
+ok 99 - cumulative review uses only the current correction revision
+  ---
+  duration_ms: 48.22572
+  ...
+# Subtest: one selected segment is reported without arbitrary subgroup cross-products
+ok 100 - one selected segment is reported without arbitrary subgroup cross-products
+  ---
+  duration_ms: 20.187214
+  ...
+# Subtest: full-season 38 Gameweeks by 700 players remains practical for on-demand review
+ok 101 - full-season 38 Gameweeks by 700 players remains practical for on-demand review
+  ---
+  duration_ms: 929.616088
+  ...
+# Subtest: transfer preview creates the optimiser final squad without mutating the real squad
+ok 102 - transfer preview creates the optimiser final squad without mutating the real squad
+  ---
+  duration_ms: 3.340534
+  ...
+# Subtest: transfer preview fails closed when final squad identity disagrees with the optimiser
+ok 103 - transfer preview fails closed when final squad identity disagrees with the optimiser
+  ---
+  duration_ms: 1.965732
+  ...
+# Subtest: captain and vice selections remain distinct and selecting the opposite role swaps them
+ok 104 - captain and vice selections remain distinct and selecting the opposite role swaps them
+  ---
+  duration_ms: 0.491323
+  ...
+# Subtest: bench players cannot be selected for captaincy preview
+ok 105 - bench players cannot be selected for captaincy preview
+  ---
+  duration_ms: 0.213328
+  ...
+# Subtest: squad or optimiser changes clear stale transfer preview state
+ok 106 - squad or optimiser changes clear stale transfer preview state
+  ---
+  duration_ms: 0.672604
+  ...
+# Subtest: changed optimiser inputs also clear captain-only preview state
+ok 107 - changed optimiser inputs also clear captain-only preview state
+  ---
+  duration_ms: 0.234009
+  ...
+# Subtest: optimiser signatures include result changes as well as transfer identities
+ok 108 - optimiser signatures include result changes as well as transfer identities
+  ---
+  duration_ms: 0.439116
+  ...
+# Subtest: captain preview total keeps base XI score separate from the captain uplift
+ok 109 - captain preview total keeps base XI score separate from the captain uplift
+  ---
+  duration_ms: 0.384133
+  ...
+# Subtest: preview implementation is session-only and wired to accessible controls
+ok 110 - preview implementation is session-only and wired to accessible controls
+  ---
+  duration_ms: 1.518785
+  ...
+# Subtest: Stage 10.1 canonical JSON is deterministic and rejects non-finite numbers
+ok 111 - Stage 10.1 canonical JSON is deterministic and rejects non-finite numbers
+  ---
+  duration_ms: 3.310158
+  ...
+# Subtest: Stage 10.1 SHA-256 is stable
+ok 112 - Stage 10.1 SHA-256 is stable
+  ---
+  duration_ms: 25.221988
+  ...
+# Subtest: Stage 10.1 evidence safety rejects secret fields and values
+ok 113 - Stage 10.1 evidence safety rejects secret fields and values
+  ---
+  duration_ms: 2.97581
+  ...
+# Subtest: Stage 10.1 evidence safety rejects manager and configuration identifiers
+ok 114 - Stage 10.1 evidence safety rejects manager and configuration identifiers
+  ---
+  duration_ms: 0.329591
+  ...
+# Subtest: evidence import rejects unknown, duplicate or missing providers
+ok 115 - evidence import rejects unknown, duplicate or missing providers
+  ---
+  duration_ms: 14.29395
+  ...
+# Subtest: deadline window applies the approved 24-hour, one-hour and two-minute boundaries
+ok 116 - deadline window applies the approved 24-hour, one-hour and two-minute boundaries
+  ---
+  duration_ms: 0.364687
+  ...
+# Subtest: same-origin HTTP Date sampling records round-trip and skew evidence
+ok 117 - same-origin HTTP Date sampling records round-trip and skew evidence
+  ---
+  duration_ms: 1.638072
+  ...
+# Subtest: network-attested complete captures before the cutoff are official-eligible
+ok 118 - network-attested complete captures before the cutoff are official-eligible
+  ---
+  duration_ms: 0.320281
+  ...
+# Subtest: client-only time is retained but cannot become the official snapshot
+ok 119 - client-only time is retained but cannot become the official snapshot
+  ---
+  duration_ms: 2.518676
+  ...
+# Subtest: clock conflicts, safety-cutoff captures and late included providers fail closed
+ok 120 - clock conflicts, safety-cutoff captures and late included providers fail closed
+  ---
+  duration_ms: 0.505483
+  ...
+# Subtest: final records are immutable, hash-verifiable and tamper-evident
+ok 121 - final records are immutable, hash-verifiable and tamper-evident
+  ---
+  duration_ms: 24.918553
+  ...
+# Subtest: import validation rejects unknown top-level fields and invalid manager references
+ok 122 - import validation rejects unknown top-level fields and invalid manager references
+  ---
+  duration_ms: 13.773678
+  ...
+# Subtest: official snapshot selection keeps the latest eligible complete capture only
+ok 123 - official snapshot selection keeps the latest eligible complete capture only
+  ---
+  duration_ms: 26.721361
+  ...
+# Subtest: deadline revisions prevent an older deadline snapshot from being selected as official
+ok 124 - deadline revisions prevent an older deadline snapshot from being selected as official
+  ---
+  duration_ms: 19.282431
+  ...
+# Subtest: section hashes identify output tampering before the whole-record hash check
+ok 125 - section hashes identify output tampering before the whole-record hash check
+  ---
+  duration_ms: 11.233875
+  ...
+# Subtest: bounded local metadata keeps three newest unique snapshots
+ok 126 - bounded local metadata keeps three newest unique snapshots
+  ---
+  duration_ms: 9.492584
+  ...
+# Subtest: a collected snapshot freezes model outputs without exporting the manager Team ID or name
+ok 127 - a collected snapshot freezes model outputs without exporting the manager Team ID or name
+  ---
+  duration_ms: 5.387851
+  ...
+# Subtest: chunked collection preserves projections while yielding between player batches
+ok 128 - chunked collection preserves projections while yielding between player batches
+  ---
+  duration_ms: 2.76926
+  ...
+# Subtest: Stage 10.1 UI and deterministic bundle order include the evidence surface
+ok 129 - Stage 10.1 UI and deterministic bundle order include the evidence surface
+  ---
+  duration_ms: 5.953149
+  ...
+# Subtest: local recovery encoding compresses and restores a verified evidence record
+ok 130 - local recovery encoding compresses and restores a verified evidence record
+  ---
+  duration_ms: 77.736883
+  ...
+# Subtest: evidence manager reference is random, anonymised and stable on the device
+ok 131 - evidence manager reference is random, anonymised and stable on the device
+  ---
+  duration_ms: 1.096093
+  ...
+# Subtest: evidence storage keeps three metadata rows and only two full recovery records
+ok 132 - evidence storage keeps three metadata rows and only two full recovery records
+  ---
+  duration_ms: 125.77247
+  ...
+# Subtest: evidence writes surface storage failures rather than silently claiming success
+ok 133 - evidence writes surface storage failures rather than silently claiming success
+  ---
+  duration_ms: 0.914796
+  ...
+# Subtest: restored evidence is retained as recovery-only and cannot become official locally
+ok 134 - restored evidence is retained as recovery-only and cannot become official locally
+  ---
+  duration_ms: 13.3525
+  ...
+# Subtest: local evidence can be deleted without touching exported files
+ok 135 - local evidence can be deleted without touching exported files
+  ---
+  duration_ms: 17.623202
+  ...
+# Subtest: legacy metadata without an origin fails closed as recovery-only
+ok 136 - legacy metadata without an origin fails closed as recovery-only
+  ---
+  duration_ms: 2.361078
+  ...
+# Subtest: corrupt local metadata is ignored and orphaned recovery records are removable
+ok 137 - corrupt local metadata is ignored and orphaned recovery records are removable
+  ---
+  duration_ms: 3.997739
+  ...
+# Subtest: Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write
+ok 138 - Stage 10.5 snapshot journal recovers a verified payload after an interrupted index write
+  ---
+  duration_ms: 12.710636
+  ...
+# Subtest: Stage 10.5 malformed snapshot journal fails closed and is cleared
+ok 139 - Stage 10.5 malformed snapshot journal fails closed and is cleared
+  ---
+  duration_ms: 0.549939
+  ...
+# Subtest: Stage 10.5 compression failure falls back to canonical plain JSON
+ok 140 - Stage 10.5 compression failure falls back to canonical plain JSON
+  ---
+  duration_ms: 4.726271
+  ...
+# file:///home/runner/work/FPL/FPL/tests/final-mobile-polish.test.mjs:30
+#   assert.doesNotMatch(views,/reFixtures = debounce([sS]*renderSquad(); renderTransfers()/);
+#                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# SyntaxError: Invalid regular expression: /reFixtures = debounce([sS]*renderSquad(); renderTransfers()/: Unterminated group
+#     at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+#     at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:146:18)
+#     at \#translate (node:internal/modules/esm/loader:497:12)
+#     at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:544:27)
+#     at async ModuleJob._link (node:internal/modules/esm/module_job:148:19)
+# Node.js v20.20.2
+# Subtest: /home/runner/work/FPL/FPL/tests/final-mobile-polish.test.mjs
+not ok 9 - /home/runner/work/FPL/FPL/tests/final-mobile-polish.test.mjs
+  ---
+  duration_ms: 63.727715
+  location: '/home/runner/work/FPL/FPL/tests/final-mobile-polish.test.mjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: allows only absolute HTTP and HTTPS links
+ok 142 - allows only absolute HTTP and HTTPS links
+  ---
+  duration_ms: 2.205934
+  ...
+# Subtest: rejects encoded, entity-obscured and control-character schemes
+ok 143 - rejects encoded, entity-obscured and control-character schemes
+  ---
+  duration_ms: 0.361392
+  ...
+# Subtest: raw HTML and handler-shaped text remain text tokens
+ok 144 - raw HTML and handler-shaped text remain text tokens
+  ---
+  duration_ms: 0.755136
+  ...
+# Subtest: hostile Markdown links lose the link but keep their label
+ok 145 - hostile Markdown links lose the link but keep their label
+  ---
+  duration_ms: 2.422646
+  ...
+# Subtest: restricted blocks include only headings, lists and paragraphs
+ok 146 - restricted blocks include only headings, lists and paragraphs
+  ---
+  duration_ms: 1.07775
+  ...
+# Subtest: nested and unbalanced HTML cannot create an executable structure
+ok 147 - nested and unbalanced HTML cannot create an executable structure
+  ---
+  duration_ms: 0.294499
+  ...
+# Subtest: input is bounded deterministically
+ok 148 - input is bounded deterministically
+  ---
+  duration_ms: 47.860597
+  ...
+# Subtest: bundled renderer contains the DOM-only sanitised replacement
+ok 149 - bundled renderer contains the DOM-only sanitised replacement
+  ---
+  duration_ms: 0.998871
+  ...
+# Subtest: metric storage verifies, reloads and keeps one current revision
+ok 150 - metric storage verifies, reloads and keeps one current revision
+  ---
+  duration_ms: 111.273048
+  ...
+# Subtest: identical metrics deduplicate while corrections retain immutable superseded data
+ok 151 - identical metrics deduplicate while corrections retain immutable superseded data
+  ---
+  duration_ms: 112.983907
+  ...
+# Subtest: interrupted metric writes recover through the journal
+ok 152 - interrupted metric writes recover through the journal
+  ---
+  duration_ms: 34.194531
+  ...
+# Subtest: tampered metric records fail validation on reload
+ok 153 - tampered metric records fail validation on reload
+  ---
+  duration_ms: 19.279387
+  ...
+# Subtest: metric metadata is deterministic and bounded
+ok 154 - metric metadata is deterministic and bounded
+  ---
+  duration_ms: 1.294132
+  ...
+# Subtest: quota failures are surfaced and deletion is isolated from source evidence
+ok 155 - quota failures are surfaced and deletion is isolated from source evidence
+  ---
+  duration_ms: 27.139645
+  ...
+# Subtest: Stage 10.5 metric journal recovery leaves exactly one current revision
+ok 156 - Stage 10.5 metric journal recovery leaves exactly one current revision
+  ---
+  duration_ms: 29.748189
+  ...
+# Subtest: Stage 10.5 malformed metric journal fails closed
+ok 157 - Stage 10.5 malformed metric journal fails closed
+  ---
+  duration_ms: 0.330925
+  ...
+# Subtest: fixed player metrics cover zero error, signed bias and correlations
+ok 158 - fixed player metrics cover zero error, signed bias and correlations
+  ---
+  duration_ms: 3.649292
+  ...
+# Subtest: Spearman average ranks and error-band boundaries are deterministic
+ok 159 - Spearman average ranks and error-band boundaries are deterministic
+  ---
+  duration_ms: 0.744824
+  ...
+# Subtest: Brier, reliability and interval calculations use approved inclusive rules
+ok 160 - Brier, reliability and interval calculations use approved inclusive rules
+  ---
+  duration_ms: 1.270431
+  ...
+# Subtest: sample safeguards enforce exact boundaries and provider AND rule
+ok 161 - sample safeguards enforce exact boundaries and provider AND rule
+  ---
+  duration_ms: 0.323976
+  ...
+# Subtest: approved season periods and position-aware price bands are exact
+ok 162 - approved season periods and position-aware price bands are exact
+  ---
+  duration_ms: 0.371916
+  ...
+# Subtest: minutes allocation handles singles, doubles, missing starts and postponed fixtures
+ok 163 - minutes allocation handles singles, doubles, missing starts and postponed fixtures
+  ---
+  duration_ms: 1.072704
+  ...
+# Subtest: legal substitutions respect goalkeeper and minimum formation constraints
+ok 164 - legal substitutions respect goalkeeper and minimum formation constraints
+  ---
+  duration_ms: 5.31494
+  ...
+# Subtest: captain non-appearance uses vice and neither appearance gives no doubled points
+ok 165 - captain non-appearance uses vice and neither appearance gives no doubled points
+  ---
+  duration_ms: 0.390319
+  ...
+# Subtest: authoritative evaluation joins exact IDs, preserves source records and validates hashes
+ok 166 - authoritative evaluation joins exact IDs, preserves source records and validates hashes
+  ---
+  duration_ms: 43.511779
+  ...
+# Subtest: invalid, late, provisional and mismatched records fail closed
+ok 167 - invalid, late, provisional and mismatched records fail closed
+  ---
+  duration_ms: 3.344921
+  ...
+# Subtest: corrected official outcomes append an immutable evaluation revision
+ok 168 - corrected official outcomes append an immutable evaluation revision
+  ---
+  duration_ms: 39.36225
+  ...
+# Subtest: cumulative reporting filters scheduled and owned segments without hiding missingness
+ok 169 - cumulative reporting filters scheduled and owned segments without hiding missingness
+  ---
+  duration_ms: 14.205229
+  ...
+# Subtest: frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only
+ok 170 - frozen transfer horizon compares plan with zero-transfer baseline and subtracts hits only
+  ---
+  duration_ms: 8.990626
+  ...
+# Subtest: metric records preserve the approved public field names
+ok 171 - metric records preserve the approved public field names
+  ---
+  duration_ms: 10.657023
+  ...
+# Subtest: metric engine never imports or calls live production formula functions
+ok 172 - metric engine never imports or calls live production formula functions
+  ---
+  duration_ms: 2.167266
+  ...
+# Subtest: comparison state is versioned, bounded and does not seed v1 pins as network selections
+ok 173 - comparison state is versioned, bounded and does not seed v1 pins as network selections
+  ---
+  duration_ms: 2.856149
+  ...
+# Subtest: pick facts require 15 unique resolved players and positions before aggregate use
+ok 174 - pick facts require 15 unique resolved players and positions before aggregate use
+  ---
+  duration_ms: 0.874045
+  ...
+# Subtest: multi-rival exposure uses only complete fresh squads and exact selected-rival counts
+ok 175 - multi-rival exposure uses only complete fresh squads and exact selected-rival counts
+  ---
+  duration_ms: 11.846554
+  ...
+# Subtest: exposure labels are structural and deterministic rather than predictive
+ok 176 - exposure labels are structural and deterministic rather than predictive
+  ---
+  duration_ms: 0.174348
+  ...
+# Subtest: source keeps exposure on demand, concurrency bounded and model-free
+ok 177 - source keeps exposure on demand, concurrency bounded and model-free
+  ---
+  duration_ms: 2.275421
+  ...
+# Subtest: stale rival records remain visible but are excluded from the fresh aggregate
+ok 178 - stale rival records remain visible but are excluded from the fresh aggregate
+  ---
+  duration_ms: 0.436427
+  ...
+# Subtest: selection keys invalidate late results independently of rival ordering
+ok 179 - selection keys invalidate late results independently of rival ordering
+  ---
+  duration_ms: 0.32726
+  ...
+# Subtest: the selected-rival request pool never exceeds concurrency two
+ok 180 - the selected-rival request pool never exceeds concurrency two
+  ---
+  duration_ms: 14.894788
+  ...
+# Subtest: unrequested rivals are separate from fetched incomplete records
+ok 181 - unrequested rivals are separate from fetched incomplete records
+  ---
+  duration_ms: 0.75868
+  ...
+# Subtest: request-race and deep-link focus contracts remain explicit in source
+not ok 182 - request-race and deep-link focus contracts remain explicit in source
+  ---
+  duration_ms: 2.049513
+  location: '/home/runner/work/FPL/FPL/tests/mini-leagues-intelligence.test.mjs:131:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    initialRoute==='#/leagues/exposure'
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/mini-leagues-intelligence.test.mjs:133:306)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: Leagues has separate landing, standings, rival and manage surfaces
+ok 183 - Leagues has separate landing, standings, rival and manage surfaces
+  ---
+  duration_ms: 2.423266
+  ...
+# Subtest: League subroutes remain semantic and identifiers stay in local state
+ok 184 - League subroutes remain semantic and identifiers stay in local state
+  ---
+  duration_ms: 0.417794
+  ...
+# Subtest: League persistence stores choices only, not standings or rival squads
+ok 185 - League persistence stores choices only, not standings or rival squads
+  ---
+  duration_ms: 0.236657
+  ...
+# Subtest: large leagues use targeted pages and explicit incremental loading
+ok 186 - large leagues use targeted pages and explicit incremental loading
+  ---
+  duration_ms: 0.324016
+  ...
+# Subtest: rival comparison loads one selected public squad and uses exact sets
+ok 187 - rival comparison loads one selected public squad and uses exact sets
+  ---
+  duration_ms: 0.338624
+  ...
+# Subtest: official, provisional, stale and incomplete wording is explicit
+ok 188 - official, provisional, stale and incomplete wording is explicit
+  ---
+  duration_ms: 0.34283
+  ...
+# Subtest: decision links navigate without changing Team or Transfers calculations
+ok 189 - decision links navigate without changing Team or Transfers calculations
+  ---
+  duration_ms: 0.412517
+  ...
+# Subtest: mobile layout avoids the generic horizontally scrolling data table
+ok 190 - mobile layout avoids the generic horizontally scrolling data table
+  ---
+  duration_ms: 0.376712
+  ...
+# Subtest: League accessibility has route focus, live status and named back controls
+ok 191 - League accessibility has route focus, live status and named back controls
+  ---
+  duration_ms: 0.51881
+  ...
+# Subtest: standings and rival requests invalidate independently and failed empty records are not stale fallbacks
+ok 192 - standings and rival requests invalidate independently and failed empty records are not stale fallbacks
+  ---
+  duration_ms: 0.384411
+  ...
+# Subtest: narrow League header stacks the picker and the dark hero keeps refresh readable
+ok 193 - narrow League header stacks the picker and the dark hero keeps refresh readable
+  ---
+  duration_ms: 0.349007
+  ...
+# Subtest: owner-approved compact League hierarchy keeps primary context visible without duplicate landing actions
+ok 194 - owner-approved compact League hierarchy keeps primary context visible without duplicate landing actions
+  ---
+  duration_ms: 0.307755
+  ...
+# Subtest: standings use full-row touch and keyboard actions with a quiet trailing affordance
+ok 195 - standings use full-row touch and keyboard actions with a quiet trailing affordance
+  ---
+  duration_ms: 0.27951
+  ...
+# Subtest: new modules are in the deterministic bundle before the startup view
+ok 196 - new modules are in the deterministic bundle before the startup view
+  ---
+  duration_ms: 0.397828
+  ...
+# Subtest: Mini-League intelligence adds an ID-free on-demand exposure route
+ok 197 - Mini-League intelligence adds an ID-free on-demand exposure route
+  ---
+  duration_ms: 0.458895
+  ...
+# Subtest: exposure persistence stores only explicit rival choices while fetched squads remain session-only
+ok 198 - exposure persistence stores only explicit rival choices while fetched squads remain session-only
+  ---
+  duration_ms: 0.86993
+  ...
+# Subtest: league identifiers are numeric, bounded and never manufactured
+ok 199 - league identifiers are numeric, bounded and never manufactured
+  ---
+  duration_ms: 1.839374
+  ...
+# Subtest: legacy saved leagues migrate deterministically with configured selection
+ok 200 - legacy saved leagues migrate deterministically with configured selection
+  ---
+  duration_ms: 1.390702
+  ...
+# Subtest: versioned state deduplicates leagues and caps pinned rivals
+ok 201 - versioned state deduplicates leagues and caps pinned rivals
+  ---
+  duration_ms: 0.462009
+  ...
+# Subtest: entry classic leagues are the only automatically discovered competition rows
+ok 202 - entry classic leagues are the only automatically discovered competition rows
+  ---
+  duration_ms: 0.372446
+  ...
+# Subtest: official movement and ordinal wording is deterministic
+ok 203 - official movement and ordinal wording is deterministic
+  ---
+  duration_ms: 0.55808
+  ...
+# Subtest: nearest rivals use official ordering around the connected manager
+ok 204 - nearest rivals use official ordering around the connected manager
+  ---
+  duration_ms: 0.406389
+  ...
+# Subtest: squad comparison is exact set arithmetic rather than a differential score
+ok 205 - squad comparison is exact set arithmetic rather than a differential score
+  ---
+  duration_ms: 1.088695
+  ...
+# Subtest: season state labels official provisional and checked outcomes honestly
+ok 206 - season state labels official provisional and checked outcomes honestly
+  ---
+  duration_ms: 0.316346
+  ...
+# Subtest: entry validator retains only valid public classic league membership
+ok 207 - entry validator retains only valid public classic league membership
+  ---
+  duration_ms: 0.815417
+  ...
+# Subtest: standings validator requires the fields displayed by the product
+ok 208 - standings validator requires the fields displayed by the product
+  ---
+  duration_ms: 0.639761
+  ...
+# Subtest: source keeps official and factual boundaries and removes unsupported tactical claims
+ok 209 - source keeps official and factual boundaries and removes unsupported tactical claims
+  ---
+  duration_ms: 2.113147
+  ...
+# Subtest: version 1 state migrates to an empty explicit comparison group
+ok 210 - version 1 state migrates to an empty explicit comparison group
+  ---
+  duration_ms: 0.275665
+  ...
+# Subtest: aggregate denominator uses completed team matches
+ok 211 - aggregate denominator uses completed team matches
+  ---
+  duration_ms: 2.033208
+  ...
+# Subtest: stable starter produces coherent high-role outputs
+ok 212 - stable starter produces coherent high-role outputs
+  ---
+  duration_ms: 1.275328
+  ...
+# Subtest: regular substitute separates appearance from start probability
+ok 213 - regular substitute separates appearance from start probability
+  ---
+  duration_ms: 0.588187
+  ...
+# Subtest: rotation sequence lowers role stability confidence
+ok 214 - rotation sequence lowers role stability confidence
+  ---
+  duration_ms: 0.578155
+  ...
+# Subtest: doubtful availability is applied exactly once
+ok 215 - doubtful availability is applied exactly once
+  ---
+  duration_ms: 2.095426
+  ...
+# Subtest: injured and suspended players return zero outputs
+ok 216 - injured and suspended players return zero outputs
+  ---
+  duration_ms: 1.10121
+  ...
+# Subtest: limited history remains shrunk toward aggregate evidence
+ok 217 - limited history remains shrunk toward aggregate evidence
+  ---
+  duration_ms: 0.389047
+  ...
+# Subtest: logical invariants hold for hostile numeric inputs
+ok 218 - logical invariants hold for hostile numeric inputs
+  ---
+  duration_ms: 0.29548
+  ...
+# Subtest: element-summary validation drops malformed rows without payload leakage
+ok 219 - element-summary validation drops malformed rows without payload leakage
+  ---
+  duration_ms: 0.515546
+  ...
+# Subtest: element-summary unusable structure is fatal
+ok 220 - element-summary unusable structure is fatal
+  ---
+  duration_ms: 0.486239
+  ...
+# Subtest: primary navigation follows the approved five-destination order
+ok 221 - primary navigation follows the approved five-destination order
+  ---
+  duration_ms: 2.023125
+  ...
+# Subtest: legacy hashes resolve to the new information architecture
+ok 222 - legacy hashes resolve to the new information architecture
+  ---
+  duration_ms: 0.308456
+  ...
+# Subtest: unknown and empty destinations fail safely to Team
+ok 223 - unknown and empty destinations fail safely to Team
+  ---
+  duration_ms: 1.584135
+  ...
+# Subtest: Settings subroutes keep Settings as the active primary destination
+ok 224 - Settings subroutes keep Settings as the active primary destination
+  ---
+  duration_ms: 0.227255
+  ...
+# Subtest: route addresses never encode account, provider-key or evidence identities
+ok 225 - route addresses never encode account, provider-key or evidence identities
+  ---
+  duration_ms: 0.329523
+  ...
+# Subtest: static deployable navigation uses exactly five real links
+ok 226 - static deployable navigation uses exactly five real links
+  ---
+  duration_ms: 0.304392
+  ...
+# Subtest: bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs
+ok 227 - bottom navigation uses controlled monochrome SVG icons rather than emoji glyphs
+  ---
+  duration_ms: 0.313693
+  ...
+# Subtest: router owns history and active navigation instead of legacy click-to-hide wiring
+ok 228 - router owns history and active navigation instead of legacy click-to-hide wiring
+  ---
+  duration_ms: 0.300406
+  ...
+# Subtest: global Ask Teamsheet composer replaces header Data and Evidence controls
+not ok 229 - global Ask Teamsheet composer replaces header Data and Evidence controls
+  ---
+  duration_ms: 2.072727
+  location: '/home/runner/work/FPL/FPL/tests/navigation-settings.test.mjs:66:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Missing placeholder:'Ask Teamsheet…'
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///home/runner/work/FPL/FPL/tests/navigation-settings.test.mjs:13:65
+    Array.forEach (<anonymous>)
+    includesAll (file:///home/runner/work/FPL/FPL/tests/navigation-settings.test.mjs:13:43)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/navigation-settings.test.mjs:67:3)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: global Ask carries the typed question into the full Ask route and preserves origin
+ok 230 - global Ask carries the typed question into the full Ask route and preserves origin
+  ---
+  duration_ms: 0.370955
+  ...
+# Subtest: Settings headings retain programmatic focus without a visible blue outline
+ok 231 - Settings headings retain programmatic focus without a visible blue outline
+  ---
+  duration_ms: 0.23159
+  ...
+# Subtest: Settings subsections use one accessible parent-aware arrow-only back control
+ok 232 - Settings subsections use one accessible parent-aware arrow-only back control
+  ---
+  duration_ms: 0.255761
+  ...
+# Subtest: iPhone dock has one fixed safe-area grid and keyboard recovery contract
+ok 233 - iPhone dock has one fixed safe-area grid and keyboard recovery contract
+  ---
+  duration_ms: 0.239491
+  ...
+# Subtest: Team keeps the current free-transfer and bank controls pending the separate FPL authority gate
+ok 234 - Team keeps the current free-transfer and bank controls pending the separate FPL authority gate
+  ---
+  duration_ms: 0.368872
+  ...
+# Subtest: Settings remains an organised five-section menu
+ok 235 - Settings remains an organised five-section menu
+  ---
+  duration_ms: 0.203315
+  ...
+# Subtest: Fixtures and Leagues remain primary while Player Explorer stays under Research Tools
+ok 236 - Fixtures and Leagues remain primary while Player Explorer stays under Research Tools
+  ---
+  duration_ms: 0.238038
+  ...
+# Subtest: Evidence and Provider Health detail remain available through Settings only
+ok 237 - Evidence and Provider Health detail remain available through Settings only
+  ---
+  duration_ms: 0.225973
+  ...
+# Subtest: League subroutes are ID-free and keep Leagues active
+ok 238 - League subroutes are ID-free and keep Leagues active
+  ---
+  duration_ms: 0.408602
+  ...
+# Subtest: operating-review bundle is deterministic, exact and hash-verifiable
+ok 239 - operating-review bundle is deterministic, exact and hash-verifiable
+  ---
+  duration_ms: 187.782056
+  ...
+# Subtest: missing exact sources and pruned revision metadata are explicit partial evidence
+ok 240 - missing exact sources and pruned revision metadata are explicit partial evidence
+  ---
+  duration_ms: 61.493156
+  ...
+# Subtest: weekly review keeps incomplete transfer horizons pending without interim gain
+ok 241 - weekly review keeps incomplete transfer horizons pending without interim gain
+  ---
+  duration_ms: 0.554347
+  ...
+# Subtest: unsupported source schemas fail closed and exports are bounded
+ok 242 - unsupported source schemas fail closed and exports are bounded
+  ---
+  duration_ms: 16.987275
+  ...
+# Subtest: Stage 10.2 fixture validator preserves genuine doubles and exact fixture identity
+ok 243 - Stage 10.2 fixture validator preserves genuine doubles and exact fixture identity
+  ---
+  duration_ms: 2.905384
+  ...
+# Subtest: Stage 10.2 conflicting duplicate fixtures fail closed
+ok 244 - Stage 10.2 conflicting duplicate fixtures fail closed
+  ---
+  duration_ms: 0.427989
+  ...
+# Subtest: Stage 10.2 duplicate players are quarantined rather than first-wins
+ok 245 - Stage 10.2 duplicate players are quarantined rather than first-wins
+  ---
+  duration_ms: 0.866493
+  ...
+# Subtest: official starts remain null when the live endpoint does not provide them
+ok 246 - official starts remain null when the live endpoint does not provide them
+  ---
+  duration_ms: 0.438935
+  ...
+# Subtest: manager validators retain only factual picks, auto-subs and Gameweek summaries
+ok 247 - manager validators retain only factual picks, auto-subs and Gameweek summaries
+  ---
+  duration_ms: 0.730149
+  ...
+# Subtest: complete outcome requires all fixtures, event finished and data_checked
+ok 248 - complete outcome requires all fixtures, event finished and data_checked
+  ---
+  duration_ms: 23.128527
+  ...
+# Subtest: finished alone is insufficient while official data checking is delayed
+ok 249 - finished alone is insufficient while official data checking is delayed
+  ---
+  duration_ms: 2.291499
+  ...
+# Subtest: postponed or unfinished fixtures keep the Gameweek provisional
+ok 250 - postponed or unfinished fixtures keep the Gameweek provisional
+  ---
+  duration_ms: 2.182877
+  ...
+# Subtest: blank Gameweeks can complete without manufacturing fixtures
+ok 251 - blank Gameweeks can complete without manufacturing fixtures
+  ---
+  duration_ms: 1.8567
+  ...
+# Subtest: double Gameweek player detail must reconcile with aggregate points
+ok 252 - double Gameweek player detail must reconcile with aggregate points
+  ---
+  duration_ms: 9.307908
+  ...
+# Subtest: unreconciled per-fixture points keep a record provisional
+ok 253 - unreconciled per-fixture points keep a record provisional
+  ---
+  duration_ms: 2.115266
+  ...
+# Subtest: squad outcome applies official multipliers without changing the frozen decision record
+ok 254 - squad outcome applies official multipliers without changing the frozen decision record
+  ---
+  duration_ms: 0.565494
+  ...
+# Subtest: provisional-to-complete and complete-to-corrected transitions append immutable revisions
+ok 255 - provisional-to-complete and complete-to-corrected transitions append immutable revisions
+  ---
+  duration_ms: 27.691996
+  ...
+# Subtest: identical official facts do not create a duplicate revision
+ok 256 - identical official facts do not create a duplicate revision
+  ---
+  duration_ms: 6.122946
+  ...
+# Subtest: outcome records are deterministic, immutable and tamper-evident
+ok 257 - outcome records are deterministic, immutable and tamper-evident
+  ---
+  duration_ms: 9.165735
+  ...
+# Subtest: records exclude Team ID, manager names, leagues, configuration and secrets
+ok 258 - records exclude Team ID, manager names, leagues, configuration and secrets
+  ---
+  duration_ms: 5.076474
+  ...
+# Subtest: due Gameweeks are selected only after their official deadlines
+ok 259 - due Gameweeks are selected only after their official deadlines
+  ---
+  duration_ms: 0.401779
+  ...
+# Subtest: outcome storage verifies, reloads and marks one current local revision
+ok 260 - outcome storage verifies, reloads and marks one current local revision
+  ---
+  duration_ms: 78.565988
+  ...
+# Subtest: same official outcome is deduplicated without another stored revision
+ok 261 - same official outcome is deduplicated without another stored revision
+  ---
+  duration_ms: 20.678647
+  ...
+# Subtest: new local revision supersedes the earlier current pointer without mutating it
+ok 262 - new local revision supersedes the earlier current pointer without mutating it
+  ---
+  duration_ms: 34.143521
+  ...
+# Subtest: recovery imports remain non-current and cannot replace a local official outcome
+ok 263 - recovery imports remain non-current and cannot replace a local official outcome
+  ---
+  duration_ms: 31.323694
+  ...
+# Subtest: interrupted verified writes recover an orphan record through the journal
+ok 264 - interrupted verified writes recover an orphan record through the journal
+  ---
+  duration_ms: 10.765612
+  ...
+# Subtest: tampered stored records fail validation on reload
+ok 265 - tampered stored records fail validation on reload
+  ---
+  duration_ms: 8.813169
+  ...
+# Subtest: metadata remains bounded to fifty rows
+ok 266 - metadata remains bounded to fifty rows
+  ---
+  duration_ms: 1.09905
+  ...
+# Subtest: quota failures are surfaced and do not claim a successful write
+ok 267 - quota failures are surfaced and do not claim a successful write
+  ---
+  duration_ms: 7.135486
+  ...
+# Subtest: provisional outcomes recheck after fifteen minutes while complete records use the correction cadence
+ok 268 - provisional outcomes recheck after fifteen minutes while complete records use the correction cadence
+  ---
+  duration_ms: 0.48901
+  ...
+# Subtest: delete removes outcome records but leaves shared deadline-evidence identity untouched
+ok 269 - delete removes outcome records but leaves shared deadline-evidence identity untouched
+  ---
+  duration_ms: 9.847652
+  ...
+# Subtest: Stage 10.5 outcome journal recovery leaves exactly one current local revision
+ok 270 - Stage 10.5 outcome journal recovery leaves exactly one current local revision
+  ---
+  duration_ms: 16.458326
+  ...
+# Subtest: Stage 10.5 malformed outcome journal fails closed without promoting a record
+ok 271 - Stage 10.5 malformed outcome journal fails closed without promoting a record
+  ---
+  duration_ms: 0.360568
+  ...
+# Subtest: approved uncertainty labels use exact 2.0 and 5.0 point boundaries
+ok 272 - approved uncertainty labels use exact 2.0 and 5.0 point boundaries
+  ---
+  duration_ms: 5.752433
+  ...
+# Subtest: unavailable and reduced-quality simulations suppress descriptive labels
+ok 273 - unavailable and reduced-quality simulations suppress descriptive labels
+  ---
+  duration_ms: 0.305536
+  ...
+# Subtest: official doubtful status stays doubtful regardless of percentage
+ok 274 - official doubtful status stays doubtful regardless of percentage
+  ---
+  duration_ms: 0.24781
+  ...
+# Subtest: range marker positions are deterministic and bounded
+ok 275 - range marker positions are deterministic and bounded
+  ---
+  duration_ms: 0.307899
+  ...
+# Subtest: dialog controller opens accessibly, closes on Escape and restores focus
+not ok 276 - dialog controller opens accessibly, closes on Escape and restores focus
+  ---
+  duration_ms: 2.98924
+  location: '/home/runner/work/FPL/FPL/tests/player-detail.test.mjs:44:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/player-detail.test.mjs:88:10)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: template provides mobile bottom sheet and desktop side panel semantics
+ok 277 - template provides mobile bottom sheet and desktop side panel semantics
+  ---
+  duration_ms: 6.403454
+  ...
+# Subtest: player surfaces open the new detail view without the legacy inline drawer
+ok 278 - player surfaces open the new detail view without the legacy inline drawer
+  ---
+  duration_ms: 0.640085
+  ...
+# Subtest: provider health age labels remain compact and deterministic
+ok 279 - provider health age labels remain compact and deterministic
+  ---
+  duration_ms: 1.247992
+  ...
+# Subtest: material core-data age labels remain plain English
+ok 280 - material core-data age labels remain plain English
+  ---
+  duration_ms: 0.181381
+  ...
+# Subtest: healthy and optional provider states do not create primary warnings
+ok 281 - healthy and optional provider states do not create primary warnings
+  ---
+  duration_ms: 0.229222
+  ...
+# Subtest: saved core FPL data creates one consequence-led warning
+ok 282 - saved core FPL data creates one consequence-led warning
+  ---
+  duration_ms: 0.335511
+  ...
+# Subtest: missing core FPL data blocks route-level decisions without inventing a fallback
+ok 283 - missing core FPL data blocks route-level decisions without inventing a fallback
+  ---
+  duration_ms: 0.162383
+  ...
+# Subtest: provider health state classes reuse the established status palette
+ok 284 - provider health state classes reuse the established status palette
+  ---
+  duration_ms: 0.144425
+  ...
+# Subtest: Provider Health detail remains under Settings without a healthy header pill
+ok 285 - Provider Health detail remains under Settings without a healthy header pill
+  ---
+  duration_ms: 0.746203
+  ...
+# Subtest: approved provider registry is closed and names only repository-reviewed sources
+ok 286 - approved provider registry is closed and names only repository-reviewed sources
+  ---
+  duration_ms: 2.832446
+  ...
+# Subtest: provider trust validation rejects unknown and malformed provenance
+ok 287 - provider trust validation rejects unknown and malformed provenance
+  ---
+  duration_ms: 1.846985
+  ...
+# Subtest: exports the approved seven provider-health states
+ok 288 - exports the approved seven provider-health states
+  ---
+  duration_ms: 0.427528
+  ...
+# Subtest: runtime health refuses providers outside the approved registry
+ok 289 - runtime health refuses providers outside the approved registry
+  ---
+  duration_ms: 0.80444
+  ...
+# Subtest: live success records lastSuccess and consequence
+ok 290 - live success records lastSuccess and consequence
+  ---
+  duration_ms: 0.567797
+  ...
+# Subtest: fresh cached FPL data becomes stale after the context-specific threshold
+ok 291 - fresh cached FPL data becomes stale after the context-specific threshold
+  ---
+  duration_ms: 0.588418
+  ...
+# Subtest: FPL uses the shorter stale threshold during live gameweeks
+ok 292 - FPL uses the shorter stale threshold during live gameweeks
+  ---
+  duration_ms: 0.393968
+  ...
+# Subtest: Understat and odds use their approved provider-specific thresholds
+ok 293 - Understat and odds use their approved provider-specific thresholds
+  ---
+  duration_ms: 0.463932
+  ...
+# Subtest: disabled is a neutral user choice and never mutates into stale
+ok 294 - disabled is a neutral user choice and never mutates into stale
+  ---
+  duration_ms: 0.560877
+  ...
+# Subtest: fallback and unavailable remain distinct
+ok 295 - fallback and unavailable remain distinct
+  ---
+  duration_ms: 0.59677
+  ...
+# Subtest: partial preserves a usable success timestamp
+ok 296 - partial preserves a usable success timestamp
+  ---
+  duration_ms: 0.404284
+  ...
+# Subtest: legacy boolean health calls map safely onto the richer model
+ok 297 - legacy boolean health calls map safely onto the richer model
+  ---
+  duration_ms: 0.632053
+  ...
+# Subtest: healthRows reports stable provider order and calculated age
+ok 298 - healthRows reports stable provider order and calculated age
+  ---
+  duration_ms: 1.870882
+  ...
+# Subtest: XSS-1: hostile team, player and provider values are inert across core rendering
+ok 299 - XSS-1: hostile team, player and provider values are inert across core rendering
+  ---
+  duration_ms: 92.60854
+  ...
+# Subtest: XSS-1: hostile entry and saved-league names render as text nodes
+ok 300 - XSS-1: hostile entry and saved-league names render as text nodes
+  ---
+  duration_ms: 29.221437
+  ...
+# Subtest: XSS-1: manual squad pills and player-search results keep hostile names inert
+ok 301 - XSS-1: manual squad pills and player-search results keep hostile names inert
+  ---
+  duration_ms: 4.421187
+  ...
+# Subtest: XSS-1: squad, captain and transfer rendering keep hostile player text inert
+ok 302 - XSS-1: squad, captain and transfer rendering keep hostile player text inert
+  ---
+  duration_ms: 31.835198
+  ...
+# Subtest: XSS-1: approved Stage 3.5 source has no innerHTML sink outside the excluded Ask renderer
+ok 303 - XSS-1: approved Stage 3.5 source has no innerHTML sink outside the excluded Ask renderer
+  ---
+  duration_ms: 1.176065
+  ...
+# Subtest: resilience: corrupted cache JSON reads as null, not a crash
+ok 304 - resilience: corrupted cache JSON reads as null, not a crash
+  ---
+  duration_ms: 1.302023
+  ...
+# Subtest: resilience: missing optional player fields default safely
+ok 305 - resilience: missing optional player fields default safely
+  ---
+  duration_ms: 1.813535
+  ...
+# Subtest: resilience: malformed provider responses do not poison state
+ok 306 - resilience: malformed provider responses do not poison state
+  ---
+  duration_ms: 0.993752
+  ...
+# Subtest: resilience: odds provider outage → no data, fallback note, key never relayed
+ok 307 - resilience: odds provider outage → no data, fallback note, key never relayed
+  ---
+  duration_ms: 263.508519
+  ...
+# Subtest: resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)
+ok 308 - resilience: duplicate fixture rows are collapsed, genuine doubles preserved (DUP-1 closed)
+  ---
+  duration_ms: 1.141814
+  ...
+# Subtest: resilience: unmapped team name returns null and blend degrades cleanly
+ok 309 - resilience: unmapped team name returns null and blend degrades cleanly
+  ---
+  duration_ms: 0.30848
+  ...
+# Subtest: resilience: HTML escaping covers quotes, tags and ampersands
+ok 310 - resilience: HTML escaping covers quotes, tags and ampersands
+  ---
+  duration_ms: 0.279567
+  ...
+# Subtest: resilience: bench handling — keeper cannot be outfield sub and vice versa
+ok 311 - resilience: bench handling — keeper cannot be outfield sub and vice versa
+  ---
+  duration_ms: 2.826197
+  ...
+# Subtest: transport: a healthy endpoint is fetched once and never retried
+ok 312 - transport: a healthy endpoint is fetched once and never retried
+  ---
+  duration_ms: 3.091482
+  ...
+# Subtest: transport: a transient outage is retried and can recover
+ok 313 - transport: a transient outage is retried and can recover
+  ---
+  duration_ms: 164.605832
+  ...
+# Subtest: transport: exhausted retries throw the original error for core data
+ok 314 - transport: exhausted retries throw the original error for core data
+  ---
+  duration_ms: 529.471639
+  ...
+# Subtest: transport: a network failure is transient and retried
+ok 315 - transport: a network failure is transient and retried
+  ---
+  duration_ms: 748.581058
+  ...
+# Subtest: transport: a 404 across all relays is permanent — one cascade only
+ok 316 - transport: a 404 across all relays is permanent — one cascade only
+  ---
+  duration_ms: 0.781115
+  ...
+# Subtest: transport: malformed JSON is not retried
+ok 317 - transport: malformed JSON is not retried
+  ---
+  duration_ms: 0.607777
+  ...
+# Subtest: transport: a provider "not found" reply short-circuits without retrying
+ok 318 - transport: a provider "not found" reply short-circuits without retrying
+  ---
+  duration_ms: 0.387337
+  ...
+# Subtest: transport: an optional endpoint returns null after retries are exhausted
+ok 319 - transport: an optional endpoint returns null after retries are exhausted
+  ---
+  duration_ms: 168.540744
+  ...
+# Subtest: transport: core data keeps a larger allowance than optional data
+ok 320 - transport: core data keeps a larger allowance than optional data
+  ---
+  duration_ms: 886.981543
+  ...
+# Subtest: transport: fetchVia retries transient failures then degrades to null
+ok 321 - transport: fetchVia retries transient failures then degrades to null
+  ---
+  duration_ms: 228.953992
+  ...
+# Subtest: transport: fetchVia recovers when a retry succeeds
+ok 322 - transport: fetchVia recovers when a retry succeeds
+  ---
+  duration_ms: 253.55887
+  ...
+# Subtest: transport: retry metadata is keyed by normalised endpoint, not manager id
+ok 323 - transport: retry metadata is keyed by normalised endpoint, not manager id
+  ---
+  duration_ms: 0.669248
+  ...
+# Subtest: transport: no metadata value ever contains a raw payload
+ok 324 - transport: no metadata value ever contains a raw payload
+  ---
+  duration_ms: 0.293668
+  ...
+# Subtest: retry: immediate success makes exactly one attempt and never sleeps
+ok 325 - retry: immediate success makes exactly one attempt and never sleeps
+  ---
+  duration_ms: 1.852714
+  ...
+# Subtest: retry: success after one retry
+ok 326 - retry: success after one retry
+  ---
+  duration_ms: 0.288981
+  ...
+# Subtest: retry: success after multiple retries
+ok 327 - retry: success after multiple retries
+  ---
+  duration_ms: 0.23473
+  ...
+# Subtest: retry: exhausted retries stop at the attempt ceiling and report it
+ok 328 - retry: exhausted retries stop at the attempt ceiling and report it
+  ---
+  duration_ms: 0.258966
+  ...
+# Subtest: retry: attempts are clamped — no policy can authorise an unbounded loop
+ok 329 - retry: attempts are clamped — no policy can authorise an unbounded loop
+  ---
+  duration_ms: 0.433987
+  ...
+# Subtest: retry: the elapsed-time budget stops slow failures being retried
+ok 330 - retry: the elapsed-time budget stops slow failures being retried
+  ---
+  duration_ms: 0.314399
+  ...
+# Subtest: retry: a fast-failing provider still gets its full allowance
+ok 331 - retry: a fast-failing provider still gets its full allowance
+  ---
+  duration_ms: 0.307359
+  ...
+# Subtest: retry: retryable HTTP statuses are retried
+ok 332 - retry: retryable HTTP statuses are retried
+  ---
+  duration_ms: 0.396822
+  ...
+# Subtest: retry: non-retryable HTTP statuses fail on the first attempt
+ok 333 - retry: non-retryable HTTP statuses fail on the first attempt
+  ---
+  duration_ms: 0.385135
+  ...
+# Subtest: retry: a malformed payload is never retried
+ok 334 - retry: a malformed payload is never retried
+  ---
+  duration_ms: 0.284294
+  ...
+# Subtest: retry: a schema validation failure is never retried
+ok 335 - retry: a schema validation failure is never retried
+  ---
+  duration_ms: 0.246587
+  ...
+# Subtest: retry: a timeout is treated as transient and retried
+ok 336 - retry: a timeout is treated as transient and retried
+  ---
+  duration_ms: 0.213559
+  ...
+# Subtest: retry: backoff grows exponentially, is capped, and is deterministic
+ok 337 - retry: backoff grows exponentially, is capped, and is deterministic
+  ---
+  duration_ms: 1.061704
+  ...
+# Subtest: retry: jitter always lands inside the half-to-full band
+ok 338 - retry: jitter always lands inside the half-to-full band
+  ---
+  duration_ms: 0.339907
+  ...
+# Subtest: retry: the same inputs always produce the same delay sequence
+ok 339 - retry: the same inputs always produce the same delay sequence
+  ---
+  duration_ms: 0.350342
+  ...
+# Subtest: retry: endpoint labels drop query strings so an API key can never leak
+ok 340 - retry: endpoint labels drop query strings so an API key can never leak
+  ---
+  duration_ms: 0.300468
+  ...
+# Subtest: retry: endpoint labels collapse ids so metadata cannot grow per manager
+ok 341 - retry: endpoint labels collapse ids so metadata cannot grow per manager
+  ---
+  duration_ms: 0.151306
+  ...
+# Subtest: retry: the record carries exactly the fields the health model will consume
+ok 342 - retry: the record carries exactly the fields the health model will consume
+  ---
+  duration_ms: 0.338626
+  ...
+# Subtest: retry: every shipped provider policy is bounded and conservative
+ok 343 - retry: every shipped provider policy is bounded and conservative
+  ---
+  duration_ms: 0.226899
+  ...
+# Subtest: retry: an unknown provider falls back to a real policy rather than undefined
+ok 344 - retry: an unknown provider falls back to a real policy rather than undefined
+  ---
+  duration_ms: 0.174941
+  ...
+# Subtest: the approved eight CSV tables and deterministic filenames are exact
+ok 345 - the approved eight CSV tables and deterministic filenames are exact
+  ---
+  duration_ms: 58.133183
+  ...
+# Subtest: CSV preserves numeric zero, leaves null blank and blocks spreadsheet formulas
+ok 346 - CSV preserves numeric zero, leaves null blank and blocks spreadsheet formulas
+  ---
+  duration_ms: 0.326718
+  ...
+# Subtest: analysis exports omit manager reference while exact JSON sources remain intact
+ok 347 - analysis exports omit manager reference while exact JSON sources remain intact
+  ---
+  duration_ms: 29.569853
+  ...
+# Subtest: Markdown uses descriptive wording and labels the Hindsight oracle fully
+ok 348 - Markdown uses descriptive wording and labels the Hindsight oracle fully
+  ---
+  duration_ms: 23.905692
+  ...
+# Subtest: operating review remains subordinate, phone-first and manual-Sheets only
+ok 349 - operating review remains subordinate, phone-first and manual-Sheets only
+  ---
+  duration_ms: 1.884041
+  ...
+# Subtest: review engine is downstream-only and does not call production model functions
+ok 350 - review engine is downstream-only and does not call production model functions
+  ---
+  duration_ms: 1.208052
+  ...
+# Subtest: build order places review after metrics and UI review after metric storage
+ok 351 - build order places review after metrics and UI review after metric storage
+  ---
+  duration_ms: 0.268751
+  ...
+# Subtest: review source preserves the class-only CSP boundary
+ok 352 - review source preserves the class-only CSP boundary
+  ---
+  duration_ms: 0.643891
+  ...
+# Subtest: hydrate: a valid snapshot loads clean and reports no issues
+ok 353 - hydrate: a valid snapshot loads clean and reports no issues
+  ---
+  duration_ms: 3.10331
+  ...
+# Subtest: hydrate: a fatal cached snapshot is refused and does NOT poison existing state
+ok 354 - hydrate: a fatal cached snapshot is refused and does NOT poison existing state
+  ---
+  duration_ms: 0.510522
+  ...
+# Subtest: hydrate: a non-object cached payload is fatal without throwing
+ok 355 - hydrate: a non-object cached payload is fatal without throwing
+  ---
+  duration_ms: 0.32114
+  ...
+# Subtest: hydrate: a fatal fixtures payload blocks the load rather than loading half of it
+ok 356 - hydrate: a fatal fixtures payload blocks the load rather than loading half of it
+  ---
+  duration_ms: 0.375159
+  ...
+# Subtest: hydrate: partial row damage still loads, keeping every valid row
+ok 357 - hydrate: partial row damage still loads, keeping every valid row
+  ---
+  duration_ms: 0.30156
+  ...
+# Subtest: hydrate: fixture and bootstrap issues are reported together on one load
+ok 358 - hydrate: fixture and bootstrap issues are reported together on one load
+  ---
+  duration_ms: 0.351936
+  ...
+# Subtest: hydrate: resets issues each load so stale reports do not accumulate
+ok 359 - hydrate: resets issues each load so stale reports do not accumulate
+  ---
+  duration_ms: 0.349391
+  ...
+# Subtest: recordIssues: optional-provider reports are idempotent across repeat loads
+ok 360 - recordIssues: optional-provider reports are idempotent across repeat loads
+  ---
+  duration_ms: 0.317193
+  ...
+# Subtest: schema/bootstrap: a valid payload passes clean and preserves unknown fields
+ok 361 - schema/bootstrap: a valid payload passes clean and preserves unknown fields
+  ---
+  duration_ms: 2.396295
+  ...
+# Subtest: schema/bootstrap: a non-object top-level payload is fatal
+ok 362 - schema/bootstrap: a non-object top-level payload is fatal
+  ---
+  duration_ms: 0.364083
+  ...
+# Subtest: schema/bootstrap: a missing required collection is fatal and names the fields
+ok 363 - schema/bootstrap: a missing required collection is fatal and names the fields
+  ---
+  duration_ms: 0.263603
+  ...
+# Subtest: schema/bootstrap: invalid and duplicate rows are dropped, valid rows retained
+ok 364 - schema/bootstrap: invalid and duplicate rows are dropped, valid rows retained
+  ---
+  duration_ms: 0.356782
+  ...
+# Subtest: schema/bootstrap: the provider payload is never mutated
+ok 365 - schema/bootstrap: the provider payload is never mutated
+  ---
+  duration_ms: 0.240128
+  ...
+# Subtest: schema/bootstrap: bootstrapStructure is fatal-only and does not filter rows
+ok 366 - schema/bootstrap: bootstrapStructure is fatal-only and does not filter rows
+  ---
+  duration_ms: 0.183804
+  ...
+# Subtest: schema/entry: valid entry passes; a null (not found) is not a failure
+ok 367 - schema/entry: valid entry passes; a null (not found) is not a failure
+  ---
+  duration_ms: 0.447518
+  ...
+# Subtest: schema/entry: non-object is fatal; a missing name degrades to partial
+ok 368 - schema/entry: non-object is fatal; a missing name degrades to partial
+  ---
+  duration_ms: 0.273868
+  ...
+# Subtest: schema/picks: a valid payload passes and tolerates unknown fields
+ok 369 - schema/picks: a valid payload passes and tolerates unknown fields
+  ---
+  duration_ms: 0.606285
+  ...
+# Subtest: schema/picks: non-object and missing picks[] are both fatal
+ok 370 - schema/picks: non-object and missing picks[] are both fatal
+  ---
+  duration_ms: 0.343212
+  ...
+# Subtest: schema/picks: mixed rows — invalid dropped, first of a duplicate element kept
+ok 371 - schema/picks: mixed rows — invalid dropped, first of a duplicate element kept
+  ---
+  duration_ms: 1.344336
+  ...
+# Subtest: schema/picks: the rival endpoint label is carried through onto the issues
+ok 372 - schema/picks: the rival endpoint label is carried through onto the issues
+  ---
+  duration_ms: 0.185367
+  ...
+# Subtest: schema/history: chips absent is legitimate, not an issue
+ok 373 - schema/history: chips absent is legitimate, not an issue
+  ---
+  duration_ms: 0.279437
+  ...
+# Subtest: schema/history: a wrong-typed chips field degrades to an empty list, reported
+ok 374 - schema/history: a wrong-typed chips field degrades to an empty list, reported
+  ---
+  duration_ms: 0.313398
+  ...
+# Subtest: schema/history: invalid chip rows are dropped, valid ones retained
+ok 375 - schema/history: invalid chip rows are dropped, valid ones retained
+  ---
+  duration_ms: 0.287208
+  ...
+# Subtest: schema/standings: valid payload passes; missing results[] is fatal
+ok 376 - schema/standings: valid payload passes; missing results[] is fatal
+  ---
+  duration_ms: 0.480887
+  ...
+# Subtest: schema/standings: invalid and duplicate rows are partial, valid rows survive
+ok 377 - schema/standings: invalid and duplicate rows are partial, valid rows survive
+  ---
+  duration_ms: 0.223453
+  ...
+# Subtest: schema/understat: valid map passes; unusable teams are dropped as partial
+ok 378 - schema/understat: valid map passes; unusable teams are dropped as partial
+  ---
+  duration_ms: 0.447017
+  ...
+# Subtest: schema/understat: no usable teams is fatal so the FPL-ratings fallback engages
+ok 379 - schema/understat: no usable teams is fatal so the FPL-ratings fallback engages
+  ---
+  duration_ms: 0.188802
+  ...
+# Subtest: schema/odds: valid array passes; bad events dropped without killing the feed
+ok 380 - schema/odds: valid array passes; bad events dropped without killing the feed
+  ---
+  duration_ms: 0.332326
+  ...
+# Subtest: schema/odds: a non-array payload is fatal and yields no events
+ok 381 - schema/odds: a non-array payload is fatal and yields no events
+  ---
+  duration_ms: 0.233058
+  ...
+# Subtest: schema/archive: a valid header passes; missing columns are fatal and named
+ok 382 - schema/archive: a valid header passes; missing columns are fatal and named
+  ---
+  duration_ms: 0.224255
+  ...
+# Subtest: schema/issues: pooled fan-out collapses to one issue per provider+endpoint+code
+ok 383 - schema/issues: pooled fan-out collapses to one issue per provider+endpoint+code
+  ---
+  duration_ms: 0.383021
+  ...
+# Subtest: schema/issues: summaries stay payload-free across every endpoint
+ok 384 - schema/issues: summaries stay payload-free across every endpoint
+  ---
+  duration_ms: 0.535499
+  ...
+# Subtest: schema/issues: every issue carries the machine-readable identity fields
+ok 385 - schema/issues: every issue carries the machine-readable identity fields
+  ---
+  duration_ms: 0.19428
+  ...
+# Subtest: schema/entry: malformed optional league rank fields degrade to unavailable
+ok 386 - schema/entry: malformed optional league rank fields degrade to unavailable
+  ---
+  duration_ms: 0.22109
+  ...
+# Subtest: schema/picks: optional captain, vice, multiplier and chip fields fail partial without losing ownership
+ok 387 - schema/picks: optional captain, vice, multiplier and chip fields fail partial without losing ownership
+  ---
+  duration_ms: 0.369711
+  ...
+# Subtest: schema/picks: duplicate positions and ambiguous captain context are reported but player IDs remain
+ok 388 - schema/picks: duplicate positions and ambiguous captain context are reported but player IDs remain
+  ---
+  duration_ms: 0.195011
+  ...
+# Subtest: schema/standings: malformed optional movement and Gameweek totals are removed
+ok 389 - schema/standings: malformed optional movement and Gameweek totals are removed
+  ---
+  duration_ms: 0.151586
+  ...
+# Subtest: Stage 8 model and rules versions are explicit
+ok 390 - Stage 8 model and rules versions are explicit
+  ---
+  duration_ms: 1.595931
+  ...
+# Subtest: Poisson tail handles zero and threshold bounds
+ok 391 - Poisson tail handles zero and threshold bounds
+  ---
+  duration_ms: 0.363162
+  ...
+# Subtest: save groups are stepped rather than lambda divided by three
+ok 392 - save groups are stepped rather than lambda divided by three
+  ---
+  duration_ms: 0.180279
+  ...
+# Subtest: goals-conceded groups apply negative points per complete pair
+ok 393 - goals-conceded groups apply negative points per complete pair
+  ---
+  duration_ms: 0.120961
+  ...
+# Subtest: defensive-contribution threshold remains bounded by two points
+ok 394 - defensive-contribution threshold remains bounded by two points
+  ---
+  duration_ms: 0.162082
+  ...
+# Subtest: rare-event shrinkage remains finite with no player exposure
+ok 395 - rare-event shrinkage remains finite with no player exposure
+  ---
+  duration_ms: 0.165587
+  ...
+# Subtest: goalkeeper scoring exposes stepped saves and conceded parts
+ok 396 - goalkeeper scoring exposes stepped saves and conceded parts
+  ---
+  duration_ms: 1.088745
+  ...
+# Subtest: outfield scoring exposes explicit disciplinary components
+ok 397 - outfield scoring exposes explicit disciplinary components
+  ---
+  duration_ms: 0.40907
+  ...
+# Subtest: penalty role gates unlisted takers to the population prior
+ok 398 - penalty role gates unlisted takers to the population prior
+  ---
+  duration_ms: 0.255451
+  ...
+# Subtest: bonus uses awarded bonus per appearance without fixture multiplier
+ok 399 - bonus uses awarded bonus per appearance without fixture multiplier
+  ---
+  duration_ms: 0.725553
+  ...
+# Subtest: aggregate bonus appearances reuse the Stage 4 appearance estimate
+ok 400 - aggregate bonus appearances reuse the Stage 4 appearance estimate
+  ---
+  duration_ms: 0.407328
+  ...
+# Subtest: defensive contributions use appearance probability rather than p60 eligibility
+ok 401 - defensive contributions use appearance probability rather than p60 eligibility
+  ---
+  duration_ms: 0.359717
+  ...
+# Subtest: fixture run score gives a genuine blank zero and a double both fixtures
+ok 402 - fixture run score gives a genuine blank zero and a double both fixtures
+  ---
+  duration_ms: 0.420106
+  ...
+# Subtest: rare-rate helper uses position population shrinkage
+ok 403 - rare-rate helper uses position population shrinkage
+  ---
+  duration_ms: 0.206558
+  ...
+# Subtest: SEC-1: odds key is direct-only; failures degrade to internal model, never relay
+ok 404 - SEC-1: odds key is direct-only; failures degrade to internal model, never relay
+  ---
+  duration_ms: 400.637736
+  ...
+# Subtest: odds secret scrubber removes raw and encoded key material plus apiKey values
+ok 405 - odds secret scrubber removes raw and encoded key material plus apiKey values
+  ---
+  duration_ms: 1.350916
+  ...
+# Subtest: forget odds key clears field, storage property and active odds state
+ok 406 - forget odds key clears field, storage property and active odds state
+  ---
+  duration_ms: 0.908716
+  ...
+# Subtest: storage source omits an empty odds key rather than persisting an empty secret
+ok 407 - storage source omits an empty odds key rather than persisting an empty secret
+  ---
+  duration_ms: 0.38203
+  ...
+# Subtest: built UI masks the key and provides the one-action forget control
+ok 408 - built UI masks the key and provides the one-action forget control
+  ---
+  duration_ms: 3.347084
+  ...
+# Subtest: CSP hashes independently match the exact emitted inline script and style
+ok 409 - CSP hashes independently match the exact emitted inline script and style
+  ---
+  duration_ms: 6.458736
+  ...
+# Subtest: CSP removes every unsafe-inline concession and retains provider origins
+ok 410 - CSP removes every unsafe-inline concession and retains provider origins
+  ---
+  duration_ms: 3.267685
+  ...
+# Subtest: source and generated deployable contain no inline style attributes or runtime style APIs
+ok 411 - source and generated deployable contain no inline style attributes or runtime style APIs
+  ---
+  duration_ms: 11.029725
+  ...
+# Subtest: dynamic visual geometry uses style-free progress and SVG attributes
+ok 412 - dynamic visual geometry uses style-free progress and SVG attributes
+  ---
+  duration_ms: 0.331394
+  ...
+# Subtest: frame-buster and current Stage 3 modules are inside the single hashed bundle
+ok 413 - frame-buster and current Stage 3 modules are inside the single hashed bundle
+  ---
+  duration_ms: 2.215515
+  ...
+# Subtest: generated artefacts contain no planted odds secret
+ok 414 - generated artefacts contain no planted odds secret
+  ---
+  duration_ms: 4.511651
+  ...
+# Subtest: approved Settings hierarchy has route-owned landings and child destinations
+ok 415 - approved Settings hierarchy has route-owned landings and child destinations
+  ---
+  duration_ms: 1.624063
+  ...
+# Subtest: unknown nested Settings routes fail to their nearest approved landing
+ok 416 - unknown nested Settings routes fail to their nearest approved landing
+  ---
+  duration_ms: 0.141862
+  ...
+# Subtest: evidence modules use explicit hosts instead of sibling or parent DOM inference
+ok 417 - evidence modules use explicit hosts instead of sibling or parent DOM inference
+  ---
+  duration_ms: 0.461088
+  ...
+# Subtest: exports, recovery and deletion have distinct destinations and scopes
+ok 418 - exports, recovery and deletion have distinct destinations and scopes
+  ---
+  duration_ms: 0.165888
+  ...
+# Subtest: Help and About exposes guidance, limitations, privacy, operations and real build identity
+ok 419 - Help and About exposes guidance, limitations, privacy, operations and real build identity
+  ---
+  duration_ms: 0.273688
+  ...
+# Subtest: material warning hierarchy is consequence-led and wired to affected primary routes
+ok 420 - material warning hierarchy is consequence-led and wired to affected primary routes
+  ---
+  duration_ms: 0.230744
+  ...
+# Subtest: Player Explorer keeps ranking logic but uses mobile card metadata
+ok 421 - Player Explorer keeps ranking logic but uses mobile card metadata
+  ---
+  duration_ms: 0.142062
+  ...
+# Subtest: route focus is owned by exact headings and remembers the opener for Back navigation
+not ok 422 - route focus is owned by exact headings and remembers the opener for Back navigation
+  ---
+  duration_ms: 1.197536
+  location: '/home/runner/work/FPL/FPL/tests/settings-organisation.test.mjs:78:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Missing document.contains?.(remembered)
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///home/runner/work/FPL/FPL/tests/settings-organisation.test.mjs:16:65
+    Array.forEach (<anonymous>)
+    includesAll (file:///home/runner/work/FPL/FPL/tests/settings-organisation.test.mjs:16:43)
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/settings-organisation.test.mjs:79:3)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: Settings routes and status surfaces never encode private or record identities
+ok 423 - Settings routes and status surfaces never encode private or record identities
+  ---
+  duration_ms: 0.364865
+  ...
+# Subtest: seeded RNG is deterministic and bounded
+ok 424 - seeded RNG is deterministic and bounded
+  ---
+  duration_ms: 1.817131
+  ...
+# Subtest: minutes distribution preserves approved marginals
+ok 425 - minutes distribution preserves approved marginals
+  ---
+  duration_ms: 0.414559
+  ...
+# Subtest: sampled minutes converge to expected minutes
+ok 426 - sampled minutes converge to expected minutes
+  ---
+  duration_ms: 11.648047
+  ...
+# Subtest: inconsistent minutes are bounded and labelled reduced
+ok 427 - inconsistent minutes are bounded and labelled reduced
+  ---
+  duration_ms: 0.172828
+  ...
+# Subtest: summary thresholds and percentile order are stable
+ok 428 - summary thresholds and percentile order are stable
+  ---
+  duration_ms: 0.400537
+  ...
+# Subtest: Poisson sampler handles zero and remains deterministic
+ok 429 - Poisson sampler handles zero and remains deterministic
+  ---
+  duration_ms: 0.388459
+  ...
+# Subtest: legal XI enforces official formation minimums
+ok 430 - legal XI enforces official formation minimums
+  ---
+  duration_ms: 1.80326
+  ...
+# Subtest: reserve goalkeeper only replaces a missing goalkeeper
+ok 431 - reserve goalkeeper only replaces a missing goalkeeper
+  ---
+  duration_ms: 0.495029
+  ...
+# Subtest: outfield bench order is respected while preserving formation
+ok 432 - outfield bench order is respected while preserving formation
+  ---
+  duration_ms: 0.196042
+  ...
+# Subtest: captain falls to vice only when captain does not appear
+ok 433 - captain falls to vice only when captain does not appear
+  ---
+  duration_ms: 0.171646
+  ...
+# Subtest: Stage 10.5 rejects prototype-bearing JSON keys before canonicalisation
+ok 434 - Stage 10.5 rejects prototype-bearing JSON keys before canonicalisation
+  ---
+  duration_ms: 1.524975
+  ...
+# Subtest: Stage 10.5 diagnostic redaction removes secrets, queries and account identifiers
+ok 435 - Stage 10.5 diagnostic redaction removes secrets, queries and account identifiers
+  ---
+  duration_ms: 0.747485
+  ...
+# Subtest: Stage 10.5 journals are strict and current pointers reconcile deterministically
+ok 436 - Stage 10.5 journals are strict and current pointers reconcile deterministically
+  ---
+  duration_ms: 0.714296
+  ...
+# Subtest: Stage 10.5 diagnostics are bounded and owner-safe
+ok 437 - Stage 10.5 diagnostics are bounded and owner-safe
+  ---
+  duration_ms: 0.762788
+  ...
+# Subtest: Stage 10.5 transfer records reject version mismatch and forbidden evidence
+ok 438 - Stage 10.5 transfer records reject version mismatch and forbidden evidence
+  ---
+  duration_ms: 2.422233
+  ...
+# Subtest: Stage 10.5 CSV neutralises line-feed formula text without changing numeric negatives
+ok 439 - Stage 10.5 CSV neutralises line-feed formula text without changing numeric negatives
+  ---
+  duration_ms: 0.238386
+  ...
+# Subtest: Stage 10.5 download helper reports only a request and delays URL cleanup
+ok 440 - Stage 10.5 download helper reports only a request and delays URL cleanup
+  ---
+  duration_ms: 0.683019
+  ...
+# Subtest: Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads
+ok 441 - Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads
+  ---
+  duration_ms: 0.320819
+  ...
+# Subtest: startup gate is silent, minimalist and visible by default
+ok 442 - startup gate is silent, minimalist and visible by default
+  ---
+  duration_ms: 1.462071
+  ...
+# Subtest: foreground refresh is due only after the approved verification age
+ok 443 - foreground refresh is due only after the approved verification age
+  ---
+  duration_ms: 0.190314
+  ...
+# Subtest: startup and foreground paths use the same deferred verified refresh
+ok 444 - startup and foreground paths use the same deferred verified refresh
+  ---
+  duration_ms: 0.203704
+  ...
+# Subtest: automatic evidence is dispatched without extending startup loading
+ok 445 - automatic evidence is dispatched without extending startup loading
+  ---
+  duration_ms: 0.437422
+  ...
+# Subtest: evidence is automatic and backup import is segregated from official records
+ok 446 - evidence is automatic and backup import is segregated from official records
+  ---
+  duration_ms: 0.352246
+  ...
+# Subtest: Team decision home is versioned as the approved checkpoint
+ok 447 - Team decision home is versioned as the approved checkpoint
+  ---
+  duration_ms: 1.238889
+  ...
+# Subtest: forecast keeps starting-XI points and captain uplift explicit
+ok 448 - forecast keeps starting-XI points and captain uplift explicit
+  ---
+  duration_ms: 0.709359
+  ...
+# Subtest: only a complete legal FPL squad can produce the decision home
+ok 449 - only a complete legal FPL squad can produce the decision home
+  ---
+  duration_ms: 0.364965
+  ...
+# Subtest: bench labels distinguish the reserve goalkeeper from ordered outfield substitutes
+ok 450 - bench labels distinguish the reserve goalkeeper from ordered outfield substitutes
+  ---
+  duration_ms: 0.346647
+  ...
+# Subtest: source wording separates Official FPL, manual and verified fallback states
+ok 451 - source wording separates Official FPL, manual and verified fallback states
+  ---
+  duration_ms: 14.857105
+  ...
+# Subtest: risk priority protects data integrity, captaincy and selected starters in that order
+ok 452 - risk priority protects data integrity, captaincy and selected starters in that order
+  ---
+  duration_ms: 0.401809
+  ...
+# Subtest: close captaincy is uncertainty context, not protect or chase strategy
+ok 453 - close captaincy is uncertainty context, not protect or chase strategy
+  ---
+  duration_ms: 0.318946
+  ...
+# Subtest: clear Team state does not pretend the transfer optimiser has recommended a roll
+ok 454 - clear Team state does not pretend the transfer optimiser has recommended a roll
+  ---
+  duration_ms: 0.267278
+  ...
+# Subtest: deadline actions remain advisory and distinguish user previews
+ok 455 - deadline actions remain advisory and distinguish user previews
+  ---
+  duration_ms: 0.304154
+  ...
+# Subtest: production wiring wraps the verified renderer without changing model modules or routes
+ok 456 - production wiring wraps the verified renderer without changing model modules or routes
+  ---
+  duration_ms: 4.459513
+  ...
+# Subtest: pitch lines preserve every starter once in football visual order
+ok 457 - pitch lines preserve every starter once in football visual order
+  ---
+  duration_ms: 1.713937
+  ...
+# Subtest: captaincy uses the first two distinct ranked starters
+ok 458 - captaincy uses the first two distinct ranked starters
+  ---
+  duration_ms: 0.277213
+  ...
+# Subtest: known club palette is repository owned and stable
+ok 459 - known club palette is repository owned and stable
+  ---
+  duration_ms: 0.282241
+  ...
+# Subtest: unknown club palette falls back deterministically to an approved pattern
+ok 460 - unknown club palette falls back deterministically to an approved pattern
+  ---
+  duration_ms: 0.378064
+  ...
+# Subtest: shirt palette classes are stable for known and fallback clubs
+ok 461 - shirt palette classes are stable for known and fallback clubs
+  ---
+  duration_ms: 0.258325
+  ...
+# Subtest: committed transfer controls cover assumptions and display controls
+ok 462 - committed transfer controls cover assumptions and display controls
+  ---
+  duration_ms: 1.638053
+  ...
+# Subtest: transfer planner signature changes for any committed assumption or display choice
+ok 463 - transfer planner signature changes for any committed assumption or display choice
+  ---
+  duration_ms: 0.277614
+  ...
+# Subtest: planning assumptions validate explicitly instead of silently coercing blanks
+ok 464 - planning assumptions validate explicitly instead of silently coercing blanks
+  ---
+  duration_ms: 0.302501
+  ...
+# Subtest: presentation state distinguishes transfer winner, baseline winner and baseline-only evidence
+ok 465 - presentation state distinguishes transfer winner, baseline winner and baseline-only evidence
+  ---
+  duration_ms: 0.225045
+  ...
+# Subtest: no-transfer wording describes FT consequences without overstating incomplete evidence
+ok 466 - no-transfer wording describes FT consequences without overstating incomplete evidence
+  ---
+  duration_ms: 0.331074
+  ...
+# Subtest: net label calls the output a model comparison rather than promised points
+ok 467 - net label calls the output a model comparison rather than promised points
+  ---
+  duration_ms: 0.151576
+  ...
+# Subtest: plan names resolve known players and retain deterministic ID fallbacks
+ok 468 - plan names resolve known players and retain deterministic ID fallbacks
+  ---
+  duration_ms: 0.215111
+  ...
+# Subtest: any active transfer or captaincy comparison is recognised before invalidation
+ok 469 - any active transfer or captaincy comparison is recognised before invalidation
+  ---
+  duration_ms: 0.164626
+  ...
+# Subtest: workspace keeps the optimiser authoritative while removing the technical table and obsolete route selector
+ok 470 - workspace keeps the optimiser authoritative while removing the technical table and obsolete route selector
+  ---
+  duration_ms: 1.130236
+  ...
+# Subtest: app shell exposes accessible assumptions, live status and corrected display limits
+not ok 471 - app shell exposes accessible assumptions, live status and corrected display limits
+  ---
+  duration_ms: 2.991162
+  location: '/home/runner/work/FPL/FPL/tests/transfer-optimiser-view.test.mjs:104:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /<option value="20">Top 20<\/option>/. Input:
+    
+    '<!DOCTYPE html>\n' +
+      '<html lang="en-GB">\n' +
+      '<head>\n' +
+      '<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
+      '<meta name="apple-mobile-web-app-capable" content="yes">\n' +
+      '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n' +
+      '<title>Teamsheet — FPL decisions</title>\n' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
+      '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
+      '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">\n' +
+      '<style>\n' +
+      ':root{\n' +
+      '  --paper:#EFF1EC; --panel:#FFFFFF; --ink:#14261C; --ink-soft:#4A5A50; --line:#D3D8CE;\n' +
+      '  --pitch:#1F5C3A; --claret:#7A1E38; --amber:#C9922B; --info:#2E6F9E;\n' +
+      '  --fdr1:#137A4B; --fdr2:#4FA06B; --fdr3:#B9B08A; --fdr4:#C4703C; --fdr5:#9E2B2B;\n' +
+      '  --r:10px; --shadow:0 1px 0 rgba(20,38,28,.06), 0 6px 18px -12px rgba(20,38,28,.35);\n' +
+      '}\n' +
+      '*{box-sizing:border-box}\n' +
+      'html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}\n' +
+      "body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;\n" +
+      '  font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}\n' +
+      'body.startup-pending{overflow:hidden}\n' +
+      '.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}\n' +
+      '.startup-gate[hidden]{display:none}\n' +
+      '.startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}\n' +
+      ".startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}\n" +
+      ".startup-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B9C9BF}\n" +
+      '.startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:10px 0 0;overflow:hidden}\n' +
+      '.startup-pitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.34)}\n' +
+      '.startup-pitch:after{content:"";position:absolute;width:20px;height:20px;border:1px solid rgba(255,255,255,.34);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}\n' +
+      '.startup-ball{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);left:14px;top:23px;animation:startup-scan 1.7s ease-in-out infinite alternate}\n' +
+      '@keyframes startup-scan{to{transform:translateX(48px)}}\n' +
+      '@media(prefers-reduced-motion:reduce){.startup-ball{animation:none;left:38px}}\n' +
+      "h1,h2,h3{font-family:'Bricolage Grotesque','Public Sans',sans-serif;margin:0;letter-spacing:-.02em;font-weight:800}\n" +
+      'h3{font-size:14px}\n' +
+      ".mono{font-family:'IBM Plex Mono',ui-monospace,monospace}\n" +
+      'button{font:inherit;cursor:pointer}\n' +
+      'a{color:var(--info)}\n' +
+      '\n' +
+      'header{background:var(--ink);color:var(--paper);padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0));position:relative;overflow:hidden}\n' +
+      'header:after{content:"";position:absolute;inset:auto 0 0 0;height:3px;\n' +
+      '  background:linear-gradient(90deg,var(--pitch) 0 33%,var(--amber) 33% 66%,var(--claret) 66% 100%)}\n' +
+      '.masthead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}\n' +
+      '.masthead h1{font-size:26px;line-height:1;color:#fff}\n' +
+      ".masthead .sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9FB5A8;font-family:'IBM Plex Mono',monospace}\n" +
+      ".gwstrip{margin-top:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#B9C9BF;font-family:'IBM Plex Mono',monospace}\n" +
+      '.gwstrip b{color:#fff;font-weight:600}\n' +
+      '.gwstrip .live{color:var(--amber)}\n' +
+      '\n' +
+      'main{max-width:980px;margin:0 auto;padding:16px}\n' +
+      '.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}\n' +
+      '.panel > h2{font-size:17px;margin-bottom:2px}\n' +
+      '.panel > .hint{color:var(--ink-soft);font-size:13px;margin:2px 0 14px}\n' +
+      ".eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}\n" +
+      '\n' +
+      '.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}\n' +
+      'input[type=text],input[type=number],select{font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:0}\n' +
+      'input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible,textarea:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}\n' +
+      '.btn{background:var(--ink);color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:600}\n' +
+      '.btn:hover{background:#20392B}\n' +
+      '.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}\n' +
+      '.btn.ghost:hover{background:#F4F6F2}\n' +
+      '.btn.claret{background:var(--claret)}\n' +
+      '.btn.sm{padding:6px 10px;font-size:12.5px}\n' +
+      '.btn:disabled{opacity:.45;cursor:not-allowed}\n' +
+      'label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-weight:500}\n' +
+      '.check{display:flex;gap:8px;align-items:center;min-height:44px;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:0}\n' +
+      '\n' +
+      'nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);\n' +
+      '  border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0))}\n' +
+      '.tab{flex:1;background:none;border:0;border-radius:8px;padding:8px 1px;display:flex;flex-direction:column;align-items:center;gap:3px;\n' +
+      '  color:var(--ink-soft);font-size:10px;font-weight:600}\n' +
+      '.tab .ic{font-size:16px;line-height:1}\n' +
+      '.tab[aria-selected=true],.tab[aria-current=page]{color:var(--claret);background:#F7EEF0}\n' +
+      '.tab{text-decoration:none;min-width:0}.tab-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n' +
+      '.view[hidden],.settings-subview[hidden],#settingsLanding[hidden]{display:none}\n' +
+      '\n' +
+      '.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;margin:0 -16px;padding:0 16px}\n' +
+      'table.ticker{border-collapse:separate;border-spacing:4px;min-width:100%}\n' +
+      "table.ticker th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;\n" +
+      '  color:var(--ink-soft);font-weight:500;text-align:center;padding-bottom:2px;white-space:nowrap}\n' +
+      'table.ticker th.tm{text-align:left;padding-left:2px}\n' +
+      "td.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;\n" +
+      '  position:sticky;left:0;background:var(--panel);z-index:2}\n' +
+      "td.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}\n" +
+      ".cell{min-width:48px;min-height:38px;border-radius:7px;color:#fff;text-align:center;font-family:'IBM Plex Mono',monospace;\n" +
+      '  font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;\n' +
+      '  animation:flip .34s ease both;padding:2px 0}\n' +
+      '.cell small{font-size:9px;font-weight:400;opacity:.88}\n' +
+      '.cell.blank{background:#E4E7E0;color:#8A968E;font-weight:400}\n' +
+      '.cell.d1{background:var(--fdr1)}.cell.d2{background:var(--fdr2)}\n' +
+      '.cell.d3{background:var(--fdr3);color:#25281C}.cell.d4{background:var(--fdr4)}.cell.d5{background:var(--fdr5)}\n' +
+      '.cell.dbl{box-shadow:inset 0 0 0 2px #fff,0 0 0 2px var(--amber)}\n' +
+      '@keyframes flip{from{opacity:0;transform:translateY(-5px) scaleY(.7)}to{opacity:1;transform:none}}\n' +
+      '@media (prefers-reduced-motion:reduce){.cell{animation:none}}\n' +
+      '.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--ink-soft);align-items:center}\n' +
+      '.swatch{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-2px;margin-right:4px}\n' +
+      '\n' +
+      '.scroll{overflow-x:auto;margin:0 -16px;padding:0 16px}\n' +
+      'table.data{border-collapse:collapse;width:100%;font-size:13px;min-width:600px}\n' +
+      "table.data th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;text-transform:uppercase;\n" +
+      '  color:var(--ink-soft);font-weight:500;border-bottom:1px solid var(--line);padding:6px 8px;white-space:nowrap}\n' +
+      'table.data th.sortable{cursor:pointer}\n' +
+      'table.data th.sortable:hover{color:var(--ink)}\n' +
+      'table.data td{padding:8px;border-bottom:1px solid #EDEFEA;vertical-align:middle}\n' +
+      'table.data tr:last-child td{border-bottom:0}\n' +
+      'table.data tr.clickable{cursor:pointer}\n' +
+      'table.data tr.clickable:hover{background:#F7F9F5}\n' +
+      '.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}\n' +
+      '.player-row-action{display:block;width:100%;min-height:44px;padding:6px 4px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer}\n' +
+      '.player-row-action:hover{background:#F7F9F5}\n' +
+      '.player-row-action:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}\n' +
+      "table.data td.num,table.data th.num{text-align:right;font-family:'IBM Plex Mono',monospace}\n" +
+      '.pname{font-weight:600;display:block}\n' +
+      ".pmeta{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}\n" +
+      ".pos{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 5px;border-radius:4px;background:#E8EBE5;color:var(--ink-soft)}\n" +
+      ".xp{font-family:'IBM Plex Mono',monospace;font-weight:600;padding:2px 7px;border-radius:20px;background:#EAF0EB;color:var(--pitch);\n" +
+      '  display:inline-block;min-width:42px;text-align:center}\n' +
+      '.xp.hot{background:var(--pitch);color:#fff}\n' +
+      '\n' +
+      ".flag{display:inline-block;font-size:10px;font-family:'IBM Plex Mono',monospace;padding:1px 6px;border-radius:20px;margin-left:5px;vertical-align:1px}\n" +
+      '.flag.out{background:#F6E3E3;color:#9E2B2B}\n' +
+      '.flag.doubt{background:#FAF0DC;color:#8A6415}\n' +
+      '.flag.rise{background:#E3F1E8;color:#137A4B}\n' +
+      '.flag.fall{background:#F6E3E3;color:#9E2B2B}\n' +
+      '.flag.info{background:#E5EEF5;color:#2E6F9E}\n' +
+      '.flag.da'... 62891 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    <!DOCTYPE html>
+    <html lang="en-GB">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Teamsheet — FPL decisions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+    :root{
+      --paper:#EFF1EC; --panel:#FFFFFF; --ink:#14261C; --ink-soft:#4A5A50; --line:#D3D8CE;
+      --pitch:#1F5C3A; --claret:#7A1E38; --amber:#C9922B; --info:#2E6F9E;
+      --fdr1:#137A4B; --fdr2:#4FA06B; --fdr3:#B9B08A; --fdr4:#C4703C; --fdr5:#9E2B2B;
+      --r:10px; --shadow:0 1px 0 rgba(20,38,28,.06), 0 6px 18px -12px rgba(20,38,28,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+    body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
+      font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
+    body.startup-pending{overflow:hidden}
+    .startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+    .startup-gate[hidden]{display:none}
+    .startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
+    .startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
+    .startup-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B9C9BF}
+    .startup-pitch{position:relative;width:84px;height:54px;border:1px solid rgba(255,255,255,.42);border-radius:8px;margin:10px 0 0;overflow:hidden}
+    .startup-pitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.34)}
+    .startup-pitch:after{content:"";position:absolute;width:20px;height:20px;border:1px solid rgba(255,255,255,.34);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+    .startup-ball{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);left:14px;top:23px;animation:startup-scan 1.7s ease-in-out infinite alternate}
+    @keyframes startup-scan{to{transform:translateX(48px)}}
+    @media(prefers-reduced-motion:reduce){.startup-ball{animation:none;left:38px}}
+    h1,h2,h3{font-family:'Bricolage Grotesque','Public Sans',sans-serif;margin:0;letter-spacing:-.02em;font-weight:800}
+    h3{font-size:14px}
+    .mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+    button{font:inherit;cursor:pointer}
+    a{color:var(--info)}
+    
+    header{background:var(--ink);color:var(--paper);padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0));position:relative;overflow:hidden}
+    header:after{content:"";position:absolute;inset:auto 0 0 0;height:3px;
+      background:linear-gradient(90deg,var(--pitch) 0 33%,var(--amber) 33% 66%,var(--claret) 66% 100%)}
+    .masthead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+    .masthead h1{font-size:26px;line-height:1;color:#fff}
+    .masthead .sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9FB5A8;font-family:'IBM Plex Mono',monospace}
+    .gwstrip{margin-top:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#B9C9BF;font-family:'IBM Plex Mono',monospace}
+    .gwstrip b{color:#fff;font-weight:600}
+    .gwstrip .live{color:var(--amber)}
+    
+    main{max-width:980px;margin:0 auto;padding:16px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+    .panel > h2{font-size:17px;margin-bottom:2px}
+    .panel > .hint{color:var(--ink-soft);font-size:13px;margin:2px 0 14px}
+    .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+    
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+    input[type=text],input[type=number],select{font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+    input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible,textarea:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
+    .btn{background:var(--ink);color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:600}
+    .btn:hover{background:#20392B}
+    .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+    .btn.ghost:hover{background:#F4F6F2}
+    .btn.claret{background:var(--claret)}
+    .btn.sm{padding:6px 10px;font-size:12.5px}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-weight:500}
+    .check{display:flex;gap:8px;align-items:center;min-height:44px;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:0}
+    
+    nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+      border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0))}
+    .tab{flex:1;background:none;border:0;border-radius:8px;padding:8px 1px;display:flex;flex-direction:column;align-items:center;gap:3px;
+      color:var(--ink-soft);font-size:10px;font-weight:600}
+    .tab .ic{font-size:16px;line-height:1}
+    .tab[aria-selected=true],.tab[aria-current=page]{color:var(--claret);background:#F7EEF0}
+    .tab{text-decoration:none;min-width:0}.tab-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .view[hidden],.settings-subview[hidden],#settingsLanding[hidden]{display:none}
+    
+    .ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;margin:0 -16px;padding:0 16px}
+    table.ticker{border-collapse:separate;border-spacing:4px;min-width:100%}
+    table.ticker th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--ink-soft);font-weight:500;text-align:center;padding-bottom:2px;white-space:nowrap}
+    table.ticker th.tm{text-align:left;padding-left:2px}
+    td.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;
+      position:sticky;left:0;background:var(--panel);z-index:2}
+    td.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}
+    .cell{min-width:48px;min-height:38px;border-radius:7px;color:#fff;text-align:center;font-family:'IBM Plex Mono',monospace;
+      font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;
+      animation:flip .34s ease both;padding:2px 0}
+    .cell small{font-size:9px;font-weight:400;opacity:.88}
+    .cell.blank{background:#E4E7E0;color:#8A968E;font-weight:400}
+    .cell.d1{background:var(--fdr1)}.cell.d2{background:var(--fdr2)}
+    .cell.d3{background:var(--fdr3);color:#25281C}.cell.d4{background:var(--fdr4)}.cell.d5{background:var(--fdr5)}
+    .cell.dbl{box-shadow:inset 0 0 0 2px #fff,0 0 0 2px var(--amber)}
+    @keyframes flip{from{opacity:0;transform:translateY(-5px) scaleY(.7)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){.cell{animation:none}}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--ink-soft);align-items:center}
+    .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-2px;margin-right:4px}
+    
+    .scroll{overflow-x:auto;margin:0 -16px;padding:0 16px}
+    table.data{border-collapse:collapse;width:100%;font-size:13px;min-width:600px}
+    table.data th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+      color:var(--ink-soft);font-weight:500;border-bottom:1px solid var(--line);padding:6px 8px;white-space:nowrap}
+    table.data th.sortable{cursor:pointer}
+    table.data th.sortable:hover{color:var(--ink)}
+    table.data td{padding:8px;border-bottom:1px solid #EDEFEA;vertical-align:middle}
+    table.data tr:last-child td{border-bottom:0}
+    table.data tr.clickable{cursor:pointer}
+    table.data tr.clickable:hover{background:#F7F9F5}
+    .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+    .player-row-action{display:block;width:100%;min-height:44px;padding:6px 4px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+    .player-row-action:hover{background:#F7F9F5}
+    .player-row-action:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
+    table.data td.num,table.data th.num{text-align:right;font-family:'IBM Plex Mono',monospace}
+    .pname{font-weight:600;display:block}
+    .pmeta{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+    .pos{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 5px;border-radius:4px;background:#E8EBE5;color:var(--ink-soft)}
+    .xp{font-family:'IBM Plex Mono',monospace;font-weight:600;padding:2px 7px;border-radius:20px;background:#EAF0EB;color:var(--pitch);
+      display:inline-block;min-width:42px;text-align:center}
+    .xp.hot{background:var(--pitch);color:#fff}
+    
+    .flag{display:inline-block;font-size:10px;font-family:'IBM Plex Mono',monospace;padding:1px 6px;border-radius:20px;margin-left:5px;vertical-align:1px}
+    .flag.out{background:#F6E3E3;color:#9E2B2B}
+    .flag.doubt{background:#FAF0DC;color:#8A6415}
+    .flag.rise{background:#E3F1E8;color:#137A4B}
+    .flag.fall{background:#F6E3E3;color:#9E2B2B}
+    .flag.info{background:#E5EEF5;color:#2E6F9E}
+    .flag.dark{background:#E8EBE5;color:#4A5A50}
+    
+    .note{border-left:3px solid var(--amber);background:#FCF8EF;padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px;margin:10px 0}
+    .note.bad{border-color:var(--claret);background:#FBF0F2}
+    .note.good{border-color:var(--pitch);background:#EFF6F1}
+    .note.plain{border-color:var(--line);background:#F7F9F5}
+    .empty{text-align:center;padding:26px 12px;color:var(--ink-soft)}
+    .empty strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;color:var(--ink);margin-bottom:5px}
+    
+    .capgrid{display:grid;gap:10px}
+    .capcard{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center}
+    .capcard.top{border-color:var(--pitch);border-width:2px;background:#F5FAF6}
+    .rank{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;color:var(--line);min-width:30px;text-align:center}
+    .capcard.top .rank{color:var(--pitch)}
+    .capbody{flex:1;min-width:0}
+    .capbody .why{font-size:12px;color:var(--ink-soft);margin-top:2px}
+    @media(min-width:720px){.capgrid{grid-template-columns:1fr 1fr}}
+    
+    textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--line);border-radius:8px;resize:vertical;min-height:80px;background:#fff;color:var(--ink)}
+    .answer{background:#F7F9F5;border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:10px;font-size:14px}
+    .answer h4{margin:10px 0 4px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
+    .answer ul{margin:6px 0;padding-left:20px}
+    .answer p{margin:8px 0}
+    .answer.me{background:#F2EDEE;border-color:#E3D3D7}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+    .chip{background:#F2F4EF;border:1px solid var(--line);border-radius:22px;min-height:44px;padding:8px 12px;font-size:12px;color:var(--ink-soft)}
+    .chip:hover{background:#E9EDE5;color:var(--ink)}
+    .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(20,38,28,.2);border-top-color:var(--claret);border-radius:50%;
+      animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    
+    .status{font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+    .sliders{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+    .sliders label{font-size:12px;color:var(--ink-soft);font-weight:500}
+    .sliders input[type=range]{width:100%;accent-color:var(--pitch)}
+    details summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;padding:6px 0}
+    
+    /* player detail sheet / panel */
+    body.player-detail-open{overflow:hidden}
+    .player-detail-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,20,13,.46);backdrop-filter:blur(2px)}
+    .player-detail-panel{position:fixed;z-index:39;left:0;right:0;bottom:0;max-height:min(88dvh,780px);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column}
+    .player-detail-panel[hidden],.player-detail-backdrop[hidden]{display:none}
+    .player-detail-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
+    .player-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+    .player-detail-top h2{font-size:20px}
+    .player-detail-close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+    .player-detail-close:hover{background:#EEF1EB}
+    .player-detail-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(22px + env(safe-area-inset-bottom,0))}
+    .player-detail-identity{display:flex;align-items:center;gap:14px;padding:2px 0 14px}
+    .detail-shirt{width:46px;height:53px;flex:0 0 auto}
+    .detail-shirt:before,.detail-shirt:after{width:14px;height:21px}
+    .player-detail-identity-copy{min-width:0}
+    .player-detail-name{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;line-height:1.05}
+    .player-detail-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);margin-top:5px}
+    .player-detail-news{font-size:12px;color:var(--claret);margin-top:6px}
+    .player-detail-section{padding:15px 0;border-top:1px solid var(--line)}
+    .player-detail-section h3{font-size:15px;margin-bottom:9px}
+    .player-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .player-detail-metric{background:#F7F9F5;border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+    .player-detail-metric .label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    .player-detail-metric strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:18px;margin-top:3px}
+    .player-detail-metric .meta{display:block;font-size:10.5px;color:var(--ink-soft);margin-top:2px;line-height:1.25}
+    .player-detail-help{font-size:11px;color:var(--ink-soft);margin:8px 0 0}
+    .player-detail-range{background:#F4F8F4;border:1px solid #C9D8CD;border-radius:14px;padding:12px}
+    .player-detail-range-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+    .player-detail-range-head strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:22px;line-height:1.05;margin-top:3px}
+    .range-label{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;border-radius:999px;padding:5px 7px;white-space:nowrap}
+    .range-label.tight{background:#DDEFE4;color:#17643D}
+    .range-label.moderate{background:#F5E9C9;color:#7B5A13}
+    .range-label.wide{background:#F4DDE2;color:#842841}
+    .player-detail-range-track{height:18px;margin-top:11px}
+    .player-detail-range-svg{display:block;width:100%;height:18px;overflow:visible}
+    .player-detail-range-rail{stroke:#DCE4DD;stroke-width:8;stroke-linecap:round}
+    .player-detail-range-core{stroke:var(--pitch);stroke-width:8;stroke-linecap:round}
+    .player-detail-range-median{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
+    .player-detail-range-scale{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-soft);margin-top:5px}
+    .player-detail-expand{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
+    .player-detail-expand summary{color:var(--ink)}
+    .player-detail-expand[open] summary{margin-bottom:9px}
+    .detail-percentiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .probability-grid{margin-top:8px}
+    .player-detail-breakdown{background:#F7F9F5;border-left:3px solid var(--pitch);padding:12px 14px;border-radius:0 10px 10px 0;font-size:12.5px}
+    .bars{display:grid;gap:5px;margin-top:8px}
+    .bar{display:grid;grid-template-columns:118px 1fr 46px;gap:8px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px}
+    .projection-progress{width:100%;height:9px;border:0;border-radius:5px;overflow:hidden;appearance:none;background:#E4E8DF}
+    .projection-progress::-webkit-progress-bar{background:#E4E8DF;border-radius:5px}
+    .projection-progress::-webkit-progress-value{background:var(--pitch);border-radius:5px}
+    .projection-progress::-moz-progress-bar{background:var(--pitch);border-radius:5px}
+    .projection-progress.neg::-webkit-progress-value{background:var(--claret)}
+    .projection-progress.neg::-moz-progress-bar{background:var(--claret)}
+    .bar .v{text-align:right;color:var(--ink-soft)}
+    .pitch-player{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+    .pitch-player:focus-visible .pitch-copy{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px var(--info),0 4px 10px rgba(7,27,17,.18)}
+    @media(min-width:760px){
+      .player-detail-panel{top:0;bottom:0;left:auto;right:0;width:min(460px,44vw);max-height:none;border-radius:0;border-width:0 0 0 1px}
+      .player-detail-grip{display:none}
+      .player-detail-top{padding-top:calc(18px + env(safe-area-inset-top,0))}
+      .player-detail-body{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+    }
+    @media(max-width:390px){
+      .player-detail-grid{gap:6px}
+      .player-detail-metric{padding:9px 8px}
+      .player-detail-metric strong{font-size:16px}
+      .detail-percentiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+    @media(prefers-reduced-motion:no-preference){
+      .player-detail-panel{animation:playerDetailIn .2s ease both}
+      @keyframes playerDetailIn{from{transform:translateY(22px);opacity:.7}to{transform:none;opacity:1}}
+    }
+    @media(prefers-reduced-motion:no-preference) and (min-width:760px){
+      .player-detail-panel{animation-name:playerDetailInSide}
+      @keyframes playerDetailInSide{from{transform:translateX(24px);opacity:.7}to{transform:none;opacity:1}}
+    }
+    
+    /* temporary decision previews */
+    .decision-preview-banner,.decision-preview-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #B9D3C0;border-radius:14px;background:#F1F8F3;padding:12px 13px;margin:10px 0}
+    .decision-preview-banner strong,.decision-preview-controls strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;margin-top:2px}
+    .decision-preview-banner p,.decision-preview-controls p{font-size:11px;color:var(--ink-soft);margin:4px 0 0;line-height:1.4}
+    .decision-preview-copy{min-width:0}
+    .decision-preview-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;flex:0 0 auto}
+    .decision-preview-actions .active{background:var(--pitch);border-color:var(--pitch);color:#fff}
+    .selection-help{width:100%;font-weight:700;color:var(--pitch)!important}
+    .pitch-player.selection-target .pitch-copy{outline:2px dashed rgba(255,255,255,.9);outline-offset:2px}
+    .pitch-player.selection-target:hover .pitch-copy{transform:translateY(-1px)}
+    .pitch-player.incoming .pitch-copy{box-shadow:0 0 0 2px #B7F51B,0 4px 10px rgba(7,27,17,.2)}
+    .incoming-badge{position:absolute;left:-8px;top:-7px;z-index:4;border-radius:999px;background:#B7F51B;color:#102816;border:2px solid #fff;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;padding:3px 4px}
+    .captain-badge.preview{background:#fff;color:var(--pitch);border:2px solid var(--pitch);box-shadow:0 0 0 2px #fff}
+    .preview-plan-action.selected{background:var(--pitch);border-color:var(--pitch);color:#fff}
+    .preview-plan-row{background:#F1F8F3}
+    @media(max-width:600px){.decision-preview-banner,.decision-preview-controls{align-items:stretch;flex-direction:column}.decision-preview-actions{justify-content:flex-start;width:100%}.decision-preview-actions .btn{flex:1 1 auto}}
+    
+    /* team pitch */
+    .team-summary{display:grid;grid-template-columns:minmax(116px,.9fr) 1.7fr;gap:8px;margin-bottom:12px}
+    .team-score{background:var(--ink);color:#fff;border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;justify-content:center}
+    .team-score .label,.team-fact .label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+    .team-score .value{font-family:'Bricolage Grotesque',sans-serif;font-size:31px;font-weight:800;line-height:1;margin-top:4px}
+    .team-score .unit{font-size:11px;color:#B9C9BF;margin-top:3px}
+    .team-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .team-fact{background:#F7F9F5;border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-width:0}
+    .team-fact .label{display:block;color:var(--ink-soft);opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .team-fact .value{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .team-entry{margin:0 0 10px}
+    .team-stage{max-width:640px;margin:14px auto 0}
+    .team-pitch{position:relative;isolation:isolate;overflow:hidden;height:clamp(500px,135vw,680px);border-radius:22px;padding:22px 8px 18px;background:linear-gradient(90deg,rgba(255,255,255,.035) 0 50%,rgba(0,0,0,.025) 50% 100%),linear-gradient(#2E7A4D,#1F6540);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 16px 34px -24px rgba(20,38,28,.7)}
+    .team-pitch:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.48);border-radius:13px;pointer-events:none}
+    .team-pitch:after{content:"";position:absolute;left:12px;right:12px;top:50%;border-top:1px solid rgba(255,255,255,.42);pointer-events:none}
+    .pitch-mark{position:absolute;border:1px solid rgba(255,255,255,.42);pointer-events:none}
+    .pitch-centre-circle{width:92px;height:92px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+    .pitch-box{left:27%;right:27%;height:78px}
+    .pitch-box-top{top:12px;border-top:0}
+    .pitch-box-bottom{bottom:12px;border-bottom:0}
+    .pitch-formation{position:relative;z-index:2;height:100%;display:grid;grid-template-rows:repeat(4,minmax(0,1fr));align-items:center;gap:4px}
+    .pitch-line{display:flex;justify-content:space-evenly;align-items:center;gap:3px;padding:0 2px;min-width:0}
+    .pitch-player{position:relative;display:flex;flex:1 1 0;min-width:0;max-width:82px;flex-direction:column;align-items:center;text-align:center}
+    .shirt-wrap{position:relative;height:44px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:-2px;z-index:2}
+    .club-shirt{--shirt-primary:#315C8C;--shirt-secondary:#FFFFFF;--shirt-accent:#E6B84A;--shirt-ink:#FFFFFF;position:relative;display:block;width:34px;height:39px;border-radius:8px 8px 10px 10px;background:var(--shirt-primary);box-shadow:inset 0 5px 0 -3px var(--shirt-accent),0 5px 9px rgba(7,27,17,.25)}
+    .club-shirt:before,.club-shirt:after{content:"";position:absolute;top:3px;width:11px;height:16px;background:var(--shirt-primary);z-index:-1}
+    .club-shirt:before{left:-7px;border-radius:7px 2px 4px 5px;transform:skewY(15deg)}
+    .club-shirt:after{right:-7px;border-radius:2px 7px 5px 4px;transform:skewY(-15deg)}
+    .club-shirt.pattern-sleeves:before,.club-shirt.pattern-sleeves:after{background:var(--shirt-secondary)}
+    .club-shirt.pattern-stripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
+    .club-shirt.pattern-halves{background:linear-gradient(90deg,var(--shirt-primary) 0 50%,var(--shirt-secondary) 50%)}
+    .club-shirt.pattern-hoops{background:repeating-linear-gradient(0deg,var(--shirt-primary) 0 7px,var(--shirt-secondary) 7px 14px)}
+    .club-shirt.pattern-sash{background:linear-gradient(130deg,var(--shirt-primary) 0 40%,var(--shirt-secondary) 40% 58%,var(--shirt-primary) 58%)}
+    .club-shirt.pattern-pinstripes{background:repeating-linear-gradient(90deg,var(--shirt-primary) 0 5px,var(--shirt-secondary) 5px 7px)}
+    .club-shirt-code{position:absolute;left:3px;right:3px;bottom:7px;overflow:hidden;color:var(--shirt-ink);font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:600;line-height:1;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+    .captain-badge{position:absolute;top:-3px;right:-13px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid #fff;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;box-shadow:0 3px 8px rgba(7,27,17,.3)}
+    .captain-badge.vice{background:#fff;color:var(--ink);border-color:var(--ink)}
+    .pitch-copy{position:relative;width:100%;min-width:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:8px;padding:4px 3px 5px;box-shadow:0 4px 10px rgba(7,27,17,.18)}
+    .pitch-name{font-size:10px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pitch-meta{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ink-soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .pitch-xp{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--pitch);font-weight:600;line-height:1.2;margin-top:2px}
+    .pitch-player.warn .club-shirt{outline:2px solid #FFD3D9;outline-offset:2px}
+    .pitch-player.warn .pitch-copy{box-shadow:0 0 0 2px #F0AEB9,0 4px 10px rgba(7,27,17,.18)}
+    .team-bench{background:#F7F9F5;border:1px solid var(--line);border-radius:16px;padding:10px;margin-top:10px}
+    .bench-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+    .bench-head strong{font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
+    .bench-head span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    .bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+    .bench-player{max-width:none}
+    .bench-player .shirt-wrap{height:38px;transform:scale(.88);transform-origin:center bottom}
+    .bench-player .pitch-copy{box-shadow:none;border:1px solid var(--line);background:#fff}
+    .section-title{margin:18px 0 7px}
+    @media(max-width:420px){
+      .team-summary{grid-template-columns:1fr;gap:8px}
+      .team-score{min-height:82px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;grid-template-areas:"label value" "unit value";column-gap:14px;align-items:center}
+      .team-score .label{grid-area:label;align-self:end}.team-score .value{grid-area:value;font-size:32px;margin:0}.team-score .unit{grid-area:unit;align-self:start;margin:1px 0 0}
+      .team-fact{padding:9px 7px;text-align:center}.team-fact .label{min-height:24px;display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.2;overflow:visible}.team-fact .value{font-size:16px}
+    }
+    @media(max-width:380px){
+      .team-pitch{height:500px;padding-left:5px;padding-right:5px}.pitch-player{max-width:66px}.club-shirt{width:31px;height:36px}
+      .shirt-wrap{height:40px}.pitch-name{font-size:9px}.pitch-meta{font-size:7.5px}.pitch-xp{font-size:8.5px}
+    }
+    @media(min-width:720px){
+      .team-pitch{height:680px;padding:30px 16px 24px}.pitch-player{max-width:96px}.club-shirt{width:42px;height:48px}
+      .shirt-wrap{height:54px}.pitch-name{font-size:11px}.pitch-meta{font-size:9px}.pitch-xp{font-size:10px}
+    }
+    
+    .searchbox{position:relative}
+    .results{position:absolute;z-index:30;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
+      max-height:270px;overflow-y:auto;width:100%;margin-top:4px}
+    .results div,.results button{display:block;width:100%;min-height:44px;padding:9px 10px;border:0;border-bottom:1px solid #EDEFEA;background:#fff;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+    .results div:hover,.results button:hover{background:#F2F4EF}
+    .results div:last-child,.results button:last-child{border-bottom:0}
+    .results .pmeta{display:block}
+    .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .pill{background:#F2F4EF;border:1px solid var(--line);border-radius:20px;padding:4px 8px 4px 10px;font-size:12px;display:flex;gap:6px;align-items:center}
+    .pill button{display:grid;place-items:center;width:44px;height:44px;margin:-8px -8px -8px 0;background:none;border:0;border-radius:50%;color:var(--claret);font-weight:700;padding:0;line-height:1}
+    .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
+    .kpi{background:#F7F9F5;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+    .kpi .k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+    .kpi .v{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;margin-top:1px}
+    
+    
+    /* Stage 9.6 — class-only presentation and final responsive polish */
+    .mt-6{margin-top:6px}.mt-8{margin-top:8px}.mt-10{margin-top:10px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-18{margin-top:18px}
+    .mb-4{margin-bottom:4px}.mb-10{margin-bottom:10px}.mb-12{margin-bottom:12px}
+    .m-status-top{margin:10px 0 0}.m-hint-top{margin:8px 0 0}
+    .field-team{flex:1 1 140px}.field-provider{flex:1 1 200px}.field-league-id{flex:1 1 130px}.field-league-name{flex:1 1 110px}
+    .input-w-70{width:70px}.input-w-72{width:72px}.input-w-76{width:76px}.input-w-78{width:78px}.input-full{width:100%}
+    .swatch-fdr1{background:var(--fdr1)}.swatch-fdr2{background:var(--fdr2)}.swatch-fdr3{background:var(--fdr3)}.swatch-fdr4{background:var(--fdr4)}.swatch-fdr5{background:var(--fdr5)}
+    .swatch-blank{background:#E4E7E0}.swatch-double{background:#fff;box-shadow:0 0 0 2px var(--amber)}
+    .fixture-divider{border:0;height:1px;background:rgba(255,255,255,.45);width:80%;margin:2px 0}
+    .breakdown-news{margin-top:6px;color:var(--claret)}.breakdown-meta{margin-top:4px;color:var(--ink-soft)}.breakdown-meta-primary{margin-top:8px}
+    .transfer-net.positive{color:var(--pitch)}.transfer-net.negative{color:var(--claret)}
+    .chip-remove{padding:6px 9px;color:var(--claret)}.muted{color:var(--ink-soft)}
+    .data-compact{min-width:520px}
+    #providerHealthDetail,#evidencePanel{scroll-margin-top:12px}
+    .evidence-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+    .evidence-actions .btn{flex:1 1 150px}
+    .evidence-message{min-height:18px;margin-top:8px;overflow-wrap:anywhere}
+    #evidenceHistory .note{margin:8px 0}
+    #evidenceHistory .note>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    button,input,select,textarea{touch-action:manipulation}
+    .btn{min-height:44px}.btn.sm{min-height:44px}.chip{min-height:44px}.tab{min-height:52px}
+    /* repository-owned shirt palettes: static classes replace inline CSS variables */
+    .shirt-palette-ars{--shirt-primary:#D71920;--shirt-secondary:#FFFFFF;--shirt-accent:#162A4C;--shirt-ink:#FFFFFF}
+    .shirt-palette-avl{--shirt-primary:#6A1735;--shirt-secondary:#9ED8F5;--shirt-accent:#F5D36A;--shirt-ink:#FFFFFF}
+    .shirt-palette-bou{--shirt-primary:#D71920;--shirt-secondary:#121212;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-bre{--shirt-primary:#D71920;--shirt-secondary:#FFFFFF;--shirt-accent:#111111;--shirt-ink:#111111}
+    .shirt-palette-bha{--shirt-primary:#1764B0;--shirt-secondary:#FFFFFF;--shirt-accent:#F4D35E;--shirt-ink:#111111}
+    .shirt-palette-bur{--shirt-primary:#6A1735;--shirt-secondary:#9ED8F5;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-che{--shirt-primary:#1746A2;--shirt-secondary:#1746A2;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-cry{--shirt-primary:#D71920;--shirt-secondary:#1746A2;--shirt-accent:#F4D35E;--shirt-ink:#FFFFFF}
+    .shirt-palette-eve{--shirt-primary:#1746A2;--shirt-secondary:#FFFFFF;--shirt-accent:#102B5C;--shirt-ink:#FFFFFF}
+    .shirt-palette-ful{--shirt-primary:#FFFFFF;--shirt-secondary:#111111;--shirt-accent:#D71920;--shirt-ink:#111111}
+    .shirt-palette-lee{--shirt-primary:#FFFFFF;--shirt-secondary:#1746A2;--shirt-accent:#F4D35E;--shirt-ink:#111111}
+    .shirt-palette-liv{--shirt-primary:#B30D2F;--shirt-secondary:#B30D2F;--shirt-accent:#F4D35E;--shirt-ink:#FFFFFF}
+    .shirt-palette-mci{--shirt-primary:#7CC7EC;--shirt-secondary:#7CC7EC;--shirt-accent:#162A4C;--shirt-ink:#162A4C}
+    .shirt-palette-mun{--shirt-primary:#D71920;--shirt-secondary:#111111;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-new{--shirt-primary:#111111;--shirt-secondary:#FFFFFF;--shirt-accent:#3D7DB8;--shirt-ink:#FFFFFF}
+    .shirt-palette-nfo{--shirt-primary:#D71920;--shirt-secondary:#D71920;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-sun{--shirt-primary:#D71920;--shirt-secondary:#FFFFFF;--shirt-accent:#111111;--shirt-ink:#111111}
+    .shirt-palette-tot{--shirt-primary:#FFFFFF;--shirt-secondary:#162A4C;--shirt-accent:#F4D35E;--shirt-ink:#162A4C}
+    .shirt-palette-whu{--shirt-primary:#6A1735;--shirt-secondary:#9ED8F5;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-wol{--shirt-primary:#F2A900;--shirt-secondary:#111111;--shirt-accent:#FFFFFF;--shirt-ink:#111111}
+    .shirt-palette-lei{--shirt-primary:#1746A2;--shirt-secondary:#FFFFFF;--shirt-accent:#F4D35E;--shirt-ink:#FFFFFF}
+    .shirt-palette-ips{--shirt-primary:#1746A2;--shirt-secondary:#FFFFFF;--shirt-accent:#D71920;--shirt-ink:#FFFFFF}
+    .shirt-palette-sou{--shirt-primary:#D71920;--shirt-secondary:#FFFFFF;--shirt-accent:#111111;--shirt-ink:#111111}
+    .shirt-palette-fallback-1{--shirt-primary:#315C8C;--shirt-secondary:#FFFFFF;--shirt-accent:#E6B84A;--shirt-ink:#FFFFFF}
+    .shirt-palette-fallback-2{--shirt-primary:#7A1E38;--shirt-secondary:#D8EEF8;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-fallback-3{--shirt-primary:#1F5C3A;--shirt-secondary:#FFFFFF;--shirt-accent:#E6B84A;--shirt-ink:#FFFFFF}
+    .shirt-palette-fallback-4{--shirt-primary:#20262B;--shirt-secondary:#F0C24B;--shirt-accent:#FFFFFF;--shirt-ink:#FFFFFF}
+    .shirt-palette-fallback-5{--shirt-primary:#6C4BA6;--shirt-secondary:#FFFFFF;--shirt-accent:#A7E0D1;--shirt-ink:#FFFFFF}
+    .shirt-palette-fallback-6{--shirt-primary:#A13A2A;--shirt-secondary:#F5E7D4;--shirt-accent:#152A40;--shirt-ink:#FFFFFF}
+    
+    
+    /* Teamsheet 2.0.1 — route hierarchy, stable iPhone dock and global Ask composer */
+    html{min-height:100%;min-height:100dvh}
+    body{min-height:100%;min-height:100dvh;padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+    .global-ask{position:relative;width:min(100%,620px);margin-top:12px}
+    .global-ask input{width:100%;min-height:48px;padding:10px 52px 10px 15px;border:1px solid rgba(255,255,255,.32);border-radius:24px;background:rgba(255,255,255,.12);color:#fff;font-size:15px;box-shadow:none}
+    .global-ask input::placeholder{color:#C7D3CC}.global-ask input:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
+    .global-ask-send{position:absolute;right:2px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
+    .global-ask-send:disabled{background:rgba(255,255,255,.18);color:#AEBBB4;cursor:default}.global-ask-send:not(:disabled):active{transform:translateY(-50%) scale(.96)}
+    nav.tabs{position:fixed;inset:auto 0 0 0;z-index:1000;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));min-height:calc(64px + env(safe-area-inset-bottom,0px));padding:4px 4px env(safe-area-inset-bottom,0px);box-sizing:border-box;transform:translate3d(0,0,0);backface-visibility:hidden;isolation:isolate}
+    .tab{height:56px;min-width:0;padding:6px 2px;justify-content:center;box-sizing:border-box;text-decoration:none}
+    .tab .ic{display:grid;place-items:center;width:22px;height:22px;font-size:0;line-height:1}.nav-icon{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    html.keyboard-open nav.tabs{opacity:0;visibility:hidden;pointer-events:none}
+    h2[tabindex="-1"]:focus{outline:none}
+    .team-context{border:1px solid var(--line);border-radius:var(--r);background:#F7F9F5;padding:14px;margin:14px 0}
+    .team-context-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+    .team-context-head h3{font-size:16px}.team-context-head>.status{max-width:300px;text-align:right}
+    .settings-header{margin-bottom:12px}.settings-grid{display:grid;gap:10px}
+    .settings-card{display:grid;grid-template-columns:40px minmax(0,1fr) 18px;align-items:center;gap:10px;min-height:82px;padding:14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);color:var(--ink);text-decoration:none}
+    .settings-card:hover{background:#F7F9F5;border-color:#BFC7BC}.settings-card:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
+    .settings-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#EAF0EB;color:var(--pitch);font-size:19px;font-weight:800}
+    .settings-card-copy{min-width:0}.settings-card h3{font-size:15px;margin:0}.settings-card-description{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:2px}
+    .settings-card-arrow{font-size:25px;color:var(--ink-soft)}
+    .settings-view .btn.sm,.settings-view button{min-height:44px}
+    .settings-view input:not([type=checkbox]):not([type=file]),.settings-view select{min-height:44px}
+    .route-header{position:relative;margin-bottom:12px;padding-top:2px}.route-header h2{font-size:20px;margin-top:0}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
+    .route-back{display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0 0 4px;color:var(--claret);font-size:27px;font-weight:700;line-height:1;text-decoration:none;border-radius:50%}
+    .route-back:hover{background:#F7EEF0;text-decoration:none}.route-back:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
+    .settings-subview>.panel:last-child{margin-bottom:0}
+    @media(min-width:720px){.settings-grid{grid-template-columns:1fr 1fr}.settings-grid:not(.settings-subgrid)>.settings-card:last-child{grid-column:1/-1}}
+    .settings-subgrid{align-items:start}.settings-subview{min-width:0}.settings-content-panel>h3{font-size:17px;margin-bottom:2px}.settings-content-panel>.hint{color:var(--ink-soft);font-size:13px;margin:2px 0 14px}
+    .settings-action-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.settings-action-links .btn{display:grid;place-items:center;text-decoration:none;text-align:center}
+    .settings-readable-list{margin:8px 0 0;padding-left:22px}.settings-readable-list li+li{margin-top:8px}.build-identity{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 12px;margin:12px 0 0}.build-identity dt{font-weight:700}.build-identity dd{margin:0;overflow-wrap:anywhere;color:var(--ink-soft)}
+    #outcomesHost>.panel,#metricsHost>.panel,#reviewHost>.panel,#evidenceExportHost>.panel,#outcomeExportHost>.panel,#reviewExportHost>.panel,#evidenceRecoveryHost>.panel,#outcomeRecoveryHost>.panel,#stage10DiagnosticsHost>.panel,#evidenceStorageHost>.panel,#outcomeStorageHost>.panel,#metricStorageHost>.panel{margin-bottom:14px}
+    .global-data-warning{display:block;margin-top:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.35);border-radius:9px;background:#6A4E16;color:#fff;text-decoration:none;font-size:12px;font-weight:700}.global-data-warning:hover{background:#7A5B1C;color:#fff}.global-data-warning[hidden]{display:none}.global-data-warning:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
+    .data-material-warning{margin:0 0 12px}.data-material-warning a{font-weight:700}.data-material-warning[hidden]{display:none}
+    @media(max-width:640px){
+      .settings-action-links{grid-template-columns:1fr}
+      #view-players .scroll{overflow:visible;margin:0;padding:0}
+      #view-players table.data{display:block;min-width:0;width:100%}
+      #view-players table.data thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      #view-players table.data tbody{display:grid;gap:10px}
+      #view-players table.data tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow)}
+      #view-players table.data td{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:5px 6px;border:0;background:#F7F9F5;border-radius:7px;text-align:right}
+      #view-players table.data td:before{content:attr(data-label);font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);text-align:left}
+      #view-players table.data td.player-result-main{grid-column:1/-1;display:block;padding:2px 1px 8px;background:transparent;text-align:left;border-bottom:1px solid var(--line);border-radius:0}
+      #view-players table.data td.player-result-main:before{content:none}
+      #view-players table.data td.player-result-secondary{display:none}
+    }
+    @media(max-width:520px){
+      main{padding:12px}.panel{padding:14px}.row{align-items:stretch}.row>label.fld{flex:1 1 135px}
+      .tab{font-size:9px}.tab-label{max-width:68px}
+      .team-context-head>.status{text-align:left}.global-ask{width:100%}
+      .row>.btn:not(.sm){flex:1 1 100%}.bar{grid-template-columns:minmax(86px,112px) 1fr 42px;gap:6px}
+      .player-detail-range{padding:11px}.player-detail-range-head{align-items:flex-start;flex-direction:column}.range-label{align-self:flex-start}
+    }
+    
+    /* Teamsheet 2.0.2 — pitch-first Team decision home */
+    #view-squad>.hint{margin:3px 0 8px}
+    .team-home-header{display:grid;gap:7px;margin:2px 0 10px}
+    .team-home-header h3{font-size:19px}
+    .team-home-chips{display:flex;gap:6px;flex-wrap:wrap}
+    .team-home-chip{display:inline-flex;align-items:center;min-height:26px;padding:4px 8px;border:1px solid var(--line);border-radius:20px;background:#F7F9F5;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.15}
+    .team-home-chip.source{background:#EAF0EB;color:var(--pitch)}
+    .team-home-chip.deadline{background:#FCF8EF;color:#745614}
+    .team-home-chip.official{background:#E5EEF5;color:var(--info)}
+    .team-home-chip.manual{background:#F2EDEE;color:var(--claret)}
+    .team-home-decision{display:grid;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px}
+    .team-home-row{display:grid;grid-template-columns:minmax(92px,112px) minmax(0,1fr);gap:9px;padding:9px 11px;border-bottom:1px solid #EDEFEA;align-items:start}
+    .team-home-row:last-of-type{border-bottom:0}
+    .team-home-row-label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    .team-home-row-value{font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
+    .team-home-row.risk-blocking{background:#FBF0F2}.team-home-row.risk-warning{background:#FCF8EF}.team-home-row.risk-clear{background:#EFF6F1}
+    .team-home-row.deadline-action{background:#F7F9F5}
+    .team-home-advisory{margin:0;padding:7px 11px;border-top:1px solid var(--line);font-size:10px}
+    .team-home-ready .team-stage{margin-top:8px}
+    .team-home-ready .pitch-player{min-height:76px}
+    .team-home-ready .pitch-name{font-size:10px}
+    .team-home-ready .pitch-meta{font-size:8px}
+    .team-home-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+    .team-home-actions .btn{text-align:center;text-decoration:none;display:grid;place-items:center}
+    .team-home-support-host{margin-top:12px}
+    .team-home-support{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:11px 13px;margin-bottom:10px}
+    .team-home-support>summary{min-height:44px;display:flex;align-items:center;color:var(--ink);font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800}
+    .team-home-support-body{padding-top:7px}
+    .team-home-support-body>.section-title:first-child{margin-top:0}
+    .team-home-placeholder{filter:saturate(.55);opacity:.92}
+    .team-home-placeholder-player{pointer-events:none;min-height:70px}
+    .team-home-placeholder-player .pitch-copy{background:rgba(255,255,255,.8)}
+    .team-home-placeholder-player .club-shirt{opacity:.68}
+    .team-startup-lineup{width:132px;height:176px;display:grid;grid-template-rows:repeat(4,1fr);align-items:center;padding:13px 10px;margin-top:4px}
+    .team-startup-row{display:flex;justify-content:space-evenly;align-items:center;color:rgba(255,255,255,.72);font-size:13px;line-height:1}
+    .team-startup-row span{display:grid;place-items:center;width:16px;height:16px;border:1px solid rgba(255,255,255,.46);border-radius:50%;font-size:0}
+    .team-startup-row span:after{content:'';width:7px;height:9px;border-radius:3px;background:rgba(255,255,255,.45)}
+    #teamContext{margin-top:12px;margin-bottom:0}
+    @media(max-width:420px){
+      .team-home-row{grid-template-columns:86px minmax(0,1fr);padding:8px 9px;gap:7px}
+      .team-home-row-value{font-size:12px}
+      .team-home-actions{grid-template-columns:1fr}
+      .team-home-ready .pitch-name{font-size:10px}.team-home-ready .pitch-meta{font-size:8px}.team-home-ready .pitch-xp{font-size:9px}
+    }
+    @media(prefers-reduced-motion:reduce){.team-startup-lineup *{animation:none;transition:none}}
+    
+    /* Teamsheet 2.0.3 — Transfers decision workspace */
+    #view-transfers>.hint{margin-bottom:10px}
+    .transfer-workspace-head{display:grid;gap:8px;margin-bottom:12px}
+    .transfer-context-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+    .transfer-context-chip{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;background:#F7F9F5;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.2}
+    .transfer-context-chip.deadline{background:#FCF8EF;color:#745614}
+    .transfer-context-chip.source{background:#E5EEF5;color:var(--info)}
+    .transfer-assumptions{border:1px solid var(--line);border-radius:12px;padding:10px 11px 11px;margin:0 0 12px;background:#F7F9F5}
+    .transfer-assumptions legend{padding:0 5px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px}
+    .transfer-assumption-help{margin:0 0 9px;color:var(--ink-soft);font-size:11px}
+    .transfer-assumption-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .transfer-assumption-grid .fld{min-width:0}
+    .transfer-assumption-grid input,.transfer-assumption-grid select{width:100%;min-height:44px}
+    .transfer-display-options{margin-top:10px}
+    .transfer-status{min-height:18px;margin:0 0 6px}
+    .transfer-status:empty{display:none}
+    #transferOut[aria-busy=true]{opacity:.78}
+    .transfer-decision-hero{display:grid;gap:7px;padding:14px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(145deg,#173B28,#10251A);color:#fff;box-shadow:var(--shadow);margin-bottom:11px}
+    .transfer-decision-hero .eyebrow{color:#B9C9BF}
+    .transfer-decision-hero h3{font-size:18px;line-height:1.2;overflow-wrap:anywhere}
+    .transfer-decision-hero p{margin:0;color:#D8E2DB;font-size:12.5px}
+    .transfer-decision-hero.state-baseline-only{background:linear-gradient(145deg,#5F4A16,#2F2B20)}
+    .transfer-hero-facts{display:flex;gap:6px;flex-wrap:wrap}
+    .transfer-hero-facts span{display:inline-flex;align-items:center;min-height:28px;padding:4px 8px;border:1px solid rgba(255,255,255,.24);border-radius:20px;background:rgba(255,255,255,.08);font-family:'IBM Plex Mono',monospace;font-size:9.5px}
+    .transfer-card-stack{display:grid;gap:10px}
+    .transfer-card{display:grid;gap:10px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:13px;box-shadow:var(--shadow);min-width:0}
+    .transfer-card.primary{border:2px solid var(--pitch);background:#F8FBF8}
+    .transfer-baseline-card{background:#F7F9F5}
+    .transfer-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .transfer-card h3{font-size:16px;line-height:1.22;overflow-wrap:anywhere}
+    .transfer-rank{flex:0 0 auto;display:grid;place-items:center;min-width:31px;height:31px;border-radius:50%;background:#EAF0EB;color:var(--pitch);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600}
+    .transfer-card-lead,.transfer-ft-effect,.transfer-why,.transfer-explainer{margin:0;font-size:12px;color:var(--ink-soft)}
+    .transfer-ft-effect{padding:8px 10px;border-radius:8px;background:#EAF0EB;color:var(--pitch);font-weight:600}
+    .transfer-moves{display:grid;gap:7px}
+    .transfer-move{display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);align-items:center;gap:5px;border:1px solid #E5E9E2;border-radius:10px;padding:9px;background:#FAFBF9}
+    .transfer-player{display:grid;gap:2px;min-width:0}
+    .transfer-player strong{font-size:13px;overflow-wrap:anywhere}
+    .transfer-player-in{text-align:right}
+    .transfer-kicker{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+    .transfer-arrow{text-align:center;color:var(--claret);font-weight:800}
+    .transfer-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .transfer-metric{display:grid;gap:2px;min-width:0;padding:8px;border:1px solid #E6EAE3;border-radius:9px;background:#fff}
+    .transfer-metric-label{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft)}
+    .transfer-metric strong{font-size:13px;overflow-wrap:anywhere}
+    .transfer-metric-meta{font-size:9.5px;color:var(--ink-soft)}
+    .transfer-caution{padding:9px 10px;border-left:3px solid var(--amber);border-radius:0 8px 8px 0;background:#FCF8EF;font-size:11px}
+    .transfer-caution ul{margin:5px 0 0;padding-left:18px}
+    .transfer-caution li+li{margin-top:3px}
+    .transfer-details,.transfer-alternatives{border-top:1px solid #E8ECE6}
+    .transfer-details>summary,.transfer-alternatives>summary{display:flex;align-items:center;min-height:44px;color:var(--ink);font-weight:700}
+    .transfer-details-body{display:grid;gap:9px;padding:2px 0 5px}
+    .transfer-actions{display:grid;grid-template-columns:1fr;gap:8px}
+    .transfer-actions .btn{min-height:44px;width:100%}
+    .transfer-preview-action.selected{background:var(--pitch)}
+    .transfer-alternatives{margin-top:12px;padding-top:2px}
+    .transfer-alternatives>.transfer-card-stack{padding-top:8px}
+    .transfer-disclaimer{margin:11px 0 0;padding:9px 10px;border-radius:9px;background:#F7F9F5;color:var(--ink-soft);font-size:10.5px}
+    @media(max-width:420px){
+      .transfer-assumption-grid{grid-template-columns:1fr 1fr}
+      .transfer-card{padding:11px}
+      .transfer-metrics{grid-template-columns:1fr 1fr}
+      .transfer-move{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);padding:8px}
+    }
+    @media(max-width:340px){
+      .transfer-assumption-grid,.transfer-metrics{grid-template-columns:1fr}
+    }
+    @media(prefers-reduced-motion:reduce){
+      #transferOut{transition:none}
+    }
+    
+    
+    /* Teamsheet 2.0.4 — Mini Leagues official decision foundation */
+    .league-view{display:grid;gap:10px}.league-route{display:grid;gap:10px}.league-route[hidden]{display:none}
+    .league-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:9px}.league-picker{min-height:44px;max-width:240px;overflow-wrap:anywhere;text-align:left;padding:8px 11px}
+    .league-hero{display:grid;gap:6px;padding:12px 13px;border-radius:13px;background:linear-gradient(145deg,#173B28,#10251A);color:#fff;box-shadow:var(--shadow)}
+    .league-hero .eyebrow{color:#B9C9BF}.league-hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}.league-hero h3{font-size:17px;line-height:1.15;overflow-wrap:anywhere}.league-hero .btn.ghost{color:#fff;border-color:rgba(255,255,255,.56)}.league-hero .btn.ghost:hover{background:rgba(255,255,255,.12)}
+    .league-position-line{display:flex;align-items:center;justify-content:space-between;gap:9px}.league-position{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}.league-position strong{font-family:'Bricolage Grotesque',sans-serif;font-size:30px;line-height:1}.league-position span{color:#D8E2DB;font-size:12px}.league-position-line>.flag{flex:0 0 auto;margin-left:0}
+    .league-status-row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#D8E2DB;font-size:11px}.league-status-copy{margin:0;color:#D8E2DB;font-size:11px}.league-hero .note{margin:2px 0 0;padding:8px 10px;font-size:11px}
+    .league-gap-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}.league-gap{display:grid;gap:1px;padding:8px 7px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:0;text-align:center}.league-gap.current{border-color:var(--pitch);background:#F5FAF6}.league-gap span,.league-gap small{font-size:10px;color:var(--ink-soft);overflow-wrap:anywhere;line-height:1.2}.league-gap strong{font-family:'IBM Plex Mono',monospace;font-size:14px}
+    #leagueLandingOut>.league-section,#leagueLandingOut>.league-actions{margin-top:9px}.league-section{display:grid;gap:7px}.league-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.league-section-head h3{font-size:14px}.league-text-link{font-size:12px;font-weight:700}.league-rival-list,.league-manage-list,.league-standings-list{display:grid;gap:6px}
+    .league-rival-card,.league-manage-row,.league-standing-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:0}.league-rival-copy,.league-manage-row>div:first-child,.league-standing-name{display:grid;gap:1px;min-width:0}.league-rival-copy strong,.league-manage-row strong,.league-standing-name strong{font-size:13px;line-height:1.2;overflow-wrap:anywhere}.league-rival-copy span,.league-rival-copy small,.league-standing-name small{font-size:10.5px;color:var(--ink-soft)}
+    .league-rival-actions,.league-manage-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.league-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.league-actions .btn{text-align:center;min-height:44px;display:grid;place-items:center;text-decoration:none}
+    .league-standing-row{grid-template-columns:42px minmax(0,1fr) 52px 56px;min-height:52px;padding:8px 9px}.league-standing-row.mine{border:2px solid var(--info);background:#F4F8FB}.league-standing-row.interactive{cursor:pointer}.league-standing-row.interactive:hover{background:#F7F9F5}.league-standing-row.interactive:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}.league-standing-rank,.league-standing-points{font-family:'IBM Plex Mono',monospace;font-weight:600}.league-standing-points{text-align:right}.league-standing-action{justify-self:end;display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--ink-soft);white-space:nowrap}.league-standing-action .chev{font-size:17px;line-height:1;color:var(--claret)}
+    .league-rival-summary{display:grid;gap:9px}.league-comparison-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.league-comparison-facts>div{display:grid;gap:1px;padding:8px;border:1px solid var(--line);border-radius:9px}.league-comparison-facts span{font-size:10px;color:var(--ink-soft)}.league-comparison-facts strong{overflow-wrap:anywhere}
+    .league-difference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.league-player-differences{padding:9px;border:1px solid var(--line);border-radius:10px;min-width:0}.league-player-differences ul{margin:6px 0 0;padding-left:18px}.league-player-differences li{overflow-wrap:anywhere}
+    .league-manage-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}.league-manage-form input{width:100%;min-height:44px}.league-manage-row.selected{border-color:var(--pitch);background:#F5FAF6}
+    #leagueLandingOut[aria-busy=true],#leagueRivalOut[aria-busy=true]{opacity:.72}
+    @media(max-width:520px){.league-topbar{grid-template-columns:1fr;align-items:stretch}.league-picker{max-width:none;width:100%}.league-rival-card,.league-manage-row{grid-template-columns:1fr}.league-rival-actions,.league-manage-actions{justify-content:flex-start}.league-standing-row{grid-template-columns:38px minmax(0,1fr) 44px 52px}.league-difference-grid{grid-template-columns:1fr}.league-manage-form{grid-template-columns:1fr}.league-manage-form .btn{min-height:44px}.league-actions{grid-template-columns:1fr 1fr}}
+    @media(max-width:350px){.league-gap-grid,.league-actions,.league-comparison-facts{grid-template-columns:1fr}.league-standing-row{grid-template-columns:34px minmax(0,1fr) 42px 30px}.league-standing-action{font-size:0}.league-standing-action .chev{font-size:18px}}
+    @media(prefers-reduced-motion:reduce){.league-view *{scroll-behavior:auto;transition:none}}
+    
+    </style>
+    </head>
+    <body class="startup-pending" aria-busy="true">
+    
+    <section class="startup-gate" id="startupGate" role="status" aria-label="Opening Teamsheet">
+      <div class="startup-card">
+        <div class="startup-wordmark">TEAMSHEET</div>
+        <div class="startup-sub">FPL decision desk</div>
+        <div class="startup-pitch" aria-hidden="true"><span class="startup-ball"></span></div>
+      </div>
+    </section>
+    
+    <header>
+      <div class="masthead">
+        <h1>TEAMSHEET</h1><span class="sub">FPL decision desk</span>
+      </div>
+      <div class="gwstrip" id="gwstrip"><span>Loading season data…</span></div>
+    </header>
+    
+    <main>
+      <!-- SETUP -->
+      <section class="panel" id="setupPanel">
+        <span class="eyebrow">Connect</span>
+        <h2>Your team</h2>
+        <p class="hint">Team ID is in your FPL URL: <span class="mono">/entry/<b>1234567</b>/</span>. Free transfers and chips can't be read without a login, so set them here.</p>
+        <div class="row">
+          <label class="fld field-team">Team ID<input type="text" id="teamId" inputmode="numeric" placeholder="1234567"></label>
+          <label class="fld">Free transfers<input type="number" id="ftCount" min="0" max="5" value="1" class="input-w-70"></label>
+          <label class="fld">Bank £m<input type="number" id="bankIn" min="0" step="0.1" value="0" class="input-w-78"></label>
+          <button class="btn" id="loadBtn">Load data</button>
+        </div>
+        <div class="row mt-10">
+          <span class="check"><input type="checkbox" id="useManual"> Use my manually entered squad instead of the API</span>
+        </div>
+        <p class="status m-status-top" id="status">Idle.</p>
+        <div class="status mt-6" id="srcStatus"></div>
+        <div id="chipState"></div>
+        <details class="mt-12">
+          <summary>Data sources &amp; model calibration</summary>
+          <div class="mt-10">
+            <div class="row">
+              <label class="fld field-provider">Odds API key (free at the-odds-api.com)
+                <input type="text" id="oddsKey" placeholder="paste key to add bookmaker odds" autocomplete="off">
+              </label>
+              <span class="check"><input type="checkbox" id="useUstat" checked> Understat rolling xG</span>
+            </div>
+            <div class="row mt-12">
+              <button class="btn ghost" id="btBtn">Run backtest against last season</button>
+            </div>
+            <p class="hint m-hint-top">The backtest downloads last season's real gameweek data, replays this app's exact formulas against it, reports accuracy, and applies per-position corrections to every projection. Run it once; it's saved.</p>
+            <div id="btOut"></div>
+          </div>
+        </details>
+      </section>
+    
+    
+      <!-- VALIDATION EVIDENCE -->
+      <section class="panel" id="evidencePanel" tabindex="-1" aria-labelledby="evidenceTitle">
+        <span class="eyebrow">Automatic validation</span>
+        <h3 id="evidenceTitle">Deadline evidence</h3>
+        <p class="hint">Teamsheet automatically secures verified pre-deadline records after approved data has refreshed. No routine action is required.</p>
+        <div class="note plain" id="evidenceStatus"><b>Waiting for season data</b> Evidence will be handled automatically after verification.</div>
+        <p class="status" id="evidenceDeadline">Deadline unavailable.</p>
+        <p class="status evidence-message" id="evidenceDeadlineMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
+        <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
+      </section>
+    
+      <!-- FIXTURES -->
+      <section class="view panel" id="view-fixtures">
+        <span class="eyebrow">Signature view</span>
+        <h2>Fixtures</h2>
+        <p class="hint">Difficulty from the model's own attack/defence ratings, not the official 1–5. Switch the lens to see who fixtures favour.</p>
+        <div id="fixtureDataWarning"></div>
+        <div class="row mb-12">
+          <label class="fld">From GW<input type="number" id="fxFrom" min="1" max="38" class="input-w-72"></label>
+          <label class="fld">Games<input type="number" id="fxSpan" min="3" max="12" value="6" class="input-w-72"></label>
+          <label class="fld">Lens
+            <select id="fxLens">
+              <option value="attack">For attackers</option>
+              <option value="defence">For defenders &amp; keepers</option>
+              <option value="official">Official FDR</option>
+            </select>
+          </label>
+          <label class="fld">Sort<select id="fxSort"><option value="ease">Easiest run</option><option value="hard">Hardest run</option><option value="name">Team A–Z</option></select></label>
+        </div>
+        <div class="ticker-wrap"><div id="ticker"></div></div>
+        <div class="legend">
+          <span><i class="swatch swatch-fdr1"></i>1 easiest</span>
+          <span><i class="swatch swatch-fdr2"></i>2</span>
+          <span><i class="swatch swatch-fdr3"></i>3</span>
+          <span><i class="swatch swatch-fdr4"></i>4</span>
+          <span><i class="swatch swatch-fdr5"></i>5 hardest</span>
+          <span><i class="swatch swatch-blank"></i>blank</span>
+          <span><i class="swatch swatch-double"></i>double</span>
+        </div>
+        <div id="swings"></div>
+      </section>
+    
+      <!-- RANKER -->
+      <section class="view panel" id="view-players" hidden>
+        <span class="eyebrow">Shortlist</span>
+        <h3>Projected points</h3>
+        <p class="hint" id="rankerHint">Expected points per gameweek, modelled separately for each position. Tap any row for the breakdown.</p>
+        <div class="row mb-10">
+          <label class="fld">Position<select id="plPos"><option value="0">All</option></select></label>
+          <label class="fld">Max £m<input type="number" id="plMax" step="0.1" value="15" class="input-w-76"></label>
+          <label class="fld">Horizon<select id="plHorizon"><option value="1">Next GW</option><option value="3">3 GWs</option><option value="6" selected>6 GWs</option></select></label>
+          <span class="check"><input type="checkbox" id="plFit" checked> Hide flagged</span>
+          <span class="check"><input type="checkbox" id="plOwn"> Only my squad</span>
+        </div>
+        <div class="scroll"><div id="playerTable"></div></div>
+      </section>
+    
+      <!-- SQUAD -->
+      <section class="view panel" id="view-squad" hidden>
+        <span class="eyebrow">Gameweek plan</span>
+        <h2>Team</h2>
+        <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>
+        <div id="squadOut"><div class="empty"><strong>No squad yet</strong>Enter your Team ID in Team setup below. Manual squad editing will become available after the verified player list loads.</div></div>
+        <details id="manualWrap" class="mt-16">
+          <summary>Build or edit a squad by hand</summary>
+          <div class="mt-10">
+            <div class="searchbox">
+              <input type="text" id="pSearch" placeholder="Search a player to add…" class="input-full">
+              <div class="results" id="pResults" hidden></div>
+            </div>
+            <div class="pillrow" id="manualList"></div>
+            <p class="status mt-8" id="manualCount"></p>
+          </div>
+        </details>
+      </section>
+    
+      <!-- TRANSFERS -->
+      <section class="view panel" id="view-transfers" hidden>
+        <div class="transfer-workspace-head">
+          <span class="eyebrow">Decision workspace</span>
+          <h2>Transfers</h2>
+          <p class="hint">Compare making no transfer with the strongest legal plans returned by the existing optimiser. Model comparisons are decision support, not promised FPL points.</p>
+        </div>
+        <fieldset class="transfer-assumptions" aria-describedby="transferAssumptionHelp">
+          <legend>Planning assumptions</legend>
+          <p class="transfer-assumption-help" id="transferAssumptionHelp">Free transfers and bank are user-entered and not verified by the public FPL feed. Changes here also update Team setup.</p>
+          <div class="transfer-assumption-grid">
+            <label class="fld">Free transfers<input type="number" id="trFtCount" inputmode="numeric" min="0" max="5" step="1" value="1" aria-describedby="transferAssumptionHelp"></label>
+            <label class="fld">Bank £m<input type="number" id="trBankIn" inputmode="decimal" min="0" step="0.1" value="0.0" aria-describedby="transferAssumptionHelp"></label>
+            <label class="fld">Horizon<select id="trHorizon"><option value="1">Next GW</option><option value="3">3 GWs</option><option value="6" selected>6 GWs</option><option value="8">8 GWs</option></select></label>
+            <label class="fld">Optimiser return limit<select id="trTop"><option value="8" selected>Search top 8</option><option value="15">Search top 15</option><option value="20">Search top 20</option></select></label>
+          </div>
+        </fieldset>
+        <div id="transferDataWarning"></div>
+        <p class="status transfer-status" id="transferStatus" aria-live="polite"></p>
+        <div id="transferOut" aria-busy="false"><div class="empty"><strong>No verified comparison yet</strong>Load a complete squad and verified FPL data to compare transfer decisions.</div></div>
+      </section>
+    
+      <!-- LEAGUES -->
+      <section class="view league-view" id="view-league" hidden>
+        <div id="leagueDataWarning"></div>
+        <p class="status" id="leagueLiveStatus" aria-live="polite"></p>
+        <section class="panel league-route" id="leagueLanding" data-league-route="#/leagues">
+          <div class="league-topbar">
+            <div><span class="eyebrow">Competitive context</span><h2 tabindex="-1">Leagues</h2><p class="hint">Official position, points gaps and factual squad differences. No projected rank or protect/chase strategy is implied.</p></div>
+            <button class="btn ghost league-picker" id="leaguePickerButton" type="button">Choose a league</button>
+          </div>
+          <div id="leagueLandingOut" aria-busy="false"><div class="empty"><strong>Choose your Mini League</strong>Select a public classic league from your connected FPL entry, or add its numeric league ID.</div></div>
+        </section>
+        <section class="panel league-route" id="leagueStandings" data-league-route="#/leagues/standings" hidden>
+          <a class="route-back" href="#/leagues" aria-label="Back to Leagues"><span aria-hidden="true">←</span></a>
+          <span class="eyebrow">Official standings</span><h2 tabindex="-1">League table</h2><p class="hint">Nearby and loaded managers only. Large leagues are not scanned in full.</p>
+          <div id="leagueStandingsOut"></div>
+        </section>
+        <section class="panel league-route" id="leagueRival" data-league-route="#/leagues/rival" hidden>
+          <a class="route-back" href="#/leagues" aria-label="Back to Leagues"><span aria-hidden="true">←</span></a>
+          <span class="eyebrow">Factual comparison</span><h2 tabindex="-1">Rival comparison</h2><p class="hint">Public picks, captaincy and exact squad overlap. Differences are not recommendations.</p>
+          <div id="leagueRivalOut" aria-busy="false"></div>
+        </section>
+        <section class="panel league-route" id="leagueManage" data-league-route="#/leagues/manage" hidden>
+          <a class="route-back" href="#/leagues" aria-label="Back to Leagues"><span aria-hidden="true">←</span></a>
+          <span class="eyebrow">League selection</span><h2 tabindex="-1">Manage leagues</h2><p class="hint">Discovered public classic leagues and locally saved IDs. Identifiers stay out of the URL.</p>
+          <form class="league-manage-form" id="leagueManageForm">
+            <label class="fld">League ID<input type="text" id="leagueId" inputmode="numeric" autocomplete="off" placeholder="123456"></label>
+            <label class="fld">Local name (optional)<input type="text" id="leagueName" maxlength="100" placeholder="Work league"></label>
+            <button class="btn" type="submit">Add league</button>
+          </form>
+          <div id="leagueManageList" class="mt-12"></div>
+        </section>
+      </section>
+    
+      <!-- ASK -->
+      <section class="view panel" id="view-ask" hidden>
+        <span class="eyebrow">Second opinion</span>
+        <h2>Ask Teamsheet</h2>
+        <p class="hint">Your squad, projections and fixtures go with the question. The AI assistant works keylessly inside Claude's artifact preview; hosted builds require the planned serverless migration.</p>
+        <div class="chips">
+          <button type="button" class="chip" data-q="Who should I captain this week and why?">Captain call</button>
+          <button type="button" class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>
+          <button type="button" class="chip" data-q="Which two players in my squad are the weakest links to move on?">Weak links</button>
+          <button type="button" class="chip" data-q="Check the latest injury and press conference news for my squad.">Injury news</button>
+          <button type="button" class="chip" data-q="When should I plan my Wildcard based on the fixture swings?">Chip timing</button>
+        </div>
+        <div class="note plain" id="askHostedStatus" role="status" hidden><b>Ask Teamsheet is unavailable in this hosted build.</b> The approved static app does not accept or store Anthropic API keys. A separately approved serverless migration is required.</div>
+        <div id="thread" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Ask Teamsheet conversation"></div>
+        <textarea id="q" aria-describedby="askHostedStatus" placeholder="e.g. Should I take a hit to move Saka to Salah before the deadline?"></textarea>
+        <div class="row mt-10">
+          <button type="button" class="btn claret" id="askBtn">Get a read</button>
+          <button type="button" class="btn ghost sm" id="retryAsk" hidden>Retry</button>
+          <button type="button" class="btn ghost sm" id="clearThread">Clear</button>
+          <span class="status" id="askStatus" aria-live="polite"></span>
+        </div>
+      </section>
+    </main>
+    
+    <div id="playerDetailBackdrop" class="player-detail-backdrop" hidden></div>
+    <aside id="playerDetailPanel" class="player-detail-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="playerDetailTitle" hidden>
+      <div class="player-detail-grip" aria-hidden="true"></div>
+      <div class="player-detail-top">
+        <div>
+          <span class="eyebrow">Player detail</span>
+          <h2 id="playerDetailTitle">Player details</h2>
+        </div>
+        <button type="button" class="player-detail-close" id="playerDetailClose" aria-label="Close player details">×</button>
+      </div>
+      <div class="player-detail-body" id="playerDetailBody"></div>
+    </aside>
+    
+    <nav class="tabs" aria-label="Primary">
+      <a class="tab" href="#/team"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 19 8 12 13 5 8Z"></path><path d="m5 12 7 5 7-5"></path><path d="m5 16 7 5 7-5"></path></svg></span><span class="tab-label">Team</span></a>
+      <a class="tab" href="#/transfers"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h13"></path><path d="m14 4 3 3-3 3"></path><path d="M20 17H7"></path><path d="m10 14-3 3 3 3"></path></svg></span><span class="tab-label">Transfers</span></a>
+      <a class="tab" href="#/fixtures"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 17h2M14 17h2"></path></svg></span><span class="tab-label">Fixtures</span></a>
+      <a class="tab" href="#/leagues"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 21V4"></path><path d="M6 5h11l-2 4 2 4H6"></path></svg></span><span class="tab-label">Leagues</span></a>
+      <a class="tab" href="#/settings"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></span><span class="tab-label">Settings</span></a>
+    </nav>
+    <script src="app.js"></script>
+    </body>
+    </html>
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///home/runner/work/FPL/FPL/tests/transfer-optimiser-view.test.mjs:110:10)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: production bundle contains decision cards, honest comparison language and central Team preview routing
+ok 472 - production bundle contains decision cards, honest comparison language and central Team preview routing
+  ---
+  duration_ms: 4.233345
+  ...
+# Subtest: transfer renderer is bundled before the views startup boundary
+ok 473 - transfer renderer is bundled before the views startup boundary
+  ---
+  duration_ms: 0.300579
+  ...
+# Subtest: Stage 6 rules are explicit and versioned
+ok 474 - Stage 6 rules are explicit and versioned
+  ---
+  duration_ms: 2.626798
+  ...
+# Subtest: selling price keeps half of rises rounded down
+ok 475 - selling price keeps half of rises rounded down
+  ---
+  duration_ms: 0.28829
+  ...
+# Subtest: missing and null purchase prices use current price in estimated mode
+ok 476 - missing and null purchase prices use current price in estimated mode
+  ---
+  duration_ms: 0.150925
+  ...
+# Subtest: free-transfer and hit formulas cover ordinary plans
+ok 477 - free-transfer and hit formulas cover ordinary plans
+  ---
+  duration_ms: 0.228911
+  ...
+# Subtest: full squad legality enforces 15 distinct players and exact quotas
+ok 478 - full squad legality enforces 15 distinct players and exact quotas
+  ---
+  duration_ms: 0.620516
+  ...
+# Subtest: best XI selects a legal formation deterministically
+ok 479 - best XI selects a legal formation deterministically
+  ---
+  duration_ms: 0.924139
+  ...
+# Subtest: zero-transfer baseline is always present and can win
+ok 480 - zero-transfer baseline is always present and can win
+  ---
+  duration_ms: 4.334817
+  ...
+# Subtest: estimated affordability is labelled and never treats null as a zero purchase price
+ok 481 - estimated affordability is labelled and never treats null as a zero purchase price
+  ---
+  duration_ms: 3.52563
+  ...
+# Subtest: shared bank is applied once across a coordinated plan
+ok 482 - shared bank is applied once across a coordinated plan
+  ---
+  duration_ms: 11.165006
+  ...
+# Subtest: unavailable purchases are excluded while doubtful purchases remain eligible
+ok 483 - unavailable purchases are excluded while doubtful purchases remain eligible
+  ---
+  duration_ms: 1.773185
+  ...
+# Subtest: production search agrees with an independent exhaustive reference
+ok 484 - production search agrees with an independent exhaustive reference
+  ---
+  duration_ms: 5.182837
+  ...
+# Subtest: safe affordability pruning cannot remove the exhaustive optimum
+ok 485 - safe affordability pruning cannot remove the exhaustive optimum
+  ---
+  duration_ms: 1.650172
+  ...
+# Subtest: an evaluation ceiling fails closed instead of claiming a partial optimum
+ok 486 - an evaluation ceiling fails closed instead of claiming a partial optimum
+  ---
+  duration_ms: 0.329422
+  ...
+# Subtest: direct import: fixture model strength ordering
+ok 487 - direct import: fixture model strength ordering
+  ---
+  duration_ms: 1.987475
+  ...
+# Subtest: direct import: projection archetypes sane and parts sum
+ok 488 - direct import: projection archetypes sane and parts sum
+  ---
+  duration_ms: 3.04339
+  ...
+# Subtest: direct import: availability scale
+ok 489 - direct import: availability scale
+  ---
+  duration_ms: 0.20796
+  ...
+# Subtest: direct import: bestXI legality and sellPrice rounding
+ok 490 - direct import: bestXI legality and sellPrice rounding
+  ---
+  duration_ms: 3.853709
+  ...
+# Subtest: direct import: odds maths invertible
+ok 491 - direct import: odds maths invertible
+  ---
+  duration_ms: 0.337674
+  ...
+# Subtest: direct import: computeBacktest recovers planted biases with provenance
+ok 492 - direct import: computeBacktest recovers planted biases with provenance
+  ---
+  duration_ms: 30.199172
+  ...
+# Subtest: direct import: cache envelope invalidates on schema/season change
+ok 493 - direct import: cache envelope invalidates on schema/season change
+  ---
+  duration_ms: 0.969977
+  ...
+# Subtest: direct import: registry carries six quality attributes per provider
+ok 494 - direct import: registry carries six quality attributes per provider
+  ---
+  duration_ms: 0.403963
+  ...
+# Subtest: direct import: ODDS_RULES defined before any formula change
+ok 495 - direct import: ODDS_RULES defined before any formula change
+  ---
+  duration_ms: 0.244295
+  ...
+# Subtest: direct import: escapeHTML neutralises the usual suspects
+ok 496 - direct import: escapeHTML neutralises the usual suspects
+  ---
+  duration_ms: 0.40893
+  ...
+# Subtest: validation: exact duplicates collapse to the first occurrence
+ok 497 - validation: exact duplicates collapse to the first occurrence
+  ---
+  duration_ms: 1.880065
+  ...
+# Subtest: validation: genuine doubles survive — distinct ids, same teams and gameweek
+ok 498 - validation: genuine doubles survive — distinct ids, same teams and gameweek
+  ---
+  duration_ms: 1.711884
+  ...
+# Subtest: validation: genuine doubles survive when rows carry no id (composite distinct)
+ok 499 - validation: genuine doubles survive when rows carry no id (composite distinct)
+  ---
+  duration_ms: 0.237484
+  ...
+# Subtest: validation: conflicting duplicate keeps the first and names the offending fields
+ok 500 - validation: conflicting duplicate keeps the first and names the offending fields
+  ---
+  duration_ms: 0.426166
+  ...
+# Subtest: validation: a conflict is partial, never fatal — the app still loads
+ok 501 - validation: a conflict is partial, never fatal — the app still loads
+  ---
+  duration_ms: 0.416011
+  ...
+# Subtest: validation: rows with no safe identity are excluded and reported
+ok 502 - validation: rows with no safe identity are excluded and reported
+  ---
+  duration_ms: 0.260659
+  ...
+# Subtest: validation: identity is never invented for an id-less row with a null event
+ok 503 - validation: identity is never invented for an id-less row with a null event
+  ---
+  duration_ms: 0.249412
+  ...
+# Subtest: validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
+ok 504 - validation: an unscheduled fixture WITH an id is kept untouched, no false alarm
+  ---
+  duration_ms: 0.372896
+  ...
+# Subtest: validation: started/finished differences are immaterial, not a conflict
+ok 505 - validation: started/finished differences are immaterial, not a conflict
+  ---
+  duration_ms: 0.413848
+  ...
+# Subtest: validation: a non-array payload is fatal and yields an empty fixture list
+ok 506 - validation: a non-array payload is fatal and yields an empty fixture list
+  ---
+  duration_ms: 0.410923
+  ...
+# Subtest: validation: the input array and its rows are never mutated
+ok 507 - validation: the input array and its rows are never mutated
+  ---
+  duration_ms: 0.437142
+  ...
+# Subtest: validation: issueSummary is payload-free and safe to render
+ok 508 - validation: issueSummary is payload-free and safe to render
+  ---
+  duration_ms: 0.434859
+  ...
+# Subtest: dataset pin requires immutable reference and SHA-256 checksum
+ok 509 - dataset pin requires immutable reference and SHA-256 checksum
+  ---
+  duration_ms: 2.011641
+  ...
+# Subtest: observations are sorted deterministically and identical duplicates collapse
+ok 510 - observations are sorted deterministically and identical duplicates collapse
+  ---
+  duration_ms: 1.130757
+  ...
+# Subtest: conflicting duplicate observations fail closed
+ok 511 - conflicting duplicate observations fail closed
+  ---
+  duration_ms: 1.626527
+  ...
+# Subtest: future information is rejected
+ok 512 - future information is rejected
+  ---
+  duration_ms: 0.255751
+  ...
+# Subtest: walk-forward fold boundaries are chronological and separated
+ok 513 - walk-forward fold boundaries are chronological and separated
+  ---
+  duration_ms: 0.812952
+  ...
+# Subtest: position calibration is fitted only from supplied rows and bounded
+ok 514 - position calibration is fitted only from supplied rows and bounded
+  ---
+  duration_ms: 0.266036
+  ...
+# Subtest: calibration application creates an isolated named variant
+ok 515 - calibration application creates an isolated named variant
+  ---
+  duration_ms: 0.278075
+  ...
+# Subtest: metric summary calculates deterministic MAE RMSE bias and correlation
+ok 516 - metric summary calculates deterministic MAE RMSE bias and correlation
+  ---
+  duration_ms: 0.424183
+  ...
+# Subtest: segmented metrics expose position gameweek variant and prediction bands
+ok 517 - segmented metrics expose position gameweek variant and prediction bands
+  ---
+  duration_ms: 8.842833
+  ...
+# Subtest: ablation comparison requires identical holdout keys
+ok 518 - ablation comparison requires identical holdout keys
+  ---
+  duration_ms: 1.046862
+  ...
+# Subtest: stable result serialisation is key ordered and rounds finite numbers
+ok 519 - stable result serialisation is key ordered and rounds finite numbers
+  ---
+  duration_ms: 0.351855
+  ...
+# Subtest: full evaluation preserves supplied ablations when fold calibration is disabled
+ok 520 - full evaluation preserves supplied ablations when fold calibration is disabled
+  ---
+  duration_ms: 2.297067
+  ...
+# Subtest: raw-only evaluation emits train-only fold calibration
+ok 521 - raw-only evaluation emits train-only fold calibration
+  ---
+  duration_ms: 1.257195
+  ...
+1..521
+# tests 521
+# suites 0
+# pass 514
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5011.612952
