@@ -1,12 +1,10 @@
 name: Teamsheet 2.0.7 implementation
 
 on:
-  push:
+  pull_request:
     branches:
       - agent/teamsheet-2.0.7-final-mobile-polish
-    paths:
-      - scripts/apply-teamsheet-2.0.7.mjs.gz.b64
-      - .github/workflows/teamsheet-2.0.7-implementation.yml
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -17,7 +15,7 @@ concurrency:
 
 jobs:
   implement:
-    if: github.event.head_commit.message == 'Prepare Teamsheet 2.0.7 implementation'
+    if: github.event.pull_request.head.ref == 'agent/teamsheet-2.0.7-trigger'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -128,5 +126,3 @@ jobs:
 
       - name: Push implementation branch
         run: git push origin HEAD:agent/teamsheet-2.0.7-final-mobile-polish
-
-# This second branch commit intentionally triggers the workflow after the file exists.
