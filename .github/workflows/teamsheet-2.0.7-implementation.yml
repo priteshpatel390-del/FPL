@@ -14,9 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out branch
+      - name: Check out implementation branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Set up Node
@@ -51,28 +52,41 @@ jobs:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
           set -uo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           chmod +x ./run-tests.sh
           ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.txt
           TEST_STATUS=${PIPESTATUS[0]}
           TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.txt | tail -1)
-          if [ "$TEST_STATUS" -ne 0 ]; then
-            cp /tmp/teamsheet-tests.txt docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
-            git add -f docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
-            if ! git diff --cached --quiet; then
-              git commit -m 'Record Teamsheet 2.0.7 test failure'
-              git push origin HEAD:${GITHUB_HEAD_REF}
-            fi
-            exit "$TEST_STATUS"
+          echo "status=$TEST_STATUS" >> "$GITHUB_OUTPUT"
+          echo "count=${TEST_COUNT:-0}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Record exact test failure
+        if: steps.tests.outputs.status != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cp /tmp/teamsheet-tests.txt docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
+          git add -f docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
+          if ! git diff --cached --quiet; then
+            git commit -m 'Record Teamsheet 2.0.7 test failure'
+            git push origin HEAD:${GITHUB_HEAD_REF}
           fi
-          if [ -z "$TEST_COUNT" ]; then
+          exit 1
+
+      - name: Require a verified pass count
+        if: steps.tests.outputs.status == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.tests.outputs.count }}" = '0' ]; then
             echo 'Could not determine passing test count' >&2
             exit 1
           fi
-          echo "count=$TEST_COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Verify deterministic exact-identity production builds
+        if: steps.tests.outputs.status == '0'
         shell: bash
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
@@ -109,6 +123,7 @@ jobs:
           NODE
 
       - name: Commit reviewed generated artefacts
+        if: steps.tests.outputs.status == '0'
         id: generated
         shell: bash
         run: |
@@ -122,6 +137,7 @@ jobs:
           echo "sha=$GENERATED_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Finalise canonical documentation and remove temporary workflow
+        if: steps.tests.outputs.status == '0'
         shell: bash
         env:
           TEST_COUNT: ${{ steps.tests.outputs.count }}
@@ -147,6 +163,7 @@ jobs:
           PY
           rm -f \
             scripts/apply-teamsheet-2.0.7.mjs.gz.b64 \
+            scripts/teamsheet-2.0.7-run-trigger.txt \
             .github/workflows/teamsheet-2.0.7-implementation.yml \
             docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
           git add CLAUDE.md docs scripts .github/workflows
@@ -154,4 +171,5 @@ jobs:
           git commit -m 'Document Teamsheet 2.0.7 verification'
 
       - name: Push finalised implementation branch
+        if: steps.tests.outputs.status == '0'
         run: git push origin HEAD:${GITHUB_HEAD_REF}
