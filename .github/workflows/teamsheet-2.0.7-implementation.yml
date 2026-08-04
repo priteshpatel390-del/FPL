@@ -32,43 +32,17 @@ jobs:
             node /tmp/apply-teamsheet-2.0.7.mjs
           fi
 
-      - name: Commit reviewed source, tests and draft documentation
+      - name: Resolve reviewed source identity
         id: source
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.html \
-            src/main.mjs \
-            src/ui/app-shell.mjs \
-            src/ui/player-detail.mjs \
-            src/ui/views.mjs \
-            src/ui/mini-leagues-view.mjs \
-            src/ui/transfer-optimiser-view.mjs \
-            tests/final-mobile-polish.test.mjs \
-            CLAUDE.md \
-            docs/PROJECT_CONTEXT.md \
-            docs/ARCHITECTURE.md \
-            docs/DECISIONS.md \
-            docs/ROADMAP.md \
-            docs/KNOWN_LIMITATIONS.md \
-            docs/SECURITY.md \
-            docs/TESTING.md \
-            docs/CHANGELOG.md \
-            docs/STAGE_HISTORY.md \
-            docs/TEAMSHEET2-ITEM7.md
-          git diff --cached --check
-          if ! git diff --cached --quiet; then
-            git commit -m 'Implement Teamsheet 2.0.7 mobile polish'
-          fi
-          SOURCE_SHA=$(git log --format=%H --grep='^Implement Teamsheet 2.0.7 mobile polish$' -1)
+          SOURCE_SHA=$(git rev-list -1 HEAD -- app.html src tests/final-mobile-polish.test.mjs)
           if [ -z "$SOURCE_SHA" ]; then
             echo 'Reviewed source commit was not found' >&2
             exit 1
           fi
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
-          git push origin HEAD:${GITHUB_HEAD_REF}
 
       - name: Run complete test suite
         id: tests
@@ -77,13 +51,15 @@ jobs:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
           set -uo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           chmod +x ./run-tests.sh
-          ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.log
+          ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.txt
           TEST_STATUS=${PIPESTATUS[0]}
-          TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.log | tail -1)
+          TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.txt | tail -1)
           if [ "$TEST_STATUS" -ne 0 ]; then
-            cp /tmp/teamsheet-tests.log docs/TEAMSHEET2-ITEM7-TEST-FAILURE.log
-            git add docs/TEAMSHEET2-ITEM7-TEST-FAILURE.log
+            cp /tmp/teamsheet-tests.txt docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
+            git add -f docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
             if ! git diff --cached --quiet; then
               git commit -m 'Record Teamsheet 2.0.7 test failure'
               git push origin HEAD:${GITHUB_HEAD_REF}
@@ -137,6 +113,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.js dist/app.bundle.js dist/index.html dist/manifest.json index.html
           git diff --cached --check
           git commit -m 'Build Teamsheet 2.0.7 deployable'
@@ -151,6 +129,8 @@ jobs:
           GENERATED_SHA: ${{ steps.generated.outputs.sha }}
         run: |
           set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           python - <<'PY'
           import os
           from pathlib import Path
@@ -168,7 +148,7 @@ jobs:
           rm -f \
             scripts/apply-teamsheet-2.0.7.mjs.gz.b64 \
             .github/workflows/teamsheet-2.0.7-implementation.yml \
-            docs/TEAMSHEET2-ITEM7-TEST-FAILURE.log
+            docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
           git add CLAUDE.md docs scripts .github/workflows
           git diff --cached --check
           git commit -m 'Document Teamsheet 2.0.7 verification'
