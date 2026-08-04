@@ -1,10 +1,9 @@
 name: Teamsheet 2.0.7 implementation
 
 on:
-  pull_request:
+  push:
     branches:
       - agent/teamsheet-2.0.7-final-mobile-polish
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -15,7 +14,7 @@ concurrency:
 
 jobs:
   implement:
-    if: github.event.pull_request.head.ref == 'agent/teamsheet-2.0.7-trigger'
+    if: github.event.head_commit.message == 'Run Teamsheet 2.0.7 implementation'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
