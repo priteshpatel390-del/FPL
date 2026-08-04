@@ -1,6 +1,6 @@
 # TESTING.md
 
-> **Teamsheet 2.0.6 review baseline:** `./run-tests.sh` completes **520 passed, 0 failed, 0 skipped** for the approved implementation in draft PR #65. Coverage verifies nested identifier-free Settings routes, nearest-parent fallback, explicit Stage 10 UI hosts, separated export/recovery/deletion controls, consequence-led core-data warnings, Help/About truth, actual build identity, mobile Player Explorer presentation, focus restoration and preservation of all model/provider/evidence/Mini-League contracts. Production builds are deterministic and byte-identical for the exact reviewed identity, and root `index.html` matches `dist/index.html`. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone, VoiceOver and live populated-data acceptance were not performed; automated and headless-browser checks do not prove those conditions.
+> **Teamsheet 2.0.6 merged baseline:** `./run-tests.sh` completed **520 passed, 0 failed, 0 skipped** for the implementation merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. Coverage verifies nested identifier-free Settings routes, nearest-parent fallback, explicit Stage 10 UI hosts, separated export/recovery/deletion controls, consequence-led core-data warnings, Help/About truth, actual build identity, mobile Player Explorer presentation, focus restoration and preservation of all model/provider/evidence/Mini-League contracts. Production builds were deterministic and byte-identical for the exact reviewed identity, and root `index.html` matched `dist/index.html`. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance were not performed; automated and headless-browser checks do not prove those conditions. Teamsheet 2.0.7 must begin with investigation and design only; implementation requires explicit owner approval.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-08-04. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
@@ -8,7 +8,7 @@ Last updated: 2026-08-04. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-Teamsheet 2.0.6 review verification completes **520/520 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. The checkpoint changes Settings routes, UI mounting, consequence-led warning presentation, Help/About content and narrow-screen Player Explorer presentation only. Model, provider, evidence-schema, export and Mini-League correctness continue to rely on the preserved suites.
+Teamsheet 2.0.6 merged verification completed **520/520 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. The checkpoint changes Settings routes, UI mounting, consequence-led warning presentation, Help/About content and narrow-screen Player Explorer presentation only. Model, provider, evidence-schema, export and Mini-League correctness continue to rely on the preserved suites. The post-merge status correction is documentation-only: it must not modify tests, generated artefacts or application source and does not require an application rebuild.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -41,10 +41,10 @@ Teamsheet 2.0.6 review verification completes **520/520 passing tests**, a succe
 28. `mini-leagues.test.mjs`, `mini-leagues-ui.test.mjs` and `mini-leagues-intelligence.test.mjs` — versioned migration, classic-league discovery, official movement/gap helpers, exact squad and selected-rival set arithmetic, ID-free routes, targeted/incremental pagination, explicit on-demand fetching, concurrency two, selection-race invalidation, stale/incomplete/unavailable wording, mobile layout, accessibility and no-strategy/model guards.
 29. `settings-organisation.test.mjs` — Teamsheet 2.0.6 nested route hierarchy, nearest-parent fallback, explicit Stage 10 mount ownership, export/recovery/deletion separation, consequence-led warnings, Help/About truth, build identity, identifier-free routes, mobile Player Explorer metadata and focus-restoration contracts.
 
-## Teamsheet 2.0.6 review verification
-The review source passes **520/520 tests**, zero failures and zero skipped. New checks verify route-owned Settings destinations, explicit module hosts, warning materiality, Help/About content, identifier-free URLs and responsive Player Explorer metadata. A headless Chromium smoke check additionally exercises direct deep links, active Settings state, exact heading focus, Back restoration, dynamic module mounts, duplicate-ID absence and saved-core-data warning output.
+## Teamsheet 2.0.6 merged verification
+The reviewed source `72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6` passes **520/520 tests**, zero failures and zero skipped. New checks verify route-owned Settings destinations, explicit module hosts, warning materiality, Help/About content, identifier-free URLs and responsive Player Explorer metadata. A headless Chromium smoke check additionally exercises direct deep links, active Settings state, exact heading focus, Back restoration, dynamic module mounts, duplicate-ID absence and saved-core-data warning output. Production builds were deterministic, root `index.html` matched `dist/index.html`, and PR #65 merged at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`.
 
-This evidence does not replace physical iPhone Safari, VoiceOver or live populated-data acceptance.
+This evidence does not replace physical iPhone Safari, VoiceOver or live populated-data acceptance. Those remain explicit Teamsheet 2.0.7 acceptance limitations.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.

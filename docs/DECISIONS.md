@@ -161,3 +161,11 @@ Reason: the approved five-part Settings hierarchy existed, but evidence, outcome
 Approach: give each Settings goal an identifier-free route-owned landing and child route; create explicit mount hosts for Stage 10 UI modules; move exports to Evidence & Performance and recovery/deletion to Data & Diagnostics; keep full seven-state Provider Health under Settings; show primary warnings only when core Official FPL availability materially affects the current action; complete Help & About from existing repository truth; preserve Player Explorer calculations while using mobile result cards; and restore focus to the opener through hash history.
 
 Consequences: D-21's global compact Provider Health presentation is superseded. Provider state vocabulary, thresholds, transport, retries, fallbacks, persistence, evidence schemas, export formats and every model/fixture/squad/captaincy/optimiser/Mini-League calculation remain unchanged. Routes contain no account, league, manager, key or evidence-record identity. Physical iPhone, VoiceOver and live populated-data acceptance remain separate merge gates.
+
+**D-35 · 2026-08-04 · Accepted · Teamsheet 2.0.6 completion and 2.0.7 approval boundary**
+
+Reason: PR #65 was explicitly approved and merged after the 2.0.6 implementation documentation had already been finalised for draft review, leaving canonical status records inconsistent with repository history.
+
+Approach: record Teamsheet 2.0.6 as complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`, with the verified **520 passed, 0 failed, 0 skipped** baseline, deterministic builds, root/deployable equality, model `2.4.0` and rules `2026-27.3`. Preserve the fact that no provider, data source or calculation changed. Carry physical iPhone Safari, VoiceOver and live populated-data acceptance forward as explicit Teamsheet 2.0.7 limitations rather than reopening 2.0.6.
+
+Consequences: this decision is documentation-only and changes no application source, test, generated file, provider, data source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank or Mini-League calculation. Teamsheet 2.0.7 is the next formal checkpoint, beginning with investigation and design only. Implementation requires a separately approved exact scope.
