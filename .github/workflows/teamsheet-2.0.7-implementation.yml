@@ -25,105 +25,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Apply approved scope
-        run: |
-          set -euo pipefail
-          if [ ! -f tests/final-mobile-polish.test.mjs ]; then
-            base64 -d scripts/apply-teamsheet-2.0.7.mjs.gz.b64 | gunzip > /tmp/apply-teamsheet-2.0.7.mjs
-            node /tmp/apply-teamsheet-2.0.7.mjs
-          fi
-
-      - name: Apply verified regression corrections
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p=Path(path)
-              text=p.read_text()
-              if old not in text:
-                  raise SystemExit(f'missing correction target in {path}: {old[:80]!r}')
-              p.write_text(text.replace(old,new,1))
-
-          replace_once('src/ui/views.mjs',
-          """async function ask(){
-            if(!configureAskAvailability()) return;
-            const q = $('q').value.trim();
-            if(!q) return;
-          """,
-          """async function ask(){
-            const askAvailable=configureAskAvailability();
-            const q = $('q').value.trim();
-            if(!q) return;
-            if(!askAvailable){
-              lastAskQuestion=q;
-              S.thread.push({role:'user',content:q});
-              $('q').value='';
-              S.thread.push({role:'assistant',content:\"The AI assistant requires the planned serverless migration in this hosted build. Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys.\"});
-              renderThread();
-              $('askStatus').textContent='';
-              if($('retryAsk')) $('retryAsk').hidden=true;
-              return;
-            }
-          """)
-
-          replace_once('src/ui/app-shell.mjs',
-            "placeholder:askAvailable?'Ask Teamsheet…':'Ask unavailable in this hosted build'",
-            "placeholder:'Ask Teamsheet…'")
-          replace_once('src/ui/app-shell.mjs',
-            "  if(globalAsk&&globalAskInput&&globalAskSend){",
-            "  if(globalAskInput&&!askAvailable) globalAskInput.setAttribute('placeholder','Ask unavailable in this hosted build');\n  if(globalAsk&&globalAskInput&&globalAskSend){")
-          replace_once('src/ui/app-shell.mjs',
-            "    if(focusCandidateVisible(remembered)){",
-            "    if(remembered&&document.contains?.(remembered)&&focusCandidateVisible(remembered)){")
-
-          replace_once('src/ui/mini-leagues-view.mjs',
-            "  const initialRoute=globalThis.location?.hash||'#/leagues';\n  renderMiniLeagues(initialRoute);",
-            "  const initialRoute=globalThis.location?.hash||'#/leagues';\n  renderMiniLeagues(initialRoute);\n  if(initialRoute==='#/leagues/exposure') $('leagueExposure')?.querySelector?.('h2')?.focus?.({preventScroll:true});")
-
-          replace_once('app.html','td.team{','td.team,th.team{')
-          replace_once('app.html','td.team .ease{','td.team .ease,th.team .ease{')
-          replace_once('app.html','.player-detail-close{width:38px;height:38px;','.player-detail-close{width:44px;height:44px;')
-          replace_once('app.html','<option value="8" selected>Search top 8</option><option value="15">Search top 15</option><option value="20">Search top 20</option>',
-            '<option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option>')
-
-          replace_once('tests/player-detail.test.mjs',
-            "  const trigger=makeNode('trigger');\n",
-            "  const trigger=makeNode('trigger');\n  trigger.hidden=false;\n")
-
-          p=Path('tests/final-mobile-polish.test.mjs')
-          text=p.read_text()
-          text=text.replace("assert.doesNotMatch(views,/reFixtures = debounce([sS]*renderSquad(); renderTransfers()/);",
-            r"assert.doesNotMatch(views,/reFixtures = debounce\([\s\S]*renderSquad\(\); renderTransfers\(\)/);")
-          text=text.replace("assert.doesNotMatch(views,/function renderRestrictedAppState()[sS]*optimiseTransfers/);",
-            r"assert.doesNotMatch(views,/function renderRestrictedAppState\(\)[\s\S]*optimiseTransfers/);")
-          text=text.replace("assert.doesNotMatch(combined,/fantasy.premierleague.com/api/[sS]*method:s*['\"](?:POST|PUT|PATCH|DELETE)/i);",
-            r"assert.doesNotMatch(combined,/fantasy\.premierleague\.com\/api\/[\s\S]*method:\s*['\"](?:POST|PUT|PATCH|DELETE)/i);")
-          p.write_text(text)
-
-          Path('docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt').unlink(missing_ok=True)
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.html src tests docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
-          git diff --cached --check
-          if ! git diff --cached --quiet; then
-            git commit -m 'Fix Teamsheet 2.0.7 regression contracts'
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
-
       - name: Resolve reviewed source identity
         id: source
         shell: bash
         run: |
           set -euo pipefail
-          SOURCE_SHA=$(git rev-list -1 HEAD -- app.html src tests/final-mobile-polish.test.mjs)
-          if [ -z "$SOURCE_SHA" ]; then
-            echo 'Reviewed source commit was not found' >&2
-            exit 1
-          fi
+          SOURCE_SHA=$(git rev-list -1 HEAD -- app.html src tests)
+          test -n "$SOURCE_SHA"
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Run complete test suite
@@ -136,11 +44,11 @@ jobs:
           set +e
           chmod +x ./run-tests.sh
           ./run-tests.sh > /tmp/teamsheet-tests.txt 2>&1
-          TEST_STATUS=$?
+          STATUS=$?
           cat /tmp/teamsheet-tests.txt
-          TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.txt | tail -1)
-          echo "count=${TEST_COUNT:-0}" >> "$GITHUB_OUTPUT"
-          exit "$TEST_STATUS"
+          COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.txt | tail -1)
+          echo "count=${COUNT:-0}" >> "$GITHUB_OUTPUT"
+          exit "$STATUS"
 
       - name: Record exact test failure
         if: always() && steps.tests.outcome == 'failure'
@@ -151,60 +59,48 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           cp /tmp/teamsheet-tests.txt docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
           git add -f docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
-          if ! git diff --cached --quiet; then
-            git commit -m 'Record Teamsheet 2.0.7 test failure'
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
+          git commit -m 'Record Teamsheet 2.0.7 test failure'
+          git push origin HEAD:${GITHUB_HEAD_REF}
           exit 1
 
-      - name: Require a verified pass count
+      - name: Require verified pass count
         if: steps.tests.outcome == 'success'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "${{ steps.tests.outputs.count }}" = '0' ]; then
-            echo 'Could not determine passing test count' >&2
-            exit 1
-          fi
+        run: test "${{ steps.tests.outputs.count }}" != '0'
 
-      - name: Verify deterministic exact-identity production builds
+      - name: Verify deterministic exact-identity builds
         if: steps.tests.outcome == 'success'
         shell: bash
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
-          rm -rf /tmp/teamsheet-build-one /tmp/teamsheet-build-two
-          mkdir -p /tmp/teamsheet-build-one /tmp/teamsheet-build-two
-
+          rm -rf /tmp/build-one /tmp/build-two
+          mkdir -p /tmp/build-one /tmp/build-two
           node build.mjs
-          cp index.html /tmp/teamsheet-build-one/index.html
-          cp dist/index.html /tmp/teamsheet-build-one/dist-index.html
-          cp dist/app.bundle.js /tmp/teamsheet-build-one/app.bundle.js
-          cp dist/manifest.json /tmp/teamsheet-build-one/manifest.json
-
+          cp index.html /tmp/build-one/index.html
+          cp dist/index.html /tmp/build-one/dist-index.html
+          cp dist/app.bundle.js /tmp/build-one/app.bundle.js
+          cp dist/manifest.json /tmp/build-one/manifest.json
           node build.mjs
-          cp index.html /tmp/teamsheet-build-two/index.html
-          cp dist/index.html /tmp/teamsheet-build-two/dist-index.html
-          cp dist/app.bundle.js /tmp/teamsheet-build-two/app.bundle.js
-          cp dist/manifest.json /tmp/teamsheet-build-two/manifest.json
-
-          cmp /tmp/teamsheet-build-one/index.html /tmp/teamsheet-build-two/index.html
-          cmp /tmp/teamsheet-build-one/dist-index.html /tmp/teamsheet-build-two/dist-index.html
-          cmp /tmp/teamsheet-build-one/app.bundle.js /tmp/teamsheet-build-two/app.bundle.js
-          cmp /tmp/teamsheet-build-one/manifest.json /tmp/teamsheet-build-two/manifest.json
+          cp index.html /tmp/build-two/index.html
+          cp dist/index.html /tmp/build-two/dist-index.html
+          cp dist/app.bundle.js /tmp/build-two/app.bundle.js
+          cp dist/manifest.json /tmp/build-two/manifest.json
+          cmp /tmp/build-one/index.html /tmp/build-two/index.html
+          cmp /tmp/build-one/dist-index.html /tmp/build-two/dist-index.html
+          cmp /tmp/build-one/app.bundle.js /tmp/build-two/app.bundle.js
+          cmp /tmp/build-one/manifest.json /tmp/build-two/manifest.json
           cmp index.html dist/index.html
           node - <<'NODE'
           const fs=require('fs');
           const manifest=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
-          const expected=process.env.BUILD_COMMIT;
-          if(manifest.commit!==expected) throw new Error(`manifest commit ${manifest.commit} != ${expected}`);
+          if(manifest.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch');
           if(manifest.modelVersion!=='2.4.0') throw new Error('model version changed');
           if(manifest.rulesVersion!=='2026-27.3') throw new Error('rules version changed');
           if(!/^[0-9a-f]{64}$/.test(manifest.sourceHash)) throw new Error('source hash missing');
           NODE
 
-      - name: Commit reviewed generated artefacts
+      - name: Commit generated deployable
         if: steps.tests.outcome == 'success'
         id: generated
         shell: bash
@@ -215,10 +111,9 @@ jobs:
           git add app.js dist/app.bundle.js dist/index.html dist/manifest.json index.html
           git diff --cached --check
           git commit -m 'Build Teamsheet 2.0.7 deployable'
-          GENERATED_SHA=$(git rev-parse HEAD)
-          echo "sha=$GENERATED_SHA" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Finalise canonical documentation and remove temporary workflow
+      - name: Finalise canonical documentation
         if: steps.tests.outcome == 'success'
         shell: bash
         env:
@@ -232,10 +127,8 @@ jobs:
           python - <<'PY'
           import os
           from pathlib import Path
-          for path in [
-              'CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ARCHITECTURE.md','docs/DECISIONS.md',
-              'docs/ROADMAP.md','docs/KNOWN_LIMITATIONS.md','docs/SECURITY.md','docs/TESTING.md',
-              'docs/CHANGELOG.md','docs/STAGE_HISTORY.md','docs/TEAMSHEET2-ITEM7.md']:
+          paths=['CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ARCHITECTURE.md','docs/DECISIONS.md','docs/ROADMAP.md','docs/KNOWN_LIMITATIONS.md','docs/SECURITY.md','docs/TESTING.md','docs/CHANGELOG.md','docs/STAGE_HISTORY.md','docs/TEAMSHEET2-ITEM7.md']
+          for path in paths:
               p=Path(path)
               text=p.read_text()
               text=text.replace('__TEST_COUNT__',os.environ['TEST_COUNT'])
@@ -243,15 +136,11 @@ jobs:
               text=text.replace('__GENERATED_COMMIT__',os.environ['GENERATED_SHA'])
               p.write_text(text)
           PY
-          rm -f \
-            scripts/apply-teamsheet-2.0.7.mjs.gz.b64 \
-            scripts/teamsheet-2.0.7-run-trigger.txt \
-            .github/workflows/teamsheet-2.0.7-implementation.yml \
-            docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
+          rm -f scripts/apply-teamsheet-2.0.7.mjs.gz.b64 scripts/teamsheet-2.0.7-run-trigger.txt .github/workflows/teamsheet-2.0.7-implementation.yml docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
           git add CLAUDE.md docs scripts .github/workflows
           git diff --cached --check
           git commit -m 'Document Teamsheet 2.0.7 verification'
 
-      - name: Push finalised implementation branch
+      - name: Push finalised branch
         if: steps.tests.outcome == 'success'
         run: git push origin HEAD:${GITHUB_HEAD_REF}

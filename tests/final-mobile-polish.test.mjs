@@ -43,7 +43,7 @@ test('Ask hosted mode is honest and failed prompts are retained',()=>{
   assert.match(app,/id="askStatus" aria-live="polite"/);
   assert.match(views,/your question has been kept/);
   assert.equal(views.includes('S.thread.pop();'),false);
-  assert.match(views,/id:'retryAsk'|$('retryAsk')/);
+  assert.match(views,/id:'retryAsk'|\$\('retryAsk'\)/);
   assert.doesNotMatch(main,/The Ask tab still works/);
 });
 
@@ -77,9 +77,8 @@ test('Transfers wording distinguishes no hit and disclosed alternatives',()=>{
 });
 
 test('approved polish adds no service worker, framework or account-write path',()=>{
-  const combined=[app,shell,views,main,transfers,leagues].join('
-');
+  const combined=[app,shell,views,main,transfers,leagues].join('\n');
   assert.doesNotMatch(combined,/serviceWorker.register/);
   assert.doesNotMatch(combined,/react|vue|angular/i);
-  assert.doesNotMatch(combined,/fantasy\.premierleague\.com\/api\/[\s\S]*method:\s*['\"](?:POST|PUT|PATCH|DELETE)/i);
+  assert.doesNotMatch(combined,/fantasy\.premierleague\.com\/api\/[\s\S]*method:\s*['"](?:POST|PUT|PATCH|DELETE)/i);
 });
