@@ -1,0 +1,27 @@
+name: Temporary repository export
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Package repository worktree
+        run: tar --exclude=.git -czf /tmp/teamsheet-source.tar.gz .
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamsheet-source
+          path: /tmp/teamsheet-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
