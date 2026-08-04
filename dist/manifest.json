@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "78c3bb46431d5b92b82932d10ae56a83113b01c4f0f6e0e753624c55a56902bf",
-  "commit": "8b6d42d3e95ea3dcb2364a0958e11242f038faae",
+  "sourceHash": "146431ec24cf7bedcf205a4495ee515baa02643dca099b868cb1e8c8a8b67f5c",
+  "commit": "72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -18,6 +18,7 @@
     "src/providers/understat.mjs",
     "src/providers/odds.mjs",
     "src/providers/minutes-history.mjs",
+    "src/ui/data-warning.mjs",
     "src/model/fixtures.mjs",
     "src/model/minutes.mjs",
     "src/model/scoring-rules.mjs",

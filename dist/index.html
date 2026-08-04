@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-cPzlFN+8jwVnF2T6IP6RtqcqJe6FhIVGZ4VKRcbIHw0='; style-src-elem 'sha256-jWeMzh4ds+gYbXMg/8QHVNsyLxhrOSZjdBdlCYC5Y48=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-UjeZd/s2vjIM8hvEV1dSIvqH1Y2eLXIr5DunN54gFJA='; style-src-elem 'sha256-OLHyxjZyXK2paWa8CdErmOQQXx/iJ3iC4+QqhwIGc3Q=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -348,8 +348,6 @@ body.player-detail-open{overflow:hidden}
 .transfer-net.positive{color:var(--pitch)}.transfer-net.negative{color:var(--claret)}
 .chip-remove{padding:6px 9px;color:var(--claret)}.muted{color:var(--ink-soft)}
 .data-compact{min-width:520px}
-#providerHealthCompact,#evidenceCompact{margin-top:10px;min-height:38px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff}
-#providerHealthCompact:hover,#evidenceCompact:hover{background:rgba(255,255,255,.16);color:#fff}
 #providerHealthDetail,#evidencePanel{scroll-margin-top:12px}
 .evidence-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .evidence-actions .btn{flex:1 1 150px}
@@ -412,11 +410,32 @@ h2[tabindex="-1"]:focus{outline:none}
 .settings-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#EAF0EB;color:var(--pitch);font-size:19px;font-weight:800}
 .settings-card-copy{min-width:0}.settings-card h3{font-size:15px;margin:0}.settings-card-description{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:2px}
 .settings-card-arrow{font-size:25px;color:var(--ink-soft)}
+.settings-view .btn.sm,.settings-view button{min-height:44px}
+.settings-view input:not([type=checkbox]):not([type=file]),.settings-view select{min-height:44px}
 .route-header{position:relative;margin-bottom:12px;padding-top:2px}.route-header h2{font-size:20px;margin-top:0}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
 .route-back{display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0 0 4px;color:var(--claret);font-size:27px;font-weight:700;line-height:1;text-decoration:none;border-radius:50%}
 .route-back:hover{background:#F7EEF0;text-decoration:none}.route-back:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .settings-subview>.panel:last-child{margin-bottom:0}
-@media(min-width:720px){.settings-grid{grid-template-columns:1fr 1fr}.settings-card:last-child{grid-column:1/-1}}
+@media(min-width:720px){.settings-grid{grid-template-columns:1fr 1fr}.settings-grid:not(.settings-subgrid)>.settings-card:last-child{grid-column:1/-1}}
+.settings-subgrid{align-items:start}.settings-subview{min-width:0}.settings-content-panel>h3{font-size:17px;margin-bottom:2px}.settings-content-panel>.hint{color:var(--ink-soft);font-size:13px;margin:2px 0 14px}
+.settings-action-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.settings-action-links .btn{display:grid;place-items:center;text-decoration:none;text-align:center}
+.settings-readable-list{margin:8px 0 0;padding-left:22px}.settings-readable-list li+li{margin-top:8px}.build-identity{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 12px;margin:12px 0 0}.build-identity dt{font-weight:700}.build-identity dd{margin:0;overflow-wrap:anywhere;color:var(--ink-soft)}
+#outcomesHost>.panel,#metricsHost>.panel,#reviewHost>.panel,#evidenceExportHost>.panel,#outcomeExportHost>.panel,#reviewExportHost>.panel,#evidenceRecoveryHost>.panel,#outcomeRecoveryHost>.panel,#stage10DiagnosticsHost>.panel,#evidenceStorageHost>.panel,#outcomeStorageHost>.panel,#metricStorageHost>.panel{margin-bottom:14px}
+.global-data-warning{display:block;margin-top:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.35);border-radius:9px;background:#6A4E16;color:#fff;text-decoration:none;font-size:12px;font-weight:700}.global-data-warning:hover{background:#7A5B1C;color:#fff}.global-data-warning[hidden]{display:none}.global-data-warning:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
+.data-material-warning{margin:0 0 12px}.data-material-warning a{font-weight:700}.data-material-warning[hidden]{display:none}
+@media(max-width:640px){
+  .settings-action-links{grid-template-columns:1fr}
+  #view-players .scroll{overflow:visible;margin:0;padding:0}
+  #view-players table.data{display:block;min-width:0;width:100%}
+  #view-players table.data thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  #view-players table.data tbody{display:grid;gap:10px}
+  #view-players table.data tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow)}
+  #view-players table.data td{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:5px 6px;border:0;background:#F7F9F5;border-radius:7px;text-align:right}
+  #view-players table.data td:before{content:attr(data-label);font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);text-align:left}
+  #view-players table.data td.player-result-main{grid-column:1/-1;display:block;padding:2px 1px 8px;background:transparent;text-align:left;border-bottom:1px solid var(--line);border-radius:0}
+  #view-players table.data td.player-result-main:before{content:none}
+  #view-players table.data td.player-result-secondary{display:none}
+}
 @media(max-width:520px){
   main{padding:12px}.panel{padding:14px}.row{align-items:stretch}.row>label.fld{flex:1 1 135px}
   .tab{font-size:9px}.tab-label{max-width:68px}
@@ -621,23 +640,12 @@ h2[tabindex="-1"]:focus{outline:none}
   <!-- VALIDATION EVIDENCE -->
   <section class="panel" id="evidencePanel" tabindex="-1" aria-labelledby="evidenceTitle">
     <span class="eyebrow">Automatic validation</span>
-    <h2 id="evidenceTitle">Deadline evidence</h2>
-    <p class="hint">Teamsheet automatically secures verified pre-deadline records and later collects official Gameweek outcomes after approved data has refreshed. No routine action is required.</p>
+    <h3 id="evidenceTitle">Deadline evidence</h3>
+    <p class="hint">Teamsheet automatically secures verified pre-deadline records after approved data has refreshed. No routine action is required.</p>
     <div class="note plain" id="evidenceStatus"><b>Waiting for season data</b> Evidence will be handled automatically after verification.</div>
     <p class="status" id="evidenceDeadline">Deadline unavailable.</p>
-    <p class="status evidence-message" id="evidenceMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
-    <details class="mt-12">
-      <summary>Saved evidence and recovery controls</summary>
-      <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
-      <p class="hint m-hint-top">These controls are for backup recovery and diagnostics only. Imported files cannot become official prospective evidence.</p>
-      <div class="evidence-actions">
-        <button class="btn ghost" id="exportEvidenceBtn" disabled>Export latest JSON</button>
-        <button class="btn ghost" id="importEvidenceBtn">Restore backup JSON</button>
-        <button class="btn ghost" id="captureEvidenceBtn" disabled>Diagnostic capture</button>
-        <button class="btn ghost" id="deleteEvidenceBtn">Delete local evidence</button>
-        <input type="file" id="evidenceImport" accept="application/json,.json" hidden>
-      </div>
-    </details>
+    <p class="status evidence-message" id="evidenceDeadlineMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
+    <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
   </section>
 
   <!-- FIXTURES -->
@@ -645,6 +653,7 @@ h2[tabindex="-1"]:focus{outline:none}
     <span class="eyebrow">Signature view</span>
     <h2>Fixtures</h2>
     <p class="hint">Difficulty from the model's own attack/defence ratings, not the official 1–5. Switch the lens to see who fixtures favour.</p>
+    <div id="fixtureDataWarning"></div>
     <div class="row mb-12">
       <label class="fld">From GW<input type="number" id="fxFrom" min="1" max="38" class="input-w-72"></label>
       <label class="fld">Games<input type="number" id="fxSpan" min="3" max="12" value="6" class="input-w-72"></label>
@@ -673,7 +682,7 @@ h2[tabindex="-1"]:focus{outline:none}
   <!-- RANKER -->
   <section class="view panel" id="view-players" hidden>
     <span class="eyebrow">Shortlist</span>
-    <h2>Projected points</h2>
+    <h3>Projected points</h3>
     <p class="hint" id="rankerHint">Expected points per gameweek, modelled separately for each position. Tap any row for the breakdown.</p>
     <div class="row mb-10">
       <label class="fld">Position<select id="plPos"><option value="0">All</option></select></label>
@@ -721,12 +730,14 @@ h2[tabindex="-1"]:focus{outline:none}
         <label class="fld">Display options<select id="trTop"><option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option></select></label>
       </div>
     </fieldset>
+    <div id="transferDataWarning"></div>
     <p class="status transfer-status" id="transferStatus" aria-live="polite"></p>
     <div id="transferOut" aria-busy="false"><div class="empty"><strong>No verified comparison yet</strong>Load a complete squad and verified FPL data to compare transfer decisions.</div></div>
   </section>
 
   <!-- LEAGUES -->
   <section class="view league-view" id="view-league" hidden>
+    <div id="leagueDataWarning"></div>
     <p class="status" id="leagueLiveStatus" aria-live="polite"></p>
     <section class="panel league-route" id="leagueLanding" data-league-route="#/leagues">
       <div class="league-topbar">
@@ -800,8 +811,8 @@ h2[tabindex="-1"]:focus{outline:none}
   <a class="tab" href="#/settings"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></span><span class="tab-label">Settings</span></a>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"78c3bb46431d5b92","commit":"8b6d42d3e95ea3dcb2364a0958e11242f038faae"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"78c3bb46431d5b92b82932d10ae56a83113b01c4f0f6e0e753624c55a56902bf","commit":"8b6d42d3e95ea3dcb2364a0958e11242f038faae","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"146431ec24cf7bed","commit":"72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"146431ec24cf7bedcf205a4495ee515baa02643dca099b868cb1e8c8a8b67f5c","commit":"72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -2757,6 +2768,82 @@ async function loadMinuteHistories(){
 
 
 
+/* ===== src/ui/data-warning.mjs ===== */
+
+const MATERIAL_SAVED_FPL_STATES=Object.freeze([
+  HEALTH_STATES.CACHED,
+  HEALTH_STATES.STALE,
+  HEALTH_STATES.FALLBACK
+]);
+
+function materialDataAgeLabel(ms){
+  if(ms==null||!Number.isFinite(Number(ms))) return 'time unavailable';
+  const minutes=Math.max(0,Math.floor(Number(ms)/60000));
+  if(minutes<1) return 'verified just now';
+  if(minutes<60) return `verified ${minutes}m ago`;
+  const hours=Math.floor(minutes/60);
+  if(hours<48) return `verified ${hours}h ago`;
+  return `verified ${Math.floor(hours/24)}d ago`;
+}
+
+function fplDataWarningModel({state=null,hasCoreData=false,ageMs=null}={}){
+  if(!hasCoreData){
+    return Object.freeze({
+      kind:'unavailable',
+      level:'blocking',
+      title:'Official FPL data is unavailable',
+      detail:'Teamsheet cannot verify recommendations or fixture context until the core season feed loads.',
+      settingsOnly:false
+    });
+  }
+  if(MATERIAL_SAVED_FPL_STATES.includes(state)){
+    return Object.freeze({
+      kind:'saved-data',
+      level:'warning',
+      title:'Using previously verified FPL data',
+      detail:`The live Official FPL refresh did not complete · ${materialDataAgeLabel(ageMs)}.`,
+      settingsOnly:false
+    });
+  }
+  return Object.freeze({kind:'clear',level:'clear',title:'',detail:'',settingsOnly:true});
+}
+
+function currentFplDataWarning(now=Date.now()){
+  const health=getHealth('fpl',{seasonLive:S.seasonLive},now);
+  const ageMs=health?.lastSuccess?Math.max(0,now-health.lastSuccess):null;
+  return fplDataWarningModel({state:health?.state||null,hasCoreData:Boolean(S.boot),ageMs});
+}
+
+function dataWarningContent(model,{settingsLink=true}={}){
+  const children=[el('b',{},model.title),document.createTextNode(` ${model.detail}`)];
+  if(settingsLink) children.push(document.createTextNode(' '),el('a',{href:'#/settings/data/providers'},'View data details'));
+  return children;
+}
+
+function renderGlobalDataWarning(){
+  const node=$('globalDataWarning');if(!node)return;
+  const model=currentFplDataWarning();
+  const visible=model.kind==='saved-data';
+  node.hidden=!visible;
+  if(!visible){setChildren(node);node.removeAttribute?.('aria-label');return;}
+  setChildren(node,`${model.title} · ${model.detail}`);
+  node.setAttribute('aria-label',`${model.title}. ${model.detail} Open Provider Health.`);
+}
+
+function renderRouteDataWarning(targetId,{showUnavailable=true,settingsLink=true}={}){
+  const node=$(targetId);if(!node)return currentFplDataWarning();
+  const model=currentFplDataWarning();
+  const visible=model.kind==='saved-data'||(showUnavailable&&model.kind==='unavailable');
+  if(!visible){setChildren(node);node.hidden=true;return model;}
+  node.hidden=false;
+  node.className=`note ${model.level==='blocking'?'bad':'plain'} data-material-warning`;
+  node.setAttribute('role',model.level==='blocking'?'alert':'status');
+  setChildren(node,dataWarningContent(model,{settingsLink}));
+  return model;
+}
+
+
+
 /* ===== src/model/fixtures.mjs ===== */
 /* ---------------------------------------------------------------------
    FIXTURE MODEL — expected goals for and against, from team strength
@@ -4213,15 +4300,6 @@ async function runBacktest(){
 /* ===== src/main.mjs ===== */
 
 const HEALTH_LABELS = {fpl:'FPL', understat:'Understat', odds:'Odds', archive:'Archive'};
-const HEALTH_PRIORITY = [
-  HEALTH_STATES.UNAVAILABLE,
-  HEALTH_STATES.FALLBACK,
-  HEALTH_STATES.PARTIAL,
-  HEALTH_STATES.STALE,
-  HEALTH_STATES.CACHED,
-  HEALTH_STATES.DISABLED,
-  HEALTH_STATES.LIVE
-];
 const VERIFIED_REFRESH_MIN_AGE_MS = 10 * 60 * 1000;
 const STARTUP_PHASE_COPY = Object.freeze({
   cache:['Loading verified data','Preparing the last accepted dataset as a safe fallback.'],
@@ -4252,34 +4330,9 @@ function providerHealthFlagClass(state){
   if(state === HEALTH_STATES.FALLBACK || state === HEALTH_STATES.UNAVAILABLE) return 'out';
   return 'dark';
 }
-function providerHealthCompactModel(rows = []){
-  if(!rows.length) return {
-    label:'Waiting',
-    state:'Waiting',
-    ariaLabel:'Provider Health: waiting for first data load'
-  };
-  const allLive = rows.every(row => row.state === HEALTH_STATES.LIVE);
-  const worst = HEALTH_PRIORITY.map(state => rows.find(row => row.state === state)).find(Boolean) || rows[0];
-  const detail = rows.map(row => `${HEALTH_LABELS[row.provider] || row.provider} ${row.state}`).join(', ');
-  return {
-    label:allLive ? 'All live' : worst.state,
-    state:allLive ? HEALTH_STATES.LIVE : worst.state,
-    ariaLabel:`Provider Health: ${detail}. Open full detail.`
-  };
-}
 function renderProviderHealth(){
-  const compact = $('providerHealthCompact');
   const detail = $('providerHealthRows');
   const rows = healthRows({seasonLive:S.seasonLive});
-  const compactModel = providerHealthCompactModel(rows);
-
-  if(compact){
-    setChildren(compact,
-      document.createTextNode('Data '),
-      el('span',{class:`flag ${providerHealthFlagClass(compactModel.state)}`},compactModel.label));
-    compact.setAttribute('aria-label',compactModel.ariaLabel);
-    compact.dataset.healthState = String(compactModel.state).toLowerCase();
-  }
 
   if(!detail) return;
   if(!rows.length){
@@ -4304,13 +4357,14 @@ function reportLoadPhase(options,key){
 function renderVerifiedState(){
   clearXP();
   renderProviderHealth();
+  renderGlobalDataWarning();
   renderAll();
 }
 
 async function loadAll(options = {}){
   const st = $('status');
   const deferRender = Boolean(options.deferRender);
-  const renderIntermediate = () => { if(!deferRender){ renderProviderHealth(); renderAll(); } };
+  const renderIntermediate = () => { if(!deferRender){ renderProviderHealth(); renderGlobalDataWarning(); renderAll(); } };
   reportLoadPhase(options,'cache');
   const cached = await sget(K_CACHE);
   let cacheAccepted = false;
@@ -4416,7 +4470,7 @@ async function loadAll(options = {}){
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
-    else renderProviderHealth();
+    else { renderProviderHealth(); renderGlobalDataWarning(); }
     return {
       ok:Boolean(S.boot),
       criticalReady:Boolean(S.boot),
@@ -4450,11 +4504,6 @@ function setRefreshInteractionLock(locked,{startup=false}={}){
   if(!startup){
     if(main) main.inert=locked;
     if(nav) nav.inert=locked;
-  }
-  const compact=$('providerHealthCompact');
-  if(locked&&compact){
-    setChildren(compact,document.createTextNode('Data '),el('span',{class:'flag info'},'Checking'));
-    compact.setAttribute('aria-label','Data refresh in progress. Previously verified data remains visible.');
   }
 }
 async function dispatchVerifiedData(detail){
@@ -4508,8 +4557,9 @@ function installVerifiedRefreshTriggers(){
 
 
 /* ===== src/ui/app-shell.mjs ===== */
-// Teamsheet 2.0.1 app shell — primary navigation, URL routing and Settings hierarchy.
-// Reorganises existing DOM nodes without changing model, provider or persistence behaviour.
+// Teamsheet 2.0.6 app shell — primary navigation, Settings information
+// architecture, URL routing and route-owned focus. Existing data, model and
+// persistence behaviour remains owned by the original feature modules.
 
 const TEAMSHEET_PRIMARY_ROUTES = Object.freeze([
   Object.freeze({route:'#/team',key:'team',icon:'team',label:'Team'}),
@@ -4535,23 +4585,47 @@ const TEAMSHEET_ROUTE_ALIASES = Object.freeze({
   '#/players':'#/settings/research/players',
   '#/league':'#/leagues',
   '#/mini-leagues':'#/leagues',
-  '#/more':'#/settings',
-  '#/settings/research':'#/settings/research/players'
+  '#/more':'#/settings'
 });
 
-const TEAMSHEET_VALID_ROUTES = new Set([
-  ...TEAMSHEET_PRIMARY_ROUTES.map(item=>item.route),
-  '#/ask',
-  '#/settings/team-account',
-  '#/settings/research/players',
-  '#/settings/evidence',
-  '#/settings/data',
-  '#/settings/help',
-  '#/leagues/standings',
-  '#/leagues/rival',
-  '#/leagues/exposure',
-  '#/leagues/manage'
-]);
+const TEAMSHEET_ROUTE_TABLE = Object.freeze({
+  '#/team':Object.freeze({title:'Team',primary:'team'}),
+  '#/transfers':Object.freeze({title:'Transfers',primary:'transfers'}),
+  '#/fixtures':Object.freeze({title:'Fixtures',primary:'fixtures'}),
+  '#/leagues':Object.freeze({title:'Leagues',primary:'leagues'}),
+  '#/leagues/standings':Object.freeze({title:'League table',primary:'leagues',parent:'#/leagues'}),
+  '#/leagues/rival':Object.freeze({title:'Rival comparison',primary:'leagues',parent:'#/leagues'}),
+  '#/leagues/exposure':Object.freeze({title:'Rival exposure',primary:'leagues',parent:'#/leagues'}),
+  '#/leagues/manage':Object.freeze({title:'Manage leagues',primary:'leagues',parent:'#/leagues'}),
+  '#/settings':Object.freeze({title:'Settings',primary:'settings'}),
+  '#/settings/team-account':Object.freeze({title:'Team & Account',primary:'settings',settings:'team-account',parent:'#/settings'}),
+  '#/settings/team-account/manual-squad':Object.freeze({title:'Manual squad',primary:'settings',settings:'team-account',parent:'#/settings/team-account'}),
+  '#/settings/team-account/connection':Object.freeze({title:'Connection guidance',primary:'settings',settings:'team-account',parent:'#/settings/team-account'}),
+  '#/settings/research':Object.freeze({title:'Research Tools',primary:'settings',settings:'research',parent:'#/settings'}),
+  '#/settings/research/players':Object.freeze({title:'Player Explorer',primary:'settings',settings:'research',parent:'#/settings/research'}),
+  '#/settings/evidence':Object.freeze({title:'Evidence & Performance',primary:'settings',settings:'evidence',parent:'#/settings'}),
+  '#/settings/evidence/deadline':Object.freeze({title:'Deadline evidence',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/outcomes':Object.freeze({title:'Official outcomes',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/metrics':Object.freeze({title:'Performance metrics',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/review':Object.freeze({title:'Operating review',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/exports':Object.freeze({title:'Exports',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/data':Object.freeze({title:'Data & Diagnostics',primary:'settings',settings:'data',parent:'#/settings'}),
+  '#/settings/data/providers':Object.freeze({title:'Provider Health',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/optional-sources':Object.freeze({title:'Optional sources',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/calibration':Object.freeze({title:'Calibration',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/recovery':Object.freeze({title:'Recovery',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/storage':Object.freeze({title:'Local storage',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/help':Object.freeze({title:'Help & About',primary:'settings',settings:'help',parent:'#/settings'}),
+  '#/settings/help/recommendations':Object.freeze({title:'Recommendations',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/uncertainty':Object.freeze({title:'Expected points & uncertainty',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/limitations':Object.freeze({title:'Known limitations',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/privacy':Object.freeze({title:'Privacy & data',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/about':Object.freeze({title:'About this build',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/operations':Object.freeze({title:'Live-season operations',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/ask':Object.freeze({title:'Ask Teamsheet',primary:null})
+});
+
+const TEAMSHEET_VALID_ROUTES = new Set(Object.keys(TEAMSHEET_ROUTE_TABLE));
 
 function normaliseTeamsheetRoute(value=''){
   let route=String(value??'').trim();
@@ -4563,29 +4637,21 @@ function normaliseTeamsheetRoute(value=''){
   if(Object.prototype.hasOwnProperty.call(TEAMSHEET_ROUTE_ALIASES,route)) return TEAMSHEET_ROUTE_ALIASES[route];
   if(TEAMSHEET_VALID_ROUTES.has(route)) return route;
   if(route.startsWith('#/leagues/')) return '#/leagues';
+  for(const section of ['team-account','research','evidence','data','help']){
+    const prefix=`#/settings/${section}/`;
+    if(route.startsWith(prefix)) return `#/settings/${section}`;
+  }
+  if(route.startsWith('#/settings/')) return '#/settings';
   return '#/team';
 }
 
 function teamsheetRouteMeta(value=''){
   const route=normaliseTeamsheetRoute(value);
-  const table={
-    '#/team':{title:'Team',primary:'team'},
-    '#/transfers':{title:'Transfers',primary:'transfers'},
-    '#/fixtures':{title:'Fixtures',primary:'fixtures'},
-    '#/leagues':{title:'Leagues',primary:'leagues'},
-    '#/leagues/standings':{title:'League table',primary:'leagues'},
-    '#/leagues/rival':{title:'Rival comparison',primary:'leagues'},
-    '#/leagues/exposure':{title:'Rival exposure',primary:'leagues'},
-    '#/leagues/manage':{title:'Manage leagues',primary:'leagues'},
-    '#/settings':{title:'Settings',primary:'settings'},
-    '#/settings/team-account':{title:'Team & Account',primary:'settings',settings:'team-account'},
-    '#/settings/research/players':{title:'Player Explorer',primary:'settings',settings:'research-players'},
-    '#/settings/evidence':{title:'Evidence & Performance',primary:'settings',settings:'evidence'},
-    '#/settings/data':{title:'Data & Diagnostics',primary:'settings',settings:'data'},
-    '#/settings/help':{title:'Help & About',primary:'settings',settings:'help'},
-    '#/ask':{title:'Ask Teamsheet',primary:null}
-  };
-  return Object.freeze({route,...table[route]});
+  return Object.freeze({route,...TEAMSHEET_ROUTE_TABLE[route]});
+}
+
+function teamsheetRouteParent(value=''){
+  return teamsheetRouteMeta(value).parent||null;
 }
 
 function teamsheetElement(tag,attributes={},...children){
@@ -4623,11 +4689,17 @@ function teamsheetNavIcon(name){
   return svg;
 }
 
-function teamsheetRouteHeader(title,hint){
+function teamsheetRouteHeadingId(route){
+  return `routeHeading-${String(route).replace(/^#\//,'').replaceAll('/','-')}`;
+}
+
+function teamsheetRouteHeader(route,title,hint){
+  const parent=teamsheetRouteParent(route)||'#/settings';
+  const parentTitle=teamsheetRouteMeta(parent).title;
   return teamsheetElement('div',{class:'route-header'},
-    teamsheetElement('a',{class:'route-back',href:'#/settings','aria-label':'Back to Settings'},
+    teamsheetElement('a',{class:'route-back',href:parent,'aria-label':`Back to ${parentTitle}`},
       teamsheetElement('span',{'aria-hidden':'true'},'←')),
-    teamsheetElement('h2',{tabindex:'-1'},title),
+    teamsheetElement('h2',{id:teamsheetRouteHeadingId(route),tabindex:'-1'},title),
     teamsheetElement('p',{class:'hint'},hint));
 }
 
@@ -4638,6 +4710,48 @@ function teamsheetSettingsCard(route,icon,title,copy){
       teamsheetElement('h3',{},title),
       teamsheetElement('span',{class:'settings-card-description'},copy)),
     teamsheetElement('span',{class:'settings-card-arrow','aria-hidden':'true'},'›'));
+}
+
+function teamsheetSettingsMenu(route,title,hint,cards){
+  return teamsheetElement('section',{
+    id:`settings-route-${route.replace(/^#\/settings\/?/,'').replaceAll('/','-')||'root'}`,
+    class:'settings-subview',
+    'data-settings-route':route,
+    hidden:'hidden'
+  },
+  teamsheetRouteHeader(route,title,hint),
+  teamsheetElement('div',{class:'settings-grid settings-subgrid'},cards));
+}
+
+function teamsheetSettingsContent(route,title,hint,...children){
+  return teamsheetElement('section',{
+    id:`settings-route-${route.replace(/^#\/settings\/?/,'').replaceAll('/','-')}`,
+    class:'settings-subview',
+    'data-settings-route':route,
+    hidden:'hidden'
+  },teamsheetRouteHeader(route,title,hint),children);
+}
+
+function teamsheetPanel(eyebrow,title,hint,...children){
+  return teamsheetElement('section',{class:'panel settings-content-panel'},
+    teamsheetElement('span',{class:'eyebrow'},eyebrow),
+    teamsheetElement('h3',{},title),
+    hint?teamsheetElement('p',{class:'hint'},hint):null,
+    children);
+}
+
+function teamsheetBuildInfoPanel(){
+  const info=typeof BUILD_INFO!=='undefined'&&BUILD_INFO&&typeof BUILD_INFO==='object'?BUILD_INFO:null;
+  const rows=info?[
+    ['Model',info.modelVersion],
+    ['Rules',info.rulesVersion],
+    ['Commit',info.commit],
+    ['Source',String(info.sourceHash||'').slice(0,16)]
+  ]:[['Build','Unavailable in this source view']];
+  return teamsheetPanel('Version identity','This Teamsheet build','Public build identity helps confirm which reviewed source produced the page.',
+    teamsheetElement('dl',{class:'build-identity'},rows.map(([label,value])=>[
+      teamsheetElement('dt',{},label),teamsheetElement('dd',{class:'mono'},String(value||'unversioned'))
+    ])));
 }
 
 function setupAppShell(){
@@ -4685,12 +4799,11 @@ function setupAppShell(){
       teamsheetElement('div',{},
         teamsheetElement('span',{class:'eyebrow'},'Weekly resources'),
         teamsheetElement('h3',{id:'teamContextTitle'},'Your FPL context')),
-      teamsheetElement('span',{class:'status'},'Free transfers and bank stay visible on Team.')));
+      teamsheetElement('span',{class:'status'},'Team ID, free transfers and bank stay visible because they affect weekly decisions.')));
   setupRows.slice(0,2).forEach(row=>teamContext.appendChild(row));
   ['status','srcStatus','chipState'].map(id=>document.getElementById(id)).filter(Boolean).forEach(node=>teamContext.appendChild(node));
   if(squadOut) teamView.insertBefore(teamContext,squadOut);
   else teamView.appendChild(teamContext);
-
 
   const fixturesHeading=fixturesView.querySelector('h2');
   if(fixturesHeading) fixturesHeading.textContent='Fixtures';
@@ -4700,10 +4813,10 @@ function setupAppShell(){
   if(leaguesHeading) leaguesHeading.textContent='Leagues';
   if(leaguesEyebrow) leaguesEyebrow.textContent='Mini leagues';
   if(leaguesHint) leaguesHint.textContent='Official position, points gaps, pairwise comparisons and on-demand selected-rival exposure. Projected rank and protect/chase strategy are not included.';
-  const playersHeading=playersView.querySelector('h2');
+  const playersHeading=playersView.querySelector('h3, h2');
   const playersEyebrow=playersView.querySelector('.eyebrow');
   if(playersHeading) playersHeading.textContent='Player Explorer';
-  if(playersEyebrow) playersEyebrow.textContent='Research tools';
+  if(playersEyebrow) playersEyebrow.textContent='Research tool';
   const askHeading=askView.querySelector('h2');
   const askEyebrow=askView.querySelector('.eyebrow');
   if(askHeading) askHeading.textContent='Ask Teamsheet';
@@ -4714,73 +4827,145 @@ function setupAppShell(){
 
   const settingsView=teamsheetElement('section',{id:'view-settings',class:'view settings-view',hidden:'hidden'});
   const settingsHeader=teamsheetElement('div',{class:'panel settings-header'},
-    teamsheetElement('span',{class:'eyebrow'},'Organised controls'),
+    teamsheetElement('span',{class:'eyebrow'},'Advanced tools, kept out of the way'),
     teamsheetElement('h2',{id:'settingsTitle',tabindex:'-1'},'Settings'),
-    teamsheetElement('p',{class:'hint'},'Team setup, research, evidence, provider detail and help—separated by purpose rather than one long page.'));
+    teamsheetElement('p',{class:'hint'},'Connect your team, research players, review evidence and resolve data issues without cluttering weekly decisions.'));
   const settingsLanding=teamsheetElement('div',{id:'settingsLanding',class:'settings-grid'},
-    teamsheetSettingsCard('#/settings/team-account','◈','Team & Account','Manual squad editing and account setup guidance.'),
-    teamsheetSettingsCard('#/settings/research/players','↗','Research Tools','Explore player projections and supporting detail.'),
-    teamsheetSettingsCard('#/settings/evidence','✓','Evidence & Performance','Deadline records, official outcomes, metrics, reviews and exports.'),
-    teamsheetSettingsCard('#/settings/data','⌁','Data & Diagnostics','Provider Health, optional sources, calibration and recovery detail.'),
-    teamsheetSettingsCard('#/settings/help','?','Help & About','How Teamsheet works, limitations, privacy and build information.'));
+    teamsheetSettingsCard('#/settings/team-account','◈','Team & Account','Manual squad editing, connection guidance and account links.'),
+    teamsheetSettingsCard('#/settings/research','↗','Research Tools','Player Explorer and supporting research outside the main decision journeys.'),
+    teamsheetSettingsCard('#/settings/evidence','✓','Evidence & Performance','Deadline records, outcomes, metrics, review and exports.'),
+    teamsheetSettingsCard('#/settings/data','⌁','Data & Diagnostics','Provider status, optional sources, recovery and local storage.'),
+    teamsheetSettingsCard('#/settings/help','?','Help & About','Recommendation guidance, limitations, privacy and build identity.'));
   settingsView.append(settingsHeader,settingsLanding);
 
-  const settingsTeam=teamsheetElement('section',{id:'settings-team-account',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Team & Account','Manual squad controls live here. Team ID, free transfers and bank remain visible on Team because they directly affect weekly decisions.'));
-  const manualPanel=teamsheetElement('section',{class:'panel'},
-    teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
-    teamsheetElement('h2',{},'Manual squad'),
-    teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled. The verified Official FPL player list is required.'),
-    teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));
-  if(manualWrap){
-    manualWrap.open=true;
-    manualPanel.appendChild(manualWrap);
-  }else manualPanel.appendChild(teamsheetElement('p',{class:'status'},'Manual squad controls are unavailable.'));
-  settingsTeam.appendChild(manualPanel);
+  const settingsRoutes=[];
+  const addRoute=route=>{settingsRoutes.push(route);settingsView.appendChild(route);return route;};
 
-  const settingsResearch=teamsheetElement('section',{id:'settings-research-players',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Player Explorer','Research individual projections without restoring Players to primary navigation.'));
+  addRoute(teamsheetSettingsMenu('#/settings/team-account','Team & Account','Connection and squad setup live here; weekly bank and free-transfer assumptions remain on Team.',[
+    teamsheetSettingsCard('#/settings/team-account/manual-squad','XI','Manual squad','Build or correct the 15-player squad used by manual mode.'),
+    teamsheetSettingsCard('#/settings/team-account/connection','ID','Connection guidance','Find your Team ID and jump to saved-league management.')
+  ]));
+
+  const manualPanel=teamsheetPanel('Squad setup','Manual squad','Build or correct the 15-player squad used when manual mode is enabled. Verified Official FPL player data is required.',
+    teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));
+  if(manualWrap){manualWrap.open=true;manualPanel.appendChild(manualWrap);}
+  else manualPanel.appendChild(teamsheetElement('p',{class:'status'},'Manual squad controls are unavailable.'));
+  addRoute(teamsheetSettingsContent('#/settings/team-account/manual-squad','Manual squad','Edit the local 15-player fallback without changing anything in Official FPL.',manualPanel));
+
+  addRoute(teamsheetSettingsContent('#/settings/team-account/connection','Connection guidance','Teamsheet reads public Official FPL identifiers only; it does not ask for an FPL password.',
+    teamsheetPanel('Public connection','Find your Team ID','Open your team in Official FPL and copy the number after /entry/ in the address.',
+      teamsheetElement('div',{class:'settings-action-links'},
+        teamsheetElement('a',{class:'btn ghost',href:'#/team'},'Open Team setup'),
+        teamsheetElement('a',{class:'btn ghost',href:'#/leagues/manage'},'Manage saved leagues')),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Account boundary: '),'Free transfers and bank remain manual because the public feed cannot verify them without a separately approved authenticated integration.'),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Saved leagues: '),'League IDs and local labels are managed inside Leagues. Settings links there rather than duplicating competitive controls.'))));
+
+  addRoute(teamsheetSettingsMenu('#/settings/research','Research Tools','Supporting player research that does not belong in Team, Transfers or Fixtures.',[
+    teamsheetSettingsCard('#/settings/research/players','↗','Player Explorer','Filter current projections and open the existing player detail view.')
+  ]));
   playersView.classList.remove('view');
   playersView.hidden=false;
-  settingsResearch.appendChild(playersView);
+  addRoute(teamsheetSettingsContent('#/settings/research/players','Player Explorer','Research individual projections without restoring Players to primary navigation.',playersView));
 
-  const settingsEvidence=teamsheetElement('section',{id:'settings-evidence',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Evidence & Performance','Prospective records, official outcomes, descriptive metrics, operating review and owner-controlled exports.'));
+  addRoute(teamsheetSettingsMenu('#/settings/evidence','Evidence & Performance','What was recorded, what happened and how Teamsheet has performed.',[
+    teamsheetSettingsCard('#/settings/evidence/deadline','D','Deadline evidence','Prospective pre-deadline records and capture history.'),
+    teamsheetSettingsCard('#/settings/evidence/outcomes','O','Official outcomes','Authoritative completed-Gameweek records and revisions.'),
+    teamsheetSettingsCard('#/settings/evidence/metrics','M','Performance metrics','Descriptive points, minutes and uncertainty evaluation.'),
+    teamsheetSettingsCard('#/settings/evidence/review','R','Operating review','Weekly and season evidence summaries.'),
+    teamsheetSettingsCard('#/settings/evidence/exports','↓','Exports','Owner-controlled JSON, Markdown and CSV downloads.')
+  ]));
   evidencePanel.hidden=false;
-  settingsEvidence.appendChild(evidencePanel);
+  addRoute(teamsheetSettingsContent('#/settings/evidence/deadline','Deadline evidence','Prospective records captured before the Official FPL deadline.',evidencePanel));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/outcomes','Official outcomes','Completed and corrected Official FPL outcome records.',teamsheetElement('div',{id:'outcomesHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/metrics','Performance metrics','Descriptive evaluation from matched official evidence only.',teamsheetElement('div',{id:'metricsHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/review','Operating review','Weekly and season summaries from immutable local evidence.',teamsheetElement('div',{id:'reviewHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/exports','Exports','Downloads are generated on demand and remain under your control.',
+    teamsheetElement('div',{id:'evidenceExportHost'}),
+    teamsheetElement('div',{id:'outcomeExportHost'}),
+    teamsheetElement('div',{id:'reviewExportHost'})));
 
-  const healthPanel=teamsheetElement('section',{id:'providerHealthDetail',class:'panel',tabindex:'-1','aria-labelledby':'providerHealthTitle'},
-    teamsheetElement('span',{class:'eyebrow'},'Current session'),
-    teamsheetElement('h2',{id:'providerHealthTitle'},'Provider Health'),
-    teamsheetElement('p',{class:'hint'},'Which approved data source is active, how fresh it is and what any fallback changes.'),
-    teamsheetElement('div',{id:'providerHealthRows'}));
-  const setupEyebrow=setupPanel.querySelector('.eyebrow');
-  const setupHeading=setupPanel.querySelector('h2');
-  const setupHint=setupPanel.querySelector('.hint');
-  if(setupEyebrow) setupEyebrow.textContent='Data & diagnostics';
-  if(setupHeading) setupHeading.textContent='Optional data and calibration';
-  if(setupHint) setupHint.textContent='Manage optional provider inputs and the existing historical calibration control.';
-  const settingsData=teamsheetElement('section',{id:'settings-data',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Data & Diagnostics','Provider status, optional source controls and calibration detail.'));
-  settingsData.append(healthPanel,setupPanel);
+  const providerRow=document.getElementById('oddsKey')?.closest?.('.row')||null;
+  const backtestRow=document.getElementById('btBtn')?.closest?.('.row')||null;
+  const backtestHint=backtestRow?.nextElementSibling?.classList?.contains('hint')?backtestRow.nextElementSibling:null;
+  const backtestOut=document.getElementById('btOut');
+  const healthPanel=teamsheetPanel('Current session','Provider Health','Which approved source is active, how fresh it is and what any fallback changes.',teamsheetElement('div',{id:'providerHealthRows'}));
+  healthPanel.id='providerHealthDetail';
+  healthPanel.setAttribute('aria-labelledby','providerHealthTitle');
+  healthPanel.querySelector('h3')?.setAttribute('id','providerHealthTitle');
 
-  const settingsHelp=teamsheetElement('section',{id:'settings-help',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Help & About','Plain-English guidance about recommendations, limitations, privacy and this build.'),
-    teamsheetElement('section',{class:'panel'},
-      teamsheetElement('span',{class:'eyebrow'},'About Teamsheet'),
-      teamsheetElement('h2',{},'FPL Decision Desk'),
-      teamsheetElement('p',{class:'hint'},'Teamsheet is advisory. It does not submit transfers, captaincy or squad changes to Official FPL.'),
-      teamsheetElement('div',{class:'note plain'},
-        teamsheetElement('b',{},'Current limitation: '),
-        'Ask Teamsheet works keylessly only in the approved artifact-preview environment until a separately approved serverless migration.'),
-      teamsheetElement('div',{class:'note plain'},
-        teamsheetElement('b',{},'Evidence wording: '),
-        'Prospective metrics remain descriptive until enough genuine pre-deadline observations exist.'),
-      teamsheetElement('p',{class:'status mono'},'Build identity is recorded in the generated manifest and deployable.')));
+  const optionalPanel=teamsheetPanel('Approved optional inputs','Optional sources','Optional providers may improve context, but their approved fallbacks keep core FPL decisions available.');
+  if(providerRow) optionalPanel.appendChild(providerRow);
+  else optionalPanel.appendChild(teamsheetElement('p',{class:'status'},'Optional-source controls are unavailable.'));
+  const calibrationPanel=teamsheetPanel('Historical diagnostic','Calibration','The existing deadline-safe walk-forward check remains diagnostic and does not change live projections automatically.');
+  if(backtestRow) calibrationPanel.appendChild(backtestRow);
+  if(backtestHint) calibrationPanel.appendChild(backtestHint);
+  if(backtestOut) calibrationPanel.appendChild(backtestOut);
+  setupPanel.remove?.();
 
-  [settingsTeam,settingsResearch,settingsEvidence,settingsData,settingsHelp].forEach(section=>settingsView.appendChild(section));
+  addRoute(teamsheetSettingsMenu('#/settings/data','Data & Diagnostics','Current provider detail, optional inputs and recovery tools.',[
+    teamsheetSettingsCard('#/settings/data/providers','●','Provider Health','Freshness, active source and fallback consequences.'),
+    teamsheetSettingsCard('#/settings/data/optional-sources','+','Optional sources','Odds and Understat controls.'),
+    teamsheetSettingsCard('#/settings/data/calibration','≈','Calibration','Deadline-safe historical diagnostic.'),
+    teamsheetSettingsCard('#/settings/data/recovery','↺','Recovery','Restore verified backups and inspect recovery warnings.'),
+    teamsheetSettingsCard('#/settings/data/storage','×','Local storage','Delete specific local evidence datasets.')
+  ]));
+  addRoute(teamsheetSettingsContent('#/settings/data/providers','Provider Health','Full technical source status remains here; healthy states do not occupy the main header.',healthPanel));
+  addRoute(teamsheetSettingsContent('#/settings/data/optional-sources','Optional sources','Configure approved supporting inputs without changing provider transport or model rules.',optionalPanel));
+  addRoute(teamsheetSettingsContent('#/settings/data/calibration','Calibration','Run the existing historical diagnostic without changing live recommendations.',calibrationPanel));
+  addRoute(teamsheetSettingsContent('#/settings/data/recovery','Recovery','Restored files remain recovery-only and cannot silently become official or current.',
+    teamsheetElement('div',{id:'evidenceRecoveryHost'}),
+    teamsheetElement('div',{id:'outcomeRecoveryHost'}),
+    teamsheetElement('div',{id:'stage10DiagnosticsHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/data/storage','Local storage','Delete one local dataset at a time. Downloaded files are outside Teamsheet and are not removed.',
+    teamsheetElement('div',{id:'evidenceStorageHost'}),
+    teamsheetElement('div',{id:'outcomeStorageHost'}),
+    teamsheetElement('div',{id:'metricStorageHost'})));
+
+  addRoute(teamsheetSettingsMenu('#/settings/help','Help & About','Plain-English guidance for interpreting Teamsheet and this build.',[
+    teamsheetSettingsCard('#/settings/help/recommendations','?','Recommendations','What Teamsheet does and what remains your decision.'),
+    teamsheetSettingsCard('#/settings/help/uncertainty','±','Expected points & uncertainty','How projections and ranges should be read.'),
+    teamsheetSettingsCard('#/settings/help/limitations','!','Known limitations','Important gaps and evidence boundaries.'),
+    teamsheetSettingsCard('#/settings/help/privacy','○','Privacy & data','Local storage, public identifiers and exports.'),
+    teamsheetSettingsCard('#/settings/help/about','i','About this build','Model, rules, commit and source identity.'),
+    teamsheetSettingsCard('#/settings/help/operations','✓','Live-season operations','What to check before and after a deadline.')
+  ]));
+  addRoute(teamsheetSettingsContent('#/settings/help/recommendations','Recommendations','Teamsheet supports decisions; it never submits changes to Official FPL.',
+    teamsheetPanel('Decision support','You remain in control','Teamsheet compares the current verified inputs and presents a recommendation with its main risk. It does not log in to FPL, confirm transfers, set captaincy or change your squad.',
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Team: '),'Review the proposed XI, captain and bench, then reproduce any chosen action in Official FPL.'),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Transfers: '),'Model comparisons are alternatives against making no transfer, not promised FPL points.'),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Leagues: '),'Rival and exposure views report selected public facts; they do not infer protect or chase strategy.'))));
+  addRoute(teamsheetSettingsContent('#/settings/help/uncertainty','Expected points & uncertainty','Projections are estimates, not confirmed outcomes or team news.',
+    teamsheetPanel('Interpretation','Read the range, not only the headline','Expected points combine the approved model inputs for a defined Gameweek horizon. Player detail shows uncertainty where a valid distribution is available.',
+      teamsheetElement('div',{class:'note plain'},'A narrow difference between players or captains is a close model call, not a certainty.'),
+      teamsheetElement('div',{class:'note plain'},'Expected minutes are model estimates. Official availability flags and current team news still matter.'),
+      teamsheetElement('div',{class:'note plain'},'Pre-season and missing-data states remain deliberately less precise rather than manufacturing detail.'))));
+  addRoute(teamsheetSettingsContent('#/settings/help/limitations','Known limitations','The application states what has not been verified instead of treating automated tests as physical acceptance.',
+    teamsheetPanel('Current boundaries','Important limitations','',
+      teamsheetElement('ul',{class:'settings-readable-list'},
+        teamsheetElement('li',{},'Prospective performance evidence remains descriptive until enough genuine pre-deadline observations exist.'),
+        teamsheetElement('li',{},'Ask Teamsheet works keylessly only in the approved artifact-preview environment until a separately approved serverless migration.'),
+        teamsheetElement('li',{},'Public Official FPL transport can be unavailable or return incomplete data.'),
+        teamsheetElement('li',{},'Automated tests do not prove physical iPhone usability, VoiceOver behaviour or live endpoint availability.'),
+        teamsheetElement('li',{},'Projected global rank, projected rival outcomes and protect/balanced/chase strategy are not implemented.')))));
+  addRoute(teamsheetSettingsContent('#/settings/help/privacy','Privacy & data','Teamsheet uses public FPL identifiers and local browser storage; it does not request an FPL password.',
+    teamsheetPanel('Local-first boundary','What is stored','Configuration, manual squad, approved caches, calibration and validated evidence are stored locally in the browser.',
+      teamsheetElement('div',{class:'note plain'},'Exported JSON files are complete and unencrypted. Deleting browser records cannot remove files already saved to Files or Downloads.'),
+      teamsheetElement('div',{class:'note plain'},'Restored evidence remains recovery-only and cannot alter recommendations or become the official prospective record.'),
+      teamsheetElement('div',{class:'note plain'},'Odds keys remain browser-held, password-masked, direct-only and removable with one action. Anthropic keys are never stored client-side.'))));
+  addRoute(teamsheetSettingsContent('#/settings/help/about','About this build','Confirm the reviewed model, rules and source identity used by this page.',teamsheetBuildInfoPanel()));
+  addRoute(teamsheetSettingsContent('#/settings/help/operations','Live-season operations','A small set of checks protects the prospective evidence workflow.',
+    teamsheetPanel('Before and after each deadline','Operational checklist','',
+      teamsheetElement('ol',{class:'settings-readable-list'},
+        teamsheetElement('li',{},'Before the deadline, open Teamsheet on a verified refresh and confirm Deadline Evidence is official-eligible.'),
+        teamsheetElement('li',{},'After a complete or corrected Gameweek, allow Official Outcomes and Metrics to update.'),
+        teamsheetElement('li',{},'Use Exports to save the required JSON, Markdown or CSV files and confirm they appear in Files or Downloads.'),
+        teamsheetElement('li',{},'Use Recovery only for verified backups. Never clear browser data before durable files have been checked.'),
+        teamsheetElement('li',{},'Google Sheets import remains manual; no automatic authentication or scheduled export is active.')))));
+
   main.appendChild(settingsView);
 
+  const globalDataWarning=header?teamsheetElement('a',{id:'globalDataWarning',class:'global-data-warning',href:'#/settings/data/providers',hidden:'hidden','aria-live':'polite'}):null;
+  if(globalDataWarning) header.appendChild(globalDataWarning);
   const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
   const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet'}):null;
   const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
@@ -4788,7 +4973,7 @@ function setupAppShell(){
   if(globalAsk&&globalAskInput&&globalAskSend){
     globalAsk.append(globalAskInput,globalAskSend);
     header.appendChild(globalAsk);
-    globalAskInput.addEventListener('input',()=>{ globalAskSend.disabled=!globalAskInput.value.trim(); });
+    globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
     globalAsk.addEventListener('submit',event=>{
       event.preventDefault();
       const question=globalAskInput.value.trim();
@@ -4821,13 +5006,7 @@ function setupAppShell(){
   updateKeyboardState();
 
   const topLevelViews=[teamView,transfersView,fixturesView,leaguesView,settingsView,askView];
-  const settingsSubviews=new Map([
-    ['#/settings/team-account',settingsTeam],
-    ['#/settings/research/players',settingsResearch],
-    ['#/settings/evidence',settingsEvidence],
-    ['#/settings/data',settingsData],
-    ['#/settings/help',settingsHelp]
-  ]);
+  const settingsRouteNodes=new Map(settingsRoutes.map(node=>[node.dataset.settingsRoute,node]));
   const routeNodes=new Map([
     ['#/team',teamView],
     ['#/transfers',transfersView],
@@ -4836,6 +5015,26 @@ function setupAppShell(){
     ['#/settings',settingsView],
     ['#/ask',askView]
   ]);
+  const rememberedFocus=new Map();
+  let activeRoute=normaliseTeamsheetRoute(globalThis.location?.hash||'');
+
+  document.addEventListener('click',event=>{
+    const link=event.target?.closest?.('a[href^="#/"]');
+    if(!link) return;
+    const destination=normaliseTeamsheetRoute(link.getAttribute('href'));
+    if(destination!==activeRoute) rememberedFocus.set(activeRoute,link);
+  },true);
+
+  const focusRoute=(route,node)=>{
+    const remembered=rememberedFocus.get(route);
+    if(remembered&&document.contains?.(remembered)&&!remembered.hidden){
+      remembered.focus?.({preventScroll:true});
+      return;
+    }
+    const heading=node?.querySelector?.(`#${teamsheetRouteHeadingId(route)}`)||node?.querySelector?.('h2');
+    heading?.setAttribute?.('tabindex','-1');
+    heading?.focus?.({preventScroll:true});
+  };
 
   const activateRoute=(requested,{focus=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
@@ -4848,21 +5047,20 @@ function setupAppShell(){
       view.setAttribute('aria-hidden',active?'false':'true');
     });
     settingsLanding.hidden=route!=='#/settings';
-    settingsSubviews.forEach((section,sectionRoute)=>{ section.hidden=sectionRoute!==route; });
+    settingsRouteNodes.forEach((section,sectionRoute)=>{section.hidden=sectionRoute!==route;section.setAttribute('aria-hidden',sectionRoute===route?'false':'true');});
     navLinks.forEach(link=>{
       if(link.dataset.primary===meta.primary) link.setAttribute('aria-current','page');
       else link.removeAttribute('aria-current');
     });
     document.body.dataset.route=route.slice(2);
     document.title=`${meta.title} — Teamsheet`;
+    activeRoute=route;
     globalThis.scrollTo?.({top:0,left:0});
     if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
-      const heading=activeNode.querySelector('h2');
-      heading?.setAttribute?.('tabindex','-1');
-      heading?.focus?.({preventScroll:true});
+      const activeNode=route.startsWith('#/settings')?(settingsRouteNodes.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
+      focusRoute(route,activeNode);
     }
-    document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary}}));
+    document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary,parent:meta.parent||null}}));
     return route;
   };
 
@@ -7242,6 +7440,7 @@ function transferPlannerMarkUpdating(){
 function renderTransfers(){
   const out=$('transferOut');
   if(!out) return;
+  renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
   transferPlannerSyncVisibleAssumptions();
   transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
   transferPlannerMarkUpdating();
@@ -7816,6 +8015,7 @@ function renderLeagueManageList(){
     el('div',{class:'league-manage-actions'},miniLeagueButton(row.id===state.selectedLeagueId?'Selected':'Select',{disabled:row.id===state.selectedLeagueId,onclick:async()=>{await selectMiniLeague(row.id);renderMiniLeagues();miniLeagueNavigate('#/leagues');}}),miniLeagueButton(row.primary?'Primary':'Make primary',{disabled:row.primary,onclick:async()=>{await upsertMiniLeague(row.id,row.name,{primary:true,select:true});renderMiniLeagues();}}),miniLeagueButton('Remove',{'aria-label':`Remove ${row.name||`league ${row.id}`}`,onclick:async()=>{await removeMiniLeague(row.id);delete S.miniLeagueData.standings[row.id];delete S.miniLeagueData.exposure[row.id];renderMiniLeagues();}}))))));
 }
 function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
+  renderRouteDataWarning('leagueDataWarning',{showUnavailable:true});
   if(!miniLeagueReady) return; ensureMiniLeagueExposureSection(); renderLeaguePickerSummary(); renderLeagueManageList();
   const sections=[['#/leagues',$('leagueLanding')],['#/leagues/standings',$('leagueStandings')],['#/leagues/rival',$('leagueRival')],['#/leagues/exposure',$('leagueExposure')],['#/leagues/manage',$('leagueManage')]];
   const resolved=sections.some(([key])=>key===route)?route:'#/leagues'; sections.forEach(([key,node])=>{if(node) node.hidden=key!==resolved;});
@@ -7862,7 +8062,11 @@ const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+ki
    VIEW — FIXTURE TICKER
    --------------------------------------------------------------------- */
 function renderTicker(){
-  if(!S.fixtures) return;
+  const warning=renderRouteDataWarning('fixtureDataWarning',{showUnavailable:true});
+  if(!S.fixtures){
+    if(warning.kind==='unavailable') setChildren($('ticker'),elNode('div',{class:'empty'},elNode('strong',{},'Fixtures are unavailable'),'Refresh Official FPL data before using the fixture view.'));
+    return;
+  }
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const span = clamp(parseInt($('fxSpan').value) || 6, 3, 12);
   const lens = $('fxLens').value, sort = $('fxSort').value;
@@ -7947,11 +8151,14 @@ function renderPlayers(){
   ranked.forEach(({p,x}) => {
     const t = S.teams[p.team];
     playerBody.appendChild(elNode('tr',{class:'clickable',dataset:{pid:p.id},onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
-      elNode('td',{},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
+      elNode('td',{class:'player-result-main'},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
         elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`)),
-      cell((p.now_cost/10).toFixed(1),'num'),cell(p.selected_by_percent,'num'),cell(fmt1(num(p.form)),'num'),
-      elNode('td',{class:'num'},elNode('span',{class:`xp ${x.perGW >= maxPer*0.82 ? 'hot':''}`},fmt1(x.perGW))),
-      cell(fmt1(x.total),'num'),cell(fmt1(x.total/(p.now_cost/10)),'num')));
+      elNode('td',{class:'num',dataset:{label:'Price'}},(p.now_cost/10).toFixed(1)),
+      elNode('td',{class:'num player-result-secondary',dataset:{label:'Ownership'}},p.selected_by_percent),
+      elNode('td',{class:'num player-result-secondary',dataset:{label:'Form'}},fmt1(num(p.form))),
+      elNode('td',{class:'num',dataset:{label:'xP / GW'}},elNode('span',{class:`xp ${x.perGW >= maxPer*0.82 ? 'hot':''}`},fmt1(x.perGW))),
+      elNode('td',{class:'num',dataset:{label:`${span} GW xP`}},fmt1(x.total)),
+      elNode('td',{class:'num',dataset:{label:'xP / £m'}},fmt1(x.total/(p.now_cost/10)))));
   });
   setChildren($('playerTable'),elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
 }
@@ -9244,20 +9451,46 @@ function evidenceFlagClass(state){
   return 'out';
 }
 function openEvidencePanel(){
-  if(typeof globalThis.__teamsheetNavigate==='function') globalThis.__teamsheetNavigate('#/settings/evidence');
-  else if(globalThis.location) globalThis.location.hash='#/settings/evidence';
+  if(typeof globalThis.__teamsheetNavigate==='function') globalThis.__teamsheetNavigate('#/settings/evidence/deadline');
+  else if(globalThis.location) globalThis.location.hash='#/settings/evidence/deadline';
 }
-function ensureEvidenceCompact(){
-  $('evidenceCompact')?.remove?.();
+function evidenceActionPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
+function ensureEvidenceActionUi(){
+  const exportHost=$('evidenceExportHost');
+  if(exportHost&&!$('evidenceExportPanel')){
+    const panel=evidenceActionPanel('Deadline record','Deadline evidence JSON','Download the latest locally available validated snapshot.',
+      el('button',{class:'btn ghost',id:'exportEvidenceBtn',type:'button',disabled:true},'Download latest snapshot JSON'),
+      el('p',{class:'status evidence-message',id:'evidenceExportMessage'},'No export is retained automatically.'));
+    panel.id='evidenceExportPanel';exportHost.appendChild(panel);
+  }
+  const recoveryHost=$('evidenceRecoveryHost');
+  if(recoveryHost&&!$('evidenceRecoveryPanel')){
+    const panel=evidenceActionPanel('Snapshot recovery','Deadline evidence recovery','Restored files remain recovery-only and cannot become the official prospective record.',
+      el('div',{class:'evidence-actions'},
+        el('button',{class:'btn ghost',id:'importEvidenceBtn',type:'button'},'Restore snapshot JSON'),
+        el('button',{class:'btn ghost',id:'captureEvidenceBtn',type:'button',disabled:true},'Diagnostic capture'),
+        el('input',{id:'evidenceImport',type:'file',accept:'application/json,.json',hidden:true})),
+      el('p',{class:'status evidence-message',id:'evidenceRecoveryMessage'},'Use recovery only for verified Teamsheet backups.'));
+    panel.id='evidenceRecoveryPanel';recoveryHost.appendChild(panel);
+  }
+  const storageHost=$('evidenceStorageHost');
+  if(storageHost&&!$('evidenceStoragePanel')){
+    const panel=evidenceActionPanel('Deadline records','Delete local deadline evidence','This removes local snapshots and the anonymous device reference. Downloaded files are not affected.',
+      el('button',{class:'btn ghost',id:'deleteEvidenceBtn',type:'button'},'Delete local deadline evidence'),
+      el('p',{class:'status evidence-message',id:'evidenceStorageMessage'},'Snapshots, outcomes and metrics have separate deletion controls.'));
+    panel.id='evidenceStoragePanel';storageHost.appendChild(panel);
+  }
 }
 function ensureStage10OperationsUi(){
-  const panel=$('evidencePanel');if(!panel||$('stage10Operations'))return;
-  panel.appendChild(el('details',{class:'mt-12',id:'stage10Operations'},
-    el('summary',{},'Live-season checklist and recovery'),
-    el('div',{class:'mt-10'},
-      el('p',{class:'hint'},'Before each deadline, confirm Official-eligible evidence and request the snapshot JSON. After a complete or corrected outcome, request the weekly operating-review JSON and confirm it appears in Files or Downloads.'),
-      el('p',{class:'hint'},'Restored JSON remains recovery-only. Never clear browser data until durable files have been checked. Google Sheets import remains manual.'),
-      el('div',{id:'stage10Diagnostics'},el('div',{class:'status'},'No recovery warning is active.')))));
+  const host=$('stage10DiagnosticsHost');if(!host||$('stage10Operations'))return;
+  host.appendChild(el('section',{class:'panel settings-content-panel',id:'stage10Operations'},
+    el('span',{class:'eyebrow'},'Evidence integrity'),
+    el('h3',{},'Recovery diagnostics'),
+    el('p',{class:'hint'},'Storage, import and interrupted-write warnings appear here. Technical identifiers remain scrubbed.'),
+    el('div',{id:'stage10Diagnostics'},el('div',{class:'status'},'No recovery warning is active.'))));
 }
 function renderStage10Diagnostics(){
   const node=$('stage10Diagnostics');if(!node)return;const rows=stage10Diagnostics();
@@ -9266,7 +9499,7 @@ function renderStage10Diagnostics(){
 }
 async function renderEvidenceStatus(){
   const sequence=++evidenceRenderSequence;
-  ensureEvidenceCompact();ensureStage10OperationsUi();
+  ensureEvidenceActionUi();ensureStage10OperationsUi();
   const deadline=currentDeadline();
   const state=deadline?deadlineWindow(deadline):{state:'unavailable',remainingMs:null};
   const [title,detail]=windowCopy(state.state);
@@ -9274,15 +9507,6 @@ async function renderEvidenceStatus(){
   if(sequence!==evidenceRenderSequence) return;
   const latest=index[0]||null;
   const latestForCurrent=latest&&Number(latest.gameweek)===Number(S.nextGW)?latest:null;
-  const compact=$('evidenceCompact');
-  const compactState=latestForCurrent?.timingGrade||state.state;
-  const compactLabel=latestForCurrent
-    ? (latest.officialEligible?'Captured':'Recorded')
-    : state.state==='ideal'?'Due now':state.state==='due_soon'||state.state==='final_window'?'Due soon':state.state==='closed'?'Missed':'Waiting';
-  if(compact){
-    setChildren(compact,document.createTextNode('Evidence '),el('span',{class:`flag ${evidenceFlagClass(compactState)}`},compactLabel));
-    compact.setAttribute('aria-label',`Validation evidence: ${compactLabel}. Open evidence controls.`);
-  }
   const status=$('evidenceStatus');
   if(status){
     const remaining=state.remainingMs!=null&&state.remainingMs>0?` ${minutesLabel(state.remainingMs)} remaining.`:'';
@@ -9320,7 +9544,7 @@ async function latestEvidenceRecord(){
 async function captureEvidence({automatic=false}={}){
   if(evidenceBusy) return null;
   evidenceBusy=true; await renderEvidenceStatus();
-  const message=$('evidenceMessage');
+  const message=$(automatic?'evidenceDeadlineMessage':'evidenceRecoveryMessage');
   try{
     const managerRef=await evidenceManagerRef();
     const horizon=Math.max(1,Math.min(8,Math.trunc(num($('trHorizon')?.value)||6)));
@@ -9360,7 +9584,7 @@ async function maybeAutoCaptureEvidence({reason='verified_refresh',verifiedAt=nu
 }
 
 async function exportLatestEvidence(){
-  const message=$('evidenceMessage');
+  const message=$('evidenceExportMessage');
   try{
     const record=await latestEvidenceRecord();
     if(!record) throw new Error('No saved snapshot is available');
@@ -9369,7 +9593,7 @@ async function exportLatestEvidence(){
   }catch(error){ if(message) message.textContent=`Export failed: ${error.message}`; }
 }
 async function deleteEvidence(){
-  const message=$('evidenceMessage');
+  const message=$('evidenceStorageMessage');
   try{
     if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored validation evidence and the anonymous device reference? Exported JSON files will not be affected.')) return;
     await clearEvidenceStorage();
@@ -9378,7 +9602,7 @@ async function deleteEvidence(){
   finally{ await renderEvidenceStatus(); }
 }
 async function importEvidenceFile(file){
-  const message=$('evidenceMessage');
+  const message=$('evidenceRecoveryMessage');
   try{
     if(!file) return;
     if(Number(file.size)>MAX_EVIDENCE_IMPORT_BYTES) throw new Error('file exceeds the 25 MB evidence limit');
@@ -9392,7 +9616,7 @@ async function importEvidenceFile(file){
 }
 function initEvidenceUi(){
   if(typeof document==='undefined') return;
-  ensureEvidenceCompact();
+  ensureEvidenceActionUi();ensureStage10OperationsUi();
   $('captureEvidenceBtn')?.addEventListener('click',captureEvidence);
   $('exportEvidenceBtn')?.addEventListener('click',exportLatestEvidence);
   $('importEvidenceBtn')?.addEventListener('click',()=> $('evidenceImport')?.click());
@@ -9619,24 +9843,41 @@ function outcomeFileName(record){
   return `teamsheet-${record.season}-gw${record.gameweek}-outcome-r${record.identity.revision}-${record.identity.contentHash.slice(0,16)}.json`;
 }
 function downloadOutcome(record){const filename=outcomeFileName(record);requestStage10Download(filename,stableStringify(record)+'\n','application/json');return filename;}
+function outcomeActionPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
 function ensureOutcomeUi(){
-  if(typeof document==='undefined'||$('outcomeStatus')) return;
-  const details=$('evidenceHistory')?.parentElement;
-  if(!details) return;
-  const section=el('div',{class:'mt-12'},
-    el('h3',{},'Official outcomes'),
-    el('div',{class:'note plain',id:'outcomeStatus'},el('b',{},'Waiting for completed Gameweeks'),document.createTextNode(' Outcome checks run automatically after the app opens.')),
-    el('div',{class:'mt-10',id:'outcomeHistory'},el('div',{class:'status'},'No official outcome records saved on this device.')),
-    el('p',{class:'hint m-hint-top'},'Outcome backups are complete unencrypted JSON. Restored files remain recovery-only and cannot silently become the local official record.'),
-    el('div',{class:'evidence-actions'},
-      el('button',{class:'btn ghost',id:'exportOutcomeBtn',type:'button'},'Export latest outcome'),
+  if(typeof document==='undefined') return;
+  const host=$('outcomesHost');
+  if(host&&!$('outcomePanel')){
+    const panel=outcomeActionPanel('Official FPL facts','Official outcomes','Outcome checks run automatically after completed Gameweeks.',
+      el('div',{class:'note plain',id:'outcomeStatus'},el('b',{},'Waiting for completed Gameweeks'),document.createTextNode(' Outcome checks run automatically after the app opens.')),
+      el('div',{class:'mt-10',id:'outcomeHistory'},el('div',{class:'status'},'No official outcome records saved on this device.')));
+    panel.id='outcomePanel';host.appendChild(panel);
+  }
+  const exportHost=$('outcomeExportHost');
+  if(exportHost&&!$('outcomeExportPanel')){
+    const panel=outcomeActionPanel('Completed Gameweek','Official outcome JSON','Download the latest locally available validated outcome record.',
+      el('button',{class:'btn ghost',id:'exportOutcomeBtn',type:'button',disabled:true},'Download latest outcome JSON'),
+      el('p',{class:'status evidence-message',id:'outcomeExportMessage'},'No export is retained automatically.'));
+    panel.id='outcomeExportPanel';exportHost.appendChild(panel);
+  }
+  const recoveryHost=$('outcomeRecoveryHost');
+  if(recoveryHost&&!$('outcomeRecoveryPanel')){
+    const panel=outcomeActionPanel('Outcome recovery','Restore official outcome JSON','Restored files remain recovery-only and cannot become the local official outcome.',
       el('button',{class:'btn ghost',id:'importOutcomeBtn',type:'button'},'Restore outcome JSON'),
-      el('button',{class:'btn ghost',id:'deleteOutcomeBtn',type:'button'},'Delete local outcomes'),
-      el('input',{id:'outcomeImport',type:'file',accept:'application/json,.json',hidden:true})
-    ),
-    el('p',{class:'status evidence-message',id:'outcomeMessage'},'Collection is automatic and does not delay access to Teamsheet.')
-  );
-  details.appendChild(section);
+      el('input',{id:'outcomeImport',type:'file',accept:'application/json,.json',hidden:true}),
+      el('p',{class:'status evidence-message',id:'outcomeRecoveryMessage'},'Outcome backups are complete unencrypted JSON.'));
+    panel.id='outcomeRecoveryPanel';recoveryHost.appendChild(panel);
+  }
+  const storageHost=$('outcomeStorageHost');
+  if(storageHost&&!$('outcomeStoragePanel')){
+    const panel=outcomeActionPanel('Official outcomes','Delete local official outcomes','This removes local outcome records only. Deadline snapshots and downloaded files remain.',
+      el('button',{class:'btn ghost',id:'deleteOutcomeBtn',type:'button'},'Delete local official outcomes'),
+      el('p',{class:'status evidence-message',id:'outcomeStorageMessage'},'Snapshots, outcomes and metrics have separate deletion controls.'));
+    panel.id='outcomeStoragePanel';storageHost.appendChild(panel);
+  }
 }
 function outcomeFlagClass(status){
   if(status==='complete'||status==='corrected') return 'rise';
@@ -9712,12 +9953,12 @@ async function runOutcomeCollection({trigger='automatic',force=false,nowFn=Date.
   finally{ outcomeBusy=false; outcomePromise=null; await renderOutcomeStatus(); }
 }
 async function exportLatestOutcome(){
-  const message=$('outcomeMessage');
+  const message=$('outcomeExportMessage');
   try{ const record=await latestOutcomeRecord(); if(!record) throw new Error('No saved outcome is available'); const filename=downloadOutcome(record); recordStage10Diagnostic('download_requested',{recordType:'gameweekOutcome',recordId:record.identity.outcomeId,severity:'info'}); if(message) message.textContent=stage10DownloadRequestedMessage(filename); }
   catch(error){ if(message) message.textContent=`Outcome export failed: ${error.message}`; }
 }
 async function importOutcomeFile(file){
-  const message=$('outcomeMessage');
+  const message=$('outcomeRecoveryMessage');
   try{
     if(!file) return;
     if(Number(file.size)>MAX_OUTCOME_IMPORT_BYTES) throw new Error('file exceeds the 25 MB outcome limit');
@@ -9729,7 +9970,7 @@ async function importOutcomeFile(file){
   finally{ await renderOutcomeStatus(); }
 }
 async function deleteOutcomes(){
-  const message=$('outcomeMessage');
+  const message=$('outcomeStorageMessage');
   try{
     if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored official outcome records? Exported JSON files and deadline snapshots will not be affected.')) return;
     await clearOutcomeStorage(); if(message) message.textContent='Local official outcome records were deleted. Deadline snapshots and exported files were not affected.';
@@ -9882,13 +10123,31 @@ async function runMetricBackfill(){
 function metricFormat(value,digits=2){return value==null||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits);}
 function metricPercent(value){return value==null||!Number.isFinite(Number(value))?'—':`${(Number(value)*100).toFixed(1)}%`;}
 function metricKpi(label,value){return el('div',{class:'kpi'},el('div',{class:'k'},label),el('div',{class:'v'},String(value)));}
+function metricActionPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
 function ensureMetricUi(){
-  if(typeof document==='undefined'||$('metricStatus')) return;
-  const outcomeStatus=$('outcomeStatus'),container=outcomeStatus?.parentElement||$('evidencePanel');if(!container) return;
-  const segment=el('select',{id:'metricSegment','aria-label':'Metrics segment'},
-    el('option',{value:'overall|all'},'All matched players'),el('option',{value:'schedule|schedule_aligned'},'Schedule-aligned only'),el('option',{value:'owned|owned'},'Owned players'),el('option',{value:'recommendation|selected_xi'},'Frozen selected XI'),el('option',{value:'position|GKP'},'Goalkeepers'),el('option',{value:'position|DEF'},'Defenders'),el('option',{value:'position|MID'},'Midfielders'),el('option',{value:'position|FWD'},'Forwards'),el('option',{value:'fixtureClass|blank'},'Blank Gameweeks'),el('option',{value:'fixtureClass|single'},'Single Gameweeks'),el('option',{value:'fixtureClass|double'},'Double Gameweeks'));
-  const section=el('div',{class:'mt-12',id:'metricsPanel'},el('h3',{},'Metrics'),el('div',{class:'note plain',id:'metricStatus'},el('b',{},'Waiting for matched evidence'),document.createTextNode(' Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.')),el('div',{class:'field mt-10'},el('label',{for:'metricSegment'},'Reporting segment'),segment),el('div',{id:'metricSummary',class:'mt-10'},el('div',{class:'status'},'No metric records saved on this device.')),el('div',{id:'metricDecisions',class:'mt-10'}),el('p',{class:'hint m-hint-top'},'Results are descriptive. Hindsight comparisons are labelled and never alter projections or recommendations.'),el('button',{class:'btn ghost',id:'deleteMetricsBtn',type:'button'},'Delete local metrics'),el('p',{class:'status evidence-message',id:'metricMessage'},'Metrics update automatically after corrected official outcomes.'));
-  container.appendChild(section);segment.addEventListener('change',renderMetricStatus);$('deleteMetricsBtn')?.addEventListener('click',deleteMetrics);
+  if(typeof document==='undefined') return;
+  const host=$('metricsHost');
+  if(host&&!$('metricsPanel')){
+    const segment=el('select',{id:'metricSegment','aria-label':'Metrics segment'},
+      el('option',{value:'overall|all'},'All matched players'),el('option',{value:'schedule|schedule_aligned'},'Schedule-aligned only'),el('option',{value:'owned|owned'},'Owned players'),el('option',{value:'recommendation|selected_xi'},'Frozen selected XI'),el('option',{value:'position|GKP'},'Goalkeepers'),el('option',{value:'position|DEF'},'Defenders'),el('option',{value:'position|MID'},'Midfielders'),el('option',{value:'position|FWD'},'Forwards'),el('option',{value:'fixtureClass|blank'},'Blank Gameweeks'),el('option',{value:'fixtureClass|single'},'Single Gameweeks'),el('option',{value:'fixtureClass|double'},'Double Gameweeks'));
+    const panel=metricActionPanel('Matched evidence','Performance metrics','Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.',
+      el('div',{class:'note plain',id:'metricStatus'},el('b',{},'Waiting for matched evidence'),document.createTextNode(' Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.')),
+      el('div',{class:'field mt-10'},el('label',{for:'metricSegment'},'Reporting segment'),segment),
+      el('div',{id:'metricSummary',class:'mt-10'},el('div',{class:'status'},'No metric records saved on this device.')),
+      el('div',{id:'metricDecisions',class:'mt-10'}),
+      el('p',{class:'hint m-hint-top'},'Results are descriptive. Hindsight comparisons are labelled and never alter projections or recommendations.'));
+    panel.id='metricsPanel';host.appendChild(panel);segment.addEventListener('change',renderMetricStatus);
+  }
+  const storageHost=$('metricStorageHost');
+  if(storageHost&&!$('metricStoragePanel')){
+    const panel=metricActionPanel('Performance records','Delete local metrics','This removes derived metric records only. Snapshots and official outcomes remain.',
+      el('button',{class:'btn ghost',id:'deleteMetricsBtn',type:'button'},'Delete local metrics'),
+      el('p',{class:'status evidence-message',id:'metricStorageMessage'},'Snapshots, outcomes and metrics have separate deletion controls.'));
+    panel.id='metricStoragePanel';storageHost.appendChild(panel);$('deleteMetricsBtn')?.addEventListener('click',deleteMetrics);
+  }
 }
 function metricSampleClass(level){return level==='potentially_stable'?'good':level==='raw_only'?'bad':'plain';}
 async function renderMetricStatus(){
@@ -9901,7 +10160,7 @@ async function renderMetricStatus(){
   if(decisions){const squad=latest.decisions?.squad,captain=latest.decisions?.captaincy,bench=latest.decisions?.bench,transfer=transfers.slice().sort((a,b)=>b.startGameweek-a.startGameweek)[0],primary=transfer?.plans?.[0];const cards=[];if(squad)cards.push(el('article',{class:'note plain'},el('b',{},`GW${latest.gameweek} frozen decisions`),el('div',{class:'status'},`Selected XI ${squad.selectedRealised?.basePoints??'—'} pts · Hindsight oracle ${squad.hindsightOracle?.realisedPoints??'—'} pts · realised rank ${squad.selectedRealisedRank||'—'}.`)));if(captain)cards.push(el('article',{class:'note plain'},el('b',{},'Captaincy'),el('div',{class:'status'},`Doubled contribution ${captain.selected?.doubledContribution??0} pts${captain.selected?.viceTookOver?' · vice-captain fallback used':''}. Hindsight comparisons are descriptive only.`)));if(bench)cards.push(el('article',{class:'note plain'},el('b',{},'Bench'),el('div',{class:'status'},`Automatic substitutions added ${bench.automaticSubstitutionContribution??0} pts · ${bench.pointsLeftOnBench??0} pts left on unused bench players.`)));if(transfer&&primary)cards.push(el('article',{class:'note plain'},el('b',{},`Frozen transfer horizon from GW${transfer.startGameweek}`),el('div',{class:'status'},`Gross gain ${primary.grossGain} pts · net after hits ${primary.netGainAfterHits} pts. Roll value is shown only as frozen planning context.`)));setChildren(decisions,cards);}
 }
 async function deleteMetrics(){
-  const message=$('metricMessage');try{if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored metric records? Snapshots and official outcomes will not be affected.')) return;await clearMetricStorage();if(message) message.textContent='Local metrics were deleted. Snapshots and outcomes were not affected.';}catch(error){if(message) message.textContent=`Metric deletion failed: ${error.message}`;}finally{await renderMetricStatus();}
+  const message=$('metricStorageMessage');try{if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored metric records? Snapshots and official outcomes will not be affected.')) return;await clearMetricStorage();if(message) message.textContent='Local metrics were deleted. Snapshots and outcomes were not affected.';}catch(error){if(message) message.textContent=`Metric deletion failed: ${error.message}`;}finally{await renderMetricStatus();}
 }
 function initMetricsUi(){
   if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);
@@ -9959,27 +10218,35 @@ async function reviewUiLoadBundle(scopeValue=null){
   reviewUiBundlePromise=task;
   try{return await task;}finally{if(reviewUiBundlePromise===task){reviewUiBundlePromise=null;reviewUiBundleScope=null;}}
 }
+function reviewUiPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
 function reviewUiEnsure(){
-  if(typeof document==='undefined'||$('operatingReviewPanel')) return;
-  const metrics=$('metricsPanel'),container=metrics?.parentElement||$('evidencePanel');if(!container) return;
-  const scope=el('select',{id:'reviewScope','aria-label':'Operating review scope'},el('option',{value:'season'},'Season review'));
-  const csv=el('select',{id:'reviewCsvTable','aria-label':'CSV export table'},
-    el('option',{value:'gameweeks'},'Gameweeks'),el('option',{value:'players'},'Players'),el('option',{value:'minute_fixtures'},'Minute fixtures'),el('option',{value:'squad_decisions'},'Squad decisions'),
-    el('option',{value:'transfer_horizons'},'Transfer horizons'),el('option',{value:'transfer_horizon_gameweeks'},'Transfer horizon Gameweeks'),el('option',{value:'provider_states'},'Provider states'),el('option',{value:'revisions'},'Revisions'));
-  const section=el('section',{class:'mt-12',id:'operatingReviewPanel'},
-    el('h3',{},'Operating review'),
-    el('div',{class:'note plain',id:'reviewStatus'},el('b',{},'Waiting for evaluated Gameweeks'),document.createTextNode(' Weekly and season reviews use immutable local evidence only.')),
-    el('div',{class:'field mt-10'},el('label',{for:'reviewScope'},'Review'),scope),
-    el('div',{id:'reviewSummary',class:'mt-10'},el('div',{class:'status'},'No operating review is available on this device.')),
-    el('details',{class:'mt-10',id:'reviewDetails'},el('summary',{},'Review details'),el('div',{id:'reviewDetailContent',class:'mt-10'})),
-    el('details',{class:'mt-10'},el('summary',{},'Exports and recovery'),
-      el('p',{class:'hint m-hint-top'},'Downloads are deterministic and owner-controlled. Google Sheets import remains manual in Stage 10.4.'),
+  if(typeof document==='undefined') return;
+  const host=$('reviewHost');
+  if(host&&!$('operatingReviewPanel')){
+    const scope=el('select',{id:'reviewScope','aria-label':'Operating review scope'},el('option',{value:'season'},'Season review'));
+    const panel=reviewUiPanel('Evidence summary','Operating review','Weekly and season reviews use immutable local evidence only.',
+      el('div',{class:'note plain',id:'reviewStatus'},el('b',{},'Waiting for evaluated Gameweeks'),document.createTextNode(' Weekly and season reviews use immutable local evidence only.')),
+      el('div',{class:'field mt-10'},el('label',{for:'reviewScope'},'Review'),scope),
+      el('div',{id:'reviewSummary',class:'mt-10'},el('div',{class:'status'},'No operating review is available on this device.')),
+      el('details',{class:'mt-10',id:'reviewDetails'},el('summary',{},'Review details'),el('div',{id:'reviewDetailContent',class:'mt-10'})));
+    panel.id='operatingReviewPanel';host.appendChild(panel);scope.addEventListener('change',reviewUiRender);
+  }
+  const exportHost=$('reviewExportHost');
+  if(exportHost&&!$('reviewExportPanel')){
+    const csv=el('select',{id:'reviewCsvTable','aria-label':'CSV export table'},
+      el('option',{value:'gameweeks'},'Gameweeks'),el('option',{value:'players'},'Players'),el('option',{value:'minute_fixtures'},'Minute fixtures'),el('option',{value:'squad_decisions'},'Squad decisions'),
+      el('option',{value:'transfer_horizons'},'Transfer horizons'),el('option',{value:'transfer_horizon_gameweeks'},'Transfer horizon Gameweeks'),el('option',{value:'provider_states'},'Provider states'),el('option',{value:'revisions'},'Revisions'));
+    const panel=reviewUiPanel('Operating review','Review exports','Downloads are deterministic and owner-controlled. Google Sheets import remains manual.',
       el('div',{class:'actions mt-10'},el('button',{class:'btn ghost',id:'reviewJsonBtn',type:'button'},'Download JSON'),el('button',{class:'btn ghost',id:'reviewMarkdownBtn',type:'button'},'Download Markdown')),
       el('div',{class:'field mt-10'},el('label',{for:'reviewCsvTable'},'CSV table'),csv),
       el('button',{class:'btn ghost',id:'reviewCsvBtn',type:'button'},'Download selected CSV'),
-      el('p',{class:'status evidence-message',id:'reviewMessage'},'No export is retained automatically.')));
-  if(metrics?.nextSibling) container.insertBefore(section,metrics.nextSibling);else container.appendChild(section);
-  scope.addEventListener('change',reviewUiRender);$('reviewJsonBtn')?.addEventListener('click',reviewUiExportJson);$('reviewMarkdownBtn')?.addEventListener('click',reviewUiExportMarkdown);$('reviewCsvBtn')?.addEventListener('click',reviewUiExportCsv);
+      el('p',{class:'status evidence-message',id:'reviewMessage'},'No export is retained automatically.'));
+    panel.id='reviewExportPanel';exportHost.appendChild(panel);
+    $('reviewJsonBtn')?.addEventListener('click',reviewUiExportJson);$('reviewMarkdownBtn')?.addEventListener('click',reviewUiExportMarkdown);$('reviewCsvBtn')?.addEventListener('click',reviewUiExportCsv);
+  }
 }
 function reviewUiScopeOptions(select,evaluations){
   const current=String(select?.value||'season'),gameweeks=[...new Set((evaluations||[]).map(record=>Number(record.gameweek)).filter(Number.isFinite))].sort((a,b)=>b-a);
