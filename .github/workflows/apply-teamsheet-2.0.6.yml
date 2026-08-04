@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   apply:
+    # Retry after the three approved new files were added directly.
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
