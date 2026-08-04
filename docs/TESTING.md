@@ -1,13 +1,14 @@
 # TESTING.md
 
-> **Teamsheet 2.0.4 merged baseline:** 493/493 tests passed through `./run-tests.sh` before merge through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. New contracts cover versioned League state migration, official entry/standings field validation, ID-free subroutes, targeted large-league pagination, selected-rival set comparison, stale/incomplete wording, mobile/accessibility structure and prevention of unsupported projected-rank or strategy claims. Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not separately performed; the approved sample preview established design direction but was not equivalent to full repository-device acceptance.
+> **Teamsheet 2.0.5 merged baseline:** `./run-tests.sh` completed **510 passed, 0 failed, 0 skipped** before merge through PR #63 at `0b04dd68194207d301667a7100c3ed804ec1e056`. Coverage verifies version-2 Mini-League state migration, explicit maximum-five selected-rival groups, no automatic public-picks requests, bounded two-request concurrency, exact fresh/complete selected-rival exposure, honest stale/incomplete/unavailable states, optional Official FPL field validation, ID-free exposure routing, privacy boundaries, narrow-screen/accessibility source contracts and absence of projection, scoring, simulation, rank or strategy changes. Production builds were deterministic and byte-identical for the exact verified identity, and root `index.html` matched `dist/index.html`. Model version remains `2.4.0`; rules version remains `2026-27.3`. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not performed; automated tests do not prove device usability or live endpoint availability.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-08-02. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-08-03. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
-Teamsheet 2.0.2 verification completes **454/454 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. It changes Team presentation only; model/provider correctness continues to rely on the preserved suites and the Stage 10.5 428-test baseline.
+## Current verified baseline
+Teamsheet 2.0.5 verification completes **510/510 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. The checkpoint changes factual Mini-League intelligence, validation and presentation only; model/provider correctness continues to rely on the preserved suites and the Stage 10.5 baseline.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -37,7 +38,7 @@ Teamsheet 2.0.2 verification completes **454/454 passing tests**, a successful p
 25. `stage10-hardening.test.mjs` — dangerous-key rejection, diagnostic redaction, strict journals/current reconciliation, transfer-version parity, line-feed spreadsheet protection, honest download requests and bounded retry/orchestration wiring.
 26. `navigation-settings.test.mjs` — primary order, hash normalisation, legacy aliases, safe fallback, Settings hierarchy, Team resource relocation, Fixtures/Leagues promotion, Ask Teamsheet access, shortcut routes and removal of legacy click-to-hide navigation.
 27. `team-decision-home.test.mjs` — legal-squad gating, Official/manual/cache provenance, explicit base-XI/captain forecast, risk priority, advisory deadline actions, neutral close-captaincy wording, placeholder pitch and presentation-only wiring.
-28. `mini-leagues.test.mjs` and `mini-leagues-ui.test.mjs` — versioned migration, classic-league discovery, official movement/gap helpers, exact squad set comparison, ID-free routes, targeted/incremental pagination, selected-rival-only fetching, stale/incomplete wording, mobile layout, accessibility and no-strategy/model guards.
+28. `mini-leagues.test.mjs`, `mini-leagues-ui.test.mjs` and `mini-leagues-intelligence.test.mjs` — versioned migration, classic-league discovery, official movement/gap helpers, exact squad and selected-rival set arithmetic, ID-free routes, targeted/incremental pagination, explicit on-demand fetching, concurrency two, selection-race invalidation, stale/incomplete/unavailable wording, mobile layout, accessibility and no-strategy/model guards.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
@@ -53,7 +54,7 @@ Stages 8–10.3 change no deterministic projection formula and require no golden
 3. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte, then verify the generated root `index.html` deployment copy is identical to `dist/index.html`.
 4. Independently verify CSP/build identity through the committed security tests and emitted manifest.
 5. Confirm `BUILD_INFO`, manifest module order, source hash, commit identity and generated files agree.
-6. Commit verified generated artefacts.
+6. Commit verified generated artefacts for implementation checkpoints; documentation-only pull requests must confirm generated files are absent from their diff.
 7. Remove temporary verification workflows before merge.
 
 ## Philosophy
@@ -81,6 +82,7 @@ The final Stage 10.3 run completed **397/397 tests**, zero failures and zero ski
 - successful build, byte-identical exact-identity rebuild and root/deployable equality.
 
 Verified source: `3eaae862b8a8277e450af062ff4bcecd15b12f3f`. Verified generated artefacts: `8c4b60a367b9858146b42ff8710d888856462c21`. Merge commit: `2c703be2ccebc9bd0c4d782ad07b5324b1ed0997`.
+
 ## Stage 10.4 review/export coverage
 Stage 10.4 adds `operating-review.test.mjs`, `cumulative-review.test.mjs`, `review-export.test.mjs`, `review-ui.test.mjs` and shared canonical evidence fixtures. Coverage includes correction chains, current-revision selection, pruned/missing exact records, unsupported schemas, incomplete transfer horizons, null minutes, schedule changes, one-segment limits, deterministic bundle hashes/bytes, all eight CSV contracts, formula-injection cases, manager-reference boundaries, Markdown wording, class-only CSP rules and downstream-only imports.
 
@@ -89,24 +91,20 @@ A synthetic 38-Gameweek × 700-player case exercises 26,600 player rows and equi
 ## Stage 10.5 hardening verification
 Stage 10.5 adds deterministic fault-injection coverage for snapshot/outcome/metric journals, corrupt journals, duplicate-current reconciliation, compression fallback, dangerous JSON keys, version parity, diagnostic redaction, line-feed formula injection, bounded automatic retry, immediate outcome-to-metric orchestration and honest delayed-cleanup downloads. Verified source `0302c54e3eb1d77657b3d892bebb33c90438fa92` passes **428/428 tests** with byte-identical exact-identity builds and root/deployable equality.
 
-
 ## Teamsheet 2.0.1 navigation verification
 The Teamsheet 2.0.1 baseline is **445/445 tests** with zero failures and zero skipped. Coverage verifies the exact five-destination order, URL aliases and safe fallback, browser-history wiring, `aria-current`, static link semantics, no account/key/evidence identities in routes, free transfers and bank on Team, Player Explorer under Research Tools, purpose-led Settings sections, direct evidence/provider shortcuts and Ask Teamsheet as a global/Team action rather than a sixth tab.
 
 Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. PR #48 is merged; its historical physical findings remain recorded, while populated-data transport is tracked separately and the complete end-to-end rehearsal remains deferred to Teamsheet 2.0.7.
 
 ## Teamsheet 2.0.1 physical-review regression coverage
-
-The navigation suite now verifies the persistent global Ask composer and internal arrow, absence of global Data/Evidence pills, controlled SVG dock icons, one fixed five-column safe-area contract, keyboard visual-viewport recovery, invisible focus presentation for programmatically focused headings, and arrow-only Settings subsection navigation. Automated checks still cannot prove physical iPhone placement or populated FPL behaviour.
+The navigation suite verifies the persistent global Ask composer and internal arrow, absence of global Data/Evidence pills, controlled SVG dock icons, one fixed five-column safe-area contract, keyboard visual-viewport recovery, invisible focus presentation for programmatically focused headings, and arrow-only Settings subsection navigation. Automated checks still cannot prove physical iPhone placement or populated FPL behaviour.
 
 ## Teamsheet 2.0.2 Team decision-home verification
+The final Teamsheet 2.0.2 merged baseline is **459/459 tests** with zero failures and zero skipped. Coverage verifies legal-15 gating, immediate placeholder/connected pitch structure, explicit provenance, base XI plus captain uplift arithmetic, deterministic material-risk priority, advisory/no-submission deadline wording, preview distinction, neutral ownership context, preserved routes and absence of model/optimiser/persistence calls from the presentation wrapper.
 
-The Teamsheet 2.0.2 baseline is **454/454 tests** with zero failures and zero skipped. Coverage verifies legal-15 gating, immediate placeholder/connected pitch structure, explicit provenance, base XI plus captain uplift arithmetic, deterministic material-risk priority, advisory/no-submission deadline wording, preview distinction, neutral ownership context, preserved routes and absence of model/optimiser/persistence calls from the presentation wrapper.
-
-Completion also requires two byte-identical builds using the exact verified source commit, root/deployable equality and the existing CSP/build-identity suites. Automated checks cannot prove physical iPhone pitch position, text scaling, VoiceOver order or thumb comfort.
+Completion also required two byte-identical builds using the exact verified source commit, root/deployable equality and the existing CSP/build-identity suites. Automated checks cannot prove physical iPhone pitch position, text scaling, VoiceOver order or thumb comfort.
 
 ## Teamsheet 2.0.4 Mini-League verification
-
 Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. The verified source suite is **493/493 passing tests**. Coverage includes:
 - deterministic migration from `fpl:config.leagueId` and `fpl:leagues` into version-1 minimal state;
 - deduplicated league records and five-rival pin cap;
@@ -122,19 +120,22 @@ Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a5
 
 Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Automated tests do not prove real Official FPL availability, physical iPhone density or VoiceOver reading order. Physical testing of the actual repository build on an iPhone was not separately performed, VoiceOver acceptance was not performed, and live populated-data acceptance was not performed. The approved sample preview established design direction but was not equivalent to full repository-device acceptance.
 
-## Teamsheet 2.0.5 Mini-League intelligence verification contract
-
-The approved 2.0.5 implementation must verify:
+## Teamsheet 2.0.5 Mini-League intelligence verification
+Teamsheet 2.0.5 is complete and merged through PR #63 at `0b04dd68194207d301667a7100c3ed804ec1e056`. The verified suite is **510 passed, 0 failed, 0 skipped**. Coverage verifies:
 
 - deterministic version-1 to version-2 Mini-League state migration;
 - an explicit maximum-five selected-rival group with no automatic picks requests;
 - two-request maximum concurrency and current-session reuse;
 - exact set arithmetic and selected-rival owner/captain/vice/chip counts;
 - aggregate denominators containing only complete, fresh 15-player squads;
-- stale, incomplete, unavailable and outside-loaded-standings behaviour;
+- distinct not-loaded, stale, incomplete, unavailable and outside-loaded-standings behaviour;
 - optional Official FPL rank, Gameweek-total, multiplier, captain, vice and chip validation;
 - ID-free `#/leagues/exposure` routing, history and focus contracts;
 - privacy boundaries keeping fetched standings and picks session-only;
 - accessibility and narrow-screen source contracts;
-- absence of projection, scoring, simulation, rank and transfer-optimiser calls;
-- full `./run-tests.sh`, two exact-identity production builds, root/deployable equality and `git diff --check`.
+- selection-key race invalidation and immediate busy-state cleanup;
+- absence of projection, scoring, simulation, rank and transfer-optimiser calls.
+
+Two production builds using the exact verified identity were byte-identical, root `index.html` equalled `dist/index.html`, model version remained `2.4.0`, and rules version remained `2026-27.3`.
+
+Physical testing of the actual repository build on an iPhone was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. Automated source, test and build evidence cannot prove those acceptance conditions.

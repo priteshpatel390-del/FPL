@@ -1,16 +1,18 @@
 # Teamsheet 2.0.5 — Mini-League Intelligence
 
-Status: owner-approved implementation in review.
+Status: complete and merged through PR #63 at `0b04dd68194207d301667a7100c3ed804ec1e056`.
 Approval: 2 August 2026.
+Merge: 3 August 2026.
 Parent checkpoint: Teamsheet 2.0.4 — Mini Leagues.
 Model version: `2.4.0`.
 Rules version: `2026-27.3`.
+Verified baseline: **510 passed, 0 failed, 0 skipped**; deterministic exact-identity production builds; root `index.html` equals `dist/index.html`.
 
 ## Objective
 
 Add compact factual intelligence across an explicitly selected set of relevant rivals without predicting outcomes or changing Team, Transfers, projection, simulation or strategy logic.
 
-## Approved behaviour
+## Implemented behaviour
 
 - ID-free `#/leagues/exposure` route.
 - Up to five explicitly selected rivals.
@@ -57,12 +59,24 @@ Public endpoint failure degrades per rival. A prior valid current-session record
 
 ## Acceptance limitations
 
-Automated source and build verification cannot establish physical iPhone Safari layout, VoiceOver reading order or live populated-data availability. Those checks must be reported only when separately performed.
+Physical testing of the actual merged repository build on an iPhone was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. Automated source, calculation, route, privacy and build verification cannot establish physical iPhone Safari layout, assistive reading order or live endpoint availability.
 
-## Review refinements
+## Implemented review refinements
 
 - Rivals not yet requested are labelled `not loaded`, not `incomplete`.
 - A comparison-set change invalidates late aggregate results and clears the busy state immediately.
 - The selection identity is deterministic regardless of rival ordering.
 - A direct `#/leagues/exposure` load hands focus to the exposure heading after the dynamically built section is rendered.
 - Automated tests exercise concurrency two, cache/no-preload source contracts and selection-key race invalidation.
+
+## Completion evidence
+
+- Merge PR: #63.
+- Merge commit: `0b04dd68194207d301667a7100c3ed804ec1e056`.
+- Tests: **510 passed, 0 failed, 0 skipped**.
+- Production builds: deterministic and byte-identical for the exact verified identity.
+- Deployment equality: root `index.html` equals `dist/index.html`.
+- Model version: `2.4.0`.
+- Rules version: `2026-27.3`.
+
+The next formal checkpoint is Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation. Investigation and design may proceed; implementation requires explicit owner approval.
