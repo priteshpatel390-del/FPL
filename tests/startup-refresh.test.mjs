@@ -68,5 +68,6 @@ test('evidence is automatic and backup import is segregated from official record
   assert.match(EVIDENCE_SOURCE,/maybeAutoCaptureEvidence/);
   assert.match(EVIDENCE_SOURCE,/origin:EVIDENCE_ORIGINS\.RECOVERY/);
   assert.match(APP_HTML,/No routine action is required/);
-  assert.match(APP_HTML,/Imported files cannot become official prospective evidence/);
+  const shell=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
+  assert.match(shell,/Restored evidence remains recovery-only/);
 });

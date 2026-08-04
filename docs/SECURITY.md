@@ -1,6 +1,6 @@
 # SECURITY.md
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
-Last updated: 2026-07-29. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
+Last updated: 2026-08-04. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
 
 ## Current architecture
 Static single-file application on GitHub Pages. Stage 3 security hardening is complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`. The verified Stage 3 baseline was 210 passing tests with deterministic two-build output.
@@ -9,7 +9,7 @@ Static single-file application on GitHub Pages. Stage 3 security hardening is co
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
 - Provider and user strings render through DOM builders; AI output uses the restricted Markdown AST.
 - External payloads are validated at provider boundaries and transient failures use bounded retry.
-- Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable; full current-session detail is organised under Settings → Data & Diagnostics. The navigation placement changes presentation only.
+- Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable; full current-session detail is organised under Settings → Data & Diagnostics → Provider Health. Healthy state does not occupy the header. Primary screens receive only fixed consequence-led core-data warnings and never raw endpoints, relay errors or identifiers. The placement changes presentation only.
 - Stage 9.6 forbids style attributes/runtime style APIs and removes the related CSP concession without changing provider, storage or model behaviour.
 - Stage 10 snapshot, outcome and metric records use allowlisted shapes, canonical finite JSON, immutable revisions and deterministic SHA-256 verification.
 
@@ -99,3 +99,11 @@ Requests remain read-only through the existing Official FPL transport. No cookie
 The version-2 Mini-League state may persist an explicitly confirmed comparison group of no more than five public rival IDs and locally displayed labels. It does not persist standings, scores, public picks, captaincy, chip state or derived exposure.
 
 The new `#/leagues/exposure` route contains no league, manager, player, Team or Gameweek identifier. Public picks requests remain read-only through the existing Official FPL transport, use bounded concurrency and do not introduce authentication, cookies, account writes, a CSP origin or a provider. Raw rival identifiers remain excluded from Provider Health, Stage 10 evidence and endpoint diagnostics. Removing a league clears its selected comparison group locally.
+
+## Teamsheet 2.0.6 navigation and diagnostic privacy boundary
+
+Every Settings route is semantic and identifier-free. Team, league, manager, rival, API-key, snapshot and record identifiers remain outside hashes and page titles. Build identity displays only public model/rules/commit/source fields already emitted by the deterministic build.
+
+Full provider notes and freshness remain under Provider Health. Primary warnings use fixed application copy derived from approved core states and consequences; they do not render endpoint URLs, transport details or arbitrary provider errors. Existing diagnostic scrubbing remains the boundary for recovery warnings.
+
+Moving restore, export and deletion controls changes no trust rule. Imported snapshots/outcomes remain recovery-only, exports remain complete unencrypted user-controlled files and deleting browser records cannot delete downloaded files. Odds-key masking, direct-only transport, omission from diagnostics and one-action deletion remain unchanged. No origin, CSP permission, authentication, analytics or persistent health history is added.

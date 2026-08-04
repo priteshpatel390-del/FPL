@@ -1,14 +1,14 @@
 # TESTING.md
 
-> **Teamsheet 2.0.5 merged baseline:** `./run-tests.sh` completed **510 passed, 0 failed, 0 skipped** before merge through PR #63 at `0b04dd68194207d301667a7100c3ed804ec1e056`. Coverage verifies version-2 Mini-League state migration, explicit maximum-five selected-rival groups, no automatic public-picks requests, bounded two-request concurrency, exact fresh/complete selected-rival exposure, honest stale/incomplete/unavailable states, optional Official FPL field validation, ID-free exposure routing, privacy boundaries, narrow-screen/accessibility source contracts and absence of projection, scoring, simulation, rank or strategy changes. Production builds were deterministic and byte-identical for the exact verified identity, and root `index.html` matched `dist/index.html`. Model version remains `2.4.0`; rules version remains `2026-27.3`. Physical testing of the actual repository build on an iPhone, VoiceOver acceptance and live populated-data acceptance were not performed; automated tests do not prove device usability or live endpoint availability.
+> **Teamsheet 2.0.6 review baseline:** `./run-tests.sh` completes **520 passed, 0 failed, 0 skipped** for the approved implementation in draft PR #65. Coverage verifies nested identifier-free Settings routes, nearest-parent fallback, explicit Stage 10 UI hosts, separated export/recovery/deletion controls, consequence-led core-data warnings, Help/About truth, actual build identity, mobile Player Explorer presentation, focus restoration and preservation of all model/provider/evidence/Mini-League contracts. Production builds are deterministic and byte-identical for the exact reviewed identity, and root `index.html` matches `dist/index.html`. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone, VoiceOver and live populated-data acceptance were not performed; automated and headless-browser checks do not prove those conditions.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-08-03. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-08-04. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-Teamsheet 2.0.5 verification completes **510/510 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. The checkpoint changes factual Mini-League intelligence, validation and presentation only; model/provider correctness continues to rely on the preserved suites and the Stage 10.5 baseline.
+Teamsheet 2.0.6 review verification completes **520/520 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. The checkpoint changes Settings routes, UI mounting, consequence-led warning presentation, Help/About content and narrow-screen Player Explorer presentation only. Model, provider, evidence-schema, export and Mini-League correctness continue to rely on the preserved suites.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -26,7 +26,7 @@ Teamsheet 2.0.5 verification completes **510/510 passing tests**, a successful p
 13. `squad-simulation.test.mjs` — Stage 8 legal formations, goalkeeper substitution, ordered outfield substitutions and captain/vice fallback.
 14. `player-detail.test.mjs` — Stage 9.3 spread thresholds, quality suppression, range geometry, official availability labels, dialog accessibility/focus and surface wiring.
 15. `decision-preview.test.mjs` — Stage 9.4 transfer-copy non-mutation, optimiser-final-squad agreement, captain/vice rules, stale-state invalidation, deterministic signatures, score separation and no-persistence wiring.
-16. `provider-health-ui.test.mjs` — Stage 9.5 compact age/status modelling, deterministic highest-attention state, status palette mapping and Settings/full-detail wiring.
+16. `provider-health-ui.test.mjs` — Provider Health age/status palette, saved-core-data materiality, quiet healthy/optional states and Settings/full-detail wiring.
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
 19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
@@ -39,6 +39,12 @@ Teamsheet 2.0.5 verification completes **510/510 passing tests**, a successful p
 26. `navigation-settings.test.mjs` — primary order, hash normalisation, legacy aliases, safe fallback, Settings hierarchy, Team resource relocation, Fixtures/Leagues promotion, Ask Teamsheet access, shortcut routes and removal of legacy click-to-hide navigation.
 27. `team-decision-home.test.mjs` — legal-squad gating, Official/manual/cache provenance, explicit base-XI/captain forecast, risk priority, advisory deadline actions, neutral close-captaincy wording, placeholder pitch and presentation-only wiring.
 28. `mini-leagues.test.mjs`, `mini-leagues-ui.test.mjs` and `mini-leagues-intelligence.test.mjs` — versioned migration, classic-league discovery, official movement/gap helpers, exact squad and selected-rival set arithmetic, ID-free routes, targeted/incremental pagination, explicit on-demand fetching, concurrency two, selection-race invalidation, stale/incomplete/unavailable wording, mobile layout, accessibility and no-strategy/model guards.
+29. `settings-organisation.test.mjs` — Teamsheet 2.0.6 nested route hierarchy, nearest-parent fallback, explicit Stage 10 mount ownership, export/recovery/deletion separation, consequence-led warnings, Help/About truth, build identity, identifier-free routes, mobile Player Explorer metadata and focus-restoration contracts.
+
+## Teamsheet 2.0.6 review verification
+The review source passes **520/520 tests**, zero failures and zero skipped. New checks verify route-owned Settings destinations, explicit module hosts, warning materiality, Help/About content, identifier-free URLs and responsive Player Explorer metadata. A headless Chromium smoke check additionally exercises direct deep links, active Settings state, exact heading focus, Back restoration, dynamic module mounts, duplicate-ID absence and saved-core-data warning output.
+
+This evidence does not replace physical iPhone Safari, VoiceOver or live populated-data acceptance.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.

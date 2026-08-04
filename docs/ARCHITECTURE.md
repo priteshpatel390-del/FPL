@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last updated: 2026-08-02. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last updated: 2026-08-04. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -33,7 +33,8 @@ src/
   squad.mjs             squad helpers and deterministic best-XI selection
   main.mjs              load orchestration; evidence capture can explicitly await optional providers
   ui/
-    evidence.mjs        phone-first snapshot capture/status, compressed local recovery and JSON import/export
+    data-warning.mjs    consequence-led core Official FPL warning classification and rendering
+    evidence.mjs        phone-first snapshot status with explicit export/recovery/storage hosts
     outcomes.mjs        non-blocking outcome orchestration, bounded revisions and recovery-only restore
     metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting
     review.mjs          phone-first operating review controls and JSON/Markdown/CSV downloads
@@ -77,6 +78,15 @@ Existing functional nodes are relocated rather than cloned: weekly Team ID/free-
 
 The router stores no account, provider-key or evidence identity in the URL. It does not own model state, provider state or persisted configuration. Player detail remains an accessible dialog rather than a URL route. The owner-approved Teamsheet 2.0.1 boundary changes presentation and navigation only.
 
+## Teamsheet 2.0.6 Settings organisation boundary
+`ui/app-shell.mjs` extends the 2.0.1 router with route-owned landings and child destinations under Team & Account, Research Tools, Evidence & Performance, Data & Diagnostics and Help & About. Unknown nested Settings paths fail to the nearest approved landing. Every child route owns an exact heading and parent link; browser history remains hash-based and a remembered opener restores focus when returning through Settings.
+
+The shell creates explicit hosts for outcome, metric, review, export, recovery, diagnostic and dataset-deletion UI. `ui/evidence.mjs`, `ui/outcomes.mjs`, `ui/metrics.mjs` and `ui/review.mjs` mount only into those hosts rather than inferring placement from sibling order or `parentElement`. Their evidence engines, storage keys, schemas, hashes, revision rules and export bytes remain unchanged.
+
+`ui/data-warning.mjs` translates only core Official FPL availability into primary consequences. Healthy, Partial and deliberately Disabled optional states stay in Settings. Cached, Stale or Fallback core data produces one saved-data warning; unavailable core data blocks only routes that require it. Full seven-state Provider Health remains session-scoped under `#/settings/data/providers`. This module does not change provider thresholds, transport, retry or fallback behaviour.
+
+Player Explorer retains the same filters, projection ordering and Player Detail controller. CSS presents its existing rows as stacked cards on narrow screens. Help & About reads public `BUILD_INFO` fields and documents existing recommendation, uncertainty, privacy and operational boundaries without introducing state or network access.
+
 ## Provider Health and storage
 Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
 
@@ -118,7 +128,7 @@ Player points remain player–Gameweek observations. Minutes/probability evaluat
 
 Frozen squad evaluation enumerates legal XIs, applies official-style goalkeeper and ordered outfield automatic substitutions, applies captain-to-vice fallback and labels the realised optimum from the same frozen 15 as a descriptive hindsight oracle. Frozen transfer plans are compared with the stored zero-transfer baseline over the exact stored horizon; realised net gain subtracts hits but not the optimiser's judgement-based roll value.
 
-`ui/metrics.mjs` stores hash-verified compressed evaluation records with a journal, current pointers and bounded superseded revisions. It backfills from locally authoritative outcomes, processes corrections idempotently and renders descriptive metrics under Deadline evidence. It does not create a composite score, classify accuracy as good/bad or alter any recommendation.
+`ui/metrics.mjs` stores hash-verified compressed evaluation records with a journal, current pointers and bounded superseded revisions. It backfills from locally authoritative outcomes, processes corrections idempotently and renders descriptive metrics under Settings → Evidence & Performance → Performance metrics. It does not create a composite score, classify accuracy as good/bad or alter any recommendation.
 
 ## Stage 10.4 operating-review boundary
 `evidence/review.mjs` validates retained Stage 10.1–10.3 records sequentially, selects only current evaluation revisions for analysis and retains known revision metadata for audit. Missing or pruned exact records make the review explicitly partial rather than being silently dropped. Unsupported source schemas fail closed.

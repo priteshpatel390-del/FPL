@@ -4,6 +4,7 @@ import { xpOf } from '../model/xp.mjs';
 import { mySquad } from '../squad.mjs';
 import { optimiseTransfers } from '../model/transfers.mjs';
 import { saveCfg } from '../storage.mjs';
+import { renderRouteDataWarning } from './data-warning.mjs';
 import {
   decisionPreviewSquadSignature,
   decisionPreviewPlanSignature,
@@ -299,6 +300,7 @@ function transferPlannerMarkUpdating(){
 function renderTransfers(){
   const out=$('transferOut');
   if(!out) return;
+  renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
   transferPlannerSyncVisibleAssumptions();
   transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
   transferPlannerMarkUpdating();

@@ -3,6 +3,7 @@ import { $, el, setChildren } from '../util.mjs';
 import { api, pool } from '../providers/transport.mjs';
 import { validateStandings, validatePicks, collapseIssues } from '../providers/validate.mjs';
 import { mySquad } from '../squad.mjs';
+import { renderRouteDataWarning } from './data-warning.mjs';
 import { initMiniLeagueState, mergeDiscoveredMiniLeagues, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, removeMiniLeague, selectMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, setMiniLeagueComparisonRivals, clearMiniLeagueComparisonRivals, miniLeagueSelectedRivalId, miniLeaguePinnedRivals, miniLeagueComparisonRivals, miniLeagueId, MAX_COMPARISON_RIVALS } from './mini-leagues-state.mjs';
 
 const MINI_LEAGUE_PAGE_SIZE=50;
@@ -415,6 +416,7 @@ function renderLeagueManageList(){
     el('div',{class:'league-manage-actions'},miniLeagueButton(row.id===state.selectedLeagueId?'Selected':'Select',{disabled:row.id===state.selectedLeagueId,onclick:async()=>{await selectMiniLeague(row.id);renderMiniLeagues();miniLeagueNavigate('#/leagues');}}),miniLeagueButton(row.primary?'Primary':'Make primary',{disabled:row.primary,onclick:async()=>{await upsertMiniLeague(row.id,row.name,{primary:true,select:true});renderMiniLeagues();}}),miniLeagueButton('Remove',{'aria-label':`Remove ${row.name||`league ${row.id}`}`,onclick:async()=>{await removeMiniLeague(row.id);delete S.miniLeagueData.standings[row.id];delete S.miniLeagueData.exposure[row.id];renderMiniLeagues();}}))))));
 }
 function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
+  renderRouteDataWarning('leagueDataWarning',{showUnavailable:true});
   if(!miniLeagueReady) return; ensureMiniLeagueExposureSection(); renderLeaguePickerSummary(); renderLeagueManageList();
   const sections=[['#/leagues',$('leagueLanding')],['#/leagues/standings',$('leagueStandings')],['#/leagues/rival',$('leagueRival')],['#/leagues/exposure',$('leagueExposure')],['#/leagues/manage',$('leagueManage')]];
   const resolved=sections.some(([key])=>key===route)?route:'#/leagues'; sections.forEach(([key,node])=>{if(node) node.hidden=key!==resolved;});

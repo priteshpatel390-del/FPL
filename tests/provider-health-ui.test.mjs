@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { HEALTH_STATES } from '../src/providers/registry.mjs';
-import { ageLabel, providerHealthCompactModel, providerHealthFlagClass } from '../src/main.mjs';
+import { ageLabel, providerHealthFlagClass } from '../src/main.mjs';
+import { materialDataAgeLabel, fplDataWarningModel } from '../src/ui/data-warning.mjs';
 
 test('provider health age labels remain compact and deterministic',()=>{
   assert.equal(ageLabel(null),'');
@@ -12,30 +13,35 @@ test('provider health age labels remain compact and deterministic',()=>{
   assert.equal(ageLabel(72*60*60000),'3d ago');
 });
 
-test('compact provider health waits honestly before the first response',()=>{
-  assert.deepEqual(providerHealthCompactModel([]),{
-    label:'Waiting',state:'Waiting',ariaLabel:'Provider Health: waiting for first data load'
-  });
+test('material core-data age labels remain plain English',()=>{
+  assert.equal(materialDataAgeLabel(null),'time unavailable');
+  assert.equal(materialDataAgeLabel(0),'verified just now');
+  assert.equal(materialDataAgeLabel(59*60000),'verified 59m ago');
+  assert.equal(materialDataAgeLabel(48*60*60000),'verified 2d ago');
 });
 
-test('compact provider health reports all-live without inventing a score',()=>{
-  const model=providerHealthCompactModel([
-    {provider:'fpl',state:HEALTH_STATES.LIVE},
-    {provider:'understat',state:HEALTH_STATES.LIVE}
-  ]);
-  assert.equal(model.label,'All live');
-  assert.equal(model.state,HEALTH_STATES.LIVE);
-  assert.match(model.ariaLabel,/FPL Live, Understat Live/);
+test('healthy and optional provider states do not create primary warnings',()=>{
+  assert.equal(fplDataWarningModel({state:HEALTH_STATES.LIVE,hasCoreData:true}).kind,'clear');
+  assert.equal(fplDataWarningModel({state:HEALTH_STATES.PARTIAL,hasCoreData:true}).kind,'clear');
+  assert.equal(fplDataWarningModel({state:HEALTH_STATES.DISABLED,hasCoreData:true}).settingsOnly,true);
 });
 
-test('compact provider health surfaces the most consequential existing state',()=>{
-  const model=providerHealthCompactModel([
-    {provider:'fpl',state:HEALTH_STATES.CACHED},
-    {provider:'understat',state:HEALTH_STATES.FALLBACK},
-    {provider:'odds',state:HEALTH_STATES.DISABLED}
-  ]);
-  assert.equal(model.label,HEALTH_STATES.FALLBACK);
-  assert.equal(model.state,HEALTH_STATES.FALLBACK);
+test('saved core FPL data creates one consequence-led warning',()=>{
+  for(const state of [HEALTH_STATES.CACHED,HEALTH_STATES.STALE,HEALTH_STATES.FALLBACK]){
+    const model=fplDataWarningModel({state,hasCoreData:true,ageMs:75*60000});
+    assert.equal(model.kind,'saved-data');
+    assert.equal(model.level,'warning');
+    assert.match(model.title,/previously verified FPL data/);
+    assert.match(model.detail,/live Official FPL refresh did not complete/);
+    assert.doesNotMatch(model.detail,/Fallback|Cached|Stale/);
+  }
+});
+
+test('missing core FPL data blocks route-level decisions without inventing a fallback',()=>{
+  const model=fplDataWarningModel({state:HEALTH_STATES.UNAVAILABLE,hasCoreData:false});
+  assert.equal(model.kind,'unavailable');
+  assert.equal(model.level,'blocking');
+  assert.match(model.detail,/cannot verify recommendations or fixture context/);
 });
 
 test('provider health state classes reuse the established status palette',()=>{
@@ -45,12 +51,15 @@ test('provider health state classes reuse the established status palette',()=>{
   assert.equal(providerHealthFlagClass(HEALTH_STATES.DISABLED),'dark');
 });
 
-test('Provider Health detail remains under Settings without a global header pill',()=>{
-  const source=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
-  assert.doesNotMatch(source,/providerHealthCompact/);
-  assert.match(source,/providerHealthDetail/);
-  assert.match(source,/providerHealthRows/);
-  assert.match(source,/#\/settings\/data/);
-  assert.match(source,/__teamsheetNavigate/);
-  assert.doesNotMatch(source,/moreTab\.click\(\)/);
+test('Provider Health detail remains under Settings without a healthy header pill',()=>{
+  const shell=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
+  const main=readFileSync(new URL('../src/main.mjs',import.meta.url),'utf8');
+  const warning=readFileSync(new URL('../src/ui/data-warning.mjs',import.meta.url),'utf8');
+  assert.doesNotMatch(shell,/providerHealthCompact/);
+  assert.doesNotMatch(main,/providerHealthCompact/);
+  assert.match(shell,/providerHealthDetail/);
+  assert.match(shell,/providerHealthRows/);
+  assert.match(shell,/#\/settings\/data\/providers/);
+  assert.match(warning,/visible=model\.kind==='saved-data'/);
+  assert.doesNotMatch(warning,/All live/);
 });
