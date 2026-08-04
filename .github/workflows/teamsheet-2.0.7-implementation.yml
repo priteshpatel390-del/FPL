@@ -26,10 +26,13 @@ jobs:
 
       - name: Apply approved scope
         run: |
-          base64 -d scripts/apply-teamsheet-2.0.7.mjs.gz.b64 | gunzip > /tmp/apply-teamsheet-2.0.7.mjs
-          node /tmp/apply-teamsheet-2.0.7.mjs
+          set -euo pipefail
+          if [ ! -f tests/final-mobile-polish.test.mjs ]; then
+            base64 -d scripts/apply-teamsheet-2.0.7.mjs.gz.b64 | gunzip > /tmp/apply-teamsheet-2.0.7.mjs
+            node /tmp/apply-teamsheet-2.0.7.mjs
+          fi
 
-      - name: Commit reviewed source and tests
+      - name: Commit reviewed source, tests and draft documentation
         id: source
         shell: bash
         run: |
@@ -43,11 +46,29 @@ jobs:
             src/ui/views.mjs \
             src/ui/mini-leagues-view.mjs \
             src/ui/transfer-optimiser-view.mjs \
-            tests/final-mobile-polish.test.mjs
+            tests/final-mobile-polish.test.mjs \
+            CLAUDE.md \
+            docs/PROJECT_CONTEXT.md \
+            docs/ARCHITECTURE.md \
+            docs/DECISIONS.md \
+            docs/ROADMAP.md \
+            docs/KNOWN_LIMITATIONS.md \
+            docs/SECURITY.md \
+            docs/TESTING.md \
+            docs/CHANGELOG.md \
+            docs/STAGE_HISTORY.md \
+            docs/TEAMSHEET2-ITEM7.md
           git diff --cached --check
-          git commit -m 'Implement Teamsheet 2.0.7 mobile polish'
-          SOURCE_SHA=$(git rev-parse HEAD)
+          if ! git diff --cached --quiet; then
+            git commit -m 'Implement Teamsheet 2.0.7 mobile polish'
+          fi
+          SOURCE_SHA=$(git log --format=%H --grep='^Implement Teamsheet 2.0.7 mobile polish$' -1)
+          if [ -z "$SOURCE_SHA" ]; then
+            echo 'Reviewed source commit was not found' >&2
+            exit 1
+          fi
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          git push origin HEAD:${GITHUB_HEAD_REF}
 
       - name: Run complete test suite
         id: tests
@@ -55,10 +76,20 @@ jobs:
         env:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           chmod +x ./run-tests.sh
           ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.log
+          TEST_STATUS=${PIPESTATUS[0]}
           TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.log | tail -1)
+          if [ "$TEST_STATUS" -ne 0 ]; then
+            cp /tmp/teamsheet-tests.log docs/TEAMSHEET2-ITEM7-TEST-FAILURE.log
+            git add docs/TEAMSHEET2-ITEM7-TEST-FAILURE.log
+            if ! git diff --cached --quiet; then
+              git commit -m 'Record Teamsheet 2.0.7 test failure'
+              git push origin HEAD:${GITHUB_HEAD_REF}
+            fi
+            exit "$TEST_STATUS"
+          fi
           if [ -z "$TEST_COUNT" ]; then
             echo 'Could not determine passing test count' >&2
             exit 1
@@ -134,7 +165,10 @@ jobs:
               text=text.replace('__GENERATED_COMMIT__',os.environ['GENERATED_SHA'])
               p.write_text(text)
           PY
-          rm -f scripts/apply-teamsheet-2.0.7.mjs.gz.b64 .github/workflows/teamsheet-2.0.7-implementation.yml
+          rm -f \
+            scripts/apply-teamsheet-2.0.7.mjs.gz.b64 \
+            .github/workflows/teamsheet-2.0.7-implementation.yml \
+            docs/TEAMSHEET2-ITEM7-TEST-FAILURE.log
           git add CLAUDE.md docs scripts .github/workflows
           git diff --cached --check
           git commit -m 'Document Teamsheet 2.0.7 verification'
