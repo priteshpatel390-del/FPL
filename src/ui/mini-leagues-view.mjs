@@ -442,6 +442,7 @@ async function initMiniLeagues(legacyConfig={}){
   document.addEventListener('teamsheet:data-rendered',async()=>{await mergeDiscoveredMiniLeagues(S.entry);renderMiniLeagues();const route=globalThis.location?.hash||'';if(route.startsWith('#/leagues')&&selectedMiniLeague()) void loadMiniLeagueStandings({force:true});});
   const initialRoute=globalThis.location?.hash||'#/leagues';
   renderMiniLeagues(initialRoute);
+  if(initialRoute==='#/leagues/exposure') $('leagueExposure')?.querySelector?.('h2')?.focus?.({preventScroll:true});
 }
 
 export { MINI_LEAGUE_PAGE_SIZE, miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSelectionKey, miniLeagueExposureSummary, miniLeagueStatusCopy, initMiniLeagues, renderMiniLeagues, renderLeagueChips, loadMiniLeagueStandings, loadNextMiniLeagueStandingsPage, loadMiniLeagueRival, loadMiniLeagueExposure };

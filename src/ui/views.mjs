@@ -418,9 +418,19 @@ function configureAskAvailability(){
 }
 
 async function ask(){
-  if(!configureAskAvailability()) return;
+  const askAvailable=configureAskAvailability();
   const q = $('q').value.trim();
   if(!q) return;
+  if(!askAvailable){
+    lastAskQuestion=q;
+    S.thread.push({role:'user',content:q});
+    $('q').value='';
+    S.thread.push({role:'assistant',content:"The AI assistant requires the planned serverless migration in this hosted build. Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+    renderThread();
+    $('askStatus').textContent='';
+    if($('retryAsk')) $('retryAsk').hidden=true;
+    return;
+  }
   lastAskQuestion=q;
   if($('retryAsk')) $('retryAsk').hidden=true;
   S.thread.push({role:'user', content:q});

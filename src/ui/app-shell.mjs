@@ -409,9 +409,10 @@ function setupAppShell(){
   if(globalDataWarning) header.appendChild(globalDataWarning);
   const askAvailable=Boolean(globalThis.window?.storage);
   const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
-  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:askAvailable?'Ask Teamsheet…':'Ask unavailable in this hosted build',autocomplete:'off','aria-label':'Ask Teamsheet',disabled:askAvailable?null:'disabled','aria-describedby':askAvailable?null:'askHostedStatus'}):null;
+  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet',disabled:askAvailable?null:'disabled','aria-describedby':askAvailable?null:'askHostedStatus'}):null;
   const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
     teamsheetElement('span',{'aria-hidden':'true'},'↑')):null;
+  if(globalAskInput&&!askAvailable) globalAskInput.setAttribute('placeholder','Ask unavailable in this hosted build');
   if(globalAsk&&globalAskInput&&globalAskSend){
     globalAsk.append(globalAskInput,globalAskSend);
     header.appendChild(globalAsk);
@@ -487,7 +488,7 @@ function setupAppShell(){
 
   const focusRoute=(route,node,{preferRemembered=false}={})=>{
     const remembered=preferRemembered?rememberedFocus.get(route):null;
-    if(focusCandidateVisible(remembered)){
+    if(remembered&&document.contains?.(remembered)&&focusCandidateVisible(remembered)){
       remembered.focus?.({preventScroll:true});
       return;
     }

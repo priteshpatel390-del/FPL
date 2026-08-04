@@ -27,14 +27,14 @@ test('mobile action classes keep the 44 pixel contract',()=>{
 test('fixture controls rerender only their dependent views',()=>{
   assert.match(views,/reFixtureDisplay = debounce(() => { renderTicker(); }, 180)/);
   assert.match(views,/reFixtureWindow = debounce(() => { clearXP(); renderTicker(); renderPlayers(); }, 180)/);
-  assert.doesNotMatch(views,/reFixtures = debounce([sS]*renderSquad(); renderTransfers()/);
+  assert.doesNotMatch(views,/reFixtures = debounce\([\s\S]*renderSquad\(\); renderTransfers\(\)/);
 });
 
 test('restricted startup state remains presentation-only and route complete',()=>{
   assert.match(main,/teamsheet:restricted/);
   assert.match(views,/function renderRestrictedAppState()/);
   assert.match(leagues,/Official FPL data is unavailable/);
-  assert.doesNotMatch(views,/function renderRestrictedAppState()[sS]*optimiseTransfers/);
+  assert.doesNotMatch(views,/function renderRestrictedAppState\(\)[\s\S]*optimiseTransfers/);
 });
 
 test('Ask hosted mode is honest and failed prompts are retained',()=>{
@@ -81,5 +81,5 @@ test('approved polish adds no service worker, framework or account-write path',(
 ');
   assert.doesNotMatch(combined,/serviceWorker.register/);
   assert.doesNotMatch(combined,/react|vue|angular/i);
-  assert.doesNotMatch(combined,/fantasy.premierleague.com/api/[sS]*method:s*['"](?:POST|PUT|PATCH|DELETE)/i);
+  assert.doesNotMatch(combined,/fantasy\.premierleague\.com\/api\/[\s\S]*method:\s*['\"](?:POST|PUT|PATCH|DELETE)/i);
 });

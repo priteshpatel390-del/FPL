@@ -81,9 +81,9 @@ table.ticker{border-collapse:separate;border-spacing:4px;min-width:100%}
 table.ticker th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-soft);font-weight:500;text-align:center;padding-bottom:2px;white-space:nowrap}
 table.ticker th.tm{text-align:left;padding-left:2px}
-td.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;
+td.team,th.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;
   position:sticky;left:0;background:var(--panel);z-index:2}
-td.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}
+td.team .ease,th.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}
 .cell{min-width:48px;min-height:38px;border-radius:7px;color:#fff;text-align:center;font-family:'IBM Plex Mono',monospace;
   font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;
   animation:flip .34s ease both;padding:2px 0}
@@ -170,7 +170,7 @@ body.player-detail-open{overflow:hidden}
 .player-detail-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
 .player-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
 .player-detail-top h2{font-size:20px}
-.player-detail-close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.player-detail-close{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
 .player-detail-close:hover{background:#EEF1EB}
 .player-detail-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(22px + env(safe-area-inset-bottom,0))}
 .player-detail-identity{display:flex;align-items:center;gap:14px;padding:2px 0 14px}
@@ -731,7 +731,7 @@ h2[tabindex="-1"]:focus{outline:none}
         <label class="fld">Free transfers<input type="number" id="trFtCount" inputmode="numeric" min="0" max="5" step="1" value="1" aria-describedby="transferAssumptionHelp"></label>
         <label class="fld">Bank £m<input type="number" id="trBankIn" inputmode="decimal" min="0" step="0.1" value="0.0" aria-describedby="transferAssumptionHelp"></label>
         <label class="fld">Horizon<select id="trHorizon"><option value="1">Next GW</option><option value="3">3 GWs</option><option value="6" selected>6 GWs</option><option value="8">8 GWs</option></select></label>
-        <label class="fld">Optimiser return limit<select id="trTop"><option value="8" selected>Search top 8</option><option value="15">Search top 15</option><option value="20">Search top 20</option></select></label>
+        <label class="fld">Optimiser return limit<select id="trTop"><option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option></select></label>
       </div>
     </fieldset>
     <div id="transferDataWarning"></div>
