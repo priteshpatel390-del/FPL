@@ -1,11 +1,15 @@
 # Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation
 
-Status: implemented for review on `agent/teamsheet-2.0.6-settings-organisation` in draft PR #65. Not merged.
-Approval: 4 August 2026.
+Status: complete and merged through PR #65 at merge commit `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`.
+Approval: implementation scope approved 4 August 2026; merge explicitly approved 4 August 2026.
 Parent checkpoint: Teamsheet 2.0.5 — Mini-League Intelligence.
+Reviewed source commit: `72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6`.
+Generated-build branch head: `0402e66d53ad470bea81117a59ca64accc57902f`.
+Generated source hash: `146431ec24cf7bedcf205a4495ee515baa02643dca099b868cb1e8c8a8b67f5c`.
 Model version: `2.4.0`.
 Rules version: `2026-27.3`.
-Review baseline: **520 passed, 0 failed, 0 skipped**; deterministic exact-identity production builds; root `index.html` equals `dist/index.html`.
+Verified baseline: **520 passed, 0 failed, 0 skipped**; deterministic exact-identity production builds; root `index.html` equals `dist/index.html`.
+Next formal checkpoint: Teamsheet 2.0.7 — Final Mobile Polish and Acceptance. It must begin with investigation and design only; implementation requires explicit owner approval.
 
 ## Objective
 
@@ -130,12 +134,13 @@ No provider state, threshold, transport, retry, fallback or calculation changed.
 - Existing model, optimiser, league, evidence and security suites remain green.
 - New tests cover route hierarchy, nearest-parent fallbacks, explicit mount ownership, export/recovery/deletion separation, Help/About content, warning materiality, identifier-free routes, mobile Player Explorer metadata and focus restoration.
 - Headless Chromium smoke checks cover direct Settings deep links, exact heading focus, active Settings navigation, parent/back focus restoration, explicit module mounts, duplicate-ID absence and saved-data warnings.
-- Production builds are deterministic and byte-identical for the exact reviewed source identity.
+- Production builds were deterministic and byte-identical for the exact reviewed source identity.
 - Root `index.html` equals `dist/index.html`.
 - Model remains `2.4.0`; rules remain `2026-27.3`.
+- No provider, data source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank or Mini-League calculation changed.
 
 ## Acceptance limitations
 
-Physical testing of the actual repository build on an iPhone was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. The environment browser smoke check is not equivalent to iPhone Safari, one-handed use, real VoiceOver reading order or live Official FPL transport acceptance.
+Physical testing of the actual repository build on an iPhone Safari was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. The environment browser smoke check is not equivalent to iPhone Safari, one-handed use, real VoiceOver reading order or live Official FPL transport acceptance.
 
-The implementation must not merge without explicit owner approval. Teamsheet 2.0.7 must not begin before this checkpoint is reviewed and merged.
+These are outstanding acceptance limitations for Teamsheet 2.0.7; they do not reopen the completed 2.0.6 implementation scope. Teamsheet 2.0.7 must begin with investigation and design only, and implementation requires explicit owner approval.
