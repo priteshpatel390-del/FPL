@@ -33,6 +33,87 @@ jobs:
             node /tmp/apply-teamsheet-2.0.7.mjs
           fi
 
+      - name: Apply verified regression corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p=Path(path)
+              text=p.read_text()
+              if old not in text:
+                  raise SystemExit(f'missing correction target in {path}: {old[:80]!r}')
+              p.write_text(text.replace(old,new,1))
+
+          replace_once('src/ui/views.mjs',
+          """async function ask(){
+            if(!configureAskAvailability()) return;
+            const q = $('q').value.trim();
+            if(!q) return;
+          """,
+          """async function ask(){
+            const askAvailable=configureAskAvailability();
+            const q = $('q').value.trim();
+            if(!q) return;
+            if(!askAvailable){
+              lastAskQuestion=q;
+              S.thread.push({role:'user',content:q});
+              $('q').value='';
+              S.thread.push({role:'assistant',content:\"The AI assistant requires the planned serverless migration in this hosted build. Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys.\"});
+              renderThread();
+              $('askStatus').textContent='';
+              if($('retryAsk')) $('retryAsk').hidden=true;
+              return;
+            }
+          """)
+
+          replace_once('src/ui/app-shell.mjs',
+            "placeholder:askAvailable?'Ask Teamsheet…':'Ask unavailable in this hosted build'",
+            "placeholder:'Ask Teamsheet…'")
+          replace_once('src/ui/app-shell.mjs',
+            "  if(globalAsk&&globalAskInput&&globalAskSend){",
+            "  if(globalAskInput&&!askAvailable) globalAskInput.setAttribute('placeholder','Ask unavailable in this hosted build');\n  if(globalAsk&&globalAskInput&&globalAskSend){")
+          replace_once('src/ui/app-shell.mjs',
+            "    if(focusCandidateVisible(remembered)){",
+            "    if(remembered&&document.contains?.(remembered)&&focusCandidateVisible(remembered)){")
+
+          replace_once('src/ui/mini-leagues-view.mjs',
+            "  const initialRoute=globalThis.location?.hash||'#/leagues';\n  renderMiniLeagues(initialRoute);",
+            "  const initialRoute=globalThis.location?.hash||'#/leagues';\n  renderMiniLeagues(initialRoute);\n  if(initialRoute==='#/leagues/exposure') $('leagueExposure')?.querySelector?.('h2')?.focus?.({preventScroll:true});")
+
+          replace_once('app.html','td.team{','td.team,th.team{')
+          replace_once('app.html','td.team .ease{','td.team .ease,th.team .ease{')
+          replace_once('app.html','.player-detail-close{width:38px;height:38px;','.player-detail-close{width:44px;height:44px;')
+          replace_once('app.html','<option value="8" selected>Search top 8</option><option value="15">Search top 15</option><option value="20">Search top 20</option>',
+            '<option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option>')
+
+          replace_once('tests/player-detail.test.mjs',
+            "  const trigger=makeNode('trigger');\n",
+            "  const trigger=makeNode('trigger');\n  trigger.hidden=false;\n")
+
+          p=Path('tests/final-mobile-polish.test.mjs')
+          text=p.read_text()
+          text=text.replace("assert.doesNotMatch(views,/reFixtures = debounce([sS]*renderSquad(); renderTransfers()/);",
+            r"assert.doesNotMatch(views,/reFixtures = debounce\([\s\S]*renderSquad\(\); renderTransfers\(\)/);")
+          text=text.replace("assert.doesNotMatch(views,/function renderRestrictedAppState()[sS]*optimiseTransfers/);",
+            r"assert.doesNotMatch(views,/function renderRestrictedAppState\(\)[\s\S]*optimiseTransfers/);")
+          text=text.replace("assert.doesNotMatch(combined,/fantasy.premierleague.com/api/[sS]*method:s*['\"](?:POST|PUT|PATCH|DELETE)/i);",
+            r"assert.doesNotMatch(combined,/fantasy\.premierleague\.com\/api\/[\s\S]*method:\s*['\"](?:POST|PUT|PATCH|DELETE)/i);")
+          p.write_text(text)
+
+          Path('docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt').unlink(missing_ok=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.html src tests docs/TEAMSHEET2-ITEM7-TEST-FAILURE.txt
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m 'Fix Teamsheet 2.0.7 regression contracts'
+            git push origin HEAD:${GITHUB_HEAD_REF}
+          fi
+
       - name: Resolve reviewed source identity
         id: source
         shell: bash
