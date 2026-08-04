@@ -79,4 +79,4 @@ Physical testing of the actual merged repository build on an iPhone was not perf
 - Model version: `2.4.0`.
 - Rules version: `2026-27.3`.
 
-The next formal checkpoint is Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation. Investigation and design may proceed; implementation requires explicit owner approval.
+Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation was subsequently approved on 4 August 2026 and is implemented for review in draft PR #65. It remains unmerged.

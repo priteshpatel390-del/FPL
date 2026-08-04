@@ -279,10 +279,14 @@ test('chunked collection preserves projections while yielding between player bat
 test('Stage 10.1 UI and deterministic bundle order include the evidence surface',()=>{
   const html=readFileSync(new URL('../app.html',import.meta.url),'utf8');
   const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
+  const shell=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
+  const ui=readFileSync(new URL('../src/ui/evidence.mjs',import.meta.url),'utf8');
   assert.match(html,/id="evidencePanel"/);
-  assert.match(html,/id="captureEvidenceBtn"/);
-  assert.match(html,/id="evidenceImport"/);
-  assert.match(html,/id="deleteEvidenceBtn"/);
+  assert.match(shell,/id:'evidenceRecoveryHost'/);
+  assert.match(shell,/id:'evidenceStorageHost'/);
+  assert.match(ui,/id:'captureEvidenceBtn'/);
+  assert.match(ui,/id:'evidenceImport'/);
+  assert.match(ui,/id:'deleteEvidenceBtn'/);
   assert.ok(build.indexOf("src/evidence/snapshot.mjs")<build.indexOf("src/ui/evidence.mjs"));
   const dist=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
   assert.match(dist,/function findForbiddenEvidence\(value,path='\$',findings=\[\]\)/);

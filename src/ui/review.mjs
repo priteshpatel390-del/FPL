@@ -50,27 +50,35 @@ async function reviewUiLoadBundle(scopeValue=null){
   reviewUiBundlePromise=task;
   try{return await task;}finally{if(reviewUiBundlePromise===task){reviewUiBundlePromise=null;reviewUiBundleScope=null;}}
 }
+function reviewUiPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
 function reviewUiEnsure(){
-  if(typeof document==='undefined'||$('operatingReviewPanel')) return;
-  const metrics=$('metricsPanel'),container=metrics?.parentElement||$('evidencePanel');if(!container) return;
-  const scope=el('select',{id:'reviewScope','aria-label':'Operating review scope'},el('option',{value:'season'},'Season review'));
-  const csv=el('select',{id:'reviewCsvTable','aria-label':'CSV export table'},
-    el('option',{value:'gameweeks'},'Gameweeks'),el('option',{value:'players'},'Players'),el('option',{value:'minute_fixtures'},'Minute fixtures'),el('option',{value:'squad_decisions'},'Squad decisions'),
-    el('option',{value:'transfer_horizons'},'Transfer horizons'),el('option',{value:'transfer_horizon_gameweeks'},'Transfer horizon Gameweeks'),el('option',{value:'provider_states'},'Provider states'),el('option',{value:'revisions'},'Revisions'));
-  const section=el('section',{class:'mt-12',id:'operatingReviewPanel'},
-    el('h3',{},'Operating review'),
-    el('div',{class:'note plain',id:'reviewStatus'},el('b',{},'Waiting for evaluated Gameweeks'),document.createTextNode(' Weekly and season reviews use immutable local evidence only.')),
-    el('div',{class:'field mt-10'},el('label',{for:'reviewScope'},'Review'),scope),
-    el('div',{id:'reviewSummary',class:'mt-10'},el('div',{class:'status'},'No operating review is available on this device.')),
-    el('details',{class:'mt-10',id:'reviewDetails'},el('summary',{},'Review details'),el('div',{id:'reviewDetailContent',class:'mt-10'})),
-    el('details',{class:'mt-10'},el('summary',{},'Exports and recovery'),
-      el('p',{class:'hint m-hint-top'},'Downloads are deterministic and owner-controlled. Google Sheets import remains manual in Stage 10.4.'),
+  if(typeof document==='undefined') return;
+  const host=$('reviewHost');
+  if(host&&!$('operatingReviewPanel')){
+    const scope=el('select',{id:'reviewScope','aria-label':'Operating review scope'},el('option',{value:'season'},'Season review'));
+    const panel=reviewUiPanel('Evidence summary','Operating review','Weekly and season reviews use immutable local evidence only.',
+      el('div',{class:'note plain',id:'reviewStatus'},el('b',{},'Waiting for evaluated Gameweeks'),document.createTextNode(' Weekly and season reviews use immutable local evidence only.')),
+      el('div',{class:'field mt-10'},el('label',{for:'reviewScope'},'Review'),scope),
+      el('div',{id:'reviewSummary',class:'mt-10'},el('div',{class:'status'},'No operating review is available on this device.')),
+      el('details',{class:'mt-10',id:'reviewDetails'},el('summary',{},'Review details'),el('div',{id:'reviewDetailContent',class:'mt-10'})));
+    panel.id='operatingReviewPanel';host.appendChild(panel);scope.addEventListener('change',reviewUiRender);
+  }
+  const exportHost=$('reviewExportHost');
+  if(exportHost&&!$('reviewExportPanel')){
+    const csv=el('select',{id:'reviewCsvTable','aria-label':'CSV export table'},
+      el('option',{value:'gameweeks'},'Gameweeks'),el('option',{value:'players'},'Players'),el('option',{value:'minute_fixtures'},'Minute fixtures'),el('option',{value:'squad_decisions'},'Squad decisions'),
+      el('option',{value:'transfer_horizons'},'Transfer horizons'),el('option',{value:'transfer_horizon_gameweeks'},'Transfer horizon Gameweeks'),el('option',{value:'provider_states'},'Provider states'),el('option',{value:'revisions'},'Revisions'));
+    const panel=reviewUiPanel('Operating review','Review exports','Downloads are deterministic and owner-controlled. Google Sheets import remains manual.',
       el('div',{class:'actions mt-10'},el('button',{class:'btn ghost',id:'reviewJsonBtn',type:'button'},'Download JSON'),el('button',{class:'btn ghost',id:'reviewMarkdownBtn',type:'button'},'Download Markdown')),
       el('div',{class:'field mt-10'},el('label',{for:'reviewCsvTable'},'CSV table'),csv),
       el('button',{class:'btn ghost',id:'reviewCsvBtn',type:'button'},'Download selected CSV'),
-      el('p',{class:'status evidence-message',id:'reviewMessage'},'No export is retained automatically.')));
-  if(metrics?.nextSibling) container.insertBefore(section,metrics.nextSibling);else container.appendChild(section);
-  scope.addEventListener('change',reviewUiRender);$('reviewJsonBtn')?.addEventListener('click',reviewUiExportJson);$('reviewMarkdownBtn')?.addEventListener('click',reviewUiExportMarkdown);$('reviewCsvBtn')?.addEventListener('click',reviewUiExportCsv);
+      el('p',{class:'status evidence-message',id:'reviewMessage'},'No export is retained automatically.'));
+    panel.id='reviewExportPanel';exportHost.appendChild(panel);
+    $('reviewJsonBtn')?.addEventListener('click',reviewUiExportJson);$('reviewMarkdownBtn')?.addEventListener('click',reviewUiExportMarkdown);$('reviewCsvBtn')?.addEventListener('click',reviewUiExportCsv);
+  }
 }
 function reviewUiScopeOptions(select,evaluations){
   const current=String(select?.value||'season'),gameweeks=[...new Set((evaluations||[]).map(record=>Number(record.gameweek)).filter(Number.isFinite))].sort((a,b)=>b-a);

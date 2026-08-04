@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { TEAMSHEET_PRIMARY_ROUTES, normaliseTeamsheetRoute, teamsheetRouteMeta } from '../src/ui/app-shell.mjs';
+import { TEAMSHEET_PRIMARY_ROUTES, normaliseTeamsheetRoute, teamsheetRouteMeta, teamsheetRouteParent } from '../src/ui/app-shell.mjs';
 
 const shellSource=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
 const appHtml=readFileSync(new URL('../app.html',import.meta.url),'utf8');
@@ -32,7 +32,8 @@ test('unknown and empty destinations fail safely to Team',()=>{
 });
 
 test('Settings subroutes keep Settings as the active primary destination',()=>{
-  assert.deepEqual(teamsheetRouteMeta('#/settings/evidence'),{route:'#/settings/evidence',title:'Evidence & Performance',primary:'settings',settings:'evidence'});
+  assert.deepEqual(teamsheetRouteMeta('#/settings/evidence'),{route:'#/settings/evidence',title:'Evidence & Performance',primary:'settings',settings:'evidence',parent:'#/settings'});
+  assert.equal(teamsheetRouteParent('#/settings/evidence/metrics'),'#/settings/evidence');
   assert.equal(teamsheetRouteMeta('#/ask').primary,null);
 });
 
@@ -65,7 +66,8 @@ test('router owns history and active navigation instead of legacy click-to-hide 
 test('global Ask Teamsheet composer replaces header Data and Evidence controls',()=>{
   includesAll(shellSource,['askTeamsheetGlobalInput','askTeamsheetGlobalSend',"placeholder:'Ask Teamsheet…'","'aria-label':'Send question'","'↑'"]);
   excludesAll(shellSource,['providerHealthCompact','askTeamsheetCompact','askCallout','headerActions']);
-  assert.equal(evidenceSource.includes("$('evidenceCompact')?.remove?.()"),true);
+  assert.equal(shellSource.includes('globalDataWarning'),true);
+  assert.equal(evidenceSource.includes('evidenceCompact'),false);
 });
 
 test('global Ask carries the typed question into the full Ask route and preserves origin',()=>{
@@ -77,8 +79,8 @@ test('Settings headings retain programmatic focus without a visible blue outline
   assert.equal(appHtml.includes('h2[tabindex="-1"]:focus{outline:none}'),true);
 });
 
-test('Settings subsections use one accessible arrow-only back control',()=>{
-  assert.equal(shellSource.includes("'aria-label':'Back to Settings'"),true);
+test('Settings subsections use one accessible parent-aware arrow-only back control',()=>{
+  includesAll(shellSource,['teamsheetRouteParent(route)',"'aria-label':`Back to ${parentTitle}`","'←'"]);
   excludesAll(shellSource,['← Settings',"teamsheetRouteHeader('Settings'","teamsheetRouteHeader('Settings · Research Tools'"]);
 });
 

@@ -1,5 +1,6 @@
-// Teamsheet 2.0.1 app shell — primary navigation, URL routing and Settings hierarchy.
-// Reorganises existing DOM nodes without changing model, provider or persistence behaviour.
+// Teamsheet 2.0.6 app shell — primary navigation, Settings information
+// architecture, URL routing and route-owned focus. Existing data, model and
+// persistence behaviour remains owned by the original feature modules.
 
 const TEAMSHEET_PRIMARY_ROUTES = Object.freeze([
   Object.freeze({route:'#/team',key:'team',icon:'team',label:'Team'}),
@@ -25,23 +26,47 @@ const TEAMSHEET_ROUTE_ALIASES = Object.freeze({
   '#/players':'#/settings/research/players',
   '#/league':'#/leagues',
   '#/mini-leagues':'#/leagues',
-  '#/more':'#/settings',
-  '#/settings/research':'#/settings/research/players'
+  '#/more':'#/settings'
 });
 
-const TEAMSHEET_VALID_ROUTES = new Set([
-  ...TEAMSHEET_PRIMARY_ROUTES.map(item=>item.route),
-  '#/ask',
-  '#/settings/team-account',
-  '#/settings/research/players',
-  '#/settings/evidence',
-  '#/settings/data',
-  '#/settings/help',
-  '#/leagues/standings',
-  '#/leagues/rival',
-  '#/leagues/exposure',
-  '#/leagues/manage'
-]);
+const TEAMSHEET_ROUTE_TABLE = Object.freeze({
+  '#/team':Object.freeze({title:'Team',primary:'team'}),
+  '#/transfers':Object.freeze({title:'Transfers',primary:'transfers'}),
+  '#/fixtures':Object.freeze({title:'Fixtures',primary:'fixtures'}),
+  '#/leagues':Object.freeze({title:'Leagues',primary:'leagues'}),
+  '#/leagues/standings':Object.freeze({title:'League table',primary:'leagues',parent:'#/leagues'}),
+  '#/leagues/rival':Object.freeze({title:'Rival comparison',primary:'leagues',parent:'#/leagues'}),
+  '#/leagues/exposure':Object.freeze({title:'Rival exposure',primary:'leagues',parent:'#/leagues'}),
+  '#/leagues/manage':Object.freeze({title:'Manage leagues',primary:'leagues',parent:'#/leagues'}),
+  '#/settings':Object.freeze({title:'Settings',primary:'settings'}),
+  '#/settings/team-account':Object.freeze({title:'Team & Account',primary:'settings',settings:'team-account',parent:'#/settings'}),
+  '#/settings/team-account/manual-squad':Object.freeze({title:'Manual squad',primary:'settings',settings:'team-account',parent:'#/settings/team-account'}),
+  '#/settings/team-account/connection':Object.freeze({title:'Connection guidance',primary:'settings',settings:'team-account',parent:'#/settings/team-account'}),
+  '#/settings/research':Object.freeze({title:'Research Tools',primary:'settings',settings:'research',parent:'#/settings'}),
+  '#/settings/research/players':Object.freeze({title:'Player Explorer',primary:'settings',settings:'research',parent:'#/settings/research'}),
+  '#/settings/evidence':Object.freeze({title:'Evidence & Performance',primary:'settings',settings:'evidence',parent:'#/settings'}),
+  '#/settings/evidence/deadline':Object.freeze({title:'Deadline evidence',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/outcomes':Object.freeze({title:'Official outcomes',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/metrics':Object.freeze({title:'Performance metrics',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/review':Object.freeze({title:'Operating review',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/evidence/exports':Object.freeze({title:'Exports',primary:'settings',settings:'evidence',parent:'#/settings/evidence'}),
+  '#/settings/data':Object.freeze({title:'Data & Diagnostics',primary:'settings',settings:'data',parent:'#/settings'}),
+  '#/settings/data/providers':Object.freeze({title:'Provider Health',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/optional-sources':Object.freeze({title:'Optional sources',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/calibration':Object.freeze({title:'Calibration',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/recovery':Object.freeze({title:'Recovery',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/storage':Object.freeze({title:'Local storage',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/help':Object.freeze({title:'Help & About',primary:'settings',settings:'help',parent:'#/settings'}),
+  '#/settings/help/recommendations':Object.freeze({title:'Recommendations',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/uncertainty':Object.freeze({title:'Expected points & uncertainty',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/limitations':Object.freeze({title:'Known limitations',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/privacy':Object.freeze({title:'Privacy & data',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/about':Object.freeze({title:'About this build',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/settings/help/operations':Object.freeze({title:'Live-season operations',primary:'settings',settings:'help',parent:'#/settings/help'}),
+  '#/ask':Object.freeze({title:'Ask Teamsheet',primary:null})
+});
+
+const TEAMSHEET_VALID_ROUTES = new Set(Object.keys(TEAMSHEET_ROUTE_TABLE));
 
 function normaliseTeamsheetRoute(value=''){
   let route=String(value??'').trim();
@@ -53,29 +78,21 @@ function normaliseTeamsheetRoute(value=''){
   if(Object.prototype.hasOwnProperty.call(TEAMSHEET_ROUTE_ALIASES,route)) return TEAMSHEET_ROUTE_ALIASES[route];
   if(TEAMSHEET_VALID_ROUTES.has(route)) return route;
   if(route.startsWith('#/leagues/')) return '#/leagues';
+  for(const section of ['team-account','research','evidence','data','help']){
+    const prefix=`#/settings/${section}/`;
+    if(route.startsWith(prefix)) return `#/settings/${section}`;
+  }
+  if(route.startsWith('#/settings/')) return '#/settings';
   return '#/team';
 }
 
 function teamsheetRouteMeta(value=''){
   const route=normaliseTeamsheetRoute(value);
-  const table={
-    '#/team':{title:'Team',primary:'team'},
-    '#/transfers':{title:'Transfers',primary:'transfers'},
-    '#/fixtures':{title:'Fixtures',primary:'fixtures'},
-    '#/leagues':{title:'Leagues',primary:'leagues'},
-    '#/leagues/standings':{title:'League table',primary:'leagues'},
-    '#/leagues/rival':{title:'Rival comparison',primary:'leagues'},
-    '#/leagues/exposure':{title:'Rival exposure',primary:'leagues'},
-    '#/leagues/manage':{title:'Manage leagues',primary:'leagues'},
-    '#/settings':{title:'Settings',primary:'settings'},
-    '#/settings/team-account':{title:'Team & Account',primary:'settings',settings:'team-account'},
-    '#/settings/research/players':{title:'Player Explorer',primary:'settings',settings:'research-players'},
-    '#/settings/evidence':{title:'Evidence & Performance',primary:'settings',settings:'evidence'},
-    '#/settings/data':{title:'Data & Diagnostics',primary:'settings',settings:'data'},
-    '#/settings/help':{title:'Help & About',primary:'settings',settings:'help'},
-    '#/ask':{title:'Ask Teamsheet',primary:null}
-  };
-  return Object.freeze({route,...table[route]});
+  return Object.freeze({route,...TEAMSHEET_ROUTE_TABLE[route]});
+}
+
+function teamsheetRouteParent(value=''){
+  return teamsheetRouteMeta(value).parent||null;
 }
 
 function teamsheetElement(tag,attributes={},...children){
@@ -113,11 +130,17 @@ function teamsheetNavIcon(name){
   return svg;
 }
 
-function teamsheetRouteHeader(title,hint){
+function teamsheetRouteHeadingId(route){
+  return `routeHeading-${String(route).replace(/^#\//,'').replaceAll('/','-')}`;
+}
+
+function teamsheetRouteHeader(route,title,hint){
+  const parent=teamsheetRouteParent(route)||'#/settings';
+  const parentTitle=teamsheetRouteMeta(parent).title;
   return teamsheetElement('div',{class:'route-header'},
-    teamsheetElement('a',{class:'route-back',href:'#/settings','aria-label':'Back to Settings'},
+    teamsheetElement('a',{class:'route-back',href:parent,'aria-label':`Back to ${parentTitle}`},
       teamsheetElement('span',{'aria-hidden':'true'},'←')),
-    teamsheetElement('h2',{tabindex:'-1'},title),
+    teamsheetElement('h2',{id:teamsheetRouteHeadingId(route),tabindex:'-1'},title),
     teamsheetElement('p',{class:'hint'},hint));
 }
 
@@ -128,6 +151,48 @@ function teamsheetSettingsCard(route,icon,title,copy){
       teamsheetElement('h3',{},title),
       teamsheetElement('span',{class:'settings-card-description'},copy)),
     teamsheetElement('span',{class:'settings-card-arrow','aria-hidden':'true'},'›'));
+}
+
+function teamsheetSettingsMenu(route,title,hint,cards){
+  return teamsheetElement('section',{
+    id:`settings-route-${route.replace(/^#\/settings\/?/,'').replaceAll('/','-')||'root'}`,
+    class:'settings-subview',
+    'data-settings-route':route,
+    hidden:'hidden'
+  },
+  teamsheetRouteHeader(route,title,hint),
+  teamsheetElement('div',{class:'settings-grid settings-subgrid'},cards));
+}
+
+function teamsheetSettingsContent(route,title,hint,...children){
+  return teamsheetElement('section',{
+    id:`settings-route-${route.replace(/^#\/settings\/?/,'').replaceAll('/','-')}`,
+    class:'settings-subview',
+    'data-settings-route':route,
+    hidden:'hidden'
+  },teamsheetRouteHeader(route,title,hint),children);
+}
+
+function teamsheetPanel(eyebrow,title,hint,...children){
+  return teamsheetElement('section',{class:'panel settings-content-panel'},
+    teamsheetElement('span',{class:'eyebrow'},eyebrow),
+    teamsheetElement('h3',{},title),
+    hint?teamsheetElement('p',{class:'hint'},hint):null,
+    children);
+}
+
+function teamsheetBuildInfoPanel(){
+  const info=typeof BUILD_INFO!=='undefined'&&BUILD_INFO&&typeof BUILD_INFO==='object'?BUILD_INFO:null;
+  const rows=info?[
+    ['Model',info.modelVersion],
+    ['Rules',info.rulesVersion],
+    ['Commit',info.commit],
+    ['Source',String(info.sourceHash||'').slice(0,16)]
+  ]:[['Build','Unavailable in this source view']];
+  return teamsheetPanel('Version identity','This Teamsheet build','Public build identity helps confirm which reviewed source produced the page.',
+    teamsheetElement('dl',{class:'build-identity'},rows.map(([label,value])=>[
+      teamsheetElement('dt',{},label),teamsheetElement('dd',{class:'mono'},String(value||'unversioned'))
+    ])));
 }
 
 function setupAppShell(){
@@ -175,12 +240,11 @@ function setupAppShell(){
       teamsheetElement('div',{},
         teamsheetElement('span',{class:'eyebrow'},'Weekly resources'),
         teamsheetElement('h3',{id:'teamContextTitle'},'Your FPL context')),
-      teamsheetElement('span',{class:'status'},'Free transfers and bank stay visible on Team.')));
+      teamsheetElement('span',{class:'status'},'Team ID, free transfers and bank stay visible because they affect weekly decisions.')));
   setupRows.slice(0,2).forEach(row=>teamContext.appendChild(row));
   ['status','srcStatus','chipState'].map(id=>document.getElementById(id)).filter(Boolean).forEach(node=>teamContext.appendChild(node));
   if(squadOut) teamView.insertBefore(teamContext,squadOut);
   else teamView.appendChild(teamContext);
-
 
   const fixturesHeading=fixturesView.querySelector('h2');
   if(fixturesHeading) fixturesHeading.textContent='Fixtures';
@@ -190,10 +254,10 @@ function setupAppShell(){
   if(leaguesHeading) leaguesHeading.textContent='Leagues';
   if(leaguesEyebrow) leaguesEyebrow.textContent='Mini leagues';
   if(leaguesHint) leaguesHint.textContent='Official position, points gaps, pairwise comparisons and on-demand selected-rival exposure. Projected rank and protect/chase strategy are not included.';
-  const playersHeading=playersView.querySelector('h2');
+  const playersHeading=playersView.querySelector('h3, h2');
   const playersEyebrow=playersView.querySelector('.eyebrow');
   if(playersHeading) playersHeading.textContent='Player Explorer';
-  if(playersEyebrow) playersEyebrow.textContent='Research tools';
+  if(playersEyebrow) playersEyebrow.textContent='Research tool';
   const askHeading=askView.querySelector('h2');
   const askEyebrow=askView.querySelector('.eyebrow');
   if(askHeading) askHeading.textContent='Ask Teamsheet';
@@ -204,73 +268,145 @@ function setupAppShell(){
 
   const settingsView=teamsheetElement('section',{id:'view-settings',class:'view settings-view',hidden:'hidden'});
   const settingsHeader=teamsheetElement('div',{class:'panel settings-header'},
-    teamsheetElement('span',{class:'eyebrow'},'Organised controls'),
+    teamsheetElement('span',{class:'eyebrow'},'Advanced tools, kept out of the way'),
     teamsheetElement('h2',{id:'settingsTitle',tabindex:'-1'},'Settings'),
-    teamsheetElement('p',{class:'hint'},'Team setup, research, evidence, provider detail and help—separated by purpose rather than one long page.'));
+    teamsheetElement('p',{class:'hint'},'Connect your team, research players, review evidence and resolve data issues without cluttering weekly decisions.'));
   const settingsLanding=teamsheetElement('div',{id:'settingsLanding',class:'settings-grid'},
-    teamsheetSettingsCard('#/settings/team-account','◈','Team & Account','Manual squad editing and account setup guidance.'),
-    teamsheetSettingsCard('#/settings/research/players','↗','Research Tools','Explore player projections and supporting detail.'),
-    teamsheetSettingsCard('#/settings/evidence','✓','Evidence & Performance','Deadline records, official outcomes, metrics, reviews and exports.'),
-    teamsheetSettingsCard('#/settings/data','⌁','Data & Diagnostics','Provider Health, optional sources, calibration and recovery detail.'),
-    teamsheetSettingsCard('#/settings/help','?','Help & About','How Teamsheet works, limitations, privacy and build information.'));
+    teamsheetSettingsCard('#/settings/team-account','◈','Team & Account','Manual squad editing, connection guidance and account links.'),
+    teamsheetSettingsCard('#/settings/research','↗','Research Tools','Player Explorer and supporting research outside the main decision journeys.'),
+    teamsheetSettingsCard('#/settings/evidence','✓','Evidence & Performance','Deadline records, outcomes, metrics, review and exports.'),
+    teamsheetSettingsCard('#/settings/data','⌁','Data & Diagnostics','Provider status, optional sources, recovery and local storage.'),
+    teamsheetSettingsCard('#/settings/help','?','Help & About','Recommendation guidance, limitations, privacy and build identity.'));
   settingsView.append(settingsHeader,settingsLanding);
 
-  const settingsTeam=teamsheetElement('section',{id:'settings-team-account',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Team & Account','Manual squad controls live here. Team ID, free transfers and bank remain visible on Team because they directly affect weekly decisions.'));
-  const manualPanel=teamsheetElement('section',{class:'panel'},
-    teamsheetElement('span',{class:'eyebrow'},'Squad setup'),
-    teamsheetElement('h2',{},'Manual squad'),
-    teamsheetElement('p',{class:'hint'},'Build or correct the 15-player squad used when manual mode is enabled. The verified Official FPL player list is required.'),
-    teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));
-  if(manualWrap){
-    manualWrap.open=true;
-    manualPanel.appendChild(manualWrap);
-  }else manualPanel.appendChild(teamsheetElement('p',{class:'status'},'Manual squad controls are unavailable.'));
-  settingsTeam.appendChild(manualPanel);
+  const settingsRoutes=[];
+  const addRoute=route=>{settingsRoutes.push(route);settingsView.appendChild(route);return route;};
 
-  const settingsResearch=teamsheetElement('section',{id:'settings-research-players',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Player Explorer','Research individual projections without restoring Players to primary navigation.'));
+  addRoute(teamsheetSettingsMenu('#/settings/team-account','Team & Account','Connection and squad setup live here; weekly bank and free-transfer assumptions remain on Team.',[
+    teamsheetSettingsCard('#/settings/team-account/manual-squad','XI','Manual squad','Build or correct the 15-player squad used by manual mode.'),
+    teamsheetSettingsCard('#/settings/team-account/connection','ID','Connection guidance','Find your Team ID and jump to saved-league management.')
+  ]));
+
+  const manualPanel=teamsheetPanel('Squad setup','Manual squad','Build or correct the 15-player squad used when manual mode is enabled. Verified Official FPL player data is required.',
+    teamsheetElement('p',{id:'manualEditorAvailability',class:'status'},'Checking player data…'));
+  if(manualWrap){manualWrap.open=true;manualPanel.appendChild(manualWrap);}
+  else manualPanel.appendChild(teamsheetElement('p',{class:'status'},'Manual squad controls are unavailable.'));
+  addRoute(teamsheetSettingsContent('#/settings/team-account/manual-squad','Manual squad','Edit the local 15-player fallback without changing anything in Official FPL.',manualPanel));
+
+  addRoute(teamsheetSettingsContent('#/settings/team-account/connection','Connection guidance','Teamsheet reads public Official FPL identifiers only; it does not ask for an FPL password.',
+    teamsheetPanel('Public connection','Find your Team ID','Open your team in Official FPL and copy the number after /entry/ in the address.',
+      teamsheetElement('div',{class:'settings-action-links'},
+        teamsheetElement('a',{class:'btn ghost',href:'#/team'},'Open Team setup'),
+        teamsheetElement('a',{class:'btn ghost',href:'#/leagues/manage'},'Manage saved leagues')),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Account boundary: '),'Free transfers and bank remain manual because the public feed cannot verify them without a separately approved authenticated integration.'),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Saved leagues: '),'League IDs and local labels are managed inside Leagues. Settings links there rather than duplicating competitive controls.'))));
+
+  addRoute(teamsheetSettingsMenu('#/settings/research','Research Tools','Supporting player research that does not belong in Team, Transfers or Fixtures.',[
+    teamsheetSettingsCard('#/settings/research/players','↗','Player Explorer','Filter current projections and open the existing player detail view.')
+  ]));
   playersView.classList.remove('view');
   playersView.hidden=false;
-  settingsResearch.appendChild(playersView);
+  addRoute(teamsheetSettingsContent('#/settings/research/players','Player Explorer','Research individual projections without restoring Players to primary navigation.',playersView));
 
-  const settingsEvidence=teamsheetElement('section',{id:'settings-evidence',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Evidence & Performance','Prospective records, official outcomes, descriptive metrics, operating review and owner-controlled exports.'));
+  addRoute(teamsheetSettingsMenu('#/settings/evidence','Evidence & Performance','What was recorded, what happened and how Teamsheet has performed.',[
+    teamsheetSettingsCard('#/settings/evidence/deadline','D','Deadline evidence','Prospective pre-deadline records and capture history.'),
+    teamsheetSettingsCard('#/settings/evidence/outcomes','O','Official outcomes','Authoritative completed-Gameweek records and revisions.'),
+    teamsheetSettingsCard('#/settings/evidence/metrics','M','Performance metrics','Descriptive points, minutes and uncertainty evaluation.'),
+    teamsheetSettingsCard('#/settings/evidence/review','R','Operating review','Weekly and season evidence summaries.'),
+    teamsheetSettingsCard('#/settings/evidence/exports','↓','Exports','Owner-controlled JSON, Markdown and CSV downloads.')
+  ]));
   evidencePanel.hidden=false;
-  settingsEvidence.appendChild(evidencePanel);
+  addRoute(teamsheetSettingsContent('#/settings/evidence/deadline','Deadline evidence','Prospective records captured before the Official FPL deadline.',evidencePanel));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/outcomes','Official outcomes','Completed and corrected Official FPL outcome records.',teamsheetElement('div',{id:'outcomesHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/metrics','Performance metrics','Descriptive evaluation from matched official evidence only.',teamsheetElement('div',{id:'metricsHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/review','Operating review','Weekly and season summaries from immutable local evidence.',teamsheetElement('div',{id:'reviewHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/exports','Exports','Downloads are generated on demand and remain under your control.',
+    teamsheetElement('div',{id:'evidenceExportHost'}),
+    teamsheetElement('div',{id:'outcomeExportHost'}),
+    teamsheetElement('div',{id:'reviewExportHost'})));
 
-  const healthPanel=teamsheetElement('section',{id:'providerHealthDetail',class:'panel',tabindex:'-1','aria-labelledby':'providerHealthTitle'},
-    teamsheetElement('span',{class:'eyebrow'},'Current session'),
-    teamsheetElement('h2',{id:'providerHealthTitle'},'Provider Health'),
-    teamsheetElement('p',{class:'hint'},'Which approved data source is active, how fresh it is and what any fallback changes.'),
-    teamsheetElement('div',{id:'providerHealthRows'}));
-  const setupEyebrow=setupPanel.querySelector('.eyebrow');
-  const setupHeading=setupPanel.querySelector('h2');
-  const setupHint=setupPanel.querySelector('.hint');
-  if(setupEyebrow) setupEyebrow.textContent='Data & diagnostics';
-  if(setupHeading) setupHeading.textContent='Optional data and calibration';
-  if(setupHint) setupHint.textContent='Manage optional provider inputs and the existing historical calibration control.';
-  const settingsData=teamsheetElement('section',{id:'settings-data',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Data & Diagnostics','Provider status, optional source controls and calibration detail.'));
-  settingsData.append(healthPanel,setupPanel);
+  const providerRow=document.getElementById('oddsKey')?.closest?.('.row')||null;
+  const backtestRow=document.getElementById('btBtn')?.closest?.('.row')||null;
+  const backtestHint=backtestRow?.nextElementSibling?.classList?.contains('hint')?backtestRow.nextElementSibling:null;
+  const backtestOut=document.getElementById('btOut');
+  const healthPanel=teamsheetPanel('Current session','Provider Health','Which approved source is active, how fresh it is and what any fallback changes.',teamsheetElement('div',{id:'providerHealthRows'}));
+  healthPanel.id='providerHealthDetail';
+  healthPanel.setAttribute('aria-labelledby','providerHealthTitle');
+  healthPanel.querySelector('h3')?.setAttribute('id','providerHealthTitle');
 
-  const settingsHelp=teamsheetElement('section',{id:'settings-help',class:'settings-subview',hidden:'hidden'},
-    teamsheetRouteHeader('Help & About','Plain-English guidance about recommendations, limitations, privacy and this build.'),
-    teamsheetElement('section',{class:'panel'},
-      teamsheetElement('span',{class:'eyebrow'},'About Teamsheet'),
-      teamsheetElement('h2',{},'FPL Decision Desk'),
-      teamsheetElement('p',{class:'hint'},'Teamsheet is advisory. It does not submit transfers, captaincy or squad changes to Official FPL.'),
-      teamsheetElement('div',{class:'note plain'},
-        teamsheetElement('b',{},'Current limitation: '),
-        'Ask Teamsheet works keylessly only in the approved artifact-preview environment until a separately approved serverless migration.'),
-      teamsheetElement('div',{class:'note plain'},
-        teamsheetElement('b',{},'Evidence wording: '),
-        'Prospective metrics remain descriptive until enough genuine pre-deadline observations exist.'),
-      teamsheetElement('p',{class:'status mono'},'Build identity is recorded in the generated manifest and deployable.')));
+  const optionalPanel=teamsheetPanel('Approved optional inputs','Optional sources','Optional providers may improve context, but their approved fallbacks keep core FPL decisions available.');
+  if(providerRow) optionalPanel.appendChild(providerRow);
+  else optionalPanel.appendChild(teamsheetElement('p',{class:'status'},'Optional-source controls are unavailable.'));
+  const calibrationPanel=teamsheetPanel('Historical diagnostic','Calibration','The existing deadline-safe walk-forward check remains diagnostic and does not change live projections automatically.');
+  if(backtestRow) calibrationPanel.appendChild(backtestRow);
+  if(backtestHint) calibrationPanel.appendChild(backtestHint);
+  if(backtestOut) calibrationPanel.appendChild(backtestOut);
+  setupPanel.remove?.();
 
-  [settingsTeam,settingsResearch,settingsEvidence,settingsData,settingsHelp].forEach(section=>settingsView.appendChild(section));
+  addRoute(teamsheetSettingsMenu('#/settings/data','Data & Diagnostics','Current provider detail, optional inputs and recovery tools.',[
+    teamsheetSettingsCard('#/settings/data/providers','●','Provider Health','Freshness, active source and fallback consequences.'),
+    teamsheetSettingsCard('#/settings/data/optional-sources','+','Optional sources','Odds and Understat controls.'),
+    teamsheetSettingsCard('#/settings/data/calibration','≈','Calibration','Deadline-safe historical diagnostic.'),
+    teamsheetSettingsCard('#/settings/data/recovery','↺','Recovery','Restore verified backups and inspect recovery warnings.'),
+    teamsheetSettingsCard('#/settings/data/storage','×','Local storage','Delete specific local evidence datasets.')
+  ]));
+  addRoute(teamsheetSettingsContent('#/settings/data/providers','Provider Health','Full technical source status remains here; healthy states do not occupy the main header.',healthPanel));
+  addRoute(teamsheetSettingsContent('#/settings/data/optional-sources','Optional sources','Configure approved supporting inputs without changing provider transport or model rules.',optionalPanel));
+  addRoute(teamsheetSettingsContent('#/settings/data/calibration','Calibration','Run the existing historical diagnostic without changing live recommendations.',calibrationPanel));
+  addRoute(teamsheetSettingsContent('#/settings/data/recovery','Recovery','Restored files remain recovery-only and cannot silently become official or current.',
+    teamsheetElement('div',{id:'evidenceRecoveryHost'}),
+    teamsheetElement('div',{id:'outcomeRecoveryHost'}),
+    teamsheetElement('div',{id:'stage10DiagnosticsHost'})));
+  addRoute(teamsheetSettingsContent('#/settings/data/storage','Local storage','Delete one local dataset at a time. Downloaded files are outside Teamsheet and are not removed.',
+    teamsheetElement('div',{id:'evidenceStorageHost'}),
+    teamsheetElement('div',{id:'outcomeStorageHost'}),
+    teamsheetElement('div',{id:'metricStorageHost'})));
+
+  addRoute(teamsheetSettingsMenu('#/settings/help','Help & About','Plain-English guidance for interpreting Teamsheet and this build.',[
+    teamsheetSettingsCard('#/settings/help/recommendations','?','Recommendations','What Teamsheet does and what remains your decision.'),
+    teamsheetSettingsCard('#/settings/help/uncertainty','±','Expected points & uncertainty','How projections and ranges should be read.'),
+    teamsheetSettingsCard('#/settings/help/limitations','!','Known limitations','Important gaps and evidence boundaries.'),
+    teamsheetSettingsCard('#/settings/help/privacy','○','Privacy & data','Local storage, public identifiers and exports.'),
+    teamsheetSettingsCard('#/settings/help/about','i','About this build','Model, rules, commit and source identity.'),
+    teamsheetSettingsCard('#/settings/help/operations','✓','Live-season operations','What to check before and after a deadline.')
+  ]));
+  addRoute(teamsheetSettingsContent('#/settings/help/recommendations','Recommendations','Teamsheet supports decisions; it never submits changes to Official FPL.',
+    teamsheetPanel('Decision support','You remain in control','Teamsheet compares the current verified inputs and presents a recommendation with its main risk. It does not log in to FPL, confirm transfers, set captaincy or change your squad.',
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Team: '),'Review the proposed XI, captain and bench, then reproduce any chosen action in Official FPL.'),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Transfers: '),'Model comparisons are alternatives against making no transfer, not promised FPL points.'),
+      teamsheetElement('div',{class:'note plain'},teamsheetElement('b',{},'Leagues: '),'Rival and exposure views report selected public facts; they do not infer protect or chase strategy.'))));
+  addRoute(teamsheetSettingsContent('#/settings/help/uncertainty','Expected points & uncertainty','Projections are estimates, not confirmed outcomes or team news.',
+    teamsheetPanel('Interpretation','Read the range, not only the headline','Expected points combine the approved model inputs for a defined Gameweek horizon. Player detail shows uncertainty where a valid distribution is available.',
+      teamsheetElement('div',{class:'note plain'},'A narrow difference between players or captains is a close model call, not a certainty.'),
+      teamsheetElement('div',{class:'note plain'},'Expected minutes are model estimates. Official availability flags and current team news still matter.'),
+      teamsheetElement('div',{class:'note plain'},'Pre-season and missing-data states remain deliberately less precise rather than manufacturing detail.'))));
+  addRoute(teamsheetSettingsContent('#/settings/help/limitations','Known limitations','The application states what has not been verified instead of treating automated tests as physical acceptance.',
+    teamsheetPanel('Current boundaries','Important limitations','',
+      teamsheetElement('ul',{class:'settings-readable-list'},
+        teamsheetElement('li',{},'Prospective performance evidence remains descriptive until enough genuine pre-deadline observations exist.'),
+        teamsheetElement('li',{},'Ask Teamsheet works keylessly only in the approved artifact-preview environment until a separately approved serverless migration.'),
+        teamsheetElement('li',{},'Public Official FPL transport can be unavailable or return incomplete data.'),
+        teamsheetElement('li',{},'Automated tests do not prove physical iPhone usability, VoiceOver behaviour or live endpoint availability.'),
+        teamsheetElement('li',{},'Projected global rank, projected rival outcomes and protect/balanced/chase strategy are not implemented.')))));
+  addRoute(teamsheetSettingsContent('#/settings/help/privacy','Privacy & data','Teamsheet uses public FPL identifiers and local browser storage; it does not request an FPL password.',
+    teamsheetPanel('Local-first boundary','What is stored','Configuration, manual squad, approved caches, calibration and validated evidence are stored locally in the browser.',
+      teamsheetElement('div',{class:'note plain'},'Exported JSON files are complete and unencrypted. Deleting browser records cannot remove files already saved to Files or Downloads.'),
+      teamsheetElement('div',{class:'note plain'},'Restored evidence remains recovery-only and cannot alter recommendations or become the official prospective record.'),
+      teamsheetElement('div',{class:'note plain'},'Odds keys remain browser-held, password-masked, direct-only and removable with one action. Anthropic keys are never stored client-side.'))));
+  addRoute(teamsheetSettingsContent('#/settings/help/about','About this build','Confirm the reviewed model, rules and source identity used by this page.',teamsheetBuildInfoPanel()));
+  addRoute(teamsheetSettingsContent('#/settings/help/operations','Live-season operations','A small set of checks protects the prospective evidence workflow.',
+    teamsheetPanel('Before and after each deadline','Operational checklist','',
+      teamsheetElement('ol',{class:'settings-readable-list'},
+        teamsheetElement('li',{},'Before the deadline, open Teamsheet on a verified refresh and confirm Deadline Evidence is official-eligible.'),
+        teamsheetElement('li',{},'After a complete or corrected Gameweek, allow Official Outcomes and Metrics to update.'),
+        teamsheetElement('li',{},'Use Exports to save the required JSON, Markdown or CSV files and confirm they appear in Files or Downloads.'),
+        teamsheetElement('li',{},'Use Recovery only for verified backups. Never clear browser data before durable files have been checked.'),
+        teamsheetElement('li',{},'Google Sheets import remains manual; no automatic authentication or scheduled export is active.')))));
+
   main.appendChild(settingsView);
 
+  const globalDataWarning=header?teamsheetElement('a',{id:'globalDataWarning',class:'global-data-warning',href:'#/settings/data/providers',hidden:'hidden','aria-live':'polite'}):null;
+  if(globalDataWarning) header.appendChild(globalDataWarning);
   const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
   const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet'}):null;
   const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
@@ -278,7 +414,7 @@ function setupAppShell(){
   if(globalAsk&&globalAskInput&&globalAskSend){
     globalAsk.append(globalAskInput,globalAskSend);
     header.appendChild(globalAsk);
-    globalAskInput.addEventListener('input',()=>{ globalAskSend.disabled=!globalAskInput.value.trim(); });
+    globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
     globalAsk.addEventListener('submit',event=>{
       event.preventDefault();
       const question=globalAskInput.value.trim();
@@ -311,13 +447,7 @@ function setupAppShell(){
   updateKeyboardState();
 
   const topLevelViews=[teamView,transfersView,fixturesView,leaguesView,settingsView,askView];
-  const settingsSubviews=new Map([
-    ['#/settings/team-account',settingsTeam],
-    ['#/settings/research/players',settingsResearch],
-    ['#/settings/evidence',settingsEvidence],
-    ['#/settings/data',settingsData],
-    ['#/settings/help',settingsHelp]
-  ]);
+  const settingsRouteNodes=new Map(settingsRoutes.map(node=>[node.dataset.settingsRoute,node]));
   const routeNodes=new Map([
     ['#/team',teamView],
     ['#/transfers',transfersView],
@@ -326,6 +456,26 @@ function setupAppShell(){
     ['#/settings',settingsView],
     ['#/ask',askView]
   ]);
+  const rememberedFocus=new Map();
+  let activeRoute=normaliseTeamsheetRoute(globalThis.location?.hash||'');
+
+  document.addEventListener('click',event=>{
+    const link=event.target?.closest?.('a[href^="#/"]');
+    if(!link) return;
+    const destination=normaliseTeamsheetRoute(link.getAttribute('href'));
+    if(destination!==activeRoute) rememberedFocus.set(activeRoute,link);
+  },true);
+
+  const focusRoute=(route,node)=>{
+    const remembered=rememberedFocus.get(route);
+    if(remembered&&document.contains?.(remembered)&&!remembered.hidden){
+      remembered.focus?.({preventScroll:true});
+      return;
+    }
+    const heading=node?.querySelector?.(`#${teamsheetRouteHeadingId(route)}`)||node?.querySelector?.('h2');
+    heading?.setAttribute?.('tabindex','-1');
+    heading?.focus?.({preventScroll:true});
+  };
 
   const activateRoute=(requested,{focus=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
@@ -338,21 +488,20 @@ function setupAppShell(){
       view.setAttribute('aria-hidden',active?'false':'true');
     });
     settingsLanding.hidden=route!=='#/settings';
-    settingsSubviews.forEach((section,sectionRoute)=>{ section.hidden=sectionRoute!==route; });
+    settingsRouteNodes.forEach((section,sectionRoute)=>{section.hidden=sectionRoute!==route;section.setAttribute('aria-hidden',sectionRoute===route?'false':'true');});
     navLinks.forEach(link=>{
       if(link.dataset.primary===meta.primary) link.setAttribute('aria-current','page');
       else link.removeAttribute('aria-current');
     });
     document.body.dataset.route=route.slice(2);
     document.title=`${meta.title} — Teamsheet`;
+    activeRoute=route;
     globalThis.scrollTo?.({top:0,left:0});
     if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsSubviews.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
-      const heading=activeNode.querySelector('h2');
-      heading?.setAttribute?.('tabindex','-1');
-      heading?.focus?.({preventScroll:true});
+      const activeNode=route.startsWith('#/settings')?(settingsRouteNodes.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
+      focusRoute(route,activeNode);
     }
-    document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary}}));
+    document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary,parent:meta.parent||null}}));
     return route;
   };
 
@@ -375,4 +524,11 @@ function setupAppShell(){
 
 setupAppShell();
 
-export { TEAMSHEET_PRIMARY_ROUTES, normaliseTeamsheetRoute, teamsheetRouteMeta, setupAppShell };
+export {
+  TEAMSHEET_PRIMARY_ROUTES,
+  TEAMSHEET_ROUTE_TABLE,
+  normaliseTeamsheetRoute,
+  teamsheetRouteMeta,
+  teamsheetRouteParent,
+  setupAppShell
+};

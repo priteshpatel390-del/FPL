@@ -1,6 +1,6 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-08-02. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
+Last updated: 2026-08-04. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives: Netlify Drop, Cloudflare Pages (deferred, see D-08), Claude-artifact-only (blocked network). Consequences: no server code, no headers (frame-ancestors ineffective), meta-CSP only, relays needed.
@@ -153,3 +153,11 @@ Reason: the merged 2.0.4 foundation could compare one public rival accurately, b
 Approach: add ID-free `#/leagues/exposure` for no more than five explicitly selected rivals. Public current-Gameweek picks load only after a user action, with concurrency two and current-session reuse. Aggregate player/captain/vice/chip counts include only fresh complete 15-player squads; not-loaded, incomplete, unavailable and stale records remain explicit. Counts are labelled as selected-rival facts, not whole-league ownership. Version-2 local state persists only the explicit IDs and labels. Optional Official FPL context fields are validated before aggregation, and invalid context degrades without discarding otherwise valid ownership.
 
 Consequences: no provider, origin, authentication, full-league fan-out, projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy, differential recommendation, protect/balanced/chase logic or Team/Transfers/model calculation change. Physical iPhone, VoiceOver and live populated-data acceptance remain separate review gates. The implementation must not merge without explicit owner approval.
+
+**D-34 · 2026-08-04 · Accepted · Route-owned advanced content and consequence-led provider warnings**
+
+Reason: the approved five-part Settings hierarchy existed, but evidence, outcomes, metrics, review, exports, recovery and provider controls were still assembled into broad technical pages through DOM relocation and sibling-order assumptions. Healthy provider status and engineering detail should not compete with weekly FPL decisions.
+
+Approach: give each Settings goal an identifier-free route-owned landing and child route; create explicit mount hosts for Stage 10 UI modules; move exports to Evidence & Performance and recovery/deletion to Data & Diagnostics; keep full seven-state Provider Health under Settings; show primary warnings only when core Official FPL availability materially affects the current action; complete Help & About from existing repository truth; preserve Player Explorer calculations while using mobile result cards; and restore focus to the opener through hash history.
+
+Consequences: D-21's global compact Provider Health presentation is superseded. Provider state vocabulary, thresholds, transport, retries, fallbacks, persistence, evidence schemas, export formats and every model/fixture/squad/captaincy/optimiser/Mini-League calculation remain unchanged. Routes contain no account, league, manager, key or evidence-record identity. Physical iPhone, VoiceOver and live populated-data acceptance remain separate merge gates.

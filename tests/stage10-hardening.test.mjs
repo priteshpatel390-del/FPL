@@ -54,7 +54,7 @@ test('Stage 10.5 download helper reports only a request and delays URL cleanup',
 });
 
 test('Stage 10.5 wiring includes bounded retry, journals, immediate metrics and honest downloads',()=>{
-  assert.match(EVIDENCE_SOURCE,/AUTO_CAPTURE_RETRY_MS=5\*60\*1000/);assert.match(EVIDENCE_SOURCE,/AUTO_CAPTURE_MAX_ATTEMPTS=3/);assert.match(EVIDENCE_SOURCE,/K_EVIDENCE_JOURNAL/);assert.match(EVIDENCE_SOURCE,/Live-season checklist and recovery/);
+  assert.match(EVIDENCE_SOURCE,/AUTO_CAPTURE_RETRY_MS=5\*60\*1000/);assert.match(EVIDENCE_SOURCE,/AUTO_CAPTURE_MAX_ATTEMPTS=3/);assert.match(EVIDENCE_SOURCE,/K_EVIDENCE_JOURNAL/);assert.match(EVIDENCE_SOURCE,/stage10DiagnosticsHost/);assert.match(EVIDENCE_SOURCE,/Recovery diagnostics/);
   assert.match(OUTCOME_SOURCE,/dispatchOutcomeStored/);assert.match(OUTCOME_SOURCE,/reconcileLocalCurrentRows/);assert.match(METRIC_SOURCE,/reconcileLocalCurrentRows/);assert.match(REVIEW_SOURCE,/stage10DownloadRequestedMessage/);
   for(const source of [EVIDENCE_SOURCE,OUTCOME_SOURCE,REVIEW_SOURCE])assert.doesNotMatch(source,/message\.textContent=`(?:Exported|Downloaded)/);
 });
