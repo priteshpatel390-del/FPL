@@ -1,0 +1,130 @@
+name: Teamsheet 2.0.7 implementation
+
+on:
+  push:
+    branches:
+      - agent/teamsheet-2.0.7-final-mobile-polish
+    paths:
+      - scripts/apply-teamsheet-2.0.7.mjs.gz.b64
+      - .github/workflows/teamsheet-2.0.7-implementation.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teamsheet-2.0.7-implementation
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    if: github.event.head_commit.message == 'Prepare Teamsheet 2.0.7 implementation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/teamsheet-2.0.7-final-mobile-polish
+          fetch-depth: 0
+
+      - name: Apply approved scope
+        run: |
+          base64 -d scripts/apply-teamsheet-2.0.7.mjs.gz.b64 | gunzip > /tmp/apply-teamsheet-2.0.7.mjs
+          node /tmp/apply-teamsheet-2.0.7.mjs
+
+      - name: Commit source and tests
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Teamsheet automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app.html \
+            src/main.mjs \
+            src/ui/app-shell.mjs \
+            src/ui/player-detail.mjs \
+            src/ui/views.mjs \
+            src/ui/mini-leagues-view.mjs \
+            src/ui/transfer-optimiser-view.mjs \
+            tests/final-mobile-polish.test.mjs
+          git commit -m "Implement Teamsheet 2.0.7 mobile polish"
+          SOURCE_SHA=$(git rev-parse HEAD)
+          echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Run full verification
+        id: tests
+        shell: bash
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.log
+          TEST_COUNT=$(awk '/^# pass /{print $3}' /tmp/teamsheet-tests.log | tail -1)
+          if [ -z "$TEST_COUNT" ]; then
+            echo "Could not determine passing test count" >&2
+            exit 1
+          fi
+          echo "count=$TEST_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Verify deterministic build and deployment identity
+        shell: bash
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/teamsheet-first
+          cp dist/index.html /tmp/teamsheet-first/dist-index.html
+          cp dist/app.bundle.js /tmp/teamsheet-first/app.bundle.js
+          cp dist/manifest.json /tmp/teamsheet-first/manifest.json
+          node build.mjs
+          cmp /tmp/teamsheet-first/dist-index.html dist/index.html
+          cmp /tmp/teamsheet-first/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-first/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          node - <<'NODE'
+          const fs=require('fs');
+          const manifest=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
+          const expected=process.env.BUILD_COMMIT;
+          if(manifest.commit!==expected) throw new Error(`manifest commit ${manifest.commit} != ${expected}`);
+          if(manifest.modelVersion!=='2.4.0') throw new Error('model version changed');
+          if(manifest.rulesVersion!=='2026-27.3') throw new Error('rules version changed');
+          if(!/^[0-9a-f]{64}$/.test(manifest.sourceHash)) throw new Error('source hash missing');
+          NODE
+
+      - name: Commit generated deployable
+        id: generated
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add app.js dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Build Teamsheet 2.0.7 deployable"
+          GENERATED_SHA=$(git rev-parse HEAD)
+          echo "sha=$GENERATED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Finalise documentation and remove temporary workflow
+        shell: bash
+        env:
+          TEST_COUNT: ${{ steps.tests.outputs.count }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          GENERATED_SHA: ${{ steps.generated.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          for path in [
+              'CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ARCHITECTURE.md','docs/DECISIONS.md',
+              'docs/ROADMAP.md','docs/KNOWN_LIMITATIONS.md','docs/SECURITY.md','docs/TESTING.md',
+              'docs/CHANGELOG.md','docs/STAGE_HISTORY.md','docs/TEAMSHEET2-ITEM7.md']:
+              p=Path(path)
+              text=p.read_text()
+              text=text.replace('__TEST_COUNT__',os.environ['TEST_COUNT'])
+              text=text.replace('__SOURCE_COMMIT__',os.environ['SOURCE_SHA'])
+              text=text.replace('__GENERATED_COMMIT__',os.environ['GENERATED_SHA'])
+              p.write_text(text)
+          PY
+          rm -f scripts/apply-teamsheet-2.0.7.mjs.gz.b64 .github/workflows/teamsheet-2.0.7-implementation.yml
+          git add CLAUDE.md docs scripts .github/workflows
+          git commit -m "Document Teamsheet 2.0.7 verification"
+
+      - name: Push implementation branch
+        run: git push origin HEAD:agent/teamsheet-2.0.7-final-mobile-polish
