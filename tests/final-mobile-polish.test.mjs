@@ -25,9 +25,9 @@ test('mobile action classes keep the 44 pixel contract',()=>{
 });
 
 test('fixture controls rerender only their dependent views',()=>{
-  assert.match(views,/reFixtureDisplay = debounce(() => { renderTicker(); }, 180)/);
-  assert.match(views,/reFixtureWindow = debounce(() => { clearXP(); renderTicker(); renderPlayers(); }, 180)/);
-  assert.equal(views.includes("const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);"),false);
+  assert.equal(views.includes('const reFixtureDisplay = debounce(() => { renderTicker(); }, 180);'),true);
+  assert.equal(views.includes('const reFixtureWindow = debounce(() => { clearXP(); renderTicker(); renderPlayers(); }, 180);'),true);
+  assert.equal(views.includes('const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);'),false);
 });
 
 test('restricted startup state remains presentation-only and route complete',()=>{
