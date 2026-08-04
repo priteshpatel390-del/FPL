@@ -9,17 +9,9 @@ import { loadOdds } from './providers/odds.mjs';
 import { loadMinuteHistories } from './providers/minutes-history.mjs';
 import { clearXP } from './model/xp.mjs';
 import { HEALTH_STATES, healthRows, getHealth, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable } from './providers/registry.mjs';
+import { renderGlobalDataWarning } from './ui/data-warning.mjs';
 
 const HEALTH_LABELS = {fpl:'FPL', understat:'Understat', odds:'Odds', archive:'Archive'};
-const HEALTH_PRIORITY = [
-  HEALTH_STATES.UNAVAILABLE,
-  HEALTH_STATES.FALLBACK,
-  HEALTH_STATES.PARTIAL,
-  HEALTH_STATES.STALE,
-  HEALTH_STATES.CACHED,
-  HEALTH_STATES.DISABLED,
-  HEALTH_STATES.LIVE
-];
 const VERIFIED_REFRESH_MIN_AGE_MS = 10 * 60 * 1000;
 const STARTUP_PHASE_COPY = Object.freeze({
   cache:['Loading verified data','Preparing the last accepted dataset as a safe fallback.'],
@@ -50,34 +42,9 @@ function providerHealthFlagClass(state){
   if(state === HEALTH_STATES.FALLBACK || state === HEALTH_STATES.UNAVAILABLE) return 'out';
   return 'dark';
 }
-function providerHealthCompactModel(rows = []){
-  if(!rows.length) return {
-    label:'Waiting',
-    state:'Waiting',
-    ariaLabel:'Provider Health: waiting for first data load'
-  };
-  const allLive = rows.every(row => row.state === HEALTH_STATES.LIVE);
-  const worst = HEALTH_PRIORITY.map(state => rows.find(row => row.state === state)).find(Boolean) || rows[0];
-  const detail = rows.map(row => `${HEALTH_LABELS[row.provider] || row.provider} ${row.state}`).join(', ');
-  return {
-    label:allLive ? 'All live' : worst.state,
-    state:allLive ? HEALTH_STATES.LIVE : worst.state,
-    ariaLabel:`Provider Health: ${detail}. Open full detail.`
-  };
-}
 function renderProviderHealth(){
-  const compact = $('providerHealthCompact');
   const detail = $('providerHealthRows');
   const rows = healthRows({seasonLive:S.seasonLive});
-  const compactModel = providerHealthCompactModel(rows);
-
-  if(compact){
-    setChildren(compact,
-      document.createTextNode('Data '),
-      el('span',{class:`flag ${providerHealthFlagClass(compactModel.state)}`},compactModel.label));
-    compact.setAttribute('aria-label',compactModel.ariaLabel);
-    compact.dataset.healthState = String(compactModel.state).toLowerCase();
-  }
 
   if(!detail) return;
   if(!rows.length){
@@ -102,13 +69,14 @@ function reportLoadPhase(options,key){
 function renderVerifiedState(){
   clearXP();
   renderProviderHealth();
+  renderGlobalDataWarning();
   renderAll();
 }
 
 async function loadAll(options = {}){
   const st = $('status');
   const deferRender = Boolean(options.deferRender);
-  const renderIntermediate = () => { if(!deferRender){ renderProviderHealth(); renderAll(); } };
+  const renderIntermediate = () => { if(!deferRender){ renderProviderHealth(); renderGlobalDataWarning(); renderAll(); } };
   reportLoadPhase(options,'cache');
   const cached = await sget(K_CACHE);
   let cacheAccepted = false;
@@ -214,7 +182,7 @@ async function loadAll(options = {}){
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
-    else renderProviderHealth();
+    else { renderProviderHealth(); renderGlobalDataWarning(); }
     return {
       ok:Boolean(S.boot),
       criticalReady:Boolean(S.boot),
@@ -248,11 +216,6 @@ function setRefreshInteractionLock(locked,{startup=false}={}){
   if(!startup){
     if(main) main.inert=locked;
     if(nav) nav.inert=locked;
-  }
-  const compact=$('providerHealthCompact');
-  if(locked&&compact){
-    setChildren(compact,document.createTextNode('Data '),el('span',{class:'flag info'},'Checking'));
-    compact.setAttribute('aria-label','Data refresh in progress. Previously verified data remains visible.');
   }
 }
 async function dispatchVerifiedData(detail){
@@ -308,7 +271,6 @@ export {
   renderProviderHealth,
   ageLabel,
   providerHealthFlagClass,
-  providerHealthCompactModel,
   VERIFIED_REFRESH_MIN_AGE_MS,
   STARTUP_PHASE_COPY,
   shouldRefreshVerifiedData,

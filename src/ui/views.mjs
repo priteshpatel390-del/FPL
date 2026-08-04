@@ -1,3 +1,4 @@
+import { renderRouteDataWarning } from './data-warning.mjs';
 // Views import broadly; the bundler flattens everything into one scope.
 const elNode = el;
 const svgNode = svgEl;
@@ -18,7 +19,11 @@ const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+ki
    VIEW — FIXTURE TICKER
    --------------------------------------------------------------------- */
 function renderTicker(){
-  if(!S.fixtures) return;
+  const warning=renderRouteDataWarning('fixtureDataWarning',{showUnavailable:true});
+  if(!S.fixtures){
+    if(warning.kind==='unavailable') setChildren($('ticker'),elNode('div',{class:'empty'},elNode('strong',{},'Fixtures are unavailable'),'Refresh Official FPL data before using the fixture view.'));
+    return;
+  }
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const span = clamp(parseInt($('fxSpan').value) || 6, 3, 12);
   const lens = $('fxLens').value, sort = $('fxSort').value;
@@ -103,11 +108,14 @@ function renderPlayers(){
   ranked.forEach(({p,x}) => {
     const t = S.teams[p.team];
     playerBody.appendChild(elNode('tr',{class:'clickable',dataset:{pid:p.id},onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
-      elNode('td',{},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
+      elNode('td',{class:'player-result-main'},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
         elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`)),
-      cell((p.now_cost/10).toFixed(1),'num'),cell(p.selected_by_percent,'num'),cell(fmt1(num(p.form)),'num'),
-      elNode('td',{class:'num'},elNode('span',{class:`xp ${x.perGW >= maxPer*0.82 ? 'hot':''}`},fmt1(x.perGW))),
-      cell(fmt1(x.total),'num'),cell(fmt1(x.total/(p.now_cost/10)),'num')));
+      elNode('td',{class:'num',dataset:{label:'Price'}},(p.now_cost/10).toFixed(1)),
+      elNode('td',{class:'num player-result-secondary',dataset:{label:'Ownership'}},p.selected_by_percent),
+      elNode('td',{class:'num player-result-secondary',dataset:{label:'Form'}},fmt1(num(p.form))),
+      elNode('td',{class:'num',dataset:{label:'xP / GW'}},elNode('span',{class:`xp ${x.perGW >= maxPer*0.82 ? 'hot':''}`},fmt1(x.perGW))),
+      elNode('td',{class:'num',dataset:{label:`${span} GW xP`}},fmt1(x.total)),
+      elNode('td',{class:'num',dataset:{label:'xP / £m'}},fmt1(x.total/(p.now_cost/10)))));
   });
   setChildren($('playerTable'),elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
 }

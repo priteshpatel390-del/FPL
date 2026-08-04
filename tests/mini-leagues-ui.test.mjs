@@ -97,7 +97,7 @@ test('new modules are in the deterministic bundle before the startup view',()=>{
 });
 
 test('Mini-League intelligence adds an ID-free on-demand exposure route',()=>{
-  includesAll(shell,['#/leagues/exposure',"{title:'Rival exposure',primary:'leagues'}"]);
+  includesAll(shell,['#/leagues/exposure',"title:'Rival exposure'","primary:'leagues'"]);
   includesAll(view,["id:'leagueExposure'","'data-league-route':'#/leagues/exposure'",'MAX_COMPARISON_RIVALS','loadMiniLeagueExposure','pool(group,async row=>','},2)','selected rivals only','No public squad request is made until you press Load rival exposure']);
   includesAll(state,['MINI_LEAGUE_STATE_VERSION = 2','comparisonRivalsByLeague','MAX_COMPARISON_RIVALS = 5']);
   const routeHandler=view.slice(view.indexOf("document.addEventListener('teamsheet:route-change'"),view.indexOf("document.addEventListener('teamsheet:data-rendered'"));

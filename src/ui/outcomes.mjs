@@ -217,24 +217,41 @@ function outcomeFileName(record){
   return `teamsheet-${record.season}-gw${record.gameweek}-outcome-r${record.identity.revision}-${record.identity.contentHash.slice(0,16)}.json`;
 }
 function downloadOutcome(record){const filename=outcomeFileName(record);requestStage10Download(filename,stableStringify(record)+'\n','application/json');return filename;}
+function outcomeActionPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
 function ensureOutcomeUi(){
-  if(typeof document==='undefined'||$('outcomeStatus')) return;
-  const details=$('evidenceHistory')?.parentElement;
-  if(!details) return;
-  const section=el('div',{class:'mt-12'},
-    el('h3',{},'Official outcomes'),
-    el('div',{class:'note plain',id:'outcomeStatus'},el('b',{},'Waiting for completed Gameweeks'),document.createTextNode(' Outcome checks run automatically after the app opens.')),
-    el('div',{class:'mt-10',id:'outcomeHistory'},el('div',{class:'status'},'No official outcome records saved on this device.')),
-    el('p',{class:'hint m-hint-top'},'Outcome backups are complete unencrypted JSON. Restored files remain recovery-only and cannot silently become the local official record.'),
-    el('div',{class:'evidence-actions'},
-      el('button',{class:'btn ghost',id:'exportOutcomeBtn',type:'button'},'Export latest outcome'),
+  if(typeof document==='undefined') return;
+  const host=$('outcomesHost');
+  if(host&&!$('outcomePanel')){
+    const panel=outcomeActionPanel('Official FPL facts','Official outcomes','Outcome checks run automatically after completed Gameweeks.',
+      el('div',{class:'note plain',id:'outcomeStatus'},el('b',{},'Waiting for completed Gameweeks'),document.createTextNode(' Outcome checks run automatically after the app opens.')),
+      el('div',{class:'mt-10',id:'outcomeHistory'},el('div',{class:'status'},'No official outcome records saved on this device.')));
+    panel.id='outcomePanel';host.appendChild(panel);
+  }
+  const exportHost=$('outcomeExportHost');
+  if(exportHost&&!$('outcomeExportPanel')){
+    const panel=outcomeActionPanel('Completed Gameweek','Official outcome JSON','Download the latest locally available validated outcome record.',
+      el('button',{class:'btn ghost',id:'exportOutcomeBtn',type:'button',disabled:true},'Download latest outcome JSON'),
+      el('p',{class:'status evidence-message',id:'outcomeExportMessage'},'No export is retained automatically.'));
+    panel.id='outcomeExportPanel';exportHost.appendChild(panel);
+  }
+  const recoveryHost=$('outcomeRecoveryHost');
+  if(recoveryHost&&!$('outcomeRecoveryPanel')){
+    const panel=outcomeActionPanel('Outcome recovery','Restore official outcome JSON','Restored files remain recovery-only and cannot become the local official outcome.',
       el('button',{class:'btn ghost',id:'importOutcomeBtn',type:'button'},'Restore outcome JSON'),
-      el('button',{class:'btn ghost',id:'deleteOutcomeBtn',type:'button'},'Delete local outcomes'),
-      el('input',{id:'outcomeImport',type:'file',accept:'application/json,.json',hidden:true})
-    ),
-    el('p',{class:'status evidence-message',id:'outcomeMessage'},'Collection is automatic and does not delay access to Teamsheet.')
-  );
-  details.appendChild(section);
+      el('input',{id:'outcomeImport',type:'file',accept:'application/json,.json',hidden:true}),
+      el('p',{class:'status evidence-message',id:'outcomeRecoveryMessage'},'Outcome backups are complete unencrypted JSON.'));
+    panel.id='outcomeRecoveryPanel';recoveryHost.appendChild(panel);
+  }
+  const storageHost=$('outcomeStorageHost');
+  if(storageHost&&!$('outcomeStoragePanel')){
+    const panel=outcomeActionPanel('Official outcomes','Delete local official outcomes','This removes local outcome records only. Deadline snapshots and downloaded files remain.',
+      el('button',{class:'btn ghost',id:'deleteOutcomeBtn',type:'button'},'Delete local official outcomes'),
+      el('p',{class:'status evidence-message',id:'outcomeStorageMessage'},'Snapshots, outcomes and metrics have separate deletion controls.'));
+    panel.id='outcomeStoragePanel';storageHost.appendChild(panel);
+  }
 }
 function outcomeFlagClass(status){
   if(status==='complete'||status==='corrected') return 'rise';
@@ -310,12 +327,12 @@ async function runOutcomeCollection({trigger='automatic',force=false,nowFn=Date.
   finally{ outcomeBusy=false; outcomePromise=null; await renderOutcomeStatus(); }
 }
 async function exportLatestOutcome(){
-  const message=$('outcomeMessage');
+  const message=$('outcomeExportMessage');
   try{ const record=await latestOutcomeRecord(); if(!record) throw new Error('No saved outcome is available'); const filename=downloadOutcome(record); recordStage10Diagnostic('download_requested',{recordType:'gameweekOutcome',recordId:record.identity.outcomeId,severity:'info'}); if(message) message.textContent=stage10DownloadRequestedMessage(filename); }
   catch(error){ if(message) message.textContent=`Outcome export failed: ${error.message}`; }
 }
 async function importOutcomeFile(file){
-  const message=$('outcomeMessage');
+  const message=$('outcomeRecoveryMessage');
   try{
     if(!file) return;
     if(Number(file.size)>MAX_OUTCOME_IMPORT_BYTES) throw new Error('file exceeds the 25 MB outcome limit');
@@ -327,7 +344,7 @@ async function importOutcomeFile(file){
   finally{ await renderOutcomeStatus(); }
 }
 async function deleteOutcomes(){
-  const message=$('outcomeMessage');
+  const message=$('outcomeStorageMessage');
   try{
     if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored official outcome records? Exported JSON files and deadline snapshots will not be affected.')) return;
     await clearOutcomeStorage(); if(message) message.textContent='Local official outcome records were deleted. Deadline snapshots and exported files were not affected.';

@@ -129,13 +129,31 @@ async function runMetricBackfill(){
 function metricFormat(value,digits=2){return value==null||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits);}
 function metricPercent(value){return value==null||!Number.isFinite(Number(value))?'—':`${(Number(value)*100).toFixed(1)}%`;}
 function metricKpi(label,value){return el('div',{class:'kpi'},el('div',{class:'k'},label),el('div',{class:'v'},String(value)));}
+function metricActionPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
 function ensureMetricUi(){
-  if(typeof document==='undefined'||$('metricStatus')) return;
-  const outcomeStatus=$('outcomeStatus'),container=outcomeStatus?.parentElement||$('evidencePanel');if(!container) return;
-  const segment=el('select',{id:'metricSegment','aria-label':'Metrics segment'},
-    el('option',{value:'overall|all'},'All matched players'),el('option',{value:'schedule|schedule_aligned'},'Schedule-aligned only'),el('option',{value:'owned|owned'},'Owned players'),el('option',{value:'recommendation|selected_xi'},'Frozen selected XI'),el('option',{value:'position|GKP'},'Goalkeepers'),el('option',{value:'position|DEF'},'Defenders'),el('option',{value:'position|MID'},'Midfielders'),el('option',{value:'position|FWD'},'Forwards'),el('option',{value:'fixtureClass|blank'},'Blank Gameweeks'),el('option',{value:'fixtureClass|single'},'Single Gameweeks'),el('option',{value:'fixtureClass|double'},'Double Gameweeks'));
-  const section=el('div',{class:'mt-12',id:'metricsPanel'},el('h3',{},'Metrics'),el('div',{class:'note plain',id:'metricStatus'},el('b',{},'Waiting for matched evidence'),document.createTextNode(' Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.')),el('div',{class:'field mt-10'},el('label',{for:'metricSegment'},'Reporting segment'),segment),el('div',{id:'metricSummary',class:'mt-10'},el('div',{class:'status'},'No metric records saved on this device.')),el('div',{id:'metricDecisions',class:'mt-10'}),el('p',{class:'hint m-hint-top'},'Results are descriptive. Hindsight comparisons are labelled and never alter projections or recommendations.'),el('button',{class:'btn ghost',id:'deleteMetricsBtn',type:'button'},'Delete local metrics'),el('p',{class:'status evidence-message',id:'metricMessage'},'Metrics update automatically after corrected official outcomes.'));
-  container.appendChild(section);segment.addEventListener('change',renderMetricStatus);$('deleteMetricsBtn')?.addEventListener('click',deleteMetrics);
+  if(typeof document==='undefined') return;
+  const host=$('metricsHost');
+  if(host&&!$('metricsPanel')){
+    const segment=el('select',{id:'metricSegment','aria-label':'Metrics segment'},
+      el('option',{value:'overall|all'},'All matched players'),el('option',{value:'schedule|schedule_aligned'},'Schedule-aligned only'),el('option',{value:'owned|owned'},'Owned players'),el('option',{value:'recommendation|selected_xi'},'Frozen selected XI'),el('option',{value:'position|GKP'},'Goalkeepers'),el('option',{value:'position|DEF'},'Defenders'),el('option',{value:'position|MID'},'Midfielders'),el('option',{value:'position|FWD'},'Forwards'),el('option',{value:'fixtureClass|blank'},'Blank Gameweeks'),el('option',{value:'fixtureClass|single'},'Single Gameweeks'),el('option',{value:'fixtureClass|double'},'Double Gameweeks'));
+    const panel=metricActionPanel('Matched evidence','Performance metrics','Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.',
+      el('div',{class:'note plain',id:'metricStatus'},el('b',{},'Waiting for matched evidence'),document.createTextNode(' Metrics are created only from an official pre-deadline snapshot and an authoritative outcome.')),
+      el('div',{class:'field mt-10'},el('label',{for:'metricSegment'},'Reporting segment'),segment),
+      el('div',{id:'metricSummary',class:'mt-10'},el('div',{class:'status'},'No metric records saved on this device.')),
+      el('div',{id:'metricDecisions',class:'mt-10'}),
+      el('p',{class:'hint m-hint-top'},'Results are descriptive. Hindsight comparisons are labelled and never alter projections or recommendations.'));
+    panel.id='metricsPanel';host.appendChild(panel);segment.addEventListener('change',renderMetricStatus);
+  }
+  const storageHost=$('metricStorageHost');
+  if(storageHost&&!$('metricStoragePanel')){
+    const panel=metricActionPanel('Performance records','Delete local metrics','This removes derived metric records only. Snapshots and official outcomes remain.',
+      el('button',{class:'btn ghost',id:'deleteMetricsBtn',type:'button'},'Delete local metrics'),
+      el('p',{class:'status evidence-message',id:'metricStorageMessage'},'Snapshots, outcomes and metrics have separate deletion controls.'));
+    panel.id='metricStoragePanel';storageHost.appendChild(panel);$('deleteMetricsBtn')?.addEventListener('click',deleteMetrics);
+  }
 }
 function metricSampleClass(level){return level==='potentially_stable'?'good':level==='raw_only'?'bad':'plain';}
 async function renderMetricStatus(){
@@ -148,7 +166,7 @@ async function renderMetricStatus(){
   if(decisions){const squad=latest.decisions?.squad,captain=latest.decisions?.captaincy,bench=latest.decisions?.bench,transfer=transfers.slice().sort((a,b)=>b.startGameweek-a.startGameweek)[0],primary=transfer?.plans?.[0];const cards=[];if(squad)cards.push(el('article',{class:'note plain'},el('b',{},`GW${latest.gameweek} frozen decisions`),el('div',{class:'status'},`Selected XI ${squad.selectedRealised?.basePoints??'—'} pts · Hindsight oracle ${squad.hindsightOracle?.realisedPoints??'—'} pts · realised rank ${squad.selectedRealisedRank||'—'}.`)));if(captain)cards.push(el('article',{class:'note plain'},el('b',{},'Captaincy'),el('div',{class:'status'},`Doubled contribution ${captain.selected?.doubledContribution??0} pts${captain.selected?.viceTookOver?' · vice-captain fallback used':''}. Hindsight comparisons are descriptive only.`)));if(bench)cards.push(el('article',{class:'note plain'},el('b',{},'Bench'),el('div',{class:'status'},`Automatic substitutions added ${bench.automaticSubstitutionContribution??0} pts · ${bench.pointsLeftOnBench??0} pts left on unused bench players.`)));if(transfer&&primary)cards.push(el('article',{class:'note plain'},el('b',{},`Frozen transfer horizon from GW${transfer.startGameweek}`),el('div',{class:'status'},`Gross gain ${primary.grossGain} pts · net after hits ${primary.netGainAfterHits} pts. Roll value is shown only as frozen planning context.`)));setChildren(decisions,cards);}
 }
 async function deleteMetrics(){
-  const message=$('metricMessage');try{if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored metric records? Snapshots and official outcomes will not be affected.')) return;await clearMetricStorage();if(message) message.textContent='Local metrics were deleted. Snapshots and outcomes were not affected.';}catch(error){if(message) message.textContent=`Metric deletion failed: ${error.message}`;}finally{await renderMetricStatus();}
+  const message=$('metricStorageMessage');try{if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored metric records? Snapshots and official outcomes will not be affected.')) return;await clearMetricStorage();if(message) message.textContent='Local metrics were deleted. Snapshots and outcomes were not affected.';}catch(error){if(message) message.textContent=`Metric deletion failed: ${error.message}`;}finally{await renderMetricStatus();}
 }
 function initMetricsUi(){
   if(typeof document==='undefined') return;ensureMetricUi();document.addEventListener('teamsheet:outcome-stored',event=>{const task=event.detail?.outcomeId?processOutcomeMetric(event.detail.outcomeId):runMetricBackfill();if(typeof event.detail?.waitUntil==='function') event.detail.waitUntil(task);else void task.then(renderMetricStatus);});document.addEventListener('teamsheet:data-rendered',renderMetricStatus);document.addEventListener('teamsheet:data-verified',()=>{setTimeout(()=>void runMetricBackfill(),2000);});document.addEventListener('visibilitychange',()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();});setInterval(()=>{if(!document.visibilityState||document.visibilityState==='visible') void runMetricBackfill();},60*1000);void recoverMetricJournal().then(runMetricBackfill).then(renderMetricStatus);

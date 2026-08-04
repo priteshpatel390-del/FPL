@@ -347,8 +347,6 @@ body.player-detail-open{overflow:hidden}
 .transfer-net.positive{color:var(--pitch)}.transfer-net.negative{color:var(--claret)}
 .chip-remove{padding:6px 9px;color:var(--claret)}.muted{color:var(--ink-soft)}
 .data-compact{min-width:520px}
-#providerHealthCompact,#evidenceCompact{margin-top:10px;min-height:38px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff}
-#providerHealthCompact:hover,#evidenceCompact:hover{background:rgba(255,255,255,.16);color:#fff}
 #providerHealthDetail,#evidencePanel{scroll-margin-top:12px}
 .evidence-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .evidence-actions .btn{flex:1 1 150px}
@@ -411,11 +409,32 @@ h2[tabindex="-1"]:focus{outline:none}
 .settings-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#EAF0EB;color:var(--pitch);font-size:19px;font-weight:800}
 .settings-card-copy{min-width:0}.settings-card h3{font-size:15px;margin:0}.settings-card-description{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:2px}
 .settings-card-arrow{font-size:25px;color:var(--ink-soft)}
+.settings-view .btn.sm,.settings-view button{min-height:44px}
+.settings-view input:not([type=checkbox]):not([type=file]),.settings-view select{min-height:44px}
 .route-header{position:relative;margin-bottom:12px;padding-top:2px}.route-header h2{font-size:20px;margin-top:0}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
 .route-back{display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0 0 4px;color:var(--claret);font-size:27px;font-weight:700;line-height:1;text-decoration:none;border-radius:50%}
 .route-back:hover{background:#F7EEF0;text-decoration:none}.route-back:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .settings-subview>.panel:last-child{margin-bottom:0}
-@media(min-width:720px){.settings-grid{grid-template-columns:1fr 1fr}.settings-card:last-child{grid-column:1/-1}}
+@media(min-width:720px){.settings-grid{grid-template-columns:1fr 1fr}.settings-grid:not(.settings-subgrid)>.settings-card:last-child{grid-column:1/-1}}
+.settings-subgrid{align-items:start}.settings-subview{min-width:0}.settings-content-panel>h3{font-size:17px;margin-bottom:2px}.settings-content-panel>.hint{color:var(--ink-soft);font-size:13px;margin:2px 0 14px}
+.settings-action-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.settings-action-links .btn{display:grid;place-items:center;text-decoration:none;text-align:center}
+.settings-readable-list{margin:8px 0 0;padding-left:22px}.settings-readable-list li+li{margin-top:8px}.build-identity{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 12px;margin:12px 0 0}.build-identity dt{font-weight:700}.build-identity dd{margin:0;overflow-wrap:anywhere;color:var(--ink-soft)}
+#outcomesHost>.panel,#metricsHost>.panel,#reviewHost>.panel,#evidenceExportHost>.panel,#outcomeExportHost>.panel,#reviewExportHost>.panel,#evidenceRecoveryHost>.panel,#outcomeRecoveryHost>.panel,#stage10DiagnosticsHost>.panel,#evidenceStorageHost>.panel,#outcomeStorageHost>.panel,#metricStorageHost>.panel{margin-bottom:14px}
+.global-data-warning{display:block;margin-top:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.35);border-radius:9px;background:#6A4E16;color:#fff;text-decoration:none;font-size:12px;font-weight:700}.global-data-warning:hover{background:#7A5B1C;color:#fff}.global-data-warning[hidden]{display:none}.global-data-warning:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
+.data-material-warning{margin:0 0 12px}.data-material-warning a{font-weight:700}.data-material-warning[hidden]{display:none}
+@media(max-width:640px){
+  .settings-action-links{grid-template-columns:1fr}
+  #view-players .scroll{overflow:visible;margin:0;padding:0}
+  #view-players table.data{display:block;min-width:0;width:100%}
+  #view-players table.data thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  #view-players table.data tbody{display:grid;gap:10px}
+  #view-players table.data tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow)}
+  #view-players table.data td{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:5px 6px;border:0;background:#F7F9F5;border-radius:7px;text-align:right}
+  #view-players table.data td:before{content:attr(data-label);font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);text-align:left}
+  #view-players table.data td.player-result-main{grid-column:1/-1;display:block;padding:2px 1px 8px;background:transparent;text-align:left;border-bottom:1px solid var(--line);border-radius:0}
+  #view-players table.data td.player-result-main:before{content:none}
+  #view-players table.data td.player-result-secondary{display:none}
+}
 @media(max-width:520px){
   main{padding:12px}.panel{padding:14px}.row{align-items:stretch}.row>label.fld{flex:1 1 135px}
   .tab{font-size:9px}.tab-label{max-width:68px}
@@ -620,23 +639,12 @@ h2[tabindex="-1"]:focus{outline:none}
   <!-- VALIDATION EVIDENCE -->
   <section class="panel" id="evidencePanel" tabindex="-1" aria-labelledby="evidenceTitle">
     <span class="eyebrow">Automatic validation</span>
-    <h2 id="evidenceTitle">Deadline evidence</h2>
-    <p class="hint">Teamsheet automatically secures verified pre-deadline records and later collects official Gameweek outcomes after approved data has refreshed. No routine action is required.</p>
+    <h3 id="evidenceTitle">Deadline evidence</h3>
+    <p class="hint">Teamsheet automatically secures verified pre-deadline records after approved data has refreshed. No routine action is required.</p>
     <div class="note plain" id="evidenceStatus"><b>Waiting for season data</b> Evidence will be handled automatically after verification.</div>
     <p class="status" id="evidenceDeadline">Deadline unavailable.</p>
-    <p class="status evidence-message" id="evidenceMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
-    <details class="mt-12">
-      <summary>Saved evidence and recovery controls</summary>
-      <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
-      <p class="hint m-hint-top">These controls are for backup recovery and diagnostics only. Imported files cannot become official prospective evidence.</p>
-      <div class="evidence-actions">
-        <button class="btn ghost" id="exportEvidenceBtn" disabled>Export latest JSON</button>
-        <button class="btn ghost" id="importEvidenceBtn">Restore backup JSON</button>
-        <button class="btn ghost" id="captureEvidenceBtn" disabled>Diagnostic capture</button>
-        <button class="btn ghost" id="deleteEvidenceBtn">Delete local evidence</button>
-        <input type="file" id="evidenceImport" accept="application/json,.json" hidden>
-      </div>
-    </details>
+    <p class="status evidence-message" id="evidenceDeadlineMessage">Only approved Teamsheet sources can enter the verified data cycle.</p>
+    <div class="mt-10" id="evidenceHistory"><div class="status">No evidence snapshots saved on this device.</div></div>
   </section>
 
   <!-- FIXTURES -->
@@ -644,6 +652,7 @@ h2[tabindex="-1"]:focus{outline:none}
     <span class="eyebrow">Signature view</span>
     <h2>Fixtures</h2>
     <p class="hint">Difficulty from the model's own attack/defence ratings, not the official 1–5. Switch the lens to see who fixtures favour.</p>
+    <div id="fixtureDataWarning"></div>
     <div class="row mb-12">
       <label class="fld">From GW<input type="number" id="fxFrom" min="1" max="38" class="input-w-72"></label>
       <label class="fld">Games<input type="number" id="fxSpan" min="3" max="12" value="6" class="input-w-72"></label>
@@ -672,7 +681,7 @@ h2[tabindex="-1"]:focus{outline:none}
   <!-- RANKER -->
   <section class="view panel" id="view-players" hidden>
     <span class="eyebrow">Shortlist</span>
-    <h2>Projected points</h2>
+    <h3>Projected points</h3>
     <p class="hint" id="rankerHint">Expected points per gameweek, modelled separately for each position. Tap any row for the breakdown.</p>
     <div class="row mb-10">
       <label class="fld">Position<select id="plPos"><option value="0">All</option></select></label>
@@ -720,12 +729,14 @@ h2[tabindex="-1"]:focus{outline:none}
         <label class="fld">Display options<select id="trTop"><option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option></select></label>
       </div>
     </fieldset>
+    <div id="transferDataWarning"></div>
     <p class="status transfer-status" id="transferStatus" aria-live="polite"></p>
     <div id="transferOut" aria-busy="false"><div class="empty"><strong>No verified comparison yet</strong>Load a complete squad and verified FPL data to compare transfer decisions.</div></div>
   </section>
 
   <!-- LEAGUES -->
   <section class="view league-view" id="view-league" hidden>
+    <div id="leagueDataWarning"></div>
     <p class="status" id="leagueLiveStatus" aria-live="polite"></p>
     <section class="panel league-route" id="leagueLanding" data-league-route="#/leagues">
       <div class="league-topbar">

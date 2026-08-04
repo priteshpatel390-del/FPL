@@ -11,7 +11,7 @@ const ORDER = [
   'src/config.mjs', 'src/util.mjs', 'src/providers/retry.mjs', 'src/providers/validate.mjs', 'src/providers/outcome-validate.mjs',
   'src/state.mjs', 'src/storage.mjs', 'src/ui/mini-leagues-state.mjs',
   'src/providers/registry.mjs', 'src/providers/transport.mjs', 'src/providers/common.mjs',
-  'src/providers/understat.mjs', 'src/providers/odds.mjs', 'src/providers/minutes-history.mjs',
+  'src/providers/understat.mjs', 'src/providers/odds.mjs', 'src/providers/minutes-history.mjs', 'src/ui/data-warning.mjs',
   'src/model/fixtures.mjs', 'src/model/minutes.mjs', 'src/model/scoring-rules.mjs',
   'src/model/scoring.mjs', 'src/model/simulation.mjs', 'src/squad.mjs',
   'src/model/squad-simulation.mjs', 'src/model/transfers.mjs', 'src/model/walk-forward.mjs',

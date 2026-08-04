@@ -235,20 +235,46 @@ function evidenceFlagClass(state){
   return 'out';
 }
 function openEvidencePanel(){
-  if(typeof globalThis.__teamsheetNavigate==='function') globalThis.__teamsheetNavigate('#/settings/evidence');
-  else if(globalThis.location) globalThis.location.hash='#/settings/evidence';
+  if(typeof globalThis.__teamsheetNavigate==='function') globalThis.__teamsheetNavigate('#/settings/evidence/deadline');
+  else if(globalThis.location) globalThis.location.hash='#/settings/evidence/deadline';
 }
-function ensureEvidenceCompact(){
-  $('evidenceCompact')?.remove?.();
+function evidenceActionPanel(eyebrow,title,copy,...children){
+  return el('section',{class:'panel settings-content-panel'},
+    el('span',{class:'eyebrow'},eyebrow),el('h3',{},title),el('p',{class:'hint'},copy),children);
+}
+function ensureEvidenceActionUi(){
+  const exportHost=$('evidenceExportHost');
+  if(exportHost&&!$('evidenceExportPanel')){
+    const panel=evidenceActionPanel('Deadline record','Deadline evidence JSON','Download the latest locally available validated snapshot.',
+      el('button',{class:'btn ghost',id:'exportEvidenceBtn',type:'button',disabled:true},'Download latest snapshot JSON'),
+      el('p',{class:'status evidence-message',id:'evidenceExportMessage'},'No export is retained automatically.'));
+    panel.id='evidenceExportPanel';exportHost.appendChild(panel);
+  }
+  const recoveryHost=$('evidenceRecoveryHost');
+  if(recoveryHost&&!$('evidenceRecoveryPanel')){
+    const panel=evidenceActionPanel('Snapshot recovery','Deadline evidence recovery','Restored files remain recovery-only and cannot become the official prospective record.',
+      el('div',{class:'evidence-actions'},
+        el('button',{class:'btn ghost',id:'importEvidenceBtn',type:'button'},'Restore snapshot JSON'),
+        el('button',{class:'btn ghost',id:'captureEvidenceBtn',type:'button',disabled:true},'Diagnostic capture'),
+        el('input',{id:'evidenceImport',type:'file',accept:'application/json,.json',hidden:true})),
+      el('p',{class:'status evidence-message',id:'evidenceRecoveryMessage'},'Use recovery only for verified Teamsheet backups.'));
+    panel.id='evidenceRecoveryPanel';recoveryHost.appendChild(panel);
+  }
+  const storageHost=$('evidenceStorageHost');
+  if(storageHost&&!$('evidenceStoragePanel')){
+    const panel=evidenceActionPanel('Deadline records','Delete local deadline evidence','This removes local snapshots and the anonymous device reference. Downloaded files are not affected.',
+      el('button',{class:'btn ghost',id:'deleteEvidenceBtn',type:'button'},'Delete local deadline evidence'),
+      el('p',{class:'status evidence-message',id:'evidenceStorageMessage'},'Snapshots, outcomes and metrics have separate deletion controls.'));
+    panel.id='evidenceStoragePanel';storageHost.appendChild(panel);
+  }
 }
 function ensureStage10OperationsUi(){
-  const panel=$('evidencePanel');if(!panel||$('stage10Operations'))return;
-  panel.appendChild(el('details',{class:'mt-12',id:'stage10Operations'},
-    el('summary',{},'Live-season checklist and recovery'),
-    el('div',{class:'mt-10'},
-      el('p',{class:'hint'},'Before each deadline, confirm Official-eligible evidence and request the snapshot JSON. After a complete or corrected outcome, request the weekly operating-review JSON and confirm it appears in Files or Downloads.'),
-      el('p',{class:'hint'},'Restored JSON remains recovery-only. Never clear browser data until durable files have been checked. Google Sheets import remains manual.'),
-      el('div',{id:'stage10Diagnostics'},el('div',{class:'status'},'No recovery warning is active.')))));
+  const host=$('stage10DiagnosticsHost');if(!host||$('stage10Operations'))return;
+  host.appendChild(el('section',{class:'panel settings-content-panel',id:'stage10Operations'},
+    el('span',{class:'eyebrow'},'Evidence integrity'),
+    el('h3',{},'Recovery diagnostics'),
+    el('p',{class:'hint'},'Storage, import and interrupted-write warnings appear here. Technical identifiers remain scrubbed.'),
+    el('div',{id:'stage10Diagnostics'},el('div',{class:'status'},'No recovery warning is active.'))));
 }
 function renderStage10Diagnostics(){
   const node=$('stage10Diagnostics');if(!node)return;const rows=stage10Diagnostics();
@@ -257,7 +283,7 @@ function renderStage10Diagnostics(){
 }
 async function renderEvidenceStatus(){
   const sequence=++evidenceRenderSequence;
-  ensureEvidenceCompact();ensureStage10OperationsUi();
+  ensureEvidenceActionUi();ensureStage10OperationsUi();
   const deadline=currentDeadline();
   const state=deadline?deadlineWindow(deadline):{state:'unavailable',remainingMs:null};
   const [title,detail]=windowCopy(state.state);
@@ -265,15 +291,6 @@ async function renderEvidenceStatus(){
   if(sequence!==evidenceRenderSequence) return;
   const latest=index[0]||null;
   const latestForCurrent=latest&&Number(latest.gameweek)===Number(S.nextGW)?latest:null;
-  const compact=$('evidenceCompact');
-  const compactState=latestForCurrent?.timingGrade||state.state;
-  const compactLabel=latestForCurrent
-    ? (latest.officialEligible?'Captured':'Recorded')
-    : state.state==='ideal'?'Due now':state.state==='due_soon'||state.state==='final_window'?'Due soon':state.state==='closed'?'Missed':'Waiting';
-  if(compact){
-    setChildren(compact,document.createTextNode('Evidence '),el('span',{class:`flag ${evidenceFlagClass(compactState)}`},compactLabel));
-    compact.setAttribute('aria-label',`Validation evidence: ${compactLabel}. Open evidence controls.`);
-  }
   const status=$('evidenceStatus');
   if(status){
     const remaining=state.remainingMs!=null&&state.remainingMs>0?` ${minutesLabel(state.remainingMs)} remaining.`:'';
@@ -311,7 +328,7 @@ async function latestEvidenceRecord(){
 async function captureEvidence({automatic=false}={}){
   if(evidenceBusy) return null;
   evidenceBusy=true; await renderEvidenceStatus();
-  const message=$('evidenceMessage');
+  const message=$(automatic?'evidenceDeadlineMessage':'evidenceRecoveryMessage');
   try{
     const managerRef=await evidenceManagerRef();
     const horizon=Math.max(1,Math.min(8,Math.trunc(num($('trHorizon')?.value)||6)));
@@ -351,7 +368,7 @@ async function maybeAutoCaptureEvidence({reason='verified_refresh',verifiedAt=nu
 }
 
 async function exportLatestEvidence(){
-  const message=$('evidenceMessage');
+  const message=$('evidenceExportMessage');
   try{
     const record=await latestEvidenceRecord();
     if(!record) throw new Error('No saved snapshot is available');
@@ -360,7 +377,7 @@ async function exportLatestEvidence(){
   }catch(error){ if(message) message.textContent=`Export failed: ${error.message}`; }
 }
 async function deleteEvidence(){
-  const message=$('evidenceMessage');
+  const message=$('evidenceStorageMessage');
   try{
     if(typeof globalThis.confirm==='function'&&!globalThis.confirm('Delete all locally stored validation evidence and the anonymous device reference? Exported JSON files will not be affected.')) return;
     await clearEvidenceStorage();
@@ -369,7 +386,7 @@ async function deleteEvidence(){
   finally{ await renderEvidenceStatus(); }
 }
 async function importEvidenceFile(file){
-  const message=$('evidenceMessage');
+  const message=$('evidenceRecoveryMessage');
   try{
     if(!file) return;
     if(Number(file.size)>MAX_EVIDENCE_IMPORT_BYTES) throw new Error('file exceeds the 25 MB evidence limit');
@@ -383,7 +400,7 @@ async function importEvidenceFile(file){
 }
 function initEvidenceUi(){
   if(typeof document==='undefined') return;
-  ensureEvidenceCompact();
+  ensureEvidenceActionUi();ensureStage10OperationsUi();
   $('captureEvidenceBtn')?.addEventListener('click',captureEvidence);
   $('exportEvidenceBtn')?.addEventListener('click',exportLatestEvidence);
   $('importEvidenceBtn')?.addEventListener('click',()=> $('evidenceImport')?.click());
