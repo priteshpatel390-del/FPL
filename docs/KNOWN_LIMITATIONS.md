@@ -39,7 +39,7 @@ Last updated: 2026-08-04. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | STYLE-1 | `style-src-attr 'unsafe-inline'` remained necessary | Replaced fixed/dynamic styles with classes, progress and SVG attributes; source/build/deployable guards reject style attributes and the CSP concession is removed | Stage 9.6 | **CLOSED and verified 2026-07-29** |
 | UI-1 | No persistent browser-level screenshot-regression suite | Stage 9.6 completed representative mobile/desktop browser review with no console errors, but future visual changes still require human device review | Future tooling only with separate approval | Open (accepted) |
 | UI-2 | Stage 9 primary navigation remained Team, Players, Transfers and More | Replaced by Team, Transfers, Fixtures, Leagues and Settings with Ask Teamsheet as a global/Team action | Teamsheet 2.0.1 | **CLOSED and verified 2026-07-31** |
-| UI-3 | Settings and supporting tools were distributed through the Stage 9 More hierarchy | 2.0.1 created the approved hierarchy; 2.0.6 adds route-owned subsections and explicit content mounts | Teamsheet 2.0.1/2.0.6 | **CLOSED in 2.0.6 review implementation** |
+| UI-3 | Settings and supporting tools were distributed through the Stage 9 More hierarchy | 2.0.1 created the approved hierarchy; 2.0.6 adds route-owned subsections and explicit content mounts | Teamsheet 2.0.1/2.0.6 | **CLOSED and merged 2026-08-04 through PR #65** |
 | UI-5 | Physical iPhone rendering of the five-tab navigation is not independently automated | Static responsive, route and accessibility contracts pass, but exact device chrome, text scaling and thumb comfort require owner review | Teamsheet 2.0.1 review and 2.0.7 | Open (acceptance gate) |
 | UI-4 | The Team screen did not provide the complete approved decision-home summary | Pitch-first hierarchy, XI/captain/bench forecast, one material risk, deadline action and honest setup/degraded states are implemented without calculation changes | Teamsheet 2.0.2 | **CLOSED and verified 2026-07-31** |
 | PREVIEW-1 | Decision previews are intentionally session-only | Transfer/captain previews disappear on refresh and are not submitted to FPL; this prevents accidental persistence or account changes | By design | Accepted |
@@ -65,7 +65,7 @@ Last updated: 2026-08-04. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | OPS-1 | Full repository tree was not committed | None | Owner action | **CLOSED 2026-07-26** |
 | UI-6 | First Teamsheet 2.0.1 physical iPhone review found dock, icon, focus and Settings-header defects | Approved corrections were implemented and merged through PR #48; populated-data transport remains tracked separately by FPL-1 | Teamsheet 2.0.1 | **CLOSED and merged 2026-07-31** |
 | UI-7 | Teamsheet 2.0.2 physical iPhone acceptance is not yet recorded | Automated contracts cover hierarchy, states, wording, accessibility and build integrity, but physical pitch position, text scaling, VoiceOver order and one-handed comfort require owner review | Teamsheet 2.0.2 review / 2.0.7 | Open (acceptance gate) |
-| UI-8 | Teamsheet 2.0.6 physical iPhone, VoiceOver and live populated-data acceptance is not recorded | Automated and headless-browser checks cover routes, focus, mounts, warning states and responsive CSS, but they do not establish iPhone Safari density, one-handed comfort, actual VoiceOver order or live transport behaviour | Teamsheet 2.0.6 review / 2.0.7 | Open (acceptance gate) |
+| UI-8 | Teamsheet 2.0.6 physical iPhone, VoiceOver and live populated-data acceptance is not recorded | Automated and headless-browser checks cover routes, focus, mounts, warning states and responsive CSS, but they do not establish iPhone Safari density, one-handed comfort, actual VoiceOver order or live transport behaviour | Teamsheet 2.0.7 | Open (acceptance gate) |
 | REFRESH-1 | Qualifying foreground return temporarily locks the app while a complete verified provider cycle settles | Trust consistency is preserved, but switching apps repeatedly feels frozen; non-blocking atomic refresh requires separate security design | Separate approved investigation | Open (gated) |
 | FPL-1 | The first-party Pages preview could not load core Official FPL data through the public relay cascade | Populated squad, transfer, fixture, player and league iPhone acceptance is blocked | Separate transport investigation | Open (acceptance blocker) |
 | ACCOUNT-1 | Bank and available free transfers remain manual inputs rather than proven authoritative account values | Values can be entered but are not yet verified from the connected FPL account; no inference may be labelled authoritative | Separate data/security design | Open (gated) |
@@ -73,13 +73,14 @@ Last updated: 2026-08-04. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
 ## Teamsheet 2.0 migration limitations
-- Teamsheet 2.0.1–2.0.5 implement the approved navigation, Team, Transfers, factual Mini-League foundation and selected-rival factual exposure. Teamsheet 2.0.6 is implemented for review with nested Settings routes, explicit mounts and consequence-led warnings. Projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy and tactical recommendation work remain separately gated.
+- Teamsheet 2.0.1–2.0.6 are complete and merged, implementing the approved navigation, Team, Transfers, factual Mini-League foundation, selected-rival factual exposure and organised Settings/research/evidence/diagnostic surfaces. Projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy and tactical recommendation work remain separately gated.
 - The Stage 9 engineering foundation remains valid, while its primary information architecture is superseded.
 - No new projection, captaincy, optimiser, Mini-League strategy or rank model is authorised by the blueprint.
 - The migration must preserve verified engineering and existing access to every current functional surface.
 - Provider Health retains all seven states. Full detail now remains in Settings; only material core Official FPL consequences surface on primary routes. Provider behaviour is unchanged.
 - Official results and projected values require explicit separation in future rank and Mini-League work.
 - Low ownership alone must not be presented as a positive differential recommendation.
+- Teamsheet 2.0.7 must begin with investigation and design only; implementation requires explicit owner approval.
 
 ## Stage 10.1 automatic refresh limitations
 - “Latest” means the latest data that passed approved validation. It does not guarantee every optional provider is live.
@@ -137,12 +138,11 @@ Automated contracts cover League state migration, official-data validation, ID-f
 - Points gaps and squad overlap are factual derivations. They do not establish projected rank, captaincy gain, meaningful differential quality or protect/chase strategy.
 - League/member identifiers remain local but are necessarily sent to Official FPL/public relays for the requested read-only endpoint. They are omitted from routes, rendered diagnostics and Stage 10 evidence.
 
-
 ## Teamsheet 2.0.6 acceptance evidence
 
-Automated contracts cover the nested Settings route map, nearest-parent fallbacks, exact route headings, parent-aware Back focus, identifier-free URLs, explicit Stage 10 UI hosts, export/recovery/deletion separation, consequence-led core-data warnings, build identity, mobile Player Explorer presentation, CSP and deterministic build integrity. A headless Chromium smoke check exercised direct deep links, active navigation, exact focus, Back restoration, dynamic hosts, warning copy and duplicate-ID absence.
+Teamsheet 2.0.6 is complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. Automated contracts cover the nested Settings route map, nearest-parent fallbacks, exact route headings, parent-aware Back focus, identifier-free URLs, explicit Stage 10 UI hosts, export/recovery/deletion separation, consequence-led core-data warnings, build identity, mobile Player Explorer presentation, CSP and deterministic build integrity. A headless Chromium smoke check exercised direct deep links, active navigation, exact focus, Back restoration, dynamic hosts, warning copy and duplicate-ID absence. The verified baseline is **520 passed, 0 failed, 0 skipped**, with deterministic builds and root `index.html` equal to `dist/index.html`.
 
-Physical testing of the actual repository build on an iPhone was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. Headless Chromium is not equivalent to iPhone Safari, actual touch comfort, real assistive reading order or public endpoint availability.
+Physical testing of the actual repository build on an iPhone Safari was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. Headless Chromium is not equivalent to iPhone Safari, actual touch comfort, real assistive reading order or public endpoint availability. These limitations carry into Teamsheet 2.0.7 acceptance.
 
 ## Teamsheet 2.0.6 organisation limitations
 
