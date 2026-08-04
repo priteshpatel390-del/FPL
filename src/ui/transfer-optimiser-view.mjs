@@ -246,7 +246,7 @@ function transferPlannerDecisionHero(state,baseline,topAlternative,horizon){
     title=moves.map(move=>`${move.outName} → ${move.inName}`).join(' · ');
     detail='This transfer plan ranks above making no transfer under the current assumptions.';
     metric=transferPlannerNetLabel(topAlternative.netGain);
-    hit=`${Number(topAlternative.hitCost)||0}-point hit`;
+    hit=Number(topAlternative.hitCost)?`${Number(topAlternative.hitCost)}-point hit`:'No hit';
   }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST){
     eyebrow='Highest-ranked decision';
     title='Make no transfer';
@@ -394,7 +394,7 @@ function renderTransfers(){
     const otherAlternatives=alternatives.slice(1,4);
     if(otherAlternatives.length){
       nodes.push(el('details',{class:'transfer-alternatives'},
-        el('summary',{},`Other legal options (${otherAlternatives.length})`),
+        el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
         el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
           title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
           index:plans.indexOf(plan),
@@ -408,7 +408,7 @@ function renderTransfers(){
     }
 
     nodes.push(el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points.'));
+      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
     setChildren(out,nodes);
   }finally{
     out.setAttribute('aria-busy','false');

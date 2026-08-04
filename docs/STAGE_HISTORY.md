@@ -53,3 +53,8 @@ Verified source `eb3497ec405d6c7b8ce09105614fcb8280abc34b` passes **349/349 test
 ## Teamsheet 2.0.3 — Transfers Decision Workspace
 
 Implemented the owner-approved transfer presentation/state checkpoint on a dedicated draft branch. The existing exact optimiser remains authoritative. Verification: 467/467 tests, deterministic builds and root/deployable equality. Merge remains subject to owner approval.
+
+
+## Teamsheet 2.0.7 — implementation prepared for acceptance
+
+Scope S-2.0.7 was approved on 4 August 2026 and implemented from main `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification and generated-build identity are recorded in `TEAMSHEET2-ITEM7.md`. Completion remains gated on owner review, physical iPhone Safari, VoiceOver and live populated-data acceptance.

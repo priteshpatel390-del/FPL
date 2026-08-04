@@ -151,3 +151,8 @@ Physical testing of the actual repository build on an iPhone Safari was not perf
 - Browser Back focus restoration depends on the opener remaining in the current DOM. If it is unavailable, the exact route heading receives focus.
 - Evidence, outcome and metric storage remains bounded local recovery. Reorganisation does not create a permanent archive or migration engine.
 - A persistent screenshot-regression suite remains absent, so later visual changes still require human device review.
+
+
+## Teamsheet 2.0.7 implementation acceptance status
+
+The approved final-polish implementation is available for review and automated verification. UI-5, ML-3, UI-7 and UI-8 remain open until physical iPhone Safari and VoiceOver acceptance are recorded. FPL-1 remains an external live populated-data acceptance blocker if the public Pages transport still cannot load core Official FPL data. Automated completion does not close those limitations.

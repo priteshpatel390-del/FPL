@@ -107,3 +107,8 @@ Every Settings route is semantic and identifier-free. Team, league, manager, riv
 Full provider notes and freshness remain under Provider Health. Primary warnings use fixed application copy derived from approved core states and consequences; they do not render endpoint URLs, transport details or arbitrary provider errors. Existing diagnostic scrubbing remains the boundary for recovery warnings.
 
 Moving restore, export and deletion controls changes no trust rule. Imported snapshots/outcomes remain recovery-only, exports remain complete unencrypted user-controlled files and deleting browser records cannot delete downloaded files. Odds-key masking, direct-only transport, omission from diagnostics and one-action deletion remain unchanged. No origin, CSP permission, authentication, analytics or persistent health history is added.
+
+
+## Teamsheet 2.0.7 security boundary
+
+Final-polish work adds no network origin, provider, authentication, secret, backend, service worker or account-write route. Hosted Ask is disabled before submission and states that no Anthropic key is accepted or stored. The artifact-preview keyless path remains the only approved AI transport. Restricted startup rendering and route/focus changes are presentation-only and cannot make recovery records official or alter recommendations.

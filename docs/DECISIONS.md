@@ -169,3 +169,8 @@ Reason: PR #65 was explicitly approved and merged after the 2.0.6 implementation
 Approach: record Teamsheet 2.0.6 as complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`, with the verified **520 passed, 0 failed, 0 skipped** baseline, deterministic builds, root/deployable equality, model `2.4.0` and rules `2026-27.3`. Preserve the fact that no provider, data source or calculation changed. Carry physical iPhone Safari, VoiceOver and live populated-data acceptance forward as explicit Teamsheet 2.0.7 limitations rather than reopening 2.0.6.
 
 Consequences: this decision is documentation-only and changes no application source, test, generated file, provider, data source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank or Mini-League calculation. Teamsheet 2.0.7 is the next formal checkpoint, beginning with investigation and design only. Implementation requires a separately approved exact scope.
+
+
+## Teamsheet 2.0.7 approved implementation boundary — 4 August 2026
+
+Pritesh approved Scope S-2.0.7 for final mobile polish and acceptance. The implementation is limited to semantic controls, 44-pixel targets, restricted-state completion, route/focus/scroll behaviour, Player Detail route safety, Ask presentation resilience, Fixture render isolation, table semantics, exact Transfers wording and evidence-led responsive corrections. Football calculations, providers, data sources, persistence schemas, trust boundaries and account-write behaviour remain unchanged. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain mandatory before completion.

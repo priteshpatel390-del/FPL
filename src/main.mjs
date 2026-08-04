@@ -178,11 +178,15 @@ async function loadAll(options = {}){
       markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
       if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.'));
+        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. Ask Teamsheet is also unavailable in this hosted build until the separately approved serverless migration.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
-    else { renderProviderHealth(); renderGlobalDataWarning(); }
+    else {
+      renderProviderHealth(); renderGlobalDataWarning();
+      if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+        document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
+    }
     return {
       ok:Boolean(S.boot),
       criticalReady:Boolean(S.boot),
@@ -249,7 +253,11 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       return report;
     }finally{
       setRefreshInteractionLock(false,{startup});
-      if(startup) setStartupGateVisible(false);
+      if(startup){
+        setStartupGateVisible(false);
+        if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+          document.dispatchEvent(new CustomEvent('teamsheet:startup-ready'));
+      }
     }
   })();
   try{ return await verifiedRefreshPromise; }

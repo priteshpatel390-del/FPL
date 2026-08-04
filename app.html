@@ -17,7 +17,7 @@
   --r:10px; --shadow:0 1px 0 rgba(20,38,28,.06), 0 6px 18px -12px rgba(20,38,28,.35);
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
 body.startup-pending{overflow:hidden}
@@ -65,7 +65,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible
 .btn.sm{padding:6px 10px;font-size:12.5px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-weight:500}
-.check{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:9px}
+.check{display:flex;gap:8px;align-items:center;min-height:44px;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:0}
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
   border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0))}
@@ -76,7 +76,7 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,2
 .tab{text-decoration:none;min-width:0}.tab-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .view[hidden],.settings-subview[hidden],#settingsLanding[hidden]{display:none}
 
-.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px}
+.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;margin:0 -16px;padding:0 16px}
 table.ticker{border-collapse:separate;border-spacing:4px;min-width:100%}
 table.ticker th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-soft);font-weight:500;text-align:center;padding-bottom:2px;white-space:nowrap}
@@ -107,6 +107,10 @@ table.data td{padding:8px;border-bottom:1px solid #EDEFEA;vertical-align:middle}
 table.data tr:last-child td{border-bottom:0}
 table.data tr.clickable{cursor:pointer}
 table.data tr.clickable:hover{background:#F7F9F5}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.player-row-action{display:block;width:100%;min-height:44px;padding:6px 4px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.player-row-action:hover{background:#F7F9F5}
+.player-row-action:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 table.data td.num,table.data th.num{text-align:right;font-family:'IBM Plex Mono',monospace}
 .pname{font-weight:600;display:block}
 .pmeta{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
@@ -146,7 +150,7 @@ textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--line);borde
 .answer p{margin:8px 0}
 .answer.me{background:#F2EDEE;border-color:#E3D3D7}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
-.chip{background:#F2F4EF;border:1px solid var(--line);border-radius:20px;padding:6px 11px;font-size:12px;color:var(--ink-soft)}
+.chip{background:#F2F4EF;border:1px solid var(--line);border-radius:22px;min-height:44px;padding:8px 12px;font-size:12px;color:var(--ink-soft)}
 .chip:hover{background:#E9EDE5;color:var(--ink)}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(20,38,28,.2);border-top-color:var(--claret);border-radius:50%;
   animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
@@ -156,7 +160,7 @@ textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--line);borde
 .sliders{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
 .sliders label{font-size:12px;color:var(--ink-soft);font-weight:500}
 .sliders input[type=range]{width:100%;accent-color:var(--pitch)}
-details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;padding:4px 0}
+details summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;padding:6px 0}
 
 /* player detail sheet / panel */
 body.player-detail-open{overflow:hidden}
@@ -218,7 +222,7 @@ body.player-detail-open{overflow:hidden}
   .player-detail-panel{top:0;bottom:0;left:auto;right:0;width:min(460px,44vw);max-height:none;border-radius:0;border-width:0 0 0 1px}
   .player-detail-grip{display:none}
   .player-detail-top{padding-top:calc(18px + env(safe-area-inset-top,0))}
-  .player-detail-body{padding-bottom:24px}
+  .player-detail-body{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 }
 @media(max-width:390px){
   .player-detail-grid{gap:6px}
@@ -322,12 +326,13 @@ body.player-detail-open{overflow:hidden}
 .searchbox{position:relative}
 .results{position:absolute;z-index:30;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
   max-height:270px;overflow-y:auto;width:100%;margin-top:4px}
-.results div{padding:8px 10px;font-size:13px;border-bottom:1px solid #EDEFEA;cursor:pointer}
-.results div:hover{background:#F2F4EF}
-.results div:last-child{border-bottom:0}
+.results div,.results button{display:block;width:100%;min-height:44px;padding:9px 10px;border:0;border-bottom:1px solid #EDEFEA;background:#fff;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.results div:hover,.results button:hover{background:#F2F4EF}
+.results div:last-child,.results button:last-child{border-bottom:0}
+.results .pmeta{display:block}
 .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .pill{background:#F2F4EF;border:1px solid var(--line);border-radius:20px;padding:4px 8px 4px 10px;font-size:12px;display:flex;gap:6px;align-items:center}
-.pill button{background:none;border:0;color:var(--claret);font-weight:700;padding:0 2px;line-height:1}
+.pill button{display:grid;place-items:center;width:44px;height:44px;margin:-8px -8px -8px 0;background:none;border:0;border-radius:50%;color:var(--claret);font-weight:700;padding:0;line-height:1}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
 .kpi{background:#F7F9F5;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
 .kpi .k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
@@ -354,7 +359,7 @@ body.player-detail-open{overflow:hidden}
 #evidenceHistory .note{margin:8px 0}
 #evidenceHistory .note>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 button,input,select,textarea{touch-action:manipulation}
-.btn{min-height:44px}.btn.sm{min-height:36px}.chip{min-height:36px}.tab{min-height:52px}
+.btn{min-height:44px}.btn.sm{min-height:44px}.chip{min-height:44px}.tab{min-height:52px}
 /* repository-owned shirt palettes: static classes replace inline CSS variables */
 .shirt-palette-ars{--shirt-primary:#D71920;--shirt-secondary:#FFFFFF;--shirt-accent:#162A4C;--shirt-ink:#FFFFFF}
 .shirt-palette-avl{--shirt-primary:#6A1735;--shirt-secondary:#9ED8F5;--shirt-accent:#F5D36A;--shirt-ink:#FFFFFF}
@@ -393,7 +398,7 @@ body{min-height:100%;min-height:100dvh;padding-bottom:calc(82px + env(safe-area-
 .global-ask{position:relative;width:min(100%,620px);margin-top:12px}
 .global-ask input{width:100%;min-height:48px;padding:10px 52px 10px 15px;border:1px solid rgba(255,255,255,.32);border-radius:24px;background:rgba(255,255,255,.12);color:#fff;font-size:15px;box-shadow:none}
 .global-ask input::placeholder{color:#C7D3CC}.global-ask input:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
-.global-ask-send{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
+.global-ask-send{position:absolute;right:2px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
 .global-ask-send:disabled{background:rgba(255,255,255,.18);color:#AEBBB4;cursor:default}.global-ask-send:not(:disabled):active{transform:translateY(-50%) scale(.96)}
 nav.tabs{position:fixed;inset:auto 0 0 0;z-index:1000;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));min-height:calc(64px + env(safe-area-inset-bottom,0px));padding:4px 4px env(safe-area-inset-bottom,0px);box-sizing:border-box;transform:translate3d(0,0,0);backface-visibility:hidden;isolation:isolate}
 .tab{height:56px;min-width:0;padding:6px 2px;justify-content:center;box-sizing:border-box;text-decoration:none}
@@ -726,7 +731,7 @@ h2[tabindex="-1"]:focus{outline:none}
         <label class="fld">Free transfers<input type="number" id="trFtCount" inputmode="numeric" min="0" max="5" step="1" value="1" aria-describedby="transferAssumptionHelp"></label>
         <label class="fld">Bank £m<input type="number" id="trBankIn" inputmode="decimal" min="0" step="0.1" value="0.0" aria-describedby="transferAssumptionHelp"></label>
         <label class="fld">Horizon<select id="trHorizon"><option value="1">Next GW</option><option value="3">3 GWs</option><option value="6" selected>6 GWs</option><option value="8">8 GWs</option></select></label>
-        <label class="fld">Display options<select id="trTop"><option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option></select></label>
+        <label class="fld">Optimiser return limit<select id="trTop"><option value="8" selected>Search top 8</option><option value="15">Search top 15</option><option value="20">Search top 20</option></select></label>
       </div>
     </fieldset>
     <div id="transferDataWarning"></div>
@@ -773,18 +778,20 @@ h2[tabindex="-1"]:focus{outline:none}
     <h2>Ask Teamsheet</h2>
     <p class="hint">Your squad, projections and fixtures go with the question. The AI assistant works keylessly inside Claude's artifact preview; hosted builds require the planned serverless migration.</p>
     <div class="chips">
-      <button class="chip" data-q="Who should I captain this week and why?">Captain call</button>
-      <button class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>
-      <button class="chip" data-q="Which two players in my squad are the weakest links to move on?">Weak links</button>
-      <button class="chip" data-q="Check the latest injury and press conference news for my squad.">Injury news</button>
-      <button class="chip" data-q="When should I plan my Wildcard based on the fixture swings?">Chip timing</button>
+      <button type="button" class="chip" data-q="Who should I captain this week and why?">Captain call</button>
+      <button type="button" class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>
+      <button type="button" class="chip" data-q="Which two players in my squad are the weakest links to move on?">Weak links</button>
+      <button type="button" class="chip" data-q="Check the latest injury and press conference news for my squad.">Injury news</button>
+      <button type="button" class="chip" data-q="When should I plan my Wildcard based on the fixture swings?">Chip timing</button>
     </div>
-    <div id="thread"></div>
-    <textarea id="q" placeholder="e.g. Should I take a hit to move Saka to Salah before the deadline?"></textarea>
+    <div class="note plain" id="askHostedStatus" role="status" hidden><b>Ask Teamsheet is unavailable in this hosted build.</b> The approved static app does not accept or store Anthropic API keys. A separately approved serverless migration is required.</div>
+    <div id="thread" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Ask Teamsheet conversation"></div>
+    <textarea id="q" aria-describedby="askHostedStatus" placeholder="e.g. Should I take a hit to move Saka to Salah before the deadline?"></textarea>
     <div class="row mt-10">
-      <button class="btn claret" id="askBtn">Get a read</button>
-      <button class="btn ghost sm" id="clearThread">Clear</button>
-      <span class="status" id="askStatus"></span>
+      <button type="button" class="btn claret" id="askBtn">Get a read</button>
+      <button type="button" class="btn ghost sm" id="retryAsk" hidden>Retry</button>
+      <button type="button" class="btn ghost sm" id="clearThread">Clear</button>
+      <span class="status" id="askStatus" aria-live="polite"></span>
     </div>
   </section>
 </main>
