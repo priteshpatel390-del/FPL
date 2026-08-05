@@ -30,10 +30,16 @@ function transferPerformanceRetainPlan(plans, plan, limit, compare){
 
 function transferPerformanceBoundOptimiserSource(modelSource){
   const source = String(modelSource || '');
+  const optimiserMarker = 'function optimiseTransfers(args){';
+  const markerMatches = source.split(optimiserMarker).length - 1;
+  if(markerMatches !== 1) throw new Error(`Expected one optimiseTransfers definition; found ${markerMatches}`);
+  const optimiserStart = source.indexOf(optimiserMarker);
+  const prefix = source.slice(0, optimiserStart);
+  const optimiserSource = source.slice(optimiserStart);
   const target = 'if(plan) plans.push(plan);';
-  const matches = source.split(target).length - 1;
-  if(matches !== 1) throw new Error(`Expected one optimiser plan-retention site; found ${matches}`);
-  return source.replace(target, 'if(plan) transferPerformanceRetainPlan(plans,plan,ctx.maxResults,comparePlans);');
+  const matches = optimiserSource.split(target).length - 1;
+  if(matches !== 1) throw new Error(`Expected one optimiseTransfers plan-retention site; found ${matches}`);
+  return prefix + optimiserSource.replace(target, 'if(plan) transferPerformanceRetainPlan(plans,plan,ctx.maxResults,comparePlans);');
 }
 
 function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
@@ -410,6 +416,7 @@ function transferPerformanceCancel(message='Calculation cancelled.',{render=true
 }
 
 function transferPerformanceRenderShell(){
+  transferPerformanceCancel('',{render:false});
   const out=$('transferOut');
   if(!out) return;
   renderRouteDataWarning('transferDataWarning',{showUnavailable:false});

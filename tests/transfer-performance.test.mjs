@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import { stripModuleSyntax } from '../build-utils.mjs';
+import { optimiseTransfers } from '../src/model/transfers.mjs';
 import {
   TRANSFER_PERFORMANCE_CACHE_LIMIT,
   TRANSFER_PERFORMANCE_SCORE_BATCH,
@@ -23,13 +26,14 @@ test('bounded plan retention is exactly equivalent to full sort and slice',()=>{
   assert.equal(TRANSFER_PERFORMANCE_CACHE_LIMIT,4);
 });
 
-test('worker optimiser replacement changes one retention site and fails closed otherwise',()=>{
-  const source='function optimiseTransfers(){if(plan) plans.push(plan);}';
+test('worker optimiser replacement targets only optimiseTransfers and fails closed otherwise',()=>{
+  const source='function exhaustiveTransferSearch(){if(plan) plans.push(plan);}function optimiseTransfers(args){if(plan) plans.push(plan);}';
   const bounded=transferPerformanceBoundOptimiserSource(source);
   assert.match(bounded,/transferPerformanceRetainPlan\(plans,plan,ctx\.maxResults,comparePlans\)/);
-  assert.doesNotMatch(bounded,/if\(plan\) plans\.push\(plan\)/);
-  assert.throws(()=>transferPerformanceBoundOptimiserSource('function x(){}'),/found 0/);
-  assert.throws(()=>transferPerformanceBoundOptimiserSource(source+source),/found 2/);
+  assert.equal((bounded.match(/if\(plan\) plans\.push\(plan\);/g)||[]).length,1);
+  assert.match(bounded,/function exhaustiveTransferSearch\(\)\{if\(plan\) plans\.push\(plan\);\}/);
+  assert.throws(()=>transferPerformanceBoundOptimiserSource('function x(){}'),/definition; found 0/);
+  assert.throws(()=>transferPerformanceBoundOptimiserSource(source+source),/definition; found 2/);
 });
 
 test('worker source executes the optimiser only inside the background worker contract',()=>{
@@ -40,6 +44,58 @@ test('worker source executes the optimiser only inside the background worker con
   assert.match(source,/const result=optimiseTransfers/);
   assert.match(source,/transferPerformanceRetainPlan/);
   assert.doesNotMatch(source,/\beval\s*\(|new Function/);
+});
+
+test('actual stripped worker model matches the direct optimiser result',()=>{
+  const modelSource=stripModuleSyntax(readFileSync(new URL('../src/model/transfers.mjs',import.meta.url),'utf8'));
+  const workerSource=transferPerformanceWorkerSource(modelSource);
+  const positions=[1,1,2,2,2,2,2,3,3,3,3,3,4,4,4];
+  const squad=positions.map((position,index)=>({
+    p:{
+      id:index+1,
+      web_name:`P${index+1}`,
+      team:(index%5)+1,
+      element_type:position,
+      now_cost:50,
+      status:'a',
+      chance_of_playing_next_round:100
+    },
+    bought:50
+  }));
+  const replacement={
+    id:99,
+    web_name:'Upgrade',
+    team:6,
+    element_type:2,
+    now_cost:50,
+    status:'a',
+    chance_of_playing_next_round:100
+  };
+  const players=[...squad.map(entry=>entry.p),replacement];
+  const scoreRows=players.map(player=>[player.id,[player.id===99?20:5]]);
+  const args={
+    squad,
+    players,
+    bank:0,
+    freeTransfers:1,
+    startGW:1,
+    horizon:1,
+    maxTransfers:1,
+    maxResults:4,
+    maxEvaluations:1000
+  };
+  const scoreMap=new Map(scoreRows);
+  const expected=optimiseTransfers({
+    ...args,
+    scorePlayer:(player,gw)=>Number(scoreMap.get(Number(player.id))?.[gw-1])||0
+  });
+  let posted=null;
+  const self={postMessage:value=>{posted=value;}};
+  runInNewContext(workerSource,{self});
+  self.onmessage({data:{type:'calculate',requestId:17,args,scoreRows}});
+  assert.equal(posted?.type,'result');
+  assert.equal(posted?.requestId,17);
+  assert.deepEqual(JSON.parse(JSON.stringify(posted.result)),expected);
 });
 
 test('worker payload retains only optimiser-required player fields',()=>{
@@ -68,6 +124,10 @@ test('Transfers opens as a lightweight explicit action and supports cancellation
   assert.match(source,/teamsheet:before-route-change/);
   assert.match(source,/transferPerformanceWorker\?\.terminate/);
   assert.match(source,/renderTransfers=transferPerformanceRenderShell/);
+  const shellStart=source.indexOf('function transferPerformanceRenderShell(){');
+  const cancelAt=source.indexOf("transferPerformanceCancel('',{render:false});",shellStart);
+  const snapshotAt=source.indexOf('const snapshot=transferPerformanceSnapshot();',shellStart);
+  assert.ok(shellStart>=0&&cancelAt>shellStart&&snapshotAt>cancelAt);
 });
 
 test('build embeds the exact transfer model for the Blob worker and grants only worker execution',()=>{
