@@ -25,6 +25,7 @@ const STARTUP_PHASE_COPY = Object.freeze({
 });
 let verifiedRefreshPromise = null;
 let lastVerifiedRefreshAt = 0;
+let lastRefreshAttemptAt = 0;
 let verifiedRefreshTriggersInstalled = false;
 
 function ageLabel(ms){
@@ -202,6 +203,13 @@ async function loadAll(options = {}){
 function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
 }
+function shouldBlockRefreshInteractions({reason='manual',startup=false}={}){
+  return Boolean(startup||reason==='manual');
+}
+function shouldRunForegroundRefresh(lastAttemptAt,{visibilityState='visible',now=Date.now()}={}){
+  if(visibilityState&&visibilityState!=='visible') return false;
+  return shouldRefreshVerifiedData(lastAttemptAt,now);
+}
 function setStartupPhase(key){
   return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
 }
@@ -231,10 +239,11 @@ async function dispatchVerifiedData(detail){
 }
 async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
   if(verifiedRefreshPromise) return verifiedRefreshPromise;
-  if(!force&&!shouldRefreshVerifiedData(lastVerifiedRefreshAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_verified'};
+  if(!force&&!shouldRefreshVerifiedData(lastRefreshAttemptAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_attempted'};
+  const blockInteractions=shouldBlockRefreshInteractions({reason,startup});
   verifiedRefreshPromise=(async()=>{
     if(startup) setStartupGateVisible(true);
-    setRefreshInteractionLock(true,{startup});
+    if(blockInteractions) setRefreshInteractionLock(true,{startup});
     setStartupPhase('cache');
     try{
       const report=await loadAll({
@@ -252,7 +261,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       }
       return report;
     }finally{
-      setRefreshInteractionLock(false,{startup});
+      lastRefreshAttemptAt=nowFn();
+      if(blockInteractions) setRefreshInteractionLock(false,{startup});
       if(startup){
         setStartupGateVisible(false);
         if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
@@ -267,8 +277,8 @@ function installVerifiedRefreshTriggers(){
   if(verifiedRefreshTriggersInstalled||typeof document==='undefined') return;
   verifiedRefreshTriggersInstalled=true;
   const refreshIfDue=()=>{
-    if(document.visibilityState&&document.visibilityState!=='visible') return;
-    if(shouldRefreshVerifiedData(lastVerifiedRefreshAt)) runVerifiedRefresh({reason:'foreground'});
+    if(!shouldRunForegroundRefresh(lastRefreshAttemptAt,{visibilityState:document.visibilityState})) return;
+    void runVerifiedRefresh({reason:'foreground'});
   };
   document.addEventListener('visibilitychange',refreshIfDue);
   globalThis.window?.addEventListener?.('pageshow',refreshIfDue);
@@ -282,6 +292,8 @@ export {
   VERIFIED_REFRESH_MIN_AGE_MS,
   STARTUP_PHASE_COPY,
   shouldRefreshVerifiedData,
+  shouldBlockRefreshInteractions,
+  shouldRunForegroundRefresh,
   setStartupPhase,
   setStartupGateVisible,
   dispatchVerifiedData,
