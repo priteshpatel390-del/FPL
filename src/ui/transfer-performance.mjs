@@ -439,8 +439,10 @@ function transferPerformanceCancel(message='Calculation cancelled.',{render=true
 }
 
 // The only Transfers renderer. Opening the route paints the workspace shell and, when an
-// exact earlier result is still valid, restores it. It never enters the optimiser.
+// exact earlier result is still valid, restores it. It never enters the optimiser. Any
+// calculation still running belongs to the previous inputs, so re-rendering cancels it.
 function renderTransfers(){
+  transferPerformanceCancel('',{render:false});
   const out=$('transferOut');
   if(!out) return;
   renderRouteDataWarning('transferDataWarning',{showUnavailable:false});

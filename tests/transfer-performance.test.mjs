@@ -311,6 +311,11 @@ test('Transfers opens as a lightweight explicit action and supports cancellation
   // The renderer is declared once and never swapped at runtime.
   assert.match(source,/function renderTransfers\(\)/);
   assert.doesNotMatch(source,/renderTransfers=/);
+  // Re-rendering the workspace cancels work that belongs to the previous inputs.
+  const rendererStart=source.indexOf('function renderTransfers(){');
+  const cancelAt=source.indexOf("transferPerformanceCancel('',{render:false});",rendererStart);
+  const snapshotAt=source.indexOf('const snapshot=transferPerformanceSnapshot();',rendererStart);
+  assert.ok(cancelAt>rendererStart&&cancelAt<snapshotAt,'the renderer must cancel obsolete work before reading a new snapshot');
 });
 
 test('no runtime optimiser-source rewriting survives anywhere in the Transfers path',()=>{
