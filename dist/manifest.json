@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "8c97afbea58529773636bd3b3d24d6a5bfecac4becf04b25971988f66f02a8ff",
-  "commit": "14b1e31ba9ff8d592afa3c07ab8627d94a979d94",
+  "sourceHash": "9960f69f18786a35c97fad40db2b6386b8234da1ee46b15eebfda399ebf1b991",
+  "commit": "64ddb0ef5a3103e7820200c16043e4bf4e5136b3",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -40,6 +40,7 @@
     "src/evidence/metrics.mjs",
     "src/evidence/review.mjs",
     "src/ui/transfer-optimiser-view.mjs",
+    "src/ui/transfer-performance.mjs",
     "src/ui/mini-leagues-view.mjs",
     "src/ui/views.mjs",
     "src/ui/team-decision-home.mjs",

@@ -1,5 +1,6 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"8c97afbea5852977","commit":"14b1e31ba9ff8d592afa3c07ab8627d94a979d94"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"8c97afbea58529773636bd3b3d24d6a5bfecac4becf04b25971988f66f02a8ff","commit":"14b1e31ba9ff8d592afa3c07ab8627d94a979d94","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"9960f69f18786a35","commit":"64ddb0ef5a3103e7820200c16043e4bf4e5136b3"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"9960f69f18786a35c97fad40db2b6386b8234da1ee46b15eebfda399ebf1b991","commit":"64ddb0ef5a3103e7820200c16043e4bf4e5136b3","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+const TRANSFER_WORKER_MODEL_SOURCE = "\nconst POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;\nconst UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);\n\nfunction playerOf(entry){ return entry?.p || entry; }\nfunction playerId(entry){ return Number(playerOf(entry)?.id); }\nfunction positionOf(entry){ return Number(playerOf(entry)?.element_type); }\nfunction hasKnownPurchasePrice(entry){\n  const raw = entry?.bought ?? entry?.purchasePrice;\n  return raw !== null && raw !== undefined && Number.isFinite(Number(raw));\n}\n\nfunction transferSellPrice(entry){\n  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);\n  if(!Number.isFinite(now)) return 0;\n  const bought = hasKnownPurchasePrice(entry) ? Number(entry?.bought ?? entry?.purchasePrice) : now;\n  if(now <= bought) return now;\n  return bought + Math.floor((now - bought) / 2);\n}\n\nfunction nextFreeTransfers(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);\n}\n\nfunction transferHit(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  const paidTransfers = Math.max(0, n - ft);\n  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };\n}\n\nfunction combinations(items, size, start=0, chosen=[], out=[]){\n  if(chosen.length === size){ out.push(chosen.slice()); return out; }\n  for(let i=start; i<=items.length-(size-chosen.length); i++){\n    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();\n  }\n  return out;\n}\n\nfunction validateSquad(squad, {allowInheritedOverQuota=true}={}){\n  const issues=[];\n  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');\n  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];\n  const ids = players.map(p=>Number(p.id));\n  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');\n  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)] || !Number.isFinite(Number(p.team)))) issues.push('unknown_player');\n  const pos={1:0,2:0,3:0,4:0}, clubs={};\n  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });\n  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });\n  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');\n  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};\n}\n\nfunction bestXIForGW(squad, gw, scorePlayer){\n  const byPos={1:[],2:[],3:[],4:[]};\n  squad.forEach(entry=>{\n    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));\n    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});\n  });\n  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));\n  let best=null;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];\n    const total=selected.reduce((a,x)=>a+x.score,0);\n    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;\n    if(!best || total>best.total || (total===best.total && signature<best.signature))\n      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};\n  }\n  return best || {total:0,formation:'—',playerIds:[],signature:''};\n}\n\nfunction scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){\n  const perGameweek=[]; let total=0;\n  for(let gw=startGW;gw<startGW+horizon;gw++){\n    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction canonicalTransfers(transfers){\n  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);\n}\nfunction planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }\n\nfunction comparePlans(a,b){\n  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||\n    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||\n    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);\n}\n\nfunction inheritedClubLegal(startCounts, finalCounts, transferCount){\n  for(const [club,count] of Object.entries(finalCounts)){\n    const start=startCounts[club]||0;\n    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;\n    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;\n  }\n  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  return finalExcess <= Math.max(0,startExcess-transferCount);\n}\n\nfunction buildBaseline({squad,bank,freeTransfers,startGW,horizon,scorePlayer}){\n  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer);\n  return {transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter:bank,\n    freeTransfersBefore:freeTransfers,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(freeTransfers,0),grossBestXIPoints:baselineScore.total,\n    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};\n}\n\nfunction buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline,startCounts,pricingMode}){\n  const outIds=new Set(outgoing.map(playerId));\n  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));\n  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});\n  if(!legality.ok || !inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;\n  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);\n  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);\n  const bankAfter=bank+sellTotal-buyTotal;\n  if(bankAfter<0) return null;\n  const hit=transferHit(freeTransfers,outgoing.length);\n  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);\n  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);\n  const rollDifference=nextFT-baseline.freeTransfersNextGW;\n  const grossGain=score.total-baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,\n    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,\n    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\nfunction normaliseSearch(args){\n  const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,\n    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer}=args;\n  const legality=validateSquad(squad,{allowInheritedOverQuota:true});\n  if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};\n  if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};\n  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));\n  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));\n  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));\n  const cleanLimit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(Number(maxTransfers)||0)));\n  const cleanMaxResults=Math.max(1,Math.trunc(Number(maxResults)||1));\n  const cleanMaxEvaluations=Math.max(0,Math.trunc(Number(maxEvaluations)||0));\n  const owned=new Set(squad.map(playerId));\n  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));\n  const pricingMode=squad.every(hasKnownPurchasePrice)?'exact':'estimated';\n  const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});\n  baseline.pricingMode=pricingMode;\n  return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,\n    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode};\n}\n\nfunction completeResult(ctx,plans,evaluations,pruned=0,incomplete=false){\n  plans.sort(comparePlans);\n  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n}\n\nfunction exhaustiveTransferSearch(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, incomplete=false;\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const candidates=ctx.eligible.filter(p=>required.includes(Number(p.element_type)));\n      for(const incoming of combinations(candidates,n)){\n        if(++evaluations>ctx.maxEvaluations){ incomplete=true; break outer; }\n        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);\n        if(incomingPos.some((v,i)=>v!==required[i])) continue;\n        const ordered=[], used=new Set();\n        for(const out of outgoing){\n          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));\n          if(idx<0) break; used.add(idx); ordered.push(incoming[idx]);\n        }\n        if(ordered.length!==n) continue;\n        const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:ordered,bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n          horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n        if(plan) plans.push(plan);\n      }\n    }\n  }\n  return completeResult(ctx,plans,evaluations,0,incomplete);\n}\n\nfunction cheapestAvailableCost(pool, count, usedIds){\n  const costs=pool.filter(p=>!usedIds.has(Number(p.id))).map(p=>Number(p.now_cost||0)).sort((a,b)=>a-b);\n  if(costs.length<count) return Infinity;\n  return costs.slice(0,count).reduce((a,n)=>a+n,0);\n}\n\nfunction optimiseTransfers(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;\n  const byPosition={1:[],2:[],3:[],4:[]};\n  ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);\n      if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }\n      const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);\n      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPosition[pos],count,new Set()),0);\n      if(minimumBuy>ctx.bank+sellTotal){ pruned++; continue; }\n      const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });\n      const chosen=[];\n      function choose(index,cost,clubCounts){\n        if(incomplete) return;\n        if(index===required.length){\n          if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }\n          const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:chosen.slice(),bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n            horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n          if(plan) plans.push(plan);\n          return;\n        }\n        const pos=required[index], pool=byPosition[pos];\n        const previousSame=index>0&&required[index-1]===pos ? Number(chosen[index-1].id) : -Infinity;\n        for(const candidate of pool){\n          if(Number(candidate.id)<=previousSame || chosen.some(p=>Number(p.id)===Number(candidate.id))) continue;\n          const nextCost=cost+Number(candidate.now_cost||0);\n          const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));\n          const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);\n          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPosition[rpos],count,usedIds),0);\n          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; continue; }\n          const club=String(candidate.team), nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};\n          const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);\n          if(nextClubs[club]>allowed){ pruned++; continue; }\n          chosen.push(candidate); choose(index+1,nextCost,nextClubs); chosen.pop();\n          if(incomplete) return;\n        }\n      }\n      choose(0,0,afterOut);\n      if(incomplete) break outer;\n    }\n  }\n  return completeResult(ctx,plans,evaluations,pruned,incomplete);\n}\n";
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -6966,6 +6967,439 @@ function installTransferPlannerCommittedControlRefresh(){
 }
 
 installTransferPlannerCommittedControlRefresh();
+
+
+
+/* ===== src/ui/transfer-performance.mjs ===== */
+
+const TRANSFER_PERFORMANCE_CACHE_LIMIT = 4;
+const TRANSFER_PERFORMANCE_SCORE_BATCH = 12;
+const transferPerformanceCache = new Map();
+let transferPerformanceWorker = null;
+let transferPerformanceToken = 0;
+let transferPerformanceDataVersion = 0;
+let transferPerformanceInstalled = false;
+
+function transferPerformanceRetainPlan(plans, plan, limit, compare){
+  plans.push(plan);
+  plans.sort(compare);
+  if(plans.length > limit) plans.length = limit;
+  return plans;
+}
+
+function transferPerformanceBoundOptimiserSource(modelSource){
+  const source = String(modelSource || '');
+  const target = 'if(plan) plans.push(plan);';
+  const matches = source.split(target).length - 1;
+  if(matches !== 1) throw new Error(`Expected one optimiser plan-retention site; found ${matches}`);
+  return source.replace(target, 'if(plan) transferPerformanceRetainPlan(plans,plan,ctx.maxResults,comparePlans);');
+}
+
+function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
+  const bounded = transferPerformanceBoundOptimiserSource(modelSource);
+  return `"use strict";
+const TRANSFER_RULES=${JSON.stringify(rules)};
+${transferPerformanceRetainPlan.toString()}
+${bounded}
+self.onmessage=event=>{
+  const payload=event.data||{};
+  if(payload.type!=="calculate") return;
+  const rows=Array.isArray(payload.scoreRows)?payload.scoreRows:[];
+  const scoreMap=new Map(rows.map(row=>[Number(row[0]),Array.isArray(row[1])?row[1]:[]]));
+  const startGW=Number(payload.args?.startGW)||1;
+  const scorePlayer=(player,gw)=>{
+    const scores=scoreMap.get(Number(player?.id));
+    const value=Number(scores?.[Number(gw)-startGW]);
+    return Number.isFinite(value)?value:0;
+  };
+  try{
+    const result=optimiseTransfers({...payload.args,scorePlayer});
+    self.postMessage({type:"result",requestId:payload.requestId,result});
+  }catch(error){
+    self.postMessage({type:"error",requestId:payload.requestId,message:String(error?.message||error||"Worker calculation failed")});
+  }
+};`;
+}
+
+function transferPerformanceHash(value, seed=2166136261){
+  let hash=seed>>>0;
+  const text=String(value ?? '');
+  for(let i=0;i<text.length;i++){
+    hash^=text.charCodeAt(i);
+    hash=Math.imul(hash,16777619)>>>0;
+  }
+  return hash>>>0;
+}
+
+function transferPerformanceCurrentRoute(){
+  return String(globalThis.location?.hash||'').split('?')[0];
+}
+
+function transferPerformanceYield(){
+  return new Promise(resolve=>{
+    if(typeof globalThis.requestAnimationFrame==='function') globalThis.requestAnimationFrame(()=>resolve());
+    else globalThis.setTimeout?.(resolve,0);
+  });
+}
+
+function transferPerformanceControlSignature(){
+  return transferPlannerControlSignature(
+    $('trFtCount')?.value,
+    $('trBankIn')?.value,
+    $('trHorizon')?.value,
+    $('trTop')?.value
+  );
+}
+
+function transferPerformanceWorkerPlayer(player={}){
+  return {
+    id:Number(player.id),
+    web_name:String(player.web_name||player.id||''),
+    team:Number(player.team),
+    element_type:Number(player.element_type),
+    now_cost:Number(player.now_cost)||0,
+    status:String(player.status||'a'),
+    chance_of_playing_next_round:player.chance_of_playing_next_round??null
+  };
+}
+
+function transferPerformanceSnapshot(){
+  if(!S.boot) return {error:['Verified player data is unavailable.','Refresh from Settings before using transfer comparisons.']};
+  const squad=mySquad();
+  if(squad.length!==15) return {error:['A complete 15-player squad is required.','Load your team or finish the manual squad in Team setup.']};
+  const assumptions=transferPlannerReadAssumptions($('trFtCount')?.value,$('trBankIn')?.value);
+  if(!assumptions.valid) return {error:['Check the planning assumptions.',assumptions.issues.join(' ')]};
+  const horizon=Math.max(1,Math.min(8,Math.trunc(Number($('trHorizon')?.value)||6)));
+  const maxResults=Math.max(1,Math.min(20,Math.trunc(Number($('trTop')?.value)||8)));
+  const squadSignature=decisionPreviewSquadSignature(squad);
+  const signature=[
+    transferPerformanceDataVersion,
+    typeof BUILD_INFO!=='undefined'?BUILD_INFO.sourceHash:'',
+    S.cachedAt||'live',
+    S.nextGW,
+    horizon,
+    maxResults,
+    assumptions.bankTenths,
+    assumptions.freeTransfers,
+    squadSignature
+  ].join('|');
+  return {
+    squad,
+    players:S.boot.elements||[],
+    horizon,
+    maxResults,
+    assumptions,
+    squadSignature,
+    signature,
+    args:{
+      squad:squad.map(entry=>({
+        p:transferPerformanceWorkerPlayer(entry?.p||entry),
+        bought:entry?.bought??entry?.purchasePrice??null
+      })),
+      players:(S.boot.elements||[]).map(transferPerformanceWorkerPlayer),
+      bank:assumptions.bankTenths,
+      freeTransfers:assumptions.freeTransfers,
+      startGW:S.nextGW,
+      horizon,
+      maxResults
+    }
+  };
+}
+
+function transferPerformanceCacheSet(key,value){
+  transferPerformanceCache.delete(key);
+  transferPerformanceCache.set(key,value);
+  while(transferPerformanceCache.size>TRANSFER_PERFORMANCE_CACHE_LIMIT){
+    transferPerformanceCache.delete(transferPerformanceCache.keys().next().value);
+  }
+}
+
+function transferPerformanceStatus(text){
+  const status=$('transferStatus');
+  if(status) status.textContent=text;
+}
+
+function transferPerformanceAction(label,handler,{secondary=false}={}){
+  return el('button',{
+    type:'button',
+    class:`btn${secondary?' ghost':''}`,
+    onclick:handler
+  },label);
+}
+
+function transferPerformanceRenderReady(snapshot,{message='Ready to calculate without blocking the rest of Teamsheet.'}={}){
+  const out=$('transferOut');
+  if(!out) return;
+  out.setAttribute('aria-busy','false');
+  const cached=transferPerformanceCache.get(snapshot.signature);
+  if(cached){
+    transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
+    return;
+  }
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note plain'},
+      el('b',{},'Transfers is ready. '),
+      message),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Calculate transfers',()=>void transferPerformanceStart(snapshot))));
+  transferPerformanceStatus('Ready. Calculation starts only when requested.');
+}
+
+function transferPerformanceRenderBusy(snapshot,completed,total){
+  const out=$('transferOut');
+  if(!out) return;
+  const preparing=completed<total;
+  out.setAttribute('aria-busy','true');
+  const detail=preparing
+    ? `Preparing projections ${completed} of ${total}.`
+    : 'Evaluating legal transfer plans in the background.';
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note plain'},el('b',{},'Calculating transfers. '),detail),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.'),{secondary:true})));
+  transferPerformanceStatus(detail);
+}
+
+function transferPerformanceRenderError(title,detail){
+  const out=$('transferOut');
+  if(!out) return;
+  out.setAttribute('aria-busy','false');
+  transferPlannerBlocking(out,title,detail);
+  transferPerformanceStatus('Transfer comparison unavailable.');
+}
+
+function transferPerformanceRenderResult(result,context,{cached=false}={}){
+  const out=$('transferOut');
+  if(!out) return;
+  const {snapshot}=context;
+  const {squad,horizon,assumptions,squadSignature}=snapshot;
+  S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
+
+  if(result.status==='invalid-input'){
+    transferPerformanceRenderError('Squad cannot be compared.',`Fix the squad before continuing: ${(result.issues||[]).join(', ')}.`);
+    return;
+  }
+  if(result.status==='projection-unavailable'){
+    transferPerformanceRenderError('Projections are unavailable.','No transfer recommendation can be made from an unverified comparison.');
+    return;
+  }
+  if(result.status==='search-incomplete'){
+    transferPerformanceRenderError('Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
+    return;
+  }
+
+  const plans=result.plans||[];
+  const state=transferPlannerPresentationState(plans);
+  const baseline=plans.find(plan=>Number(plan.transferCount)===0);
+  if(!baseline){
+    transferPerformanceRenderError('No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
+    return;
+  }
+
+  const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
+  const topAlternative=alternatives[0]||null;
+  const optimiserSignature=decisionPreviewOptimiserSignature({
+    squadSignature,
+    horizon,
+    bank:assumptions.bankTenths,
+    freeTransfers:assumptions.freeTransfers,
+    plans
+  });
+  const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
+  if(previewCleared) transferPlannerDispatchPreviewChange();
+  const previewState=decisionPreviewSnapshot();
+  const nodes=[
+    transferPlannerContext(),
+    transferPlannerDecisionHero(state,baseline,topAlternative,horizon),
+    el('div',{class:'transfer-card-stack'},
+      transferPlannerBaselineCard(baseline,{
+        alternativesCount:alternatives.length,
+        rankedFirst:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST,
+        primary:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST||state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY
+      }),
+      topAlternative?transferPlannerPlanCard(topAlternative,{
+        title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
+        index:plans.indexOf(topAlternative),
+        squad,
+        optimiserSignature,
+        horizon,
+        selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
+        primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
+        pricingMode:result.pricingMode
+      }):null)
+  ];
+
+  const otherAlternatives=alternatives.slice(1,4);
+  if(otherAlternatives.length){
+    nodes.push(el('details',{class:'transfer-alternatives'},
+      el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
+      el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
+        title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
+        index:plans.indexOf(plan),
+        squad,
+        optimiserSignature,
+        horizon,
+        selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
+        primary:false,
+        pricingMode:result.pricingMode
+      })))));
+  }
+
+  nodes.push(
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Recalculate transfers',()=>{
+        transferPerformanceCache.clear();
+        void transferPerformanceStart(transferPerformanceSnapshot());
+      },{secondary:true})),
+    el('p',{class:'transfer-disclaimer'},
+      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.')
+  );
+  setChildren(out,nodes);
+  out.setAttribute('aria-busy','false');
+  transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
+  transferPerformanceStatus(cached?'Saved transfer comparison reused instantly.':'Transfer comparison updated.');
+}
+
+async function transferPerformanceScores(snapshot,token){
+  const rows=[];
+  let dataHash=2166136261;
+  const total=snapshot.players.length;
+  for(let start=0;start<total;start+=TRANSFER_PERFORMANCE_SCORE_BATCH){
+    if(token!==transferPerformanceToken){
+      const error=new Error('Cancelled');
+      error.name='AbortError';
+      throw error;
+    }
+    const end=Math.min(total,start+TRANSFER_PERFORMANCE_SCORE_BATCH);
+    for(let index=start;index<end;index++){
+      const player=snapshot.players[index];
+      const scores=[];
+      dataHash=transferPerformanceHash(`${player.id}|${player.team}|${player.element_type}|${player.now_cost}|${player.status}|${player.chance_of_playing_next_round}`,dataHash);
+      for(let offset=0;offset<snapshot.horizon;offset++){
+        const value=Number(xpOf(player,S.nextGW+offset,1).total);
+        const safe=Number.isFinite(value)?value:0;
+        scores.push(safe);
+        dataHash=transferPerformanceHash(safe.toFixed(8),dataHash);
+      }
+      rows.push([Number(player.id),scores]);
+    }
+    transferPerformanceRenderBusy(snapshot,end,total);
+    await transferPerformanceYield();
+  }
+  return {rows,dataHash:dataHash.toString(16)};
+}
+
+function transferPerformanceCreateWorker(){
+  if(typeof Worker!=='function'||typeof Blob!=='function'||!globalThis.URL?.createObjectURL)
+    throw new Error('This browser cannot run the optimiser safely in the background.');
+  if(typeof TRANSFER_WORKER_MODEL_SOURCE!=='string'||!TRANSFER_WORKER_MODEL_SOURCE)
+    throw new Error('The background optimiser source is unavailable in this build.');
+  const source=transferPerformanceWorkerSource(TRANSFER_WORKER_MODEL_SOURCE);
+  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+  try{
+    return new Worker(url);
+  }finally{
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot()){
+  if(initialSnapshot?.error){
+    transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
+    return;
+  }
+  transferPerformanceCancel('',{render:false});
+  const snapshot=initialSnapshot;
+  const token=++transferPerformanceToken;
+  transferPlannerClearPreview();
+  void saveCfg();
+  transferPerformanceRenderBusy(snapshot,0,snapshot.players.length);
+
+  try{
+    const prepared=await transferPerformanceScores(snapshot,token);
+    if(token!==transferPerformanceToken) return;
+    const exactSignature=`${snapshot.signature}|${prepared.dataHash}`;
+    const cached=transferPerformanceCache.get(exactSignature);
+    if(cached){
+      transferPerformanceCacheSet(snapshot.signature,cached);
+      transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
+      return;
+    }
+
+    const worker=transferPerformanceCreateWorker();
+    transferPerformanceWorker=worker;
+    transferPerformanceRenderBusy(snapshot,snapshot.players.length,snapshot.players.length);
+    const result=await new Promise((resolve,reject)=>{
+      worker.onmessage=event=>{
+        const payload=event.data||{};
+        if(payload.requestId!==token) return;
+        if(payload.type==='result') resolve(payload.result);
+        else reject(new Error(payload.message||'Background calculation failed.'));
+      };
+      worker.onerror=event=>reject(new Error(event?.message||'Background calculation failed.'));
+      worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
+    });
+    if(token!==transferPerformanceToken) return;
+    worker.terminate();
+    transferPerformanceWorker=null;
+    const context={snapshot,preparedAt:Date.now()};
+    const record={result,context};
+    transferPerformanceCacheSet(exactSignature,record);
+    transferPerformanceCacheSet(snapshot.signature,record);
+    transferPerformanceRenderResult(result,context);
+  }catch(error){
+    if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
+    transferPerformanceWorker?.terminate?.();
+    transferPerformanceWorker=null;
+    transferPerformanceRenderError('Background calculation failed.',String(error?.message||error||'Try again.'));
+  }
+}
+
+function transferPerformanceCancel(message='Calculation cancelled.',{render=true}={}){
+  transferPerformanceToken++;
+  transferPerformanceWorker?.terminate?.();
+  transferPerformanceWorker=null;
+  if(render&&transferPerformanceCurrentRoute()==='#/transfers'){
+    const snapshot=transferPerformanceSnapshot();
+    if(snapshot.error) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+    else transferPerformanceRenderReady(snapshot,{message});
+  }
+}
+
+function transferPerformanceRenderShell(){
+  const out=$('transferOut');
+  if(!out) return;
+  renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
+  transferPlannerSyncVisibleAssumptions();
+  transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
+  const snapshot=transferPerformanceSnapshot();
+  if(snapshot.error){
+    transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+    return;
+  }
+  transferPerformanceRenderReady(snapshot);
+}
+
+function installTransferPerformanceRuntime(){
+  if(transferPerformanceInstalled||typeof document==='undefined'||typeof renderTransfers!=='function') return;
+  transferPerformanceInstalled=true;
+  renderTransfers=transferPerformanceRenderShell;
+
+  document.addEventListener('teamsheet:before-route-change',event=>{
+    if(event?.detail?.from==='#/transfers'&&event?.detail?.to!=='#/transfers')
+      transferPerformanceCancel('',{render:false});
+  });
+  document.addEventListener('teamsheet:data-rendered',()=>{
+    transferPerformanceDataVersion++;
+    transferPerformanceCache.clear();
+    transferPerformanceCancel('',{render:false});
+    if(transferPerformanceCurrentRoute()==='#/transfers') transferPerformanceRenderShell();
+  });
+}
+
+installTransferPerformanceRuntime();
 
 
 
