@@ -18,11 +18,12 @@ const ORDER = [
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
   'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
-  'src/ui/transfer-optimiser-view.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
+  'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
   'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
+const transferWorkerModelSource = stripModuleSyntax(readFileSync('src/model/transfers.mjs', 'utf8'));
 const sourceHasher = createHash('sha256');
 let bundle = '';
 for (const path of ORDER) {
@@ -42,6 +43,7 @@ const rulesVersion = /RULES_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 const manifest = { modelVersion, rulesVersion, sourceHash, commit, moduleOrder: ORDER };
 bundle = (`/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: sourceHash.slice(0,16), commit })} */\n`
   + `const BUILD_INFO = ${JSON.stringify(manifest)};\n`
+  + `const TRANSFER_WORKER_MODEL_SOURCE = ${JSON.stringify(transferWorkerModelSource)};\n`
   + `if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;\n`
   + bundle).trimEnd() + '\n';
 
@@ -79,6 +81,7 @@ const csp = [
   `style-src-elem '${styleHash}' https://fonts.googleapis.com`,
   'font-src https://fonts.gstatic.com',
   `connect-src ${connectOrigins.join(' ')}`,
+  "worker-src 'self' blob:",
   "img-src 'self' data:",
   "object-src 'none'",
   "base-uri 'none'",

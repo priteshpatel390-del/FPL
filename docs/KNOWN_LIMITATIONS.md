@@ -73,6 +73,8 @@ Last updated: 2026-08-05. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | MANUAL-1 | Manual squad editing requires the verified Official FPL player catalogue | First-run core-data failure means player search and saved-ID resolution cannot operate; controls are now disabled and honestly labelled, while production remedies remain separately gated | Manual fallback investigation | Open (design gate) |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
 
+| UI-9 | Transfer optimisation previously ran synchronously on the Safari UI thread | PR #69 now uses an explicit cancellable Blob Web Worker, batched projection preparation and session result reuse; physical iPhone speed and memory acceptance remain required | PR #69 performance correction | Implemented and automatically verified; device acceptance open |
+
 ## Teamsheet 2.0 migration limitations
 - Teamsheet 2.0.1–2.0.6 are complete and merged, implementing the approved navigation, Team, Transfers, factual Mini-League foundation, selected-rival factual exposure and organised Settings/research/evidence/diagnostic surfaces. Projected rank, rival-score prediction, remaining-player simulation, effective-ownership strategy and tactical recommendation work remain separately gated.
 - The Stage 9 engineering foundation remains valid, while its primary information architecture is superseded.

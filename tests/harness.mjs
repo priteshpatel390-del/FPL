@@ -41,7 +41,7 @@ export function loadApp(fieldValues = {}) {
     teamFixtures, playerFixtureXP, projectXP, priceBaseline, availability, expectedMinutes, bestXI,
     sellPrice, mySquad, parseCSV, pearson, poissonOver, solveLambda, mapTeamName, parseUnderstat,
     runBacktest, rememberLeague, renderLeagueChips, renderTicker, renderPlayers, renderSquad, renderTransfers,
-    renderManual, searchPlayers, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
+    renderManual, searchPlayers, transferPlannerMoveList, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
     clearXP, flagsFor, priceMomentum });\nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
   delete globalThis.__EXPORTS__;
   return { T: exports, doc: made, setFetch: f => { globalThis.fetch = f; } };

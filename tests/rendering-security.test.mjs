@@ -52,6 +52,10 @@ test('XSS-1: squad, captain and transfer rendering keep hostile player text iner
   T.S.boot.elements.push(target); T.S.byId[target.id]=target;
   T.renderSquad(); T.renderTransfers();
   assertInert(doc.squadOut,payloads[1]);
+  assert.match(visibleText(doc.transferOut),/Transfers is ready/);
+  doc.transferOut.appendChild(T.transferPlannerMoveList({transfers:[
+    {outPlayerId:T.S.boot.elements[0].id,inPlayerId:target.id}
+  ]}));
   assertInert(doc.transferOut,payloads[1]);
 });
 
