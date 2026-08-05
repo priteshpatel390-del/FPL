@@ -28,6 +28,7 @@ export function loadApp(fieldValues = {}) {
   globalThis.window = { scrollTo(){} };
   globalThis.localStorage = { _d:{}, getItem(k){ return this._d[k] ?? null; },
     setItem(k,v){ this._d[k]=v; }, removeItem(k){ delete this._d[k]; } };
+  globalThis.__TEAMSHEET_FPL_GATEWAY_BASE__ = 'https://teamsheet.test/fpl';
   globalThis.fetch = async () => { throw new Error('network disabled in tests'); };
   globalThis.AbortController = class { constructor(){ this.signal = {}; } abort(){} };
 

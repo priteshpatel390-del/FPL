@@ -183,3 +183,19 @@ Reason: physical iPhone acceptance found that returning to Safari after an unsuc
 Approach: timestamp every completed refresh attempt for the existing ten-minute automatic cooldown, retain in-flight promise deduplication for paired Safari resume events, keep foreground refresh interaction non-blocking, and preserve the force-enabled manual **Load data** retry.
 
 Consequences: this is refresh orchestration and interaction behaviour only. It changes no provider, endpoint, data source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank, Mini-League, persistence or security logic. Physical iPhone retesting remains required.
+
+**D-36 · 2026-08-05 · Accepted · Teamsheet 2.0.7 merge with explicit limitation disposition**
+
+Reason: PR #68 passed 533 tests, deterministic builds and physical Safari foreground-resume retest. VoiceOver remained unverified and live populated-data acceptance was externally blocked by FPL-1.
+
+Approach: merge PR #68 after Pritesh's explicit approval, record VoiceOver as an accepted unverified limitation and move the live transport blocker into separately approved FPL-T1 rather than claiming those tests were performed.
+
+Consequences: Teamsheet 2.0.7 is complete at merge `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; no calculation or provider change is implied.
+
+**D-37 · 2026-08-05 · Accepted · Owner-controlled narrow Official FPL gateway**
+
+Reason: Official FPL data is available but the static browser cannot reliably read it through anonymous CORS relays, blocking live populated-data operation and acceptance.
+
+Approach: retain Official FPL as the provider; add one owner-controlled Cloudflare Worker with a closed read-only endpoint/query allowlist, exact-origin CORS, no credential forwarding, five-minute shared caching only for bootstrap/unfiltered fixtures and existing device-cache/restricted fallback. Anonymous relays leave the Official FPL path and remain only for optional Understat transport.
+
+Consequences: no source fields or model/fixture/scoring/squad/captaincy/simulation/optimiser/rank/Mini-League calculation changes. Deployment hostname, full verification and physical live-data acceptance are mandatory before merge.

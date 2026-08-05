@@ -5,12 +5,12 @@ this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DE
 
 ## Official FPL API — foundation
 Purpose: players/prices/teams/fixtures/GWs/ownership/status/news/minutes/points/BPS/DC/xG-xA/entry/
-picks/history/leagues. Authority: high (game's own data; player xG is Opta-derived). Transport:
-public CORS relays (no secrets carried) — availability medium. Schema stability: medium
-(undocumented; validate at runtime from Stage 3). Licensing: unofficial, tolerated. Refresh: every
-load; future SWR per STAGE3-DESIGN §6 thresholds. Caching: versioned envelope (schemaVersion+season).
-Fallback: cached snapshot with age labelling. Health: live/cached/stale/partial. Future: /api proxy
-at serverless; actual-club-matches denominators (Stage 4).
+picks/history/leagues. Authority: high (game's own data; player xG is Opta-derived). Transport: owner-controlled narrow FPL gateway under approved Scope FPL-T1; Official FPL remains the
+provider and every response still passes the existing validators. The browser sends no cookies, credentials or
+arbitrary upstream URL. Bootstrap and unfiltered fixtures may use a five-minute shared edge cache; manager,
+picks, histories, leagues and outcomes are no-store initially. Fallback: verified device cache with age labelling,
+otherwise restricted mode. Schema stability: medium (undocumented; validate at runtime from Stage 3).
+Licensing: unofficial, tolerated. The production Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev`, the app uses its exact `/fpl` base and live 2026/27 bootstrap transport was verified on physical iPhone Safari. Full populated application acceptance remains pending under FPL-2.
 
 ## Understat — team form layer only (D-05)
 Purpose: last-6 team xG/xGA multipliers, 45% blend vs FPL strengths. Authority: medium (own xG

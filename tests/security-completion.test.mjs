@@ -70,10 +70,14 @@ test('CSP removes every unsafe-inline concession and retains provider origins', 
   assert.equal(policy.includes("'unsafe-inline'"),false);
   assert.equal(policy.includes('style-src-attr'),false);
   for(const origin of [
-    'https://fantasy.premierleague.com','https://api.allorigins.win','https://corsproxy.io',
+    'https://api.allorigins.win','https://corsproxy.io',
     'https://api.codetabs.com','https://thingproxy.freeboard.io','https://understat.com',
     'https://api.the-odds-api.com','https://raw.githubusercontent.com','https://api.anthropic.com'
   ]) assert.ok(policy.includes(origin),origin);
+  assert.equal(policy.includes('https://fantasy.premierleague.com'),false,'browser must not contact Official FPL directly');
+  assert.match(readFileSync('app.html','utf8'),/name="teamsheet-fpl-gateway" content="https:\/\/teamsheet-fpl-gateway\.fpltsheet\.workers\.dev\/fpl"/);
+assert.ok(policy.includes('https://teamsheet-fpl-gateway.fpltsheet.workers.dev'));
+assert.equal(policy.includes('*-teamsheet-fpl-gateway'),false);
   assert.ok(policy.includes("object-src 'none'"));
   assert.ok(policy.includes("base-uri 'none'"));
   assert.ok(policy.includes("form-action 'self'"));

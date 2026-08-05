@@ -23,6 +23,17 @@ const STARTUP_PHASE_COPY = Object.freeze({
   ready:['Ready','Latest verified data available.'],
   restricted:['Limited mode','Official FPL data could not be verified, so recommendations remain unavailable.']
 });
+function validGameweekId(value){
+  const id = Number(value);
+  return Number.isInteger(id) && id >= 1 && id <= 38 ? id : 0;
+}
+function publicPicksGameweek(events = S.boot?.events, currentGW = S.currentGW){
+  const current = validGameweekId(currentGW);
+  if(current) return current;
+  const next = Array.isArray(events) ? events.find(event => event?.is_next === true) : null;
+  return validGameweekId(next?.id);
+}
+
 let verifiedRefreshPromise = null;
 let lastVerifiedRefreshAt = 0;
 let lastRefreshAttemptAt = 0;
@@ -115,7 +126,8 @@ async function loadAll(options = {}){
 
     reportLoadPhase(options,'team');
     S.teamId = $('teamId').value.replace(/\D/g,'');
-    S.entry = null; S.picks = null; S.chipsUsed = [];
+    S.entry = null; S.picks = null; S.picksGameweek = 0; S.picksStatus = 'idle'; S.chipsUsed = [];
+    let teamStatus = '';
     if(S.teamId){
       if(st) st.textContent = 'Fetching your team…';
       const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
@@ -124,10 +136,20 @@ async function loadAll(options = {}){
       if(!S.entry){
         if(st) st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
       } else {
-        if(S.currentGW){
-          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true}));
+        const picksGW = publicPicksGameweek();
+        S.picksGameweek = picksGW;
+        if(picksGW){
+          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+picksGW+'/picks/', {optional:true}));
           recordIssues('fpl', '/entry/event/picks/', picksV.issues);
           S.picks = picksV.value;
+          const picksCount = Array.isArray(S.picks?.picks) ? S.picks.picks.length : 0;
+          S.picksStatus = picksCount === 15 ? 'loaded' : picksCount ? 'incomplete' : 'unavailable';
+          if(S.picksStatus === 'loaded') teamStatus = ` · public GW${picksGW} squad loaded`;
+          else if(S.picksStatus === 'incomplete') teamStatus = ` · ${picksCount}/15 public GW${picksGW} picks usable`;
+          else teamStatus = ` · public GW${picksGW} squad unavailable`;
+        } else {
+          S.picksStatus = 'gameweek-unavailable';
+          teamStatus = ' · public squad Gameweek unavailable';
         }
         const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
         recordIssues('fpl', '/entry/history/', histV.issues);
@@ -139,7 +161,7 @@ async function loadAll(options = {}){
       }
     }
     if(S.entry || !S.teamId){
-      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}${teamStatus}`;
     }
     await saveCfg();
 
@@ -176,10 +198,10 @@ async function loadAll(options = {}){
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
         "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
-      markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
+      markUnavailable('fpl', 'official gateway unavailable', 'season data cannot be shown');
       if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. Ask Teamsheet is also unavailable in this hosted build until the separately approved serverless migration.'));
+        'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
@@ -298,5 +320,7 @@ export {
   setStartupGateVisible,
   dispatchVerifiedData,
   runVerifiedRefresh,
-  installVerifiedRefreshTriggers
+  installVerifiedRefreshTriggers,
+  validGameweekId,
+  publicPicksGameweek
 };

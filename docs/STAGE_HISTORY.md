@@ -1,4 +1,7 @@
 # STAGE_HISTORY.md — engineering diary
+
+## FPL-T1 — Owner-controlled Official FPL gateway (draft PR #69)
+Approved and implemented after Teamsheet 2.0.7. The fixed-host, allowlisted Cloudflare Worker is deployed at the stable production origin; live bootstrap transport passed on physical iPhone Safari. The app is pinned to the exact `/fpl` base and verified at **547 passed, 0 failed, 0 skipped** with deterministic builds. No provider fields, model or football calculations changed. Full populated application acceptance and explicit merge approval remain pending.
 Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-30.
 Related: stage design and item records, TEAMSHEET2-PRODUCT-BLUEPRINT.md, ROADMAP.md, DECISIONS.md, CHANGELOG.md, AUDIT.md.
 
@@ -58,3 +61,5 @@ Implemented the owner-approved transfer presentation/state checkpoint on a dedic
 ## Teamsheet 2.0.7 — implementation prepared for acceptance
 
 Scope S-2.0.7 was approved on 4 August 2026 and implemented from main `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification and generated-build identity are recorded in `TEAMSHEET2-ITEM7.md`. Completion remains gated on owner review, physical iPhone Safari, VoiceOver and live populated-data acceptance.
+## 2026-08-05 — Teamsheet 2.0.7 merge and FPL-T1 start
+PR #68 merged at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf` after explicit owner approval. The Safari foreground-resume correction passed physical retest. VoiceOver remains accepted-unverified. Live populated-data acceptance remains blocked by FPL-1, and the owner approved FPL-T1 for a narrow owner-controlled Official FPL gateway.

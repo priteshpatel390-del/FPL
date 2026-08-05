@@ -1,6 +1,6 @@
 # Teamsheet 2.0.7 — Final Mobile Polish and Acceptance
 
-Status: **implemented on the approved branch for automated review; the physical iPhone Safari foreground-resume correction passed owner retest on 5 August 2026, while broader mobile polish, VoiceOver and live populated-data acceptance remain pending.**
+Status: **complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; Safari foreground-resume retest passed, VoiceOver remains accepted-unverified and live populated-data moved to approved blocker FPL-1/FPL-T1.**
 Approval: exact Scope S-2.0.7 approved by Pritesh on 4 August 2026.
 Base commit: `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`.
 Model version: `2.4.0`.
@@ -38,7 +38,7 @@ No provider, endpoint, data source, model, fixture calculation, expected-minutes
 
 ## Acceptance still required
 
-Automated and browser-contract evidence cannot prove every physical iPhone Safari layout, one-handed comfort, actual VoiceOver reading order or live public Official FPL transport. These remain explicit owner acceptance gates. The implementation must not be called complete or merged until Pritesh reviews the remaining manual gates or explicitly accepts a remaining external blocker.
+Teamsheet 2.0.7 is merged and its Safari foreground-resume defect passed physical owner retest. VoiceOver remains accepted-unverified. FPL-T1 has since established live Official FPL bootstrap transport on physical iPhone Safari through the owner-controlled Worker, but full populated Team, Transfers, Fixtures, Player Detail and Leagues acceptance remains open on draft PR #69.
 
 ## Physical iPhone Safari foreground-resume correction — 5 August 2026
 

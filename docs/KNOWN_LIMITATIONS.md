@@ -66,8 +66,9 @@ Last updated: 2026-08-05. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | UI-6 | First Teamsheet 2.0.1 physical iPhone review found dock, icon, focus and Settings-header defects | Approved corrections were implemented and merged through PR #48; populated-data transport remains tracked separately by FPL-1 | Teamsheet 2.0.1 | **CLOSED and merged 2026-07-31** |
 | UI-7 | Teamsheet 2.0.2 physical iPhone acceptance is not yet recorded | Automated contracts cover hierarchy, states, wording, accessibility and build integrity, but physical pitch position, text scaling, VoiceOver order and one-handed comfort require owner review | Teamsheet 2.0.2 review / 2.0.7 | Open (acceptance gate) |
 | UI-8 | Teamsheet 2.0.6 physical iPhone, VoiceOver and live populated-data acceptance is not recorded | Automated and headless-browser checks cover routes, focus, mounts, warning states and responsive CSS, but they do not establish iPhone Safari density, one-handed comfort, actual VoiceOver order or live transport behaviour | Teamsheet 2.0.7 | Open (acceptance gate) |
-| REFRESH-1 | Qualifying foreground return temporarily locks the app while a complete verified provider cycle settles | Trust consistency is preserved, but switching apps repeatedly feels frozen; non-blocking atomic refresh requires separate security design | Separate approved investigation | Open (gated) |
-| FPL-1 | The first-party Pages preview could not load core Official FPL data through the public relay cascade | Populated squad, transfer, fixture, player and league iPhone acceptance is blocked | Separate transport investigation | Open (acceptance blocker) |
+| REFRESH-1 | Qualifying foreground return temporarily locked the app after unsuccessful loading | Every completed attempt now starts the ten-minute cooldown, paired Safari events deduplicate and foreground refresh remains interactive; physical owner retest passed | Teamsheet 2.0.7 | **CLOSED and merged 2026-08-05 through PR #68** |
+| FPL-1 | Static Pages could not reliably read Official FPL through anonymous browser relays | Replaced on draft PR #69 by the owner-controlled allowlisted Worker; the stable production route returned live 2026/27 bootstrap data on physical iPhone Safari | FPL-T1 | Implemented and transport-verified; merge pending |
+| FPL-2 | Full populated Teamsheet behaviour has not yet been accepted against live Official FPL account, fixture, player and league endpoints | Transport success does not by itself prove the 15-player squad, captain/bench, Transfers, Fixtures, Player Detail, leagues, cache and refresh flows | PR #69 live acceptance | Open (acceptance gate) |
 | ACCOUNT-1 | Bank and available free transfers remain manual inputs rather than proven authoritative account values | Values can be entered but are not yet verified from the connected FPL account; no inference may be labelled authoritative | Separate data/security design | Open (gated) |
 | MANUAL-1 | Manual squad editing requires the verified Official FPL player catalogue | First-run core-data failure means player search and saved-ID resolution cannot operate; controls are now disabled and honestly labelled, while production remedies remain separately gated | Manual fallback investigation | Open (design gate) |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
@@ -80,7 +81,7 @@ Last updated: 2026-08-05. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - Provider Health retains all seven states. Full detail now remains in Settings; only material core Official FPL consequences surface on primary routes. Provider behaviour is unchanged.
 - Official results and projected values require explicit separation in future rank and Mini-League work.
 - Low ownership alone must not be presented as a positive differential recommendation.
-- Teamsheet 2.0.7 is implemented for automated review only; physical iPhone Safari, VoiceOver and live populated-data acceptance remain open, and PR #68 must not merge without explicit owner approval.
+- Teamsheet 2.0.7 is merged through PR #68; its Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified. FPL-T1 now provides verified live bootstrap transport on draft PR #69, while full populated application acceptance remains open under FPL-2.
 
 ## Stage 10.1 automatic refresh limitations
 - “Latest” means the latest data that passed approved validation. It does not guarantee every optional provider is live.
@@ -161,3 +162,9 @@ The approved final-polish implementation is available for review and automated v
 ### Physical iPhone Safari foreground resume
 
 Physical device acceptance identified a repeat-refresh interaction freeze when Safari returned from another app after an unsuccessful startup load. The approved correction is implemented on PR #68 and automated regression coverage passes, but the limitation remains open until Pritesh repeats the physical app-switch test successfully.
+
+### PR #69 populated-data correction note
+Physical iPhone review exposed pre-season public-picks and missing-team-strength gaps. The review branch now derives public picks from the current or explicit next Gameweek and fails honestly to manual setup when FPL withholds a complete public squad. Missing strength inputs no longer create `NaN`: Official FPL difficulty temporarily drives the fixture table/sort while player projections use neutral multipliers. Live owner retest remains required before FPL-2 can close.
+
+### Overall FDR fallback limitation
+When current Official FPL attack/defence strengths are unavailable, the Fixtures surface uses the provider's single overall 1–5 difficulty rating. It cannot honestly distinguish attacker and defender fixture quality, so those lenses are hidden and the direct average FDR is shown with lower meaning easier. This is coarse contextual data, not a position-specific model. A historical pre-season prior remains a separately gated design item.
