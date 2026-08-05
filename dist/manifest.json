@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "9960f69f18786a35c97fad40db2b6386b8234da1ee46b15eebfda399ebf1b991",
-  "commit": "64ddb0ef5a3103e7820200c16043e4bf4e5136b3",
+  "sourceHash": "ceb20141be51c2d915f7e521a298c7d7e7339f10cfaa91092d587b5262a47292",
+  "commit": "36c38d7ef72267991a7ca722ad3dd8cc509c6276",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
