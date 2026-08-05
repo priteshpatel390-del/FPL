@@ -174,3 +174,12 @@ Consequences: this decision is documentation-only and changes no application sou
 ## Teamsheet 2.0.7 approved implementation boundary — 4 August 2026
 
 Pritesh approved Scope S-2.0.7 for final mobile polish and acceptance. The implementation is limited to semantic controls, 44-pixel targets, restricted-state completion, route/focus/scroll behaviour, Player Detail route safety, Ask presentation resilience, Fixture render isolation, table semantics, exact Transfers wording and evidence-led responsive corrections. Football calculations, providers, data sources, persistence schemas, trust boundaries and account-write behaviour remain unchanged. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain mandatory before completion.
+
+
+## D-36 · 2026-08-05 · Accepted · Safari foreground-resume refresh correction
+
+Reason: physical iPhone acceptance found that returning to Safari after an unsuccessful startup load could immediately start another blocking Official FPL refresh, making the app appear frozen.
+
+Approach: timestamp every completed refresh attempt for the existing ten-minute automatic cooldown, retain in-flight promise deduplication for paired Safari resume events, keep foreground refresh interaction non-blocking, and preserve the force-enabled manual **Load data** retry.
+
+Consequences: this is refresh orchestration and interaction behaviour only. It changes no provider, endpoint, data source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank, Mini-League, persistence or security logic. Physical iPhone retesting remains required.

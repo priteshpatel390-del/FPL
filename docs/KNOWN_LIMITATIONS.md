@@ -156,3 +156,8 @@ Physical testing of the actual repository build on an iPhone Safari was not perf
 ## Teamsheet 2.0.7 implementation acceptance status
 
 The approved final-polish implementation is available for review and automated verification. UI-5, ML-3, UI-7 and UI-8 remain open until physical iPhone Safari and VoiceOver acceptance are recorded. FPL-1 remains an external live populated-data acceptance blocker if the public Pages transport still cannot load core Official FPL data. Automated completion does not close those limitations.
+
+
+### Physical iPhone Safari foreground resume
+
+Physical device acceptance identified a repeat-refresh interaction freeze when Safari returned from another app after an unsuccessful startup load. The approved correction is implemented on PR #68 and automated regression coverage passes, but the limitation remains open until Pritesh repeats the physical app-switch test successfully.

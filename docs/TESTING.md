@@ -1,6 +1,6 @@
 # TESTING.md
 
-> **Teamsheet 2.0.7 review verification:** `./run-tests.sh` completed **530 passed, 0 failed, 0 skipped** for reviewed source `3baeb8fd51ea68af353c5097b0e5d2d49837dcf6`. Generated commit `db48549fe6c527e235615eb7fd057f8a51de4d7a` contains only `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Two exact-identity production builds were byte-identical; root `index.html` matched `dist/index.html`; manifest commit identity matched the reviewed source; model remains `2.4.0` and rules remain `2026-27.3`. Repository security suites passed. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. PR #68 is draft and must not merge without Pritesh’s explicit approval.
+> **Teamsheet 2.0.7 review verification:** `./run-tests.sh` completed **533 passed, 0 failed, 0 skipped** for reviewed source `5a61ec5510c447580afa6070a5a9815516babe86`. Generated commit `__GENERATED_COMMIT__` contains only `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Two exact-identity production builds were byte-identical; root `index.html` matched `dist/index.html`; manifest commit identity matched the reviewed source; model remains `2.4.0` and rules remain `2026-27.3`. Repository security suites passed. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. PR #68 is draft and must not merge without Pritesh’s explicit approval.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
@@ -8,7 +8,7 @@ Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-Teamsheet 2.0.7 review verification completed **530/530 passing tests**, zero failures and zero skipped for source `3baeb8fd51ea68af353c5097b0e5d2d49837dcf6`. Two production builds were byte-identical, root `index.html` matched `dist/index.html`, manifest identity matched the reviewed source, and generated files were committed at `db48549fe6c527e235615eb7fd057f8a51de4d7a`. Model `2.4.0`, rules `2026-27.3`, provider boundaries, security boundaries and every football calculation remain unchanged. Subsequent finalisation changes are documentation and pull-request metadata only. Automated evidence does not establish physical iPhone Safari, VoiceOver or live populated-data acceptance.
+Teamsheet 2.0.7 review verification completed **533/533 passing tests**, zero failures and zero skipped for source `5a61ec5510c447580afa6070a5a9815516babe86`. Two production builds were byte-identical, root `index.html` matched `dist/index.html`, manifest identity matched the reviewed source, and generated files were committed at `__GENERATED_COMMIT__`. Model `2.4.0`, rules `2026-27.3`, provider boundaries, security boundaries and every football calculation remain unchanged. Subsequent finalisation changes are documentation and pull-request metadata only. Automated evidence does not establish physical iPhone Safari, VoiceOver or live populated-data acceptance.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -149,4 +149,9 @@ Physical testing of the actual repository build on an iPhone was not performed. 
 
 ## Teamsheet 2.0.7 implementation verification
 
-The approved implementation adds `final-mobile-polish.test.mjs` and updates existing presentation contracts for native controls, touch targets, restricted states, route focus/scroll, Player Detail route closure, Ask resilience, Fixture render isolation, table semantics and Transfers wording. The branch verification completed **530 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality for source commit `3baeb8fd51ea68af353c5097b0e5d2d49837dcf6`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed and must not be inferred from this automated evidence.
+The approved implementation adds `final-mobile-polish.test.mjs` and updates existing presentation contracts for native controls, touch targets, restricted states, route focus/scroll, Player Detail route closure, Ask resilience, Fixture render isolation, table semantics and Transfers wording. The branch verification completed **533 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality for source commit `5a61ec5510c447580afa6070a5a9815516babe86`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed and must not be inferred from this automated evidence.
+
+
+## Safari foreground-resume correction verification
+
+Physical iPhone testing exposed an untested failure path: unsuccessful startup attempts did not start the automatic refresh cooldown, and foreground refreshes temporarily made the application inert. Regression coverage now verifies failed-attempt cooldown, hidden-page suppression, foreground interactivity and in-flight deduplication while preserving immediate manual refresh. Source `5a61ec5510c447580afa6070a5a9815516babe86` completed **533 passed, 0 failed, 0 skipped**, two byte-identical builds and root/deployable equality. Physical iPhone retesting remains an evidence gate.

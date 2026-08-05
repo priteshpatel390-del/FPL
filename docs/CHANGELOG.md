@@ -96,3 +96,5 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Implemented final mobile semantic controls, touch targets, route/focus/scroll restoration, restricted states, Ask resilience, Fixture render isolation, table semantics and wording precision.
 - Preserved model `2.4.0`, rules `2026-27.3`, providers, calculations, deterministic build and advisory/no-write boundaries.
 - Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.
+
+- Corrected iPhone Safari foreground resume so unsuccessful loads respect the automatic cooldown and background refreshes do not freeze interaction; physical-device retest remains pending.

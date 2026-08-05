@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"58aca328bc6fa89f","commit":"3baeb8fd51ea68af353c5097b0e5d2d49837dcf6"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"58aca328bc6fa89fec6cba672e1287e5340a72b134d809aa4afff2617d002062","commit":"3baeb8fd51ea68af353c5097b0e5d2d49837dcf6","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f","commit":"5a61ec5510c447580afa6070a5a9815516babe86"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f0b7bbe65166e54802920a2e73c06a2e1946b249ff57e9cb4","commit":"5a61ec5510c447580afa6070a5a9815516babe86","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3500,6 +3500,7 @@ const STARTUP_PHASE_COPY = Object.freeze({
 });
 let verifiedRefreshPromise = null;
 let lastVerifiedRefreshAt = 0;
+let lastRefreshAttemptAt = 0;
 let verifiedRefreshTriggersInstalled = false;
 
 function ageLabel(ms){
@@ -3677,6 +3678,13 @@ async function loadAll(options = {}){
 function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
 }
+function shouldBlockRefreshInteractions({reason='manual',startup=false}={}){
+  return Boolean(startup||reason==='manual');
+}
+function shouldRunForegroundRefresh(lastAttemptAt,{visibilityState='visible',now=Date.now()}={}){
+  if(visibilityState&&visibilityState!=='visible') return false;
+  return shouldRefreshVerifiedData(lastAttemptAt,now);
+}
 function setStartupPhase(key){
   return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
 }
@@ -3706,10 +3714,11 @@ async function dispatchVerifiedData(detail){
 }
 async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
   if(verifiedRefreshPromise) return verifiedRefreshPromise;
-  if(!force&&!shouldRefreshVerifiedData(lastVerifiedRefreshAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_verified'};
+  if(!force&&!shouldRefreshVerifiedData(lastRefreshAttemptAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_attempted'};
+  const blockInteractions=shouldBlockRefreshInteractions({reason,startup});
   verifiedRefreshPromise=(async()=>{
     if(startup) setStartupGateVisible(true);
-    setRefreshInteractionLock(true,{startup});
+    if(blockInteractions) setRefreshInteractionLock(true,{startup});
     setStartupPhase('cache');
     try{
       const report=await loadAll({
@@ -3727,7 +3736,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       }
       return report;
     }finally{
-      setRefreshInteractionLock(false,{startup});
+      lastRefreshAttemptAt=nowFn();
+      if(blockInteractions) setRefreshInteractionLock(false,{startup});
       if(startup){
         setStartupGateVisible(false);
         if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
@@ -3742,8 +3752,8 @@ function installVerifiedRefreshTriggers(){
   if(verifiedRefreshTriggersInstalled||typeof document==='undefined') return;
   verifiedRefreshTriggersInstalled=true;
   const refreshIfDue=()=>{
-    if(document.visibilityState&&document.visibilityState!=='visible') return;
-    if(shouldRefreshVerifiedData(lastVerifiedRefreshAt)) runVerifiedRefresh({reason:'foreground'});
+    if(!shouldRunForegroundRefresh(lastRefreshAttemptAt,{visibilityState:document.visibilityState})) return;
+    void runVerifiedRefresh({reason:'foreground'});
   };
   document.addEventListener('visibilitychange',refreshIfDue);
   globalThis.window?.addEventListener?.('pageshow',refreshIfDue);

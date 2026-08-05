@@ -185,3 +185,5 @@ Aggregate exposure requires the user's squad and each included rival squad to co
 - No-core-data startup dispatches a presentation-only restricted state; no projection, XI, optimiser or League calculation is invoked without verified core data.
 - Ask Teamsheet exposes an honest disabled hosted state while preserving the approved artifact-preview path and client-secret ban.
 - Fixture display controls rerender only their dependent presentation surfaces.
+
+- Foreground resume uses the timestamp of the last completed refresh attempt, not only the last successful verification; automatic retries retain the ten-minute cooldown and do not make the application inert.

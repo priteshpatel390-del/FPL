@@ -1,13 +1,13 @@
 # Teamsheet 2.0.7 — Final Mobile Polish and Acceptance
 
-Status: **implemented on the approved branch for automated review; physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.**
+Status: **implemented on the approved branch for automated review; the physical iPhone Safari foreground-resume defect is corrected and pending owner retest, while VoiceOver and live populated-data acceptance remain pending.**
 Approval: exact Scope S-2.0.7 approved by Pritesh on 4 August 2026.
 Base commit: `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`.
 Model version: `2.4.0`.
 Rules version: `2026-27.3`.
-Automated baseline: **530 passed, 0 failed, 0 skipped**.
-Reviewed source commit: `3baeb8fd51ea68af353c5097b0e5d2d49837dcf6`.
-Generated-build commit: `db48549fe6c527e235615eb7fd057f8a51de4d7a`.
+Automated baseline: **533 passed, 0 failed, 0 skipped**.
+Reviewed source commit: `5a61ec5510c447580afa6070a5a9815516babe86`.
+Generated-build commit: `__GENERATED_COMMIT__`.
 
 ## Implemented scope
 
@@ -29,7 +29,7 @@ No provider, endpoint, data source, model, fixture calculation, expected-minutes
 
 ## Automated verification
 
-- `./run-tests.sh`: **530 passed, 0 failed, 0 skipped**;
+- `./run-tests.sh`: **533 passed, 0 failed, 0 skipped**;
 - successful exact-source production build;
 - two exact-identity builds were byte-identical;
 - root `index.html` equals `dist/index.html`;
@@ -39,6 +39,15 @@ No provider, endpoint, data source, model, fixture calculation, expected-minutes
 ## Acceptance still required
 
 Automated and browser-contract evidence cannot prove physical iPhone Safari rendering, one-handed comfort, actual VoiceOver reading order or live public Official FPL transport. These remain explicit owner acceptance gates. The implementation must not be called complete or merged until Pritesh reviews the draft PR and records the required physical/live acceptance or explicitly accepts a remaining external blocker.
+
+
+## Physical iPhone Safari foreground-resume correction — 5 August 2026
+
+Physical iPhone testing found that returning from another app could start another Official FPL refresh immediately after an unsuccessful startup attempt. Safari can emit both visibility and page-resume events; because only successful verification had been timestamped, every return remained eligible for another blocking retry.
+
+Pritesh approved a narrow correction: every completed refresh attempt now starts the existing ten-minute automatic cooldown, paired resume events remain deduplicated by the in-flight promise, foreground refreshes no longer disable the app, and the manual **Load data** action continues to bypass the cooldown. No provider, endpoint, source, calculation, persistence schema or security boundary changed.
+
+Automated verification for source `5a61ec5510c447580afa6070a5a9815516babe86` completed **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical iPhone retesting remains required before this finding can be closed.
 
 ## Explicit exclusions retained
 
