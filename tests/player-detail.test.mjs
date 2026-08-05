@@ -63,6 +63,7 @@ test('dialog controller opens accessibly, closes on Escape and restores focus',(
     playerDetailBody:makeNode('playerDetailBody')
   };
   const trigger=makeNode('trigger');
+  trigger.hidden=false;
   globalThis.document={
     activeElement:trigger,
     body:{classList:{values:new Set(),add(v){this.values.add(v);},remove(v){this.values.delete(v);}}},

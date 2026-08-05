@@ -29,7 +29,15 @@ function playerDetailAvailabilityLabel(p = {}){
   return 'Available';
 }
 
-function playerDetailClose(){
+function playerDetailCanRestoreFocus(node){
+  if(!node||typeof node.focus!=='function') return false;
+  if(typeof document!=='undefined'&&typeof document.contains==='function'&&!document.contains(node)) return false;
+  if(node.hidden||node.getAttribute?.('aria-hidden')==='true') return false;
+  if(node.closest?.('[hidden],[aria-hidden="true"]')) return false;
+  return true;
+}
+
+function playerDetailClose({restoreFocus=true}={}){
   if(typeof document === 'undefined') return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
   if(!panel || !backdrop) return false;
@@ -39,7 +47,7 @@ function playerDetailClose(){
   if(document.body?.classList) document.body.classList.remove('player-detail-open');
   const restore = playerDetailPreviousFocus;
   playerDetailPreviousFocus = null;
-  if(restore && typeof restore.focus === 'function') restore.focus();
+  if(restoreFocus&&playerDetailCanRestoreFocus(restore)) restore.focus({preventScroll:true});
   return true;
 }
 
@@ -90,13 +98,20 @@ function playerDetailOpen({title = '', body = [], trigger = null} = {}){
   return true;
 }
 
-if(typeof document !== 'undefined') playerDetailSetup();
+if(typeof document !== 'undefined'){
+  playerDetailSetup();
+  document.addEventListener('teamsheet:before-route-change',()=>{
+    const panel=$('playerDetailPanel');
+    if(panel&&!panel.hidden) playerDetailClose({restoreFocus:false});
+  });
+}
 
 export {
   PLAYER_DETAIL_SPREAD_THRESHOLDS,
   playerDetailSpread,
   playerDetailRangePosition,
   playerDetailAvailabilityLabel,
+  playerDetailCanRestoreFocus,
   playerDetailSetup,
   playerDetailOpen,
   playerDetailClose

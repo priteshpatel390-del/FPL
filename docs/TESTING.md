@@ -1,14 +1,14 @@
 # TESTING.md
 
-> **Teamsheet 2.0.6 merged baseline:** `./run-tests.sh` completed **520 passed, 0 failed, 0 skipped** for the implementation merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. Coverage verifies nested identifier-free Settings routes, nearest-parent fallback, explicit Stage 10 UI hosts, separated export/recovery/deletion controls, consequence-led core-data warnings, Help/About truth, actual build identity, mobile Player Explorer presentation, focus restoration and preservation of all model/provider/evidence/Mini-League contracts. Production builds were deterministic and byte-identical for the exact reviewed identity, and root `index.html` matched `dist/index.html`. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance were not performed; automated and headless-browser checks do not prove those conditions. Teamsheet 2.0.7 must begin with investigation and design only; implementation requires explicit owner approval.
+> **Teamsheet 2.0.7 review verification:** `./run-tests.sh` completed **533 passed, 0 failed, 0 skipped** for reviewed source `5a61ec5510c447580afa6070a5a9815516babe86`. Generated commit `71397382911a4e32633de15200ad59cfb26dc439` contains only `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Two exact-identity production builds were byte-identical; root `index.html` matched `dist/index.html`; manifest commit identity matched the reviewed source; model remains `2.4.0` and rules remain `2026-27.3`. Repository security suites passed. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. PR #68 is draft and must not merge without Pritesh’s explicit approval.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-08-04. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-Teamsheet 2.0.6 merged verification completed **520/520 passing tests**, a successful production build, byte-identical two-build artefact verification, exact build identity and root/deployable equality. The checkpoint changes Settings routes, UI mounting, consequence-led warning presentation, Help/About content and narrow-screen Player Explorer presentation only. Model, provider, evidence-schema, export and Mini-League correctness continue to rely on the preserved suites. The post-merge status correction is documentation-only: it must not modify tests, generated artefacts or application source and does not require an application rebuild.
+Teamsheet 2.0.7 review verification completed **533/533 passing tests**, zero failures and zero skipped for source `5a61ec5510c447580afa6070a5a9815516babe86`. Two production builds were byte-identical, root `index.html` matched `dist/index.html`, manifest identity matched the reviewed source, and generated files were committed at `71397382911a4e32633de15200ad59cfb26dc439`. Model `2.4.0`, rules `2026-27.3`, provider boundaries, security boundaries and every football calculation remain unchanged. Subsequent finalisation changes are documentation and pull-request metadata only. Automated evidence does not establish physical iPhone Safari, VoiceOver or live populated-data acceptance.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -145,3 +145,13 @@ Teamsheet 2.0.5 is complete and merged through PR #63 at `0b04dd68194207d301667a
 Two production builds using the exact verified identity were byte-identical, root `index.html` equalled `dist/index.html`, model version remained `2.4.0`, and rules version remained `2026-27.3`.
 
 Physical testing of the actual repository build on an iPhone was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. Automated source, test and build evidence cannot prove those acceptance conditions.
+
+
+## Teamsheet 2.0.7 implementation verification
+
+The approved implementation adds `final-mobile-polish.test.mjs` and updates existing presentation contracts for native controls, touch targets, restricted states, route focus/scroll, Player Detail route closure, Ask resilience, Fixture render isolation, table semantics and Transfers wording. The branch verification completed **533 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality for source commit `5a61ec5510c447580afa6070a5a9815516babe86`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed and must not be inferred from this automated evidence.
+
+
+## Safari foreground-resume correction verification
+
+Physical iPhone testing exposed an untested failure path: unsuccessful startup attempts did not start the automatic refresh cooldown, and foreground refreshes temporarily made the application inert. Regression coverage now verifies failed-attempt cooldown, hidden-page suppression, foreground interactivity and in-flight deduplication while preserving immediate manual refresh. Source `5a61ec5510c447580afa6070a5a9815516babe86` completed **533 passed, 0 failed, 0 skipped**, two byte-identical builds and root/deployable equality. Physical iPhone retesting remains an evidence gate.

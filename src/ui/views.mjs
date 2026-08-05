@@ -13,7 +13,7 @@ const flagNodes = p => {
   return nodes;
 };
 const cell = (text, cls = '') => elNode('td', cls ? {class:cls} : {}, text);
-const head = (text, cls = '') => elNode('th', cls ? {class:cls} : {}, text);
+const head = (text, cls = '', scope='col') => elNode('th', cls ? {class:cls,scope} : {scope}, text);
 const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+kind : ''}`},children);
 /* ---------------------------------------------------------------------
    VIEW — FIXTURE TICKER
@@ -37,7 +37,7 @@ function renderTicker(){
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    const row = elNode('tr',{},elNode('td',{class:'team'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
+    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
     teamFixtures(t.id, from, span).forEach(games => {
       if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
       const diffs = games.map(g => lens === 'official' ? g.officialDiff
@@ -51,7 +51,7 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('thead',{},header),body));
+  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
@@ -107,9 +107,11 @@ function renderPlayers(){
   const playerBody = elNode('tbody');
   ranked.forEach(({p,x}) => {
     const t = S.teams[p.team];
-    playerBody.appendChild(elNode('tr',{class:'clickable',dataset:{pid:p.id},onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
-      elNode('td',{class:'player-result-main'},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
-        elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`)),
+    const openButton=elNode('button',{type:'button',class:'player-row-action','aria-label':`Open ${p.web_name} player details`,onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
+      elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
+      elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`));
+    playerBody.appendChild(elNode('tr',{dataset:{pid:p.id}},
+      elNode('td',{class:'player-result-main'},openButton),
       elNode('td',{class:'num',dataset:{label:'Price'}},(p.now_cost/10).toFixed(1)),
       elNode('td',{class:'num player-result-secondary',dataset:{label:'Ownership'}},p.selected_by_percent),
       elNode('td',{class:'num player-result-secondary',dataset:{label:'Form'}},fmt1(num(p.form))),
@@ -117,7 +119,7 @@ function renderPlayers(){
       elNode('td',{class:'num',dataset:{label:`${span} GW xP`}},fmt1(x.total)),
       elNode('td',{class:'num',dataset:{label:'xP / £m'}},fmt1(x.total/(p.now_cost/10)))));
   });
-  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
+  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('caption',{class:'sr-only'},`Player projections over ${span} Gameweeks`),elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
 }
 
 function breakdownNode(p, x, span){
@@ -339,10 +341,15 @@ function renderSquad(){
   }
   nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
   const tbody=elNode('tbody');
-  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{class:'clickable',onclick:event=>openPlayerDetailView(s.p,gw,6,event.currentTarget)},
-    elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
-    cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total))))));
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
+  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>{
+    const openButton=elNode('button',{type:'button',class:'player-row-action','aria-label':`Open ${s.p.web_name} player details`,onclick:event=>openPlayerDetailView(s.p,gw,6,event.currentTarget)},
+      elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),
+      elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`));
+    tbody.appendChild(elNode('tr',{},
+      elNode('td',{},openButton),
+      cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total)))));
+  });
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('caption',{class:'sr-only'},`Current squad projections from GW${gw}`),elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
   if(!$('useManual').checked&&S.picks) nodes.push(noteNode('plain',"Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact."));
   setChildren(out,nodes);
 }
@@ -392,14 +399,40 @@ function buildContext(){
   return c;
 }
 
+let lastAskQuestion='';
 function renderThread(){
-  $('thread').innerHTML = S.thread.map(m =>
+  const thread=$('thread');
+  thread.innerHTML = S.thread.map(m =>
     `<div class="answer ${m.role==='user'?'me':''}"><p>${md(m.content)}</p></div>`).join('');
+  if(globalThis.location?.hash==='#/ask') globalThis.requestAnimationFrame?.(()=>thread.lastElementChild?.scrollIntoView?.({block:'nearest'}));
+}
+function configureAskAvailability(){
+  const available=Boolean(globalThis.window?.storage);
+  const hosted=$('askHostedStatus'),question=$('q'),askButton=$('askBtn'),retry=$('retryAsk');
+  if(hosted) hosted.hidden=available;
+  if(question){question.disabled=!available;question.setAttribute('aria-describedby','askHostedStatus');}
+  if(askButton) askButton.disabled=!available;
+  if(retry&&!available) retry.hidden=true;
+  document.querySelectorAll('[data-q]').forEach(button=>{button.disabled=!available;});
+  return available;
 }
 
 async function ask(){
+  const askAvailable=configureAskAvailability();
   const q = $('q').value.trim();
   if(!q) return;
+  if(!askAvailable){
+    lastAskQuestion=q;
+    S.thread.push({role:'user',content:q});
+    $('q').value='';
+    S.thread.push({role:'assistant',content:"The AI assistant requires the planned serverless migration in this hosted build. Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+    renderThread();
+    $('askStatus').textContent='';
+    if($('retryAsk')) $('retryAsk').hidden=true;
+    return;
+  }
+  lastAskQuestion=q;
+  if($('retryAsk')) $('retryAsk').hidden=true;
   S.thread.push({role:'user', content:q});
   $('q').value = '';
   renderThread();
@@ -415,9 +448,9 @@ ${buildContext()}`;
     // D-08 / SEC-3: no Anthropic secret is accepted, stored or sent by this
     // frontend. Claude's artifact preview provides the only approved keyless
     // path. Static hosted builds stop before making any Anthropic request.
-    if(!window.storage){
+    if(!globalThis.window?.storage){
       S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
+      renderThread(); $('askStatus').textContent = ''; if($('retryAsk')) $('retryAsk').hidden=false; btn.disabled = false; return;
     }
     const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -429,20 +462,22 @@ ${buildContext()}`;
       })
     });
     if(!res.ok){
-      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Try again later or use the hosted app without the Ask feature.'});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
+      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Your question has been kept so you can retry.'});
+      renderThread(); $('askStatus').textContent = ''; if($('retryAsk')) $('retryAsk').hidden=false; btn.disabled = false; return;
     }
     const data = await res.json();
     const text = (data.content||[]).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
     S.thread.push({role:'assistant', content: text || 'No answer came back — try again.'});
     renderThread();
     $('askStatus').textContent = '';
+    if($('retryAsk')) $('retryAsk').hidden=true;
   }catch(e){
-    S.thread.pop();
+    S.thread.push({role:'assistant',content:'That request failed — your question has been kept. Check your connection and try again.'});
     renderThread();
-    $('askStatus').textContent = 'That request failed — check your connection and try again.';
+    $('askStatus').textContent = 'Request failed. Your question is still in the conversation.';
+    if($('retryAsk')) $('retryAsk').hidden=false;
   }
-  btn.disabled = false;
+  btn.disabled = !Boolean(globalThis.window?.storage);
 }
 
 /* ---------------------------------------------------------------------
@@ -455,7 +490,7 @@ function renderManual(){
     if(!p) return null;
     return elNode('span', {class:'pill'}, p.web_name, ' ',
       elNode('span', {class:'mono muted'}, S.posName[p.element_type]||''),
-      elNode('button', {dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
+      elNode('button', {type:'button',class:'pill-remove',dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
   }));
   const counts = {1:0,2:0,3:0,4:0};
   S.manual.forEach(m => { const p = S.byId[m.id]; if(p && counts[p.element_type]!==undefined) counts[p.element_type]++; });
@@ -471,7 +506,7 @@ function searchPlayers(term){
   if(!S.boot || term.length < 2){ box.hidden = true; return; }
   const t = term.toLowerCase();
   const hits = S.boot.elements.filter(p => p.web_name.toLowerCase().includes(t)).slice(0,12);
-  setChildren(box, hits.length ? hits.map(p => elNode('div', {dataset:{add:p.id}}, p.web_name,
+  setChildren(box, hits.length ? hits.map(p => elNode('button', {type:'button',class:'manual-player-result',dataset:{add:p.id},'aria-label':`Add ${p.web_name} to manual squad`}, p.web_name,
     elNode('span', {class:'pmeta'}, `${S.posName[p.element_type]||''} · ${S.teams[p.team]?.short_name||''} · £${(p.now_cost/10).toFixed(1)}m`)))
     : elNode('div', {}, 'No player by that name'));
   box.hidden = false;
@@ -489,6 +524,19 @@ function searchPlayers(term){
 /* ---------------------------------------------------------------------
    RENDER + WIRING
    --------------------------------------------------------------------- */
+function renderRestrictedAppState(){
+  setChildren($('gwstrip'),elNode('span',{},'Official FPL data unavailable'));
+  renderTicker();
+  renderTransfers();
+  renderSquad();
+  renderManual();
+  setChildren($('playerTable'),elNode('div',{class:'empty'},elNode('strong',{},'Player Explorer unavailable'),'Verified Official FPL player data is required before players can be researched.'));
+  renderMiniLeagues(globalThis.location?.hash||'#/leagues');
+  configureAskAvailability();
+  if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+    document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
+}
+
 function renderAll(){
   if(!S.boot) return;
   clearXP();
@@ -517,11 +565,15 @@ function renderAll(){
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
 // Teamsheet 2.0.1: app-shell.mjs owns hash routing, history and focus.
-document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { $('q').value = c.dataset.q; ask(); }));
+configureAskAvailability();
+document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { if(c.disabled) return; $('q').value = c.dataset.q; ask(); }));
 document.addEventListener('teamsheet:preview-change',()=>renderSquad());
+document.addEventListener('teamsheet:restricted',renderRestrictedAppState);
 
-const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);
-['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
+const reFixtureDisplay = debounce(() => { renderTicker(); }, 180);
+const reFixtureWindow = debounce(() => { clearXP(); renderTicker(); renderPlayers(); }, 180);
+['fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtureDisplay));
+['fxFrom','fxSpan'].forEach(id => $(id).addEventListener('input', reFixtureWindow));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
 // The Team ID persists as it is typed; Mini-League choices use their own versioned state.
@@ -529,13 +581,14 @@ $('teamId').addEventListener('input', debounce(saveCfg, 300));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
 $('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
 $('askBtn').addEventListener('click', ask);
+$('retryAsk')?.addEventListener('click',()=>{ if(!lastAskQuestion) return; $('q').value=lastAskQuestion; ask(); });
 $('btBtn').addEventListener('click', runBacktest);
 // The low-value odds key remains client-side temporarily (D-08); save it on
 // input so a pasted value is not lost before the field blurs.
 $('oddsKey').addEventListener('input', debounce(saveCfg, 300));
 $('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds().then(() => { clearXP(); renderAll(); }); });
 $('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat().then(() => { clearXP(); renderAll(); }); });
-$('clearThread').addEventListener('click', () => { S.thread = []; renderThread(); });
+$('clearThread').addEventListener('click', () => { S.thread = []; lastAskQuestion=''; if($('retryAsk')) $('retryAsk').hidden=true; renderThread(); });
 $('pSearch').addEventListener('input', debounce(e => searchPlayers(e.target.value.trim()), 160));
 document.addEventListener('click', e => {
   if(!e.target.closest('.searchbox')) $('pResults').hidden = true;

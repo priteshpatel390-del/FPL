@@ -1,7 +1,7 @@
 # ROADMAP.md — living roadmap
 
-> **Teamsheet 2.0.6 merged baseline:** Research, Evidence and Diagnostics Organisation is complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. It adds nested Settings routes, explicit evidence/recovery/export/storage hosts, consequence-led core-data warnings, complete Help & About guidance, real build identity and mobile Player Explorer cards without changing providers, persistence or calculations. Verification established **520 passed, 0 failed, 0 skipped**, deterministic exact-identity production builds and root `index.html` equal to `dist/index.html`; model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. The next formal checkpoint is Teamsheet 2.0.7 — Final Mobile Polish and Acceptance, beginning with investigation and design only; implementation requires explicit owner approval.
-Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-04.
+> **Teamsheet 2.0.7 review branch:** Approved Scope S-2.0.7 is implemented on draft PR #68 from main `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Verified source `5a61ec5510c447580afa6070a5a9815516babe86` passes **533 passed, 0 failed, 0 skipped**; generated deployables are committed at `71397382911a4e32633de15200ad59cfb26dc439`. Two exact-identity builds were byte-identical, root/deployable equality passed, and model `2.4.0` plus rules `2026-27.3` remain unchanged. Physical iPhone Safari testing identified a foreground-resume defect; the approved correction is implemented and pending owner retest. VoiceOver and live populated-data acceptance remain pending. The checkpoint is not merged or fully accepted; do not merge without Pritesh’s explicit approval.
+Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-05.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
 ## Completed
@@ -82,10 +82,9 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
   - Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed.
 
 ## Current
-- **Teamsheet 2.0.6 post-merge documentation correction** · DOCUMENTATION ONLY.
-  - Align canonical status records with the merged PR #65 evidence.
-  - No source, test, generated, provider, data-source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank or Mini-League calculation change.
-  - Must merge only after explicit owner approval.
+- **Teamsheet 2.0.7 — Final Mobile Polish and Acceptance** · IMPLEMENTED FOR REVIEW.
+  - Scope S-2.0.7 is owner-approved and limited to presentation, interaction, accessibility, resilience and acceptance work.
+  - Automated verification is complete; physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.
 - **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
 
 ## Teamsheet 2.0 migration sequence
@@ -105,16 +104,16 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
    - Adds selected-rival factual exposure, exact complete/fresh counts and honest partial states; strategy modelling remains separately gated.
 6. **Teamsheet 2.0.6 — Research, evidence and diagnostics completion** · COMPLETE AND MERGED.
    - Route-owned Settings hierarchy, explicit mounts, consequence-led warnings, complete help/build detail and mobile research presentation merged through PR #65.
-7. **Teamsheet 2.0.7 — Final mobile polish and acceptance** · NEXT FORMAL CHECKPOINT.
-   - Begin with investigation and design only after the documentation correction is approved, merged and latest `main` is verified.
-   - Complete hierarchy, performance, accessibility, full pre-season rehearsal and physical-device acceptance.
-   - Implementation requires explicit owner approval.
+7. **Teamsheet 2.0.7 — Final mobile polish and acceptance** · IMPLEMENTED FOR REVIEW.
+   - Approved Scope S-2.0.7 is implemented on draft PR #68 with automated verification and generated-artifact finalisation complete.
+   - Physical iPhone Safari, VoiceOver and live populated-data acceptance remain required before the checkpoint can be fully accepted.
+   - Do not merge without Pritesh’s explicit approval; do not begin a new product checkpoint.
 
 Every checkpoint requires its own investigation, exact scope, exclusions, owner approval where required, branch, complete verification, documentation and draft PR.
 
 ## Upcoming
-1. Review and merge the Teamsheet 2.0.6 post-merge documentation correction only after explicit owner approval, then verify latest `main`.
-2. Begin Teamsheet 2.0.7 investigation and design only; present one exact implementation scope for approval before changing application code.
+1. Review the Teamsheet 2.0.7 draft implementation and automated evidence.
+2. Perform physical iPhone Safari, VoiceOver and live populated-data acceptance; record any external blocker honestly.
 3. Operate pre-deadline snapshots and durable owner-controlled exports during the 2026/27 season.
 4. Complete checkpoint-specific iPhone checks and the final Teamsheet 2.0.7 end-to-end rehearsal.
 5. Collect official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until approved sample safeguards are met.
@@ -123,7 +122,7 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 1. Teamsheet 2.0.6 physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed and must be addressed or explicitly recorded through 2.0.7 acceptance.
 2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
 3. Teamsheet 2.0.6 automated and headless-browser checks do not independently prove physical iPhone density, Safari interaction, VoiceOver reading order or live populated-data behaviour.
-4. Teamsheet 2.0.7 may begin only with investigation and design after the documentation correction merges; implementation requires explicit owner approval.
+4. Teamsheet 2.0.7 automated verification is complete, but physical iPhone Safari, VoiceOver and live populated-data acceptance remain open; PR #68 must not merge without explicit owner approval.
 5. The old standalone Stage 10.5 rehearsal gate is superseded by checkpoint-specific checks and final 2.0.7 rehearsal; its historical record remains intact.
 6. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
 7. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
@@ -135,3 +134,8 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 - The global Ask composer, stable dock/icons, focus presentation and simplified Settings hierarchy were merged through PR #48.
 - Non-blocking foreground refresh, reliable populated Official FPL transport and authoritative read-only bank/free-transfer retrieval remain separately gated investigations.
 - These unresolved data/account items do not reopen the completed 2.0.1 navigation scope.
+
+
+## Teamsheet 2.0.7 current handover
+
+Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a separate branch from `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification is **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not call the checkpoint complete or merge without owner approval.

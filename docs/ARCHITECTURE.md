@@ -175,3 +175,15 @@ The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` ow
 Aggregate exposure requires the user's squad and each included rival squad to contain 15 unique resolved player IDs in unique positions 1–15. Exact counts cover player ownership, captain, vice-captain and active-chip context across complete fresh selected rivals. Wording is `X of N loaded selected rivals`, never whole-league ownership, effective ownership, projected outcome or strategy advice. Not-loaded, incomplete, unavailable, stale and outside-loaded-standings states remain separate.
 
 `validateEntry()`, `validateStandings()` and `validatePicks()` validate the optional rank, current-Gameweek total, multiplier, captain, vice and chip fields used by the feature. Invalid optional context degrades to unknown while retaining otherwise valid ownership IDs. The existing Official FPL provider, transport, retry, security, CSP and criticality boundaries are unchanged. No scoring, projection, expected-minutes, fixture, squad, captaincy, simulation, rank or transfer-optimiser module is imported or modified.
+
+
+## Teamsheet 2.0.7 final-polish architecture
+
+- Hash routes now retain per-route scroll positions for browser Back/Forward and restore route openers only when they remain visible.
+- Nested direct links receive exact route-heading focus after the verified startup gate releases.
+- Player Detail closes before an underlying route transition and never restores focus to a detached or hidden opener.
+- No-core-data startup dispatches a presentation-only restricted state; no projection, XI, optimiser or League calculation is invoked without verified core data.
+- Ask Teamsheet exposes an honest disabled hosted state while preserving the approved artifact-preview path and client-secret ban.
+- Fixture display controls rerender only their dependent presentation surfaces.
+
+- Foreground resume uses the timestamp of the last completed refresh attempt, not only the last successful verification; automatic retries retain the ten-minute cooldown and do not make the application inert.

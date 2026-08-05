@@ -89,3 +89,12 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Applied the owner-approved compact mobile hierarchy, added breathing room below the position card and made standings rows full-row touch/keyboard actions with a quiet `Open ›` affordance.
 - No provider, model, rank-prediction, strategy, Team or Transfers calculation changed.
 - Current source suite: 493/493 passing tests; exact build finalisation and device acceptance pending.
+
+
+## Unreleased — Teamsheet 2.0.7
+
+- Implemented final mobile semantic controls, touch targets, route/focus/scroll restoration, restricted states, Ask resilience, Fixture render isolation, table semantics and wording precision.
+- Preserved model `2.4.0`, rules `2026-27.3`, providers, calculations, deterministic build and advisory/no-write boundaries.
+- Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.
+
+- Corrected iPhone Safari foreground resume so unsuccessful loads respect the automatic cooldown and background refreshes do not freeze interaction; physical-device retest remains pending.

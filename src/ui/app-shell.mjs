@@ -407,31 +407,35 @@ function setupAppShell(){
 
   const globalDataWarning=header?teamsheetElement('a',{id:'globalDataWarning',class:'global-data-warning',href:'#/settings/data/providers',hidden:'hidden','aria-live':'polite'}):null;
   if(globalDataWarning) header.appendChild(globalDataWarning);
+  const askAvailable=Boolean(globalThis.window?.storage);
   const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
-  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet'}):null;
+  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet',disabled:askAvailable?null:'disabled','aria-describedby':askAvailable?null:'askHostedStatus'}):null;
   const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
     teamsheetElement('span',{'aria-hidden':'true'},'↑')):null;
+  if(globalAskInput&&!askAvailable) globalAskInput.setAttribute('placeholder','Ask unavailable in this hosted build');
   if(globalAsk&&globalAskInput&&globalAskSend){
     globalAsk.append(globalAskInput,globalAskSend);
     header.appendChild(globalAsk);
-    globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
-    globalAsk.addEventListener('submit',event=>{
-      event.preventDefault();
-      const question=globalAskInput.value.trim();
-      if(!question) return;
-      const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
-      const origin=current==='#/ask'?'#/team':current;
-      const originMeta=teamsheetRouteMeta(origin);
-      askRouteBack.setAttribute('href',origin);
-      askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
-      askView.dataset.originRoute=origin;
-      const fullQuestion=document.getElementById('q');
-      if(fullQuestion) fullQuestion.value=question;
-      navigateTeamsheetRoute('#/ask');
-      setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
-      globalAskInput.value='';
-      globalAskSend.disabled=true;
-    });
+    if(askAvailable){
+      globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
+      globalAsk.addEventListener('submit',event=>{
+        event.preventDefault();
+        const question=globalAskInput.value.trim();
+        if(!question) return;
+        const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
+        const origin=current==='#/ask'?'#/team':current;
+        const originMeta=teamsheetRouteMeta(origin);
+        askRouteBack.setAttribute('href',origin);
+        askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
+        askView.dataset.originRoute=origin;
+        const fullQuestion=document.getElementById('q');
+        if(fullQuestion) fullQuestion.value=question;
+        navigateTeamsheetRoute('#/ask');
+        setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
+        globalAskInput.value='';
+        globalAskSend.disabled=true;
+      });
+    }
   }
 
   const updateKeyboardState=()=>{
@@ -457,18 +461,34 @@ function setupAppShell(){
     ['#/ask',askView]
   ]);
   const rememberedFocus=new Map();
+  const routeScrollPositions=new Map();
   let activeRoute=normaliseTeamsheetRoute(globalThis.location?.hash||'');
+  let pendingNavigation=null;
+  if(globalThis.history&&'scrollRestoration' in globalThis.history) globalThis.history.scrollRestoration='manual';
+
+  const routeNodeFor=route=>route.startsWith('#/settings')
+    ? (settingsRouteNodes.get(route)||settingsView)
+    : route.startsWith('#/leagues')
+      ? (leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView)
+      : (routeNodes.get(route)||teamView);
+  const currentScroll=()=>({left:Number(globalThis.scrollX||0),top:Number(globalThis.scrollY||0)});
+  const rememberRouteState=()=>routeScrollPositions.set(activeRoute,currentScroll());
+  const focusCandidateVisible=node=>Boolean(node&&document.contains?.(node)&&!node.hidden&&!node.closest?.('[hidden],[aria-hidden="true"]'));
 
   document.addEventListener('click',event=>{
     const link=event.target?.closest?.('a[href^="#/"]');
     if(!link) return;
     const destination=normaliseTeamsheetRoute(link.getAttribute('href'));
-    if(destination!==activeRoute) rememberedFocus.set(activeRoute,link);
+    if(destination!==activeRoute){
+      rememberedFocus.set(activeRoute,link);
+      rememberRouteState();
+      pendingNavigation={route:destination,kind:link.classList?.contains('route-back')?'return':'forward'};
+    }
   },true);
 
-  const focusRoute=(route,node)=>{
-    const remembered=rememberedFocus.get(route);
-    if(remembered&&document.contains?.(remembered)&&!remembered.hidden){
+  const focusRoute=(route,node,{preferRemembered=false}={})=>{
+    const remembered=preferRemembered?rememberedFocus.get(route):null;
+    if(remembered&&document.contains?.(remembered)&&focusCandidateVisible(remembered)){
       remembered.focus?.({preventScroll:true});
       return;
     }
@@ -477,10 +497,12 @@ function setupAppShell(){
     heading?.focus?.({preventScroll:true});
   };
 
-  const activateRoute=(requested,{focus=false}={})=>{
+  const activateRoute=(requested,{focus=false,restoreScroll=false,preferRemembered=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
     const meta=teamsheetRouteMeta(route);
+    const previousRoute=activeRoute;
     if(globalThis.location?.hash!==route) globalThis.history?.replaceState?.(null,'',route);
+    if(previousRoute!==route) document.dispatchEvent?.(new CustomEvent('teamsheet:before-route-change',{detail:{from:previousRoute,to:route}}));
 
     topLevelViews.forEach(view=>{
       const active=route.startsWith('#/settings')?view===settingsView:route.startsWith('#/leagues')?view===leaguesView:view===routeNodes.get(route);
@@ -496,30 +518,44 @@ function setupAppShell(){
     document.body.dataset.route=route.slice(2);
     document.title=`${meta.title} — Teamsheet`;
     activeRoute=route;
-    globalThis.scrollTo?.({top:0,left:0});
-    if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsRouteNodes.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
-      focusRoute(route,activeNode);
-    }
+    const position=restoreScroll?(routeScrollPositions.get(route)||{top:0,left:0}):{top:0,left:0};
+    globalThis.scrollTo?.({top:position.top,left:position.left});
+    if(focus) focusRoute(route,routeNodeFor(route),{preferRemembered});
     document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary,parent:meta.parent||null}}));
     return route;
   };
 
   const navigateTeamsheetRoute=(requested,{replace=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
+    rememberRouteState();
+    pendingNavigation={route,kind:'forward'};
     if(replace){
       globalThis.history?.replaceState?.(null,'',route);
+      pendingNavigation=null;
       activateRoute(route,{focus:true});
-    }else if(globalThis.location?.hash===route) activateRoute(route,{focus:true});
-    else if(globalThis.location) globalThis.location.hash=route;
+    }else if(globalThis.location?.hash===route){
+      pendingNavigation=null;
+      activateRoute(route,{focus:true});
+    }else if(globalThis.location) globalThis.location.hash=route;
     return route;
   };
   globalThis.__teamsheetNavigate=navigateTeamsheetRoute;
-  globalThis.addEventListener?.('hashchange',()=>activateRoute(globalThis.location?.hash,{focus:true}));
+  globalThis.addEventListener?.('hashchange',()=>{
+    const route=normaliseTeamsheetRoute(globalThis.location?.hash);
+    const navigation=pendingNavigation?.route===route?pendingNavigation:null;
+    pendingNavigation=null;
+    const returning=!navigation||navigation.kind==='return';
+    activateRoute(route,{focus:true,restoreScroll:returning,preferRemembered:returning});
+  });
 
   const initial=normaliseTeamsheetRoute(globalThis.location?.hash||'');
   if(globalThis.location?.hash!==initial) globalThis.history?.replaceState?.(null,'',initial);
   activateRoute(initial);
+  if(initial!=='#/team'){
+    const focusInitial=()=>focusRoute(initial,routeNodeFor(initial));
+    if(document.body?.classList?.contains('startup-pending')) document.addEventListener('teamsheet:startup-ready',focusInitial,{once:true});
+    else globalThis.queueMicrotask?.(focusInitial);
+  }
 }
 
 setupAppShell();

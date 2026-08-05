@@ -420,6 +420,11 @@ function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
   if(!miniLeagueReady) return; ensureMiniLeagueExposureSection(); renderLeaguePickerSummary(); renderLeagueManageList();
   const sections=[['#/leagues',$('leagueLanding')],['#/leagues/standings',$('leagueStandings')],['#/leagues/rival',$('leagueRival')],['#/leagues/exposure',$('leagueExposure')],['#/leagues/manage',$('leagueManage')]];
   const resolved=sections.some(([key])=>key===route)?route:'#/leagues'; sections.forEach(([key,node])=>{if(node) node.hidden=key!==resolved;});
+  if(!S.boot&&resolved!=='#/leagues/manage'){
+    const target=resolved==='#/leagues'?$('leagueLandingOut'):resolved==='#/leagues/standings'?$('leagueStandingsOut'):resolved==='#/leagues/rival'?$('leagueRivalOut'):$('leagueExposureOut');
+    setChildren(target,miniLeagueEmpty('Official FPL data is unavailable','League position and public rival facts cannot be verified until core Official FPL data loads.',miniLeagueLink('Manage saved leagues','#/leagues/manage','btn ghost')));
+    return;
+  }
   renderMiniLeagueLanding(); renderMiniLeagueStandings(); renderMiniLeagueRival(); renderMiniLeagueExposure();
 }
 function renderLeagueChips(){

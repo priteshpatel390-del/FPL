@@ -1,6 +1,6 @@
 # KNOWN_LIMITATIONS.md
 Purpose: single register of every current limitation. Audience: all sessions.
-Last updated: 2026-08-04. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
+Last updated: 2026-08-05. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
@@ -80,7 +80,7 @@ Last updated: 2026-08-04. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - Provider Health retains all seven states. Full detail now remains in Settings; only material core Official FPL consequences surface on primary routes. Provider behaviour is unchanged.
 - Official results and projected values require explicit separation in future rank and Mini-League work.
 - Low ownership alone must not be presented as a positive differential recommendation.
-- Teamsheet 2.0.7 must begin with investigation and design only; implementation requires explicit owner approval.
+- Teamsheet 2.0.7 is implemented for automated review only; physical iPhone Safari, VoiceOver and live populated-data acceptance remain open, and PR #68 must not merge without explicit owner approval.
 
 ## Stage 10.1 automatic refresh limitations
 - “Latest” means the latest data that passed approved validation. It does not guarantee every optional provider is live.
@@ -151,3 +151,13 @@ Physical testing of the actual repository build on an iPhone Safari was not perf
 - Browser Back focus restoration depends on the opener remaining in the current DOM. If it is unavailable, the exact route heading receives focus.
 - Evidence, outcome and metric storage remains bounded local recovery. Reorganisation does not create a permanent archive or migration engine.
 - A persistent screenshot-regression suite remains absent, so later visual changes still require human device review.
+
+
+## Teamsheet 2.0.7 implementation acceptance status
+
+The approved final-polish implementation is available for review and automated verification. UI-5, ML-3, UI-7 and UI-8 remain open until physical iPhone Safari and VoiceOver acceptance are recorded. FPL-1 remains an external live populated-data acceptance blocker if the public Pages transport still cannot load core Official FPL data. Automated completion does not close those limitations.
+
+
+### Physical iPhone Safari foreground resume
+
+Physical device acceptance identified a repeat-refresh interaction freeze when Safari returned from another app after an unsuccessful startup load. The approved correction is implemented on PR #68 and automated regression coverage passes, but the limitation remains open until Pritesh repeats the physical app-switch test successfully.

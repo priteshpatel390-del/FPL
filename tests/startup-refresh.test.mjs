@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import {
   VERIFIED_REFRESH_MIN_AGE_MS,
   shouldRefreshVerifiedData,
+  shouldBlockRefreshInteractions,
+  shouldRunForegroundRefresh,
   dispatchVerifiedData
 } from '../src/main.mjs';
 
@@ -27,6 +29,29 @@ test('foreground refresh is due only after the approved verification age',()=>{
   assert.equal(shouldRefreshVerifiedData(0,now),true);
   assert.equal(shouldRefreshVerifiedData(now-VERIFIED_REFRESH_MIN_AGE_MS+1,now),false);
   assert.equal(shouldRefreshVerifiedData(now-VERIFIED_REFRESH_MIN_AGE_MS,now),true);
+});
+
+
+test('failed refresh attempts respect the foreground cooldown',()=>{
+  const now=2_000_000;
+  const failedAttemptCompletedAt=now-1_000;
+  assert.equal(shouldRunForegroundRefresh(failedAttemptCompletedAt,{visibilityState:'visible',now}),false);
+  assert.equal(shouldRunForegroundRefresh(now-VERIFIED_REFRESH_MIN_AGE_MS,{visibilityState:'visible',now}),true);
+  assert.equal(shouldRunForegroundRefresh(0,{visibilityState:'hidden',now}),false);
+});
+
+test('only startup and manual refreshes block app interaction',()=>{
+  assert.equal(shouldBlockRefreshInteractions({reason:'startup',startup:true}),true);
+  assert.equal(shouldBlockRefreshInteractions({reason:'manual',startup:false}),true);
+  assert.equal(shouldBlockRefreshInteractions({reason:'foreground',startup:false}),false);
+});
+
+test('Safari resume uses completed-attempt throttling and in-flight deduplication',()=>{
+  assert.match(MAIN_SOURCE,/let lastRefreshAttemptAt = 0;/);
+  assert.match(MAIN_SOURCE,/if\(verifiedRefreshPromise\) return verifiedRefreshPromise;/);
+  assert.match(MAIN_SOURCE,/finally\{\s*lastRefreshAttemptAt=nowFn\(\);/);
+  assert.match(MAIN_SOURCE,/shouldRunForegroundRefresh\(lastRefreshAttemptAt/);
+  assert.match(MAIN_SOURCE,/if\(blockInteractions\) setRefreshInteractionLock\(true/);
 });
 
 test('startup and foreground paths use the same deferred verified refresh',()=>{

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-UjeZd/s2vjIM8hvEV1dSIvqH1Y2eLXIr5DunN54gFJA='; style-src-elem 'sha256-OLHyxjZyXK2paWa8CdErmOQQXx/iJ3iC4+QqhwIGc3Q=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fPsTJccgm3xeqy6NceW8eOSxmJRwvM9SWUjpyGJJ+p8='; style-src-elem 'sha256-KSQts6SOrT11xPXJCdGZFWUc0KQjhtGPrHQ0AXMhG3o=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
   --r:10px; --shadow:0 1px 0 rgba(20,38,28,.06), 0 6px 18px -12px rgba(20,38,28,.35);
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
 body.startup-pending{overflow:hidden}
@@ -66,7 +66,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible
 .btn.sm{padding:6px 10px;font-size:12.5px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-weight:500}
-.check{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:9px}
+.check{display:flex;gap:8px;align-items:center;min-height:44px;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:0}
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
   border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0))}
@@ -77,14 +77,14 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,2
 .tab{text-decoration:none;min-width:0}.tab-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .view[hidden],.settings-subview[hidden],#settingsLanding[hidden]{display:none}
 
-.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px}
+.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;margin:0 -16px;padding:0 16px}
 table.ticker{border-collapse:separate;border-spacing:4px;min-width:100%}
 table.ticker th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-soft);font-weight:500;text-align:center;padding-bottom:2px;white-space:nowrap}
 table.ticker th.tm{text-align:left;padding-left:2px}
-td.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;
+td.team,th.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;
   position:sticky;left:0;background:var(--panel);z-index:2}
-td.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}
+td.team .ease,th.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}
 .cell{min-width:48px;min-height:38px;border-radius:7px;color:#fff;text-align:center;font-family:'IBM Plex Mono',monospace;
   font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;
   animation:flip .34s ease both;padding:2px 0}
@@ -108,6 +108,10 @@ table.data td{padding:8px;border-bottom:1px solid #EDEFEA;vertical-align:middle}
 table.data tr:last-child td{border-bottom:0}
 table.data tr.clickable{cursor:pointer}
 table.data tr.clickable:hover{background:#F7F9F5}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.player-row-action{display:block;width:100%;min-height:44px;padding:6px 4px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.player-row-action:hover{background:#F7F9F5}
+.player-row-action:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 table.data td.num,table.data th.num{text-align:right;font-family:'IBM Plex Mono',monospace}
 .pname{font-weight:600;display:block}
 .pmeta{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
@@ -147,7 +151,7 @@ textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--line);borde
 .answer p{margin:8px 0}
 .answer.me{background:#F2EDEE;border-color:#E3D3D7}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
-.chip{background:#F2F4EF;border:1px solid var(--line);border-radius:20px;padding:6px 11px;font-size:12px;color:var(--ink-soft)}
+.chip{background:#F2F4EF;border:1px solid var(--line);border-radius:22px;min-height:44px;padding:8px 12px;font-size:12px;color:var(--ink-soft)}
 .chip:hover{background:#E9EDE5;color:var(--ink)}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(20,38,28,.2);border-top-color:var(--claret);border-radius:50%;
   animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
@@ -157,7 +161,7 @@ textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--line);borde
 .sliders{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
 .sliders label{font-size:12px;color:var(--ink-soft);font-weight:500}
 .sliders input[type=range]{width:100%;accent-color:var(--pitch)}
-details summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;padding:4px 0}
+details summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;padding:6px 0}
 
 /* player detail sheet / panel */
 body.player-detail-open{overflow:hidden}
@@ -167,7 +171,7 @@ body.player-detail-open{overflow:hidden}
 .player-detail-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
 .player-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
 .player-detail-top h2{font-size:20px}
-.player-detail-close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.player-detail-close{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
 .player-detail-close:hover{background:#EEF1EB}
 .player-detail-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(22px + env(safe-area-inset-bottom,0))}
 .player-detail-identity{display:flex;align-items:center;gap:14px;padding:2px 0 14px}
@@ -219,7 +223,7 @@ body.player-detail-open{overflow:hidden}
   .player-detail-panel{top:0;bottom:0;left:auto;right:0;width:min(460px,44vw);max-height:none;border-radius:0;border-width:0 0 0 1px}
   .player-detail-grip{display:none}
   .player-detail-top{padding-top:calc(18px + env(safe-area-inset-top,0))}
-  .player-detail-body{padding-bottom:24px}
+  .player-detail-body{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 }
 @media(max-width:390px){
   .player-detail-grid{gap:6px}
@@ -323,12 +327,13 @@ body.player-detail-open{overflow:hidden}
 .searchbox{position:relative}
 .results{position:absolute;z-index:30;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
   max-height:270px;overflow-y:auto;width:100%;margin-top:4px}
-.results div{padding:8px 10px;font-size:13px;border-bottom:1px solid #EDEFEA;cursor:pointer}
-.results div:hover{background:#F2F4EF}
-.results div:last-child{border-bottom:0}
+.results div,.results button{display:block;width:100%;min-height:44px;padding:9px 10px;border:0;border-bottom:1px solid #EDEFEA;background:#fff;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.results div:hover,.results button:hover{background:#F2F4EF}
+.results div:last-child,.results button:last-child{border-bottom:0}
+.results .pmeta{display:block}
 .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .pill{background:#F2F4EF;border:1px solid var(--line);border-radius:20px;padding:4px 8px 4px 10px;font-size:12px;display:flex;gap:6px;align-items:center}
-.pill button{background:none;border:0;color:var(--claret);font-weight:700;padding:0 2px;line-height:1}
+.pill button{display:grid;place-items:center;width:44px;height:44px;margin:-8px -8px -8px 0;background:none;border:0;border-radius:50%;color:var(--claret);font-weight:700;padding:0;line-height:1}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
 .kpi{background:#F7F9F5;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
 .kpi .k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
@@ -355,7 +360,7 @@ body.player-detail-open{overflow:hidden}
 #evidenceHistory .note{margin:8px 0}
 #evidenceHistory .note>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 button,input,select,textarea{touch-action:manipulation}
-.btn{min-height:44px}.btn.sm{min-height:36px}.chip{min-height:36px}.tab{min-height:52px}
+.btn{min-height:44px}.btn.sm{min-height:44px}.chip{min-height:44px}.tab{min-height:52px}
 /* repository-owned shirt palettes: static classes replace inline CSS variables */
 .shirt-palette-ars{--shirt-primary:#D71920;--shirt-secondary:#FFFFFF;--shirt-accent:#162A4C;--shirt-ink:#FFFFFF}
 .shirt-palette-avl{--shirt-primary:#6A1735;--shirt-secondary:#9ED8F5;--shirt-accent:#F5D36A;--shirt-ink:#FFFFFF}
@@ -394,7 +399,7 @@ body{min-height:100%;min-height:100dvh;padding-bottom:calc(82px + env(safe-area-
 .global-ask{position:relative;width:min(100%,620px);margin-top:12px}
 .global-ask input{width:100%;min-height:48px;padding:10px 52px 10px 15px;border:1px solid rgba(255,255,255,.32);border-radius:24px;background:rgba(255,255,255,.12);color:#fff;font-size:15px;box-shadow:none}
 .global-ask input::placeholder{color:#C7D3CC}.global-ask input:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
-.global-ask-send{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
+.global-ask-send{position:absolute;right:2px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
 .global-ask-send:disabled{background:rgba(255,255,255,.18);color:#AEBBB4;cursor:default}.global-ask-send:not(:disabled):active{transform:translateY(-50%) scale(.96)}
 nav.tabs{position:fixed;inset:auto 0 0 0;z-index:1000;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));min-height:calc(64px + env(safe-area-inset-bottom,0px));padding:4px 4px env(safe-area-inset-bottom,0px);box-sizing:border-box;transform:translate3d(0,0,0);backface-visibility:hidden;isolation:isolate}
 .tab{height:56px;min-width:0;padding:6px 2px;justify-content:center;box-sizing:border-box;text-decoration:none}
@@ -727,7 +732,7 @@ h2[tabindex="-1"]:focus{outline:none}
         <label class="fld">Free transfers<input type="number" id="trFtCount" inputmode="numeric" min="0" max="5" step="1" value="1" aria-describedby="transferAssumptionHelp"></label>
         <label class="fld">Bank £m<input type="number" id="trBankIn" inputmode="decimal" min="0" step="0.1" value="0.0" aria-describedby="transferAssumptionHelp"></label>
         <label class="fld">Horizon<select id="trHorizon"><option value="1">Next GW</option><option value="3">3 GWs</option><option value="6" selected>6 GWs</option><option value="8">8 GWs</option></select></label>
-        <label class="fld">Display options<select id="trTop"><option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option></select></label>
+        <label class="fld">Optimiser return limit<select id="trTop"><option value="8" selected>Top 8</option><option value="15">Top 15</option><option value="20">Top 20</option></select></label>
       </div>
     </fieldset>
     <div id="transferDataWarning"></div>
@@ -774,18 +779,20 @@ h2[tabindex="-1"]:focus{outline:none}
     <h2>Ask Teamsheet</h2>
     <p class="hint">Your squad, projections and fixtures go with the question. The AI assistant works keylessly inside Claude's artifact preview; hosted builds require the planned serverless migration.</p>
     <div class="chips">
-      <button class="chip" data-q="Who should I captain this week and why?">Captain call</button>
-      <button class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>
-      <button class="chip" data-q="Which two players in my squad are the weakest links to move on?">Weak links</button>
-      <button class="chip" data-q="Check the latest injury and press conference news for my squad.">Injury news</button>
-      <button class="chip" data-q="When should I plan my Wildcard based on the fixture swings?">Chip timing</button>
+      <button type="button" class="chip" data-q="Who should I captain this week and why?">Captain call</button>
+      <button type="button" class="chip" data-q="Is any transfer worth a -4 hit this week? Be strict with me.">Worth a hit?</button>
+      <button type="button" class="chip" data-q="Which two players in my squad are the weakest links to move on?">Weak links</button>
+      <button type="button" class="chip" data-q="Check the latest injury and press conference news for my squad.">Injury news</button>
+      <button type="button" class="chip" data-q="When should I plan my Wildcard based on the fixture swings?">Chip timing</button>
     </div>
-    <div id="thread"></div>
-    <textarea id="q" placeholder="e.g. Should I take a hit to move Saka to Salah before the deadline?"></textarea>
+    <div class="note plain" id="askHostedStatus" role="status" hidden><b>Ask Teamsheet is unavailable in this hosted build.</b> The approved static app does not accept or store Anthropic API keys. A separately approved serverless migration is required.</div>
+    <div id="thread" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Ask Teamsheet conversation"></div>
+    <textarea id="q" aria-describedby="askHostedStatus" placeholder="e.g. Should I take a hit to move Saka to Salah before the deadline?"></textarea>
     <div class="row mt-10">
-      <button class="btn claret" id="askBtn">Get a read</button>
-      <button class="btn ghost sm" id="clearThread">Clear</button>
-      <span class="status" id="askStatus"></span>
+      <button type="button" class="btn claret" id="askBtn">Get a read</button>
+      <button type="button" class="btn ghost sm" id="retryAsk" hidden>Retry</button>
+      <button type="button" class="btn ghost sm" id="clearThread">Clear</button>
+      <span class="status" id="askStatus" aria-live="polite"></span>
     </div>
   </section>
 </main>
@@ -811,8 +818,8 @@ h2[tabindex="-1"]:focus{outline:none}
   <a class="tab" href="#/settings"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></span><span class="tab-label">Settings</span></a>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"146431ec24cf7bed","commit":"72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"146431ec24cf7bedcf205a4495ee515baa02643dca099b868cb1e8c8a8b67f5c","commit":"72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f","commit":"5a61ec5510c447580afa6070a5a9815516babe86"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f0b7bbe65166e54802920a2e73c06a2e1946b249ff57e9cb4","commit":"5a61ec5510c447580afa6070a5a9815516babe86","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -4313,6 +4320,7 @@ const STARTUP_PHASE_COPY = Object.freeze({
 });
 let verifiedRefreshPromise = null;
 let lastVerifiedRefreshAt = 0;
+let lastRefreshAttemptAt = 0;
 let verifiedRefreshTriggersInstalled = false;
 
 function ageLabel(ms){
@@ -4466,11 +4474,15 @@ async function loadAll(options = {}){
       markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
       if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.'));
+        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. Ask Teamsheet is also unavailable in this hosted build until the separately approved serverless migration.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
-    else { renderProviderHealth(); renderGlobalDataWarning(); }
+    else {
+      renderProviderHealth(); renderGlobalDataWarning();
+      if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+        document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
+    }
     return {
       ok:Boolean(S.boot),
       criticalReady:Boolean(S.boot),
@@ -4485,6 +4497,13 @@ async function loadAll(options = {}){
 
 function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
   return !Number.isFinite(Number(lastVerifiedAt)) || now-Number(lastVerifiedAt)>=minAgeMs;
+}
+function shouldBlockRefreshInteractions({reason='manual',startup=false}={}){
+  return Boolean(startup||reason==='manual');
+}
+function shouldRunForegroundRefresh(lastAttemptAt,{visibilityState='visible',now=Date.now()}={}){
+  if(visibilityState&&visibilityState!=='visible') return false;
+  return shouldRefreshVerifiedData(lastAttemptAt,now);
 }
 function setStartupPhase(key){
   return STARTUP_PHASE_COPY[key]||STARTUP_PHASE_COPY.cache;
@@ -4515,10 +4534,11 @@ async function dispatchVerifiedData(detail){
 }
 async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
   if(verifiedRefreshPromise) return verifiedRefreshPromise;
-  if(!force&&!shouldRefreshVerifiedData(lastVerifiedRefreshAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_verified'};
+  if(!force&&!shouldRefreshVerifiedData(lastRefreshAttemptAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_attempted'};
+  const blockInteractions=shouldBlockRefreshInteractions({reason,startup});
   verifiedRefreshPromise=(async()=>{
     if(startup) setStartupGateVisible(true);
-    setRefreshInteractionLock(true,{startup});
+    if(blockInteractions) setRefreshInteractionLock(true,{startup});
     setStartupPhase('cache');
     try{
       const report=await loadAll({
@@ -4536,8 +4556,13 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       }
       return report;
     }finally{
-      setRefreshInteractionLock(false,{startup});
-      if(startup) setStartupGateVisible(false);
+      lastRefreshAttemptAt=nowFn();
+      if(blockInteractions) setRefreshInteractionLock(false,{startup});
+      if(startup){
+        setStartupGateVisible(false);
+        if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+          document.dispatchEvent(new CustomEvent('teamsheet:startup-ready'));
+      }
     }
   })();
   try{ return await verifiedRefreshPromise; }
@@ -4547,8 +4572,8 @@ function installVerifiedRefreshTriggers(){
   if(verifiedRefreshTriggersInstalled||typeof document==='undefined') return;
   verifiedRefreshTriggersInstalled=true;
   const refreshIfDue=()=>{
-    if(document.visibilityState&&document.visibilityState!=='visible') return;
-    if(shouldRefreshVerifiedData(lastVerifiedRefreshAt)) runVerifiedRefresh({reason:'foreground'});
+    if(!shouldRunForegroundRefresh(lastRefreshAttemptAt,{visibilityState:document.visibilityState})) return;
+    void runVerifiedRefresh({reason:'foreground'});
   };
   document.addEventListener('visibilitychange',refreshIfDue);
   globalThis.window?.addEventListener?.('pageshow',refreshIfDue);
@@ -4966,31 +4991,35 @@ function setupAppShell(){
 
   const globalDataWarning=header?teamsheetElement('a',{id:'globalDataWarning',class:'global-data-warning',href:'#/settings/data/providers',hidden:'hidden','aria-live':'polite'}):null;
   if(globalDataWarning) header.appendChild(globalDataWarning);
+  const askAvailable=Boolean(globalThis.window?.storage);
   const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
-  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet'}):null;
+  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet',disabled:askAvailable?null:'disabled','aria-describedby':askAvailable?null:'askHostedStatus'}):null;
   const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
     teamsheetElement('span',{'aria-hidden':'true'},'↑')):null;
+  if(globalAskInput&&!askAvailable) globalAskInput.setAttribute('placeholder','Ask unavailable in this hosted build');
   if(globalAsk&&globalAskInput&&globalAskSend){
     globalAsk.append(globalAskInput,globalAskSend);
     header.appendChild(globalAsk);
-    globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
-    globalAsk.addEventListener('submit',event=>{
-      event.preventDefault();
-      const question=globalAskInput.value.trim();
-      if(!question) return;
-      const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
-      const origin=current==='#/ask'?'#/team':current;
-      const originMeta=teamsheetRouteMeta(origin);
-      askRouteBack.setAttribute('href',origin);
-      askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
-      askView.dataset.originRoute=origin;
-      const fullQuestion=document.getElementById('q');
-      if(fullQuestion) fullQuestion.value=question;
-      navigateTeamsheetRoute('#/ask');
-      setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
-      globalAskInput.value='';
-      globalAskSend.disabled=true;
-    });
+    if(askAvailable){
+      globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
+      globalAsk.addEventListener('submit',event=>{
+        event.preventDefault();
+        const question=globalAskInput.value.trim();
+        if(!question) return;
+        const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
+        const origin=current==='#/ask'?'#/team':current;
+        const originMeta=teamsheetRouteMeta(origin);
+        askRouteBack.setAttribute('href',origin);
+        askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
+        askView.dataset.originRoute=origin;
+        const fullQuestion=document.getElementById('q');
+        if(fullQuestion) fullQuestion.value=question;
+        navigateTeamsheetRoute('#/ask');
+        setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
+        globalAskInput.value='';
+        globalAskSend.disabled=true;
+      });
+    }
   }
 
   const updateKeyboardState=()=>{
@@ -5016,18 +5045,34 @@ function setupAppShell(){
     ['#/ask',askView]
   ]);
   const rememberedFocus=new Map();
+  const routeScrollPositions=new Map();
   let activeRoute=normaliseTeamsheetRoute(globalThis.location?.hash||'');
+  let pendingNavigation=null;
+  if(globalThis.history&&'scrollRestoration' in globalThis.history) globalThis.history.scrollRestoration='manual';
+
+  const routeNodeFor=route=>route.startsWith('#/settings')
+    ? (settingsRouteNodes.get(route)||settingsView)
+    : route.startsWith('#/leagues')
+      ? (leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView)
+      : (routeNodes.get(route)||teamView);
+  const currentScroll=()=>({left:Number(globalThis.scrollX||0),top:Number(globalThis.scrollY||0)});
+  const rememberRouteState=()=>routeScrollPositions.set(activeRoute,currentScroll());
+  const focusCandidateVisible=node=>Boolean(node&&document.contains?.(node)&&!node.hidden&&!node.closest?.('[hidden],[aria-hidden="true"]'));
 
   document.addEventListener('click',event=>{
     const link=event.target?.closest?.('a[href^="#/"]');
     if(!link) return;
     const destination=normaliseTeamsheetRoute(link.getAttribute('href'));
-    if(destination!==activeRoute) rememberedFocus.set(activeRoute,link);
+    if(destination!==activeRoute){
+      rememberedFocus.set(activeRoute,link);
+      rememberRouteState();
+      pendingNavigation={route:destination,kind:link.classList?.contains('route-back')?'return':'forward'};
+    }
   },true);
 
-  const focusRoute=(route,node)=>{
-    const remembered=rememberedFocus.get(route);
-    if(remembered&&document.contains?.(remembered)&&!remembered.hidden){
+  const focusRoute=(route,node,{preferRemembered=false}={})=>{
+    const remembered=preferRemembered?rememberedFocus.get(route):null;
+    if(remembered&&document.contains?.(remembered)&&focusCandidateVisible(remembered)){
       remembered.focus?.({preventScroll:true});
       return;
     }
@@ -5036,10 +5081,12 @@ function setupAppShell(){
     heading?.focus?.({preventScroll:true});
   };
 
-  const activateRoute=(requested,{focus=false}={})=>{
+  const activateRoute=(requested,{focus=false,restoreScroll=false,preferRemembered=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
     const meta=teamsheetRouteMeta(route);
+    const previousRoute=activeRoute;
     if(globalThis.location?.hash!==route) globalThis.history?.replaceState?.(null,'',route);
+    if(previousRoute!==route) document.dispatchEvent?.(new CustomEvent('teamsheet:before-route-change',{detail:{from:previousRoute,to:route}}));
 
     topLevelViews.forEach(view=>{
       const active=route.startsWith('#/settings')?view===settingsView:route.startsWith('#/leagues')?view===leaguesView:view===routeNodes.get(route);
@@ -5055,30 +5102,44 @@ function setupAppShell(){
     document.body.dataset.route=route.slice(2);
     document.title=`${meta.title} — Teamsheet`;
     activeRoute=route;
-    globalThis.scrollTo?.({top:0,left:0});
-    if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsRouteNodes.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
-      focusRoute(route,activeNode);
-    }
+    const position=restoreScroll?(routeScrollPositions.get(route)||{top:0,left:0}):{top:0,left:0};
+    globalThis.scrollTo?.({top:position.top,left:position.left});
+    if(focus) focusRoute(route,routeNodeFor(route),{preferRemembered});
     document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary,parent:meta.parent||null}}));
     return route;
   };
 
   const navigateTeamsheetRoute=(requested,{replace=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
+    rememberRouteState();
+    pendingNavigation={route,kind:'forward'};
     if(replace){
       globalThis.history?.replaceState?.(null,'',route);
+      pendingNavigation=null;
       activateRoute(route,{focus:true});
-    }else if(globalThis.location?.hash===route) activateRoute(route,{focus:true});
-    else if(globalThis.location) globalThis.location.hash=route;
+    }else if(globalThis.location?.hash===route){
+      pendingNavigation=null;
+      activateRoute(route,{focus:true});
+    }else if(globalThis.location) globalThis.location.hash=route;
     return route;
   };
   globalThis.__teamsheetNavigate=navigateTeamsheetRoute;
-  globalThis.addEventListener?.('hashchange',()=>activateRoute(globalThis.location?.hash,{focus:true}));
+  globalThis.addEventListener?.('hashchange',()=>{
+    const route=normaliseTeamsheetRoute(globalThis.location?.hash);
+    const navigation=pendingNavigation?.route===route?pendingNavigation:null;
+    pendingNavigation=null;
+    const returning=!navigation||navigation.kind==='return';
+    activateRoute(route,{focus:true,restoreScroll:returning,preferRemembered:returning});
+  });
 
   const initial=normaliseTeamsheetRoute(globalThis.location?.hash||'');
   if(globalThis.location?.hash!==initial) globalThis.history?.replaceState?.(null,'',initial);
   activateRoute(initial);
+  if(initial!=='#/team'){
+    const focusInitial=()=>focusRoute(initial,routeNodeFor(initial));
+    if(document.body?.classList?.contains('startup-pending')) document.addEventListener('teamsheet:startup-ready',focusInitial,{once:true});
+    else globalThis.queueMicrotask?.(focusInitial);
+  }
 }
 
 setupAppShell();
@@ -5200,7 +5261,15 @@ function playerDetailAvailabilityLabel(p = {}){
   return 'Available';
 }
 
-function playerDetailClose(){
+function playerDetailCanRestoreFocus(node){
+  if(!node||typeof node.focus!=='function') return false;
+  if(typeof document!=='undefined'&&typeof document.contains==='function'&&!document.contains(node)) return false;
+  if(node.hidden||node.getAttribute?.('aria-hidden')==='true') return false;
+  if(node.closest?.('[hidden],[aria-hidden="true"]')) return false;
+  return true;
+}
+
+function playerDetailClose({restoreFocus=true}={}){
   if(typeof document === 'undefined') return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
   if(!panel || !backdrop) return false;
@@ -5210,7 +5279,7 @@ function playerDetailClose(){
   if(document.body?.classList) document.body.classList.remove('player-detail-open');
   const restore = playerDetailPreviousFocus;
   playerDetailPreviousFocus = null;
-  if(restore && typeof restore.focus === 'function') restore.focus();
+  if(restoreFocus&&playerDetailCanRestoreFocus(restore)) restore.focus({preventScroll:true});
   return true;
 }
 
@@ -5261,7 +5330,13 @@ function playerDetailOpen({title = '', body = [], trigger = null} = {}){
   return true;
 }
 
-if(typeof document !== 'undefined') playerDetailSetup();
+if(typeof document !== 'undefined'){
+  playerDetailSetup();
+  document.addEventListener('teamsheet:before-route-change',()=>{
+    const panel=$('playerDetailPanel');
+    if(panel&&!panel.hidden) playerDetailClose({restoreFocus:false});
+  });
+}
 
 
 
@@ -7386,7 +7461,7 @@ function transferPlannerDecisionHero(state,baseline,topAlternative,horizon){
     title=moves.map(move=>`${move.outName} → ${move.inName}`).join(' · ');
     detail='This transfer plan ranks above making no transfer under the current assumptions.';
     metric=transferPlannerNetLabel(topAlternative.netGain);
-    hit=`${Number(topAlternative.hitCost)||0}-point hit`;
+    hit=Number(topAlternative.hitCost)?`${Number(topAlternative.hitCost)}-point hit`:'No hit';
   }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST){
     eyebrow='Highest-ranked decision';
     title='Make no transfer';
@@ -7534,7 +7609,7 @@ function renderTransfers(){
     const otherAlternatives=alternatives.slice(1,4);
     if(otherAlternatives.length){
       nodes.push(el('details',{class:'transfer-alternatives'},
-        el('summary',{},`Other legal options (${otherAlternatives.length})`),
+        el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
         el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
           title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
           index:plans.indexOf(plan),
@@ -7548,7 +7623,7 @@ function renderTransfers(){
     }
 
     nodes.push(el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points.'));
+      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
     setChildren(out,nodes);
   }finally{
     out.setAttribute('aria-busy','false');
@@ -8019,6 +8094,11 @@ function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
   if(!miniLeagueReady) return; ensureMiniLeagueExposureSection(); renderLeaguePickerSummary(); renderLeagueManageList();
   const sections=[['#/leagues',$('leagueLanding')],['#/leagues/standings',$('leagueStandings')],['#/leagues/rival',$('leagueRival')],['#/leagues/exposure',$('leagueExposure')],['#/leagues/manage',$('leagueManage')]];
   const resolved=sections.some(([key])=>key===route)?route:'#/leagues'; sections.forEach(([key,node])=>{if(node) node.hidden=key!==resolved;});
+  if(!S.boot&&resolved!=='#/leagues/manage'){
+    const target=resolved==='#/leagues'?$('leagueLandingOut'):resolved==='#/leagues/standings'?$('leagueStandingsOut'):resolved==='#/leagues/rival'?$('leagueRivalOut'):$('leagueExposureOut');
+    setChildren(target,miniLeagueEmpty('Official FPL data is unavailable','League position and public rival facts cannot be verified until core Official FPL data loads.',miniLeagueLink('Manage saved leagues','#/leagues/manage','btn ghost')));
+    return;
+  }
   renderMiniLeagueLanding(); renderMiniLeagueStandings(); renderMiniLeagueRival(); renderMiniLeagueExposure();
 }
 function renderLeagueChips(){
@@ -8056,7 +8136,7 @@ const flagNodes = p => {
   return nodes;
 };
 const cell = (text, cls = '') => elNode('td', cls ? {class:cls} : {}, text);
-const head = (text, cls = '') => elNode('th', cls ? {class:cls} : {}, text);
+const head = (text, cls = '', scope='col') => elNode('th', cls ? {class:cls,scope} : {scope}, text);
 const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+kind : ''}`},children);
 /* ---------------------------------------------------------------------
    VIEW — FIXTURE TICKER
@@ -8080,7 +8160,7 @@ function renderTicker(){
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    const row = elNode('tr',{},elNode('td',{class:'team'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
+    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
     teamFixtures(t.id, from, span).forEach(games => {
       if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
       const diffs = games.map(g => lens === 'official' ? g.officialDiff
@@ -8094,7 +8174,7 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('thead',{},header),body));
+  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
@@ -8150,9 +8230,11 @@ function renderPlayers(){
   const playerBody = elNode('tbody');
   ranked.forEach(({p,x}) => {
     const t = S.teams[p.team];
-    playerBody.appendChild(elNode('tr',{class:'clickable',dataset:{pid:p.id},onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
-      elNode('td',{class:'player-result-main'},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
-        elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`)),
+    const openButton=elNode('button',{type:'button',class:'player-row-action','aria-label':`Open ${p.web_name} player details`,onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
+      elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
+      elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`));
+    playerBody.appendChild(elNode('tr',{dataset:{pid:p.id}},
+      elNode('td',{class:'player-result-main'},openButton),
       elNode('td',{class:'num',dataset:{label:'Price'}},(p.now_cost/10).toFixed(1)),
       elNode('td',{class:'num player-result-secondary',dataset:{label:'Ownership'}},p.selected_by_percent),
       elNode('td',{class:'num player-result-secondary',dataset:{label:'Form'}},fmt1(num(p.form))),
@@ -8160,7 +8242,7 @@ function renderPlayers(){
       elNode('td',{class:'num',dataset:{label:`${span} GW xP`}},fmt1(x.total)),
       elNode('td',{class:'num',dataset:{label:'xP / £m'}},fmt1(x.total/(p.now_cost/10)))));
   });
-  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
+  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('caption',{class:'sr-only'},`Player projections over ${span} Gameweeks`),elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
 }
 
 function breakdownNode(p, x, span){
@@ -8382,10 +8464,15 @@ function renderSquad(){
   }
   nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
   const tbody=elNode('tbody');
-  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{class:'clickable',onclick:event=>openPlayerDetailView(s.p,gw,6,event.currentTarget)},
-    elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
-    cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total))))));
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
+  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>{
+    const openButton=elNode('button',{type:'button',class:'player-row-action','aria-label':`Open ${s.p.web_name} player details`,onclick:event=>openPlayerDetailView(s.p,gw,6,event.currentTarget)},
+      elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),
+      elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`));
+    tbody.appendChild(elNode('tr',{},
+      elNode('td',{},openButton),
+      cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total)))));
+  });
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('caption',{class:'sr-only'},`Current squad projections from GW${gw}`),elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
   if(!$('useManual').checked&&S.picks) nodes.push(noteNode('plain',"Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact."));
   setChildren(out,nodes);
 }
@@ -8435,14 +8522,40 @@ function buildContext(){
   return c;
 }
 
+let lastAskQuestion='';
 function renderThread(){
-  $('thread').innerHTML = S.thread.map(m =>
+  const thread=$('thread');
+  thread.innerHTML = S.thread.map(m =>
     `<div class="answer ${m.role==='user'?'me':''}"><p>${md(m.content)}</p></div>`).join('');
+  if(globalThis.location?.hash==='#/ask') globalThis.requestAnimationFrame?.(()=>thread.lastElementChild?.scrollIntoView?.({block:'nearest'}));
+}
+function configureAskAvailability(){
+  const available=Boolean(globalThis.window?.storage);
+  const hosted=$('askHostedStatus'),question=$('q'),askButton=$('askBtn'),retry=$('retryAsk');
+  if(hosted) hosted.hidden=available;
+  if(question){question.disabled=!available;question.setAttribute('aria-describedby','askHostedStatus');}
+  if(askButton) askButton.disabled=!available;
+  if(retry&&!available) retry.hidden=true;
+  document.querySelectorAll('[data-q]').forEach(button=>{button.disabled=!available;});
+  return available;
 }
 
 async function ask(){
+  const askAvailable=configureAskAvailability();
   const q = $('q').value.trim();
   if(!q) return;
+  if(!askAvailable){
+    lastAskQuestion=q;
+    S.thread.push({role:'user',content:q});
+    $('q').value='';
+    S.thread.push({role:'assistant',content:"The AI assistant requires the planned serverless migration in this hosted build. Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+    renderThread();
+    $('askStatus').textContent='';
+    if($('retryAsk')) $('retryAsk').hidden=true;
+    return;
+  }
+  lastAskQuestion=q;
+  if($('retryAsk')) $('retryAsk').hidden=true;
   S.thread.push({role:'user', content:q});
   $('q').value = '';
   renderThread();
@@ -8458,9 +8571,9 @@ ${buildContext()}`;
     // D-08 / SEC-3: no Anthropic secret is accepted, stored or sent by this
     // frontend. Claude's artifact preview provides the only approved keyless
     // path. Static hosted builds stop before making any Anthropic request.
-    if(!window.storage){
+    if(!globalThis.window?.storage){
       S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
+      renderThread(); $('askStatus').textContent = ''; if($('retryAsk')) $('retryAsk').hidden=false; btn.disabled = false; return;
     }
     const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -8472,20 +8585,22 @@ ${buildContext()}`;
       })
     });
     if(!res.ok){
-      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Try again later or use the hosted app without the Ask feature.'});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
+      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Your question has been kept so you can retry.'});
+      renderThread(); $('askStatus').textContent = ''; if($('retryAsk')) $('retryAsk').hidden=false; btn.disabled = false; return;
     }
     const data = await res.json();
     const text = (data.content||[]).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
     S.thread.push({role:'assistant', content: text || 'No answer came back — try again.'});
     renderThread();
     $('askStatus').textContent = '';
+    if($('retryAsk')) $('retryAsk').hidden=true;
   }catch(e){
-    S.thread.pop();
+    S.thread.push({role:'assistant',content:'That request failed — your question has been kept. Check your connection and try again.'});
     renderThread();
-    $('askStatus').textContent = 'That request failed — check your connection and try again.';
+    $('askStatus').textContent = 'Request failed. Your question is still in the conversation.';
+    if($('retryAsk')) $('retryAsk').hidden=false;
   }
-  btn.disabled = false;
+  btn.disabled = !Boolean(globalThis.window?.storage);
 }
 
 /* ---------------------------------------------------------------------
@@ -8498,7 +8613,7 @@ function renderManual(){
     if(!p) return null;
     return elNode('span', {class:'pill'}, p.web_name, ' ',
       elNode('span', {class:'mono muted'}, S.posName[p.element_type]||''),
-      elNode('button', {dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
+      elNode('button', {type:'button',class:'pill-remove',dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
   }));
   const counts = {1:0,2:0,3:0,4:0};
   S.manual.forEach(m => { const p = S.byId[m.id]; if(p && counts[p.element_type]!==undefined) counts[p.element_type]++; });
@@ -8514,7 +8629,7 @@ function searchPlayers(term){
   if(!S.boot || term.length < 2){ box.hidden = true; return; }
   const t = term.toLowerCase();
   const hits = S.boot.elements.filter(p => p.web_name.toLowerCase().includes(t)).slice(0,12);
-  setChildren(box, hits.length ? hits.map(p => elNode('div', {dataset:{add:p.id}}, p.web_name,
+  setChildren(box, hits.length ? hits.map(p => elNode('button', {type:'button',class:'manual-player-result',dataset:{add:p.id},'aria-label':`Add ${p.web_name} to manual squad`}, p.web_name,
     elNode('span', {class:'pmeta'}, `${S.posName[p.element_type]||''} · ${S.teams[p.team]?.short_name||''} · £${(p.now_cost/10).toFixed(1)}m`)))
     : elNode('div', {}, 'No player by that name'));
   box.hidden = false;
@@ -8532,6 +8647,19 @@ function searchPlayers(term){
 /* ---------------------------------------------------------------------
    RENDER + WIRING
    --------------------------------------------------------------------- */
+function renderRestrictedAppState(){
+  setChildren($('gwstrip'),elNode('span',{},'Official FPL data unavailable'));
+  renderTicker();
+  renderTransfers();
+  renderSquad();
+  renderManual();
+  setChildren($('playerTable'),elNode('div',{class:'empty'},elNode('strong',{},'Player Explorer unavailable'),'Verified Official FPL player data is required before players can be researched.'));
+  renderMiniLeagues(globalThis.location?.hash||'#/leagues');
+  configureAskAvailability();
+  if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+    document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
+}
+
 function renderAll(){
   if(!S.boot) return;
   clearXP();
@@ -8560,11 +8688,15 @@ function renderAll(){
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
 // Teamsheet 2.0.1: app-shell.mjs owns hash routing, history and focus.
-document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { $('q').value = c.dataset.q; ask(); }));
+configureAskAvailability();
+document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { if(c.disabled) return; $('q').value = c.dataset.q; ask(); }));
 document.addEventListener('teamsheet:preview-change',()=>renderSquad());
+document.addEventListener('teamsheet:restricted',renderRestrictedAppState);
 
-const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);
-['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
+const reFixtureDisplay = debounce(() => { renderTicker(); }, 180);
+const reFixtureWindow = debounce(() => { clearXP(); renderTicker(); renderPlayers(); }, 180);
+['fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtureDisplay));
+['fxFrom','fxSpan'].forEach(id => $(id).addEventListener('input', reFixtureWindow));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
 // The Team ID persists as it is typed; Mini-League choices use their own versioned state.
@@ -8572,13 +8704,14 @@ $('teamId').addEventListener('input', debounce(saveCfg, 300));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
 $('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
 $('askBtn').addEventListener('click', ask);
+$('retryAsk')?.addEventListener('click',()=>{ if(!lastAskQuestion) return; $('q').value=lastAskQuestion; ask(); });
 $('btBtn').addEventListener('click', runBacktest);
 // The low-value odds key remains client-side temporarily (D-08); save it on
 // input so a pasted value is not lost before the field blurs.
 $('oddsKey').addEventListener('input', debounce(saveCfg, 300));
 $('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds().then(() => { clearXP(); renderAll(); }); });
 $('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat().then(() => { clearXP(); renderAll(); }); });
-$('clearThread').addEventListener('click', () => { S.thread = []; renderThread(); });
+$('clearThread').addEventListener('click', () => { S.thread = []; lastAskQuestion=''; if($('retryAsk')) $('retryAsk').hidden=true; renderThread(); });
 $('pSearch').addEventListener('input', debounce(e => searchPlayers(e.target.value.trim()), 160));
 document.addEventListener('click', e => {
   if(!e.target.closest('.searchbox')) $('pResults').hidden = true;

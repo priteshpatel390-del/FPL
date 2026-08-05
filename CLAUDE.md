@@ -1,5 +1,5 @@
 # CLAUDE.md — onboarding for every future development session
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-08-04.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-08-05.
 
 ## Owner
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
@@ -17,7 +17,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 10. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-Teamsheet 2.0.6 — Research, Evidence and Diagnostics Organisation is complete and merged through PR #65 at merge commit `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. It adds nested identifier-free Settings routes, explicit evidence/recovery/export/storage mount ownership, consequence-led core-data warnings, complete Help & About guidance, actual build identity presentation, parent-aware history/focus and a mobile Player Explorer card layout. It changed no provider, endpoint, transport, model, expected-minutes, fixture, scoring, squad, captaincy, simulation, transfer optimiser, rank or Mini-League calculation. The verified baseline is **520 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root `index.html` equal to `dist/index.html`; model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari acceptance, VoiceOver acceptance and live populated-data acceptance were not performed and remain outstanding limitations. The next formal checkpoint is Teamsheet 2.0.7 — Final Mobile Polish and Acceptance. Begin it with investigation and design only; implementation requires explicit owner approval.
+Teamsheet 2.0.7 — Final Mobile Polish and Acceptance is implemented for review on draft PR #68 from main `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Approved Scope S-2.0.7 covers presentation, interaction, accessibility, resilience and acceptance preparation only. Verified source `5a61ec5510c447580afa6070a5a9815516babe86` passes **533 passed, 0 failed, 0 skipped**; generated deployables are committed at `71397382911a4e32633de15200ad59cfb26dc439`. Two exact-identity production builds were byte-identical, root `index.html` equals `dist/index.html`, model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari testing identified a foreground-resume defect; the approved correction is implemented and pending owner retest. VoiceOver and live populated-data acceptance remain pending. The checkpoint is not merged or fully accepted; do not merge without Pritesh’s explicit approval.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
