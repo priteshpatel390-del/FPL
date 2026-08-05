@@ -108,7 +108,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.js dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
           git diff --cached --check
           git commit -m 'Build Teamsheet 2.0.7 deployable'
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
