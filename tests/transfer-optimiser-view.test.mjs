@@ -90,10 +90,18 @@ test('any active transfer or captaincy comparison is recognised before invalidat
   assert.equal(transferPlannerHasActivePreview({selectionMode:'vice'}),true);
 });
 
-test('workspace keeps the optimiser authoritative while removing the technical table and obsolete route selector',()=>{
+// Replaces an earlier assertion that required transfer-optimiser-view.mjs to call
+// optimiseTransfers({...}) directly. That call was the synchronous main-thread search which
+// froze Safari, so the contract is now the stronger one: the presentation module must not be
+// able to enter the optimiser at all, and the background worker must be the only entry point.
+test('workspace presentation cannot enter the optimiser and keeps Team preview routing',()=>{
   const source=readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8');
+  const performance=readFileSync(new URL('../src/ui/transfer-performance.mjs',import.meta.url),'utf8');
   const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
-  assert.match(source,/optimiseTransfers\(\{/);
+  assert.doesNotMatch(source,/optimiseTransfers\s*\(/);
+  assert.doesNotMatch(source,/function renderTransfers\s*\(/);
+  assert.match(performance,/function renderTransfers\(\)/);
+  assert.match(performance,/const result=optimiseTransfers\(\{\.\.\.payload\.args/);
   assert.match(source,/globalThis\.__teamsheetNavigate\?\.\('#\/team'\)/);
   assert.doesNotMatch(source,/data-view="squad"/);
   assert.doesNotMatch(source,/el\('table'/);

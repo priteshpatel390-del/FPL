@@ -84,6 +84,24 @@ assert.equal(policy.includes('*-teamsheet-fpl-gateway'),false);
   assert.ok(policy.includes("frame-ancestors 'none'"));
 });
 
+test('CSP grants the background transfer worker exactly one local source and nothing more', () => {
+  const page = html();
+  const policy = /Content-Security-Policy"\s+content="([^"]+)"/.exec(page)?.[1] || '';
+  const directives = policy.split(';').map(part => part.trim());
+  const workerSrc = directives.filter(part => part.startsWith('worker-src'));
+  assert.deepEqual(workerSrc, ["worker-src 'self' blob:"]);
+  // The worker is a local Blob built from the embedded model. No remote or data: worker,
+  // no eval concession, and the hash-locked script policy is untouched.
+  assert.equal(/worker-src[^;]*(?:https?:|data:|\*)/.test(policy), false);
+  assert.equal(policy.includes("'unsafe-eval'"), false);
+  assert.equal(directives.some(part => part.startsWith('child-src')), false);
+  const scripts = [...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+  assert.equal(scripts.length, 1, 'the deployable must remain a single inline script');
+  assert.ok(policy.includes(`script-src '${sha256(scripts[0][1])}'`));
+  assert.equal(/<script[^>]+src=/.test(page), false, 'no separately deployed worker or script asset');
+  assert.match(page, /const TRANSFER_WORKER_MODEL_SOURCE = "/);
+});
+
 
 test('source and generated deployable contain no inline style attributes or runtime style APIs', () => {
   const sourceFiles = ['app.html'];

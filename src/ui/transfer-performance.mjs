@@ -15,36 +15,23 @@ import { renderRouteDataWarning } from './data-warning.mjs';
 
 const TRANSFER_PERFORMANCE_CACHE_LIMIT = 4;
 const TRANSFER_PERFORMANCE_SCORE_BATCH = 12;
+const TRANSFER_PERFORMANCE_PROGRESS_MS = 200;
+const TRANSFER_PERFORMANCE_UNAVAILABLE = 'This browser cannot run the transfer calculation in the background, so no comparison is being produced.';
 const transferPerformanceCache = new Map();
 let transferPerformanceWorker = null;
 let transferPerformanceToken = 0;
 let transferPerformanceDataVersion = 0;
 let transferPerformanceInstalled = false;
+let transferPerformanceBusyDetail = null;
 
-function transferPerformanceRetainPlan(plans, plan, limit, compare){
-  plans.push(plan);
-  plans.sort(compare);
-  if(plans.length > limit) plans.length = limit;
-  return plans;
-}
-
-function transferPerformanceBoundOptimiserSource(modelSource){
-  const source = String(modelSource || '');
-  const target = 'if(plan) plans.push(plan);';
-  const matches = source.split(target).length - 1;
-  if(matches !== 1) throw new Error(`Expected one optimiser plan-retention site; found ${matches}`);
-  return source.replace(target, 'if(plan) transferPerformanceRetainPlan(plans,plan,ctx.maxResults,comparePlans);');
-}
-
-function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
-  const bounded = transferPerformanceBoundOptimiserSource(modelSource);
-  return `"use strict";
-const TRANSFER_RULES=${JSON.stringify(rules)};
-${transferPerformanceRetainPlan.toString()}
-${bounded}
+// The worker runs the reviewed transfer model verbatim. Nothing rewrites, patches or
+// re-derives the optimiser at runtime: bounded top-K retention lives in the model itself,
+// so the background search and a direct optimiseTransfers() call execute identical code.
+const TRANSFER_PERFORMANCE_WORKER_HANDLER = `
 self.onmessage=event=>{
   const payload=event.data||{};
   if(payload.type!=="calculate") return;
+  const requestId=payload.requestId;
   const rows=Array.isArray(payload.scoreRows)?payload.scoreRows:[];
   const scoreMap=new Map(rows.map(row=>[Number(row[0]),Array.isArray(row[1])?row[1]:[]]));
   const startGW=Number(payload.args?.startGW)||1;
@@ -53,13 +40,29 @@ self.onmessage=event=>{
     const value=Number(scores?.[Number(gw)-startGW]);
     return Number.isFinite(value)?value:0;
   };
+  let reportedAt=0;
+  const onProgress=state=>{
+    const now=Date.now();
+    if(now-reportedAt<${TRANSFER_PERFORMANCE_PROGRESS_MS}) return;
+    reportedAt=now;
+    self.postMessage({type:"progress",requestId,depth:state.depth,maxDepth:state.maxDepth,evaluations:state.evaluations});
+  };
   try{
-    const result=optimiseTransfers({...payload.args,scorePlayer});
-    self.postMessage({type:"result",requestId:payload.requestId,result});
+    const result=optimiseTransfers({...payload.args,scorePlayer,onProgress});
+    self.postMessage({type:"result",requestId,result});
   }catch(error){
-    self.postMessage({type:"error",requestId:payload.requestId,message:String(error?.message||error||"Worker calculation failed")});
+    self.postMessage({type:"error",requestId,message:String(error?.message||error||"Worker calculation failed")});
   }
 };`;
+
+function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
+  const source=String(modelSource||'');
+  if(!/function optimiseTransfers\(/.test(source))
+    throw new Error('The reviewed transfer model is missing from this build.');
+  return `"use strict";
+const TRANSFER_RULES=${JSON.stringify(rules)};
+${source}
+${TRANSFER_PERFORMANCE_WORKER_HANDLER}`;
 }
 
 function transferPerformanceHash(value, seed=2166136261){
@@ -171,6 +174,7 @@ function transferPerformanceAction(label,handler,{secondary=false}={}){
 function transferPerformanceRenderReady(snapshot,{message='Ready to calculate without blocking the rest of Teamsheet.'}={}){
   const out=$('transferOut');
   if(!out) return;
+  transferPerformanceBusyDetail=null;
   out.setAttribute('aria-busy','false');
   const cached=transferPerformanceCache.get(snapshot.signature);
   if(cached){
@@ -187,17 +191,37 @@ function transferPerformanceRenderReady(snapshot,{message='Ready to calculate wi
   transferPerformanceStatus('Ready. Calculation starts only when requested.');
 }
 
-function transferPerformanceRenderBusy(snapshot,completed,total){
+function transferPerformancePreparingDetail(completed,total){
+  const share=total>0?Math.min(100,Math.round(completed/total*100)):100;
+  return `Preparing projections ${share}%.`;
+}
+
+function transferPerformanceSearchingDetail(progress=null){
+  const depth=Math.max(0,Math.trunc(Number(progress?.depth)||0));
+  const maxDepth=Math.max(0,Math.trunc(Number(progress?.maxDepth)||0));
+  const evaluations=Math.max(0,Math.trunc(Number(progress?.evaluations)||0));
+  if(!depth) return 'Evaluating legal transfer plans in the background.';
+  const counted=evaluations?` · ${evaluations.toLocaleString('en-GB')} plans checked`:'';
+  return `Evaluating legal transfer plans in the background. Depth ${depth}${maxDepth?` of ${maxDepth}`:''}${counted}.`;
+}
+
+// The busy panel is built once per calculation. Progress only rewrites one text node, so
+// throttled worker updates cannot rebuild the workspace or fight the browser for the frame.
+function transferPerformanceRenderBusy(detail){
   const out=$('transferOut');
   if(!out) return;
-  const preparing=completed<total;
   out.setAttribute('aria-busy','true');
-  const detail=preparing
-    ? `Preparing projections ${completed} of ${total}.`
-    : 'Evaluating legal transfer plans in the background.';
+  if(transferPerformanceBusyDetail&&transferPerformanceBusyDetail.parentNode?.parentNode===out){
+    if(transferPerformanceBusyDetail.textContent!==detail){
+      transferPerformanceBusyDetail.textContent=detail;
+      transferPerformanceStatus(detail);
+    }
+    return;
+  }
+  transferPerformanceBusyDetail=document.createTextNode(detail);
   setChildren(out,
     transferPlannerContext(),
-    el('div',{class:'note plain'},el('b',{},'Calculating transfers. '),detail),
+    el('div',{class:'note plain'},el('b',{},'Calculating transfers. '),transferPerformanceBusyDetail),
     el('div',{class:'transfer-actions'},
       transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.'),{secondary:true})));
   transferPerformanceStatus(detail);
@@ -206,6 +230,7 @@ function transferPerformanceRenderBusy(snapshot,completed,total){
 function transferPerformanceRenderError(title,detail){
   const out=$('transferOut');
   if(!out) return;
+  transferPerformanceBusyDetail=null;
   out.setAttribute('aria-busy','false');
   transferPlannerBlocking(out,title,detail);
   transferPerformanceStatus('Transfer comparison unavailable.');
@@ -214,6 +239,7 @@ function transferPerformanceRenderError(title,detail){
 function transferPerformanceRenderResult(result,context,{cached=false}={}){
   const out=$('transferOut');
   if(!out) return;
+  transferPerformanceBusyDetail=null;
   const {snapshot}=context;
   const {squad,horizon,assumptions,squadSignature}=snapshot;
   S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
@@ -326,7 +352,7 @@ async function transferPerformanceScores(snapshot,token){
       }
       rows.push([Number(player.id),scores]);
     }
-    transferPerformanceRenderBusy(snapshot,end,total);
+    transferPerformanceRenderBusy(transferPerformancePreparingDetail(end,total));
     await transferPerformanceYield();
   }
   return {rows,dataHash:dataHash.toString(16)};
@@ -334,9 +360,9 @@ async function transferPerformanceScores(snapshot,token){
 
 function transferPerformanceCreateWorker(){
   if(typeof Worker!=='function'||typeof Blob!=='function'||!globalThis.URL?.createObjectURL)
-    throw new Error('This browser cannot run the optimiser safely in the background.');
+    throw new Error('worker_unsupported');
   if(typeof TRANSFER_WORKER_MODEL_SOURCE!=='string'||!TRANSFER_WORKER_MODEL_SOURCE)
-    throw new Error('The background optimiser source is unavailable in this build.');
+    throw new Error('worker_model_unavailable');
   const source=transferPerformanceWorkerSource(TRANSFER_WORKER_MODEL_SOURCE);
   const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
   try{
@@ -356,7 +382,7 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
   const token=++transferPerformanceToken;
   transferPlannerClearPreview();
   void saveCfg();
-  transferPerformanceRenderBusy(snapshot,0,snapshot.players.length);
+  transferPerformanceRenderBusy(transferPerformancePreparingDetail(0,snapshot.players.length));
 
   try{
     const prepared=await transferPerformanceScores(snapshot,token);
@@ -371,15 +397,16 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
 
     const worker=transferPerformanceCreateWorker();
     transferPerformanceWorker=worker;
-    transferPerformanceRenderBusy(snapshot,snapshot.players.length,snapshot.players.length);
+    transferPerformanceRenderBusy(transferPerformanceSearchingDetail());
     const result=await new Promise((resolve,reject)=>{
       worker.onmessage=event=>{
         const payload=event.data||{};
-        if(payload.requestId!==token) return;
+        if(payload.requestId!==token||token!==transferPerformanceToken) return;
+        if(payload.type==='progress'){ transferPerformanceRenderBusy(transferPerformanceSearchingDetail(payload)); return; }
         if(payload.type==='result') resolve(payload.result);
-        else reject(new Error(payload.message||'Background calculation failed.'));
+        else reject(new Error('worker_failed'));
       };
-      worker.onerror=event=>reject(new Error(event?.message||'Background calculation failed.'));
+      worker.onerror=()=>reject(new Error('worker_failed'));
       worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
     });
     if(token!==transferPerformanceToken) return;
@@ -394,7 +421,9 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
     if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
     transferPerformanceWorker?.terminate?.();
     transferPerformanceWorker=null;
-    transferPerformanceRenderError('Background calculation failed.',String(error?.message||error||'Try again.'));
+    // Internal reasons stay out of the interface. Teamsheet fails closed and never falls
+    // back to a blocking main-thread search.
+    transferPerformanceRenderError('Transfers could not be calculated.',TRANSFER_PERFORMANCE_UNAVAILABLE);
   }
 }
 
@@ -409,7 +438,9 @@ function transferPerformanceCancel(message='Calculation cancelled.',{render=true
   }
 }
 
-function transferPerformanceRenderShell(){
+// The only Transfers renderer. Opening the route paints the workspace shell and, when an
+// exact earlier result is still valid, restores it. It never enters the optimiser.
+function renderTransfers(){
   const out=$('transferOut');
   if(!out) return;
   renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
@@ -424,9 +455,8 @@ function transferPerformanceRenderShell(){
 }
 
 function installTransferPerformanceRuntime(){
-  if(transferPerformanceInstalled||typeof document==='undefined'||typeof renderTransfers!=='function') return;
+  if(transferPerformanceInstalled||typeof document==='undefined') return;
   transferPerformanceInstalled=true;
-  renderTransfers=transferPerformanceRenderShell;
 
   document.addEventListener('teamsheet:before-route-change',event=>{
     if(event?.detail?.from==='#/transfers'&&event?.detail?.to!=='#/transfers')
@@ -436,7 +466,7 @@ function installTransferPerformanceRuntime(){
     transferPerformanceDataVersion++;
     transferPerformanceCache.clear();
     transferPerformanceCancel('',{render:false});
-    if(transferPerformanceCurrentRoute()==='#/transfers') transferPerformanceRenderShell();
+    if(transferPerformanceCurrentRoute()==='#/transfers') renderTransfers();
   });
 }
 
@@ -445,14 +475,16 @@ installTransferPerformanceRuntime();
 export {
   TRANSFER_PERFORMANCE_CACHE_LIMIT,
   TRANSFER_PERFORMANCE_SCORE_BATCH,
-  transferPerformanceRetainPlan,
-  transferPerformanceBoundOptimiserSource,
+  TRANSFER_PERFORMANCE_PROGRESS_MS,
+  TRANSFER_PERFORMANCE_UNAVAILABLE,
   transferPerformanceWorkerSource,
   transferPerformanceHash,
   transferPerformanceWorkerPlayer,
+  transferPerformancePreparingDetail,
+  transferPerformanceSearchingDetail,
   transferPerformanceSnapshot,
-  transferPerformanceRenderShell,
   transferPerformanceStart,
   transferPerformanceCancel,
-  installTransferPerformanceRuntime
+  installTransferPerformanceRuntime,
+  renderTransfers
 };

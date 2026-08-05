@@ -156,7 +156,7 @@ The existing Stage 10.1 verified startup and foreground interaction lock are unc
 
 ## Teamsheet 2.0.3 transfer presentation boundary
 
-The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` owns assumptions synchronization, presentation states, preview invalidation and vertical decision cards. It consumes `optimiseTransfers()` without recalculating transfer values. `src/model/transfers.mjs` remains the sole calculation owner. Plans and previews are session-only; only free transfers, bank, horizon and result count persist.
+The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` is presentation-only: it owns assumptions synchronisation, presentation states, preview invalidation and vertical decision cards, and cannot enter the optimiser. `src/ui/transfer-performance.mjs` owns the single `renderTransfers()` renderer, the explicit calculate/cancel actions, batched projection preparation, the session result cache and the Blob Web Worker that runs the search off the UI thread. The worker embeds the reviewed `src/model/transfers.mjs` verbatim — the build emits it as `TRANSFER_WORKER_MODEL_SOURCE` — so the background search and a direct `optimiseTransfers()` call execute identical code and nothing rewrites the optimiser at runtime. `src/model/transfers.mjs` remains the sole calculation owner and bounds plan retention to the requested result count. Plans and previews are session-only; only free transfers, bank, horizon and result count persist.
 
 ## Teamsheet 2.0.4 Mini-League boundary
 

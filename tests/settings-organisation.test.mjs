@@ -10,7 +10,11 @@ const outcomes=readFileSync(new URL('../src/ui/outcomes.mjs',import.meta.url),'u
 const metrics=readFileSync(new URL('../src/ui/metrics.mjs',import.meta.url),'utf8');
 const review=readFileSync(new URL('../src/ui/review.mjs',import.meta.url),'utf8');
 const warning=readFileSync(new URL('../src/ui/data-warning.mjs',import.meta.url),'utf8');
-const transfers=readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8');
+// Route data-warning wiring lives with the authoritative Transfers renderer.
+const transfers=[
+  readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8'),
+  readFileSync(new URL('../src/ui/transfer-performance.mjs',import.meta.url),'utf8')
+].join('\n');
 const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
 const leagues=readFileSync(new URL('../src/ui/mini-leagues-view.mjs',import.meta.url),'utf8');
 const includesAll=(source,values)=>values.forEach(value=>assert.equal(source.includes(value),true,`Missing ${value}`));

@@ -1,6 +1,6 @@
 # TESTING.md
 
-> **FPL-T1 review verification:** The deployed owner-controlled Official FPL gateway and exact Pages configuration pass **565 passed, 0 failed, 0 skipped**. Two exact-identity production builds are byte-identical, root `index.html` equals `dist/index.html`, the manifest points to the reviewed source, CSP permits only the stable production Worker origin, model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari returned live 2026/27 bootstrap JSON. Full populated application and VoiceOver acceptance remain outside automated evidence; PR #69 stays draft until explicit owner approval.
+> **FPL-T1 review verification:** The deployed owner-controlled Official FPL gateway and exact Pages configuration pass **590 passed, 0 failed, 0 skipped**. Two exact-identity production builds are byte-identical, root `index.html` equals `dist/index.html`, the manifest points to the reviewed source, CSP permits only the stable production Worker origin, model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari returned live 2026/27 bootstrap JSON. Full populated application and VoiceOver acceptance remain outside automated evidence; PR #69 stays draft until explicit owner approval.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
@@ -8,7 +8,7 @@ Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-FPL-T1 review verification completed **565/565 passing tests**, zero failures and zero skipped. The exact production Worker base is embedded in source and generated HTML, its origin is independently required by CSP tests, and anonymous Official FPL browser relays are absent. Worker contracts cover route/query allowlisting, methods, CORS, credential non-forwarding, JSON/schema failure, bounded cache policy, redirect rejection and redacted diagnostics. Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Physical iPhone Safari established live bootstrap transport only; populated Team, Transfers, Fixtures, Player Detail and Leagues acceptance remains pending.
+FPL-T1 review verification completed **590/590 passing tests**, zero failures and zero skipped. The exact production Worker base is embedded in source and generated HTML, its origin is independently required by CSP tests, and anonymous Official FPL browser relays are absent. Worker contracts cover route/query allowlisting, methods, CORS, credential non-forwarding, JSON/schema failure, bounded cache policy, redirect rejection and redacted diagnostics. Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Physical iPhone Safari established live bootstrap transport only; populated Team, Transfers, Fixtures, Player Detail and Leagues acceptance remains pending.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -168,6 +168,36 @@ The live pre-season regression suite verifies that missing strengths force the o
 
 
 ## Transfers background performance correction
-The PR #69 performance correction moves the exact transfer search into a deterministic Blob Web Worker. Transfers now paints a lightweight shell first, calculation is explicit, projection preparation yields in fixed batches, route exit/input refresh cancels obsolete work, unchanged session inputs reuse the exact completed result, and the worker retains only the comparator-defined top result set. The production search formula, transfer depth, horizon, evaluation ceiling, legality, selling prices, hits, free-transfer utility and ordering remain unchanged.
+The PR #69 performance correction moves the exact transfer search into a deterministic Blob Web Worker. Transfers now paints a lightweight shell first, calculation is explicit, projection preparation yields in fixed batches, route exit/input refresh cancels obsolete work, unchanged session inputs reuse the exact completed result, and the search retains only the comparator-defined top result set. The production search formula, transfer depth, horizon, evaluation ceiling, legality, selling prices, hits, free-transfer utility and ordering remain unchanged.
 
-The verified suite is **565 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Automated evidence proves worker/CSP/build wiring, bounded-retention equivalence and inert rendering of hostile transfer names after explicit calculation; physical iPhone calculation duration, memory pressure and cancellation latency remain an acceptance gate.
+### Defect found in the first implementation
+The first attempt assembled the worker by rewriting the embedded model source at runtime, replacing the single string `if(plan) plans.push(plan);`. That string occurs **twice** in `src/model/transfers.mjs` — once in `exhaustiveTransferSearch()` and once in `optimiseTransfers()` — so the assembly threw before any worker was created and **Calculate transfers could never succeed in the shipped deployable**. The suite was green because no test built the worker from the real model; the only coverage fed the assembler a synthetic one-line stub.
+
+The correction removes runtime source rewriting entirely:
+
+- bounded top-K retention now lives in `src/model/transfers.mjs` as `retainPlan()`, used at the single retention site inside `optimiseTransfers()`;
+- `exhaustiveTransferSearch()` is unchanged and remains the independent oracle;
+- the worker embeds the reviewed stripped model **verbatim**, so the background search and a direct `optimiseTransfers()` call execute identical code;
+- the previously duplicated synchronous `renderTransfers()` in `transfer-optimiser-view.mjs` is deleted. That module is now presentation-only and there is exactly one Transfers renderer, declared in `transfer-performance.mjs` and never reassigned at runtime.
+
+### Retention equivalence
+`comparePlans()` is a total order: its final tiebreak is the plan signature, signatures are unique per transfer set, and they contain only ASCII digits, `>` and `|`, so two distinct plans never compare equal. With a total order, retaining the best `maxResults` plans as they are produced returns exactly the same plans in exactly the same order as retaining every plan, sorting once and slicing. The zero-transfer baseline participates as an ordinary member and is evicted exactly where a full sort and slice would evict it. No comparator, ranking, eligibility, pricing, hit, free-transfer or evaluation-count semantics changed, and no accuracy improvement is claimed.
+
+### Coverage added
+`transfer-performance.test.mjs` and `transfer-performance-runtime.test.mjs` now cover:
+
+- bounded versus exhaustive equality across 60 deterministic synthetic cases, all transfer depths 0–3, comparator-tie fixtures, and every `maxResults` from 1 to 20 including values that evict the baseline;
+- worker versus direct `optimiseTransfers()` equality across 25 deterministic cases, executed from the assembled worker source;
+- the same check against the **shipped** `dist/app.bundle.js` embed, so a deployable that cannot build or run its own worker fails the suite;
+- fail-closed `search-incomplete` behaviour through the worker boundary;
+- the progress hook proven inert — identical plans, evaluations and pruning with and without it — and throttled rather than posted per evaluation;
+- route rendering that constructs no worker and records no optimiser result; explicit calculation; cancel, route exit, verified-data change and superseding calculations all terminating real workers; stale results unable to render or become `S.lastOptimiser`;
+- session-cache reuse and invalidation for horizon, return limit, free transfers, bank, Gameweek, purchase price and squad identity;
+- honest failure when `Worker` is unavailable, with internal reasons kept out of the interface;
+- deployable CSP granting exactly `worker-src 'self' blob:` with no remote, `data:`, wildcard, `child-src` or `unsafe-eval` concession, an unchanged hash-locked `script-src`, and a single inline script with no separately deployed asset.
+
+`tests/harness.mjs` gains an opt-in `interactive` mode supplying a document event registry, `CustomEvent`, a hash location and a controllable `Worker`/`Blob`/`URL` trio. Default loads keep the original inert stubs, so existing suites are unaffected. The harness truncates the bundle at the `init()` boundary, so `manual-squad-runtime.mjs` route wiring remains covered by its own source-level suite rather than the bundle harness.
+
+One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
+
+The verified suite is **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Physical iPhone calculation duration, memory pressure and cancellation latency remain an acceptance gate, and Blob-Worker acceptance under the live Pages CSP is unproven until that device test.

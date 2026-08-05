@@ -6,7 +6,35 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-export function loadApp(fieldValues = {}) {
+// Opt-in browser affordances for runtime behaviour tests: a real document event registry,
+// CustomEvent, a hash location and a controllable Worker/Blob/URL trio. Default loads keep
+// the original inert stubs so existing suites are unaffected.
+function interactiveGlobals(){
+  const listeners = new Map();
+  const workers = [];
+  globalThis.CustomEvent = class CustomEvent {
+    constructor(type, init = {}){ this.type = type; this.detail = init.detail; }
+  };
+  globalThis.location = { hash:'#/transfers' };
+  globalThis.Blob = class Blob { constructor(parts = [], options = {}){ this.parts = parts; this.type = options.type || ''; } };
+  globalThis.URL = { createObjectURL: () => 'blob:teamsheet-test', revokeObjectURL(){} };
+  globalThis.Worker = class Worker {
+    constructor(url){ this.url = url; this.messages = []; this.terminated = false; workers.push(this); }
+    postMessage(message){ this.messages.push(message); }
+    terminate(){ this.terminated = true; }
+  };
+  return {
+    workers,
+    addEventListener(type, handler){
+      if(!listeners.has(type)) listeners.set(type, []);
+      listeners.get(type).push(handler);
+    },
+    dispatchEvent(event){ (listeners.get(event?.type) || []).forEach(handler => handler(event)); return true; }
+  };
+}
+
+export function loadApp(fieldValues = {}, { interactive = false } = {}) {
+  const browser = interactive ? interactiveGlobals() : null;
   const defaults = { fxFrom:'4', fxSpan:'6', fxSort:'ease', fxLens:'attack', plHorizon:'6',
     ftCount:'1', bankIn:'0', oddsKey:'', useUstat:false, useManual:false,
     leagueId:'', leagueName:'', lgN:'20', teamId:'', plPos:'0', plMax:'15', plFit:true, plOwn:false,
@@ -14,16 +42,21 @@ export function loadApp(fieldValues = {}) {
   const vals = { ...defaults, ...fieldValues };
   const made = {};
   const mk = (id, tag = 'div') => ({ id, tagName:tag.toUpperCase(), attrs:{}, nodeType:1, value: vals[id] ?? '', checked: vals[id] === true, innerHTML:'', textContent:'', children:[],
-    options:{length:9}, add(){}, hidden:false, dataset:{}, style:{}, addEventListener(){},
+    options:{length:9}, add(){}, hidden:false, dataset:{}, style:{}, listeners:{},
+    addEventListener(type, handler){ if(!browser) return; (this.listeners[type] = this.listeners[type] || []).push(handler); },
     querySelectorAll(){ return []; }, after(){}, remove(){}, nextElementSibling:null,
-    classList:{ contains(){ return false; } }, setAttribute(k,v){ this.attrs[k] = String(v); this[k] = String(v); }, focus(){}, click(){},
+    classList:{ contains(){ return false; } }, setAttribute(k,v){ this.attrs[k] = String(v); this[k] = String(v); }, focus(){},
+    click(){ (this.listeners.click || []).forEach(handler => handler({ type:'click', target:this, preventDefault(){}, stopImmediatePropagation(){} })); },
     closest(){ return null; }, appendChild(child){ this.children.push(child); child.parentNode = this; return child; },
     append(...children){ children.forEach(child => this.appendChild(child)); },
     removeChild(child){ this.children.splice(this.children.indexOf(child), 1); }, get firstChild(){ return this.children[0] || null; },
     closest(){ return null; }, disabled:false });
 
   globalThis.document = { getElementById: id => made[id] || (made[id] = mk(id)),
-    querySelectorAll: () => [], addEventListener(){}, createElement: tag => mk('x', tag),
+    querySelectorAll: () => [],
+    addEventListener: browser ? browser.addEventListener : function(){},
+    ...(browser ? { dispatchEvent: browser.dispatchEvent } : {}),
+    createElement: tag => mk('x', tag),
     createElementNS: (_namespace, tag) => mk('x', tag), createTextNode: text => ({nodeType:3, textContent:String(text), parentNode:null}) };
   globalThis.window = { scrollTo(){} };
   globalThis.localStorage = { _d:{}, getItem(k){ return this._d[k] ?? null; },
@@ -42,9 +75,12 @@ export function loadApp(fieldValues = {}) {
     sellPrice, mySquad, parseCSV, pearson, poissonOver, solveLambda, mapTeamName, parseUnderstat,
     runBacktest, rememberLeague, renderLeagueChips, renderTicker, renderPlayers, renderSquad, renderTransfers,
     renderManual, searchPlayers, transferPlannerMoveList, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
-    clearXP, flagsFor, priceMomentum });\nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
+    clearXP, flagsFor, priceMomentum, transferPerformanceStart, transferPerformanceCancel, transferPerformanceSnapshot });
+    \nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
   delete globalThis.__EXPORTS__;
-  return { T: exports, doc: made, setFetch: f => { globalThis.fetch = f; } };
+  return { T: exports, doc: made, workers: browser?.workers || [],
+    dispatch: (type, detail) => globalThis.document.dispatchEvent(new globalThis.CustomEvent(type, {detail})),
+    setFetch: f => { globalThis.fetch = f; } };
 }
 
 // Deterministic synthetic league shared by all characterisation tests.
