@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"146431ec24cf7bed","commit":"72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"146431ec24cf7bedcf205a4495ee515baa02643dca099b868cb1e8c8a8b67f5c","commit":"72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"58aca328bc6fa89f","commit":"3baeb8fd51ea68af353c5097b0e5d2d49837dcf6"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"58aca328bc6fa89fec6cba672e1287e5340a72b134d809aa4afff2617d002062","commit":"3baeb8fd51ea68af353c5097b0e5d2d49837dcf6","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3653,11 +3653,15 @@ async function loadAll(options = {}){
       markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
       if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. The Ask tab still works — it searches the web instead.'));
+        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. Ask Teamsheet is also unavailable in this hosted build until the separately approved serverless migration.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
-    else { renderProviderHealth(); renderGlobalDataWarning(); }
+    else {
+      renderProviderHealth(); renderGlobalDataWarning();
+      if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+        document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
+    }
     return {
       ok:Boolean(S.boot),
       criticalReady:Boolean(S.boot),
@@ -3724,7 +3728,11 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       return report;
     }finally{
       setRefreshInteractionLock(false,{startup});
-      if(startup) setStartupGateVisible(false);
+      if(startup){
+        setStartupGateVisible(false);
+        if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+          document.dispatchEvent(new CustomEvent('teamsheet:startup-ready'));
+      }
     }
   })();
   try{ return await verifiedRefreshPromise; }
@@ -4153,31 +4161,35 @@ function setupAppShell(){
 
   const globalDataWarning=header?teamsheetElement('a',{id:'globalDataWarning',class:'global-data-warning',href:'#/settings/data/providers',hidden:'hidden','aria-live':'polite'}):null;
   if(globalDataWarning) header.appendChild(globalDataWarning);
+  const askAvailable=Boolean(globalThis.window?.storage);
   const globalAsk=header?teamsheetElement('form',{id:'askTeamsheetGlobal',class:'global-ask',role:'search'}):null;
-  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet'}):null;
+  const globalAskInput=globalAsk?teamsheetElement('input',{id:'askTeamsheetGlobalInput',type:'search',placeholder:'Ask Teamsheet…',autocomplete:'off','aria-label':'Ask Teamsheet',disabled:askAvailable?null:'disabled','aria-describedby':askAvailable?null:'askHostedStatus'}):null;
   const globalAskSend=globalAsk?teamsheetElement('button',{id:'askTeamsheetGlobalSend',class:'global-ask-send',type:'submit','aria-label':'Send question',disabled:'disabled'},
     teamsheetElement('span',{'aria-hidden':'true'},'↑')):null;
+  if(globalAskInput&&!askAvailable) globalAskInput.setAttribute('placeholder','Ask unavailable in this hosted build');
   if(globalAsk&&globalAskInput&&globalAskSend){
     globalAsk.append(globalAskInput,globalAskSend);
     header.appendChild(globalAsk);
-    globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
-    globalAsk.addEventListener('submit',event=>{
-      event.preventDefault();
-      const question=globalAskInput.value.trim();
-      if(!question) return;
-      const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
-      const origin=current==='#/ask'?'#/team':current;
-      const originMeta=teamsheetRouteMeta(origin);
-      askRouteBack.setAttribute('href',origin);
-      askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
-      askView.dataset.originRoute=origin;
-      const fullQuestion=document.getElementById('q');
-      if(fullQuestion) fullQuestion.value=question;
-      navigateTeamsheetRoute('#/ask');
-      setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
-      globalAskInput.value='';
-      globalAskSend.disabled=true;
-    });
+    if(askAvailable){
+      globalAskInput.addEventListener('input',()=>{globalAskSend.disabled=!globalAskInput.value.trim();});
+      globalAsk.addEventListener('submit',event=>{
+        event.preventDefault();
+        const question=globalAskInput.value.trim();
+        if(!question) return;
+        const current=normaliseTeamsheetRoute(globalThis.location?.hash||'#/team');
+        const origin=current==='#/ask'?'#/team':current;
+        const originMeta=teamsheetRouteMeta(origin);
+        askRouteBack.setAttribute('href',origin);
+        askRouteBack.setAttribute('aria-label',`Back to ${originMeta.title}`);
+        askView.dataset.originRoute=origin;
+        const fullQuestion=document.getElementById('q');
+        if(fullQuestion) fullQuestion.value=question;
+        navigateTeamsheetRoute('#/ask');
+        setTimeout(()=>document.getElementById('askBtn')?.click?.(),0);
+        globalAskInput.value='';
+        globalAskSend.disabled=true;
+      });
+    }
   }
 
   const updateKeyboardState=()=>{
@@ -4203,18 +4215,34 @@ function setupAppShell(){
     ['#/ask',askView]
   ]);
   const rememberedFocus=new Map();
+  const routeScrollPositions=new Map();
   let activeRoute=normaliseTeamsheetRoute(globalThis.location?.hash||'');
+  let pendingNavigation=null;
+  if(globalThis.history&&'scrollRestoration' in globalThis.history) globalThis.history.scrollRestoration='manual';
+
+  const routeNodeFor=route=>route.startsWith('#/settings')
+    ? (settingsRouteNodes.get(route)||settingsView)
+    : route.startsWith('#/leagues')
+      ? (leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView)
+      : (routeNodes.get(route)||teamView);
+  const currentScroll=()=>({left:Number(globalThis.scrollX||0),top:Number(globalThis.scrollY||0)});
+  const rememberRouteState=()=>routeScrollPositions.set(activeRoute,currentScroll());
+  const focusCandidateVisible=node=>Boolean(node&&document.contains?.(node)&&!node.hidden&&!node.closest?.('[hidden],[aria-hidden="true"]'));
 
   document.addEventListener('click',event=>{
     const link=event.target?.closest?.('a[href^="#/"]');
     if(!link) return;
     const destination=normaliseTeamsheetRoute(link.getAttribute('href'));
-    if(destination!==activeRoute) rememberedFocus.set(activeRoute,link);
+    if(destination!==activeRoute){
+      rememberedFocus.set(activeRoute,link);
+      rememberRouteState();
+      pendingNavigation={route:destination,kind:link.classList?.contains('route-back')?'return':'forward'};
+    }
   },true);
 
-  const focusRoute=(route,node)=>{
-    const remembered=rememberedFocus.get(route);
-    if(remembered&&document.contains?.(remembered)&&!remembered.hidden){
+  const focusRoute=(route,node,{preferRemembered=false}={})=>{
+    const remembered=preferRemembered?rememberedFocus.get(route):null;
+    if(remembered&&document.contains?.(remembered)&&focusCandidateVisible(remembered)){
       remembered.focus?.({preventScroll:true});
       return;
     }
@@ -4223,10 +4251,12 @@ function setupAppShell(){
     heading?.focus?.({preventScroll:true});
   };
 
-  const activateRoute=(requested,{focus=false}={})=>{
+  const activateRoute=(requested,{focus=false,restoreScroll=false,preferRemembered=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
     const meta=teamsheetRouteMeta(route);
+    const previousRoute=activeRoute;
     if(globalThis.location?.hash!==route) globalThis.history?.replaceState?.(null,'',route);
+    if(previousRoute!==route) document.dispatchEvent?.(new CustomEvent('teamsheet:before-route-change',{detail:{from:previousRoute,to:route}}));
 
     topLevelViews.forEach(view=>{
       const active=route.startsWith('#/settings')?view===settingsView:route.startsWith('#/leagues')?view===leaguesView:view===routeNodes.get(route);
@@ -4242,30 +4272,44 @@ function setupAppShell(){
     document.body.dataset.route=route.slice(2);
     document.title=`${meta.title} — Teamsheet`;
     activeRoute=route;
-    globalThis.scrollTo?.({top:0,left:0});
-    if(focus){
-      const activeNode=route.startsWith('#/settings')?(settingsRouteNodes.get(route)||settingsView):route.startsWith('#/leagues')?(leaguesView.querySelector(`[data-league-route="${route}"]`)||leaguesView):(routeNodes.get(route)||teamView);
-      focusRoute(route,activeNode);
-    }
+    const position=restoreScroll?(routeScrollPositions.get(route)||{top:0,left:0}):{top:0,left:0};
+    globalThis.scrollTo?.({top:position.top,left:position.left});
+    if(focus) focusRoute(route,routeNodeFor(route),{preferRemembered});
     document.dispatchEvent?.(new CustomEvent('teamsheet:route-change',{detail:{route,primary:meta.primary,parent:meta.parent||null}}));
     return route;
   };
 
   const navigateTeamsheetRoute=(requested,{replace=false}={})=>{
     const route=normaliseTeamsheetRoute(requested);
+    rememberRouteState();
+    pendingNavigation={route,kind:'forward'};
     if(replace){
       globalThis.history?.replaceState?.(null,'',route);
+      pendingNavigation=null;
       activateRoute(route,{focus:true});
-    }else if(globalThis.location?.hash===route) activateRoute(route,{focus:true});
-    else if(globalThis.location) globalThis.location.hash=route;
+    }else if(globalThis.location?.hash===route){
+      pendingNavigation=null;
+      activateRoute(route,{focus:true});
+    }else if(globalThis.location) globalThis.location.hash=route;
     return route;
   };
   globalThis.__teamsheetNavigate=navigateTeamsheetRoute;
-  globalThis.addEventListener?.('hashchange',()=>activateRoute(globalThis.location?.hash,{focus:true}));
+  globalThis.addEventListener?.('hashchange',()=>{
+    const route=normaliseTeamsheetRoute(globalThis.location?.hash);
+    const navigation=pendingNavigation?.route===route?pendingNavigation:null;
+    pendingNavigation=null;
+    const returning=!navigation||navigation.kind==='return';
+    activateRoute(route,{focus:true,restoreScroll:returning,preferRemembered:returning});
+  });
 
   const initial=normaliseTeamsheetRoute(globalThis.location?.hash||'');
   if(globalThis.location?.hash!==initial) globalThis.history?.replaceState?.(null,'',initial);
   activateRoute(initial);
+  if(initial!=='#/team'){
+    const focusInitial=()=>focusRoute(initial,routeNodeFor(initial));
+    if(document.body?.classList?.contains('startup-pending')) document.addEventListener('teamsheet:startup-ready',focusInitial,{once:true});
+    else globalThis.queueMicrotask?.(focusInitial);
+  }
 }
 
 setupAppShell();
@@ -4387,7 +4431,15 @@ function playerDetailAvailabilityLabel(p = {}){
   return 'Available';
 }
 
-function playerDetailClose(){
+function playerDetailCanRestoreFocus(node){
+  if(!node||typeof node.focus!=='function') return false;
+  if(typeof document!=='undefined'&&typeof document.contains==='function'&&!document.contains(node)) return false;
+  if(node.hidden||node.getAttribute?.('aria-hidden')==='true') return false;
+  if(node.closest?.('[hidden],[aria-hidden="true"]')) return false;
+  return true;
+}
+
+function playerDetailClose({restoreFocus=true}={}){
   if(typeof document === 'undefined') return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
   if(!panel || !backdrop) return false;
@@ -4397,7 +4449,7 @@ function playerDetailClose(){
   if(document.body?.classList) document.body.classList.remove('player-detail-open');
   const restore = playerDetailPreviousFocus;
   playerDetailPreviousFocus = null;
-  if(restore && typeof restore.focus === 'function') restore.focus();
+  if(restoreFocus&&playerDetailCanRestoreFocus(restore)) restore.focus({preventScroll:true});
   return true;
 }
 
@@ -4448,7 +4500,13 @@ function playerDetailOpen({title = '', body = [], trigger = null} = {}){
   return true;
 }
 
-if(typeof document !== 'undefined') playerDetailSetup();
+if(typeof document !== 'undefined'){
+  playerDetailSetup();
+  document.addEventListener('teamsheet:before-route-change',()=>{
+    const panel=$('playerDetailPanel');
+    if(panel&&!panel.hidden) playerDetailClose({restoreFocus:false});
+  });
+}
 
 
 
@@ -6573,7 +6631,7 @@ function transferPlannerDecisionHero(state,baseline,topAlternative,horizon){
     title=moves.map(move=>`${move.outName} → ${move.inName}`).join(' · ');
     detail='This transfer plan ranks above making no transfer under the current assumptions.';
     metric=transferPlannerNetLabel(topAlternative.netGain);
-    hit=`${Number(topAlternative.hitCost)||0}-point hit`;
+    hit=Number(topAlternative.hitCost)?`${Number(topAlternative.hitCost)}-point hit`:'No hit';
   }else if(state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST){
     eyebrow='Highest-ranked decision';
     title='Make no transfer';
@@ -6721,7 +6779,7 @@ function renderTransfers(){
     const otherAlternatives=alternatives.slice(1,4);
     if(otherAlternatives.length){
       nodes.push(el('details',{class:'transfer-alternatives'},
-        el('summary',{},`Other legal options (${otherAlternatives.length})`),
+        el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
         el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
           title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
           index:plans.indexOf(plan),
@@ -6735,7 +6793,7 @@ function renderTransfers(){
     }
 
     nodes.push(el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points.'));
+      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
     setChildren(out,nodes);
   }finally{
     out.setAttribute('aria-busy','false');
@@ -7206,6 +7264,11 @@ function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
   if(!miniLeagueReady) return; ensureMiniLeagueExposureSection(); renderLeaguePickerSummary(); renderLeagueManageList();
   const sections=[['#/leagues',$('leagueLanding')],['#/leagues/standings',$('leagueStandings')],['#/leagues/rival',$('leagueRival')],['#/leagues/exposure',$('leagueExposure')],['#/leagues/manage',$('leagueManage')]];
   const resolved=sections.some(([key])=>key===route)?route:'#/leagues'; sections.forEach(([key,node])=>{if(node) node.hidden=key!==resolved;});
+  if(!S.boot&&resolved!=='#/leagues/manage'){
+    const target=resolved==='#/leagues'?$('leagueLandingOut'):resolved==='#/leagues/standings'?$('leagueStandingsOut'):resolved==='#/leagues/rival'?$('leagueRivalOut'):$('leagueExposureOut');
+    setChildren(target,miniLeagueEmpty('Official FPL data is unavailable','League position and public rival facts cannot be verified until core Official FPL data loads.',miniLeagueLink('Manage saved leagues','#/leagues/manage','btn ghost')));
+    return;
+  }
   renderMiniLeagueLanding(); renderMiniLeagueStandings(); renderMiniLeagueRival(); renderMiniLeagueExposure();
 }
 function renderLeagueChips(){
@@ -7243,7 +7306,7 @@ const flagNodes = p => {
   return nodes;
 };
 const cell = (text, cls = '') => elNode('td', cls ? {class:cls} : {}, text);
-const head = (text, cls = '') => elNode('th', cls ? {class:cls} : {}, text);
+const head = (text, cls = '', scope='col') => elNode('th', cls ? {class:cls,scope} : {scope}, text);
 const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+kind : ''}`},children);
 /* ---------------------------------------------------------------------
    VIEW — FIXTURE TICKER
@@ -7267,7 +7330,7 @@ function renderTicker(){
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    const row = elNode('tr',{},elNode('td',{class:'team'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
+    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
     teamFixtures(t.id, from, span).forEach(games => {
       if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
       const diffs = games.map(g => lens === 'official' ? g.officialDiff
@@ -7281,7 +7344,7 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('thead',{},header),body));
+  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
@@ -7337,9 +7400,11 @@ function renderPlayers(){
   const playerBody = elNode('tbody');
   ranked.forEach(({p,x}) => {
     const t = S.teams[p.team];
-    playerBody.appendChild(elNode('tr',{class:'clickable',dataset:{pid:p.id},onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
-      elNode('td',{class:'player-result-main'},elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
-        elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`)),
+    const openButton=elNode('button',{type:'button',class:'player-row-action','aria-label':`Open ${p.web_name} player details`,onclick:event=>openPlayerDetailView(p,from,span,event.currentTarget)},
+      elNode('span',{class:'pname'},p.web_name,flagNodes(p)),
+      elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[p.element_type]||'?'),` ${t?t.short_name:'—'}${x.games!==span?` · ${x.games} games`:''}`));
+    playerBody.appendChild(elNode('tr',{dataset:{pid:p.id}},
+      elNode('td',{class:'player-result-main'},openButton),
       elNode('td',{class:'num',dataset:{label:'Price'}},(p.now_cost/10).toFixed(1)),
       elNode('td',{class:'num player-result-secondary',dataset:{label:'Ownership'}},p.selected_by_percent),
       elNode('td',{class:'num player-result-secondary',dataset:{label:'Form'}},fmt1(num(p.form))),
@@ -7347,7 +7412,7 @@ function renderPlayers(){
       elNode('td',{class:'num',dataset:{label:`${span} GW xP`}},fmt1(x.total)),
       elNode('td',{class:'num',dataset:{label:'xP / £m'}},fmt1(x.total/(p.now_cost/10)))));
   });
-  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
+  setChildren($('playerTable'),elNode('table',{class:'data'},elNode('caption',{class:'sr-only'},`Player projections over ${span} Gameweeks`),elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Own%','num'),head('Form','num'),head('xP/GW','num'),head(`xP ${span}GW`,'num'),head('per £m','num'))),playerBody));
 }
 
 function breakdownNode(p, x, span){
@@ -7569,10 +7634,15 @@ function renderSquad(){
   }
   nodes.push(elNode('h3',{class:'section-title'},'All 15 over 6 gameweeks'));
   const tbody=elNode('tbody');
-  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>tbody.appendChild(elNode('tr',{class:'clickable',onclick:event=>openPlayerDetailView(s.p,gw,6,event.currentTarget)},
-    elNode('td',{},elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`)),
-    cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total))))));
-  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
+  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(s=>{
+    const openButton=elNode('button',{type:'button',class:'player-row-action','aria-label':`Open ${s.p.web_name} player details`,onclick:event=>openPlayerDetailView(s.p,gw,6,event.currentTarget)},
+      elNode('span',{class:'pname'},s.p.web_name,flagNodes(s.p)),
+      elNode('span',{class:'pmeta'},elNode('span',{class:'pos'},S.posName[s.p.element_type]||'?'),` ${S.teams[s.p.team]?.short_name||''}`));
+    tbody.appendChild(elNode('tr',{},
+      elNode('td',{},openButton),
+      cell((s.p.now_cost/10).toFixed(1),'num'),cell((sellPrice(s)/10).toFixed(1),'num'),cell(fmt1(num(s.p.form)),'num'),cell(fmt1(xpOf(s.p,gw,1).total),'num'),elNode('td',{class:'num'},elNode('span',{class:'xp'},fmt1(xpOf(s.p,gw,6).total)))));
+  });
+  nodes.push(elNode('div',{class:'scroll'},elNode('table',{class:'data'},elNode('caption',{class:'sr-only'},`Current squad projections from GW${gw}`),elNode('thead',{},elNode('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody)));
   if(!$('useManual').checked&&S.picks) nodes.push(noteNode('plain',"Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact."));
   setChildren(out,nodes);
 }
@@ -7622,14 +7692,40 @@ function buildContext(){
   return c;
 }
 
+let lastAskQuestion='';
 function renderThread(){
-  $('thread').innerHTML = S.thread.map(m =>
+  const thread=$('thread');
+  thread.innerHTML = S.thread.map(m =>
     `<div class="answer ${m.role==='user'?'me':''}"><p>${md(m.content)}</p></div>`).join('');
+  if(globalThis.location?.hash==='#/ask') globalThis.requestAnimationFrame?.(()=>thread.lastElementChild?.scrollIntoView?.({block:'nearest'}));
+}
+function configureAskAvailability(){
+  const available=Boolean(globalThis.window?.storage);
+  const hosted=$('askHostedStatus'),question=$('q'),askButton=$('askBtn'),retry=$('retryAsk');
+  if(hosted) hosted.hidden=available;
+  if(question){question.disabled=!available;question.setAttribute('aria-describedby','askHostedStatus');}
+  if(askButton) askButton.disabled=!available;
+  if(retry&&!available) retry.hidden=true;
+  document.querySelectorAll('[data-q]').forEach(button=>{button.disabled=!available;});
+  return available;
 }
 
 async function ask(){
+  const askAvailable=configureAskAvailability();
   const q = $('q').value.trim();
   if(!q) return;
+  if(!askAvailable){
+    lastAskQuestion=q;
+    S.thread.push({role:'user',content:q});
+    $('q').value='';
+    S.thread.push({role:'assistant',content:"The AI assistant requires the planned serverless migration in this hosted build. Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
+    renderThread();
+    $('askStatus').textContent='';
+    if($('retryAsk')) $('retryAsk').hidden=true;
+    return;
+  }
+  lastAskQuestion=q;
+  if($('retryAsk')) $('retryAsk').hidden=true;
   S.thread.push({role:'user', content:q});
   $('q').value = '';
   renderThread();
@@ -7645,9 +7741,9 @@ ${buildContext()}`;
     // D-08 / SEC-3: no Anthropic secret is accepted, stored or sent by this
     // frontend. Claude's artifact preview provides the only approved keyless
     // path. Static hosted builds stop before making any Anthropic request.
-    if(!window.storage){
+    if(!globalThis.window?.storage){
       S.thread.push({role:'assistant', content:"The AI assistant requires the planned serverless migration in this hosted build. For now, Ask Teamsheet is available only inside Claude's artifact preview; this app does not accept or store Anthropic API keys."});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
+      renderThread(); $('askStatus').textContent = ''; if($('retryAsk')) $('retryAsk').hidden=false; btn.disabled = false; return;
     }
     const msgs = S.thread.slice(-8).map(m => ({role:m.role, content:m.content}));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -7659,20 +7755,22 @@ ${buildContext()}`;
       })
     });
     if(!res.ok){
-      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Try again later or use the hosted app without the Ask feature.'});
-      renderThread(); $('askStatus').textContent = ''; btn.disabled = false; return;
+      S.thread.push({role:'assistant', content:'The keyless Claude connection is unavailable in this preview. Your question has been kept so you can retry.'});
+      renderThread(); $('askStatus').textContent = ''; if($('retryAsk')) $('retryAsk').hidden=false; btn.disabled = false; return;
     }
     const data = await res.json();
     const text = (data.content||[]).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
     S.thread.push({role:'assistant', content: text || 'No answer came back — try again.'});
     renderThread();
     $('askStatus').textContent = '';
+    if($('retryAsk')) $('retryAsk').hidden=true;
   }catch(e){
-    S.thread.pop();
+    S.thread.push({role:'assistant',content:'That request failed — your question has been kept. Check your connection and try again.'});
     renderThread();
-    $('askStatus').textContent = 'That request failed — check your connection and try again.';
+    $('askStatus').textContent = 'Request failed. Your question is still in the conversation.';
+    if($('retryAsk')) $('retryAsk').hidden=false;
   }
-  btn.disabled = false;
+  btn.disabled = !Boolean(globalThis.window?.storage);
 }
 
 /* ---------------------------------------------------------------------
@@ -7685,7 +7783,7 @@ function renderManual(){
     if(!p) return null;
     return elNode('span', {class:'pill'}, p.web_name, ' ',
       elNode('span', {class:'mono muted'}, S.posName[p.element_type]||''),
-      elNode('button', {dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
+      elNode('button', {type:'button',class:'pill-remove',dataset:{rm:i}, 'aria-label':`Remove ${p.web_name}`}, '×'));
   }));
   const counts = {1:0,2:0,3:0,4:0};
   S.manual.forEach(m => { const p = S.byId[m.id]; if(p && counts[p.element_type]!==undefined) counts[p.element_type]++; });
@@ -7701,7 +7799,7 @@ function searchPlayers(term){
   if(!S.boot || term.length < 2){ box.hidden = true; return; }
   const t = term.toLowerCase();
   const hits = S.boot.elements.filter(p => p.web_name.toLowerCase().includes(t)).slice(0,12);
-  setChildren(box, hits.length ? hits.map(p => elNode('div', {dataset:{add:p.id}}, p.web_name,
+  setChildren(box, hits.length ? hits.map(p => elNode('button', {type:'button',class:'manual-player-result',dataset:{add:p.id},'aria-label':`Add ${p.web_name} to manual squad`}, p.web_name,
     elNode('span', {class:'pmeta'}, `${S.posName[p.element_type]||''} · ${S.teams[p.team]?.short_name||''} · £${(p.now_cost/10).toFixed(1)}m`)))
     : elNode('div', {}, 'No player by that name'));
   box.hidden = false;
@@ -7719,6 +7817,19 @@ function searchPlayers(term){
 /* ---------------------------------------------------------------------
    RENDER + WIRING
    --------------------------------------------------------------------- */
+function renderRestrictedAppState(){
+  setChildren($('gwstrip'),elNode('span',{},'Official FPL data unavailable'));
+  renderTicker();
+  renderTransfers();
+  renderSquad();
+  renderManual();
+  setChildren($('playerTable'),elNode('div',{class:'empty'},elNode('strong',{},'Player Explorer unavailable'),'Verified Official FPL player data is required before players can be researched.'));
+  renderMiniLeagues(globalThis.location?.hash||'#/leagues');
+  configureAskAvailability();
+  if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+    document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
+}
+
 function renderAll(){
   if(!S.boot) return;
   clearXP();
@@ -7747,11 +7858,15 @@ function renderAll(){
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
 // Teamsheet 2.0.1: app-shell.mjs owns hash routing, history and focus.
-document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { $('q').value = c.dataset.q; ask(); }));
+configureAskAvailability();
+document.querySelectorAll('[data-q]').forEach(c => c.addEventListener('click', () => { if(c.disabled) return; $('q').value = c.dataset.q; ask(); }));
 document.addEventListener('teamsheet:preview-change',()=>renderSquad());
+document.addEventListener('teamsheet:restricted',renderRestrictedAppState);
 
-const reFixtures = debounce(() => { clearXP(); renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); }, 180);
-['fxFrom','fxSpan','fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtures));
+const reFixtureDisplay = debounce(() => { renderTicker(); }, 180);
+const reFixtureWindow = debounce(() => { clearXP(); renderTicker(); renderPlayers(); }, 180);
+['fxSort','fxLens'].forEach(id => $(id).addEventListener('input', reFixtureDisplay));
+['fxFrom','fxSpan'].forEach(id => $(id).addEventListener('input', reFixtureWindow));
 ['plPos','plMax','plHorizon','plFit','plOwn'].forEach(id => $(id).addEventListener('input', debounce(renderPlayers, 180)));
 ['ftCount','bankIn'].forEach(id => $(id).addEventListener('input', debounce(() => { saveCfg(); renderSquad(); renderTransfers(); }, 250)));
 // The Team ID persists as it is typed; Mini-League choices use their own versioned state.
@@ -7759,13 +7874,14 @@ $('teamId').addEventListener('input', debounce(saveCfg, 300));
 $('useManual').addEventListener('change', () => { saveCfg(); renderAll(); });
 $('loadBtn').addEventListener('click', () => runVerifiedRefresh({reason:'manual',force:true}));
 $('askBtn').addEventListener('click', ask);
+$('retryAsk')?.addEventListener('click',()=>{ if(!lastAskQuestion) return; $('q').value=lastAskQuestion; ask(); });
 $('btBtn').addEventListener('click', runBacktest);
 // The low-value odds key remains client-side temporarily (D-08); save it on
 // input so a pasted value is not lost before the field blurs.
 $('oddsKey').addEventListener('input', debounce(saveCfg, 300));
 $('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds().then(() => { clearXP(); renderAll(); }); });
 $('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat().then(() => { clearXP(); renderAll(); }); });
-$('clearThread').addEventListener('click', () => { S.thread = []; renderThread(); });
+$('clearThread').addEventListener('click', () => { S.thread = []; lastAskQuestion=''; if($('retryAsk')) $('retryAsk').hidden=true; renderThread(); });
 $('pSearch').addEventListener('input', debounce(e => searchPlayers(e.target.value.trim()), 160));
 document.addEventListener('click', e => {
   if(!e.target.closest('.searchbox')) $('pResults').hidden = true;
