@@ -1,1 +1,0 @@
-Run the Teamsheet 2.0.7 verification after failure-capture hardening.

@@ -5,9 +5,9 @@ Approval: exact Scope S-2.0.7 approved by Pritesh on 4 August 2026.
 Base commit: `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`.
 Model version: `2.4.0`.
 Rules version: `2026-27.3`.
-Automated baseline: **__TEST_COUNT__ passed, 0 failed, 0 skipped**.
-Reviewed source commit: `__SOURCE_COMMIT__`.
-Generated-build commit: `__GENERATED_COMMIT__`.
+Automated baseline: **530 passed, 0 failed, 0 skipped**.
+Reviewed source commit: `3baeb8fd51ea68af353c5097b0e5d2d49837dcf6`.
+Generated-build commit: `db48549fe6c527e235615eb7fd057f8a51de4d7a`.
 
 ## Implemented scope
 
@@ -29,7 +29,7 @@ No provider, endpoint, data source, model, fixture calculation, expected-minutes
 
 ## Automated verification
 
-- `./run-tests.sh`: **__TEST_COUNT__ passed, 0 failed, 0 skipped**;
+- `./run-tests.sh`: **530 passed, 0 failed, 0 skipped**;
 - successful exact-source production build;
 - two exact-identity builds were byte-identical;
 - root `index.html` equals `dist/index.html`;
