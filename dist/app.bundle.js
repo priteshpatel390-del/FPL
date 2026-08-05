@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f","commit":"5a61ec5510c447580afa6070a5a9815516babe86"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f0b7bbe65166e54802920a2e73c06a2e1946b249ff57e9cb4","commit":"5a61ec5510c447580afa6070a5a9815516babe86","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"8c97afbea5852977","commit":"14b1e31ba9ff8d592afa3c07ab8627d94a979d94"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"8c97afbea58529773636bd3b3d24d6a5bfecac4becf04b25971988f66f02a8ff","commit":"14b1e31ba9ff8d592afa3c07ab8627d94a979d94","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -53,6 +53,7 @@ const TRANSFER_RULES = Object.freeze({
   maxFreeTransfers:5,
   pointsPerPaidTransfer:4,
   rollValue:0.5,
+  squadBudget:1000,
   maxPerClub:3,
   positionQuotas:Object.freeze({1:2,2:5,3:5,4:3}),
   unavailableStatuses:Object.freeze(['i','u','s','n']),
@@ -994,6 +995,7 @@ function validateOutcomeHistory(payload){
 /* ===== src/state.mjs ===== */
 const S = {
   boot:null, fixtures:null, entry:null, picks:null, history:null,
+  picksGameweek:0, picksStatus:'idle', strengthsAvailable:false,
   teams:{}, byId:{}, posName:{}, avg:null,
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
@@ -1007,6 +1009,17 @@ const S = {
    SLIM + CACHE — bootstrap is far too large to store whole, so only the
    fields the model uses are kept.
    --------------------------------------------------------------------- */
+const TEAM_STRENGTH_FIELDS = Object.freeze([
+  'strength_attack_home','strength_attack_away','strength_defence_home','strength_defence_away'
+]);
+function validTeamStrength(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0;
+}
+function teamStrengthsValid(team){
+  return Boolean(team) && TEAM_STRENGTH_FIELDS.every(field => validTeamStrength(team[field]));
+}
+
 const KEEP = ['id','web_name','team','element_type','now_cost','total_points','form','points_per_game',
   'selected_by_percent','minutes','starts','goals_scored','assists','clean_sheets','saves','bonus','bps',
   'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
@@ -1046,6 +1059,11 @@ function hydrate(d){
     return { ok:false, issues };
   }
   const v = bv.value;
+  const invalidStrengthTeams = v.teams.filter(team => !teamStrengthsValid(team)).length;
+  if(invalidStrengthTeams) issues.push({
+    provider:'fpl', endpoint:'/bootstrap-static/', code:'team_strengths_unavailable',
+    severity:'partial', count:invalidStrengthTeams, fields:TEAM_STRENGTH_FIELDS.slice()
+  });
   S.boot = {events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types};
   S.fixtures = fx.fixtures;
   S.dataIssues = issues;
@@ -1062,8 +1080,12 @@ function hydrate(d){
   S.gamesPlayed = Math.max(1, S.currentGW);
   S.cachedAt = v.at;
 
-  const ts = v.teams, n = ts.length || 1;
-  const mean = k => ts.reduce((a,t) => a + (t[k]||1000), 0) / n;
+  const ts = v.teams;
+  S.strengthsAvailable = ts.length > 0 && ts.every(teamStrengthsValid);
+  const mean = key => {
+    const values = ts.map(team => Number(team[key])).filter(validTeamStrength);
+    return values.length ? values.reduce((sum,value) => sum + value, 0) / values.length : null;
+  };
   S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
            defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
 
@@ -1475,19 +1497,16 @@ function resetHealth(){ Object.keys(health).forEach(k => delete health[k]); }
 
 /* ===== src/providers/transport.mjs ===== */
 /* ---------------------------------------------------------------------
-   FETCH — the FPL API sends no CORS headers, so requests cascade through
-   public read-only relays. Each attempt is capped so one dead relay
-   cannot stall the chain.
+   Official FPL transport.
 
-   D-15: retry sits around the WHOLE cascade, not around each relay.
-   Rotating to the next relay is transport selection, not a retry — it is
-   already the redundancy mechanism. Retrying each of five relays three
-   times would mean fifteen requests and roughly two minutes of spinner
-   on a total outage. One cascade therefore counts as one attempt, and a
-   second cascade only runs if the first failed transiently AND failed
-   quickly enough to still look like a blip (the elapsed-time budget).
+   Browser requests use the owner-controlled Teamsheet gateway declared
+   in the document meta tag. The gateway is a narrow read-only transport
+   to fantasy.premierleague.com; it is not another football-data provider.
+   Anonymous public relays remain available only to the optional Understat
+   HTML loader and are never part of the Official FPL request path.
    --------------------------------------------------------------------- */
 const BASE = 'https://fantasy.premierleague.com/api';
+const FPL_GATEWAY_META = 'teamsheet-fpl-gateway';
 const RELAYS = [
   u => u,
   u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
@@ -1495,113 +1514,128 @@ const RELAYS = [
   u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
   u => 'https://thingproxy.freeboard.io/fetch/' + u
 ];
-let relayIdx = 0;
 
-async function fetchT(url, ms){
+async function fetchT(url, ms, options = {}){
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);
-  try{ return await fetch(url, {signal:c.signal, headers:{'Accept':'application/json'}}); }
+  try{ return await fetch(url, {...options, signal:c.signal}); }
   finally{ clearTimeout(t); }
 }
 
-/* One full pass over the relay list. Returns an outcome describing what
-   happened, including whether the failures looked transient:
-     {outcome:'value',    value, status}
-     {outcome:'notfound', status}          provider says the entry isn't there
-     {outcome:'failed',   retryable, status}
-   A parse failure does NOT mark the cascade retryable — a relay returning
-   junk will keep returning junk — but the next relay is still tried, since
-   that is a different upstream and may well be fine. */
-async function cascadeOnce(url, timeout, optional){
-  let sawRetryable = false, lastStatus = null;
-  for(let i=0;i<RELAYS.length;i++){
-    const idx = (relayIdx + i) % RELAYS.length;
-    let res;
-    try{ res = await fetchT(RELAYS[idx](url), timeout); }
-    catch(e){ sawRetryable = true; lastStatus = 'network'; continue; }
-
-    if(!res.ok){
-      lastStatus = res.status;
-      if(isRetryableStatus(res.status)) sawRetryable = true;
-      continue;
-    }
-
-    let data;
-    try{ data = await res.json(); }
-    catch(e){ lastStatus = 'parse'; continue; }
-
-    if(data && (data.detail === 'Not found.' || data.detail)){
-      if(optional) return {outcome:'notfound', status:'not-found'};
-      lastStatus = 'detail';
-      continue;
-    }
-
-    relayIdx = idx;
-    S.source = idx === 0 ? 'direct' : 'relay ' + idx;
-    return {outcome:'value', value:data, status:res.status};
-  }
-  return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
+function normaliseGatewayBase(value){
+  if(typeof value !== 'string' || !value.trim()) return null;
+  try{
+    const u = new URL(value.trim());
+    const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    if(u.protocol !== 'https:' && !(local && u.protocol === 'http:')) return null;
+    if(u.username || u.password || u.search || u.hash) return null;
+    if(!/^\/fpl\/?$/.test(u.pathname)) return null;
+    return u.origin + '/fpl';
+  }catch(error){ return null; }
 }
 
-async function api(path, {optional=false, timeout=8000} = {}){
-  const url = BASE + path;
-  // Optional endpoints already have a graceful fallback, and several of them
-  // are fetched in a pool of twenty (rival squads). Spending the full core-data
-  // allowance on each would turn one outage into hundreds of doomed requests,
-  // so they get a smaller one. Core data keeps the full allowance.
+function configuredGatewayBase(documentRef = globalThis.document){
+  const injected = normaliseGatewayBase(globalThis.__TEAMSHEET_FPL_GATEWAY_BASE__);
+  if(injected) return injected;
+  const meta = documentRef?.querySelector?.(`meta[name="${FPL_GATEWAY_META}"]`);
+  return normaliseGatewayBase(meta?.content || '');
+}
+
+function gatewayRequestUrl(path, gatewayBase = configuredGatewayBase()){
+  const base = normaliseGatewayBase(gatewayBase);
+  if(!base || typeof path !== 'string' || !path.startsWith('/') ||
+     path.includes('://') || path.includes('..') || path.includes('\\')) return null;
+  return base + path;
+}
+
+async function gatewayOnce(path, timeout, optional, gatewayBase){
+  const url = gatewayRequestUrl(path, gatewayBase);
+  if(!url) return {outcome:'failed', retryable:false, status:'gateway-unconfigured'};
+  let res;
+  try{
+    res = await fetchT(url, timeout, {
+      method:'GET',
+      credentials:'omit',
+      redirect:'error',
+      referrerPolicy:'no-referrer',
+      headers:{'Accept':'application/json'}
+    });
+  }catch(error){
+    return {outcome:'failed', retryable:true, status:'network'};
+  }
+  if(!res.ok){
+    if(optional && res.status === 404) return {outcome:'notfound', status:'not-found'};
+    return {outcome:'failed', retryable:isRetryableStatus(res.status), status:res.status};
+  }
+  let data;
+  try{ data = await res.json(); }
+  catch(error){ return {outcome:'failed', retryable:false, status:'parse'}; }
+  if(data && data.detail){
+    if(optional) return {outcome:'notfound', status:'not-found'};
+    return {outcome:'failed', retryable:false, status:'detail'};
+  }
+  S.source = 'Teamsheet gateway';
+  return {outcome:'value', value:data, status:res.status};
+}
+
+async function api(path, {optional=false, timeout=8000, gatewayBase} = {}){
   const policy = policyFor('fpl');
   if(optional) policy.attempts = Math.min(policy.attempts, 2);
-
   const { result, record } = await withRetry(
     async () => {
-      const c = await cascadeOnce(url, timeout, optional);
-      if(c.outcome === 'value')    return {ok:true, value:c.value, status:c.status};
-      if(c.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
-      return {ok:false, retryable:c.retryable, status:c.status};
+      const response = await gatewayOnce(path, timeout, optional, gatewayBase);
+      if(response.outcome === 'value') return {ok:true, value:response.value, status:response.status};
+      if(response.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
+      return {ok:false, retryable:response.retryable, status:response.status};
     },
-    { ...policy, endpoint: safeEndpoint(path) }
+    {...policy, endpoint:safeEndpoint(path)}
   );
   recordRetry(record);
-
   if(result && result.ok) return result.value;
   if(optional) return null;
   throw new Error('feed unreachable: ' + path);
 }
 
-// limited-concurrency map, so 20 rival lookups don't hammer one relay
+// limited-concurrency map, so rival and player-history lookups stay bounded
 async function pool(items, worker, size=4){
   const out = new Array(items.length);
   let i = 0;
   await Promise.all(Array.from({length:Math.min(size, items.length)}, async () => {
     while(i < items.length){
       const idx = i++;
-      try{ out[idx] = await worker(items[idx]); }catch(e){ out[idx] = null; }
+      try{ out[idx] = await worker(items[idx]); }catch(error){ out[idx] = null; }
     }
   }));
   return out;
 }
 
-// generic relay fetch for non-FPL sites (Understat needs it; raw GitHub doesn't)
+// Generic relay cascade retained only for optional non-FPL sources.
+async function cascadeOnce(url, timeout, {asText=false} = {}){
+  let sawRetryable = false, lastStatus = null;
+  for(const wrap of RELAYS){
+    let res;
+    try{ res = await fetchT(wrap(url), timeout, {headers:{'Accept':asText?'text/html':'application/json'}}); }
+    catch(error){ sawRetryable = true; lastStatus = 'network'; continue; }
+    if(!res.ok){
+      lastStatus = res.status;
+      if(isRetryableStatus(res.status)) sawRetryable = true;
+      continue;
+    }
+    try{
+      return {outcome:'value', value:asText ? await res.text() : await res.json(), status:res.status};
+    }catch(error){ lastStatus = 'parse'; }
+  }
+  return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
+}
+
 async function fetchVia(url, {timeout=12000, asText=false} = {}){
   const { result, record } = await withRetry(
     async () => {
-      let sawRetryable = false, lastStatus = null;
-      for(const wrap of RELAYS){
-        let res;
-        try{ res = await fetchT(wrap(url), timeout); }
-        catch(e){ sawRetryable = true; lastStatus = 'network'; continue; }
-
-        if(!res.ok){
-          lastStatus = res.status;
-          if(isRetryableStatus(res.status)) sawRetryable = true;
-          continue;
-        }
-        try{ return {ok:true, value: asText ? await res.text() : await res.json(), status:res.status}; }
-        catch(e){ lastStatus = 'parse'; continue; }
-      }
-      return {ok:false, retryable:sawRetryable, status:lastStatus};
+      const response = await cascadeOnce(url, timeout, {asText});
+      if(response.outcome === 'value') return {ok:true, value:response.value, status:response.status};
+      return {ok:false, retryable:response.retryable, status:response.status};
     },
-    { ...policyFor('understat'), endpoint: safeEndpoint(url) }
+    {...policyFor('understat'), endpoint:safeEndpoint(url)}
   );
   recordRetry(record);
   return result && result.ok ? result.value : null;
@@ -2035,16 +2069,26 @@ function renderRouteDataWarning(targetId,{showUnavailable=true,settingsLink=true
 /* ---------------------------------------------------------------------
    FIXTURE MODEL — expected goals for and against, from team strength
    ratings rather than the official 1–5 difficulty.
+
+   When Official FPL has not published finite team-strength fields, player
+   projections use a neutral multiplier and the Fixtures view/sort uses the
+   provider's explicit 1–5 difficulty. Invalid values never become NaN.
    --------------------------------------------------------------------- */
+function neutralMatchContext(home){
+  return {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS),
+    atk:1, def:1, home, strengthAvailable:false};
+}
 function matchContext(teamId, oppId, home){
   const t = S.teams[teamId], o = S.teams[oppId], A = S.avg;
-  if(!t || !o) return {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS), atk:1, def:1, home};
-  const tAtk = home ? t.strength_attack_home : t.strength_attack_away;
-  const tDef = home ? t.strength_defence_home : t.strength_defence_away;
-  const oAtk = home ? o.strength_attack_away : o.strength_attack_home;
-  const oDef = home ? o.strength_defence_away : o.strength_defence_home;
-  const avgAtkT = home ? A.atkH : A.atkA, avgDefT = home ? A.defH : A.defA;
-  const avgAtkO = home ? A.atkA : A.atkH, avgDefO = home ? A.defA : A.defH;
+  const averagesValid = A && ['atkH','atkA','defH','defA'].every(key => validTeamStrength(A[key]));
+  if(!t || !o || !S.strengthsAvailable || !averagesValid ||
+     !teamStrengthsValid(t) || !teamStrengthsValid(o)) return neutralMatchContext(home);
+  const tAtk = Number(home ? t.strength_attack_home : t.strength_attack_away);
+  const tDef = Number(home ? t.strength_defence_home : t.strength_defence_away);
+  const oAtk = Number(home ? o.strength_attack_away : o.strength_attack_home);
+  const oDef = Number(home ? o.strength_defence_away : o.strength_defence_home);
+  const avgAtkT = Number(home ? A.atkH : A.atkA), avgDefT = Number(home ? A.defH : A.defA);
+  const avgAtkO = Number(home ? A.atkA : A.atkH), avgDefO = Number(home ? A.defA : A.defH);
 
   let xGF = clamp(BASE_GOALS * (tAtk/avgAtkT) * (avgDefO/oDef) * (home ? HOME_TILT : 1/HOME_TILT), .25, 4);
   let xGA = clamp(BASE_GOALS * (oAtk/avgAtkO) * (avgDefT/tDef) * (home ? 1/HOME_TILT : HOME_TILT), .25, 4);
@@ -2065,7 +2109,49 @@ function matchContext(teamId, oppId, home){
       xGA = xGA*0.35 + mA*0.65;
     }
   }
+  if(![xGF,xGA].every(Number.isFinite)) return neutralMatchContext(home);
+  // Preserve the long-standing public result shape when valid inputs exist.
   return {xGF, xGA, cs:Math.exp(-xGA), atk:xGF/BASE_GOALS, def:BASE_GOALS/xGA, home};
+}
+
+function officialFixtureDifficulty(game){
+  const value = Number(game?.officialDiff);
+  return Number.isInteger(value) && value >= 1 && value <= 5 ? value : null;
+}
+function fixtureAnalysisMode(){
+  return S.strengthsAvailable ? 'team-strengths' : 'official-fpl-difficulty';
+}
+function fixtureDifficulty(game, lens){
+  const official = officialFixtureDifficulty(game);
+  if(lens === 'official' || game?.ctx?.strengthAvailable === false) return official ?? 3;
+  return multToDiff(lens === 'defence' ? game.ctx.def : game.ctx.atk);
+}
+function fixtureLensState(requestedLens='attack'){
+  const fallback = fixtureAnalysisMode() === 'official-fpl-difficulty';
+  const lens = fallback ? 'official' : requestedLens;
+  return {lens, fallback, lowerIsEasier:lens === 'official'};
+}
+function averageOfficialDifficulty(teamId, fromGW, span){
+  const runs = teamFixtures(teamId, fromGW, span);
+  let total = 0, count = 0;
+  runs.forEach(games => games.forEach(game => {
+    const difficulty = officialFixtureDifficulty(game);
+    if(difficulty !== null){ total += difficulty; count += 1; }
+  }));
+  return count ? total / count : null;
+}
+function compareFixtureRunScores(left, right, sort, lens){
+  const a = Number(left), b = Number(right);
+  const aFinite = Number.isFinite(a), bFinite = Number.isFinite(b);
+  if(!aFinite || !bFinite){
+    if(aFinite) return -1;
+    if(bFinite) return 1;
+    return 0;
+  }
+  const lowerIsEasier = fixtureLensState(lens).lowerIsEasier;
+  if(sort === 'ease') return lowerIsEasier ? a - b : b - a;
+  if(sort === 'hard') return lowerIsEasier ? b - a : a - b;
+  return 0;
 }
 
 function teamFixtures(teamId, fromGW, span){
@@ -2085,19 +2171,22 @@ function teamFixtures(teamId, fromGW, span){
 
 // 1 (easiest) – 5 (hardest) from a multiplier where >1 is favourable
 function multToDiff(m){
+  m = Number(m);
+  if(!Number.isFinite(m)) return 3;
   if(m >= 1.28) return 1;
   if(m >= 1.10) return 2;
   if(m >= 0.93) return 3;
   if(m >= 0.78) return 4;
   return 5;
 }
-function runScore(teamId, fromGW, span, lens){
+function runScore(teamId, fromGW, span, requestedLens){
+  const {lens, fallback} = fixtureLensState(requestedLens);
+  if(fallback || lens === 'official') return averageOfficialDifficulty(teamId, fromGW, span);
   const runs = teamFixtures(teamId, fromGW, span);
   let total = 0;
-  runs.forEach(games => games.forEach(g => {
-    total += lens === 'defence' ? g.ctx.def
-           : lens === 'official' ? (6 - g.officialDiff)/3
-           : g.ctx.atk;
+  runs.forEach(games => games.forEach(game => {
+    const value = lens === 'defence' ? game.ctx.def : game.ctx.atk;
+    total += Number.isFinite(value) ? value : 1;
   }));
   return total/Math.max(1,span);
 }
@@ -3498,6 +3587,17 @@ const STARTUP_PHASE_COPY = Object.freeze({
   ready:['Ready','Latest verified data available.'],
   restricted:['Limited mode','Official FPL data could not be verified, so recommendations remain unavailable.']
 });
+function validGameweekId(value){
+  const id = Number(value);
+  return Number.isInteger(id) && id >= 1 && id <= 38 ? id : 0;
+}
+function publicPicksGameweek(events = S.boot?.events, currentGW = S.currentGW){
+  const current = validGameweekId(currentGW);
+  if(current) return current;
+  const next = Array.isArray(events) ? events.find(event => event?.is_next === true) : null;
+  return validGameweekId(next?.id);
+}
+
 let verifiedRefreshPromise = null;
 let lastVerifiedRefreshAt = 0;
 let lastRefreshAttemptAt = 0;
@@ -3590,7 +3690,8 @@ async function loadAll(options = {}){
 
     reportLoadPhase(options,'team');
     S.teamId = $('teamId').value.replace(/\D/g,'');
-    S.entry = null; S.picks = null; S.chipsUsed = [];
+    S.entry = null; S.picks = null; S.picksGameweek = 0; S.picksStatus = 'idle'; S.chipsUsed = [];
+    let teamStatus = '';
     if(S.teamId){
       if(st) st.textContent = 'Fetching your team…';
       const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
@@ -3599,10 +3700,20 @@ async function loadAll(options = {}){
       if(!S.entry){
         if(st) st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
       } else {
-        if(S.currentGW){
-          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true}));
+        const picksGW = publicPicksGameweek();
+        S.picksGameweek = picksGW;
+        if(picksGW){
+          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+picksGW+'/picks/', {optional:true}));
           recordIssues('fpl', '/entry/event/picks/', picksV.issues);
           S.picks = picksV.value;
+          const picksCount = Array.isArray(S.picks?.picks) ? S.picks.picks.length : 0;
+          S.picksStatus = picksCount === 15 ? 'loaded' : picksCount ? 'incomplete' : 'unavailable';
+          if(S.picksStatus === 'loaded') teamStatus = ` · public GW${picksGW} squad loaded`;
+          else if(S.picksStatus === 'incomplete') teamStatus = ` · ${picksCount}/15 public GW${picksGW} picks usable`;
+          else teamStatus = ` · public GW${picksGW} squad unavailable`;
+        } else {
+          S.picksStatus = 'gameweek-unavailable';
+          teamStatus = ' · public squad Gameweek unavailable';
         }
         const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
         recordIssues('fpl', '/entry/history/', histV.issues);
@@ -3614,7 +3725,7 @@ async function loadAll(options = {}){
       }
     }
     if(S.entry || !S.teamId){
-      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}${teamStatus}`;
     }
     await saveCfg();
 
@@ -3651,10 +3762,10 @@ async function loadAll(options = {}){
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
         "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
-      markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
+      markUnavailable('fpl', 'official gateway unavailable', 'season data cannot be shown');
       if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. Ask Teamsheet is also unavailable in this hosted build until the separately approved serverless migration.'));
+        'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
@@ -7329,22 +7440,31 @@ function renderTicker(){
   }
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const span = clamp(parseInt($('fxSpan').value) || 6, 3, 12);
-  const lens = $('fxLens').value, sort = $('fxSort').value;
+  const lensControl = $('fxLens'), sort = $('fxSort').value;
+  const lensState = fixtureLensState(lensControl.value);
+  for(const option of Array.from(lensControl.options || [])){
+    if(!option) continue;
+    const separated = option.value === 'attack' || option.value === 'defence';
+    option.hidden = lensState.fallback && separated;
+    option.disabled = lensState.fallback && separated;
+    if(option.value === 'official') option.textContent = lensState.fallback ? 'Overall FPL difficulty' : 'Official FDR';
+  }
+  if(lensState.fallback) lensControl.value = 'official';
+  const lens = lensState.lens;
 
   let teams = Object.values(S.teams).map(t => ({t, s:runScore(t.id, from, span, lens)}));
-  if(sort === 'ease') teams.sort((a,b) => b.s - a.s);
-  else if(sort === 'hard') teams.sort((a,b) => a.s - b.s);
+  if(sort === 'ease' || sort === 'hard') teams.sort((a,b) => compareFixtureRunScores(a.s,b.s,sort,lens));
   else teams.sort((a,b) => a.t.name.localeCompare(b.t.name));
 
   const header = elNode('tr',{},head('Team','tm'));
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
+    const scoreLabel=Number.isFinite(s)?s.toFixed(2):'—';
+    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},scoreLabel)));
     teamFixtures(t.id, from, span).forEach(games => {
       if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
-      const diffs = games.map(g => lens === 'official' ? g.officialDiff
-        : multToDiff(lens === 'defence' ? g.ctx.def : g.ctx.atk));
+      const diffs = games.map(g => fixtureDifficulty(g,lens));
       const contents = [];
       games.forEach((g,i) => {
         if(i) contents.push(elNode('hr',{class:'fixture-divider'}));
@@ -7354,17 +7474,28 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
+  const tickerNodes = [];
+  if(lensState.fallback) tickerNodes.push(noteNode('plain',
+    elNode('b',{},'Overall FPL difficulty.'),
+    ' Lower is easier. Official FPL currently supplies one overall 1–5 rating, so separate attacker and defender lenses are hidden until genuine team-strength inputs are available.'));
+  tickerNodes.push(elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
+  setChildren($('ticker'),tickerNodes);
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
     return {t, delta: later - now};
   });
-  const up = swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
-  const down = swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
+  const favourable = lensState.lowerIsEasier
+    ? swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4)
+    : swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
+  const harder = lensState.lowerIsEasier
+    ? swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4)
+    : swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
   const swingNodes = [];
-  if(up.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${up.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
-  if(down.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${down.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
+  if(lensState.fallback)
+    swingNodes.push(noteNode('plain',elNode('b',{},'Projection fallback.'),' Player projections use neutral fixture multipliers until separate, validated attack and defence strengths are available.'));
+  if(favourable.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${favourable.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
+  if(harder.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${harder.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
 
   const perGW = {};
   S.fixtures.filter(f => f.event >= from && f.event < from+span).forEach(f => {
@@ -7949,9 +8080,12 @@ function teamDecisionSquadReady(squad=[]){
   return counts[1]===2&&counts[2]===5&&counts[3]===5&&counts[4]===3;
 }
 
-function teamDecisionSourceLabel({manual=false,hasPicks=false,fplState='',cachedAt=null}={}){
+function teamDecisionSourceLabel({manual=false,hasPicks=false,picksGameweek=0,picksStatus='',fplState='',cachedAt=null}={}){
   const state=String(fplState||'');
-  let label=manual?'User-entered squad':hasPicks?'Official FPL public picks':'Squad unavailable';
+  const gw=Number(picksGameweek);
+  let label=manual?'User-entered squad':hasPicks
+    ? `Official FPL public picks${gw>=1&&gw<=38?` · locked GW${gw}`:''}`
+    : picksStatus==='unavailable'&&gw>=1&&gw<=38?`Public GW${gw} squad unavailable`:'Squad unavailable';
   if([HEALTH_STATES.CACHED,HEALTH_STATES.STALE,HEALTH_STATES.FALLBACK].includes(state)){
     label += state===HEALTH_STATES.FALLBACK?' · verified fallback':' · verified cache';
     if(Number.isFinite(Number(cachedAt))) label += ` · ${new Date(Number(cachedAt)).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
@@ -7996,9 +8130,12 @@ function teamDecisionRisk({dataState='',captain=null,starters=[],blankIds=[],clo
   return Object.freeze({kind:'none',level:'clear',text:'No material Team-selection risk is identified from the currently verified inputs.'});
 }
 
-function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none',squadStatus='',squadGameweek=0}={}){
   if(riskKind==='data-unavailable') return 'Official FPL season data is unavailable. Manual squad editing also needs the verified player list, so retry the data load before building a squad.';
   if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
+  if(!hasSquad && squadStatus==='gameweek-unavailable') return 'Use Load data again when Official FPL identifies the current or next Gameweek, or build your squad manually in Settings → Team & Account.';
+  if(!hasSquad && squadStatus==='unavailable') return `Use Load data again when Official FPL publishes the public${Number(squadGameweek)?` GW${Number(squadGameweek)}`:''} squad, or build your squad manually in Settings → Team & Account.`;
+  if(!hasSquad && squadStatus==='incomplete') return 'The public squad response was incomplete. Retry Load data, or build the complete squad manually in Settings → Team & Account.';
   if(!hasSquad) return 'Enter your Team ID in Team setup below, or open Settings → Team & Account to build a manual squad.';
   if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
   if(riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
@@ -8184,7 +8321,8 @@ function teamDecisionEnhanceRenderedTeam(){
   const dataState=health?.state||(!S.boot?HEALTH_STATES.UNAVAILABLE:HEALTH_STATES.LIVE);
   const deadline=teamDecisionDeadlineModel();
   const manual=Boolean($('useManual')?.checked);
-  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),fplState:dataState,cachedAt:S.cachedAt});
+  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),
+    picksGameweek:S.picksGameweek,picksStatus:S.picksStatus,fplState:dataState,cachedAt:S.cachedAt});
   const ft=Math.max(0,Math.trunc(num($('ftCount')?.value)));
   const bank=Math.max(0,num($('bankIn')?.value)).toFixed(1);
   const rank=Number(S.entry?.summary_overall_rank)>0?`Official OR ${Number(S.entry.summary_overall_rank).toLocaleString('en-GB')}`:'';
@@ -8192,10 +8330,17 @@ function teamDecisionEnhanceRenderedTeam(){
 
   if(!ready){
     const count=realSquad.length;
-    const risk=dataState===HEALTH_STATES.UNAVAILABLE
-      ? teamDecisionRisk({dataState})
-      : Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
-    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind});
+    let risk;
+    if(dataState===HEALTH_STATES.UNAVAILABLE) risk=teamDecisionRisk({dataState});
+    else if(S.picksStatus==='gameweek-unavailable') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:'Official FPL has not identified a valid current or next Gameweek, so Teamsheet cannot request public squad picks.'});
+    else if(S.picksStatus==='unavailable'&&S.entry) risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:`Official FPL has not exposed a complete public GW${S.picksGameweek} squad for this Team ID yet. Teamsheet will not invent or reuse a different Gameweek squad.`});
+    else if(S.picksStatus==='incomplete') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:`${count} of 15 public GW${S.picksGameweek} picks were usable. A complete legal squad is required before Teamsheet can recommend an XI.`});
+    else risk=Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
+    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind,
+      squadStatus:S.picksStatus,squadGameweek:S.picksGameweek});
     const header=teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank,ft,bank});
     const summary=teamDecisionSummary({recommendation:'Recommendation unavailable',forecast:'No projection calculated',risk,action});
     const placeholder=teamDecisionPlaceholderStage(S.nextGW,'Empty Team pitch. No valid squad is available, so no XI, captaincy or bench recommendation has been calculated.');
@@ -8278,6 +8423,263 @@ function teamDecisionInstall(){
 }
 
 teamDecisionInstall();
+
+
+
+/* ===== src/ui/manual-squad-runtime.mjs ===== */
+
+const MANUAL_SQUAD_POSITION_LABELS = Object.freeze({1:'GKP',2:'DEF',3:'MID',4:'FWD'});
+
+function manualSquadBudget(rules=TRANSFER_RULES){
+  const value=Number(rules?.squadBudget);
+  return Number.isFinite(value)&&value>0?Math.trunc(value):1000;
+}
+
+function manualSquadMoney(value){
+  const amount=Number(value);
+  return Number.isFinite(amount)?`£${(amount/10).toFixed(1)}m`:'—';
+}
+
+function manualSquadEntryCost(entry,player){
+  const stored=entry?.bought??entry?.purchasePrice;
+  const bought=Number(stored);
+  if(stored!==null&&stored!==undefined&&stored!==''&&Number.isFinite(bought)&&bought>=0)
+    return Math.trunc(bought);
+  const current=Number(player?.now_cost);
+  return Number.isFinite(current)&&current>=0?Math.trunc(current):null;
+}
+
+function manualSquadValidation(manual=[],byId={},rules=TRANSFER_RULES){
+  const entries=Array.isArray(manual)?manual:[];
+  const quotas=rules?.positionQuotas||{1:2,2:5,3:5,4:3};
+  const maxPerClub=Number(rules?.maxPerClub)||3;
+  const budget=manualSquadBudget(rules);
+  const positionCounts={1:0,2:0,3:0,4:0};
+  const clubCounts={};
+  const unknownIds=[];
+  const duplicateIds=[];
+  const invalidPriceIds=[];
+  const seen=new Set();
+  let cost=0;
+
+  entries.forEach(entry=>{
+    const id=Number(entry?.id);
+    if(seen.has(id)) duplicateIds.push(id);
+    seen.add(id);
+    const player=byId?.[id];
+    if(!player){ unknownIds.push(id); invalidPriceIds.push(id); return; }
+    const position=Number(player.element_type);
+    const club=Number(player.team);
+    if(Object.prototype.hasOwnProperty.call(positionCounts,position)) positionCounts[position]++;
+    if(Number.isFinite(club)) clubCounts[club]=(clubCounts[club]||0)+1;
+    const entryCost=manualSquadEntryCost(entry,player);
+    if(entryCost===null) invalidPriceIds.push(id);
+    else cost+=entryCost;
+  });
+
+  const priceComplete=invalidPriceIds.length===0;
+  const remainingBudget=priceComplete?budget-cost:null;
+  const issues=[];
+  if(entries.length>15) issues.push('The squad contains more than 15 players.');
+  if(unknownIds.length) issues.push('One or more saved players are no longer in the verified player list.');
+  if(duplicateIds.length) issues.push('The same player appears more than once.');
+  if(!priceComplete) issues.push('One or more player purchase prices are unavailable.');
+  Object.entries(quotas).forEach(([position,quota])=>{
+    const count=positionCounts[position]||0;
+    if(count>quota) issues.push(`Too many ${MANUAL_SQUAD_POSITION_LABELS[position]} players (${count}/${quota}).`);
+  });
+  if(Object.values(clubCounts).some(count=>count>maxPerClub))
+    issues.push(`A maximum of ${maxPerClub} players from one club is allowed.`);
+  if(priceComplete&&cost>budget)
+    issues.push(`Squad cost ${manualSquadMoney(cost)} exceeds the ${manualSquadMoney(budget)} budget.`);
+
+  const complete=entries.length===15;
+  const exactPositions=Object.entries(quotas).every(([position,quota])=>(positionCounts[position]||0)===quota);
+  if(complete&&!exactPositions) issues.push('A legal squad needs 2 GKP, 5 DEF, 5 MID and 3 FWD.');
+  const legal=complete&&exactPositions&&issues.length===0;
+  return Object.freeze({
+    count:entries.length,
+    complete,
+    legal,
+    issues:Object.freeze([...new Set(issues)]),
+    positionCounts:Object.freeze({...positionCounts}),
+    clubCounts:Object.freeze({...clubCounts}),
+    unknownIds:Object.freeze(unknownIds.slice()),
+    duplicateIds:Object.freeze(duplicateIds.slice()),
+    invalidPriceIds:Object.freeze(invalidPriceIds.slice()),
+    priceComplete,
+    cost,
+    budget,
+    remainingBudget
+  });
+}
+
+function manualSquadAddDecision(manual=[],player=null,byId={},rules=TRANSFER_RULES){
+  if(!player||!Number.isFinite(Number(player.id))) return {ok:false,message:'That player is unavailable.'};
+  const id=Number(player.id);
+  if((manual||[]).some(entry=>Number(entry?.id)===id)) return {ok:false,message:`${player.web_name||'That player'} is already in your squad.`};
+  if((manual||[]).length>=15) return {ok:false,message:'Remove a player before adding another.'};
+
+  const current=manualSquadValidation(manual,byId,rules);
+  const position=Number(player.element_type);
+  const quota=Number(rules?.positionQuotas?.[position]);
+  if(!Number.isFinite(quota)) return {ok:false,message:'That player has an unsupported position.'};
+  if((current.positionCounts[position]||0)>=quota)
+    return {ok:false,message:`You already have the maximum ${quota} ${MANUAL_SQUAD_POSITION_LABELS[position]} players.`};
+  const club=Number(player.team);
+  const maxPerClub=Number(rules?.maxPerClub)||3;
+  if((current.clubCounts[club]||0)>=maxPerClub)
+    return {ok:false,message:`You already have ${maxPerClub} players from ${S.teams?.[club]?.name||'that club'}.`};
+  const playerCost=manualSquadEntryCost({bought:player.now_cost},player);
+  if(playerCost===null) return {ok:false,message:`${player.web_name||'That player'} does not have a verified price.`};
+  if(!current.priceComplete) return {ok:false,message:'A saved player price is unavailable, so the squad budget cannot be verified.'};
+  const nextCost=current.cost+playerCost;
+  if(nextCost>current.budget)
+    return {ok:false,message:`Adding ${player.web_name||'that player'} would take the squad to ${manualSquadMoney(nextCost)}, above the ${manualSquadMoney(current.budget)} budget.`};
+  return {ok:true,message:'',nextCost,remainingBudget:current.budget-nextCost};
+}
+
+function manualSquadStatusText(validation,rejection=''){
+  const counts=validation?.positionCounts||{1:0,2:0,3:0,4:0};
+  const budgetText=validation?.priceComplete===false
+    ? ' · budget unavailable'
+    : ` · ${manualSquadMoney(validation?.cost||0)} used · ${validation?.remainingBudget>=0
+      ? `${manualSquadMoney(validation.remainingBudget)} left`
+      : `${manualSquadMoney(Math.abs(validation?.remainingBudget||0))} over`}`;
+  const base=`${validation?.count||0}/15 · ${counts[1]||0} GKP, ${counts[2]||0} DEF, ${counts[3]||0} MID, ${counts[4]||0} FWD${budgetText}`;
+  if(rejection) return `${base} — ${rejection}`;
+  if(validation?.legal) return `${base} — complete and legal`;
+  if(validation?.complete&&validation?.issues?.length) return `${base} — fix: ${validation.issues[0]}`;
+  const remaining=Math.max(0,15-(validation?.count||0));
+  return `${base}${remaining?` — add ${remaining} more`:''}`;
+}
+
+function manualSquadApplyStatus(documentRef,manual=S.manual,byId=S.byId,rejection=''){
+  const node=documentRef?.getElementById?.('manualCount');
+  const validation=manualSquadValidation(manual,byId);
+  if(node){
+    node.textContent=manualSquadStatusText(validation,rejection);
+    node.setAttribute?.('role','status');
+    node.setAttribute?.('aria-live','polite');
+  }
+  return validation;
+}
+
+function manualSquadIsTransfersRoute(value=''){
+  return String(value||'').split('?')[0]==='#/transfers';
+}
+
+function manualSquadCreateRouteAwareTransferRenderer(renderTransferView,routeProvider=()=>globalThis.location?.hash||''){
+  if(typeof renderTransferView!=='function') throw new TypeError('renderTransferView must be a function');
+  return function routeAwareTransferRenderer(options={}){
+    const forced=options===true||options?.force===true;
+    if(!forced&&!manualSquadIsTransfersRoute(routeProvider())) return {deferred:true};
+    return renderTransferView();
+  };
+}
+
+async function manualSquadCommitAddition({
+  manual,player,byId,persist=async()=>{},saveConfiguration=async()=>{},
+  renderManualView=()=>{},renderTeamView=()=>{},dispatchRendered=()=>{}
+}={}){
+  const decision=manualSquadAddDecision(manual,player,byId);
+  if(!decision.ok) return {ok:false,message:decision.message,validation:manualSquadValidation(manual,byId)};
+  manual.push({id:Number(player.id),bought:Number(player.now_cost)});
+  await persist(manual);
+  await saveConfiguration();
+  renderManualView();
+  let teamRenderError=null;
+  try{ renderTeamView(); }
+  catch(error){ teamRenderError=error; }
+  try{ dispatchRendered(); }
+  catch(error){}
+  return {ok:true,message:'',validation:manualSquadValidation(manual,byId),teamRenderError};
+}
+
+function manualSquadInstallBrowserRuntime({
+  documentRef=globalThis.document,
+  routeProvider=()=>globalThis.location?.hash||'',
+  renderTransferView,
+  renderManualView,
+  renderTeamView
+}={}){
+  if(!documentRef?.addEventListener||documentRef.documentElement?.dataset?.manualSquadRuntime==='installed') return null;
+  if(documentRef.documentElement?.dataset) documentRef.documentElement.dataset.manualSquadRuntime='installed';
+
+  const routeAware=manualSquadCreateRouteAwareTransferRenderer(renderTransferView,routeProvider);
+  documentRef.addEventListener('teamsheet:route-change',event=>{
+    if(event?.detail?.route==='#/transfers') routeAware({force:true});
+  });
+  documentRef.addEventListener('teamsheet:data-rendered',()=>manualSquadApplyStatus(documentRef));
+
+  documentRef.addEventListener('click',event=>{
+    const target=event.target?.closest?.('[data-add],[data-rm]');
+    if(!target) return;
+    const add=target.hasAttribute?.('data-add')&&target.closest?.('#pResults');
+    const remove=target.hasAttribute?.('data-rm')&&target.closest?.('#manualList');
+    if(!add&&!remove) return;
+    event.preventDefault?.();
+    event.stopImmediatePropagation?.();
+
+    void (async()=>{
+      if(add){
+        const id=Number(target.dataset.add);
+        const player=S.byId?.[id];
+        const decision=manualSquadAddDecision(S.manual,player,S.byId);
+        if(!decision.ok){ manualSquadApplyStatus(documentRef,S.manual,S.byId,decision.message); return; }
+        const result=await manualSquadCommitAddition({
+          manual:S.manual,
+          player,
+          byId:S.byId,
+          persist:value=>sset(K_SQUAD,value),
+          saveConfiguration:async()=>{
+            const useManual=documentRef.getElementById?.('useManual');
+            if(useManual) useManual.checked=true;
+            await saveCfg();
+          },
+          renderManualView,
+          renderTeamView,
+          dispatchRendered:()=>documentRef.dispatchEvent?.(new CustomEvent('teamsheet:data-rendered'))
+        });
+        const search=documentRef.getElementById?.('pSearch');
+        const results=documentRef.getElementById?.('pResults');
+        if(search) search.value='';
+        if(results) results.hidden=true;
+        if(result.teamRenderError)
+          manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved. Team analysis could not refresh; reopen Team.');
+        else manualSquadApplyStatus(documentRef);
+        return;
+      }
+
+      const index=Number(target.dataset.rm);
+      if(!Number.isInteger(index)||index<0||index>=S.manual.length) return;
+      S.manual.splice(index,1);
+      await sset(K_SQUAD,S.manual);
+      renderManualView();
+      try{ renderTeamView(); }
+      catch(error){ manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved. Team analysis could not refresh; reopen Team.'); return; }
+      documentRef.dispatchEvent?.(new CustomEvent('teamsheet:data-rendered'));
+      manualSquadApplyStatus(documentRef);
+    })();
+  },true);
+
+  manualSquadApplyStatus(documentRef);
+  return routeAware;
+}
+
+if(typeof document!=='undefined'&&typeof renderTransfers==='function'){
+  const manualSquadOriginalRenderTransfers=renderTransfers;
+  const manualSquadRouteAwareRenderTransfers=manualSquadCreateRouteAwareTransferRenderer(
+    manualSquadOriginalRenderTransfers,()=>globalThis.location?.hash||''
+  );
+  renderTransfers=manualSquadRouteAwareRenderTransfers;
+  manualSquadInstallBrowserRuntime({
+    documentRef:document,
+    renderTransferView:manualSquadOriginalRenderTransfers,
+    renderManualView:typeof renderManual==='function'?renderManual:()=>{},
+    renderTeamView:typeof renderSquad==='function'?renderSquad:()=>{}
+  });
+}
 
 
 

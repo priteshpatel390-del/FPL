@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "fcd7db6e30a4716f0b7bbe65166e54802920a2e73c06a2e1946b249ff57e9cb4",
-  "commit": "5a61ec5510c447580afa6070a5a9815516babe86",
+  "sourceHash": "8c97afbea58529773636bd3b3d24d6a5bfecac4becf04b25971988f66f02a8ff",
+  "commit": "14b1e31ba9ff8d592afa3c07ab8627d94a979d94",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -43,6 +43,7 @@
     "src/ui/mini-leagues-view.mjs",
     "src/ui/views.mjs",
     "src/ui/team-decision-home.mjs",
+    "src/ui/manual-squad-runtime.mjs",
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
     "src/ui/security-wiring.mjs",
