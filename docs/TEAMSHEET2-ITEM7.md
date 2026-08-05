@@ -1,6 +1,6 @@
 # Teamsheet 2.0.7 — Final Mobile Polish and Acceptance
 
-Status: **implemented on the approved branch for automated review; the physical iPhone Safari foreground-resume defect is corrected and pending owner retest, while VoiceOver and live populated-data acceptance remain pending.**
+Status: **implemented on the approved branch for automated review; the physical iPhone Safari foreground-resume correction passed owner retest on 5 August 2026, while broader mobile polish, VoiceOver and live populated-data acceptance remain pending.**
 Approval: exact Scope S-2.0.7 approved by Pritesh on 4 August 2026.
 Base commit: `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`.
 Model version: `2.4.0`.
@@ -38,8 +38,7 @@ No provider, endpoint, data source, model, fixture calculation, expected-minutes
 
 ## Acceptance still required
 
-Automated and browser-contract evidence cannot prove physical iPhone Safari rendering, one-handed comfort, actual VoiceOver reading order or live public Official FPL transport. These remain explicit owner acceptance gates. The implementation must not be called complete or merged until Pritesh reviews the draft PR and records the required physical/live acceptance or explicitly accepts a remaining external blocker.
-
+Automated and browser-contract evidence cannot prove every physical iPhone Safari layout, one-handed comfort, actual VoiceOver reading order or live public Official FPL transport. These remain explicit owner acceptance gates. The implementation must not be called complete or merged until Pritesh reviews the remaining manual gates or explicitly accepts a remaining external blocker.
 
 ## Physical iPhone Safari foreground-resume correction — 5 August 2026
 
@@ -47,7 +46,9 @@ Physical iPhone testing found that returning from another app could start anothe
 
 Pritesh approved a narrow correction: every completed refresh attempt now starts the existing ten-minute automatic cooldown, paired resume events remain deduplicated by the in-flight promise, foreground refreshes no longer disable the app, and the manual **Load data** action continues to bypass the cooldown. No provider, endpoint, source, calculation, persistence schema or security boundary changed.
 
-Automated verification for source `5a61ec5510c447580afa6070a5a9815516babe86` completed **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical iPhone retesting remains required before this finding can be closed.
+Automated verification for source `5a61ec5510c447580afa6070a5a9815516babe86` completed **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality.
+
+Pritesh then retested the deployed PR build on a physical iPhone in Safari and reported that the app-switch return was working normally. This closes the specific foreground-resume defect. It does not by itself establish complete mobile-layout acceptance, VoiceOver acceptance or live populated-data acceptance.
 
 ## Explicit exclusions retained
 
