@@ -1,8 +1,8 @@
 # PROJECT_CONTEXT.md
 
-> **Teamsheet 2.0.6 merged baseline:** Research, Evidence and Diagnostics Organisation is complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. It adds nested identifier-free Settings routes, explicit evidence/outcome/metric/review/export/recovery/storage hosts, consequence-led core-data warnings, complete Help & About content, actual build identity and a mobile Player Explorer card presentation without changing providers, calculations or persistence. Verification: **520 passed, 0 failed, 0 skipped**, deterministic exact-identity production builds and root `index.html` equal to `dist/index.html`; model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. The next formal checkpoint is Teamsheet 2.0.7 — Final Mobile Polish and Acceptance, beginning with investigation and design only; implementation requires explicit owner approval.
+> **Teamsheet 2.0.7 review branch:** Scope S-2.0.7 is implemented on draft PR #68 from main `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Verified source `3baeb8fd51ea68af353c5097b0e5d2d49837dcf6` passes **530 passed, 0 failed, 0 skipped**; generated deployables are committed at `db48549fe6c527e235615eb7fd057f8a51de4d7a`. Two exact-identity production builds were byte-identical, root `index.html` equals `dist/index.html`, model remains `2.4.0` and rules remain `2026-27.3`. This checkpoint is not merged or fully accepted. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not merge without Pritesh’s explicit approval.
 Purpose: master overview — the first document any new developer or session reads after CLAUDE.md.
-Audience: anyone joining the project. Last updated: 2026-08-04. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
+Audience: anyone joining the project. Last updated: 2026-08-05. Related: ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 ## What this is
 **Teamsheet — FPL Decision Desk.** A single-file, mobile-first web app that helps Fantasy Premier League managers maximise the performance of their own complete 15-player squad through intelligent, explainable, team-level recommendations.
@@ -83,7 +83,7 @@ Approved product direction: Teamsheet 2.0 Product Blueprint and migration checkp
 
 Current operational work: pre-season readiness and prospective 2026/27 evidence collection. Stage 10 infrastructure is complete; accuracy and calibration validation remain in progress.
 
-Current development item: **Teamsheet 2.0.7 — Final Mobile Polish and Acceptance**. It must begin with investigation and design only after the 2.0.6 post-merge documentation correction is approved, merged and latest `main` is verified. Implementation requires explicit owner approval. No application implementation is authorised by this status correction.
+Current development item: **Teamsheet 2.0.7 — Final Mobile Polish and Acceptance** is implemented for review on draft PR #68. Automated repository verification and generated-artifact finalisation are complete. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain outstanding, and merge requires Pritesh’s explicit approval. Do not begin a new product checkpoint.
 
 ## Teamsheet 2.0 migration checkpoints
 1. Teamsheet 2.0.1 — Navigation and Settings architecture.
@@ -104,8 +104,3 @@ The public FPL API and pinned vaastav archive remain available; the owner accept
 
 ## Approval and implementation boundary
 Teamsheet 2.0.6 is complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. It changed Settings organisation, routes, focus, responsive presentation and consequence-led status wording only. Projection, fixture, captaincy, squad, transfer, simulation, rank, Mini-League, provider and data-source behaviour remain unchanged. The verified baseline is **520 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Prospective validation remains in progress; physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. Teamsheet 2.0.7 Scope S-2.0.7 is owner-approved and implemented on a review branch. Automated verification is complete; physical iPhone Safari, VoiceOver and live populated-data acceptance remain the next gate before completion or merge.
-
-
-## Teamsheet 2.0.7 current handover
-
-Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a separate branch from `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification is **530 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not call the checkpoint complete or merge without owner approval.
