@@ -1,5 +1,15 @@
 # CHANGELOG.md
 
+## 2026-08-06 — Transfers Track A correction: exact search architecture
+
+- Recorded the first physical iPhone Safari failure honestly: the automatic exact six-Gameweek search exhausted the unchanged 2,000,000 evaluation ceiling and reported "Exact search did not complete."
+- Rebuilt the exact search around position-quota score prefix sums, zero placeholders for unfilled incoming slots, per-formation and node-aware admissible bounds, price-capped optimistic completion tables, a joint-budget price cap and descending identity-gain stopping rules.
+- Materialised canonical transfers, plan signatures and per-Gameweek best-XI detail only for genuine contenders or exact ties.
+- Left the football problem untouched: no projection, minutes, scoring, fixture, captaincy, affordability, hit, free-transfer, roll-value, comparator or ordering change, no candidate filter, and no change to the six-Gameweek default, Top 8, depth three or the 2,000,000 ceiling.
+- Kept `exhaustiveTransferSearch()` independent and free of the new pruning, and added controlled-pool differential coverage across seven adversarial shapes plus an Official-scale completion and fail-closed suite.
+- A Node reproduction of the failure shape that previously did not finish after more than ten minutes now completes in about 1.2 seconds with `status: 'ok'`.
+- Verified **606 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality. PR #70 remains draft and unmerged, and physical iPhone Safari retest remains required.
+
 ## 2026-08-05 — FPL-T1 live gateway deployment review
 - Deployed the owner-controlled allowlisted Cloudflare Worker and configured the exact production `/fpl` base in Teamsheet.
 - Verified live 2026/27 Official FPL bootstrap JSON on physical iPhone Safari.

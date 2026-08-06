@@ -255,81 +255,249 @@ function scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,startGW,horizon
   return {total,perGameweek};
 }
 
-function candidateScoreOrders(byPosition,scoreRows,horizon){
-  const result={1:[],2:[],3:[],4:[]};
-  for(const pos of [1,2,3,4]) for(let offset=0;offset<horizon;offset++)
-    result[pos][offset]=byPosition[pos].slice().sort((a,b)=>
-      (Number(scoreRows.get(Number(b.id))?.[offset])||0)-(Number(scoreRows.get(Number(a.id))?.[offset])||0)||Number(a.id)-Number(b.id));
-  return result;
-}
+/* ---------------------------------------------------------------------------
+   Exact position-pool machinery.
 
+   Every legal transfer keeps the squad on its exact position quota, so for a
+   fixed outgoing set the final pool at each position always holds exactly
+   POSITION_QUOTAS[pos] players. A horizon best-XI total can therefore be read
+   from per-Gameweek descending score prefix sums rather than rebuilding,
+   re-sorting and re-scanning squad rows for every candidate.
 
-function paddedTopState(rows,count){
-  const values=rows.map(row=>Number(row?.score ?? row)||0);
-  for(let i=values.length;i<count;i++) values.push(0);
-  values.sort((a,b)=>b-a);
-  const selected=values.slice(0,count);
-  return {total:selected.reduce((sum,value)=>sum+value,0),threshold:selected[count-1]??0};
-}
+   An incoming slot that is not yet filled is held as a zero placeholder. Zero
+   is optimistic because a real incoming player may score below zero, so a
+   padded pool never understates any descendant of the node.
+   --------------------------------------------------------------------------- */
+const FORMATIONS=Object.freeze([[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,2,3],[5,3,2],[5,4,1]]);
+// Largest starting count each position reaches across the legal formations.
+const STARTER_LIMIT=Object.freeze({1:1,2:5,3:5,4:3});
 
-// Admissible horizon bound that preserves each candidate's identity across all
-// Gameweeks. Zero placeholders can only make an incomplete position group more
-// optimistic; singleton top-k gains are then summed, which is safe by diminishing
-// returns. The bound may overstate a descendant, but can never understate it.
-function identityPreservingUpperData(coreByGameweek,byPosition,scoreRows,horizon){
-  const gains=new Map();
-  for(const pos of [1,2,3,4]) for(const p of byPosition[pos]) gains.set(Number(p.id),0);
-  let base=0;
-  for(let offset=0;offset<horizon;offset++){
-    const core=coreByGameweek[offset];
-    const states={
-      1:{1:paddedTopState(core[1],1)},
-      2:{3:paddedTopState(core[2],3),4:paddedTopState(core[2],4),5:paddedTopState(core[2],5)},
-      3:{2:paddedTopState(core[3],2),3:paddedTopState(core[3],3),4:paddedTopState(core[3],4),5:paddedTopState(core[3],5)},
-      4:{1:paddedTopState(core[4],1),2:paddedTopState(core[4],2),3:paddedTopState(core[4],3)}
-    };
-    let bestBase=-Infinity;
-    for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){
-      const f=10-d-m; if(f<1||f>3) continue;
-      bestBase=Math.max(bestBase,states[1][1].total+states[2][d].total+states[3][m].total+states[4][f].total);
-    }
-    base+=Number.isFinite(bestBase)?bestBase:0;
-    const thresholds={
-      1:states[1][1].threshold,
-      2:Math.min(states[2][3].threshold,states[2][4].threshold,states[2][5].threshold),
-      3:Math.min(states[3][2].threshold,states[3][3].threshold,states[3][4].threshold,states[3][5].threshold),
-      4:Math.min(states[4][1].threshold,states[4][2].threshold,states[4][3].threshold)
-    };
-    for(const pos of [1,2,3,4]) for(const p of byPosition[pos]){
-      const id=Number(p.id),score=Number(scoreRows.get(id)?.[offset])||0;
-      gains.set(id,(gains.get(id)||0)+Math.max(0,score-thresholds[pos]));
-    }
-  }
-  return {base,gains};
-}
-
-function bestRemainingIdentityGain(poolsByGain,remainingNeed,usedIds,maxCandidateCost,clubCounts,startCounts,gains){
-  let total=0;
+function createPoolLevel(horizon){
+  const level={count:{1:0,2:0,3:0,4:0},real:{},values:{},prefix:{}};
   for(const pos of [1,2,3,4]){
-    let left=Number(remainingNeed[pos])||0;
-    if(!left) continue;
-    for(const p of poolsByGain[pos]){
-      if(usedIds.has(Number(p.id))||Number(p.now_cost||0)>maxCandidateCost) continue;
-      if(clubCounts){
-        const club=String(p.team),allowed=Math.max(TRANSFER_RULES.maxPerClub,startCounts?.[club]||0);
-        if((clubCounts[club]||0)>=allowed) continue;
-      }
-      total+=Number(gains.get(Number(p.id)))||0;
-      if(--left===0) break;
+    const quota=POSITION_QUOTAS[pos];
+    level.real[pos]=new Float64Array(horizon*quota);
+    level.values[pos]=new Float64Array(horizon*quota);
+    level.prefix[pos]=new Float64Array(horizon*(quota+1));
+  }
+  return level;
+}
+
+function sortDescInPlace(row,base,length){
+  for(let k=1;k<length;k++){
+    const value=row[base+k]; let j=k-1;
+    while(j>=0&&row[base+j]<value){ row[base+j+1]=row[base+j]; j--; }
+    row[base+j+1]=value;
+  }
+}
+
+// Rebuilds the zero-padded pool and its descending prefix sums for one position.
+function refreshPool(level,pos,horizon){
+  const quota=POSITION_QUOTAS[pos],count=level.count[pos],
+    real=level.real[pos],values=level.values[pos],prefix=level.prefix[pos];
+  for(let offset=0;offset<horizon;offset++){
+    const rowBase=offset*quota,prefixBase=offset*(quota+1);
+    for(let k=0;k<quota;k++) values[rowBase+k]=k<count?real[rowBase+k]:0;
+    sortDescInPlace(values,rowBase,quota);
+    let sum=0; prefix[prefixBase]=0;
+    for(let k=0;k<quota;k++){ sum+=values[rowBase+k]; prefix[prefixBase+k+1]=sum; }
+  }
+}
+
+function seedPoolLevel(level,core,scoreRows,horizon){
+  const rows={1:[],2:[],3:[],4:[]};
+  for(const entry of core) rows[positionOf(entry)].push(scoreRows.get(playerId(entry)));
+  for(const pos of [1,2,3,4]){
+    const quota=POSITION_QUOTAS[pos],members=rows[pos],real=level.real[pos];
+    level.count[pos]=members.length;
+    for(let offset=0;offset<horizon;offset++){
+      const rowBase=offset*quota;
+      for(let k=0;k<members.length;k++) real[rowBase+k]=Number(members[k]?.[offset])||0;
+      sortDescInPlace(real,rowBase,members.length);
     }
-    if(left>0) return -Infinity;
+    refreshPool(level,pos,horizon);
+  }
+}
+
+// Copies `from` into `to` with one further real member added at `pos`.
+function extendPoolLevel(from,to,pos,scoreRow,horizon){
+  for(const other of [1,2,3,4]){
+    to.count[other]=from.count[other];
+    to.real[other].set(from.real[other]);
+    if(other!==pos){ to.values[other].set(from.values[other]); to.prefix[other].set(from.prefix[other]); }
+  }
+  const quota=POSITION_QUOTAS[pos],count=from.count[pos],real=to.real[pos];
+  for(let offset=0;offset<horizon;offset++){
+    const rowBase=offset*quota;
+    real[rowBase+count]=Number(scoreRow?.[offset])||0;
+    sortDescInPlace(real,rowBase,count+1);
+  }
+  to.count[pos]=count+1;
+  refreshPool(to,pos,horizon);
+}
+
+function horizonTotalFromPrefixes(gkPrefix,defPrefix,midPrefix,fwdPrefix,horizon){
+  let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const gk=gkPrefix[offset*3+1],defBase=offset*6,midBase=offset*6,fwdBase=offset*4;
+    let best=-Infinity;
+    for(let i=0;i<FORMATIONS.length;i++){
+      const shape=FORMATIONS[i];
+      const value=gk+defPrefix[defBase+shape[0]]+midPrefix[midBase+shape[1]]+fwdPrefix[fwdBase+shape[2]];
+      if(value>best) best=value;
+    }
+    total+=best;
   }
   return total;
 }
 
-function identityPreservingUpperBound(data,chosenGain,remainingNeed,poolsByGain,usedIds,maxCandidateCost,clubCounts,startCounts){
-  const rest=bestRemainingIdentityGain(poolsByGain,remainingNeed,usedIds,maxCandidateCost,clubCounts,startCounts,data.gains);
-  return rest===-Infinity?-Infinity:data.base+chosenGain+rest;
+// Exact horizon best-XI total for a complete pool; an optimistic base while slots remain.
+function poolHorizonTotal(level,horizon){
+  return horizonTotalFromPrefixes(level.prefix[1],level.prefix[2],level.prefix[3],level.prefix[4],horizon);
+}
+
+// Admissible identity-preserving marginal of one candidate against a padded pool.
+// Filling a placeholder with score s raises any top-k total by at most
+// max(0, s - kth value of the padded pool), and the largest starting count gives
+// the smallest such threshold, so one gain is valid for every legal formation and
+// for every placeholder still outstanding at that position.
+function poolPlayerGain(level,pos,scoreRow,horizon){
+  const quota=POSITION_QUOTAS[pos],values=level.values[pos],index=STARTER_LIMIT[pos]-1;
+  let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const delta=(Number(scoreRow?.[offset])||0)-values[offset*quota+index];
+    if(delta>0) total+=delta;
+  }
+  return total;
+}
+
+/* Cost of moving an identity gain from the branch-level padded pool to the node's
+   padded pool. max(0, s - b) <= max(0, s - a) + max(0, a - b) for every score, so
+   adding this constant per outstanding slot keeps a branch-level gain admissible
+   at any node while leaving the branch-level ordering intact. */
+function thresholdDelta(branchLevel,nodeLevel,pos,horizon){
+  const quota=POSITION_QUOTAS[pos],index=STARTER_LIMIT[pos]-1;
+  const branchValues=branchLevel.values[pos],nodeValues=nodeLevel.values[pos];
+  let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const drop=branchValues[offset*quota+index]-nodeValues[offset*quota+index];
+    if(drop>0) total+=drop;
+  }
+  return total;
+}
+
+// Admissible per-formation bound for the last outstanding slot. It preserves the
+// candidate's identity across every Gameweek and applies each formation's own
+// threshold instead of the smallest threshold across formations.
+function finalSlotUpperBound(level,pos,scoreRow,horizon){
+  const gkPrefix=level.prefix[1],defPrefix=level.prefix[2],midPrefix=level.prefix[3],fwdPrefix=level.prefix[4];
+  const quota=POSITION_QUOTAS[pos],values=level.values[pos];
+  let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const gk=gkPrefix[offset*3+1],defBase=offset*6,midBase=offset*6,fwdBase=offset*4,
+      valueBase=offset*quota,score=Number(scoreRow?.[offset])||0;
+    let best=-Infinity;
+    for(let i=0;i<FORMATIONS.length;i++){
+      const shape=FORMATIONS[i];
+      const starters=pos===1?1:pos===2?shape[0]:pos===3?shape[1]:shape[2];
+      const delta=score-values[valueBase+starters-1];
+      const value=gk+defPrefix[defBase+shape[0]]+midPrefix[midBase+shape[1]]+fwdPrefix[fwdBase+shape[2]]+(delta>0?delta:0);
+      if(value>best) best=value;
+    }
+    total+=best;
+  }
+  return total;
+}
+
+/* Exact "best k scores available at or below a price" tables.
+
+   Candidates are swept in ascending price once per position, so for any budget a
+   binary search returns both how many candidates are affordable and their highest
+   scores in each Gameweek. This replaces a price-filtered scan of the whole
+   position pool at every partial node. */
+const RELAXED_TOP_K=TRANSFER_RULES.maxTransfers;
+
+function buildCostCappedTables(byPositionCost,scoreRows,horizon){
+  const tables={1:null,2:null,3:null,4:null};
+  for(const pos of [1,2,3,4]){
+    const pool=byPositionCost[pos],costs=[];
+    for(const p of pool){
+      const cost=Number(p.now_cost||0);
+      if(!costs.length||costs[costs.length-1]!==cost) costs.push(cost);
+    }
+    const steps=costs.length,available=new Int32Array(steps),top=new Float64Array(horizon*steps*RELAXED_TOP_K);
+    top.fill(-Infinity);
+    for(let offset=0;offset<horizon;offset++){
+      const best=new Float64Array(RELAXED_TOP_K).fill(-Infinity);
+      let index=0,seen=0,i=0;
+      while(i<pool.length){
+        const cost=Number(pool[i].now_cost||0);
+        while(i<pool.length&&Number(pool[i].now_cost||0)===cost){
+          const score=Number(scoreRows.get(Number(pool[i].id))?.[offset])||0;
+          for(let k=0;k<RELAXED_TOP_K;k++) if(score>best[k]){
+            for(let j=RELAXED_TOP_K-1;j>k;j--) best[j]=best[j-1];
+            best[k]=score; break;
+          }
+          seen++; i++;
+        }
+        const base=(offset*steps+index)*RELAXED_TOP_K;
+        for(let k=0;k<RELAXED_TOP_K;k++) top[base+k]=best[k];
+        if(offset===0) available[index]=seen;
+        index++;
+      }
+    }
+    tables[pos]={costs:Float64Array.from(costs),steps,available,top};
+  }
+  return tables;
+}
+
+// Largest table step whose price is within budget, or -1 when nothing is affordable.
+function costCappedStep(table,maxCandidateCost){
+  const costs=table.costs;
+  let low=0,high=table.steps-1,found=-1;
+  while(low<=high){
+    const mid=(low+high)>>1;
+    if(costs[mid]<=maxCandidateCost){ found=mid; low=mid+1; } else high=mid-1;
+  }
+  return found;
+}
+
+/* Admissible bound that keeps `fixedRow` at `fixedPos` with its true identity and
+   fills every other outstanding slot with the highest-scoring affordable candidate
+   of that Gameweek. Cross-Gameweek identity, club capacity and candidate reuse are
+   relaxed only in the optimistic direction and the per-player price cap is exact,
+   so no reachable descendant can score higher. -Infinity means no completion can
+   be afforded at all. */
+function relaxedHorizonUpperBound(from,scratch,prefixRefs,remainingNeed,horizon,costTables,
+  fixedPos,fixedRow,caps){
+  for(let pos=1;pos<=4;pos++){
+    const quota=POSITION_QUOTAS[pos],count=from.count[pos];
+    const relaxedNeed=remainingNeed[pos]|0,fixed=pos===fixedPos?1:0;
+    if(!relaxedNeed&&!fixed){ prefixRefs[pos]=from.prefix[pos]; continue; }
+    const values=scratch.values[pos],prefix=scratch.prefix[pos],real=from.real[pos];
+    let step=-1,table=null;
+    if(relaxedNeed){
+      table=costTables[pos];
+      step=costCappedStep(table,caps[pos]);
+      if(step<0||table.available[step]<relaxedNeed) return -Infinity;
+    }
+    for(let offset=0;offset<horizon;offset++){
+      const rowBase=offset*quota,prefixBase=offset*(quota+1);
+      for(let k=0;k<count;k++) values[rowBase+k]=real[rowBase+k];
+      let filled=0;
+      if(fixed){ values[rowBase+count]=Number(fixedRow?.[offset])||0; filled=1; }
+      if(relaxedNeed){
+        const base=(offset*table.steps+step)*RELAXED_TOP_K;
+        for(let k=0;k<relaxedNeed;k++) values[rowBase+count+filled+k]=table.top[base+k];
+        filled+=relaxedNeed;
+      }
+      sortDescInPlace(values,rowBase,quota);
+      let sum=0; prefix[prefixBase]=0;
+      for(let k=0;k<quota;k++){ sum+=values[rowBase+k]; prefix[prefixBase+k+1]=sum; }
+    }
+    prefixRefs[pos]=prefix;
+  }
+  return horizonTotalFromPrefixes(prefixRefs[1],prefixRefs[2],prefixRefs[3],prefixRefs[4],horizon);
 }
 
 function minimumRemainingDoubtful(byPosition,remainingNeed,usedIds){
@@ -377,70 +545,89 @@ function optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPosi
   };
 }
 
-// Admissible upper bound: budget, shared club capacity and cross-Gameweek player identity
-// are relaxed only in the optimistic direction, so no real descendant can score higher.
-function optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,horizon,maxCandidateCost=Infinity,clubCounts=null,startCounts=null){
-  const chosenIds=new Set(chosen.map(p=>Number(p.id)));
-  let total=0;
-  for(let offset=0;offset<horizon;offset++){
-    const base=coreByGameweek[offset];
-    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};
-    for(const p of chosen){
-      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;
-      byPos[p.element_type].push({entry:p,p,score});
-    }
-    for(const pos of [1,2,3,4]){
-      let left=Number(remainingNeed[pos])||0;
-      if(!left) continue;
-      for(const p of candidatesByScore[pos][offset]){
-        if(chosenIds.has(Number(p.id))) continue;
-        if(Number(p.now_cost||0)>maxCandidateCost) continue;
-        if(clubCounts){
-          const club=String(p.team),allowed=Math.max(TRANSFER_RULES.maxPerClub,startCounts?.[club]||0);
-          if((clubCounts[club]||0)>=allowed) continue;
-        }
-        const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;
-        byPos[pos].push({entry:p,p,score});
-        if(--left===0) break;
-      }
-      if(left>0) return -Infinity;
-    }
-    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));
-    total+=bestXIFromPositionRows(byPos).total;
-  }
-  return total;
-}
+const BOUND_EPSILON=1e-9;
 
-function boundCannotBeat(upperGross,ctx,transferCount,kth,optimisticTie=null){
-  if(!kth||!Number.isFinite(upperGross)) return upperGross===-Infinity;
-  const hit=transferHit(ctx.freeTransfers,transferCount);
-  const nextFT=nextFreeTransfers(ctx.freeTransfers,transferCount);
-  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;
-  const upperNet=upperGross-ctx.baseline.grossBestXIPoints-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;
-  const epsilon=1e-9;
-  if(upperNet<kth.netGain-epsilon) return true;
-  if(upperNet>kth.netGain+epsilon) return false;
-  if(upperGross<kth.grossBestXIPoints-epsilon) return true;
-  if(upperGross>kth.grossBestXIPoints+epsilon) return false;
-  const optimistic={
+/* Comparator-complete rejection for an already-tied optimistic bound. It is only
+   reached when the optimistic net gain and gross score both tie the retained Kth
+   plan, so the optimistic completion signature — the expensive part — is built
+   only when it can change the outcome. */
+function tiedBoundCannotBeat(depth,kth,optimisticTie){
+  return comparePlans({
     netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints,
-    hitCost:hit.hitCost,transferCount,freeTransfersNextGW:nextFT,
+    hitCost:depth.hitCost,transferCount:depth.transferCount,freeTransfersNextGW:depth.freeTransfersNextGW,
     bankAfter:Number.isFinite(optimisticTie?.bankAfter)?optimisticTie.bankAfter:Number.MAX_SAFE_INTEGER,
     doubtfulIncoming:Number.isFinite(optimisticTie?.doubtfulIncoming)?optimisticTie.doubtfulIncoming:-1,
     signature:String(optimisticTie?.signature??'')
-  };
-  return comparePlans(optimistic,kth)>0;
+  },kth)>0;
 }
 
-function cheapestAvailableCost(poolByCost,count,usedIds){
+// Fixed comparator terms for one transfer depth. netOffset converts any gross
+// best-XI bound into the matching net-gain bound in one addition.
+function depthConstants(ctx,transferCount){
+  const hit=transferHit(ctx.freeTransfers,transferCount);
+  const freeTransfersNextGW=nextFreeTransfers(ctx.freeTransfers,transferCount);
+  const rollDifference=freeTransfersNextGW-ctx.baseline.freeTransfersNextGW;
+  return {transferCount,hitCost:hit.hitCost,paidTransfers:hit.paidTransfers,freeTransfersNextGW,
+    netOffset:-ctx.baseline.grossBestXIPoints-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference};
+}
+
+// -1 rejected outright on net gain, 0 undecided until the tie keys, 1 retained.
+function boundVerdict(upperGross,depth,kth){
+  if(!kth) return Number.isFinite(upperGross)?1:(upperGross===-Infinity?-1:1);
+  if(!Number.isFinite(upperGross)) return upperGross===-Infinity?-1:1;
+  const upperNet=upperGross+depth.netOffset;
+  if(upperNet<kth.netGain-BOUND_EPSILON) return -1;
+  if(upperNet>kth.netGain+BOUND_EPSILON) return 1;
+  if(upperGross<kth.grossBestXIPoints-BOUND_EPSILON) return -1;
+  if(upperGross>kth.grossBestXIPoints+BOUND_EPSILON) return 1;
+  return 0;
+}
+
+function cheapestAvailableCost(poolByCost,count,usedIds,extraUsedId=null){
   if(count<=0) return 0;
   let total=0,found=0;
   for(const p of poolByCost){
-    if(usedIds.has(Number(p.id))) continue;
+    const id=Number(p.id);
+    if(usedIds.has(id)||id===extraUsedId) continue;
     total+=Number(p.now_cost||0);
     if(++found===count) return total;
   }
   return Infinity;
+}
+
+// Cheapest `count + 1` still-available prices at a position. One spare entry is
+// enough to price the remaining slots exactly when the candidate being tried is
+// itself one of the cheapest.
+function cheapestAvailableCosts(poolByCost,count,usedIds){
+  const rows=[];
+  if(count<=0) return rows;
+  for(const p of poolByCost){
+    if(usedIds.has(Number(p.id))) continue;
+    rows.push({id:Number(p.id),cost:Number(p.now_cost||0)});
+    if(rows.length===count+1) break;
+  }
+  return rows;
+}
+
+// Price of the dearest member of the cheapest `count` still-available candidates.
+// Subtracting it from a cheapest-completion total leaves a true lower bound on the
+// price of every other outstanding slot.
+function dearestOfCheapest(rows,count,excludedId){
+  let found=0,last=0;
+  for(let i=0;i<rows.length&&found<count;i++){
+    if(rows[i].id===excludedId) continue;
+    last=rows[i].cost; found++;
+  }
+  return found<count?Infinity:last;
+}
+
+function cheapestFrom(rows,count,excludedId){
+  let total=0,found=0;
+  for(let i=0;i<rows.length&&found<count;i++){
+    if(rows[i].id===excludedId) continue;
+    total+=rows[i].cost; found++;
+  }
+  return found<count?Infinity:total;
 }
 
 function orderedIncomingForOutgoing(outgoing,chosen){
@@ -467,64 +654,19 @@ function buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,
     warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};
 }
 
-function bestXITotalFromScores(byPos){
-  const prefix={1:[0],2:[0],3:[0],4:[0]};
-  for(const pos of [1,2,3,4]){
-    byPos[pos].sort((a,b)=>b-a);
-    for(const value of byPos[pos]) prefix[pos].push(prefix[pos][prefix[pos].length-1]+value);
-  }
-  let best=-Infinity;
-  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){
-    const f=10-d-m; if(f<1||f>3) continue;
-    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;
-    const total=prefix[1][1]+prefix[2][d]+prefix[3][m]+prefix[4][f];
-    if(total>best) best=total;
-  }
-  return Number.isFinite(best)?best:0;
-}
-
-function scoreCoreTotalWithIncoming(coreByGameweek,incoming,scoreRows,horizon){
-  let total=0;
-  for(let offset=0;offset<horizon;offset++){
-    const base=coreByGameweek[offset];
-    const byPos={
-      1:base[1].map(row=>row.score),2:base[2].map(row=>row.score),
-      3:base[3].map(row=>row.score),4:base[4].map(row=>row.score)
-    };
-    for(const p of incoming) byPos[p.element_type].push(Number(scoreRows.get(Number(p.id))?.[offset])||0);
-    total+=bestXITotalFromScores(byPos);
-  }
-  return total;
-}
-
-function lightweightPreparedPlan(ctx,outgoing,incoming,grossBestXIPoints,bankAfter){
-  const hit=transferHit(ctx.freeTransfers,outgoing.length);
-  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);
-  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;
-  const grossGain=grossBestXIPoints-ctx.baseline.grossBestXIPoints;
-  const transfers=canonicalTransfers(outgoing.map((out,i)=>({
-    outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),
-    sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)
-  })));
-  return {netGain:grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference,grossBestXIPoints,
-    hitCost:hit.hitCost,transferCount:outgoing.length,freeTransfersNextGW:nextFT,bankAfter,
-    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers)};
-}
-
-
-function lightweightCannotEnter(plan,kth){
-  const epsilon=1e-9;
-  if(plan.netGain<kth.netGain-epsilon) return true;
-  if(plan.netGain>kth.netGain+epsilon) return false;
-  if(plan.grossBestXIPoints<kth.grossBestXIPoints-epsilon) return true;
-  if(plan.grossBestXIPoints>kth.grossBestXIPoints+epsilon) return false;
-  return comparePlans({...plan,netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints},kth)>0;
+function outgoingCombinations(squad,size,scoreRows){
+  return combinations(squad,size).map(set=>({
+    set,
+    score:set.reduce((sum,entry)=>sum+horizonScore(scoreRows,playerOf(entry)),0),
+    key:set.map(playerId).sort((a,b)=>a-b).join(',')
+  })).sort((a,b)=>a.score-b.score||a.key.localeCompare(b.key)).map(item=>item.set);
 }
 
 function optimiseTransfers(args){
   const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;
   const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;
-  const profile={outgoingBranches:0,boundPruned:0,identityBoundPruned:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};
+  const profile={outgoingBranches:0,boundPruned:0,identityBoundPruned:0,relaxedBoundPruned:0,finalSlotPruned:0,
+    orderedBreaks:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};
   const scoreRows=prepareScoreRows(ctx);
   const byPosition={1:[],2:[],3:[],4:[]};
   ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));
@@ -534,102 +676,201 @@ function optimiseTransfers(args){
     byPositionCost[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
     byPositionId[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.id)-Number(b.id));
   }
-  const candidatesByScore=candidateScoreOrders(byPosition,scoreRows,ctx.horizon);
+  const costTables=buildCostCappedTables(byPositionCost,scoreRows,ctx.horizon);
+  const allowanceCache=new Map();
+  const clubAllowance=team=>{
+    let allowed=allowanceCache.get(team);
+    if(allowed===undefined){
+      allowed=Math.max(TRANSFER_RULES.maxPerClub,Number(ctx.startCounts[team])||0);
+      allowanceCache.set(team,allowed);
+    }
+    return allowed;
+  };
+  const levels=[]; for(let depth=0;depth<=TRANSFER_RULES.maxTransfers;depth++) levels.push(createPoolLevel(ctx.horizon));
+  const scratch=createPoolLevel(ctx.horizon),prefixRefs={1:null,2:null,3:null,4:null};
+  const retainedKth=()=>plans.length>=ctx.maxResults?plans[plans.length-1]:null;
 
   outer: for(let n=1;n<=ctx.limit;n++){
     ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});
-    const outgoingSets=combinations(ctx.squad,n).sort((a,b)=>{
-      const aScore=a.reduce((sum,e)=>sum+horizonScore(scoreRows,playerOf(e)),0);
-      const bScore=b.reduce((sum,e)=>sum+horizonScore(scoreRows,playerOf(e)),0);
-      if(aScore!==bScore) return aScore-bScore;
-      return a.map(playerId).sort((x,y)=>x-y).join(',').localeCompare(b.map(playerId).sort((x,y)=>x-y).join(','));
-    });
-    for(const outgoing of outgoingSets){
+    const depth=depthConstants(ctx,n);
+    for(const outgoing of outgoingCombinations(ctx.squad,n,scoreRows)){
       profile.outgoingBranches++;
       const required=outgoing.map(positionOf).sort((a,b)=>a-b);
       const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);
       if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }
       const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);
-      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPositionCost[pos],count,new Set()),0);
-      if(minimumBuy>ctx.bank+sellTotal){ pruned++; profile.affordabilityPruned++; continue; }
+      const budget=ctx.bank+sellTotal;
+      const noneUsed=new Set();
+      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPositionCost[pos],count,noneUsed),0);
+      if(minimumBuy>budget){ pruned++; profile.affordabilityPruned++; continue; }
       const outIds=new Set(outgoing.map(playerId));
       const core=ctx.squad.filter(entry=>!outIds.has(playerId(entry)));
-      const coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon);
       const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });
-      const identityData=identityPreservingUpperData(coreByGameweek,byPosition,scoreRows,ctx.horizon);
-      const byPositionGain={1:[],2:[],3:[],4:[]};
-      for(const pos of [1,2,3,4]) byPositionGain[pos]=byPosition[pos].slice().sort((a,b)=>
-        (Number(identityData.gains.get(Number(b.id)))||0)-(Number(identityData.gains.get(Number(a.id)))||0)||
-        Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
-      const kth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;
-      if(kth){
-        const usedIds=new Set();
-        const relaxedUpper=optimisticSquadUpperBound(coreByGameweek,[],need,candidatesByScore,scoreRows,ctx.horizon,
-          ctx.bank+sellTotal,afterOut,ctx.startCounts);
-        const identityUpper=identityPreservingUpperBound(identityData,0,need,byPositionGain,usedIds,
-          ctx.bank+sellTotal,afterOut,ctx.startCounts);
-        const upper=Math.min(relaxedUpper,identityUpper);
-        const tie=optimisticTieBreak({ctx,outgoing,chosen:[],remainingNeed:need,byPosition,byPositionCost,byPositionId,
-          usedIds,cost:0,sellTotal});
-        if(boundCannotBeat(upper,ctx,n,kth,tie)){
-          pruned++; profile.boundPruned++; if(identityUpper<=relaxedUpper) profile.identityBoundPruned++; continue;
-        }
-      }
+      seedPoolLevel(levels[0],core,scoreRows,ctx.horizon);
 
-      const chosen=[],chosenPoolIndexes=[];
-      function choose(index,cost,clubCounts,chosenGain=0){
-        if(incomplete) return;
-        if(index===required.length){
-          if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }
-          profile.leafEvaluations=evaluations;
-          if(ctx.onProgress&&evaluations%ctx.progressInterval===0)
-            ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});
-          if(!inheritedClubLegal(ctx.startCounts,clubCounts,n)) return;
-          const incoming=orderedIncomingForOutgoing(outgoing,chosen);
-          const bankAfter=ctx.bank+sellTotal-cost;
-          const gross=scoreCoreTotalWithIncoming(coreByGameweek,incoming,scoreRows,ctx.horizon);
-          const lightweight=lightweightPreparedPlan(ctx,outgoing,incoming,gross,bankAfter);
-          if(plans.length>=ctx.maxResults&&lightweightCannotEnter(lightweight,plans[plans.length-1])) return;
-          const plan=buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts});
-          if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }
-          return;
-        }
-        const pos=required[index],pool=byPositionGain[pos];
-        const samePosition=index>0&&required[index-1]===pos;
-        const startAt=samePosition?chosenPoolIndexes[index-1]+1:0;
-        for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){
-          const candidate=pool[poolIndex];
-          const nextCost=cost+Number(candidate.now_cost||0);
-          const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));
-          const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);
-          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPositionCost[rpos],count,usedIds),0);
-          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; profile.affordabilityPruned++; continue; }
-          const club=String(candidate.team),nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};
-          const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);
-          if(nextClubs[club]>allowed){ pruned++; profile.clubPruned++; continue; }
-          chosen.push(candidate); chosenPoolIndexes.push(poolIndex);
-          const nextGain=chosenGain+(Number(identityData.gains.get(Number(candidate.id)))||0);
-          const nextKth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;
-          if(nextKth){
-            const identityUpper=identityPreservingUpperBound(identityData,nextGain,remainingNeed,byPositionGain,usedIds,
-              ctx.bank+sellTotal-nextCost,nextClubs,ctx.startCounts);
-            const hasRemaining=Object.values(remainingNeed).some(Boolean);
-            const relaxedUpper=hasRemaining?optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,ctx.horizon,
-              ctx.bank+sellTotal-nextCost,nextClubs,ctx.startCounts):Infinity;
-            const upper=Math.min(identityUpper,relaxedUpper);
-            const tie=optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPositionCost,byPositionId,
-              usedIds,cost:nextCost,sellTotal});
-            if(boundCannotBeat(upper,ctx,n,nextKth,tie)){
-              pruned++; profile.boundPruned++; if(identityUpper<=relaxedUpper) profile.identityBoundPruned++;
-              chosen.pop(); chosenPoolIndexes.pop(); continue;
-            }
+      const caps={1:0,2:0,3:0,4:0};
+      for(let rpos=1;rpos<=4;rpos++){
+        const count=need[rpos]|0;
+        caps[rpos]=count?budget-minimumBuy+dearestOfCheapest(
+          cheapestAvailableCosts(byPositionCost[rpos],count,noneUsed),count,null):0;
+      }
+      const branchRelaxed=relaxedHorizonUpperBound(levels[0],scratch,prefixRefs,need,ctx.horizon,costTables,0,null,caps);
+      const branchKth=retainedKth();
+      let branchVerdict=boundVerdict(branchRelaxed,depth,branchKth);
+      if(branchVerdict===0) branchVerdict=tiedBoundCannotBeat(depth,branchKth,optimisticTieBreak({ctx,outgoing,chosen:[],
+        remainingNeed:need,byPosition,byPositionCost,byPositionId,usedIds:noneUsed,cost:0,sellTotal}))?-1:1;
+      if(branchVerdict<0){ pruned++; profile.boundPruned++; profile.relaxedBoundPruned++; continue; }
+
+      // Identity gains and their descending order are immutable for the whole branch.
+      const gainOrder={},gainValue={};
+      for(const pos of [1,2,3,4]){
+        if(!need[pos]) continue;
+        const values=new Map();
+        for(const p of byPosition[pos]) values.set(Number(p.id),poolPlayerGain(levels[0],pos,scoreRows.get(Number(p.id)),ctx.horizon));
+        gainOrder[pos]=byPosition[pos].slice().sort((a,b)=>
+          (values.get(Number(b.id))-values.get(Number(a.id)))||
+          Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
+        gainValue[pos]=values;
+      }
+      const bestRemainingGain=(remainingNeed,usedIds,maxCandidateCost,clubCounts)=>{
+        let total=0;
+        for(let pos=1;pos<=4;pos++){
+          let left=remainingNeed[pos]|0;
+          if(!left) continue;
+          for(const p of gainOrder[pos]){
+            const id=Number(p.id);
+            if(usedIds.has(id)) continue;
+            if(Number(p.now_cost||0)>maxCandidateCost) continue;
+            if((clubCounts[p.team]|0)>=clubAllowance(p.team)) continue;
+            total+=gainValue[pos].get(id)||0;
+            if(--left===0) break;
           }
-          choose(index+1,nextCost,nextClubs,nextGain);
-          chosen.pop(); chosenPoolIndexes.pop();
+          if(left>0) return Infinity;
+        }
+        return total;
+      };
+      let coreByGameweek=null;
+      const preparedCore=()=>coreByGameweek||(coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon));
+
+      const chosen=[],chosenPoolIndexes=[],usedIds=new Set(),clubCounts={...afterOut};
+      function choose(index,cost,level){
+        if(incomplete) return;
+        const pos=required[index],pool=gainOrder[pos],last=index===required.length-1;
+        const remainingAfter={1:0,2:0,3:0,4:0};
+        for(let i=index+1;i<required.length;i++) remainingAfter[required[i]]++;
+        const restGain=last?0:bestRemainingGain(remainingAfter,usedIds,budget-cost,clubCounts);
+        if(restGain===Infinity){ pruned++; profile.boundPruned++; return; }
+        // Exact base for everything already chosen, plus the admissible gain of an
+        // optimistic completion. Both stay valid for every descendant of this node.
+        const slotDelta={1:0,2:0,3:0,4:0}; let restDelta=0;
+        for(let rpos=1;rpos<=4;rpos++){
+          const outstanding=(remainingAfter[rpos]|0)+(rpos===pos?1:0);
+          if(!outstanding) continue;
+          slotDelta[rpos]=thresholdDelta(levels[0],level,rpos,ctx.horizon);
+          restDelta+=(remainingAfter[rpos]|0)*slotDelta[rpos];
+        }
+        const nodeCeiling=poolHorizonTotal(level,ctx.horizon)+restGain+restDelta,slotBonus=slotDelta[pos];
+        // Remaining-slot prices are fixed for the node; one spare entry per position
+        // covers the case where the candidate being tried is itself among the cheapest.
+        const cheapRows={1:null,2:null,3:null,4:null},cheapBase={1:0,2:0,3:0,4:0};
+        let cheapestRestBase=0,restPriceable=true;
+        for(let rpos=1;rpos<=4&&restPriceable;rpos++){
+          const count=remainingAfter[rpos]|0;
+          if(!count) continue;
+          const rows=cheapestAvailableCosts(byPositionCost[rpos],count,usedIds);
+          const total=cheapestFrom(rows,count,null);
+          if(!Number.isFinite(total)) restPriceable=false;
+          else { cheapRows[rpos]=rows; cheapBase[rpos]=total; cheapestRestBase+=total; }
+        }
+        if(!restPriceable){ pruned++; profile.affordabilityPruned++; return; }
+        const startAt=index>0&&required[index-1]===pos?chosenPoolIndexes[index-1]+1:0;
+        for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){
+          const candidate=pool[poolIndex],id=Number(candidate.id),team=candidate.team;
+          const gain=gainValue[pos].get(id)||0;
+          const kth=retainedKth();
+          // Descending identity order: the whole remainder of this pool is hopeless too.
+          if(boundVerdict(nodeCeiling+gain+slotBonus,depth,kth)<0){
+            pruned++; profile.boundPruned++; profile.identityBoundPruned++; profile.orderedBreaks++; break;
+          }
+          const nextCost=cost+Number(candidate.now_cost||0);
+          let cheapestRest=cheapestRestBase;
+          if(cheapRows[pos]){
+            const count=remainingAfter[pos]|0;
+            const replacement=cheapestFrom(cheapRows[pos],count,id);
+            if(!Number.isFinite(replacement)){ pruned++; profile.affordabilityPruned++; continue; }
+            cheapestRest=cheapestRest-cheapBase[pos]+replacement;
+          }
+          if(nextCost+cheapestRest>budget){ pruned++; profile.affordabilityPruned++; continue; }
+          if((clubCounts[team]|0)>=clubAllowance(team)){ pruned++; profile.clubPruned++; continue; }
+
+          if(last){
+            if(kth){
+              let verdict=boundVerdict(finalSlotUpperBound(level,pos,scoreRows.get(id),ctx.horizon),depth,kth);
+              if(verdict===0){
+                chosen.push(candidate);
+                verdict=tiedBoundCannotBeat(depth,kth,optimisticTieBreak({ctx,outgoing,chosen,
+                  remainingNeed:{1:0,2:0,3:0,4:0},byPosition,byPositionCost,byPositionId,usedIds,cost:nextCost,sellTotal}))?-1:1;
+                chosen.pop();
+              }
+              if(verdict<0){ pruned++; profile.boundPruned++; profile.finalSlotPruned++; continue; }
+            }
+            if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }
+            profile.leafEvaluations=evaluations;
+            if(ctx.onProgress&&evaluations%ctx.progressInterval===0)
+              ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});
+            clubCounts[team]=(clubCounts[team]|0)+1;
+            if(inheritedClubLegal(ctx.startCounts,clubCounts,n)){
+              chosen.push(candidate);
+              extendPoolLevel(level,levels[index+1],pos,scoreRows.get(id),ctx.horizon);
+              const incoming=orderedIncomingForOutgoing(outgoing,chosen),bankAfter=budget-nextCost;
+              const gross=poolHorizonTotal(levels[index+1],ctx.horizon);
+              const kthNow=retainedKth();
+              let contend=boundVerdict(gross,depth,kthNow);
+              if(contend===0) contend=tiedBoundCannotBeat(depth,kthNow,{bankAfter,
+                doubtfulIncoming:incoming.filter(p=>p.status==='d').length,
+                signature:planSignature(canonicalTransfers(outgoing.map((out,i)=>({
+                  outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out)}))))})?-1:1;
+              if(contend>=0){
+                const plan=buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek:preparedCore(),scoreRows,bankAfter,clubCounts});
+                if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }
+              }
+              chosen.pop();
+            }
+            clubCounts[team]=(clubCounts[team]|0)-1;
+            continue;
+          }
+
+          clubCounts[team]=(clubCounts[team]|0)+1;
+          for(let rpos=1;rpos<=4;rpos++){
+            const count=remainingAfter[rpos]|0;
+            caps[rpos]=count?budget-nextCost-cheapestRest+dearestOfCheapest(cheapRows[rpos],count,id):0;
+          }
+          const relaxed=relaxedHorizonUpperBound(level,scratch,prefixRefs,remainingAfter,ctx.horizon,costTables,
+            pos,scoreRows.get(id),caps);
+          const identityUpper=nodeCeiling+gain+slotBonus;
+          const upper=Math.min(identityUpper,relaxed);
+          let verdict=boundVerdict(upper,depth,kth);
+          if(verdict===0){
+            chosen.push(candidate);
+            verdict=tiedBoundCannotBeat(depth,kth,optimisticTieBreak({ctx,outgoing,chosen,remainingNeed:remainingAfter,
+              byPosition,byPositionCost,byPositionId,usedIds,cost:nextCost,sellTotal}))?-1:1;
+            chosen.pop();
+          }
+          if(verdict<0){
+            pruned++; profile.boundPruned++;
+            if(identityUpper<=relaxed) profile.identityBoundPruned++; else profile.relaxedBoundPruned++;
+            clubCounts[team]=(clubCounts[team]|0)-1;
+            continue;
+          }
+          chosen.push(candidate); chosenPoolIndexes.push(poolIndex); usedIds.add(id);
+          extendPoolLevel(level,levels[index+1],pos,scoreRows.get(id),ctx.horizon);
+          choose(index+1,nextCost,levels[index+1]);
+          chosen.pop(); chosenPoolIndexes.pop(); usedIds.delete(id);
+          clubCounts[team]=(clubCounts[team]|0)-1;
           if(incomplete) return;
         }
       }
-      choose(0,0,afterOut);
+      choose(0,0,levels[0]);
       if(incomplete) break outer;
     }
   }
@@ -637,5 +878,5 @@ function optimiseTransfers(args){
 }
 
 export { TRANSFER_PROGRESS_INTERVAL, hasKnownPurchasePrice, transferSellPrice, nextFreeTransfers, transferHit, validateSquad,
-  bestXIForGW, scoreSquadAcrossHorizon, comparePlans, retainPlan, optimisticSquadUpperBound,
+  bestXIForGW, scoreSquadAcrossHorizon, comparePlans, retainPlan, createPoolLevel, seedPoolLevel, poolHorizonTotal,
   optimiseTransfers, exhaustiveTransferSearch };

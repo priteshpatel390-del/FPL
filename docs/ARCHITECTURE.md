@@ -21,7 +21,7 @@ src/
     scoring.mjs         rule-aware deterministic player components and projection cache
     simulation.mjs      seeded player uncertainty, minutes states and percentiles
     squad-simulation.mjs legal auto-subs, captain fallback and squad distributions
-    transfers.mjs       exact 0–3 transfer optimiser
+    transfers.mjs       exact 0–3 transfer optimiser and its position-quota search machinery
     walk-forward.mjs    chronological evaluation and fold-only calibration
     archive-replay.mjs  pinned historical replay
     backtest.mjs        historical evaluation utilities
@@ -48,6 +48,8 @@ dist/                   generated deployable; never hand-edit
 
 ## Dependency flow
 Configuration and state feed providers, storage and model modules. Official FPL element histories populate `S.minuteHistory`. `model/minutes.mjs` owns expected-minutes probabilities and aggregate fallback. `model/scoring.mjs` consumes that boundary and returns the unchanged deterministic `{total,perGW,games,parts}` projection surface.
+
+`model/transfers.mjs` holds two independent searches. `exhaustiveTransferSearch()` is the reduced-pool oracle and is deliberately unoptimised; it shares no pruning with production. `optimiseTransfers()` is the production exact search. Because every legal transfer is position-preserving, each node's position pool always holds exactly the position quota, so the search carries per-position, per-Gameweek descending score arrays and prefix sums instead of rebuilding squad rows; an unfilled incoming slot is a zero placeholder. Bounds are per-formation and node-aware, optimistic completions come from price-capped tables built once per position, and each position pool is enumerated in descending identity-gain order so a failed bound ends the enumeration rather than skipping one candidate. Full plan detail — canonical transfers, signature and per-Gameweek best XI — is materialised only for a genuine contender. The evaluation ceiling, comparator, candidate universe and result ordering are owned by the approved model, not by this machinery.
 
 `model/simulation.mjs` is downstream of fixtures, minutes and scoring. It samples around approved deterministic component expectations and never writes back into scoring or calibration. `model/squad-simulation.mjs` is downstream of player simulation and owns only FPL squad mechanics. Transfers continue to consume deterministic expected points; Stage 8 does not alter optimiser objectives.
 
@@ -198,6 +200,6 @@ The static GitHub Pages application remains unchanged as the UI host. `src/provi
 
 The controller fingerprints build/model/rules identity, verified-data revision, Gameweek, squad and purchase prices, player price/availability and prepared projection values, bank, free transfers, horizon, result limit and search limits. Material changes supersede and terminate obsolete work. Route changes and unrelated renders do not. One worker and one current job may exist; explicit cancellation is available, and Retry is reserved for a genuine failure. Full reload/page closure remains a session boundary.
 
-`src/model/transfers.mjs` preserves the approved Stage 6 objective, comparator, candidate eligibility and evaluation ceiling. Exact performance work precomputes the player-by-Gameweek score surface, reuses each outgoing squad core, scores non-contending leaves through a lower-allocation exact XI path, materialises complete plan detail only when a candidate can enter retained top K, explores promising branches earlier and applies only conservative upper bounds that cannot remove a possible retained result. The independent `exhaustiveTransferSearch()` remains deliberately separate and unchanged in purpose for differential verification on reduced pools.
+`src/model/transfers.mjs` preserves the approved Stage 6 objective, comparator, candidate eligibility and evaluation ceiling. After the physical iPhone Safari failure the exact search was rebuilt around position-quota score prefix sums, zero placeholders for unfilled incoming slots, per-formation and node-aware admissible bounds with a threshold-delta correction for negative projections, price-capped optimistic completion tables under a joint-budget price cap, descending identity-gain stopping rules, and materialisation of complete plan detail only for a genuine contender or an exact tie. Every bound is optimistic in the relaxed constraints, so no branch that could enter the retained top K is removed. The independent `exhaustiveTransferSearch()` remains deliberately separate, unoptimised and free of the production pruning for differential verification on reduced pools.
 
 This boundary adds no provider, network origin, persistence database or Cloudflare optimisation. Projection, expected-minutes, fixture, scoring, selling-price, hit, free-transfer, roll-value, maximum-depth, horizon, captaincy, bench and result-order behaviour remain unchanged. Deadline evidence may still call the optimiser directly outside this UI controller and remains a separately documented main-thread path.
