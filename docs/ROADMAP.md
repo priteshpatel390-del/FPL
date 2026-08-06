@@ -145,3 +145,18 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 ## Teamsheet 2.0.7 current handover
 
 Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a separate branch from `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification is **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not call the checkpoint complete or merge without owner approval.
+
+## Transfers Track A corrective status — 2026-08-06
+
+- [x] Record the first physical iPhone Safari failure at the two-million evaluation ceiling.
+- [x] Investigate and record the root cause: node cost, bound looseness, no stopping rule and a per-player rather than joint budget relaxation.
+- [x] Rebuild the exact search on position-quota prefix sums, per-formation node-aware admissible bounds, price-capped completion tables and descending-gain stopping rules.
+- [x] Prove controlled-pool equality with the independent `exhaustiveTransferSearch()` oracle across seven adversarial shapes and each fixed transfer depth.
+- [x] Prove Official-scale six-Gameweek completion below the unchanged ceiling with `status: 'ok'`, and unchanged fail-closed behaviour when the ceiling is genuinely exceeded.
+- [x] Pass the 606-test repository gate with deterministic exact-identity builds and root/deployable equality.
+- [ ] Repeat physical iPhone Safari Test 1 on the corrected preview and confirm the search now completes.
+- [ ] Complete navigation persistence, cancellation, cached reuse and VoiceOver physical checks.
+- [ ] Obtain Pritesh's explicit approval before any merge.
+
+Track B football-intelligence changes remain outside this checkpoint and unapproved.
+
