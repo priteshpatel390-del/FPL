@@ -1,5 +1,9 @@
 # TESTING.md
 
+<!-- UX-A2-2026-08-06 -->
+> **UX-A2 Player Detail Scroll and Rotation Correction review verification:** the branch adds nineteen focused behaviour and CSS-contract tests in one new file without deleting, weakening or skipping any existing test and without changing a golden/model expectation. The complete baseline moves from **624** to **643 passed, 0 failed, 0 skipped**. Two production builds using the exact reviewed source commit are byte-identical for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`; root `index.html` equals `dist/index.html`. Automated evidence covers exact background-offset capture and restoration, root plus body locking, internal scroll reset, `preventScroll` focus on open and on close, close-button/backdrop/Escape parity, player replacement while open, route-driven close without stale scroll or focus restoration, detached and hidden trigger rejection, viewport-property fallback, flex-scroll constraints, `vh`-before-`dvh` ordering, compact-landscape sizing, four-sided safe areas, the dialog-not-a-route boundary and the no-inline-style and no-data-reach guards. Physical populated iPhone Safari acceptance remains owner-pending; see the UX-A2 device script below. VoiceOver is not a Teamsheet acceptance gate.
+
+
 <!-- UX-A1-2026-08-06 -->
 > **UX-A1 Team Resources and Bench Clarity review verification:** the branch adds eleven focused presentation contracts without changing a golden/model expectation. The complete baseline is **624 passed, 0 failed, 0 skipped**. Two production builds using the exact reviewed source commit are byte-identical for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`; root `index.html` equals `dist/index.html`. Automated evidence covers resource-bar adjacency, exact labels, secondary manual provenance, compact-chip removal, non-duplication, exact separate bench roles, unchanged bench order, two-line names, complete accessible labels, retained Player Detail tapping and the no-new-engine presentation boundary. Physical populated iPhone Safari acceptance remains owner-pending; VoiceOver was deliberately not tested.
 
@@ -53,6 +57,7 @@ FPL-T1 review verification completed **590/590 passing tests**, zero failures an
 32. `transfer-exact-correction.test.mjs` — the Track A correction. Controlled-pool equality with the independent `exhaustiveTransferSearch()` oracle across seven adversarial shapes (mixed, goalkeeper-only, cheap enablers, doubtful-heavy, exact price boundaries, inherited club excess and fully tied projections) at 45 deterministic seeds each; oracle equality at each fixed depth of one, two and three transfers; re-scoring every retained plan from its own final squad through the reviewed scorer; prefix-sum pool totals against the reviewed best-XI scoring; canonical bank, doubtful-count and signature tie-breaking on a fully tied pool; zero-transfer ranking agreement; Official-scale six-Gameweek completion below the unchanged 2,000,000 ceiling with `status: 'ok'`; deterministic Official-scale profiling; and Official-scale fail-closed behaviour when the ceiling is genuinely exceeded.
 33. `transfer-baseline-presentation.test.mjs` — Worker-result and cache regressions for a separately returned mandatory zero-transfer baseline when it falls outside the unchanged ranked Top K, plus fail-closed handling of a missing or malformed baseline.
 34. `team-resources-bench-clarity.test.mjs` — UX-A1 resource-bar adjacency and exact labels, honest manual provenance and edit route, compact-chip removal/non-duplication, separate exact bench roles, index-preserving order, two-line names, fixture/xP readability, complete accessible labels, Player Detail tapping and a presentation-only dependency guard.
+35. `player-detail-scroll-rotation.test.mjs` — UX-A2 dialog scroll behaviour. Exact background-offset capture on a fresh open and restoration on a normal close, proved against a simulated mobile-Safari lock that clamps the page to the top; root and body lock application and removal; internal scroll reset on every open; `preventScroll` focus on the close control and on the restored trigger; identical close/backdrop/Escape outcomes; player replacement while open preserving the original offset and trigger; route-driven close that unlocks but restores neither scroll nor focus; a no-op route change while closed; detached and hidden trigger rejection; documented viewport-property fallback; and the CSS contracts for flex scrolling with `min-height:0`, `vh` declared before `dvh`, compact-landscape full-height sizing, four-sided safe areas, the dialog-not-a-route boundary, no runtime inline styling and no data/model reach.
 
 Two forms of Transfers evidence are deliberately separate. Oracle equality is proved only on controlled pools, where an exhaustive comparison is tractable. On the Official-scale pool the claim is only that the exact search completes below the unchanged ceiling and returns `status: 'ok'`; it is not an exactness proof, and a lower evaluation count is never presented as improved prediction accuracy.
 
@@ -250,3 +255,22 @@ Use a populated legal 15-player team and the production preview for the draft PR
 8. Repeat steps 1–7 with Safari's address bar collapsed.
 9. Rotate to landscape and repeat the resource, bench-role, long-name, fixture/xP and tap checks with both address-bar states where available.
 10. Record any overlap, clipped text, accidental tap, horizontal scroll or confusing duplicate value. VoiceOver is outside this UX-A1 device script and must remain recorded as not tested unless separately performed.
+
+## UX-A2 populated iPhone Safari owner test script
+Use a populated legal 15-player team and the production preview for draft PR #76. Record portrait and landscape separately, and repeat with Safari's browser controls expanded and collapsed.
+
+1. Open Team or Players in portrait and scroll the surface partway down — far enough that the top of the page is off screen.
+2. Open Player Detail from a player that is visible at that scroll position.
+3. Confirm the background page does not move, jump or scroll behind the dialog while it is open, including when you drag on the backdrop.
+4. Scroll inside Player Detail all the way to its final section and confirm nothing is cut off or unreachable.
+5. Close with the close button and confirm the background returns to the **exact** position you left, not the top of the page.
+6. Reopen the same player and confirm the detail starts at the top rather than where you had scrolled it.
+7. Repeat steps 1–6 with Safari's browser controls collapsed, then again with them expanded.
+8. With Player Detail open, rotate from portrait to landscape.
+9. In landscape, confirm the close button is fully visible and tappable and that you can still scroll to the last section.
+10. Rotate back from landscape to portrait and confirm the dialog is still usable and nothing is clipped.
+11. Close after rotating and confirm the background position is still correct.
+12. Repeat the close checks using the backdrop and, on an external keyboard if available, Escape. All three must behave identically.
+13. Open Player Detail and press browser Back once.
+14. Confirm one Back press leaves the previous underlying route — no second Back needed, no stale scroll jump and no Player Detail URL.
+15. Record any clipped close button, unreachable content, background jump, wrong restored position, horizontal scroll or rotation glitch. VoiceOver is outside this script; it is not a Teamsheet acceptance gate.
