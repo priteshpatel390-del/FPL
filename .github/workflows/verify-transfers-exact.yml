@@ -1,0 +1,72 @@
+name: Verify exact Transfers architecture
+
+on:
+  push:
+    branches:
+      - agent/transfers-exact-performance
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply approved Track A source and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .tmp/transfer-model.gz.b64 | gzip -d > src/model/transfers.mjs
+          base64 -d .tmp/transfer-ui.gz.b64 | gzip -d > src/ui/transfer-performance.mjs
+          base64 -d .tmp/transfer-exact-test.gz.b64 | gzip -d > tests/transfer-exact-performance.test.mjs
+          base64 -d .tmp/patch-transfer-tests.py.gz.b64 | gzip -d > /tmp/patch-transfer-tests.py
+          python /tmp/patch-transfer-tests.py
+          rm -rf .tmp
+          rm -f .github/workflows/verify-transfers-exact.yml
+          node --check src/model/transfers.mjs
+          node --check src/ui/transfer-performance.mjs
+          node --check tests/transfer-exact-performance.test.mjs
+          git diff --check
+
+      - name: Commit reviewed source
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement exact persistent transfer search"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Run full tests and deterministic builds
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          mkdir -p /tmp/first-build
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/first-build/
+          node build.mjs
+          cmp /tmp/first-build/index.html dist/index.html
+          cmp /tmp/first-build/app.bundle.js dist/app.bundle.js
+          cmp /tmp/first-build/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          git diff --check
+
+      - name: Commit generated artefacts and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Build exact persistent transfer search"
+          fi
+          git push origin HEAD:agent/transfers-exact-performance
