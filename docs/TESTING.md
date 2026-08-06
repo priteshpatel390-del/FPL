@@ -223,3 +223,11 @@ Claude's controlled-shape, fixed-depth, re-score, prefix-sum, tied-comparator an
 Pritesh physically tested the reconciled PR #72 preview on iPhone Safari with populated Official FPL data. The default six-Gameweek exact calculation completed in approximately **15 seconds** and displayed both the highest-ranked transfer plan and the separate no-transfer baseline. Internal navigation preserved completed results; cancellation and restart responded promptly; an active calculation survived navigation; leaving and returning to Safari caused no freeze or reload; and a newer three-Gameweek request was not overwritten by the older eight-Gameweek result.
 
 VoiceOver was not tested and must not be claimed as physically verified. A final production-bundle regression requires every zero transfer cost to render as **“No hit”** and forbids **“−0”** anywhere in the displayed transfer result.
+
+## 2026-08-06 — Track A merged checkpoint
+
+- Approved stack merged in order: PR #69 at `00a35bacd2396a125a8a914bff9980b4f18b257f`, PR #70 at `78b2729c51419a36c5e6f757fa54830100b5435c`, and PR #72 at `be742e1eb707b3892f6405adf5d8769e084eee65`.
+- The final `main` tree `3794e8e7ab9859717950296766dc9d64c9e5473f` exactly matches the verified PR #72 head tree, proving the merge introduced no file-content drift.
+- The accepted pre-merge gate remains **613 passed, 0 failed, 0 skipped**, with deterministic production builds and root/deployable equality. No new runtime test run is claimed after the merge; the tree-identity check ties `main` directly to that verified content.
+- Populated physical iPhone Safari passed the six-Gameweek exact calculation in about 15 seconds, result restoration, active navigation, cancel/restart, Safari background/return, stale-result protection, separate no-transfer comparison and final **No hit** wording.
+- VoiceOver was not tested and is not claimed.

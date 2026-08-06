@@ -175,3 +175,7 @@ Automated verification: **612 passed, 0 failed, 0 skipped** with deterministic e
 ## Physical iPhone Safari result — 2026-08-06
 
 On populated Official FPL data, the reconciled six-Gameweek exact calculation completed in approximately 15 seconds on Pritesh's iPhone Safari. Completed-result restoration, cancellation/restart, navigation during calculation, Safari background/return and stale-result protection all behaved smoothly. This is device evidence for the tested scenario, not a universal performance guarantee. VoiceOver was not tested. The final presentation rule renders a zero transfer cost as **“No hit”**, without changing the numeric result.
+
+## Integrated main checkpoint — 2026-08-06
+
+The approved stack is merged: PR #69 at `00a35bacd2396a125a8a914bff9980b4f18b257f`, PR #70 at `78b2729c51419a36c5e6f757fa54830100b5435c` and PR #72 at final `main` `be742e1eb707b3892f6405adf5d8769e084eee65`. The merge commit's tree `3794e8e7ab9859717950296766dc9d64c9e5473f` exactly matches the verified PR #72 head tree. Accepted evidence remains 613 passing tests, deterministic builds and the populated iPhone Safari result: approximately 15 seconds for the six-Gameweek exact calculation, smooth navigation/cancellation/app-switch/stale-result paths, the required no-transfer comparison and final **No hit** wording. VoiceOver was not tested, and no universal device-speed or prediction-accuracy claim is made.

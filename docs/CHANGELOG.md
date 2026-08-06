@@ -147,3 +147,10 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Added a production-bundle regression that forbids negative-zero hit copy.
 - Recorded populated iPhone Safari evidence: six-Gameweek completion in about 15 seconds, navigation persistence, cancellation/restart, app-switch stability and stale-result protection.
 - No optimiser, projection, scoring, ranking, candidate or transfer-rule behaviour changed.
+
+## 2026-08-06 — FPL-T1 and Track A integrated
+
+- Merged the approved stack in order: PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`), PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`).
+- Confirmed final `main` has the identical tree `3794e8e7ab9859717950296766dc9d64c9e5473f` as the verified PR #72 head.
+- Preserved the 613-test deterministic-build evidence and recorded populated iPhone Safari acceptance for the tested Transfers lifecycle and final **No hit** wording.
+- No Track B intelligence, provider expansion, prediction formula or accuracy claim was introduced.
