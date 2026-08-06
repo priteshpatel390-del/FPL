@@ -127,3 +127,23 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Retained the independent exhaustive search as the differential oracle and added exactness, position/enabler and persistent-controller tests.
 - Verified 594 passed, 0 failed, 0 skipped with byte-identical exact-identity builds and root/deployable equality.
 - No model, rules, provider, data-source, Cloudflare, captaincy, bench, Mini-League or rank logic changed. Physical iPhone performance acceptance remains open.
+
+## 2026-08-06 — Concurrent continuation reconciliation
+
+### Reconciled
+- Retained Claude's corrected exact position-pool and budget-bound search architecture.
+- Settled cancelled and superseded Worker waits to release old in-session calculation chains.
+- Made partial signature bounds universally optimistic for mixed-width player IDs.
+
+### Verification
+- 609 tests pass with zero failures or skips.
+- Existing independent exhaustive-oracle and Official-scale coverage remains intact.
+- Deterministic production builds and root/deployable equality retained.
+- Physical iPhone Safari retest remains pending.
+
+## 2026-08-06 — Transfers plain-language zero-hit copy
+
+- Replaced confusing **“−0”** transfer-cost output with **“No hit”** across baseline cards, plan summaries and review details.
+- Added a production-bundle regression that forbids negative-zero hit copy.
+- Recorded populated iPhone Safari evidence: six-Gameweek completion in about 15 seconds, navigation persistence, cancellation/restart, app-switch stability and stale-result protection.
+- No optimiser, projection, scoring, ranking, candidate or transfer-rule behaviour changed.

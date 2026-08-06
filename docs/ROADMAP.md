@@ -1,7 +1,7 @@
 # ROADMAP.md — living roadmap
 
 <!-- TRANSFERS-TRACK-A-2026-08-06 -->
-> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. **The first physical iPhone Safari test failed:** with verified saved data, a complete squad, one free transfer, an empty bank, the six-Gameweek horizon and Top 8, the automatic exact search exhausted the unchanged 2,000,000 evaluation ceiling and reported *"Exact search did not complete."* The owner-approved corrective change rebuilds the exact search around position-quota score prefix sums, per-formation admissible bounds, price-capped optimistic completion tables and descending-gain stopping rules. The approved football problem, comparator, candidate universe, horizon, result limit and evaluation ceiling are unchanged, and `exhaustiveTransferSearch()` remains an independent oracle. Automated verification is **606 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. **The corrected search has not yet been physically retested on iPhone Safari.** Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
+> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. **The first physical iPhone Safari test failed:** with verified saved data, a complete squad, one free transfer, an empty bank, the six-Gameweek horizon and Top 8, the automatic exact search exhausted the unchanged 2,000,000 evaluation ceiling and reported *"Exact search did not complete."* The owner-approved corrective change rebuilds the exact search around position-quota score prefix sums, per-formation admissible bounds, price-capped optimistic completion tables and descending-gain stopping rules. The approved football problem, comparator, candidate universe, horizon, result limit and evaluation ceiling are unchanged, and `exhaustiveTransferSearch()` remains an independent oracle. Automated verification is **612 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. **The corrected search completed on the second physical iPhone Safari test, but the result screen failed because the separately returned zero-transfer baseline had fallen outside the Top 8 and the presentation read only `result.plans`. The owner-approved PR #72 correction reads `result.baseline` without changing the optimiser or its ranked Top 8. A further physical retest remains required.** Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
 
 
 > **Current approved item — FPL-T1:** Implemented for review on draft PR #69. The owner-controlled Official FPL Worker is deployed, the exact stable `/fpl` gateway is configured in the deterministic Pages build, live 2026/27 bootstrap transport passed on physical iPhone Safari and the automated baseline is **590 passed, 0 failed, 0 skipped**. The approved responsive Transfers correction is automatically verified; complete physical populated-app acceptance, update the PR evidence and obtain explicit merge approval. No model or calculation change is authorised.
@@ -160,3 +160,16 @@ Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a sepa
 
 Track B football-intelligence changes remain outside this checkpoint and unapproved.
 
+## 2026-08-06 — Concurrent continuation reconciliation
+
+- [x] Assess and retain Claude's concurrent exact-search correction.
+- [x] Reconcile explicit cancellation and force-start promise settlement.
+- [x] Harden partial signature bounds for mixed-width IDs.
+- [x] Pass 609 tests and deterministic build verification on the combined branch.
+- [ ] Publish the combined preview and repeat the physical iPhone Safari checklist.
+- [ ] Record device duration, responsiveness, memory pressure, cancellation, persistence, cache reuse and VoiceOver evidence.
+- [ ] Obtain explicit approval before the stacked PR integration sequence.
+
+### Track A acceptance update — 2026-08-06
+
+Core populated-data iPhone Safari acceptance passed for PR #72. Remaining work before integration is limited to verifying the approved plain-language zero-hit display correction, updating generated files and obtaining explicit stacked merge approval. VoiceOver was not physically tested and is not an acceptance claim for this release.

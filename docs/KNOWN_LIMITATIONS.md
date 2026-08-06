@@ -69,7 +69,7 @@ Last updated: 2026-08-05. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | REFRESH-1 | Qualifying foreground return temporarily locked the app after unsuccessful loading | Every completed attempt now starts the ten-minute cooldown, paired Safari events deduplicate and foreground refresh remains interactive; physical owner retest passed | Teamsheet 2.0.7 | **CLOSED and merged 2026-08-05 through PR #68** |
 | FPL-1 | Static Pages could not reliably read Official FPL through anonymous browser relays | Replaced on draft PR #69 by the owner-controlled allowlisted Worker; the stable production route returned live 2026/27 bootstrap data on physical iPhone Safari | FPL-T1 | Implemented and transport-verified; merge pending |
 | FPL-2 | Full populated Teamsheet behaviour has not yet been accepted against live Official FPL account, fixture, player and league endpoints | Transport success does not by itself prove the 15-player squad, captain/bench, Transfers, Fixtures, Player Detail, leagues, cache and refresh flows | PR #69 live acceptance | Open (acceptance gate) |
-| TRF-A1 | The first physical iPhone Safari test of the automatic exact Transfers search exhausted the 2,000,000 evaluation ceiling and reported "Exact search did not complete." | The approved corrective search architecture is implemented and automatically verified, and a Node reproduction of the failure shape that previously took 13 minutes 38 seconds now completes in about 1.2 seconds with identical complete top-8 results, but the corrected build has not yet been physically retested | PR #70 physical retest | **Open (acceptance gate)** |
+| TRF-A1 | The first physical iPhone Safari test exhausted the 2,000,000 evaluation ceiling; the second completed the corrected search but exposed a presentation-contract defect when the mandatory baseline ranked outside Top 8 | PR #72 now reads the separately returned `result.baseline` while preserving the optimiser Top K; automated regression coverage is complete, but another physical iPhone retest is required | PR #72 physical retest | **Open (acceptance gate)** |
 | TRF-A2 | Official-scale exactness is not proved against the exhaustive oracle | A full-pool exhaustive comparison is not tractable; oracle equality is proved on controlled pools and the Official-scale claim is only that the exact search completes below the unchanged ceiling with `status: 'ok'` | By design of the evidence | Accepted-labelled |
 | TRF-A3 | Reduced evaluation counts are a search-efficiency result only | Fewer evaluated plans say nothing about projection quality; no prediction-accuracy claim is created or implied | By design | Accepted |
 | ACCOUNT-1 | Bank and available free transfers remain manual inputs rather than proven authoritative account values | Values can be entered but are not yet verified from the connected FPL account; no inference may be labelled authoritative | Separate data/security design | Open (gated) |
@@ -188,3 +188,13 @@ When current Official FPL attack/defence strengths are unavailable, the Fixtures
 | TRF-PERF-4 | Deadline evidence can still invoke the optimiser directly outside the app-scoped Transfers controller | Evidence capture may retain a main-thread search path; this Track A UI architecture does not silently broaden into Stage 10 evidence orchestration | Separate scope gate | Open |
 
 The Track A implementation does not address captaincy, bench emergency value, auto-subs, future transfer sequencing, recent player attacking-role form or heuristic/progressive search. Those remain separate model/data approval gates.
+
+## 2026-08-06 — Concurrent continuation reconciliation
+
+The unresolved-promise risk for cancelled or superseded transfer Workers is closed by explicit settlement and runtime tests. Mixed-width player-ID tie handling is covered against the independent exhaustive oracle.
+
+Physical iPhone Safari performance remains unverified for the combined build. CI cannot establish real device memory pressure, thermal behaviour, cancellation latency, backgrounding or VoiceOver announcements.
+
+## Track A physical-test limitation — 2026-08-06
+
+The populated Transfers workflow was physically tested on Pritesh's iPhone Safari, but VoiceOver was deliberately not tested. Do not claim physical screen-reader verification. The device result is evidence for the tested calculation, navigation, cancellation, app-switch and stale-result paths only.
