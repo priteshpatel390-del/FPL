@@ -217,3 +217,10 @@ Decision: keep the approved football problem, comparator, candidate universe, ho
 
 Consequences: no projection, minutes, scoring, fixture, captaincy, squad, affordability, hit, free-transfer, roll-value or ordering change; no candidate filter of any kind; no ceiling, horizon, depth or Top-8 change; fail-closed behaviour is unchanged. A Node reproduction of the failure shape that previously took 13 minutes 38 seconds over 9,480,866 partial nodes now completes in about 1.2 seconds over 880,555 nodes with `status: 'ok'`, a head-to-head run of both implementations on that input returned identical complete top-8 results, and equality with the independent oracle is proved on controlled pools across seven adversarial shapes. Reduced evaluation counts are a search-efficiency result only and create no prediction-accuracy claim. The corrected search has not yet been physically retested on iPhone Safari, so Track A remains unaccepted and unapproved for merge.
 
+## 2026-08-06 — Concurrent continuation reconciliation
+
+**Decision:** preserve Claude's corrected exact-search architecture and add explicit Worker-wait settlement plus universally optimistic partial signatures.
+
+**Reason:** Worker termination alone does not guarantee promise settlement, and numeric player-ID order is not universally equivalent to locale string order for mixed-width IDs.
+
+**Consequence:** cancellation remains a paused/non-failure state, stale results remain rejected, the final comparator is unchanged and partial tie pruning is deliberately conservative. Permanent runtime and exhaustive-oracle regressions enforce the decision.

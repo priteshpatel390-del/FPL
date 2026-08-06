@@ -188,3 +188,9 @@ When current Official FPL attack/defence strengths are unavailable, the Fixtures
 | TRF-PERF-4 | Deadline evidence can still invoke the optimiser directly outside the app-scoped Transfers controller | Evidence capture may retain a main-thread search path; this Track A UI architecture does not silently broaden into Stage 10 evidence orchestration | Separate scope gate | Open |
 
 The Track A implementation does not address captaincy, bench emergency value, auto-subs, future transfer sequencing, recent player attacking-role form or heuristic/progressive search. Those remain separate model/data approval gates.
+
+## 2026-08-06 — Concurrent continuation reconciliation
+
+The unresolved-promise risk for cancelled or superseded transfer Workers is closed by explicit settlement and runtime tests. Mixed-width player-ID tie handling is covered against the independent exhaustive oracle.
+
+Physical iPhone Safari performance remains unverified for the combined build. CI cannot establish real device memory pressure, thermal behaviour, cancellation latency, backgrounding or VoiceOver announcements.

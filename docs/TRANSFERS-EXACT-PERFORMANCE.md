@@ -120,7 +120,7 @@ Cheap players, defenders and goalkeepers remain in the broad eligible universe. 
 
 ## Automated evidence
 
-Complete repository result: **606 passed, 0 failed, 0 skipped**.
+Complete repository result: **609 passed, 0 failed, 0 skipped**.
 
 Two independent forms of evidence are kept apart deliberately:
 
@@ -148,3 +148,14 @@ Physical iPhone Safari must still verify:
 - exact final plans/order matching the frozen reference input.
 
 Until that evidence is recorded, Track A is implemented and automatically verified but **not** product-accepted and **not** approved for merge. No device-speed claim is made before Pritesh completes the new physical test.
+
+## 2026-08-06 — Concurrent continuation reconciliation
+
+Claude's position-pool prefix sums, per-formation/final-slot bounds, price-capped completion tables, joint-budget caps and descending identity-gain stopping rules are retained unchanged.
+
+Two lifecycle/exactness safeguards were added during reconciliation:
+
+1. cancelling, invalidating or superseding a Worker settles the Promise awaiting its result with an internal `AbortError`, allowing the old snapshot, score rows and handlers to be released;
+2. a partial node uses the empty string as its optimistic signature, avoiding any assumption that numeric player-ID order matches locale string order. Complete plans still use the unchanged canonical signature and comparator.
+
+The combined build passes 609 tests. Mixed-width IDs match the independent exhaustive oracle, and cancellation/supersession promises are proven to settle. A deterministic seed-7 Official-scale profile completed with 21 exact leaf evaluations across 575 outgoing branches. Physical iPhone acceptance remains outstanding.

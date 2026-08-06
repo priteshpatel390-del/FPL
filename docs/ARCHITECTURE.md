@@ -203,3 +203,11 @@ The controller fingerprints build/model/rules identity, verified-data revision, 
 `src/model/transfers.mjs` preserves the approved Stage 6 objective, comparator, candidate eligibility and evaluation ceiling. After the physical iPhone Safari failure the exact search was rebuilt around position-quota score prefix sums, zero placeholders for unfilled incoming slots, per-formation and node-aware admissible bounds with a threshold-delta correction for negative projections, price-capped optimistic completion tables under a joint-budget price cap, descending identity-gain stopping rules, and materialisation of complete plan detail only for a genuine contender or an exact tie. Every bound is optimistic in the relaxed constraints, so no branch that could enter the retained top K is removed. The independent `exhaustiveTransferSearch()` remains deliberately separate, unoptimised and free of the production pruning for differential verification on reduced pools.
 
 This boundary adds no provider, network origin, persistence database or Cloudflare optimisation. Projection, expected-minutes, fixture, scoring, selling-price, hit, free-transfer, roll-value, maximum-depth, horizon, captaincy, bench and result-order behaviour remain unchanged. Deadline evidence may still call the optimiser directly outside this UI controller and remains a separately documented main-thread path.
+
+## 2026-08-06 — Concurrent continuation reconciliation
+
+The reconciled architecture keeps Claude's exact position-pool prefix sums, admissible price-capped completion, joint-budget bounds and descending-gain stopping rules.
+
+The app-scoped controller additionally owns a one-shot cancellation settlement callback for the currently awaited Worker result. Cancel, material invalidation and force-start replacement settle that wait with an internal `AbortError`; the existing outer controller treats it as intentional cancellation and releases the superseded job's retained data.
+
+For comparator ties, a partial search node uses `''` as its optimistic signature because every real transfer signature is non-empty. The exact unchanged canonical signature is used once the branch is complete. This is more conservative pruning and cannot alter final ordering.
