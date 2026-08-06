@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UX-A2 Player Detail review</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#eef4ef;
+  --panel:#fff;
+  --line:#d8e1d9;
+  --ink:#102217;
+  --ink-soft:#5f7065;
+  --accent:#167447;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+body{padding:calc(18px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
+main{max-width:760px;margin:0 auto}
+.review-banner{position:sticky;top:0;z-index:5;margin:-18px -16px 18px;padding:calc(12px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) 12px calc(16px + env(safe-area-inset-left,0px));background:rgba(238,244,239,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.review-banner strong{display:block;font-size:18px}.review-banner span{display:block;margin-top:3px;color:var(--ink-soft);font-size:13px}
+h1{font-size:28px;margin:0 0 8px}.lead{margin:0 0 22px;color:var(--ink-soft);line-height:1.5}
+.spacer{height:42vh;min-height:280px;display:grid;place-items:center;color:var(--ink-soft);text-align:center;padding:24px;border:1px dashed #abc0ae;border-radius:20px;margin-bottom:20px}
+.squad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.player-card{appearance:none;width:100%;border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:16px;text-align:left;color:var(--ink);min-height:112px;box-shadow:0 8px 24px rgba(16,34,23,.06)}
+.player-card:active{transform:scale(.99)}
+.player-card .role{display:block;color:var(--accent);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.player-card .name{display:block;font-size:18px;font-weight:800;margin-top:7px}.player-card .meta{display:block;color:var(--ink-soft);font-size:13px;margin-top:6px}
+.review-tail{height:55vh;min-height:420px;margin-top:20px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.25));display:grid;place-items:center;text-align:center;color:var(--ink-soft);padding:24px}
+.detail-section{padding:16px 0;border-bottom:1px solid var(--line)}.detail-section:last-child{border-bottom:0}.detail-section h3{margin:0 0 7px;font-size:17px}.detail-section p{margin:0;color:var(--ink-soft);line-height:1.55}.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.metric{border:1px solid var(--line);border-radius:14px;padding:12px;background:#f8faf8}.metric strong{display:block;font-size:18px}.metric span{display:block;color:var(--ink-soft);font-size:12px;margin-top:3px}
+
+/* Exact UX-A2 Player Detail rules from app.html. */
+html.player-detail-open,body.player-detail-open{overflow:hidden;overscroll-behavior:none}
+.player-detail-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,20,13,.46);backdrop-filter:blur(2px);overscroll-behavior:contain;touch-action:none}
+.player-detail-panel{position:fixed;z-index:39;left:0;right:0;bottom:0;max-height:min(88vh,780px);max-height:min(88dvh,780px);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column;overscroll-behavior:contain}
+.player-detail-panel[hidden],.player-detail-backdrop[hidden]{display:none}
+.player-detail-grip{flex:0 0 auto;width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
+.player-detail-top{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+.player-detail-top h2{font-size:20px;margin:7px 0 0}
+.player-detail-close{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.player-detail-close:hover{background:#EEF1EB}
+.player-detail-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 16px calc(22px + env(safe-area-inset-bottom,0px));padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}
+@media(min-width:760px){.player-detail-panel{left:50%;right:auto;bottom:24px;width:min(680px,calc(100vw - 48px));transform:translateX(-50%);border-bottom:1px solid var(--line);border-radius:24px}}
+@media(max-width:759px) and (orientation:landscape) and (max-height:520px){
+  .player-detail-panel{top:0;bottom:0;max-height:100vh;max-height:100dvh;border-radius:0;border-width:0;padding-top:env(safe-area-inset-top,0px)}
+  .player-detail-grip{display:none}
+  .player-detail-top{padding-top:8px;padding-bottom:8px}
+  .player-detail-top h2{font-size:17px}
+  .player-detail-body{padding-top:10px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .detail-section{padding:11px 0}
+}
+@media(prefers-reduced-motion:no-preference){
+  .player-detail-panel{animation:playerDetailIn .2s ease both}
+  @keyframes playerDetailIn{from{transform:translateY(22px);opacity:.7}to{transform:none;opacity:1}}
+  @media(min-width:760px){@keyframes playerDetailIn{from{transform:translate(-50%,22px);opacity:.7}to{transform:translate(-50%,0);opacity:1}}}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="review-banner"><strong>UX-A2 populated review</strong><span>Fictional, storage-isolated layout fixture. No FPL recommendation or live data.</span></div>
+  <h1>Sample Team</h1>
+  <p class="lead">Scroll well down this page, open a player, then test background locking, internal scrolling, closing and phone rotation.</p>
+  <div class="spacer">Scroll until this panel is mostly above the screen before opening a player. This makes exact background-position restoration easy to judge.</div>
+  <section class="squad" aria-label="Fictional sample squad" id="sampleSquad"></section>
+  <div class="review-tail">Continue scrolling here before opening another player. When you close Player Detail, this exact place should be preserved.</div>
+</main>
+
+<div id="playerDetailBackdrop" class="player-detail-backdrop" hidden></div>
+<section id="playerDetailPanel" class="player-detail-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="playerDetailTitle" hidden>
+  <div class="player-detail-grip" aria-hidden="true"></div>
+  <header class="player-detail-top">
+    <h2 id="playerDetailTitle"></h2>
+    <button id="playerDetailClose" class="player-detail-close" type="button" aria-label="Close Player Detail">×</button>
+  </header>
+  <div id="playerDetailBody" class="player-detail-body"></div>
+</section>
+
+<script type="module">
+import { playerDetailOpen } from '../src/ui/player-detail.mjs';
+
+const players = [
+  ['GK','Alex Keeper','Northbridge','4.5m'],['DEF','Ben Fullback','Riverside','5.0m'],
+  ['DEF','Chris Centreback','Harbour City','5.5m'],['DEF','Dev Wingback','Oakfield','4.8m'],
+  ['MID','Elliot Playmaker','Meadow United','7.5m'],['MID','Fin Wideplayer','Stone Athletic','8.0m'],
+  ['MID','Gareth Box-to-box','Kingsport','6.5m'],['FWD','Harvey Striker','Westborough','9.0m'],
+  ['FWD','Isaac Forward','Easton','7.0m'],['BENCH','Jamie Reserve','Lakeside','4.5m']
+];
+
+function node(tag, className, text){
+  const el=document.createElement(tag);
+  if(className) el.className=className;
+  if(text!==undefined) el.textContent=text;
+  return el;
+}
+
+function detailBody(name,club,price){
+  const sections=[];
+  const intro=node('section','detail-section');
+  intro.append(node('h3','',`${name} · ${club}`),node('p','',`Fictional review player priced at £${price}. This content is deliberately long enough to prove the final sections remain reachable on a short mobile viewport.`));
+  sections.push(intro);
+
+  const summary=node('section','detail-section');
+  summary.append(node('h3','','Decision summary'),node('p','','Available for selection. Projection wording and values on this page are illustrative only and are not produced by the Teamsheet model.'));
+  const grid=node('div','detail-grid');
+  [['Expected points','5.4'],['Expected minutes','78'],['Fixture','HOM (H)'],['Uncertainty','Moderate']].forEach(([label,value])=>{
+    const metric=node('div','metric');metric.append(node('strong','',value),node('span','',label));grid.append(metric);
+  });
+  summary.append(grid);sections.push(summary);
+
+  ['Minutes outlook','Fixture context','Projection breakdown','Uncertainty range','Availability notes','Longer-term context','Final review section'].forEach((title,index)=>{
+    const section=node('section','detail-section');
+    section.append(node('h3','',title),node('p','',`Review section ${index+1}. Scroll through every section in portrait and landscape. The close button must stay visible and this final content must remain reachable without the background page moving.`));
+    sections.push(section);
+  });
+  return sections;
+}
+
+const squad=document.getElementById('sampleSquad');
+players.forEach(([role,name,club,price])=>{
+  const button=node('button','player-card');button.type='button';
+  button.append(node('span','role',role),node('span','name',name),node('span','meta',`${club} · £${price}`));
+  button.addEventListener('click',()=>playerDetailOpen({title:name,body:detailBody(name,club,price),trigger:button}));
+  squad.append(button);
+});
+</script>
+</body>
+</html>
