@@ -17,16 +17,20 @@ const TRANSFER_PERFORMANCE_CACHE_LIMIT = 4;
 const TRANSFER_PERFORMANCE_SCORE_BATCH = 12;
 const TRANSFER_PERFORMANCE_PROGRESS_MS = 200;
 const TRANSFER_PERFORMANCE_UNAVAILABLE = 'This browser cannot run the transfer calculation in the background, so no comparison is being produced.';
+const TRANSFER_PERFORMANCE_INPUT_IDS = new Set(['ftCount','bankIn','trFtCount','trBankIn','trHorizon','trTop','useManual']);
 const transferPerformanceCache = new Map();
 let transferPerformanceWorker = null;
 let transferPerformanceToken = 0;
 let transferPerformanceDataVersion = 0;
 let transferPerformanceInstalled = false;
 let transferPerformanceBusyDetail = null;
+let transferPerformanceActive = null;
+let transferPerformanceCancelledSignature = '';
+let transferPerformanceFailure = null;
+let transferPerformanceAutoTimer = null;
 
 // The worker runs the reviewed transfer model verbatim. Nothing rewrites, patches or
-// re-derives the optimiser at runtime: bounded top-K retention lives in the model itself,
-// so the background search and a direct optimiseTransfers() call execute identical code.
+// re-derives the optimiser at runtime.
 const TRANSFER_PERFORMANCE_WORKER_HANDLER = `
 self.onmessage=event=>{
   const payload=event.data||{};
@@ -59,10 +63,7 @@ function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
   const source=String(modelSource||'');
   if(!/function optimiseTransfers\(/.test(source))
     throw new Error('The reviewed transfer model is missing from this build.');
-  return `"use strict";
-const TRANSFER_RULES=${JSON.stringify(rules)};
-${source}
-${TRANSFER_PERFORMANCE_WORKER_HANDLER}`;
+  return `"use strict";\nconst TRANSFER_RULES=${JSON.stringify(rules)};\n${source}\n${TRANSFER_PERFORMANCE_WORKER_HANDLER}`;
 }
 
 function transferPerformanceHash(value, seed=2166136261){
@@ -78,6 +79,7 @@ function transferPerformanceHash(value, seed=2166136261){
 function transferPerformanceCurrentRoute(){
   return String(globalThis.location?.hash||'').split('?')[0];
 }
+function transferPerformanceVisible(){ return transferPerformanceCurrentRoute()==='#/transfers'; }
 
 function transferPerformanceYield(){
   return new Promise(resolve=>{
@@ -119,7 +121,6 @@ function transferPerformanceSnapshot(){
   const signature=[
     transferPerformanceDataVersion,
     typeof BUILD_INFO!=='undefined'?BUILD_INFO.sourceHash:'',
-    S.cachedAt||'live',
     S.nextGW,
     horizon,
     maxResults,
@@ -153,9 +154,8 @@ function transferPerformanceSnapshot(){
 function transferPerformanceCacheSet(key,value){
   transferPerformanceCache.delete(key);
   transferPerformanceCache.set(key,value);
-  while(transferPerformanceCache.size>TRANSFER_PERFORMANCE_CACHE_LIMIT){
+  while(transferPerformanceCache.size>TRANSFER_PERFORMANCE_CACHE_LIMIT)
     transferPerformanceCache.delete(transferPerformanceCache.keys().next().value);
-  }
 }
 
 function transferPerformanceStatus(text){
@@ -164,31 +164,7 @@ function transferPerformanceStatus(text){
 }
 
 function transferPerformanceAction(label,handler,{secondary=false}={}){
-  return el('button',{
-    type:'button',
-    class:`btn${secondary?' ghost':''}`,
-    onclick:handler
-  },label);
-}
-
-function transferPerformanceRenderReady(snapshot,{message='Ready to calculate without blocking the rest of Teamsheet.'}={}){
-  const out=$('transferOut');
-  if(!out) return;
-  transferPerformanceBusyDetail=null;
-  out.setAttribute('aria-busy','false');
-  const cached=transferPerformanceCache.get(snapshot.signature);
-  if(cached){
-    transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
-    return;
-  }
-  setChildren(out,
-    transferPlannerContext(),
-    el('div',{class:'note plain'},
-      el('b',{},'Transfers is ready. '),
-      message),
-    el('div',{class:'transfer-actions'},
-      transferPerformanceAction('Calculate transfers',()=>void transferPerformanceStart(snapshot))));
-  transferPerformanceStatus('Ready. Calculation starts only when requested.');
+  return el('button',{type:'button',class:`btn${secondary?' ghost':''}`,onclick:handler},label);
 }
 
 function transferPerformancePreparingDetail(completed,total){
@@ -198,15 +174,12 @@ function transferPerformancePreparingDetail(completed,total){
 
 function transferPerformanceSearchingDetail(progress=null){
   const depth=Math.max(0,Math.trunc(Number(progress?.depth)||0));
-  const maxDepth=Math.max(0,Math.trunc(Number(progress?.maxDepth)||0));
   const evaluations=Math.max(0,Math.trunc(Number(progress?.evaluations)||0));
-  if(!depth) return 'Evaluating legal transfer plans in the background.';
-  const counted=evaluations?` · ${evaluations.toLocaleString('en-GB')} plans checked`:'';
-  return `Evaluating legal transfer plans in the background. Depth ${depth}${maxDepth?` of ${maxDepth}`:''}${counted}.`;
+  if(!evaluations) return 'Checking exact transfer plans in the background.';
+  const scope=depth?` · up to ${depth} transfer${depth===1?'':'s'}`:'';
+  return `Checking exact transfer plans in the background. ${evaluations.toLocaleString('en-GB')} complete plans verified${scope}.`;
 }
 
-// The busy panel is built once per calculation. Progress only rewrites one text node, so
-// throttled worker updates cannot rebuild the workspace or fight the browser for the frame.
 function transferPerformanceRenderBusy(detail){
   const out=$('transferOut');
   if(!out) return;
@@ -221,9 +194,9 @@ function transferPerformanceRenderBusy(detail){
   transferPerformanceBusyDetail=document.createTextNode(detail);
   setChildren(out,
     transferPlannerContext(),
-    el('div',{class:'note plain'},el('b',{},'Calculating transfers. '),transferPerformanceBusyDetail),
+    el('div',{class:'note plain'},el('b',{},'Updating transfer advice. '),transferPerformanceBusyDetail),
     el('div',{class:'transfer-actions'},
-      transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.'),{secondary:true})));
+      transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.',{explicit:true}),{secondary:true})));
   transferPerformanceStatus(detail);
 }
 
@@ -233,6 +206,38 @@ function transferPerformanceRenderError(title,detail){
   transferPerformanceBusyDetail=null;
   out.setAttribute('aria-busy','false');
   transferPlannerBlocking(out,title,detail);
+  transferPerformanceStatus('Transfer comparison unavailable.');
+}
+
+function transferPerformanceRenderCancelled(snapshot,message='Calculation cancelled.'){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  out.setAttribute('aria-busy','false');
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note plain'},el('b',{},'Transfer calculation paused. '),message),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Resume calculation',()=>{
+        transferPerformanceCancelledSignature='';
+        void transferPerformanceStart(snapshot,{force:true});
+      })));
+  transferPerformanceStatus('Transfer calculation paused.');
+}
+
+function transferPerformanceRenderFailure(snapshot){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  out.setAttribute('aria-busy','false');
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note bad',role:'alert'},el('b',{},'Transfers could not be calculated. '),TRANSFER_PERFORMANCE_UNAVAILABLE),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Retry',()=>{
+        transferPerformanceFailure=null;
+        void transferPerformanceStart(snapshot,{force:true});
+      })));
   transferPerformanceStatus('Transfer comparison unavailable.');
 }
 
@@ -253,7 +258,7 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
     return;
   }
   if(result.status==='search-incomplete'){
-    transferPerformanceRenderError('Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
+    transferPerformanceRenderError('Exact search did not complete.','No partial result is being presented as optimal.');
     return;
   }
 
@@ -268,11 +273,7 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
   const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
   const topAlternative=alternatives[0]||null;
   const optimiserSignature=decisionPreviewOptimiserSignature({
-    squadSignature,
-    horizon,
-    bank:assumptions.bankTenths,
-    freeTransfers:assumptions.freeTransfers,
-    plans
+    squadSignature,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,plans
   });
   const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
   if(previewCleared) transferPlannerDispatchPreviewChange();
@@ -288,13 +289,9 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
       }),
       topAlternative?transferPlannerPlanCard(topAlternative,{
         title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
-        index:plans.indexOf(topAlternative),
-        squad,
-        optimiserSignature,
-        horizon,
+        index:plans.indexOf(topAlternative),squad,optimiserSignature,horizon,
         selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
-        primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
-        pricingMode:result.pricingMode
+        primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,pricingMode:result.pricingMode
       }):null)
   ];
 
@@ -304,29 +301,23 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
       el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
       el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
         title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
-        index:plans.indexOf(plan),
-        squad,
-        optimiserSignature,
-        horizon,
+        index:plans.indexOf(plan),squad,optimiserSignature,horizon,
         selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
-        primary:false,
-        pricingMode:result.pricingMode
+        primary:false,pricingMode:result.pricingMode
       })))));
   }
 
-  nodes.push(
-    el('div',{class:'transfer-actions'},
-      transferPerformanceAction('Recalculate transfers',()=>{
-        transferPerformanceCache.clear();
-        void transferPerformanceStart(transferPerformanceSnapshot());
-      },{secondary:true})),
-    el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.')
-  );
+  nodes.push(el('p',{class:'transfer-disclaimer'},
+    'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
   setChildren(out,nodes);
   out.setAttribute('aria-busy','false');
   transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
   transferPerformanceStatus(cached?'Saved transfer comparison reused instantly.':'Transfer comparison updated.');
+}
+
+function transferPerformanceUpdateBusy(detail){
+  if(transferPerformanceActive) transferPerformanceActive.detail=detail;
+  if(transferPerformanceVisible()) transferPerformanceRenderBusy(detail);
 }
 
 async function transferPerformanceScores(snapshot,token){
@@ -335,9 +326,7 @@ async function transferPerformanceScores(snapshot,token){
   const total=snapshot.players.length;
   for(let start=0;start<total;start+=TRANSFER_PERFORMANCE_SCORE_BATCH){
     if(token!==transferPerformanceToken){
-      const error=new Error('Cancelled');
-      error.name='AbortError';
-      throw error;
+      const error=new Error('Cancelled'); error.name='AbortError'; throw error;
     }
     const end=Math.min(total,start+TRANSFER_PERFORMANCE_SCORE_BATCH);
     for(let index=start;index<end;index++){
@@ -352,7 +341,7 @@ async function transferPerformanceScores(snapshot,token){
       }
       rows.push([Number(player.id),scores]);
     }
-    transferPerformanceRenderBusy(transferPerformancePreparingDetail(end,total));
+    transferPerformanceUpdateBusy(transferPerformancePreparingDetail(end,total));
     await transferPerformanceYield();
   }
   return {rows,dataHash:dataHash.toString(16)};
@@ -365,111 +354,170 @@ function transferPerformanceCreateWorker(){
     throw new Error('worker_model_unavailable');
   const source=transferPerformanceWorkerSource(TRANSFER_WORKER_MODEL_SOURCE);
   const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
-  try{
-    return new Worker(url);
-  }finally{
-    URL.revokeObjectURL(url);
-  }
+  try{ return new Worker(url); }
+  finally{ URL.revokeObjectURL(url); }
 }
 
-async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot()){
+async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot(),{force=false}={}){
   if(initialSnapshot?.error){
-    transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
+    if(transferPerformanceVisible()) transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
     return;
   }
-  transferPerformanceCancel('',{render:false});
   const snapshot=initialSnapshot;
+  const cached=transferPerformanceCache.get(snapshot.signature);
+  if(cached&&!force){
+    transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
+    return cached.result;
+  }
+  if(transferPerformanceActive?.signature===snapshot.signature&&!force){
+    if(transferPerformanceVisible()) transferPerformanceRenderBusy(transferPerformanceActive.detail);
+    return transferPerformanceActive.promise;
+  }
+  transferPerformanceCancel('',{render:false,explicit:false});
+  transferPerformanceCancelledSignature='';
+  transferPerformanceFailure=null;
   const token=++transferPerformanceToken;
   transferPlannerClearPreview();
   void saveCfg();
-  transferPerformanceRenderBusy(transferPerformancePreparingDetail(0,snapshot.players.length));
+  const detail=transferPerformancePreparingDetail(0,snapshot.players.length);
+  transferPerformanceActive={signature:snapshot.signature,detail,promise:null};
+  transferPerformanceUpdateBusy(detail);
 
-  try{
-    const prepared=await transferPerformanceScores(snapshot,token);
-    if(token!==transferPerformanceToken) return;
-    const exactSignature=`${snapshot.signature}|${prepared.dataHash}`;
-    const cached=transferPerformanceCache.get(exactSignature);
-    if(cached){
-      transferPerformanceCacheSet(snapshot.signature,cached);
-      transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
-      return;
+  const promise=(async()=>{
+    try{
+      const prepared=await transferPerformanceScores(snapshot,token);
+      if(token!==transferPerformanceToken) return;
+      const exactSignature=`${snapshot.signature}|${prepared.dataHash}`;
+      const exactCached=transferPerformanceCache.get(exactSignature);
+      if(exactCached){
+        transferPerformanceActive=null;
+        transferPerformanceCacheSet(snapshot.signature,exactCached);
+        transferPerformanceRenderResult(exactCached.result,exactCached.context,{cached:true});
+        return exactCached.result;
+      }
+
+      const worker=transferPerformanceCreateWorker();
+      transferPerformanceWorker=worker;
+      transferPerformanceUpdateBusy(transferPerformanceSearchingDetail());
+      const result=await new Promise((resolve,reject)=>{
+        worker.onmessage=event=>{
+          const payload=event.data||{};
+          if(payload.requestId!==token||token!==transferPerformanceToken) return;
+          if(payload.type==='progress'){
+            transferPerformanceUpdateBusy(transferPerformanceSearchingDetail(payload));
+            return;
+          }
+          if(payload.type==='result') resolve(payload.result);
+          else reject(new Error('worker_failed'));
+        };
+        worker.onerror=()=>reject(new Error('worker_failed'));
+        worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
+      });
+      if(token!==transferPerformanceToken) return;
+      worker.terminate();
+      transferPerformanceWorker=null;
+      transferPerformanceActive=null;
+      const context={snapshot,preparedAt:Date.now()};
+      const record={result,context};
+      transferPerformanceCacheSet(exactSignature,record);
+      transferPerformanceCacheSet(snapshot.signature,record);
+      transferPerformanceRenderResult(result,context);
+      return result;
+    }catch(error){
+      if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
+      transferPerformanceWorker?.terminate?.();
+      transferPerformanceWorker=null;
+      transferPerformanceActive=null;
+      transferPerformanceFailure={signature:snapshot.signature};
+      if(transferPerformanceVisible()) transferPerformanceRenderFailure(snapshot);
     }
-
-    const worker=transferPerformanceCreateWorker();
-    transferPerformanceWorker=worker;
-    transferPerformanceRenderBusy(transferPerformanceSearchingDetail());
-    const result=await new Promise((resolve,reject)=>{
-      worker.onmessage=event=>{
-        const payload=event.data||{};
-        if(payload.requestId!==token||token!==transferPerformanceToken) return;
-        if(payload.type==='progress'){ transferPerformanceRenderBusy(transferPerformanceSearchingDetail(payload)); return; }
-        if(payload.type==='result') resolve(payload.result);
-        else reject(new Error('worker_failed'));
-      };
-      worker.onerror=()=>reject(new Error('worker_failed'));
-      worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
-    });
-    if(token!==transferPerformanceToken) return;
-    worker.terminate();
-    transferPerformanceWorker=null;
-    const context={snapshot,preparedAt:Date.now()};
-    const record={result,context};
-    transferPerformanceCacheSet(exactSignature,record);
-    transferPerformanceCacheSet(snapshot.signature,record);
-    transferPerformanceRenderResult(result,context);
-  }catch(error){
-    if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
-    transferPerformanceWorker?.terminate?.();
-    transferPerformanceWorker=null;
-    // Internal reasons stay out of the interface. Teamsheet fails closed and never falls
-    // back to a blocking main-thread search.
-    transferPerformanceRenderError('Transfers could not be calculated.',TRANSFER_PERFORMANCE_UNAVAILABLE);
-  }
+  })();
+  transferPerformanceActive.promise=promise;
+  return promise;
 }
 
-function transferPerformanceCancel(message='Calculation cancelled.',{render=true}={}){
+function transferPerformanceCancel(message='Calculation cancelled.',{render=true,explicit=false}={}){
+  const activeSignature=transferPerformanceActive?.signature||transferPerformanceSnapshot()?.signature||'';
   transferPerformanceToken++;
   transferPerformanceWorker?.terminate?.();
   transferPerformanceWorker=null;
-  if(render&&transferPerformanceCurrentRoute()==='#/transfers'){
+  transferPerformanceActive=null;
+  if(explicit) transferPerformanceCancelledSignature=activeSignature;
+  if(render&&transferPerformanceVisible()){
     const snapshot=transferPerformanceSnapshot();
     if(snapshot.error) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
-    else transferPerformanceRenderReady(snapshot,{message});
+    else if(explicit) transferPerformanceRenderCancelled(snapshot,message);
   }
 }
 
-// The only Transfers renderer. Opening the route paints the workspace shell and, when an
-// exact earlier result is still valid, restores it. It never enters the optimiser. Any
-// calculation still running belongs to the previous inputs, so re-rendering cancels it.
+function transferPerformanceEnsure(snapshot=transferPerformanceSnapshot()){
+  if(snapshot.error){
+    if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
+    if(transferPerformanceVisible()) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+    return;
+  }
+  const cached=transferPerformanceCache.get(snapshot.signature);
+  if(cached){ transferPerformanceRenderResult(cached.result,cached.context,{cached:true}); return; }
+  if(transferPerformanceActive?.signature===snapshot.signature){
+    transferPerformanceRenderBusy(transferPerformanceActive.detail); return;
+  }
+  if(transferPerformanceCancelledSignature===snapshot.signature){
+    transferPerformanceRenderCancelled(snapshot); return;
+  }
+  if(transferPerformanceFailure?.signature===snapshot.signature){
+    transferPerformanceRenderFailure(snapshot); return;
+  }
+  transferPerformanceRenderBusy(transferPerformancePreparingDetail(0,snapshot.players.length));
+  void transferPerformanceStart(snapshot);
+}
+
+function transferPerformanceScheduleAuto(){
+  if(transferPerformanceAutoTimer!=null) globalThis.clearTimeout?.(transferPerformanceAutoTimer);
+  transferPerformanceAutoTimer=globalThis.setTimeout?.(()=>{
+    transferPerformanceAutoTimer=null;
+    const snapshot=transferPerformanceSnapshot();
+    if(snapshot.error){
+      if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
+      if(transferPerformanceVisible()) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+      return;
+    }
+    if(transferPerformanceCancelledSignature===snapshot.signature||transferPerformanceFailure?.signature===snapshot.signature){
+      if(transferPerformanceVisible()) transferPerformanceEnsure(snapshot);
+      return;
+    }
+    void transferPerformanceStart(snapshot);
+  },0);
+}
+
 function renderTransfers(){
-  transferPerformanceCancel('',{render:false});
   const out=$('transferOut');
   if(!out) return;
   renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
   transferPlannerSyncVisibleAssumptions();
   transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
-  const snapshot=transferPerformanceSnapshot();
-  if(snapshot.error){
-    transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
-    return;
-  }
-  transferPerformanceRenderReady(snapshot);
+  transferPerformanceEnsure(transferPerformanceSnapshot());
 }
 
 function installTransferPerformanceRuntime(){
   if(transferPerformanceInstalled||typeof document==='undefined') return;
   transferPerformanceInstalled=true;
 
-  document.addEventListener('teamsheet:before-route-change',event=>{
-    if(event?.detail?.from==='#/transfers'&&event?.detail?.to!=='#/transfers')
-      transferPerformanceCancel('',{render:false});
+  document.addEventListener('teamsheet:route-change',event=>{
+    if(event?.detail?.route==='#/transfers') renderTransfers();
   });
   document.addEventListener('teamsheet:data-rendered',()=>{
     transferPerformanceDataVersion++;
     transferPerformanceCache.clear();
-    transferPerformanceCancel('',{render:false});
-    if(transferPerformanceCurrentRoute()==='#/transfers') renderTransfers();
+    transferPerformanceCancelledSignature='';
+    transferPerformanceFailure=null;
+    transferPerformanceCancel('',{render:false,explicit:false});
+    transferPerformanceScheduleAuto();
   });
+  const scheduleFromInput=event=>{
+    if(TRANSFER_PERFORMANCE_INPUT_IDS.has(String(event?.target?.id||''))) transferPerformanceScheduleAuto();
+  };
+  document.addEventListener('input',scheduleFromInput);
+  document.addEventListener('change',scheduleFromInput);
 }
 
 installTransferPerformanceRuntime();
@@ -487,6 +535,7 @@ export {
   transferPerformanceSnapshot,
   transferPerformanceStart,
   transferPerformanceCancel,
+  transferPerformanceScheduleAuto,
   installTransferPerformanceRuntime,
   renderTransfers
 };
