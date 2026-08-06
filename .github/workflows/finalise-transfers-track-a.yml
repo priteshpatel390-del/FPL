@@ -1,0 +1,240 @@
+name: Finalise Transfers Track A
+
+on:
+  push:
+    branches:
+      - agent/transfers-exact-performance
+
+permissions:
+  contents: write
+
+jobs:
+  finalise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update canonical documentation
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/finalise-transfers-track-a.yml
+          python - <<'PY'
+          from pathlib import Path
+
+          marker = 'TRANSFERS-TRACK-A-2026-08-06'
+
+          def insert_after_first_line(path, block):
+              p = Path(path)
+              text = p.read_text()
+              if marker in text:
+                  return
+              first, rest = text.split('\n', 1)
+              p.write_text(first + '\n\n' + block.strip() + '\n\n' + rest)
+
+          def append(path, block):
+              p = Path(path)
+              text = p.read_text().rstrip()
+              if marker in text:
+                  return
+              p.write_text(text + '\n\n' + block.strip() + '\n')
+
+          current = '''<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+          > **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers now calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. The exact search reuses prepared scores and unchanged squad cores, avoids full result construction for losing candidates and applies conservative mathematically safe bounds while retaining `exhaustiveTransferSearch()` as an independent reduced-pool oracle. Automated verification is **594 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari completion time, memory pressure, cancellation latency and repeated-run acceptance remain required. Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.'''
+
+          insert_after_first_line('CLAUDE.md', current)
+          insert_after_first_line('docs/PROJECT_CONTEXT.md', current)
+          insert_after_first_line('docs/ROADMAP.md', current)
+          insert_after_first_line('docs/TESTING.md', current)
+
+          append('docs/ARCHITECTURE.md', '''<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+          ## Transfers Track A — exact persistent calculation boundary
+
+          `src/ui/transfer-performance.mjs` now owns one application-scoped transfer calculation controller. A route render is a subscriber to that controller rather than the owner of a worker. Once verified player data, a complete legal squad and valid bank/free-transfer/horizon assumptions exist, preparation and exact search begin automatically after the interface can paint. Internal Team, Fixtures, Leagues and Settings navigation does not terminate the job; returning to Transfers restores its current progress or exact completed result.
+
+          The controller fingerprints build/model/rules identity, verified-data revision, Gameweek, squad and purchase prices, player price/availability and prepared projection values, bank, free transfers, horizon, result limit and search limits. Material changes supersede and terminate obsolete work. Route changes and unrelated renders do not. One worker and one current job may exist; explicit cancellation is available, and Retry is reserved for a genuine failure. Full reload/page closure remains a session boundary.
+
+          `src/model/transfers.mjs` preserves the approved Stage 6 objective, comparator, candidate eligibility and evaluation ceiling. Exact performance work precomputes the player-by-Gameweek score surface, reuses each outgoing squad core, scores non-contending leaves through a lower-allocation exact XI path, materialises complete plan detail only when a candidate can enter retained top K, explores promising branches earlier and applies only conservative upper bounds that cannot remove a possible retained result. The independent `exhaustiveTransferSearch()` remains deliberately separate and unchanged in purpose for differential verification on reduced pools.
+
+          This boundary adds no provider, network origin, persistence database or Cloudflare optimisation. Projection, expected-minutes, fixture, scoring, selling-price, hit, free-transfer, roll-value, maximum-depth, horizon, captaincy, bench and result-order behaviour remain unchanged. Deadline evidence may still call the optimiser directly outside this UI controller and remains a separately documented main-thread path.''')
+
+          append('docs/DECISIONS.md', '''<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+          **D-TRF-A · 2026-08-06 · Accepted · Exact persistent on-device Transfers architecture**
+
+          Reason: physical iPhone Safari proved that moving the unchanged exhaustive optimiser off the interface thread prevented freezing but did not make its normal workload acceptable; more than five minutes and roughly 1.06 million evaluated plans had not completed depth two, while route exit deliberately discarded valid work.
+
+          Decision: preserve the exact Stage 6 football objective and broad candidate universe, but make calculation automatic and application-scoped, keep one worker alive across internal navigation, reuse exact completed results and optimise the search only through mathematically result-preserving preparation, core reuse, low-allocation exact scoring, promising ordering and conservative bounds. `exhaustiveTransferSearch()` remains the independent oracle. Cloudflare remains Official FPL transport only.
+
+          Consequences: the normal Calculate/Recalculate buttons are removed; route rendering cannot own or terminate the active calculation; material inputs are fingerprinted; partial work is never called optimal; no heuristic universe or progressive recommendation is introduced. Automated equality and lifecycle contracts pass, but physical iPhone duration, memory and repeated-run acceptance remain mandatory before completion or merge. No prediction-accuracy claim is created.''')
+
+          append('docs/KNOWN_LIMITATIONS.md', '''<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+          ## Transfers Track A limitations
+
+          | ID | Description | Current impact | Planned stage | Status |
+          |---|---|---|---|---|
+          | TRF-PERF-1 | Exact automatic/persistent search is repository-verified but not yet performance-accepted on the physical iPhone | Correctness, non-blocking interaction and route persistence are automated; the proposed well-below-30-second default target, memory pressure and repeated-run stability remain unproven on Safari | Track A physical acceptance | Open acceptance gate |
+          | TRF-PERF-2 | A browser reload or page close ends the in-memory worker and result cache | The next valid session recalculates automatically; no durable optimiser-result database is introduced | By approved design | Accepted |
+          | TRF-PERF-3 | Exact pruning is intentionally conservative | It may leave performance on the table rather than risk changing plans or ordering; heuristic candidate restriction remains unapproved | Future only if device target fails | Accepted |
+          | TRF-PERF-4 | Deadline evidence can still invoke the optimiser directly outside the app-scoped Transfers controller | Evidence capture may retain a main-thread search path; this Track A UI architecture does not silently broaden into Stage 10 evidence orchestration | Separate scope gate | Open |
+
+          The Track A implementation does not address captaincy, bench emergency value, auto-subs, future transfer sequencing, recent player attacking-role form or heuristic/progressive search. Those remain separate model/data approval gates.''')
+
+          append('docs/CHANGELOG.md', '''<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+          ## 2026-08-06 — Transfers Track A implemented for review
+
+          - Replaced normal manual Calculate/Recalculate flow with automatic exact calculation after a complete legal squad and valid assumptions exist.
+          - Added one app-scoped worker controller that continues across internal navigation and restores current progress or an unchanged completed result.
+          - Restricted cancellation/restart to material input/data changes, explicit cancellation, superseding work and the page-session boundary.
+          - Preserved the complete eligible player universe, zero-transfer baseline, 0–3 depth, six-Gameweek default, two-million evaluation ceiling, selling-price/hit/free-transfer/roll formulas, comparator and ordering.
+          - Added exact performance preparation: player score matrices, outgoing-core reuse, lower-allocation exact XI totals, retained-plan-only materialisation, promising branch order and conservative safe bounds.
+          - Retained the independent exhaustive search as the differential oracle and added exactness, position/enabler and persistent-controller tests.
+          - Verified 594 passed, 0 failed, 0 skipped with byte-identical exact-identity builds and root/deployable equality.
+          - No model, rules, provider, data-source, Cloudflare, captaincy, bench, Mini-League or rank logic changed. Physical iPhone performance acceptance remains open.''')
+
+          Path('docs/TRANSFERS-EXACT-PERFORMANCE.md').write_text('''# Transfers Track A — Exact Performance and Persistent Calculation
+
+          <!-- TRANSFERS-TRACK-A-2026-08-06 -->
+          Status: **Owner-approved and implemented for review on `agent/transfers-exact-performance`; stacked on draft PR #69. No merge is approved.**
+
+          ## Product outcome
+
+          Transfers begins calculating automatically once Teamsheet has verified data, a complete legal 15-player squad and valid planning assumptions. The ordinary experience has no Calculate or Recalculate button. One exact calculation continues while the manager moves between internal destinations, and returning to Transfers restores the current progress or reuses the completed result immediately.
+
+          This item addresses search execution and lifecycle only. It does not claim that the underlying projections or football recommendations are more accurate.
+
+          ## Previous and implemented behaviour
+
+          | Area | Previous PR #69 behaviour | Track A behaviour |
+          |---|---|---|
+          | Start | Explicit Calculate transfers action | Automatic after valid inputs |
+          | Navigation | Leaving Transfers terminated the worker | Internal navigation keeps the same job alive |
+          | Return | In-flight work restarted from zero | Existing progress/result is restored |
+          | Completed result | Session reuse after explicit completion | Immediate exact reuse for the full material fingerprint |
+          | Search leaf | Rebuilt, validated, scored and materialised the full plan | Reuses prepared/core state and materialises full detail only for a retained contender |
+          | Search ordering | Primarily player-ID traversal | Promising exact branches are considered earlier without excluding any branch |
+          | Pruning | Position, minimum cost and club impossibility | Existing pruning plus conservative mathematically safe score bounds |
+          | Exactness oracle | Independent reduced-pool exhaustive search | Preserved as an independent oracle |
+
+          ## Exact calculation controller
+
+          The application owns one controller rather than tying worker lifetime to the Transfers route. Its material job identity covers the verified dataset and prepared projection values, current Gameweek, complete squad and purchase prices, player prices and availability, bank, free transfers, horizon, result limit, search limits and build/model/rules identity.
+
+          A material change supersedes the current job and starts the newly required calculation. Internal route changes and unrelated renders do not. An explicit Cancel action stops the current work; Resume starts the same still-valid snapshot again. Retry is shown only after a genuine worker/preparation failure. Page close or reload remains an intentional session boundary.
+
+          ## Exact search architecture
+
+          The optimiser still evaluates the approved complete 0–3 transfer problem. Performance work consists of:
+
+          1. preparing every eligible player's exact per-Gameweek score once;
+          2. grouping candidates and immutable numeric metadata once;
+          3. reusing the unchanged squad core for each outgoing combination;
+          4. maintaining affordability, uniqueness and club counts incrementally;
+          5. computing exact best-XI totals through compact position score lists;
+          6. avoiding full transfer/final-squad/per-Gameweek result construction for candidates that cannot enter retained top K;
+          7. visiting promising branches earlier so a useful exact retention threshold is available sooner;
+          8. pruning only when a conservative optimistic bound proves the branch cannot enter the retained exact results.
+
+          Equality is determined by the existing full-precision comparator and canonical signature. A branch capable of a relevant tie is not removed. The production search continues to fail closed at the unchanged evaluation ceiling; no partial incumbent is presented as optimal.
+
+          ## Football and data boundary
+
+          Unchanged:
+
+          - model `2.4.0` and rules `2026-27.3`;
+          - Official FPL, team-level Understat, Odds and archive provider boundaries;
+          - candidate eligibility and unavailable/doubtful treatment;
+          - selling prices, pooled affordability and club/position legality;
+          - free transfers, hits and 0.5 terminal roll utility;
+          - maximum transfer depth, horizon limits and two-million evaluation ceiling;
+          - best-XI objective, comparator and result ordering;
+          - zero-transfer as a genuine candidate;
+          - no captain doubling, bench points, auto-subs or future transfer sequencing in the optimiser;
+          - no Cloudflare calculation and no player-level Understat.
+
+          Cheap players, defenders and goalkeepers remain in the broad eligible universe. No price, ownership, recent-points or arbitrary top-N threshold is introduced.
+
+          ## Automated evidence
+
+          - Complete repository result: **594 passed, 0 failed, 0 skipped**.
+          - Production search versus independent exhaustive-oracle equality on controlled deterministic pools.
+          - Exact retained ordering and zero-transfer behaviour.
+          - Goalkeeper, defender, cheap-enabler and no-transfer scenarios.
+          - Automatic start, single-worker ownership, route persistence, progress restoration, material invalidation, cancellation, stale-result rejection and exact session reuse.
+          - Two builds using the same exact source identity are byte-identical for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`.
+          - Root `index.html` equals `dist/index.html`.
+
+          Automated equality proves implementation agreement with the approved objective. It does not prove prediction accuracy or physical-device speed.
+
+          ## Remaining acceptance gate
+
+          Physical iPhone Safari must still verify:
+
+          - immediate Transfers opening;
+          - automatic start without a manual Calculate button;
+          - continued progress through repeated internal navigation;
+          - no Safari freeze, reload or excessive memory pressure;
+          - prompt explicit cancellation;
+          - immediate reuse of a completed result;
+          - default six-Gameweek completion time, ideally well below 30 seconds;
+          - repeated runs and material input changes;
+          - VoiceOver announcement of major state changes without noisy progress repetition;
+          - exact final plans/order matching the frozen reference input.
+
+          Until that evidence is recorded, Track A is implemented and automatically verified but not product-accepted or approved for merge.
+          '''.replace('\n          ', '\n').lstrip())
+
+          for path in [
+              'CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ROADMAP.md','docs/TESTING.md',
+              'docs/ARCHITECTURE.md','docs/DECISIONS.md','docs/KNOWN_LIMITATIONS.md',
+              'docs/CHANGELOG.md','docs/TRANSFERS-EXACT-PERFORMANCE.md'
+          ]:
+              p = Path(path)
+              p.write_text(p.read_text().rstrip() + '\n')
+          PY
+          git diff --check
+          git add -A
+          git commit -m "Document exact persistent Transfers architecture"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Run complete repository tests
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          grep -Eq '# pass 594$' /tmp/teamsheet-tests.log
+          grep -Eq '# fail 0$' /tmp/teamsheet-tests.log
+          grep -Eq '# skipped 0$' /tmp/teamsheet-tests.log
+
+      - name: Verify deterministic production builds
+        env:
+          BUILD_COMMIT: ${{ steps.source.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/first-build
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/first-build/
+          node build.mjs
+          cmp /tmp/first-build/index.html dist/index.html
+          cmp /tmp/first-build/app.bundle.js dist/app.bundle.js
+          cmp /tmp/first-build/manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+          git diff --check
+
+      - name: Commit verified generated artefacts and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Build documented exact Transfers architecture"
+          fi
+          git push origin HEAD:agent/transfers-exact-performance
