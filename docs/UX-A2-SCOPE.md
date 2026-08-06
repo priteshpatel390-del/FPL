@@ -1,8 +1,11 @@
 # UX-A2 — Player Detail Scroll and Rotation Correction
 
-Status: **Implemented and accepted. Populated physical iPhone Safari acceptance passed on 6 August 2026.**
+Status: **Complete and merged.** Populated physical iPhone Safari acceptance passed on
+6 August 2026; PR #76 merged to `main` at `bffcba8e9231adfc216125913f8ab83c042c3e10`.
 
-This supersedes earlier wording in this file and elsewhere that described device acceptance as pending. The owner acceptance detail is recorded in `UX-A2-ACCEPTANCE.md`.
+This supersedes earlier wording in this file and elsewhere that described device
+acceptance as pending or the change as unmerged. `UX-A2-MERGE-RECORD.md` is the
+authoritative checkpoint record and `UX-A2-ACCEPTANCE.md` holds the acceptance detail.
 
 Purpose: exact scope, behaviour and evidence for the approved UX-A2 correction.
 Audience: reviewers and later sessions. Last updated: 2026-08-06.
