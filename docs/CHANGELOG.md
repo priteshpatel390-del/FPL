@@ -105,3 +105,15 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 
 - Corrected iPhone Safari foreground resume so unsuccessful loads respect the automatic cooldown and background refreshes do not freeze interaction; physical-device retest remains pending.
 - 2026-08-05: PR #68 merged Teamsheet 2.0.7 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; Safari resume retest passed. FPL-T1 owner-controlled Official FPL gateway approved and implementation started without calculation changes.
+
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+## 2026-08-06 — Transfers Track A implemented for review
+
+- Replaced normal manual Calculate/Recalculate flow with automatic exact calculation after a complete legal squad and valid assumptions exist.
+- Added one app-scoped worker controller that continues across internal navigation and restores current progress or an unchanged completed result.
+- Restricted cancellation/restart to material input/data changes, explicit cancellation, superseding work and the page-session boundary.
+- Preserved the complete eligible player universe, zero-transfer baseline, 0–3 depth, six-Gameweek default, two-million evaluation ceiling, selling-price/hit/free-transfer/roll formulas, comparator and ordering.
+- Added exact performance preparation: player score matrices, outgoing-core reuse, lower-allocation exact XI totals, retained-plan-only materialisation, promising branch order and conservative safe bounds.
+- Retained the independent exhaustive search as the differential oracle and added exactness, position/enabler and persistent-controller tests.
+- Verified 594 passed, 0 failed, 0 skipped with byte-identical exact-identity builds and root/deployable equality.
+- No model, rules, provider, data-source, Cloudflare, captaincy, bench, Mini-League or rank logic changed. Physical iPhone performance acceptance remains open.

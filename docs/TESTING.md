@@ -1,5 +1,9 @@
 # TESTING.md
 
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers now calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. The exact search reuses prepared scores and unchanged squad cores, avoids full result construction for losing candidates and applies conservative mathematically safe bounds while retaining `exhaustiveTransferSearch()` as an independent reduced-pool oracle. Automated verification is **594 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari completion time, memory pressure, cancellation latency and repeated-run acceptance remain required. Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
+
+
 > **FPL-T1 review verification:** The deployed owner-controlled Official FPL gateway and exact Pages configuration pass **590 passed, 0 failed, 0 skipped**. Two exact-identity production builds are byte-identical, root `index.html` equals `dist/index.html`, the manifest points to the reviewed source, CSP permits only the stable production Worker origin, model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari returned live 2026/27 bootstrap JSON. Full populated application and VoiceOver acceptance remain outside automated evidence; PR #69 stays draft until explicit owner approval.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
 Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.

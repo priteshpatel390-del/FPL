@@ -1,5 +1,9 @@
 # ROADMAP.md — living roadmap
 
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers now calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. The exact search reuses prepared scores and unchanged squad cores, avoids full result construction for losing candidates and applies conservative mathematically safe bounds while retaining `exhaustiveTransferSearch()` as an independent reduced-pool oracle. Automated verification is **594 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari completion time, memory pressure, cancellation latency and repeated-run acceptance remain required. Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
+
+
 > **Current approved item — FPL-T1:** Implemented for review on draft PR #69. The owner-controlled Official FPL Worker is deployed, the exact stable `/fpl` gateway is configured in the deterministic Pages build, live 2026/27 bootstrap transport passed on physical iPhone Safari and the automated baseline is **590 passed, 0 failed, 0 skipped**. The approved responsive Transfers correction is automatically verified; complete physical populated-app acceptance, update the PR evidence and obtain explicit merge approval. No model or calculation change is authorised.
 
 > **Teamsheet 2.0.7:** Complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; the Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified.

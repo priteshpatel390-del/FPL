@@ -173,3 +173,15 @@ Physical iPhone review exposed pre-season public-picks and missing-team-strength
 
 ### Overall FDR fallback limitation
 When current Official FPL attack/defence strengths are unavailable, the Fixtures surface uses the provider's single overall 1–5 difficulty rating. It cannot honestly distinguish attacker and defender fixture quality, so those lenses are hidden and the direct average FDR is shown with lower meaning easier. This is coarse contextual data, not a position-specific model. A historical pre-season prior remains a separately gated design item.
+
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+## Transfers Track A limitations
+
+| ID | Description | Current impact | Planned stage | Status |
+|---|---|---|---|---|
+| TRF-PERF-1 | Exact automatic/persistent search is repository-verified but not yet performance-accepted on the physical iPhone | Correctness, non-blocking interaction and route persistence are automated; the proposed well-below-30-second default target, memory pressure and repeated-run stability remain unproven on Safari | Track A physical acceptance | Open acceptance gate |
+| TRF-PERF-2 | A browser reload or page close ends the in-memory worker and result cache | The next valid session recalculates automatically; no durable optimiser-result database is introduced | By approved design | Accepted |
+| TRF-PERF-3 | Exact pruning is intentionally conservative | It may leave performance on the table rather than risk changing plans or ordering; heuristic candidate restriction remains unapproved | Future only if device target fails | Accepted |
+| TRF-PERF-4 | Deadline evidence can still invoke the optimiser directly outside the app-scoped Transfers controller | Evidence capture may retain a main-thread search path; this Track A UI architecture does not silently broaden into Stage 10 evidence orchestration | Separate scope gate | Open |
+
+The Track A implementation does not address captaincy, bench emergency value, auto-subs, future transfer sequencing, recent player attacking-role form or heuristic/progressive search. Those remain separate model/data approval gates.

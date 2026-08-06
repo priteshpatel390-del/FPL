@@ -190,3 +190,14 @@ Aggregate exposure requires the user's squad and each included rival squad to co
 
 ## FPL-T1 Official FPL gateway boundary
 The static GitHub Pages application remains unchanged as the UI host. `src/providers/transport.mjs` reads one exact HTTPS `/fpl` gateway base from a build-validated meta tag and never sends Official FPL traffic through anonymous public relays. `workers/fpl-gateway.mjs` accepts only approved read-only endpoint families, rebuilds the upstream request from an allowlist and returns JSON with exact-origin CORS. Existing validators, retry metadata, device cache, Provider Health and restricted-state behaviour remain downstream and authoritative.
+
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+## Transfers Track A — exact persistent calculation boundary
+
+`src/ui/transfer-performance.mjs` now owns one application-scoped transfer calculation controller. A route render is a subscriber to that controller rather than the owner of a worker. Once verified player data, a complete legal squad and valid bank/free-transfer/horizon assumptions exist, preparation and exact search begin automatically after the interface can paint. Internal Team, Fixtures, Leagues and Settings navigation does not terminate the job; returning to Transfers restores its current progress or exact completed result.
+
+The controller fingerprints build/model/rules identity, verified-data revision, Gameweek, squad and purchase prices, player price/availability and prepared projection values, bank, free transfers, horizon, result limit and search limits. Material changes supersede and terminate obsolete work. Route changes and unrelated renders do not. One worker and one current job may exist; explicit cancellation is available, and Retry is reserved for a genuine failure. Full reload/page closure remains a session boundary.
+
+`src/model/transfers.mjs` preserves the approved Stage 6 objective, comparator, candidate eligibility and evaluation ceiling. Exact performance work precomputes the player-by-Gameweek score surface, reuses each outgoing squad core, scores non-contending leaves through a lower-allocation exact XI path, materialises complete plan detail only when a candidate can enter retained top K, explores promising branches earlier and applies only conservative upper bounds that cannot remove a possible retained result. The independent `exhaustiveTransferSearch()` remains deliberately separate and unchanged in purpose for differential verification on reduced pools.
+
+This boundary adds no provider, network origin, persistence database or Cloudflare optimisation. Projection, expected-minutes, fixture, scoring, selling-price, hit, free-transfer, roll-value, maximum-depth, horizon, captaincy, bench and result-order behaviour remain unchanged. Deadline evidence may still call the optimiser directly outside this UI controller and remains a separately documented main-thread path.

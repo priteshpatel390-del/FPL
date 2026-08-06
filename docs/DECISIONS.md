@@ -199,3 +199,12 @@ Reason: Official FPL data is available but the static browser cannot reliably re
 Approach: retain Official FPL as the provider; add one owner-controlled Cloudflare Worker with a closed read-only endpoint/query allowlist, exact-origin CORS, no credential forwarding, five-minute shared caching only for bootstrap/unfiltered fixtures and existing device-cache/restricted fallback. Anonymous relays leave the Official FPL path and remain only for optional Understat transport.
 
 Consequences: no source fields or model/fixture/scoring/squad/captaincy/simulation/optimiser/rank/Mini-League calculation changes. Deployment hostname, full verification and physical live-data acceptance are mandatory before merge.
+
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+**D-TRF-A · 2026-08-06 · Accepted · Exact persistent on-device Transfers architecture**
+
+Reason: physical iPhone Safari proved that moving the unchanged exhaustive optimiser off the interface thread prevented freezing but did not make its normal workload acceptable; more than five minutes and roughly 1.06 million evaluated plans had not completed depth two, while route exit deliberately discarded valid work.
+
+Decision: preserve the exact Stage 6 football objective and broad candidate universe, but make calculation automatic and application-scoped, keep one worker alive across internal navigation, reuse exact completed results and optimise the search only through mathematically result-preserving preparation, core reuse, low-allocation exact scoring, promising ordering and conservative bounds. `exhaustiveTransferSearch()` remains the independent oracle. Cloudflare remains Official FPL transport only.
+
+Consequences: the normal Calculate/Recalculate buttons are removed; route rendering cannot own or terminate the active calculation; material inputs are fingerprinted; partial work is never called optimal; no heuristic universe or progressive recommendation is introduced. Automated equality and lifecycle contracts pass, but physical iPhone duration, memory and repeated-run acceptance remain mandatory before completion or merge. No prediction-accuracy claim is created.
