@@ -247,6 +247,13 @@ function transferPerformanceRenderFailure(snapshot){
   transferPerformanceStatus('Transfer comparison unavailable.');
 }
 
+function transferPerformanceResultBaseline(result={}){
+  const baseline=result?.baseline;
+  if(!baseline||Number(baseline.transferCount)!==0) return null;
+  if(!Array.isArray(baseline.transfers)||baseline.transfers.length!==0) return null;
+  return baseline;
+}
+
 function transferPerformanceRenderResult(result,context,{cached=false}={}){
   const out=$('transferOut');
   if(!out) return;
@@ -268,15 +275,17 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
     return;
   }
 
-  const plans=result.plans||[];
-  const state=transferPlannerPresentationState(plans);
-  const baseline=plans.find(plan=>Number(plan.transferCount)===0);
+  const rankedPlans=Array.isArray(result.plans)?result.plans:[];
+  const baseline=transferPerformanceResultBaseline(result);
   if(!baseline){
     transferPerformanceRenderError('No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
     return;
   }
-
-  const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
+  const plans=rankedPlans.some(plan=>Number(plan?.transferCount)===0)
+    ? rankedPlans.map(plan=>Number(plan?.transferCount)===0?baseline:plan)
+    : [...rankedPlans,baseline];
+  const state=transferPlannerPresentationState(plans);
+  const alternatives=rankedPlans.filter(plan=>Number(plan?.transferCount)>0);
   const topAlternative=alternatives[0]||null;
   const optimiserSignature=decisionPreviewOptimiserSignature({
     squadSignature,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,plans

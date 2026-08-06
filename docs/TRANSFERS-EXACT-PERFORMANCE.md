@@ -120,7 +120,7 @@ Cheap players, defenders and goalkeepers remain in the broad eligible universe. 
 
 ## Automated evidence
 
-Complete repository result: **609 passed, 0 failed, 0 skipped**.
+Complete repository result: **612 passed, 0 failed, 0 skipped**.
 
 Two independent forms of evidence are kept apart deliberately:
 
@@ -158,4 +158,17 @@ Two lifecycle/exactness safeguards were added during reconciliation:
 1. cancelling, invalidating or superseding a Worker settles the Promise awaiting its result with an internal `AbortError`, allowing the old snapshot, score rows and handlers to be released;
 2. a partial node uses the empty string as its optimistic signature, avoiding any assumption that numeric player-ID order matches locale string order. Complete plans still use the unchanged canonical signature and comparator.
 
-The combined build passes 609 tests. Mixed-width IDs match the independent exhaustive oracle, and cancellation/supersession promises are proven to settle. A deterministic seed-7 Official-scale profile completed with 21 exact leaf evaluations across 575 outgoing branches. Physical iPhone acceptance remains outstanding.
+The combined build passes 612 tests. Mixed-width IDs match the independent exhaustive oracle, and cancellation/supersession promises are proven to settle. A deterministic seed-7 Official-scale profile completed with 21 exact leaf evaluations across 575 outgoing branches. Physical iPhone acceptance remains outstanding.
+
+## 2026-08-06 — Second physical iPhone test and baseline presentation correction
+
+The corrected exact search passed its original device failure point: it completed on Pritesh's live saved-data case rather than exhausting the two-million evaluation ceiling. The result screen nevertheless blocked with *"No zero-transfer baseline was returned."*
+
+This was a presentation-contract defect. `result.plans` is the unchanged ranked Top K and may legally contain only transfer plans, while `result.baseline` is the mandatory zero-transfer comparison even when it falls outside that Top K.
+
+PR #72 now validates and reads the separate baseline, keeps the optimiser Top K untouched, and adds the baseline only to its local presentation/signature view when absent from the ranked set. A baseline already in Top K is replaced by the same authoritative object rather than duplicated. Missing or malformed separate baselines still fail closed.
+
+No projection, score, candidate, transfer depth, affordability, comparator, ranking, result limit, evaluation ceiling or Worker lifecycle behaviour changed. Permanent production-bundle regressions cover Worker results with an evicted baseline, unchanged cached reuse with exactly one comparison, and genuinely invalid baseline failure.
+
+Automated verification: **612 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical iPhone Safari must still retest the corrected result screen before Track A can be product-accepted or merged.
+
