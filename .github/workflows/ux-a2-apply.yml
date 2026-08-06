@@ -1,0 +1,147 @@
+name: UX-A2 apply and verify
+
+on:
+  push:
+    branches:
+      - agent/ux-a2-player-detail-scroll-rotation
+
+permissions:
+  contents: write
+
+jobs:
+  publish-accepted-ux-a2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out UX-A2 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/ux-a2-player-detail-scroll-rotation
+          fetch-depth: 0
+
+      - name: Apply accepted correction and verify
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_path=Path('app.html')
+          app=app_path.read_text(encoding='utf-8')
+          rule="html{-webkit-text-size-adjust:100%;text-size-adjust:100%}"
+          if rule not in app:
+              needle="*{box-sizing:border-box}\n"
+              if needle not in app:
+                  raise SystemExit('CSS insertion point missing')
+              app=app.replace(needle,needle+rule+'\n',1)
+              app_path.write_text(app,encoding='utf-8')
+
+          test_path=Path('tests/player-detail-scroll-rotation.test.mjs')
+          tests=test_path.read_text(encoding='utf-8')
+          marker='iOS automatic text inflation is fixed at 100% across rotation'
+          if marker not in tests:
+              tests += """\n\ntest('iOS automatic text inflation is fixed at 100% across rotation',()=>{\n  const root = ruleBody(app,'html');\n  assert.match(root,/-webkit-text-size-adjust:100%/);\n  assert.match(root,/(?:^|;)text-size-adjust:100%/);\n});\n"""
+              test_path.write_text(tests,encoding='utf-8')
+
+          def append_once(path,marker,text):
+              p=Path(path)
+              value=p.read_text(encoding='utf-8')
+              if marker not in value:
+                  p.write_text(value.rstrip()+"\n\n"+text.strip()+"\n",encoding='utf-8')
+
+          append_once('docs/UX-A2-SCOPE.md','UX-A2-OWNER-ACCEPTANCE-2026-08-06',r'''
+## Owner acceptance — 6 August 2026
+
+<!-- UX-A2-OWNER-ACCEPTANCE-2026-08-06 -->
+
+Pritesh completed the populated physical iPhone Safari review. Background locking, internal scrolling, final-section reachability, close-button reachability, exact background-position restoration, repeat opening from the top, backdrop closing and portrait/landscape rotation all passed.
+
+The first rotation pass exposed Safari automatically enlarging text after portrait → landscape → portrait. The production correction sets both `-webkit-text-size-adjust:100%` and `text-size-adjust:100%` on the root element. Pritesh retested the corrected orientation cycle and confirmed it worked perfectly, with scrolling and closing still intact.
+
+The owner also identified that the existing Player Detail information may require too much scrolling. That is a separate information-density and hierarchy proposal. It is deliberately excluded from UX-A2 and requires its own investigation and approval before implementation.
+''')
+
+          append_once('docs/TESTING.md','UX-A2-ACCEPTANCE-PASSED-2026-08-06',r'''
+## UX-A2 physical iPhone Safari acceptance
+
+<!-- UX-A2-ACCEPTANCE-PASSED-2026-08-06 -->
+
+**Passed by Pritesh on 6 August 2026.** The physical review covered background lock, modal-only scrolling, final-content and close-control reachability, portrait/landscape rotation, return to portrait, exact background-position restoration, repeat open at the top and backdrop close. The initial orientation cycle exposed Safari text inflation; after the root `text-size-adjust:100%` correction, Pritesh repeated the cycle and confirmed the text scale remained stable and the other behaviours still worked perfectly. VoiceOver is not a project acceptance requirement.
+''')
+
+          append_once('docs/KNOWN_LIMITATIONS.md','UX-A2-UI13-CLOSED-2026-08-06',r'''
+## UX-A2 limitation disposition
+
+<!-- UX-A2-UI13-CLOSED-2026-08-06 -->
+
+`UI-13` is **CLOSED — owner accepted 6 August 2026**. The physical iPhone Safari acceptance gate passed after the observed orientation-driven text inflation was corrected with root text-size adjustment. The compact-landscape threshold remains an implementation judgement, but it worked on the owner's handset during the accepted review. A possible future reduction in Player Detail information density is a separate product-design proposal, not an unresolved UX-A2 defect.
+''')
+
+          append_once('docs/ROADMAP.md','UX-A2-ACCEPTED-2026-08-06',r'''
+## UX-A2 acceptance update — 6 August 2026
+
+<!-- UX-A2-ACCEPTED-2026-08-06 -->
+
+UX-A2 Player Detail Scroll and Rotation Correction passed populated physical iPhone Safari review after one observed Safari text-inflation defect was corrected and retested. Merge remains subject to Pritesh's explicit approval. A concise Player Detail information-density and hierarchy review is a separate future proposal and must not be pulled into UX-A2 without a new approval gate.
+''')
+
+          append_once('docs/PROJECT_CONTEXT.md','UX-A2-ACCEPTED-CONTEXT-2026-08-06',r'''
+## UX-A2 accepted review state — 6 August 2026
+
+<!-- UX-A2-ACCEPTED-CONTEXT-2026-08-06 -->
+
+The existing Player Detail dialog now has accepted iPhone Safari behaviour for internal scrolling, background lock, exact normal-close restoration, compact landscape, safe areas and stable text scale across portrait → landscape → portrait. PR #76 remains draft and unmerged until explicit owner approval. The owner raised a separate information-density concern; no concise-detail redesign is included in UX-A2.
+''')
+
+          claude_path=Path('CLAUDE.md')
+          claude=claude_path.read_text(encoding='utf-8')
+          old="Automated verification is **643 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Populated physical iPhone Safari acceptance is **pending**;"
+          new="Automated verification is **644 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Populated physical iPhone Safari acceptance passed on 6 August 2026 after an observed orientation-driven text-inflation defect was corrected and retested;"
+          if old in claude:
+              claude=claude.replace(old,new,1)
+          marker='UX-A2-CONCISE-DETAIL-BOUNDARY-2026-08-06'
+          if marker not in claude:
+              claude += "\n\n<!-- UX-A2-CONCISE-DETAIL-BOUNDARY-2026-08-06 -->\n> **Boundary:** the owner's suggestion to make Player Detail more concise is a separate future information-density and hierarchy item. It is not implemented in UX-A2 and requires its own investigation and explicit approval.\n"
+          claude_path.write_text(claude,encoding='utf-8')
+          PY
+
+          rm -f review/ux-a2-player-detail-preview.html review/ux-a2-player-detail-preview-v2.html
+          rmdir review 2>/dev/null || true
+          git rm .github/workflows/ux-a2-apply.yml
+
+          git config user.name "Teamsheet UX-A2 Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add app.html tests/player-detail-scroll-rotation.test.mjs CLAUDE.md docs/ review/
+          git commit -m "Complete UX-A2 iPhone acceptance correction"
+          SOURCE_SHA=$(git rev-parse HEAD)
+
+          ./run-tests.sh | tee /tmp/ux-a2-tests.log
+          grep -q '^# pass 644$' /tmp/ux-a2-tests.log
+          grep -q '^# fail 0$' /tmp/ux-a2-tests.log
+          grep -q '^# skipped 0$' /tmp/ux-a2-tests.log
+
+          rm -rf /tmp/ux-a2-build-a /tmp/ux-a2-build-b
+          mkdir -p /tmp/ux-a2-build-a /tmp/ux-a2-build-b
+
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cp dist/app.bundle.js /tmp/ux-a2-build-a/app.bundle.js
+          cp dist/index.html /tmp/ux-a2-build-a/dist-index.html
+          cp dist/manifest.json /tmp/ux-a2-build-a/manifest.json
+          cp index.html /tmp/ux-a2-build-a/root-index.html
+
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cp dist/app.bundle.js /tmp/ux-a2-build-b/app.bundle.js
+          cp dist/index.html /tmp/ux-a2-build-b/dist-index.html
+          cp dist/manifest.json /tmp/ux-a2-build-b/manifest.json
+          cp index.html /tmp/ux-a2-build-b/root-index.html
+
+          cmp /tmp/ux-a2-build-a/app.bundle.js /tmp/ux-a2-build-b/app.bundle.js
+          cmp /tmp/ux-a2-build-a/dist-index.html /tmp/ux-a2-build-b/dist-index.html
+          cmp /tmp/ux-a2-build-a/manifest.json /tmp/ux-a2-build-b/manifest.json
+          cmp /tmp/ux-a2-build-a/root-index.html /tmp/ux-a2-build-b/root-index.html
+          cmp dist/index.html index.html
+
+          sha256sum dist/app.bundle.js dist/index.html dist/manifest.json index.html | tee /tmp/ux-a2-sha256.txt
+
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Build accepted UX-A2 correction"
+          git push origin HEAD:agent/ux-a2-player-detail-scroll-rotation
