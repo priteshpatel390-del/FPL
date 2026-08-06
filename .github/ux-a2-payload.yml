@@ -1,0 +1,587 @@
+name: UX-A2 apply and verify
+
+on:
+  push:
+    branches:
+      - agent/ux-a2-player-detail-scroll-rotation
+
+permissions:
+  contents: write
+
+jobs:
+  apply-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out approved branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/ux-a2-player-detail-scroll-rotation
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply approved UX-A2 source and test changes
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              return text.replace(old, new, 1)
+
+          player_path = Path('src/ui/player-detail.mjs')
+          player = player_path.read_text()
+          if 'let playerDetailBackgroundPosition = null;' not in player:
+              player = replace_once(
+                  player,
+                  "let playerDetailPreviousFocus = null;\nlet playerDetailSetupDone = false;",
+                  "let playerDetailPreviousFocus = null;\nlet playerDetailBackgroundPosition = null;\nlet playerDetailSetupDone = false;",
+                  'player detail state'
+              )
+
+              old = """function playerDetailAvailabilityLabel(p = {}){
+  if(['i','u','s','n'].includes(p.status)) return 'Unavailable';
+  if(p.status === 'd') return 'Doubtful';
+  return 'Available';
+}
+
+function playerDetailCanRestoreFocus(node){"""
+              new = """function playerDetailAvailabilityLabel(p = {}){
+  if(['i','u','s','n'].includes(p.status)) return 'Unavailable';
+  if(p.status === 'd') return 'Doubtful';
+  return 'Available';
+}
+
+function playerDetailCurrentScroll(){
+  const left=Number(globalThis.scrollX??globalThis.pageXOffset??0);
+  const top=Number(globalThis.scrollY??globalThis.pageYOffset??0);
+  return {
+    left:Number.isFinite(left)?left:0,
+    top:Number.isFinite(top)?top:0
+  };
+}
+
+function playerDetailSetOpenClass(open){
+  if(typeof document === 'undefined') return;
+  if(open){
+    document.documentElement?.classList?.add('player-detail-open');
+    document.body?.classList?.add('player-detail-open');
+  } else {
+    document.documentElement?.classList?.remove('player-detail-open');
+    document.body?.classList?.remove('player-detail-open');
+  }
+}
+
+function playerDetailLockBackground(){
+  if(typeof document === 'undefined') return null;
+  const position=playerDetailCurrentScroll();
+  playerDetailBackgroundPosition=position;
+  playerDetailSetOpenClass(true);
+  return position;
+}
+
+function playerDetailUnlockBackground({restoreScroll=true}={}){
+  if(typeof document === 'undefined') return null;
+  playerDetailSetOpenClass(false);
+  const position=playerDetailBackgroundPosition;
+  playerDetailBackgroundPosition=null;
+  if(restoreScroll&&position&&typeof globalThis.scrollTo==='function')
+    globalThis.scrollTo({top:position.top,left:position.left,behavior:'auto'});
+  return position;
+}
+
+function playerDetailCanRestoreFocus(node){"""
+              player = replace_once(player, old, new, 'player detail scroll helpers')
+
+              old = """function playerDetailClose({restoreFocus=true}={}){
+  if(typeof document === 'undefined') return false;
+  const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
+  if(!panel || !backdrop) return false;
+  panel.hidden = true;
+  backdrop.hidden = true;
+  panel.setAttribute('aria-hidden','true');
+  if(document.body?.classList) document.body.classList.remove('player-detail-open');
+  const restore = playerDetailPreviousFocus;
+  playerDetailPreviousFocus = null;
+  if(restoreFocus&&playerDetailCanRestoreFocus(restore)) restore.focus({preventScroll:true});
+  return true;
+}"""
+              new = """function playerDetailClose({restoreFocus=true,restoreScroll=true}={}){
+  if(typeof document === 'undefined') return false;
+  const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
+  if(!panel || !backdrop) return false;
+  panel.hidden = true;
+  backdrop.hidden = true;
+  panel.setAttribute('aria-hidden','true');
+  playerDetailUnlockBackground({restoreScroll});
+  const restore = playerDetailPreviousFocus;
+  playerDetailPreviousFocus = null;
+  if(restoreFocus&&playerDetailCanRestoreFocus(restore)) restore.focus({preventScroll:true});
+  return true;
+}"""
+              player = replace_once(player, old, new, 'player detail close')
+
+              old = """function playerDetailOpen({title = '', body = [], trigger = null} = {}){
+  if(!playerDetailSetup()) return false;
+  const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
+  const titleNode = $('playerDetailTitle'), bodyNode = $('playerDetailBody'), close = $('playerDetailClose');
+  playerDetailPreviousFocus = trigger || document.activeElement || null;
+  titleNode.textContent = String(title);
+  setChildren(bodyNode,body);
+  backdrop.hidden = false;
+  panel.hidden = false;
+  panel.setAttribute('aria-hidden','false');
+  if(document.body?.classList) document.body.classList.add('player-detail-open');
+  if(close && typeof close.focus === 'function') close.focus();
+  return true;
+}"""
+              new = """function playerDetailOpen({title = '', body = [], trigger = null} = {}){
+  if(!playerDetailSetup()) return false;
+  const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
+  const titleNode = $('playerDetailTitle'), bodyNode = $('playerDetailBody'), close = $('playerDetailClose');
+  const wasOpen=!panel.hidden;
+  playerDetailPreviousFocus = trigger || document.activeElement || null;
+  titleNode.textContent = String(title);
+  setChildren(bodyNode,body);
+  bodyNode.scrollTop=0;
+  if(!wasOpen||!playerDetailBackgroundPosition) playerDetailLockBackground();
+  else playerDetailSetOpenClass(true);
+  backdrop.hidden = false;
+  panel.hidden = false;
+  panel.setAttribute('aria-hidden','false');
+  if(close && typeof close.focus === 'function') close.focus({preventScroll:true});
+  return true;
+}"""
+              player = replace_once(player, old, new, 'player detail open')
+              player = replace_once(
+                  player,
+                  "if(panel&&!panel.hidden) playerDetailClose({restoreFocus:false});",
+                  "if(panel&&!panel.hidden) playerDetailClose({restoreFocus:false,restoreScroll:false});",
+                  'route-driven close'
+              )
+              player_path.write_text(player)
+
+          app_path = Path('app.html')
+          app = app_path.read_text()
+          if 'html.player-detail-open,body.player-detail-open' not in app:
+              old = """body.player-detail-open{overflow:hidden}
+.player-detail-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,20,13,.46);backdrop-filter:blur(2px)}
+.player-detail-panel{position:fixed;z-index:39;left:0;right:0;bottom:0;max-height:min(88dvh,780px);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column}
+.player-detail-panel[hidden],.player-detail-backdrop[hidden]{display:none}
+.player-detail-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
+.player-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+.player-detail-top h2{font-size:20px}
+.player-detail-close{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.player-detail-close:hover{background:#EEF1EB}
+.player-detail-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(22px + env(safe-area-inset-bottom,0))}"""
+              new = """html.player-detail-open,body.player-detail-open{overflow:hidden;overscroll-behavior:none}
+.player-detail-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,20,13,.46);backdrop-filter:blur(2px);touch-action:none;overscroll-behavior:contain}
+.player-detail-panel{position:fixed;z-index:39;left:0;right:0;bottom:0;max-height:min(88vh,780px);max-height:min(88dvh,780px);overflow:hidden;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column}
+.player-detail-panel[hidden],.player-detail-backdrop[hidden]{display:none}
+.player-detail-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
+.player-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px calc(16px + env(safe-area-inset-right,0px)) 12px calc(16px + env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+.player-detail-top h2{font-size:20px}
+.player-detail-close{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#F7F9F5;color:var(--ink);font-size:24px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.player-detail-close:hover{background:#EEF1EB}
+.player-detail-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:14px calc(16px + env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}"""
+              app = replace_once(app, old, new, 'player detail CSS')
+
+              anchor = """@media(min-width:760px){
+  .player-detail-panel{top:0;bottom:0;left:auto;right:0;width:min(460px,44vw);max-height:none;border-radius:0;border-width:0 0 0 1px}
+  .player-detail-grip{display:none}
+  .player-detail-top{padding-top:calc(18px + env(safe-area-inset-top,0))}
+  .player-detail-body{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+}
+"""
+              addition = anchor + """@media(orientation:landscape) and (max-height:520px){
+  .player-detail-grip{display:none}
+  .player-detail-top{padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px}
+  .player-detail-body{padding-top:10px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+}
+@media(orientation:landscape) and (max-height:520px) and (max-width:759px){
+  .player-detail-panel{top:0;bottom:0;max-height:none;border-radius:0;border-width:0}
+}
+"""
+              app = replace_once(app, anchor, addition, 'compact landscape CSS')
+              app_path.write_text(app)
+
+          test_path = Path('tests/player-detail.test.mjs')
+          tests = test_path.read_text()
+          if 'playerDetailClose' not in tests.split("from '../src/ui/player-detail.mjs';",1)[0]:
+              tests = replace_once(
+                  tests,
+                  "  playerDetailSetup,\n  playerDetailOpen\n",
+                  "  playerDetailSetup,\n  playerDetailOpen,\n  playerDetailClose\n",
+                  'player detail test import'
+              )
+
+          if "dialog controller locks scrolling" not in tests:
+              start = tests.index("test('dialog controller opens accessibly, closes on Escape and restores focus'")
+              end = tests.index("test('template provides mobile bottom sheet and desktop side panel semantics'", start)
+              block = r"""test('dialog controller locks scrolling, resets detail, closes on Escape and restores focus and position',()=>{
+  const listeners={};
+  const makeClasses=()=>({values:new Set(),add(v){this.values.add(v);},remove(v){this.values.delete(v);}});
+  const makeNode=id=>({
+    id,nodeType:1,hidden:true,attrs:{},children:[],disabled:false,textContent:'',scrollTop:73,
+    classList:makeClasses(),
+    addEventListener(type,fn){listeners[`${id}:${type}`]=fn;},
+    setAttribute(key,value){this.attrs[key]=String(value);},
+    getAttribute(key){return this.attrs[key];},
+    appendChild(child){this.children.push(child);child.parentNode=this;return child;},
+    removeChild(child){this.children.splice(this.children.indexOf(child),1);},
+    get firstChild(){return this.children[0]||null;},
+    querySelectorAll(){return [nodes.playerDetailClose];},
+    focus(options){document.activeElement=this;this.focused=true;this.focusOptions=options;}
+  });
+  const nodes={
+    playerDetailPanel:makeNode('playerDetailPanel'),
+    playerDetailBackdrop:makeNode('playerDetailBackdrop'),
+    playerDetailClose:makeNode('playerDetailClose'),
+    playerDetailTitle:makeNode('playerDetailTitle'),
+    playerDetailBody:makeNode('playerDetailBody')
+  };
+  const trigger=makeNode('trigger');
+  trigger.hidden=false;
+  const bodyClasses=makeClasses(),rootClasses=makeClasses(),restored=[];
+  globalThis.document={
+    activeElement:trigger,
+    documentElement:{classList:rootClasses},
+    body:{classList:bodyClasses},
+    getElementById:id=>nodes[id],
+    addEventListener(type,fn){listeners[`document:${type}`]=fn;},
+    createTextNode:text=>({nodeType:3,textContent:String(text)})
+  };
+  globalThis.scrollX=19;
+  globalThis.scrollY=640;
+  globalThis.scrollTo=options=>restored.push(options);
+
+  assert.equal(playerDetailSetup(),true);
+  assert.equal(playerDetailOpen({title:'Saka details',body:['content'],trigger}),true);
+  assert.equal(nodes.playerDetailPanel.hidden,false);
+  assert.equal(nodes.playerDetailBackdrop.hidden,false);
+  assert.equal(nodes.playerDetailPanel.attrs['aria-hidden'],'false');
+  assert.equal(nodes.playerDetailTitle.textContent,'Saka details');
+  assert.equal(nodes.playerDetailBody.scrollTop,0);
+  assert.equal(nodes.playerDetailClose.focused,true);
+  assert.deepEqual(nodes.playerDetailClose.focusOptions,{preventScroll:true});
+  assert.equal(bodyClasses.values.has('player-detail-open'),true);
+  assert.equal(rootClasses.values.has('player-detail-open'),true);
+
+  globalThis.scrollX=999;
+  globalThis.scrollY=1000;
+  let prevented=false;
+  listeners['document:keydown']({key:'Escape',preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);
+  assert.equal(nodes.playerDetailPanel.hidden,true);
+  assert.equal(nodes.playerDetailBackdrop.hidden,true);
+  assert.equal(nodes.playerDetailPanel.attrs['aria-hidden'],'true');
+  assert.deepEqual(restored,[{top:640,left:19,behavior:'auto'}]);
+  assert.deepEqual(trigger.focusOptions,{preventScroll:true});
+  assert.equal(bodyClasses.values.has('player-detail-open'),false);
+  assert.equal(rootClasses.values.has('player-detail-open'),false);
+
+  nodes.playerDetailBody.scrollTop=88;
+  globalThis.scrollX=25;
+  globalThis.scrollY=880;
+  assert.equal(playerDetailOpen({title:'Palmer details',body:['new content'],trigger}),true);
+  assert.equal(nodes.playerDetailBody.scrollTop,0);
+  assert.equal(playerDetailClose({restoreFocus:false,restoreScroll:false}),true);
+  assert.equal(restored.length,1);
+  assert.equal(bodyClasses.values.has('player-detail-open'),false);
+  assert.equal(rootClasses.values.has('player-detail-open'),false);
+
+  delete globalThis.document;
+  delete globalThis.scrollX;
+  delete globalThis.scrollY;
+  delete globalThis.scrollTo;
+});
+
+"""
+              tests = tests[:start] + block + tests[end:]
+
+          if 'dynamic viewport, contained scrolling and compact landscape safety' not in tests:
+              marker = "test('player surfaces open the new detail view without the legacy inline drawer'"
+              insert = tests.index(marker)
+              block = r"""test('Player Detail CSS owns dynamic viewport, contained scrolling and compact landscape safety',()=>{
+  const html=readFileSync(new URL('../app.html',import.meta.url),'utf8');
+  assert.match(html,/html\.player-detail-open,body\.player-detail-open\{overflow:hidden;overscroll-behavior:none\}/);
+  assert.match(html,/max-height:min\(88vh,780px\);max-height:min\(88dvh,780px\)/);
+  assert.match(html,/\.player-detail-body\{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;/);
+  assert.match(html,/\.player-detail-backdrop\{[^}]*touch-action:none;overscroll-behavior:contain/);
+  assert.match(html,/@media\(orientation:landscape\) and \(max-height:520px\)\{[\s\S]*safe-area-inset-top/);
+  assert.match(html,/@media\(orientation:landscape\) and \(max-height:520px\) and \(max-width:759px\)\{[\s\S]*\.player-detail-panel\{top:0;bottom:0;max-height:none/);
+});
+
+"""
+              tests = tests[:insert] + block + tests[insert:]
+          test_path.write_text(tests)
+
+          polish_path = Path('tests/final-mobile-polish.test.mjs')
+          polish = polish_path.read_text()
+          if "const playerDetailSource=" not in polish:
+              polish = replace_once(
+                  polish,
+                  "const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');\n",
+                  "const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');\nconst playerDetailSource=readFileSync(new URL('../src/ui/player-detail.mjs',import.meta.url),'utf8');\n",
+                  'final polish source fixture'
+              )
+          if 'route closure releases scroll locks' not in polish:
+              marker = "test('fixture and player tables include captions and scoped headings'"
+              insert = polish.index(marker)
+              block = r"""test('Player Detail route closure releases scroll locks without overriding route restoration',()=>{
+  assert.match(playerDetailSource,/teamsheet:before-route-change[\s\S]*playerDetailClose\(\{restoreFocus:false,restoreScroll:false\}\)/);
+  assert.match(playerDetailSource,/document\.documentElement\?\.classList\?\.add\('player-detail-open'\)/);
+  assert.match(playerDetailSource,/globalThis\.scrollTo\(\{top:position\.top,left:position\.left,behavior:'auto'\}\)/);
+  assert.doesNotMatch(playerDetailSource,/history\.|pushState|location\.hash/);
+});
+
+"""
+              polish = polish[:insert] + block + polish[insert:]
+          polish_path.write_text(polish)
+          PY
+
+      - name: Commit reviewed source and focused tests locally
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/ui/player-detail.mjs app.html tests/player-detail.test.mjs tests/final-mobile-polish.test.mjs
+          git commit -m "Implement UX-A2 Player Detail scroll and rotation"
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Run complete test and build baseline
+        shell: bash
+        run: |
+          set -o pipefail
+          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/ux-a2-tests.log
+          TEST_COUNT=$(awk '/^# tests /{value=$3} END{print value}' /tmp/ux-a2-tests.log)
+          PASS_COUNT=$(awk '/^# pass /{value=$3} END{print value}' /tmp/ux-a2-tests.log)
+          FAIL_COUNT=$(awk '/^# fail /{value=$3} END{print value}' /tmp/ux-a2-tests.log)
+          SKIP_COUNT=$(awk '/^# skipped /{value=$3} END{print value}' /tmp/ux-a2-tests.log)
+          test -n "$TEST_COUNT"
+          test "$TEST_COUNT" = "$PASS_COUNT"
+          test "${FAIL_COUNT:-0}" = "0"
+          test "${SKIP_COUNT:-0}" = "0"
+          echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
+          echo "PASS_COUNT=$PASS_COUNT" >> "$GITHUB_ENV"
+          echo "FAIL_COUNT=${FAIL_COUNT:-0}" >> "$GITHUB_ENV"
+          echo "SKIP_COUNT=${SKIP_COUNT:-0}" >> "$GITHUB_ENV"
+
+      - name: Verify deterministic production output and root equality
+        shell: bash
+        run: |
+          mkdir -p /tmp/ux-a2-build-a
+          cp dist/app.bundle.js /tmp/ux-a2-build-a/app.bundle.js
+          cp dist/index.html /tmp/ux-a2-build-a/index.html
+          cp dist/manifest.json /tmp/ux-a2-build-a/manifest.json
+          cp index.html /tmp/ux-a2-build-a/root-index.html
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cmp /tmp/ux-a2-build-a/app.bundle.js dist/app.bundle.js
+          cmp /tmp/ux-a2-build-a/index.html dist/index.html
+          cmp /tmp/ux-a2-build-a/manifest.json dist/manifest.json
+          cmp /tmp/ux-a2-build-a/root-index.html index.html
+          cmp dist/index.html index.html
+          echo "BUNDLE_HASH=$(sha256sum dist/app.bundle.js | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "HTML_HASH=$(sha256sum dist/index.html | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "MANIFEST_HASH=$(sha256sum dist/manifest.json | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Update canonical UX-A2 records
+        shell: bash
+        run: |
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          source=os.environ['SOURCE_SHA']
+          tests=os.environ['TEST_COUNT']
+          bundle=os.environ['BUNDLE_HASH']
+          html=os.environ['HTML_HASH']
+          manifest=os.environ['MANIFEST_HASH']
+          branch='agent/ux-a2-player-detail-scroll-rotation'
+
+          def read(path): return Path(path).read_text()
+          def write(path,text): Path(path).write_text(text)
+          def insert_before(text, marker, block, label):
+              if block.splitlines()[0] in text: return text
+              pos=text.find(marker)
+              if pos<0: raise SystemExit(f'{label}: marker not found')
+              return text[:pos]+block+text[pos:]
+
+          a2_block=(
+              '<!-- UX-A2-2026-08-06 -->\n'
+              f'> **Current approved implementation item — UX-A2 Player Detail Scroll and Rotation Correction:** implemented on `{branch}` from verified `main` `2738a0500b9be20a723f0940df0a93766b29c05d`. Player Detail now resets to the top for every player, locks both root and body scrolling, restores the exact background coordinates on normal close, yields route scroll restoration on navigation, contains internal overscroll and adds dynamic-viewport, safe-area and compact-landscape safeguards without changing its information or calculations. Source `{source}` passes **{tests} passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical populated iPhone Safari portrait/landscape acceptance remains required. VoiceOver is not a project acceptance gate; standard accessibility safeguards remain required. UX-A3 and Track B remain unapproved.\n\n'
+          )
+
+          claude=read('CLAUDE.md')
+          claude=insert_before(claude,'<!-- UX-A1-2026-08-06 -->',a2_block,'CLAUDE A2 block')
+          claude=claude.replace(
+              'Workstreams A2, A3 and B remain unapproved and must not start.',
+              'UX-A2 is now owner-approved and implemented for draft review; A3 and B remain unapproved and must not start.',1)
+          claude=claude.replace(
+              "Workstreams A2, A3, Track B and every provider/model change remain unapproved; begin any later development with investigation, exact scope and Pritesh's explicit approval.",
+              'UX-A2 Player Detail Scroll and Rotation Correction is implemented on a separate branch for draft review under its approved presentation-only scope. A3, Track B and every provider/model change remain unapproved.',1)
+          write('CLAUDE.md',claude)
+
+          context=read('docs/PROJECT_CONTEXT.md')
+          context=insert_before(context,'<!-- UX-A1-2026-08-06 -->',a2_block,'PROJECT_CONTEXT A2 block')
+          context=re.sub(
+              r'<!-- UX-A1-2026-08-06 -->\n> \*\*UX-A1 Team Resources[^\n]*\n\n',
+              '<!-- UX-A1-2026-08-06 -->\n> **UX-A1 Team Resources and Bench Clarity — complete and merged:** PR #74 merged at `15aa01a07a5645f5df9ec2f2f429aefa52965c94` with the accepted **624 passed, 0 failed, 0 skipped** baseline, deterministic builds, root/deployable equality and populated iPhone Safari acceptance. `docs/UX-A1-MERGE-RECORD.md` is authoritative.\n\n',
+              context,count=1)
+          context=re.sub(
+              r'Current development item: \*\*no new implementation checkpoint is approved\.\*\*[^\n]*',
+              f'Current development item: **UX-A2 Player Detail Scroll and Rotation Correction is implemented for draft review** on `{branch}`. Physical populated iPhone Safari portrait/landscape acceptance and explicit owner merge approval remain required. UX-A3, Track B and any provider/model change remain unapproved.',
+              context,count=1)
+          write('docs/PROJECT_CONTEXT.md',context)
+
+          roadmap=read('docs/ROADMAP.md')
+          roadmap=insert_before(roadmap,'<!-- UX-A1-2026-08-06 -->',a2_block,'ROADMAP A2 block')
+          roadmap=re.sub(
+              r'<!-- UX-A1-2026-08-06 -->\n> \*\*Current approved item — UX-A1[^\n]*\n\n',
+              '<!-- UX-A1-2026-08-06 -->\n> **UX-A1 Team Resources and Bench Clarity — complete and merged:** PR #74 merged at `15aa01a07a5645f5df9ec2f2f429aefa52965c94`; accepted evidence is 624 passing tests, deterministic builds, root/deployable equality and populated iPhone Safari acceptance.\n\n',
+              roadmap,count=1)
+          roadmap=roadmap.replace(
+              '- **UX-A1 Team Resources and Bench Clarity** · IMPLEMENTED FOR REVIEW; draft PR and populated iPhone Safari owner acceptance pending.',
+              '- **UX-A1 Team Resources and Bench Clarity** · COMPLETE AND MERGED through PR #74; populated iPhone Safari acceptance passed.',1)
+          roadmap=roadmap.replace(
+              '- **Later implementation work** · NOT APPROVED. A2, A3, Track B and any provider/model change require a new investigation and approval gate.',
+              f'- **UX-A2 Player Detail Scroll and Rotation Correction** · IMPLEMENTED FOR REVIEW on `{branch}`; automated verification passed and physical populated iPhone Safari portrait/landscape acceptance remains pending.\n- **Later implementation work** · NOT APPROVED. UX-A3, Track B and any provider/model change require a new investigation and approval gate.',1)
+          write('docs/ROADMAP.md',roadmap)
+
+          limitations=read('docs/KNOWN_LIMITATIONS.md')
+          if '| UI-13 |' not in limitations:
+              row=(
+                  '| UI-13 | UX-A2 Player Detail scrolling and rotation correction has not yet received populated physical iPhone Safari acceptance | Automated tests cover fresh-open scroll reset, root/body lock lifecycle, exact normal-close restoration, route-close release, dynamic viewport sizing, overscroll containment, safe areas and compact landscape rules, but cannot prove Safari toolbar animation, touch transfer, rotation rendering or notch clearance on the owner device. VoiceOver is not required. | UX-A2 owner acceptance | Open (acceptance gate) |\n'
+              )
+              marker='| UI-1 | No persistent browser-level screenshot-regression suite'
+              pos=limitations.find(marker)
+              if pos<0: raise SystemExit('KNOWN_LIMITATIONS insertion marker missing')
+              limitations=limitations[:pos]+row+limitations[pos:]
+          write('docs/KNOWN_LIMITATIONS.md',limitations)
+
+          testing=read('docs/TESTING.md')
+          testing=insert_before(testing,'<!-- UX-A1-2026-08-06 -->',a2_block,'TESTING A2 block')
+          testing=testing.replace(
+              '14. `player-detail.test.mjs` — Stage 9.3 spread thresholds, quality suppression, range geometry, official availability labels, dialog accessibility/focus and surface wiring.',
+              '14. `player-detail.test.mjs` — Stage 9.3 spread thresholds, quality suppression, range geometry, official availability labels, dialog accessibility/focus, exact background-position restoration, fresh-open scroll reset, route-close release, dynamic viewport sizing, contained scrolling, safe areas and compact-landscape wiring.',1)
+          write('docs/TESTING.md',testing)
+
+          architecture=read('docs/ARCHITECTURE.md')
+          architecture_note=(
+              '\n### UX-A2 Player Detail viewport and scroll boundary\n'
+              '`ui/player-detail.mjs` keeps Player Detail as a non-route modal dialog. It owns the saved background coordinates, root/body lock lifecycle, fresh-open internal scroll reset, normal-close restoration and route-close release. `ui/app-shell.mjs` remains the sole owner of route history, route focus and route scroll restoration; a route-driven modal close deliberately does not restore the old page coordinates. The hash-locked stylesheet owns dynamic `vh`/`dvh` sizing, flex-body scrolling, overscroll containment, four-sided safe areas and compact landscape presentation. No runtime style attribute, CSS-variable write, player identifier route or persistence state is introduced.\n'
+          )
+          if '### UX-A2 Player Detail viewport and scroll boundary' not in architecture:
+              anchor='## Expected-minutes boundary\n'
+              pos=architecture.find(anchor)
+              if pos<0: raise SystemExit('ARCHITECTURE insertion marker missing')
+              architecture=architecture[:pos]+architecture_note+'\n'+architecture[pos:]
+          write('docs/ARCHITECTURE.md',architecture)
+
+          decisions=read('docs/DECISIONS.md')
+          if 'D-UX-A2' not in decisions:
+              decisions += (
+                  '\n\n**D-UX-A2 · 2026-08-06 · Accepted · Player Detail scroll and rotation correction**\n\n'
+                  'Reason: the existing custom Player Detail dialog had sound semantics and focus handling but relied on body-only overflow locking, did not record or restore exact background coordinates, did not reset the internal scroller for a newly opened player and had no explicit compact-landscape or four-sided safe-area contract. Automated tests did not cover those mobile lifecycle behaviours.\n\n'
+                  'Decision: preserve Player Detail as a non-route modal and preserve all information and calculations. Save the background coordinates on open, lock both root and body through classes, reset the detail body to the top for each player, restore exact coordinates on normal close, yield restoration to the router on route change, contain overscroll and use stylesheet-owned `vh`/`dvh`, flex-scroller, safe-area and compact-landscape rules. Browser Back continues to navigate the underlying hash route rather than adding modal history.\n\n'
+                  'Consequences: no player data, projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, transfer, rank, Mini-League, provider, Cloudflare, persistence, authentication or URL-identity behaviour changes. Physical populated iPhone Safari portrait/landscape and toolbar acceptance remains required before merge. VoiceOver is not a project gate; normal semantic, focus, keyboard, reduced-motion and touch-target safeguards remain.\n'
+              )
+          write('docs/DECISIONS.md',decisions)
+
+          detail_doc=f"""# UX-A2 — Player Detail Scroll and Rotation Correction
+
+Status: **implemented for draft review; physical populated iPhone Safari acceptance pending.**
+Approval: Pritesh approved the exact investigation proposal on 6 August 2026.
+Base `main`: `2738a0500b9be20a723f0940df0a93766b29c05d`.
+Branch: `{branch}`.
+Reviewed source commit: `{source}`.
+Automated verification: **{tests} passed, 0 failed, 0 skipped**.
+
+## Practical outcome
+
+Player Detail now opens at the top for every player, scrolls within its own body, keeps the page behind it fixed and restores the exact underlying position when normally closed. Rotation and short landscape viewports retain a reachable close control, scrollable content and four-sided iPhone safe-area protection.
+
+## Implemented behaviour
+
+- preserves the existing non-route `role=dialog` surface and all current Player Detail information;
+- records background X/Y coordinates on first open;
+- applies the open lock to both `html` and `body` through stylesheet classes;
+- resets the internal detail scroller to zero for every opening;
+- restores exact background coordinates on close-button, backdrop or Escape closure;
+- restores focus to the originating player button with `preventScroll`;
+- releases locks without restoring stale coordinates or focus before an app route change, leaving route focus and scroll restoration to `app-shell.mjs`;
+- contains backdrop and detail overscroll;
+- adds `vh` fallback followed by `dvh`, explicit flex shrink, four-sided safe-area padding and compact landscape rules;
+- preserves browser Back and deep-link behaviour: Player Detail remains a dialog and does not add URL or history identity.
+
+## Automated evidence
+
+`./run-tests.sh` completed **{tests} passed, 0 failed, 0 skipped** against source `{source}`. Two exact-identity production builds were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`; root `index.html` equals `dist/index.html`.
+
+Generated SHA-256 evidence:
+
+- `dist/app.bundle.js`: `{bundle}`
+- `dist/index.html`: `{html}`
+- `dist/manifest.json`: `{manifest}`
+- root `index.html`: `{html}`
+
+Automated tests protect state transitions, lock classes, saved coordinates, fresh-open position, focus restoration, route closure, no modal history and static responsive CSS contracts. They do not prove real Safari toolbar animation, momentum scrolling, touch transfer, rotation rendering or notch clearance.
+
+## Physical iPhone Safari acceptance
+
+1. Scroll Team until a player card is mid-screen, open and close Player Detail, and confirm the card returns to the same position.
+2. Scroll from the player identity to the final projection section in portrait; the close button must remain reachable.
+3. Close after scrolling to the bottom, open the same and a different player, and confirm both start at the top.
+4. Expand and collapse Safari chrome while open; content and close control must remain reachable.
+5. Rotate portrait to landscape and back while open; content must remain scrollable and clear of every safe area.
+6. Close after rotation and confirm the background is unlocked at its original position.
+7. Open Player Detail and use browser Back; the previous route must appear with no remaining modal or scroll lock.
+8. Repeat from direct Team and Player Explorer deep links.
+
+VoiceOver testing is not required. Standard labels, keyboard focus containment, Escape, focus restoration, reduced motion, semantic buttons and 44-pixel controls remain preserved.
+
+## Exact exclusions
+
+No Player Detail data redesign; no new statistics; no projection, expected-minutes, scoring, fixture, simulation, captaincy, squad, bench, transfer, rank or Mini-League change; no provider, Cloudflare, authentication or persistence change; no Player Detail URL route; no UX-A3, Track B or unrelated visual redesign.
+
+## Merge gate
+
+Do not merge until Pritesh completes the physical iPhone Safari script, explicitly approves the result and confirms the draft PR may merge.
+"""
+          write('docs/UX-A2-PLAYER-DETAIL-SCROLL-ROTATION.md',detail_doc)
+          PY
+
+      - name: Commit verified deployable and documentation
+        shell: bash
+        run: |
+          rm .github/workflows/ux-a2-apply.yml
+          git add CLAUDE.md app.html src/ui/player-detail.mjs tests/player-detail.test.mjs tests/final-mobile-polish.test.mjs \
+            docs/PROJECT_CONTEXT.md docs/ARCHITECTURE.md docs/DECISIONS.md docs/ROADMAP.md docs/KNOWN_LIMITATIONS.md docs/TESTING.md \
+            docs/UX-A2-PLAYER-DETAIL-SCROLL-ROTATION.md dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git add -u .github/workflows/ux-a2-apply.yml
+          git commit -m "Build and document UX-A2"
+          echo "FINAL_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Push verified branch
+        shell: bash
+        run: |
+          git push origin HEAD:agent/ux-a2-player-detail-scroll-rotation
+
+      - name: Verification summary
+        shell: bash
+        run: |
+          echo "Source: $SOURCE_SHA"
+          echo "Final: $(git rev-parse HEAD)"
+          echo "Tests: $TEST_COUNT passed, $FAIL_COUNT failed, $SKIP_COUNT skipped"
+          echo "Bundle: $BUNDLE_HASH"
+          echo "HTML: $HTML_HASH"
+          echo "Manifest: $MANIFEST_HASH"
