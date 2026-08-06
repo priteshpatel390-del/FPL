@@ -15,7 +15,7 @@ test('tie-heavy branch ordering and optimistic tie bounds preserve exhaustive to
   const args=buildTransferScaleCase({counts:{1:5,2:8,3:8,4:5},tieHeavy:true,maxEvaluations:500000});
   const prepared=optimiseTransfers(args),oracle=exhaustiveTransferSearch(args);
   assert.deepEqual(transferResultSummary(prepared),transferResultSummary(oracle));
-  assert.ok(prepared.profile.identityBoundPruned>0);
+  assert.ok(prepared.profile.boundPruned>0);
 });
 
 test('identity-preserving bounds remain exact when projections include negative and tied values',()=>{
