@@ -118,61 +118,62 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
 Every checkpoint requires its own investigation, exact scope, exclusions, owner approval where required, branch, complete verification, documentation and draft PR.
 
 ## Upcoming
-1. Review the Teamsheet 2.0.7 draft implementation and automated evidence.
-2. Perform physical iPhone Safari, VoiceOver and live populated-data acceptance; record any external blocker honestly.
-3. Operate pre-deadline snapshots and durable owner-controlled exports during the 2026/27 season.
-4. Complete checkpoint-specific iPhone checks and the final Teamsheet 2.0.7 end-to-end rehearsal.
-5. Collect official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until approved sample safeguards are met.
+1. Operate pre-deadline snapshots and durable owner-controlled exports during the 2026/27 season.
+2. Complete feature-specific live populated acceptance still listed for Team captain/bench, Fixtures, Player Detail and Leagues.
+3. Collect Official outcomes and descriptive metrics prospectively; do not claim accuracy or calibration until approved sample safeguards are met.
+4. Investigate any new product, provider, model or Track B proposal before defining scope or implementation. No new implementation item is currently approved.
 
 ## Current blockers and gates
-1. Teamsheet 2.0.6 physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed and must be addressed or explicitly recorded through 2.0.7 acceptance.
-2. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
-3. Teamsheet 2.0.6 automated and headless-browser checks do not independently prove physical iPhone density, Safari interaction, VoiceOver reading order or live populated-data behaviour.
-4. Teamsheet 2.0.7 automated verification is complete, but physical iPhone Safari, VoiceOver and live populated-data acceptance remain open; PR #68 must not merge without explicit owner approval.
-5. The old standalone Stage 10.5 rehearsal gate is superseded by checkpoint-specific checks and final 2.0.7 rehearsal; its historical record remains intact.
-6. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
-7. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
-8. Projected live rank, projected rival outcomes, remaining-player simulations and protect/balanced/chase strategy logic require separate designs and explicit approval.
-9. Official FPL endpoints remain undocumented and public transport limitations can block live populated-data acceptance.
+1. Physical iPhone and live populated acceptance is not recorded for every Team, Fixtures, Player Detail and Leagues path; the tested Transfers paths must not be generalised to those features.
+2. VoiceOver was deliberately not tested for Track A and remains accepted-unverified elsewhere; no physical screen-reader claim is permitted.
+3. A persistent screenshot-regression suite is absent; visual changes still require human device checks.
+4. Free historical odds and other missing pre-deadline provider snapshots require prospective 2026/27 logging.
+5. Prospective sample size begins at zero; Stage 10 infrastructure does not establish model accuracy or calibration.
+6. Projected live rank, projected rival outcomes, remaining-player simulations and protect/balanced/chase strategy logic require separate designs and explicit approval.
+7. Official FPL endpoints remain undocumented and can drift; validation must continue to fail closed.
+8. Bank and available free transfers remain manual rather than proven authoritative account values.
 
 ## Post-merge Teamsheet 2.0.1 investigations
 
 - The global Ask composer, stable dock/icons, focus presentation and simplified Settings hierarchy were merged through PR #48.
-- Non-blocking foreground refresh, reliable populated Official FPL transport and authoritative read-only bank/free-transfer retrieval remain separately gated investigations.
+- Non-blocking foreground refresh and reliable Official FPL transport are implemented and merged; authoritative read-only bank/free-transfer retrieval remains separately gated.
 - These unresolved data/account items do not reopen the completed 2.0.1 navigation scope.
 
 
-## Teamsheet 2.0.7 current handover
+## Teamsheet 2.0.7 final handover
 
-Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a separate branch from `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification is **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not call the checkpoint complete or merge without owner approval.
+Scope S-2.0.7 is complete and merged through PR #68. Its Safari foreground-resume correction passed owner retest. VoiceOver remains accepted-unverified. Subsequent FPL-T1 and Track A work is complete and merged through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). Remaining live populated acceptance is tracked by feature and does not reopen the completed checkpoint.
 
-## Transfers Track A corrective status — 2026-08-06
+## Transfers Track A final status — 2026-08-06
 
-- [x] Record the first physical iPhone Safari failure at the two-million evaluation ceiling.
-- [x] Investigate and record the root cause: node cost, bound looseness, no stopping rule and a per-player rather than joint budget relaxation.
-- [x] Rebuild the exact search on position-quota prefix sums, per-formation node-aware admissible bounds, price-capped completion tables and descending-gain stopping rules.
-- [x] Prove controlled-pool equality with the independent `exhaustiveTransferSearch()` oracle across seven adversarial shapes and each fixed transfer depth.
-- [x] Prove Official-scale six-Gameweek completion below the unchanged ceiling with `status: 'ok'`, and unchanged fail-closed behaviour when the ceiling is genuinely exceeded.
-- [x] Pass the 606-test repository gate with deterministic exact-identity builds and root/deployable equality.
-- [ ] Repeat physical iPhone Safari Test 1 on the corrected preview and confirm the search now completes.
-- [ ] Complete navigation persistence, cancellation, cached reuse and VoiceOver physical checks.
-- [ ] Obtain Pritesh's explicit approval before any merge.
+- [x] Record the first physical iPhone Safari evaluation-ceiling failure and its root cause.
+- [x] Rebuild the exact search with admissible position-quota, price-capped and joint-budget bounds plus descending-gain stopping rules.
+- [x] Preserve the independent exhaustive oracle and prove exactness on controlled adversarial pools.
+- [x] Complete Official-scale exact-search verification below the unchanged ceiling.
+- [x] Correct Worker cancellation/supersession settlement and mixed-width-ID partial tie bounds.
+- [x] Correct the separate no-transfer baseline presentation contract without changing ranked Top K.
+- [x] Replace zero-cost **“−0”** copy with **“No hit”**.
+- [x] Pass the final 613-test gate with deterministic production builds and root/deployable equality.
+- [x] Pass the populated physical iPhone Safari calculation and lifecycle checks, including the final wording confirmation.
+- [x] Receive explicit stacked integration approval and merge PR #69, PR #70 and PR #72 in order.
 
-Track B football-intelligence changes remain outside this checkpoint and unapproved.
+Final `main` is `be742e1eb707b3892f6405adf5d8769e084eee65` and has the identical tree `3794e8e7ab9859717950296766dc9d64c9e5473f` as the verified PR #72 head. VoiceOver was not tested. Track B football-intelligence changes remain outside this checkpoint and unapproved.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 
 - [x] Assess and retain Claude's concurrent exact-search correction.
 - [x] Reconcile explicit cancellation and force-start promise settlement.
 - [x] Harden partial signature bounds for mixed-width IDs.
-- [x] Pass 609 tests and deterministic build verification on the combined branch.
-- [ ] Publish the combined preview and repeat the physical iPhone Safari checklist.
-- [ ] Record device duration, responsiveness, memory pressure, cancellation, persistence, cache reuse and VoiceOver evidence.
-- [ ] Obtain explicit approval before the stacked PR integration sequence.
+- [x] Complete the combined 609-test interim verification, followed by the final 613-test baseline/presentation/copy gate.
+- [x] Publish and physically test the combined preview on populated iPhone Safari.
+- [x] Record duration, responsiveness, cancellation, persistence, cache reuse, app-switch and stale-result evidence.
+- [x] Obtain explicit approval and complete the stacked integration sequence.
+
+VoiceOver was deliberately not tested and is not an acceptance claim.
 
 ### Track A acceptance update — 2026-08-06
 
-Core populated-data iPhone Safari acceptance passed for PR #72. Remaining work before integration is limited to verifying the approved plain-language zero-hit display correction, updating generated files and obtaining explicit stacked merge approval. VoiceOver was not physically tested and is not an acceptance claim for this release.
+Core populated-data iPhone Safari acceptance passed for the exact six-Gameweek calculation and tested lifecycle paths, and the final **“No hit”** wording was visually confirmed. The accepted repository gate is 613 passing tests with deterministic builds. The approved stack is merged through final `main` `be742e1eb707b3892f6405adf5d8769e084eee65`. VoiceOver was not physically tested and is not an acceptance claim for this release.
 
 ## Track A merge record — 2026-08-06
 

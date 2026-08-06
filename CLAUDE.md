@@ -57,7 +57,7 @@ Report what changed, what deliberately did not change, exact test count/result, 
 - The app-scoped controller now settles the pending Worker result promise on explicit cancellation, material invalidation and force-start supersession, preventing orphaned in-session calculation chains.
 - Partial-node signature ties now use the universally optimistic empty string; exact canonical signatures remain unchanged and are evaluated only for complete branches.
 - Mixed-width player IDs, explicit cancellation settlement and supersession settlement are permanent regressions.
-- Automated verification: 609 passed, zero failed or skipped, deterministic builds. Physical iPhone Safari retest remains required.
+- Interim reconciliation verification was 609 passed with deterministic builds. That pending device gate was subsequently completed on PR #72 and is superseded by the accepted 613-test merged checkpoint above.
 
 ## Handover update — 2026-08-06
 

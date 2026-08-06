@@ -121,7 +121,7 @@ The final combined repository gate is 609 passing tests. A deterministic Officia
 
 ## Track A device acceptance update — 2026-08-06
 
-The reconciled exact Transfers flow has passed its core physical iPhone Safari checks on populated data: six-Gameweek completion in about 15 seconds, cached navigation restoration, prompt cancellation/restart, active-navigation persistence, Safari app-switch stability and stale-result protection. The final approved display correction replaces confusing zero-cost **“−0”** text with **“No hit”** everywhere. Track A remains draft/unmerged pending final repository verification and explicit integration approval.
+The reconciled exact Transfers flow has passed its core physical iPhone Safari checks on populated data: six-Gameweek completion in about 15 seconds, cached navigation restoration, prompt cancellation/restart, active-navigation persistence, Safari app-switch stability and stale-result protection. The final approved display correction replaces confusing zero-cost **“−0”** text with **“No hit”** everywhere. That interim state was subsequently verified and merged through PRs #69, #70 and #72 at final `main` `be742e1eb707b3892f6405adf5d8769e084eee65`, as recorded below.
 
 ## Track A integrated checkpoint — 2026-08-06
 

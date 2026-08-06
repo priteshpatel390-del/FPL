@@ -89,7 +89,7 @@ Last updated: 2026-08-06. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 - Provider Health retains all seven states. Full detail now remains in Settings; only material core Official FPL consequences surface on primary routes. Provider behaviour is unchanged.
 - Official results and projected values require explicit separation in future rank and Mini-League work.
 - Low ownership alone must not be presented as a positive differential recommendation.
-- Teamsheet 2.0.7 is merged through PR #68; its Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified. FPL-T1 now provides verified live bootstrap transport on draft PR #69, while full populated application acceptance remains open under FPL-2.
+- Teamsheet 2.0.7 is merged through PR #68; its Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified. FPL-T1 and Track A are merged through PRs #69–#72 at `be742e1eb707b3892f6405adf5d8769e084eee65`; tested Transfers paths passed, while remaining feature-specific populated acceptance stays open under FPL-2.
 
 ## Stage 10.1 automatic refresh limitations
 - “Latest” means the latest data that passed approved validation. It does not guarantee every optional provider is live.
