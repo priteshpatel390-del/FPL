@@ -69,25 +69,22 @@ jobs:
             const alternatives=rankedPlans.filter(plan=>Number(plan?.transferCount)>0);
           """
           assert old in source, 'old baseline presentation block not found'
-          source=source.replace(old,new,1)
-          source_path.write_text(source)
+          source_path.write_text(source.replace(old,new,1))
 
-          test_path=Path('tests/transfer-baseline-presentation.test.mjs')
-          test_path.write_text(r"""// Regression coverage for the result contract between the exact optimiser and the
-          // Transfers presentation. The optimiser owns a separately returned mandatory
-          // zero-transfer baseline while result.plans remains the unchanged ranked Top K.
+          Path('tests/transfer-baseline-presentation.test.mjs').write_text(r"""// Regression coverage for the contract between the exact optimiser and the
+          // Transfers presentation. result.plans remains ranked Top K; result.baseline
+          // remains the mandatory zero-transfer comparison even when Top K evicts it.
           import test from 'node:test';
           import assert from 'node:assert/strict';
           import { loadApp, syntheticWorld } from './harness.mjs';
 
           const walk=root=>{ const nodes=[]; const visit=node=>{ if(!node) return; nodes.push(node); (node.children||[]).forEach(visit); }; visit(root); return nodes; };
           const visibleText=root=>walk(root).filter(node=>node.nodeType===3).map(node=>node.textContent).join('');
-          const classCount=(root,name)=>walk(root).filter(node=>String(node.attrs?.class||'').split(/\s+/).includes(name)).length;
+          const textCount=(root,needle)=>visibleText(root).split(needle).length-1;
           const settle=async(turns=8)=>{ for(let index=0;index<turns;index++) await new Promise(resolve=>setTimeout(resolve,0)); };
 
           function completeSquad(T){
-            const need={1:2,2:5,3:5,4:3};
-            const manual=[];
+            const need={1:2,2:5,3:5,4:3},manual=[];
             let id=900;
             for(const [position,count] of Object.entries(need)){
               for(let index=0;index<count;index++){
@@ -134,37 +131,35 @@ jobs:
             worker.onmessage({data:{type:'result',requestId:request.requestId,result}});
           }
 
-          test('an evicted zero-transfer baseline renders from result.baseline without changing the ranked Top K',async()=>{
+          test('an evicted zero-transfer baseline renders from result.baseline without changing ranked Top K',async()=>{
             const {T,doc,workers}=openTransfers({trTop:'1'});
             T.renderTransfers();
             await settle();
-            const baseline=baselinePlan();
-            const plan=strongerTransferPlan(T);
+            const baseline=baselinePlan(),plan=strongerTransferPlan(T);
             sendResult(workers[0],{status:'ok',issues:[],plans:[plan],evaluations:12,pruned:3,baseline,pricingMode:'exact'});
             await settle();
 
             const text=visibleText(doc.transferOut);
-            assert.match(text,/Make no transfer/,'the mandatory comparison must remain visible');
-            assert.match(text,/Highest-ranked decision/,'the stronger ranked transfer must remain the decision');
+            assert.match(text,/Make no transfer/);
+            assert.match(text,/Highest-ranked decision/);
             assert.doesNotMatch(text,/No zero-transfer baseline was returned/);
-            assert.equal(classCount(doc.transferOut,'transfer-baseline-card'),1);
-            assert.equal(T.S.lastOptimiser.result.plans.length,1,'presentation must not insert the baseline into the optimiser Top K');
+            assert.equal(textCount(doc.transferOut,'Make no transfer'),1);
+            assert.equal(T.S.lastOptimiser.result.plans.length,1,'presentation must not insert the baseline into optimiser Top K');
             assert.equal(T.S.lastOptimiser.result.plans[0].transferCount,1);
           });
 
-          test('the evicted-baseline result is reused from cache without recalculation or a duplicate baseline card',async()=>{
+          test('the evicted-baseline result is reused from cache without recalculation or duplication',async()=>{
             const {T,doc,workers}=openTransfers({trTop:'1'});
             T.renderTransfers();
             await settle();
-            const baseline=baselinePlan();
-            sendResult(workers[0],{status:'ok',issues:[],plans:[strongerTransferPlan(T)],evaluations:12,pruned:3,baseline,pricingMode:'exact'});
+            sendResult(workers[0],{status:'ok',issues:[],plans:[strongerTransferPlan(T)],evaluations:12,pruned:3,baseline:baselinePlan(),pricingMode:'exact'});
             await settle();
-            assert.equal(classCount(doc.transferOut,'transfer-baseline-card'),1);
+            assert.equal(textCount(doc.transferOut,'Make no transfer'),1);
 
             T.renderTransfers();
             assert.match(doc.transferStatus.textContent,/reused instantly/);
             assert.equal(workers.length,1,'unchanged cached inputs must not create another worker');
-            assert.equal(classCount(doc.transferOut,'transfer-baseline-card'),1);
+            assert.equal(textCount(doc.transferOut,'Make no transfer'),1);
           });
 
           test('an ok result without a valid separate baseline remains fail-closed',async()=>{
@@ -179,7 +174,7 @@ jobs:
               const text=visibleText(doc.transferOut);
               assert.match(text,/No zero-transfer baseline was returned/);
               assert.doesNotMatch(text,/Highest-ranked decision/);
-              assert.equal(classCount(doc.transferOut,'transfer-baseline-card'),0);
+              assert.equal(textCount(doc.transferOut,'Make no transfer'),0);
               assert.equal(T.S.lastOptimiser,null);
             }
           });
@@ -194,7 +189,7 @@ jobs:
           test -n "$TEST_COUNT"
           echo "TEST_COUNT=$TEST_COUNT" >> "$GITHUB_ENV"
 
-      - name: Update canonical documentation and remove temporary workflow
+      - name: Update canonical documentation and commit source
         shell: bash
         run: |
           python3 <<'PY'
@@ -240,14 +235,11 @@ jobs:
 
           The corrected exact search passed its original device failure point: it completed on Pritesh's live saved-data case rather than exhausting the two-million evaluation ceiling. The result screen nevertheless blocked with *"No zero-transfer baseline was returned."*
 
-          This was a presentation-contract defect. The exact optimiser returns two deliberately different surfaces:
+          This was a presentation-contract defect. `result.plans` is the unchanged ranked Top K and may legally contain only transfer plans, while `result.baseline` is the mandatory zero-transfer comparison even when it falls outside that Top K.
 
-          - `result.plans` is the unchanged ranked Top K and may legally contain only transfer plans when every retained plan ranks above doing nothing;
-          - `result.baseline` is the mandatory zero-transfer comparison and remains available even when it falls outside that Top K.
+          PR #72 now validates and reads the separate baseline, keeps the optimiser Top K untouched, and adds the baseline only to its local presentation/signature view when absent from the ranked set. A baseline already in Top K is replaced by the same authoritative object rather than duplicated. Missing or malformed separate baselines still fail closed.
 
-          The renderer had searched only `result.plans`. PR #72 now validates and reads the separate `result.baseline`, keeps `result.plans` untouched, and adds the baseline only to its local presentation/signature view when it is absent from the ranked set. A baseline already present in Top K is replaced by the same authoritative separate object rather than duplicated. Missing or malformed separate baselines still fail closed.
-
-          No projection, score, candidate, transfer depth, affordability, comparator, ranking, result limit, evaluation ceiling or Worker lifecycle behaviour changed. Permanent production-bundle regressions cover Worker results with an evicted baseline, unchanged cached reuse with exactly one baseline card, and genuinely invalid baseline failure.
+          No projection, score, candidate, transfer depth, affordability, comparator, ranking, result limit, evaluation ceiling or Worker lifecycle behaviour changed. Permanent production-bundle regressions cover Worker results with an evicted baseline, unchanged cached reuse with exactly one comparison, and genuinely invalid baseline failure.
 
           Automated verification: **{count} passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical iPhone Safari must still retest the corrected result screen before Track A can be product-accepted or merged.
           """.replace('\n          ','\n')
@@ -255,13 +247,13 @@ jobs:
             text=text.rstrip()+section+'\n'
           exact.write_text(text)
 
-          workflow=Path('.github/workflows/pr72-baseline-contract.yml')
-          workflow.unlink()
+          trigger=Path('.github/pr72-baseline-trigger')
+          if trigger.exists(): trigger.unlink()
           PY
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/ui/transfer-performance.mjs tests/transfer-baseline-presentation.test.mjs CLAUDE.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md docs/KNOWN_LIMITATIONS.md docs/TRANSFERS-EXACT-PERFORMANCE.md .github/workflows/pr72-baseline-contract.yml
+          git add src/ui/transfer-performance.mjs tests/transfer-baseline-presentation.test.mjs CLAUDE.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md docs/KNOWN_LIMITATIONS.md docs/TRANSFERS-EXACT-PERFORMANCE.md .github/pr72-baseline-trigger
           git commit -m "Fix Transfers baseline presentation contract"
           echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
