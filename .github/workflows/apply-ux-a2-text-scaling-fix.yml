@@ -1,0 +1,121 @@
+name: Apply UX-A2 text scaling correction
+
+on:
+  push:
+    branches:
+      - agent/ux-a2-player-detail-scroll-rotation
+
+permissions:
+  contents: write
+
+jobs:
+  correct-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out UX-A2 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/ux-a2-player-detail-scroll-rotation
+          fetch-depth: 0
+
+      - name: Apply focused correction, test and rebuild
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          css_rule = "html{-webkit-text-size-adjust:100%;text-size-adjust:100%}"
+
+          def add_text_adjust(path):
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              if css_rule in text:
+                  return
+              needle = "*{box-sizing:border-box}\n"
+              if needle not in text:
+                  raise SystemExit(f"expected CSS insertion point missing in {path}")
+              text = text.replace(needle, needle + css_rule + "\n", 1)
+              p.write_text(text, encoding="utf-8")
+
+          add_text_adjust("app.html")
+          add_text_adjust("review/ux-a2-player-detail-preview.html")
+
+          test_path = Path("tests/player-detail-scroll-rotation.test.mjs")
+          test_text = test_path.read_text(encoding="utf-8")
+          marker = "iOS automatic text inflation is fixed at 100% across rotation"
+          if marker not in test_text:
+              test_text += f'''\n\ntest('{marker}',()=>{{\n  const root = ruleBody(app,'html');\n  assert.match(root,/-webkit-text-size-adjust:100%/);\n  assert.match(root,/(?:^|;)text-size-adjust:100%/);\n}});\n'''
+              test_path.write_text(test_text, encoding="utf-8")
+
+          scope_path = Path("docs/UX-A2-SCOPE.md")
+          scope = scope_path.read_text(encoding="utf-8")
+          scope_marker = "UX-A2-ROTATION-TEXT-SCALING-2026-08-06"
+          if scope_marker not in scope:
+              scope += f'''\n\n## Physical finding — rotation text scaling\n\n<!-- {scope_marker} -->\n\nThe first populated iPhone Safari review passed background locking, internal scrolling, content reachability, close-button reachability and position restoration, but exposed one defect after portrait → landscape → portrait: Safari automatically enlarged the dialog text while the sheet dimensions remained unchanged.\n\nThe correction adds `-webkit-text-size-adjust:100%` and the standards property `text-size-adjust:100%` at the document root. This prevents Safari's automatic orientation-driven text inflation while preserving pinch zoom and the user's browser zoom controls. The same rule is present in the isolated fictional review harness. One focused CSS contract protects the production rule. Physical retest remains required before UX-A2 acceptance.\n'''
+              scope_path.write_text(scope, encoding="utf-8")
+
+          testing_path = Path("docs/TESTING.md")
+          testing = testing_path.read_text(encoding="utf-8")
+          testing_marker = "UX-A2-TEXT-SCALING-RETEST-2026-08-06"
+          if testing_marker not in testing:
+              testing += f'''\n\n## UX-A2 rotation text-scaling retest\n\n<!-- {testing_marker} -->\n\nThe first physical iPhone Safari pass found automatic text enlargement after portrait → landscape → portrait. After the root `text-size-adjust:100%` correction, repeat the orientation cycle with Player Detail open and confirm the title, body copy, metrics and close control return to the same portrait scale as before rotation. All previously passed scroll, reachability and restoration checks must remain unchanged.\n'''
+              testing_path.write_text(testing, encoding="utf-8")
+
+          limitations_path = Path("docs/KNOWN_LIMITATIONS.md")
+          limitations = limitations_path.read_text(encoding="utf-8")
+          old_row_start = "| UI-13 | UX-A2 Player Detail scroll and rotation correction has not yet received populated physical iPhone Safari acceptance |"
+          lines = limitations.splitlines()
+          replaced = False
+          for i, line in enumerate(lines):
+              if line.startswith(old_row_start):
+                  lines[i] = "| UI-13 | UX-A2 Player Detail physical iPhone acceptance remains incomplete after the first pass exposed Safari text inflation following portrait → landscape → portrait | Background locking, internal scrolling, final-section reachability, close-button reachability and position restoration passed. Root text scaling is now fixed at 100% in production and the isolated review harness; the corrected orientation cycle still requires owner retest before merge. VoiceOver is not a Teamsheet acceptance gate. | UX-A2 owner acceptance | Open (retest required) |"
+                  replaced = True
+                  break
+          if not replaced:
+              raise SystemExit("UI-13 row not found")
+          limitations_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          claude_path = Path("CLAUDE.md")
+          claude = claude_path.read_text(encoding="utf-8")
+          old = "Automated verification is **643 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Populated physical iPhone Safari acceptance is **pending**;"
+          new = "Automated verification is **644 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. The first physical iPhone pass confirmed scrolling, reachability and restoration but exposed Safari text inflation after portrait → landscape → portrait; the root text-scaling correction is implemented and physical retest is **pending**;"
+          if old not in claude:
+              raise SystemExit("UX-A2 CLAUDE status text not found")
+          claude = claude.replace(old, new, 1)
+          claude_path.write_text(claude, encoding="utf-8")
+          PY
+
+          git rm .github/workflows/apply-ux-a2-text-scaling-fix.yml
+          git config user.name "Teamsheet UX-A2 Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add app.html review/ux-a2-player-detail-preview.html tests/player-detail-scroll-rotation.test.mjs docs/UX-A2-SCOPE.md docs/TESTING.md docs/KNOWN_LIMITATIONS.md CLAUDE.md
+          git commit -m "Fix iOS text scaling after rotation"
+          SOURCE_SHA=$(git rev-parse HEAD)
+
+          ./run-tests.sh
+
+          rm -rf /tmp/ux-a2-build-a /tmp/ux-a2-build-b
+          mkdir -p /tmp/ux-a2-build-a /tmp/ux-a2-build-b
+
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cp dist/app.bundle.js /tmp/ux-a2-build-a/app.bundle.js
+          cp dist/index.html /tmp/ux-a2-build-a/dist-index.html
+          cp dist/manifest.json /tmp/ux-a2-build-a/manifest.json
+          cp index.html /tmp/ux-a2-build-a/root-index.html
+
+          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          cp dist/app.bundle.js /tmp/ux-a2-build-b/app.bundle.js
+          cp dist/index.html /tmp/ux-a2-build-b/dist-index.html
+          cp dist/manifest.json /tmp/ux-a2-build-b/manifest.json
+          cp index.html /tmp/ux-a2-build-b/root-index.html
+
+          cmp /tmp/ux-a2-build-a/app.bundle.js /tmp/ux-a2-build-b/app.bundle.js
+          cmp /tmp/ux-a2-build-a/dist-index.html /tmp/ux-a2-build-b/dist-index.html
+          cmp /tmp/ux-a2-build-a/manifest.json /tmp/ux-a2-build-b/manifest.json
+          cmp /tmp/ux-a2-build-a/root-index.html /tmp/ux-a2-build-b/root-index.html
+          cmp dist/index.html index.html
+
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Build UX-A2 after rotation text fix"
+          git push origin HEAD:agent/ux-a2-player-detail-scroll-rotation
