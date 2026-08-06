@@ -16,7 +16,13 @@ Pritesh confirmed that Player Detail:
 - starts at the top when reopened;
 - closes correctly from the backdrop.
 
-The first portrait → landscape → portrait cycle exposed Safari automatically enlarging the text. The production correction fixes root text adjustment at 100% using both the WebKit and standards properties. Pritesh repeated the corrected rotation check and confirmed it worked perfectly, with scrolling and closing still intact.
+The first portrait → landscape → portrait cycle exposed Safari automatically enlarging the text. The production correction fixes root text adjustment at 100% in `app.html` using both `-webkit-text-size-adjust` and the standards `text-size-adjust` property, and is held in place by a regression contract in `tests/player-detail-scroll-rotation.test.mjs`. Viewport metadata is unchanged and pinch zoom remains available. Pritesh repeated the corrected rotation check and confirmed it worked perfectly, with scrolling and closing still intact.
+
+## Gate status
+
+`UI-13` — the UX-A2 populated physical iPhone Safari acceptance gate — is **closed** as of 6 August 2026. Any earlier statement that this acceptance is pending, outstanding or blocking is superseded.
+
+VoiceOver testing was not performed and is **not required**: it is not a Teamsheet acceptance gate (`VOICEOVER-DECISION.md`). The standard accessibility safeguards already in the dialog — semantic controls, labels, focus handling and reduced motion — remain in place.
 
 ## Separate future proposal
 

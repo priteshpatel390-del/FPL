@@ -297,6 +297,22 @@ test('safe areas are respected on all four sides',()=>{
     assert.match(detailCss,new RegExp(`env\\(safe-area-inset-${side}`),`missing safe-area-inset-${side}`);
 });
 
+// The physical iPhone Safari review found the first portrait → landscape →
+// portrait cycle left the text permanently enlarged: Safari applies automatic
+// text inflation at the root document on rotation. Fixing the root text size
+// adjustment at 100% suppresses that inflation. Both the WebKit property and
+// the standards property are required, and neither may be achieved by
+// disabling the user's own pinch zoom.
+test('the production root rule fixes text size adjustment so rotation cannot inflate text',()=>{
+  const root = ruleBody(app,'html');
+  assert.match(root,/-webkit-text-size-adjust:100%/,'missing -webkit-text-size-adjust:100%');
+  assert.match(root,/(?:^|;)text-size-adjust:100%/,'missing standards text-size-adjust:100%');
+  const viewport = /<meta name="viewport" content="([^"]*)">/.exec(app);
+  assert.ok(viewport,'expected viewport metadata');
+  assert.doesNotMatch(viewport[1],/user-scalable\s*=\s*no/);
+  assert.doesNotMatch(viewport[1],/maximum-scale/);
+});
+
 test('Player Detail remains a dialog and never becomes a route',()=>{
   assert.match(app,/id="playerDetailPanel"[^>]*role="dialog"[^>]*aria-modal="true"/);
   assert.doesNotMatch(source,/location\s*\.\s*hash/);
