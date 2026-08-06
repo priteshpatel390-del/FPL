@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teamsheet — FPL decisions</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-++NCA+SyTIP9PsKdL4J+K62dMgZCNMOKFUrDIkvhCcU='; style-src-elem 'sha256-KSQts6SOrT11xPXJCdGZFWUc0KQjhtGPrHQ0AXMhG3o=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com https://teamsheet-fpl-gateway.fpltsheet.workers.dev; worker-src 'self' blob:; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-mkrAeZ1VCUnK+uFD2xfJiZj57BCDHX1PGMOm2oXktJw='; style-src-elem 'sha256-KSQts6SOrT11xPXJCdGZFWUc0KQjhtGPrHQ0AXMhG3o=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com https://teamsheet-fpl-gateway.fpltsheet.workers.dev; worker-src 'self' blob:; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -819,9 +819,9 @@ h2[tabindex="-1"]:focus{outline:none}
   <a class="tab" href="#/settings"><span class="ic" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></span><span class="tab-label">Settings</span></a>
 </nav>
 <script>
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d18b17a19353e7c2","commit":"d6f856a734dc00751ed5fc0d5c249e27a7b7ddf7"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d18b17a19353e7c2037354c0f99df34c41b295a74d0035ae8092eaec805778dc","commit":"d6f856a734dc00751ed5fc0d5c249e27a7b7ddf7","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
-const TRANSFER_WORKER_MODEL_SOURCE = "\nconst POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;\nconst UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);\n// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.\nconst TRANSFER_PROGRESS_INTERVAL = 20000;\n\nfunction playerOf(entry){ return entry?.p || entry; }\nfunction playerId(entry){ return Number(playerOf(entry)?.id); }\nfunction positionOf(entry){ return Number(playerOf(entry)?.element_type); }\nfunction hasKnownPurchasePrice(entry){\n  const raw = entry?.bought ?? entry?.purchasePrice;\n  return raw !== null && raw !== undefined && Number.isFinite(Number(raw));\n}\n\nfunction transferSellPrice(entry){\n  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);\n  if(!Number.isFinite(now)) return 0;\n  const bought = hasKnownPurchasePrice(entry) ? Number(entry?.bought ?? entry?.purchasePrice) : now;\n  if(now <= bought) return now;\n  return bought + Math.floor((now - bought) / 2);\n}\n\nfunction nextFreeTransfers(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);\n}\n\nfunction transferHit(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  const paidTransfers = Math.max(0, n - ft);\n  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };\n}\n\nfunction combinations(items, size, start=0, chosen=[], out=[]){\n  if(chosen.length === size){ out.push(chosen.slice()); return out; }\n  for(let i=start; i<=items.length-(size-chosen.length); i++){\n    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();\n  }\n  return out;\n}\n\nfunction validateSquad(squad, {allowInheritedOverQuota=true}={}){\n  const issues=[];\n  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');\n  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];\n  const ids = players.map(p=>Number(p.id));\n  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');\n  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)] || !Number.isFinite(Number(p.team)))) issues.push('unknown_player');\n  const pos={1:0,2:0,3:0,4:0}, clubs={};\n  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });\n  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });\n  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');\n  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};\n}\n\nfunction bestXIForGW(squad, gw, scorePlayer){\n  const byPos={1:[],2:[],3:[],4:[]};\n  squad.forEach(entry=>{\n    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));\n    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});\n  });\n  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));\n  let best=null;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];\n    const total=selected.reduce((a,x)=>a+x.score,0);\n    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;\n    if(!best || total>best.total || (total===best.total && signature<best.signature))\n      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};\n  }\n  return best || {total:0,formation:'—',playerIds:[],signature:''};\n}\n\nfunction scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){\n  const perGameweek=[]; let total=0;\n  for(let gw=startGW;gw<startGW+horizon;gw++){\n    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction canonicalTransfers(transfers){\n  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);\n}\nfunction planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }\n\nfunction comparePlans(a,b){\n  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||\n    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||\n    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);\n}\n\nfunction inheritedClubLegal(startCounts, finalCounts, transferCount){\n  for(const [club,count] of Object.entries(finalCounts)){\n    const start=startCounts[club]||0;\n    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;\n    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;\n  }\n  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  return finalExcess <= Math.max(0,startExcess-transferCount);\n}\n\nfunction buildBaseline({squad,bank,freeTransfers,startGW,horizon,scorePlayer}){\n  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer);\n  return {transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter:bank,\n    freeTransfersBefore:freeTransfers,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(freeTransfers,0),grossBestXIPoints:baselineScore.total,\n    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};\n}\n\nfunction buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline,startCounts,pricingMode}){\n  const outIds=new Set(outgoing.map(playerId));\n  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));\n  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});\n  if(!legality.ok || !inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;\n  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);\n  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);\n  const bankAfter=bank+sellTotal-buyTotal;\n  if(bankAfter<0) return null;\n  const hit=transferHit(freeTransfers,outgoing.length);\n  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);\n  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);\n  const rollDifference=nextFT-baseline.freeTransfersNextGW;\n  const grossGain=score.total-baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,\n    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,\n    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\n// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the\n// plan signature, signatures are unique per transfer set and contain only ASCII digits,\n// '>' and '|', so two distinct plans never compare equal. With a total order, retaining\n// the best `limit` plans as they are produced returns exactly the same plans in exactly\n// the same order as retaining every plan, sorting once and slicing to `limit`. Retention\n// is bounded so an exhaustive search cannot accumulate millions of complete plans.\nfunction retainPlan(plans,plan,limit){\n  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;\n  plans.push(plan);\n  plans.sort(comparePlans);\n  if(plans.length>limit) plans.length=limit;\n  return plans;\n}\n\nfunction normaliseSearch(args){\n  const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,\n    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,\n    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;\n  const legality=validateSquad(squad,{allowInheritedOverQuota:true});\n  if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};\n  if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};\n  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));\n  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));\n  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));\n  const cleanLimit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(Number(maxTransfers)||0)));\n  const cleanMaxResults=Math.max(1,Math.trunc(Number(maxResults)||1));\n  const cleanMaxEvaluations=Math.max(0,Math.trunc(Number(maxEvaluations)||0));\n  const owned=new Set(squad.map(playerId));\n  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));\n  const pricingMode=squad.every(hasKnownPurchasePrice)?'exact':'estimated';\n  const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});\n  baseline.pricingMode=pricingMode;\n  return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,\n    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,\n    onProgress:typeof onProgress==='function'?onProgress:null,\n    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};\n}\n\nfunction completeResult(ctx,plans,evaluations,pruned=0,incomplete=false){\n  plans.sort(comparePlans);\n  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n}\n\nfunction exhaustiveTransferSearch(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, incomplete=false;\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const candidates=ctx.eligible.filter(p=>required.includes(Number(p.element_type)));\n      for(const incoming of combinations(candidates,n)){\n        if(++evaluations>ctx.maxEvaluations){ incomplete=true; break outer; }\n        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);\n        if(incomingPos.some((v,i)=>v!==required[i])) continue;\n        const ordered=[], used=new Set();\n        for(const out of outgoing){\n          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));\n          if(idx<0) break; used.add(idx); ordered.push(incoming[idx]);\n        }\n        if(ordered.length!==n) continue;\n        const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:ordered,bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n          horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n        if(plan) plans.push(plan);\n      }\n    }\n  }\n  return completeResult(ctx,plans,evaluations,0,incomplete);\n}\n\nfunction cheapestAvailableCost(pool, count, usedIds){\n  const costs=pool.filter(p=>!usedIds.has(Number(p.id))).map(p=>Number(p.now_cost||0)).sort((a,b)=>a-b);\n  if(costs.length<count) return Infinity;\n  return costs.slice(0,count).reduce((a,n)=>a+n,0);\n}\n\nfunction optimiseTransfers(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;\n  const byPosition={1:[],2:[],3:[],4:[]};\n  ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));\n  outer: for(let n=1;n<=ctx.limit;n++){\n    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);\n      if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }\n      const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);\n      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPosition[pos],count,new Set()),0);\n      if(minimumBuy>ctx.bank+sellTotal){ pruned++; continue; }\n      const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });\n      const chosen=[];\n      function choose(index,cost,clubCounts){\n        if(incomplete) return;\n        if(index===required.length){\n          if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }\n          if(ctx.onProgress && evaluations%ctx.progressInterval===0) ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});\n          const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:chosen.slice(),bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n            horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n          if(plan) retainPlan(plans,plan,ctx.maxResults);\n          return;\n        }\n        const pos=required[index], pool=byPosition[pos];\n        const previousSame=index>0&&required[index-1]===pos ? Number(chosen[index-1].id) : -Infinity;\n        for(const candidate of pool){\n          if(Number(candidate.id)<=previousSame || chosen.some(p=>Number(p.id)===Number(candidate.id))) continue;\n          const nextCost=cost+Number(candidate.now_cost||0);\n          const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));\n          const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);\n          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPosition[rpos],count,usedIds),0);\n          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; continue; }\n          const club=String(candidate.team), nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};\n          const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);\n          if(nextClubs[club]>allowed){ pruned++; continue; }\n          chosen.push(candidate); choose(index+1,nextCost,nextClubs); chosen.pop();\n          if(incomplete) return;\n        }\n      }\n      choose(0,0,afterOut);\n      if(incomplete) break outer;\n    }\n  }\n  return completeResult(ctx,plans,evaluations,pruned,incomplete);\n}\n";
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"c7629e82e31bd7cc","commit":"a89544ba6abe36975bf6d9597cba274996caf41a"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"c7629e82e31bd7cccc352d24952d1a5d8710c40937f16af1404788647a410a2c","commit":"a89544ba6abe36975bf6d9597cba274996caf41a","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+const TRANSFER_WORKER_MODEL_SOURCE = "\nconst POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;\nconst UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);\n// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.\nconst TRANSFER_PROGRESS_INTERVAL = 20000;\n\nfunction playerOf(entry){ return entry?.p || entry; }\nfunction playerId(entry){ return Number(playerOf(entry)?.id); }\nfunction positionOf(entry){ return Number(playerOf(entry)?.element_type); }\nfunction hasKnownPurchasePrice(entry){\n  const raw = entry?.bought ?? entry?.purchasePrice;\n  return raw !== null && raw !== undefined && Number.isFinite(Number(raw));\n}\n\nfunction transferSellPrice(entry){\n  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);\n  if(!Number.isFinite(now)) return 0;\n  const bought = hasKnownPurchasePrice(entry) ? Number(entry?.bought ?? entry?.purchasePrice) : now;\n  if(now <= bought) return now;\n  return bought + Math.floor((now - bought) / 2);\n}\n\nfunction nextFreeTransfers(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);\n}\n\nfunction transferHit(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  const paidTransfers = Math.max(0, n - ft);\n  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };\n}\n\nfunction combinations(items, size, start=0, chosen=[], out=[]){\n  if(chosen.length === size){ out.push(chosen.slice()); return out; }\n  for(let i=start; i<=items.length-(size-chosen.length); i++){\n    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();\n  }\n  return out;\n}\n\nfunction validateSquad(squad, {allowInheritedOverQuota=true}={}){\n  const issues=[];\n  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');\n  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];\n  const ids = players.map(p=>Number(p.id));\n  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');\n  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)] || !Number.isFinite(Number(p.team)))) issues.push('unknown_player');\n  const pos={1:0,2:0,3:0,4:0}, clubs={};\n  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });\n  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });\n  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');\n  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};\n}\n\nfunction bestXIFromPositionRows(byPos){\n  let best=null;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];\n    const total=selected.reduce((a,x)=>a+x.score,0);\n    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;\n    if(!best || total>best.total || (total===best.total && signature<best.signature))\n      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};\n  }\n  return best || {total:0,formation:'—',playerIds:[],signature:''};\n}\n\nfunction bestXIForGW(squad, gw, scorePlayer){\n  const byPos={1:[],2:[],3:[],4:[]};\n  squad.forEach(entry=>{\n    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));\n    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});\n  });\n  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));\n  return bestXIFromPositionRows(byPos);\n}\n\nfunction scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){\n  const perGameweek=[]; let total=0;\n  for(let gw=startGW;gw<startGW+horizon;gw++){\n    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction canonicalTransfers(transfers){\n  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);\n}\nfunction planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }\n\nfunction comparePlans(a,b){\n  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||\n    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||\n    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);\n}\n\nfunction inheritedClubLegal(startCounts, finalCounts, transferCount){\n  for(const [club,count] of Object.entries(finalCounts)){\n    const start=startCounts[club]||0;\n    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;\n    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;\n  }\n  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  return finalExcess <= Math.max(0,startExcess-transferCount);\n}\n\nfunction buildBaseline({squad,bank,freeTransfers,startGW,horizon,scorePlayer}){\n  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer);\n  return {transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter:bank,\n    freeTransfersBefore:freeTransfers,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(freeTransfers,0),grossBestXIPoints:baselineScore.total,\n    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};\n}\n\nfunction buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline,startCounts,pricingMode}){\n  const outIds=new Set(outgoing.map(playerId));\n  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));\n  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});\n  if(!legality.ok || !inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;\n  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);\n  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);\n  const bankAfter=bank+sellTotal-buyTotal;\n  if(bankAfter<0) return null;\n  const hit=transferHit(freeTransfers,outgoing.length);\n  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);\n  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);\n  const rollDifference=nextFT-baseline.freeTransfersNextGW;\n  const grossGain=score.total-baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,\n    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,\n    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\n// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the\n// plan signature, signatures are unique per transfer set and contain only ASCII digits,\n// '>' and '|', so two distinct plans never compare equal.\nfunction retainPlan(plans,plan,limit){\n  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;\n  plans.push(plan);\n  plans.sort(comparePlans);\n  if(plans.length>limit) plans.length=limit;\n  return plans;\n}\n\nfunction normaliseSearch(args){\n  const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,\n    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,\n    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;\n  const legality=validateSquad(squad,{allowInheritedOverQuota:true});\n  if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};\n  if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};\n  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));\n  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));\n  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));\n  const cleanLimit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(Number(maxTransfers)||0)));\n  const cleanMaxResults=Math.max(1,Math.trunc(Number(maxResults)||1));\n  const cleanMaxEvaluations=Math.max(0,Math.trunc(Number(maxEvaluations)||0));\n  const owned=new Set(squad.map(playerId));\n  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));\n  const pricingMode=squad.every(hasKnownPurchasePrice)?'exact':'estimated';\n  const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});\n  baseline.pricingMode=pricingMode;\n  return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,\n    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,\n    onProgress:typeof onProgress==='function'?onProgress:null,\n    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};\n}\n\nfunction completeResult(ctx,plans,evaluations,pruned=0,incomplete=false,profile=null){\n  plans.sort(comparePlans);\n  const base={evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n  if(profile) base.profile=Object.freeze({...profile});\n  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],...base};\n  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),...base};\n}\n\nfunction exhaustiveTransferSearch(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, incomplete=false;\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const candidates=ctx.eligible.filter(p=>required.includes(Number(p.element_type)));\n      for(const incoming of combinations(candidates,n)){\n        if(++evaluations>ctx.maxEvaluations){ incomplete=true; break outer; }\n        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);\n        if(incomingPos.some((v,i)=>v!==required[i])) continue;\n        const ordered=[], used=new Set();\n        for(const out of outgoing){\n          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));\n          if(idx<0) break; used.add(idx); ordered.push(incoming[idx]);\n        }\n        if(ordered.length!==n) continue;\n        const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:ordered,bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n          horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n        if(plan) plans.push(plan);\n      }\n    }\n  }\n  return completeResult(ctx,plans,evaluations,0,incomplete);\n}\n\nfunction prepareScoreRows(ctx){\n  const rows=new Map(), all=[], seen=new Set();\n  for(const entry of ctx.squad){ const p=playerOf(entry),id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }\n  for(const p of ctx.eligible){ const id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }\n  for(const p of all){\n    const values=[];\n    for(let offset=0;offset<ctx.horizon;offset++){\n      const raw=Number(ctx.scorePlayer(p,ctx.startGW+offset));\n      values.push(Number.isFinite(raw)?raw:0);\n    }\n    rows.set(Number(p.id),values);\n  }\n  return rows;\n}\nfunction horizonScore(scoreRows,p){ return (scoreRows.get(Number(p.id))||[]).reduce((sum,value)=>sum+value,0); }\n\nfunction buildCoreByGameweek(core,scoreRows,horizon){\n  const games=[];\n  for(let offset=0;offset<horizon;offset++){\n    const byPos={1:[],2:[],3:[],4:[]};\n    for(const entry of core){\n      const p=playerOf(entry),score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry,p,score});\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    games.push(byPos);\n  }\n  return games;\n}\n\nfunction scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,startGW,horizon){\n  const perGameweek=[]; let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const base=coreByGameweek[offset];\n    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};\n    for(const p of incoming){\n      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry:p,p,score});\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    const xi=bestXIFromPositionRows(byPos);\n    total+=xi.total; perGameweek.push({gw:startGW+offset,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction candidateScoreOrders(byPosition,scoreRows,horizon){\n  const result={1:[],2:[],3:[],4:[]};\n  for(const pos of [1,2,3,4]) for(let offset=0;offset<horizon;offset++)\n    result[pos][offset]=byPosition[pos].slice().sort((a,b)=>\n      (Number(scoreRows.get(Number(b.id))?.[offset])||0)-(Number(scoreRows.get(Number(a.id))?.[offset])||0)||Number(a.id)-Number(b.id));\n  return result;\n}\n\n// Admissible upper bound: budget, shared club capacity and cross-Gameweek player identity\n// are relaxed only in the optimistic direction, so no real descendant can score higher.\nfunction optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,horizon,maxCandidateCost=Infinity,clubCounts=null,startCounts=null){\n  const chosenIds=new Set(chosen.map(p=>Number(p.id)));\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const base=coreByGameweek[offset];\n    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};\n    for(const p of chosen){\n      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry:p,p,score});\n    }\n    for(const pos of [1,2,3,4]){\n      let left=Number(remainingNeed[pos])||0;\n      if(!left) continue;\n      for(const p of candidatesByScore[pos][offset]){\n        if(chosenIds.has(Number(p.id))) continue;\n        if(Number(p.now_cost||0)>maxCandidateCost) continue;\n        if(clubCounts){\n          const club=String(p.team),allowed=Math.max(TRANSFER_RULES.maxPerClub,startCounts?.[club]||0);\n          if((clubCounts[club]||0)>=allowed) continue;\n        }\n        const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n        byPos[pos].push({entry:p,p,score});\n        if(--left===0) break;\n      }\n      if(left>0) return -Infinity;\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    total+=bestXIFromPositionRows(byPos).total;\n  }\n  return total;\n}\n\nfunction boundCannotBeat(upperGross,ctx,transferCount,kth){\n  if(!kth||!Number.isFinite(upperGross)) return upperGross===-Infinity;\n  const hit=transferHit(ctx.freeTransfers,transferCount);\n  const nextFT=nextFreeTransfers(ctx.freeTransfers,transferCount);\n  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;\n  const upperNet=upperGross-ctx.baseline.grossBestXIPoints-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const epsilon=1e-9;\n  if(upperNet<kth.netGain-epsilon) return true;\n  if(upperNet>kth.netGain+epsilon) return false;\n  return upperGross<kth.grossBestXIPoints-epsilon;\n}\n\nfunction cheapestAvailableCost(poolByCost,count,usedIds){\n  if(count<=0) return 0;\n  let total=0,found=0;\n  for(const p of poolByCost){\n    if(usedIds.has(Number(p.id))) continue;\n    total+=Number(p.now_cost||0);\n    if(++found===count) return total;\n  }\n  return Infinity;\n}\n\nfunction orderedIncomingForOutgoing(outgoing,chosen){\n  const byPos={1:[],2:[],3:[],4:[]};\n  chosen.forEach(p=>byPos[positionOf(p)].push(p));\n  Object.values(byPos).forEach(rows=>rows.sort((a,b)=>Number(a.id)-Number(b.id)));\n  const used={1:0,2:0,3:0,4:0};\n  return outgoing.map(out=>byPos[positionOf(out)][used[positionOf(out)]++]);\n}\n\nfunction buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts,preparedScore=null}){\n  if(!inheritedClubLegal(ctx.startCounts,clubCounts,outgoing.length)) return null;\n  const hit=transferHit(ctx.freeTransfers,outgoing.length);\n  const score=preparedScore||scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,ctx.startGW,ctx.horizon);\n  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);\n  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;\n  const grossGain=score.total-ctx.baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:core.map(playerId).concat(incoming.map(p=>Number(p.id))).sort((a,b)=>a-b),\n    bankBefore:ctx.bank,bankAfter,freeTransfersBefore:ctx.freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,\n    freeTransfersNextGW:nextFT,grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode:ctx.pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\nfunction bestXITotalFromScores(byPos){\n  const prefix={1:[0],2:[0],3:[0],4:[0]};\n  for(const pos of [1,2,3,4]){\n    byPos[pos].sort((a,b)=>b-a);\n    for(const value of byPos[pos]) prefix[pos].push(prefix[pos][prefix[pos].length-1]+value);\n  }\n  let best=-Infinity;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const total=prefix[1][1]+prefix[2][d]+prefix[3][m]+prefix[4][f];\n    if(total>best) best=total;\n  }\n  return Number.isFinite(best)?best:0;\n}\n\nfunction scoreCoreTotalWithIncoming(coreByGameweek,incoming,scoreRows,horizon){\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const base=coreByGameweek[offset];\n    const byPos={\n      1:base[1].map(row=>row.score),2:base[2].map(row=>row.score),\n      3:base[3].map(row=>row.score),4:base[4].map(row=>row.score)\n    };\n    for(const p of incoming) byPos[p.element_type].push(Number(scoreRows.get(Number(p.id))?.[offset])||0);\n    total+=bestXITotalFromScores(byPos);\n  }\n  return total;\n}\n\nfunction lightweightPreparedPlan(ctx,outgoing,incoming,grossBestXIPoints,bankAfter){\n  const hit=transferHit(ctx.freeTransfers,outgoing.length);\n  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);\n  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;\n  const grossGain=grossBestXIPoints-ctx.baseline.grossBestXIPoints;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({\n    outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),\n    sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)\n  })));\n  return {netGain:grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference,grossBestXIPoints,\n    hitCost:hit.hitCost,transferCount:outgoing.length,freeTransfersNextGW:nextFT,bankAfter,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers)};\n}\n\n\nfunction lightweightCannotEnter(plan,kth){\n  const epsilon=1e-9;\n  if(plan.netGain<kth.netGain-epsilon) return true;\n  if(plan.netGain>kth.netGain+epsilon) return false;\n  if(plan.grossBestXIPoints<kth.grossBestXIPoints-epsilon) return true;\n  if(plan.grossBestXIPoints>kth.grossBestXIPoints+epsilon) return false;\n  return comparePlans({...plan,netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints},kth)>0;\n}\n\nfunction optimiseTransfers(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;\n  const profile={outgoingBranches:0,boundPruned:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};\n  const scoreRows=prepareScoreRows(ctx);\n  const byPosition={1:[],2:[],3:[],4:[]};\n  ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));\n  const byPositionCost={1:[],2:[],3:[],4:[]};\n  for(const pos of [1,2,3,4]){\n    byPosition[pos].sort((a,b)=>horizonScore(scoreRows,b)-horizonScore(scoreRows,a)||Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n    byPositionCost[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n  }\n  const candidatesByScore=candidateScoreOrders(byPosition,scoreRows,ctx.horizon);\n\n  outer: for(let n=1;n<=ctx.limit;n++){\n    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});\n    const outgoingSets=combinations(ctx.squad,n).sort((a,b)=>{\n      const aScore=a.reduce((sum,e)=>sum+horizonScore(scoreRows,playerOf(e)),0);\n      const bScore=b.reduce((sum,e)=>sum+horizonScore(scoreRows,playerOf(e)),0);\n      if(aScore!==bScore) return aScore-bScore;\n      return a.map(playerId).sort((x,y)=>x-y).join(',').localeCompare(b.map(playerId).sort((x,y)=>x-y).join(','));\n    });\n    for(const outgoing of outgoingSets){\n      profile.outgoingBranches++;\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);\n      if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }\n      const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);\n      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPositionCost[pos],count,new Set()),0);\n      if(minimumBuy>ctx.bank+sellTotal){ pruned++; profile.affordabilityPruned++; continue; }\n      const outIds=new Set(outgoing.map(playerId));\n      const core=ctx.squad.filter(entry=>!outIds.has(playerId(entry)));\n      const coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon);\n      const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });\n      const kth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;\n      if(kth){\n        const upper=optimisticSquadUpperBound(coreByGameweek,[],need,candidatesByScore,scoreRows,ctx.horizon,\n          ctx.bank+sellTotal,afterOut,ctx.startCounts);\n        if(boundCannotBeat(upper,ctx,n,kth)){ pruned++; profile.boundPruned++; continue; }\n      }\n\n      const chosen=[],chosenPoolIndexes=[];\n      function choose(index,cost,clubCounts){\n        if(incomplete) return;\n        if(index===required.length){\n          if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }\n          profile.leafEvaluations=evaluations;\n          if(ctx.onProgress&&evaluations%ctx.progressInterval===0)\n            ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});\n          if(!inheritedClubLegal(ctx.startCounts,clubCounts,n)) return;\n          const incoming=orderedIncomingForOutgoing(outgoing,chosen);\n          const bankAfter=ctx.bank+sellTotal-cost;\n          const gross=scoreCoreTotalWithIncoming(coreByGameweek,incoming,scoreRows,ctx.horizon);\n          const lightweight=lightweightPreparedPlan(ctx,outgoing,incoming,gross,bankAfter);\n          if(plans.length>=ctx.maxResults&&lightweightCannotEnter(lightweight,plans[plans.length-1])) return;\n          const plan=buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts});\n          if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }\n          return;\n        }\n        const pos=required[index],pool=byPosition[pos];\n        const samePosition=index>0&&required[index-1]===pos;\n        const startAt=samePosition?chosenPoolIndexes[index-1]+1:0;\n        for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){\n          const candidate=pool[poolIndex];\n          const nextCost=cost+Number(candidate.now_cost||0);\n          const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));\n          const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);\n          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPositionCost[rpos],count,usedIds),0);\n          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; profile.affordabilityPruned++; continue; }\n          const club=String(candidate.team),nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};\n          const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);\n          if(nextClubs[club]>allowed){ pruned++; profile.clubPruned++; continue; }\n          chosen.push(candidate); chosenPoolIndexes.push(poolIndex);\n          const nextKth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;\n          if(index===0&&required.length===3&&nextKth){\n            const upper=optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,ctx.horizon,\n              ctx.bank+sellTotal-nextCost,nextClubs,ctx.startCounts);\n            if(boundCannotBeat(upper,ctx,n,nextKth)){\n              pruned++; profile.boundPruned++; chosen.pop(); chosenPoolIndexes.pop(); continue;\n            }\n          }\n          choose(index+1,nextCost,nextClubs);\n          chosen.pop(); chosenPoolIndexes.pop();\n          if(incomplete) return;\n        }\n      }\n      choose(0,0,afterOut);\n      if(incomplete) break outer;\n    }\n  }\n  return completeResult(ctx,plans,evaluations,pruned,incomplete,profile);\n}\n\n";
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -3670,13 +3670,7 @@ function validateSquad(squad, {allowInheritedOverQuota=true}={}){
   return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};
 }
 
-function bestXIForGW(squad, gw, scorePlayer){
-  const byPos={1:[],2:[],3:[],4:[]};
-  squad.forEach(entry=>{
-    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));
-    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});
-  });
-  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));
+function bestXIFromPositionRows(byPos){
   let best=null;
   for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){
     const f=10-d-m; if(f<1||f>3) continue;
@@ -3688,6 +3682,16 @@ function bestXIForGW(squad, gw, scorePlayer){
       best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};
   }
   return best || {total:0,formation:'—',playerIds:[],signature:''};
+}
+
+function bestXIForGW(squad, gw, scorePlayer){
+  const byPos={1:[],2:[],3:[],4:[]};
+  squad.forEach(entry=>{
+    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));
+    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});
+  });
+  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));
+  return bestXIFromPositionRows(byPos);
 }
 
 function scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){
@@ -3752,10 +3756,7 @@ function buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,hori
 
 // Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the
 // plan signature, signatures are unique per transfer set and contain only ASCII digits,
-// '>' and '|', so two distinct plans never compare equal. With a total order, retaining
-// the best `limit` plans as they are produced returns exactly the same plans in exactly
-// the same order as retaining every plan, sorting once and slicing to `limit`. Retention
-// is bounded so an exhaustive search cannot accumulate millions of complete plans.
+// '>' and '|', so two distinct plans never compare equal.
 function retainPlan(plans,plan,limit){
   if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;
   plans.push(plan);
@@ -3788,10 +3789,12 @@ function normaliseSearch(args){
     progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};
 }
 
-function completeResult(ctx,plans,evaluations,pruned=0,incomplete=false){
+function completeResult(ctx,plans,evaluations,pruned=0,incomplete=false,profile=null){
   plans.sort(comparePlans);
-  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};
-  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};
+  const base={evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};
+  if(profile) base.profile=Object.freeze({...profile});
+  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],...base};
+  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),...base};
 }
 
 function exhaustiveTransferSearch(args){
@@ -3820,51 +3823,278 @@ function exhaustiveTransferSearch(args){
   return completeResult(ctx,plans,evaluations,0,incomplete);
 }
 
-function cheapestAvailableCost(pool, count, usedIds){
-  const costs=pool.filter(p=>!usedIds.has(Number(p.id))).map(p=>Number(p.now_cost||0)).sort((a,b)=>a-b);
-  if(costs.length<count) return Infinity;
-  return costs.slice(0,count).reduce((a,n)=>a+n,0);
+function prepareScoreRows(ctx){
+  const rows=new Map(), all=[], seen=new Set();
+  for(const entry of ctx.squad){ const p=playerOf(entry),id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }
+  for(const p of ctx.eligible){ const id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }
+  for(const p of all){
+    const values=[];
+    for(let offset=0;offset<ctx.horizon;offset++){
+      const raw=Number(ctx.scorePlayer(p,ctx.startGW+offset));
+      values.push(Number.isFinite(raw)?raw:0);
+    }
+    rows.set(Number(p.id),values);
+  }
+  return rows;
+}
+function horizonScore(scoreRows,p){ return (scoreRows.get(Number(p.id))||[]).reduce((sum,value)=>sum+value,0); }
+
+function buildCoreByGameweek(core,scoreRows,horizon){
+  const games=[];
+  for(let offset=0;offset<horizon;offset++){
+    const byPos={1:[],2:[],3:[],4:[]};
+    for(const entry of core){
+      const p=playerOf(entry),score=Number(scoreRows.get(Number(p.id))?.[offset])||0;
+      byPos[p.element_type].push({entry,p,score});
+    }
+    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));
+    games.push(byPos);
+  }
+  return games;
+}
+
+function scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,startGW,horizon){
+  const perGameweek=[]; let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const base=coreByGameweek[offset];
+    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};
+    for(const p of incoming){
+      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;
+      byPos[p.element_type].push({entry:p,p,score});
+    }
+    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));
+    const xi=bestXIFromPositionRows(byPos);
+    total+=xi.total; perGameweek.push({gw:startGW+offset,...xi});
+  }
+  return {total,perGameweek};
+}
+
+function candidateScoreOrders(byPosition,scoreRows,horizon){
+  const result={1:[],2:[],3:[],4:[]};
+  for(const pos of [1,2,3,4]) for(let offset=0;offset<horizon;offset++)
+    result[pos][offset]=byPosition[pos].slice().sort((a,b)=>
+      (Number(scoreRows.get(Number(b.id))?.[offset])||0)-(Number(scoreRows.get(Number(a.id))?.[offset])||0)||Number(a.id)-Number(b.id));
+  return result;
+}
+
+// Admissible upper bound: budget, shared club capacity and cross-Gameweek player identity
+// are relaxed only in the optimistic direction, so no real descendant can score higher.
+function optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,horizon,maxCandidateCost=Infinity,clubCounts=null,startCounts=null){
+  const chosenIds=new Set(chosen.map(p=>Number(p.id)));
+  let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const base=coreByGameweek[offset];
+    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};
+    for(const p of chosen){
+      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;
+      byPos[p.element_type].push({entry:p,p,score});
+    }
+    for(const pos of [1,2,3,4]){
+      let left=Number(remainingNeed[pos])||0;
+      if(!left) continue;
+      for(const p of candidatesByScore[pos][offset]){
+        if(chosenIds.has(Number(p.id))) continue;
+        if(Number(p.now_cost||0)>maxCandidateCost) continue;
+        if(clubCounts){
+          const club=String(p.team),allowed=Math.max(TRANSFER_RULES.maxPerClub,startCounts?.[club]||0);
+          if((clubCounts[club]||0)>=allowed) continue;
+        }
+        const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;
+        byPos[pos].push({entry:p,p,score});
+        if(--left===0) break;
+      }
+      if(left>0) return -Infinity;
+    }
+    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));
+    total+=bestXIFromPositionRows(byPos).total;
+  }
+  return total;
+}
+
+function boundCannotBeat(upperGross,ctx,transferCount,kth){
+  if(!kth||!Number.isFinite(upperGross)) return upperGross===-Infinity;
+  const hit=transferHit(ctx.freeTransfers,transferCount);
+  const nextFT=nextFreeTransfers(ctx.freeTransfers,transferCount);
+  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;
+  const upperNet=upperGross-ctx.baseline.grossBestXIPoints-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;
+  const epsilon=1e-9;
+  if(upperNet<kth.netGain-epsilon) return true;
+  if(upperNet>kth.netGain+epsilon) return false;
+  return upperGross<kth.grossBestXIPoints-epsilon;
+}
+
+function cheapestAvailableCost(poolByCost,count,usedIds){
+  if(count<=0) return 0;
+  let total=0,found=0;
+  for(const p of poolByCost){
+    if(usedIds.has(Number(p.id))) continue;
+    total+=Number(p.now_cost||0);
+    if(++found===count) return total;
+  }
+  return Infinity;
+}
+
+function orderedIncomingForOutgoing(outgoing,chosen){
+  const byPos={1:[],2:[],3:[],4:[]};
+  chosen.forEach(p=>byPos[positionOf(p)].push(p));
+  Object.values(byPos).forEach(rows=>rows.sort((a,b)=>Number(a.id)-Number(b.id)));
+  const used={1:0,2:0,3:0,4:0};
+  return outgoing.map(out=>byPos[positionOf(out)][used[positionOf(out)]++]);
+}
+
+function buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts,preparedScore=null}){
+  if(!inheritedClubLegal(ctx.startCounts,clubCounts,outgoing.length)) return null;
+  const hit=transferHit(ctx.freeTransfers,outgoing.length);
+  const score=preparedScore||scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,ctx.startGW,ctx.horizon);
+  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);
+  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;
+  const grossGain=score.total-ctx.baseline.grossBestXIPoints;
+  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;
+  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));
+  return {transferCount:outgoing.length,transfers,finalSquadIds:core.map(playerId).concat(incoming.map(p=>Number(p.id))).sort((a,b)=>a-b),
+    bankBefore:ctx.bank,bankAfter,freeTransfersBefore:ctx.freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,
+    freeTransfersNextGW:nextFT,grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,
+    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode:ctx.pricingMode,
+    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};
+}
+
+function bestXITotalFromScores(byPos){
+  const prefix={1:[0],2:[0],3:[0],4:[0]};
+  for(const pos of [1,2,3,4]){
+    byPos[pos].sort((a,b)=>b-a);
+    for(const value of byPos[pos]) prefix[pos].push(prefix[pos][prefix[pos].length-1]+value);
+  }
+  let best=-Infinity;
+  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){
+    const f=10-d-m; if(f<1||f>3) continue;
+    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;
+    const total=prefix[1][1]+prefix[2][d]+prefix[3][m]+prefix[4][f];
+    if(total>best) best=total;
+  }
+  return Number.isFinite(best)?best:0;
+}
+
+function scoreCoreTotalWithIncoming(coreByGameweek,incoming,scoreRows,horizon){
+  let total=0;
+  for(let offset=0;offset<horizon;offset++){
+    const base=coreByGameweek[offset];
+    const byPos={
+      1:base[1].map(row=>row.score),2:base[2].map(row=>row.score),
+      3:base[3].map(row=>row.score),4:base[4].map(row=>row.score)
+    };
+    for(const p of incoming) byPos[p.element_type].push(Number(scoreRows.get(Number(p.id))?.[offset])||0);
+    total+=bestXITotalFromScores(byPos);
+  }
+  return total;
+}
+
+function lightweightPreparedPlan(ctx,outgoing,incoming,grossBestXIPoints,bankAfter){
+  const hit=transferHit(ctx.freeTransfers,outgoing.length);
+  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);
+  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;
+  const grossGain=grossBestXIPoints-ctx.baseline.grossBestXIPoints;
+  const transfers=canonicalTransfers(outgoing.map((out,i)=>({
+    outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),
+    sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)
+  })));
+  return {netGain:grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference,grossBestXIPoints,
+    hitCost:hit.hitCost,transferCount:outgoing.length,freeTransfersNextGW:nextFT,bankAfter,
+    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers)};
+}
+
+
+function lightweightCannotEnter(plan,kth){
+  const epsilon=1e-9;
+  if(plan.netGain<kth.netGain-epsilon) return true;
+  if(plan.netGain>kth.netGain+epsilon) return false;
+  if(plan.grossBestXIPoints<kth.grossBestXIPoints-epsilon) return true;
+  if(plan.grossBestXIPoints>kth.grossBestXIPoints+epsilon) return false;
+  return comparePlans({...plan,netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints},kth)>0;
 }
 
 function optimiseTransfers(args){
   const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;
   const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;
+  const profile={outgoingBranches:0,boundPruned:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};
+  const scoreRows=prepareScoreRows(ctx);
   const byPosition={1:[],2:[],3:[],4:[]};
   ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));
+  const byPositionCost={1:[],2:[],3:[],4:[]};
+  for(const pos of [1,2,3,4]){
+    byPosition[pos].sort((a,b)=>horizonScore(scoreRows,b)-horizonScore(scoreRows,a)||Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
+    byPositionCost[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
+  }
+  const candidatesByScore=candidateScoreOrders(byPosition,scoreRows,ctx.horizon);
+
   outer: for(let n=1;n<=ctx.limit;n++){
     ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});
-    for(const outgoing of combinations(ctx.squad,n)){
+    const outgoingSets=combinations(ctx.squad,n).sort((a,b)=>{
+      const aScore=a.reduce((sum,e)=>sum+horizonScore(scoreRows,playerOf(e)),0);
+      const bScore=b.reduce((sum,e)=>sum+horizonScore(scoreRows,playerOf(e)),0);
+      if(aScore!==bScore) return aScore-bScore;
+      return a.map(playerId).sort((x,y)=>x-y).join(',').localeCompare(b.map(playerId).sort((x,y)=>x-y).join(','));
+    });
+    for(const outgoing of outgoingSets){
+      profile.outgoingBranches++;
       const required=outgoing.map(positionOf).sort((a,b)=>a-b);
       const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);
       if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }
       const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);
-      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPosition[pos],count,new Set()),0);
-      if(minimumBuy>ctx.bank+sellTotal){ pruned++; continue; }
+      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPositionCost[pos],count,new Set()),0);
+      if(minimumBuy>ctx.bank+sellTotal){ pruned++; profile.affordabilityPruned++; continue; }
+      const outIds=new Set(outgoing.map(playerId));
+      const core=ctx.squad.filter(entry=>!outIds.has(playerId(entry)));
+      const coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon);
       const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });
-      const chosen=[];
+      const kth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;
+      if(kth){
+        const upper=optimisticSquadUpperBound(coreByGameweek,[],need,candidatesByScore,scoreRows,ctx.horizon,
+          ctx.bank+sellTotal,afterOut,ctx.startCounts);
+        if(boundCannotBeat(upper,ctx,n,kth)){ pruned++; profile.boundPruned++; continue; }
+      }
+
+      const chosen=[],chosenPoolIndexes=[];
       function choose(index,cost,clubCounts){
         if(incomplete) return;
         if(index===required.length){
           if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }
-          if(ctx.onProgress && evaluations%ctx.progressInterval===0) ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});
-          const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:chosen.slice(),bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,
-            horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});
-          if(plan) retainPlan(plans,plan,ctx.maxResults);
+          profile.leafEvaluations=evaluations;
+          if(ctx.onProgress&&evaluations%ctx.progressInterval===0)
+            ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});
+          if(!inheritedClubLegal(ctx.startCounts,clubCounts,n)) return;
+          const incoming=orderedIncomingForOutgoing(outgoing,chosen);
+          const bankAfter=ctx.bank+sellTotal-cost;
+          const gross=scoreCoreTotalWithIncoming(coreByGameweek,incoming,scoreRows,ctx.horizon);
+          const lightweight=lightweightPreparedPlan(ctx,outgoing,incoming,gross,bankAfter);
+          if(plans.length>=ctx.maxResults&&lightweightCannotEnter(lightweight,plans[plans.length-1])) return;
+          const plan=buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts});
+          if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }
           return;
         }
-        const pos=required[index], pool=byPosition[pos];
-        const previousSame=index>0&&required[index-1]===pos ? Number(chosen[index-1].id) : -Infinity;
-        for(const candidate of pool){
-          if(Number(candidate.id)<=previousSame || chosen.some(p=>Number(p.id)===Number(candidate.id))) continue;
+        const pos=required[index],pool=byPosition[pos];
+        const samePosition=index>0&&required[index-1]===pos;
+        const startAt=samePosition?chosenPoolIndexes[index-1]+1:0;
+        for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){
+          const candidate=pool[poolIndex];
           const nextCost=cost+Number(candidate.now_cost||0);
           const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));
           const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);
-          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPosition[rpos],count,usedIds),0);
-          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; continue; }
-          const club=String(candidate.team), nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};
+          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPositionCost[rpos],count,usedIds),0);
+          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; profile.affordabilityPruned++; continue; }
+          const club=String(candidate.team),nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};
           const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);
-          if(nextClubs[club]>allowed){ pruned++; continue; }
-          chosen.push(candidate); choose(index+1,nextCost,nextClubs); chosen.pop();
+          if(nextClubs[club]>allowed){ pruned++; profile.clubPruned++; continue; }
+          chosen.push(candidate); chosenPoolIndexes.push(poolIndex);
+          const nextKth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;
+          if(index===0&&required.length===3&&nextKth){
+            const upper=optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,ctx.horizon,
+              ctx.bank+sellTotal-nextCost,nextClubs,ctx.startCounts);
+            if(boundCannotBeat(upper,ctx,n,nextKth)){
+              pruned++; profile.boundPruned++; chosen.pop(); chosenPoolIndexes.pop(); continue;
+            }
+          }
+          choose(index+1,nextCost,nextClubs);
+          chosen.pop(); chosenPoolIndexes.pop();
           if(incomplete) return;
         }
       }
@@ -3872,8 +4102,9 @@ function optimiseTransfers(args){
       if(incomplete) break outer;
     }
   }
-  return completeResult(ctx,plans,evaluations,pruned,incomplete);
+  return completeResult(ctx,plans,evaluations,pruned,incomplete,profile);
 }
+
 
 
 /* ===== src/model/walk-forward.mjs ===== */
@@ -7700,16 +7931,20 @@ const TRANSFER_PERFORMANCE_CACHE_LIMIT = 4;
 const TRANSFER_PERFORMANCE_SCORE_BATCH = 12;
 const TRANSFER_PERFORMANCE_PROGRESS_MS = 200;
 const TRANSFER_PERFORMANCE_UNAVAILABLE = 'This browser cannot run the transfer calculation in the background, so no comparison is being produced.';
+const TRANSFER_PERFORMANCE_INPUT_IDS = new Set(['ftCount','bankIn','trFtCount','trBankIn','trHorizon','trTop','useManual']);
 const transferPerformanceCache = new Map();
 let transferPerformanceWorker = null;
 let transferPerformanceToken = 0;
 let transferPerformanceDataVersion = 0;
 let transferPerformanceInstalled = false;
 let transferPerformanceBusyDetail = null;
+let transferPerformanceActive = null;
+let transferPerformanceCancelledSignature = '';
+let transferPerformanceFailure = null;
+let transferPerformanceAutoTimer = null;
 
 // The worker runs the reviewed transfer model verbatim. Nothing rewrites, patches or
-// re-derives the optimiser at runtime: bounded top-K retention lives in the model itself,
-// so the background search and a direct optimiseTransfers() call execute identical code.
+// re-derives the optimiser at runtime.
 const TRANSFER_PERFORMANCE_WORKER_HANDLER = `
 self.onmessage=event=>{
   const payload=event.data||{};
@@ -7742,10 +7977,7 @@ function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
   const source=String(modelSource||'');
   if(!/function optimiseTransfers\(/.test(source))
     throw new Error('The reviewed transfer model is missing from this build.');
-  return `"use strict";
-const TRANSFER_RULES=${JSON.stringify(rules)};
-${source}
-${TRANSFER_PERFORMANCE_WORKER_HANDLER}`;
+  return `"use strict";\nconst TRANSFER_RULES=${JSON.stringify(rules)};\n${source}\n${TRANSFER_PERFORMANCE_WORKER_HANDLER}`;
 }
 
 function transferPerformanceHash(value, seed=2166136261){
@@ -7761,6 +7993,7 @@ function transferPerformanceHash(value, seed=2166136261){
 function transferPerformanceCurrentRoute(){
   return String(globalThis.location?.hash||'').split('?')[0];
 }
+function transferPerformanceVisible(){ return transferPerformanceCurrentRoute()==='#/transfers'; }
 
 function transferPerformanceYield(){
   return new Promise(resolve=>{
@@ -7802,7 +8035,6 @@ function transferPerformanceSnapshot(){
   const signature=[
     transferPerformanceDataVersion,
     typeof BUILD_INFO!=='undefined'?BUILD_INFO.sourceHash:'',
-    S.cachedAt||'live',
     S.nextGW,
     horizon,
     maxResults,
@@ -7836,9 +8068,8 @@ function transferPerformanceSnapshot(){
 function transferPerformanceCacheSet(key,value){
   transferPerformanceCache.delete(key);
   transferPerformanceCache.set(key,value);
-  while(transferPerformanceCache.size>TRANSFER_PERFORMANCE_CACHE_LIMIT){
+  while(transferPerformanceCache.size>TRANSFER_PERFORMANCE_CACHE_LIMIT)
     transferPerformanceCache.delete(transferPerformanceCache.keys().next().value);
-  }
 }
 
 function transferPerformanceStatus(text){
@@ -7847,31 +8078,7 @@ function transferPerformanceStatus(text){
 }
 
 function transferPerformanceAction(label,handler,{secondary=false}={}){
-  return el('button',{
-    type:'button',
-    class:`btn${secondary?' ghost':''}`,
-    onclick:handler
-  },label);
-}
-
-function transferPerformanceRenderReady(snapshot,{message='Ready to calculate without blocking the rest of Teamsheet.'}={}){
-  const out=$('transferOut');
-  if(!out) return;
-  transferPerformanceBusyDetail=null;
-  out.setAttribute('aria-busy','false');
-  const cached=transferPerformanceCache.get(snapshot.signature);
-  if(cached){
-    transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
-    return;
-  }
-  setChildren(out,
-    transferPlannerContext(),
-    el('div',{class:'note plain'},
-      el('b',{},'Transfers is ready. '),
-      message),
-    el('div',{class:'transfer-actions'},
-      transferPerformanceAction('Calculate transfers',()=>void transferPerformanceStart(snapshot))));
-  transferPerformanceStatus('Ready. Calculation starts only when requested.');
+  return el('button',{type:'button',class:`btn${secondary?' ghost':''}`,onclick:handler},label);
 }
 
 function transferPerformancePreparingDetail(completed,total){
@@ -7881,15 +8088,12 @@ function transferPerformancePreparingDetail(completed,total){
 
 function transferPerformanceSearchingDetail(progress=null){
   const depth=Math.max(0,Math.trunc(Number(progress?.depth)||0));
-  const maxDepth=Math.max(0,Math.trunc(Number(progress?.maxDepth)||0));
   const evaluations=Math.max(0,Math.trunc(Number(progress?.evaluations)||0));
-  if(!depth) return 'Evaluating legal transfer plans in the background.';
-  const counted=evaluations?` · ${evaluations.toLocaleString('en-GB')} plans checked`:'';
-  return `Evaluating legal transfer plans in the background. Depth ${depth}${maxDepth?` of ${maxDepth}`:''}${counted}.`;
+  if(!evaluations) return 'Checking exact transfer plans in the background.';
+  const scope=depth?` · up to ${depth} transfer${depth===1?'':'s'}`:'';
+  return `Checking exact transfer plans in the background. ${evaluations.toLocaleString('en-GB')} complete plans verified${scope}.`;
 }
 
-// The busy panel is built once per calculation. Progress only rewrites one text node, so
-// throttled worker updates cannot rebuild the workspace or fight the browser for the frame.
 function transferPerformanceRenderBusy(detail){
   const out=$('transferOut');
   if(!out) return;
@@ -7904,9 +8108,9 @@ function transferPerformanceRenderBusy(detail){
   transferPerformanceBusyDetail=document.createTextNode(detail);
   setChildren(out,
     transferPlannerContext(),
-    el('div',{class:'note plain'},el('b',{},'Calculating transfers. '),transferPerformanceBusyDetail),
+    el('div',{class:'note plain'},el('b',{},'Updating transfer advice. '),transferPerformanceBusyDetail),
     el('div',{class:'transfer-actions'},
-      transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.'),{secondary:true})));
+      transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.',{explicit:true}),{secondary:true})));
   transferPerformanceStatus(detail);
 }
 
@@ -7916,6 +8120,38 @@ function transferPerformanceRenderError(title,detail){
   transferPerformanceBusyDetail=null;
   out.setAttribute('aria-busy','false');
   transferPlannerBlocking(out,title,detail);
+  transferPerformanceStatus('Transfer comparison unavailable.');
+}
+
+function transferPerformanceRenderCancelled(snapshot,message='Calculation cancelled.'){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  out.setAttribute('aria-busy','false');
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note plain'},el('b',{},'Transfer calculation paused. '),message),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Resume calculation',()=>{
+        transferPerformanceCancelledSignature='';
+        void transferPerformanceStart(snapshot,{force:true});
+      })));
+  transferPerformanceStatus('Transfer calculation paused.');
+}
+
+function transferPerformanceRenderFailure(snapshot){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  out.setAttribute('aria-busy','false');
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note bad',role:'alert'},el('b',{},'Transfers could not be calculated. '),TRANSFER_PERFORMANCE_UNAVAILABLE),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Retry',()=>{
+        transferPerformanceFailure=null;
+        void transferPerformanceStart(snapshot,{force:true});
+      })));
   transferPerformanceStatus('Transfer comparison unavailable.');
 }
 
@@ -7936,7 +8172,7 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
     return;
   }
   if(result.status==='search-incomplete'){
-    transferPerformanceRenderError('Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
+    transferPerformanceRenderError('Exact search did not complete.','No partial result is being presented as optimal.');
     return;
   }
 
@@ -7951,11 +8187,7 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
   const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
   const topAlternative=alternatives[0]||null;
   const optimiserSignature=decisionPreviewOptimiserSignature({
-    squadSignature,
-    horizon,
-    bank:assumptions.bankTenths,
-    freeTransfers:assumptions.freeTransfers,
-    plans
+    squadSignature,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,plans
   });
   const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
   if(previewCleared) transferPlannerDispatchPreviewChange();
@@ -7971,13 +8203,9 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
       }),
       topAlternative?transferPlannerPlanCard(topAlternative,{
         title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
-        index:plans.indexOf(topAlternative),
-        squad,
-        optimiserSignature,
-        horizon,
+        index:plans.indexOf(topAlternative),squad,optimiserSignature,horizon,
         selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
-        primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
-        pricingMode:result.pricingMode
+        primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,pricingMode:result.pricingMode
       }):null)
   ];
 
@@ -7987,29 +8215,23 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
       el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
       el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
         title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
-        index:plans.indexOf(plan),
-        squad,
-        optimiserSignature,
-        horizon,
+        index:plans.indexOf(plan),squad,optimiserSignature,horizon,
         selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
-        primary:false,
-        pricingMode:result.pricingMode
+        primary:false,pricingMode:result.pricingMode
       })))));
   }
 
-  nodes.push(
-    el('div',{class:'transfer-actions'},
-      transferPerformanceAction('Recalculate transfers',()=>{
-        transferPerformanceCache.clear();
-        void transferPerformanceStart(transferPerformanceSnapshot());
-      },{secondary:true})),
-    el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.')
-  );
+  nodes.push(el('p',{class:'transfer-disclaimer'},
+    'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
   setChildren(out,nodes);
   out.setAttribute('aria-busy','false');
   transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
   transferPerformanceStatus(cached?'Saved transfer comparison reused instantly.':'Transfer comparison updated.');
+}
+
+function transferPerformanceUpdateBusy(detail){
+  if(transferPerformanceActive) transferPerformanceActive.detail=detail;
+  if(transferPerformanceVisible()) transferPerformanceRenderBusy(detail);
 }
 
 async function transferPerformanceScores(snapshot,token){
@@ -8018,9 +8240,7 @@ async function transferPerformanceScores(snapshot,token){
   const total=snapshot.players.length;
   for(let start=0;start<total;start+=TRANSFER_PERFORMANCE_SCORE_BATCH){
     if(token!==transferPerformanceToken){
-      const error=new Error('Cancelled');
-      error.name='AbortError';
-      throw error;
+      const error=new Error('Cancelled'); error.name='AbortError'; throw error;
     }
     const end=Math.min(total,start+TRANSFER_PERFORMANCE_SCORE_BATCH);
     for(let index=start;index<end;index++){
@@ -8035,7 +8255,7 @@ async function transferPerformanceScores(snapshot,token){
       }
       rows.push([Number(player.id),scores]);
     }
-    transferPerformanceRenderBusy(transferPerformancePreparingDetail(end,total));
+    transferPerformanceUpdateBusy(transferPerformancePreparingDetail(end,total));
     await transferPerformanceYield();
   }
   return {rows,dataHash:dataHash.toString(16)};
@@ -8048,111 +8268,170 @@ function transferPerformanceCreateWorker(){
     throw new Error('worker_model_unavailable');
   const source=transferPerformanceWorkerSource(TRANSFER_WORKER_MODEL_SOURCE);
   const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
-  try{
-    return new Worker(url);
-  }finally{
-    URL.revokeObjectURL(url);
-  }
+  try{ return new Worker(url); }
+  finally{ URL.revokeObjectURL(url); }
 }
 
-async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot()){
+async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot(),{force=false}={}){
   if(initialSnapshot?.error){
-    transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
+    if(transferPerformanceVisible()) transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
     return;
   }
-  transferPerformanceCancel('',{render:false});
   const snapshot=initialSnapshot;
+  const cached=transferPerformanceCache.get(snapshot.signature);
+  if(cached&&!force){
+    transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
+    return cached.result;
+  }
+  if(transferPerformanceActive?.signature===snapshot.signature&&!force){
+    if(transferPerformanceVisible()) transferPerformanceRenderBusy(transferPerformanceActive.detail);
+    return transferPerformanceActive.promise;
+  }
+  transferPerformanceCancel('',{render:false,explicit:false});
+  transferPerformanceCancelledSignature='';
+  transferPerformanceFailure=null;
   const token=++transferPerformanceToken;
   transferPlannerClearPreview();
   void saveCfg();
-  transferPerformanceRenderBusy(transferPerformancePreparingDetail(0,snapshot.players.length));
+  const detail=transferPerformancePreparingDetail(0,snapshot.players.length);
+  transferPerformanceActive={signature:snapshot.signature,detail,promise:null};
+  transferPerformanceUpdateBusy(detail);
 
-  try{
-    const prepared=await transferPerformanceScores(snapshot,token);
-    if(token!==transferPerformanceToken) return;
-    const exactSignature=`${snapshot.signature}|${prepared.dataHash}`;
-    const cached=transferPerformanceCache.get(exactSignature);
-    if(cached){
-      transferPerformanceCacheSet(snapshot.signature,cached);
-      transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
-      return;
+  const promise=(async()=>{
+    try{
+      const prepared=await transferPerformanceScores(snapshot,token);
+      if(token!==transferPerformanceToken) return;
+      const exactSignature=`${snapshot.signature}|${prepared.dataHash}`;
+      const exactCached=transferPerformanceCache.get(exactSignature);
+      if(exactCached){
+        transferPerformanceActive=null;
+        transferPerformanceCacheSet(snapshot.signature,exactCached);
+        transferPerformanceRenderResult(exactCached.result,exactCached.context,{cached:true});
+        return exactCached.result;
+      }
+
+      const worker=transferPerformanceCreateWorker();
+      transferPerformanceWorker=worker;
+      transferPerformanceUpdateBusy(transferPerformanceSearchingDetail());
+      const result=await new Promise((resolve,reject)=>{
+        worker.onmessage=event=>{
+          const payload=event.data||{};
+          if(payload.requestId!==token||token!==transferPerformanceToken) return;
+          if(payload.type==='progress'){
+            transferPerformanceUpdateBusy(transferPerformanceSearchingDetail(payload));
+            return;
+          }
+          if(payload.type==='result') resolve(payload.result);
+          else reject(new Error('worker_failed'));
+        };
+        worker.onerror=()=>reject(new Error('worker_failed'));
+        worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
+      });
+      if(token!==transferPerformanceToken) return;
+      worker.terminate();
+      transferPerformanceWorker=null;
+      transferPerformanceActive=null;
+      const context={snapshot,preparedAt:Date.now()};
+      const record={result,context};
+      transferPerformanceCacheSet(exactSignature,record);
+      transferPerformanceCacheSet(snapshot.signature,record);
+      transferPerformanceRenderResult(result,context);
+      return result;
+    }catch(error){
+      if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
+      transferPerformanceWorker?.terminate?.();
+      transferPerformanceWorker=null;
+      transferPerformanceActive=null;
+      transferPerformanceFailure={signature:snapshot.signature};
+      if(transferPerformanceVisible()) transferPerformanceRenderFailure(snapshot);
     }
-
-    const worker=transferPerformanceCreateWorker();
-    transferPerformanceWorker=worker;
-    transferPerformanceRenderBusy(transferPerformanceSearchingDetail());
-    const result=await new Promise((resolve,reject)=>{
-      worker.onmessage=event=>{
-        const payload=event.data||{};
-        if(payload.requestId!==token||token!==transferPerformanceToken) return;
-        if(payload.type==='progress'){ transferPerformanceRenderBusy(transferPerformanceSearchingDetail(payload)); return; }
-        if(payload.type==='result') resolve(payload.result);
-        else reject(new Error('worker_failed'));
-      };
-      worker.onerror=()=>reject(new Error('worker_failed'));
-      worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
-    });
-    if(token!==transferPerformanceToken) return;
-    worker.terminate();
-    transferPerformanceWorker=null;
-    const context={snapshot,preparedAt:Date.now()};
-    const record={result,context};
-    transferPerformanceCacheSet(exactSignature,record);
-    transferPerformanceCacheSet(snapshot.signature,record);
-    transferPerformanceRenderResult(result,context);
-  }catch(error){
-    if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
-    transferPerformanceWorker?.terminate?.();
-    transferPerformanceWorker=null;
-    // Internal reasons stay out of the interface. Teamsheet fails closed and never falls
-    // back to a blocking main-thread search.
-    transferPerformanceRenderError('Transfers could not be calculated.',TRANSFER_PERFORMANCE_UNAVAILABLE);
-  }
+  })();
+  transferPerformanceActive.promise=promise;
+  return promise;
 }
 
-function transferPerformanceCancel(message='Calculation cancelled.',{render=true}={}){
+function transferPerformanceCancel(message='Calculation cancelled.',{render=true,explicit=false}={}){
+  const activeSignature=transferPerformanceActive?.signature||transferPerformanceSnapshot()?.signature||'';
   transferPerformanceToken++;
   transferPerformanceWorker?.terminate?.();
   transferPerformanceWorker=null;
-  if(render&&transferPerformanceCurrentRoute()==='#/transfers'){
+  transferPerformanceActive=null;
+  if(explicit) transferPerformanceCancelledSignature=activeSignature;
+  if(render&&transferPerformanceVisible()){
     const snapshot=transferPerformanceSnapshot();
     if(snapshot.error) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
-    else transferPerformanceRenderReady(snapshot,{message});
+    else if(explicit) transferPerformanceRenderCancelled(snapshot,message);
   }
 }
 
-// The only Transfers renderer. Opening the route paints the workspace shell and, when an
-// exact earlier result is still valid, restores it. It never enters the optimiser. Any
-// calculation still running belongs to the previous inputs, so re-rendering cancels it.
+function transferPerformanceEnsure(snapshot=transferPerformanceSnapshot()){
+  if(snapshot.error){
+    if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
+    if(transferPerformanceVisible()) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+    return;
+  }
+  const cached=transferPerformanceCache.get(snapshot.signature);
+  if(cached){ transferPerformanceRenderResult(cached.result,cached.context,{cached:true}); return; }
+  if(transferPerformanceActive?.signature===snapshot.signature){
+    transferPerformanceRenderBusy(transferPerformanceActive.detail); return;
+  }
+  if(transferPerformanceCancelledSignature===snapshot.signature){
+    transferPerformanceRenderCancelled(snapshot); return;
+  }
+  if(transferPerformanceFailure?.signature===snapshot.signature){
+    transferPerformanceRenderFailure(snapshot); return;
+  }
+  transferPerformanceRenderBusy(transferPerformancePreparingDetail(0,snapshot.players.length));
+  void transferPerformanceStart(snapshot);
+}
+
+function transferPerformanceScheduleAuto(){
+  if(transferPerformanceAutoTimer!=null) globalThis.clearTimeout?.(transferPerformanceAutoTimer);
+  transferPerformanceAutoTimer=globalThis.setTimeout?.(()=>{
+    transferPerformanceAutoTimer=null;
+    const snapshot=transferPerformanceSnapshot();
+    if(snapshot.error){
+      if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
+      if(transferPerformanceVisible()) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+      return;
+    }
+    if(transferPerformanceCancelledSignature===snapshot.signature||transferPerformanceFailure?.signature===snapshot.signature){
+      if(transferPerformanceVisible()) transferPerformanceEnsure(snapshot);
+      return;
+    }
+    void transferPerformanceStart(snapshot);
+  },0);
+}
+
 function renderTransfers(){
-  transferPerformanceCancel('',{render:false});
   const out=$('transferOut');
   if(!out) return;
   renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
   transferPlannerSyncVisibleAssumptions();
   transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
-  const snapshot=transferPerformanceSnapshot();
-  if(snapshot.error){
-    transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
-    return;
-  }
-  transferPerformanceRenderReady(snapshot);
+  transferPerformanceEnsure(transferPerformanceSnapshot());
 }
 
 function installTransferPerformanceRuntime(){
   if(transferPerformanceInstalled||typeof document==='undefined') return;
   transferPerformanceInstalled=true;
 
-  document.addEventListener('teamsheet:before-route-change',event=>{
-    if(event?.detail?.from==='#/transfers'&&event?.detail?.to!=='#/transfers')
-      transferPerformanceCancel('',{render:false});
+  document.addEventListener('teamsheet:route-change',event=>{
+    if(event?.detail?.route==='#/transfers') renderTransfers();
   });
   document.addEventListener('teamsheet:data-rendered',()=>{
     transferPerformanceDataVersion++;
     transferPerformanceCache.clear();
-    transferPerformanceCancel('',{render:false});
-    if(transferPerformanceCurrentRoute()==='#/transfers') renderTransfers();
+    transferPerformanceCancelledSignature='';
+    transferPerformanceFailure=null;
+    transferPerformanceCancel('',{render:false,explicit:false});
+    transferPerformanceScheduleAuto();
   });
+  const scheduleFromInput=event=>{
+    if(TRANSFER_PERFORMANCE_INPUT_IDS.has(String(event?.target?.id||''))) transferPerformanceScheduleAuto();
+  };
+  document.addEventListener('input',scheduleFromInput);
+  document.addEventListener('change',scheduleFromInput);
 }
 
 installTransferPerformanceRuntime();
