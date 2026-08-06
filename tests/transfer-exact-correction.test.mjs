@@ -162,3 +162,16 @@ test('Official-scale search still fails closed when the ceiling is genuinely exc
   assert.equal(result.plans.length,1);
   assert.equal(result.plans[0].transferCount,0);
 });
+
+test('partial tie bounds remain exact for mixed-width player IDs and reversed input order',()=>{
+  const args=differentialCase(5,'ties');
+  const mixedIds=[20,99,100,101,109,110,999,1000,1001,10000];
+  const candidates=args.players.filter(p=>Number(p.id)>=200);
+  candidates.forEach((p,index)=>{ p.id=mixedIds[index]; });
+  args.players=args.players.slice().reverse();
+  args.squad=args.squad.slice().reverse();
+  args.maxResults=3;
+  assert.deepEqual(transferResultSummary(optimiseTransfers(args)),
+    transferResultSummary(exhaustiveTransferSearch(args)));
+});
+

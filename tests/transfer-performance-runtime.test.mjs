@@ -1,8 +1,7 @@
-// Runtime contracts for the background Transfers calculation, exercised against the
-// production bundle with a controllable Worker. These cover the behaviour the earlier
-// implementation could not prove: route rendering never calculates, calculation is
-// explicit, cancellation terminates real work, stale results cannot land, and the session
-// cache returns an exact earlier result without recalculating.
+// Runtime contracts for the automatic background Transfers calculation, exercised
+// against the production bundle with a controllable Worker. These cover automatic start,
+// cancellation and supersession settlement, stale-result rejection, route persistence and
+// exact session reuse without a synchronous UI-thread fallback.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadApp, syntheticWorld } from './harness.mjs';
@@ -227,3 +226,42 @@ test('progress updates rewrite the status without rebuilding the workspace',asyn
   assert.match(doc.transferStatus.textContent,/41,000 complete plans verified/);
   assert.equal(workers[0].terminated,false);
 });
+
+test('explicit cancellation settles the pending calculation promise instead of retaining an orphaned job',async()=>{
+  const {T,workers}=openTransfers();
+  T.renderTransfers();
+  const pending=T.transferPerformanceStart();
+  await settle();
+  assert.equal(workers.length,1);
+  T.transferPerformanceCancel('Calculation cancelled.',{render:false,explicit:true});
+  const outcome=await Promise.race([
+    pending.then(()=> 'settled',()=> 'settled'),
+    new Promise(resolve=>setTimeout(()=>resolve('timeout'),100))
+  ]);
+  assert.equal(outcome,'settled');
+  assert.equal(workers[0].terminated,true);
+});
+
+test('force-starting a replacement settles the superseded worker promise',async()=>{
+  const {T,workers}=openTransfers();
+  T.renderTransfers();
+  const first=T.transferPerformanceStart();
+  await settle();
+  assert.equal(workers.length,1);
+  const second=T.transferPerformanceStart(T.transferPerformanceSnapshot(),{force:true});
+  await settle();
+  assert.equal(workers.length,2);
+  assert.equal(workers[0].terminated,true);
+  const firstOutcome=await Promise.race([
+    first.then(()=> 'settled',()=> 'settled'),
+    new Promise(resolve=>setTimeout(()=>resolve('timeout'),100))
+  ]);
+  assert.equal(firstOutcome,'settled');
+  T.transferPerformanceCancel('',{render:false,explicit:false});
+  const secondOutcome=await Promise.race([
+    second.then(()=> 'settled',()=> 'settled'),
+    new Promise(resolve=>setTimeout(()=>resolve('timeout'),100))
+  ]);
+  assert.equal(secondOutcome,'settled');
+});
+

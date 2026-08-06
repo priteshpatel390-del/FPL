@@ -88,6 +88,12 @@ function transferPerformanceYield(){
   });
 }
 
+function transferPerformanceAbortError(){
+  const error=new Error('Cancelled');
+  error.name='AbortError';
+  return error;
+}
+
 function transferPerformanceControlSignature(){
   return transferPlannerControlSignature(
     $('trFtCount')?.value,
@@ -325,9 +331,7 @@ async function transferPerformanceScores(snapshot,token){
   let dataHash=2166136261;
   const total=snapshot.players.length;
   for(let start=0;start<total;start+=TRANSFER_PERFORMANCE_SCORE_BATCH){
-    if(token!==transferPerformanceToken){
-      const error=new Error('Cancelled'); error.name='AbortError'; throw error;
-    }
+    if(token!==transferPerformanceToken) throw transferPerformanceAbortError();
     const end=Math.min(total,start+TRANSFER_PERFORMANCE_SCORE_BATCH);
     for(let index=start;index<end;index++){
       const player=snapshot.players[index];
@@ -380,7 +384,7 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
   transferPlannerClearPreview();
   void saveCfg();
   const detail=transferPerformancePreparingDetail(0,snapshot.players.length);
-  transferPerformanceActive={signature:snapshot.signature,detail,promise:null};
+  transferPerformanceActive={signature:snapshot.signature,detail,promise:null,token,cancel:null};
   transferPerformanceUpdateBusy(detail);
 
   const promise=(async()=>{
@@ -400,6 +404,16 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
       transferPerformanceWorker=worker;
       transferPerformanceUpdateBusy(transferPerformanceSearchingDetail());
       const result=await new Promise((resolve,reject)=>{
+        let settled=false;
+        const settle=(callback,value)=>{
+          if(settled) return;
+          settled=true;
+          if(transferPerformanceActive?.token===token) transferPerformanceActive.cancel=null;
+          callback(value);
+        };
+        const cancel=()=>settle(reject,transferPerformanceAbortError());
+        if(transferPerformanceActive?.token===token) transferPerformanceActive.cancel=cancel;
+        else { cancel(); return; }
         worker.onmessage=event=>{
           const payload=event.data||{};
           if(payload.requestId!==token||token!==transferPerformanceToken) return;
@@ -407,10 +421,10 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
             transferPerformanceUpdateBusy(transferPerformanceSearchingDetail(payload));
             return;
           }
-          if(payload.type==='result') resolve(payload.result);
-          else reject(new Error('worker_failed'));
+          if(payload.type==='result') settle(resolve,payload.result);
+          else settle(reject,new Error('worker_failed'));
         };
-        worker.onerror=()=>reject(new Error('worker_failed'));
+        worker.onerror=()=>settle(reject,new Error('worker_failed'));
         worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
       });
       if(token!==transferPerformanceToken) return;
@@ -437,8 +451,10 @@ async function transferPerformanceStart(initialSnapshot=transferPerformanceSnaps
 }
 
 function transferPerformanceCancel(message='Calculation cancelled.',{render=true,explicit=false}={}){
-  const activeSignature=transferPerformanceActive?.signature||transferPerformanceSnapshot()?.signature||'';
+  const active=transferPerformanceActive;
+  const activeSignature=active?.signature||transferPerformanceSnapshot()?.signature||'';
   transferPerformanceToken++;
+  active?.cancel?.();
   transferPerformanceWorker?.terminate?.();
   transferPerformanceWorker=null;
   transferPerformanceActive=null;

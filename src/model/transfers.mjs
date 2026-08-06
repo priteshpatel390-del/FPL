@@ -538,10 +538,14 @@ function optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId){
 function optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPositionCost,byPositionId,usedIds,cost,sellTotal}){
   const cheapestRest=Object.entries(remainingNeed).reduce((sum,[pos,count])=>
     sum+cheapestAvailableCost(byPositionCost[pos],count,usedIds),0);
+  const hasRemaining=Object.values(remainingNeed).some(Boolean);
   return {
     bankAfter:ctx.bank+sellTotal-cost-cheapestRest,
     doubtfulIncoming:chosen.filter(p=>p.status==='d').length+minimumRemainingDoubtful(byPosition,remainingNeed,usedIds),
-    signature:optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId)
+    // Every real transfer signature is non-empty. The empty string is therefore
+    // universally optimistic for a partial node, without assuming numeric player-ID
+    // order is the same as locale string order for mixed-width identifiers.
+    signature:hasRemaining?'':optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId)
   };
 }
 
