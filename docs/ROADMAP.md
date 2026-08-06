@@ -1,5 +1,8 @@
 # ROADMAP.md — living roadmap
 
+<!-- UX-A2-2026-08-06 -->
+> **Current approved item — UX-A2 Player Detail Scroll and Rotation Correction:** implemented on `agent/ux-a2-player-detail-scroll-rotation` (PR #76) from verified `main` `2738a0500b9be20a723f0940df0a93766b29c05d`. Scope is behaviour correction only: internal Player Detail scrolling, root plus body scroll locking, exact background-position restoration on normal close, route-safe unlocking without stale restoration, viewport-height fallback before `dvh`, compact-landscape sizing, four-sided safe areas, focus handling with `preventScroll` and root text-size adjustment fixed at 100% against Safari rotation text inflation. Player Detail content is unchanged. Automated evidence is **644 passed, 0 failed, 0 skipped** plus deterministic exact-identity builds and root/deployable equality. **Populated physical iPhone Safari acceptance passed on 6 August 2026**, including a successful retest of the corrected rotation behaviour; `UI-13` is closed. Making Player Detail more concise is a separate future proposal, not part of UX-A2. UX-A3 and Workstream B remain unapproved. See `UX-A2-ACCEPTANCE.md` and `UX-A2-SCOPE.md`.
+
 <!-- UX-A1-2026-08-06 -->
 > **Current approved item — UX-A1 Team Resources and Bench Clarity:** implemented for review on `agent/ux-a1-team-resources-bench-clarity` from verified `main` `06e4a07d95c961af2ebbb90f1e142635a582e7b1`. Scope is presentation-only: one honest manual-resource bar directly above the pitch, removal of duplicate FT/bank chips, and clearer `GK`, `1st`, `2nd`, `3rd` bench roles with two-line names. Automated evidence is **624 passed, 0 failed, 0 skipped** plus deterministic exact-identity builds and root/deployable equality. Physical populated iPhone Safari acceptance remains pending; VoiceOver was not tested. The draft PR is not merged. A2, A3 and Workstream B remain unapproved.
 
@@ -8,7 +11,7 @@
 > **Current Track A status — complete and merged:** FPL-T1 and Track A are integrated on `main` through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). The final `main` merge commit and the verified PR #72 head (`7257e8601b4a4f2fae80ce30a787f7069974a926`) have the identical repository tree `3794e8e7ab9859717950296766dc9d64c9e5473f`. The accepted branch baseline is **613 passed, 0 failed, 0 skipped** with deterministic production builds and root/deployable equality. On populated physical iPhone Safari, the six-Gameweek exact calculation completed in about 15 seconds; completed and active navigation persistence, prompt cancellation/restart, Safari app switching, stale-result protection, the separate no-transfer baseline and the final **“No hit”** wording all passed. VoiceOver was deliberately not tested and must not be claimed as physically verified. No prediction-accuracy improvement is claimed, and Track B football intelligence remains unapproved and unimplemented.
 
 
-> **Current approved item:** UX-A1 Team Resources and Bench Clarity only. It is implemented on a separate branch for draft-PR and owner/device review. FPL-T1 and Track A remain complete; A2, A3, Track B and any football-intelligence change remain separately gated and unapproved.
+> **Current approved item:** UX-A2 Player Detail Scroll and Rotation Correction only. It is implemented on a separate branch for draft-PR and owner/device review. FPL-T1, Track A and UX-A1 are complete and merged; A3, Track B and any football-intelligence change remain separately gated and unapproved.
 
 > **Teamsheet 2.0.7:** Complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; the Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified.
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-06.
@@ -95,8 +98,10 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
 ## Current
 - **Pre-season readiness and prospective validation** · OPERATIONAL. Genuine pre-deadline evidence collection begins with the 2026/27 season.
 - **Remaining live populated acceptance outside tested Transfers paths** · OPEN where separately recorded for Team, Fixtures, Player Detail and Leagues.
-- **UX-A1 Team Resources and Bench Clarity** · IMPLEMENTED FOR REVIEW; draft PR and populated iPhone Safari owner acceptance pending.
-- **Later implementation work** · NOT APPROVED. A2, A3, Track B and any provider/model change require a new investigation and approval gate.
+- **UX-A1 Team Resources and Bench Clarity** · COMPLETE AND MERGED through PR #74 at `15aa01a07a5645f5df9ec2f2f429aefa52965c94`; see `UX-A1-MERGE-RECORD.md`.
+- **UX-A2 Player Detail Scroll and Rotation Correction** · IMPLEMENTED AND ACCEPTED on PR #76; populated iPhone Safari owner acceptance passed 6 August 2026 and the Safari rotation text-inflation defect it exposed is corrected and physically retested. Behaviour correction only; no Player Detail information redesign. See `UX-A2-ACCEPTANCE.md` and `UX-A2-SCOPE.md`.
+- **Concise Player Detail information density** · NOT APPROVED. A separate future proposal raised during UX-A2 acceptance to review how much information Player Detail shows and how far it must be scrolled. Requires its own investigation, scope and explicit approval.
+- **Later implementation work** · NOT APPROVED. A3, Track B and any provider/model change require a new investigation and approval gate.
 
 ## Teamsheet 2.0 migration sequence
 1. **Teamsheet 2.0.1 — Navigation and Settings architecture** · COMPLETE AND MERGED.

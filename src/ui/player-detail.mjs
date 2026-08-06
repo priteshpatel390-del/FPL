@@ -1,7 +1,9 @@
 import { $, num, clamp, setChildren } from '../util.mjs';
 
 const PLAYER_DETAIL_SPREAD_THRESHOLDS = Object.freeze({tightMax:2, moderateMax:5});
+const PLAYER_DETAIL_OPEN_CLASS = 'player-detail-open';
 let playerDetailPreviousFocus = null;
+let playerDetailSavedScroll = null;
 let playerDetailSetupDone = false;
 
 function playerDetailSpread(summary = {}){
@@ -37,16 +39,57 @@ function playerDetailCanRestoreFocus(node){
   return true;
 }
 
-function playerDetailClose({restoreFocus=true}={}){
+// The background is locked by class only: no runtime inline style is permitted
+// by the hash-locked CSP. Because `html`/`body` overflow locking can clamp or
+// discard the page offset on mobile Safari, the exact pre-open coordinates are
+// captured here and reapplied on a normal close.
+function playerDetailCurrentScroll(){
+  const view = typeof globalThis !== 'undefined' ? globalThis : {};
+  const root = typeof document !== 'undefined' ? document.documentElement : null;
+  const axis = (primary,secondary,fallback) => {
+    const value = Number(primary ?? secondary ?? fallback ?? 0);
+    return Number.isFinite(value) ? value : 0;
+  };
+  return {
+    left: axis(view.scrollX, view.pageXOffset, root?.scrollLeft),
+    top: axis(view.scrollY, view.pageYOffset, root?.scrollTop)
+  };
+}
+
+// Both the root element and the body carry the open state: body-only locking
+// leaks background scrolling on mobile Safari.
+function playerDetailSetLock(locked){
+  if(typeof document === 'undefined') return;
+  for(const node of [document.documentElement, document.body]){
+    if(!node?.classList) continue;
+    if(locked) node.classList.add(PLAYER_DETAIL_OPEN_CLASS);
+    else node.classList.remove(PLAYER_DETAIL_OPEN_CLASS);
+  }
+}
+
+function playerDetailIsOpen(){
+  if(typeof document === 'undefined') return false;
+  const panel = $('playerDetailPanel');
+  return Boolean(panel) && panel.hidden === false;
+}
+
+// `restoreScroll` and `restoreFocus` are both suppressed for route-driven
+// closure: the router owns the destination route's scroll and focus, so
+// reapplying the previous route's coordinates or trigger would be stale.
+function playerDetailClose({restoreFocus=true, restoreScroll=true}={}){
   if(typeof document === 'undefined') return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
   if(!panel || !backdrop) return false;
   panel.hidden = true;
   backdrop.hidden = true;
   panel.setAttribute('aria-hidden','true');
-  if(document.body?.classList) document.body.classList.remove('player-detail-open');
+  playerDetailSetLock(false);
+  const saved = playerDetailSavedScroll;
   const restore = playerDetailPreviousFocus;
+  playerDetailSavedScroll = null;
   playerDetailPreviousFocus = null;
+  if(restoreScroll && saved && typeof globalThis.scrollTo === 'function')
+    globalThis.scrollTo({top:saved.top, left:saved.left, behavior:'auto'});
   if(restoreFocus&&playerDetailCanRestoreFocus(restore)) restore.focus({preventScroll:true});
   return true;
 }
@@ -56,8 +99,9 @@ function playerDetailSetup(){
   if(playerDetailSetupDone) return true;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop'), close = $('playerDetailClose');
   if(!panel || !backdrop || !close) return false;
-  close.addEventListener('click',playerDetailClose);
-  backdrop.addEventListener('click',playerDetailClose);
+  // Wrapped so the DOM event object can never be read as close options.
+  close.addEventListener('click',()=>playerDetailClose());
+  backdrop.addEventListener('click',()=>playerDetailClose());
   document.addEventListener('keydown',event => {
     if(panel.hidden) return;
     if(event.key === 'Escape'){
@@ -87,31 +131,40 @@ function playerDetailOpen({title = '', body = [], trigger = null} = {}){
   if(!playerDetailSetup()) return false;
   const panel = $('playerDetailPanel'), backdrop = $('playerDetailBackdrop');
   const titleNode = $('playerDetailTitle'), bodyNode = $('playerDetailBody'), close = $('playerDetailClose');
-  playerDetailPreviousFocus = trigger || document.activeElement || null;
+  // Swapping the displayed player while the dialog is already open must not
+  // overwrite the true background position with a locked-state reading, nor
+  // move focus restoration away from the element the user actually left.
+  if(!playerDetailIsOpen()){
+    playerDetailSavedScroll = playerDetailCurrentScroll();
+    playerDetailPreviousFocus = trigger || document.activeElement || null;
+  }
   titleNode.textContent = String(title);
   setChildren(bodyNode,body);
+  if(bodyNode) bodyNode.scrollTop = 0;
   backdrop.hidden = false;
   panel.hidden = false;
   panel.setAttribute('aria-hidden','false');
-  if(document.body?.classList) document.body.classList.add('player-detail-open');
-  if(close && typeof close.focus === 'function') close.focus();
+  playerDetailSetLock(true);
+  if(close && typeof close.focus === 'function') close.focus({preventScroll:true});
   return true;
 }
 
 if(typeof document !== 'undefined'){
   playerDetailSetup();
   document.addEventListener('teamsheet:before-route-change',()=>{
-    const panel=$('playerDetailPanel');
-    if(panel&&!panel.hidden) playerDetailClose({restoreFocus:false});
+    if(playerDetailIsOpen()) playerDetailClose({restoreFocus:false,restoreScroll:false});
   });
 }
 
 export {
   PLAYER_DETAIL_SPREAD_THRESHOLDS,
+  PLAYER_DETAIL_OPEN_CLASS,
   playerDetailSpread,
   playerDetailRangePosition,
   playerDetailAvailabilityLabel,
   playerDetailCanRestoreFocus,
+  playerDetailCurrentScroll,
+  playerDetailIsOpen,
   playerDetailSetup,
   playerDetailOpen,
   playerDetailClose
