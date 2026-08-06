@@ -1,5 +1,9 @@
 # ROADMAP.md — living roadmap
 
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. **The first physical iPhone Safari test failed:** with verified saved data, a complete squad, one free transfer, an empty bank, the six-Gameweek horizon and Top 8, the automatic exact search exhausted the unchanged 2,000,000 evaluation ceiling and reported *"Exact search did not complete."* The owner-approved corrective change rebuilds the exact search around position-quota score prefix sums, per-formation admissible bounds, price-capped optimistic completion tables and descending-gain stopping rules. The approved football problem, comparator, candidate universe, horizon, result limit and evaluation ceiling are unchanged, and `exhaustiveTransferSearch()` remains an independent oracle. Automated verification is **606 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. **The corrected search has not yet been physically retested on iPhone Safari.** Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
+
+
 > **Current approved item — FPL-T1:** Implemented for review on draft PR #69. The owner-controlled Official FPL Worker is deployed, the exact stable `/fpl` gateway is configured in the deterministic Pages build, live 2026/27 bootstrap transport passed on physical iPhone Safari and the automated baseline is **590 passed, 0 failed, 0 skipped**. The approved responsive Transfers correction is automatically verified; complete physical populated-app acceptance, update the PR evidence and obtain explicit merge approval. No model or calculation change is authorised.
 
 > **Teamsheet 2.0.7:** Complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; the Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified.
@@ -141,3 +145,18 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 ## Teamsheet 2.0.7 current handover
 
 Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a separate branch from `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification is **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not call the checkpoint complete or merge without owner approval.
+
+## Transfers Track A corrective status — 2026-08-06
+
+- [x] Record the first physical iPhone Safari failure at the two-million evaluation ceiling.
+- [x] Investigate and record the root cause: node cost, bound looseness, no stopping rule and a per-player rather than joint budget relaxation.
+- [x] Rebuild the exact search on position-quota prefix sums, per-formation node-aware admissible bounds, price-capped completion tables and descending-gain stopping rules.
+- [x] Prove controlled-pool equality with the independent `exhaustiveTransferSearch()` oracle across seven adversarial shapes and each fixed transfer depth.
+- [x] Prove Official-scale six-Gameweek completion below the unchanged ceiling with `status: 'ok'`, and unchanged fail-closed behaviour when the ceiling is genuinely exceeded.
+- [x] Pass the 606-test repository gate with deterministic exact-identity builds and root/deployable equality.
+- [ ] Repeat physical iPhone Safari Test 1 on the corrected preview and confirm the search now completes.
+- [ ] Complete navigation persistence, cancellation, cached reuse and VoiceOver physical checks.
+- [ ] Obtain Pritesh's explicit approval before any merge.
+
+Track B football-intelligence changes remain outside this checkpoint and unapproved.
+

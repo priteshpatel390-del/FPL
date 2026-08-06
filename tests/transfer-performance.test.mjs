@@ -277,45 +277,46 @@ test('worker payload retains only optimiser-required player fields',()=>{
   });
 });
 
-test('progress copy states depth and evaluated plans without technical detail',()=>{
+test('progress copy states verified complete plans without claiming finality',()=>{
   assert.equal(transferPerformancePreparingDetail(0,700),'Preparing projections 0%.');
   assert.equal(transferPerformancePreparingDetail(350,700),'Preparing projections 50%.');
   assert.equal(transferPerformancePreparingDetail(0,0),'Preparing projections 100%.');
-  assert.equal(transferPerformanceSearchingDetail(),'Evaluating legal transfer plans in the background.');
+  assert.equal(transferPerformanceSearchingDetail(),'Checking exact transfer plans in the background.');
   assert.equal(
     transferPerformanceSearchingDetail({depth:2,maxDepth:3,evaluations:41000}),
-    'Evaluating legal transfer plans in the background. Depth 2 of 3 · 41,000 plans checked.'
+    'Checking exact transfer plans in the background. 41,000 complete plans verified · up to 2 transfers.'
   );
 });
 
-test('failure copy is owner-facing and never exposes an internal reason',()=>{
+test('failure copy is owner-facing, exposes Retry and never exposes an internal reason',()=>{
   const source=readFileSync(new URL('../src/ui/transfer-performance.mjs',import.meta.url),'utf8');
   assert.match(TRANSFER_PERFORMANCE_UNAVAILABLE,/cannot run the transfer calculation in the background/);
   assert.doesNotMatch(TRANSFER_PERFORMANCE_UNAVAILABLE,/worker_|optimiser source|retention site/);
-  // Internal reasons are thrown as opaque codes and must never reach the rendered error.
-  assert.match(source,/transferPerformanceRenderError\('Transfers could not be calculated\.',TRANSFER_PERFORMANCE_UNAVAILABLE\)/);
+  assert.match(source,/function transferPerformanceRenderFailure\(snapshot\)/);
+  assert.match(source,/transferPerformanceAction\('Retry'/);
   assert.doesNotMatch(source,/transferPerformanceRenderError\([^)]*error\?\.message/);
 });
 
-test('Transfers opens as a lightweight explicit action and supports cancellation',()=>{
+test('Transfers owns one automatic persistent calculation with explicit Cancel, Resume and failure Retry',()=>{
   const source=readFileSync(new URL('../src/ui/transfer-performance.mjs',import.meta.url),'utf8');
   assert.equal(TRANSFER_PERFORMANCE_CACHE_LIMIT,4);
   assert.equal(TRANSFER_PERFORMANCE_SCORE_BATCH,12);
-  assert.match(source,/Calculate transfers/);
+  assert.doesNotMatch(source,/Calculate transfers/);
+  assert.doesNotMatch(source,/Recalculate transfers/);
   assert.match(source,/Cancel calculation/);
-  assert.match(source,/teamsheet:before-route-change/);
-  assert.match(source,/transferPerformanceWorker\?\.terminate/);
+  assert.match(source,/Resume calculation/);
+  assert.match(source,/transferPerformanceAction\('Retry'/);
+  assert.match(source,/transferPerformanceScheduleAuto/);
   assert.match(source,/await transferPerformanceYield\(\)/);
-  assert.match(source,/Preparing projections/);
   assert.match(source,/new Worker\(url\)/);
-  // The renderer is declared once and never swapped at runtime.
   assert.match(source,/function renderTransfers\(\)/);
   assert.doesNotMatch(source,/renderTransfers=/);
-  // Re-rendering the workspace cancels work that belongs to the previous inputs.
+  assert.doesNotMatch(source,/teamsheet:before-route-change/,'internal navigation must not own worker lifetime');
   const rendererStart=source.indexOf('function renderTransfers(){');
-  const cancelAt=source.indexOf("transferPerformanceCancel('',{render:false});",rendererStart);
-  const snapshotAt=source.indexOf('const snapshot=transferPerformanceSnapshot();',rendererStart);
-  assert.ok(cancelAt>rendererStart&&cancelAt<snapshotAt,'the renderer must cancel obsolete work before reading a new snapshot');
+  const rendererEnd=source.indexOf('function installTransferPerformanceRuntime(){',rendererStart);
+  const renderer=source.slice(rendererStart,rendererEnd);
+  assert.doesNotMatch(renderer,/transferPerformanceCancel/,'route rendering must reconnect rather than cancel');
+  assert.match(renderer,/transferPerformanceEnsure/);
 });
 
 test('no runtime optimiser-source rewriting survives anywhere in the Transfers path',()=>{
@@ -359,10 +360,11 @@ test('the shipped deployable can actually build and run its own worker',()=>{
   assert.deepEqual(planSummary(result.result),planSummary(optimiseTransfers(args)));
 });
 
-test('production bundle contains the responsive worker flow and one Transfers renderer',()=>{
+test('production bundle contains the automatic persistent worker flow and one Transfers renderer',()=>{
   const bundle=readFileSync(new URL('../dist/app.bundle.js',import.meta.url),'utf8');
-  assert.match(bundle,/Calculate transfers/);
-  assert.match(bundle,/Evaluating legal transfer plans in the background/);
+  assert.doesNotMatch(bundle,/Calculate transfers/);
+  assert.match(bundle,/Checking exact transfer plans in the background/);
+  assert.match(bundle,/Resume calculation/);
   assert.match(bundle,/TRANSFER_WORKER_MODEL_SOURCE/);
   assert.equal((bundle.match(/function renderTransfers\(/g)||[]).length,1);
 });

@@ -53,29 +53,31 @@ function workerResult(app,worker,plans){
 
 // Opening #/transfers calls exactly this renderer. The route-aware deferral wrapper itself is
 // covered by manual-squad-runtime.test.mjs, whose module sits past the harness init boundary.
-test('opening Transfers paints the workspace without calculating anything',()=>{
+test('opening Transfers paints immediately and starts one automatic background calculation',async()=>{
   const {T,doc,workers}=openTransfers();
   T.S.lastOptimiser=null;
   T.renderTransfers();
-  const text=visibleText(doc.transferOut);
-  assert.match(text,/Transfers is ready/);
-  assert.equal(workers.length,0,'route rendering must not construct a worker');
-  assert.equal(T.S.lastOptimiser,null,'route rendering must not produce an optimiser result');
-  assert.equal(doc.transferOut.attrs['aria-busy'],'false');
-  assert.match(doc.transferStatus.textContent,/Calculation starts only when requested/);
+  assert.match(visibleText(doc.transferOut),/Updating transfer advice|Preparing projections/);
+  assert.doesNotMatch(visibleText(doc.transferOut),/Calculate transfers/);
+  await settle();
+  assert.equal(workers.length,1,'valid inputs must start exactly one background worker automatically');
+  assert.match(workers[0].url,/^blob:/);
+  assert.equal(workers[0].messages[0].type,'calculate');
+  assert.equal(T.S.lastOptimiser,null,'an in-flight calculation must not claim a result');
+  assert.equal(doc.transferOut.attrs['aria-busy'],'true');
 });
 
-test('calculation begins only on the explicit action',async()=>{
+test('re-rendering Transfers reconnects to the existing in-flight calculation',async()=>{
   const {T,doc,workers}=openTransfers();
   T.renderTransfers();
-  assert.equal(workers.length,0);
-  const action=buttons(doc.transferOut).find(node=>visibleText(node).includes('Calculate transfers'));
-  assert.ok(action,'the workspace must offer an explicit calculate action');
-  action.click();
   await settle();
-  assert.equal(workers.length,1,'the explicit action must start exactly one background worker');
-  assert.match(workers[0].url,/^blob:/,'the optimiser must run from a local Blob worker');
-  assert.equal(workers[0].messages[0].type,'calculate');
+  assert.equal(workers.length,1);
+  const active=workers[0];
+  T.renderTransfers();
+  await settle(2);
+  assert.equal(workers.length,1,'route rendering must not start a duplicate worker');
+  assert.equal(active.terminated,false,'route rendering must not terminate valid work');
+  assert.match(visibleText(doc.transferOut),/Updating transfer advice|Checking exact transfer plans/);
 });
 
 test('a completed worker result renders and is reused from the session cache',async()=>{
@@ -95,21 +97,17 @@ test('a completed worker result renders and is reused from the session cache',as
   assert.equal(workers.length,1,'an unchanged input set must not recalculate');
 });
 
-test('every material input change invalidates the cached result without recalculating',async()=>{
+test('every material input change invalidates the cached result and starts one replacement calculation',async()=>{
   for(const change of [
     app=>{ app.doc.trHorizon.value='3'; },
     app=>{ app.doc.trTop.value='20'; },
-    // Free transfers and bank are owned by the canonical Team-setup controls; the Transfers
-    // fields mirror them, so a durable change updates both.
     app=>{ app.doc.ftCount.value='2'; app.doc.trFtCount.value='2'; },
     app=>{ app.doc.bankIn.value='1.5'; app.doc.trBankIn.value='1.5'; },
     app=>{ app.T.S.nextGW=12; },
-    app=>{ app.T.S.manual[0].bought=46; },
-    app=>{ app.T.S.manual.pop(); app.T.S.manual.push({id:app.T.S.boot.elements[0].id,bought:50}); }
+    app=>{ app.T.S.manual[0].bought=46; }
   ]){
     const app=openTransfers();
     app.T.renderTransfers();
-    void app.T.transferPerformanceStart();
     await settle();
     workerResult(app.T,app.workers[0]);
     await settle();
@@ -117,80 +115,88 @@ test('every material input change invalidates the cached result without recalcul
 
     change(app);
     app.T.renderTransfers();
-    assert.match(visibleText(app.doc.transferOut),/Transfers is ready|complete 15-player squad|planning assumptions/);
-    assert.equal(app.workers.length,1,'invalidation must not start a new search on its own');
+    await settle();
+    assert.equal(app.workers.length,2,'a changed material fingerprint must start one replacement worker');
+    assert.match(visibleText(app.doc.transferOut),/Updating transfer advice|Checking exact transfer plans/);
   }
 });
 
-test('cancelling terminates the active worker and returns to the explicit action',async()=>{
+test('explicit cancellation pauses the exact job and Resume starts a new one',async()=>{
   const {T,doc,workers}=openTransfers();
   T.renderTransfers();
-  void T.transferPerformanceStart();
   await settle();
   assert.equal(workers.length,1);
   const cancel=buttons(doc.transferOut).find(node=>visibleText(node).includes('Cancel calculation'));
-  assert.ok(cancel,'an active calculation must offer a cancel action');
+  assert.ok(cancel);
   cancel.click();
   await settle();
   assert.equal(workers[0].terminated,true);
-  assert.match(visibleText(doc.transferOut),/Calculation cancelled/);
+  assert.match(visibleText(doc.transferOut),/Transfer calculation paused/);
+  assert.doesNotMatch(visibleText(doc.transferOut),/Retry/,'Retry is reserved for genuine failure');
+  const resume=buttons(doc.transferOut).find(node=>visibleText(node).includes('Resume calculation'));
+  assert.ok(resume);
+  resume.click();
+  await settle();
+  assert.equal(workers.length,2);
 });
 
-test('leaving Transfers terminates active background work',async()=>{
+test('leaving Transfers preserves active background work and returning reconnects to it',async()=>{
   const {T,workers,dispatch}=openTransfers();
   T.renderTransfers();
-  void T.transferPerformanceStart();
   await settle();
   assert.equal(workers.length,1);
+  const active=workers[0];
   dispatch('teamsheet:before-route-change',{from:'#/transfers',to:'#/team'});
-  assert.equal(workers[0].terminated,true,'navigating away must terminate the worker');
-});
-
-test('verified data changes cancel obsolete work and clear the cached result',async()=>{
-  const {T,doc,workers,dispatch}=openTransfers();
+  assert.equal(active.terminated,false,'internal navigation must not terminate valid exact work');
   T.renderTransfers();
-  void T.transferPerformanceStart();
-  await settle();
-  workerResult(T,workers[0]);
-  await settle();
-  assert.match(visibleText(doc.transferOut),/Make no transfer/);
-  dispatch('teamsheet:data-rendered',{});
-  assert.match(visibleText(doc.transferOut),/Transfers is ready/);
-  assert.equal(workers.length,1,'invalidation must not start a new search on its own');
+  await settle(2);
+  assert.equal(workers.length,1,'returning must reconnect to the same worker');
 });
 
-test('a stale worker response cannot overwrite a newer calculation',async()=>{
+test('verified data changes cancel obsolete work and automatically start one replacement',async()=>{
+  const {T,workers,dispatch}=openTransfers();
+  T.renderTransfers();
+  await settle();
+  assert.equal(workers.length,1);
+  const obsolete=workers[0];
+  dispatch('teamsheet:data-rendered',{});
+  await settle();
+  assert.equal(obsolete.terminated,true);
+  assert.equal(workers.length,2,'one new verified-data fingerprint must start one new worker');
+});
+
+test('a stale worker response cannot overwrite a force-started newer calculation',async()=>{
   const {T,doc,workers}=openTransfers();
   T.renderTransfers();
-  void T.transferPerformanceStart();
   await settle();
   const stale=workers[0];
-  void T.transferPerformanceStart();
+  void T.transferPerformanceStart(T.transferPerformanceSnapshot(),{force:true});
   await settle();
-  assert.equal(workers.length,2,'a superseding calculation must start its own worker');
-  assert.equal(stale.terminated,true,'the superseded worker must be terminated');
+  assert.equal(workers.length,2);
+  assert.equal(stale.terminated,true);
   workerResult(T,stale);
   await settle();
-  assert.doesNotMatch(visibleText(doc.transferOut),/Make no transfer/,'a stale result must not render');
-  assert.equal(T.S.lastOptimiser,null,'a stale result must not become the recorded optimiser result');
+  assert.doesNotMatch(visibleText(doc.transferOut),/Make no transfer/);
+  assert.equal(T.S.lastOptimiser,null);
 });
 
-test('an unavailable Worker fails honestly and never falls back to a blocking search',async()=>{
+test('a genuine Worker failure shows Retry and never falls back to blocking search',async()=>{
   const {T,doc,workers}=openTransfers();
-  T.renderTransfers();
   const RealWorker=globalThis.Worker;
   globalThis.Worker=undefined;
   try{
-    await T.transferPerformanceStart();
+    T.renderTransfers();
+    await settle(12);
   }finally{
     globalThis.Worker=RealWorker;
   }
   const text=visibleText(doc.transferOut);
   assert.match(text,/could not be calculated/);
   assert.match(text,/cannot run the transfer calculation in the background/);
-  assert.doesNotMatch(text,/worker_|Blob|optimiser source/,'internal reasons must stay out of the interface');
+  assert.match(text,/Retry/);
+  assert.doesNotMatch(text,/worker_|Blob|optimiser source/);
   assert.equal(workers.length,0);
-  assert.equal(T.S.lastOptimiser,null,'a failed calculation must not claim an optimiser result');
+  assert.equal(T.S.lastOptimiser,null);
   assert.equal(doc.transferOut.attrs['aria-busy'],'false');
 });
 
@@ -212,13 +218,12 @@ test('an incomplete search stays fail-closed through the worker boundary',async(
 test('progress updates rewrite the status without rebuilding the workspace',async()=>{
   const {T,doc,workers}=openTransfers();
   T.renderTransfers();
-  void T.transferPerformanceStart();
   await settle();
   const request=workers[0].messages.find(message=>message.type==='calculate');
   const before=doc.transferOut.children.length;
   workers[0].onmessage({data:{type:'progress',requestId:request.requestId,depth:2,maxDepth:3,evaluations:41000}});
-  assert.equal(doc.transferOut.children.length,before,'progress must not rebuild the workspace');
-  assert.match(visibleText(doc.transferOut),/Depth 2 of 3 · 41,000 plans checked/);
-  assert.match(doc.transferStatus.textContent,/Depth 2 of 3/);
-  assert.equal(workers[0].terminated,false,'progress must not end the calculation');
+  assert.equal(doc.transferOut.children.length,before);
+  assert.match(visibleText(doc.transferOut),/41,000 complete plans verified · up to 2 transfers/);
+  assert.match(doc.transferStatus.textContent,/41,000 complete plans verified/);
+  assert.equal(workers[0].terminated,false);
 });

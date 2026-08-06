@@ -69,6 +69,9 @@ Last updated: 2026-08-05. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | REFRESH-1 | Qualifying foreground return temporarily locked the app after unsuccessful loading | Every completed attempt now starts the ten-minute cooldown, paired Safari events deduplicate and foreground refresh remains interactive; physical owner retest passed | Teamsheet 2.0.7 | **CLOSED and merged 2026-08-05 through PR #68** |
 | FPL-1 | Static Pages could not reliably read Official FPL through anonymous browser relays | Replaced on draft PR #69 by the owner-controlled allowlisted Worker; the stable production route returned live 2026/27 bootstrap data on physical iPhone Safari | FPL-T1 | Implemented and transport-verified; merge pending |
 | FPL-2 | Full populated Teamsheet behaviour has not yet been accepted against live Official FPL account, fixture, player and league endpoints | Transport success does not by itself prove the 15-player squad, captain/bench, Transfers, Fixtures, Player Detail, leagues, cache and refresh flows | PR #69 live acceptance | Open (acceptance gate) |
+| TRF-A1 | The first physical iPhone Safari test of the automatic exact Transfers search exhausted the 2,000,000 evaluation ceiling and reported "Exact search did not complete." | The approved corrective search architecture is implemented and automatically verified, and a Node reproduction of the failure shape that previously took 13 minutes 38 seconds now completes in about 1.2 seconds with identical complete top-8 results, but the corrected build has not yet been physically retested | PR #70 physical retest | **Open (acceptance gate)** |
+| TRF-A2 | Official-scale exactness is not proved against the exhaustive oracle | A full-pool exhaustive comparison is not tractable; oracle equality is proved on controlled pools and the Official-scale claim is only that the exact search completes below the unchanged ceiling with `status: 'ok'` | By design of the evidence | Accepted-labelled |
+| TRF-A3 | Reduced evaluation counts are a search-efficiency result only | Fewer evaluated plans say nothing about projection quality; no prediction-accuracy claim is created or implied | By design | Accepted |
 | ACCOUNT-1 | Bank and available free transfers remain manual inputs rather than proven authoritative account values | Values can be entered but are not yet verified from the connected FPL account; no inference may be labelled authoritative | Separate data/security design | Open (gated) |
 | MANUAL-1 | Manual squad editing requires the verified Official FPL player catalogue | First-run core-data failure means player search and saved-ID resolution cannot operate; controls are now disabled and honestly labelled, while production remedies remain separately gated | Manual fallback investigation | Open (design gate) |
 | AI-1 | Ask works only inside Claude artifact preview | No hosted AI features | Serverless | Accepted |
@@ -173,3 +176,15 @@ Physical iPhone review exposed pre-season public-picks and missing-team-strength
 
 ### Overall FDR fallback limitation
 When current Official FPL attack/defence strengths are unavailable, the Fixtures surface uses the provider's single overall 1–5 difficulty rating. It cannot honestly distinguish attacker and defender fixture quality, so those lenses are hidden and the direct average FDR is shown with lower meaning easier. This is coarse contextual data, not a position-specific model. A historical pre-season prior remains a separately gated design item.
+
+<!-- TRANSFERS-TRACK-A-2026-08-06 -->
+## Transfers Track A limitations
+
+| ID | Description | Current impact | Planned stage | Status |
+|---|---|---|---|---|
+| TRF-PERF-1 | Exact automatic/persistent search is repository-verified but not yet performance-accepted on the physical iPhone | Correctness, non-blocking interaction and route persistence are automated; the proposed well-below-30-second default target, memory pressure and repeated-run stability remain unproven on Safari | Track A physical acceptance | Open acceptance gate |
+| TRF-PERF-2 | A browser reload or page close ends the in-memory worker and result cache | The next valid session recalculates automatically; no durable optimiser-result database is introduced | By approved design | Accepted |
+| TRF-PERF-3 | Exact pruning is intentionally conservative | It may leave performance on the table rather than risk changing plans or ordering; heuristic candidate restriction remains unapproved | Future only if device target fails | Accepted |
+| TRF-PERF-4 | Deadline evidence can still invoke the optimiser directly outside the app-scoped Transfers controller | Evidence capture may retain a main-thread search path; this Track A UI architecture does not silently broaden into Stage 10 evidence orchestration | Separate scope gate | Open |
+
+The Track A implementation does not address captaincy, bench emergency value, auto-subs, future transfer sequencing, recent player attacking-role form or heuristic/progressive search. Those remain separate model/data approval gates.
