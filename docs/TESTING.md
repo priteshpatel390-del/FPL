@@ -206,3 +206,20 @@ The correction removes runtime source rewriting entirely:
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
 The verified suite is **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Physical iPhone calculation duration, memory pressure and cancellation latency remain an acceptance gate, and Blob-Worker acceptance under the live Pages CSP is unproven until that device test.
+
+## 2026-08-06 — Transfers exact-search corrective evidence
+
+The first physical iPhone Safari Test 1 reached the unchanged 2,000,000-evaluation ceiling. Expected fail-closed behaviour was observed: `search-incomplete` produced no partial recommendation.
+
+Corrective automated coverage now includes:
+
+- production search versus the independent exhaustive oracle;
+- official-scale-shaped pools with all four positions and six Gameweeks;
+- tie-heavy comparator paths;
+- negative and tied projection values;
+- unchanged safety-ceiling fail-closed behaviour;
+- deterministic profiling and exact plan ordering.
+
+The repository gate passes **597 tests** with zero failures or skips. A 650-candidate, six-Gameweek synthetic benchmark completed with **11,128 exact leaf evaluations**, **122 identity-bound prunes** and **117 materialised contenders**. This benchmark is not physical-device acceptance evidence.
+
+Physical retest must verify automatic start, completion, responsive navigation, worker persistence, cancellation, cached reuse and VoiceOver status announcements.

@@ -49,3 +49,12 @@ Teamsheet 2.0.7 is complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c3
 
 ## Completion report for every item
 Report what changed, what deliberately did not change, exact test count/result, build and reproducibility evidence, documentation updates, judgement calls, remaining limitations, branch/commit and draft PR link.
+
+## 2026-08-06 — Transfers exact-search physical-test correction
+
+- Physical iPhone Safari Test 1 reached the unchanged 2,000,000-evaluation safety ceiling at the default six-Gameweek horizon. The fail-closed contract worked: no partial incumbent was presented as optimal.
+- Track A was corrected without changing projections, football formulas, candidate eligibility, transfer depth, ranking, tie-breaks, horizon limits, pricing, hits, free-transfer utility or the safety ceiling.
+- The exact optimiser now applies tighter identity-preserving optimistic bounds throughout the search tree and tie-aware pruning that respects the existing comparator.
+- Independent exhaustive-oracle, tie-heavy, negative-score and official-scale regressions now cover the correction.
+- Automated gate: 597 passing tests and deterministic production builds. A 650-candidate six-Gameweek synthetic run completed with 11,128 exact leaf evaluations; this is engineering evidence only, not physical-iPhone acceptance.
+- Physical iPhone retest remains the approval gate. Track B football-intelligence work remains unapproved and unimplemented.

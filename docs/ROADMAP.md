@@ -145,3 +145,15 @@ Every checkpoint requires its own investigation, exact scope, exclusions, owner 
 ## Teamsheet 2.0.7 current handover
 
 Scope S-2.0.7 was approved by Pritesh on 4 August 2026 and implemented on a separate branch from `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Automated verification is **533 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending; do not call the checkpoint complete or merge without owner approval.
+
+## 2026-08-06 — Transfers Track A corrective status
+
+- [x] Record first physical iPhone Safari failure at the two-million evaluation ceiling.
+- [x] Add exact identity-preserving and tie-aware branch bounds.
+- [x] Add official-scale, tie-heavy, negative-score and exhaustive-oracle regressions.
+- [x] Pass the 597-test repository gate and deterministic build verification.
+- [ ] Repeat physical iPhone Safari Test 1 on the corrected preview.
+- [ ] Complete navigation persistence, cancellation, cache reuse and VoiceOver physical checks.
+- [ ] Obtain explicit approval before merge.
+
+Track B football-intelligence changes remain outside this checkpoint.

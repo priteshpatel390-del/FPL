@@ -110,3 +110,15 @@ The public FPL API and pinned vaastav archive remain available; the owner accept
 
 ## Approval and implementation boundary
 Teamsheet 2.0.6 is complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`. It changed Settings organisation, routes, focus, responsive presentation and consequence-led status wording only. Projection, fixture, captaincy, squad, transfer, simulation, rank, Mini-League, provider and data-source behaviour remain unchanged. The verified baseline is **520 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Prospective validation remains in progress; physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed. Teamsheet 2.0.7 Scope S-2.0.7 is owner-approved and implemented on a review branch. Automated verification is complete; physical iPhone Safari, VoiceOver and live populated-data acceptance remain the next gate before completion or merge.
+
+## 2026-08-06 — Transfers exact-search physical-test correction
+
+**Observed fact:** the first physical iPhone Safari run of Track A failed to complete at the default six-Gameweek horizon because the exact optimiser reached the unchanged 2,000,000-evaluation ceiling. The interface correctly withheld partial recommendations.
+
+**Approved corrective scope:** performance architecture only. The complete player universe, zero-to-three transfer depth, model projections, scoring formulas, affordability, club limits, hits, free-transfer utility, comparator and deterministic ordering remain unchanged.
+
+**Correction:** tighter identity-preserving optimistic bounds are now evaluated at each exact-search node. Equal-score pruning uses optimistic bank, doubtful-player and canonical-signature values so it cannot discard a plan that could win under the existing comparator.
+
+**Evidence:** 597 repository tests pass. New tests compare the production search with the independent exhaustive oracle across official-scale-shaped, tie-heavy, negative and tied projection cases. A 650-candidate, six-Gameweek synthetic run completed at 11,128 exact leaf evaluations.
+
+**Remaining gate:** repeat the physical iPhone Safari acceptance test. Synthetic or CI timing does not establish device speed, memory behaviour, cancellation latency or responsiveness.

@@ -88,3 +88,34 @@ Physical iPhone Safari must still verify:
 - exact final plans/order matching the frozen reference input.
 
 Until that evidence is recorded, Track A is implemented and automatically verified but not product-accepted or approved for merge.
+
+## 2026-08-06 — Physical Test 1 failure and exact correction
+
+### Observed failure
+
+On iPhone Safari, the default six-Gameweek run reached the unchanged 2,000,000-evaluation ceiling. Teamsheet displayed `Exact search did not complete` and withheld all partial plans. That confirms the safety contract worked, but the performance acceptance gate failed.
+
+### Corrective architecture
+
+The candidate universe, score rows, transfer depths, affordability rules, club constraints, hit calculation, free-transfer utility, plan comparator and top-K contract are unchanged.
+
+The exact search now adds:
+
+- an identity-preserving optimistic horizon gain for each candidate;
+- a required-position upper bound at every recursive node;
+- branch ordering by optimistic identity gain, then cost and ID;
+- optimistic tie fields for bank, doubtful incoming players and canonical signature;
+- deterministic profiling of identity-bound prunes.
+
+These values are optimistic relaxations. They can remove a branch only when even its best fictional completion cannot beat the current top-K frontier under the existing comparator.
+
+### Automated evidence
+
+- 597 repository tests pass.
+- Production output remains deterministic.
+- Official-scale-shaped, tie-heavy, negative-score and tied-score cases match the independent exhaustive oracle exactly.
+- A 650-candidate six-Gameweek synthetic run completed with 11,128 exact leaf evaluations, 122 identity-bound prunes and 117 materialised contenders.
+
+### Remaining acceptance gate
+
+The synthetic run does not establish iPhone Safari performance. The corrected preview must repeat the full physical checklist before Track A can be accepted.

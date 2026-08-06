@@ -208,3 +208,16 @@ Reason: physical iPhone Safari proved that moving the unchanged exhaustive optim
 Decision: preserve the exact Stage 6 football objective and broad candidate universe, but make calculation automatic and application-scoped, keep one worker alive across internal navigation, reuse exact completed results and optimise the search only through mathematically result-preserving preparation, core reuse, low-allocation exact scoring, promising ordering and conservative bounds. `exhaustiveTransferSearch()` remains the independent oracle. Cloudflare remains Official FPL transport only.
 
 Consequences: the normal Calculate/Recalculate buttons are removed; route rendering cannot own or terminate the active calculation; material inputs are fingerprinted; partial work is never called optimal; no heuristic universe or progressive recommendation is introduced. Automated equality and lifecycle contracts pass, but physical iPhone duration, memory and repeated-run acceptance remain mandatory before completion or merge. No prediction-accuracy claim is created.
+
+## 2026-08-06 — Decision: preserve exactness after the first physical-test failure
+
+**Decision:** retain the 2,000,000-evaluation fail-closed ceiling and strengthen only mathematically optimistic branch bounds.
+
+**Rejected alternatives:**
+- increasing the ceiling and asking Safari to do more work;
+- limiting the player universe;
+- reducing the default horizon or transfer depth;
+- returning a partial incumbent;
+- changing model scores or recommendation ordering.
+
+**Reason:** each rejected option would weaken safety, exactness or the approved product behaviour. The implemented bounds alter traversal and pruning only; exhaustive-oracle tests verify identical plans and order.

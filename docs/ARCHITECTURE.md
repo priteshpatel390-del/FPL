@@ -201,3 +201,16 @@ The controller fingerprints build/model/rules identity, verified-data revision, 
 `src/model/transfers.mjs` preserves the approved Stage 6 objective, comparator, candidate eligibility and evaluation ceiling. Exact performance work precomputes the player-by-Gameweek score surface, reuses each outgoing squad core, scores non-contending leaves through a lower-allocation exact XI path, materialises complete plan detail only when a candidate can enter retained top K, explores promising branches earlier and applies only conservative upper bounds that cannot remove a possible retained result. The independent `exhaustiveTransferSearch()` remains deliberately separate and unchanged in purpose for differential verification on reduced pools.
 
 This boundary adds no provider, network origin, persistence database or Cloudflare optimisation. Projection, expected-minutes, fixture, scoring, selling-price, hit, free-transfer, roll-value, maximum-depth, horizon, captaincy, bench and result-order behaviour remain unchanged. Deadline evidence may still call the optimiser directly outside this UI controller and remains a separately documented main-thread path.
+
+## 2026-08-06 — Exact-search bound correction
+
+The Transfers worker still runs the canonical optimiser verbatim in one app-scoped Web Worker. The search remains complete and exact.
+
+The search tree now combines two safe optimistic ceilings:
+
+1. the existing relaxed per-position best-XI ceiling; and
+2. an identity-preserving ceiling built from each remaining candidate's best possible marginal contribution across the horizon.
+
+At each node, the tighter ceiling may prune only when the branch cannot beat the current top-K frontier under the full existing comparator. Equal-score pruning uses optimistic bank remaining, doubtful-incoming count and canonical signature. Affordability and club checks remain exact leaf constraints.
+
+No candidate pre-filter, heuristic shortlist, approximate scoring path or altered evaluation ceiling was introduced.

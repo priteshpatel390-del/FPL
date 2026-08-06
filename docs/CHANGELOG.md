@@ -117,3 +117,17 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Retained the independent exhaustive search as the differential oracle and added exactness, position/enabler and persistent-controller tests.
 - Verified 594 passed, 0 failed, 0 skipped with byte-identical exact-identity builds and root/deployable equality.
 - No model, rules, provider, data-source, Cloudflare, captaincy, bench, Mini-League or rank logic changed. Physical iPhone performance acceptance remains open.
+
+## 2026-08-06 — Transfers exact-search physical-test correction
+
+### Fixed
+- Strengthened exact branch-and-bound pruning after the first iPhone Safari test reached the two-million evaluation ceiling.
+- Added identity-preserving optimistic ceilings and comparator-aware tie pruning without changing transfer recommendations or model inputs.
+- Added official-scale, tie-heavy, negative-score and exhaustive-oracle regression coverage.
+
+### Verification
+- 597 tests pass.
+- Deterministic production build retained.
+- Model version remains 2.4.0.
+- Rules version remains 2026-27.3.
+- Physical iPhone retest remains pending.
