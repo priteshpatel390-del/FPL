@@ -22,185 +22,55 @@ jobs:
           ref: agent/transfers-exact-continuation
           fetch-depth: 0
 
-      - name: Apply approved plain-language hit copy and regressions
+      - name: Apply approved copy, tests and records
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          view = Path('src/ui/transfer-optimiser-view.mjs')
-          source = view.read_text()
-
-          net_block = """function transferPlannerNetLabel(value){
-            const n=Number(value)||0;
-            if(Math.abs(n)<0.05) return 'Level net model comparison';
-            return `${n>0?'+':'−'}${Math.abs(n).toFixed(1)} net model ${n>0?'advantage':'disadvantage'}`;
-          }
-
-          function transferPlannerPlanNames"""
-          hit_block = """function transferPlannerNetLabel(value){
-            const n=Number(value)||0;
-            if(Math.abs(n)<0.05) return 'Level net model comparison';
-            return `${n>0?'+':'−'}${Math.abs(n).toFixed(1)} net model ${n>0?'advantage':'disadvantage'}`;
-          }
-
-          function transferPlannerHitLabel(value){
-            const points=Math.max(0,Math.trunc(Number(value)||0));
-            return points?`−${points}`:'No hit';
-          }
-
-          function transferPlannerPlanNames"""
-          assert source.count(net_block) == 1, 'net label insertion point changed'
-          source = source.replace(net_block, hit_block)
-
-          replacements = {
-            "transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,'Actual FPL transfer deduction')":
-              "transferPlannerMetric('Hit',transferPlannerHitLabel(plan.hitCost),'Actual FPL transfer deduction')",
-            "transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,plan.hitCost?'Paid transfer cost':'No points deduction')":
-              "transferPlannerMetric('Hit',transferPlannerHitLabel(plan.hitCost),plan.hitCost?'Paid transfer cost':'No points deduction')",
-            "transferPlannerMetric('Hit','−0','No points deduction')":
-              "transferPlannerMetric('Hit',transferPlannerHitLabel(baseline.hitCost),'No points deduction')",
-            "  transferPlannerNetLabel,\n  transferPlannerPlanNames,":
-              "  transferPlannerNetLabel,\n  transferPlannerHitLabel,\n  transferPlannerPlanNames,"
-          }
-          for old, new in replacements.items():
-            assert source.count(old) == 1, f'expected one occurrence: {old}'
-            source = source.replace(old, new)
-          view.write_text(source)
-
-          test_file = Path('tests/transfer-baseline-presentation.test.mjs')
-          tests = test_file.read_text()
-          marker = "test('zero transfer costs use plain No hit copy instead of a negative zero'"
-          assert marker not in tests, 'copy regression already exists'
-          tests += """
-
-test('zero transfer costs use plain No hit copy instead of a negative zero',async()=>{
-  const {T,doc,workers}=openTransfers({trTop:'1'});
-  T.renderTransfers();
-  await settle();
-  sendResult(workers[0],{status:'ok',issues:[],plans:[strongerTransferPlan(T)],evaluations:12,pruned:3,baseline:baselinePlan(),pricingMode:'exact'});
-  await settle();
-
-  const text=visibleText(doc.transferOut);
-  assert.match(text,/No hit/);
-  assert.doesNotMatch(text,/−0/);
-});
-"""
-          test_file.write_text(tests)
-
-          entries = {
-            'docs/DECISIONS.md': """
-
-## 2026-08-06 — Plain-language decision information
-
-**Decision:** user-facing FPL information must be simple, relevant and immediately understandable. A zero transfer-points cost is displayed as **“No hit”**, never as the mathematically awkward **“−0”**. Paid transfer costs retain their actual deduction, such as **“−4”** or **“−8”**. This is a presentation rule only and does not alter optimiser values, scoring or ranking.
-""",
-            'docs/TESTING.md': """
-
-## 2026-08-06 — Track A physical iPhone Safari evidence
-
-Pritesh physically tested the reconciled PR #72 preview on iPhone Safari with populated Official FPL data. The default six-Gameweek exact calculation completed in approximately **15 seconds** and displayed both the highest-ranked transfer plan and the separate no-transfer baseline. Internal navigation preserved completed results; cancellation and restart responded promptly; an active calculation survived navigation; leaving and returning to Safari caused no freeze or reload; and a newer three-Gameweek request was not overwritten by the older eight-Gameweek result.
-
-VoiceOver was not tested and must not be claimed as physically verified. A final production-bundle regression requires every zero transfer cost to render as **“No hit”** and forbids **“−0”** anywhere in the displayed transfer result.
-""",
-            'docs/PROJECT_CONTEXT.md': """
-
-## Track A device acceptance update — 2026-08-06
-
-The reconciled exact Transfers flow has passed its core physical iPhone Safari checks on populated data: six-Gameweek completion in about 15 seconds, cached navigation restoration, prompt cancellation/restart, active-navigation persistence, Safari app-switch stability and stale-result protection. The final approved display correction replaces confusing zero-cost **“−0”** text with **“No hit”** everywhere. Track A remains draft/unmerged pending final repository verification and explicit integration approval.
-""",
-            'docs/ROADMAP.md': """
-
-### Track A acceptance update — 2026-08-06
-
-Core populated-data iPhone Safari acceptance passed for PR #72. Remaining work before integration is limited to verifying the approved plain-language zero-hit display correction, updating generated files and obtaining explicit stacked merge approval. VoiceOver was not physically tested and is not an acceptance claim for this release.
-""",
-            'docs/KNOWN_LIMITATIONS.md': """
-
-## Track A physical-test limitation — 2026-08-06
-
-The populated Transfers workflow was physically tested on Pritesh's iPhone Safari, but VoiceOver was deliberately not tested. Do not claim physical screen-reader verification. The device result is evidence for the tested calculation, navigation, cancellation, app-switch and stale-result paths only.
-""",
-            'docs/CHANGELOG.md': """
-
-## 2026-08-06 — Transfers plain-language zero-hit copy
-
-- Replaced confusing **“−0”** transfer-cost output with **“No hit”** across baseline cards, plan summaries and review details.
-- Added a production-bundle regression that forbids negative-zero hit copy.
-- Recorded populated iPhone Safari evidence: six-Gameweek completion in about 15 seconds, navigation persistence, cancellation/restart, app-switch stability and stale-result protection.
-- No optimiser, projection, scoring, ranking, candidate or transfer-rule behaviour changed.
-""",
-            'docs/TRANSFERS-EXACT-PERFORMANCE.md': """
-
-## Physical iPhone Safari result — 2026-08-06
-
-On populated Official FPL data, the reconciled six-Gameweek exact calculation completed in approximately 15 seconds on Pritesh's iPhone Safari. Completed-result restoration, cancellation/restart, navigation during calculation, Safari background/return and stale-result protection all behaved smoothly. This is device evidence for the tested scenario, not a universal performance guarantee. VoiceOver was not tested. The final presentation rule renders a zero transfer cost as **“No hit”**, without changing the numeric result.
-""",
-            'CLAUDE.md': """
-
-## Handover update — 2026-08-06
-
-- PR #72 core populated-data iPhone Safari checks passed: six-GW exact completion ~15 seconds; completed and active navigation persistence; prompt cancel/restart; Safari app-switch stability; stale-result protection.
-- VoiceOver was not tested and must not be claimed as physically verified.
-- Product wording rule: user-facing FPL information must be simple and immediately understandable. Zero transfer cost is **“No hit”**, never **“−0”**.
-- This final copy correction is presentation-only. Do not change optimiser, football model, ranking or transfer rules without a new approval gate.
-- PRs remain draft/unmerged until Pritesh explicitly approves the stacked integration sequence.
-"""
-          }
-          for path, entry in entries.items():
-            target = Path(path)
-            text = target.read_text()
-            heading = entry.strip().splitlines()[0]
-            assert heading not in text, f'documentation entry already exists: {path}'
-            target.write_text(text.rstrip() + entry + '\n')
-          PY
-
-      - name: Commit reviewed source tests and documentation
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python -m py_compile .github/scripts/final_hit_copy.py
+          python .github/scripts/final_hit_copy.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/ui/transfer-optimiser-view.mjs tests/transfer-baseline-presentation.test.mjs CLAUDE.md docs/DECISIONS.md docs/TESTING.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/KNOWN_LIMITATIONS.md docs/CHANGELOG.md docs/TRANSFERS-EXACT-PERFORMANCE.md
           git diff --cached --check
-          git commit -m "Clarify zero-hit transfer copy"
-          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          git commit -m 'Clarify zero-hit transfer copy'
+          git push origin HEAD:agent/transfers-exact-continuation
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
-      - name: Run full test and production-build gate
+      - name: Run complete repository gate
         shell: bash
         run: |
-          BUILD_COMMIT="$SOURCE_SHA" ./run-tests.sh | tee /tmp/run-tests.log
-          grep -Eq '613 passed, 0 failed, 0 skipped' /tmp/run-tests.log
-          cmp -s index.html dist/index.html
-          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html > /tmp/build-one.sha
-          cp dist/index.html /tmp/dist-index-one.html
-          cp dist/app.bundle.js /tmp/app-bundle-one.js
-          cp dist/manifest.json /tmp/manifest-one.json
-          cp index.html /tmp/root-index-one.html
+          BUILD_COMMIT="$SOURCE_COMMIT" ./run-tests.sh 2>&1 | tee /tmp/final-copy-tests.log
+          TEST_COUNT=$(awk '/^# tests /{value=$3} END{print value}' /tmp/final-copy-tests.log)
+          test "$TEST_COUNT" = "613"
+          test "$(awk '/^# pass /{value=$3} END{print value}' /tmp/final-copy-tests.log)" = "613"
+          test "$(awk '/^# fail /{value=$3} END{print value}' /tmp/final-copy-tests.log)" = "0"
+          test "$(awk '/^# skipped /{value=$3} END{print value}' /tmp/final-copy-tests.log)" = "0"
+          cmp dist/index.html index.html
 
-      - name: Verify deterministic production build
+      - name: Verify deterministic production builds
         shell: bash
         run: |
-          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
-          cmp -s /tmp/dist-index-one.html dist/index.html
-          cmp -s /tmp/app-bundle-one.js dist/app.bundle.js
-          cmp -s /tmp/manifest-one.json dist/manifest.json
-          cmp -s /tmp/root-index-one.html index.html
-          cmp -s index.html dist/index.html
-          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html > /tmp/build-two.sha
-          diff -u /tmp/build-one.sha /tmp/build-two.sha
+          mkdir -p /tmp/build-one/dist
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/build-one/dist/
+          cp index.html /tmp/build-one/index.html
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/build-one/dist/index.html dist/index.html
+          cmp /tmp/build-one/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/build-one/dist/manifest.json dist/manifest.json
+          cmp /tmp/build-one/index.html index.html
+          cmp dist/index.html index.html
+          sha256sum dist/index.html dist/app.bundle.js dist/manifest.json index.html
 
       - name: Commit verified generated files
         shell: bash
         run: |
           git add dist/index.html dist/app.bundle.js dist/manifest.json index.html
           git diff --cached --check
-          git commit -m "Build verified zero-hit copy"
+          git commit -m 'Build verified zero-hit transfer copy'
           git push origin HEAD:agent/transfers-exact-continuation
-          echo "FINAL_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "FINAL_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
-      - name: Verification summary
+      - name: Report verified commits
         shell: bash
         run: |
-          echo "Source commit: $SOURCE_SHA"
-          echo "Generated head: $FINAL_SHA"
-          cat /tmp/build-two.sha
+          echo "Source commit: $SOURCE_COMMIT"
+          echo "Generated head: $FINAL_COMMIT"
