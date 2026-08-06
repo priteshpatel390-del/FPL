@@ -217,3 +217,9 @@ The verified suite is **590 passed, 0 failed, 0 skipped** with two byte-identica
 The reconciled branch passes **609 tests**. Added contracts prove that explicit cancellation and force-start supersession settle their pending calculation promises, and that mixed-width player IDs with reversed input order preserve exact production-versus-exhaustive results.
 
 Claude's controlled-shape, fixed-depth, re-score, prefix-sum, tied-comparator and Official-scale suites remain intact. The seed-7 automated profile completed with **21 exact leaf evaluations** across **575 outgoing branches**. Automated timing is not physical-iPhone evidence.
+
+## 2026-08-06 — Track A physical iPhone Safari evidence
+
+Pritesh physically tested the reconciled PR #72 preview on iPhone Safari with populated Official FPL data. The default six-Gameweek exact calculation completed in approximately **15 seconds** and displayed both the highest-ranked transfer plan and the separate no-transfer baseline. Internal navigation preserved completed results; cancellation and restart responded promptly; an active calculation survived navigation; leaving and returning to Safari caused no freeze or reload; and a newer three-Gameweek request was not overwritten by the older eight-Gameweek result.
+
+VoiceOver was not tested and must not be claimed as physically verified. A final production-bundle regression requires every zero transfer cost to render as **“No hit”** and forbids **“−0”** anywhere in the displayed transfer result.

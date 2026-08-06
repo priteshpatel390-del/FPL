@@ -105,3 +105,16 @@ test('an ok result without a valid separate baseline remains fail-closed',async(
     assert.equal(T.S.lastOptimiser,null);
   }
 });
+
+
+test('zero transfer costs use plain No hit copy instead of a negative zero',async()=>{
+  const {T,doc,workers}=openTransfers({trTop:'1'});
+  T.renderTransfers();
+  await settle();
+  sendResult(workers[0],{status:'ok',issues:[],plans:[strongerTransferPlan(T)],evaluations:12,pruned:3,baseline:baselinePlan(),pricingMode:'exact'});
+  await settle();
+
+  const text=visibleText(doc.transferOut);
+  assert.match(text,/No hit/);
+  assert.doesNotMatch(text,/−0/);
+});

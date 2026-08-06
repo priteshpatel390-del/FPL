@@ -172,3 +172,6 @@ No projection, score, candidate, transfer depth, affordability, comparator, rank
 
 Automated verification: **612 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical iPhone Safari must still retest the corrected result screen before Track A can be product-accepted or merged.
 
+## Physical iPhone Safari result — 2026-08-06
+
+On populated Official FPL data, the reconciled six-Gameweek exact calculation completed in approximately 15 seconds on Pritesh's iPhone Safari. Completed-result restoration, cancellation/restart, navigation during calculation, Safari background/return and stale-result protection all behaved smoothly. This is device evidence for the tested scenario, not a universal performance guarantee. VoiceOver was not tested. The final presentation rule renders a zero transfer cost as **“No hit”**, without changing the numeric result.

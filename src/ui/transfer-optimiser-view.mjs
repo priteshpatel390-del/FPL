@@ -102,6 +102,11 @@ function transferPlannerNetLabel(value){
   return `${n>0?'+':'−'}${Math.abs(n).toFixed(1)} net model ${n>0?'advantage':'disadvantage'}`;
 }
 
+function transferPlannerHitLabel(value){
+  const points=Math.max(0,Math.trunc(Number(value)||0));
+  return points?`−${points}`:'No hit';
+}
+
 function transferPlannerPlanNames(plan={},byId={}){
   return (plan.transfers||[]).map(move=>({
     outName:byId[move.outPlayerId]?.web_name||String(move.outPlayerId),
@@ -175,7 +180,7 @@ function transferPlannerDetails(plan,horizon){
     el('div',{class:'transfer-details-body'},
       el('div',{class:'transfer-metrics'},
         transferPlannerMetric('Gross XI gain',`${Number(plan.grossGain)>=0?'+':''}${Number(plan.grossGain||0).toFixed(1)}`,'Best legal XI across the selected horizon'),
-        transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,'Actual FPL transfer deduction'),
+        transferPlannerMetric('Hit',transferPlannerHitLabel(plan.hitCost),'Actual FPL transfer deduction'),
         transferPlannerMetric('FT adjustment',`${rollAdjustment>=0?'+':''}${rollAdjustment.toFixed(1)}`,'Decision utility, not an FPL score'),
         transferPlannerMetric('Net comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,'Gross gain minus hit plus FT utility')),
       el('p',{class:'transfer-explainer'},transferPlannerPlanContext(plan,horizon))));
@@ -204,7 +209,7 @@ function transferPlannerPlanCard(plan,{title,index,squad,optimiserSignature,hori
     transferPlannerMoveList(plan),
     el('div',{class:'transfer-metrics transfer-metrics-summary'},
       transferPlannerMetric('Net model comparison',`${Number(plan.netGain)>=0?'+':''}${Number(plan.netGain||0).toFixed(1)}`,`vs no transfer over ${horizon} GW${horizon===1?'':'s'}`),
-      transferPlannerMetric('Hit',`−${Number(plan.hitCost)||0}`,plan.hitCost?'Paid transfer cost':'No points deduction'),
+      transferPlannerMetric('Hit',transferPlannerHitLabel(plan.hitCost),plan.hitCost?'Paid transfer cost':'No points deduction'),
       transferPlannerMetric('Bank after',`£${(Number(plan.bankAfter||0)/10).toFixed(1)}m`),
       transferPlannerMetric('Next GW',`${Number(plan.freeTransfersNextGW)||0} FT`)),
     el('p',{class:'transfer-why'},el('b',{},'Why shown: '),primary
@@ -226,7 +231,7 @@ function transferPlannerBaselineCard(baseline,{alternativesCount,rankedFirst,pri
     el('p',{class:'transfer-card-lead'},copy.comparison),
     el('div',{class:'transfer-metrics transfer-metrics-summary'},
       transferPlannerMetric('Net comparison','0.0','The benchmark'),
-      transferPlannerMetric('Hit','−0','No points deduction'),
+      transferPlannerMetric('Hit',transferPlannerHitLabel(baseline.hitCost),'No points deduction'),
       transferPlannerMetric('Bank after',`£${(Number(baseline.bankAfter||0)/10).toFixed(1)}m`),
       transferPlannerMetric('Next GW',`${Number(baseline.freeTransfersNextGW)||0} FT`)),
     el('p',{class:'transfer-ft-effect'},copy.ftEffect));
@@ -345,6 +350,7 @@ export {
   transferPlannerPresentationState,
   transferPlannerNoTransferCopy,
   transferPlannerNetLabel,
+  transferPlannerHitLabel,
   transferPlannerPlanNames,
   transferPlannerMoveList,
   transferPlannerContext,

@@ -224,3 +224,7 @@ Consequences: no projection, minutes, scoring, fixture, captaincy, squad, afford
 **Reason:** Worker termination alone does not guarantee promise settlement, and numeric player-ID order is not universally equivalent to locale string order for mixed-width IDs.
 
 **Consequence:** cancellation remains a paused/non-failure state, stale results remain rejected, the final comparator is unchanged and partial tie pruning is deliberately conservative. Permanent runtime and exhaustive-oracle regressions enforce the decision.
+
+## 2026-08-06 — Plain-language decision information
+
+**Decision:** user-facing FPL information must be simple, relevant and immediately understandable. A zero transfer-points cost is displayed as **“No hit”**, never as the mathematically awkward **“−0”**. Paid transfer costs retain their actual deduction, such as **“−4”** or **“−8”**. This is a presentation rule only and does not alter optimiser values, scoring or ranking.

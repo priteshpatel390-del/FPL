@@ -116,3 +116,7 @@ Teamsheet 2.0.6 is complete and merged through PR #65 at `cd1ad52ea4d13a247a82bc
 Claude's substantive exact-search correction was pushed concurrently and is retained in full. Reconciliation added two complementary Track A safeguards: intentional Worker cancellation now settles the associated pending promise, and partial-node signature bounds no longer depend on numeric and locale string ordering being equivalent.
 
 The final combined repository gate is 609 passing tests. A deterministic Official-scale seed-7 profile completed with 21 exact leaf evaluations across 575 outgoing branches. This is automated search evidence, not physical-device acceptance.
+
+## Track A device acceptance update — 2026-08-06
+
+The reconciled exact Transfers flow has passed its core physical iPhone Safari checks on populated data: six-Gameweek completion in about 15 seconds, cached navigation restoration, prompt cancellation/restart, active-navigation persistence, Safari app-switch stability and stale-result protection. The final approved display correction replaces confusing zero-cost **“−0”** text with **“No hit”** everywhere. Track A remains draft/unmerged pending final repository verification and explicit integration approval.

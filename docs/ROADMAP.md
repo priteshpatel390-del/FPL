@@ -169,3 +169,7 @@ Track B football-intelligence changes remain outside this checkpoint and unappro
 - [ ] Publish the combined preview and repeat the physical iPhone Safari checklist.
 - [ ] Record device duration, responsiveness, memory pressure, cancellation, persistence, cache reuse and VoiceOver evidence.
 - [ ] Obtain explicit approval before the stacked PR integration sequence.
+
+### Track A acceptance update — 2026-08-06
+
+Core populated-data iPhone Safari acceptance passed for PR #72. Remaining work before integration is limited to verifying the approved plain-language zero-hit display correction, updating generated files and obtaining explicit stacked merge approval. VoiceOver was not physically tested and is not an acceptance claim for this release.

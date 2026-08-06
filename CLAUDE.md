@@ -58,3 +58,11 @@ Report what changed, what deliberately did not change, exact test count/result, 
 - Partial-node signature ties now use the universally optimistic empty string; exact canonical signatures remain unchanged and are evaluated only for complete branches.
 - Mixed-width player IDs, explicit cancellation settlement and supersession settlement are permanent regressions.
 - Automated verification: 609 passed, zero failed or skipped, deterministic builds. Physical iPhone Safari retest remains required.
+
+## Handover update — 2026-08-06
+
+- PR #72 core populated-data iPhone Safari checks passed: six-GW exact completion ~15 seconds; completed and active navigation persistence; prompt cancel/restart; Safari app-switch stability; stale-result protection.
+- VoiceOver was not tested and must not be claimed as physically verified.
+- Product wording rule: user-facing FPL information must be simple and immediately understandable. Zero transfer cost is **“No hit”**, never **“−0”**.
+- This final copy correction is presentation-only. Do not change optimiser, football model, ranking or transfer rules without a new approval gate.
+- PRs remain draft/unmerged until Pritesh explicitly approves the stacked integration sequence.

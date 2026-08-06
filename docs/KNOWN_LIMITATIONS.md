@@ -194,3 +194,7 @@ The Track A implementation does not address captaincy, bench emergency value, au
 The unresolved-promise risk for cancelled or superseded transfer Workers is closed by explicit settlement and runtime tests. Mixed-width player-ID tie handling is covered against the independent exhaustive oracle.
 
 Physical iPhone Safari performance remains unverified for the combined build. CI cannot establish real device memory pressure, thermal behaviour, cancellation latency, backgrounding or VoiceOver announcements.
+
+## Track A physical-test limitation — 2026-08-06
+
+The populated Transfers workflow was physically tested on Pritesh's iPhone Safari, but VoiceOver was deliberately not tested. Do not claim physical screen-reader verification. The device result is evidence for the tested calculation, navigation, cancellation, app-switch and stale-result paths only.

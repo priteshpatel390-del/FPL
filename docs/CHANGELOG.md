@@ -140,3 +140,10 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Existing independent exhaustive-oracle and Official-scale coverage remains intact.
 - Deterministic production builds and root/deployable equality retained.
 - Physical iPhone Safari retest remains pending.
+
+## 2026-08-06 — Transfers plain-language zero-hit copy
+
+- Replaced confusing **“−0”** transfer-cost output with **“No hit”** across baseline cards, plan summaries and review details.
+- Added a production-bundle regression that forbids negative-zero hit copy.
+- Recorded populated iPhone Safari evidence: six-Gameweek completion in about 15 seconds, navigation persistence, cancellation/restart, app-switch stability and stale-result protection.
+- No optimiser, projection, scoring, ranking, candidate or transfer-rule behaviour changed.
