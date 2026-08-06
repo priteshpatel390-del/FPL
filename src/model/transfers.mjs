@@ -263,6 +263,120 @@ function candidateScoreOrders(byPosition,scoreRows,horizon){
   return result;
 }
 
+
+function paddedTopState(rows,count){
+  const values=rows.map(row=>Number(row?.score ?? row)||0);
+  for(let i=values.length;i<count;i++) values.push(0);
+  values.sort((a,b)=>b-a);
+  const selected=values.slice(0,count);
+  return {total:selected.reduce((sum,value)=>sum+value,0),threshold:selected[count-1]??0};
+}
+
+// Admissible horizon bound that preserves each candidate's identity across all
+// Gameweeks. Zero placeholders can only make an incomplete position group more
+// optimistic; singleton top-k gains are then summed, which is safe by diminishing
+// returns. The bound may overstate a descendant, but can never understate it.
+function identityPreservingUpperData(coreByGameweek,byPosition,scoreRows,horizon){
+  const gains=new Map();
+  for(const pos of [1,2,3,4]) for(const p of byPosition[pos]) gains.set(Number(p.id),0);
+  let base=0;
+  for(let offset=0;offset<horizon;offset++){
+    const core=coreByGameweek[offset];
+    const states={
+      1:{1:paddedTopState(core[1],1)},
+      2:{3:paddedTopState(core[2],3),4:paddedTopState(core[2],4),5:paddedTopState(core[2],5)},
+      3:{2:paddedTopState(core[3],2),3:paddedTopState(core[3],3),4:paddedTopState(core[3],4),5:paddedTopState(core[3],5)},
+      4:{1:paddedTopState(core[4],1),2:paddedTopState(core[4],2),3:paddedTopState(core[4],3)}
+    };
+    let bestBase=-Infinity;
+    for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){
+      const f=10-d-m; if(f<1||f>3) continue;
+      bestBase=Math.max(bestBase,states[1][1].total+states[2][d].total+states[3][m].total+states[4][f].total);
+    }
+    base+=Number.isFinite(bestBase)?bestBase:0;
+    const thresholds={
+      1:states[1][1].threshold,
+      2:Math.min(states[2][3].threshold,states[2][4].threshold,states[2][5].threshold),
+      3:Math.min(states[3][2].threshold,states[3][3].threshold,states[3][4].threshold,states[3][5].threshold),
+      4:Math.min(states[4][1].threshold,states[4][2].threshold,states[4][3].threshold)
+    };
+    for(const pos of [1,2,3,4]) for(const p of byPosition[pos]){
+      const id=Number(p.id),score=Number(scoreRows.get(id)?.[offset])||0;
+      gains.set(id,(gains.get(id)||0)+Math.max(0,score-thresholds[pos]));
+    }
+  }
+  return {base,gains};
+}
+
+function bestRemainingIdentityGain(poolsByGain,remainingNeed,usedIds,maxCandidateCost,clubCounts,startCounts,gains){
+  let total=0;
+  for(const pos of [1,2,3,4]){
+    let left=Number(remainingNeed[pos])||0;
+    if(!left) continue;
+    for(const p of poolsByGain[pos]){
+      if(usedIds.has(Number(p.id))||Number(p.now_cost||0)>maxCandidateCost) continue;
+      if(clubCounts){
+        const club=String(p.team),allowed=Math.max(TRANSFER_RULES.maxPerClub,startCounts?.[club]||0);
+        if((clubCounts[club]||0)>=allowed) continue;
+      }
+      total+=Number(gains.get(Number(p.id)))||0;
+      if(--left===0) break;
+    }
+    if(left>0) return -Infinity;
+  }
+  return total;
+}
+
+function identityPreservingUpperBound(data,chosenGain,remainingNeed,poolsByGain,usedIds,maxCandidateCost,clubCounts,startCounts){
+  const rest=bestRemainingIdentityGain(poolsByGain,remainingNeed,usedIds,maxCandidateCost,clubCounts,startCounts,data.gains);
+  return rest===-Infinity?-Infinity:data.base+chosenGain+rest;
+}
+
+function minimumRemainingDoubtful(byPosition,remainingNeed,usedIds){
+  let total=0;
+  for(const pos of [1,2,3,4]){
+    const count=Number(remainingNeed[pos])||0;
+    if(!count) continue;
+    let available=0,nonDoubtful=0;
+    for(const p of byPosition[pos]){
+      if(usedIds.has(Number(p.id))) continue;
+      available++;
+      if(p.status!=='d') nonDoubtful++;
+    }
+    if(available<count) return Infinity;
+    total+=Math.max(0,count-nonDoubtful);
+  }
+  return total;
+}
+
+function optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId){
+  const completion=chosen.slice(),used=new Set(chosen.map(p=>Number(p.id)));
+  for(const pos of [1,2,3,4]){
+    let left=Number(remainingNeed[pos])||0;
+    for(const p of byPositionId[pos]){
+      if(!left) break;
+      if(used.has(Number(p.id))) continue;
+      used.add(Number(p.id)); completion.push(p); left--;
+    }
+    if(left>0) return '';
+  }
+  const incoming=orderedIncomingForOutgoing(outgoing,completion);
+  const transfers=canonicalTransfers(outgoing.map((out,index)=>({
+    outPlayerId:playerId(out),inPlayerId:Number(incoming[index]?.id),position:positionOf(out)
+  })));
+  return planSignature(transfers);
+}
+
+function optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPositionCost,byPositionId,usedIds,cost,sellTotal}){
+  const cheapestRest=Object.entries(remainingNeed).reduce((sum,[pos,count])=>
+    sum+cheapestAvailableCost(byPositionCost[pos],count,usedIds),0);
+  return {
+    bankAfter:ctx.bank+sellTotal-cost-cheapestRest,
+    doubtfulIncoming:chosen.filter(p=>p.status==='d').length+minimumRemainingDoubtful(byPosition,remainingNeed,usedIds),
+    signature:optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId)
+  };
+}
+
 // Admissible upper bound: budget, shared club capacity and cross-Gameweek player identity
 // are relaxed only in the optimistic direction, so no real descendant can score higher.
 function optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,horizon,maxCandidateCost=Infinity,clubCounts=null,startCounts=null){
@@ -297,7 +411,7 @@ function optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidate
   return total;
 }
 
-function boundCannotBeat(upperGross,ctx,transferCount,kth){
+function boundCannotBeat(upperGross,ctx,transferCount,kth,optimisticTie=null){
   if(!kth||!Number.isFinite(upperGross)) return upperGross===-Infinity;
   const hit=transferHit(ctx.freeTransfers,transferCount);
   const nextFT=nextFreeTransfers(ctx.freeTransfers,transferCount);
@@ -306,7 +420,16 @@ function boundCannotBeat(upperGross,ctx,transferCount,kth){
   const epsilon=1e-9;
   if(upperNet<kth.netGain-epsilon) return true;
   if(upperNet>kth.netGain+epsilon) return false;
-  return upperGross<kth.grossBestXIPoints-epsilon;
+  if(upperGross<kth.grossBestXIPoints-epsilon) return true;
+  if(upperGross>kth.grossBestXIPoints+epsilon) return false;
+  const optimistic={
+    netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints,
+    hitCost:hit.hitCost,transferCount,freeTransfersNextGW:nextFT,
+    bankAfter:Number.isFinite(optimisticTie?.bankAfter)?optimisticTie.bankAfter:Number.MAX_SAFE_INTEGER,
+    doubtfulIncoming:Number.isFinite(optimisticTie?.doubtfulIncoming)?optimisticTie.doubtfulIncoming:-1,
+    signature:String(optimisticTie?.signature??'')
+  };
+  return comparePlans(optimistic,kth)>0;
 }
 
 function cheapestAvailableCost(poolByCost,count,usedIds){
@@ -401,14 +524,15 @@ function lightweightCannotEnter(plan,kth){
 function optimiseTransfers(args){
   const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;
   const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;
-  const profile={outgoingBranches:0,boundPruned:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};
+  const profile={outgoingBranches:0,boundPruned:0,identityBoundPruned:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};
   const scoreRows=prepareScoreRows(ctx);
   const byPosition={1:[],2:[],3:[],4:[]};
   ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));
-  const byPositionCost={1:[],2:[],3:[],4:[]};
+  const byPositionCost={1:[],2:[],3:[],4:[]},byPositionId={1:[],2:[],3:[],4:[]};
   for(const pos of [1,2,3,4]){
     byPosition[pos].sort((a,b)=>horizonScore(scoreRows,b)-horizonScore(scoreRows,a)||Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
     byPositionCost[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
+    byPositionId[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.id)-Number(b.id));
   }
   const candidatesByScore=candidateScoreOrders(byPosition,scoreRows,ctx.horizon);
 
@@ -432,15 +556,28 @@ function optimiseTransfers(args){
       const core=ctx.squad.filter(entry=>!outIds.has(playerId(entry)));
       const coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon);
       const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });
+      const identityData=identityPreservingUpperData(coreByGameweek,byPosition,scoreRows,ctx.horizon);
+      const byPositionGain={1:[],2:[],3:[],4:[]};
+      for(const pos of [1,2,3,4]) byPositionGain[pos]=byPosition[pos].slice().sort((a,b)=>
+        (Number(identityData.gains.get(Number(b.id)))||0)-(Number(identityData.gains.get(Number(a.id)))||0)||
+        Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));
       const kth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;
       if(kth){
-        const upper=optimisticSquadUpperBound(coreByGameweek,[],need,candidatesByScore,scoreRows,ctx.horizon,
+        const usedIds=new Set();
+        const relaxedUpper=optimisticSquadUpperBound(coreByGameweek,[],need,candidatesByScore,scoreRows,ctx.horizon,
           ctx.bank+sellTotal,afterOut,ctx.startCounts);
-        if(boundCannotBeat(upper,ctx,n,kth)){ pruned++; profile.boundPruned++; continue; }
+        const identityUpper=identityPreservingUpperBound(identityData,0,need,byPositionGain,usedIds,
+          ctx.bank+sellTotal,afterOut,ctx.startCounts);
+        const upper=Math.min(relaxedUpper,identityUpper);
+        const tie=optimisticTieBreak({ctx,outgoing,chosen:[],remainingNeed:need,byPosition,byPositionCost,byPositionId,
+          usedIds,cost:0,sellTotal});
+        if(boundCannotBeat(upper,ctx,n,kth,tie)){
+          pruned++; profile.boundPruned++; if(identityUpper<=relaxedUpper) profile.identityBoundPruned++; continue;
+        }
       }
 
       const chosen=[],chosenPoolIndexes=[];
-      function choose(index,cost,clubCounts){
+      function choose(index,cost,clubCounts,chosenGain=0){
         if(incomplete) return;
         if(index===required.length){
           if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }
@@ -457,7 +594,7 @@ function optimiseTransfers(args){
           if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }
           return;
         }
-        const pos=required[index],pool=byPosition[pos];
+        const pos=required[index],pool=byPositionGain[pos];
         const samePosition=index>0&&required[index-1]===pos;
         const startAt=samePosition?chosenPoolIndexes[index-1]+1:0;
         for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){
@@ -471,15 +608,23 @@ function optimiseTransfers(args){
           const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);
           if(nextClubs[club]>allowed){ pruned++; profile.clubPruned++; continue; }
           chosen.push(candidate); chosenPoolIndexes.push(poolIndex);
+          const nextGain=chosenGain+(Number(identityData.gains.get(Number(candidate.id)))||0);
           const nextKth=plans.length>=ctx.maxResults?plans[plans.length-1]:null;
-          if(index===0&&required.length===3&&nextKth){
-            const upper=optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,ctx.horizon,
+          if(nextKth){
+            const identityUpper=identityPreservingUpperBound(identityData,nextGain,remainingNeed,byPositionGain,usedIds,
               ctx.bank+sellTotal-nextCost,nextClubs,ctx.startCounts);
-            if(boundCannotBeat(upper,ctx,n,nextKth)){
-              pruned++; profile.boundPruned++; chosen.pop(); chosenPoolIndexes.pop(); continue;
+            const hasRemaining=Object.values(remainingNeed).some(Boolean);
+            const relaxedUpper=hasRemaining?optimisticSquadUpperBound(coreByGameweek,chosen,remainingNeed,candidatesByScore,scoreRows,ctx.horizon,
+              ctx.bank+sellTotal-nextCost,nextClubs,ctx.startCounts):Infinity;
+            const upper=Math.min(identityUpper,relaxedUpper);
+            const tie=optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPositionCost,byPositionId,
+              usedIds,cost:nextCost,sellTotal});
+            if(boundCannotBeat(upper,ctx,n,nextKth,tie)){
+              pruned++; profile.boundPruned++; if(identityUpper<=relaxedUpper) profile.identityBoundPruned++;
+              chosen.pop(); chosenPoolIndexes.pop(); continue;
             }
           }
-          choose(index+1,nextCost,nextClubs);
+          choose(index+1,nextCost,nextClubs,nextGain);
           chosen.pop(); chosenPoolIndexes.pop();
           if(incomplete) return;
         }
