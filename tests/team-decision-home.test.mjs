@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   TEAM_DECISION_HOME_VERSION,
+  TEAM_RESOURCES_BENCH_CLARITY_VERSION,
   TEAM_DECISION_BENCH_LABELS,
   teamDecisionForecast,
   teamDecisionSquadReady,
@@ -24,6 +25,7 @@ const legalSquad=()=>[
 
 test('Team decision home is versioned as the approved checkpoint',()=>{
   assert.equal(TEAM_DECISION_HOME_VERSION,'2.0.2');
+  assert.equal(TEAM_RESOURCES_BENCH_CLARITY_VERSION,'UX-A1');
 });
 
 test('forecast keeps starting-XI points and captain uplift explicit',()=>{
@@ -38,8 +40,8 @@ test('only a complete legal FPL squad can produce the decision home',()=>{
 });
 
 test('bench labels distinguish the reserve goalkeeper from ordered outfield substitutes',()=>{
-  assert.deepEqual(TEAM_DECISION_BENCH_LABELS,['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
-  assert.deepEqual(Array.from({length:4},(_,index)=>teamDecisionBenchLabel(index)),['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
+  assert.deepEqual(TEAM_DECISION_BENCH_LABELS,['GK','1st','2nd','3rd']);
+  assert.deepEqual(Array.from({length:4},(_,index)=>teamDecisionBenchLabel(index)),['GK','1st','2nd','3rd']);
 });
 
 test('source wording separates Official FPL, manual and verified fallback states',()=>{
@@ -97,7 +99,7 @@ test('production wiring wraps the verified renderer without changing model modul
   assert.match(source,/manualToggle\.disabled=!available/);
   assert.match(source,/Manual squad editing is unavailable until verified Official FPL player data loads/);
   assert.match(source,/teamDecisionRelabelBench\(stage\)/);
-  assert.match(bundle,/\['Reserve goalkeeper','1st sub','2nd sub','3rd sub'\]/);
+  assert.match(bundle,/\['GK','1st','2nd','3rd'\]/);
   assert.doesNotMatch(app,/Load your team ID above|build your 15 by hand below/);
   assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);
 });

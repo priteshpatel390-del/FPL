@@ -1,5 +1,9 @@
 # PROJECT_CONTEXT.md
 
+<!-- UX-A1-2026-08-06 -->
+> **UX-A1 Team Resources and Bench Clarity — approved implementation in review:** branch `agent/ux-a1-team-resources-bench-clarity` is based on verified `main` `06e4a07d95c961af2ebbb90f1e142635a582e7b1`. It adds one manual-resource bar directly before the Team pitch, removes the duplicate compact FT/bank chips and separates the four bench roles from player names without changing the bench array, order, Player Detail route or any calculation. Verification is **624 passed, 0 failed, 0 skipped** with deterministic production outputs. Populated physical iPhone Safari review remains owner-pending; VoiceOver was deliberately not tested. A2, A3 and Workstream B remain outside scope and unapproved.
+
+
 <!-- TRANSFERS-TRACK-A-2026-08-06 -->
 > **Current Track A status — complete and merged:** FPL-T1 and Track A are integrated on `main` through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). The final `main` merge commit and the verified PR #72 head (`7257e8601b4a4f2fae80ce30a787f7069974a926`) have the identical repository tree `3794e8e7ab9859717950296766dc9d64c9e5473f`. The accepted branch baseline is **613 passed, 0 failed, 0 skipped** with deterministic production builds and root/deployable equality. On populated physical iPhone Safari, the six-Gameweek exact calculation completed in about 15 seconds; completed and active navigation persistence, prompt cancellation/restart, Safari app switching, stale-result protection, the separate no-transfer baseline and the final **“No hit”** wording all passed. VoiceOver was deliberately not tested and must not be claimed as physically verified. No prediction-accuracy improvement is claimed, and Track B football intelligence remains unapproved and unimplemented.
 
