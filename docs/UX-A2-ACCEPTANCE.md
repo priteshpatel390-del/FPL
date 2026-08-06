@@ -1,6 +1,8 @@
 # UX-A2 owner acceptance
 
-Status: **passed on physical iPhone Safari on 6 August 2026**.
+Status: **passed on physical iPhone Safari on 6 August 2026**. UX-A2 subsequently merged
+through PR #76 to `main` at `bffcba8e9231adfc216125913f8ab83c042c3e10`; see
+`UX-A2-MERGE-RECORD.md`.
 
 This record supersedes earlier current-status wording that described UX-A2 device acceptance as pending.
 
