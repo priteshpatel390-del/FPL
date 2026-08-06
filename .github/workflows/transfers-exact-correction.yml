@@ -23,20 +23,7 @@ jobs:
       - name: Align tie-heavy regression with its exactness purpose
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          path=Path('tests/transfer-exact-scale.test.mjs')
-          text=path.read_text()
-          old="""  assert.deepEqual(transferResultSummary(prepared),transferResultSummary(oracle));
-  assert.ok(prepared.profile.identityBoundPruned>0);
-});"""
-          new="""  assert.deepEqual(transferResultSummary(prepared),transferResultSummary(oracle));
-  assert.ok(prepared.profile.boundPruned>0);
-});"""
-          if text.count(old)!=1:
-              raise SystemExit(f'expected one tie-heavy assertion block, found {text.count(old)}')
-          path.write_text(text.replace(old,new,1))
-          PY
+          python -c "from pathlib import Path; p=Path('tests/transfer-exact-scale.test.mjs'); t=p.read_text(); old='  assert.deepEqual(transferResultSummary(prepared),transferResultSummary(oracle));\\n  assert.ok(prepared.profile.identityBoundPruned>0);\\n});'; new='  assert.deepEqual(transferResultSummary(prepared),transferResultSummary(oracle));\\n  assert.ok(prepared.profile.boundPruned>0);\\n});'; assert t.count(old)==1, t.count(old); p.write_text(t.replace(old,new,1))"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tests/transfer-exact-scale.test.mjs
