@@ -1,16 +1,17 @@
 # ROADMAP.md — living roadmap
 
 <!-- TRANSFERS-TRACK-A-2026-08-06 -->
-> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. **The first physical iPhone Safari test failed:** with verified saved data, a complete squad, one free transfer, an empty bank, the six-Gameweek horizon and Top 8, the automatic exact search exhausted the unchanged 2,000,000 evaluation ceiling and reported *"Exact search did not complete."* The owner-approved corrective change rebuilds the exact search around position-quota score prefix sums, per-formation admissible bounds, price-capped optimistic completion tables and descending-gain stopping rules. The approved football problem, comparator, candidate universe, horizon, result limit and evaluation ceiling are unchanged, and `exhaustiveTransferSearch()` remains an independent oracle. Automated verification is **612 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. **The corrected search completed on the second physical iPhone Safari test, but the result screen failed because the separately returned zero-transfer baseline had fallen outside the Top 8 and the presentation read only `result.plans`. The owner-approved PR #72 correction reads `result.baseline` without changing the optimiser or its ranked Top 8. A further physical retest remains required.** Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
+> **Current Track A status — complete and merged:** FPL-T1 and Track A are integrated on `main` through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). The final `main` merge commit and the verified PR #72 head (`7257e8601b4a4f2fae80ce30a787f7069974a926`) have the identical repository tree `3794e8e7ab9859717950296766dc9d64c9e5473f`. The accepted branch baseline is **613 passed, 0 failed, 0 skipped** with deterministic production builds and root/deployable equality. On populated physical iPhone Safari, the six-Gameweek exact calculation completed in about 15 seconds; completed and active navigation persistence, prompt cancellation/restart, Safari app switching, stale-result protection, the separate no-transfer baseline and the final **“No hit”** wording all passed. VoiceOver was deliberately not tested and must not be claimed as physically verified. No prediction-accuracy improvement is claimed, and Track B football intelligence remains unapproved and unimplemented.
 
 
-> **Current approved item — FPL-T1:** Implemented for review on draft PR #69. The owner-controlled Official FPL Worker is deployed, the exact stable `/fpl` gateway is configured in the deterministic Pages build, live 2026/27 bootstrap transport passed on physical iPhone Safari and the automated baseline is **590 passed, 0 failed, 0 skipped**. The approved responsive Transfers correction is automatically verified; complete physical populated-app acceptance, update the PR evidence and obtain explicit merge approval. No model or calculation change is authorised.
+> **Current approved item:** No new implementation item is approved. FPL-T1 and Track A are complete and merged through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). Current work is pre-season readiness and prospective evidence collection; Track B remains separately gated.
 
 > **Teamsheet 2.0.7:** Complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; the Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified.
-Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-05.
+Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-06.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 
 ## Completed
+- **FPL-T1 and Track A — Official FPL gateway plus exact persistent Transfers** · COMPLETE AND MERGED through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). Final accepted evidence: 613 passing tests, deterministic builds, exact merge-tree identity and populated iPhone Safari acceptance for the tested Transfers paths; VoiceOver was not tested.
 - **Stage 1 — Characterisation and audit** · DONE.
 - **SEC-1 hot-fix** · Odds key never transits relays · DONE and deployed.
 - **Stage 2 — Module extraction** · ES modules, deterministic build, provider registry and backtest provenance · DONE.
@@ -88,10 +89,9 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
   - Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed.
 
 ## Current
-- **Teamsheet 2.0.7 — Final Mobile Polish and Acceptance** · IMPLEMENTED FOR REVIEW.
-  - Scope S-2.0.7 is owner-approved and limited to presentation, interaction, accessibility, resilience and acceptance work.
-  - Automated verification is complete; physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.
-- **Live-season readiness and prospective validation** remains operational. Genuine pre-deadline evidence collection begins with the 2026/27 season.
+- **Pre-season readiness and prospective validation** · OPERATIONAL. Genuine pre-deadline evidence collection begins with the 2026/27 season.
+- **Remaining live populated acceptance outside tested Transfers paths** · OPEN where separately recorded for Team, Fixtures, Player Detail and Leagues.
+- **New implementation work** · NOT APPROVED. Track B and any product, provider or model change require a new investigation and approval gate.
 
 ## Teamsheet 2.0 migration sequence
 1. **Teamsheet 2.0.1 — Navigation and Settings architecture** · COMPLETE AND MERGED.
@@ -110,10 +110,10 @@ Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, ST
    - Adds selected-rival factual exposure, exact complete/fresh counts and honest partial states; strategy modelling remains separately gated.
 6. **Teamsheet 2.0.6 — Research, evidence and diagnostics completion** · COMPLETE AND MERGED.
    - Route-owned Settings hierarchy, explicit mounts, consequence-led warnings, complete help/build detail and mobile research presentation merged through PR #65.
-7. **Teamsheet 2.0.7 — Final mobile polish and acceptance** · IMPLEMENTED FOR REVIEW.
-   - Approved Scope S-2.0.7 is implemented on draft PR #68 with automated verification and generated-artifact finalisation complete.
-   - Physical iPhone Safari, VoiceOver and live populated-data acceptance remain required before the checkpoint can be fully accepted.
-   - Do not merge without Pritesh’s explicit approval; do not begin a new product checkpoint.
+7. **Teamsheet 2.0.7 — Final mobile polish and acceptance** · COMPLETE AND MERGED through PR #68.
+   - Safari foreground-resume behaviour passed owner retest.
+   - VoiceOver remains accepted-unverified.
+   - Subsequent FPL-T1 and Track A integration is complete through PRs #69, #70 and #72; remaining live populated acceptance is tracked by feature rather than blocking the merged checkpoint.
 
 Every checkpoint requires its own investigation, exact scope, exclusions, owner approval where required, branch, complete verification, documentation and draft PR.
 
@@ -173,3 +173,7 @@ Track B football-intelligence changes remain outside this checkpoint and unappro
 ### Track A acceptance update — 2026-08-06
 
 Core populated-data iPhone Safari acceptance passed for PR #72. Remaining work before integration is limited to verifying the approved plain-language zero-hit display correction, updating generated files and obtaining explicit stacked merge approval. VoiceOver was not physically tested and is not an acceptance claim for this release.
+
+## Track A merge record — 2026-08-06
+
+The approved stack merged in order: PR #69 → `00a35bacd2396a125a8a914bff9980b4f18b257f`, PR #70 → `78b2729c51419a36c5e6f757fa54830100b5435c`, PR #72 → `be742e1eb707b3892f6405adf5d8769e084eee65`. Final `main` has the same tree `3794e8e7ab9859717950296766dc9d64c9e5473f` as the verified PR #72 head. No Track B work was pulled forward.
