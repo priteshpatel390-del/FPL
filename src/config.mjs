@@ -48,6 +48,7 @@ export const TRANSFER_RULES = Object.freeze({
   maxFreeTransfers:5,
   pointsPerPaidTransfer:4,
   rollValue:0.5,
+  squadBudget:1000,
   maxPerClub:3,
   positionQuotas:Object.freeze({1:2,2:5,3:5,4:3}),
   unavailableStatuses:Object.freeze(['i','u','s','n']),

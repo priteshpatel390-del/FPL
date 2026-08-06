@@ -3,7 +3,7 @@ Purpose: security posture record. Audience: all sessions; Stage 3 implementers e
 Last updated: 2026-08-04. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
 
 ## Current architecture
-Static single-file application on GitHub Pages. Stage 3 security hardening is complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`. The verified Stage 3 baseline was 210 passing tests with deterministic two-build output.
+Static single-file application on GitHub Pages plus one owner-controlled, zero-dependency Cloudflare Worker used only as a narrow read-only transport to Official FPL. The Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev` and accepts only the approved allowlisted FPL paths; it is not a generic proxy. Stage 3 security hardening remains complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`.
 
 - Odds transport is DIRECT ONLY. The key cannot enter the FPL/Understat relay cascade.
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
@@ -12,6 +12,9 @@ Static single-file application on GitHub Pages. Stage 3 security hardening is co
 - Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable; full current-session detail is organised under Settings → Data & Diagnostics → Provider Health. Healthy state does not occupy the header. Primary screens receive only fixed consequence-led core-data warnings and never raw endpoints, relay errors or identifiers. The placement changes presentation only.
 - Stage 9.6 forbids style attributes/runtime style APIs and removes the related CSP concession without changing provider, storage or model behaviour.
 - Stage 10 snapshot, outcome and metric records use allowlisted shapes, canonical finite JSON, immutable revisions and deterministic SHA-256 verification.
+
+## Official FPL gateway security
+The production gateway uses a fixed Official FPL upstream host and an exact path/query allowlist. It supports only `GET`, `HEAD` and CORS `OPTIONS`, forwards only `Accept: application/json`, omits browser credentials and rejects unknown paths, traversal, arbitrary URLs, non-JSON responses and every redirect without following or exposing its destination. Browser CORS is limited to approved exact origins, but this is not authentication. Redacted observability can record only bounded error type/message data; permanent tests strip URLs, query values and numeric identifiers. Live bootstrap transport was verified after deployment, while account-shaped application acceptance remains pending.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:
@@ -37,7 +40,7 @@ Policy shape:
 - hash-only inline style element plus `https://fonts.googleapis.com`
 - no `style-src-attr` directive and no `unsafe-inline` token
 - `font-src https://fonts.gstatic.com`
-- explicit `connect-src` allow-list for same-origin timing evidence, FPL, relays, Understat, Odds, archive and Claude preview
+- explicit `connect-src` allow-list for same-origin timing evidence, the exact owner-controlled FPL gateway origin `https://teamsheet-fpl-gateway.fpltsheet.workers.dev`, optional Understat relays, Odds, archive and Claude preview
 - `img-src 'self' data:`
 - `object-src 'none'`, `base-uri 'none'`, `form-action 'self'`
 - `frame-ancestors 'none'` retained for future header migration
@@ -47,7 +50,7 @@ GitHub Pages cannot send CSP headers and meta CSP ignores `frame-ancestors`. A b
 Stage 10.3 adds no network origin and no CSP relaxation. Metrics are computed from locally stored validated evidence only.
 
 ## Deferred triggers
-Serverless proxies, environment-held secrets, origin checks, server rate limiting, real CSP headers and hosted Anthropic support remain deferred until hosted AI is required under D-08 or another separately approved trigger exists.
+The approved narrow Official FPL transport Worker is implemented and deployed. Environment-held secrets, authenticated/private FPL access, server rate limiting, real CSP headers and hosted Anthropic support remain deferred until separately approved. The Worker stores no FPL credentials or application secrets.
 
 ## Stage 10 evidence security
 Evidence construction is allowlist-only and rejects secret-shaped keys or values before finalisation. It never serialises configuration or core state wholesale. Numeric entry and league identifiers are redacted from retry/issue endpoints; FPL Team ID, manager name and league IDs are omitted. A random 128-bit device-local reference is used instead.
@@ -112,3 +115,6 @@ Moving restore, export and deletion controls changes no trust rule. Imported sna
 ## Teamsheet 2.0.7 security boundary
 
 Final-polish work adds no network origin, provider, authentication, secret, backend, service worker or account-write route. Hosted Ask is disabled before submission and states that no Anthropic key is accepted or stored. The artifact-preview keyless path remains the only approved AI transport. Restricted startup rendering and route/focus changes are presentation-only and cannot make recovery records official or alter recommendations.
+
+## FPL-T1 Official FPL gateway security boundary
+The Worker is not a generic proxy: upstream host and path families are fixed, methods are read-only, query names and numeric ranges are allowlisted, and browser cookies, authorization headers and arbitrary headers are never forwarded. The browser receives CORS only for exact approved origins. The gateway holds no FPL password, account cookie, Odds key or Anthropic key and performs no account write. Dynamic account and league responses are no-store; only bootstrap and unfiltered fixtures may use a five-minute shared cache. Ordinary platform request metadata may still be visible to the infrastructure host and must not be described as private from Cloudflare.

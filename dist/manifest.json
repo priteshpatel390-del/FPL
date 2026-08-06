@@ -1,8 +1,8 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "fcd7db6e30a4716f0b7bbe65166e54802920a2e73c06a2e1946b249ff57e9cb4",
-  "commit": "5a61ec5510c447580afa6070a5a9815516babe86",
+  "sourceHash": "d18b17a19353e7c2037354c0f99df34c41b295a74d0035ae8092eaec805778dc",
+  "commit": "d6f856a734dc00751ed5fc0d5c249e27a7b7ddf7",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -40,9 +40,11 @@
     "src/evidence/metrics.mjs",
     "src/evidence/review.mjs",
     "src/ui/transfer-optimiser-view.mjs",
+    "src/ui/transfer-performance.mjs",
     "src/ui/mini-leagues-view.mjs",
     "src/ui/views.mjs",
     "src/ui/team-decision-home.mjs",
+    "src/ui/manual-squad-runtime.mjs",
     "src/ui/backtest-copy.mjs",
     "src/ui/markdown.mjs",
     "src/ui/security-wiring.mjs",

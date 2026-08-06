@@ -1,16 +1,10 @@
+// Presentation only. The authoritative Transfers renderer and the background calculation
+// live in transfer-performance.mjs; nothing here may enter the optimiser on the UI thread.
 import { S } from '../state.mjs';
 import { $, el, setChildren } from '../util.mjs';
-import { xpOf } from '../model/xp.mjs';
-import { mySquad } from '../squad.mjs';
-import { optimiseTransfers } from '../model/transfers.mjs';
 import { saveCfg } from '../storage.mjs';
-import { renderRouteDataWarning } from './data-warning.mjs';
 import {
-  decisionPreviewSquadSignature,
-  decisionPreviewPlanSignature,
-  decisionPreviewOptimiserSignature,
   decisionPreviewSnapshot,
-  decisionPreviewSyncOptimiser,
   decisionPreviewSelectTransfer,
   decisionPreviewClearTransfer
 } from './decision-preview.mjs';
@@ -297,126 +291,6 @@ function transferPlannerMarkUpdating(){
   if(status) status.textContent='Updating transfer comparison…';
 }
 
-function renderTransfers(){
-  const out=$('transferOut');
-  if(!out) return;
-  renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
-  transferPlannerSyncVisibleAssumptions();
-  transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
-  transferPlannerMarkUpdating();
-
-  try{
-    if(!S.boot){
-      transferPlannerBlocking(out,'Verified player data is unavailable.','Refresh from Settings before using transfer comparisons.');
-      return;
-    }
-    const squad=mySquad();
-    if(squad.length!==15){
-      transferPlannerBlocking(out,'A complete 15-player squad is required.','Load your team or finish the manual squad in Team setup.');
-      return;
-    }
-
-    const assumptions=transferPlannerReadAssumptions($('trFtCount')?.value,$('trBankIn')?.value);
-    if(!assumptions.valid){
-      transferPlannerBlocking(out,'Check the planning assumptions.',assumptions.issues.join(' '));
-      return;
-    }
-
-    const horizon=Math.max(1,Math.min(8,Math.trunc(Number($('trHorizon')?.value)||6)));
-    const maxResults=Math.max(1,Math.min(20,Math.trunc(Number($('trTop')?.value)||8)));
-    const squadSignature=decisionPreviewSquadSignature(squad);
-    const result=optimiseTransfers({
-      squad,
-      players:S.boot.elements||[],
-      bank:assumptions.bankTenths,
-      freeTransfers:assumptions.freeTransfers,
-      startGW:S.nextGW,
-      horizon,
-      maxResults,
-      scorePlayer:(player,gw)=>xpOf(player,gw,1).total
-    });
-    S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
-
-    if(result.status==='invalid-input'){
-      transferPlannerBlocking(out,'Squad cannot be compared.',`Fix the squad before continuing: ${(result.issues||[]).join(', ')}.`);
-      return;
-    }
-    if(result.status==='projection-unavailable'){
-      transferPlannerBlocking(out,'Projections are unavailable.','No transfer recommendation can be made from an unverified comparison.');
-      return;
-    }
-    if(result.status==='search-incomplete'){
-      transferPlannerBlocking(out,'Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
-      return;
-    }
-
-    const plans=result.plans||[];
-    const state=transferPlannerPresentationState(plans);
-    const baseline=plans.find(plan=>Number(plan.transferCount)===0);
-    if(!baseline){
-      transferPlannerBlocking(out,'No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
-      return;
-    }
-
-    const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
-    const topAlternative=alternatives[0]||null;
-    const optimiserSignature=decisionPreviewOptimiserSignature({
-      squadSignature,
-      horizon,
-      bank:assumptions.bankTenths,
-      freeTransfers:assumptions.freeTransfers,
-      plans
-    });
-    const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
-    if(previewCleared) transferPlannerDispatchPreviewChange();
-    const previewState=decisionPreviewSnapshot();
-    const nodes=[
-      transferPlannerContext(),
-      transferPlannerDecisionHero(state,baseline,topAlternative,horizon),
-      el('div',{class:'transfer-card-stack'},
-        transferPlannerBaselineCard(baseline,{
-          alternativesCount:alternatives.length,
-          rankedFirst:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST,
-          primary:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST||state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY
-        }),
-        topAlternative?transferPlannerPlanCard(topAlternative,{
-          title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
-          index:plans.indexOf(topAlternative),
-          squad,
-          optimiserSignature,
-          horizon,
-          selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
-          primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
-          pricingMode:result.pricingMode
-        }):null)
-    ];
-
-    const otherAlternatives=alternatives.slice(1,4);
-    if(otherAlternatives.length){
-      nodes.push(el('details',{class:'transfer-alternatives'},
-        el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
-        el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
-          title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
-          index:plans.indexOf(plan),
-          squad,
-          optimiserSignature,
-          horizon,
-          selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
-          primary:false,
-          pricingMode:result.pricingMode
-        })))));
-    }
-
-    nodes.push(el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
-    setChildren(out,nodes);
-  }finally{
-    out.setAttribute('aria-busy','false');
-    const status=$('transferStatus');
-    if(status) status.textContent='Transfer comparison updated.';
-  }
-}
-
 function transferPlannerClearPreview(){
   const preview=decisionPreviewSnapshot();
   decisionPreviewClearTransfer();
@@ -472,7 +346,15 @@ export {
   transferPlannerNoTransferCopy,
   transferPlannerNetLabel,
   transferPlannerPlanNames,
+  transferPlannerMoveList,
+  transferPlannerContext,
+  transferPlannerBlocking,
+  transferPlannerDecisionHero,
+  transferPlannerBaselineCard,
+  transferPlannerPlanCard,
+  transferPlannerClearPreview,
+  transferPlannerSyncVisibleAssumptions,
+  transferPlannerDispatchPreviewChange,
   transferPlannerRefreshCommittedSelection,
-  installTransferPlannerCommittedControlRefresh,
-  renderTransfers
+  installTransferPlannerCommittedControlRefresh
 };

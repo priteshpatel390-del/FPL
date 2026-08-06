@@ -26,22 +26,31 @@ function renderTicker(){
   }
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const span = clamp(parseInt($('fxSpan').value) || 6, 3, 12);
-  const lens = $('fxLens').value, sort = $('fxSort').value;
+  const lensControl = $('fxLens'), sort = $('fxSort').value;
+  const lensState = fixtureLensState(lensControl.value);
+  for(const option of Array.from(lensControl.options || [])){
+    if(!option) continue;
+    const separated = option.value === 'attack' || option.value === 'defence';
+    option.hidden = lensState.fallback && separated;
+    option.disabled = lensState.fallback && separated;
+    if(option.value === 'official') option.textContent = lensState.fallback ? 'Overall FPL difficulty' : 'Official FDR';
+  }
+  if(lensState.fallback) lensControl.value = 'official';
+  const lens = lensState.lens;
 
   let teams = Object.values(S.teams).map(t => ({t, s:runScore(t.id, from, span, lens)}));
-  if(sort === 'ease') teams.sort((a,b) => b.s - a.s);
-  else if(sort === 'hard') teams.sort((a,b) => a.s - b.s);
+  if(sort === 'ease' || sort === 'hard') teams.sort((a,b) => compareFixtureRunScores(a.s,b.s,sort,lens));
   else teams.sort((a,b) => a.t.name.localeCompare(b.t.name));
 
   const header = elNode('tr',{},head('Team','tm'));
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
+    const scoreLabel=Number.isFinite(s)?s.toFixed(2):'—';
+    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},scoreLabel)));
     teamFixtures(t.id, from, span).forEach(games => {
       if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
-      const diffs = games.map(g => lens === 'official' ? g.officialDiff
-        : multToDiff(lens === 'defence' ? g.ctx.def : g.ctx.atk));
+      const diffs = games.map(g => fixtureDifficulty(g,lens));
       const contents = [];
       games.forEach((g,i) => {
         if(i) contents.push(elNode('hr',{class:'fixture-divider'}));
@@ -51,17 +60,28 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
+  const tickerNodes = [];
+  if(lensState.fallback) tickerNodes.push(noteNode('plain',
+    elNode('b',{},'Overall FPL difficulty.'),
+    ' Lower is easier. Official FPL currently supplies one overall 1–5 rating, so separate attacker and defender lenses are hidden until genuine team-strength inputs are available.'));
+  tickerNodes.push(elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
+  setChildren($('ticker'),tickerNodes);
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
     return {t, delta: later - now};
   });
-  const up = swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
-  const down = swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
+  const favourable = lensState.lowerIsEasier
+    ? swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4)
+    : swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
+  const harder = lensState.lowerIsEasier
+    ? swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4)
+    : swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
   const swingNodes = [];
-  if(up.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${up.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
-  if(down.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${down.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
+  if(lensState.fallback)
+    swingNodes.push(noteNode('plain',elNode('b',{},'Projection fallback.'),' Player projections use neutral fixture multipliers until separate, validated attack and defence strengths are available.'));
+  if(favourable.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${favourable.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
+  if(harder.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${harder.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
 
   const perGW = {};
   S.fixtures.filter(f => f.event >= from && f.event < from+span).forEach(f => {

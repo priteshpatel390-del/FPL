@@ -1,5 +1,11 @@
 # CHANGELOG.md
 
+## 2026-08-05 — FPL-T1 live gateway deployment review
+- Deployed the owner-controlled allowlisted Cloudflare Worker and configured the exact production `/fpl` base in Teamsheet.
+- Verified live 2026/27 Official FPL bootstrap JSON on physical iPhone Safari.
+- Rejected every upstream redirect explicitly, retained credential-free requests and added redacted observability plus deployment/CSP contracts.
+- Verified **547 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality. Full populated application acceptance remains pending; PR #69 is draft and unmerged.
+
 ## 2026-08-02 — Teamsheet 2.0.3: Transfers Decision Workspace
 
 - Replaced the wide transfer table with mobile decision cards.
@@ -98,3 +104,4 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.
 
 - Corrected iPhone Safari foreground resume so unsuccessful loads respect the automatic cooldown and background refreshes do not freeze interaction; physical-device retest remains pending.
+- 2026-08-05: PR #68 merged Teamsheet 2.0.7 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; Safari resume retest passed. FPL-T1 owner-controlled Official FPL gateway approved and implementation started without calculation changes.

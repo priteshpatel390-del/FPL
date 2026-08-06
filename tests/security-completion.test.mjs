@@ -70,14 +70,36 @@ test('CSP removes every unsafe-inline concession and retains provider origins', 
   assert.equal(policy.includes("'unsafe-inline'"),false);
   assert.equal(policy.includes('style-src-attr'),false);
   for(const origin of [
-    'https://fantasy.premierleague.com','https://api.allorigins.win','https://corsproxy.io',
+    'https://api.allorigins.win','https://corsproxy.io',
     'https://api.codetabs.com','https://thingproxy.freeboard.io','https://understat.com',
     'https://api.the-odds-api.com','https://raw.githubusercontent.com','https://api.anthropic.com'
   ]) assert.ok(policy.includes(origin),origin);
+  assert.equal(policy.includes('https://fantasy.premierleague.com'),false,'browser must not contact Official FPL directly');
+  assert.match(readFileSync('app.html','utf8'),/name="teamsheet-fpl-gateway" content="https:\/\/teamsheet-fpl-gateway\.fpltsheet\.workers\.dev\/fpl"/);
+assert.ok(policy.includes('https://teamsheet-fpl-gateway.fpltsheet.workers.dev'));
+assert.equal(policy.includes('*-teamsheet-fpl-gateway'),false);
   assert.ok(policy.includes("object-src 'none'"));
   assert.ok(policy.includes("base-uri 'none'"));
   assert.ok(policy.includes("form-action 'self'"));
   assert.ok(policy.includes("frame-ancestors 'none'"));
+});
+
+test('CSP grants the background transfer worker exactly one local source and nothing more', () => {
+  const page = html();
+  const policy = /Content-Security-Policy"\s+content="([^"]+)"/.exec(page)?.[1] || '';
+  const directives = policy.split(';').map(part => part.trim());
+  const workerSrc = directives.filter(part => part.startsWith('worker-src'));
+  assert.deepEqual(workerSrc, ["worker-src 'self' blob:"]);
+  // The worker is a local Blob built from the embedded model. No remote or data: worker,
+  // no eval concession, and the hash-locked script policy is untouched.
+  assert.equal(/worker-src[^;]*(?:https?:|data:|\*)/.test(policy), false);
+  assert.equal(policy.includes("'unsafe-eval'"), false);
+  assert.equal(directives.some(part => part.startsWith('child-src')), false);
+  const scripts = [...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+  assert.equal(scripts.length, 1, 'the deployable must remain a single inline script');
+  assert.ok(policy.includes(`script-src '${sha256(scripts[0][1])}'`));
+  assert.equal(/<script[^>]+src=/.test(page), false, 'no separately deployed worker or script asset');
+  assert.match(page, /const TRANSFER_WORKER_MODEL_SOURCE = "/);
 });
 
 

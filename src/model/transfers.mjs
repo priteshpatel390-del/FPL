@@ -2,6 +2,8 @@ import { TRANSFER_RULES } from '../config.mjs';
 
 const POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;
 const UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);
+// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.
+const TRANSFER_PROGRESS_INTERVAL = 20000;
 
 function playerOf(entry){ return entry?.p || entry; }
 function playerId(entry){ return Number(playerOf(entry)?.id); }
@@ -134,9 +136,24 @@ function buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,hori
     warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};
 }
 
+// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the
+// plan signature, signatures are unique per transfer set and contain only ASCII digits,
+// '>' and '|', so two distinct plans never compare equal. With a total order, retaining
+// the best `limit` plans as they are produced returns exactly the same plans in exactly
+// the same order as retaining every plan, sorting once and slicing to `limit`. Retention
+// is bounded so an exhaustive search cannot accumulate millions of complete plans.
+function retainPlan(plans,plan,limit){
+  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;
+  plans.push(plan);
+  plans.sort(comparePlans);
+  if(plans.length>limit) plans.length=limit;
+  return plans;
+}
+
 function normaliseSearch(args){
   const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,
-    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer}=args;
+    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,
+    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;
   const legality=validateSquad(squad,{allowInheritedOverQuota:true});
   if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};
   if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};
@@ -152,7 +169,9 @@ function normaliseSearch(args){
   const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});
   baseline.pricingMode=pricingMode;
   return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,
-    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode};
+    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,
+    onProgress:typeof onProgress==='function'?onProgress:null,
+    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};
 }
 
 function completeResult(ctx,plans,evaluations,pruned=0,incomplete=false){
@@ -199,6 +218,7 @@ function optimiseTransfers(args){
   const byPosition={1:[],2:[],3:[],4:[]};
   ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));
   outer: for(let n=1;n<=ctx.limit;n++){
+    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});
     for(const outgoing of combinations(ctx.squad,n)){
       const required=outgoing.map(positionOf).sort((a,b)=>a-b);
       const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);
@@ -212,9 +232,10 @@ function optimiseTransfers(args){
         if(incomplete) return;
         if(index===required.length){
           if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }
+          if(ctx.onProgress && evaluations%ctx.progressInterval===0) ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});
           const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:chosen.slice(),bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,
             horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});
-          if(plan) plans.push(plan);
+          if(plan) retainPlan(plans,plan,ctx.maxResults);
           return;
         }
         const pos=required[index], pool=byPosition[pos];
@@ -240,5 +261,5 @@ function optimiseTransfers(args){
   return completeResult(ctx,plans,evaluations,pruned,incomplete);
 }
 
-export { hasKnownPurchasePrice, transferSellPrice, nextFreeTransfers, transferHit, validateSquad, bestXIForGW, scoreSquadAcrossHorizon,
-  comparePlans, optimiseTransfers, exhaustiveTransferSearch };
+export { TRANSFER_PROGRESS_INTERVAL, hasKnownPurchasePrice, transferSellPrice, nextFreeTransfers, transferHit, validateSquad, bestXIForGW,
+  scoreSquadAcrossHorizon, comparePlans, retainPlan, optimiseTransfers, exhaustiveTransferSearch };

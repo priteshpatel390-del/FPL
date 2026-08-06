@@ -2,6 +2,7 @@ import { $ } from './util.mjs';
 import { normaliseFixtures, validateBootstrap, hasFatal } from './providers/validate.mjs';
 const S = {
   boot:null, fixtures:null, entry:null, picks:null, history:null,
+  picksGameweek:0, picksStatus:'idle', strengthsAvailable:false,
   teams:{}, byId:{}, posName:{}, avg:null,
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
@@ -15,6 +16,17 @@ const S = {
    SLIM + CACHE — bootstrap is far too large to store whole, so only the
    fields the model uses are kept.
    --------------------------------------------------------------------- */
+const TEAM_STRENGTH_FIELDS = Object.freeze([
+  'strength_attack_home','strength_attack_away','strength_defence_home','strength_defence_away'
+]);
+function validTeamStrength(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0;
+}
+function teamStrengthsValid(team){
+  return Boolean(team) && TEAM_STRENGTH_FIELDS.every(field => validTeamStrength(team[field]));
+}
+
 const KEEP = ['id','web_name','team','element_type','now_cost','total_points','form','points_per_game',
   'selected_by_percent','minutes','starts','goals_scored','assists','clean_sheets','saves','bonus','bps',
   'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
@@ -54,6 +66,11 @@ function hydrate(d){
     return { ok:false, issues };
   }
   const v = bv.value;
+  const invalidStrengthTeams = v.teams.filter(team => !teamStrengthsValid(team)).length;
+  if(invalidStrengthTeams) issues.push({
+    provider:'fpl', endpoint:'/bootstrap-static/', code:'team_strengths_unavailable',
+    severity:'partial', count:invalidStrengthTeams, fields:TEAM_STRENGTH_FIELDS.slice()
+  });
   S.boot = {events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types};
   S.fixtures = fx.fixtures;
   S.dataIssues = issues;
@@ -70,8 +87,12 @@ function hydrate(d){
   S.gamesPlayed = Math.max(1, S.currentGW);
   S.cachedAt = v.at;
 
-  const ts = v.teams, n = ts.length || 1;
-  const mean = k => ts.reduce((a,t) => a + (t[k]||1000), 0) / n;
+  const ts = v.teams;
+  S.strengthsAvailable = ts.length > 0 && ts.every(teamStrengthsValid);
+  const mean = key => {
+    const values = ts.map(team => Number(team[key])).filter(validTeamStrength);
+    return values.length ? values.reduce((sum,value) => sum + value, 0) / values.length : null;
+  };
   S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
            defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
 
@@ -92,4 +113,7 @@ function recordRetry(record){
   S.retryStats[record.provider + '|' + record.endpoint] = record;
 }
 
-export { S, KEEP, slim, hydrate, recordIssues, recordRetry };
+export {
+  S, KEEP, TEAM_STRENGTH_FIELDS, validTeamStrength, teamStrengthsValid,
+  slim, hydrate, recordIssues, recordRetry
+};

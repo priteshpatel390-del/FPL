@@ -1,6 +1,8 @@
 # ROADMAP.md — living roadmap
 
-> **Teamsheet 2.0.7 review branch:** Approved Scope S-2.0.7 is implemented on draft PR #68 from main `0f9e6c879859a2584ab8d7b9d4879a84efbfaf5d`. Verified source `5a61ec5510c447580afa6070a5a9815516babe86` passes **533 passed, 0 failed, 0 skipped**; generated deployables are committed at `71397382911a4e32633de15200ad59cfb26dc439`. Two exact-identity builds were byte-identical, root/deployable equality passed, and model `2.4.0` plus rules `2026-27.3` remain unchanged. Physical iPhone Safari testing identified a foreground-resume defect; the approved correction is implemented and pending owner retest. VoiceOver and live populated-data acceptance remain pending. The checkpoint is not merged or fully accepted; do not merge without Pritesh’s explicit approval.
+> **Current approved item — FPL-T1:** Implemented for review on draft PR #69. The owner-controlled Official FPL Worker is deployed, the exact stable `/fpl` gateway is configured in the deterministic Pages build, live 2026/27 bootstrap transport passed on physical iPhone Safari and the automated baseline is **590 passed, 0 failed, 0 skipped**. The approved responsive Transfers correction is automatically verified; complete physical populated-app acceptance, update the PR evidence and obtain explicit merge approval. No model or calculation change is authorised.
+
+> **Teamsheet 2.0.7:** Complete and merged through PR #68 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; the Safari foreground-resume correction passed owner retest and VoiceOver remains accepted-unverified.
 Purpose: stage plan with status. Audience: session planning. Last updated: 2026-08-05.
 Related: STAGE_HISTORY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, STAGE3-DESIGN.md, STAGE4-DESIGN.md, STAGE5-DESIGN.md, STAGE6-DESIGN.md, STAGE7-DESIGN.md, STAGE8-DESIGN.md, STAGE9-DESIGN.md, STAGE10-DESIGN.md, DECISIONS.md.
 

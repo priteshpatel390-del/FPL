@@ -7,7 +7,12 @@ const app=readFileSync(new URL('../app.html',import.meta.url),'utf8');
 const shell=readFileSync(new URL('../src/ui/app-shell.mjs',import.meta.url),'utf8');
 const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
 const main=readFileSync(new URL('../src/main.mjs',import.meta.url),'utf8');
-const transfers=readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8');
+// Transfers is presented by transfer-optimiser-view.mjs and driven by transfer-performance.mjs.
+// The wording contract applies across both halves of the workspace.
+const transfers=[
+  readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8'),
+  readFileSync(new URL('../src/ui/transfer-performance.mjs',import.meta.url),'utf8')
+].join('\n');
 const leagues=readFileSync(new URL('../src/ui/mini-leagues-view.mjs',import.meta.url),'utf8');
 
 test('player research and Team tables use native player-detail actions',()=>{

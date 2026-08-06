@@ -1,5 +1,6 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f","commit":"5a61ec5510c447580afa6070a5a9815516babe86"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"fcd7db6e30a4716f0b7bbe65166e54802920a2e73c06a2e1946b249ff57e9cb4","commit":"5a61ec5510c447580afa6070a5a9815516babe86","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d18b17a19353e7c2","commit":"d6f856a734dc00751ed5fc0d5c249e27a7b7ddf7"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"d18b17a19353e7c2037354c0f99df34c41b295a74d0035ae8092eaec805778dc","commit":"d6f856a734dc00751ed5fc0d5c249e27a7b7ddf7","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/views.mjs","src/ui/team-decision-home.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"]};
+const TRANSFER_WORKER_MODEL_SOURCE = "\nconst POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;\nconst UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);\n// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.\nconst TRANSFER_PROGRESS_INTERVAL = 20000;\n\nfunction playerOf(entry){ return entry?.p || entry; }\nfunction playerId(entry){ return Number(playerOf(entry)?.id); }\nfunction positionOf(entry){ return Number(playerOf(entry)?.element_type); }\nfunction hasKnownPurchasePrice(entry){\n  const raw = entry?.bought ?? entry?.purchasePrice;\n  return raw !== null && raw !== undefined && Number.isFinite(Number(raw));\n}\n\nfunction transferSellPrice(entry){\n  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);\n  if(!Number.isFinite(now)) return 0;\n  const bought = hasKnownPurchasePrice(entry) ? Number(entry?.bought ?? entry?.purchasePrice) : now;\n  if(now <= bought) return now;\n  return bought + Math.floor((now - bought) / 2);\n}\n\nfunction nextFreeTransfers(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);\n}\n\nfunction transferHit(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  const paidTransfers = Math.max(0, n - ft);\n  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };\n}\n\nfunction combinations(items, size, start=0, chosen=[], out=[]){\n  if(chosen.length === size){ out.push(chosen.slice()); return out; }\n  for(let i=start; i<=items.length-(size-chosen.length); i++){\n    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();\n  }\n  return out;\n}\n\nfunction validateSquad(squad, {allowInheritedOverQuota=true}={}){\n  const issues=[];\n  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');\n  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];\n  const ids = players.map(p=>Number(p.id));\n  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');\n  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)] || !Number.isFinite(Number(p.team)))) issues.push('unknown_player');\n  const pos={1:0,2:0,3:0,4:0}, clubs={};\n  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });\n  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });\n  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');\n  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};\n}\n\nfunction bestXIForGW(squad, gw, scorePlayer){\n  const byPos={1:[],2:[],3:[],4:[]};\n  squad.forEach(entry=>{\n    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));\n    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});\n  });\n  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));\n  let best=null;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];\n    const total=selected.reduce((a,x)=>a+x.score,0);\n    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;\n    if(!best || total>best.total || (total===best.total && signature<best.signature))\n      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};\n  }\n  return best || {total:0,formation:'—',playerIds:[],signature:''};\n}\n\nfunction scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){\n  const perGameweek=[]; let total=0;\n  for(let gw=startGW;gw<startGW+horizon;gw++){\n    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction canonicalTransfers(transfers){\n  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);\n}\nfunction planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }\n\nfunction comparePlans(a,b){\n  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||\n    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||\n    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);\n}\n\nfunction inheritedClubLegal(startCounts, finalCounts, transferCount){\n  for(const [club,count] of Object.entries(finalCounts)){\n    const start=startCounts[club]||0;\n    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;\n    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;\n  }\n  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  return finalExcess <= Math.max(0,startExcess-transferCount);\n}\n\nfunction buildBaseline({squad,bank,freeTransfers,startGW,horizon,scorePlayer}){\n  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer);\n  return {transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter:bank,\n    freeTransfersBefore:freeTransfers,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(freeTransfers,0),grossBestXIPoints:baselineScore.total,\n    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};\n}\n\nfunction buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline,startCounts,pricingMode}){\n  const outIds=new Set(outgoing.map(playerId));\n  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));\n  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});\n  if(!legality.ok || !inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;\n  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);\n  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);\n  const bankAfter=bank+sellTotal-buyTotal;\n  if(bankAfter<0) return null;\n  const hit=transferHit(freeTransfers,outgoing.length);\n  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);\n  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);\n  const rollDifference=nextFT-baseline.freeTransfersNextGW;\n  const grossGain=score.total-baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,\n    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,\n    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\n// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the\n// plan signature, signatures are unique per transfer set and contain only ASCII digits,\n// '>' and '|', so two distinct plans never compare equal. With a total order, retaining\n// the best `limit` plans as they are produced returns exactly the same plans in exactly\n// the same order as retaining every plan, sorting once and slicing to `limit`. Retention\n// is bounded so an exhaustive search cannot accumulate millions of complete plans.\nfunction retainPlan(plans,plan,limit){\n  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;\n  plans.push(plan);\n  plans.sort(comparePlans);\n  if(plans.length>limit) plans.length=limit;\n  return plans;\n}\n\nfunction normaliseSearch(args){\n  const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,\n    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,\n    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;\n  const legality=validateSquad(squad,{allowInheritedOverQuota:true});\n  if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};\n  if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};\n  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));\n  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));\n  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));\n  const cleanLimit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(Number(maxTransfers)||0)));\n  const cleanMaxResults=Math.max(1,Math.trunc(Number(maxResults)||1));\n  const cleanMaxEvaluations=Math.max(0,Math.trunc(Number(maxEvaluations)||0));\n  const owned=new Set(squad.map(playerId));\n  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));\n  const pricingMode=squad.every(hasKnownPurchasePrice)?'exact':'estimated';\n  const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});\n  baseline.pricingMode=pricingMode;\n  return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,\n    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,\n    onProgress:typeof onProgress==='function'?onProgress:null,\n    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};\n}\n\nfunction completeResult(ctx,plans,evaluations,pruned=0,incomplete=false){\n  plans.sort(comparePlans);\n  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n}\n\nfunction exhaustiveTransferSearch(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, incomplete=false;\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const candidates=ctx.eligible.filter(p=>required.includes(Number(p.element_type)));\n      for(const incoming of combinations(candidates,n)){\n        if(++evaluations>ctx.maxEvaluations){ incomplete=true; break outer; }\n        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);\n        if(incomingPos.some((v,i)=>v!==required[i])) continue;\n        const ordered=[], used=new Set();\n        for(const out of outgoing){\n          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));\n          if(idx<0) break; used.add(idx); ordered.push(incoming[idx]);\n        }\n        if(ordered.length!==n) continue;\n        const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:ordered,bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n          horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n        if(plan) plans.push(plan);\n      }\n    }\n  }\n  return completeResult(ctx,plans,evaluations,0,incomplete);\n}\n\nfunction cheapestAvailableCost(pool, count, usedIds){\n  const costs=pool.filter(p=>!usedIds.has(Number(p.id))).map(p=>Number(p.now_cost||0)).sort((a,b)=>a-b);\n  if(costs.length<count) return Infinity;\n  return costs.slice(0,count).reduce((a,n)=>a+n,0);\n}\n\nfunction optimiseTransfers(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;\n  const byPosition={1:[],2:[],3:[],4:[]};\n  ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));\n  outer: for(let n=1;n<=ctx.limit;n++){\n    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);\n      if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }\n      const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);\n      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPosition[pos],count,new Set()),0);\n      if(minimumBuy>ctx.bank+sellTotal){ pruned++; continue; }\n      const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });\n      const chosen=[];\n      function choose(index,cost,clubCounts){\n        if(incomplete) return;\n        if(index===required.length){\n          if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }\n          if(ctx.onProgress && evaluations%ctx.progressInterval===0) ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});\n          const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:chosen.slice(),bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n            horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n          if(plan) retainPlan(plans,plan,ctx.maxResults);\n          return;\n        }\n        const pos=required[index], pool=byPosition[pos];\n        const previousSame=index>0&&required[index-1]===pos ? Number(chosen[index-1].id) : -Infinity;\n        for(const candidate of pool){\n          if(Number(candidate.id)<=previousSame || chosen.some(p=>Number(p.id)===Number(candidate.id))) continue;\n          const nextCost=cost+Number(candidate.now_cost||0);\n          const usedIds=new Set(chosen.map(p=>Number(p.id)).concat(Number(candidate.id)));\n          const remainingNeed={1:0,2:0,3:0,4:0}; required.slice(index+1).forEach(rpos=>remainingNeed[rpos]++);\n          const cheapestRest=Object.entries(remainingNeed).reduce((sum,[rpos,count])=>sum+cheapestAvailableCost(byPosition[rpos],count,usedIds),0);\n          if(nextCost+cheapestRest>ctx.bank+sellTotal){ pruned++; continue; }\n          const club=String(candidate.team), nextClubs={...clubCounts,[club]:(clubCounts[club]||0)+1};\n          const allowed=Math.max(TRANSFER_RULES.maxPerClub,ctx.startCounts[club]||0);\n          if(nextClubs[club]>allowed){ pruned++; continue; }\n          chosen.push(candidate); choose(index+1,nextCost,nextClubs); chosen.pop();\n          if(incomplete) return;\n        }\n      }\n      choose(0,0,afterOut);\n      if(incomplete) break outer;\n    }\n  }\n  return completeResult(ctx,plans,evaluations,pruned,incomplete);\n}\n";
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
 /* ===== src/config.mjs ===== */
@@ -53,6 +54,7 @@ const TRANSFER_RULES = Object.freeze({
   maxFreeTransfers:5,
   pointsPerPaidTransfer:4,
   rollValue:0.5,
+  squadBudget:1000,
   maxPerClub:3,
   positionQuotas:Object.freeze({1:2,2:5,3:5,4:3}),
   unavailableStatuses:Object.freeze(['i','u','s','n']),
@@ -994,6 +996,7 @@ function validateOutcomeHistory(payload){
 /* ===== src/state.mjs ===== */
 const S = {
   boot:null, fixtures:null, entry:null, picks:null, history:null,
+  picksGameweek:0, picksStatus:'idle', strengthsAvailable:false,
   teams:{}, byId:{}, posName:{}, avg:null,
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
@@ -1007,6 +1010,17 @@ const S = {
    SLIM + CACHE — bootstrap is far too large to store whole, so only the
    fields the model uses are kept.
    --------------------------------------------------------------------- */
+const TEAM_STRENGTH_FIELDS = Object.freeze([
+  'strength_attack_home','strength_attack_away','strength_defence_home','strength_defence_away'
+]);
+function validTeamStrength(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0;
+}
+function teamStrengthsValid(team){
+  return Boolean(team) && TEAM_STRENGTH_FIELDS.every(field => validTeamStrength(team[field]));
+}
+
 const KEEP = ['id','web_name','team','element_type','now_cost','total_points','form','points_per_game',
   'selected_by_percent','minutes','starts','goals_scored','assists','clean_sheets','saves','bonus','bps',
   'expected_goals_per_90','expected_assists_per_90','expected_goal_involvements_per_90',
@@ -1046,6 +1060,11 @@ function hydrate(d){
     return { ok:false, issues };
   }
   const v = bv.value;
+  const invalidStrengthTeams = v.teams.filter(team => !teamStrengthsValid(team)).length;
+  if(invalidStrengthTeams) issues.push({
+    provider:'fpl', endpoint:'/bootstrap-static/', code:'team_strengths_unavailable',
+    severity:'partial', count:invalidStrengthTeams, fields:TEAM_STRENGTH_FIELDS.slice()
+  });
   S.boot = {events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types};
   S.fixtures = fx.fixtures;
   S.dataIssues = issues;
@@ -1062,8 +1081,12 @@ function hydrate(d){
   S.gamesPlayed = Math.max(1, S.currentGW);
   S.cachedAt = v.at;
 
-  const ts = v.teams, n = ts.length || 1;
-  const mean = k => ts.reduce((a,t) => a + (t[k]||1000), 0) / n;
+  const ts = v.teams;
+  S.strengthsAvailable = ts.length > 0 && ts.every(teamStrengthsValid);
+  const mean = key => {
+    const values = ts.map(team => Number(team[key])).filter(validTeamStrength);
+    return values.length ? values.reduce((sum,value) => sum + value, 0) / values.length : null;
+  };
   S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
            defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
 
@@ -1475,19 +1498,16 @@ function resetHealth(){ Object.keys(health).forEach(k => delete health[k]); }
 
 /* ===== src/providers/transport.mjs ===== */
 /* ---------------------------------------------------------------------
-   FETCH — the FPL API sends no CORS headers, so requests cascade through
-   public read-only relays. Each attempt is capped so one dead relay
-   cannot stall the chain.
+   Official FPL transport.
 
-   D-15: retry sits around the WHOLE cascade, not around each relay.
-   Rotating to the next relay is transport selection, not a retry — it is
-   already the redundancy mechanism. Retrying each of five relays three
-   times would mean fifteen requests and roughly two minutes of spinner
-   on a total outage. One cascade therefore counts as one attempt, and a
-   second cascade only runs if the first failed transiently AND failed
-   quickly enough to still look like a blip (the elapsed-time budget).
+   Browser requests use the owner-controlled Teamsheet gateway declared
+   in the document meta tag. The gateway is a narrow read-only transport
+   to fantasy.premierleague.com; it is not another football-data provider.
+   Anonymous public relays remain available only to the optional Understat
+   HTML loader and are never part of the Official FPL request path.
    --------------------------------------------------------------------- */
 const BASE = 'https://fantasy.premierleague.com/api';
+const FPL_GATEWAY_META = 'teamsheet-fpl-gateway';
 const RELAYS = [
   u => u,
   u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
@@ -1495,113 +1515,128 @@ const RELAYS = [
   u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
   u => 'https://thingproxy.freeboard.io/fetch/' + u
 ];
-let relayIdx = 0;
 
-async function fetchT(url, ms){
+async function fetchT(url, ms, options = {}){
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);
-  try{ return await fetch(url, {signal:c.signal, headers:{'Accept':'application/json'}}); }
+  try{ return await fetch(url, {...options, signal:c.signal}); }
   finally{ clearTimeout(t); }
 }
 
-/* One full pass over the relay list. Returns an outcome describing what
-   happened, including whether the failures looked transient:
-     {outcome:'value',    value, status}
-     {outcome:'notfound', status}          provider says the entry isn't there
-     {outcome:'failed',   retryable, status}
-   A parse failure does NOT mark the cascade retryable — a relay returning
-   junk will keep returning junk — but the next relay is still tried, since
-   that is a different upstream and may well be fine. */
-async function cascadeOnce(url, timeout, optional){
-  let sawRetryable = false, lastStatus = null;
-  for(let i=0;i<RELAYS.length;i++){
-    const idx = (relayIdx + i) % RELAYS.length;
-    let res;
-    try{ res = await fetchT(RELAYS[idx](url), timeout); }
-    catch(e){ sawRetryable = true; lastStatus = 'network'; continue; }
-
-    if(!res.ok){
-      lastStatus = res.status;
-      if(isRetryableStatus(res.status)) sawRetryable = true;
-      continue;
-    }
-
-    let data;
-    try{ data = await res.json(); }
-    catch(e){ lastStatus = 'parse'; continue; }
-
-    if(data && (data.detail === 'Not found.' || data.detail)){
-      if(optional) return {outcome:'notfound', status:'not-found'};
-      lastStatus = 'detail';
-      continue;
-    }
-
-    relayIdx = idx;
-    S.source = idx === 0 ? 'direct' : 'relay ' + idx;
-    return {outcome:'value', value:data, status:res.status};
-  }
-  return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
+function normaliseGatewayBase(value){
+  if(typeof value !== 'string' || !value.trim()) return null;
+  try{
+    const u = new URL(value.trim());
+    const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    if(u.protocol !== 'https:' && !(local && u.protocol === 'http:')) return null;
+    if(u.username || u.password || u.search || u.hash) return null;
+    if(!/^\/fpl\/?$/.test(u.pathname)) return null;
+    return u.origin + '/fpl';
+  }catch(error){ return null; }
 }
 
-async function api(path, {optional=false, timeout=8000} = {}){
-  const url = BASE + path;
-  // Optional endpoints already have a graceful fallback, and several of them
-  // are fetched in a pool of twenty (rival squads). Spending the full core-data
-  // allowance on each would turn one outage into hundreds of doomed requests,
-  // so they get a smaller one. Core data keeps the full allowance.
+function configuredGatewayBase(documentRef = globalThis.document){
+  const injected = normaliseGatewayBase(globalThis.__TEAMSHEET_FPL_GATEWAY_BASE__);
+  if(injected) return injected;
+  const meta = documentRef?.querySelector?.(`meta[name="${FPL_GATEWAY_META}"]`);
+  return normaliseGatewayBase(meta?.content || '');
+}
+
+function gatewayRequestUrl(path, gatewayBase = configuredGatewayBase()){
+  const base = normaliseGatewayBase(gatewayBase);
+  if(!base || typeof path !== 'string' || !path.startsWith('/') ||
+     path.includes('://') || path.includes('..') || path.includes('\\')) return null;
+  return base + path;
+}
+
+async function gatewayOnce(path, timeout, optional, gatewayBase){
+  const url = gatewayRequestUrl(path, gatewayBase);
+  if(!url) return {outcome:'failed', retryable:false, status:'gateway-unconfigured'};
+  let res;
+  try{
+    res = await fetchT(url, timeout, {
+      method:'GET',
+      credentials:'omit',
+      redirect:'error',
+      referrerPolicy:'no-referrer',
+      headers:{'Accept':'application/json'}
+    });
+  }catch(error){
+    return {outcome:'failed', retryable:true, status:'network'};
+  }
+  if(!res.ok){
+    if(optional && res.status === 404) return {outcome:'notfound', status:'not-found'};
+    return {outcome:'failed', retryable:isRetryableStatus(res.status), status:res.status};
+  }
+  let data;
+  try{ data = await res.json(); }
+  catch(error){ return {outcome:'failed', retryable:false, status:'parse'}; }
+  if(data && data.detail){
+    if(optional) return {outcome:'notfound', status:'not-found'};
+    return {outcome:'failed', retryable:false, status:'detail'};
+  }
+  S.source = 'Teamsheet gateway';
+  return {outcome:'value', value:data, status:res.status};
+}
+
+async function api(path, {optional=false, timeout=8000, gatewayBase} = {}){
   const policy = policyFor('fpl');
   if(optional) policy.attempts = Math.min(policy.attempts, 2);
-
   const { result, record } = await withRetry(
     async () => {
-      const c = await cascadeOnce(url, timeout, optional);
-      if(c.outcome === 'value')    return {ok:true, value:c.value, status:c.status};
-      if(c.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
-      return {ok:false, retryable:c.retryable, status:c.status};
+      const response = await gatewayOnce(path, timeout, optional, gatewayBase);
+      if(response.outcome === 'value') return {ok:true, value:response.value, status:response.status};
+      if(response.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
+      return {ok:false, retryable:response.retryable, status:response.status};
     },
-    { ...policy, endpoint: safeEndpoint(path) }
+    {...policy, endpoint:safeEndpoint(path)}
   );
   recordRetry(record);
-
   if(result && result.ok) return result.value;
   if(optional) return null;
   throw new Error('feed unreachable: ' + path);
 }
 
-// limited-concurrency map, so 20 rival lookups don't hammer one relay
+// limited-concurrency map, so rival and player-history lookups stay bounded
 async function pool(items, worker, size=4){
   const out = new Array(items.length);
   let i = 0;
   await Promise.all(Array.from({length:Math.min(size, items.length)}, async () => {
     while(i < items.length){
       const idx = i++;
-      try{ out[idx] = await worker(items[idx]); }catch(e){ out[idx] = null; }
+      try{ out[idx] = await worker(items[idx]); }catch(error){ out[idx] = null; }
     }
   }));
   return out;
 }
 
-// generic relay fetch for non-FPL sites (Understat needs it; raw GitHub doesn't)
+// Generic relay cascade retained only for optional non-FPL sources.
+async function cascadeOnce(url, timeout, {asText=false} = {}){
+  let sawRetryable = false, lastStatus = null;
+  for(const wrap of RELAYS){
+    let res;
+    try{ res = await fetchT(wrap(url), timeout, {headers:{'Accept':asText?'text/html':'application/json'}}); }
+    catch(error){ sawRetryable = true; lastStatus = 'network'; continue; }
+    if(!res.ok){
+      lastStatus = res.status;
+      if(isRetryableStatus(res.status)) sawRetryable = true;
+      continue;
+    }
+    try{
+      return {outcome:'value', value:asText ? await res.text() : await res.json(), status:res.status};
+    }catch(error){ lastStatus = 'parse'; }
+  }
+  return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
+}
+
 async function fetchVia(url, {timeout=12000, asText=false} = {}){
   const { result, record } = await withRetry(
     async () => {
-      let sawRetryable = false, lastStatus = null;
-      for(const wrap of RELAYS){
-        let res;
-        try{ res = await fetchT(wrap(url), timeout); }
-        catch(e){ sawRetryable = true; lastStatus = 'network'; continue; }
-
-        if(!res.ok){
-          lastStatus = res.status;
-          if(isRetryableStatus(res.status)) sawRetryable = true;
-          continue;
-        }
-        try{ return {ok:true, value: asText ? await res.text() : await res.json(), status:res.status}; }
-        catch(e){ lastStatus = 'parse'; continue; }
-      }
-      return {ok:false, retryable:sawRetryable, status:lastStatus};
+      const response = await cascadeOnce(url, timeout, {asText});
+      if(response.outcome === 'value') return {ok:true, value:response.value, status:response.status};
+      return {ok:false, retryable:response.retryable, status:response.status};
     },
-    { ...policyFor('understat'), endpoint: safeEndpoint(url) }
+    {...policyFor('understat'), endpoint:safeEndpoint(url)}
   );
   recordRetry(record);
   return result && result.ok ? result.value : null;
@@ -2035,16 +2070,26 @@ function renderRouteDataWarning(targetId,{showUnavailable=true,settingsLink=true
 /* ---------------------------------------------------------------------
    FIXTURE MODEL — expected goals for and against, from team strength
    ratings rather than the official 1–5 difficulty.
+
+   When Official FPL has not published finite team-strength fields, player
+   projections use a neutral multiplier and the Fixtures view/sort uses the
+   provider's explicit 1–5 difficulty. Invalid values never become NaN.
    --------------------------------------------------------------------- */
+function neutralMatchContext(home){
+  return {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS),
+    atk:1, def:1, home, strengthAvailable:false};
+}
 function matchContext(teamId, oppId, home){
   const t = S.teams[teamId], o = S.teams[oppId], A = S.avg;
-  if(!t || !o) return {xGF:BASE_GOALS, xGA:BASE_GOALS, cs:Math.exp(-BASE_GOALS), atk:1, def:1, home};
-  const tAtk = home ? t.strength_attack_home : t.strength_attack_away;
-  const tDef = home ? t.strength_defence_home : t.strength_defence_away;
-  const oAtk = home ? o.strength_attack_away : o.strength_attack_home;
-  const oDef = home ? o.strength_defence_away : o.strength_defence_home;
-  const avgAtkT = home ? A.atkH : A.atkA, avgDefT = home ? A.defH : A.defA;
-  const avgAtkO = home ? A.atkA : A.atkH, avgDefO = home ? A.defA : A.defH;
+  const averagesValid = A && ['atkH','atkA','defH','defA'].every(key => validTeamStrength(A[key]));
+  if(!t || !o || !S.strengthsAvailable || !averagesValid ||
+     !teamStrengthsValid(t) || !teamStrengthsValid(o)) return neutralMatchContext(home);
+  const tAtk = Number(home ? t.strength_attack_home : t.strength_attack_away);
+  const tDef = Number(home ? t.strength_defence_home : t.strength_defence_away);
+  const oAtk = Number(home ? o.strength_attack_away : o.strength_attack_home);
+  const oDef = Number(home ? o.strength_defence_away : o.strength_defence_home);
+  const avgAtkT = Number(home ? A.atkH : A.atkA), avgDefT = Number(home ? A.defH : A.defA);
+  const avgAtkO = Number(home ? A.atkA : A.atkH), avgDefO = Number(home ? A.defA : A.defH);
 
   let xGF = clamp(BASE_GOALS * (tAtk/avgAtkT) * (avgDefO/oDef) * (home ? HOME_TILT : 1/HOME_TILT), .25, 4);
   let xGA = clamp(BASE_GOALS * (oAtk/avgAtkO) * (avgDefT/tDef) * (home ? 1/HOME_TILT : HOME_TILT), .25, 4);
@@ -2065,7 +2110,49 @@ function matchContext(teamId, oppId, home){
       xGA = xGA*0.35 + mA*0.65;
     }
   }
+  if(![xGF,xGA].every(Number.isFinite)) return neutralMatchContext(home);
+  // Preserve the long-standing public result shape when valid inputs exist.
   return {xGF, xGA, cs:Math.exp(-xGA), atk:xGF/BASE_GOALS, def:BASE_GOALS/xGA, home};
+}
+
+function officialFixtureDifficulty(game){
+  const value = Number(game?.officialDiff);
+  return Number.isInteger(value) && value >= 1 && value <= 5 ? value : null;
+}
+function fixtureAnalysisMode(){
+  return S.strengthsAvailable ? 'team-strengths' : 'official-fpl-difficulty';
+}
+function fixtureDifficulty(game, lens){
+  const official = officialFixtureDifficulty(game);
+  if(lens === 'official' || game?.ctx?.strengthAvailable === false) return official ?? 3;
+  return multToDiff(lens === 'defence' ? game.ctx.def : game.ctx.atk);
+}
+function fixtureLensState(requestedLens='attack'){
+  const fallback = fixtureAnalysisMode() === 'official-fpl-difficulty';
+  const lens = fallback ? 'official' : requestedLens;
+  return {lens, fallback, lowerIsEasier:lens === 'official'};
+}
+function averageOfficialDifficulty(teamId, fromGW, span){
+  const runs = teamFixtures(teamId, fromGW, span);
+  let total = 0, count = 0;
+  runs.forEach(games => games.forEach(game => {
+    const difficulty = officialFixtureDifficulty(game);
+    if(difficulty !== null){ total += difficulty; count += 1; }
+  }));
+  return count ? total / count : null;
+}
+function compareFixtureRunScores(left, right, sort, lens){
+  const a = Number(left), b = Number(right);
+  const aFinite = Number.isFinite(a), bFinite = Number.isFinite(b);
+  if(!aFinite || !bFinite){
+    if(aFinite) return -1;
+    if(bFinite) return 1;
+    return 0;
+  }
+  const lowerIsEasier = fixtureLensState(lens).lowerIsEasier;
+  if(sort === 'ease') return lowerIsEasier ? a - b : b - a;
+  if(sort === 'hard') return lowerIsEasier ? b - a : a - b;
+  return 0;
 }
 
 function teamFixtures(teamId, fromGW, span){
@@ -2085,19 +2172,22 @@ function teamFixtures(teamId, fromGW, span){
 
 // 1 (easiest) – 5 (hardest) from a multiplier where >1 is favourable
 function multToDiff(m){
+  m = Number(m);
+  if(!Number.isFinite(m)) return 3;
   if(m >= 1.28) return 1;
   if(m >= 1.10) return 2;
   if(m >= 0.93) return 3;
   if(m >= 0.78) return 4;
   return 5;
 }
-function runScore(teamId, fromGW, span, lens){
+function runScore(teamId, fromGW, span, requestedLens){
+  const {lens, fallback} = fixtureLensState(requestedLens);
+  if(fallback || lens === 'official') return averageOfficialDifficulty(teamId, fromGW, span);
   const runs = teamFixtures(teamId, fromGW, span);
   let total = 0;
-  runs.forEach(games => games.forEach(g => {
-    total += lens === 'defence' ? g.ctx.def
-           : lens === 'official' ? (6 - g.officialDiff)/3
-           : g.ctx.atk;
+  runs.forEach(games => games.forEach(game => {
+    const value = lens === 'defence' ? game.ctx.def : game.ctx.atk;
+    total += Number.isFinite(value) ? value : 1;
   }));
   return total/Math.max(1,span);
 }
@@ -2705,6 +2795,8 @@ function compareCaptains(input,candidateIds){
 
 const POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;
 const UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);
+// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.
+const TRANSFER_PROGRESS_INTERVAL = 20000;
 
 function playerOf(entry){ return entry?.p || entry; }
 function playerId(entry){ return Number(playerOf(entry)?.id); }
@@ -2837,9 +2929,24 @@ function buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,hori
     warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};
 }
 
+// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the
+// plan signature, signatures are unique per transfer set and contain only ASCII digits,
+// '>' and '|', so two distinct plans never compare equal. With a total order, retaining
+// the best `limit` plans as they are produced returns exactly the same plans in exactly
+// the same order as retaining every plan, sorting once and slicing to `limit`. Retention
+// is bounded so an exhaustive search cannot accumulate millions of complete plans.
+function retainPlan(plans,plan,limit){
+  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;
+  plans.push(plan);
+  plans.sort(comparePlans);
+  if(plans.length>limit) plans.length=limit;
+  return plans;
+}
+
 function normaliseSearch(args){
   const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,
-    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer}=args;
+    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,
+    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;
   const legality=validateSquad(squad,{allowInheritedOverQuota:true});
   if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};
   if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};
@@ -2855,7 +2962,9 @@ function normaliseSearch(args){
   const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});
   baseline.pricingMode=pricingMode;
   return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,
-    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode};
+    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,
+    onProgress:typeof onProgress==='function'?onProgress:null,
+    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};
 }
 
 function completeResult(ctx,plans,evaluations,pruned=0,incomplete=false){
@@ -2902,6 +3011,7 @@ function optimiseTransfers(args){
   const byPosition={1:[],2:[],3:[],4:[]};
   ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));
   outer: for(let n=1;n<=ctx.limit;n++){
+    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});
     for(const outgoing of combinations(ctx.squad,n)){
       const required=outgoing.map(positionOf).sort((a,b)=>a-b);
       const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);
@@ -2915,9 +3025,10 @@ function optimiseTransfers(args){
         if(incomplete) return;
         if(index===required.length){
           if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }
+          if(ctx.onProgress && evaluations%ctx.progressInterval===0) ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});
           const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:chosen.slice(),bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,
             horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});
-          if(plan) plans.push(plan);
+          if(plan) retainPlan(plans,plan,ctx.maxResults);
           return;
         }
         const pos=required[index], pool=byPosition[pos];
@@ -3498,6 +3609,17 @@ const STARTUP_PHASE_COPY = Object.freeze({
   ready:['Ready','Latest verified data available.'],
   restricted:['Limited mode','Official FPL data could not be verified, so recommendations remain unavailable.']
 });
+function validGameweekId(value){
+  const id = Number(value);
+  return Number.isInteger(id) && id >= 1 && id <= 38 ? id : 0;
+}
+function publicPicksGameweek(events = S.boot?.events, currentGW = S.currentGW){
+  const current = validGameweekId(currentGW);
+  if(current) return current;
+  const next = Array.isArray(events) ? events.find(event => event?.is_next === true) : null;
+  return validGameweekId(next?.id);
+}
+
 let verifiedRefreshPromise = null;
 let lastVerifiedRefreshAt = 0;
 let lastRefreshAttemptAt = 0;
@@ -3590,7 +3712,8 @@ async function loadAll(options = {}){
 
     reportLoadPhase(options,'team');
     S.teamId = $('teamId').value.replace(/\D/g,'');
-    S.entry = null; S.picks = null; S.chipsUsed = [];
+    S.entry = null; S.picks = null; S.picksGameweek = 0; S.picksStatus = 'idle'; S.chipsUsed = [];
+    let teamStatus = '';
     if(S.teamId){
       if(st) st.textContent = 'Fetching your team…';
       const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
@@ -3599,10 +3722,20 @@ async function loadAll(options = {}){
       if(!S.entry){
         if(st) st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
       } else {
-        if(S.currentGW){
-          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+S.currentGW+'/picks/', {optional:true}));
+        const picksGW = publicPicksGameweek();
+        S.picksGameweek = picksGW;
+        if(picksGW){
+          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+picksGW+'/picks/', {optional:true}));
           recordIssues('fpl', '/entry/event/picks/', picksV.issues);
           S.picks = picksV.value;
+          const picksCount = Array.isArray(S.picks?.picks) ? S.picks.picks.length : 0;
+          S.picksStatus = picksCount === 15 ? 'loaded' : picksCount ? 'incomplete' : 'unavailable';
+          if(S.picksStatus === 'loaded') teamStatus = ` · public GW${picksGW} squad loaded`;
+          else if(S.picksStatus === 'incomplete') teamStatus = ` · ${picksCount}/15 public GW${picksGW} picks usable`;
+          else teamStatus = ` · public GW${picksGW} squad unavailable`;
+        } else {
+          S.picksStatus = 'gameweek-unavailable';
+          teamStatus = ' · public squad Gameweek unavailable';
         }
         const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
         recordIssues('fpl', '/entry/history/', histV.issues);
@@ -3614,7 +3747,7 @@ async function loadAll(options = {}){
       }
     }
     if(S.entry || !S.teamId){
-      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}${teamStatus}`;
     }
     await saveCfg();
 
@@ -3651,10 +3784,10 @@ async function loadAll(options = {}){
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
         "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
-      markUnavailable('fpl', 'all transports failed', 'season data cannot be shown');
+      markUnavailable('fpl', 'official gateway unavailable', 'season data cannot be shown');
       if(st) st.textContent = 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Every public relay refused or timed out. Try again shortly, or open the file in a normal browser tab rather than an in-app preview. Ask Teamsheet is also unavailable in this hosted build until the separately approved serverless migration.'));
+        'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
@@ -6409,6 +6542,8 @@ function buildOperatingReviewMarkdown(bundle){
 
 
 /* ===== src/ui/transfer-optimiser-view.mjs ===== */
+// Presentation only. The authoritative Transfers renderer and the background calculation
+// live in transfer-performance.mjs; nothing here may enter the optimiser on the UI thread.
 
 const TRANSFER_PLANNER_COMMITTED_CONTROL_IDS = Object.freeze(['trFtCount','trBankIn','trHorizon','trTop']);
 const TRANSFER_PRESENTATION_STATES = Object.freeze({
@@ -6692,126 +6827,6 @@ function transferPlannerMarkUpdating(){
   if(status) status.textContent='Updating transfer comparison…';
 }
 
-function renderTransfers(){
-  const out=$('transferOut');
-  if(!out) return;
-  renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
-  transferPlannerSyncVisibleAssumptions();
-  transferPlannerRenderedControlSignature=transferPlannerCurrentControlSignature();
-  transferPlannerMarkUpdating();
-
-  try{
-    if(!S.boot){
-      transferPlannerBlocking(out,'Verified player data is unavailable.','Refresh from Settings before using transfer comparisons.');
-      return;
-    }
-    const squad=mySquad();
-    if(squad.length!==15){
-      transferPlannerBlocking(out,'A complete 15-player squad is required.','Load your team or finish the manual squad in Team setup.');
-      return;
-    }
-
-    const assumptions=transferPlannerReadAssumptions($('trFtCount')?.value,$('trBankIn')?.value);
-    if(!assumptions.valid){
-      transferPlannerBlocking(out,'Check the planning assumptions.',assumptions.issues.join(' '));
-      return;
-    }
-
-    const horizon=Math.max(1,Math.min(8,Math.trunc(Number($('trHorizon')?.value)||6)));
-    const maxResults=Math.max(1,Math.min(20,Math.trunc(Number($('trTop')?.value)||8)));
-    const squadSignature=decisionPreviewSquadSignature(squad);
-    const result=optimiseTransfers({
-      squad,
-      players:S.boot.elements||[],
-      bank:assumptions.bankTenths,
-      freeTransfers:assumptions.freeTransfers,
-      startGW:S.nextGW,
-      horizon,
-      maxResults,
-      scorePlayer:(player,gw)=>xpOf(player,gw,1).total
-    });
-    S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
-
-    if(result.status==='invalid-input'){
-      transferPlannerBlocking(out,'Squad cannot be compared.',`Fix the squad before continuing: ${(result.issues||[]).join(', ')}.`);
-      return;
-    }
-    if(result.status==='projection-unavailable'){
-      transferPlannerBlocking(out,'Projections are unavailable.','No transfer recommendation can be made from an unverified comparison.');
-      return;
-    }
-    if(result.status==='search-incomplete'){
-      transferPlannerBlocking(out,'Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
-      return;
-    }
-
-    const plans=result.plans||[];
-    const state=transferPlannerPresentationState(plans);
-    const baseline=plans.find(plan=>Number(plan.transferCount)===0);
-    if(!baseline){
-      transferPlannerBlocking(out,'No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
-      return;
-    }
-
-    const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
-    const topAlternative=alternatives[0]||null;
-    const optimiserSignature=decisionPreviewOptimiserSignature({
-      squadSignature,
-      horizon,
-      bank:assumptions.bankTenths,
-      freeTransfers:assumptions.freeTransfers,
-      plans
-    });
-    const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
-    if(previewCleared) transferPlannerDispatchPreviewChange();
-    const previewState=decisionPreviewSnapshot();
-    const nodes=[
-      transferPlannerContext(),
-      transferPlannerDecisionHero(state,baseline,topAlternative,horizon),
-      el('div',{class:'transfer-card-stack'},
-        transferPlannerBaselineCard(baseline,{
-          alternativesCount:alternatives.length,
-          rankedFirst:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST,
-          primary:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST||state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY
-        }),
-        topAlternative?transferPlannerPlanCard(topAlternative,{
-          title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
-          index:plans.indexOf(topAlternative),
-          squad,
-          optimiserSignature,
-          horizon,
-          selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
-          primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
-          pricingMode:result.pricingMode
-        }):null)
-    ];
-
-    const otherAlternatives=alternatives.slice(1,4);
-    if(otherAlternatives.length){
-      nodes.push(el('details',{class:'transfer-alternatives'},
-        el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
-        el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
-          title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
-          index:plans.indexOf(plan),
-          squad,
-          optimiserSignature,
-          horizon,
-          selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
-          primary:false,
-          pricingMode:result.pricingMode
-        })))));
-    }
-
-    nodes.push(el('p',{class:'transfer-disclaimer'},
-      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.'));
-    setChildren(out,nodes);
-  }finally{
-    out.setAttribute('aria-busy','false');
-    const status=$('transferStatus');
-    if(status) status.textContent='Transfer comparison updated.';
-  }
-}
-
 function transferPlannerClearPreview(){
   const preview=decisionPreviewSnapshot();
   decisionPreviewClearTransfer();
@@ -6855,6 +6870,471 @@ function installTransferPlannerCommittedControlRefresh(){
 }
 
 installTransferPlannerCommittedControlRefresh();
+
+
+
+/* ===== src/ui/transfer-performance.mjs ===== */
+
+const TRANSFER_PERFORMANCE_CACHE_LIMIT = 4;
+const TRANSFER_PERFORMANCE_SCORE_BATCH = 12;
+const TRANSFER_PERFORMANCE_PROGRESS_MS = 200;
+const TRANSFER_PERFORMANCE_UNAVAILABLE = 'This browser cannot run the transfer calculation in the background, so no comparison is being produced.';
+const transferPerformanceCache = new Map();
+let transferPerformanceWorker = null;
+let transferPerformanceToken = 0;
+let transferPerformanceDataVersion = 0;
+let transferPerformanceInstalled = false;
+let transferPerformanceBusyDetail = null;
+
+// The worker runs the reviewed transfer model verbatim. Nothing rewrites, patches or
+// re-derives the optimiser at runtime: bounded top-K retention lives in the model itself,
+// so the background search and a direct optimiseTransfers() call execute identical code.
+const TRANSFER_PERFORMANCE_WORKER_HANDLER = `
+self.onmessage=event=>{
+  const payload=event.data||{};
+  if(payload.type!=="calculate") return;
+  const requestId=payload.requestId;
+  const rows=Array.isArray(payload.scoreRows)?payload.scoreRows:[];
+  const scoreMap=new Map(rows.map(row=>[Number(row[0]),Array.isArray(row[1])?row[1]:[]]));
+  const startGW=Number(payload.args?.startGW)||1;
+  const scorePlayer=(player,gw)=>{
+    const scores=scoreMap.get(Number(player?.id));
+    const value=Number(scores?.[Number(gw)-startGW]);
+    return Number.isFinite(value)?value:0;
+  };
+  let reportedAt=0;
+  const onProgress=state=>{
+    const now=Date.now();
+    if(now-reportedAt<${TRANSFER_PERFORMANCE_PROGRESS_MS}) return;
+    reportedAt=now;
+    self.postMessage({type:"progress",requestId,depth:state.depth,maxDepth:state.maxDepth,evaluations:state.evaluations});
+  };
+  try{
+    const result=optimiseTransfers({...payload.args,scorePlayer,onProgress});
+    self.postMessage({type:"result",requestId,result});
+  }catch(error){
+    self.postMessage({type:"error",requestId,message:String(error?.message||error||"Worker calculation failed")});
+  }
+};`;
+
+function transferPerformanceWorkerSource(modelSource, rules=TRANSFER_RULES){
+  const source=String(modelSource||'');
+  if(!/function optimiseTransfers\(/.test(source))
+    throw new Error('The reviewed transfer model is missing from this build.');
+  return `"use strict";
+const TRANSFER_RULES=${JSON.stringify(rules)};
+${source}
+${TRANSFER_PERFORMANCE_WORKER_HANDLER}`;
+}
+
+function transferPerformanceHash(value, seed=2166136261){
+  let hash=seed>>>0;
+  const text=String(value ?? '');
+  for(let i=0;i<text.length;i++){
+    hash^=text.charCodeAt(i);
+    hash=Math.imul(hash,16777619)>>>0;
+  }
+  return hash>>>0;
+}
+
+function transferPerformanceCurrentRoute(){
+  return String(globalThis.location?.hash||'').split('?')[0];
+}
+
+function transferPerformanceYield(){
+  return new Promise(resolve=>{
+    if(typeof globalThis.requestAnimationFrame==='function') globalThis.requestAnimationFrame(()=>resolve());
+    else globalThis.setTimeout?.(resolve,0);
+  });
+}
+
+function transferPerformanceControlSignature(){
+  return transferPlannerControlSignature(
+    $('trFtCount')?.value,
+    $('trBankIn')?.value,
+    $('trHorizon')?.value,
+    $('trTop')?.value
+  );
+}
+
+function transferPerformanceWorkerPlayer(player={}){
+  return {
+    id:Number(player.id),
+    web_name:String(player.web_name||player.id||''),
+    team:Number(player.team),
+    element_type:Number(player.element_type),
+    now_cost:Number(player.now_cost)||0,
+    status:String(player.status||'a'),
+    chance_of_playing_next_round:player.chance_of_playing_next_round??null
+  };
+}
+
+function transferPerformanceSnapshot(){
+  if(!S.boot) return {error:['Verified player data is unavailable.','Refresh from Settings before using transfer comparisons.']};
+  const squad=mySquad();
+  if(squad.length!==15) return {error:['A complete 15-player squad is required.','Load your team or finish the manual squad in Team setup.']};
+  const assumptions=transferPlannerReadAssumptions($('trFtCount')?.value,$('trBankIn')?.value);
+  if(!assumptions.valid) return {error:['Check the planning assumptions.',assumptions.issues.join(' ')]};
+  const horizon=Math.max(1,Math.min(8,Math.trunc(Number($('trHorizon')?.value)||6)));
+  const maxResults=Math.max(1,Math.min(20,Math.trunc(Number($('trTop')?.value)||8)));
+  const squadSignature=decisionPreviewSquadSignature(squad);
+  const signature=[
+    transferPerformanceDataVersion,
+    typeof BUILD_INFO!=='undefined'?BUILD_INFO.sourceHash:'',
+    S.cachedAt||'live',
+    S.nextGW,
+    horizon,
+    maxResults,
+    assumptions.bankTenths,
+    assumptions.freeTransfers,
+    squadSignature
+  ].join('|');
+  return {
+    squad,
+    players:S.boot.elements||[],
+    horizon,
+    maxResults,
+    assumptions,
+    squadSignature,
+    signature,
+    args:{
+      squad:squad.map(entry=>({
+        p:transferPerformanceWorkerPlayer(entry?.p||entry),
+        bought:entry?.bought??entry?.purchasePrice??null
+      })),
+      players:(S.boot.elements||[]).map(transferPerformanceWorkerPlayer),
+      bank:assumptions.bankTenths,
+      freeTransfers:assumptions.freeTransfers,
+      startGW:S.nextGW,
+      horizon,
+      maxResults
+    }
+  };
+}
+
+function transferPerformanceCacheSet(key,value){
+  transferPerformanceCache.delete(key);
+  transferPerformanceCache.set(key,value);
+  while(transferPerformanceCache.size>TRANSFER_PERFORMANCE_CACHE_LIMIT){
+    transferPerformanceCache.delete(transferPerformanceCache.keys().next().value);
+  }
+}
+
+function transferPerformanceStatus(text){
+  const status=$('transferStatus');
+  if(status) status.textContent=text;
+}
+
+function transferPerformanceAction(label,handler,{secondary=false}={}){
+  return el('button',{
+    type:'button',
+    class:`btn${secondary?' ghost':''}`,
+    onclick:handler
+  },label);
+}
+
+function transferPerformanceRenderReady(snapshot,{message='Ready to calculate without blocking the rest of Teamsheet.'}={}){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  out.setAttribute('aria-busy','false');
+  const cached=transferPerformanceCache.get(snapshot.signature);
+  if(cached){
+    transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
+    return;
+  }
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note plain'},
+      el('b',{},'Transfers is ready. '),
+      message),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Calculate transfers',()=>void transferPerformanceStart(snapshot))));
+  transferPerformanceStatus('Ready. Calculation starts only when requested.');
+}
+
+function transferPerformancePreparingDetail(completed,total){
+  const share=total>0?Math.min(100,Math.round(completed/total*100)):100;
+  return `Preparing projections ${share}%.`;
+}
+
+function transferPerformanceSearchingDetail(progress=null){
+  const depth=Math.max(0,Math.trunc(Number(progress?.depth)||0));
+  const maxDepth=Math.max(0,Math.trunc(Number(progress?.maxDepth)||0));
+  const evaluations=Math.max(0,Math.trunc(Number(progress?.evaluations)||0));
+  if(!depth) return 'Evaluating legal transfer plans in the background.';
+  const counted=evaluations?` · ${evaluations.toLocaleString('en-GB')} plans checked`:'';
+  return `Evaluating legal transfer plans in the background. Depth ${depth}${maxDepth?` of ${maxDepth}`:''}${counted}.`;
+}
+
+// The busy panel is built once per calculation. Progress only rewrites one text node, so
+// throttled worker updates cannot rebuild the workspace or fight the browser for the frame.
+function transferPerformanceRenderBusy(detail){
+  const out=$('transferOut');
+  if(!out) return;
+  out.setAttribute('aria-busy','true');
+  if(transferPerformanceBusyDetail&&transferPerformanceBusyDetail.parentNode?.parentNode===out){
+    if(transferPerformanceBusyDetail.textContent!==detail){
+      transferPerformanceBusyDetail.textContent=detail;
+      transferPerformanceStatus(detail);
+    }
+    return;
+  }
+  transferPerformanceBusyDetail=document.createTextNode(detail);
+  setChildren(out,
+    transferPlannerContext(),
+    el('div',{class:'note plain'},el('b',{},'Calculating transfers. '),transferPerformanceBusyDetail),
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Cancel calculation',()=>transferPerformanceCancel('Calculation cancelled.'),{secondary:true})));
+  transferPerformanceStatus(detail);
+}
+
+function transferPerformanceRenderError(title,detail){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  out.setAttribute('aria-busy','false');
+  transferPlannerBlocking(out,title,detail);
+  transferPerformanceStatus('Transfer comparison unavailable.');
+}
+
+function transferPerformanceRenderResult(result,context,{cached=false}={}){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPerformanceBusyDetail=null;
+  const {snapshot}=context;
+  const {squad,horizon,assumptions,squadSignature}=snapshot;
+  S.lastOptimiser={result,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,startGW:S.nextGW,squadSignature};
+
+  if(result.status==='invalid-input'){
+    transferPerformanceRenderError('Squad cannot be compared.',`Fix the squad before continuing: ${(result.issues||[]).join(', ')}.`);
+    return;
+  }
+  if(result.status==='projection-unavailable'){
+    transferPerformanceRenderError('Projections are unavailable.','No transfer recommendation can be made from an unverified comparison.');
+    return;
+  }
+  if(result.status==='search-incomplete'){
+    transferPerformanceRenderError('Exact search did not complete.','No partial result is being presented as optimal. Try a shorter horizon.');
+    return;
+  }
+
+  const plans=result.plans||[];
+  const state=transferPlannerPresentationState(plans);
+  const baseline=plans.find(plan=>Number(plan.transferCount)===0);
+  if(!baseline){
+    transferPerformanceRenderError('No zero-transfer baseline was returned.','Teamsheet will not present a transfer decision without its required comparison.');
+    return;
+  }
+
+  const alternatives=plans.filter(plan=>Number(plan.transferCount)>0);
+  const topAlternative=alternatives[0]||null;
+  const optimiserSignature=decisionPreviewOptimiserSignature({
+    squadSignature,
+    horizon,
+    bank:assumptions.bankTenths,
+    freeTransfers:assumptions.freeTransfers,
+    plans
+  });
+  const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
+  if(previewCleared) transferPlannerDispatchPreviewChange();
+  const previewState=decisionPreviewSnapshot();
+  const nodes=[
+    transferPlannerContext(),
+    transferPlannerDecisionHero(state,baseline,topAlternative,horizon),
+    el('div',{class:'transfer-card-stack'},
+      transferPlannerBaselineCard(baseline,{
+        alternativesCount:alternatives.length,
+        rankedFirst:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST,
+        primary:state===TRANSFER_PRESENTATION_STATES.BASELINE_FIRST||state===TRANSFER_PRESENTATION_STATES.BASELINE_ONLY
+      }),
+      topAlternative?transferPlannerPlanCard(topAlternative,{
+        title:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST?'Highest-ranked transfer plan':'Best transfer alternative',
+        index:plans.indexOf(topAlternative),
+        squad,
+        optimiserSignature,
+        horizon,
+        selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(topAlternative),
+        primary:state===TRANSFER_PRESENTATION_STATES.TRANSFER_FIRST,
+        pricingMode:result.pricingMode
+      }):null)
+  ];
+
+  const otherAlternatives=alternatives.slice(1,4);
+  if(otherAlternatives.length){
+    nodes.push(el('details',{class:'transfer-alternatives'},
+      el('summary',{},`Other legal options shown (${otherAlternatives.length} of ${Math.max(0,alternatives.length-1)})`),
+      el('div',{class:'transfer-card-stack'},otherAlternatives.map(plan=>transferPlannerPlanCard(plan,{
+        title:plan.hitCost?`${plan.transferCount}-transfer plan · ${plan.hitCost}-point hit`:`${plan.transferCount}-transfer plan`,
+        index:plans.indexOf(plan),
+        squad,
+        optimiserSignature,
+        horizon,
+        selected:Boolean(previewState.transfer)&&decisionPreviewPlanSignature(previewState.transfer)===decisionPreviewPlanSignature(plan),
+        primary:false,
+        pricingMode:result.pricingMode
+      })))));
+  }
+
+  nodes.push(
+    el('div',{class:'transfer-actions'},
+      transferPerformanceAction('Recalculate transfers',()=>{
+        transferPerformanceCache.clear();
+        void transferPerformanceStart(transferPerformanceSnapshot());
+      },{secondary:true})),
+    el('p',{class:'transfer-disclaimer'},
+      'Net model comparison = best-XI projection change minus transfer hits plus the versioned free-transfer utility. It is not a promise of FPL points, and it excludes captain doubling and bench points. The interface shows the highest-ranked plan plus up to three additional alternatives.')
+  );
+  setChildren(out,nodes);
+  out.setAttribute('aria-busy','false');
+  transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
+  transferPerformanceStatus(cached?'Saved transfer comparison reused instantly.':'Transfer comparison updated.');
+}
+
+async function transferPerformanceScores(snapshot,token){
+  const rows=[];
+  let dataHash=2166136261;
+  const total=snapshot.players.length;
+  for(let start=0;start<total;start+=TRANSFER_PERFORMANCE_SCORE_BATCH){
+    if(token!==transferPerformanceToken){
+      const error=new Error('Cancelled');
+      error.name='AbortError';
+      throw error;
+    }
+    const end=Math.min(total,start+TRANSFER_PERFORMANCE_SCORE_BATCH);
+    for(let index=start;index<end;index++){
+      const player=snapshot.players[index];
+      const scores=[];
+      dataHash=transferPerformanceHash(`${player.id}|${player.team}|${player.element_type}|${player.now_cost}|${player.status}|${player.chance_of_playing_next_round}`,dataHash);
+      for(let offset=0;offset<snapshot.horizon;offset++){
+        const value=Number(xpOf(player,S.nextGW+offset,1).total);
+        const safe=Number.isFinite(value)?value:0;
+        scores.push(safe);
+        dataHash=transferPerformanceHash(safe.toFixed(8),dataHash);
+      }
+      rows.push([Number(player.id),scores]);
+    }
+    transferPerformanceRenderBusy(transferPerformancePreparingDetail(end,total));
+    await transferPerformanceYield();
+  }
+  return {rows,dataHash:dataHash.toString(16)};
+}
+
+function transferPerformanceCreateWorker(){
+  if(typeof Worker!=='function'||typeof Blob!=='function'||!globalThis.URL?.createObjectURL)
+    throw new Error('worker_unsupported');
+  if(typeof TRANSFER_WORKER_MODEL_SOURCE!=='string'||!TRANSFER_WORKER_MODEL_SOURCE)
+    throw new Error('worker_model_unavailable');
+  const source=transferPerformanceWorkerSource(TRANSFER_WORKER_MODEL_SOURCE);
+  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+  try{
+    return new Worker(url);
+  }finally{
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot()){
+  if(initialSnapshot?.error){
+    transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
+    return;
+  }
+  transferPerformanceCancel('',{render:false});
+  const snapshot=initialSnapshot;
+  const token=++transferPerformanceToken;
+  transferPlannerClearPreview();
+  void saveCfg();
+  transferPerformanceRenderBusy(transferPerformancePreparingDetail(0,snapshot.players.length));
+
+  try{
+    const prepared=await transferPerformanceScores(snapshot,token);
+    if(token!==transferPerformanceToken) return;
+    const exactSignature=`${snapshot.signature}|${prepared.dataHash}`;
+    const cached=transferPerformanceCache.get(exactSignature);
+    if(cached){
+      transferPerformanceCacheSet(snapshot.signature,cached);
+      transferPerformanceRenderResult(cached.result,cached.context,{cached:true});
+      return;
+    }
+
+    const worker=transferPerformanceCreateWorker();
+    transferPerformanceWorker=worker;
+    transferPerformanceRenderBusy(transferPerformanceSearchingDetail());
+    const result=await new Promise((resolve,reject)=>{
+      worker.onmessage=event=>{
+        const payload=event.data||{};
+        if(payload.requestId!==token||token!==transferPerformanceToken) return;
+        if(payload.type==='progress'){ transferPerformanceRenderBusy(transferPerformanceSearchingDetail(payload)); return; }
+        if(payload.type==='result') resolve(payload.result);
+        else reject(new Error('worker_failed'));
+      };
+      worker.onerror=()=>reject(new Error('worker_failed'));
+      worker.postMessage({type:'calculate',requestId:token,args:snapshot.args,scoreRows:prepared.rows});
+    });
+    if(token!==transferPerformanceToken) return;
+    worker.terminate();
+    transferPerformanceWorker=null;
+    const context={snapshot,preparedAt:Date.now()};
+    const record={result,context};
+    transferPerformanceCacheSet(exactSignature,record);
+    transferPerformanceCacheSet(snapshot.signature,record);
+    transferPerformanceRenderResult(result,context);
+  }catch(error){
+    if(error?.name==='AbortError'||token!==transferPerformanceToken) return;
+    transferPerformanceWorker?.terminate?.();
+    transferPerformanceWorker=null;
+    // Internal reasons stay out of the interface. Teamsheet fails closed and never falls
+    // back to a blocking main-thread search.
+    transferPerformanceRenderError('Transfers could not be calculated.',TRANSFER_PERFORMANCE_UNAVAILABLE);
+  }
+}
+
+function transferPerformanceCancel(message='Calculation cancelled.',{render=true}={}){
+  transferPerformanceToken++;
+  transferPerformanceWorker?.terminate?.();
+  transferPerformanceWorker=null;
+  if(render&&transferPerformanceCurrentRoute()==='#/transfers'){
+    const snapshot=transferPerformanceSnapshot();
+    if(snapshot.error) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+    else transferPerformanceRenderReady(snapshot,{message});
+  }
+}
+
+// The only Transfers renderer. Opening the route paints the workspace shell and, when an
+// exact earlier result is still valid, restores it. It never enters the optimiser. Any
+// calculation still running belongs to the previous inputs, so re-rendering cancels it.
+function renderTransfers(){
+  transferPerformanceCancel('',{render:false});
+  const out=$('transferOut');
+  if(!out) return;
+  renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
+  transferPlannerSyncVisibleAssumptions();
+  transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
+  const snapshot=transferPerformanceSnapshot();
+  if(snapshot.error){
+    transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
+    return;
+  }
+  transferPerformanceRenderReady(snapshot);
+}
+
+function installTransferPerformanceRuntime(){
+  if(transferPerformanceInstalled||typeof document==='undefined') return;
+  transferPerformanceInstalled=true;
+
+  document.addEventListener('teamsheet:before-route-change',event=>{
+    if(event?.detail?.from==='#/transfers'&&event?.detail?.to!=='#/transfers')
+      transferPerformanceCancel('',{render:false});
+  });
+  document.addEventListener('teamsheet:data-rendered',()=>{
+    transferPerformanceDataVersion++;
+    transferPerformanceCache.clear();
+    transferPerformanceCancel('',{render:false});
+    if(transferPerformanceCurrentRoute()==='#/transfers') renderTransfers();
+  });
+}
+
+installTransferPerformanceRuntime();
 
 
 
@@ -7329,22 +7809,31 @@ function renderTicker(){
   }
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const span = clamp(parseInt($('fxSpan').value) || 6, 3, 12);
-  const lens = $('fxLens').value, sort = $('fxSort').value;
+  const lensControl = $('fxLens'), sort = $('fxSort').value;
+  const lensState = fixtureLensState(lensControl.value);
+  for(const option of Array.from(lensControl.options || [])){
+    if(!option) continue;
+    const separated = option.value === 'attack' || option.value === 'defence';
+    option.hidden = lensState.fallback && separated;
+    option.disabled = lensState.fallback && separated;
+    if(option.value === 'official') option.textContent = lensState.fallback ? 'Overall FPL difficulty' : 'Official FDR';
+  }
+  if(lensState.fallback) lensControl.value = 'official';
+  const lens = lensState.lens;
 
   let teams = Object.values(S.teams).map(t => ({t, s:runScore(t.id, from, span, lens)}));
-  if(sort === 'ease') teams.sort((a,b) => b.s - a.s);
-  else if(sort === 'hard') teams.sort((a,b) => a.s - b.s);
+  if(sort === 'ease' || sort === 'hard') teams.sort((a,b) => compareFixtureRunScores(a.s,b.s,sort,lens));
   else teams.sort((a,b) => a.t.name.localeCompare(b.t.name));
 
   const header = elNode('tr',{},head('Team','tm'));
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
-    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},s.toFixed(2))));
+    const scoreLabel=Number.isFinite(s)?s.toFixed(2):'—';
+    const row = elNode('tr',{},elNode('th',{class:'team',scope:'row'},t.short_name,elNode('span',{class:'ease'},scoreLabel)));
     teamFixtures(t.id, from, span).forEach(games => {
       if(!games.length){ row.appendChild(elNode('td',{},elNode('div',{class:'cell blank'},'—',elNode('small',{},'BLANK')))); return; }
-      const diffs = games.map(g => lens === 'official' ? g.officialDiff
-        : multToDiff(lens === 'defence' ? g.ctx.def : g.ctx.atk));
+      const diffs = games.map(g => fixtureDifficulty(g,lens));
       const contents = [];
       games.forEach((g,i) => {
         if(i) contents.push(elNode('hr',{class:'fixture-divider'}));
@@ -7354,17 +7843,28 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
+  const tickerNodes = [];
+  if(lensState.fallback) tickerNodes.push(noteNode('plain',
+    elNode('b',{},'Overall FPL difficulty.'),
+    ' Lower is easier. Official FPL currently supplies one overall 1–5 rating, so separate attacker and defender lenses are hidden until genuine team-strength inputs are available.'));
+  tickerNodes.push(elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
+  setChildren($('ticker'),tickerNodes);
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
     return {t, delta: later - now};
   });
-  const up = swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
-  const down = swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
+  const favourable = lensState.lowerIsEasier
+    ? swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4)
+    : swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);
+  const harder = lensState.lowerIsEasier
+    ? swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4)
+    : swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4);
   const swingNodes = [];
-  if(up.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${up.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
-  if(down.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${down.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
+  if(lensState.fallback)
+    swingNodes.push(noteNode('plain',elNode('b',{},'Projection fallback.'),' Player projections use neutral fixture multipliers until separate, validated attack and defence strengths are available.'));
+  if(favourable.length) swingNodes.push(noteNode('good',elNode('b',{},`Turns favourable from GW${from+3}:`),` ${favourable.map(s=>s.t.name).join(', ')}. Buying a gameweek early usually beats buying late.`));
+  if(harder.length) swingNodes.push(noteNode('bad',elNode('b',{},`Turns hard from GW${from+3}:`),` ${harder.map(s=>s.t.name).join(', ')}. Plan exits before the crowd moves.`));
 
   const perGW = {};
   S.fixtures.filter(f => f.event >= from && f.event < from+span).forEach(f => {
@@ -7949,9 +8449,12 @@ function teamDecisionSquadReady(squad=[]){
   return counts[1]===2&&counts[2]===5&&counts[3]===5&&counts[4]===3;
 }
 
-function teamDecisionSourceLabel({manual=false,hasPicks=false,fplState='',cachedAt=null}={}){
+function teamDecisionSourceLabel({manual=false,hasPicks=false,picksGameweek=0,picksStatus='',fplState='',cachedAt=null}={}){
   const state=String(fplState||'');
-  let label=manual?'User-entered squad':hasPicks?'Official FPL public picks':'Squad unavailable';
+  const gw=Number(picksGameweek);
+  let label=manual?'User-entered squad':hasPicks
+    ? `Official FPL public picks${gw>=1&&gw<=38?` · locked GW${gw}`:''}`
+    : picksStatus==='unavailable'&&gw>=1&&gw<=38?`Public GW${gw} squad unavailable`:'Squad unavailable';
   if([HEALTH_STATES.CACHED,HEALTH_STATES.STALE,HEALTH_STATES.FALLBACK].includes(state)){
     label += state===HEALTH_STATES.FALLBACK?' · verified fallback':' · verified cache';
     if(Number.isFinite(Number(cachedAt))) label += ` · ${new Date(Number(cachedAt)).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
@@ -7996,9 +8499,12 @@ function teamDecisionRisk({dataState='',captain=null,starters=[],blankIds=[],clo
   return Object.freeze({kind:'none',level:'clear',text:'No material Team-selection risk is identified from the currently verified inputs.'});
 }
 
-function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none',squadStatus='',squadGameweek=0}={}){
   if(riskKind==='data-unavailable') return 'Official FPL season data is unavailable. Manual squad editing also needs the verified player list, so retry the data load before building a squad.';
   if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
+  if(!hasSquad && squadStatus==='gameweek-unavailable') return 'Use Load data again when Official FPL identifies the current or next Gameweek, or build your squad manually in Settings → Team & Account.';
+  if(!hasSquad && squadStatus==='unavailable') return `Use Load data again when Official FPL publishes the public${Number(squadGameweek)?` GW${Number(squadGameweek)}`:''} squad, or build your squad manually in Settings → Team & Account.`;
+  if(!hasSquad && squadStatus==='incomplete') return 'The public squad response was incomplete. Retry Load data, or build the complete squad manually in Settings → Team & Account.';
   if(!hasSquad) return 'Enter your Team ID in Team setup below, or open Settings → Team & Account to build a manual squad.';
   if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
   if(riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
@@ -8184,7 +8690,8 @@ function teamDecisionEnhanceRenderedTeam(){
   const dataState=health?.state||(!S.boot?HEALTH_STATES.UNAVAILABLE:HEALTH_STATES.LIVE);
   const deadline=teamDecisionDeadlineModel();
   const manual=Boolean($('useManual')?.checked);
-  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),fplState:dataState,cachedAt:S.cachedAt});
+  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),
+    picksGameweek:S.picksGameweek,picksStatus:S.picksStatus,fplState:dataState,cachedAt:S.cachedAt});
   const ft=Math.max(0,Math.trunc(num($('ftCount')?.value)));
   const bank=Math.max(0,num($('bankIn')?.value)).toFixed(1);
   const rank=Number(S.entry?.summary_overall_rank)>0?`Official OR ${Number(S.entry.summary_overall_rank).toLocaleString('en-GB')}`:'';
@@ -8192,10 +8699,17 @@ function teamDecisionEnhanceRenderedTeam(){
 
   if(!ready){
     const count=realSquad.length;
-    const risk=dataState===HEALTH_STATES.UNAVAILABLE
-      ? teamDecisionRisk({dataState})
-      : Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
-    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind});
+    let risk;
+    if(dataState===HEALTH_STATES.UNAVAILABLE) risk=teamDecisionRisk({dataState});
+    else if(S.picksStatus==='gameweek-unavailable') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:'Official FPL has not identified a valid current or next Gameweek, so Teamsheet cannot request public squad picks.'});
+    else if(S.picksStatus==='unavailable'&&S.entry) risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:`Official FPL has not exposed a complete public GW${S.picksGameweek} squad for this Team ID yet. Teamsheet will not invent or reuse a different Gameweek squad.`});
+    else if(S.picksStatus==='incomplete') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:`${count} of 15 public GW${S.picksGameweek} picks were usable. A complete legal squad is required before Teamsheet can recommend an XI.`});
+    else risk=Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
+    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind,
+      squadStatus:S.picksStatus,squadGameweek:S.picksGameweek});
     const header=teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank,ft,bank});
     const summary=teamDecisionSummary({recommendation:'Recommendation unavailable',forecast:'No projection calculated',risk,action});
     const placeholder=teamDecisionPlaceholderStage(S.nextGW,'Empty Team pitch. No valid squad is available, so no XI, captaincy or bench recommendation has been calculated.');
@@ -8278,6 +8792,263 @@ function teamDecisionInstall(){
 }
 
 teamDecisionInstall();
+
+
+
+/* ===== src/ui/manual-squad-runtime.mjs ===== */
+
+const MANUAL_SQUAD_POSITION_LABELS = Object.freeze({1:'GKP',2:'DEF',3:'MID',4:'FWD'});
+
+function manualSquadBudget(rules=TRANSFER_RULES){
+  const value=Number(rules?.squadBudget);
+  return Number.isFinite(value)&&value>0?Math.trunc(value):1000;
+}
+
+function manualSquadMoney(value){
+  const amount=Number(value);
+  return Number.isFinite(amount)?`£${(amount/10).toFixed(1)}m`:'—';
+}
+
+function manualSquadEntryCost(entry,player){
+  const stored=entry?.bought??entry?.purchasePrice;
+  const bought=Number(stored);
+  if(stored!==null&&stored!==undefined&&stored!==''&&Number.isFinite(bought)&&bought>=0)
+    return Math.trunc(bought);
+  const current=Number(player?.now_cost);
+  return Number.isFinite(current)&&current>=0?Math.trunc(current):null;
+}
+
+function manualSquadValidation(manual=[],byId={},rules=TRANSFER_RULES){
+  const entries=Array.isArray(manual)?manual:[];
+  const quotas=rules?.positionQuotas||{1:2,2:5,3:5,4:3};
+  const maxPerClub=Number(rules?.maxPerClub)||3;
+  const budget=manualSquadBudget(rules);
+  const positionCounts={1:0,2:0,3:0,4:0};
+  const clubCounts={};
+  const unknownIds=[];
+  const duplicateIds=[];
+  const invalidPriceIds=[];
+  const seen=new Set();
+  let cost=0;
+
+  entries.forEach(entry=>{
+    const id=Number(entry?.id);
+    if(seen.has(id)) duplicateIds.push(id);
+    seen.add(id);
+    const player=byId?.[id];
+    if(!player){ unknownIds.push(id); invalidPriceIds.push(id); return; }
+    const position=Number(player.element_type);
+    const club=Number(player.team);
+    if(Object.prototype.hasOwnProperty.call(positionCounts,position)) positionCounts[position]++;
+    if(Number.isFinite(club)) clubCounts[club]=(clubCounts[club]||0)+1;
+    const entryCost=manualSquadEntryCost(entry,player);
+    if(entryCost===null) invalidPriceIds.push(id);
+    else cost+=entryCost;
+  });
+
+  const priceComplete=invalidPriceIds.length===0;
+  const remainingBudget=priceComplete?budget-cost:null;
+  const issues=[];
+  if(entries.length>15) issues.push('The squad contains more than 15 players.');
+  if(unknownIds.length) issues.push('One or more saved players are no longer in the verified player list.');
+  if(duplicateIds.length) issues.push('The same player appears more than once.');
+  if(!priceComplete) issues.push('One or more player purchase prices are unavailable.');
+  Object.entries(quotas).forEach(([position,quota])=>{
+    const count=positionCounts[position]||0;
+    if(count>quota) issues.push(`Too many ${MANUAL_SQUAD_POSITION_LABELS[position]} players (${count}/${quota}).`);
+  });
+  if(Object.values(clubCounts).some(count=>count>maxPerClub))
+    issues.push(`A maximum of ${maxPerClub} players from one club is allowed.`);
+  if(priceComplete&&cost>budget)
+    issues.push(`Squad cost ${manualSquadMoney(cost)} exceeds the ${manualSquadMoney(budget)} budget.`);
+
+  const complete=entries.length===15;
+  const exactPositions=Object.entries(quotas).every(([position,quota])=>(positionCounts[position]||0)===quota);
+  if(complete&&!exactPositions) issues.push('A legal squad needs 2 GKP, 5 DEF, 5 MID and 3 FWD.');
+  const legal=complete&&exactPositions&&issues.length===0;
+  return Object.freeze({
+    count:entries.length,
+    complete,
+    legal,
+    issues:Object.freeze([...new Set(issues)]),
+    positionCounts:Object.freeze({...positionCounts}),
+    clubCounts:Object.freeze({...clubCounts}),
+    unknownIds:Object.freeze(unknownIds.slice()),
+    duplicateIds:Object.freeze(duplicateIds.slice()),
+    invalidPriceIds:Object.freeze(invalidPriceIds.slice()),
+    priceComplete,
+    cost,
+    budget,
+    remainingBudget
+  });
+}
+
+function manualSquadAddDecision(manual=[],player=null,byId={},rules=TRANSFER_RULES){
+  if(!player||!Number.isFinite(Number(player.id))) return {ok:false,message:'That player is unavailable.'};
+  const id=Number(player.id);
+  if((manual||[]).some(entry=>Number(entry?.id)===id)) return {ok:false,message:`${player.web_name||'That player'} is already in your squad.`};
+  if((manual||[]).length>=15) return {ok:false,message:'Remove a player before adding another.'};
+
+  const current=manualSquadValidation(manual,byId,rules);
+  const position=Number(player.element_type);
+  const quota=Number(rules?.positionQuotas?.[position]);
+  if(!Number.isFinite(quota)) return {ok:false,message:'That player has an unsupported position.'};
+  if((current.positionCounts[position]||0)>=quota)
+    return {ok:false,message:`You already have the maximum ${quota} ${MANUAL_SQUAD_POSITION_LABELS[position]} players.`};
+  const club=Number(player.team);
+  const maxPerClub=Number(rules?.maxPerClub)||3;
+  if((current.clubCounts[club]||0)>=maxPerClub)
+    return {ok:false,message:`You already have ${maxPerClub} players from ${S.teams?.[club]?.name||'that club'}.`};
+  const playerCost=manualSquadEntryCost({bought:player.now_cost},player);
+  if(playerCost===null) return {ok:false,message:`${player.web_name||'That player'} does not have a verified price.`};
+  if(!current.priceComplete) return {ok:false,message:'A saved player price is unavailable, so the squad budget cannot be verified.'};
+  const nextCost=current.cost+playerCost;
+  if(nextCost>current.budget)
+    return {ok:false,message:`Adding ${player.web_name||'that player'} would take the squad to ${manualSquadMoney(nextCost)}, above the ${manualSquadMoney(current.budget)} budget.`};
+  return {ok:true,message:'',nextCost,remainingBudget:current.budget-nextCost};
+}
+
+function manualSquadStatusText(validation,rejection=''){
+  const counts=validation?.positionCounts||{1:0,2:0,3:0,4:0};
+  const budgetText=validation?.priceComplete===false
+    ? ' · budget unavailable'
+    : ` · ${manualSquadMoney(validation?.cost||0)} used · ${validation?.remainingBudget>=0
+      ? `${manualSquadMoney(validation.remainingBudget)} left`
+      : `${manualSquadMoney(Math.abs(validation?.remainingBudget||0))} over`}`;
+  const base=`${validation?.count||0}/15 · ${counts[1]||0} GKP, ${counts[2]||0} DEF, ${counts[3]||0} MID, ${counts[4]||0} FWD${budgetText}`;
+  if(rejection) return `${base} — ${rejection}`;
+  if(validation?.legal) return `${base} — complete and legal`;
+  if(validation?.complete&&validation?.issues?.length) return `${base} — fix: ${validation.issues[0]}`;
+  const remaining=Math.max(0,15-(validation?.count||0));
+  return `${base}${remaining?` — add ${remaining} more`:''}`;
+}
+
+function manualSquadApplyStatus(documentRef,manual=S.manual,byId=S.byId,rejection=''){
+  const node=documentRef?.getElementById?.('manualCount');
+  const validation=manualSquadValidation(manual,byId);
+  if(node){
+    node.textContent=manualSquadStatusText(validation,rejection);
+    node.setAttribute?.('role','status');
+    node.setAttribute?.('aria-live','polite');
+  }
+  return validation;
+}
+
+function manualSquadIsTransfersRoute(value=''){
+  return String(value||'').split('?')[0]==='#/transfers';
+}
+
+function manualSquadCreateRouteAwareTransferRenderer(renderTransferView,routeProvider=()=>globalThis.location?.hash||''){
+  if(typeof renderTransferView!=='function') throw new TypeError('renderTransferView must be a function');
+  return function routeAwareTransferRenderer(options={}){
+    const forced=options===true||options?.force===true;
+    if(!forced&&!manualSquadIsTransfersRoute(routeProvider())) return {deferred:true};
+    return renderTransferView();
+  };
+}
+
+async function manualSquadCommitAddition({
+  manual,player,byId,persist=async()=>{},saveConfiguration=async()=>{},
+  renderManualView=()=>{},renderTeamView=()=>{},dispatchRendered=()=>{}
+}={}){
+  const decision=manualSquadAddDecision(manual,player,byId);
+  if(!decision.ok) return {ok:false,message:decision.message,validation:manualSquadValidation(manual,byId)};
+  manual.push({id:Number(player.id),bought:Number(player.now_cost)});
+  await persist(manual);
+  await saveConfiguration();
+  renderManualView();
+  let teamRenderError=null;
+  try{ renderTeamView(); }
+  catch(error){ teamRenderError=error; }
+  try{ dispatchRendered(); }
+  catch(error){}
+  return {ok:true,message:'',validation:manualSquadValidation(manual,byId),teamRenderError};
+}
+
+function manualSquadInstallBrowserRuntime({
+  documentRef=globalThis.document,
+  routeProvider=()=>globalThis.location?.hash||'',
+  renderTransferView,
+  renderManualView,
+  renderTeamView
+}={}){
+  if(!documentRef?.addEventListener||documentRef.documentElement?.dataset?.manualSquadRuntime==='installed') return null;
+  if(documentRef.documentElement?.dataset) documentRef.documentElement.dataset.manualSquadRuntime='installed';
+
+  const routeAware=manualSquadCreateRouteAwareTransferRenderer(renderTransferView,routeProvider);
+  documentRef.addEventListener('teamsheet:route-change',event=>{
+    if(event?.detail?.route==='#/transfers') routeAware({force:true});
+  });
+  documentRef.addEventListener('teamsheet:data-rendered',()=>manualSquadApplyStatus(documentRef));
+
+  documentRef.addEventListener('click',event=>{
+    const target=event.target?.closest?.('[data-add],[data-rm]');
+    if(!target) return;
+    const add=target.hasAttribute?.('data-add')&&target.closest?.('#pResults');
+    const remove=target.hasAttribute?.('data-rm')&&target.closest?.('#manualList');
+    if(!add&&!remove) return;
+    event.preventDefault?.();
+    event.stopImmediatePropagation?.();
+
+    void (async()=>{
+      if(add){
+        const id=Number(target.dataset.add);
+        const player=S.byId?.[id];
+        const decision=manualSquadAddDecision(S.manual,player,S.byId);
+        if(!decision.ok){ manualSquadApplyStatus(documentRef,S.manual,S.byId,decision.message); return; }
+        const result=await manualSquadCommitAddition({
+          manual:S.manual,
+          player,
+          byId:S.byId,
+          persist:value=>sset(K_SQUAD,value),
+          saveConfiguration:async()=>{
+            const useManual=documentRef.getElementById?.('useManual');
+            if(useManual) useManual.checked=true;
+            await saveCfg();
+          },
+          renderManualView,
+          renderTeamView,
+          dispatchRendered:()=>documentRef.dispatchEvent?.(new CustomEvent('teamsheet:data-rendered'))
+        });
+        const search=documentRef.getElementById?.('pSearch');
+        const results=documentRef.getElementById?.('pResults');
+        if(search) search.value='';
+        if(results) results.hidden=true;
+        if(result.teamRenderError)
+          manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved. Team analysis could not refresh; reopen Team.');
+        else manualSquadApplyStatus(documentRef);
+        return;
+      }
+
+      const index=Number(target.dataset.rm);
+      if(!Number.isInteger(index)||index<0||index>=S.manual.length) return;
+      S.manual.splice(index,1);
+      await sset(K_SQUAD,S.manual);
+      renderManualView();
+      try{ renderTeamView(); }
+      catch(error){ manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved. Team analysis could not refresh; reopen Team.'); return; }
+      documentRef.dispatchEvent?.(new CustomEvent('teamsheet:data-rendered'));
+      manualSquadApplyStatus(documentRef);
+    })();
+  },true);
+
+  manualSquadApplyStatus(documentRef);
+  return routeAware;
+}
+
+if(typeof document!=='undefined'&&typeof renderTransfers==='function'){
+  const manualSquadOriginalRenderTransfers=renderTransfers;
+  const manualSquadRouteAwareRenderTransfers=manualSquadCreateRouteAwareTransferRenderer(
+    manualSquadOriginalRenderTransfers,()=>globalThis.location?.hash||''
+  );
+  renderTransfers=manualSquadRouteAwareRenderTransfers;
+  manualSquadInstallBrowserRuntime({
+    documentRef:document,
+    renderTransferView:manualSquadOriginalRenderTransfers,
+    renderManualView:typeof renderManual==='function'?renderManual:()=>{},
+    renderTeamView:typeof renderSquad==='function'?renderSquad:()=>{}
+  });
+}
 
 
 

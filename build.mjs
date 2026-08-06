@@ -18,11 +18,12 @@ const ORDER = [
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
   'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
-  'src/ui/transfer-optimiser-view.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/backtest-copy.mjs',
+  'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/views.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
   'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
+const transferWorkerModelSource = stripModuleSyntax(readFileSync('src/model/transfers.mjs', 'utf8'));
 const sourceHasher = createHash('sha256');
 let bundle = '';
 for (const path of ORDER) {
@@ -42,6 +43,7 @@ const rulesVersion = /RULES_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 const manifest = { modelVersion, rulesVersion, sourceHash, commit, moduleOrder: ORDER };
 bundle = (`/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: sourceHash.slice(0,16), commit })} */\n`
   + `const BUILD_INFO = ${JSON.stringify(manifest)};\n`
+  + `const TRANSFER_WORKER_MODEL_SOURCE = ${JSON.stringify(transferWorkerModelSource)};\n`
   + `if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;\n`
   + bundle).trimEnd() + '\n';
 
@@ -51,15 +53,35 @@ if(/\sstyle\s*=/.test(template)) throw new Error('Inline style attribute remains
 const styleMatches = [...template.matchAll(/<style>([\s\S]*?)<\/style>/g)];
 if(styleMatches.length !== 1) throw new Error(`CSP build requires exactly one inline style block; found ${styleMatches.length}`);
 const styleContent = styleMatches[0][1];
+const gatewayMeta = [...template.matchAll(/<meta\s+name=["']teamsheet-fpl-gateway["']\s+content=["']([^"']*)["']\s*\/?\s*>/g)];
+if(gatewayMeta.length !== 1) throw new Error(`Build requires exactly one Teamsheet FPL gateway meta tag; found ${gatewayMeta.length}`);
+let gatewayOrigin = null;
+if(gatewayMeta[0][1].trim()){
+  const gatewayUrl = new URL(gatewayMeta[0][1].trim());
+  const local = gatewayUrl.hostname === 'localhost' || gatewayUrl.hostname === '127.0.0.1';
+  if((gatewayUrl.protocol !== 'https:' && !(local && gatewayUrl.protocol === 'http:')) ||
+     gatewayUrl.username || gatewayUrl.password || gatewayUrl.search || gatewayUrl.hash ||
+     !/^\/fpl\/?$/.test(gatewayUrl.pathname))
+    throw new Error('Teamsheet FPL gateway meta content must be an exact HTTPS /fpl base URL');
+  gatewayOrigin = gatewayUrl.origin;
+}
 const scriptContent = '\n' + bundle + '\n';
 const scriptHash = sha256Csp(scriptContent);
 const styleHash = sha256Csp(styleContent);
+const connectOrigins = [
+  "'self'", 'https://api.allorigins.win', 'https://corsproxy.io',
+  'https://api.codetabs.com', 'https://thingproxy.freeboard.io',
+  'https://understat.com', 'https://api.the-odds-api.com',
+  'https://raw.githubusercontent.com', 'https://api.anthropic.com'
+];
+if(gatewayOrigin) connectOrigins.push(gatewayOrigin);
 const csp = [
   "default-src 'none'",
   `script-src '${scriptHash}'`,
   `style-src-elem '${styleHash}' https://fonts.googleapis.com`,
   'font-src https://fonts.gstatic.com',
-  "connect-src 'self' https://fantasy.premierleague.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com https://thingproxy.freeboard.io https://understat.com https://api.the-odds-api.com https://raw.githubusercontent.com https://api.anthropic.com",
+  `connect-src ${connectOrigins.join(' ')}`,
+  "worker-src 'self' blob:",
   "img-src 'self' data:",
   "object-src 'none'",
   "base-uri 'none'",

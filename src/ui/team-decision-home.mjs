@@ -37,9 +37,12 @@ function teamDecisionSquadReady(squad=[]){
   return counts[1]===2&&counts[2]===5&&counts[3]===5&&counts[4]===3;
 }
 
-function teamDecisionSourceLabel({manual=false,hasPicks=false,fplState='',cachedAt=null}={}){
+function teamDecisionSourceLabel({manual=false,hasPicks=false,picksGameweek=0,picksStatus='',fplState='',cachedAt=null}={}){
   const state=String(fplState||'');
-  let label=manual?'User-entered squad':hasPicks?'Official FPL public picks':'Squad unavailable';
+  const gw=Number(picksGameweek);
+  let label=manual?'User-entered squad':hasPicks
+    ? `Official FPL public picks${gw>=1&&gw<=38?` · locked GW${gw}`:''}`
+    : picksStatus==='unavailable'&&gw>=1&&gw<=38?`Public GW${gw} squad unavailable`:'Squad unavailable';
   if([HEALTH_STATES.CACHED,HEALTH_STATES.STALE,HEALTH_STATES.FALLBACK].includes(state)){
     label += state===HEALTH_STATES.FALLBACK?' · verified fallback':' · verified cache';
     if(Number.isFinite(Number(cachedAt))) label += ` · ${new Date(Number(cachedAt)).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
@@ -84,9 +87,12 @@ function teamDecisionRisk({dataState='',captain=null,starters=[],blankIds=[],clo
   return Object.freeze({kind:'none',level:'clear',text:'No material Team-selection risk is identified from the currently verified inputs.'});
 }
 
-function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none'}={}){
+function teamDecisionAction({hasSquad=false,deadlinePassed=false,previewActive=false,riskKind='none',squadStatus='',squadGameweek=0}={}){
   if(riskKind==='data-unavailable') return 'Official FPL season data is unavailable. Manual squad editing also needs the verified player list, so retry the data load before building a squad.';
   if(deadlinePassed) return 'The Official FPL deadline has passed. Review this recommendation for context only.';
+  if(!hasSquad && squadStatus==='gameweek-unavailable') return 'Use Load data again when Official FPL identifies the current or next Gameweek, or build your squad manually in Settings → Team & Account.';
+  if(!hasSquad && squadStatus==='unavailable') return `Use Load data again when Official FPL publishes the public${Number(squadGameweek)?` GW${Number(squadGameweek)}`:''} squad, or build your squad manually in Settings → Team & Account.`;
+  if(!hasSquad && squadStatus==='incomplete') return 'The public squad response was incomplete. Retry Load data, or build the complete squad manually in Settings → Team & Account.';
   if(!hasSquad) return 'Enter your Team ID in Team setup below, or open Settings → Team & Account to build a manual squad.';
   if(previewActive) return 'Review this user preview and reproduce it in Official FPL before the deadline if you choose to act.';
   if(riskKind==='data-stale') return 'Check the data warning before acting. Previously verified content is not confirmation of a successful live refresh.';
@@ -272,7 +278,8 @@ function teamDecisionEnhanceRenderedTeam(){
   const dataState=health?.state||(!S.boot?HEALTH_STATES.UNAVAILABLE:HEALTH_STATES.LIVE);
   const deadline=teamDecisionDeadlineModel();
   const manual=Boolean($('useManual')?.checked);
-  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),fplState:dataState,cachedAt:S.cachedAt});
+  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),
+    picksGameweek:S.picksGameweek,picksStatus:S.picksStatus,fplState:dataState,cachedAt:S.cachedAt});
   const ft=Math.max(0,Math.trunc(num($('ftCount')?.value)));
   const bank=Math.max(0,num($('bankIn')?.value)).toFixed(1);
   const rank=Number(S.entry?.summary_overall_rank)>0?`Official OR ${Number(S.entry.summary_overall_rank).toLocaleString('en-GB')}`:'';
@@ -280,10 +287,17 @@ function teamDecisionEnhanceRenderedTeam(){
 
   if(!ready){
     const count=realSquad.length;
-    const risk=dataState===HEALTH_STATES.UNAVAILABLE
-      ? teamDecisionRisk({dataState})
-      : Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
-    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind});
+    let risk;
+    if(dataState===HEALTH_STATES.UNAVAILABLE) risk=teamDecisionRisk({dataState});
+    else if(S.picksStatus==='gameweek-unavailable') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:'Official FPL has not identified a valid current or next Gameweek, so Teamsheet cannot request public squad picks.'});
+    else if(S.picksStatus==='unavailable'&&S.entry) risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:`Official FPL has not exposed a complete public GW${S.picksGameweek} squad for this Team ID yet. Teamsheet will not invent or reuse a different Gameweek squad.`});
+    else if(S.picksStatus==='incomplete') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
+      text:`${count} of 15 public GW${S.picksGameweek} picks were usable. A complete legal squad is required before Teamsheet can recommend an XI.`});
+    else risk=Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
+    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind,
+      squadStatus:S.picksStatus,squadGameweek:S.picksGameweek});
     const header=teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank,ft,bank});
     const summary=teamDecisionSummary({recommendation:'Recommendation unavailable',forecast:'No projection calculated',risk,action});
     const placeholder=teamDecisionPlaceholderStage(S.nextGW,'Empty Team pitch. No valid squad is available, so no XI, captaincy or bench recommendation has been calculated.');

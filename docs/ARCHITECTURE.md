@@ -156,7 +156,7 @@ The existing Stage 10.1 verified startup and foreground interaction lock are unc
 
 ## Teamsheet 2.0.3 transfer presentation boundary
 
-The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` owns assumptions synchronization, presentation states, preview invalidation and vertical decision cards. It consumes `optimiseTransfers()` without recalculating transfer values. `src/model/transfers.mjs` remains the sole calculation owner. Plans and previews are session-only; only free transfers, bank, horizon and result count persist.
+The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` is presentation-only: it owns assumptions synchronisation, presentation states, preview invalidation and vertical decision cards, and cannot enter the optimiser. `src/ui/transfer-performance.mjs` owns the single `renderTransfers()` renderer, the explicit calculate/cancel actions, batched projection preparation, the session result cache and the Blob Web Worker that runs the search off the UI thread. The worker embeds the reviewed `src/model/transfers.mjs` verbatim — the build emits it as `TRANSFER_WORKER_MODEL_SOURCE` — so the background search and a direct `optimiseTransfers()` call execute identical code and nothing rewrites the optimiser at runtime. `src/model/transfers.mjs` remains the sole calculation owner and bounds plan retention to the requested result count. Plans and previews are session-only; only free transfers, bank, horizon and result count persist.
 
 ## Teamsheet 2.0.4 Mini-League boundary
 
@@ -187,3 +187,6 @@ Aggregate exposure requires the user's squad and each included rival squad to co
 - Fixture display controls rerender only their dependent presentation surfaces.
 
 - Foreground resume uses the timestamp of the last completed refresh attempt, not only the last successful verification; automatic retries retain the ten-minute cooldown and do not make the application inert.
+
+## FPL-T1 Official FPL gateway boundary
+The static GitHub Pages application remains unchanged as the UI host. `src/providers/transport.mjs` reads one exact HTTPS `/fpl` gateway base from a build-validated meta tag and never sends Official FPL traffic through anonymous public relays. `workers/fpl-gateway.mjs` accepts only approved read-only endpoint families, rebuilds the upstream request from an allowlist and returns JSON with exact-origin CORS. Existing validators, retry metadata, device cache, Provider Health and restricted-state behaviour remain downstream and authoritative.
