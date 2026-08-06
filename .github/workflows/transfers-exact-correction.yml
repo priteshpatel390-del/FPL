@@ -32,12 +32,13 @@ jobs:
       - name: Verify deterministic production builds
         shell: bash
         run: |
-          mkdir -p /tmp/build-one
-          cp dist/index.html dist/app.bundle.js dist/manifest.json index.html /tmp/build-one/
+          mkdir -p /tmp/build-one/dist
+          cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/build-one/dist/
+          cp index.html /tmp/build-one/index.html
           BUILD_COMMIT="$REVIEW_COMMIT" node build.mjs
-          cmp /tmp/build-one/index.html dist/index.html
-          cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
-          cmp /tmp/build-one/manifest.json dist/manifest.json
+          cmp /tmp/build-one/dist/index.html dist/index.html
+          cmp /tmp/build-one/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/build-one/dist/manifest.json dist/manifest.json
           cmp /tmp/build-one/index.html index.html
           cmp dist/index.html index.html
 
