@@ -23,14 +23,15 @@ jobs:
         run: |
           set -euo pipefail
           cat .tmp/model.00 .tmp/model.01 .tmp/model.02 .tmp/model.03 .tmp/model.04 .tmp/model.05 .tmp/model.06 > /tmp/transfer-model.gz.b64
+          cat .tmp/patch.00 .tmp/patch.01 .tmp/patch.02 > /tmp/patch-transfer-tests.py.gz.b64
           echo "fd27f4570c2d63078f55754ee14e4d49a5db499f52f908b9a42999724047f67d  /tmp/transfer-model.gz.b64" | sha256sum -c -
           echo "66a4a4d3bc687b1106ea2f177dd295bda354e5d3381a647cdf6a0eb8f288c5ab  .tmp/transfer-ui.gz.b64" | sha256sum -c -
           echo "6da7748623d02cf59399e4189240ee985e9191151d3168715703216aa2d8396d  .tmp/transfer-exact-test.gz.b64" | sha256sum -c -
-          echo "2c4717a675fbf48466307ac0b1ee4c8b0270d0f39337b8d840a1015b32b56094  .tmp/patch-transfer-tests.py.gz.b64" | sha256sum -c -
+          echo "2c4717a675fbf48466307ac0b1ee4c8b0270d0f39337b8d840a1015b32b56094  /tmp/patch-transfer-tests.py.gz.b64" | sha256sum -c -
           base64 -d /tmp/transfer-model.gz.b64 | gzip -d > src/model/transfers.mjs
           base64 -d .tmp/transfer-ui.gz.b64 | gzip -d > src/ui/transfer-performance.mjs
           base64 -d .tmp/transfer-exact-test.gz.b64 | gzip -d > tests/transfer-exact-performance.test.mjs
-          base64 -d .tmp/patch-transfer-tests.py.gz.b64 | gzip -d > /tmp/patch-transfer-tests.py
+          base64 -d /tmp/patch-transfer-tests.py.gz.b64 | gzip -d > /tmp/patch-transfer-tests.py
           python /tmp/patch-transfer-tests.py
           rm -rf .tmp
           rm -f .github/workflows/verify-transfers-exact.yml
