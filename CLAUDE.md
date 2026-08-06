@@ -1,7 +1,7 @@
 # CLAUDE.md — onboarding for every future development session
 
 <!-- VOICEOVER-DECISION-2026-08-06 -->
-> **Owner decision — 6 August 2026:** VoiceOver testing is not required for Teamsheet and is not an acceptance gate. Standard accessibility safeguards—including semantic controls, labels, focus behaviour, reduced motion, contrast, touch targets and keyboard behaviour—remain required where applicable.
+> **Owner decision — 6 August 2026:** VoiceOver testing is not required for Teamsheet and is not an acceptance gate. `docs/VOICEOVER-DECISION.md` supersedes earlier current-status wording that treated it as pending or accepted-unverified. Standard accessibility safeguards—including semantic controls, labels, focus behaviour, reduced motion, contrast, touch targets and keyboard behaviour—remain required where applicable.
 
 <!-- UX-A1-2026-08-06 -->
 > **Current approved review item — UX-A1 Team Resources and Bench Clarity:** implemented on `agent/ux-a1-team-resources-bench-clarity` from verified `main` `06e4a07d95c961af2ebbb90f1e142635a582e7b1`. The Team screen now has one labelled manual-resource bar immediately above the pitch and separate `GK`, `1st`, `2nd`, `3rd` bench roles, with the existing squad order, calculations and Player Detail behaviour preserved. Automated verification is **624 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Physical populated iPhone Safari acceptance passed on 6 August 2026. Workstreams A2, A3 and B remain unapproved and must not start. The draft PR must not be merged without Pritesh's explicit approval.
