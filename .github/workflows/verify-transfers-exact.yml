@@ -68,8 +68,24 @@ jobs:
           BUILD_COMMIT: ${{ steps.source.outputs.sha }}
         shell: bash
         run: |
-          set -euo pipefail
-          ./run-tests.sh | tee /tmp/teamsheet-tests.log
+          set -uo pipefail
+          ./run-tests.sh 2>&1 | tee /tmp/teamsheet-tests.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "Track A verification failures"
+              echo "Source: ${{ steps.source.outputs.sha }}"
+              echo
+              awk '/^not ok /{remaining=32} remaining>0{print;remaining--}' /tmp/teamsheet-tests.log
+              echo
+              tail -n 20 /tmp/teamsheet-tests.log
+            } > TRANSFER_VERIFICATION_FAILURES.txt
+            git add TRANSFER_VERIFICATION_FAILURES.txt
+            git commit -m "Record exact Transfers verification failures"
+            git push origin HEAD:agent/transfers-exact-performance
+            exit "$status"
+          fi
           mkdir -p /tmp/first-build
           cp dist/index.html dist/app.bundle.js dist/manifest.json /tmp/first-build/
           node build.mjs
