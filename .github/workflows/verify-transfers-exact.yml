@@ -33,6 +33,18 @@ jobs:
           base64 -d .tmp/transfer-exact-test.gz.b64 | gzip -d > tests/transfer-exact-performance.test.mjs
           base64 -d /tmp/patch-transfer-tests.py.gz.b64 | gzip -d > /tmp/patch-transfer-tests.py
           python /tmp/patch-transfer-tests.py
+          python - <<'PY'
+          from pathlib import Path
+          for name in [
+              'tests/transfer-performance-runtime.test.mjs',
+              'tests/transfer-performance.test.mjs',
+              'tests/transfer-exact-performance.test.mjs',
+              'src/model/transfers.mjs',
+              'src/ui/transfer-performance.mjs',
+          ]:
+              path = Path(name)
+              path.write_text(path.read_text().rstrip() + '\n')
+          PY
           rm -rf .tmp
           rm -f .github/workflows/verify-transfers-exact.yml
           node --check src/model/transfers.mjs
