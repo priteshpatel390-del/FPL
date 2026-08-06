@@ -304,10 +304,14 @@ body.player-detail-open{overflow:hidden}
 .bench-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
 .bench-head strong{font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
 .bench-head span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
-.bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .bench-player{max-width:none}
 .bench-player .shirt-wrap{height:38px;transform:scale(.88);transform-origin:center bottom}
-.bench-player .pitch-copy{box-shadow:none;border:1px solid var(--line);background:#fff}
+.bench-player .pitch-copy{min-height:78px;padding:6px 4px;box-shadow:none;border:1px solid var(--line);background:#fff}
+.bench-role{display:block;margin-bottom:3px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--claret);line-height:1}
+.bench-player .pitch-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;min-height:2.3em;overflow:hidden;text-overflow:ellipsis;overflow-wrap:anywhere}
+.bench-player .pitch-meta{font-size:8px;line-height:1.25;margin-top:3px}
+.bench-player .pitch-xp{font-size:9px;line-height:1.25;margin-top:3px}
 .section-title{margin:18px 0 7px}
 @media(max-width:420px){
   .team-summary{grid-template-columns:1fr;gap:8px}
@@ -458,7 +462,15 @@ h2[tabindex="-1"]:focus{outline:none}
 .team-home-chip.source{background:#EAF0EB;color:var(--pitch)}
 .team-home-chip.deadline{background:#FCF8EF;color:#745614}
 .team-home-chip.official{background:#E5EEF5;color:var(--info)}
-.team-home-chip.manual{background:#F2EDEE;color:var(--claret)}
+.team-resource-bar{display:grid;gap:9px;margin:10px 0 8px;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}
+.team-resource-bar-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.team-resource-heading{display:grid;gap:2px;min-width:0}
+.team-resource-provenance{font-size:10.5px;color:var(--ink-soft);line-height:1.25}
+.team-resource-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.team-resource-item{display:grid;gap:2px;min-width:0;padding:10px 11px;border-radius:11px;background:#F7F9F5;border:1px solid #E7EAE4}
+.team-resource-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);line-height:1.25}
+.team-resource-value{font-family:'Bricolage Grotesque',sans-serif;font-size:25px;line-height:1.05;overflow-wrap:anywhere}
+.team-resource-edit{flex:0 0 auto;min-height:40px;display:grid;place-items:center;text-decoration:none}
 .team-home-decision{display:grid;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px}
 .team-home-row{display:grid;grid-template-columns:minmax(92px,112px) minmax(0,1fr);gap:9px;padding:9px 11px;border-bottom:1px solid #EDEFEA;align-items:start}
 .team-home-row:last-of-type{border-bottom:0}
@@ -491,7 +503,10 @@ h2[tabindex="-1"]:focus{outline:none}
   .team-home-row{grid-template-columns:86px minmax(0,1fr);padding:8px 9px;gap:7px}
   .team-home-row-value{font-size:12px}
   .team-home-actions{grid-template-columns:1fr}
+  .team-resource-bar{padding:10px}.team-resource-value{font-size:24px}.team-resource-edit{padding:6px 9px;font-size:11px}
+  .team-bench{padding:11px 7px}.bench-grid{gap:6px}.bench-player .pitch-copy{min-height:80px;padding:6px 3px}
   .team-home-ready .pitch-name{font-size:10px}.team-home-ready .pitch-meta{font-size:8px}.team-home-ready .pitch-xp{font-size:9px}
+  .team-home-ready .bench-role{font-size:8px}.team-home-ready .bench-player .pitch-name{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.team-startup-lineup *{animation:none;transition:none}}
 

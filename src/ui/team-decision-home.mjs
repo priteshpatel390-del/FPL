@@ -16,8 +16,9 @@ import {
 // best-XI, captaincy, bench, projection, simulation or optimiser behaviour.
 
 const TEAM_DECISION_HOME_VERSION = '2.0.2';
+const TEAM_RESOURCES_BENCH_CLARITY_VERSION = 'UX-A1';
 const TEAM_DECISION_UNAVAILABLE = new Set(['i','u','s','n']);
-const TEAM_DECISION_BENCH_LABELS = Object.freeze(['Reserve goalkeeper','1st sub','2nd sub','3rd sub']);
+const TEAM_DECISION_BENCH_LABELS = Object.freeze(['GK','1st','2nd','3rd']);
 
 function teamDecisionForecast(xiTotal, captainXp){
   const base = Number.isFinite(Number(xiTotal)) ? Number(xiTotal) : 0;
@@ -111,26 +112,31 @@ function teamDecisionBenchLabel(index){
 function teamDecisionRelabelBench(stage){
   if(!stage?.querySelectorAll) return;
   const players=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
+  const rolePrefix=/^(?:(?:Reserve goalkeeper|[123](?:st|nd|rd) sub|GK|1st|2nd|3rd)(?: bench)?[,·]\s*)/;
   players.forEach((player,index)=>{
     const label=teamDecisionBenchLabel(index);
     const nameNode=player.querySelector('.pitch-name');
+    const oldRole=player.querySelector('.bench-role');
+    if(oldRole?.remove) oldRole.remove();
     if(nameNode){
-      const playerName=String(nameNode.textContent||'').replace(/^\d+\.\s*/, '');
-      nameNode.textContent=`${label} · ${playerName}`;
+      const playerName=String(nameNode.textContent||'').replace(/^\d+\.\s*/, '').replace(rolePrefix,'');
+      nameNode.textContent=playerName;
+      nameNode.parentNode?.insertBefore(el('span',{class:'bench-role'},label),nameNode);
     }
     const aria=player.getAttribute('aria-label');
     if(aria){
-      const detail=aria.replace(/^\d+\.\s*/, '');
-      player.setAttribute('aria-label',`${label}, ${detail}`);
+      const detail=aria.replace(/^\d+\.\s*/, '').replace(rolePrefix,'');
+      player.setAttribute('aria-label',`${label} bench, ${detail}`);
     }
   });
 }
 
-function teamDecisionPlaceholderPlayer(label='—'){
+function teamDecisionPlaceholderPlayer(label='—',benchRole=''){
   return el('div',{class:'pitch-player team-home-placeholder-player','aria-hidden':'true'},
     el('div',{class:'shirt-wrap'},
       el('span',{class:'club-shirt pattern-solid shirt-palette-fallback-3'},el('span',{class:'club-shirt-code'},'FPL'))),
-    el('div',{class:'pitch-copy'},el('div',{class:'pitch-name'},label),el('div',{class:'pitch-meta'},'Awaiting squad'),el('div',{class:'pitch-xp'},'— xP')));
+    el('div',{class:'pitch-copy'},benchRole?el('span',{class:'bench-role'},benchRole):null,
+      el('div',{class:'pitch-name'},label),el('div',{class:'pitch-meta'},'Awaiting squad'),el('div',{class:'pitch-xp'},'— xP')));
 }
 
 function teamDecisionPlaceholderStage(gw,message){
@@ -142,7 +148,7 @@ function teamDecisionPlaceholderStage(gw,message){
     el('div',{class:'pitch-formation'},line(4,3),line(3,4),line(2,3),line(1,1)));
   const bench=el('section',{class:'team-bench','aria-label':'Bench unavailable'},
     el('div',{class:'bench-head'},el('strong',{},'Bench'),el('span',{},'Auto-sub order')),
-    el('div',{class:'bench-grid'},Array.from({length:4},(_,index)=>teamDecisionPlaceholderPlayer(teamDecisionBenchLabel(index)))));
+    el('div',{class:'bench-grid'},Array.from({length:4},(_,index)=>teamDecisionPlaceholderPlayer('—',teamDecisionBenchLabel(index)))));
   return el('div',{class:'team-stage'},pitch,bench);
 }
 
@@ -150,12 +156,33 @@ function teamDecisionMetaChip(text,kind='plain'){
   return el('span',{class:`team-home-chip ${kind}`},text);
 }
 
-function teamDecisionHeader({title,eyebrow,source,deadline,rank,ft,bank}){
+function teamDecisionFocusResources(){
+  const context=$('teamContext');
+  const firstInput=$('ftCount')||$('bankIn');
+  context?.scrollIntoView?.({block:'start'});
+  firstInput?.focus?.();
+}
+
+function teamDecisionResourceBar({ft=0,bank='0.0'}={}){
+  const item=(label,value)=>el('div',{class:'team-resource-item'},
+    el('span',{class:'team-resource-label'},label),
+    el('strong',{class:'team-resource-value'},value));
+  return el('section',{class:'team-resource-bar','aria-label':'Team resources'},
+    el('div',{class:'team-resource-bar-head'},
+      el('div',{class:'team-resource-heading'},
+        el('span',{class:'eyebrow'},'Team resources'),
+        el('span',{class:'team-resource-provenance'},'Entered manually')),
+      el('button',{type:'button',class:'btn ghost sm team-resource-edit',onclick:teamDecisionFocusResources,
+        'aria-label':'Edit free transfers and money in bank'},'Edit resources')),
+    el('div',{class:'team-resource-values'},
+      item('Free transfers',String(ft)),
+      item('Money in bank',`£${bank}m`)));
+}
+
+function teamDecisionHeader({title,eyebrow,source,deadline,rank}){
   const chips=[teamDecisionMetaChip(source,'source')];
   if(deadline) chips.push(teamDecisionMetaChip(deadline,'deadline'));
   if(rank) chips.push(teamDecisionMetaChip(rank,'official'));
-  chips.push(teamDecisionMetaChip(`${ft} FT · manual`,'manual'));
-  chips.push(teamDecisionMetaChip(`£${bank}m bank · manual`,'manual'));
   return el('section',{class:'team-home-header','aria-labelledby':'teamDecisionTitle'},
     el('span',{class:'eyebrow'},eyebrow),
     el('h3',{id:'teamDecisionTitle'},title),
@@ -298,10 +325,11 @@ function teamDecisionEnhanceRenderedTeam(){
     else risk=Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
     const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind,
       squadStatus:S.picksStatus,squadGameweek:S.picksGameweek});
-    const header=teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank,ft,bank});
+    const header=teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank});
     const summary=teamDecisionSummary({recommendation:'Recommendation unavailable',forecast:'No projection calculated',risk,action});
     const placeholder=teamDecisionPlaceholderStage(S.nextGW,'Empty Team pitch. No valid squad is available, so no XI, captaincy or bench recommendation has been calculated.');
-    setChildren(out,header,summary,placeholder);
+    const resourceBar=teamDecisionResourceBar({ft,bank});
+    setChildren(out,header,summary,resourceBar,placeholder);
     return;
   }
 
@@ -337,8 +365,9 @@ function teamDecisionEnhanceRenderedTeam(){
   const bench=xi.bench.map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
-  const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank,ft,bank});
+  const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank});
   const summary=teamDecisionSummary({recommendation,forecast:forecastCopy,risk,action});
+  const resourceBar=teamDecisionResourceBar({ft,bank});
 
   const children=Array.from(out.children);
   const previewBanner=children.find(node=>node.classList?.contains('decision-preview-banner'))||null;
@@ -354,7 +383,7 @@ function teamDecisionEnhanceRenderedTeam(){
   const actions=el('div',{class:'team-home-actions'},
     el('a',{class:'btn ghost',href:'#/transfers'},'Open Transfers'),
     el('a',{class:'btn ghost',href:'#/settings/team-account'},'Edit manual squad'));
-  setChildren(out,header,summary,previewBanner,stage,controls,actions);
+  setChildren(out,header,summary,previewBanner,resourceBar,stage,controls,actions);
 
   const why=el('details',{class:'team-home-support'},
     el('summary',{},'Why this XI and captaincy'),
@@ -383,6 +412,7 @@ teamDecisionInstall();
 
 export {
   TEAM_DECISION_HOME_VERSION,
+  TEAM_RESOURCES_BENCH_CLARITY_VERSION,
   TEAM_DECISION_BENCH_LABELS,
   teamDecisionForecast,
   teamDecisionSquadReady,
@@ -391,5 +421,7 @@ export {
   teamDecisionAction,
   teamDecisionCloseCaptainCopy,
   teamDecisionBenchLabel,
+  teamDecisionFocusResources,
+  teamDecisionResourceBar,
   teamDecisionRelabelBench
 };
