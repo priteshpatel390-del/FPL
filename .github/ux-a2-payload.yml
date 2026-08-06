@@ -86,6 +86,7 @@ steps:
           PY
 
           rm -f review/ux-a2-player-detail-preview.html review/ux-a2-player-detail-preview-v2.html
+          rm -f tests/.ux-a2-final-test.tmp tests/.ux-a2-final-test.b64 docs/UX-A2-PUBLICATION-NOTE.md
           rmdir review 2>/dev/null || true
           rm .github/workflows/ux-a2-apply.yml
           git config user.name "Teamsheet UX-A2 Agent"
@@ -145,6 +146,9 @@ steps:
           test ! -e .github/workflows/ux-a2-apply.yml
           test ! -e .github/ux-a2-payload.yml
           test ! -d review
+          test ! -e tests/.ux-a2-final-test.tmp
+          test ! -e tests/.ux-a2-final-test.b64
+          test ! -e docs/UX-A2-PUBLICATION-NOTE.md
           grep -q 'text-size-adjust:100%' app.html
           grep -q 'iOS automatic text inflation is fixed at 100% across rotation' tests/player-detail-scroll-rotation.test.mjs
           grep -q "$SOURCE_SHA" dist/manifest.json
