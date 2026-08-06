@@ -37,7 +37,7 @@ The pre-correction search was correct but structurally too weak for an Official-
 3. **No stopping rule.** Candidates that failed a bound were skipped individually. The enumeration still walked every remaining candidate of a position pool — roughly 200–280 players — at every partial node.
 4. **Budget relaxed per player.** The optimistic completion allowed each outstanding slot the *whole* remaining budget independently, which is far too generous with an empty bank, where affordability is the binding constraint.
 
-Together these produced both observed failure modes: on some inputs the leaf count runs past 2,000,000 (the reported failure), and on others the search does not finish in a usable time at all. On a Node reproduction of the failure shape the previous search did not complete a default six-Gameweek run in **more than ten minutes** of measurement before it was stopped; the corrected search completes the same case in **about 1.2 seconds**.
+Together these produced both observed failure modes: on some inputs the leaf count runs past 2,000,000 (the reported failure), and on others the search visits so many partial nodes that it cannot finish in a usable time. On a Node reproduction of the failure shape the previous search took **13 minutes 38 seconds** and visited **9,480,866** partial nodes; the corrected search completes the identical case in **about 1.2 seconds** across **880,555** nodes.
 
 ## Corrective exact architecture
 
@@ -88,13 +88,16 @@ Reproduction: a deterministic twenty-club Official-scale pool of about 700 playe
 
 | Case | Previous | Corrected |
 |---|---|---|
-| Default six-Gameweek search (seed 7) | **did not finish** — stopped after more than ten minutes | **≈1.2 s**, `status: 'ok'` |
+| Default six-Gameweek search (seed 7) | 817,571 ms (**13 min 38 s**) | **1,136 ms**, `status: 'ok'` |
 | Depth 2 only (seed 7) | 1,834 ms | 107 ms |
 | Depth 1 only (seed 7) | 83 ms | 37 ms |
-| Nodes visited at depth 3 (seed 7) | unfinished | 880,555 |
-| Exact evaluations at depth 3 (seed 7) | unfinished | 21 |
-| Nodes visited at depth 2 (seed 7) | 25,891 | 11,083 |
+| Partial nodes visited (seed 7) | 9,480,866 | 880,555 |
+| Exact evaluations (seed 7) | 32 | 21 |
+| Partial nodes visited at depth 2 (seed 7) | 25,891 | 11,083 |
+| Complete retained top 8 (seed 7) | — | **identical** to the previous implementation's, field for field |
 | Seeds 1, 2, 3, 7, 11 at depth 3 | not measurable | 1.1–3.4 s, all `status: 'ok'`, all below the ceiling |
+
+The two implementations were also run head to head on the identical Official-scale input and their complete retained results compared field for field — signature, transfer count, net gain, gross best-XI points, hit cost, bank after, next-Gameweek free transfers and every per-Gameweek best XI. They agreed exactly on all eight retained plans. This is a recorded one-off measurement rather than a suite test, because the previous implementation needs about thirteen minutes per run; the repeatable exactness gate remains the controlled-pool oracle comparison.
 
 The evaluation counts are low because the bounds now separate branches before a complete incoming combination is formed. Fewer evaluations is a search-efficiency result only; it says nothing about prediction accuracy.
 

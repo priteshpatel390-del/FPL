@@ -7,7 +7,7 @@
 - Materialised canonical transfers, plan signatures and per-Gameweek best-XI detail only for genuine contenders or exact ties.
 - Left the football problem untouched: no projection, minutes, scoring, fixture, captaincy, affordability, hit, free-transfer, roll-value, comparator or ordering change, no candidate filter, and no change to the six-Gameweek default, Top 8, depth three or the 2,000,000 ceiling.
 - Kept `exhaustiveTransferSearch()` independent and free of the new pruning, and added controlled-pool differential coverage across seven adversarial shapes plus an Official-scale completion and fail-closed suite.
-- A Node reproduction of the failure shape that previously did not finish after more than ten minutes now completes in about 1.2 seconds with `status: 'ok'`.
+- A Node reproduction of the failure shape that previously took 13 minutes 38 seconds over 9,480,866 partial nodes now completes in about 1.2 seconds over 880,555 nodes, and a head-to-head run of both implementations on that input returned identical complete top-8 results.
 - Verified **606 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality. PR #70 remains draft and unmerged, and physical iPhone Safari retest remains required.
 
 ## 2026-08-05 — FPL-T1 live gateway deployment review
