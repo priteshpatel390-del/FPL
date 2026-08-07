@@ -1,65 +1,87 @@
-name: Apply approved Leagues hub layout
+name: Verify Teamsheet
 
 on:
-  push:
-    branches:
-      - agent/leagues-hub-first
+  pull_request:
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  apply-and-build:
+  verify:
+    name: Tests and deterministic build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+
     steps:
-      - name: Check out PR branch
+      - name: Check out exact revision
         uses: actions/checkout@v4
         with:
-          ref: agent/leagues-hub-first
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Apply accepted full-width intro layout
+      - name: Confirm runtime and revision
         run: |
           set -eu
-          python3 -c "from pathlib import Path; p=Path('app.html'); s=p.read_text(); old='<div><span class=\"eyebrow\">Competitive context</span><h2 tabindex=\"-1\">Leagues</h2><p class=\"hint\">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p></div>'; new='<div><span class=\"eyebrow\">Competitive context</span><h2 tabindex=\"-1\">Leagues</h2></div>'; assert s.count(old)==1, s.count(old); s=s.replace(old,new,1); marker='        <a class=\"btn ghost sm\" href=\"#/leagues/manage\">Manage leagues</a>\\n      </div>\\n      <div id=\"leagueHubOut\">'; replacement='        <a class=\"btn ghost sm\" href=\"#/leagues/manage\">Manage leagues</a>\\n      </div>\\n      <p class=\"hint\">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p>\\n      <div id=\"leagueHubOut\">'; assert s.count(marker)==1, s.count(marker); p.write_text(s.replace(marker,replacement,1))"
+          node --version
+          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          echo "Verifying $BUILD_COMMIT"
 
-      - name: Commit accepted source layout
-        run: |
-          set -eu
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.html
-          git commit -m "Let Leagues intro use full card width"
-          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-
-      - name: Test complete suite
+      - name: Run complete test suite
         run: |
           set -eu
           ./run-tests.sh
 
-      - name: Build and verify deterministic production bytes
+      - name: Capture first exact-identity production build
         run: |
           set -eu
-          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+          node build.mjs
           rm -rf /tmp/teamsheet-build-a
           mkdir -p /tmp/teamsheet-build-a/dist
           cp dist/app.bundle.js /tmp/teamsheet-build-a/dist/app.bundle.js
           cp dist/index.html /tmp/teamsheet-build-a/dist/index.html
           cp dist/manifest.json /tmp/teamsheet-build-a/dist/manifest.json
           cp index.html /tmp/teamsheet-build-a/index.html
-          BUILD_COMMIT="$SOURCE_SHA" node build.mjs
+
+      - name: Rebuild and verify deterministic bytes
+        run: |
+          set -eu
+          node build.mjs
           cmp /tmp/teamsheet-build-a/dist/app.bundle.js dist/app.bundle.js
           cmp /tmp/teamsheet-build-a/dist/index.html dist/index.html
           cmp /tmp/teamsheet-build-a/dist/manifest.json dist/manifest.json
           cmp /tmp/teamsheet-build-a/index.html index.html
           cmp dist/index.html index.html
 
-      - name: Restore permanent verifier and commit generated files
+      - name: Verify build identity
         run: |
           set -eu
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/verify.yml
-          git add .github/workflows/verify.yml dist/app.bundle.js dist/index.html dist/manifest.json index.html
-          git commit -m "Regenerate deployable for accepted Leagues hub layout"
-          git push origin HEAD:agent/leagues-hub-first
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); console.log('Manifest commit verified:',m.commit);"
+
+      - name: Preserve verified production outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamsheet-production-${{ env.BUILD_COMMIT }}
+          path: |
+            dist/app.bundle.js
+            dist/index.html
+            dist/manifest.json
+            index.html
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verification summary
+        run: |
+          echo '### Teamsheet verification passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Revision: \`$BUILD_COMMIT\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Complete test suite: passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Two exact-identity production builds: byte-identical' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Root index.html equals dist/index.html' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Manifest build identity: exact' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Verified production outputs: preserved as a workflow artifact' >> "$GITHUB_STEP_SUMMARY"
