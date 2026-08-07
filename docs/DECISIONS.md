@@ -228,3 +228,12 @@ Consequences: no projection, minutes, scoring, fixture, captaincy, squad, afford
 ## 2026-08-06 — Plain-language decision information
 
 **Decision:** user-facing FPL information must be simple, relevant and immediately understandable. A zero transfer-points cost is displayed as **“No hit”**, never as the mathematically awkward **“−0”**. Paid transfer costs retain their actual deduction, such as **“−4”** or **“−8”**. This is a presentation rule only and does not alter optimiser values, scoring or ranking.
+
+
+**D-37 · 2026-08-07 · Accepted · Leagues opens with an all-league hub before selected-league detail**
+
+Reason: populated iPhone review showed that opening Leagues directly into one preselected league hides the user's competitive context across their other leagues. The owner wants the first Leagues screen to resemble Official FPL's league directory: every league visible at a glance, then deeper information after choosing one.
+
+Approach: `#/leagues` becomes a lightweight all-league hub using the already-loaded Official FPL classic-league membership list plus locally saved leagues. Positive published membership ranks and supplied previous ranks are shown without fetching every standings table; unpublished pre-season rank remains `Not ranked yet`. Tapping a row persists the existing selected league and opens new ID-free `#/leagues/detail`. Existing standings, rival and selected-rival exposure routes become children of that detail route. Manage leagues is secondary from the hub.
+
+Consequences: no full-league or all-league standings fanout, no provider/endpoint/authentication change, no rank projection, effective ownership, rival prediction, protect/balanced/chase strategy, transfer, squad, fixture or projection-model change. Large-league targeted pages and on-demand rival public-picks loading remain unchanged. Physical iPhone Safari acceptance is required before the Leagues live/populated checkpoint closes. See `docs/LEAGUES-HUB-DESIGN.md`.

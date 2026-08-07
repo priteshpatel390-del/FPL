@@ -76,6 +76,8 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 ## Teamsheet 2.0.1 UI and routing boundary
 `ui/app-shell.mjs` owns the implemented Team, Transfers, Fixtures, Leagues and Settings primary destinations, the secondary Ask Teamsheet route, hash normalisation, legacy aliases, browser history, active-link state, route focus and the five-section Settings hierarchy. The old direct click-to-hide navigation in `ui/views.mjs` is removed.
 
+Within Leagues, `#/leagues` is a lightweight all-league membership hub and `#/leagues/detail` is the selected-league overview. The hub uses already-loaded entry membership facts and does not fan out standings requests; `#/leagues/standings`, `#/leagues/rival` and `#/leagues/exposure` remain ID-free child destinations that load only the selected league context.
+
 Existing functional nodes are relocated rather than cloned: weekly Team ID/free-transfer/bank context moves into Team; Player Explorer moves under Settings → Research Tools; evidence/outcomes/metrics/review remain under Settings → Evidence & Performance; Provider Health and optional provider/calibration controls live under Settings → Data & Diagnostics; the existing League comparison and Fixtures ticker become primary destinations. Ask Teamsheet remains functionally unchanged and is linked globally and from Team.
 
 The router stores no account, provider-key or evidence identity in the URL. It does not own model state, provider state or persisted configuration. Player detail remains an accessible dialog rather than a URL route. The owner-approved Teamsheet 2.0.1 boundary changes presentation and navigation only.

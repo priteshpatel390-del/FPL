@@ -111,7 +111,7 @@ test('Evidence and Provider Health detail remain available through Settings only
 
 
 test('League subroutes are ID-free and keep Leagues active',()=>{
-  for(const route of ['#/leagues/standings','#/leagues/rival','#/leagues/exposure','#/leagues/manage']){
+  for(const route of ['#/leagues/detail','#/leagues/standings','#/leagues/rival','#/leagues/exposure','#/leagues/manage']){
     assert.equal(normaliseTeamsheetRoute(route),route);
     assert.equal(teamsheetRouteMeta(route).primary,'leagues');
     for(const forbidden of ['leagueId','managerId','entryId']) assert.equal(route.includes(forbidden),false);
