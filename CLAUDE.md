@@ -4,7 +4,7 @@
 > **Current merged application checkpoint — Team populated acceptance complete:** PRs #80–#83 are merged, with current `main` `385e5102c0e86e4b926503bffceba08bd6d831c3` from PR #83. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity. The final PR head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for `385e5102c0e86e4b926503bffceba08bd6d831c3` succeeded. Pritesh then physically accepted the populated Team path on iPhone Safari: startup/loading owns the viewport; availability is visible; the reserve goalkeeper occupies `GK`; outfield substitutes retain `1st` / `2nd` / `3rd`; and `Unavailable` is centred on one line without overlap. Normal Safari retained the saved manual squad; Private Browsing uses separate browser storage and is not currently a Teamsheet persistence defect. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` is authoritative for this Team follow-up sequence. Remaining populated live acceptance is **Fixtures, then Leagues**. No calculation, provider, data-source or security behaviour changed.
 
 <!-- UX-A2-DOCK-LAYERING-2026-08-07 -->
-> **Current merged application checkpoint — PR #78 Player Detail dock-layering correction:** PR #78 was physically accepted on populated iPhone Safari and merged to `main` at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`. It raises only the existing Player Detail backdrop and panel above the unchanged fixed primary dock so the final projection line cannot be covered. Verification is **645 passed, 0 failed, 0 skipped, 0 cancelled** with deterministic exact-identity builds and root/deployable equality. GitHub Pages deployment succeeded and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`. Every FPL calculation, Player Detail content, route and navigation dimension is unchanged. `UI-14` is closed. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` is authoritative for this correction; UX-A3 and Track B remain unapproved.
+> **Preceding merged checkpoint — PR #78 Player Detail dock-layering correction:** PR #78 was physically accepted on populated iPhone Safari and merged to `main` at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`. It raises only the existing Player Detail backdrop and panel above the unchanged fixed primary dock so the final projection line cannot be covered. Verification is **645 passed, 0 failed, 0 skipped, 0 cancelled** with deterministic exact-identity builds and root/deployable equality. GitHub Pages deployment succeeded and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`. Every FPL calculation, Player Detail content, route and navigation dimension is unchanged. `UI-14` is closed. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` is authoritative for this correction; UX-A3 and Track B remain unapproved.
 
 
 <!-- VOICEOVER-DECISION-2026-08-06 -->
@@ -26,22 +26,23 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
 
 ## Read in this order
-1. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the merged PR #78 dock-layering correction
-2. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
-3. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
-4. `docs/PROJECT_CONTEXT.md`
-5. `docs/ARCHITECTURE.md`
-6. `docs/DECISIONS.md`
-7. `docs/ROADMAP.md`
-8. `docs/KNOWN_LIMITATIONS.md`
-9. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
-10. The current checkpoint design document
-11. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
-12. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
-13. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
+1. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` — authoritative record for the current merged Team populated-acceptance checkpoint
+2. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the preceding PR #78 dock-layering correction
+3. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
+4. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
+5. `docs/PROJECT_CONTEXT.md`
+6. `docs/ARCHITECTURE.md`
+7. `docs/DECISIONS.md`
+8. `docs/ROADMAP.md`
+9. `docs/KNOWN_LIMITATIONS.md`
+10. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
+11. The current checkpoint design document
+12. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
+13. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
+14. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-The current merged **application** checkpoint is PR #83 at `385e5102c0e86e4b926503bffceba08bd6d831c3`. PRs #80–#83 complete the approved Team T-01/T-02 populated-iPhone follow-up sequence. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 passed, 0 failed, 0 skipped, 0 cancelled**, two byte-identical production builds, root `index.html` equality with `dist/index.html` and exact manifest identity; that head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for the merge commit succeeded. Pritesh physically accepted the deployed Team path on 7 August 2026, including startup ownership, explicit availability, reserve-GK display, preserved outfield bench order and the centred one-line unavailable badge. The next substantive work is investigation-only populated live acceptance of **Fixtures**, followed by **Leagues**. No Fixtures implementation, model/provider change, UX-A3 or Track B work is approved by this checkpoint.
+The current merged **application** checkpoint is PR #83 at `385e5102c0e86e4b926503bffceba08bd6d831c3`. PRs #80–#83 complete the approved Team T-01/T-02 populated-iPhone follow-up sequence. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, two byte-identical production builds, root `index.html` equality with `dist/index.html` and exact manifest identity; that head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for the merge commit succeeded. Pritesh physically accepted the deployed Team path on 7 August 2026, including startup ownership, explicit availability, reserve-GK display, preserved outfield bench order and the centred one-line unavailable badge. The next substantive work is investigation-only populated live acceptance of **Fixtures**, followed by **Leagues**. No Fixtures implementation, model/provider change, UX-A3 or Track B work is approved by this checkpoint.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
