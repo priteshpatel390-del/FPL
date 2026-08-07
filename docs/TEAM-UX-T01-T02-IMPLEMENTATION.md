@@ -7,7 +7,6 @@ Date: 7 August 2026.
 Base `main`: `d742562059c966e6e456abe39247fa3a18e6c72c`.
 Branch: `agent/team-ux-startup-availability`.
 Draft PR: #80.
-Verified source: `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26`.
 
 ## Approved scope
 
@@ -71,9 +70,11 @@ GitHub Actions **Verify Teamsheet run #1** verified source `68d16a2a8fc3113da274
 - manifest `commit`: exactly `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26`;
 - model/golden expectations: unchanged.
 
-The workflow itself was introduced in the verified source revision, so the green run proves the committed CI definition and the implementation together. No GitHub Pages or Cloudflare deployment was requested or changed by this branch.
+Subsequent documentation-only edits trigger the same workflow again on the new PR head; the current PR check is the authoritative pass/fail signal for the exact head under review.
 
-Generated production files created by the workflow were verification outputs in the GitHub runner and were not written back to the branch. If this implementation checkpoint requires committed generated artefacts before merge, that remains a separate repository-completion step; no generated file has been hand-edited.
+No GitHub Pages or Cloudflare deployment is requested or changed by this branch.
+
+Generated production files created by the workflow are verification outputs in the GitHub runner and are not written back to the branch. If this implementation checkpoint requires committed generated artefacts before merge, that remains a separate repository-completion step; no generated file has been hand-edited.
 
 ## Remaining acceptance limitation
 
@@ -81,4 +82,4 @@ Automated verification cannot establish whether iPhone Safari ever paints a pre-
 
 ## Review gate
 
-This work remains a Draft PR and must not merge until Pritesh explicitly approves it. Automated repository verification is complete and green; physical iPhone Safari review of T-01 and any required generated-artefact commit remain the outstanding completion checks.
+This work remains a Draft PR and must not merge until Pritesh explicitly approves it. Automated repository verification is available on every PR head; physical iPhone Safari review of T-01 and any required generated-artefact commit remain the outstanding completion checks.
