@@ -68,3 +68,8 @@ The required visual condition is that an iPhone first paint shows only the start
 ## Review gate
 
 Pritesh approved merge after documentation updates and successful T-01 visual acceptance. Those conditions are now satisfied: automated verification is green, generated deployables are current, and physical iPhone Safari T-01 acceptance passed. T-02 physical presentation was not observable because the current squad had no flagged player; automated T-02 coverage remains green. PR #80 is ready to merge under the existing owner approval.
+
+
+## T-02 physical visual follow-up — availability badge centring
+
+On 7 August 2026, physical iPhone Safari review of an unavailable bench player found the availability badge visually shifted to the right. The cause was the generic `.flag` rule's `margin-left:5px`, inherited by the standalone `.pitch-availability` badge. The approved presentation-only correction adds `.pitch-availability{margin-left:0}`, preserving all availability data, selection, ordering, projection, captaincy, transfer and provider behaviour. A focused regression protects the centring override.
