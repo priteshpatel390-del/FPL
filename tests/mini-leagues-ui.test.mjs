@@ -10,14 +10,14 @@ const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
 const includesAll=(source,values)=>values.forEach(value=>assert.equal(source.includes(value),true,`Missing ${value}`));
 const excludesAll=(source,values)=>values.forEach(value=>assert.equal(source.includes(value),false,`Unexpected ${value}`));
 
-test('Leagues has separate landing, standings, rival and manage surfaces',()=>{
-  includesAll(app,['id="leagueLanding"','id="leagueStandings"','id="leagueRival"','id="leagueManage"','data-league-route="#/leagues/standings"','data-league-route="#/leagues/rival"']);
+test('Leagues has separate all-league hub, selected-league overview, standings, rival and manage surfaces',()=>{
+  includesAll(app,['id="leagueHub"','data-league-route="#/leagues"','id="leagueLanding"','data-league-route="#/leagues/detail"','id="leagueStandings"','id="leagueRival"','id="leagueManage"','data-league-route="#/leagues/standings"','data-league-route="#/leagues/rival"']);
   includesAll(view,["id:'leagueExposure'","'data-league-route':'#/leagues/exposure'"]);
   excludesAll(app,['id="lgN"','id="lgBtn"','id="leagueOut"','Top 30','effective ownership against your rivals']);
 });
 
 test('League subroutes remain semantic and identifiers stay in local state',()=>{
-  includesAll(shell,["'#/leagues/standings'","'#/leagues/rival'","'#/leagues/exposure'","'#/leagues/manage'","route.startsWith('#/leagues')"]);
+  includesAll(shell,["'#/leagues/detail'","'#/leagues/standings'","'#/leagues/rival'","'#/leagues/exposure'","'#/leagues/manage'","route.startsWith('#/leagues')"]);
   excludesAll(shell,[':leagueId',':managerId','leagueId/rival','managerId']);
   includesAll(state,["'fpl:mini-leagues'",'MINI_LEAGUE_STATE_VERSION = 2','selectedLeagueId','selectedRivalByLeague','comparisonRivalsByLeague','pinnedRivals']);
 });
@@ -55,6 +55,17 @@ test('mobile layout avoids the generic horizontally scrolling data table',()=>{
   assert.equal(view.includes("class:'data'"),false);
 });
 
+
+test('Leagues opens with a lightweight all-league standings hub before selected-league detail',()=>{
+  const hubStart=view.indexOf('function miniLeagueHubCategory(league){');
+  const hub=view.slice(hubStart,view.indexOf('function renderLeaguePickerSummary',hubStart));
+  includesAll(app,['id="leagueHub"','id="leagueHubOut"','Your current position across every connected classic league','href="#/leagues/manage"','.league-hub-row{appearance:none']);
+  includesAll(hub,['Invitational leagues','General leagues','Saved leagues','entry_rank','entry_last_rank',"league_type||''","miniLeagueNavigate('#/leagues/detail')"]);
+  excludesAll(hub,['loadMiniLeagueStandings','/standings/?page_standings']);
+  const routeHandler=view.slice(view.indexOf("document.addEventListener('teamsheet:route-change'"),view.indexOf("document.addEventListener('teamsheet:data-rendered'"));
+  includesAll(routeHandler,["['#/leagues/detail','#/leagues/standings','#/leagues/rival','#/leagues/exposure'].includes(route)",'needsStandings']);
+});
+
 test('League accessibility has route focus, live status and named back controls',()=>{
   includesAll(app,['id="leagueLiveStatus" aria-live="polite"','aria-label="Back to Leagues"','<h2 tabindex="-1">League table</h2>','<h2 tabindex="-1">Rival comparison</h2>']);
   includesAll(shell,['data-league-route','heading?.focus?.({preventScroll:true})']);
@@ -77,8 +88,8 @@ test('narrow League header stacks the picker and the dark hero keeps refresh rea
 test('owner-approved compact League hierarchy keeps primary context visible without duplicate landing actions',()=>{
   const landing=view.slice(view.indexOf('function renderMiniLeagueLanding'),view.indexOf('function renderMiniLeagueRivalCard'));
   includesAll(app,['.league-position-line{display:flex','.league-status-row{display:flex','.league-gap-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px','#leagueLandingOut>.league-section,#leagueLandingOut>.league-actions{margin-top:9px']);
-  includesAll(landing,['league-position-line','league-status-row',"miniLeagueLink('View standings','#/leagues/standings','btn')","miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost')"]);
-  excludesAll(landing,["miniLeagueLink('Review Team'","miniLeagueLink('Review Transfers'"]);
+  includesAll(landing,['league-position-line','league-status-row',"class:'league-actions single'","miniLeagueLink('View standings','#/leagues/standings','btn')"]);
+  excludesAll(landing,["miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost')","miniLeagueLink('Review Team'","miniLeagueLink('Review Transfers'"]);
 });
 
 test('standings use full-row touch and keyboard actions with a quiet trailing affordance',()=>{
