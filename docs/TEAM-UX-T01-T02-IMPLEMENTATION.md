@@ -1,6 +1,6 @@
 # Team UX T-01 / T-02 implementation record
 
-Status: **Draft implementation; final verification and visual acceptance in progress. Not merged.**
+Status: **Implementation and verification complete. Approved to merge after final repository hygiene. Not yet merged.**
 
 Date: 7 August 2026.
 
@@ -55,7 +55,7 @@ The accepted starting baseline on `main` remains **645 passed, 0 failed, 0 skipp
 
 Before the static first-paint correction, GitHub Actions verified the three original T-01/T-02 regressions with **648 passed, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical builds, root/deployable equality and exact manifest build identity.
 
-An iPhone-sized first-paint rendering then exposed a genuine residual T-01 issue: the fixed dock could still be painted before JavaScript established shell ownership. That result was treated as a failed visual acceptance check, not as a pass. The static CSS correction above was added in response, together with the fourth regression. The exact corrected source revision must pass the repository workflow before merge.
+An iPhone-sized first-paint rendering then exposed a genuine residual T-01 issue: the fixed dock could still be painted before JavaScript established shell ownership. That result was treated as a failed visual acceptance check, not as a pass. The static CSS correction above was added in response, together with the fourth regression. The corrected source revision 17ddfa6250ad9039317c159459a63ded30b893a6 passed the permanent repository workflow with **649 passed, 0 failed, 0 skipped, 0 cancelled**, two byte-identical production builds, root/deployable equality and exact manifest build identity.
 
 Generated deployment files are produced only by `build.mjs`; they are never hand-edited. The branch uses a one-time self-removing finalisation workflow when necessary to commit verified generated outputs because GitHub Pages serves the committed production artefacts.
 
@@ -63,8 +63,8 @@ No Cloudflare Worker change or deployment is requested by this branch.
 
 ## Visual acceptance
 
-The required visual condition is that an iPhone-sized first paint shows only the startup/loading experience with no header, application content or fixed navigation dock visible above or through it. The corrected static CSS is specifically designed to make this true before application JavaScript executes. Final visual evidence is recorded only after the corrected production build is rendered.
+The required visual condition is that an iPhone-sized first paint shows only the startup/loading experience with no header, application content or fixed navigation dock visible above or through it. The corrected production build passed a 390x844 first-paint browser rendering with script execution disabled: the startup gate remained visible while header, main and the fixed navigation computed hidden, and no fixed dock or application content was visible. This is an iPhone-sized browser simulation, not a claim of physical iPhone Safari testing.
 
 ## Review gate
 
-Pritesh has approved merge after documentation updates and successful visual acceptance. Keep PR #80 Draft and unmerged until the corrected exact revision passes automated verification, generated deployables are current, and the final visual check succeeds.
+Pritesh has approved merge after documentation updates and successful visual acceptance. Automated verification and the corrected mobile first-paint visual check have passed. Final repository hygiene commits the generated deployables before merge.
