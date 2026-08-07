@@ -1,10 +1,10 @@
 # CLAUDE.md — onboarding for every future development session
 
-<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
-> **Approved Fixtures GW38 horizon follow-up — implementation in review:** owner testing after PR #85 deployment confirmed the mobile sticky-column/fallback-note correction and exposed a separate silent 12-Gameweek cap: Safari could display a typed value such as 23 while the renderer clamped it to 12. The approved follow-up exposes the remaining season through GW38, synchronises the visible horizon to the actual rendered span, prevents post-GW38 swing windows, and preserves every existing fixture difficulty, `runScore`, blank/double and projection formula. Branch verification: **660 passed, 0 failed, 0 skipped, 0 cancelled**. Physical iPhone retest remains required before Fixtures acceptance closes.
+<!-- FIXTURES-ACCEPTANCE-2026-08-07 -->
+> **Current merged application checkpoint — Fixtures populated acceptance complete:** PR #85 fixed the mobile horizontal-scroll presentation and merged at `01c16588b63bf41b099adc64b6a1c9044eba9eec`. PR #86 removed the silent 12-Gameweek horizon cap and merged at current `main` `e49599a75bbb77618292fdb6100fcffd81685c44`. The exact PR #86 head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity; the reviewed head and merge commit share Git tree `007ef40c5b4810777cfefec027cc80bf90fc19e0`. GitHub Pages deployment of the merge commit succeeded. Pritesh then physically accepted the populated Fixtures path on iPhone Safari: a 23-Gameweek request remains 23 and reaches GW23, horizontal scrolling beyond GW12 keeps TEAM fixed/readable, and from GW30 a 23-Gameweek request normalises to 9 and stops at GW38 with no post-season column. `docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md` is authoritative. Remaining feature-specific populated live acceptance is **Leagues only**. No fixture formula, provider, projection, transfer, rank, Mini-League or strategy logic changed.
 
 <!-- FIXTURES-MOBILE-SCROLL-FOLLOW-UP-2026-08-07 -->
-> **Approved implementation in review — Fixtures mobile horizontal-scroll presentation:** populated iPhone Safari review proved 12-Gameweek horizontal scrolling works but exposed a broken sticky TEAM presentation, a fallback explanation that travelled with the table, and static intro copy that contradicted the active Official-FPL fallback. The approved branch is presentation-only: fixture calculations, fallback mathematics, providers, projections and strategy stay unchanged. `docs/FIXTURES-MOBILE-SCROLL-FOLLOW-UP.md` is the focused record. Automated verification is recorded there; physical iPhone retest remains required before Fixtures is accepted and the project moves to Leagues.
+> **Historical Fixtures mobile follow-up — complete:** PR #85 corrected the sticky TEAM column/header, kept the fallback explanation outside the horizontal scroller and made the intro copy truthful in Official-FPL fallback mode. The deployed correction was physically confirmed on iPhone Safari during the subsequent long-horizon acceptance. PR #86 then completed the separate GW38 horizon follow-up. See `docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md` for the authoritative current record.
 
 <!-- TEAM-ACCEPTANCE-2026-08-07 -->
 > **Current merged application checkpoint — Team populated acceptance complete:** PRs #80–#83 are merged, with current `main` `385e5102c0e86e4b926503bffceba08bd6d831c3` from PR #83. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity. The final PR head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for `385e5102c0e86e4b926503bffceba08bd6d831c3` succeeded. Pritesh then physically accepted the populated Team path on iPhone Safari: startup/loading owns the viewport; availability is visible; the reserve goalkeeper occupies `GK`; outfield substitutes retain `1st` / `2nd` / `3rd`; and `Unavailable` is centred on one line without overlap. Normal Safari retained the saved manual squad; Private Browsing uses separate browser storage and is not currently a Teamsheet persistence defect. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` is authoritative for this Team follow-up sequence. Remaining populated live acceptance is **Fixtures, then Leagues**. No calculation, provider, data-source or security behaviour changed.
@@ -32,23 +32,24 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
 
 ## Read in this order
-1. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` — authoritative record for the current merged Team populated-acceptance checkpoint
-2. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the preceding PR #78 dock-layering correction
-3. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
-4. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
-5. `docs/PROJECT_CONTEXT.md`
-6. `docs/ARCHITECTURE.md`
-7. `docs/DECISIONS.md`
-8. `docs/ROADMAP.md`
-9. `docs/KNOWN_LIMITATIONS.md`
-10. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
-11. The current checkpoint design document
-12. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
-13. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
-14. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
+1. `docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md` — authoritative record for the current merged Fixtures populated-acceptance checkpoint
+2. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` — authoritative record for the preceding Team populated-acceptance checkpoint
+3. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the preceding PR #78 dock-layering correction
+4. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
+5. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
+6. `docs/PROJECT_CONTEXT.md`
+7. `docs/ARCHITECTURE.md`
+8. `docs/DECISIONS.md`
+9. `docs/ROADMAP.md`
+10. `docs/KNOWN_LIMITATIONS.md`
+11. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
+12. The current checkpoint design document
+13. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
+14. Before model/projection/squad/optimisation/Mini-League work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
+15. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
 ## Current checkpoint
-The current merged **application** checkpoint is PR #83 at `385e5102c0e86e4b926503bffceba08bd6d831c3`. PRs #80–#83 complete the approved Team T-01/T-02 populated-iPhone follow-up sequence. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, two byte-identical production builds, root `index.html` equality with `dist/index.html` and exact manifest identity; that head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for the merge commit succeeded. Pritesh physically accepted the deployed Team path on 7 August 2026, including startup ownership, explicit availability, reserve-GK display, preserved outfield bench order and the centred one-line unavailable badge. The next substantive work is investigation-only populated live acceptance of **Fixtures**, followed by **Leagues**. No Fixtures implementation, model/provider change, UX-A3 or Track B work is approved by this checkpoint.
+The current merged **application** checkpoint is PR #86 at `e49599a75bbb77618292fdb6100fcffd81685c44`. Its exact reviewed head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled**, two byte-identical exact-identity production builds, root `index.html` equality with `dist/index.html` and exact manifest identity. The reviewed head and merge commit share Git tree `007ef40c5b4810777cfefec027cc80bf90fc19e0`. GitHub Pages deployment of the merge commit succeeded. Pritesh physically accepted the deployed Fixtures path on 7 August 2026, including a 23-Gameweek horizon through GW23, coherent sticky TEAM behaviour beyond GW12 and late-season normalisation from GW30 to the remaining nine Gameweeks through GW38. Transfers, Player Detail, Team and Fixtures now have populated iPhone acceptance evidence for their tested paths. The next substantive work is investigation-only populated live acceptance of **Leagues**. FPL-2 and ML-3 remain open for Leagues; no Mini-League calculation, projected-rank, rival-prediction or strategy implementation is approved by this checkpoint.
 
 ## Non-negotiable rules
 - Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
@@ -93,4 +94,4 @@ Report what changed, what deliberately did not change, exact test count/result, 
 - PR #76 UX-A2 Player Detail scroll/rotation correction merged after 644 passing tests and populated iPhone Safari acceptance; PR #78 then fixed the post-merge dock-layering defect, passed the 645-test gate, received populated iPhone Safari acceptance and merged at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`.
 - VoiceOver testing is not required for Teamsheet and is not an acceptance gate.
 - Product wording rule: user-facing FPL information must be simple and immediately understandable. Zero transfer cost is **“No hit”**, never **“−0”**.
-- The next substantive work is investigation-only populated live-acceptance planning for Team, then Fixtures, then Leagues. Transfers and Player Detail are excluded from that remaining plan because their tested populated iPhone paths already have acceptance evidence. No A3, Track B, optimiser, football-model, ranking or provider implementation is approved without a new explicit gate.
+- The next substantive work is investigation-only populated live acceptance of Leagues. Transfers, Player Detail, Team and Fixtures already have acceptance evidence for their tested populated iPhone paths. No A3, Track B, optimiser, football-model, projected-rank, Mini-League strategy or provider implementation is approved without a new explicit gate.
