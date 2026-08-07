@@ -2,11 +2,11 @@
 
 Status: **Complete and merged.**
 
-This is the authoritative UX-A2 checkpoint record. It supersedes any earlier wording —
-in this repository or in conversation — that described UX-A2 as in review, draft,
-awaiting merge or awaiting physical acceptance.
+This is the authoritative record for the original UX-A2 Player Detail Scroll and Rotation Correction merged through PR #76. The later PR #78 dock-layering correction is recorded authoritatively in `UX-A2-DOCK-LAYERING-FOLLOW-UP.md`.
 
-## Authoritative checkpoint status
+This record supersedes earlier wording — in this repository or in conversation — that described the original PR #76 UX-A2 checkpoint as in review, draft, awaiting merge or awaiting physical acceptance.
+
+## Authoritative PR #76 checkpoint status
 
 UX-A2 — Player Detail Scroll and Rotation Correction merged through PR #76 on
 6 August 2026.
@@ -27,7 +27,7 @@ The merge commit and the approved branch head have the identical repository tree
 The merge commit's parents are the previous `main` and the approved branch head, which
 is the expected merge-parent metadata and the only difference from the head commit.
 
-### SHA-256 of the merged generated outputs
+### SHA-256 of the merged PR #76 generated outputs
 
 ```
 8f8b9a028eb96868541d7260b38fcd96167bc27716d9ade242c2d54c70d5b869  dist/app.bundle.js
@@ -92,8 +92,12 @@ own investigation, exact scope and explicit approval before any work begins.
 
 UX-A3 and Track B remain unapproved and must not start.
 
-## Post-merge dock-layering follow-up — draft review
+## Post-merge dock-layering follow-up — merged through PR #78
 
 <!-- UX-A2-DOCK-LAYERING-FOLLOW-UP-2026-08-07 -->
 
-On 7 August 2026, Pritesh found that the fixed primary dock could cover the final Player Detail projection line even though UX-A2 scrolling and rotation otherwise worked correctly. The approved branch `agent/ux-a2-player-detail-dock-layering` raises only the existing modal layers above the unchanged dock. Automated verification is **645 passed** with deterministic builds. This follow-up is not merged and populated physical iPhone Safari confirmation remains pending; the historical UX-A2 merge facts above remain unchanged.
+On 7 August 2026, Pritesh found that the fixed primary dock could cover the final Player Detail projection line even though the original UX-A2 scrolling and rotation behaviour otherwise worked correctly. The approved correction raised only the existing Player Detail backdrop and panel above the unchanged dock and added a focused stacking regression.
+
+PR #78 passed **645 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical production builds and root/deployable equality. Pritesh physically accepted the corrected populated iPhone Safari path, and PR #78 merged at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`. `UI-14` is closed. GitHub Pages deployment succeeded and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`.
+
+For the exact PR #78 correction scope, evidence and limitations, see `UX-A2-DOCK-LAYERING-FOLLOW-UP.md`. The historical PR #76 facts above remain unchanged.
