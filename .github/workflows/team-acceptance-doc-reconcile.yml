@@ -40,7 +40,7 @@ jobs:
             docs/TEAM-UX-T01-T02-MERGE-RECORD.md \
             docs/TEAM-UX-T02-UNAVAILABLE-WRAP-FOLLOW-UP.md \
             docs/TESTING.md)"
-          actual="$(git diff --name-only | sort)"
+          actual="$({ git diff --name-only; git ls-files --others --exclude-standard; } | sort -u)"
           test "$actual" = "$expected"
           git add CLAUDE.md docs/KNOWN_LIMITATIONS.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TEAM-UX-T01-T02-IMPLEMENTATION.md docs/TEAM-UX-T01-T02-MERGE-RECORD.md docs/TEAM-UX-T02-UNAVAILABLE-WRAP-FOLLOW-UP.md docs/TESTING.md
           git commit -m "Reconcile merged Team acceptance status"
