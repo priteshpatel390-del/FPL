@@ -47,7 +47,7 @@ All components are inspectable. Non-finite components are zeroed. Position calib
 Before the season is live, deterministic projections continue to use the established price-implied positional baseline, ownership tilt and fixture adjustment. Stage 8 detailed simulation is disabled in pre-season because this path does not expose sufficiently credible event-level rates for precise distributions.
 
 ## Multi-Gameweek projection and fixture runs
-`projectXP` sums actual fixtures across the requested span. Doubles add both matches; blanks contribute zero. `runScore` sums real fixture values and divides by requested Gameweeks, with no arbitrary blank or double constants.
+`projectXP` sums actual fixtures across the requested span. Doubles add both matches; blanks contribute zero. `runScore` sums real fixture values and divides by requested Gameweeks, with no arbitrary blank or double constants. The Fixtures UI may expose any remaining-season horizon through GW38; this expands only the requested span and does not change either calculation formula.
 
 Squad review, best XI, captaincy, transfers, Ask context and backtest continue to consume `{total, perGW, games, parts}`. Stage 8 and Stage 10 do not change that contract.
 

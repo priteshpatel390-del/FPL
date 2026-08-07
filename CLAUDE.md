@@ -1,5 +1,8 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
+> **Approved Fixtures GW38 horizon follow-up — implementation in review:** owner testing after PR #85 deployment confirmed the mobile sticky-column/fallback-note correction and exposed a separate silent 12-Gameweek cap: Safari could display a typed value such as 23 while the renderer clamped it to 12. The approved follow-up exposes the remaining season through GW38, synchronises the visible horizon to the actual rendered span, prevents post-GW38 swing windows, and preserves every existing fixture difficulty, `runScore`, blank/double and projection formula. Branch verification: **660 passed, 0 failed, 0 skipped, 0 cancelled**. Physical iPhone retest remains required before Fixtures acceptance closes.
+
 <!-- FIXTURES-MOBILE-SCROLL-FOLLOW-UP-2026-08-07 -->
 > **Approved implementation in review — Fixtures mobile horizontal-scroll presentation:** populated iPhone Safari review proved 12-Gameweek horizontal scrolling works but exposed a broken sticky TEAM presentation, a fallback explanation that travelled with the table, and static intro copy that contradicted the active Official-FPL fallback. The approved branch is presentation-only: fixture calculations, fallback mathematics, providers, projections and strategy stay unchanged. `docs/FIXTURES-MOBILE-SCROLL-FOLLOW-UP.md` is the focused record. Automated verification is recorded there; physical iPhone retest remains required before Fixtures is accepted and the project moves to Leagues.
 
