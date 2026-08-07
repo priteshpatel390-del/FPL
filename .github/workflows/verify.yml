@@ -22,23 +22,7 @@ jobs:
       - name: Apply accepted full-width intro layout
         run: |
           set -eu
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('app.html')
-          text = path.read_text()
-          old = '''      <div class="league-hub-head">
-        <div><span class="eyebrow">Competitive context</span><h2 tabindex="-1">Leagues</h2><p class="hint">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p></div>
-        <a class="btn ghost sm" href="#/leagues/manage">Manage leagues</a>
-      </div>'''
-          new = '''      <div class="league-hub-head">
-        <div><span class="eyebrow">Competitive context</span><h2 tabindex="-1">Leagues</h2></div>
-        <a class="btn ghost sm" href="#/leagues/manage">Manage leagues</a>
-      </div>
-      <p class="hint">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p>'''
-          if text.count(old) != 1:
-              raise SystemExit(f'Expected exactly one Leagues hub intro block, found {text.count(old)}')
-          path.write_text(text.replace(old, new))
-          PY
+          python3 -c "from pathlib import Path; p=Path('app.html'); s=p.read_text(); old='<div><span class=\"eyebrow\">Competitive context</span><h2 tabindex=\"-1\">Leagues</h2><p class=\"hint\">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p></div>'; new='<div><span class=\"eyebrow\">Competitive context</span><h2 tabindex=\"-1\">Leagues</h2></div>'; assert s.count(old)==1, s.count(old); s=s.replace(old,new,1); marker='        <a class=\"btn ghost sm\" href=\"#/leagues/manage\">Manage leagues</a>\\n      </div>\\n      <div id=\"leagueHubOut\">'; replacement='        <a class=\"btn ghost sm\" href=\"#/leagues/manage\">Manage leagues</a>\\n      </div>\\n      <p class=\"hint\">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p>\\n      <div id=\"leagueHubOut\">'; assert s.count(marker)==1, s.count(marker); p.write_text(s.replace(marker,replacement,1))"
 
       - name: Commit accepted source layout
         run: |
