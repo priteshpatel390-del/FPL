@@ -38,9 +38,19 @@ test('entry classic leagues are the only automatically discovered competition ro
 test('official movement and ordinal wording is deterministic',()=>{
   assert.equal(miniLeagueOrdinal(12),'12th');
   assert.equal(miniLeagueOrdinal(21),'21st');
+  assert.equal(miniLeagueOrdinal(0),'—');
+  assert.equal(miniLeagueOrdinal(-1),'—');
+  assert.equal(miniLeagueOrdinal(1.5),'—');
   assert.deepEqual(miniLeagueMovement(4,7),{delta:3,label:'Up 3 places',direction:'up'});
   assert.deepEqual(miniLeagueMovement(8,6),{delta:-2,label:'Down 2 places',direction:'down'});
   assert.equal(miniLeagueMovement(2,null).label,'Previous position unavailable');
+  assert.deepEqual(miniLeagueMovement(0,0),{delta:null,label:'Previous position unavailable',direction:'unknown'});
+});
+
+test('pre-season rank zero is treated as unpublished rather than a real league position',()=>{
+  const source=readFileSync(new URL('../src/ui/mini-leagues-view.mjs',import.meta.url),'utf8');
+  for(const required of ["function miniLeagueRank(value)","const rank=miniLeagueRank(user?.rank??membership?.entry_rank??null)","const movementFlag=rank!==null?","Not ranked yet","Official FPL has not published a league position yet.","Nearby rivals will appear once Official FPL publishes league positions."]) assert.equal(source.includes(required),true,required);
+  assert.equal(source.includes("const rank=miniLeagueNumber(membership?.entry_rank)"),false);
 });
 
 test('nearest rivals use official ordering around the connected manager',()=>{
