@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { teamDecisionAvailabilityPresentation } from '../src/ui/team-decision-home.mjs';
 
 const TEAM_SOURCE=readFileSync(new URL('../src/ui/team-decision-home.mjs',import.meta.url),'utf8');
+const APP_SOURCE=readFileSync(new URL('../app.html',import.meta.url),'utf8');
 
 test('flagged Team cards expose explicit Official FPL availability wording',()=>{
   assert.deepEqual(teamDecisionAvailabilityPresentation({status:'d',chance_of_playing_next_round:50}),{
@@ -41,4 +42,8 @@ test('startup gate owns the application shell until the existing ready event',()
   assert.match(TEAM_SOURCE,/teamsheet:startup-ready/);
   assert.match(TEAM_SOURCE,/teamDecisionSetStartupShellOwned\(false\)/);
   assert.match(TEAM_SOURCE,/\{once:true\}/);
+});
+
+test('startup ownership exists in static CSS before application JavaScript runs',()=>{
+  assert.match(APP_SOURCE,/body\.startup-pending\s*>\s*header,\s*body\.startup-pending\s*>\s*main,\s*body\.startup-pending\s*>\s*nav\.tabs\s*\{\s*visibility:hidden\s*\}/s);
 });
