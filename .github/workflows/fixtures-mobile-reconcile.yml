@@ -91,6 +91,8 @@ jobs:
           git add -A
           git diff --cached --name-only | sort > /tmp/fixtures-files.txt
           cat > /tmp/fixtures-allowed.txt <<'EOF'
+          .github/fixtures-mobile-reconcile.py
+          .github/workflows/fixtures-mobile-reconcile.yml
           CLAUDE.md
           app.html
           dist/app.bundle.js
