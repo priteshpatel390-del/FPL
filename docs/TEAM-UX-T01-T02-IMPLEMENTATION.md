@@ -1,6 +1,6 @@
 # Team UX T-01 / T-02 implementation record
 
-Status: **Draft implementation verified automatically; owner review pending. Not merged.**
+Status: **Draft implementation with automated verification green; owner review pending. Not merged.**
 
 Date: 7 August 2026.
 
@@ -36,14 +36,7 @@ No dependency or framework is added. `src/ui/team-pitch.mjs` remains visual-only
 
 ## Regression coverage
 
-`tests/team-ux-startup-availability.test.mjs` adds focused contracts for:
-
-- explicit doubtful, unavailable and suspended presentation;
-- chance-of-playing wording and screen-reader wording;
-- both starting and bench card annotation;
-- preservation of the existing Team-selection functions rather than replacement;
-- startup ownership of header, main and primary navigation;
-- release through the existing one-shot `teamsheet:startup-ready` event.
+`tests/team-ux-startup-availability.test.mjs` adds focused contracts for explicit availability wording, both starting and bench card annotation, accessible labels, unchanged Team-selection ownership, startup shell ownership and release through the existing `teamsheet:startup-ready` event.
 
 No existing test or golden expectation is deleted, weakened or regenerated.
 
@@ -60,17 +53,13 @@ The accepted starting baseline on `main` remains **645 passed, 0 failed, 0 skipp
 GitHub Actions **Verify Teamsheet run #1** verified source `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26` successfully on 7 August 2026:
 
 - `./run-tests.sh`: **648 passed, 0 failed, 0 skipped, 0 cancelled**;
-- the three added T-01/T-02 regressions passed;
-- first exact-identity production build: passed;
-- second exact-identity production build: passed;
-- `dist/app.bundle.js`: byte-identical across builds;
-- `dist/index.html`: byte-identical across builds;
-- `dist/manifest.json`: byte-identical across builds;
-- root `index.html`: byte-identical across builds and exactly equal to `dist/index.html`;
-- manifest `commit`: exactly `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26`;
-- model/golden expectations: unchanged.
+- all three added T-01/T-02 regressions passed;
+- two exact-identity production builds were byte-identical for `dist/app.bundle.js`, `dist/index.html` and `dist/manifest.json`;
+- root `index.html` was byte-identical across builds and exactly equal to `dist/index.html`;
+- manifest `commit` exactly matched the verified source revision;
+- model/golden expectations remained unchanged.
 
-Every later PR-head commit triggers the same verification automatically. The green check displayed on PR #80 is therefore the authoritative automated verification result for the exact head currently under review.
+Every later PR-head commit triggers the same verification automatically. The PR check displayed for the current head is the authoritative automated verification result for that exact revision.
 
 No GitHub Pages or Cloudflare deployment is requested or changed by this branch.
 
