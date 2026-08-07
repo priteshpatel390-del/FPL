@@ -1,0 +1,51 @@
+name: Finalize PR 80 deployable
+
+on:
+  push:
+    branches:
+      - agent/team-ux-startup-availability
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor == 'priteshpatel390-del'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUILD_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/team-ux-startup-availability
+          fetch-depth: 0
+
+      - name: Verify source and generate deployable
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          ./run-tests.sh
+          node build.mjs
+          rm -rf /tmp/pr80-build
+          mkdir -p /tmp/pr80-build/dist
+          cp dist/app.bundle.js /tmp/pr80-build/dist/app.bundle.js
+          cp dist/index.html /tmp/pr80-build/dist/index.html
+          cp dist/manifest.json /tmp/pr80-build/dist/manifest.json
+          cp index.html /tmp/pr80-build/index.html
+          node build.mjs
+          cmp /tmp/pr80-build/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/pr80-build/dist/index.html dist/index.html
+          cmp /tmp/pr80-build/dist/manifest.json dist/manifest.json
+          cmp /tmp/pr80-build/index.html index.html
+          cmp dist/index.html index.html
+
+      - name: Commit generated deployable and remove this one-time workflow
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git rm .github/workflows/finalize-pr80.yml
+          git commit -m "Build PR 80 deployable [skip ci]"
+          git push origin HEAD:agent/team-ux-startup-availability
