@@ -3,7 +3,7 @@ import { $, num, el, setChildren } from '../util.mjs';
 import { mySquad, bestXI } from '../squad.mjs';
 import { xpOf } from '../model/xp.mjs';
 import { getHealth, HEALTH_STATES } from '../providers/registry.mjs';
-import { teamPitchCaptaincy } from './team-pitch.mjs';
+import { teamPitchCaptaincy, teamPitchLines } from './team-pitch.mjs';
 import {
   decisionPreviewSnapshot,
   decisionPreviewApplyTransferPlan,
@@ -131,6 +131,42 @@ function teamDecisionRelabelBench(stage){
   });
 }
 
+function teamDecisionAvailabilityPresentation(player){
+  const status=String(player?.status||'');
+  if(status==='d'){
+    const chance=player?.chance_of_playing_next_round;
+    const chanceLabel=chance==null?'chance unknown':`${chance}% chance`;
+    const chanceAria=chance==null?'chance of playing unknown':`${chance} percent chance of playing`;
+    return Object.freeze({label:`Doubtful · ${chanceLabel}`,className:'doubt',aria:`doubtful, ${chanceAria}`});
+  }
+  if(status==='s') return Object.freeze({label:'Suspended',className:'out',aria:'suspended and unavailable'});
+  if(TEAM_DECISION_UNAVAILABLE.has(status)) return Object.freeze({label:'Unavailable',className:'out',aria:'unavailable'});
+  return null;
+}
+
+function teamDecisionAnnotateAvailability(stage,xi){
+  if(!stage?.querySelectorAll||!xi) return;
+  const starterSlots=teamPitchLines(xi.xi).flatMap(line=>line.players);
+  const starterNodes=Array.from(stage.querySelectorAll('.team-pitch .pitch-player'));
+  const benchSlots=Array.isArray(xi.bench)?xi.bench:[];
+  const benchNodes=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
+  const annotate=(node,slot)=>{
+    if(!node||!slot?.p) return;
+    const presentation=teamDecisionAvailabilityPresentation(slot.p);
+    node.querySelector('.pitch-availability')?.remove?.();
+    if(!presentation) return;
+    const copy=node.querySelector('.pitch-copy');
+    const nameNode=copy?.querySelector?.('.pitch-name');
+    const badge=el('span',{class:`flag ${presentation.className} pitch-availability`},presentation.label);
+    if(copy&&nameNode) copy.insertBefore(badge,nameNode.nextSibling);
+    else copy?.appendChild?.(badge);
+    const aria=String(node.getAttribute?.('aria-label')||'');
+    if(aria) node.setAttribute('aria-label',`${aria}, ${presentation.aria}`);
+  };
+  starterNodes.forEach((node,index)=>annotate(node,starterSlots[index]));
+  benchNodes.forEach((node,index)=>annotate(node,benchSlots[index]));
+}
+
 function teamDecisionPlaceholderPlayer(label='—',benchRole=''){
   return el('div',{class:'pitch-player team-home-placeholder-player','aria-hidden':'true'},
     el('div',{class:'shirt-wrap'},
@@ -224,8 +260,19 @@ function teamDecisionRestoreFocus(out,focus){
   match?.focus?.({preventScroll:true});
 }
 
+function teamDecisionSetStartupShellOwned(owned){
+  if(typeof document==='undefined') return;
+  [document.querySelector('header'),document.querySelector('main'),document.querySelector('nav.tabs')].filter(Boolean).forEach(node=>{
+    node.hidden=Boolean(owned);
+    node.inert=Boolean(owned);
+  });
+}
+
 function teamDecisionSetupStartup(){
   if(typeof document==='undefined') return;
+  const startupPending=Boolean(document.body?.classList?.contains('startup-pending'));
+  if(startupPending) teamDecisionSetStartupShellOwned(true);
+  document.addEventListener?.('teamsheet:startup-ready',()=>teamDecisionSetStartupShellOwned(false),{once:true});
   const pitch=document.querySelector('#startupGate .startup-pitch');
   if(!pitch) return;
   pitch.classList.add('team-startup-lineup');
@@ -374,6 +421,7 @@ function teamDecisionEnhanceRenderedTeam(){
   const controls=children.find(node=>node.classList?.contains('decision-preview-controls'))||null;
   const stage=children.find(node=>node.classList?.contains('team-stage'))||null;
   teamDecisionRelabelBench(stage);
+  teamDecisionAnnotateAvailability(stage,xi);
   const captainHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim()==='Captaincy ranking')||null;
   const captainGrid=captainHeading?.nextElementSibling?.classList?.contains('capgrid')?captainHeading.nextElementSibling:null;
   const allHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim().startsWith('All 15'))||null;
@@ -421,7 +469,10 @@ export {
   teamDecisionAction,
   teamDecisionCloseCaptainCopy,
   teamDecisionBenchLabel,
+  teamDecisionAvailabilityPresentation,
+  teamDecisionAnnotateAvailability,
   teamDecisionFocusResources,
   teamDecisionResourceBar,
-  teamDecisionRelabelBench
+  teamDecisionRelabelBench,
+  teamDecisionSetStartupShellOwned
 };

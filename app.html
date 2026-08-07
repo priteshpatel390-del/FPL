@@ -22,6 +22,9 @@ html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
 body.startup-pending{overflow:hidden}
+body.startup-pending > header,
+body.startup-pending > main,
+body.startup-pending > nav.tabs{visibility:hidden}
 .startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
 .startup-gate[hidden]{display:none}
 .startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
