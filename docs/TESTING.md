@@ -1,10 +1,10 @@
 # TESTING.md
 
-<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
-> **Fixtures GW38 horizon follow-up:** focused regressions cover the 38-Gameweek control contract, visible-value/season-boundary synchronisation, the no-post-GW38 swing guard and unchanged long-horizon `runScore`/Official-FPL fallback semantics at 13, 23 and 38 Gameweeks. Branch verification: **660 passed, 0 failed, 0 skipped, 0 cancelled**. No model formula, provider, source or golden expectation changed; physical iPhone verification remains required after deployment.
+<!-- FIXTURES-ACCEPTANCE-2026-08-07 -->
+> **Fixtures acceptance verification complete:** PR #86 exact head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled** in permanent Verify Teamsheet run `31198545580`, with deterministic byte-identical double builds, root/deployable equality and exact manifest identity. The merged tree was deployed at `e49599a75bbb77618292fdb6100fcffd81685c44`; owner iPhone Safari acceptance passed for GW23 reachability, sticky TEAM behaviour beyond GW12 and GW38 boundary normalisation. No model formula, provider, source or golden expectation changed.
 
 <!-- FIXTURES-MOBILE-SCROLL-TESTING-2026-08-07 -->
-> **Fixtures mobile presentation follow-up:** four focused regressions were added for truthful fallback-aware copy, a non-scrolling mode explanation, a shared sticky TEAM header/body column and removal of the left scrolling gutter. **Branch verification:** 656 passed, 0 failed, 0 skipped, 0 cancelled. Physical iPhone Safari retest of the 12-Gameweek horizontal-scroll path remains required; no model, provider or golden expectation changed.
+> **Historical PR #85 verification — accepted:** four focused regressions cover truthful fallback-aware copy, a non-scrolling mode explanation, a shared sticky TEAM header/body column and removal of the left scrolling gutter. PR #85 reached **656 passed, 0 failed, 0 skipped, 0 cancelled** and its deployed mobile path was physically confirmed during the subsequent Fixtures acceptance sequence.
 
 <!-- TEAM-ACCEPTANCE-2026-08-07 -->
 > **Current merged application checkpoint — Team populated acceptance complete:** PRs #80–#83 are merged, with current `main` `385e5102c0e86e4b926503bffceba08bd6d831c3` from PR #83. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity. The final PR head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for `385e5102c0e86e4b926503bffceba08bd6d831c3` succeeded. Pritesh then physically accepted the populated Team path on iPhone Safari: startup/loading owns the viewport; availability is visible; the reserve goalkeeper occupies `GK`; outfield substitutes retain `1st` / `2nd` / `3rd`; and `Unavailable` is centred on one line without overlap. Normal Safari retained the saved manual squad; Private Browsing uses separate browser storage and is not currently a Teamsheet persistence defect. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` is authoritative for this Team follow-up sequence. Remaining populated live acceptance is **Fixtures, then Leagues**. No calculation, provider, data-source or security behaviour changed.
@@ -40,20 +40,21 @@ Last updated: 2026-08-07. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-The current merged application checkpoint is PR #83 at `385e5102c0e86e4b926503bffceba08bd6d831c3`.
+The current merged application checkpoint is PR #86 at `e49599a75bbb77618292fdb6100fcffd81685c44`.
 
-- exact final PR #83 head: `990a85eb69319064038be458081d029d8a3b8828`
-- `./run-tests.sh`: **652 passed, 0 failed, 0 skipped, 0 cancelled**
+- exact final PR #86 head: `be90b4f25b90472a3f30b3b765e56d23d8d95862`
+- permanent Verify Teamsheet run: `31198545580`, completed successfully
+- `./run-tests.sh`: **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled**
 - two exact-identity production builds: byte-identical
 - root `index.html`: byte-identical to `dist/index.html`
 - manifest build identity: exact to the verified PR head
-- final PR head and merge commit Git tree: `70b38bf4bf5b5bdb0f295fa6738554266441e62b`
-- GitHub Pages deployment: succeeded for exact merge commit `385e5102c0e86e4b926503bffceba08bd6d831c3`
-- populated physical iPhone Safari Team acceptance: passed on 7 August 2026 for startup ownership, availability visibility, reserve-GK display, preserved outfield bench order and the centred one-line `Unavailable` badge without overlap
+- final PR head and merge commit Git tree: `007ef40c5b4810777cfefec027cc80bf90fc19e0`
+- GitHub Pages deployment: succeeded for exact merge commit `e49599a75bbb77618292fdb6100fcffd81685c44`
+- populated physical iPhone Safari Fixtures acceptance: passed on 7 August 2026 for a 23-Gameweek horizon through GW23, sticky TEAM presentation beyond GW12, and GW30 remaining-season normalisation to nine Gameweeks through GW38
 - model/golden expectations: unchanged
 - calculation, provider and data-source behaviour: unchanged
 
-Transfers, Player Detail and Team have populated iPhone acceptance evidence for the tested paths. Remaining feature-specific live acceptance is **Fixtures, then Leagues**. VoiceOver is not a Teamsheet acceptance gate.
+Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evidence for their tested paths. Remaining feature-specific live acceptance is **Leagues**. VoiceOver is not a Teamsheet acceptance gate.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
