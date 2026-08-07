@@ -1,0 +1,74 @@
+name: T-02 bench summary alignment
+
+on:
+  push:
+    branches:
+      - agent/t02-bench-gk-availability-row
+
+permissions:
+  contents: write
+
+jobs:
+  align-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/t02-bench-gk-availability-row
+          fetch-depth: 0
+
+      - name: Align recommendation copy with approved display order
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          def replace_once(path, old, new):
+              p=Path(path); text=p.read_text(); count=text.count(old)
+              if count!=1: raise SystemExit(f'Expected one match in {path}, got {count}: {old!r}')
+              p.write_text(text.replace(old,new,1))
+
+          replace_once('src/ui/team-decision-home.mjs',
+            "const bench=xi.bench.map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');",
+            "const bench=teamDecisionBenchDisplayOrder(xi.bench).map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');")
+
+          test_path='tests/team-resources-bench-clarity.test.mjs'
+          old="""  assert.match(teamSource,/teamDecisionOrderBenchDisplay\\(stage,xi\\);\\s*teamDecisionRelabelBench\\(stage\\);\\s*teamDecisionAnnotateAvailability\\(stage,xi\\);/);
+});"""
+          new="""  assert.match(teamSource,/teamDecisionOrderBenchDisplay\\(stage,xi\\);\\s*teamDecisionRelabelBench\\(stage\\);\\s*teamDecisionAnnotateAvailability\\(stage,xi\\);/);
+  assert.match(teamSource,/const bench=teamDecisionBenchDisplayOrder\\(xi\\.bench\\)\\.map\\(\\(slot,index\\)=>`\\$\\{teamDecisionBenchLabel\\(index\\)\\} \\$\\{slot\\.p\\.web_name\\}`\\)/);
+});"""
+          replace_once(test_path,old,new)
+          PY
+
+      - name: Run complete test suite
+        run: ./run-tests.sh
+
+      - name: Commit source and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/t02-bench-summary-alignment.yml
+          git add src/ui/team-decision-home.mjs tests/team-resources-bench-clarity.test.mjs
+          git commit -m "Align Team bench recommendation with display order"
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Verify deterministic production builds
+        run: |
+          mkdir -p /tmp/build-one
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cp dist/app.bundle.js /tmp/build-one/app.bundle.js
+          cp dist/index.html /tmp/build-one/index.html
+          cp dist/manifest.json /tmp/build-one/manifest.json
+          cp index.html /tmp/build-one/root-index.html
+          BUILD_COMMIT="$SOURCE_COMMIT" node build.mjs
+          cmp /tmp/build-one/app.bundle.js dist/app.bundle.js
+          cmp /tmp/build-one/index.html dist/index.html
+          cmp /tmp/build-one/manifest.json dist/manifest.json
+          cmp /tmp/build-one/root-index.html index.html
+          cmp index.html dist/index.html
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));if(m.commit!==process.env.SOURCE_COMMIT)throw new Error('manifest commit mismatch')"
+
+      - name: Commit verified deployables and push once
+        run: |
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git commit -m "Refresh verified Team UX deployables"
+          git push origin HEAD:agent/t02-bench-gk-availability-row
