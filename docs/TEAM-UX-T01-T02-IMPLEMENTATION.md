@@ -1,12 +1,13 @@
 # Team UX T-01 / T-02 implementation record
 
-Status: **Draft implementation for owner review. Not merged.**
+Status: **Draft implementation verified automatically; owner review pending. Not merged.**
 
 Date: 7 August 2026.
 
 Base `main`: `d742562059c966e6e456abe39247fa3a18e6c72c`.
 Branch: `agent/team-ux-startup-availability`.
 Draft PR: #80.
+Verified source: `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26`.
 
 ## Approved scope
 
@@ -16,7 +17,7 @@ The existing startup gate remains the startup mechanism and the existing verifie
 
 This removes the fixed dock from the active rendered shell during the actual verified-data loading period without changing refresh cadence, fallback behaviour, provider calls, data validation, calculations or routing.
 
-The source HTML still assigns the startup gate a lower stacking value than the fixed dock. The synchronous shell lock prevents the dock remaining above the gate once application JavaScript initialises, but automated evidence in this environment cannot prove that Safari never paints a pre-script frame before that lock is installed. Physical iPhone Safari review therefore remains required for final acceptance of T-01.
+The source HTML still assigns the startup gate a lower stacking value than the fixed dock. The synchronous shell lock prevents the dock remaining above the gate once application JavaScript initialises, but automated evidence cannot prove that Safari never paints a pre-script frame before that lock is installed. Physical iPhone Safari review therefore remains required for final acceptance of T-01.
 
 ### T-02 — Team availability clarity
 
@@ -47,16 +48,37 @@ No dependency or framework is added. `src/ui/team-pitch.mjs` remains visual-only
 
 No existing test or golden expectation is deleted, weakened or regenerated.
 
-## Verification status
+## Repository verification workflow
 
-The accepted starting baseline on `main` is **645 passed, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical production builds and root/deployable equality. GitHub Pages and the `teamsheet-fpl-gateway` Cloudflare Worker were verified at that baseline.
+With owner approval, `.github/workflows/verify.yml` adds repository-owned verification for pull requests and manual `workflow_dispatch` runs. It is verification infrastructure only: read-only repository permission, no deployment, no package installation, no generated-file write-back and no application behaviour change.
 
-A direct Node execution check of the newly introduced pure availability mapping and startup shell-lock helper passed in isolation on 7 August 2026. It verified doubtful/suspended/unavailable/available mappings and hide/inert plus release behaviour for header, main and primary navigation. This is limited helper evidence only and is not equivalent to executing the repository test suite or production bundle.
+The workflow checks out the exact PR revision, runs the existing `./run-tests.sh`, creates two production builds with the exact revision supplied as `BUILD_COMMIT`, compares `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html` byte-for-byte, verifies root `index.html` equals `dist/index.html`, and confirms the emitted manifest records the exact source revision.
 
-Full branch verification with `./run-tests.sh`, two exact-identity production builds, byte comparison and root/deployable equality is still required before this implementation can be called complete. The current execution environment cannot resolve GitHub from the local shell, has no usable local checkout or GitHub CLI, and the repository has no GitHub Actions workflow on which to run the required build/test command without introducing unapproved CI infrastructure. This draft record therefore does **not** claim that the new branch has passed the full completion gate.
+## Verification evidence
 
-No GitHub Pages or Cloudflare deployment is requested or changed by this draft.
+The accepted starting baseline on `main` remains **645 passed, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical production builds and root/deployable equality. GitHub Pages and the `teamsheet-fpl-gateway` Cloudflare Worker were verified at that merged baseline.
+
+GitHub Actions **Verify Teamsheet run #1** verified source `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26` successfully on 7 August 2026:
+
+- `./run-tests.sh`: **648 passed, 0 failed, 0 skipped, 0 cancelled**;
+- the three added T-01/T-02 regressions passed;
+- first exact-identity production build: passed;
+- second exact-identity production build: passed;
+- `dist/app.bundle.js`: byte-identical across builds;
+- `dist/index.html`: byte-identical across builds;
+- `dist/manifest.json`: byte-identical across builds;
+- root `index.html`: byte-identical across builds and exactly equal to `dist/index.html`;
+- manifest `commit`: exactly `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26`;
+- model/golden expectations: unchanged.
+
+The workflow itself was introduced in the verified source revision, so the green run proves the committed CI definition and the implementation together. No GitHub Pages or Cloudflare deployment was requested or changed by this branch.
+
+Generated production files created by the workflow were verification outputs in the GitHub runner and were not written back to the branch. If this implementation checkpoint requires committed generated artefacts before merge, that remains a separate repository-completion step; no generated file has been hand-edited.
+
+## Remaining acceptance limitation
+
+Automated verification cannot establish whether iPhone Safari ever paints a pre-script frame before the synchronous startup shell lock runs. A physical iPhone Safari startup review remains required before T-01 is treated as physically accepted.
 
 ## Review gate
 
-This work must remain a Draft PR and must not merge until Pritesh explicitly approves it. Full repository verification and physical iPhone Safari review of T-01 remain required acceptance evidence; neither limitation is treated as a pass.
+This work remains a Draft PR and must not merge until Pritesh explicitly approves it. Automated repository verification is complete and green; physical iPhone Safari review of T-01 and any required generated-artefact commit remain the outstanding completion checks.
