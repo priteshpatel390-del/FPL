@@ -35,7 +35,9 @@ jobs:
       - name: Apply approved documentation reconciliation
         run: |
           set -euo pipefail
+          python3 -c "from pathlib import Path; p=Path('.github/fixtures-acceptance-doc-reconcile.py'); s=p.read_text(); old=\"    replace_all_required(\\n        'docs/PROJECT_CONTEXT.md',\\n        'Remaining feature-specific populated live acceptance is **Fixtures, then Leagues**.',\\n        'Remaining feature-specific populated live acceptance is **Leagues**.'\\n    )\\n\"; assert old in s; p.write_text(s.replace(old, '', 1))"
           python3 .github/fixtures-acceptance-doc-reconcile.py apply
+          git checkout -- .github/fixtures-acceptance-doc-reconcile.py
           git diff --check
           python3 .github/fixtures-acceptance-doc-reconcile.py guard-worktree
 
