@@ -70,7 +70,7 @@ GitHub Actions **Verify Teamsheet run #1** verified source `68d16a2a8fc3113da274
 - manifest `commit`: exactly `68d16a2a8fc3113da27491c3ddf0282f9fbbbc26`;
 - model/golden expectations: unchanged.
 
-Subsequent documentation-only edits trigger the same workflow again on the new PR head; the current PR check is the authoritative pass/fail signal for the exact head under review.
+Every later PR-head commit triggers the same verification automatically. The green check displayed on PR #80 is therefore the authoritative automated verification result for the exact head currently under review.
 
 No GitHub Pages or Cloudflare deployment is requested or changed by this branch.
 
