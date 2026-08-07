@@ -430,7 +430,7 @@ function teamDecisionEnhanceRenderedTeam(){
   previewState=decisionPreviewSnapshot();
   const previewActive=Boolean(previewState.transfer||effectiveCaptaincy.isPreview);
   const action=teamDecisionAction({hasSquad:true,deadlinePassed:deadline.passed,previewActive,riskKind:risk.kind});
-  const bench=xi.bench.map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
+  const bench=teamDecisionBenchDisplayOrder(xi.bench).map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
   const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank});

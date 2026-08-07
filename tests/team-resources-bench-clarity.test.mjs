@@ -81,6 +81,7 @@ test('bench display puts reserve goalkeeper in GK slot without mutating calculat
   assert.match(reorder,/grid\.appendChild\(node\)/);
   assert.doesNotMatch(reorder,/bestXI\(|xpOf\(|\.sort\(|\.splice\(|\.reverse\(/);
   assert.match(teamSource,/teamDecisionOrderBenchDisplay\(stage,xi\);\s*teamDecisionRelabelBench\(stage\);\s*teamDecisionAnnotateAvailability\(stage,xi\);/);
+  assert.match(teamSource,/const bench=teamDecisionBenchDisplayOrder\(xi\.bench\)\.map\(\(slot,index\)=>`\$\{teamDecisionBenchLabel\(index\)\} \$\{slot\.p\.web_name\}`\)/);
 });
 
 test('bench names receive a two-line treatment before truncation',()=>{
