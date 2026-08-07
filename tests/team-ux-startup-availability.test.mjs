@@ -39,6 +39,10 @@ test('availability badges cancel generic flag horizontal offset for centred Team
   assert.match(APP_SOURCE,/\.pitch-availability\{[^}]*display:block[^}]*width:fit-content[^}]*margin:3px auto 0[^}]*overflow-wrap:anywhere[^}]*\}/);
 });
 
+test('unavailable bench badge stays on one centred line on narrow iPhone layouts',()=>{
+  assert.match(APP_SOURCE,/@media\(max-width:420px\)\{[\s\S]*?\.bench-player \.pitch-availability\.out\{[^}]*font-size:8px[^}]*max-width:none[^}]*white-space:nowrap[^}]*overflow-wrap:normal[^}]*\}/);
+});
+
 test('startup gate owns the application shell until the existing ready event',()=>{
   assert.match(TEAM_SOURCE,/document\.querySelector\('header'\),document\.querySelector\('main'\),document\.querySelector\('nav\.tabs'\)/);
   assert.match(TEAM_SOURCE,/node\.hidden=Boolean\(owned\);\s*node\.inert=Boolean\(owned\);/);
