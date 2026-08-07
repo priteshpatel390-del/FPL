@@ -63,6 +63,18 @@ jobs:
           set -eu
           node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); console.log('Manifest commit verified:',m.commit);"
 
+      - name: Preserve verified production outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamsheet-production-${{ env.BUILD_COMMIT }}
+          path: |
+            dist/app.bundle.js
+            dist/index.html
+            dist/manifest.json
+            index.html
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verification summary
         run: |
           echo '### Teamsheet verification passed' >> "$GITHUB_STEP_SUMMARY"
@@ -72,3 +84,4 @@ jobs:
           echo '- Two exact-identity production builds: byte-identical' >> "$GITHUB_STEP_SUMMARY"
           echo '- Root index.html equals dist/index.html' >> "$GITHUB_STEP_SUMMARY"
           echo '- Manifest build identity: exact' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Verified production outputs: preserved as a workflow artifact' >> "$GITHUB_STEP_SUMMARY"
