@@ -20,13 +20,9 @@ The source HTML still assigns the startup gate a lower stacking value than the f
 
 ### T-02 — Team availability clarity
 
-Starting-XI and bench cards now add an explicit visible availability badge for Official FPL flagged states:
+Starting-XI and bench cards add an explicit visible availability badge for Official FPL flagged states: `Doubtful` with the supplied chance when present, `Suspended`, or `Unavailable`. The same state is appended to each affected card's existing accessible label.
 
-- `d`: `Doubtful`, including the supplied chance of playing when present;
-- `s`: `Suspended`;
-- `i`, `u`, `n`: `Unavailable`.
-
-The same state is appended to each affected card's existing accessible label. The presentation is added after the existing verified Team renderer has already selected the XI, captain, vice-captain and bench. It consumes only the status fields already present on each rendered player.
+The presentation is added after the existing verified Team renderer has selected the XI, captain, vice-captain and bench. It consumes only the status fields already present on each rendered player.
 
 ## Explicitly unchanged
 
@@ -36,15 +32,13 @@ No dependency or framework is added. `src/ui/team-pitch.mjs` remains visual-only
 
 ## Regression coverage
 
-`tests/team-ux-startup-availability.test.mjs` adds focused contracts for explicit availability wording, both starting and bench card annotation, accessible labels, unchanged Team-selection ownership, startup shell ownership and release through the existing `teamsheet:startup-ready` event.
-
-No existing test or golden expectation is deleted, weakened or regenerated.
+`tests/team-ux-startup-availability.test.mjs` adds focused contracts for explicit availability wording, starting and bench card annotation, accessible labels, unchanged Team-selection ownership, startup shell ownership and release through the existing `teamsheet:startup-ready` event. No existing test or golden expectation is deleted, weakened or regenerated.
 
 ## Repository verification workflow
 
 With owner approval, `.github/workflows/verify.yml` adds repository-owned verification for pull requests and manual `workflow_dispatch` runs. It is verification infrastructure only: read-only repository permission, no deployment, no package installation, no generated-file write-back and no application behaviour change.
 
-The workflow checks out the exact PR revision, runs the existing `./run-tests.sh`, creates two production builds with the exact revision supplied as `BUILD_COMMIT`, compares `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html` byte-for-byte, verifies root `index.html` equals `dist/index.html`, and confirms the emitted manifest records the exact source revision.
+It checks out the exact PR revision, runs `./run-tests.sh`, performs two production builds using the exact revision as `BUILD_COMMIT`, compares generated outputs byte-for-byte, verifies root `index.html` equals `dist/index.html`, and confirms the manifest contains the exact source revision.
 
 ## Verification evidence
 
@@ -59,11 +53,11 @@ GitHub Actions **Verify Teamsheet run #1** verified source `68d16a2a8fc3113da274
 - manifest `commit` exactly matched the verified source revision;
 - model/golden expectations remained unchanged.
 
-Every later PR-head commit triggers the same verification automatically. The PR check displayed for the current head is the authoritative automated verification result for that exact revision.
+Every later PR-head commit triggers the same verification automatically. The green PR check for the current head is the authoritative automated result for that exact revision.
 
 No GitHub Pages or Cloudflare deployment is requested or changed by this branch.
 
-Generated production files created by the workflow are verification outputs in the GitHub runner and are not written back to the branch. If this implementation checkpoint requires committed generated artefacts before merge, that remains a separate repository-completion step; no generated file has been hand-edited.
+Generated production files created by the workflow are verification outputs in the GitHub runner and are not written back to the branch. If committed generated artefacts are required before merge, that remains a separate completion step; no generated file has been hand-edited.
 
 ## Remaining acceptance limitation
 
