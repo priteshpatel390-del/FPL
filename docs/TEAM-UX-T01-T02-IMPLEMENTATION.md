@@ -1,6 +1,6 @@
 # Team UX T-01 / T-02 implementation record
 
-Status: **Implementation and verification complete. Approved to merge after final repository hygiene. Not yet merged.**
+Status: **Implementation, automated verification and physical T-01 acceptance complete. Owner approved to merge. Not yet merged.**
 
 Date: 7 August 2026.
 
@@ -63,8 +63,8 @@ No Cloudflare Worker change or deployment is requested by this branch.
 
 ## Visual acceptance
 
-The required visual condition is that an iPhone-sized first paint shows only the startup/loading experience with no header, application content or fixed navigation dock visible above or through it. The corrected production build passed a 390x844 first-paint browser rendering with script execution disabled: the startup gate remained visible while header, main and the fixed navigation computed hidden, and no fixed dock or application content was visible. This is an iPhone-sized browser simulation, not a claim of physical iPhone Safari testing.
+The required visual condition is that an iPhone first paint shows only the startup/loading experience with no header, application content or fixed navigation dock visible above or through it. After the corrected build also passed a 390x844 browser first-paint simulation, Pritesh physically tested the exact PR #80 preview on iPhone Safari on 7 August 2026. The startup screen showed only the Teamsheet loading experience and **no bottom navigation dock**; T-01 therefore passed physical acceptance. T-02 could not be visually exercised on the owner's current squad because no player was flagged at the time of review. That is recorded as an unperformed physical T-02 presentation check, not a pass; the explicit starting/bench availability wording and accessibility labels remain protected by focused automated regressions.
 
 ## Review gate
 
-Pritesh has approved merge after documentation updates and successful visual acceptance. Automated verification and the corrected mobile first-paint visual check have passed. Final repository hygiene commits the generated deployables before merge.
+Pritesh approved merge after documentation updates and successful T-01 visual acceptance. Those conditions are now satisfied: automated verification is green, generated deployables are current, and physical iPhone Safari T-01 acceptance passed. T-02 physical presentation was not observable because the current squad had no flagged player; automated T-02 coverage remains green. PR #80 is ready to merge under the existing owner approval.
