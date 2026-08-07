@@ -82,22 +82,20 @@ jobs:
           rm .github/fixtures-acceptance-doc-reconcile.py
           rm .github/workflows/fixtures-acceptance-doc-reconcile.yml
           git add -A
-          EXPECTED="$(cat <<'EOF'
-CLAUDE.md
-docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md
-docs/FIXTURES-MOBILE-SCROLL-FOLLOW-UP.md
-docs/KNOWN_LIMITATIONS.md
-docs/PROJECT_CONTEXT.md
-docs/ROADMAP.md
-docs/TESTING.md
-EOF
-)"
-          ACTUAL="$(git diff --cached --name-only "$BASE_COMMIT" | sort)"
-          test "$ACTUAL" = "$EXPECTED"
+          printf '%s\n' \
+            'CLAUDE.md' \
+            'docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md' \
+            'docs/FIXTURES-MOBILE-SCROLL-FOLLOW-UP.md' \
+            'docs/KNOWN_LIMITATIONS.md' \
+            'docs/PROJECT_CONTEXT.md' \
+            'docs/ROADMAP.md' \
+            'docs/TESTING.md' > /tmp/expected-doc-paths.txt
+          git diff --cached --name-only "$BASE_COMMIT" | sort > /tmp/actual-doc-paths.txt
+          diff -u /tmp/expected-doc-paths.txt /tmp/actual-doc-paths.txt
           git diff --cached --check
           git commit -m 'Reconcile Fixtures acceptance status'
-          FINAL="$(git diff --name-only "$BASE_COMMIT"..HEAD | sort)"
-          test "$FINAL" = "$EXPECTED"
+          git diff --name-only "$BASE_COMMIT"..HEAD | sort > /tmp/final-doc-paths.txt
+          diff -u /tmp/expected-doc-paths.txt /tmp/final-doc-paths.txt
           git push origin HEAD:agent/fixtures-acceptance-doc-reconciliation
 
       - name: Summary
