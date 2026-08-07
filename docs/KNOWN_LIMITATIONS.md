@@ -1,6 +1,6 @@
 # KNOWN_LIMITATIONS.md
 Purpose: single register of every current limitation. Audience: all sessions.
-Last updated: 2026-08-06. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
+Last updated: 2026-08-07. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md.
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
@@ -38,6 +38,7 @@ Last updated: 2026-08-06. Related: AUDIT.md, ROADMAP.md, SECURITY.md, TEAMSHEET2
 | FRAME-1 | `frame-ancestors` is ineffective in meta CSP on GitHub Pages | Frame-buster is compensating control | Serverless | Accepted-temporary |
 | STYLE-1 | `style-src-attr 'unsafe-inline'` remained necessary | Replaced fixed/dynamic styles with classes, progress and SVG attributes; source/build/deployable guards reject style attributes and the CSP concession is removed | Stage 9.6 | **CLOSED and verified 2026-07-29** |
 | UI-13 | UX-A2 Player Detail scroll and rotation correction had not yet received populated physical iPhone Safari acceptance | Acceptance was performed by the owner on 6 August 2026 and passed: background locking, internal scrolling to the final content, close-control reachability, exact background-position restoration on normal close, reopening at the top, backdrop close and both orientations. The first return to portrait exposed Safari automatically enlarging text; root text-size adjustment is now fixed at 100% and the owner physically retested the corrected behaviour successfully. VoiceOver is not a Teamsheet acceptance gate. | UX-A2 owner acceptance | **CLOSED and merged 2026-08-06 through PR #76** |
+| UI-14 | The fixed primary dock layered above Player Detail and could cover the final projection line | Corrected on the approved follow-up branch by placing the modal backdrop and panel above the unchanged dock; automated regression and full verification pass | UX-A2 post-merge follow-up | In draft review; populated physical iPhone Safari confirmation pending |
 | UI-12 | UX-A1 Team resources and bench clarity has not yet received populated physical iPhone Safari acceptance | Automated tests cover placement, wording, duplication, order, two-line names, accessible labels and presentation boundaries, but cannot prove portrait/landscape density, Safari chrome interaction, long-name recognition or tap comfort on the owner's device. VoiceOver was deliberately not tested. | UX-A1 owner acceptance | Open (acceptance gate) |
 | UI-1 | No persistent browser-level screenshot-regression suite | Stage 9.6 completed representative mobile/desktop browser review with no console errors, but future visual changes still require human device review | Future tooling only with separate approval | Open (accepted) |
 | UI-2 | Stage 9 primary navigation remained Team, Players, Transfers and More | Replaced by Team, Transfers, Fixtures, Leagues and Settings with Ask Teamsheet as a global/Team action | Teamsheet 2.0.1 | **CLOSED and verified 2026-07-31** |

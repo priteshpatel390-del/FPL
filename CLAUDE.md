@@ -1,5 +1,9 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- UX-A2-DOCK-LAYERING-2026-08-07 -->
+> **UX-A2 post-merge dock-layering follow-up — implemented and verified in draft review:** `agent/ux-a2-player-detail-dock-layering` is based on `main` `2f2930de125cbb63600aa9514123f516d8b9e188`. It raises only the existing Player Detail backdrop and panel above the unchanged fixed primary dock so the final projection line cannot be covered. Verification is **645 passed, 0 failed, 0 skipped, 0 cancelled** with deterministic exact-identity builds and root/deployable equality. Every FPL calculation, Player Detail content, route and navigation dimension is unchanged. Populated physical iPhone Safari confirmation remains pending; UX-A3 and Track B remain unapproved.
+
+
 <!-- VOICEOVER-DECISION-2026-08-06 -->
 > **Owner decision — 6 August 2026:** VoiceOver testing is not required for Teamsheet and is not an acceptance gate. `docs/VOICEOVER-DECISION.md` supersedes earlier current-status wording that treated it as pending or accepted-unverified. Standard accessibility safeguards—including semantic controls, labels, focus behaviour, reduced motion, contrast, touch targets and keyboard behaviour—remain required where applicable.
 
