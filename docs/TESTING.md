@@ -1,5 +1,8 @@
 # TESTING.md
 
+<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
+> **Fixtures GW38 horizon follow-up:** focused regressions cover the 38-Gameweek control contract, visible-value/season-boundary synchronisation, the no-post-GW38 swing guard and unchanged long-horizon `runScore`/Official-FPL fallback semantics at 13, 23 and 38 Gameweeks. Branch verification: **660 passed, 0 failed, 0 skipped, 0 cancelled**. No model formula, provider, source or golden expectation changed; physical iPhone verification remains required after deployment.
+
 <!-- FIXTURES-MOBILE-SCROLL-TESTING-2026-08-07 -->
 > **Fixtures mobile presentation follow-up:** four focused regressions were added for truthful fallback-aware copy, a non-scrolling mode explanation, a shared sticky TEAM header/body column and removal of the left scrolling gutter. **Branch verification:** 656 passed, 0 failed, 0 skipped, 0 cancelled. Physical iPhone Safari retest of the 12-Gameweek horizontal-scroll path remains required; no model, provider or golden expectation changed.
 

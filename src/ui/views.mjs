@@ -26,7 +26,11 @@ function renderTicker(){
     return;
   }
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
-  const span = clamp(parseInt($('fxSpan').value) || 6, 3, 12);
+  const requestedSpan = clamp(parseInt($('fxSpan').value) || 6, 1, 38);
+  const span = Math.min(requestedSpan, 39 - from);
+  $('fxFrom').value = String(from);
+  $('fxSpan').max = String(39 - from);
+  $('fxSpan').value = String(span);
   const lensControl = $('fxLens'), sort = $('fxSort').value;
   const lensState = fixtureLensState(lensControl.value);
   for(const option of Array.from(lensControl.options || [])){
@@ -67,10 +71,11 @@ function renderTicker(){
   else setChildren($('fixtureModeNote'));
   setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
 
-  const swings = Object.values(S.teams).map(t => {
+  const canCompareSwings = from + 5 <= 38;
+  const swings = canCompareSwings ? Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);
     return {t, delta: later - now};
-  });
+  }) : [];
   const favourable = lensState.lowerIsEasier
     ? swings.filter(s => s.delta < -.18).sort((a,b)=>a.delta-b.delta).slice(0,4)
     : swings.filter(s => s.delta > .18).sort((a,b)=>b.delta-a.delta).slice(0,4);

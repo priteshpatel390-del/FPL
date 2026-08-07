@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { S, hydrate } from '../src/state.mjs';
-import { matchContext, multToDiff, teamFixtures } from '../src/model/fixtures.mjs';
+import { matchContext, multToDiff, teamFixtures, runScore, averageOfficialDifficulty } from '../src/model/fixtures.mjs';
 import { availability, priceBaseline, projectXP, clearXP } from '../src/model/scoring.mjs';
 import { bestXI, sellPrice } from '../src/squad.mjs';
 import { poissonOver, solveLambda } from '../src/providers/odds.mjs';
@@ -132,4 +132,23 @@ test('direct import: ODDS_RULES defined before any formula change', () => {
 test('direct import: escapeHTML neutralises the usual suspects', () => {
   assert.equal(escapeHTML(`<img src=x onerror="a('b')">`),
     '&lt;img src=x onerror=&quot;a(&#39;b&#39;)&quot;&gt;');
+});
+
+
+test('direct import: fixture runs support horizons through GW38 with unchanged scoring semantics', () => {
+  const gw38 = { event:38, team_h:1, team_a:2, team_h_difficulty:2, team_a_difficulty:4, finished:false };
+  S.fixtures.push(gw38);
+  const strengthsAvailable = S.strengthsAvailable;
+  try {
+    for (const span of [13, 23, 38]) assert.equal(teamFixtures(1, 1, span).length, span, `span ${span}`);
+    const runs = teamFixtures(1, 1, 38);
+    assert.equal(runs[37].length, 1, 'GW38 fixture remains reachable');
+    const manual = runs.flat().reduce((total, game) => total + (Number.isFinite(game.ctx.atk) ? game.ctx.atk : 1), 0) / 38;
+    assert.ok(Math.abs(runScore(1, 1, 38, 'attack') - manual) < 1e-12, 'long horizon keeps existing attack runScore formula');
+    S.strengthsAvailable = false;
+    assert.equal(runScore(1, 1, 38, 'attack'), averageOfficialDifficulty(1, 1, 38), 'fallback remains direct Official-FPL average');
+  } finally {
+    S.strengthsAvailable = strengthsAvailable;
+    S.fixtures.pop();
+  }
 });

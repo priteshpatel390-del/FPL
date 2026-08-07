@@ -39,3 +39,18 @@ On the deployed iPhone Safari build, repeat the 12-Gameweek view and confirm:
 - the final rows, legend and swing notes remain clear of the fixed bottom navigation.
 
 Until that retest passes, Fixtures remains open under FPL-2 and Leagues does not become the active acceptance checkpoint.
+
+
+<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
+## GW38 horizon follow-up
+
+Owner retest after PR #85 deployment confirmed that the corrected fallback explanation remains above the table and the sticky TEAM column now stays coherent while swiping. A separate issue was then reproduced: entering `23` in the horizon field left `23` visible but runtime silently clamped the calculation/render span to 12.
+
+Approved behaviour:
+- label the control as `Gameweeks`, default 6;
+- allow 1–38 Gameweeks while never rendering or scoring beyond GW38;
+- when the requested span would cross the season boundary, synchronise the visible value to the actual remaining-season span;
+- keep `runScore`, fixture difficulty, Official-FPL fallback, blank/double treatment and projection formulas unchanged;
+- suppress the existing three-plus-three Gameweek swing comparison when its later window would extend beyond GW38.
+
+Validation: **660 passed, 0 failed, 0 skipped, 0 cancelled** on the implementation branch. Focused model regressions exercise 13-, 23- and 38-Gameweek spans and prove the existing attack-run and Official-FPL fallback formulas are unchanged. Physical iPhone Safari retest is still required after deployment before Fixtures can be accepted.

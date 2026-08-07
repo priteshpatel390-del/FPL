@@ -1,5 +1,8 @@
 # ROADMAP.md — living roadmap
 
+<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
+> **Current Fixtures acceptance follow-up:** PR #85's mobile horizontal-scroll correction is merged and deployed. Owner retest then exposed a separate silent 12-Gameweek horizon cap. GW38 horizon support is approved and in review with **660 passing tests**; Fixtures remains open until the deployed long-horizon path is physically accepted. Leagues remains next and must not be pulled forward.
+
 <!-- FIXTURES-MOBILE-SCROLL-FOLLOW-UP-2026-08-07 -->
 > **Approved implementation in review — Fixtures mobile horizontal-scroll presentation:** populated iPhone Safari review proved 12-Gameweek horizontal scrolling works but exposed a broken sticky TEAM presentation, a fallback explanation that travelled with the table, and static intro copy that contradicted the active Official-FPL fallback. The approved branch is presentation-only: fixture calculations, fallback mathematics, providers, projections and strategy stay unchanged. `docs/FIXTURES-MOBILE-SCROLL-FOLLOW-UP.md` is the focused record. Automated verification is recorded there; physical iPhone retest remains required before Fixtures is accepted and the project moves to Leagues.
 

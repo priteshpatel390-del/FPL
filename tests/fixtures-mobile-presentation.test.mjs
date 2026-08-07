@@ -29,3 +29,22 @@ test('Fixtures horizontal scroller has no left gutter that exposes travelled fix
   assert.match(app,/\.ticker-wrap\{[^}]*margin:0;padding:0;isolation:isolate\}/);
   assert.doesNotMatch(app,/\.ticker-wrap\{[^}]*margin:0 -16px;padding:0 16px/);
 });
+
+
+test('Fixtures horizon control exposes the remaining season through GW38',()=>{
+  assert.match(app,/<label class="fld">Gameweeks<input type="number" id="fxSpan" min="1" max="38" value="6"/);
+  assert.doesNotMatch(app,/id="fxSpan"[^>]*max="12"/);
+});
+
+test('Fixtures renderer accepts long horizons and synchronises the visible value to the season boundary',()=>{
+  assert.match(views,/const requestedSpan = clamp\(parseInt\(\$\('fxSpan'\)\.value\) \|\| 6, 1, 38\);/);
+  assert.match(views,/const span = Math\.min\(requestedSpan, 39 - from\);/);
+  assert.match(views,/\$\('fxSpan'\)\.max = String\(39 - from\);/);
+  assert.match(views,/\$\('fxSpan'\)\.value = String\(span\);/);
+  assert.doesNotMatch(views,/clamp\(parseInt\(\$\('fxSpan'\)\.value\) \|\| 6, 3, 12\)/);
+});
+
+test('Fixtures late-season swing notes never evaluate a three-Gameweek window beyond GW38',()=>{
+  assert.match(views,/const canCompareSwings = from \+ 5 <= 38;/);
+  assert.match(views,/const swings = canCompareSwings \? Object\.values\(S\.teams\)\.map/);
+});

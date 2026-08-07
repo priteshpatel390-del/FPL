@@ -1,5 +1,8 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- FIXTURES-GW38-HORIZON-2026-08-07 -->
+> **Fixtures horizon follow-up in review:** merged PR #85 fixed the sticky TEAM/fallback-note presentation, but owner retest exposed that the `Gameweeks` request could visually accept values above 12 while runtime silently clamped to 12. The approved branch removes that mismatch and permits the remaining season through GW38 without changing scoring formulas. Until deployed/physically retested, long-horizon Fixtures acceptance remains open.
+
 <!-- FIXTURES-MOBILE-SCROLL-LIMITATION-2026-08-07 -->
 > **Fixtures acceptance follow-up in review:** the owner reproduced a 12-Gameweek mobile presentation defect in which the TEAM column/header and fallback explanation did not remain coherent during horizontal scrolling. A presentation-only correction is approved and under verification; physical iPhone retest remains required.
 
