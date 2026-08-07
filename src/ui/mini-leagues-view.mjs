@@ -15,13 +15,14 @@ const miniLeagueRivalLoads=new Map();
 S.miniLeagueData={standings:{},rivals:{},exposure:{}};
 
 function miniLeagueNumber(value){ if(value===null||value===undefined||value==='') return null; const n=Number(value); return Number.isFinite(n)?n:null; }
+function miniLeagueRank(value){ const n=miniLeagueNumber(value); return n!==null&&Number.isInteger(n)&&n>0?n:null; }
 function miniLeagueOrdinal(value){
-  const n=miniLeagueNumber(value); if(n===null) return '—';
-  const v=Math.abs(Math.trunc(n)),mod100=v%100,suffix=mod100>=11&&mod100<=13?'th':v%10===1?'st':v%10===2?'nd':v%10===3?'rd':'th';
+  const n=miniLeagueRank(value); if(n===null) return '—';
+  const v=n,mod100=v%100,suffix=mod100>=11&&mod100<=13?'th':v%10===1?'st':v%10===2?'nd':v%10===3?'rd':'th';
   return `${v}${suffix}`;
 }
 function miniLeagueMovement(current,last){
-  const c=miniLeagueNumber(current),l=miniLeagueNumber(last);
+  const c=miniLeagueRank(current),l=miniLeagueRank(last);
   if(c===null||l===null) return {delta:null,label:'Previous position unavailable',direction:'unknown'};
   const delta=l-c;
   if(delta>0) return {delta,label:`Up ${delta} place${delta===1?'':'s'}`,direction:'up'};
@@ -203,7 +204,7 @@ async function loadMiniLeagueStandings({force=false}={}){
   const league=selectedMiniLeague(); if(!league) return null;
   const existing=S.miniLeagueData.standings[league.id]; if(existing&&!force) return existing;
   const token=++miniLeagueStandingsRequest; miniLeagueAnnounce(`Loading ${league.name||'selected league'} standings.`); miniLeagueSetBusy($('leagueLandingOut'),true);
-  const membership=miniLeagueMembership(league.id); const rank=miniLeagueNumber(membership?.entry_rank); const pages=[1];
+  const membership=miniLeagueMembership(league.id); const rank=miniLeagueRank(membership?.entry_rank); const pages=[1];
   if(rank){ const rankPage=Math.ceil(rank/MINI_LEAGUE_PAGE_SIZE); pages.push(rankPage); if(rankPage>1) pages.push(rankPage-1); pages.push(rankPage+1); }
   const responses=[]; const issues=[];
   for(const page of [...new Set(pages)]){
@@ -222,7 +223,8 @@ async function loadMiniLeagueStandings({force=false}={}){
   if(resolvedName!==league.name) await upsertMiniLeague(league.id,resolvedName,{select:true});
   const data={league:{id:league.id,name:resolvedName||`League ${league.id}`},rows:[...map.values()],hasNext:Boolean(first.standings?.has_next),browsePage:1,browseHasNext:Boolean(first.standings?.has_next),updatedAt:Date.now(),provisional:miniLeagueStatusCopy().provisional,stale:false,refreshError:false};
   S.miniLeagueData.standings[league.id]=data; renderMiniLeagues(); miniLeagueSetBusy($('leagueLandingOut'),false);
-  const nearest=miniLeagueNearestRows(data.rows,S.teamId); miniLeagueAnnounce(nearest.user?`Standings loaded. Your position is ${miniLeagueOrdinal(nearest.user.rank)}.`:'Standings loaded. Your connected team was not found on the loaded pages.');
+  const nearest=miniLeagueNearestRows(data.rows,S.teamId),announcedRank=miniLeagueRank(nearest.user?.rank??membership?.entry_rank);
+  miniLeagueAnnounce(announcedRank?`Standings loaded. Your position is ${miniLeagueOrdinal(announcedRank)}.`:!S.seasonLive?'Standings loaded. Your league position is not ranked yet.':'Standings loaded. Your connected team was not found on the loaded pages.');
   return data;
 }
 async function loadNextMiniLeagueStandingsPage(){
@@ -293,10 +295,10 @@ function renderMiniLeagueLanding(){
   if(data?.error){ setChildren(out,miniLeagueEmpty('League standings unavailable','This league is unavailable through the public FPL data used by Teamsheet. Your saved league has not been removed.',miniLeagueButton('Try again',{onclick:()=>loadMiniLeagueStandings({force:true})}))); return; }
   if(!data){ setChildren(out,miniLeagueEmpty('Ready to check your league','Teamsheet will load official position, gaps and nearby rivals without scanning every squad.',miniLeagueButton('Load standings',{onclick:()=>loadMiniLeagueStandings({force:true})}))); return; }
   const membership=miniLeagueMembership(league.id),nearest=miniLeagueNearestRows(data.rows,S.teamId); const user=nearest.user;
-  const rank=user?.rank??membership?.entry_rank??null,total=user?.total??S.entry?.summary_overall_points??null,last=user?.last_rank??membership?.entry_last_rank??null,movement=miniLeagueMovement(rank,last);
+  const rank=miniLeagueRank(user?.rank??membership?.entry_rank??null),total=user?.total??S.entry?.summary_overall_points??null,last=miniLeagueRank(user?.last_rank??membership?.entry_last_rank??null),movement=miniLeagueMovement(rank,last);
   const statusSummary=!S.seasonLive?'No completed Gameweek yet':status.provisional?'Scores and positions may still change':'Confirmed after official FPL checks';
-  const position=rank!==null?el('div',{class:'league-position'},el('strong',{},miniLeagueOrdinal(rank)),el('span',{},total!==null?`${total} points`:'Official points unavailable')):el('div',{class:'league-position'},el('strong',{},'Position unavailable'),el('span',{},'Your connected team was not found on the loaded standings pages.'));
-  const movementFlag=el('span',{class:`flag ${movement.direction==='up'?'rise':movement.direction==='down'?'fall':'dark'}`},movement.label);
+  const position=rank!==null?el('div',{class:'league-position'},el('strong',{},miniLeagueOrdinal(rank)),el('span',{},total!==null?`${total} points`:'Official points unavailable')):!S.seasonLive?el('div',{class:'league-position'},el('strong',{},'Not ranked yet'),el('span',{},'Official FPL has not published a league position yet.')):el('div',{class:'league-position'},el('strong',{},'Position unavailable'),el('span',{},'Your connected team was not found on the loaded standings pages.'));
+  const movementFlag=rank!==null?el('span',{class:`flag ${movement.direction==='up'?'rise':movement.direction==='down'?'fall':'dark'}`},movement.label):null;
   const hero=el('section',{class:'league-hero','aria-label':`${data.league.name} official position`},
     el('div',{class:'league-hero-head'},el('div',{},el('span',{class:'eyebrow'},status.label),el('h3',{},data.league.name)),miniLeagueButton('Refresh',{onclick:()=>loadMiniLeagueStandings({force:true})})),
     el('div',{class:'league-position-line'},position,movementFlag),
@@ -304,11 +306,11 @@ function renderMiniLeagueLanding(){
     data.stale?el('div',{class:'note plain'},'Refresh failed. Showing the last standings loaded in this session; this view may be out of date.'):null);
   const gaps=el('div',{class:'league-gap-grid'},
     el('div',{class:'league-gap'},el('span',{},'Above'),el('strong',{},nearest.above&&user?`${miniLeagueGap(user,nearest.above)} pts`:'—'),nearest.above?el('small',{},miniLeagueManagerName(nearest.above)):null),
-    el('div',{class:'league-gap current'},el('span',{},'You'),el('strong',{},total??'—'),el('small',{},rank!==null?miniLeagueOrdinal(rank):'Not located')),
+    el('div',{class:'league-gap current'},el('span',{},'You'),el('strong',{},total??'—'),el('small',{},rank!==null?miniLeagueOrdinal(rank):!S.seasonLive?'Not ranked yet':'Not located')),
     el('div',{class:'league-gap'},el('span',{},'Below'),el('strong',{},nearest.below&&user?`${miniLeagueGap(user,nearest.below)} pts`:'—'),nearest.below?el('small',{},miniLeagueManagerName(nearest.below)):null));
-  const rivals=miniLeagueSuggestedRivals(data);
+  const rivals=miniLeagueSuggestedRivals(data),noRivalsCopy=!S.seasonLive&&rank===null?'Nearby rivals will appear once Official FPL publishes league positions.':'No nearby rival rows were available on the loaded standings pages.';
   const rivalSection=el('section',{class:'league-section'},el('div',{class:'league-section-head'},el('h3',{},'Nearest rivals'),miniLeagueLink('View standings','#/leagues/standings','league-text-link')),
-    rivals.length?el('div',{class:'league-rival-list'},rivals.map(row=>renderMiniLeagueRivalCard(row,user,data.league.id))):el('p',{class:'status'},'No nearby rival rows were available on the loaded standings pages.'));
+    rivals.length?el('div',{class:'league-rival-list'},rivals.map(row=>renderMiniLeagueRivalCard(row,user,data.league.id))):el('p',{class:'status'},noRivalsCopy));
   const group=miniLeagueComparisonRivals(league.id);
   const exposureSection=el('section',{class:'league-section'},el('div',{class:'league-section-head'},el('h3',{},'Rival exposure'),miniLeagueLink(group.length?'View exposure':'Set up comparison','#/leagues/exposure','league-text-link')),
     el('p',{class:'status'},group.length?`${group.length} selected rival${group.length===1?'':'s'}. Public squads load only when you request the exposure view.`:'Choose up to five nearby, leading or pinned rivals. Teamsheet will count only the public squads you explicitly load.'));
