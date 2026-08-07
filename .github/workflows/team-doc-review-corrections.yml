@@ -1,0 +1,126 @@
+name: Temporary Team doc review corrections
+
+on:
+  push:
+    branches:
+      - agent/team-acceptance-doc-reconciliation
+
+permissions:
+  contents: write
+
+jobs:
+  correct:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out reconciliation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/team-acceptance-doc-reconciliation
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply content-review corrections
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'{path}: expected text missing: {old[:80]}')
+              p.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'CLAUDE.md',
+              '> **Current merged application checkpoint — PR #78 Player Detail dock-layering correction:**',
+              '> **Preceding merged checkpoint — PR #78 Player Detail dock-layering correction:**'
+          )
+          replace_once(
+              'CLAUDE.md',
+              'passed **652 passed, 0 failed, 0 skipped, 0 cancelled**',
+              'passed **652 tests, 0 failed, 0 skipped, 0 cancelled**'
+          )
+          old_order = '''1. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the merged PR #78 dock-layering correction
+2. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
+3. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
+4. `docs/PROJECT_CONTEXT.md`
+5. `docs/ARCHITECTURE.md`
+6. `docs/DECISIONS.md`
+7. `docs/ROADMAP.md`
+8. `docs/KNOWN_LIMITATIONS.md`
+9. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
+10. The current checkpoint design document
+11. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
+12. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
+13. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records'''
+          new_order = '''1. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` — authoritative record for the current merged Team populated-acceptance checkpoint
+2. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the preceding PR #78 dock-layering correction
+3. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
+4. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
+5. `docs/PROJECT_CONTEXT.md`
+6. `docs/ARCHITECTURE.md`
+7. `docs/DECISIONS.md`
+8. `docs/ROADMAP.md`
+9. `docs/KNOWN_LIMITATIONS.md`
+10. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
+11. The current checkpoint design document
+12. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
+13. Before model/projection/squad/optimisation work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
+14. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records'''
+          replace_once('CLAUDE.md', old_order, new_order)
+
+          replace_once(
+              'docs/PROJECT_CONTEXT.md',
+              '> **Current merged application checkpoint:** PR #78 corrected the post-merge Player Detail stacking conflict found by Pritesh on physical iPhone Safari.',
+              '> **Preceding merged checkpoint:** PR #78 corrected the post-merge Player Detail stacking conflict found by Pritesh on physical iPhone Safari.'
+          )
+
+          replace_once(
+              'docs/ROADMAP.md',
+              '> **Current merged application checkpoint — PR #78:**',
+              '> **Preceding merged checkpoint — PR #78:**'
+          )
+
+          replace_once(
+              'docs/TESTING.md',
+              '> **T-02 bench/availability follow-up review:**',
+              '> **Historical T-02 bench/availability follow-up state — superseded by the Team merge record:**'
+          )
+          replace_once(
+              'docs/TESTING.md',
+              'Final physical iPhone acceptance is pending.',
+              'Final physical iPhone acceptance subsequently passed after PR #83 deployment; see the current Team acceptance record above.'
+          )
+          replace_once(
+              'docs/TESTING.md',
+              '> **Current merged baseline — PR #78 dock-layering correction:**',
+              '> **Historical merged baseline — PR #78 dock-layering correction:**'
+          )
+          replace_once(
+              'docs/TESTING.md',
+              'Current repository verification is the PR #78 645-test baseline above.',
+              'That Track A checkpoint and the later PR #78 baseline are historical; the current repository baseline is recorded above.'
+          )
+          PY
+
+      - name: Verify correction scope and commit
+        run: |
+          set -eu
+          expected="$(printf '%s\n' CLAUDE.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          git add CLAUDE.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md
+          git commit -m "Clarify superseded Team status wording"
+
+      - name: Remove temporary review workflow and push
+        run: |
+          git rm .github/workflows/team-doc-review-corrections.yml
+          git commit -m "Remove temporary Team doc review workflow"
+          git push origin HEAD:agent/team-acceptance-doc-reconciliation
