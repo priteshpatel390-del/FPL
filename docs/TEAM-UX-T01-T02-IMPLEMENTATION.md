@@ -73,3 +73,11 @@ Pritesh approved merge after documentation updates and successful T-01 visual ac
 ## T-02 physical visual follow-up — availability badge centring
 
 On 7 August 2026, physical iPhone Safari review of an unavailable bench player found the availability badge visually shifted to the right. The cause was the generic `.flag` rule's `margin-left:5px`, inherited by the standalone `.pitch-availability` badge. The approved presentation-only correction adds `.pitch-availability{margin-left:0}`, preserving all availability data, selection, ordering, projection, captaincy, transfer and provider behaviour. A focused regression protects the centring override.
+
+
+<!-- T02-BENCH-GK-AVAILABILITY-FOLLOW-UP-2026-08-07 -->
+## 7 August 2026 — physical T-02 follow-up
+
+A populated physical iPhone Safari review after PR #81 exposed two remaining presentation defects: the calculated bench array placed the reserve goalkeeper after outfield substitutes while UX-A1 labelled visual slot zero as `GK`, and the availability pill still did not own a reliably centred row. The approved correction is presentation-only: the reserve goalkeeper is moved to the first **displayed** bench slot while the three outfield substitutes retain their existing relative order; `bestXI()` and its calculated `bench` array are not changed or mutated. Availability now owns a block, intrinsic-width centred row for `Unavailable`, `Suspended` and `Doubtful`.
+
+Automated verification on the approved follow-up branch: **651 passed, 0 failed, 0 skipped, 0 cancelled**. Focused regressions prove the display-order helper returns a new array, leaves the calculated bench order intact, moves only the reserve goalkeeper to the visual `GK` slot, keeps availability annotation aligned with displayed order, and requires the availability pill's centred-row CSS contract. No projection, expected-minutes, scoring, fixture, captaincy, transfer, optimiser, simulation, provider or data-source formula is changed. Physical iPhone confirmation remains required before merge.

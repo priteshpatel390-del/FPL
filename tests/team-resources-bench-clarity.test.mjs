@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { teamDecisionBenchDisplayOrder } from '../src/ui/team-decision-home.mjs';
 
 const teamSource=readFileSync(new URL('../src/ui/team-decision-home.mjs',import.meta.url),'utf8');
 const viewsSource=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
@@ -63,6 +64,23 @@ test('bench array order remains index-preserving and unsorted',()=>{
   assert.match(relabel,/teamDecisionBenchLabel\(index\)/);
   assert.doesNotMatch(relabel,/\.sort\(|\.reverse\(|\.splice\(/);
   assert.match(viewsSource,/xi\.bench\.map\(\(slot,index\)=>playerNode\(slot,index\+1\)\)/);
+});
+
+test('bench display puts reserve goalkeeper in GK slot without mutating calculated bench order',()=>{
+  const gk={p:{id:1,element_type:1}};
+  const defender={p:{id:2,element_type:2}};
+  const midfielder={p:{id:3,element_type:3}};
+  const forward={p:{id:4,element_type:4}};
+  const bench=[defender,midfielder,forward,gk];
+  const ordered=teamDecisionBenchDisplayOrder(bench);
+  assert.deepEqual(ordered.map(slot=>slot.p.id),[1,2,3,4]);
+  assert.deepEqual(bench.map(slot=>slot.p.id),[2,3,4,1]);
+  assert.notStrictEqual(ordered,bench);
+  const reorder=functionSource('teamDecisionOrderBenchDisplay');
+  assert.match(reorder,/teamDecisionBenchDisplayOrder\(source\)/);
+  assert.match(reorder,/grid\.appendChild\(node\)/);
+  assert.doesNotMatch(reorder,/bestXI\(|xpOf\(|\.sort\(|\.splice\(|\.reverse\(/);
+  assert.match(teamSource,/teamDecisionOrderBenchDisplay\(stage,xi\);\s*teamDecisionRelabelBench\(stage\);\s*teamDecisionAnnotateAvailability\(stage,xi\);/);
 });
 
 test('bench names receive a two-line treatment before truncation',()=>{
