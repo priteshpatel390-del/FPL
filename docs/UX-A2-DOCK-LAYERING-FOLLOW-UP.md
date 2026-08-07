@@ -1,6 +1,6 @@
 # UX-A2 Player Detail dock-layering follow-up
 
-Status: **Implemented and verified on a draft branch; populated physical iPhone Safari confirmation pending.**
+Status: **Implemented, automatically verified, physically accepted on iPhone Safari and approved for merge.**
 
 ## Owner-reported defect
 
@@ -37,10 +37,12 @@ e45bd5a60ceba14e3049c6a5197bb26a0946931f62eb218205377760c3d12caf  dist/manifest.
 ef5c649ef78a008b32d933aa7fe285433f7d3fa9ce4afa0a67bba7fce41f4ca4  index.html
 ```
 
+## Physical iPhone acceptance
+
+On 7 August 2026, Pritesh retested the deployed populated preview in Safari and confirmed the defect was fixed. He then explicitly approved PR #78 for merge.
+
+The accepted check confirmed that the final projection line was no longer covered by the primary dock. The previously accepted Player Detail scrolling and rotation behaviour remained satisfactory. VoiceOver was not a project acceptance gate.
+
 ## Explicit exclusions
 
 No Player Detail information was removed or rearranged. No navigation sizing, route, projection, expected-minutes, fixture, scoring, squad, captaincy, simulation, transfer, rank, Mini-League, provider, data source, persistence, security, Cloudflare or Pages configuration changed.
-
-## Remaining gate
-
-A populated physical iPhone Safari recheck must confirm that the final projection line is no longer covered by the dock and that scrolling, closing and rotation remain intact. VoiceOver is not a project acceptance gate.
