@@ -1,7 +1,7 @@
 # TESTING.md
 
 <!-- UX-A2-DOCK-LAYERING-TESTING-2026-08-07 -->
-> **UX-A2 dock-layering follow-up verification:** the new regression first failed against the merged ordering, then passed after the narrow CSS correction. The complete suite is **645 passed, 0 failed, 0 skipped, 0 cancelled**. Two builds using exact source `44154da4190d35b6d6b747f537c19a060892bc14` are byte-identical for all generated outputs, and root `index.html` equals `dist/index.html`. Populated physical iPhone Safari confirmation remains pending.
+> **Current merged baseline — PR #78 dock-layering correction:** the focused regression first failed against the pre-correction merged ordering, then passed after the narrow CSS correction. The complete suite is **645 passed, 0 failed, 0 skipped, 0 cancelled**. Two builds using exact source `44154da4190d35b6d6b747f537c19a060892bc14` are byte-identical for all generated outputs, and root `index.html` equals `dist/index.html`. Populated physical iPhone Safari acceptance passed on 7 August 2026. PR #78 merged at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`; GitHub Pages deployment succeeded and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`. `UI-14` is closed.
 
 
 <!-- UX-A2-2026-08-06 -->
@@ -9,22 +9,34 @@
 
 
 <!-- UX-A1-2026-08-06 -->
-> **UX-A1 Team Resources and Bench Clarity review verification:** the branch adds eleven focused presentation contracts without changing a golden/model expectation. The complete baseline is **624 passed, 0 failed, 0 skipped**. Two production builds using the exact reviewed source commit are byte-identical for `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json`; root `index.html` equals `dist/index.html`. Automated evidence covers resource-bar adjacency, exact labels, secondary manual provenance, compact-chip removal, non-duplication, exact separate bench roles, unchanged bench order, two-line names, complete accessible labels, retained Player Detail tapping and the no-new-engine presentation boundary. Physical populated iPhone Safari acceptance remains owner-pending; VoiceOver was deliberately not tested.
+> **Historical status superseded — UX-A1 Team Resources and Bench Clarity:** the original review branch added eleven focused presentation contracts without changing a golden/model expectation and reached **624 passed, 0 failed, 0 skipped** with deterministic builds and root/deployable equality. Populated physical iPhone Safari acceptance subsequently passed on 6 August 2026 and PR #74 merged. Earlier wording describing device acceptance as pending is superseded by `UX-A1-MERGE-RECORD.md`. VoiceOver is not a Teamsheet acceptance gate.
 
 
 <!-- TRANSFERS-TRACK-A-2026-08-06 -->
-> **Current Track A review — Transfers exact performance and persistence:** Owner-approved Track A is implemented on `agent/transfers-exact-performance`, stacked on draft PR #69 without changing PR #69 itself. Transfers calculates automatically for a complete legal squad and valid assumptions, keeps one exact browser-worker calculation alive across internal navigation, restores progress/results on return, and reuses unchanged completed results. **The first physical iPhone Safari test failed:** with verified saved data, a complete squad, one free transfer, an empty bank, the six-Gameweek horizon and Top 8, the automatic exact search exhausted the unchanged 2,000,000 evaluation ceiling and reported *"Exact search did not complete."* The owner-approved corrective change rebuilds the exact search around position-quota score prefix sums, per-formation admissible bounds, price-capped optimistic completion tables and descending-gain stopping rules. The approved football problem, comparator, candidate universe, horizon, result limit and evaluation ceiling are unchanged, and `exhaustiveTransferSearch()` remains an independent oracle. Automated verification is **612 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Model remains `2.4.0`; rules remain `2026-27.3`. **The corrected search completed on the second physical iPhone Safari test, but the result screen failed because the separately returned zero-transfer baseline had fallen outside the Top 8 and the presentation read only `result.plans`. The owner-approved PR #72 correction reads `result.baseline` without changing the optimiser or its ranked Top 8. A further physical retest remains required.** Do not merge PR #69 or the Track A branch without Pritesh's explicit approval.
+> **Historical Track A review state — superseded by the merged checkpoint:** the first populated iPhone Safari exact-search attempt exposed the evaluation ceiling and a later retest exposed the separately returned zero-transfer baseline presentation defect. Those issues were corrected without changing the approved football problem, comparator, candidate universe, horizon or evaluation ceiling. The final accepted Track A checkpoint is merged through PRs #69, #70 and #72 with **613 passed, 0 failed, 0 skipped**, deterministic builds and populated iPhone Safari acceptance for the tested calculation, lifecycle, stale-result and **No hit** paths. VoiceOver is not a project acceptance gate. Current repository verification is the PR #78 645-test baseline above.
 
 
-> **FPL-T1 review verification:** The deployed owner-controlled Official FPL gateway and exact Pages configuration pass **590 passed, 0 failed, 0 skipped**. Two exact-identity production builds are byte-identical, root `index.html` equals `dist/index.html`, the manifest points to the reviewed source, CSP permits only the stable production Worker origin, model remains `2.4.0` and rules remain `2026-27.3`. Physical iPhone Safari returned live 2026/27 bootstrap JSON. Full populated application and VoiceOver acceptance remain outside automated evidence; PR #69 stays draft until explicit owner approval.
+> **Historical FPL-T1 review verification:** the owner-controlled Official FPL gateway review reached **590 passed, 0 failed, 0 skipped** with deterministic builds, exact Worker/CSP configuration and successful physical iPhone live bootstrap transport. FPL-T1 subsequently merged through PR #69 and Track A through PRs #70 and #72. This historical 590-test checkpoint is not the current repository baseline.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last updated: 2026-08-05. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last updated: 2026-08-07. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-FPL-T1 review verification completed **590/590 passing tests**, zero failures and zero skipped. The exact production Worker base is embedded in source and generated HTML, its origin is independently required by CSP tests, and anonymous Official FPL browser relays are absent. Worker contracts cover route/query allowlisting, methods, CORS, credential non-forwarding, JSON/schema failure, bounded cache policy, redirect rejection and redacted diagnostics. Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Physical iPhone Safari established live bootstrap transport only; populated Team, Transfers, Fixtures, Player Detail and Leagues acceptance remains pending.
+The current merged application checkpoint is PR #78 at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`.
+
+- `./run-tests.sh`: **645 passed, 0 failed, 0 skipped, 0 cancelled**
+- focused Player Detail scroll/rotation/dock-layering suite: **21 passed, 0 failed**
+- two production builds using the exact reviewed source identity: byte-identical
+- root `index.html`: byte-identical to `dist/index.html`
+- populated physical iPhone Safari acceptance: passed for the tested PR #78 Player Detail correction path
+- GitHub Pages deployment: succeeded from the merged PR #78 checkpoint
+- Cloudflare Workers production build: succeeded for `teamsheet-fpl-gateway`
+- model/golden expectations: unchanged
+- calculation, provider and data-source behaviour: unchanged
+
+Transfers and Player Detail have populated iPhone acceptance evidence for the tested paths. Remaining populated live-acceptance work is Team first, followed by Fixtures and Leagues. VoiceOver is not a Teamsheet acceptance gate.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -61,14 +73,14 @@ FPL-T1 review verification completed **590/590 passing tests**, zero failures an
 32. `transfer-exact-correction.test.mjs` — the Track A correction. Controlled-pool equality with the independent `exhaustiveTransferSearch()` oracle across seven adversarial shapes (mixed, goalkeeper-only, cheap enablers, doubtful-heavy, exact price boundaries, inherited club excess and fully tied projections) at 45 deterministic seeds each; oracle equality at each fixed depth of one, two and three transfers; re-scoring every retained plan from its own final squad through the reviewed scorer; prefix-sum pool totals against the reviewed best-XI scoring; canonical bank, doubtful-count and signature tie-breaking on a fully tied pool; zero-transfer ranking agreement; Official-scale six-Gameweek completion below the unchanged 2,000,000 ceiling with `status: 'ok'`; deterministic Official-scale profiling; and Official-scale fail-closed behaviour when the ceiling is genuinely exceeded.
 33. `transfer-baseline-presentation.test.mjs` — Worker-result and cache regressions for a separately returned mandatory zero-transfer baseline when it falls outside the unchanged ranked Top K, plus fail-closed handling of a missing or malformed baseline.
 34. `team-resources-bench-clarity.test.mjs` — UX-A1 resource-bar adjacency and exact labels, honest manual provenance and edit route, compact-chip removal/non-duplication, separate exact bench roles, index-preserving order, two-line names, fixture/xP readability, complete accessible labels, Player Detail tapping and a presentation-only dependency guard.
-35. `player-detail-scroll-rotation.test.mjs` — UX-A2 dialog scroll behaviour. Exact background-offset capture on a fresh open and restoration on a normal close, proved against a simulated mobile-Safari lock that clamps the page to the top; root and body lock application and removal; internal scroll reset on every open; `preventScroll` focus on the close control and on the restored trigger; identical close/backdrop/Escape outcomes; player replacement while open preserving the original offset and trigger; route-driven close that unlocks but restores neither scroll nor focus; a no-op route change while closed; detached and hidden trigger rejection; documented viewport-property fallback; and the CSS contracts for flex scrolling with `min-height:0`, `vh` declared before `dvh`, compact-landscape full-height sizing, four-sided safe areas, the dialog-not-a-route boundary, no runtime inline styling and no data/model reach.
+35. `player-detail-scroll-rotation.test.mjs` — UX-A2 dialog scroll behaviour and PR #78 stacking regression. Exact background-offset capture on a fresh open and restoration on a normal close, proved against a simulated mobile-Safari lock that clamps the page to the top; root and body lock application and removal; internal scroll reset on every open; `preventScroll` focus on the close control and on the restored trigger; identical close/backdrop/Escape outcomes; player replacement while open preserving the original offset and trigger; route-driven close that unlocks but restores neither scroll nor focus; a no-op route change while closed; detached and hidden trigger rejection; documented viewport-property fallback; and the CSS contracts for flex scrolling with `min-height:0`, `vh` declared before `dvh`, compact-landscape full-height sizing, four-sided safe areas, **Player Detail layering above the fixed primary dock**, the dialog-not-a-route boundary, no runtime inline styling and no data/model reach.
 
 Two forms of Transfers evidence are deliberately separate. Oracle equality is proved only on controlled pools, where an exhaustive comparison is tractable. On the Official-scale pool the claim is only that the exact search completes below the unchanged ceiling and returns `status: 'ok'`; it is not an exactness proof, and a lower evaluation count is never presented as improved prediction accuracy.
 
 ## Teamsheet 2.0.6 merged verification
 The reviewed source `72bb55d484d3033a859ee51f2c3f3e7aa6bc55e6` passes **520/520 tests**, zero failures and zero skipped. New checks verify route-owned Settings destinations, explicit module hosts, warning materiality, Help/About content, identifier-free URLs and responsive Player Explorer metadata. A headless Chromium smoke check additionally exercises direct deep links, active Settings state, exact heading focus, Back restoration, dynamic module mounts, duplicate-ID absence and saved-core-data warning output. Production builds were deterministic, root `index.html` matched `dist/index.html`, and PR #65 merged at `cd1ad52ea4d13a247a82bc90f80f2db0b6f77aa4`.
 
-This evidence does not replace physical iPhone Safari, VoiceOver or live populated-data acceptance. Those remain explicit Teamsheet 2.0.7 acceptance limitations.
+This historical evidence does not replace physical iPhone Safari or live populated-data acceptance for untested features. VoiceOver is not a Teamsheet acceptance gate. Remaining feature-specific live acceptance is tracked under FPL-2.
 
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
@@ -124,15 +136,15 @@ Stage 10.5 adds deterministic fault-injection coverage for snapshot/outcome/metr
 ## Teamsheet 2.0.1 navigation verification
 The Teamsheet 2.0.1 baseline is **445/445 tests** with zero failures and zero skipped. Coverage verifies the exact five-destination order, URL aliases and safe fallback, browser-history wiring, `aria-current`, static link semantics, no account/key/evidence identities in routes, free transfers and bank on Team, Player Explorer under Research Tools, purpose-led Settings sections, direct evidence/provider shortcuts and Ask Teamsheet as a global/Team action rather than a sixth tab.
 
-Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. PR #48 is merged; its historical physical findings remain recorded, while populated-data transport is tracked separately and the complete end-to-end rehearsal remains deferred to Teamsheet 2.0.7.
+Automated checks cannot independently prove exact iPhone Safari rendering or thumb comfort. PR #48 is merged; its historical physical findings remain recorded, while populated-data transport is tracked separately and remaining feature acceptance is tracked under FPL-2.
 
 ## Teamsheet 2.0.1 physical-review regression coverage
-The navigation suite verifies the persistent global Ask composer and internal arrow, absence of global Data/Evidence pills, controlled SVG dock icons, one fixed five-column safe-area contract, keyboard visual-viewport recovery, invisible focus presentation for programmatically focused headings, and arrow-only Settings subsection navigation. Automated checks still cannot prove physical iPhone placement or populated FPL behaviour.
+The navigation suite verifies the persistent global Ask composer and internal arrow, absence of global Data/Evidence pills, controlled SVG dock icons, one fixed five-column safe-area contract, keyboard visual-viewport recovery, invisible focus presentation for programmatically focused headings, and arrow-only Settings subsection navigation. Automated checks still cannot prove every physical iPhone placement or populated FPL behaviour.
 
 ## Teamsheet 2.0.2 Team decision-home verification
 The final Teamsheet 2.0.2 merged baseline is **459/459 tests** with zero failures and zero skipped. Coverage verifies legal-15 gating, immediate placeholder/connected pitch structure, explicit provenance, base XI plus captain uplift arithmetic, deterministic material-risk priority, advisory/no-submission deadline wording, preview distinction, neutral ownership context, preserved routes and absence of model/optimiser/persistence calls from the presentation wrapper.
 
-Completion also required two byte-identical builds using the exact verified source commit, root/deployable equality and the existing CSP/build-identity suites. Automated checks cannot prove physical iPhone pitch position, text scaling, VoiceOver order or thumb comfort.
+Completion also required two byte-identical builds using the exact verified source commit, root/deployable equality and the existing CSP/build-identity suites. Automated checks cannot prove physical iPhone pitch position, text scaling or thumb comfort; Team remains first in the remaining populated live-acceptance plan. VoiceOver is not a Teamsheet acceptance gate.
 
 ## Teamsheet 2.0.4 Mini-League verification
 Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a520d92`. The verified source suite is **493/493 passing tests**. Coverage includes:
@@ -148,7 +160,7 @@ Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a5
 - iPhone-width wrapping/touch-target structure, route focus, live regions and reduced motion;
 - deterministic bundle ordering and unchanged model/rules boundaries.
 
-Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Automated tests do not prove real Official FPL availability, physical iPhone density or VoiceOver reading order. Physical testing of the actual repository build on an iPhone was not separately performed, VoiceOver acceptance was not performed, and live populated-data acceptance was not performed. The approved sample preview established design direction but was not equivalent to full repository-device acceptance.
+Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Automated tests do not prove real Official FPL availability or physical iPhone density. Physical testing of the actual repository build on an iPhone and live populated-data acceptance were not separately performed. VoiceOver is not a Teamsheet acceptance gate. The approved sample preview established design direction but was not equivalent to full repository-device acceptance.
 
 ## Teamsheet 2.0.5 Mini-League intelligence verification
 Teamsheet 2.0.5 is complete and merged through PR #63 at `0b04dd68194207d301667a7100c3ed804ec1e056`. The verified suite is **510 passed, 0 failed, 0 skipped**. Coverage verifies:
@@ -168,23 +180,23 @@ Teamsheet 2.0.5 is complete and merged through PR #63 at `0b04dd68194207d301667a
 
 Two production builds using the exact verified identity were byte-identical, root `index.html` equalled `dist/index.html`, model version remained `2.4.0`, and rules version remained `2026-27.3`.
 
-Physical testing of the actual repository build on an iPhone was not performed. VoiceOver acceptance was not performed. Live populated-data acceptance was not performed. Automated source, test and build evidence cannot prove those acceptance conditions.
+Physical testing of the actual repository build on an iPhone and live populated-data acceptance were not performed. VoiceOver is not a Teamsheet acceptance gate. Automated source, test and build evidence cannot prove the remaining device/live acceptance conditions.
 
 
 ## Teamsheet 2.0.7 implementation verification
 
-The approved implementation adds `final-mobile-polish.test.mjs` and updates existing presentation contracts for native controls, touch targets, restricted states, route focus/scroll, Player Detail route closure, Ask resilience, Fixture render isolation, table semantics and Transfers wording. The branch verification completed **533 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality for source commit `5a61ec5510c447580afa6070a5a9815516babe86`. Physical iPhone Safari, VoiceOver and live populated-data acceptance remain unperformed and must not be inferred from this automated evidence.
+Teamsheet 2.0.7 is complete and merged through PR #68. Its approved final-polish implementation added `final-mobile-polish.test.mjs` and updated presentation contracts for native controls, touch targets, restricted states, route focus/scroll, Player Detail route closure, Ask resilience, Fixture render isolation, table semantics and Transfers wording. The historical implementation branch completed **533 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality for source commit `5a61ec5510c447580afa6070a5a9815516babe86`. The Safari foreground-resume correction subsequently passed owner retest. VoiceOver is not a Teamsheet acceptance gate. Remaining populated live acceptance is tracked by feature rather than reopening 2.0.7.
 
 
 ## Safari foreground-resume correction verification
 
-Physical iPhone testing exposed an untested failure path: unsuccessful startup attempts did not start the automatic refresh cooldown, and foreground refreshes temporarily made the application inert. Regression coverage now verifies failed-attempt cooldown, hidden-page suppression, foreground interactivity and in-flight deduplication while preserving immediate manual refresh. Source `5a61ec5510c447580afa6070a5a9815516babe86` completed **533 passed, 0 failed, 0 skipped**, two byte-identical builds and root/deployable equality. Physical iPhone retesting remains an evidence gate.
+Physical iPhone testing exposed an untested failure path: unsuccessful startup attempts did not start the automatic refresh cooldown, and foreground refreshes temporarily made the application inert. Regression coverage verifies failed-attempt cooldown, hidden-page suppression, foreground interactivity and in-flight deduplication while preserving immediate manual refresh. The correction completed automated deterministic-build verification and then passed the owner's physical iPhone Safari app-switch retest before PR #68 was merged. `REFRESH-1` is closed.
 
 ## FPL-T1 gateway verification
-Gateway tests cover exact route/query allowlisting, CORS, unsupported methods, credential/header non-forwarding, cache boundaries, generic upstream failures and invalid JSON. Client transport tests cover configured/unconfigured behaviour, bounded retries, optional 404 handling, relay exclusion for Official FPL and retained optional Understat fallback. Completion additionally requires the full suite, deterministic two-build output, root/deployable equality, exact configured CSP origin and physical live-data iPhone acceptance.
+Gateway tests cover exact route/query allowlisting, CORS, unsupported methods, credential/header non-forwarding, cache boundaries, generic upstream failures and invalid JSON. Client transport tests cover configured/unconfigured behaviour, bounded retries, optional 404 handling, relay exclusion for Official FPL and retained optional Understat fallback. The owner-controlled gateway subsequently passed physical live-data iPhone transport acceptance and merged through PR #69. Feature-specific populated acceptance remains separately tracked under FPL-2.
 
 ## PR #69 populated-data regression coverage
-`live-preseason-regressions.test.mjs` verifies next-Gameweek public-picks derivation, no invented Gameweek, explicit unavailable/manual copy, missing-strength issue reporting, Official FPL difficulty fallback, finite neutral pre-season projections and unchanged activation of the normal strength model when all required fields are valid. Physical owner retest remains required because public pre-deadline picks availability is controlled by Official FPL.
+`live-preseason-regressions.test.mjs` verifies next-Gameweek public-picks derivation, no invented Gameweek, explicit unavailable/manual copy, missing-strength issue reporting, Official FPL difficulty fallback, finite neutral pre-season projections and unchanged activation of the normal strength model when all required fields are valid. The tested live transport/Transfers path subsequently passed owner acceptance; Team, Fixtures and Leagues remain separately listed under FPL-2.
 
 ## Truthful FDR fallback coverage
 The live pre-season regression suite verifies that missing strengths force the overall lens, the displayed run value is the direct average Official FPL difficulty, lower values sort as easier, higher values sort as harder, and valid-strength mode retains the established attacker/defender model contract. The correction does not activate historical data or change normal valid-input projections.
@@ -224,7 +236,7 @@ The correction removes runtime source rewriting entirely:
 
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
-The verified suite is **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Physical iPhone calculation duration, memory pressure and cancellation latency remain an acceptance gate, and Blob-Worker acceptance under the live Pages CSP is unproven until that device test.
+The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current repository baseline is the PR #78 **645-test** checkpoint at the top of this document.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 
@@ -242,12 +254,14 @@ VoiceOver was not tested and must not be claimed as physically verified. A final
 
 - Approved stack merged in order: PR #69 at `00a35bacd2396a125a8a914bff9980b4f18b257f`, PR #70 at `78b2729c51419a36c5e6f757fa54830100b5435c`, and PR #72 at `be742e1eb707b3892f6405adf5d8769e084eee65`.
 - The final `main` tree `3794e8e7ab9859717950296766dc9d64c9e5473f` exactly matches the verified PR #72 head tree, proving the merge introduced no file-content drift.
-- The accepted pre-merge gate remains **613 passed, 0 failed, 0 skipped**, with deterministic production builds and root/deployable equality. No new runtime test run is claimed after the merge; the tree-identity check ties `main` directly to that verified content.
+- The accepted pre-merge gate remains **613 passed, 0 failed, 0 skipped**, with deterministic production builds and root/deployable equality. No new runtime test run is claimed after the merge; the tree-identity check ties that merged checkpoint directly to the verified content.
 - Populated physical iPhone Safari passed the six-Gameweek exact calculation in about 15 seconds, result restoration, active navigation, cancel/restart, Safari background/return, stale-result protection, separate no-transfer comparison and final **No hit** wording.
 - VoiceOver was not tested and is not claimed.
 
 ## UX-A1 populated iPhone Safari owner test script
-Use a populated legal 15-player team and the production preview for the draft PR. Record portrait and landscape separately.
+**Completed and passed by the owner on 6 August 2026.** The script is retained as the reusable procedure for future Team resource/bench presentation changes.
+
+Use a populated legal 15-player team and the production deployment. Record portrait and landscape separately.
 
 1. Open Team in portrait with Safari's address bar expanded. Confirm **Free transfers** and **Money in bank** are readable without zoom and the resource bar sits directly above the pitch.
 2. Confirm the entered values are visually prominent, **Entered manually** is visible but secondary, and no compact conflicting FT/bank chip appears in the Team header.
@@ -258,10 +272,10 @@ Use a populated legal 15-player team and the production preview for the draft PR
 7. Confirm captain and vice-captain badges remain clear and are not crowded by the resource or bench changes.
 8. Repeat steps 1–7 with Safari's address bar collapsed.
 9. Rotate to landscape and repeat the resource, bench-role, long-name, fixture/xP and tap checks with both address-bar states where available.
-10. Record any overlap, clipped text, accidental tap, horizontal scroll or confusing duplicate value. VoiceOver is outside this UX-A1 device script and must remain recorded as not tested unless separately performed.
+10. Record any overlap, clipped text, accidental tap, horizontal scroll or confusing duplicate value. VoiceOver is outside this UX-A1 device script and is not a Teamsheet acceptance gate.
 
 ## UX-A2 populated iPhone Safari owner test script
-**Completed and passed by the owner on 6 August 2026.** Every step below passed. Step 10 initially exposed Safari automatically enlarging text on the return to portrait; root text-size adjustment is now fixed at 100% in the production stylesheet and the owner physically retested the corrected behaviour successfully, with scrolling and closing still intact. The script is retained below as the reusable procedure for future Player Detail changes.
+**Completed and passed by the owner on 6 August 2026.** Every step below passed. Step 10 initially exposed Safari automatically enlarging text on the return to portrait; root text-size adjustment is now fixed at 100% in the production stylesheet and the owner physically retested the corrected behaviour successfully, with scrolling and closing still intact. The script is retained below as the reusable procedure for future Player Detail changes. The later PR #78 dock-layering correction was separately physically accepted on 7 August 2026.
 
 Use a populated legal 15-player team and the production deployment. Record portrait and landscape separately, and repeat with Safari's browser controls expanded and collapsed.
 

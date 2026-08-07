@@ -1,6 +1,24 @@
 # UX-A2 Player Detail dock-layering follow-up
 
-Status: **Implemented, automatically verified, physically accepted on iPhone Safari and approved for merge.**
+Status: **Physically accepted and merged through PR #78.**
+
+This file is the authoritative canonical record for the PR #78 dock-layering correction. `UX-A2-MERGE-RECORD.md` remains authoritative for the preceding original PR #76 UX-A2 scroll-and-rotation checkpoint.
+
+## Merged checkpoint
+
+- pull request: #78, **Fix Player Detail layering above the primary dock**
+- merged `main`: `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`
+- accepted PR head: `d0b193aee88ad78e5206454d386b70bcec8b3d7c`
+- branch: `agent/ux-a2-player-detail-dock-layering`
+- base `main`: `2f2930de125cbb63600aa9514123f516d8b9e188`
+- verified implementation source: `44154da4190d35b6d6b747f537c19a060892bc14`
+- physical acceptance: populated iPhone Safari passed on 7 August 2026
+- automated result: **645 passed, 0 failed, 0 skipped, 0 cancelled**
+- deterministic production builds: passed
+- root/deployable equality: passed
+- GitHub Pages deployment: succeeded from the merged PR #78 checkpoint
+- Cloudflare Workers production build: succeeded for `teamsheet-fpl-gateway`
+- limitation status: `UI-14` closed
 
 ## Owner-reported defect
 
@@ -10,9 +28,6 @@ The defect was a stacking-order conflict rather than missing content padding: th
 
 ## Approved correction
 
-- branch: `agent/ux-a2-player-detail-dock-layering`
-- base `main`: `2f2930de125cbb63600aa9514123f516d8b9e188`
-- verified source commit: `44154da4190d35b6d6b747f537c19a060892bc14`
 - Player Detail backdrop: `z-index:1010`
 - Player Detail panel: `z-index:1011`
 - fixed primary dock: unchanged at `z-index:1000`
@@ -28,14 +43,9 @@ The backdrop now covers the dock and the panel remains above the backdrop. The e
 - root `index.html`: byte-identical to `dist/index.html`
 - golden/model expectations: unchanged
 
-### SHA-256 generated outputs
+### Generated-output identity
 
-```
-f9767d31bb0a5ed4d9dd4f32dd1a1f6869168905bf27a0528d94969a2c1806ab  dist/app.bundle.js
-ef5c649ef78a008b32d933aa7fe285433f7d3fa9ce4afa0a67bba7fce41f4ca4  dist/index.html
-e45bd5a60ceba14e3049c6a5197bb26a0946931f62eb218205377760c3d12caf  dist/manifest.json
-ef5c649ef78a008b32d933aa7fe285433f7d3fa9ce4afa0a67bba7fce41f4ca4  index.html
-```
+The merged PR verification demonstrated deterministic byte-identical production builds and root `index.html` equality with `dist/index.html`. A duplicated SHA-256 list previously recorded in this follow-up conflicted with the merged PR record, so that list is deliberately removed rather than treated as authoritative or replaced with guessed values. The deterministic-build and root/deployable-equality evidence above remains the canonical generated-output verification for this correction.
 
 ## Physical iPhone acceptance
 
@@ -43,6 +53,12 @@ On 7 August 2026, Pritesh retested the deployed populated preview in Safari and 
 
 The accepted check confirmed that the final projection line was no longer covered by the primary dock. The previously accepted Player Detail scrolling and rotation behaviour remained satisfactory. VoiceOver was not a project acceptance gate.
 
+## Merge and deployment result
+
+PR #78 subsequently merged to `main` at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`. GitHub Pages deployment succeeded from that merged checkpoint, and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`. The merge closes `UI-14`.
+
 ## Explicit exclusions
 
 No Player Detail information was removed or rearranged. No navigation sizing, route, projection, expected-minutes, fixture, scoring, squad, captaincy, simulation, transfer, rank, Mini-League, provider, data source, persistence, security, Cloudflare or Pages configuration changed.
+
+This correction does not approve UX-A3, Track B, a concise-Player-Detail redesign, provider changes, data-source changes or any model/calculation change.
