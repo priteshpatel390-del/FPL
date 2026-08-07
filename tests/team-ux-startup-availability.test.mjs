@@ -28,6 +28,7 @@ test('availability annotation covers both starting and bench cards without chang
   assert.match(TEAM_SOURCE,/const starterSlots=teamPitchLines\(xi\.xi\)\.flatMap\(line=>line\.players\)/);
   assert.match(TEAM_SOURCE,/\.team-pitch \.pitch-player/);
   assert.match(TEAM_SOURCE,/\.team-bench \.bench-grid \.bench-player/);
+  assert.match(TEAM_SOURCE,/const benchSlots=teamDecisionBenchDisplayOrder\(xi\.bench\)/);
   assert.match(TEAM_SOURCE,/class:`flag \$\{presentation\.className\} pitch-availability`/);
   assert.match(TEAM_SOURCE,/node\.setAttribute\('aria-label',`\$\{aria\}, \$\{presentation\.aria\}`\)/);
   assert.match(TEAM_SOURCE,/teamDecisionRelabelBench\(stage\);\s*teamDecisionAnnotateAvailability\(stage,xi\);/);
@@ -35,7 +36,7 @@ test('availability annotation covers both starting and bench cards without chang
 });
 
 test('availability badges cancel generic flag horizontal offset for centred Team cards',()=>{
-  assert.match(APP_SOURCE,/\.pitch-availability\{margin-left:0\}/);
+  assert.match(APP_SOURCE,/\.pitch-availability\{[^}]*display:block[^}]*width:fit-content[^}]*margin:3px auto 0[^}]*overflow-wrap:anywhere[^}]*\}/);
 });
 
 test('startup gate owns the application shell until the existing ready event',()=>{

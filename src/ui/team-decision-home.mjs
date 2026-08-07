@@ -109,6 +109,27 @@ function teamDecisionBenchLabel(index){
   return TEAM_DECISION_BENCH_LABELS[Number(index)]||`Sub ${Number(index)+1}`;
 }
 
+function teamDecisionBenchDisplayOrder(bench=[]){
+  const source=Array.isArray(bench)?bench:[];
+  const reserveGoalkeeper=source.find(slot=>Number(slot?.p?.element_type)===1)||null;
+  if(!reserveGoalkeeper) return source.slice();
+  return [reserveGoalkeeper,...source.filter(slot=>slot!==reserveGoalkeeper)];
+}
+
+function teamDecisionOrderBenchDisplay(stage,xi){
+  if(!stage?.querySelector||!xi) return;
+  const grid=stage.querySelector('.team-bench .bench-grid');
+  if(!grid) return;
+  const source=Array.isArray(xi.bench)?xi.bench:[];
+  const nodes=Array.from(grid.querySelectorAll('.bench-player'));
+  if(nodes.length!==source.length) return;
+  const nodeBySlot=new Map(source.map((slot,index)=>[slot,nodes[index]]));
+  for(const slot of teamDecisionBenchDisplayOrder(source)){
+    const node=nodeBySlot.get(slot);
+    if(node) grid.appendChild(node);
+  }
+}
+
 function teamDecisionRelabelBench(stage){
   if(!stage?.querySelectorAll) return;
   const players=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
@@ -148,7 +169,7 @@ function teamDecisionAnnotateAvailability(stage,xi){
   if(!stage?.querySelectorAll||!xi) return;
   const starterSlots=teamPitchLines(xi.xi).flatMap(line=>line.players);
   const starterNodes=Array.from(stage.querySelectorAll('.team-pitch .pitch-player'));
-  const benchSlots=Array.isArray(xi.bench)?xi.bench:[];
+  const benchSlots=teamDecisionBenchDisplayOrder(xi.bench);
   const benchNodes=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
   const annotate=(node,slot)=>{
     if(!node||!slot?.p) return;
@@ -409,7 +430,7 @@ function teamDecisionEnhanceRenderedTeam(){
   previewState=decisionPreviewSnapshot();
   const previewActive=Boolean(previewState.transfer||effectiveCaptaincy.isPreview);
   const action=teamDecisionAction({hasSquad:true,deadlinePassed:deadline.passed,previewActive,riskKind:risk.kind});
-  const bench=xi.bench.map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
+  const bench=teamDecisionBenchDisplayOrder(xi.bench).map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
   const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank});
@@ -420,6 +441,7 @@ function teamDecisionEnhanceRenderedTeam(){
   const previewBanner=children.find(node=>node.classList?.contains('decision-preview-banner'))||null;
   const controls=children.find(node=>node.classList?.contains('decision-preview-controls'))||null;
   const stage=children.find(node=>node.classList?.contains('team-stage'))||null;
+  teamDecisionOrderBenchDisplay(stage,xi);
   teamDecisionRelabelBench(stage);
   teamDecisionAnnotateAvailability(stage,xi);
   const captainHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim()==='Captaincy ranking')||null;
@@ -469,6 +491,8 @@ export {
   teamDecisionAction,
   teamDecisionCloseCaptainCopy,
   teamDecisionBenchLabel,
+  teamDecisionBenchDisplayOrder,
+  teamDecisionOrderBenchDisplay,
   teamDecisionAvailabilityPresentation,
   teamDecisionAnnotateAvailability,
   teamDecisionFocusResources,
