@@ -31,11 +31,8 @@ jobs:
             "const bench=teamDecisionBenchDisplayOrder(xi.bench).map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');")
 
           test_path='tests/team-resources-bench-clarity.test.mjs'
-          old="""  assert.match(teamSource,/teamDecisionOrderBenchDisplay\\(stage,xi\\);\\s*teamDecisionRelabelBench\\(stage\\);\\s*teamDecisionAnnotateAvailability\\(stage,xi\\);/);
-});"""
-          new="""  assert.match(teamSource,/teamDecisionOrderBenchDisplay\\(stage,xi\\);\\s*teamDecisionRelabelBench\\(stage\\);\\s*teamDecisionAnnotateAvailability\\(stage,xi\\);/);
-  assert.match(teamSource,/const bench=teamDecisionBenchDisplayOrder\\(xi\\.bench\\)\\.map\\(\\(slot,index\\)=>`\\$\\{teamDecisionBenchLabel\\(index\\)\\} \\$\\{slot\\.p\\.web_name\\}`\\)/);
-});"""
+          old="  assert.match(teamSource,/teamDecisionOrderBenchDisplay\\(stage,xi\\);\\s*teamDecisionRelabelBench\\(stage\\);\\s*teamDecisionAnnotateAvailability\\(stage,xi\\);/);"
+          new=old+"\n  assert.match(teamSource,/const bench=teamDecisionBenchDisplayOrder\\(xi\\.bench\\)\\.map\\(\\(slot,index\\)=>`\\$\\{teamDecisionBenchLabel\\(index\\)\\} \\$\\{slot\\.p\\.web_name\\}`\\)/);"
           replace_once(test_path,old,new)
           PY
 
