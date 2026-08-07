@@ -1,6 +1,6 @@
 # Team UX T-01 / T-02 implementation record
 
-Status: **Implementation, automated verification and physical T-01 acceptance complete. Owner approved to merge. Not yet merged.**
+Status: **Merged through PR #83; automated verification and owner physical iPhone Safari acceptance are complete for the Team follow-up sequence.**
 
 Date: 7 August 2026.
 
@@ -80,4 +80,16 @@ On 7 August 2026, physical iPhone Safari review of an unavailable bench player f
 
 A populated physical iPhone Safari review after PR #81 exposed two remaining presentation defects: the calculated bench array placed the reserve goalkeeper after outfield substitutes while UX-A1 labelled visual slot zero as `GK`, and the availability pill still did not own a reliably centred row. The approved correction is presentation-only: the reserve goalkeeper is moved to the first **displayed** bench slot while the three outfield substitutes retain their existing relative order; `bestXI()` and its calculated `bench` array are not changed or mutated. Availability now owns a block, intrinsic-width centred row for `Unavailable`, `Suspended` and `Doubtful`.
 
-Automated verification on the approved follow-up branch: **651 passed, 0 failed, 0 skipped, 0 cancelled**. Focused regressions prove the display-order helper returns a new array, leaves the calculated bench order intact, moves only the reserve goalkeeper to the visual `GK` slot, keeps availability annotation aligned with displayed order, and requires the availability pill's centred-row CSS contract. No projection, expected-minutes, scoring, fixture, captaincy, transfer, optimiser, simulation, provider or data-source formula is changed. Physical iPhone confirmation remains required before merge.
+Automated verification on the approved follow-up branch: **651 passed, 0 failed, 0 skipped, 0 cancelled**. Focused regressions prove the display-order helper returns a new array, leaves the calculated bench order intact, moves only the reserve goalkeeper to the visual `GK` slot, keeps availability annotation aligned with displayed order, and requires the availability pill's centred-row CSS contract. No projection, expected-minutes, scoring, fixture, captaincy, transfer, optimiser, simulation, provider or data-source formula is changed. That pending gate was subsequently completed after PR #83 deployment; see the final merged Team acceptance record below.
+
+
+<!-- TEAM-UX-FINAL-ACCEPTANCE-2026-08-07 -->
+## Final merged Team acceptance
+
+PR #80 merged at `99c02593026ddd9f9ac99a21c413e9c996cea31b`, PR #81 at `2df2ec1ae46c094f74b10307aba399f7dc8384fb`, PR #82 at `11102516f8bc2f9c5b81ffe4868f510aeb014a53`, and PR #83 at current `main` `385e5102c0e86e4b926503bffceba08bd6d831c3`. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity. That head and the merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for the merge commit succeeded.
+
+After deployment Pritesh physically accepted the populated Team path on iPhone Safari. The startup/loading screen owned the viewport; availability was visible for flagged players; the reserve goalkeeper was displayed in the `GK` bench slot; the three outfield substitutes retained their existing relative `1st` / `2nd` / `3rd` order; and Baleba's `Unavailable` badge was horizontally centred, remained on one line and did not overlap the player name, fixture or xP. The observed bench was Dúbravka — GK, Reinildo — 1st, Dasilva — 2nd and Baleba — 3rd.
+
+Normal Safari retained and displayed the manually saved squad. Safari Private Browsing has separate browser storage, so absence of that normal-Safari squad in a private tab is not currently classified as a Teamsheet persistence defect.
+
+No projection, expected-minutes, fixture, squad-selection, captaincy, transfer, Mini-League, provider, data-source or security behaviour changed in the Team presentation follow-ups. Team is therefore complete in the current populated live-acceptance sequence. **Fixtures is next, followed by Leagues.**

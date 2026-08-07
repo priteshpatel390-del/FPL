@@ -1,5 +1,8 @@
 # TESTING.md
 
+<!-- TEAM-ACCEPTANCE-2026-08-07 -->
+> **Current merged application checkpoint — Team populated acceptance complete:** PRs #80–#83 are merged, with current `main` `385e5102c0e86e4b926503bffceba08bd6d831c3` from PR #83. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity. The final PR head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for `385e5102c0e86e4b926503bffceba08bd6d831c3` succeeded. Pritesh then physically accepted the populated Team path on iPhone Safari: startup/loading owns the viewport; availability is visible; the reserve goalkeeper occupies `GK`; outfield substitutes retain `1st` / `2nd` / `3rd`; and `Unavailable` is centred on one line without overlap. Normal Safari retained the saved manual squad; Private Browsing uses separate browser storage and is not currently a Teamsheet persistence defect. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` is authoritative for this Team follow-up sequence. Remaining populated live acceptance is **Fixtures, then Leagues**. No calculation, provider, data-source or security behaviour changed.
+
 <!-- T02-BENCH-GK-AVAILABILITY-FOLLOW-UP-2026-08-07 -->
 > **T-02 bench/availability follow-up review:** physical iPhone evidence after PR #81 exposed a visual bench-role mismatch and incomplete availability centring. The approved review branch changes display ordering only: reserve GK first, then the pre-existing outfield bench order; `bestXI().bench` remains unchanged. Availability becomes its own centred intrinsic-width row. Verification is **651 passed, 0 failed, 0 skipped, 0 cancelled** before deterministic production-build verification. Final physical iPhone acceptance is pending.
 
@@ -31,19 +34,20 @@ Last updated: 2026-08-07. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
-The current merged application checkpoint is PR #78 at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`.
+The current merged application checkpoint is PR #83 at `385e5102c0e86e4b926503bffceba08bd6d831c3`.
 
-- `./run-tests.sh`: **645 passed, 0 failed, 0 skipped, 0 cancelled**
-- focused Player Detail scroll/rotation/dock-layering suite: **21 passed, 0 failed**
-- two production builds using the exact reviewed source identity: byte-identical
+- exact final PR #83 head: `990a85eb69319064038be458081d029d8a3b8828`
+- `./run-tests.sh`: **652 passed, 0 failed, 0 skipped, 0 cancelled**
+- two exact-identity production builds: byte-identical
 - root `index.html`: byte-identical to `dist/index.html`
-- populated physical iPhone Safari acceptance: passed for the tested PR #78 Player Detail correction path
-- GitHub Pages deployment: succeeded from the merged PR #78 checkpoint
-- Cloudflare Workers production build: succeeded for `teamsheet-fpl-gateway`
+- manifest build identity: exact to the verified PR head
+- final PR head and merge commit Git tree: `70b38bf4bf5b5bdb0f295fa6738554266441e62b`
+- GitHub Pages deployment: succeeded for exact merge commit `385e5102c0e86e4b926503bffceba08bd6d831c3`
+- populated physical iPhone Safari Team acceptance: passed on 7 August 2026 for startup ownership, availability visibility, reserve-GK display, preserved outfield bench order and the centred one-line `Unavailable` badge without overlap
 - model/golden expectations: unchanged
 - calculation, provider and data-source behaviour: unchanged
 
-Transfers and Player Detail have populated iPhone acceptance evidence for the tested paths. Remaining populated live-acceptance work is Team first, followed by Fixtures and Leagues. VoiceOver is not a Teamsheet acceptance gate.
+Transfers, Player Detail and Team have populated iPhone acceptance evidence for the tested paths. Remaining feature-specific live acceptance is **Fixtures, then Leagues**. VoiceOver is not a Teamsheet acceptance gate.
 
 ## Suites
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
