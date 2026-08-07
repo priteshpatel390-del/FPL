@@ -297,3 +297,7 @@ Use a populated legal 15-player team and the production deployment. Record portr
 13. Open Player Detail and press browser Back once.
 14. Confirm one Back press leaves the previous underlying route — no second Back needed, no stale scroll jump and no Player Detail URL.
 15. Record any clipped close button, unreachable content, background jump, wrong restored position, horizontal scroll or rotation glitch. VoiceOver is outside this script; it is not a Teamsheet acceptance gate.
+
+## T-02 availability-badge centring follow-up — 7 August 2026
+
+Physical iPhone Safari review exposed a right-shifted standalone availability badge caused by the generic `.flag` horizontal margin. The follow-up regression is required to fail before the centring override and pass after `.pitch-availability{margin-left:0}` is applied. Full-suite and deterministic-build evidence is recorded on the follow-up pull request.

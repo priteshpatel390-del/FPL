@@ -34,6 +34,10 @@ test('availability annotation covers both starting and bench cards without chang
   assert.doesNotMatch(TEAM_SOURCE,/bestXI\s*=|teamPitchCaptaincy\s*=|xpOf\s*=/);
 });
 
+test('availability badges cancel generic flag horizontal offset for centred Team cards',()=>{
+  assert.match(APP_SOURCE,/\.pitch-availability\{margin-left:0\}/);
+});
+
 test('startup gate owns the application shell until the existing ready event',()=>{
   assert.match(TEAM_SOURCE,/document\.querySelector\('header'\),document\.querySelector\('main'\),document\.querySelector\('nav\.tabs'\)/);
   assert.match(TEAM_SOURCE,/node\.hidden=Boolean\(owned\);\s*node\.inert=Boolean\(owned\);/);
