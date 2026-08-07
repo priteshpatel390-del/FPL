@@ -1,5 +1,9 @@
 # ROADMAP.md — living roadmap
 
+<!-- UX-A2-DOCK-LAYERING-ROADMAP-2026-08-07 -->
+> **Approved UX-A2 follow-up in draft review:** `agent/ux-a2-player-detail-dock-layering` fixes only the Player Detail/modal stacking conflict above the fixed primary dock. Automated verification is **645 passed** with deterministic builds. Populated physical iPhone Safari confirmation and explicit merge approval remain outstanding. UX-A3, Track B and all model/provider work remain unapproved.
+
+
 <!-- UX-A2-2026-08-06 -->
 > **Current merged checkpoint — UX-A2 Player Detail Scroll and Rotation Correction:** complete and merged through PR #76 to `main` at `bffcba8e9231adfc216125913f8ab83c042c3e10` from approved branch head `ad1dd4611c042591a3f03dea77a1a9b59101d9ba`, based on verified `main` `2738a0500b9be20a723f0940df0a93766b29c05d`. Scope is behaviour correction only: internal Player Detail scrolling, root plus body scroll locking, exact background-position restoration on normal close, route-safe unlocking without stale restoration, viewport-height fallback before `dvh`, compact-landscape sizing, four-sided safe areas, focus handling with `preventScroll` and root text-size adjustment fixed at 100% against Safari rotation text inflation. Player Detail content is unchanged. Automated evidence is **644 passed, 0 failed, 0 skipped** plus deterministic exact-identity builds and root/deployable equality. **Populated physical iPhone Safari acceptance passed on 6 August 2026**, including a successful retest of the corrected rotation behaviour; `UI-13` is closed. Making Player Detail more concise is a separate future proposal, not part of UX-A2. UX-A3 and Workstream B remain unapproved. See `UX-A2-MERGE-RECORD.md`, `UX-A2-ACCEPTANCE.md` and `UX-A2-SCOPE.md`.
 

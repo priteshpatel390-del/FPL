@@ -297,6 +297,22 @@ test('safe areas are respected on all four sides',()=>{
     assert.match(detailCss,new RegExp(`env\\(safe-area-inset-${side}`),`missing safe-area-inset-${side}`);
 });
 
+
+test('Player Detail layers above the fixed primary dock so final content cannot be covered',()=>{
+  const numericZIndex = (css,label) => {
+    const match = /(?:^|;)z-index:(\d+)/.exec(css);
+    assert.ok(match,`expected numeric z-index for ${label}`);
+    return Number(match[1]);
+  };
+  const navRules = [...app.matchAll(/(?:^|\n)nav\.tabs\{([^}]*)\}/g)].map(match => match[1]);
+  assert.ok(navRules.length >= 1,'expected primary dock CSS');
+  const dockZIndex = Math.max(...navRules.map((rule,index) => numericZIndex(rule,`primary dock rule ${index + 1}`)));
+  const backdropZIndex = numericZIndex(ruleBody(detailCss,'.player-detail-backdrop'),'Player Detail backdrop');
+  const panelZIndex = numericZIndex(ruleBody(detailCss,'.player-detail-panel'),'Player Detail panel');
+  assert.ok(backdropZIndex > dockZIndex,'the modal backdrop must cover the fixed primary dock');
+  assert.ok(panelZIndex > backdropZIndex,'the modal panel must sit above its backdrop');
+});
+
 // The physical iPhone Safari review found the first portrait → landscape →
 // portrait cycle left the text permanently enlarged: Safari applies automatic
 // text inflation at the root document on rotation. Fixing the root text size

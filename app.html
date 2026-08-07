@@ -165,8 +165,8 @@ details summary{display:flex;align-items:center;min-height:44px;cursor:pointer;f
 
 /* player detail sheet / panel */
 html.player-detail-open,body.player-detail-open{overflow:hidden;overscroll-behavior:none}
-.player-detail-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,20,13,.46);backdrop-filter:blur(2px);overscroll-behavior:contain;touch-action:none}
-.player-detail-panel{position:fixed;z-index:39;left:0;right:0;bottom:0;max-height:min(88vh,780px);max-height:min(88dvh,780px);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column;overscroll-behavior:contain}
+.player-detail-backdrop{position:fixed;inset:0;z-index:1010;background:rgba(8,20,13,.46);backdrop-filter:blur(2px);overscroll-behavior:contain;touch-action:none}
+.player-detail-panel{position:fixed;z-index:1011;left:0;right:0;bottom:0;max-height:min(88vh,780px);max-height:min(88dvh,780px);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 55px rgba(8,20,13,.28);display:flex;flex-direction:column;overscroll-behavior:contain}
 .player-detail-panel[hidden],.player-detail-backdrop[hidden]{display:none}
 .player-detail-grip{flex:0 0 auto;width:42px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 2px}
 .player-detail-top{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 16px 12px;padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}

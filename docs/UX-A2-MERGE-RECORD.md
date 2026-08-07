@@ -91,3 +91,9 @@ a scroll or rotation defect. It was deliberately excluded from UX-A2 and require
 own investigation, exact scope and explicit approval before any work begins.
 
 UX-A3 and Track B remain unapproved and must not start.
+
+## Post-merge dock-layering follow-up — draft review
+
+<!-- UX-A2-DOCK-LAYERING-FOLLOW-UP-2026-08-07 -->
+
+On 7 August 2026, Pritesh found that the fixed primary dock could cover the final Player Detail projection line even though UX-A2 scrolling and rotation otherwise worked correctly. The approved branch `agent/ux-a2-player-detail-dock-layering` raises only the existing modal layers above the unchanged dock. Automated verification is **645 passed** with deterministic builds. This follow-up is not merged and populated physical iPhone Safari confirmation remains pending; the historical UX-A2 merge facts above remain unchanged.
