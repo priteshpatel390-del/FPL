@@ -21,6 +21,7 @@ const noteNode = (kind, ...children) => elNode('div',{class:`note${kind ? ' '+ki
 function renderTicker(){
   const warning=renderRouteDataWarning('fixtureDataWarning',{showUnavailable:true});
   if(!S.fixtures){
+    setChildren($('fixtureModeNote'));
     if(warning.kind==='unavailable') setChildren($('ticker'),elNode('div',{class:'empty'},elNode('strong',{},'Fixtures are unavailable'),'Refresh Official FPL data before using the fixture view.'));
     return;
   }
@@ -42,7 +43,7 @@ function renderTicker(){
   if(sort === 'ease' || sort === 'hard') teams.sort((a,b) => compareFixtureRunScores(a.s,b.s,sort,lens));
   else teams.sort((a,b) => a.t.name.localeCompare(b.t.name));
 
-  const header = elNode('tr',{},head('Team','tm'));
+  const header = elNode('tr',{},head('Team','tm team'));
   for(let gw = from; gw < from+span; gw++) header.appendChild(head(`GW${gw}`));
   const body = elNode('tbody');
   teams.forEach(({t,s}) => {
@@ -60,12 +61,11 @@ function renderTicker(){
     });
     body.appendChild(row);
   });
-  const tickerNodes = [];
-  if(lensState.fallback) tickerNodes.push(noteNode('plain',
+  if(lensState.fallback) setChildren($('fixtureModeNote'),noteNode('plain',
     elNode('b',{},'Overall FPL difficulty.'),
     ' Lower is easier. Official FPL currently supplies one overall 1–5 rating, so separate attacker and defender lenses are hidden until genuine team-strength inputs are available.'));
-  tickerNodes.push(elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
-  setChildren($('ticker'),tickerNodes);
+  else setChildren($('fixtureModeNote'));
+  setChildren($('ticker'),elNode('table',{class:'ticker'},elNode('caption',{class:'sr-only'},`Fixture difficulty from GW${from} across ${span} Gameweeks`),elNode('thead',{},header),body));
 
   const swings = Object.values(S.teams).map(t => {
     const now = runScore(t.id, from, 3, lens), later = runScore(t.id, from+3, 3, lens);

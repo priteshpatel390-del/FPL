@@ -80,13 +80,14 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,2
 .tab{text-decoration:none;min-width:0}.tab-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .view[hidden],.settings-subview[hidden],#settingsLanding[hidden]{display:none}
 
-.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;margin:0 -16px;padding:0 16px}
+.ticker-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;margin:0;padding:0;isolation:isolate}
 table.ticker{border-collapse:separate;border-spacing:4px;min-width:100%}
 table.ticker th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-soft);font-weight:500;text-align:center;padding-bottom:2px;white-space:nowrap}
 table.ticker th.tm{text-align:left;padding-left:2px}
 td.team,th.team{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;padding-right:6px;
-  position:sticky;left:0;background:var(--panel);z-index:2}
+  position:sticky;left:0;background:var(--panel);z-index:2;box-shadow:-8px 0 0 var(--panel),8px 0 8px -8px rgba(20,38,28,.28)}
+table.ticker thead th.team{z-index:3}
 td.team .ease,th.team .ease{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10px;color:var(--ink-soft)}
 .cell{min-width:48px;min-height:38px;border-radius:7px;color:#fff;text-align:center;font-family:'IBM Plex Mono',monospace;
   font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;
@@ -686,7 +687,7 @@ h2[tabindex="-1"]:focus{outline:none}
   <section class="view panel" id="view-fixtures">
     <span class="eyebrow">Signature view</span>
     <h2>Fixtures</h2>
-    <p class="hint">Difficulty from the model's own attack/defence ratings, not the official 1–5. Switch the lens to see who fixtures favour.</p>
+    <p class="hint">Compare upcoming fixture difficulty across gameweeks. Teamsheet uses validated attack/defence strength ratings when available, otherwise Official FPL's 1–5 difficulty.</p>
     <div id="fixtureDataWarning"></div>
     <div class="row mb-12">
       <label class="fld">From GW<input type="number" id="fxFrom" min="1" max="38" class="input-w-72"></label>
@@ -700,6 +701,7 @@ h2[tabindex="-1"]:focus{outline:none}
       </label>
       <label class="fld">Sort<select id="fxSort"><option value="ease">Easiest run</option><option value="hard">Hardest run</option><option value="name">Team A–Z</option></select></label>
     </div>
+    <div id="fixtureModeNote"></div>
     <div class="ticker-wrap"><div id="ticker"></div></div>
     <div class="legend">
       <span><i class="swatch swatch-fdr1"></i>1 easiest</span>
