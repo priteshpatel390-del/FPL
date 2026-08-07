@@ -1,0 +1,74 @@
+name: Verify Teamsheet
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Tests and deterministic build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Confirm runtime and revision
+        run: |
+          set -eu
+          node --version
+          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          echo "Verifying $BUILD_COMMIT"
+
+      - name: Run complete test suite
+        run: |
+          set -eu
+          ./run-tests.sh
+
+      - name: Capture first exact-identity production build
+        run: |
+          set -eu
+          node build.mjs
+          rm -rf /tmp/teamsheet-build-a
+          mkdir -p /tmp/teamsheet-build-a/dist
+          cp dist/app.bundle.js /tmp/teamsheet-build-a/dist/app.bundle.js
+          cp dist/index.html /tmp/teamsheet-build-a/dist/index.html
+          cp dist/manifest.json /tmp/teamsheet-build-a/dist/manifest.json
+          cp index.html /tmp/teamsheet-build-a/index.html
+
+      - name: Rebuild and verify deterministic bytes
+        run: |
+          set -eu
+          node build.mjs
+          cmp /tmp/teamsheet-build-a/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/teamsheet-build-a/dist/index.html dist/index.html
+          cmp /tmp/teamsheet-build-a/dist/manifest.json dist/manifest.json
+          cmp /tmp/teamsheet-build-a/index.html index.html
+          cmp dist/index.html index.html
+
+      - name: Verify build identity
+        run: |
+          set -eu
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); console.log('Manifest commit verified:',m.commit);"
+
+      - name: Verification summary
+        run: |
+          echo '### Teamsheet verification passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Revision: \`$BUILD_COMMIT\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Complete test suite: passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Two exact-identity production builds: byte-identical' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Root index.html equals dist/index.html' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Manifest build identity: exact' >> "$GITHUB_STEP_SUMMARY"
