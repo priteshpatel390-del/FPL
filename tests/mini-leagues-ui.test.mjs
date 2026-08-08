@@ -109,6 +109,13 @@ test('standings use full-row touch and keyboard actions with a quiet trailing af
   excludesAll(standings,["miniLeagueButton('Compare'"]);
 });
 
+test('Manage leagues distinguishes Official FPL memberships from manual additions and only confirmed manual rows are removable',()=>{
+  const manageStart=view.indexOf('function renderLeagueManageList');
+  const manage=view.slice(manageStart,view.indexOf('function renderMiniLeagues(',manageStart));
+  includesAll(manage,["const membershipKnown=Array.isArray(S.entry?.leagues?.classic)","official=Boolean(miniLeagueMembership(row.id))","official?'Official FPL league':membershipKnown?'Added manually':'Saved league'","if(membershipKnown&&!official) actions.push","miniLeagueButton('Remove'"]);
+  excludesAll(manage,["'Saved locally'"]);
+});
+
 test('new modules are in the deterministic bundle before the startup view',()=>{
   const stateIndex=build.indexOf("'src/ui/mini-leagues-state.mjs'");
   const viewIndex=build.indexOf("'src/ui/mini-leagues-view.mjs'");
