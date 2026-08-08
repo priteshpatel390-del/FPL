@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last updated: 2026-08-04. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last reconciled: 2026-08-08. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -8,6 +8,7 @@ app.html                UI shell/template
 build.mjs               deterministic bundler and CSP emitter
 build-utils.mjs         tested static import/export stripping and module-syntax guard
 run-tests.sh            production build + complete node:test suite
+index.html              generated GitHub Pages deployment copy; never hand-edit
 src/
   config.mjs            model/rules versions and FPL, minutes, scoring, transfer, simulation, odds rules
   util.mjs              shared parsing and DOM-builder primitives
@@ -22,6 +23,7 @@ src/
     simulation.mjs      seeded player uncertainty, minutes states and percentiles
     squad-simulation.mjs legal auto-subs, captain fallback and squad distributions
     transfers.mjs       exact 0–3 transfer optimiser and its position-quota search machinery
+    xp.mjs              import-compatible re-export shim; deliberately excluded from the flat bundle
     walk-forward.mjs    chronological evaluation and fold-only calibration
     archive-replay.mjs  pinned historical replay
     backtest.mjs        historical evaluation utilities
@@ -33,17 +35,27 @@ src/
   squad.mjs             squad helpers and deterministic best-XI selection
   main.mjs              load orchestration; evidence capture can explicitly await optional providers
   ui/
+    app-shell.mjs       hash router, primary shell, Settings hierarchy and route focus/history
     data-warning.mjs    consequence-led core Official FPL warning classification and rendering
+    team-decision-home.mjs accepted decision-first Team presentation layered over the legacy renderer
+    team-pitch.mjs      visual pitch/player primitives
+    player-detail.mjs   dialog lifecycle, focus, scroll and route-safe closing
+    transfer-performance.mjs application-scoped Worker controller and sole Transfers renderer
+    transfer-optimiser-view.mjs Transfers presentation helpers and assumption state
     evidence.mjs        phone-first snapshot status with explicit export/recovery/storage hosts
     outcomes.mjs        non-blocking outcome orchestration, bounded revisions and recovery-only restore
     metrics.mjs         metric storage, correction processing, transfer-horizon completion and descriptive reporting
     review.mjs          phone-first operating review controls and JSON/Markdown/CSV downloads
     mini-leagues-state.mjs versioned local League/rival choice state
-    mini-leagues-view.mjs standings, pairwise comparison and selected-rival exposure
-    ...                 app shell, Settings/Provider Health presentation, team-pitch helpers, player-detail controller, session-only decision-preview state, views, restricted Markdown and security wiring
+    mini-leagues-view.mjs all-league hub, selected-league detail, standings, pairwise comparison and selected-rival exposure
+    views.mjs           legacy/general screen rendering and composition boundary
+    ...                 decision previews, manual squad routing, restricted Markdown, downloads, recovery and security wiring
 tests/                  characterisation, model, simulation, provider, security, evidence, metric and build tests
-docs/                   canonical project records
+docs/                   canonical guidance plus indexed historical project records
 dist/                   generated deployable; never hand-edit
+workers/                separately deployed, allowlisted Official FPL Cloudflare gateway
+.github/workflows/      permanent exact-revision pull-request verification
+tools/split.py          historical Stage 2 splitter; not part of the current build path
 ```
 
 ## Dependency flow

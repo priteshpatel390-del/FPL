@@ -1,6 +1,6 @@
 # DATA_SOURCES.md
 Purpose: reference for every external source. Audience: provider work, Stage 3+.
-Last updated: 2026-07-26. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
+Last reconciled: 2026-08-08. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
 this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DECISIONS D-05/D-06/D-09/D-10.
 
 ## Official FPL API — foundation
@@ -10,30 +10,37 @@ provider and every response still passes the existing validators. The browser se
 arbitrary upstream URL. Bootstrap and unfiltered fixtures may use a five-minute shared edge cache; manager,
 picks, histories, leagues and outcomes are no-store initially. Fallback: verified device cache with age labelling,
 otherwise restricted mode. Schema stability: medium (undocumented; validate at runtime from Stage 3).
-Licensing: unofficial, tolerated. The production Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev`, the app uses its exact `/fpl` base and live 2026/27 bootstrap transport was verified on physical iPhone Safari. Full populated application acceptance remains pending under FPL-2.
+Licensing: unofficial, tolerated. The production Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev`, the app uses its exact `/fpl` base and live 2026/27 bootstrap transport was verified on physical iPhone Safari. Transfers, Player Detail, Team and Fixtures tested paths are accepted, as is the Leagues pre-season path. Published post-Gameweek League rank/standings/rival evidence remains deferred under FPL-2/ML-3.
+
+Detailed expected-minutes history uses `/element-summary/{id}/` for a bounded eligible cohort (currently up to 80 detailed players) and stores a separate versioned device cache. The configured seven-day cache age is not currently a runtime request-suppression gate, so an eligible verified refresh can request the cohort again. Any freshness/load change requires the separate provider/data checkpoint in `ROADMAP.md`.
 
 ## Understat — team form layer only (D-05)
 Purpose: last-6 team xG/xGA multipliers, 45% blend vs FPL strengths. Authority: medium (own xG
 model; NOT comparable to Opta figures — never mix at player level). Transport: relay scrape of
 embedded teamsData JSON — fragile. Licensing: ToS-grey; owner-approved continue-at-reduced-cadence
-pending ablation. Refresh target: after completed matches only. Fallback: FPL strengths, confidence
-reduced. Future: survives only if Stage-7 ablation shows out-of-sample gain; ClubElo evaluated as
-prior/anchor alternative (D-10).
+pending ablation. Current runtime behaviour: when enabled, Understat is attempted during the verified
+refresh cycle; an after-completed-matches freshness gate is a desired policy, not an implemented one.
+Fallback: FPL strengths, confidence reduced. Future: survives only if prospective ablation shows
+out-of-sample value; ClubElo remains an unimplemented prior/anchor candidate (D-10).
 
 ## The Odds API — market layer
 Purpose: h2h+totals (UK region) → devigged, outlier-filtered, staleness-cut market-implied team
 goals; 65% blend where a fixture is confidently quoted (weight unvalidated — D-09). Authority: high.
 Transport: DIRECT ONLY (D-06/SEC-1) — key never relayed. Licensing: clean. Quota: 500 credits/mo,
-2/call ≈ 250 calls → refresh few×/day + pre-deadline only (never per-load polling). Schema: stable;
+2/call ≈ 250 calls. Current runtime behaviour: configured Odds is attempted during the verified
+refresh cycle; the intended few-times-per-day/pre-deadline cadence is not yet enforced by a separate
+freshness gate. Schema: stable;
 per-event provenance retained (id, kickoff, fetchedAt, books, markets, confidence). Matching: teams
 + kickoff proximity (72h). Fallback: internal team model, reduced confidence. Historical: none on
 free tier → prospective logging from GW1 2026-27 (ODDS-2).
 
 ## vaastav historical archive
 Purpose: per-GW per-player CSVs for backtesting/calibration. Transport: raw.githubusercontent,
-direct, CORS-open, user-initiated download with progress. Reproducibility: medium until pinned
-(BT-1). Licensing: public community dataset; attribute in README. Immutable-once-downloaded caching
-planned (Stage 7).
+direct, CORS-open, user-initiated download with progress. The 2025/26 dataset is pinned to commit
+`f9ed3e8839b0f970e0d5d4a83c5628f6eaee755a`; the downloaded bytes receive a runtime SHA-256 identity
+that is retained with replay provenance. Licensing: public community dataset. Stage 7 chronological
+replay is implemented; BT-1 is closed. The archive remains a historical diagnostic rather than a
+substitute for genuine pre-deadline provider snapshots.
 
 ## Storage (window.storage / localStorage)
 Config, manual squad, saved leagues, calibration, cache envelope. Never stores Anthropic keys
@@ -53,11 +60,11 @@ in `src/providers/validate.mjs`; issues land on `S.dataIssues`.
 |---|---|---|---|---|---|
 | fpl | `/bootstrap-static/` | `slim()`, `hydrate()` | object with `events[]`, `teams[]`, `elements[]`, `element_types[]` | not an object; any of the four collections missing or not an array | rows that are not objects or lack an `id`; duplicate `id` (first kept) |
 | fpl | `/fixtures/` | `hydrate()` → ticker, projections, chips | array | not an array | duplicate/conflicting/unidentifiable rows (D-13) |
-| fpl | `/entry/{id}/` | `loadAll`, squad + header views | object; `name` read for display | not an object | `name` missing (not manufactured) |
+| fpl | `/entry/{id}/` | `loadAll`, squad/header and Leagues hub | object; `name` read for display; optional `leagues.classic[]` rows require `id` + `name`; optional published ranks are numeric-like | not an object | display name, classic membership row or optional rank fields invalid; unusable rows/fields are dropped, not manufactured |
 | fpl | `/entry/{id}/event/{gw}/picks/` | `mySquad()` | object with `picks[]`, rows having `element` + `position` | not an object; `picks` missing or not an array | invalid rows; duplicate `element` (first kept) |
 | fpl | `/entry/{id}/history/` | chip list | object; `chips[]` optional | not an object | `chips` present but wrong type (emptied); chip rows without `name` |
 | fpl | `/leagues-classic/{id}/standings/` | league comparison | object with `standings.results[]`, rows having `entry` | not an object; `standings.results` missing | invalid rows; duplicate `entry` (first kept) |
-| fpl | rival picks (pooled, same shape) | effective ownership | as picks above | per-response only — never blocks the panel | collapsed across the pool |
+| fpl | explicitly selected rival picks (same shape) | pairwise comparison and selected-rival exposure | as picks above, plus validated optional multiplier/captain/vice/chip context | per-response only — never blocks League standings | incomplete/stale/unavailable rivals remain explicit and are excluded from fresh complete denominators |
 | understat | `league/EPL` (+ prior season) | team xG blend | object map of team → `{title, history[]}` | not an object; no usable teams (→ FPL ratings fallback) | individual unusable teams dropped |
 | odds | `v4/sports/soccer_epl/odds` | market blend | array of events with string `home_team`/`away_team`, `bookmakers` absent or an array | not an array (→ internal model fallback) | unusable events dropped, remainder still priced |
 | archive | `merged_gw.csv` | `computeBacktest()` | header row containing name, position, minutes, total_points, GW | missing header or required columns | — (row-level guards remain inline; see VAL-3) |
@@ -131,17 +138,17 @@ The live Google Sheet is an optional manual destination for selected CSV imports
 ## Stage 10.5 data-source boundary
 Stage 10.5 changes no provider, transport, endpoint, validation threshold or source allowlist. Recovery and metrics operate only on existing validated immutable records. Google Sheets remains a manual analysis destination and is not a provider or authoritative evidence source.
 
-## Teamsheet 2.0.4 Official FPL League field contract
+## Current Official FPL League field contract
 
 No provider or network origin is added. The existing Official FPL endpoints are consumed more deliberately:
 
 | Endpoint | 2.0.4 fields used | Behaviour |
 |---|---|---|
-| `/entry/{id}/` | `name`, overall points/rank where supplied, `leagues.classic[].{id,name,entry_rank,entry_last_rank}` | Discover public classic leagues and locate the manager without scanning every page. Invalid membership rows are dropped and reported. |
+| `/entry/{id}/` | `name`, overall points/rank where supplied, `leagues.classic[].{id,name,league_type,entry_rank,entry_last_rank}` | Build the no-fan-out all-league hub, distinguish invitational/general membership when supplied and locate the manager without scanning standings. Invalid membership rows/rank fields are dropped or degraded and reported. Unpublished rank is `Not ranked yet`, never a fabricated position. |
 | `/leagues-classic/{id}/standings/?page_standings={page}` | `league.name`, `standings.results[].{entry,entry_name,player_name,rank,last_rank,total,event_total}`, `has_next` | Official current table, movement and simple points gaps. Page 1 and pages around the official rank load first; further pages are user requested. |
 | `/entry/{id}/event/{gw}/picks/` | `picks[].{element,position,multiplier,is_captain,is_vice_captain}`, `active_chip` | On-demand selected-rival squad, captaincy and exact set comparison. No league-wide fan-out. |
 
-League names/IDs, selected rivals and pins persist locally under `fpl:mini-leagues` version 1. Standings, points and rival squads are session-only and are not model inputs, Stage 10 evidence or exports. Public endpoint failure preserves only a clearly labelled in-session stale result where one exists; no value is manufactured.
+League names/IDs, primary/selected choice, selected rival, pins and the explicitly confirmed at-most-five comparison group persist locally under `fpl:mini-leagues` version 2. Standings, points, rival squads and derived exposure are session-only and are not model inputs, Stage 10 evidence or exports. Opening the hub makes no standings request. Connected Official FPL memberships cannot be misleadingly removed locally; only a league confirmed absent from the connected entry is labelled manually added and removable. Public endpoint failure preserves only a clearly labelled in-session stale result where one exists; no value is manufactured.
 
 ## Teamsheet 2.0.5 selected-rival exposure contract
 

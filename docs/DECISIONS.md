@@ -1,6 +1,8 @@
 # DECISIONS.md — Architectural decision record
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-08-04. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
+Last updated: 2026-08-08. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
+
+ID reconciliation note: on 8 August 2026 the later duplicate `D-36` and `D-37` labels were reassigned to `D-38` and `D-39`. The underlying decision dates, wording and meaning are unchanged.
 
 **D-01 · 2026-07-26 · Accepted · Single-file deployable on GitHub Pages retained (Stage 2 prep)**
 Reason: owner deploys from a phone; one-file upload is the only friction-free path. Alternatives: Netlify Drop, Cloudflare Pages (deferred, see D-08), Claude-artifact-only (blocked network). Consequences: no server code, no headers (frame-ancestors ineffective), meta-CSP only, relays needed.
@@ -184,7 +186,7 @@ Approach: timestamp every completed refresh attempt for the existing ten-minute 
 
 Consequences: this is refresh orchestration and interaction behaviour only. It changes no provider, endpoint, data source, model, fixture, scoring, squad, captaincy, simulation, optimiser, rank, Mini-League, persistence or security logic. Physical iPhone retesting remains required.
 
-**D-36 · 2026-08-05 · Accepted · Teamsheet 2.0.7 merge with explicit limitation disposition**
+**D-38 · 2026-08-05 · Accepted · Teamsheet 2.0.7 merge with explicit limitation disposition**
 
 Reason: PR #68 passed 533 tests, deterministic builds and physical Safari foreground-resume retest. VoiceOver remained unverified and live populated-data acceptance was externally blocked by FPL-1.
 
@@ -230,7 +232,7 @@ Consequences: no projection, minutes, scoring, fixture, captaincy, squad, afford
 **Decision:** user-facing FPL information must be simple, relevant and immediately understandable. A zero transfer-points cost is displayed as **“No hit”**, never as the mathematically awkward **“−0”**. Paid transfer costs retain their actual deduction, such as **“−4”** or **“−8”**. This is a presentation rule only and does not alter optimiser values, scoring or ranking.
 
 
-**D-37 · 2026-08-07 · Accepted · Leagues opens with an all-league hub before selected-league detail**
+**D-39 · 2026-08-07 · Accepted · Leagues opens with an all-league hub before selected-league detail**
 
 Reason: populated iPhone review showed that opening Leagues directly into one preselected league hides the user's competitive context across their other leagues. The owner wants the first Leagues screen to resemble Official FPL's league directory: every league visible at a glance, then deeper information after choosing one.
 
