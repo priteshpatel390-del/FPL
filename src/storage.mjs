@@ -3,7 +3,8 @@ import { SCHEMA_VERSION } from './config.mjs';
 /* ---------------------------------------------------------------------
    STORAGE
    --------------------------------------------------------------------- */
-const K_CFG = 'fpl:config', K_SQUAD = 'fpl:squad', K_CACHE = 'fpl:cache', K_CAL = 'fpl:calib', K_MINUTES = 'fpl:minutes-history';
+const K_CFG = 'fpl:config', K_SQUAD = 'fpl:squad', K_CACHE = 'fpl:cache', K_CAL = 'fpl:calib',
+  K_MINUTES = 'fpl:minutes-history', K_UNDERSTAT = 'fpl:understat-team-inputs', K_ODDS = 'fpl:odds-derived-inputs';
 
 async function sget(key){
   if(window.storage){
@@ -48,7 +49,7 @@ function currentConfig(){
 }
 async function saveCfg(){ await sset(K_CFG, currentConfig()); }
 
-export { K_CFG, K_SQUAD, K_CACHE, K_CAL, K_MINUTES, sget, sset, saveCfg, currentConfig, stripDeprecatedSecrets, loadCfg };
+export { K_CFG, K_SQUAD, K_CACHE, K_CAL, K_MINUTES, K_UNDERSTAT, K_ODDS, sget, sset, saveCfg, currentConfig, stripDeprecatedSecrets, loadCfg };
 
 export async function cachePut(key, payload, season){
   await sset(key, { schemaVersion: SCHEMA_VERSION, season, fetchedAt: Date.now(), payload });

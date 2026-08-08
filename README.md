@@ -4,13 +4,14 @@ Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's 
 
 ## Current repository baseline
 
-The baseline after the merged Repository Truth A1 checkpoint on 8 August 2026 is:
+The baseline after merged Safe Hygiene A2 on 8 August 2026 is:
 
 | Item | Evidence |
 |---|---|
-| GitHub `main` | `cdc3cb709d97b858f29234678e7860baab918b78` — merge of PR #94 |
+| GitHub `main` | `2eee62b77291af06552e3d1952b6e1a6355ca7e0` — merge of PR #95 |
 | Latest substantive application state | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`, exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
-| Automated repository baseline | 667 passed, 0 failed, 0 skipped, 0 cancelled — the unchanged 664 application tests plus three documentation-integrity tests; two byte-identical exact-identity builds; root/deployable equality; exact manifest identity |
+| Automated repository baseline | 667 passed, 0 failed, 0 skipped, 0 cancelled; two byte-identical exact-identity builds; root/deployable equality; exact manifest identity |
+| Current review candidate | Refresh-Load R1 adds 12 acquisition/cache tests for a 679-test candidate suite; merge remains separately gated |
 | Physical iPhone Safari baseline | Accepted tested paths for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
 | Deliberately deferred | Populated League rank, standings, gaps, rivals, exposure and relevant large-league pagination until Official FPL publishes post-Gameweek data |
 

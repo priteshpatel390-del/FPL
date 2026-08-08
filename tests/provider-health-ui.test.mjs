@@ -60,6 +60,9 @@ test('Provider Health detail remains under Settings without a healthy header pil
   assert.match(shell,/providerHealthDetail/);
   assert.match(shell,/providerHealthRows/);
   assert.match(shell,/#\/settings\/data\/providers/);
+  assert.match(main,/Detailed minutes/);
+  assert.match(main,/oldest active/);
+  assert.match(main,/from cache/);
   assert.match(warning,/visible=model\.kind==='saved-data'/);
   assert.doesNotMatch(warning,/All live/);
 });

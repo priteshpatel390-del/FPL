@@ -59,7 +59,12 @@ test('startup and foreground paths use the same deferred verified refresh',()=>{
   assert.match(VIEWS_SOURCE,/installVerifiedRefreshTriggers\(\)/);
   assert.match(VIEWS_SOURCE,/runVerifiedRefresh\(\{reason:'manual',force:true\}\)/);
   assert.match(MAIN_SOURCE,/deferRender:true/);
-  assert.match(MAIN_SOURCE,/Promise\.allSettled\(\[loadUnderstat\(\), loadOdds\(\), loadMinuteHistories\(\)\]\)/);
+  assert.match(MAIN_SOURCE,/loadUnderstat\(\{force:Boolean\(options\.forceSupporting\)\}\)/);
+  assert.match(MAIN_SOURCE,/loadOdds\(\{force:Boolean\(options\.forceSupporting\)\}\)/);
+  assert.match(MAIN_SOURCE,/loadMinuteHistories\(\)/);
+  assert.match(MAIN_SOURCE,/forceSupporting:reason==='manual'/);
+  assert.match(VIEWS_SOURCE,/oddsKey[\s\S]*loadOdds\(\{force:true\}\)/);
+  assert.match(VIEWS_SOURCE,/useUstat[\s\S]*loadUnderstat\(\{force:true\}\)/);
   assert.match(MAIN_SOURCE,/document\.addEventListener\('visibilitychange',refreshIfDue\)/);
 });
 

@@ -2,13 +2,23 @@
 
 Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 8 August 2026.
 
-## 2026-08-08 — Safe Hygiene A2 prepared for draft review
+## 2026-08-08 — Refresh-Load R1 prepared for draft review
+
+- Made the separate minute-history cache revision-aware: matching schema/model/season, validated rows, unchanged checked-fixture identity and a seven-day correction backstop now suppress repeated requests.
+- Loads only missing/due histories with the active squad first, stops a systemic outage after two failed four-player batches and never advances successful timestamps on failure.
+- Added validated normalised Understat persistence with completed-match/24-hour cadence and six-hour failure cooldown; raw HTML is never stored and the parser is unchanged.
+- Added validated key-free derived Odds persistence with hourly refresh inside 48 hours, six-hour refresh otherwise, six-hour maximum model use and secret-free failure cooldowns.
+- Manual Load Data and explicit optional-source changes bypass provider cooldowns; Provider Health separates detailed-minute cache age/use from core Official FPL freshness.
+- Added 12 focused acquisition/cache/security tests. Exact source `ac02aca03e3de0fe72e83a332b14abfbe0848a6d` passes 679/679 without changing a model or golden expectation; two stamped production builds are byte-identical, root equals deployable and manifest identity is exact. Remote and physical-device gates remain pending before merge.
+
+## 2026-08-08 — Safe Hygiene A2 merged
 
 - Removed obsolete 75-line `tools/split.py`, declaration-only `reviewRound`, `reviewSegmentValue` and provider-registry `scale`, unused transport `BASE` plus its export, and four unused imports — an exact 85-line net source/tool reduction.
 - Reconciled the merged PR #94/667-test status and corrected the remaining Blueprint navigation sentence without changing historical decisions.
 - Exact source commit `ed4517900caaf26d711bccf66bbe3459e574fd5b` passed 667/667 tests; focused affected-area coverage passed 143/143.
 - Two exact-source builds were byte-identical, root/deployable equality passed and manifest identity matched; generated outputs were produced only by `build.mjs`.
-- No provider behaviour, data source, formula, route, navigation, state, persistence, Cloudflare, security boundary, UI or golden expectation changed. Draft review and merge remain owner-gated.
+- Connector-created PR #95 head `c1ebd7610b9a81f893457b8bb1bb41316de80dc0` preserved the verified tree, passed permanent run `31256999867` and merged at `2eee62b77291af06552e3d1952b6e1a6355ca7e0`.
+- No provider behaviour, data source, formula, route, navigation, state, persistence, Cloudflare, security boundary, UI or golden expectation changed.
 
 ## 2026-08-08 — Repository Truth A1 merged
 

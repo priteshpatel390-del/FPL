@@ -66,10 +66,13 @@ function renderProviderHealth(){
 
   setChildren(detail,rows.map(h => {
     const age = h.lastSuccess ? `Last successful ${ageLabel(h.ageMs)}` : 'No successful response this session';
+    const minuteDetail=h.provider==='fpl'?h.detail:null;
+    const minuteAge=minuteDetail?.oldestActiveAt ? ageLabel(Math.max(0,Date.now()-minuteDetail.oldestActiveAt)) : '';
     return el('article',{class:'note plain'},
       el('div',{},el('b',{},HEALTH_LABELS[h.provider] || h.provider),el('span',{class:`flag ${providerHealthFlagClass(h.state)}`},h.state)),
       el('div',{class:'status'},age),
       h.note ? el('div',{},h.note) : null,
+      minuteDetail ? el('div',{class:'status'},`${minuteDetail.label || 'Detailed minutes'}: ${minuteDetail.state}${minuteAge?' · oldest active '+minuteAge:''} · ${minuteDetail.active} validated player histories active${minuteDetail.cached?' · '+minuteDetail.cached+' from cache':''}${minuteDetail.deferred?' · '+minuteDetail.deferred+' requests deferred':''}. ${minuteDetail.note}`) : null,
       h.consequence ? el('div',{class:'status'},`Impact: ${h.consequence}`) : null);
   }));
 }
@@ -166,7 +169,11 @@ async function loadAll(options = {}){
     await saveCfg();
 
     reportLoadPhase(options,'providers');
-    const optionalResults = await Promise.allSettled([loadUnderstat(), loadOdds(), loadMinuteHistories()]);
+    const optionalResults = await Promise.allSettled([
+      loadUnderstat({force:Boolean(options.forceSupporting)}),
+      loadOdds({force:Boolean(options.forceSupporting)}),
+      loadMinuteHistories()
+    ]);
     if(!getHealth('understat',{seasonLive:S.seasonLive})) markUnavailable('understat','verification did not resolve','FPL strength ratings used');
     if(!getHealth('odds',{seasonLive:S.seasonLive})) markDisabled('odds','no approved market input active','internal team model active');
     if(!getHealth('archive',{seasonLive:S.seasonLive})){
@@ -271,6 +278,8 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       const report=await loadAll({
         awaitOptional:true,
         deferRender:true,
+        reason,
+        forceSupporting:reason==='manual',
         onPhase:phase=>setStartupPhase(phase.key)
       });
       if(report.criticalReady){

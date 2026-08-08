@@ -57,7 +57,7 @@ workers/                separately deployed, allowlisted Official FPL Cloudflare
 .github/workflows/      permanent exact-revision pull-request verification
 ```
 
-The former `tools/split.py` one-off Stage 2 migration script is removed under Safe Hygiene A2. It targeted an absent monolithic `app.js` and was never part of the current source, build, test, deployment or Worker path. A2 also removes only declaration-only helpers/constants and unused imports; module order, runtime ownership and every public behaviour remain unchanged.
+Safe Hygiene A2 removed the former `tools/split.py` one-off Stage 2 migration script plus its fixed list of declaration-only helpers/constants and unused imports. It changed no runtime ownership or public behaviour and merged through PR #95.
 
 ## Dependency flow
 Configuration and state feed providers, storage and model modules. Official FPL element histories populate `S.minuteHistory`. `model/minutes.mjs` owns expected-minutes probabilities and aggregate fallback. `model/scoring.mjs` consumes that boundary and returns the unchanged deterministic `{total,perGW,games,parts}` projection surface.
@@ -105,7 +105,15 @@ The shell creates explicit hosts for outcome, metric, review, export, recovery, 
 Player Explorer retains the same filters, projection ordering and Player Detail controller. CSS presents its existing rows as stacked cards on narrow screens. Help & About reads public `BUILD_INFO` fields and documents existing recommendation, uncertainty, privacy and operational boundaries without introducing state or network access.
 
 ## Provider Health and storage
-Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Stage 9.5 changes only presentation. Minute histories use a separate schema/model-versioned cache. Stage 8 results and Stage 9.4 decision previews are session-computed and are not persisted.
+Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Core Official FPL freshness remains the FPL row's primary state; R1 adds a separate detailed-minute age/cache-use detail so optional history failure cannot mislabel a current core feed.
+
+R1 keeps three schema/model/season-bound supporting caches:
+
+- detailed histories store validated per-player rows, successful timestamps and the finished-plus-data-checked fixture revision that produced them;
+- Understat stores only validated normalised team inputs, completed-fixture revision and secret-free cooldown metadata—never raw HTML;
+- Odds stores only validated derived fixture inputs, check/success times and secret-free cooldown metadata—never the API key or keyed URL.
+
+The active connected/manual squad precedes the unchanged 80-player detailed-history research cohort. Only missing, invalid, revision-due or seven-day-backstop-due histories are requested. Two completely failed four-player batches stop a systemic fan-out. Understat refreshes after completed matches or 24 hours, with a six-hour automatic failure cooldown. Odds refreshes hourly inside the approved 48-hour deadline/kickoff window and six-hourly otherwise; derived inputs older than six hours do not enter the model. Explicit manual refresh bypasses supporting-provider cadence/cooldowns. Stage 8 results and Stage 9.4 decision previews remain session-computed and are not persisted.
 
 ## Build and deployment
 `node build.mjs` emits `dist/app.bundle.js`, `dist/manifest.json`, single-file `dist/index.html` and a byte-identical root `index.html` deployment copy. Source hash, model/rules versions and exact `BUILD_COMMIT` identity are embedded. Same sources and identity must produce byte-identical artefacts, and the root deployment copy must match `dist/index.html` exactly.
@@ -114,7 +122,7 @@ Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Parti
 Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source/generated style attributes, forbids runtime style APIs and removes both `style-src-attr` and `unsafe-inline`. Stage 10 metric records reuse allowlist construction, forbidden-secret checks, canonical hashes and recovery-only storage boundaries.
 
 ## Testing
-Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. Stage 10.3 adds pure metric and storage suites covering exact calculations, identity/revision rules, blank/double/postponed fixtures, fixture-minute allocation, legal automatic substitutions, captain fallback, frozen transfer horizons, sample safeguards, deterministic serialisation, tamper detection and non-mutation. Existing production formula and golden suites remain unchanged.
+Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. R1 adds request-count/order, revision/age, missing-only refresh, outage-guard, timestamp, provider-cadence, cache-validation, secret-free persistence and manual-bypass coverage. Stage 10.3 retains pure metric and storage suites covering exact calculations, identity/revision rules, blank/double/postponed fixtures, fixture-minute allocation, legal automatic substitutions, captain fallback, frozen transfer horizons, sample safeguards, deterministic serialisation, tamper detection and non-mutation. Existing production formula and golden suites remain unchanged.
 
 ## Future serverless architecture
 Static UI shape can remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
@@ -127,9 +135,9 @@ Capture uses the official FPL event deadline, samples same-origin HTTP `Date` be
 `ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive.
 
 ## Stage 10.1 verified-startup orchestration
-`main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying foreground returns use the same path. Cached FPL data may be hydrated as fallback, but rendering is deferred while approved sources settle. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture.
+`main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying foreground returns use the same path. Cached FPL data may be hydrated as fallback, but rendering is deferred while approved sources settle. R1 changes which supporting requests are due, not this orchestration boundary. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture.
 
-The foreground path retains previously rendered content but makes decision surfaces inert until activation, preventing reads from partially mutated runtime state. Provider transports, validators, retry budgets, caches and model consumers remain unchanged.
+Startup and explicit manual loading own the interaction gate. Foreground refresh keeps the previously rendered interface interactive while provider state is replaced before the final render; a fully atomic foreground-state replacement remains a separately gated structural improvement. R1 reduces the duration/frequency of that exposure but does not claim to solve it.
 
 ## Stage 10.2 official-outcome boundary
 `providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL player totals, filtered fixtures and optional manager outcomes. Duplicate player IDs and conflicting fixture identities fail closed.

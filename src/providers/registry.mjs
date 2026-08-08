@@ -95,6 +95,12 @@ function markDisabled(name, note = 'turned off in settings', consequence = ''){
 function markUnavailable(name, note = '', consequence = ''){
   return setHealth(name, HEALTH_STATES.UNAVAILABLE, {note, consequence});
 }
+function setHealthDetail(name, detail = null){
+  if(!APPROVED_PROVIDER_NAMES.includes(name)) throw new Error(`Provider ${name} is not approved`);
+  if(!health[name]) return null;
+  health[name] = {...health[name],detail:detail||null,at:Date.now()};
+  return health[name];
+}
 
 // Compatibility surface for Stage-2 callers. New code should use the explicit
 // functions above so Disabled, Partial and Cached are never collapsed into a
@@ -162,4 +168,4 @@ export function healthSummary(context = {}, now = Date.now()){
 
 export function resetHealth(){ Object.keys(health).forEach(k => delete health[k]); }
 
-export { setHealth, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable, thresholdFor };
+export { setHealth, setHealthDetail, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable, thresholdFor };

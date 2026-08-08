@@ -4,68 +4,43 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Baseline
 
-- Repository baseline at this checkpoint: `main` `cdc3cb709d97b858f29234678e7860baab918b78` (Repository Truth A1 merge through PR #94).
+- Repository baseline at this checkpoint: `main` `2eee62b77291af06552e3d1952b6e1a6355ca7e0` (Safe Hygiene A2 merge through PR #95).
 - Latest substantive application checkpoint: PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`, exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f`.
-- Repository verification: 667 passed, 0 failed, 0 skipped, 0 cancelled — the unchanged 664 application tests plus three documentation-integrity tests; deterministic double build; root/deployable equality; exact manifest identity.
+- Permanent repository verification: 667 passed, 0 failed, 0 skipped, 0 cancelled; deterministic double build; root/deployable equality; exact manifest identity.
+- Refresh-Load R1 exact source `ac02aca03e3de0fe72e83a332b14abfbe0848a6d`: 679/679 tests passed with deterministic double-build, root/deployable and manifest-identity verification before publication.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
-- Safe Hygiene A2 is approved; no product, calculation, provider-behaviour or infrastructure checkpoint is approved.
+- Refresh-Load R1 is approved for implementation and a draft PR. Merge remains unapproved pending exact remote verification and physical iPhone acceptance.
 
-## Current approved checkpoint — Safe Hygiene A2
+## Current approved checkpoint — Refresh-Load R1
 
-**Status:** approved for a separate maintenance pull request. Draft publication and merge remain owner-gated.
+**Status:** implemented as a review candidate on `agent/refresh-load-r1`; draft publication is approved and merge remains owner-gated.
 
-**Objective:** close A1's post-merge status gap and remove only the audit's smallest proven-unused source/tool items without changing behaviour.
+**Objective:** stop unchanged validated supporting inputs from being fetched again on every eligible startup/foreground cycle while preserving honest age, fallback and manual-refresh behaviour.
 
-**Why it matters:** current guidance still describes merged A1 as pending, while a one-off Stage 2 migration tool and a handful of declaration-only names add avoidable repository and bundle noise.
-
-**Exact scope:**
-
-- record PR #94, merge `cdc3cb709d97b858f29234678e7860baab918b78` and the 667-test repository baseline in affected canonical status;
-- correct the remaining Blueprint navigation sentence to Team, Transfers, Fixtures, Leagues and Settings;
-- delete obsolete 75-line `tools/split.py`;
-- remove declaration-only `reviewRound`, `reviewSegmentValue` and provider-registry `scale`;
-- remove unused transport `BASE` and its export;
-- remove the unused `S`, Fixtures `num`, and Odds `num`/`clamp` imports;
-- regenerate tracked deployables only through `build.mjs`.
-
-**Exclusions:** every additional deletion; provider acquisition or fallback behaviour; data sources; formulas; routes; navigation; persistence; Cloudflare; Pages architecture; dependencies; directory moves; CSS; state; harness/test-only helpers; UI rendering; and golden changes.
-
-**Risks:** mistaking an externally consumed export for dead code, allowing generated files to drift from source, or overstating behaviour-neutral maintenance as a product or security improvement.
-
-**Test requirements:** all 667 existing tests, focused provider/review/build checks, two exact-identity production builds, root/deployable equality, exact manifest identity and exact changed-file review. No test or golden may be removed or weakened.
-
-**Physical acceptance:** no iPhone retest is required because rendered and interactive behaviour is unchanged.
-
-**Approval gate:** Pritesh reviews the draft pull request and explicitly approves merge. Live refresh-load hardening is not included.
-
-## Proposed before-GW1 checkpoint — Live refresh-load hardening
-
-**Status:** proposed, not approved.
-
-**Objective:** prevent detailed and optional data acquisition from unnecessarily delaying or repeatedly loading the weekly workflow.
-
-**Why it matters:** once live-season conditions activate, detailed minute histories can create roughly 80–95 requests during an eligible refresh, while a configured seven-day cache-age rule is not currently enforcing runtime freshness.
+**Why it matters:** a connected live-season cycle can otherwise make roughly 102 requests, including 95 detailed histories, even when its seven-day cache is fresh. Optional outages also repeat retry latency and can consume Odds quota.
 
 **Exact scope:**
 
-- measure startup time and request counts with live, cached and unavailable data;
-- define freshness rules for detailed minute histories, Understat and Odds;
-- preserve honestly labelled cached/stale fallback;
-- prioritise the current squad and decision-relevant candidates if evidence supports it;
-- retain manual refresh and current Provider Health consequences.
+- minute histories require matching schema/model/season, validated player entries, an unchanged finished-and-data-checked fixture revision and a maximum seven-day age;
+- load the active connected or manual squad first, then the unchanged 80-player research cohort, requesting only missing/invalid/due players;
+- stop after two completely failed four-player batches and never advance successful timestamps on failure;
+- persist validated normalised Understat team inputs only, refresh after a completed match or 24 hours and use a six-hour automatic failure cooldown;
+- persist validated key-free derived Odds inputs only, refresh hourly within 48 hours of a deadline/kickoff or six-hourly otherwise, and exclude inputs older than six hours;
+- persist secret-free Odds cooldown state for rejected keys, quota exhaustion and transient failure;
+- let manual Load Data and explicit optional-source setting changes bypass provider cooldowns;
+- keep all seven Provider Health states and show detailed-minute age/cache use separately from core Official FPL freshness;
+- reconcile merged A2 status and regenerate deployables only through `build.mjs`.
 
-**Exclusions:** expected-minutes formulas, projection weights, provider addition, new endpoints, Team/Transfers redesign and gateway generalisation.
+**Exclusions:** Understat parser repair/replacement; atomic foreground-state redesign; core bootstrap reduction; new provider/endpoint/origin; gateway change; formula, model, ranking or recommendation change; navigation redesign; golden change.
 
-**Risks:** data could become older than intended near a deadline, or a new policy could hide a provider failure.
+**Risks:** historical player corrections can arrive without a fixture revision, cached Odds may be up to one/six hours old, and cooldowns can delay automatic recovery. The seven-day backstop, six-hour maximum Odds use and manual bypass bound those risks.
 
-**Dependencies:** real live-season measurements and an approved acquisition/fallback contract.
+**Test requirements:** all 667 prior tests plus request count/order, revision/age, missing-only refresh, outage guard, unchanged timestamp, Understat/Odds cadence/cache/cooldown/key-free persistence and manual-bypass coverage; deterministic double build, root/deployable equality, exact manifest identity and remote CI. No test or golden may be removed or weakened.
 
-**Test requirements:** request counts, cache age, stale/fallback behaviour, foreground resume, provider state and startup ordering, followed by the permanent full verification gate.
+**Physical acceptance:** mandatory on iPhone Safari for startup and foreground return with live, cached, stale and offline supporting data. No physical R1 acceptance is claimed yet.
 
-**Physical acceptance:** iPhone startup plus Team, Transfers, Player Detail and Provider Health under live, cached and offline scenarios.
-
-**Approval gate:** present the current and proposed acquisition policy, sources, fallback, limitations, cost and measured before/after evidence before implementation.
+**Approval gate:** publish a draft PR and verify its exact remote head. Pritesh then performs the physical acceptance and explicitly approves merge. Parser repair and atomic-state work remain separate proposals.
 
 ## Proposed after-GW1 checkpoint — First live evidence and Leagues acceptance
 
@@ -211,4 +186,4 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Completed foundation summary
 
-Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint and Repository Truth A1 are complete and merged. Their exact records remain in [Historical Records](HISTORICAL_RECORDS.md); they are not repeated here as open work.
+Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1 and Safe Hygiene A2 are complete and merged. Their exact records remain in [Historical Records](HISTORICAL_RECORDS.md); they are not repeated here as open work.
