@@ -5,9 +5,92 @@ on:
     branches:
       - agent/leagues-standings-preseason-empty-state
 
+permissions:
+  contents: write
+
 jobs:
   apply:
     runs-on: ubuntu-latest
     steps:
-      - name: Confirm helper can run
-        run: echo helper-ready
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply approved presentation-only changes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app = Path('app.html')
+          text = app.read_text()
+          old = '''      <span class="eyebrow">Official standings</span><h2 tabindex="-1">League table</h2><p class="hint">Nearby and loaded managers only. Large leagues are not scanned in full.</p>\n      <div id="leagueStandingsOut"></div>'''
+          new = '''      <span class="eyebrow">Official standings</span><h2 tabindex="-1">League table</h2><p class="hint" id="leagueStandingsHint" hidden>Nearby and loaded managers only. Large leagues are not scanned in full.</p>\n      <div id="leagueStandingsOut"></div>'''
+          if text.count(old) != 1:
+              raise SystemExit('app.html standings header replacement did not match exactly once')
+          app.write_text(text.replace(old, new))
+
+          view = Path('src/ui/mini-leagues-view.mjs')
+          text = view.read_text()
+          old = "  miniLeagueAnnounce(announcedRank?`Standings loaded. Your position is ${miniLeagueOrdinal(announcedRank)}.`:!S.seasonLive?'Standings loaded. Your league position is not ranked yet.':'Standings loaded. Your connected team was not found on the loaded pages.');"
+          new = "  miniLeagueAnnounce(announcedRank?`Standings loaded. Your position is ${miniLeagueOrdinal(announcedRank)}.`:!S.seasonLive?'League positions have not been published yet.':'Standings loaded. Your connected team was not found on the loaded pages.');"
+          if text.count(old) != 1:
+              raise SystemExit('standings announcement replacement did not match exactly once')
+          text = text.replace(old, new)
+
+          old = '''function renderMiniLeagueStandings(){
+  const out=$('leagueStandingsOut'),data=miniLeagueSelectedData(); if(!out) return;
+  if(!data){ setChildren(out,miniLeagueEmpty('No standings loaded','Return to the League overview and load the selected league.',miniLeagueLink('Back to League','#/leagues/detail','btn'))); return; }
+  const rows=data.rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank));
+  setChildren(out,el('div',{class:'league-standings-list'},rows.map(row=>{'''
+          new = '''function renderMiniLeagueStandings(){
+  const out=$('leagueStandingsOut'),hint=$('leagueStandingsHint'),data=miniLeagueSelectedData(); if(!out) return;
+  if(!data){ if(hint) hint.hidden=true; setChildren(out,miniLeagueEmpty('No standings loaded','Return to the League overview and load the selected league.',miniLeagueLink('Back to League','#/leagues/detail','btn'))); return; }
+  const rows=data.rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank));
+  const hasPublishedPositions=rows.some(row=>miniLeagueRank(row.rank)!==null);
+  if(!S.seasonLive&&!hasPublishedPositions){
+    if(hint) hint.hidden=true;
+    setChildren(out,miniLeagueEmpty('Standings not available yet','Official FPL will publish this league table once positions are available.'));
+    return;
+  }
+  if(hint) hint.hidden=false;
+  setChildren(out,el('div',{class:'league-standings-list'},rows.map(row=>{'''
+          if text.count(old) != 1:
+              raise SystemExit('renderMiniLeagueStandings replacement did not match exactly once')
+          view.write_text(text.replace(old, new))
+
+          tests = Path('tests/mini-leagues-ui.test.mjs')
+          text = tests.read_text()
+          marker = "test('standings use full-row touch and keyboard actions with a quiet trailing affordance',()=>{"
+          addition = '''test('pre-season standings use a compact truthful empty state until positions are published',()=>{
+  const standingsStart=view.indexOf('function renderMiniLeagueStandings');
+  const standings=view.slice(standingsStart,view.indexOf('function renderMiniLeagueRival(){',standingsStart));
+  includesAll(app,['id="leagueStandingsHint" hidden','Nearby and loaded managers only. Large leagues are not scanned in full.']);
+  includesAll(view,['League positions have not been published yet.','Standings not available yet','Official FPL will publish this league table once positions are available.']);
+  includesAll(standings,['hasPublishedPositions','if(!S.seasonLive&&!hasPublishedPositions)',"if(hint) hint.hidden=true","if(hint) hint.hidden=false"]);
+  excludesAll(view,['Standings loaded. Your league position is not ranked yet.']);
+});
+
+'''
+          if text.count(marker) != 1:
+              raise SystemExit('test insertion marker did not match exactly once')
+          tests.write_text(text.replace(marker, addition + marker))
+          PY
+      - name: Run tests and deterministic production builds
+        run: |
+          ./run-tests.sh
+          node build.mjs
+          cp dist/index.html /tmp/first-index.html
+          cp dist/app.bundle.js /tmp/first-bundle.js
+          cp dist/manifest.json /tmp/first-manifest.json
+          node build.mjs
+          cmp /tmp/first-index.html dist/index.html
+          cmp /tmp/first-bundle.js dist/app.bundle.js
+          cmp /tmp/first-manifest.json dist/manifest.json
+          cmp index.html dist/index.html
+      - name: Commit approved changes and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-leagues-standings-empty-state.yml
+          git add app.html src/ui/mini-leagues-view.mjs tests/mini-leagues-ui.test.mjs index.html dist/index.html dist/app.bundle.js dist/manifest.json
+          git commit -m "Polish pre-season League standings empty state"
+          git push origin HEAD:agent/leagues-standings-preseason-empty-state
