@@ -4,17 +4,16 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Baseline
 
-- Repository baseline at this checkpoint: `main` `2eee62b77291af06552e3d1952b6e1a6355ca7e0` (Safe Hygiene A2 merge through PR #95).
-- Latest substantive application checkpoint: PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`, exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f`.
-- Permanent repository verification: 667 passed, 0 failed, 0 skipped, 0 cancelled; deterministic double build; root/deployable equality; exact manifest identity.
-- Refresh-Load R1 corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`: 681/681 tests passed with deterministic double-build, root/deployable and manifest-identity verification before republication.
+- Repository baseline at this checkpoint: `main` `2ddb33c81fa2092598f290d60320364f2e0c35dc` (Refresh-Load R1 merge through PR #96).
+- Latest substantive application checkpoint: PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`, exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`, generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`.
+- Permanent repository verification: run `31265107597`; 681 passed, 0 failed, 0 skipped, 0 cancelled; deterministic double build; root/deployable equality; exact manifest identity.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
-- Refresh-Load R1 is approved for implementation and draft PR #96. Merge remains unapproved pending corrected exact remote verification and the focused offline-disclosure iPhone retest.
+- Refresh-Load R1 is merged, deployed from `main` and physically accepted for every currently testable iPhone path. Live minute-history reuse awaits a completed checked Gameweek; Odds reuse awaits an enabled Odds configuration.
 
-## Current approved checkpoint — Refresh-Load R1
+## Completed checkpoint — Refresh-Load R1
 
-**Status:** implemented as a review candidate on `agent/refresh-load-r1`; the first iPhone pass exposed and bounded an offline-disclosure defect, corrected source `d1b6ac0…` is locally verified, draft republication is approved and merge remains owner-gated.
+**Status:** complete and merged through PR #96 at `2ddb33c81fa2092598f290d60320364f2e0c35dc`. The first iPhone pass exposed and bounded an offline-disclosure defect; corrected source `d1b6ac0…` passed exact remote verification and the focused device retest before owner-approved merge.
 
 **Objective:** stop unchanged validated supporting inputs from being fetched again on every eligible startup/foreground cycle while preserving honest age, fallback and manual-refresh behaviour.
 
@@ -38,9 +37,9 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 **Test requirements:** all 667 prior tests plus request count/order, revision/age, missing-only refresh, outage guard, unchanged timestamp, Understat/Odds cadence/cache/cooldown/key-free persistence and manual-bypass coverage; deterministic double build, root/deployable equality, exact manifest identity and remote CI. No test or golden may be removed or weakened.
 
-**Physical acceptance:** online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience passed on iPhone Safari. Minute-history reuse cannot yet be physically exercised before a completed Gameweek; Odds reuse cannot be exercised while Odds is disabled. The first offline in-app refresh exposed misleading fresh/live disclosure; the corrected build must show FPL Fallback, explicit offline copy and the unchanged saved-data time. Full offline hard reload is outside R1 because the static Pages shell is not available without a service worker.
+**Physical acceptance:** online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience passed on iPhone Safari. The focused corrected-build retest also passed: FPL showed Fallback, explicit offline copy and the unchanged saved-data time, and the same accepted build identity was verified after Pages returned to `main`. Minute-history reuse cannot yet be physically exercised before a completed Gameweek; Odds reuse cannot be exercised while Odds is disabled. Full offline hard reload is outside R1 because the static Pages shell is not available without a service worker.
 
-**Approval gate:** republish the corrected exact tree to draft PR #96 and verify its remote head/CI. Pritesh then performs the focused offline-disclosure retest and explicitly approves merge. Parser repair, offline-shell/service-worker support and atomic-state work remain separate proposals.
+**Completion evidence:** exact remote head `967856246a0c17972c43eaf444651bceb8b9f728`, reviewed/merged tree `fd40deff72c458286e77f44a66b79a0e720e700c`, permanent run `31265107597`, 681/681 tests, deterministic builds, root/deployable equality, exact manifest identity, focused physical retest and explicit owner merge approval. Parser repair, offline-shell/service-worker support and atomic-state work remain separate proposals.
 
 ## Proposed after-GW1 checkpoint — First live evidence and Leagues acceptance
 
@@ -186,4 +185,4 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Completed foundation summary
 
-Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1 and Safe Hygiene A2 are complete and merged. Their exact records remain in [Historical Records](HISTORICAL_RECORDS.md); they are not repeated here as open work.
+Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1, Safe Hygiene A2 and Refresh-Load R1 are complete and merged. Their exact records remain in the repository history and [Historical Records](HISTORICAL_RECORDS.md); they are not open implementation work.

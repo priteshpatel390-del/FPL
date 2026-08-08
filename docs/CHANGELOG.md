@@ -2,7 +2,7 @@
 
 Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 8 August 2026.
 
-## 2026-08-08 — Refresh-Load R1 prepared for draft review
+## 2026-08-08 — Refresh-Load R1 merged, deployed and physically accepted
 
 - Made the separate minute-history cache revision-aware: matching schema/model/season, validated rows, unchanged checked-fixture identity and a seven-day correction backstop now suppress repeated requests.
 - Loads only missing/due histories with the active squad first, stops a systemic outage after two failed four-player batches and never advances successful timestamps on failure.
@@ -11,7 +11,8 @@ Purpose: high-level change record. Current operational status lives in `PROJECT_
 - Manual Load Data and explicit optional-source changes bypass provider cooldowns; Provider Health separates detailed-minute cache age/use from core Official FPL freshness.
 - Physical iPhone review passed online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. A full offline hard reload cannot load the static Pages shell and remains outside R1.
 - The same review exposed that Safari could serve gateway responses from its HTTP cache while offline, causing misleading fresh/live FPL wording. The correction now stops before network acquisition when Safari definitively reports offline, preserves the saved snapshot timestamp and reports FPL Fallback with explicit offline copy.
-- Added 14 focused acquisition/cache/security/offline-disclosure tests. Corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` passes 681/681 without changing a model or golden expectation; two stamped production builds are byte-identical, root equals deployable and manifest identity is exact. PR #96 republication and the focused iPhone retest remain pending before merge.
+- Added 14 focused acquisition/cache/security/offline-disclosure tests. Corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` passes 681/681 without changing a model or golden expectation; two stamped production builds are byte-identical, root equals deployable and manifest identity is exact.
+- Exact remote head `967856246a0c17972c43eaf444651bceb8b9f728` preserved reviewed tree `fd40deff72c458286e77f44a66b79a0e720e700c` and passed permanent run `31265107597`. The corrected offline FPL Fallback path passed focused iPhone Safari retest; PR #96 merged at `2ddb33c81fa2092598f290d60320364f2e0c35dc`, and Pages on `main` served the accepted build identity.
 
 ## 2026-08-08 — Safe Hygiene A2 merged
 

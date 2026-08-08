@@ -41,19 +41,20 @@ Last reconciled: 2026-08-08. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest substantive application checkpoint is PR #92 at merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`.
+The latest substantive application checkpoint is Refresh-Load R1 PR #96 at merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`.
 
-- exact reviewed PR #92 head: `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f`
-- permanent Verify Teamsheet run: `31247061412`, completed successfully
-- complete application suite: **664 tests, 664 passed, 0 failed, 0 skipped, 0 cancelled**
+- exact reviewed PR #96 remote head: `967856246a0c17972c43eaf444651bceb8b9f728`
+- corrected generated source: `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`
+- permanent Verify Teamsheet run: `31265107597`, completed successfully
+- complete application suite: **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled**
 - two exact-identity production builds: byte-identical
 - root `index.html`: byte-identical to `dist/index.html`
-- manifest build identity: exact to the reviewed PR head
-- reviewed head and merge Git tree: `455cc281b5a7528d37884326708a63d22fe54c35`
+- manifest build identity: exact to generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`, source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a`
+- reviewed head and merge Git tree: `fd40deff72c458286e77f44a66b79a0e720e700c`
 - model/golden expectations: unchanged
-- calculation, provider and data-source behaviour: unchanged
+- model, calculation, provider identity/endpoint and data-source behaviour: unchanged; acquisition cadence/persistence and definite-offline disclosure changed only as approved by R1
 
-PR #94 is documentation/test-infrastructure only and therefore preserves that application baseline. Its three documentation-integrity tests raise the repository suite to 667 without creating a new application-behaviour claim.
+PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
 
 Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evidence for their tested paths. Leagues has pre-season physical acceptance; post-Gameweek populated checks are deliberately deferred. VoiceOver is not a Teamsheet acceptance gate.
 
@@ -74,7 +75,7 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 - Connector-created PR #95 head `c1ebd7610b9a81f893457b8bb1bb41316de80dc0` preserved the verified tree exactly and passed permanent Verify Teamsheet run `31256999867`.
 - PR #95 merged at `2eee62b77291af06552e3d1952b6e1a6355ca7e0`. Physical iPhone testing was unnecessary because no rendered or interactive behaviour changed.
 
-### Refresh-Load R1 review-candidate evidence
+### Refresh-Load R1 merged evidence
 
 - The 667 prior tests remain unchanged and all pass. Twelve tests in `refresh-load-r1.test.mjs` plus two iPhone-found offline-disclosure regressions in `startup-refresh.test.mjs` raise the corrected candidate suite to **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled**.
 - New coverage proves active-squad-first 95-player ordering, checked-fixture revision identity, fresh-cache zero requests, missing-player-only refresh, seven-day backstop, two-failed-batch outage stop, unchanged success timestamps, separate minute-health detail, Understat 24-hour/completed-match cadence and six-hour cooldown, normalised-only storage/manual bypass, Odds one/six-hour cadence, six-hour maximum use, key-free derived storage, rejection cooldown and fresh-cache reuse.
@@ -82,7 +83,9 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 - All model, expected-minutes, projection, scoring, fixture, captaincy, transfer, rank, League and golden expectations remain unchanged.
 - Corrected exact source commit `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` passed **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled** without removing, weakening or skipping a test or changing a golden expectation.
 - Two production builds stamped with that exact source commit were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Root equalled deployable; the manifest recorded the exact source commit and source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a`.
-- The first physical iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static app shell. The misleading offline fresh/live disclosure it exposed is corrected locally; exact remote-head verification and a focused physical retest of that disclosure remain required before merge.
+- Exact remote head `967856246a0c17972c43eaf444651bceb8b9f728` preserved reviewed tree `fd40deff72c458286e77f44a66b79a0e720e700c`, passed permanent Verify Teamsheet run `31265107597` and merged through PR #96 at `2ddb33c81fa2092598f290d60320364f2e0c35dc` with the same tree.
+- The first physical iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static app shell. The focused corrected-build retest then accepted explicit FPL Fallback/offline wording with the original saved timestamp; Pages on `main` served the same accepted build identity after merge.
+- Minute-history revision/reuse remains physically unexercised until a Gameweek is complete and officially checked. Odds cadence/reuse remains physically unexercised while Odds is disabled. These are deferred evidence boundaries, not failed automated contracts.
 
 ## Coverage map
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -284,7 +287,7 @@ The correction removes runtime source rewriting entirely:
 
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
-The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #92 with **664 passing tests**, recorded at the top of this document.
+The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #96 with **681 passing tests**, recorded at the top of this document.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 
