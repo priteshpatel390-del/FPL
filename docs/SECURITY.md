@@ -9,6 +9,7 @@ Static single-file application on GitHub Pages plus one owner-controlled, zero-d
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
 - Provider and user strings render through DOM builders; AI output uses the restricted Markdown AST.
 - External payloads are validated at provider boundaries and transient failures use bounded retry.
+- R1 supporting caches are closed, schema/model/season-bound input envelopes: minute histories contain validated Official FPL rows, Understat contains only normalised team inputs and Odds contains only derived fixture inputs. Raw Understat HTML, Odds keys and keyed URLs are never stored in these caches.
 - Provider Health exposes Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable; full current-session detail is organised under Settings → Data & Diagnostics → Provider Health. Healthy state does not occupy the header. Primary screens receive only fixed consequence-led core-data warnings and never raw endpoints, relay errors or identifiers. The placement changes presentation only.
 - Stage 9.6 forbids style attributes/runtime style APIs and removes the related CSP concession without changing provider, storage or model behaviour.
 - Stage 10 snapshot, outcome and metric records use allowlisted shapes, canonical finite JSON, immutable revisions and deterministic SHA-256 verification.
@@ -16,7 +17,7 @@ Static single-file application on GitHub Pages plus one owner-controlled, zero-d
 ## Official FPL gateway security
 The production gateway uses a fixed Official FPL upstream host and an exact path/query allowlist. It supports only `GET`, `HEAD` and CORS `OPTIONS`, forwards only `Accept: application/json`, omits browser credentials and rejects unknown paths, traversal, arbitrary URLs, non-JSON responses and every redirect without following or exposing its destination. Browser CORS is limited to approved exact origins, but this is not authentication. Redacted observability can record only bounded error type/message data; permanent tests strip URLs, query values and numeric identifiers. Live transport and the tested Transfers, Player Detail, Team, Fixtures and Leagues pre-season paths are accepted; populated post-Gameweek League evidence remains deliberately deferred.
 
-Safe Hygiene A2 removes an unused browser-transport `BASE` constant and export only. Runtime Official FPL requests already derive their exact gateway base from the validated configuration/meta boundary, so this removal changes no upstream host, endpoint, request, credential, CORS, cache, fallback or trust behaviour.
+Safe Hygiene A2 removed an unused browser-transport `BASE` constant and export only. Runtime Official FPL requests continue to derive their exact gateway base from the validated configuration/meta boundary, so the merged removal changed no upstream host, endpoint, request, credential, CORS, cache, fallback or trust behaviour.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:
@@ -29,6 +30,7 @@ The Odds API key remains client-side as the accepted-temporary SEC-2 limitation.
 - user-facing errors and health notes are fixed safe strings;
 - `scrubOddsSecret()` removes the current raw/encoded key and `apiKey=` values from any future diagnostic string before it can leave the provider boundary;
 - regression tests cover forgetting, storage omission, output scrubbing, relay isolation and generated-artefact secret scans.
+- R1 persists only derived market rows plus fixed reason/cooldown metadata under `fpl:odds-derived-inputs`; tests assert that the raw API key is absent. The direct request URL remains transient and is reduced to a query-free endpoint label before retry metadata is stored.
 
 This does not make a browser-held key secret from the browser owner, extensions or compromised same-origin code. Server-side environment storage remains deferred until the serverless trigger.
 

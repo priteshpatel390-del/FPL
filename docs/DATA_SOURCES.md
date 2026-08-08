@@ -12,14 +12,15 @@ picks, histories, leagues and outcomes are no-store initially. Fallback: verifie
 otherwise restricted mode. Schema stability: medium (undocumented; validate at runtime from Stage 3).
 Licensing: unofficial, tolerated. The production Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev`, the app uses its exact `/fpl` base and live 2026/27 bootstrap transport was verified on physical iPhone Safari. Transfers, Player Detail, Team and Fixtures tested paths are accepted, as is the Leagues pre-season path. Published post-Gameweek League rank/standings/rival evidence remains deferred under FPL-2/ML-3.
 
-Detailed expected-minutes history uses `/element-summary/{id}/` for a bounded eligible cohort (currently up to 80 detailed players) and stores a separate versioned device cache. The configured seven-day cache age is not currently a runtime request-suppression gate, so an eligible verified refresh can request the cohort again. Any freshness/load change requires the separate provider/data checkpoint in `ROADMAP.md`.
+Detailed expected-minutes history uses `/element-summary/{id}/` for the active connected/manual squad followed by a bounded 80-player research cohort and stores a separate schema/model/season-versioned device cache. R1 reuses validated entries while the finished-plus-data-checked fixture revision is unchanged and each player success is no older than the seven-day correction backstop. Only missing/invalid/due players are requested. Two completely failed four-player batches stop further fan-out; cached histories remain active where valid and all other players use the existing aggregate/prior minutes fallback. Failure never advances a successful player timestamp.
+
+If Safari definitively reports the device offline, R1 performs no Official FPL or optional-provider acquisition attempt. The last verified device snapshot remains active with its original timestamp and FPL is disclosed as Fallback. This prevents a browser HTTP-cache response from being mistaken for a new live gateway success; it does not provide the static application shell on a full offline reload.
 
 ## Understat — team form layer only (D-05)
 Purpose: last-6 team xG/xGA multipliers, 45% blend vs FPL strengths. Authority: medium (own xG
 model; NOT comparable to Opta figures — never mix at player level). Transport: relay scrape of
 embedded teamsData JSON — fragile. Licensing: ToS-grey; owner-approved continue-at-reduced-cadence
-pending ablation. Current runtime behaviour: when enabled, Understat is attempted during the verified
-refresh cycle; an after-completed-matches freshness gate is a desired policy, not an implemented one.
+pending ablation. R1 persists only validated normalised team inputs—never raw HTML—and reuses them until a completed-match revision changes or 24 hours elapse. Missing expected page structure starts a six-hour automatic failure cooldown; explicit manual refresh bypasses it. Recent validated cache remains active as Cached, while inputs older than 24 hours fall back to FPL strengths. The measured current HTML lacked the expected `teamsData` structure; R1 does not repair the parser.
 Fallback: FPL strengths, confidence reduced. Future: survives only if prospective ablation shows
 out-of-sample value; ClubElo remains an unimplemented prior/anchor candidate (D-10).
 
@@ -27,9 +28,7 @@ out-of-sample value; ClubElo remains an unimplemented prior/anchor candidate (D-
 Purpose: h2h+totals (UK region) → devigged, outlier-filtered, staleness-cut market-implied team
 goals; 65% blend where a fixture is confidently quoted (weight unvalidated — D-09). Authority: high.
 Transport: DIRECT ONLY (D-06/SEC-1) — key never relayed. Licensing: clean. Quota: 500 credits/mo,
-2/call ≈ 250 calls. Current runtime behaviour: configured Odds is attempted during the verified
-refresh cycle; the intended few-times-per-day/pre-deadline cadence is not yet enforced by a separate
-freshness gate. Schema: stable;
+2/call ≈ 250 calls. R1 persists validated derived fixture inputs only—never the key or keyed URL—and refreshes at most hourly when a relevant deadline/kickoff is within 48 hours, or every six hours otherwise. Derived inputs older than six hours do not affect the model. Rejected-key, quota and transient cooldowns persist without diagnostic secrets; manual refresh and explicit key changes bypass them. Schema: stable;
 per-event provenance retained (id, kickoff, fetchedAt, books, markets, confidence). Matching: teams
 + kickoff proximity (72h). Fallback: internal team model, reduced confidence. Historical: none on
 free tier → prospective logging from GW1 2026-27 (ODDS-2).

@@ -65,13 +65,24 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 - Root `index.html` equalled `dist/index.html`, manifest identity matched the exact PR head and the verified tree merged unchanged at `cdc3cb709d97b858f29234678e7860baab918b78`.
 - A1 changed no application behaviour or tracked generated deployable.
 
-### Safe Hygiene A2 local candidate evidence
+### Safe Hygiene A2 merged evidence
 
 - Focused review/export, provider, transport, fixture, Odds, storage, build and documentation-integrity coverage passed **143/143**.
 - Exact source commit `ed4517900caaf26d711bccf66bbe3459e574fd5b` passed **667 tests, 667 passed, 0 failed, 0 skipped, 0 cancelled** without removing, weakening or skipping a test or changing a golden expectation.
 - Two production builds stamped with that exact source commit were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`.
 - Root `index.html` equalled `dist/index.html`; manifest identity matched the exact source commit; generated source hash was `9581b55c94eba9fc2948d56651e581ebc064fae5163d834a15329e8c8f1b9d77`.
-- Tracked generated outputs came only from `build.mjs`. Exact remote pull-request-head verification remains required before merge. Physical iPhone testing is unnecessary because no rendered or interactive behaviour changes.
+- Connector-created PR #95 head `c1ebd7610b9a81f893457b8bb1bb41316de80dc0` preserved the verified tree exactly and passed permanent Verify Teamsheet run `31256999867`.
+- PR #95 merged at `2eee62b77291af06552e3d1952b6e1a6355ca7e0`. Physical iPhone testing was unnecessary because no rendered or interactive behaviour changed.
+
+### Refresh-Load R1 review-candidate evidence
+
+- The 667 prior tests remain unchanged and all pass. Twelve tests in `refresh-load-r1.test.mjs` plus two iPhone-found offline-disclosure regressions in `startup-refresh.test.mjs` raise the corrected candidate suite to **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled**.
+- New coverage proves active-squad-first 95-player ordering, checked-fixture revision identity, fresh-cache zero requests, missing-player-only refresh, seven-day backstop, two-failed-batch outage stop, unchanged success timestamps, separate minute-health detail, Understat 24-hour/completed-match cadence and six-hour cooldown, normalised-only storage/manual bypass, Odds one/six-hour cadence, six-hour maximum use, key-free derived storage, rejection cooldown and fresh-cache reuse.
+- The offline regressions prove that only an explicit browser `onLine === false` signal is treated as definitely offline and that the acquisition path stops before networking, preserves saved FPL data, reports FPL Fallback and uses explicit offline copy rather than a gateway-loaded claim.
+- All model, expected-minutes, projection, scoring, fixture, captaincy, transfer, rank, League and golden expectations remain unchanged.
+- Corrected exact source commit `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` passed **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled** without removing, weakening or skipping a test or changing a golden expectation.
+- Two production builds stamped with that exact source commit were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Root equalled deployable; the manifest recorded the exact source commit and source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a`.
+- The first physical iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static app shell. The misleading offline fresh/live disclosure it exposed is corrected locally; exact remote-head verification and a focused physical retest of that disclosure remain required before merge.
 
 ## Coverage map
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -93,7 +104,7 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
 19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
-20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
+20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, definite-offline acquisition/disclosure, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
 21. `outcome-collection.test.mjs` — Stage 10.2 endpoint validation, blank/double/postponed Gameweeks, delayed checking, corrections, squad facts, snapshot-safe records and tamper detection.
 22. `outcome-storage.test.mjs` — immutable revision pointers, recovery-only imports, journal recovery, bounds, quota failure, cadence and deletion isolation.
 23. `metrics.test.mjs` — exact player/minutes/probability/interval calculations; zero and signed errors; Pearson/Spearman ties and zero variance; approved error/price/season boundaries; singles, doubles and postponements; legal automatic substitutions, goalkeeper and captain fallback; authoritative joins, corrections, tamper detection, non-mutation, segmentation, frozen transfer horizons, public record-field contracts and static no-model-recomputation guards.
@@ -109,7 +120,8 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 33. `transfer-baseline-presentation.test.mjs` — Worker-result and cache regressions for a separately returned mandatory zero-transfer baseline when it falls outside the unchanged ranked Top K, plus fail-closed handling of a missing or malformed baseline.
 34. `team-resources-bench-clarity.test.mjs` — UX-A1 resource-bar adjacency and exact labels, honest manual provenance and edit route, compact-chip removal/non-duplication, separate exact bench roles, index-preserving order, two-line names, fixture/xP readability, complete accessible labels, Player Detail tapping and a presentation-only dependency guard.
 35. `player-detail-scroll-rotation.test.mjs` — UX-A2 dialog scroll behaviour and PR #78 stacking regression. Exact background-offset capture on a fresh open and restoration on a normal close, proved against a simulated mobile-Safari lock that clamps the page to the top; root and body lock application and removal; internal scroll reset on every open; `preventScroll` focus on the close control and on the restored trigger; identical close/backdrop/Escape outcomes; player replacement while open preserving the original offset and trigger; route-driven close that unlocks but restores neither scroll nor focus; a no-op route change while closed; detached and hidden trigger rejection; documented viewport-property fallback; and the CSS contracts for flex scrolling with `min-height:0`, `vh` declared before `dvh`, compact-landscape full-height sizing, four-sided safe areas, **Player Detail layering above the fixed primary dock**, the dialog-not-a-route boundary, no runtime inline styling and no data/model reach.
-36. `documentation-integrity.test.mjs` — canonical maintainer references, local Markdown link resolution, complete documentation indexing and unique decision/limitation identifiers. This is repository guidance protection only and does not exercise or alter application behaviour.
+36. `refresh-load-r1.test.mjs` — detailed-history request suppression/delta ordering/outage guard/timestamp preservation, Understat normalised cache/cadence/cooldown/manual bypass, Odds key-free derived cache/near-deadline cadence/expiry/cooldown and supporting-data health separation.
+37. `documentation-integrity.test.mjs` — canonical maintainer references, local Markdown link resolution, complete documentation indexing and unique decision/limitation identifiers. This is repository guidance protection only and does not exercise or alter application behaviour.
 
 Two forms of Transfers evidence are deliberately separate. Oracle equality is proved only on controlled pools, where an exhaustive comparison is tractable. On the Official-scale pool the claim is only that the exact search completes below the unchanged ceiling and returns `status: 'ok'`; it is not an exactness proof, and a lower evaluation count is never presented as improved prediction accuracy.
 

@@ -6,22 +6,22 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work and the subsequent Team, Player Detail, Fixtures and Leagues pre-season checkpoints are merged. Repository Truth A1 is also complete through PR #94. No product or calculation implementation checkpoint is currently approved.
+Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1 and Safe Hygiene A2 are merged. No formula, recommendation or new-provider checkpoint is approved.
 
-The immediate approved repository work is Safe Hygiene A2: reconcile A1's merge status, remove one obsolete migration script and a fixed list of proven-unused declarations/imports, and rebuild generated deployables through the deterministic build. It is behaviour-neutral maintenance; live refresh-load hardening and every later technical or product checkpoint remain separately gated.
+The immediate approved work is Refresh-Load R1 on a separate review branch. It changes acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Understat parser repair, atomic foreground-state replacement and model/data-source expansion remain separately gated.
 
 ## Evidence baseline
 
 | Item | Evidence |
 |---|---|
-| Repository baseline | GitHub `main` `cdc3cb709d97b858f29234678e7860baab918b78`, merge of PR #94 |
+| Repository baseline | GitHub `main` `2eee62b77291af06552e3d1952b6e1a6355ca7e0`, merge of PR #95 |
 | Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
 | Application tree | PR #92 head and merge share `455cc281b5a7528d37884326708a63d22fe54c35` |
-| Permanent automated baseline | Verify Teamsheet run `31255585665`: 667 passed, 0 failed, 0 skipped, 0 cancelled — 664 unchanged application tests plus three documentation-integrity tests |
-| Build baseline | Two exact-identity production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity matched the exact PR #94 head |
-| Latest repository-truth checkpoint | PR #94 merged the A1 documentation and documentation-integrity work without changing application behaviour or generated deployables |
+| Permanent automated baseline | Verify Teamsheet run `31256999867`: 667 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #95 head `c1ebd7610b9a81f893457b8bb1bb41316de80dc0` |
+| Build baseline | Two exact-identity production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity matched the exact PR #95 head |
+| Current candidate | Refresh-Load R1 corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`: 681/681 tests passed; deterministic double build, root/deployable equality and manifest identity verified; corrected PR #96 publication and remote CI remain pending |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | A2 post-merge reconciliation and the exact approved safe-hygiene list only; draft PR and merge remain separately owner-gated |
+| Approval boundary | R1 acquisition policy, offline disclosure, tests, docs and draft PR only; the focused iPhone retest and merge remain separately owner-gated |
 
 ## Physical iPhone Safari baseline
 
@@ -34,6 +34,8 @@ Pritesh has physically accepted the tested populated paths for:
 - the Leagues all-league hub, league selection/switching, primary persistence, back navigation, pre-season standings/exposure states and Official FPL versus manually added league management.
 
 Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative.
+
+Refresh-Load R1's first PR #96 device pass additionally accepted online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It exposed one merge blocker: an offline in-app refresh could be described as newly loaded/live when Safari satisfied gateway requests from HTTP cache. The corrected candidate prevents network acquisition when Safari definitively reports offline, preserves the saved snapshot and labels FPL Fallback; that exact path awaits a focused retest. A full offline hard reload cannot load the static Pages application shell and is explicitly outside R1.
 
 ## Deferred live-season acceptance
 
@@ -117,6 +119,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 - GitHub Pages serves the byte-identical root deployment copy.
 - The Cloudflare gateway is transport-only and performs no account write, model computation or secret handling.
 - Optional providers fail gracefully; Understat remains team-level and Odds remains direct-only.
+- Validated supporting inputs use separate local caches; Understat raw HTML and Odds secrets are never stored in those caches.
 - Stage 10 evidence flows one way from frozen prediction to outcome to evaluation to review and cannot feed back into live recommendations.
 
 ## Current product gaps
@@ -131,7 +134,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 
 ## Current technical risks
 
-- detailed minute-history refresh can fan out to roughly 80–95 Official FPL requests once live-season conditions activate;
+- R1 is not yet merged, so deployed live-season minute refresh can still fan out to roughly 80–95 Official FPL requests;
 - the flattened bundle depends on an explicit module order that is broader than the direct import graph;
 - Team currently layers a decision-first renderer over legacy Team DOM construction;
 - tracked build identity semantics can be misunderstood because generated artefacts record their generating source identity, not necessarily the later documentation-only `main` commit;
@@ -143,11 +146,11 @@ These are roadmap inputs, not authority to change them.
 
 ### Approved now
 
-**Safe Hygiene A2:** post-A1 status reconciliation, deletion of obsolete `tools/split.py`, removal of the two approved review helpers, registry `scale`, transport `BASE` and four unused imports, followed by generated-output reconciliation through `build.mjs`.
+**Refresh-Load R1:** validated revision-aware minute history reuse, active-squad-first delta loading, systemic-outage guard, normalised Understat cache/cadence, key-free derived Odds cache/cadence, manual bypass and separate supporting-data health disclosure. Draft publication is approved; merge is not.
 
-### Proposed next, not approved
+### Required before merge
 
-**Live refresh-load hardening:** measure and define freshness/request policy for minute histories, Understat and Odds before changing acquisition behaviour. This requires a separate provider/data approval gate and iPhone acceptance.
+Exact-commit/full-CI verification plus the focused physical iPhone retest proving explicit FPL Fallback/offline disclosure without a fresh timestamp or gateway-loaded claim. Live-season minute-history and enabled-Odds cache paths remain unavailable for physical exercise until their required data/configuration exists.
 
 ### After real Gameweek data
 
@@ -155,4 +158,4 @@ Perform the deferred Leagues acceptance and begin genuine Stage 10 evidence revi
 
 ## Non-negotiable limits
 
-Safe Hygiene A2 changes no provider behaviour, source, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, persistence, Cloudflare or Pages architecture. No removal beyond the approved itemised list is authorised. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.
+Refresh-Load R1 changes acquisition cadence and validated local persistence only. It changes no provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, Cloudflare or Pages architecture. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.

@@ -6,6 +6,7 @@ import {
   shouldRefreshVerifiedData,
   shouldBlockRefreshInteractions,
   shouldRunForegroundRefresh,
+  browserReportsOffline,
   dispatchVerifiedData
 } from '../src/main.mjs';
 
@@ -46,6 +47,20 @@ test('only startup and manual refreshes block app interaction',()=>{
   assert.equal(shouldBlockRefreshInteractions({reason:'foreground',startup:false}),false);
 });
 
+test('a definite browser-offline state is distinguished from unknown connectivity',()=>{
+  assert.equal(browserReportsOffline({onLine:false}),true);
+  assert.equal(browserReportsOffline({onLine:true}),false);
+  assert.equal(browserReportsOffline({}),false);
+  assert.equal(browserReportsOffline(null),false);
+});
+
+test('definite-offline refresh preserves saved FPL data and discloses fallback use',()=>{
+  assert.match(MAIN_SOURCE,/if\(browserReportsOffline\(\)\)\{\s*const error=new Error\('device offline'\);\s*error\.offline=true;\s*throw error;\s*\}/);
+  assert.match(MAIN_SOURCE,/offline \? 'device is offline' : 'live feed unreachable'/);
+  assert.match(MAIN_SOURCE,/Offline — still showing saved data from/);
+  assert.match(MAIN_SOURCE,/Teamsheet is offline and no verified season data is available/);
+});
+
 test('Safari resume uses completed-attempt throttling and in-flight deduplication',()=>{
   assert.match(MAIN_SOURCE,/let lastRefreshAttemptAt = 0;/);
   assert.match(MAIN_SOURCE,/if\(verifiedRefreshPromise\) return verifiedRefreshPromise;/);
@@ -59,7 +74,12 @@ test('startup and foreground paths use the same deferred verified refresh',()=>{
   assert.match(VIEWS_SOURCE,/installVerifiedRefreshTriggers\(\)/);
   assert.match(VIEWS_SOURCE,/runVerifiedRefresh\(\{reason:'manual',force:true\}\)/);
   assert.match(MAIN_SOURCE,/deferRender:true/);
-  assert.match(MAIN_SOURCE,/Promise\.allSettled\(\[loadUnderstat\(\), loadOdds\(\), loadMinuteHistories\(\)\]\)/);
+  assert.match(MAIN_SOURCE,/loadUnderstat\(\{force:Boolean\(options\.forceSupporting\)\}\)/);
+  assert.match(MAIN_SOURCE,/loadOdds\(\{force:Boolean\(options\.forceSupporting\)\}\)/);
+  assert.match(MAIN_SOURCE,/loadMinuteHistories\(\)/);
+  assert.match(MAIN_SOURCE,/forceSupporting:reason==='manual'/);
+  assert.match(VIEWS_SOURCE,/oddsKey[\s\S]*loadOdds\(\{force:true\}\)/);
+  assert.match(VIEWS_SOURCE,/useUstat[\s\S]*loadUnderstat\(\{force:true\}\)/);
   assert.match(MAIN_SOURCE,/document\.addEventListener\('visibilitychange',refreshIfDue\)/);
 });
 

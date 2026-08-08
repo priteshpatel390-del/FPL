@@ -611,8 +611,8 @@ $('btBtn').addEventListener('click', runBacktest);
 // The low-value odds key remains client-side temporarily (D-08); save it on
 // input so a pasted value is not lost before the field blurs.
 $('oddsKey').addEventListener('input', debounce(saveCfg, 300));
-$('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds().then(() => { clearXP(); renderAll(); }); });
-$('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat().then(() => { clearXP(); renderAll(); }); });
+$('oddsKey').addEventListener('change', () => { saveCfg(); loadOdds({force:true}).then(() => { clearXP(); renderAll(); }); });
+$('useUstat').addEventListener('change', () => { saveCfg(); loadUnderstat({force:true}).then(() => { clearXP(); renderAll(); }); });
 $('clearThread').addEventListener('click', () => { S.thread = []; lastAskQuestion=''; if($('retryAsk')) $('retryAsk').hidden=true; renderThread(); });
 $('pSearch').addEventListener('input', debounce(e => searchPlayers(e.target.value.trim()), 160));
 document.addEventListener('click', e => {

@@ -36,6 +36,22 @@ export const MINUTES_RULES = Object.freeze({
   cacheMaxAgeMs:7 * 24 * 60 * 60 * 1000
 });
 
+export const SUPPORTING_REFRESH_RULES = Object.freeze({
+  understat:Object.freeze({
+    maxAgeMs:24 * 60 * 60 * 1000,
+    failureCooldownMs:6 * 60 * 60 * 1000
+  }),
+  odds:Object.freeze({
+    nearWindowMs:48 * 60 * 60 * 1000,
+    nearRefreshMs:60 * 60 * 1000,
+    normalRefreshMs:6 * 60 * 60 * 1000,
+    maxUsableAgeMs:6 * 60 * 60 * 1000,
+    transientCooldownMs:60 * 60 * 1000,
+    quotaCooldownMs:6 * 60 * 60 * 1000,
+    rejectedCooldownMs:24 * 60 * 60 * 1000
+  })
+});
+
 export const SCORING_RULES = Object.freeze({
   rareEventPriorMatches:10,
   bonusPriorAppearances:8,
