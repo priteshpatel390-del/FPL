@@ -1,4 +1,3 @@
-import { S } from './state.mjs';
 import { $, num } from './util.mjs';
 import { SCHEMA_VERSION } from './config.mjs';
 /* ---------------------------------------------------------------------

@@ -4,36 +4,40 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Baseline
 
-- Repository baseline at this checkpoint: `main` `931a3aa8ba54ef45e30056e3e1e03d8b6a443497` (documentation-only PR #93).
+- Repository baseline at this checkpoint: `main` `cdc3cb709d97b858f29234678e7860baab918b78` (Repository Truth A1 merge through PR #94).
 - Latest substantive application checkpoint: PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`, exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f`.
-- Application verification: 664 passed, 0 failed, 0 skipped, 0 cancelled; deterministic double build; root/deployable equality; exact manifest identity.
+- Repository verification: 667 passed, 0 failed, 0 skipped, 0 cancelled — the unchanged 664 application tests plus three documentation-integrity tests; deterministic double build; root/deployable equality; exact manifest identity.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
-- No application, provider, calculation or infrastructure checkpoint is currently approved.
+- Safe Hygiene A2 is approved; no product, calculation, provider-behaviour or infrastructure checkpoint is approved.
 
-## Current approved checkpoint — Repository Truth A1
+## Current approved checkpoint — Safe Hygiene A2
 
-**Status:** approved for a separate documentation/test-infrastructure pull request. Merge remains owner-gated.
+**Status:** approved for a separate maintenance pull request. Draft publication and merge remain owner-gated.
 
-**Objective:** make repository truth unambiguous before further season work.
+**Objective:** close A1's post-merge status gap and remove only the audit's smallest proven-unused source/tool items without changing behaviour.
 
-**Why it matters:** conflicting current-status documents cause repeated investigation, incorrect handovers and unnecessary retesting.
+**Why it matters:** current guidance still describes merged A1 as pending, while a one-off Stage 2 migration tool and a handful of declaration-only names add avoidable repository and bundle noise.
 
 **Exact scope:**
 
-- reconcile canonical status with PR #92/#93 and the 664-test application baseline;
-- distinguish pre-season Leagues acceptance from deliberately deferred post-Gameweek evidence;
-- provide a useful maintainer README and one complete historical-record index;
-- assign unique decision and limitation IDs without changing the decisions themselves;
-- add zero-dependency checks for canonical references and duplicate IDs.
+- record PR #94, merge `cdc3cb709d97b858f29234678e7860baab918b78` and the 667-test repository baseline in affected canonical status;
+- correct the remaining Blueprint navigation sentence to Team, Transfers, Fixtures, Leagues and Settings;
+- delete obsolete 75-line `tools/split.py`;
+- remove declaration-only `reviewRound`, `reviewSegmentValue` and provider-registry `scale`;
+- remove unused transport `BASE` and its export;
+- remove the unused `S`, Fixtures `num`, and Odds `num`/`clamp` imports;
+- regenerate tracked deployables only through `build.mjs`.
 
-**Exclusions:** application source, generated deployables, providers, data sources, formulas, routes, navigation, persistence, Cloudflare, Pages, dependencies, file moves and code deletion.
+**Exclusions:** every additional deletion; provider acquisition or fallback behaviour; data sources; formulas; routes; navigation; persistence; Cloudflare; Pages architecture; dependencies; directory moves; CSS; state; harness/test-only helpers; UI rendering; and golden changes.
 
-**Risks:** accidentally rewriting historical provenance or labelling deferred live evidence as a defect.
+**Risks:** mistaking an externally consumed export for dead code, allowing generated files to drift from source, or overstating behaviour-neutral maintenance as a product or security improvement.
 
-**Test requirements:** complete Node suite, production build, deterministic byte comparison, root/deployable equality and exact manifest identity. No physical iPhone retest is required because no UI behaviour changes.
+**Test requirements:** all 667 existing tests, focused provider/review/build checks, two exact-identity production builds, root/deployable equality, exact manifest identity and exact changed-file review. No test or golden may be removed or weakened.
 
-**Approval gate:** Pritesh reviews the draft pull request and explicitly approves merge. A2 code hygiene is not included.
+**Physical acceptance:** no iPhone retest is required because rendered and interactive behaviour is unchanged.
+
+**Approval gate:** Pritesh reviews the draft pull request and explicitly approves merge. Live refresh-load hardening is not included.
 
 ## Proposed before-GW1 checkpoint — Live refresh-load hardening
 
@@ -207,4 +211,4 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Completed foundation summary
 
-Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance and the Leagues pre-season checkpoint are complete and merged. Their exact records remain in [Historical Records](HISTORICAL_RECORDS.md); they are not repeated here as open work.
+Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint and Repository Truth A1 are complete and merged. Their exact records remain in [Historical Records](HISTORICAL_RECORDS.md); they are not repeated here as open work.

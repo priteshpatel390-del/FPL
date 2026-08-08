@@ -6,22 +6,22 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work and the subsequent Team, Player Detail, Fixtures and Leagues pre-season checkpoints are merged. No application implementation checkpoint is currently approved.
+Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work and the subsequent Team, Player Detail, Fixtures and Leagues pre-season checkpoints are merged. Repository Truth A1 is also complete through PR #94. No product or calculation implementation checkpoint is currently approved.
 
-The immediate repository work is the approved documentation-only Repository Truth A1 checkpoint. Its purpose is to remove contradictory operational guidance, not to change user behaviour. A2 code hygiene and every later technical or product checkpoint remain separately gated.
+The immediate approved repository work is Safe Hygiene A2: reconcile A1's merge status, remove one obsolete migration script and a fixed list of proven-unused declarations/imports, and rebuild generated deployables through the deterministic build. It is behaviour-neutral maintenance; live refresh-load hardening and every later technical or product checkpoint remain separately gated.
 
 ## Evidence baseline
 
 | Item | Evidence |
 |---|---|
-| Repository baseline | GitHub `main` `931a3aa8ba54ef45e30056e3e1e03d8b6a443497`, merge of PR #93 |
+| Repository baseline | GitHub `main` `cdc3cb709d97b858f29234678e7860baab918b78`, merge of PR #94 |
 | Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
 | Application tree | PR #92 head and merge share `455cc281b5a7528d37884326708a63d22fe54c35` |
-| Permanent automated baseline | Verify Teamsheet run `31247061412`: 664 passed, 0 failed, 0 skipped, 0 cancelled |
-| Build baseline | Two exact-identity production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity matched the reviewed head |
-| Latest documentation checkpoint | PR #93 records Leagues pre-season acceptance and changes no application file |
+| Permanent automated baseline | Verify Teamsheet run `31255585665`: 667 passed, 0 failed, 0 skipped, 0 cancelled — 664 unchanged application tests plus three documentation-integrity tests |
+| Build baseline | Two exact-identity production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity matched the exact PR #94 head |
+| Latest repository-truth checkpoint | PR #94 merged the A1 documentation and documentation-integrity work without changing application behaviour or generated deployables |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | A1 documentation and documentation-integrity testing only; no application or infrastructure implementation |
+| Approval boundary | A2 post-merge reconciliation and the exact approved safe-hygiene list only; draft PR and merge remain separately owner-gated |
 
 ## Physical iPhone Safari baseline
 
@@ -143,7 +143,7 @@ These are roadmap inputs, not authority to change them.
 
 ### Approved now
 
-**Repository Truth A1:** canonical-document reconciliation, maintainer README, historical index, unique IDs and documentation-integrity tests only.
+**Safe Hygiene A2:** post-A1 status reconciliation, deletion of obsolete `tools/split.py`, removal of the two approved review helpers, registry `scale`, transport `BASE` and four unused imports, followed by generated-output reconciliation through `build.mjs`.
 
 ### Proposed next, not approved
 
@@ -155,4 +155,4 @@ Perform the deferred Leagues acceptance and begin genuine Stage 10 evidence revi
 
 ## Non-negotiable limits
 
-The Repository Truth checkpoint changes no provider, source, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, persistence, Cloudflare or Pages behaviour. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.
+Safe Hygiene A2 changes no provider behaviour, source, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, persistence, Cloudflare or Pages architecture. No removal beyond the approved itemised list is authorised. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.

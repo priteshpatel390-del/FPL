@@ -53,17 +53,25 @@ The latest substantive application checkpoint is PR #92 at merge `6f0501ffc0aff3
 - model/golden expectations: unchanged
 - calculation, provider and data-source behaviour: unchanged
 
-PR #93 is documentation-only and therefore inherits that application baseline. Repository Truth A1 adds documentation-integrity checks only; its branch result must be reported separately rather than presented as a new application-behaviour baseline.
+PR #94 is documentation/test-infrastructure only and therefore preserves that application baseline. Its three documentation-integrity tests raise the repository suite to 667 without creating a new application-behaviour claim.
 
 Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evidence for their tested paths. Leagues has pre-season physical acceptance; post-Gameweek populated checks are deliberately deferred. VoiceOver is not a Teamsheet acceptance gate.
 
-### Repository Truth A1 local candidate evidence
+### Repository Truth A1 merged evidence
 
-- Complete candidate suite: **667 tests, 667 passed, 0 failed, 0 skipped, 0 cancelled** — the unchanged 664 application tests plus three documentation-integrity tests.
-- Two production builds using the same explicit candidate identity were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`.
-- Root `index.html` equalled `dist/index.html`, and the manifest identity matched the supplied candidate identity.
-- Generated files were restored through `build.mjs` and remain outside the A1 diff.
-- Exact pull-request-head verification remains the permanent GitHub workflow's responsibility and must pass before merge.
+- Exact remote PR #94 head `1a8af48c96a4aa5ed9d856061be7e95e98f1b3d4` passed **667 tests, 667 passed, 0 failed, 0 skipped, 0 cancelled** in permanent Verify Teamsheet run `31255585665`.
+- The unchanged 664 application tests plus three documentation-integrity tests make up that total.
+- Two exact-head production builds were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`.
+- Root `index.html` equalled `dist/index.html`, manifest identity matched the exact PR head and the verified tree merged unchanged at `cdc3cb709d97b858f29234678e7860baab918b78`.
+- A1 changed no application behaviour or tracked generated deployable.
+
+### Safe Hygiene A2 local candidate evidence
+
+- Focused review/export, provider, transport, fixture, Odds, storage, build and documentation-integrity coverage passed **143/143**.
+- Exact source commit `ed4517900caaf26d711bccf66bbe3459e574fd5b` passed **667 tests, 667 passed, 0 failed, 0 skipped, 0 cancelled** without removing, weakening or skipping a test or changing a golden expectation.
+- Two production builds stamped with that exact source commit were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`.
+- Root `index.html` equalled `dist/index.html`; manifest identity matched the exact source commit; generated source hash was `9581b55c94eba9fc2948d56651e581ebc064fae5163d834a15329e8c8f1b9d77`.
+- Tracked generated outputs came only from `build.mjs`. Exact remote pull-request-head verification remains required before merge. Physical iPhone testing is unnecessary because no rendered or interactive behaviour changes.
 
 ## Coverage map
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.

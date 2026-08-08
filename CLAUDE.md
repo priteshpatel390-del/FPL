@@ -6,9 +6,9 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository baseline | `main` `931a3aa8ba54ef45e30056e3e1e03d8b6a443497`, merge of documentation-only PR #93 |
+| Repository baseline | `main` `cdc3cb709d97b858f29234678e7860baab918b78`, merge of documentation/test-infrastructure PR #94 |
 | Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
-| Permanent verification | Verify Teamsheet run `31247061412`: 664 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
+| Permanent repository verification | Verify Teamsheet run `31255585665`: 667 passed, 0 failed, 0 skipped, 0 cancelled — the unchanged 664 application tests plus three documentation-integrity tests; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
 | Application tree identity | Reviewed head and PR #92 merge share Git tree `455cc281b5a7528d37884326708a63d22fe54c35` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
@@ -17,14 +17,14 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 ## Current approval boundary
 
-Repository Truth A1 is approved as documentation and test-infrastructure work only:
+Repository Truth A1 is complete and merged through PR #94. Safe Hygiene A2 is approved for a separate branch and draft pull request only:
 
-- reconcile canonical status with PR #92/#93 and the 664-test application baseline;
-- provide a useful root README and a historical-record index;
-- assign unique decision and limitation IDs;
-- add a zero-dependency documentation-integrity test.
+- reconcile canonical status with the PR #94 merge and 667-test repository baseline;
+- delete the obsolete Stage 2 `tools/split.py` migration script;
+- remove only `reviewRound`, `reviewSegmentValue`, provider-registry `scale`, transport `BASE` and the four approved unused imports;
+- regenerate deployables only through `build.mjs` and preserve exact build identity.
 
-A1 authorises no application, generated deployable, provider, data source, calculation, routing, navigation, persistence, Cloudflare or deployment change. A2 code hygiene, live refresh-load hardening, product work and every deletion remain separately gated. No branch may be merged without Pritesh's explicit approval.
+A2 authorises no provider behaviour, data source, calculation, route, navigation, persistence, Cloudflare, security-boundary or user-experience change. Live refresh-load hardening, product work and every additional deletion remain separately gated. No branch may be merged without Pritesh's explicit approval.
 
 ## Owner and communication
 

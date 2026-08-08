@@ -2,8 +2,6 @@
 // D-16: runtime state is deliberately descriptive rather than a synthetic
 // score. The seven states tell the owner what data is actually being used and
 // what consequence follows when a provider is degraded.
-const scale = ['low','medium','high']; // documentation of the vocabulary
-
 export const APPROVED_PROVIDER_NAMES = Object.freeze(['fpl','understat','odds','archive']);
 export const APPROVED_PROVIDER_SOURCES = Object.freeze({
   fpl:Object.freeze({label:'Official FPL',authority:'official',purpose:'players, teams, fixtures, deadlines, squads and outcomes'}),
