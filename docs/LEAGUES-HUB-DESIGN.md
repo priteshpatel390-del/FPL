@@ -10,6 +10,8 @@ Each row shows the league name and the user's Official FPL membership position/m
 
 Tapping a league stores the existing selected league choice and opens the ID-free `#/leagues/detail` overview. Existing `#/leagues/standings`, `#/leagues/rival` and `#/leagues/exposure` remain deeper selected-league destinations. `#/leagues/manage` remains a secondary control from the hub.
 
+The Manage Leagues surface distinguishes connected Official FPL memberships from manually added league IDs. Connected Official FPL leagues remain selectable and may be made primary, but they do not expose a misleading local **Remove** action because discovery would add them back on the next Official FPL entry refresh. A league that is confirmed absent from the connected entry is labelled **Added manually** and may be removed. If the connected entry is temporarily unavailable, provenance is labelled conservatively as **Saved league** and removal is withheld until membership can be verified.
+
 ## Data and performance boundary
 
 The hub uses only the already-loaded Official FPL entry/classic-league membership facts and locally saved league choices. Opening `#/leagues` does **not** fetch standings for every league. Standings requests begin only after a user opens a specific league or one of its deeper selected-league routes. Large-league targeted pagination and on-demand rival squad loading remain unchanged.
@@ -20,4 +22,4 @@ No provider, endpoint, authentication, rank projection, effective ownership, riv
 
 ## Acceptance
 
-Automated coverage must prove the hub/detail route hierarchy, grouped league membership rows, rank/movement presentation, full-row keyboard/touch semantics, no standings fetch on the hub, existing targeted pagination and no-strategy/model guards. Physical iPhone Safari acceptance remains required for the new hub and selected-league transition before the Leagues populated/live checkpoint can close.
+Automated coverage must prove the hub/detail route hierarchy, grouped league membership rows, rank/movement presentation, full-row keyboard/touch semantics, no standings fetch on the hub, Official-vs-manual Manage Leagues provenance/removal semantics, existing targeted pagination and no-strategy/model guards. Physical iPhone Safari acceptance remains required for the new hub, selected-league transition and Manage Leagues presentation before the Leagues pre-season checkpoint can close.
