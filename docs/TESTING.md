@@ -143,12 +143,13 @@ Stages 8–10.3 change no deterministic projection formula and require no golden
 
 ## Required checks before completion
 1. Run `./run-tests.sh` with every committed test green and no golden regeneration.
-2. Build twice with the same exact source commit in `BUILD_COMMIT`.
-3. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte, then verify the generated root `index.html` deployment copy is identical to `dist/index.html`.
-4. Independently verify CSP/build identity through the committed security tests and emitted manifest.
-5. Confirm `BUILD_INFO`, manifest module order, source hash, commit identity and generated files agree.
-6. Commit verified generated artefacts for implementation checkpoints; documentation-only pull requests must confirm generated files are absent from their diff.
-7. Remove temporary verification workflows before merge.
+2. For a generated checkpoint, verify the committed manifest source resolves, is an ancestor of the artifact commit, matches every declared build input and reproduces all tracked generated files byte-for-byte.
+3. Build twice with the same exact source commit in `BUILD_COMMIT`.
+4. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte, then verify the generated root `index.html` deployment copy is identical to `dist/index.html`.
+5. Independently verify CSP/build identity through the committed security tests and emitted manifest.
+6. Confirm `BUILD_INFO`, manifest module order, module-source hash, complete build-input hash, commit identity and generated files agree.
+7. Commit reviewed inputs first, then commit only verified generated artefacts; documentation-only pull requests must confirm generated files are absent from their diff.
+8. Remove temporary verification workflows before merge.
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 10 metrics must remain descriptive until enough genuine prospective observations exist.

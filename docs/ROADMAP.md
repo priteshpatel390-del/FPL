@@ -1,15 +1,25 @@
 # ROADMAP.md — current and proposed checkpoints
 
-Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 8 August 2026.
+Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 9 August 2026.
 
 ## Baseline
 
-- Repository baseline at this checkpoint: `main` `2ddb33c81fa2092598f290d60320364f2e0c35dc` (Refresh-Load R1 merge through PR #96).
+- Repository head at this checkpoint: `main` `b7cfe5844bca1066a15ea422e694c55d827dab3b` (R1 documentation closeout through PR #97).
 - Latest substantive application checkpoint: PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`, exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`, generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`.
 - Permanent repository verification: run `31265107597`; 681 passed, 0 failed, 0 skipped, 0 cancelled; deterministic double build; root/deployable equality; exact manifest identity.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
 - Refresh-Load R1 is merged, deployed from `main` and physically accepted for every currently testable iPhone path. Live minute-history reuse awaits a completed checked Gameweek; Odds reuse awaits an enabled Odds configuration.
+
+## Current approved checkpoint — A3-R0 durable build provenance
+
+**Status:** approved for a separate branch and draft PR; merge remains owner-gated.
+
+**Scope:** add a complete build-input identity; require the generated manifest's source commit to resolve and be an ancestor of the generated-artifact commit; reproduce committed generated files exactly in CI; clarify repository-head, application-checkpoint and generated-source terminology.
+
+**Finalisation:** commit reviewed source/build/test/documentation changes first, build with that reachable commit as `BUILD_COMMIT`, then commit only `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. This is provenance-only and requires no physical iPhone test because rendered and interactive behaviour are unchanged.
+
+**Exclusions:** application/runtime behaviour, Direct Team renderer, routing, providers/endpoints, model/calculation logic, CSP origins, dependencies, toolchain and deployment architecture.
 
 ## Completed checkpoint — Refresh-Load R1
 

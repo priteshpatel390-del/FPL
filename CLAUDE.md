@@ -1,12 +1,12 @@
 # CLAUDE.md — onboarding for every future development session
 
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 8 August 2026.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 9 August 2026.
 
 ## Current baseline
 
 | Item | Current evidence |
 |---|---|
-| Repository baseline | `main` `2ddb33c81fa2092598f290d60320364f2e0c35dc`, merge of Refresh-Load R1 PR #96 |
+| Repository head | `main` `b7cfe5844bca1066a15ea422e694c55d827dab3b`, merge of R1 documentation closeout PR #97 |
 | Latest substantive application checkpoint | PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
 | Permanent repository verification | Verify Teamsheet run `31265107597`: 681 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
 | Application tree identity | Reviewed PR #96 head and merge share Git tree `fd40deff72c458286e77f44a66b79a0e720e700c` |
@@ -30,6 +30,8 @@ Understat parser repair, atomic foreground-state replacement, core bootstrap red
 The first PR #96 iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static application shell, which remains outside R1. The in-app offline refresh exposed misleading fresh/live FPL disclosure; source `d1b6ac0…` stops before networking when Safari definitively reports offline, preserves the saved snapshot timestamp and labels FPL as Fallback. Pritesh physically retested and accepted that corrected path, then verified the same build identity after GitHub Pages returned to `main`.
 
 The next substantive checkpoint is evidence-gated rather than implementation-approved: after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues behaviour. Record evidence and defects first; do not change calculations or providers without a separate approved scope.
+
+Audit A3 is complete. A3-R0 is the approved build-provenance remediation: bind generated files to all build inputs, require their recorded source commit to be a reachable ancestor and reproduce committed deployables exactly before ordinary CI builds overwrite them. Direct Team renderer work remains a separate later approval.
 
 ## Owner and communication
 
@@ -69,7 +71,7 @@ It does not yet provide a validated projected-rank model, protect/balanced/chase
 - Never delete, weaken or skip a test to make a change pass.
 - Never claim improved prediction accuracy without genuine out-of-sample validation. The historical aggregate r=0.80 is method-flattered.
 - Transfer pruning must remain admissible, and `exhaustiveTransferSearch()` must remain independent of production pruning.
-- Preserve deterministic builds, exact `BUILD_COMMIT` identity, root/deployable equality and generated-file provenance.
+- Preserve deterministic builds, exact reachable `BUILD_COMMIT` identity, complete build-input identity, root/deployable equality and generated-file provenance.
 - Preserve Vanilla JavaScript ES modules, the zero-dependency toolchain, Node built-in tests, the custom bundler, GitHub Pages and the single-file deployment unless separately approved.
 - Generated `dist/` and root `index.html` files come only from `build.mjs`; never hand-edit them.
 - Anthropic keys remain banned client-side. Odds requests remain direct-only and the key must never be relayed, logged, rendered or exposed in diagnostics.

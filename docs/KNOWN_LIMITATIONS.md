@@ -1,6 +1,6 @@
 # KNOWN_LIMITATIONS.md
 
-Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 8 August 2026.
+Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 9 August 2026.
 
 Current evidence boundary: the latest substantive application checkpoint is Refresh-Load R1 PR #96, merged at `2ddb33c81fa2092598f290d60320364f2e0c35dc`, with 681 passing tests, deterministic exact-identity builds and accepted currently testable physical iPhone paths. Transfers, Player Detail, Team and Fixtures tested paths are physically accepted. Leagues is accepted for the available pre-season state; populated rank, standings, gaps, rivals, exposure and relevant pagination remain deferred until Official FPL publishes post-Gameweek data. Deferred live evidence is not a defect.
 
@@ -15,6 +15,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | VAL-1 | No runtime schema validation | Fixed by per-endpoint fatal/partial validation | Stage 3 | **CLOSED 2026-07-27** |
 | DUP-1 | Duplicate fixtures could double-count projections | Fixed by provider-boundary identity/deduplication | Stage 3 | **CLOSED 2026-07-26** |
 | BUILD-1 | Custom bundler could leave parts of multi-line module declarations in production output | Complete static import/export declarations are stripped and surviving module syntax is rejected | Stage 5 review | **CLOSED 2026-07-28** |
+| BUILD-2 | The tracked R1 deployable reproduced exactly but recorded an unreachable local generating commit, and its source hash covered runtime modules rather than every build input | A3-R0 adds a complete input hash plus reachable-ancestor and exact committed-artifact reproduction gates; the corrected generated checkpoint remains draft/merge-gated | A3-R0 | Implementation candidate; merge pending |
 | RET-1 | `Retry-After` is not honoured | Fixed capped backoff may retry sooner than a provider requests | Serverless reconsideration | Open (accepted) |
 | RET-2 | No general transport-level per-provider circuit breaker | R1 adds a minute-history-specific two-failed-batch guard and provider cooldowns, but other pooled endpoint families retain their existing bounded retries | Future provider hardening only with separate approval | Open |
 | HEALTH-1 | Provider Health is session-scoped | No multi-session incident history; compact global status and full Settings detail reflect only the current session | No planned stage | Accepted |

@@ -5,7 +5,13 @@
 // bytes, except the commit id supplied through BUILD_COMMIT.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { stripModuleSyntax, assertNoModuleSyntax } from './build-utils.mjs';
+import {
+  hashNamedInputs,
+  buildInputFiles,
+  hashBuildInputs,
+  stripModuleSyntax,
+  assertNoModuleSyntax
+} from './build-utils.mjs';
 
 const ORDER = [
   'src/config.mjs', 'src/util.mjs', 'src/providers/retry.mjs', 'src/providers/validate.mjs', 'src/providers/outcome-validate.mjs',
@@ -24,24 +30,26 @@ const ORDER = [
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
 const transferWorkerModelSource = stripModuleSyntax(readFileSync('src/model/transfers.mjs', 'utf8'));
-const sourceHasher = createHash('sha256');
+const moduleInputs = [];
 let bundle = '';
 for (const path of ORDER) {
   const raw = readFileSync(path, 'utf8');
   if(/\bstyle\s*:/.test(raw) || /\.style(?:\.|\[|\s*=)/.test(raw) || /setAttribute\(\s*['\"]style/.test(raw) || /\bcssText\b/.test(raw))
     throw new Error(`Inline style API is forbidden in ${path}; use the hash-locked stylesheet`);
-  sourceHasher.update(path).update('\0').update(raw);
+  moduleInputs.push({ path, content:raw });
   bundle += `\n/* ===== ${path} ===== */\n` + stripModuleSyntax(raw) + '\n';
 }
 assertNoModuleSyntax(bundle);
-const sourceHash = sourceHasher.digest('hex');
+const sourceHash = hashNamedInputs(moduleInputs);
+const buildInputs = buildInputFiles(ORDER);
+const buildInputHash = hashBuildInputs(ORDER);
 const commit = process.env.BUILD_COMMIT || 'unversioned';
 const cfg = readFileSync('src/config.mjs', 'utf8');
 const modelVersion = /MODEL_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 const rulesVersion = /RULES_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 
-const manifest = { modelVersion, rulesVersion, sourceHash, commit, moduleOrder: ORDER };
-bundle = (`/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: sourceHash.slice(0,16), commit })} */\n`
+const manifest = { modelVersion, rulesVersion, sourceHash, buildInputHash, commit, moduleOrder: ORDER, buildInputFiles:buildInputs };
+bundle = (`/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: sourceHash.slice(0,16), buildInputHash:buildInputHash.slice(0,16), commit })} */\n`
   + `const BUILD_INFO = ${JSON.stringify(manifest)};\n`
   + `const TRANSFER_WORKER_MODEL_SOURCE = ${JSON.stringify(transferWorkerModelSource)};\n`
   + `if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;\n`
@@ -112,4 +120,4 @@ writeFileSync('dist/app.bundle.js', bundle);
 writeFileSync('dist/manifest.json', JSON.stringify(manifest, null, 2));
 writeFileSync('dist/index.html', html);
 writeFileSync('index.html', html);
-console.log(`built dist/index.html + index.html (${html.length}b)  model ${modelVersion}  rules ${rulesVersion}  src ${sourceHash.slice(0,12)}  commit ${commit}`);
+console.log(`built dist/index.html + index.html (${html.length}b)  model ${modelVersion}  rules ${rulesVersion}  src ${sourceHash.slice(0,12)}  inputs ${buildInputHash.slice(0,12)}  commit ${commit}`);

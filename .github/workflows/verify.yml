@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Confirm runtime and revision
         run: |
@@ -31,6 +32,11 @@ jobs:
           node --version
           test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
           echo "Verifying $BUILD_COMMIT"
+
+      - name: Verify committed deployment provenance
+        run: |
+          set -eu
+          node scripts/verify-build-provenance.mjs
 
       - name: Run complete test suite
         run: |
@@ -61,7 +67,7 @@ jobs:
       - name: Verify build identity
         run: |
           set -eu
-          node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); console.log('Manifest commit verified:',m.commit);"
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; import {hashBuildInputs} from './build-utils.mjs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); if(m.buildInputHash!==hashBuildInputs(m.moduleOrder)) throw new Error('manifest build-input mismatch'); console.log('Manifest identity verified:',m.commit,m.buildInputHash);"
 
       - name: Preserve verified production outputs
         uses: actions/upload-artifact@v4
@@ -84,4 +90,5 @@ jobs:
           echo '- Two exact-identity production builds: byte-identical' >> "$GITHUB_STEP_SUMMARY"
           echo '- Root index.html equals dist/index.html' >> "$GITHUB_STEP_SUMMARY"
           echo '- Manifest build identity: exact' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Committed deployable source: reachable ancestor and exactly reproducible' >> "$GITHUB_STEP_SUMMARY"
           echo '- Verified production outputs: preserved as a workflow artifact' >> "$GITHUB_STEP_SUMMARY"
