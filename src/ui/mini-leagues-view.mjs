@@ -224,7 +224,7 @@ async function loadMiniLeagueStandings({force=false}={}){
   const data={league:{id:league.id,name:resolvedName||`League ${league.id}`},rows:[...map.values()],hasNext:Boolean(first.standings?.has_next),browsePage:1,browseHasNext:Boolean(first.standings?.has_next),updatedAt:Date.now(),provisional:miniLeagueStatusCopy().provisional,stale:false,refreshError:false};
   S.miniLeagueData.standings[league.id]=data; renderMiniLeagues(); miniLeagueSetBusy($('leagueLandingOut'),false);
   const nearest=miniLeagueNearestRows(data.rows,S.teamId),announcedRank=miniLeagueRank(nearest.user?.rank??membership?.entry_rank);
-  miniLeagueAnnounce(announcedRank?`Standings loaded. Your position is ${miniLeagueOrdinal(announcedRank)}.`:!S.seasonLive?'Standings loaded. Your league position is not ranked yet.':'Standings loaded. Your connected team was not found on the loaded pages.');
+  miniLeagueAnnounce(announcedRank?`Standings loaded. Your position is ${miniLeagueOrdinal(announcedRank)}.`:!S.seasonLive?'League positions have not been published yet.':'Standings loaded. Your connected team was not found on the loaded pages.');
   return data;
 }
 async function loadNextMiniLeagueStandingsPage(){
@@ -359,9 +359,16 @@ function renderMiniLeagueRivalCard(row,user,leagueId){
     el('div',{class:'league-rival-actions'},miniLeagueButton(pinned?'Unpin':'Pin',{onclick:async()=>{await togglePinnedMiniLeagueRival(leagueId,{id:row.entry,name:miniLeagueManagerName(row)});renderMiniLeagues();}}),miniLeagueButton('Compare',{onclick:async()=>{await selectMiniLeagueRival(leagueId,{id:row.entry,name:miniLeagueManagerName(row)});miniLeagueNavigate('#/leagues/rival');}})));
 }
 function renderMiniLeagueStandings(){
-  const out=$('leagueStandingsOut'),data=miniLeagueSelectedData(); if(!out) return;
-  if(!data){ setChildren(out,miniLeagueEmpty('No standings loaded','Return to the League overview and load the selected league.',miniLeagueLink('Back to League','#/leagues/detail','btn'))); return; }
+  const out=$('leagueStandingsOut'),hint=$('leagueStandingsHint'),data=miniLeagueSelectedData(); if(!out) return;
+  if(!data){ if(hint) hint.hidden=true; setChildren(out,miniLeagueEmpty('No standings loaded','Return to the League overview and load the selected league.',miniLeagueLink('Back to League','#/leagues/detail','btn'))); return; }
   const rows=data.rows.slice().sort((a,b)=>Number(a.rank)-Number(b.rank));
+  const hasPublishedPositions=rows.some(row=>miniLeagueRank(row.rank)!==null);
+  if(!S.seasonLive&&!hasPublishedPositions){
+    if(hint) hint.hidden=true;
+    setChildren(out,miniLeagueEmpty('Standings not available yet','Official FPL will publish this league table once positions are available.'));
+    return;
+  }
+  if(hint) hint.hidden=false;
   setChildren(out,el('div',{class:'league-standings-list'},rows.map(row=>{
     const mine=String(row.entry)===String(S.teamId); const movement=miniLeagueMovement(row.rank,row.last_rank);
     const open=async()=>{await selectMiniLeagueRival(data.league.id,{id:row.entry,name:miniLeagueManagerName(row)});miniLeagueNavigate('#/leagues/rival');};

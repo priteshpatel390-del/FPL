@@ -92,6 +92,15 @@ test('owner-approved compact League hierarchy keeps primary context visible with
   excludesAll(landing,["miniLeagueLink('Manage leagues','#/leagues/manage','btn ghost')","miniLeagueLink('Review Team'","miniLeagueLink('Review Transfers'"]);
 });
 
+test('pre-season standings use a compact truthful empty state until positions are published',()=>{
+  const standingsStart=view.indexOf('function renderMiniLeagueStandings');
+  const standings=view.slice(standingsStart,view.indexOf('function renderMiniLeagueRival(){',standingsStart));
+  includesAll(app,['id="leagueStandingsHint" hidden','Nearby and loaded managers only. Large leagues are not scanned in full.']);
+  includesAll(view,['League positions have not been published yet.','Standings not available yet','Official FPL will publish this league table once positions are available.']);
+  includesAll(standings,['hasPublishedPositions','if(!S.seasonLive&&!hasPublishedPositions)','if(hint) hint.hidden=true','if(hint) hint.hidden=false']);
+  excludesAll(view,['Standings loaded. Your league position is not ranked yet.']);
+});
+
 test('standings use full-row touch and keyboard actions with a quiet trailing affordance',()=>{
   const standingsStart=view.indexOf('function renderMiniLeagueStandings');
   const standings=view.slice(standingsStart,view.indexOf('function renderMiniLeagueRival(){',standingsStart));
