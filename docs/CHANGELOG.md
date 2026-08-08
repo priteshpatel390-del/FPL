@@ -2,6 +2,21 @@
 
 Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 8 August 2026.
 
+## 2026-08-08 — Safe Hygiene A2 prepared for draft review
+
+- Removed obsolete 75-line `tools/split.py`, declaration-only `reviewRound`, `reviewSegmentValue` and provider-registry `scale`, unused transport `BASE` plus its export, and four unused imports — an exact 85-line net source/tool reduction.
+- Reconciled the merged PR #94/667-test status and corrected the remaining Blueprint navigation sentence without changing historical decisions.
+- Exact source commit `ed4517900caaf26d711bccf66bbe3459e574fd5b` passed 667/667 tests; focused affected-area coverage passed 143/143.
+- Two exact-source builds were byte-identical, root/deployable equality passed and manifest identity matched; generated outputs were produced only by `build.mjs`.
+- No provider behaviour, data source, formula, route, navigation, state, persistence, Cloudflare, security boundary, UI or golden expectation changed. Draft review and merge remain owner-gated.
+
+## 2026-08-08 — Repository Truth A1 merged
+
+- PR #94 merged at `cdc3cb709d97b858f29234678e7860baab918b78` from exact remote head `1a8af48c96a4aa5ed9d856061be7e95e98f1b3d4`.
+- Reconciled canonical status, added a maintainer README and complete historical-record index, assigned unique decision/limitation IDs and added three documentation-integrity tests.
+- Permanent Verify Teamsheet run `31255585665` passed 667 tests — the unchanged 664 application tests plus the three new guidance checks — with deterministic double builds, root/deployable equality and exact manifest identity.
+- Changed no application behaviour, generated deployable, provider, calculation or infrastructure.
+
 ## 2026-08-08 — Leagues pre-season acceptance recorded
 
 - PR #93 merged at `931a3aa8ba54ef45e30056e3e1e03d8b6a443497` and added `LEAGUES-PRESEASON-ACCEPTANCE.md` only.

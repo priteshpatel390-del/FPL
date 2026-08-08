@@ -55,8 +55,9 @@ docs/                   canonical guidance plus indexed historical project recor
 dist/                   generated deployable; never hand-edit
 workers/                separately deployed, allowlisted Official FPL Cloudflare gateway
 .github/workflows/      permanent exact-revision pull-request verification
-tools/split.py          historical Stage 2 splitter; not part of the current build path
 ```
+
+The former `tools/split.py` one-off Stage 2 migration script is removed under Safe Hygiene A2. It targeted an absent monolithic `app.js` and was never part of the current source, build, test, deployment or Worker path. A2 also removes only declaration-only helpers/constants and unused imports; module order, runtime ownership and every public behaviour remain unchanged.
 
 ## Dependency flow
 Configuration and state feed providers, storage and model modules. Official FPL element histories populate `S.minuteHistory`. `model/minutes.mjs` owns expected-minutes probabilities and aggregate fallback. `model/scoring.mjs` consumes that boundary and returns the unchanged deterministic `{total,perGW,games,parts}` projection surface.

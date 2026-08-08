@@ -500,7 +500,7 @@ This blueprint does not authorise:
 ## 13. Approved Product Decisions
 
 1. Teamsheet is a team-level FPL decision product centred on the user's complete 15-player squad.
-2. The primary navigation is Team, Transfers, Mini Leagues and Settings.
+2. The primary navigation is Team, Transfers, Fixtures, Leagues and Settings.
 3. More is replaced by Settings.
 4. Players is removed from primary navigation.
 5. Replacement discovery belongs in Transfers.

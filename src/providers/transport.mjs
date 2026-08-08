@@ -9,7 +9,6 @@ import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from './retry.m
    Anonymous public relays remain available only to the optional Understat
    HTML loader and are never part of the Official FPL request path.
    --------------------------------------------------------------------- */
-const BASE = 'https://fantasy.premierleague.com/api';
 const FPL_GATEWAY_META = 'teamsheet-fpl-gateway';
 const RELAYS = [
   u => u,
@@ -146,7 +145,7 @@ async function fetchVia(url, {timeout=12000, asText=false} = {}){
 }
 
 export {
-  BASE, FPL_GATEWAY_META, RELAYS, fetchT, normaliseGatewayBase,
+  FPL_GATEWAY_META, RELAYS, fetchT, normaliseGatewayBase,
   configuredGatewayBase, gatewayRequestUrl, gatewayOnce, api, pool,
   fetchVia, cascadeOnce
 };

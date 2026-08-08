@@ -23,7 +23,6 @@ function reviewFinite(value){
   const number=Number(value);
   return Number.isFinite(number)?number:null;
 }
-function reviewRound(value){return Number.isFinite(value)?Number(value.toFixed(8)):null;}
 function reviewIso(value){const time=Date.parse(value);return Number.isFinite(time)?new Date(time).toISOString():null;}
 function reviewSortNumbers(values){return [...new Set((values||[]).map(Number).filter(Number.isFinite))].sort((a,b)=>a-b);}
 function reviewSortRecords(records){
@@ -72,11 +71,6 @@ function reviewCurrentRecords(records){
 function reviewIndexById(records){return new Map((records||[]).map(record=>[reviewRecordId(record),record]).filter(([id])=>Boolean(id)));}
 function reviewIndexSnapshots(records){return new Map((records||[]).map(record=>[record?.identity?.snapshotId,record]).filter(([id])=>Boolean(id)));}
 function reviewIndexOutcomes(records){return new Map((records||[]).map(record=>[record?.identity?.outcomeId,record]).filter(([id])=>Boolean(id)));}
-function reviewSegmentValue(row,dimension){
-  if(dimension==='overall') return 'all';
-  if(dimension==='schedule') return row?.scheduleAligned?'schedule_aligned':'schedule_changed';
-  return row?.segments?.[dimension]??'unknown';
-}
 function reviewTransferForEvaluation(evaluation,transfers){
   return (transfers||[]).find(record=>record?.sources?.startEvaluationId===evaluation?.identity?.evaluationId)||null;
 }

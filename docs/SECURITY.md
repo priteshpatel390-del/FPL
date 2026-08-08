@@ -1,6 +1,6 @@
 # SECURITY.md
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
-Last updated: 2026-08-04. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
+Last reconciled: 2026-08-08. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
 
 ## Current architecture
 Static single-file application on GitHub Pages plus one owner-controlled, zero-dependency Cloudflare Worker used only as a narrow read-only transport to Official FPL. The Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev` and accepts only the approved allowlisted FPL paths; it is not a generic proxy. Stage 3 security hardening remains complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`.
@@ -14,7 +14,9 @@ Static single-file application on GitHub Pages plus one owner-controlled, zero-d
 - Stage 10 snapshot, outcome and metric records use allowlisted shapes, canonical finite JSON, immutable revisions and deterministic SHA-256 verification.
 
 ## Official FPL gateway security
-The production gateway uses a fixed Official FPL upstream host and an exact path/query allowlist. It supports only `GET`, `HEAD` and CORS `OPTIONS`, forwards only `Accept: application/json`, omits browser credentials and rejects unknown paths, traversal, arbitrary URLs, non-JSON responses and every redirect without following or exposing its destination. Browser CORS is limited to approved exact origins, but this is not authentication. Redacted observability can record only bounded error type/message data; permanent tests strip URLs, query values and numeric identifiers. Live bootstrap transport was verified after deployment, while account-shaped application acceptance remains pending.
+The production gateway uses a fixed Official FPL upstream host and an exact path/query allowlist. It supports only `GET`, `HEAD` and CORS `OPTIONS`, forwards only `Accept: application/json`, omits browser credentials and rejects unknown paths, traversal, arbitrary URLs, non-JSON responses and every redirect without following or exposing its destination. Browser CORS is limited to approved exact origins, but this is not authentication. Redacted observability can record only bounded error type/message data; permanent tests strip URLs, query values and numeric identifiers. Live transport and the tested Transfers, Player Detail, Team, Fixtures and Leagues pre-season paths are accepted; populated post-Gameweek League evidence remains deliberately deferred.
+
+Safe Hygiene A2 removes an unused browser-transport `BASE` constant and export only. Runtime Official FPL requests already derive their exact gateway base from the validated configuration/meta boundary, so this removal changes no upstream host, endpoint, request, credential, CORS, cache, fallback or trust behaviour.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:

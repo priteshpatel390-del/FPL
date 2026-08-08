@@ -1,5 +1,5 @@
 import { S, validTeamStrength, teamStrengthsValid } from '../state.mjs';
-import { clamp, num } from '../util.mjs';
+import { clamp } from '../util.mjs';
 import { BASE_GOALS, HOME_TILT } from '../config.mjs';
 /* ---------------------------------------------------------------------
    FIXTURE MODEL — expected goals for and against, from team strength

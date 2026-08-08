@@ -1,5 +1,5 @@
 import { S } from '../state.mjs';
-import { $, num, clamp } from '../util.mjs';
+import { $ } from '../util.mjs';
 import { fetchT } from './transport.mjs';
 import { mapTeamName } from './common.mjs';
 import { ODDS_RULES } from '../config.mjs';
