@@ -76,12 +76,13 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 
 ### Refresh-Load R1 review-candidate evidence
 
-- The 667 prior tests remain unchanged and all pass. Twelve new tests in `refresh-load-r1.test.mjs` raise the candidate suite to **679 tests, 679 passed, 0 failed, 0 skipped, 0 cancelled**.
+- The 667 prior tests remain unchanged and all pass. Twelve tests in `refresh-load-r1.test.mjs` plus two iPhone-found offline-disclosure regressions in `startup-refresh.test.mjs` raise the corrected candidate suite to **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled**.
 - New coverage proves active-squad-first 95-player ordering, checked-fixture revision identity, fresh-cache zero requests, missing-player-only refresh, seven-day backstop, two-failed-batch outage stop, unchanged success timestamps, separate minute-health detail, Understat 24-hour/completed-match cadence and six-hour cooldown, normalised-only storage/manual bypass, Odds one/six-hour cadence, six-hour maximum use, key-free derived storage, rejection cooldown and fresh-cache reuse.
+- The offline regressions prove that only an explicit browser `onLine === false` signal is treated as definitely offline and that the acquisition path stops before networking, preserves saved FPL data, reports FPL Fallback and uses explicit offline copy rather than a gateway-loaded claim.
 - All model, expected-minutes, projection, scoring, fixture, captaincy, transfer, rank, League and golden expectations remain unchanged.
-- Exact source commit `ac02aca03e3de0fe72e83a332b14abfbe0848a6d` passed **679 tests, 679 passed, 0 failed, 0 skipped, 0 cancelled** without removing, weakening or skipping a test or changing a golden expectation.
-- Two production builds stamped with that exact source commit were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Root equalled deployable; the manifest recorded the exact source commit and source hash `608fefd39fdcc7c284d25191a1b3f77bcf331bac867250980c1eeff1ff025270`.
-- Exact remote-head verification and physical iPhone live/cached/stale/offline acceptance remain required before merge.
+- Corrected exact source commit `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` passed **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled** without removing, weakening or skipping a test or changing a golden expectation.
+- Two production builds stamped with that exact source commit were byte-identical for `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. Root equalled deployable; the manifest recorded the exact source commit and source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a`.
+- The first physical iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static app shell. The misleading offline fresh/live disclosure it exposed is corrected locally; exact remote-head verification and a focused physical retest of that disclosure remain required before merge.
 
 ## Coverage map
 1. `characterisation.test.mjs` — production-bundle behaviour and reviewed goldens.
@@ -103,7 +104,7 @@ Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evi
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
 18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
 19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
-20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
+20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, definite-offline acquisition/disclosure, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
 21. `outcome-collection.test.mjs` — Stage 10.2 endpoint validation, blank/double/postponed Gameweeks, delayed checking, corrections, squad facts, snapshot-safe records and tamper detection.
 22. `outcome-storage.test.mjs` — immutable revision pointers, recovery-only imports, journal recovery, bounds, quota failure, cadence and deletion isolation.
 23. `metrics.test.mjs` — exact player/minutes/probability/interval calculations; zero and signed errors; Pearson/Spearman ties and zero variance; approved error/price/season boundaries; singles, doubles and postponements; legal automatic substitutions, goalkeeper and captain fallback; authoritative joins, corrections, tamper detection, non-mutation, segmentation, frozen transfer horizons, public record-field contracts and static no-model-recomputation guards.

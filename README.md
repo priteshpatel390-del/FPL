@@ -11,7 +11,7 @@ The baseline after merged Safe Hygiene A2 on 8 August 2026 is:
 | GitHub `main` | `2eee62b77291af06552e3d1952b6e1a6355ca7e0` — merge of PR #95 |
 | Latest substantive application state | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`, exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
 | Automated repository baseline | 667 passed, 0 failed, 0 skipped, 0 cancelled; two byte-identical exact-identity builds; root/deployable equality; exact manifest identity |
-| Current review candidate | Refresh-Load R1 adds 12 acquisition/cache tests for a 679-test candidate suite; merge remains separately gated |
+| Current review candidate | Refresh-Load R1 plus the iPhone-found offline-disclosure correction adds 14 tests for a 681-test candidate suite; the focused device retest and merge remain separately gated |
 | Physical iPhone Safari baseline | Accepted tested paths for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
 | Deliberately deferred | Populated League rank, standings, gaps, rivals, exposure and relevant large-league pagination until Official FPL publishes post-Gameweek data |
 

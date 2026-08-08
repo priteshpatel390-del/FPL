@@ -39,6 +39,9 @@ let lastVerifiedRefreshAt = 0;
 let lastRefreshAttemptAt = 0;
 let verifiedRefreshTriggersInstalled = false;
 
+function browserReportsOffline(navigatorRef=globalThis.navigator){
+  return navigatorRef?.onLine === false;
+}
 function ageLabel(ms){
   if(ms == null) return '';
   const mins = Math.floor(ms / 60000);
@@ -108,6 +111,11 @@ async function loadAll(options = {}){
     st.textContent = 'Fetching season data…';
   }
   try{
+    if(browserReportsOffline()){
+      const error=new Error('device offline');
+      error.offline=true;
+      throw error;
+    }
     reportLoadPhase(options,'fpl');
     const [boot, fixtures] = await Promise.all([api('/bootstrap-static/'), api('/fixtures/')]);
     const bs = bootstrapStructure(boot);
@@ -193,10 +201,12 @@ async function loadAll(options = {}){
   }catch(err){
     await saveCfg();
     const shape = !!(err && err.feedShape);
+    const offline = !!(err && err.offline);
     if(S.boot){
-      markFallback('fpl', shape ? 'live feed shape unusable' : 'live feed unreachable', 'saved season snapshot remains active');
+      markFallback('fpl', shape ? 'live feed shape unusable' : offline ? 'device is offline' : 'live feed unreachable', 'saved season snapshot remains active');
       if(st) st.textContent = (shape
         ? 'The season feed came back in an unexpected format — still showing saved data from '
+        : offline ? 'Offline — still showing saved data from '
         : 'Live feed unreachable — still showing saved data from ') +
         new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
     } else if(shape){
@@ -205,10 +215,12 @@ async function loadAll(options = {}){
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
         "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
     } else {
-      markUnavailable('fpl', 'official gateway unavailable', 'season data cannot be shown');
-      if(st) st.textContent = 'Data feed unreachable.';
+      markUnavailable('fpl', offline ? 'device is offline' : 'official gateway unavailable', 'season data cannot be shown');
+      if(st) st.textContent = offline ? 'Teamsheet is offline and no verified season data is available.' : 'Data feed unreachable.';
       setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
+        offline
+          ? 'Reconnect to the internet, then try Load data again. Without a verified saved snapshot, recommendations remain safely unavailable.'
+          : 'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
     }
     reportLoadPhase(options,'model');
     if(S.boot) renderVerifiedState();
@@ -325,6 +337,7 @@ export {
   shouldRefreshVerifiedData,
   shouldBlockRefreshInteractions,
   shouldRunForegroundRefresh,
+  browserReportsOffline,
   setStartupPhase,
   setStartupGateVisible,
   dispatchVerifiedData,

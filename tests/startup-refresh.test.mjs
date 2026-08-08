@@ -6,6 +6,7 @@ import {
   shouldRefreshVerifiedData,
   shouldBlockRefreshInteractions,
   shouldRunForegroundRefresh,
+  browserReportsOffline,
   dispatchVerifiedData
 } from '../src/main.mjs';
 
@@ -44,6 +45,20 @@ test('only startup and manual refreshes block app interaction',()=>{
   assert.equal(shouldBlockRefreshInteractions({reason:'startup',startup:true}),true);
   assert.equal(shouldBlockRefreshInteractions({reason:'manual',startup:false}),true);
   assert.equal(shouldBlockRefreshInteractions({reason:'foreground',startup:false}),false);
+});
+
+test('a definite browser-offline state is distinguished from unknown connectivity',()=>{
+  assert.equal(browserReportsOffline({onLine:false}),true);
+  assert.equal(browserReportsOffline({onLine:true}),false);
+  assert.equal(browserReportsOffline({}),false);
+  assert.equal(browserReportsOffline(null),false);
+});
+
+test('definite-offline refresh preserves saved FPL data and discloses fallback use',()=>{
+  assert.match(MAIN_SOURCE,/if\(browserReportsOffline\(\)\)\{\s*const error=new Error\('device offline'\);\s*error\.offline=true;\s*throw error;\s*\}/);
+  assert.match(MAIN_SOURCE,/offline \? 'device is offline' : 'live feed unreachable'/);
+  assert.match(MAIN_SOURCE,/Offline — still showing saved data from/);
+  assert.match(MAIN_SOURCE,/Teamsheet is offline and no verified season data is available/);
 });
 
 test('Safari resume uses completed-attempt throttling and in-flight deduplication',()=>{

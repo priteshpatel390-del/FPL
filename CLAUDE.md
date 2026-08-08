@@ -9,7 +9,7 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 | Repository baseline | `main` `2eee62b77291af06552e3d1952b6e1a6355ca7e0`, merge of Safe Hygiene PR #95 |
 | Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
 | Permanent repository verification | Verify Teamsheet run `31256999867`: 667 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
-| Current implementation candidate | Refresh-Load R1 exact source `ac02aca03e3de0fe72e83a332b14abfbe0848a6d`: 679/679 tests passed; deterministic double build, root/deployable equality and manifest identity verified; draft publication and physical iPhone acceptance remain required |
+| Current implementation candidate | Refresh-Load R1 corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`: 681/681 tests passed; deterministic double build, root/deployable equality and manifest identity verified; PR #96 republication and the focused offline-disclosure iPhone retest remain required |
 | Application tree identity | Reviewed head and PR #92 merge share Git tree `455cc281b5a7528d37884326708a63d22fe54c35` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
@@ -27,6 +27,8 @@ Repository Truth A1 and Safe Hygiene A2 are complete and merged through PRs #94 
 - preserve every model formula, provider endpoint, gateway rule and the existing complete-state orchestration.
 
 Understat parser repair, atomic foreground-state replacement, core bootstrap reduction, new providers/endpoints and every formula or recommendation change are excluded. R1 requires exact automated verification, a draft PR and physical iPhone live/cached/stale/offline acceptance before merge. No branch may be merged without Pritesh's explicit approval.
+
+The first PR #96 iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static application shell, which remains outside R1. The in-app offline refresh exposed misleading fresh/live FPL disclosure; source `d1b6ac0…` now stops before networking when Safari definitively reports offline, preserves the saved snapshot timestamp and labels FPL as Fallback. That narrow device path must be retested before merge.
 
 ## Owner and communication
 

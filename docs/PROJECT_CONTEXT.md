@@ -19,9 +19,9 @@ The immediate approved work is Refresh-Load R1 on a separate review branch. It c
 | Application tree | PR #92 head and merge share `455cc281b5a7528d37884326708a63d22fe54c35` |
 | Permanent automated baseline | Verify Teamsheet run `31256999867`: 667 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #95 head `c1ebd7610b9a81f893457b8bb1bb41316de80dc0` |
 | Build baseline | Two exact-identity production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity matched the exact PR #95 head |
-| Current candidate | Refresh-Load R1 exact source `ac02aca03e3de0fe72e83a332b14abfbe0848a6d`: 679/679 tests passed; deterministic double build, root/deployable equality and manifest identity verified; remote CI remains pending until publication |
+| Current candidate | Refresh-Load R1 corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`: 681/681 tests passed; deterministic double build, root/deployable equality and manifest identity verified; corrected PR #96 publication and remote CI remain pending |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | R1 acquisition policy, tests, docs and draft PR only; physical iPhone acceptance and merge remain separately owner-gated |
+| Approval boundary | R1 acquisition policy, offline disclosure, tests, docs and draft PR only; the focused iPhone retest and merge remain separately owner-gated |
 
 ## Physical iPhone Safari baseline
 
@@ -34,6 +34,8 @@ Pritesh has physically accepted the tested populated paths for:
 - the Leagues all-league hub, league selection/switching, primary persistence, back navigation, pre-season standings/exposure states and Official FPL versus manually added league management.
 
 Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative.
+
+Refresh-Load R1's first PR #96 device pass additionally accepted online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It exposed one merge blocker: an offline in-app refresh could be described as newly loaded/live when Safari satisfied gateway requests from HTTP cache. The corrected candidate prevents network acquisition when Safari definitively reports offline, preserves the saved snapshot and labels FPL Fallback; that exact path awaits a focused retest. A full offline hard reload cannot load the static Pages application shell and is explicitly outside R1.
 
 ## Deferred live-season acceptance
 
@@ -148,7 +150,7 @@ These are roadmap inputs, not authority to change them.
 
 ### Required before merge
 
-Exact-commit/full-CI verification plus physical iPhone startup and foreground acceptance across live, cached, stale and offline supporting-data states.
+Exact-commit/full-CI verification plus the focused physical iPhone retest proving explicit FPL Fallback/offline disclosure without a fresh timestamp or gateway-loaded claim. Live-season minute-history and enabled-Odds cache paths remain unavailable for physical exercise until their required data/configuration exists.
 
 ### After real Gameweek data
 

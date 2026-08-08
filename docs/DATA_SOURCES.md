@@ -14,6 +14,8 @@ Licensing: unofficial, tolerated. The production Worker is deployed at `https://
 
 Detailed expected-minutes history uses `/element-summary/{id}/` for the active connected/manual squad followed by a bounded 80-player research cohort and stores a separate schema/model/season-versioned device cache. R1 reuses validated entries while the finished-plus-data-checked fixture revision is unchanged and each player success is no older than the seven-day correction backstop. Only missing/invalid/due players are requested. Two completely failed four-player batches stop further fan-out; cached histories remain active where valid and all other players use the existing aggregate/prior minutes fallback. Failure never advances a successful player timestamp.
 
+If Safari definitively reports the device offline, R1 performs no Official FPL or optional-provider acquisition attempt. The last verified device snapshot remains active with its original timestamp and FPL is disclosed as Fallback. This prevents a browser HTTP-cache response from being mistaken for a new live gateway success; it does not provide the static application shell on a full offline reload.
+
 ## Understat — team form layer only (D-05)
 Purpose: last-6 team xG/xGA multipliers, 45% blend vs FPL strengths. Authority: medium (own xG
 model; NOT comparable to Opta figures — never mix at player level). Transport: relay scrape of

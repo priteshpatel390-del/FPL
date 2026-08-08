@@ -9,7 +9,9 @@ Purpose: high-level change record. Current operational status lives in `PROJECT_
 - Added validated normalised Understat persistence with completed-match/24-hour cadence and six-hour failure cooldown; raw HTML is never stored and the parser is unchanged.
 - Added validated key-free derived Odds persistence with hourly refresh inside 48 hours, six-hour refresh otherwise, six-hour maximum model use and secret-free failure cooldowns.
 - Manual Load Data and explicit optional-source changes bypass provider cooldowns; Provider Health separates detailed-minute cache age/use from core Official FPL freshness.
-- Added 12 focused acquisition/cache/security tests. Exact source `ac02aca03e3de0fe72e83a332b14abfbe0848a6d` passes 679/679 without changing a model or golden expectation; two stamped production builds are byte-identical, root equals deployable and manifest identity is exact. Remote and physical-device gates remain pending before merge.
+- Physical iPhone review passed online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. A full offline hard reload cannot load the static Pages shell and remains outside R1.
+- The same review exposed that Safari could serve gateway responses from its HTTP cache while offline, causing misleading fresh/live FPL wording. The correction now stops before network acquisition when Safari definitively reports offline, preserves the saved snapshot timestamp and reports FPL Fallback with explicit offline copy.
+- Added 14 focused acquisition/cache/security/offline-disclosure tests. Corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` passes 681/681 without changing a model or golden expectation; two stamped production builds are byte-identical, root equals deployable and manifest identity is exact. PR #96 republication and the focused iPhone retest remain pending before merge.
 
 ## 2026-08-08 — Safe Hygiene A2 merged
 
