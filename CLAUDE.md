@@ -6,19 +6,18 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository baseline | `main` `2eee62b77291af06552e3d1952b6e1a6355ca7e0`, merge of Safe Hygiene PR #95 |
-| Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
-| Permanent repository verification | Verify Teamsheet run `31256999867`: 667 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
-| Current implementation candidate | Refresh-Load R1 corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`: 681/681 tests passed; deterministic double build, root/deployable equality and manifest identity verified; PR #96 republication and the focused offline-disclosure iPhone retest remain required |
-| Application tree identity | Reviewed head and PR #92 merge share Git tree `455cc281b5a7528d37884326708a63d22fe54c35` |
-| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
+| Repository baseline | `main` `2ddb33c81fa2092598f290d60320364f2e0c35dc`, merge of Refresh-Load R1 PR #96 |
+| Latest substantive application checkpoint | PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
+| Permanent repository verification | Verify Teamsheet run `31265107597`: 681 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
+| Application tree identity | Reviewed PR #96 head and merge share Git tree `fd40deff72c458286e77f44a66b79a0e720e700c` |
+| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
 
 ## Current approval boundary
 
-Repository Truth A1 and Safe Hygiene A2 are complete and merged through PRs #94 and #95. Refresh-Load R1 is approved for implementation on a separate branch and a draft pull request only:
+Repository Truth A1, Safe Hygiene A2 and Refresh-Load R1 are complete and merged through PRs #94, #95 and #96. R1 delivered:
 
 - suppress valid minute-history requests until a checked-fixture revision or seven-day correction backstop changes;
 - request only missing/due players, with the active squad first and a two-failed-batch outage guard;
@@ -26,9 +25,11 @@ Repository Truth A1 and Safe Hygiene A2 are complete and merged through PRs #94 
 - disclose supporting-data cache age/use separately from core Official FPL freshness;
 - preserve every model formula, provider endpoint, gateway rule and the existing complete-state orchestration.
 
-Understat parser repair, atomic foreground-state replacement, core bootstrap reduction, new providers/endpoints and every formula or recommendation change are excluded. R1 requires exact automated verification, a draft PR and physical iPhone live/cached/stale/offline acceptance before merge. No branch may be merged without Pritesh's explicit approval.
+Understat parser repair, atomic foreground-state replacement, core bootstrap reduction, new providers/endpoints and every formula or recommendation change remain excluded. R1 passed exact automated verification and the currently testable physical iPhone paths before Pritesh explicitly approved its merge. No future branch may be merged without Pritesh's explicit approval.
 
-The first PR #96 iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static application shell, which remains outside R1. The in-app offline refresh exposed misleading fresh/live FPL disclosure; source `d1b6ac0…` now stops before networking when Safari definitively reports offline, preserves the saved snapshot timestamp and labels FPL as Fallback. That narrow device path must be retested before merge.
+The first PR #96 iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static application shell, which remains outside R1. The in-app offline refresh exposed misleading fresh/live FPL disclosure; source `d1b6ac0…` stops before networking when Safari definitively reports offline, preserves the saved snapshot timestamp and labels FPL as Fallback. Pritesh physically retested and accepted that corrected path, then verified the same build identity after GitHub Pages returned to `main`.
+
+The next substantive checkpoint is evidence-gated rather than implementation-approved: after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues behaviour. Record evidence and defects first; do not change calculations or providers without a separate approved scope.
 
 ## Owner and communication
 

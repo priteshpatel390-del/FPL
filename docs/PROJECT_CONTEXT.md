@@ -6,22 +6,21 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1 and Safe Hygiene A2 are merged. No formula, recommendation or new-provider checkpoint is approved.
+Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2 and Refresh-Load R1 are merged. No formula, recommendation or new-provider checkpoint is approved.
 
-The immediate approved work is Refresh-Load R1 on a separate review branch. It changes acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Understat parser repair, atomic foreground-state replacement and model/data-source expansion remain separately gated.
+Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Understat parser repair, atomic foreground-state replacement and model/data-source expansion remain separately gated. The next substantive checkpoint requires a completed, officially checked Gameweek and begins with investigation/evidence only.
 
 ## Evidence baseline
 
 | Item | Evidence |
 |---|---|
-| Repository baseline | GitHub `main` `2eee62b77291af06552e3d1952b6e1a6355ca7e0`, merge of PR #95 |
-| Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
-| Application tree | PR #92 head and merge share `455cc281b5a7528d37884326708a63d22fe54c35` |
-| Permanent automated baseline | Verify Teamsheet run `31256999867`: 667 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #95 head `c1ebd7610b9a81f893457b8bb1bb41316de80dc0` |
-| Build baseline | Two exact-identity production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity matched the exact PR #95 head |
-| Current candidate | Refresh-Load R1 corrected exact source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`: 681/681 tests passed; deterministic double build, root/deployable equality and manifest identity verified; corrected PR #96 publication and remote CI remain pending |
+| Repository baseline | GitHub `main` `2ddb33c81fa2092598f290d60320364f2e0c35dc`, merge of PR #96 |
+| Latest substantive application checkpoint | Refresh-Load R1 PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
+| Application tree | PR #96 head and merge share `fd40deff72c458286e77f44a66b79a0e720e700c` |
+| Permanent automated baseline | Verify Teamsheet run `31265107597`: 681 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #96 head `967856246a0c17972c43eaf444651bceb8b9f728` |
+| Build baseline | Two exact-source production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity recorded source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` and source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a` |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | R1 acquisition policy, offline disclosure, tests, docs and draft PR only; the focused iPhone retest and merge remain separately owner-gated |
+| Approval boundary | R1 is merged and deployed. The first post-Gameweek live-evidence/Leagues review is investigation-only; any correction, calculation or provider change remains separately owner-gated. |
 
 ## Physical iPhone Safari baseline
 
@@ -35,7 +34,7 @@ Pritesh has physically accepted the tested populated paths for:
 
 Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative.
 
-Refresh-Load R1's first PR #96 device pass additionally accepted online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It exposed one merge blocker: an offline in-app refresh could be described as newly loaded/live when Safari satisfied gateway requests from HTTP cache. The corrected candidate prevents network acquisition when Safari definitively reports offline, preserves the saved snapshot and labels FPL Fallback; that exact path awaits a focused retest. A full offline hard reload cannot load the static Pages application shell and is explicitly outside R1.
+Refresh-Load R1's first PR #96 device pass additionally accepted online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It exposed one merge blocker: an offline in-app refresh could be described as newly loaded/live when Safari satisfied gateway requests from HTTP cache. The corrected build prevents network acquisition when Safari definitively reports offline, preserves the saved snapshot and labels FPL Fallback. Pritesh physically retested and accepted that exact path, then verified the accepted build identity after Pages returned to `main`. A full offline hard reload cannot load the static Pages application shell and is explicitly outside R1.
 
 ## Deferred live-season acceptance
 
@@ -134,7 +133,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 
 ## Current technical risks
 
-- R1 is not yet merged, so deployed live-season minute refresh can still fan out to roughly 80–95 Official FPL requests;
+- real post-Gameweek minute-history cache reuse and revision-triggered refresh have automated coverage but cannot yet have physical live-season evidence;
 - the flattened bundle depends on an explicit module order that is broader than the direct import graph;
 - Team currently layers a decision-first renderer over legacy Team DOM construction;
 - tracked build identity semantics can be misunderstood because generated artefacts record their generating source identity, not necessarily the later documentation-only `main` commit;
@@ -144,13 +143,13 @@ These are roadmap inputs, not authority to change them.
 
 ## Current and next
 
-### Approved now
+### Completed now
 
-**Refresh-Load R1:** validated revision-aware minute history reuse, active-squad-first delta loading, systemic-outage guard, normalised Understat cache/cadence, key-free derived Odds cache/cadence, manual bypass and separate supporting-data health disclosure. Draft publication is approved; merge is not.
+**Refresh-Load R1:** validated revision-aware minute history reuse, active-squad-first delta loading, systemic-outage guard, normalised Understat cache/cadence, key-free derived Odds cache/cadence, manual bypass and separate supporting-data health disclosure. PR #96 is merged, deployed and accepted for every currently testable physical iPhone path.
 
-### Required before merge
+### Next evidence checkpoint
 
-Exact-commit/full-CI verification plus the focused physical iPhone retest proving explicit FPL Fallback/offline disclosure without a fresh timestamp or gateway-loaded claim. Live-season minute-history and enabled-Odds cache paths remain unavailable for physical exercise until their required data/configuration exists.
+After the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data. Live-season minute-history behaviour and enabled-Odds cache behaviour remain unavailable for physical exercise until their required data/configuration exists. No defect correction or calculation change is authorised by this evidence checkpoint.
 
 ### After real Gameweek data
 
