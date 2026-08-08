@@ -38,7 +38,16 @@ jobs:
           tests = Path('tests/mini-leagues-ui.test.mjs')
           text = tests.read_text()
           marker = "test('standings use full-row touch and keyboard actions with a quiet trailing affordance',()=>{"
-          addition = "test('pre-season standings use a compact truthful empty state until positions are published',()=>{\n  const standingsStart=view.indexOf('function renderMiniLeagueStandings');\n  const standings=view.slice(standingsStart,view.indexOf('function renderMiniLeagueRival(){',standingsStart));\n  includesAll(app,['id=\\\"leagueStandingsHint\\\" hidden','Nearby and loaded managers only. Large leagues are not scanned in full.']);\n  includesAll(view,['League positions have not been published yet.','Standings not available yet','Official FPL will publish this league table once positions are available.']);\n  includesAll(standings,['hasPublishedPositions','if(!S.seasonLive&&!hasPublishedPositions)',\\\"if(hint) hint.hidden=true\\\",\\\"if(hint) hint.hidden=false\\\"]);\n  excludesAll(view,['Standings loaded. Your league position is not ranked yet.']);\n});\n\n"
+          addition = (
+            "test('pre-season standings use a compact truthful empty state until positions are published',()=>{\n"
+            "  const standingsStart=view.indexOf('function renderMiniLeagueStandings');\n"
+            "  const standings=view.slice(standingsStart,view.indexOf('function renderMiniLeagueRival(){',standingsStart));\n"
+            "  includesAll(app,['id=\"leagueStandingsHint\" hidden','Nearby and loaded managers only. Large leagues are not scanned in full.']);\n"
+            "  includesAll(view,['League positions have not been published yet.','Standings not available yet','Official FPL will publish this league table once positions are available.']);\n"
+            "  includesAll(standings,['hasPublishedPositions','if(!S.seasonLive&&!hasPublishedPositions)','if(hint) hint.hidden=true','if(hint) hint.hidden=false']);\n"
+            "  excludesAll(view,['Standings loaded. Your league position is not ranked yet.']);\n"
+            "});\n\n"
+          )
           if text.count(marker) != 1: raise SystemExit('test insertion marker did not match exactly once')
           tests.write_text(text.replace(marker, addition + marker))
           PY
