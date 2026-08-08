@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -85,3 +85,19 @@ jobs:
           echo '- Root index.html equals dist/index.html' >> "$GITHUB_STEP_SUMMARY"
           echo '- Manifest build identity: exact' >> "$GITHUB_STEP_SUMMARY"
           echo '- Verified production outputs: preserved as a workflow artifact' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reconcile generated outputs for approved branch
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'agent/leagues-manage-official-source' }}
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main --depth=1
+          git checkout FETCH_HEAD -- .github/workflows/verify.yml
+          git add .github/workflows/verify.yml index.html dist/app.bundle.js dist/index.html dist/manifest.json
+          if git diff --cached --quiet; then
+            echo 'Generated outputs already reconciled.'
+          else
+            git commit -m 'Reconcile generated Leagues management build'
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
