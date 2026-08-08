@@ -456,9 +456,20 @@ function renderMiniLeagueExposure(){
 function renderLeagueManageList(){
   const out=$('leagueManageList'); if(!out) return; const state=S.miniLeagues;
   if(!state.saved.length){ setChildren(out,el('p',{class:'status'},'No saved leagues yet. Connect a public FPL team or add a league ID.')); return; }
-  setChildren(out,el('div',{class:'league-manage-list'},state.saved.map(row=>el('article',{class:`league-manage-row${row.id===state.selectedLeagueId?' selected':''}`},
-    el('div',{},el('strong',{},row.name||`League ${row.id}`),el('span',{class:'status'},row.primary?'Primary league':row.id===state.selectedLeagueId?'Currently selected':'Saved locally')),
-    el('div',{class:'league-manage-actions'},miniLeagueButton(row.id===state.selectedLeagueId?'Selected':'Select',{disabled:row.id===state.selectedLeagueId,onclick:async()=>{await selectMiniLeague(row.id);renderMiniLeagues();miniLeagueNavigate('#/leagues/detail');}}),miniLeagueButton(row.primary?'Primary':'Make primary',{disabled:row.primary,onclick:async()=>{await upsertMiniLeague(row.id,row.name,{primary:true,select:true});renderMiniLeagues();}}),miniLeagueButton('Remove',{'aria-label':`Remove ${row.name||`league ${row.id}`}`,onclick:async()=>{await removeMiniLeague(row.id);delete S.miniLeagueData.standings[row.id];delete S.miniLeagueData.exposure[row.id];renderMiniLeagues();}}))))));
+  const membershipKnown=Array.isArray(S.entry?.leagues?.classic);
+  setChildren(out,el('div',{class:'league-manage-list'},state.saved.map(row=>{
+    const selected=row.id===state.selectedLeagueId,official=Boolean(miniLeagueMembership(row.id));
+    const source=official?'Official FPL league':membershipKnown?'Added manually':'Saved league';
+    const status=[source,row.primary?'Primary':selected?'Selected':''].filter(Boolean).join(' · ');
+    const actions=[
+      miniLeagueButton(selected?'Selected':'Select',{disabled:selected,onclick:async()=>{await selectMiniLeague(row.id);renderMiniLeagues();miniLeagueNavigate('#/leagues/detail');}}),
+      miniLeagueButton(row.primary?'Primary':'Make primary',{disabled:row.primary,onclick:async()=>{await upsertMiniLeague(row.id,row.name,{primary:true,select:true});renderMiniLeagues();}})
+    ];
+    if(membershipKnown&&!official) actions.push(miniLeagueButton('Remove',{'aria-label':`Remove ${row.name||`league ${row.id}`}`,onclick:async()=>{await removeMiniLeague(row.id);delete S.miniLeagueData.standings[row.id];delete S.miniLeagueData.exposure[row.id];renderMiniLeagues();}}));
+    return el('article',{class:`league-manage-row${selected?' selected':''}`},
+      el('div',{},el('strong',{},row.name||`League ${row.id}`),el('span',{class:'status'},status)),
+      el('div',{class:'league-manage-actions'},actions));
+  })));
 }
 function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
   renderRouteDataWarning('leagueDataWarning',{showUnavailable:true});
