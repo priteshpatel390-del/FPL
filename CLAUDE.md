@@ -1,97 +1,100 @@
 # CLAUDE.md — onboarding for every future development session
 
-<!-- FIXTURES-ACCEPTANCE-2026-08-07 -->
-> **Current merged application checkpoint — Fixtures populated acceptance complete:** PR #85 fixed the mobile horizontal-scroll presentation and merged at `01c16588b63bf41b099adc64b6a1c9044eba9eec`. PR #86 removed the silent 12-Gameweek horizon cap and merged at current `main` `e49599a75bbb77618292fdb6100fcffd81685c44`. The exact PR #86 head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity; the reviewed head and merge commit share Git tree `007ef40c5b4810777cfefec027cc80bf90fc19e0`. GitHub Pages deployment of the merge commit succeeded. Pritesh then physically accepted the populated Fixtures path on iPhone Safari: a 23-Gameweek request remains 23 and reaches GW23, horizontal scrolling beyond GW12 keeps TEAM fixed/readable, and from GW30 a 23-Gameweek request normalises to 9 and stops at GW38 with no post-season column. `docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md` is authoritative. Remaining feature-specific populated live acceptance is **Leagues only**. No fixture formula, provider, projection, transfer, rank, Mini-League or strategy logic changed.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 8 August 2026.
 
-<!-- FIXTURES-MOBILE-SCROLL-FOLLOW-UP-2026-08-07 -->
-> **Historical Fixtures mobile follow-up — complete:** PR #85 corrected the sticky TEAM column/header, kept the fallback explanation outside the horizontal scroller and made the intro copy truthful in Official-FPL fallback mode. The deployed correction was physically confirmed on iPhone Safari during the subsequent long-horizon acceptance. PR #86 then completed the separate GW38 horizon follow-up. See `docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md` for the authoritative current record.
+## Current baseline
 
-<!-- TEAM-ACCEPTANCE-2026-08-07 -->
-> **Current merged application checkpoint — Team populated acceptance complete:** PRs #80–#83 are merged, with current `main` `385e5102c0e86e4b926503bffceba08bd6d831c3` from PR #83. The exact final PR #83 head `990a85eb69319064038be458081d029d8a3b8828` passed **652 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic byte-identical double-build verification, root/deployable equality and exact manifest build identity. The final PR head and merge commit share Git tree `70b38bf4bf5b5bdb0f295fa6738554266441e62b`. GitHub Pages deployment for `385e5102c0e86e4b926503bffceba08bd6d831c3` succeeded. Pritesh then physically accepted the populated Team path on iPhone Safari: startup/loading owns the viewport; availability is visible; the reserve goalkeeper occupies `GK`; outfield substitutes retain `1st` / `2nd` / `3rd`; and `Unavailable` is centred on one line without overlap. Normal Safari retained the saved manual squad; Private Browsing uses separate browser storage and is not currently a Teamsheet persistence defect. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` is authoritative for this Team follow-up sequence. Remaining populated live acceptance is **Fixtures, then Leagues**. No calculation, provider, data-source or security behaviour changed.
+| Item | Current evidence |
+|---|---|
+| Repository baseline | `main` `931a3aa8ba54ef45e30056e3e1e03d8b6a443497`, merge of documentation-only PR #93 |
+| Latest substantive application checkpoint | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`; exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
+| Permanent verification | Verify Teamsheet run `31247061412`: 664 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
+| Application tree identity | Reviewed head and PR #92 merge share Git tree `455cc281b5a7528d37884326708a63d22fe54c35` |
+| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
+| Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
-<!-- UX-A2-DOCK-LAYERING-2026-08-07 -->
-> **Preceding merged checkpoint — PR #78 Player Detail dock-layering correction:** PR #78 was physically accepted on populated iPhone Safari and merged to `main` at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`. It raises only the existing Player Detail backdrop and panel above the unchanged fixed primary dock so the final projection line cannot be covered. Verification is **645 passed, 0 failed, 0 skipped, 0 cancelled** with deterministic exact-identity builds and root/deployable equality. GitHub Pages deployment succeeded and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`. Every FPL calculation, Player Detail content, route and navigation dimension is unchanged. `UI-14` is closed. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` is authoritative for this correction; UX-A3 and Track B remain unapproved.
+[Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
 
+## Current approval boundary
 
-<!-- VOICEOVER-DECISION-2026-08-06 -->
-> **Owner decision — 6 August 2026:** VoiceOver testing is not required for Teamsheet and is not an acceptance gate. `docs/VOICEOVER-DECISION.md` supersedes earlier current-status wording that treated it as pending or accepted-unverified. Standard accessibility safeguards—including semantic controls, labels, focus behaviour, reduced motion, contrast, touch targets and keyboard behaviour—remain required where applicable.
+Repository Truth A1 is approved as documentation and test-infrastructure work only:
 
-<!-- UX-A2-2026-08-06 -->
-> **UX-A2 Player Detail Scroll and Rotation Correction — complete and merged:** PR #76 merged to `main` at `bffcba8e9231adfc216125913f8ab83c042c3e10` from approved branch head `ad1dd4611c042591a3f03dea77a1a9b59101d9ba`, based on verified `main` `2738a0500b9be20a723f0940df0a93766b29c05d`. The merge commit and approved branch head have the identical repository tree. Scope is behaviour correction only for the existing Player Detail dialog: internal scrolling, root plus body scroll locking, exact background-position restoration on a normal close, route-driven close that unlocks without replaying stale scroll or focus, viewport-height fallback before `dvh`, compact-landscape sizing, four-sided safe areas, `preventScroll` focus handling and root text-size adjustment fixed at 100% so Safari cannot inflate text on rotation. Player Detail's information architecture, the routing architecture and every calculation are unchanged. Automated verification is **644 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. **Populated physical iPhone Safari acceptance passed on 6 August 2026**, including a successful retest of the corrected rotation behaviour; this supersedes all earlier wording describing that acceptance as pending. `UI-13` is closed. VoiceOver is not an acceptance gate. `docs/UX-A2-MERGE-RECORD.md` is the authoritative record for the original PR #76 checkpoint; the later PR #78 dock-layering correction is authoritative in `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md`. `docs/UX-A2-ACCEPTANCE.md` records the original acceptance detail and `docs/UX-A2-SCOPE.md` the scope and evidence. Making Player Detail more concise is a **separate future proposal**, not part of UX-A2. UX-A3 and Workstream B remain unapproved and must not start.
+- reconcile canonical status with PR #92/#93 and the 664-test application baseline;
+- provide a useful root README and a historical-record index;
+- assign unique decision and limitation IDs;
+- add a zero-dependency documentation-integrity test.
 
-<!-- UX-A1-2026-08-06 -->
-> **UX-A1 Team Resources and Bench Clarity — complete and merged:** PR #74 merged to `main` at `15aa01a07a5645f5df9ec2f2f429aefa52965c94` from approved branch head `3435c1dda12055c72ecab1a28d463b35d4278c09`. The Team screen has one labelled manual-resource bar immediately above the pitch and separate `GK`, `1st`, `2nd`, `3rd` bench roles, with the existing squad order, calculations and Player Detail behaviour preserved. Automated verification is **624 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. Populated physical iPhone Safari acceptance passed on 6 August 2026. `docs/UX-A1-MERGE-RECORD.md` is the authoritative checkpoint record and supersedes any pre-merge wording elsewhere. Workstreams A3 and B remain unapproved and must not start; UX-A2 has since been separately completed and merged (see the UX-A2 records above).
+A1 authorises no application, generated deployable, provider, data source, calculation, routing, navigation, persistence, Cloudflare or deployment change. A2 code hygiene, live refresh-load hardening, product work and every deletion remain separately gated. No branch may be merged without Pritesh's explicit approval.
 
+## Owner and communication
 
-<!-- TRANSFERS-TRACK-A-2026-08-06 -->
-> **Current Track A status — complete and merged:** FPL-T1 and Track A are integrated on `main` through PR #69 (`00a35bacd2396a125a8a914bff9980b4f18b257f`), PR #70 (`78b2729c51419a36c5e6f757fa54830100b5435c`) and PR #72 (`be742e1eb707b3892f6405adf5d8769e084eee65`). The final `main` merge commit and the verified PR #72 head (`7257e8601b4a4f2fae80ce30a787f7069974a926`) have the identical repository tree `3794e8e7ab9859717950296766dc9d64c9e5473f`. The accepted branch baseline is **613 passed, 0 failed, 0 skipped** with deterministic production builds and root/deployable equality. On populated physical iPhone Safari, the six-Gameweek exact calculation completed in about 15 seconds; completed and active navigation persistence, prompt cancellation/restart, Safari app switching, stale-result protection, the separate no-transfer baseline and the final **“No hit”** wording all passed. VoiceOver testing is not a project acceptance requirement. No prediction-accuracy improvement is claimed, and Track B football intelligence remains unapproved and unimplemented.
-
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations and old uploads. Last updated: 2026-08-07.
-
-## Owner
-Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with outcomes, explain technical decisions plainly, distinguish facts from proposals and never claim success without evidence.
+Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with the outcome, then evidence, risks and recommendation. Distinguish fact, inference, proposal and limitation. Never claim success, accuracy, deployment or physical-device acceptance without evidence.
 
 ## Read in this order
-1. `docs/FIXTURES-ACCEPTANCE-MERGE-RECORD.md` — authoritative record for the current merged Fixtures populated-acceptance checkpoint
-2. `docs/TEAM-UX-T01-T02-MERGE-RECORD.md` — authoritative record for the preceding Team populated-acceptance checkpoint
-3. `docs/UX-A2-DOCK-LAYERING-FOLLOW-UP.md` — authoritative record for the preceding PR #78 dock-layering correction
-4. `docs/UX-A2-MERGE-RECORD.md` — authoritative record for the preceding PR #76 UX-A2 checkpoint
-5. `docs/UX-A1-MERGE-RECORD.md` — preceding UX-A1 checkpoint
-6. `docs/PROJECT_CONTEXT.md`
-7. `docs/ARCHITECTURE.md`
-8. `docs/DECISIONS.md`
-9. `docs/ROADMAP.md`
-10. `docs/KNOWN_LIMITATIONS.md`
-11. `docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md`
-12. The current checkpoint design document
-13. Before provider/security work: `docs/DATA_SOURCES.md` and `docs/SECURITY.md`
-14. Before model/projection/squad/optimisation/Mini-League work: `docs/PROJECTION_MODEL.md` and `docs/TESTING.md`
-15. History only when needed: `docs/STAGE_HISTORY.md`, `docs/CHANGELOG.md`, earlier stage/audit records
 
-## Current checkpoint
-The current merged **application** checkpoint is PR #86 at `e49599a75bbb77618292fdb6100fcffd81685c44`. Its exact reviewed head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled**, two byte-identical exact-identity production builds, root `index.html` equality with `dist/index.html` and exact manifest identity. The reviewed head and merge commit share Git tree `007ef40c5b4810777cfefec027cc80bf90fc19e0`. GitHub Pages deployment of the merge commit succeeded. Pritesh physically accepted the deployed Fixtures path on 7 August 2026, including a 23-Gameweek horizon through GW23, coherent sticky TEAM behaviour beyond GW12 and late-season normalisation from GW30 to the remaining nine Gameweeks through GW38. Transfers, Player Detail, Team and Fixtures now have populated iPhone acceptance evidence for their tested paths. The next substantive work is investigation-only populated live acceptance of **Leagues**. FPL-2 and ML-3 remain open for Leagues; no Mini-League calculation, projected-rank, rival-prediction or strategy implementation is approved by this checkpoint.
+1. [Project Context](docs/PROJECT_CONTEXT.md)
+2. [Architecture](docs/ARCHITECTURE.md)
+3. [Decisions](docs/DECISIONS.md)
+4. [Roadmap](docs/ROADMAP.md)
+5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
+6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
+7. The current checkpoint design or acceptance record
+8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
+9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
+10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)
 
-## Non-negotiable rules
-- Never change projection, minutes, scoring, fixture, captaincy, squad or optimisation formulas without presenting existing behaviour, proposed behaviour, inputs, fallback, assumptions, limitations and validating tests, then receiving owner approval.
-- Never delete or weaken an existing test to make work pass.
-- Never claim improved prediction accuracy without genuine out-of-sample validation. The historical r=0.80 is method-flattered.
-- Run `./run-tests.sh` before describing implementation as complete.
-- Transfer search pruning must be admissible. Every bound must relax constraints only in the optimistic direction, must never remove a branch that could enter the retained top K under the complete comparator, and must leave `exhaustiveTransferSearch()` independent of production pruning.
-- Preserve deterministic builds and exact `BUILD_COMMIT` identity.
-- Preserve vanilla ES modules, zero dependencies, GitHub Pages and the single-file `dist/index.html` deploy workflow.
-- Generated `dist/` files come from `build.mjs`; never hand-edit them.
-- Anthropic keys are banned client-side.
-- Odds requests remain direct-only; the key must never be relayed, logged, exposed in errors or rendered into UI diagnostics.
-- Understat remains team-level only.
-- No new provider without an approved validation and ablation plan.
-- Stage discipline: inspect → scope/exclusions → owner approval where required → branch → implementation → full verification → docs → draft PR → owner review → merge only with explicit approval.
-- Teamsheet 2.0 checkpoints remain independently designed, approved, tested, reviewed and deployable. Do not silently pull later checkpoints forward.
+## What Teamsheet is
 
-## Current security and build posture
-- Provider/user rendering uses DOM builders.
-- AI output uses restricted Markdown AST rendering.
-- Odds key is masked, omitted when empty, one-action forgettable and scrubbed from diagnostics.
-- Build emits and independently verifies SHA-256 CSP hashes for the single inline script/style.
-- The custom bundler strips complete static import/export declarations and fails if raw module syntax survives.
-- Style attributes and runtime style APIs are forbidden by DOM helpers, source guards and deployable tests; CSP permits only the hash-locked style element and approved Google Fonts stylesheet.
-- Meta `frame-ancestors` is ineffective in meta CSP on GitHub Pages; a hashed frame-buster compensates until serverless headers.
+Teamsheet is a team-first, decision-first FPL application for the manager's complete 15-player squad. The primary destinations are Team, Transfers, Fixtures, Leagues and Settings. Player research lives under Settings; Ask Teamsheet has a separate route but hosted AI remains disabled. Teamsheet is advisory and performs no FPL account write.
 
-## Completion report for every item
-Report what changed, what deliberately did not change, exact test count/result, build and reproducibility evidence, documentation updates, judgement calls, remaining limitations, branch/commit and draft PR link.
+The app currently provides:
 
-## 2026-08-06 — Concurrent continuation reconciliation
+- a best XI, captain, vice-captain and bench order;
+- exact legal zero-to-three-transfer comparisons with a mandatory no-transfer baseline;
+- fixture-run and swing-window planning through GW38;
+- an all-league hub, selected-league detail, targeted standings and explicitly loaded rival comparisons;
+- settings, provider health, evidence, outcomes, descriptive metrics, review and deterministic exports.
 
-- Claude's corrected exact-search commits landed on PR #70 while a separate continuation audit was in progress. The reconciliation preserves Claude's position-pool, price-capped and stopping-rule architecture.
-- The app-scoped controller now settles the pending Worker result promise on explicit cancellation, material invalidation and force-start supersession, preventing orphaned in-session calculation chains.
-- Partial-node signature ties now use the universally optimistic empty string; exact canonical signatures remain unchanged and are evaluated only for complete branches.
-- Mixed-width player IDs, explicit cancellation settlement and supersession settlement are permanent regressions.
-- Interim reconciliation verification was 609 passed with deterministic builds. That pending device gate was subsequently completed on PR #72 and is superseded by the accepted 613-test merged checkpoint above.
+It does not yet provide a validated projected-rank model, protect/balanced/chase strategy, cited team-news intelligence, automated Google Sheets sync or prospectively proven model accuracy.
 
-## Handover update — 2026-08-07
+## Non-negotiable engineering rules
 
-- PR #72 core populated-data iPhone Safari checks passed: six-GW exact completion ~15 seconds; completed and active navigation persistence; prompt cancel/restart; Safari app-switch stability; stale-result protection.
-- PR #74 UX-A1 Team Resources and Bench Clarity merged at `15aa01a07a5645f5df9ec2f2f429aefa52965c94` after 624 passing tests, deterministic builds and populated iPhone Safari acceptance.
-- PR #76 UX-A2 Player Detail scroll/rotation correction merged after 644 passing tests and populated iPhone Safari acceptance; PR #78 then fixed the post-merge dock-layering defect, passed the 645-test gate, received populated iPhone Safari acceptance and merged at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`.
-- VoiceOver testing is not required for Teamsheet and is not an acceptance gate.
-- Product wording rule: user-facing FPL information must be simple and immediately understandable. Zero transfer cost is **“No hit”**, never **“−0”**.
-- The next substantive work is investigation-only populated live acceptance of Leagues. Transfers, Player Detail, Team and Fixtures already have acceptance evidence for their tested populated iPhone paths. No A3, Track B, optimiser, football-model, projected-rank, Mini-League strategy or provider implementation is approved without a new explicit gate.
+- Never change projection, expected-minutes, scoring, fixture, captaincy, squad, simulation, transfer, rank, Mini-League or strategy logic without first presenting existing and proposed behaviour, inputs, fallbacks, assumptions, limitations, trade-offs and validating evidence, then receiving explicit approval.
+- Never add a provider or data source without an approved purpose, field contract, reliability assessment, validation/ablation plan, fallback, security/privacy review, cost and tests.
+- Never delete, weaken or skip a test to make a change pass.
+- Never claim improved prediction accuracy without genuine out-of-sample validation. The historical aggregate r=0.80 is method-flattered.
+- Transfer pruning must remain admissible, and `exhaustiveTransferSearch()` must remain independent of production pruning.
+- Preserve deterministic builds, exact `BUILD_COMMIT` identity, root/deployable equality and generated-file provenance.
+- Preserve Vanilla JavaScript ES modules, the zero-dependency toolchain, Node built-in tests, the custom bundler, GitHub Pages and the single-file deployment unless separately approved.
+- Generated `dist/` and root `index.html` files come only from `build.mjs`; never hand-edit them.
+- Anthropic keys remain banned client-side. Odds requests remain direct-only and the key must never be relayed, logged, rendered or exposed in diagnostics.
+- Understat remains team-level only. Optional-provider failure must degrade gracefully.
+- Preserve mobile-first iPhone usability and the accepted physical behaviours touched by a future change.
+
+## Current security and data boundaries
+
+- Official FPL reads use the owner-controlled, allowlisted Cloudflare gateway and still pass client validators.
+- Provider and user strings use DOM builders; AI output uses restricted Markdown.
+- The Odds key is masked, direct-only, forgettable and scrubbed from diagnostics.
+- The generated single script and style are SHA-256 locked by CSP.
+- Runtime style APIs and style attributes are forbidden.
+- Stage 10 evidence is allowlisted, hash-verified and recovery-oriented; exports are complete, unencrypted and owner controlled.
+- League and manager identifiers stay out of routes, page titles, provider diagnostics and Stage 10 evidence.
+
+## Workflow
+
+1. Inspect latest `main` and read this file first.
+2. State the exact baseline, scope, exclusions, risks and approval gate.
+3. Obtain explicit approval where required.
+4. Create a separate branch; never push directly to `main`.
+5. Implement only the approved scope.
+6. Add or update tests without weakening existing protection.
+7. Run `./run-tests.sh` and the production build.
+8. Verify two exact-identity builds, root/deployable equality and manifest identity where relevant.
+9. Update affected canonical documentation.
+10. Open a draft pull request with evidence and exclusions.
+11. Merge only after explicit owner approval, then verify `main`.
+
+## Completion report for every implementation item
+
+Report the exact changes, deliberate exclusions, test count and result, deterministic-build evidence, root/deployable result, documentation updates, judgement calls, remaining limitations, physical-device evidence actually performed, branch, commit and draft pull-request link.

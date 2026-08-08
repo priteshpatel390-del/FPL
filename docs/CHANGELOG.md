@@ -1,6 +1,28 @@
 # CHANGELOG.md
 
-## 2026-08-06 — Transfers Track A correction: exact search architecture
+Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 8 August 2026.
+
+## 2026-08-08 — Leagues pre-season acceptance recorded
+
+- PR #93 merged at `931a3aa8ba54ef45e30056e3e1e03d8b6a443497` and added `LEAGUES-PRESEASON-ACCEPTANCE.md` only.
+- Recorded physical iPhone Safari acceptance of the all-league hub, selection/switching, primary persistence, navigation, honest pre-season standings/exposure states and Official FPL-versus-manual management.
+- Deferred published rank, populated standings/gaps, real rival comparisons/exposure and relevant pagination until post-Gameweek Official FPL data exists.
+- Changed no application source, generated deployable, provider, calculation or infrastructure.
+
+## 2026-08-08 — Official FPL League management clarified
+
+- PR #92 merged at `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5` from exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f`.
+- Distinguished connected Official FPL memberships from manually added leagues and withheld misleading Remove controls where membership is official or cannot be verified.
+- Preserved the hub-first League architecture, targeted standings, explicitly loaded rivals, providers and every football calculation.
+- Permanent Verify Teamsheet run `31247061412` passed 664 tests plus deterministic double-build, root/deployable equality and exact manifest-identity checks.
+
+## 2026-08-07 — Team and Fixtures populated acceptance completed
+
+- Team follow-ups merged through PR #83 and passed the recorded startup, availability, reserve-goalkeeper and outfield-bench iPhone checks.
+- Fixtures follow-ups merged through PR #86 and passed horizontal-scroll and remaining-season/GW38 iPhone checks.
+- No prediction, provider, transfer, rank or Mini-League strategy formula changed.
+
+## 2026-08-06 — Transfers Track A correction: exact search architecture (historical pre-merge entry)
 
 - Recorded the first physical iPhone Safari failure honestly: the automatic exact six-Gameweek search exhausted the unchanged 2,000,000 evaluation ceiling and reported "Exact search did not complete."
 - Rebuilt the exact search around position-quota score prefix sums, zero placeholders for unfilled incoming slots, per-formation and node-aware admissible bounds, price-capped optimistic completion tables, a joint-budget price cap and descending identity-gain stopping rules.
@@ -8,13 +30,13 @@
 - Left the football problem untouched: no projection, minutes, scoring, fixture, captaincy, affordability, hit, free-transfer, roll-value, comparator or ordering change, no candidate filter, and no change to the six-Gameweek default, Top 8, depth three or the 2,000,000 ceiling.
 - Kept `exhaustiveTransferSearch()` independent and free of the new pruning, and added controlled-pool differential coverage across seven adversarial shapes plus an Official-scale completion and fail-closed suite.
 - A Node reproduction of the failure shape that previously took 13 minutes 38 seconds over 9,480,866 partial nodes now completes in about 1.2 seconds over 880,555 nodes, and a head-to-head run of both implementations on that input returned identical complete top-8 results.
-- Verified **606 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality. PR #70 remains draft and unmerged, and physical iPhone Safari retest remains required.
+- At this interim point, verification was **606 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. PR #70 was then draft and device retest remained required; the later integrated entry records successful merge and physical acceptance.
 
-## 2026-08-05 — FPL-T1 live gateway deployment review
+## 2026-08-05 — FPL-T1 live gateway deployment review (historical pre-merge entry)
 - Deployed the owner-controlled allowlisted Cloudflare Worker and configured the exact production `/fpl` base in Teamsheet.
 - Verified live 2026/27 Official FPL bootstrap JSON on physical iPhone Safari.
 - Rejected every upstream redirect explicitly, retained credential-free requests and added redacted observability plus deployment/CSP contracts.
-- Verified **547 passed, 0 failed, 0 skipped**, deterministic exact-identity builds and root/deployable equality. Full populated application acceptance remains pending; PR #69 is draft and unmerged.
+- At this interim point, verification was **547 passed, 0 failed, 0 skipped** with deterministic exact-identity builds and root/deployable equality. PR #69 was then draft; the later integrated entry records its merge and tested transport/Transfers acceptance.
 
 ## 2026-08-02 — Teamsheet 2.0.3: Transfers Decision Workspace
 
@@ -25,8 +47,6 @@
 - Removed the stale isolated-swap renderer.
 - Added automated presentation, validation, routing and build contracts.
 - Left all transfer/model/provider/security calculations unchanged.
-Purpose: professional change record (Keep a Changelog conventions). Audience: all.
-Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for engineering detail.
 
 ## 2026-07-30 — Teamsheet 2.0 Product Blueprint integration
 - Added the owner-approved canonical `TEAMSHEET2-PRODUCT-BLUEPRINT.md`.
@@ -95,7 +115,7 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Preserved all model, provider, preview, route, persistence and security contracts.
 - Verified **454/454 tests**, deterministic exact-identity builds and root/deployable equality.
 
-## 2026-08-02 — Teamsheet 2.0.4 Mini Leagues (implementation branch)
+## 2026-08-02 — Teamsheet 2.0.4 Mini Leagues (historical implementation-branch entry)
 - Replaced the sampled effective-ownership report with an Official FPL Mini-League foundation.
 - Added primary/saved leagues, deterministic legacy migration and minimal selected/pinned rival persistence.
 - Added ID-free League landing, standings, rival and manage routes.
@@ -104,20 +124,20 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Added strict displayed-field validation, stale/incomplete states and mobile/accessibility contracts.
 - Applied the owner-approved compact mobile hierarchy, added breathing room below the position card and made standings rows full-row touch/keyboard actions with a quiet `Open ›` affordance.
 - No provider, model, rank-prediction, strategy, Team or Transfers calculation changed.
-- Current source suite: 493/493 passing tests; exact build finalisation and device acceptance pending.
+- At this checkpoint the source suite was 493/493 and device acceptance remained pending. Later PRs #90–#93 established the hub-first pre-season path and its physical acceptance; populated post-Gameweek evidence remains deferred.
 
 
-## Unreleased — Teamsheet 2.0.7
+## 2026-08-05 — Teamsheet 2.0.7 merged
 
 - Implemented final mobile semantic controls, touch targets, route/focus/scroll restoration, restricted states, Ask resilience, Fixture render isolation, table semantics and wording precision.
 - Preserved model `2.4.0`, rules `2026-27.3`, providers, calculations, deterministic build and advisory/no-write boundaries.
-- Physical iPhone Safari, VoiceOver and live populated-data acceptance remain pending.
-
-- Corrected iPhone Safari foreground resume so unsuccessful loads respect the automatic cooldown and background refreshes do not freeze interaction; physical-device retest remains pending.
-- 2026-08-05: PR #68 merged Teamsheet 2.0.7 at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; Safari resume retest passed. FPL-T1 owner-controlled Official FPL gateway approved and implementation started without calculation changes.
+- Corrected iPhone Safari foreground resume so unsuccessful loads respect the automatic cooldown and background refreshes do not freeze interaction.
+- PR #68 merged at `2f7e4ba6978ccd68e9d6c36b56d4063cea06beaf`; the Safari resume retest passed.
+- VoiceOver is not a project acceptance gate. Later feature-specific iPhone evidence is recorded in the relevant acceptance records rather than reopening 2.0.7.
+- FPL-T1 owner-controlled Official FPL gateway work followed as a separate approved checkpoint without calculation changes.
 
 <!-- TRANSFERS-TRACK-A-2026-08-06 -->
-## 2026-08-06 — Transfers Track A implemented for review
+## 2026-08-06 — Transfers Track A implemented for review (historical pre-acceptance entry)
 
 - Replaced normal manual Calculate/Recalculate flow with automatic exact calculation after a complete legal squad and valid assumptions exist.
 - Added one app-scoped worker controller that continues across internal navigation and restores current progress or an unchanged completed result.
@@ -126,7 +146,7 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - Added exact performance preparation: player score matrices, outgoing-core reuse, lower-allocation exact XI totals, retained-plan-only materialisation, promising branch order and conservative safe bounds.
 - Retained the independent exhaustive search as the differential oracle and added exactness, position/enabler and persistent-controller tests.
 - Verified 594 passed, 0 failed, 0 skipped with byte-identical exact-identity builds and root/deployable equality.
-- No model, rules, provider, data-source, Cloudflare, captaincy, bench, Mini-League or rank logic changed. Physical iPhone performance acceptance remains open.
+- No model, rules, provider, data-source, Cloudflare, captaincy, bench, Mini-League or rank logic changed. Physical iPhone performance acceptance was open at this interim point and later passed, as recorded in the integrated entry.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 
@@ -139,7 +159,7 @@ Last updated: 2026-07-30. Related: STAGE_HISTORY.md and stage item records for e
 - 609 tests pass with zero failures or skips.
 - Existing independent exhaustive-oracle and Official-scale coverage remains intact.
 - Deterministic production builds and root/deployable equality retained.
-- Physical iPhone Safari retest remains pending.
+- Physical iPhone Safari retest was pending at this interim point and subsequently passed on the integrated Track A path.
 
 ## 2026-08-06 — Transfers plain-language zero-hit copy
 
