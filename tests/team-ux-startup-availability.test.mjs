@@ -24,14 +24,12 @@ test('flagged Team cards expose explicit Official FPL availability wording',()=>
   assert.equal(teamDecisionAvailabilityPresentation({status:'a'}),null);
 });
 
-test('availability annotation covers both starting and bench cards without changing Team selection',()=>{
-  assert.match(TEAM_SOURCE,/const starterSlots=teamPitchLines\(xi\.xi\)\.flatMap\(line=>line\.players\)/);
-  assert.match(TEAM_SOURCE,/\.team-pitch \.pitch-player/);
-  assert.match(TEAM_SOURCE,/\.team-bench \.bench-grid \.bench-player/);
-  assert.match(TEAM_SOURCE,/const benchSlots=teamDecisionBenchDisplayOrder\(xi\.bench\)/);
-  assert.match(TEAM_SOURCE,/class:`flag \$\{presentation\.className\} pitch-availability`/);
-  assert.match(TEAM_SOURCE,/node\.setAttribute\('aria-label',`\$\{aria\}, \$\{presentation\.aria\}`\)/);
-  assert.match(TEAM_SOURCE,/teamDecisionRelabelBench\(stage\);\s*teamDecisionAnnotateAvailability\(stage,xi\);/);
+test('direct player creation covers starting and bench availability without changing Team selection',()=>{
+  assert.match(TEAM_SOURCE,/const availabilityCopy=teamDecisionAvailabilityPresentation\(player\)/);
+  assert.match(TEAM_SOURCE,/class:`flag \$\{availabilityCopy\.className\} pitch-availability`/);
+  assert.match(TEAM_SOURCE,/if\(availabilityCopy\) aria\+=`, \$\{availabilityCopy\.aria\}`/);
+  assert.match(TEAM_SOURCE,/const orderedBench=teamDecisionBenchDisplayOrder\(xi\.bench\)/);
+  assert.match(TEAM_SOURCE,/teamPitchLines\(xi\.xi\)\.map\(line=>/);
   assert.doesNotMatch(TEAM_SOURCE,/bestXI\s*=|teamPitchCaptaincy\s*=|xpOf\s*=/);
 });
 

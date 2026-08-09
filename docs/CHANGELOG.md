@@ -2,11 +2,19 @@
 
 Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 9 August 2026.
 
-## 2026-08-09 — A3-R0 durable build provenance candidate
+## 2026-08-09 — DTR-1 direct Team renderer candidate
+
+- Replaced Team's legacy-render-then-reconstruct path with one stable `renderSquad()` adapter and one direct final-DOM renderer.
+- Removed runtime renderer reassignment, async-yield timing ownership, legacy Team DOM construction, heading/class-based extraction, bench node surgery and post-render availability annotation.
+- Preserved preview synchronisation and fail-closed clearing, current captaincy tie characteristics, bench calculation/display semantics, all Player Detail and captain/vice handlers, focus restoration, routes, providers, data sources, persistence, CSS, product design and every calculation/golden expectation.
+- Added six production-bundle direct-render contracts and moved Team security coverage onto the actual shipped renderer. The complete local suite is 691/691; no existing test was removed, weakened or skipped.
+- Permanent CI, reachable two-commit generated provenance, populated physical iPhone Safari acceptance and explicit merge approval remain pending.
+
+## 2026-08-09 — A3-R0 durable build provenance merged
 
 - Added a complete ordered build-input hash covering runtime modules, the HTML template and both bundler files while preserving the existing module-only source hash.
 - Added a CI gate that requires the recorded generating commit to be a reachable ancestor, confirms every build input against that commit and reproduces all tracked deployables byte-for-byte before ordinary builds overwrite them.
-- Adopted a two-commit finalisation sequence: reviewed inputs first, generated-only outputs second. Application behaviour, providers, calculations, deployment architecture and Direct Team rendering are unchanged.
+- Adopted a two-commit finalisation sequence: reviewed inputs first, generated-only outputs second. PR #98 merged at `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`; permanent run `31283849251` passed 685/685 with exact reachable-source reproduction. Application behaviour, providers, calculations, deployment architecture and Direct Team rendering were unchanged.
 
 ## 2026-08-08 — Refresh-Load R1 merged, deployed and physically accepted
 

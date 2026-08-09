@@ -34,29 +34,36 @@
 
 > **Historical FPL-T1 review verification:** the owner-controlled Official FPL gateway review reached **590 passed, 0 failed, 0 skipped** with deterministic builds, exact Worker/CSP configuration and successful physical iPhone live bootstrap transport. FPL-T1 subsequently merged through PR #69 and Track A through PRs #70 and #72. This historical 590-test checkpoint is not the current repository baseline.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last reconciled: 2026-08-08. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last reconciled: 2026-08-09. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
 
-The latest substantive application checkpoint is Refresh-Load R1 PR #96 at merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`.
+The latest merged repository checkpoint is A3-R0 PR #98 at `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`. Refresh-Load R1 PR #96 remains the latest merged application-behaviour checkpoint. DTR-1 is the current unmerged application candidate.
 
-- exact reviewed PR #96 remote head: `967856246a0c17972c43eaf444651bceb8b9f728`
-- corrected generated source: `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`
-- permanent Verify Teamsheet run: `31265107597`, completed successfully
-- complete application suite: **681 tests, 681 passed, 0 failed, 0 skipped, 0 cancelled**
-- two exact-identity production builds: byte-identical
-- root `index.html`: byte-identical to `dist/index.html`
-- manifest build identity: exact to generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`, source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a`
-- reviewed head and merge Git tree: `fd40deff72c458286e77f44a66b79a0e720e700c`
-- model/golden expectations: unchanged
-- model, calculation, provider identity/endpoint and data-source behaviour: unchanged; acquisition cadence/persistence and definite-offline disclosure changed only as approved by R1
+- exact reviewed PR #98 remote head: `00f5a3ced9592c3a5719c6b14585703771b5e418`
+- reachable generated source: `5d10cb438636837b46047b09c71dc179726973b2`
+- permanent Verify Teamsheet run: `31283849251`, completed successfully
+- merged complete suite: **685 tests, 685 passed, 0 failed, 0 skipped, 0 cancelled**
+- A3-R0 production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build
+- DTR-1 local candidate: **691 tests, 691 passed, 0 failed, 0 skipped, 0 cancelled**
+- DTR-1 adds six production-bundle direct-render contracts; no existing test or golden expectation was removed, weakened, regenerated or skipped
+- model, calculation, provider identity/endpoint and data-source behaviour: unchanged
 
 PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
 
 Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evidence for their tested paths. Leagues has pre-season physical acceptance; post-Gameweek populated checks are deliberately deferred. VoiceOver is not a Teamsheet acceptance gate.
+
+The DTR-1 candidate touches the accepted Team path, so earlier Team device evidence is its required equivalence contract rather than proof that the candidate has passed. Test the exact PR build using [DTR-1 Direct Team Renderer](DTR-1-DIRECT-TEAM-RENDERER.md) before merge.
+
+### DTR-1 direct-renderer candidate
+
+- `team-direct-renderer-runtime.test.mjs` runs the production bundle and verifies final ready/placeholder order, no legacy Team summary, 15 direct player actions, GK/1st/2nd/3rd display roles, captain selection/reset, valid and invalid transfer previews, incoming/clear behaviour, bench and all-15 Player Detail horizons, stable module ownership and removal of runtime renderer replacement.
+- `rendering-security.test.mjs` now reaches the shipped direct renderer because `team-decision-home.mjs` is bundled before the `views.mjs` async-initialiser harness boundary.
+- the Team resource, availability, preview, manual-runtime and architecture suites now assert final behaviour and direct ownership instead of requiring the removed post-render DOM surgery.
+- the complete local result is 691/691. Permanent CI, exact source/generated provenance and physical iPhone acceptance remain pending and must not be inferred from local evidence.
 
 ### Repository Truth A1 merged evidence
 

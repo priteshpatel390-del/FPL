@@ -1,18 +1,26 @@
 import { S } from '../state.mjs';
-import { $, num, el, setChildren } from '../util.mjs';
-import { mySquad, bestXI } from '../squad.mjs';
+import { $, num, fmt1, el, setChildren } from '../util.mjs';
+import { mySquad, bestXI, sellPrice } from '../squad.mjs';
 import { xpOf } from '../model/xp.mjs';
+import { availability } from '../model/scoring.mjs';
+import { teamFixtures } from '../model/fixtures.mjs';
 import { getHealth, HEALTH_STATES } from '../providers/registry.mjs';
-import { teamPitchCaptaincy, teamPitchLines } from './team-pitch.mjs';
+import { teamPitchCaptaincy, teamPitchLines, teamPitchPalette, teamPitchPaletteClass } from './team-pitch.mjs';
 import {
   decisionPreviewSnapshot,
   decisionPreviewApplyTransferPlan,
+  decisionPreviewClearAll,
+  decisionPreviewClearTransfer,
+  decisionPreviewClearCaptaincy,
+  decisionPreviewSyncSquad,
+  decisionPreviewBeginRole,
+  decisionPreviewChooseRole,
   decisionPreviewEffectiveCaptaincy,
   decisionPreviewCaptainTotal
 } from './decision-preview.mjs';
 
 // Teamsheet 2.0.2 — presentation-only Team decision home.
-// This module wraps the existing verified renderer. It does not own or alter
+// DTR-1 builds the accepted Team DOM directly. It does not own or alter
 // best-XI, captaincy, bench, projection, simulation or optimiser behaviour.
 
 const TEAM_DECISION_HOME_VERSION = '2.0.2';
@@ -116,42 +124,6 @@ function teamDecisionBenchDisplayOrder(bench=[]){
   return [reserveGoalkeeper,...source.filter(slot=>slot!==reserveGoalkeeper)];
 }
 
-function teamDecisionOrderBenchDisplay(stage,xi){
-  if(!stage?.querySelector||!xi) return;
-  const grid=stage.querySelector('.team-bench .bench-grid');
-  if(!grid) return;
-  const source=Array.isArray(xi.bench)?xi.bench:[];
-  const nodes=Array.from(grid.querySelectorAll('.bench-player'));
-  if(nodes.length!==source.length) return;
-  const nodeBySlot=new Map(source.map((slot,index)=>[slot,nodes[index]]));
-  for(const slot of teamDecisionBenchDisplayOrder(source)){
-    const node=nodeBySlot.get(slot);
-    if(node) grid.appendChild(node);
-  }
-}
-
-function teamDecisionRelabelBench(stage){
-  if(!stage?.querySelectorAll) return;
-  const players=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
-  const rolePrefix=/^(?:(?:Reserve goalkeeper|[123](?:st|nd|rd) sub|GK|1st|2nd|3rd)(?: bench)?[,·]\s*)/;
-  players.forEach((player,index)=>{
-    const label=teamDecisionBenchLabel(index);
-    const nameNode=player.querySelector('.pitch-name');
-    const oldRole=player.querySelector('.bench-role');
-    if(oldRole?.remove) oldRole.remove();
-    if(nameNode){
-      const playerName=String(nameNode.textContent||'').replace(/^\d+\.\s*/, '').replace(rolePrefix,'');
-      nameNode.textContent=playerName;
-      nameNode.parentNode?.insertBefore(el('span',{class:'bench-role'},label),nameNode);
-    }
-    const aria=player.getAttribute('aria-label');
-    if(aria){
-      const detail=aria.replace(/^\d+\.\s*/, '').replace(rolePrefix,'');
-      player.setAttribute('aria-label',`${label} bench, ${detail}`);
-    }
-  });
-}
-
 function teamDecisionAvailabilityPresentation(player){
   const status=String(player?.status||'');
   if(status==='d'){
@@ -163,29 +135,6 @@ function teamDecisionAvailabilityPresentation(player){
   if(status==='s') return Object.freeze({label:'Suspended',className:'out',aria:'suspended and unavailable'});
   if(TEAM_DECISION_UNAVAILABLE.has(status)) return Object.freeze({label:'Unavailable',className:'out',aria:'unavailable'});
   return null;
-}
-
-function teamDecisionAnnotateAvailability(stage,xi){
-  if(!stage?.querySelectorAll||!xi) return;
-  const starterSlots=teamPitchLines(xi.xi).flatMap(line=>line.players);
-  const starterNodes=Array.from(stage.querySelectorAll('.team-pitch .pitch-player'));
-  const benchSlots=teamDecisionBenchDisplayOrder(xi.bench);
-  const benchNodes=Array.from(stage.querySelectorAll('.team-bench .bench-grid .bench-player'));
-  const annotate=(node,slot)=>{
-    if(!node||!slot?.p) return;
-    const presentation=teamDecisionAvailabilityPresentation(slot.p);
-    node.querySelector('.pitch-availability')?.remove?.();
-    if(!presentation) return;
-    const copy=node.querySelector('.pitch-copy');
-    const nameNode=copy?.querySelector?.('.pitch-name');
-    const badge=el('span',{class:`flag ${presentation.className} pitch-availability`},presentation.label);
-    if(copy&&nameNode) copy.insertBefore(badge,nameNode.nextSibling);
-    else copy?.appendChild?.(badge);
-    const aria=String(node.getAttribute?.('aria-label')||'');
-    if(aria) node.setAttribute('aria-label',`${aria}, ${presentation.aria}`);
-  };
-  starterNodes.forEach((node,index)=>annotate(node,starterSlots[index]));
-  benchNodes.forEach((node,index)=>annotate(node,benchSlots[index]));
 }
 
 function teamDecisionPlaceholderPlayer(label='—',benchRole=''){
@@ -360,21 +309,156 @@ function teamDecisionSetupShell(){
   return support;
 }
 
-function teamDecisionEnhanceRenderedTeam(){
+function teamDecisionNoteNode(kind,...children){
+  return el('div',{class:`note${kind?' '+kind:''}`},children);
+}
+
+function teamDecisionFixtureLabel(player,gw){
+  const games=teamFixtures(player.team,gw,1)[0]||[];
+  return games.length?games.map(game=>`${game.opp.short_name} ${game.home?'H':'A'}`).join(' + '):'Blank';
+}
+
+function teamDecisionPlayerNode({slot,gw,effectiveCaptaincy,incomingIds,previewState,xiIds,benchRole='',openPlayerDetail,rerenderTeam}){
+  const player=slot.p,team=S.teams[player.team],palette=teamPitchPalette(team),paletteClass=teamPitchPaletteClass(team);
+  const role=player.id===effectiveCaptaincy.captainId?'captain':player.id===effectiveCaptaincy.viceId?'vice':null;
+  const bad=availability(player)<1,incoming=incomingIds.has(Number(player.id));
+  const selectable=!benchRole&&Boolean(previewState.selectionMode);
+  const fixture=teamDecisionFixtureLabel(player,gw),projected=fmt1(xpOf(player,gw,1).total);
+  const availabilityCopy=teamDecisionAvailabilityPresentation(player);
+  let aria=selectable
+    ?`Select ${player.web_name} as ${previewState.selectionMode==='captain'?'captain':'vice-captain'}`
+    :`${benchRole?`${benchRole} bench, `:''}${player.web_name}, ${fixture}, ${projected} expected points${role==='captain'?', captain':role==='vice'?', vice-captain':''}${incoming?', incoming transfer preview':''}`;
+  if(availabilityCopy) aria+=`, ${availabilityCopy.aria}`;
+  return el('button',{type:'button',class:`pitch-player${benchRole?' bench-player':''}${bad?' warn':''}${incoming?' incoming':''}${selectable?' selection-target':''}`,
+    onclick:event=>{
+      if(selectable){
+        decisionPreviewChooseRole(previewState.selectionMode,player.id,xiIds);
+        rerenderTeam();
+      }else openPlayerDetail(player,gw,1,event.currentTarget);
+    },'aria-label':aria},
+    el('div',{class:'shirt-wrap'},
+      el('span',{class:`club-shirt pattern-${palette.pattern} ${paletteClass}`,'aria-hidden':'true'},el('span',{class:'club-shirt-code'},palette.code)),
+      role?el('span',{class:`captain-badge${role==='vice'?' vice':''}${effectiveCaptaincy.isPreview?' preview':''}`},role==='captain'?'C':'VC'):null,
+      incoming?el('span',{class:'incoming-badge'},'IN'):null),
+    el('div',{class:'pitch-copy'},
+      benchRole?el('span',{class:'bench-role'},benchRole):null,
+      el('div',{class:'pitch-name'},player.web_name),
+      availabilityCopy?el('span',{class:`flag ${availabilityCopy.className} pitch-availability`},availabilityCopy.label):null,
+      el('div',{class:'pitch-meta'},fixture),
+      el('div',{class:'pitch-xp'},`${projected} xP`)));
+}
+
+function teamDecisionStage({xi,gw,effectiveCaptaincy,incomingIds,previewState,openPlayerDetail,rerenderTeam}){
+  const xiIds=xi.xi.map(slot=>Number(slot.p.id));
+  const playerNode=(slot,benchRole='')=>teamDecisionPlayerNode({slot,gw,effectiveCaptaincy,incomingIds,previewState,xiIds,benchRole,openPlayerDetail,rerenderTeam});
+  const formation=el('div',{class:'pitch-formation'},teamPitchLines(xi.xi).map(line=>
+    el('div',{class:`pitch-line position-${line.position}`},line.players.map(slot=>playerNode(slot)))));
+  const pitch=el('section',{class:'team-pitch','aria-label':`Model-selected starting eleven for Gameweek ${gw}`},
+    el('span',{class:'pitch-mark pitch-centre-circle','aria-hidden':'true'}),
+    el('span',{class:'pitch-mark pitch-box pitch-box-top','aria-hidden':'true'}),
+    el('span',{class:'pitch-mark pitch-box pitch-box-bottom','aria-hidden':'true'}),formation);
+  const orderedBench=teamDecisionBenchDisplayOrder(xi.bench);
+  const bench=el('section',{class:'team-bench','aria-label':'Bench order'},
+    el('div',{class:'bench-head'},el('strong',{},'Bench'),el('span',{},'Auto-sub order')),
+    el('div',{class:'bench-grid'},orderedBench.map((slot,index)=>playerNode(slot,teamDecisionBenchLabel(index)))));
+  return el('div',{class:'team-stage'},pitch,bench);
+}
+
+function teamDecisionPreviewBanner({previewState,realSquad,xi,gw,rerenderTeam,renderTransfers}){
+  if(!previewState.transfer) return null;
+  const currentXi=bestXI(realSquad,gw);
+  const moves=previewState.transfer.transfers.map(move=>`${S.byId[move.outPlayerId]?.web_name||move.outPlayerId} → ${S.byId[move.inPlayerId]?.web_name||move.inPlayerId}`).join(' · ');
+  return el('section',{class:'decision-preview-banner transfer-preview','aria-label':'Temporary transfer preview'},
+    el('div',{},el('span',{class:'eyebrow'},'Preview only'),el('strong',{},moves),
+      el('p',{},`Current squad ${fmt1(currentXi.tot)} xP → preview ${fmt1(xi.tot)} xP for GW${gw}. Optimiser net ${previewState.transfer.netGain>=0?'+':''}${fmt1(previewState.transfer.netGain)} over ${previewState.transfer.previewHorizon||1} GW${(previewState.transfer.previewHorizon||1)>1?'s':''} · hit −${previewState.transfer.hitCost} · £${fmt1(previewState.transfer.bankAfter/10)}m left · ${previewState.transfer.freeTransfersNextGW} FT next GW.`)),
+    el('button',{type:'button',class:'btn ghost sm',onclick:()=>{
+      decisionPreviewClearTransfer();
+      rerenderTeam();
+      renderTransfers();
+    }},'Clear preview'));
+}
+
+function teamDecisionCaptainControls({previewState,modelCaptaincy,effectiveCaptaincy,captainTotal,xiIds,rerenderTeam}){
+  const modelCaptain=S.byId[modelCaptaincy.captainId]?.web_name||'—',modelVice=S.byId[modelCaptaincy.viceId]?.web_name||'—';
+  const previewCaptain=S.byId[effectiveCaptaincy.captainId]?.web_name||'—',previewVice=S.byId[effectiveCaptaincy.viceId]?.web_name||'—';
+  return el('section',{class:'decision-preview-controls','aria-label':'Captain and vice-captain preview controls'},
+    el('div',{class:'decision-preview-copy'},el('span',{class:'eyebrow'},'Captaincy'),
+      el('strong',{},`Model: ${modelCaptain} C · ${modelVice} VC`),
+      effectiveCaptaincy.isPreview
+        ?el('p',{},`Preview: ${previewCaptain} C · ${previewVice} VC · captain uplift ${fmt1(captainTotal.uplift)} · total ${fmt1(captainTotal.total)}.`)
+        :el('p',{},`Captain uplift ${fmt1(captainTotal.uplift)} · total with captain ${fmt1(captainTotal.total)}.`)),
+    el('div',{class:'decision-preview-actions'},
+      el('button',{type:'button',class:`btn ghost sm${previewState.selectionMode==='captain'?' active':''}`,'aria-pressed':previewState.selectionMode==='captain',onclick:()=>{
+        decisionPreviewBeginRole('captain',modelCaptaincy); rerenderTeam();
+      }},'Choose captain'),
+      el('button',{type:'button',class:`btn ghost sm${previewState.selectionMode==='vice'?' active':''}`,'aria-pressed':previewState.selectionMode==='vice',onclick:()=>{
+        decisionPreviewBeginRole('vice',modelCaptaincy); rerenderTeam();
+      }},'Choose vice-captain'),
+      effectiveCaptaincy.isPreview?el('button',{type:'button',class:'btn ghost sm',onclick:()=>{
+        decisionPreviewClearCaptaincy(); rerenderTeam();
+      }},'Reset captaincy'):null),
+    previewState.selectionMode?el('p',{class:'selection-help',role:'status'},`Tap a starting player to choose ${previewState.selectionMode==='captain'?'captain':'vice-captain'}.`):null);
+}
+
+function teamDecisionCaptainSupport(capRank,gw,flagNodes){
+  const heading=el('h3',{class:'section-title'},'Captaincy ranking');
+  const grid=el('div',{class:'capgrid'});
+  capRank.slice(0,4).forEach((candidate,index)=>{
+    const games=teamFixtures(candidate.s.p.team,gw,1)[0]||[];
+    const why=games.length?games.map(game=>`${game.home?'vs':'away to'} ${game.opp.short_name}`).join(' + ')+` · ${fmt1(candidate.x)} xP · ${candidate.own}% owned`:'no fixture';
+    grid.appendChild(el('div',{class:`capcard ${index===0?'top':''}`},el('div',{class:'rank'},index+1),
+      el('div',{class:'capbody'},el('span',{class:'pname'},candidate.s.p.web_name,flagNodes(candidate.s.p)),el('div',{class:'why'},why)),
+      el('span',{class:`xp ${index===0?'hot':''}`},fmt1(candidate.x*2))));
+  });
+  return {heading,grid};
+}
+
+function teamDecisionAllSquadSupport(squad,gw,flagNodes,openPlayerDetail){
+  const heading=el('h3',{class:'section-title'},'All 15 over 6 gameweeks');
+  const tbody=el('tbody');
+  const cell=(text,className='')=>el('td',className?{class:className}:{},text);
+  const head=(text,className='')=>el('th',className?{class:className,scope:'col'}:{scope:'col'},text);
+  squad.slice().sort((a,b)=>a.p.element_type-b.p.element_type||xpOf(b.p,gw,6).total-xpOf(a.p,gw,6).total).forEach(slot=>{
+    const player=slot.p;
+    const openButton=el('button',{type:'button',class:'player-row-action','aria-label':`Open ${player.web_name} player details`,onclick:event=>openPlayerDetail(player,gw,6,event.currentTarget)},
+      el('span',{class:'pname'},player.web_name,flagNodes(player)),
+      el('span',{class:'pmeta'},el('span',{class:'pos'},S.posName[player.element_type]||'?'),` ${S.teams[player.team]?.short_name||''}`));
+    tbody.appendChild(el('tr',{},el('td',{},openButton),cell((player.now_cost/10).toFixed(1),'num'),cell((sellPrice(slot)/10).toFixed(1),'num'),
+      cell(fmt1(num(player.form)),'num'),cell(fmt1(xpOf(player,gw,1).total),'num'),el('td',{class:'num'},el('span',{class:'xp'},fmt1(xpOf(player,gw,6).total)))));
+  });
+  const table=el('div',{class:'scroll'},el('table',{class:'data'},el('caption',{class:'sr-only'},`Current squad projections from GW${gw}`),
+    el('thead',{},el('tr',{},head('Player'),head('£','num'),head('Sell','num'),head('Form','num'),head(`xP GW${gw}`,'num'),head('xP 6GW','num'))),tbody));
+  const caveat=!$('useManual')?.checked&&S.picks
+    ?teamDecisionNoteNode('plain',"Sell prices assume you bought at today's price — the public API doesn't expose purchase prices. Build the squad by hand if you want them exact.")
+    :null;
+  return {heading,table,caveat};
+}
+
+function renderTeamDecisionHome({openPlayerDetail=()=>{},flagNodes=()=>[],rerenderTeam=()=>{},renderTransfers=()=>{}}={}){
   if(typeof document==='undefined') return;
   teamDecisionUpdateManualAvailability();
-  const out=$('squadOut'),support=$('teamHomeSupport');
+  const out=$('squadOut'),support=$('teamHomeSupport')||teamDecisionSetupShell();
   if(!out||!support) return;
+  const focus=teamDecisionCaptureFocus(out);
   const realSquad=mySquad();
+  if(!realSquad.length) decisionPreviewClearAll();
+  else decisionPreviewSyncSquad(realSquad);
+  let previewState=decisionPreviewSnapshot();
+  let applied=previewState.transfer?decisionPreviewApplyTransferPlan(realSquad,previewState.transfer,S.byId):{ok:true,squad:realSquad,incomingIds:[],outgoingIds:[]};
+  if(previewState.transfer&&!applied.ok){
+    decisionPreviewClearTransfer();
+    previewState=decisionPreviewSnapshot();
+    applied={ok:true,squad:realSquad,incomingIds:[],outgoingIds:[]};
+  }
   const ready=teamDecisionSquadReady(realSquad);
   out.classList.toggle('team-home-ready',ready);
-  support.textContent='';
+  setChildren(support);
   const health=getHealth('fpl',{seasonLive:S.seasonLive});
   const dataState=health?.state||(!S.boot?HEALTH_STATES.UNAVAILABLE:HEALTH_STATES.LIVE);
   const deadline=teamDecisionDeadlineModel();
   const manual=Boolean($('useManual')?.checked);
-  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),
-    picksGameweek:S.picksGameweek,picksStatus:S.picksStatus,fplState:dataState,cachedAt:S.cachedAt});
+  const source=teamDecisionSourceLabel({manual,hasPicks:Boolean(S.picks?.picks),picksGameweek:S.picksGameweek,
+    picksStatus:S.picksStatus,fplState:dataState,cachedAt:S.cachedAt});
   const ft=Math.max(0,Math.trunc(num($('ftCount')?.value)));
   const bank=Math.max(0,num($('bankIn')?.value)).toFixed(1);
   const rank=Number(S.entry?.summary_overall_rank)>0?`Official OR ${Number(S.entry.summary_overall_rank).toLocaleString('en-GB')}`:'';
@@ -391,94 +475,67 @@ function teamDecisionEnhanceRenderedTeam(){
     else if(S.picksStatus==='incomplete') risk=Object.freeze({kind:'squad-unavailable',level:'blocking',
       text:`${count} of 15 public GW${S.picksGameweek} picks were usable. A complete legal squad is required before Teamsheet can recommend an XI.`});
     else risk=Object.freeze({kind:'squad-unavailable',level:'blocking',text:count?`${count} of 15 players are available. A complete legal squad is required before Teamsheet can recommend an XI.`:'No usable 15-player squad is available.'});
-    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind,
-      squadStatus:S.picksStatus,squadGameweek:S.picksGameweek});
-    const header=teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank});
-    const summary=teamDecisionSummary({recommendation:'Recommendation unavailable',forecast:'No projection calculated',risk,action});
-    const placeholder=teamDecisionPlaceholderStage(S.nextGW,'Empty Team pitch. No valid squad is available, so no XI, captaincy or bench recommendation has been calculated.');
-    const resourceBar=teamDecisionResourceBar({ft,bank});
-    setChildren(out,header,summary,resourceBar,placeholder);
+    const action=teamDecisionAction({hasSquad:false,deadlinePassed:deadline.passed,riskKind:risk.kind,squadStatus:S.picksStatus,squadGameweek:S.picksGameweek});
+    setChildren(out,
+      teamDecisionHeader({title,eyebrow:'Team decision home',source,deadline:deadline.label,rank}),
+      teamDecisionSummary({recommendation:'Recommendation unavailable',forecast:'No projection calculated',risk,action}),
+      teamDecisionResourceBar({ft,bank}),
+      teamDecisionPlaceholderStage(S.nextGW,'Empty Team pitch. No valid squad is available, so no XI, captaincy or bench recommendation has been calculated.'));
+    teamDecisionRestoreFocus(out,focus);
     return;
   }
 
-  let previewState=decisionPreviewSnapshot();
-  const applied=previewState.transfer?decisionPreviewApplyTransferPlan(realSquad,previewState.transfer,S.byId):{ok:true,squad:realSquad};
-  const squad=applied.ok?applied.squad:realSquad;
-  const gw=S.nextGW,xi=bestXI(squad,gw);
-  const capRank=xi.xi.map(slot=>({s:slot,x:xpOf(slot.p,gw,1).total,own:num(slot.p.selected_by_percent)})).sort((a,b)=>b.x-a.x||Number(a.s.p.id)-Number(b.s.p.id));
-  const modelCaptaincy=teamPitchCaptaincy(capRank);
+  const squad=applied.squad,incomingIds=new Set(applied.incomingIds),gw=S.nextGW,xi=bestXI(squad,gw);
+  const visualCapRank=xi.xi.map(slot=>({s:slot,x:xpOf(slot.p,gw,1).total,own:num(slot.p.selected_by_percent)})).sort((a,b)=>b.x-a.x);
+  const decisionCapRank=xi.xi.map(slot=>({s:slot,x:xpOf(slot.p,gw,1).total,own:num(slot.p.selected_by_percent)})).sort((a,b)=>b.x-a.x||Number(a.s.p.id)-Number(b.s.p.id));
+  const visualModelCaptaincy=teamPitchCaptaincy(visualCapRank),decisionModelCaptaincy=teamPitchCaptaincy(decisionCapRank);
   const xiIds=xi.xi.map(slot=>Number(slot.p.id));
-  const effectiveCaptaincy=decisionPreviewEffectiveCaptaincy(modelCaptaincy,xiIds);
+  const visualEffectiveCaptaincy=decisionPreviewEffectiveCaptaincy(visualModelCaptaincy,xiIds);
+  const decisionEffectiveCaptaincy=decisionPreviewEffectiveCaptaincy(decisionModelCaptaincy,xiIds);
   const scoreById=Object.fromEntries(xi.xi.map(slot=>[slot.p.id,xpOf(slot.p,gw,1).total]));
-  const captainTotal=decisionPreviewCaptainTotal(xi.tot,effectiveCaptaincy.captainId,scoreById);
-  const forecast=teamDecisionForecast(xi.tot,captainTotal.uplift);
-  const captain=S.byId[effectiveCaptaincy.captainId];
-  const vice=S.byId[effectiveCaptaincy.viceId];
+  const visualCaptainTotal=decisionPreviewCaptainTotal(xi.tot,visualEffectiveCaptaincy.captainId,scoreById);
+  const decisionCaptainTotal=decisionPreviewCaptainTotal(xi.tot,decisionEffectiveCaptaincy.captainId,scoreById);
+  const forecast=teamDecisionForecast(xi.tot,decisionCaptainTotal.uplift);
+  const captain=S.byId[decisionEffectiveCaptaincy.captainId],vice=S.byId[decisionEffectiveCaptaincy.viceId];
   const blankIds=xi.xi.filter(slot=>(teamFixtures(slot.p.team,gw,1)[0]||[]).length===0).map(slot=>slot.p.id);
-  const close=capRank[1]&&capRank[0].x-capRank[1].x<0.6?{
-    firstName:capRank[0].s.p.web_name,
-    secondName:capRank[1].s.p.web_name,
-    gap:capRank[0].x-capRank[1].x
+  const close=decisionCapRank[1]&&decisionCapRank[0].x-decisionCapRank[1].x<0.6?{
+    firstName:decisionCapRank[0].s.p.web_name,secondName:decisionCapRank[1].s.p.web_name,gap:decisionCapRank[0].x-decisionCapRank[1].x
   }:null;
-  const risk=teamDecisionRisk({
-    dataState,
-    captain,
-    starters:xi.xi.map(slot=>({p:slot.p,xp:xpOf(slot.p,gw,1).total})),
-    blankIds,
-    closeCaptain:close
-  });
+  const risk=teamDecisionRisk({dataState,captain,starters:xi.xi.map(slot=>({p:slot.p,xp:xpOf(slot.p,gw,1).total})),blankIds,closeCaptain:close});
   previewState=decisionPreviewSnapshot();
-  const previewActive=Boolean(previewState.transfer||effectiveCaptaincy.isPreview);
+  const previewActive=Boolean(previewState.transfer||decisionEffectiveCaptaincy.isPreview);
   const action=teamDecisionAction({hasSquad:true,deadlinePassed:deadline.passed,previewActive,riskKind:risk.kind});
   const bench=teamDecisionBenchDisplayOrder(xi.bench).map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
   const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank});
   const summary=teamDecisionSummary({recommendation,forecast:forecastCopy,risk,action});
-  const resourceBar=teamDecisionResourceBar({ft,bank});
-
-  const children=Array.from(out.children);
-  const previewBanner=children.find(node=>node.classList?.contains('decision-preview-banner'))||null;
-  const controls=children.find(node=>node.classList?.contains('decision-preview-controls'))||null;
-  const stage=children.find(node=>node.classList?.contains('team-stage'))||null;
-  teamDecisionOrderBenchDisplay(stage,xi);
-  teamDecisionRelabelBench(stage);
-  teamDecisionAnnotateAvailability(stage,xi);
-  const captainHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim()==='Captaincy ranking')||null;
-  const captainGrid=captainHeading?.nextElementSibling?.classList?.contains('capgrid')?captainHeading.nextElementSibling:null;
-  const allHeading=children.find(node=>node.matches?.('h3.section-title')&&node.textContent.trim().startsWith('All 15'))||null;
-  const allTable=allHeading?.nextElementSibling?.classList?.contains('scroll')?allHeading.nextElementSibling:null;
-  const finalCaveat=allTable?.nextElementSibling?.classList?.contains('note')?allTable.nextElementSibling:null;
-
-  const actions=el('div',{class:'team-home-actions'},
-    el('a',{class:'btn ghost',href:'#/transfers'},'Open Transfers'),
+  const previewBanner=teamDecisionPreviewBanner({previewState,realSquad,xi,gw,rerenderTeam,renderTransfers});
+  const stage=teamDecisionStage({xi,gw,effectiveCaptaincy:visualEffectiveCaptaincy,incomingIds,previewState,openPlayerDetail,rerenderTeam});
+  const controls=teamDecisionCaptainControls({previewState,modelCaptaincy:visualModelCaptaincy,effectiveCaptaincy:visualEffectiveCaptaincy,
+    captainTotal:visualCaptainTotal,xiIds,rerenderTeam});
+  const actions=el('div',{class:'team-home-actions'},el('a',{class:'btn ghost',href:'#/transfers'},'Open Transfers'),
     el('a',{class:'btn ghost',href:'#/settings/team-account'},'Edit manual squad'));
-  setChildren(out,header,summary,previewBanner,resourceBar,stage,controls,actions);
+  setChildren(out,header,summary,previewBanner,teamDecisionResourceBar({ft,bank}),stage,controls,actions);
 
-  const why=el('details',{class:'team-home-support'},
-    el('summary',{},'Why this XI and captaincy'),
-    el('div',{class:'team-home-support-body'},captainHeading,captainGrid,
-      close?noteNode('',teamDecisionCloseCaptainCopy(close.firstName,close.secondName,close.gap)):null));
-  const all=el('details',{class:'team-home-support'},
-    el('summary',{},'All 15 over six Gameweeks'),
-    el('div',{class:'team-home-support-body'},allHeading,allTable,finalCaveat));
+  const captainSupport=teamDecisionCaptainSupport(visualCapRank,gw,flagNodes);
+  const allSupport=teamDecisionAllSquadSupport(squad,gw,flagNodes,openPlayerDetail);
+  const why=el('details',{class:'team-home-support'},el('summary',{},'Why this XI and captaincy'),
+    el('div',{class:'team-home-support-body'},captainSupport.heading,captainSupport.grid,
+      close?teamDecisionNoteNode('',teamDecisionCloseCaptainCopy(close.firstName,close.secondName,close.gap)):null));
+  const all=el('details',{class:'team-home-support'},el('summary',{},'All 15 over six Gameweeks'),
+    el('div',{class:'team-home-support-body'},allSupport.heading,allSupport.table,allSupport.caveat));
   setChildren(support,why,all);
+  teamDecisionRestoreFocus(out,focus);
 }
 
-function teamDecisionInstall(){
+function teamDecisionInitialise(){
   if(typeof document==='undefined'||typeof BUILD_INFO==='undefined') return;
   teamDecisionSetupStartup();
   teamDecisionSetupShell();
-  const legacyRenderSquad=renderSquad;
-  renderSquad=function renderSquadTeamDecisionHome(){
-    const out=$('squadOut'),focus=teamDecisionCaptureFocus(out);
-    legacyRenderSquad();
-    teamDecisionEnhanceRenderedTeam();
-    teamDecisionRestoreFocus(out,focus);
-  };
 }
 
-teamDecisionInstall();
+teamDecisionInitialise();
 
 export {
   TEAM_DECISION_HOME_VERSION,
@@ -492,11 +549,9 @@ export {
   teamDecisionCloseCaptainCopy,
   teamDecisionBenchLabel,
   teamDecisionBenchDisplayOrder,
-  teamDecisionOrderBenchDisplay,
   teamDecisionAvailabilityPresentation,
-  teamDecisionAnnotateAvailability,
   teamDecisionFocusResources,
   teamDecisionResourceBar,
-  teamDecisionRelabelBench,
-  teamDecisionSetStartupShellOwned
+  teamDecisionSetStartupShellOwned,
+  renderTeamDecisionHome
 };

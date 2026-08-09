@@ -41,19 +41,47 @@ export function loadApp(fieldValues = {}, { interactive = false } = {}) {
     trHorizon:'6', trTop:'8', pSearch:'', q:'' };
   const vals = { ...defaults, ...fieldValues };
   const made = {};
-  const mk = (id, tag = 'div') => ({ id, tagName:tag.toUpperCase(), attrs:{}, nodeType:1, value: vals[id] ?? '', checked: vals[id] === true, innerHTML:'', textContent:'', children:[],
-    options:{length:9}, add(){}, hidden:false, dataset:{}, style:{}, listeners:{},
-    addEventListener(type, handler){ if(!browser) return; (this.listeners[type] = this.listeners[type] || []).push(handler); },
-    querySelectorAll(){ return []; }, after(){}, remove(){}, nextElementSibling:null,
-    classList:{ contains(){ return false; } }, setAttribute(k,v){ this.attrs[k] = String(v); this[k] = String(v); }, focus(){},
-    click(){ (this.listeners.click || []).forEach(handler => handler({ type:'click', target:this, preventDefault(){}, stopImmediatePropagation(){} })); },
-    closest(){ return null; }, appendChild(child){ this.children.push(child); child.parentNode = this; return child; },
-    append(...children){ children.forEach(child => this.appendChild(child)); },
-    removeChild(child){ this.children.splice(this.children.indexOf(child), 1); }, get firstChild(){ return this.children[0] || null; },
-    closest(){ return null; }, disabled:false });
+  const mk = (id, tag = 'div') => {
+    const node={ id, tagName:tag.toUpperCase(), attrs:{}, nodeType:1, value: vals[id] ?? '', checked: vals[id] === true,
+      innerHTML:'', textContent:'', className:'', children:[], options:{length:9}, add(){}, hidden:false, inert:false,
+      dataset:{}, style:{}, listeners:{}, parentNode:null, parentElement:null,
+      addEventListener(type, handler){ if(!browser) return; (this.listeners[type] = this.listeners[type] || []).push(handler); },
+      querySelector(selector){ return this.querySelectorAll(selector)[0]||null; },
+      querySelectorAll(selector){
+        const choices=String(selector).split(',').map(part=>part.trim().split(/\s+/).pop()).filter(Boolean);
+        const matches=(candidate,choice)=>{
+          if(choice.startsWith('#')) return candidate.id===choice.slice(1);
+          if(choice.startsWith('.')) return candidate.classList?.contains(choice.slice(1));
+          const [tagName,className]=choice.split('.');
+          return (!tagName||candidate.tagName===tagName.toUpperCase())&&(!className||candidate.classList?.contains(className));
+        };
+        const found=[];
+        const visit=current=>{ for(const child of current.children||[]){ if(child?.nodeType===1&&choices.some(choice=>matches(child,choice))) found.push(child); visit(child); } };
+        visit(this); return found;
+      }, after(){}, remove(){ this.parentNode?.removeChild?.(this); },
+      setAttribute(k,v){ this.attrs[k] = String(v); if(k==='class') this.className=String(v); else this[k] = String(v); },
+      getAttribute(k){ return k==='class'?this.className:(this.attrs[k]??null); }, focus(){ globalThis.document.activeElement=this; },
+      click(){ (this.listeners.click || []).forEach(handler => handler({ type:'click', target:this, currentTarget:this, preventDefault(){}, stopImmediatePropagation(){} })); },
+      closest(){ return null; }, contains(target){ for(let current=target;current;current=current.parentNode) if(current===this) return true; return false; },
+      appendChild(child){ this.children.push(child); child.parentNode = this; child.parentElement=this; return child; },
+      append(...children){ children.forEach(child => this.appendChild(child)); },
+      insertBefore(child,before){ const index=this.children.indexOf(before); if(index<0) return this.appendChild(child); this.children.splice(index,0,child); child.parentNode=this; child.parentElement=this; return child; },
+      removeChild(child){ const index=this.children.indexOf(child); if(index>=0) this.children.splice(index,1); child.parentNode=null; child.parentElement=null; return child; },
+      get firstChild(){ return this.children[0] || null; }, get childNodes(){ return this.children; },
+      get nextElementSibling(){ const siblings=this.parentNode?.children||[],index=siblings.indexOf(this); return index>=0?siblings[index+1]||null:null; },
+      disabled:false };
+    node.classList={
+      contains(name){ return node.className.split(/\s+/).filter(Boolean).includes(name); },
+      add(...names){ node.className=[...new Set([...node.className.split(/\s+/).filter(Boolean),...names])].join(' '); },
+      toggle(name,force){ const present=this.contains(name),next=force===undefined?!present:Boolean(force); const names=node.className.split(/\s+/).filter(Boolean).filter(item=>item!==name); if(next) names.push(name); node.className=names.join(' '); return next; }
+    };
+    return node;
+  };
 
+  const rootClassList={contains(){ return false; },add(){},remove(){}};
   globalThis.document = { getElementById: id => made[id] || (made[id] = mk(id)),
-    querySelectorAll: () => [],
+    body:{classList:rootClassList}, documentElement:{classList:rootClassList}, activeElement:null,
+    querySelector: () => null, querySelectorAll: () => [],
     addEventListener: browser ? browser.addEventListener : function(){},
     ...(browser ? { dispatchEvent: browser.dispatchEvent } : {}),
     createElement: tag => mk('x', tag),
@@ -75,7 +103,8 @@ export function loadApp(fieldValues = {}, { interactive = false } = {}) {
     sellPrice, mySquad, parseCSV, pearson, poissonOver, solveLambda, mapTeamName, parseUnderstat,
     runBacktest, rememberLeague, renderLeagueChips, renderTicker, renderPlayers, renderSquad, renderTransfers,
     renderManual, searchPlayers, transferPlannerMoveList, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
-    clearXP, flagsFor, priceMomentum, transferPerformanceStart, transferPerformanceCancel, transferPerformanceSnapshot });
+    clearXP, flagsFor, priceMomentum, decisionPreviewSnapshot, decisionPreviewSelectTransfer, decisionPreviewClearAll,
+    transferPerformanceStart, transferPerformanceCancel, transferPerformanceSnapshot });
     \nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
   delete globalThis.__EXPORTS__;
   return { T: exports, doc: made, workers: browser?.workers || [],

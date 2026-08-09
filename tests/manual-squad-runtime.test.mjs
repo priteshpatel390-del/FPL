@@ -154,10 +154,10 @@ test('legacy invalid saved squads are not labelled complete and legal',()=>{
   assert.ok(validation.issues.some(issue=>/2 GKP, 5 DEF, 5 MID and 3 FWD/.test(issue)));
 });
 
-test('runtime module follows views and Team enhancement in deterministic build order',()=>{
+test('direct Team renderer precedes the stable views adapter and manual runtime',()=>{
   const build=readFileSync('build.mjs','utf8');
   const views=build.indexOf("'src/ui/views.mjs'");
   const teamHome=build.indexOf("'src/ui/team-decision-home.mjs'");
   const runtime=build.indexOf("'src/ui/manual-squad-runtime.mjs'");
-  assert.ok(views>=0&&teamHome>views&&runtime>teamHome);
+  assert.ok(teamHome>=0&&views>teamHome&&runtime>views);
 });

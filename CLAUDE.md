@@ -6,9 +6,9 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `b7cfe5844bca1066a15ea422e694c55d827dab3b`, merge of R1 documentation closeout PR #97 |
+| Repository head | `main` `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`, merge of A3-R0 PR #98 |
 | Latest substantive application checkpoint | PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
-| Permanent repository verification | Verify Teamsheet run `31265107597`: 681 passed, 0 failed, 0 skipped, 0 cancelled; deterministic byte-identical double build; root/deployable equality; exact manifest identity |
+| Permanent repository verification | Verify Teamsheet run `31283849251`: 685 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic byte-identical double build; root/deployable equality; exact source and complete build-input identity |
 | Application tree identity | Reviewed PR #96 head and merge share Git tree `fd40deff72c458286e77f44a66b79a0e720e700c` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
@@ -29,9 +29,11 @@ Understat parser repair, atomic foreground-state replacement, core bootstrap red
 
 The first PR #96 iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static application shell, which remains outside R1. The in-app offline refresh exposed misleading fresh/live FPL disclosure; source `d1b6ac0…` stops before networking when Safari definitively reports offline, preserves the saved snapshot timestamp and labels FPL as Fallback. Pritesh physically retested and accepted that corrected path, then verified the same build identity after GitHub Pages returned to `main`.
 
-The next substantive checkpoint is evidence-gated rather than implementation-approved: after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues behaviour. Record evidence and defects first; do not change calculations or providers without a separate approved scope.
+Audit A3 and A3-R0 are complete and merged. A3-R0 binds generated files to all build inputs, requires their recorded source commit to be a reachable ancestor and reproduces committed deployables exactly before ordinary CI builds overwrite them.
 
-Audit A3 is complete. A3-R0 is the approved build-provenance remediation: bind generated files to all build inputs, require their recorded source commit to be a reachable ancestor and reproduce committed deployables exactly before ordinary CI builds overwrite them. Direct Team renderer work remains a separate later approval.
+DTR-1 is the current approved implementation candidate. It replaces Team's legacy-render-then-reconstruct path with one direct renderer while preserving the accepted design and every calculation/provider/data-source boundary. Local verification is 691/691; permanent CI, exact two-commit generated provenance, populated physical iPhone Safari acceptance and explicit merge approval remain pending. See [DTR-1 Direct Team Renderer](docs/DTR-1-DIRECT-TEAM-RENDERER.md).
+
+After DTR-1 is accepted or closed, the next planned task is Data Architecture D1 investigation/design for Teamsheet's historical and live data platform. D1 is not approved for implementation and must compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against actual requirements. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
 
 ## Owner and communication
 

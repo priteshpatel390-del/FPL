@@ -37,7 +37,7 @@ src/
   ui/
     app-shell.mjs       hash router, primary shell, Settings hierarchy and route focus/history
     data-warning.mjs    consequence-led core Official FPL warning classification and rendering
-    team-decision-home.mjs accepted decision-first Team presentation layered over the legacy renderer
+    team-decision-home.mjs direct owner of the accepted decision-first Team DOM
     team-pitch.mjs      visual pitch/player primitives
     player-detail.mjs   dialog lifecycle, focus, scroll and route-safe closing
     transfer-performance.mjs application-scoped Worker controller and sole Transfers renderer
@@ -48,7 +48,7 @@ src/
     review.mjs          phone-first operating review controls and JSON/Markdown/CSV downloads
     mini-leagues-state.mjs versioned local League/rival choice state
     mini-leagues-view.mjs all-league hub, selected-league detail, standings, pairwise comparison and selected-rival exposure
-    views.mjs           legacy/general screen rendering and composition boundary
+    views.mjs           general screen rendering plus the stable Team-render adapter
     ...                 decision previews, manual squad routing, restricted Markdown, downloads, recovery and security wiring
 tests/                  characterisation, model, simulation, provider, security, evidence, metric and build tests
 docs/                   canonical guidance plus indexed historical project records
