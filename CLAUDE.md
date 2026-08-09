@@ -6,7 +6,7 @@ The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c277
 
 [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md) is approved as a documentation-only design decision: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox, and optional downstream Google Sheets reporting. No persistence implementation is approved.
 
-**Atomic Foreground Refresh** is implemented as a merge-gated candidate on `claude/atomic-foreground-refresh-h7umfj` after five design rounds (R2, R3, R3.1, R3.2, R3.3, R3.4) and the PR #102 correctness review. 790 tests pass locally; deterministic/generated verification must be rerun for the corrected source. Merge and physical iPhone Safari acceptance remain owner-gated and are not claimed. See [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md).
+**Atomic Foreground Refresh** is implemented as a merge-gated candidate on `claude/atomic-foreground-refresh-h7umfj` after five design rounds (R2, R3, R3.1, R3.2, R3.3, R3.4) and the PR #102 correctness review. The corrected candidate passes 792 tests (all prior 790 retained plus two rollback regressions); deterministic/generated verification remains a required publication gate. Merge and physical iPhone Safari acceptance remain owner-gated and are not claimed. See [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md).
 
 Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 9 August 2026.
 
@@ -16,7 +16,7 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 |---|---|
 | Repository head | `main` `deb4ea26ba96112dba07660e23a61f04d4b6596d`, merge of D1 design closeout PR #101 |
 | Latest application checkpoint | iPhone form-focus zoom PR #100, merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`; DTR-1 remains complete through PR #99 |
-| Permanent repository verification | 693 passed on `main`; 790 locally on the corrected Atomic Foreground Refresh candidate (693 retained unweakened + 97 added); corrected permanent CI/generated provenance pending |
+| Permanent repository verification | 693 passed on `main`; corrected Atomic Foreground Refresh candidate baseline is 792 (all prior 790 retained + 2 rollback regressions); permanent CI/generated provenance required on the published correction |
 | Application tree identity | The accepted PR #100 application tree is preserved by merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |

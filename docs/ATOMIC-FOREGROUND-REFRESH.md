@@ -94,18 +94,20 @@ Revision change and the seven-day backstop remain **correction triggers**. There
 
 ## Commit journal
 
-Four domains, restored together in reverse commit order:
+Four mutation domains are restored together when a commit fails:
 
 - refresh-owned keys of `S` (`REFRESH_OWNED_KEYS`), including `S.__accountKeys`
 - `S.retryStats`, **cloned** — `recordRetry` writes in place, so a reference snapshot restores nothing
 - the health registry, via `snapshotHealth()` / `restoreHealth()` — module-private, unreachable from `S`
-- `xpCache`, cleared rather than restored — it is a pure memo, so clearing is always safe and restoring stale entries would not be
+- the pending provider-recomputation `Set`, whose contents are snapshotted and restored **in place** so the queue object keeps its exact identity
+
+`xpCache` is deliberately **not** a rollback mutation domain. It is invalidated only at the end of a successful commit. A failed commit never clears or rebuilds it, so its pre-commit values and cached object identities remain exact.
 
 ## Files
 
 | File | Change |
 |---|---|
-| `src/providers/applied.mjs` | **new** — tokens, signatures, Rule B, the shared apply gate |
+| `src/providers/applied.mjs` | **new** — tokens, signatures, Rule B, the shared apply gate, and in-place recomputation-queue rollback |
 | `src/main.mjs` | `collectRefresh` + `applyRefreshCommit` + queue + lifecycle epoch + error classes + health aggregate |
 | `src/state.mjs` | `prepareCore` / `assignCore`, commit journal, `populatePositionFilter` extracted from `hydrate` |
 | `src/storage.mjs` | `ssetChecked` added; `sset` byte-identical |
@@ -117,7 +119,7 @@ Four domains, restored together in reverse commit order:
 | `src/ui/views.mjs` | focused-control value preservation |
 | `build.mjs` | `applied.mjs` added to `ORDER` |
 
-Review correction adds executable regression coverage for live minute-transport purity, configuration/core races, monotonic refresh and direct-wrapper precedence, rejected persistence, malformed HTTP-200 account payloads, actual commit rollback including account keys, and production-render focus retention.
+Review correction adds executable regression coverage for live minute-transport purity, configuration/core races, monotonic refresh and direct-wrapper precedence, rejected persistence, malformed HTTP-200 account payloads, actual commit rollback including account keys, exact `xpCache` value/reference preservation, recomputation-queue identity restoration, and production-render focus retention.
 
 ## Limitations
 

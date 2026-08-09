@@ -9,7 +9,7 @@ import { computeUnderstat, loadUnderstat, understatSeasonKey } from './providers
 import { computeOdds, loadOdds } from './providers/odds.mjs';
 import { computeMinuteHistories, loadMinuteHistories, completedDataRevision } from './providers/minutes-history.mjs';
 import { understatSignature, oddsSignature, minutesSignature, nextProviderToken, applyProviderResult,
-  drainRecomputation, providerPersistCandidate } from './providers/applied.mjs';
+  drainRecomputation, providerPersistCandidate, snapshotPendingRecomputation, restorePendingRecomputation } from './providers/applied.mjs';
 import { snapshotHealth, restoreHealth } from './providers/registry.mjs';
 import { clearXP } from './model/xp.mjs';
 import { HEALTH_STATES, healthRows, getHealth, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable } from './providers/registry.mjs';
@@ -278,7 +278,8 @@ async function collectRefresh(options = {}){
 function applyRefreshCommit(staged, {now = Date.now()} = {}){
   if(commitInProgress) return {ok:false, reason:'reentrant'};
   commitInProgress = true;
-  const journal = {state:captureStateJournal(), health:snapshotHealth()};
+  const journal = {state:captureStateJournal(), health:snapshotHealth(),
+    recomputation:snapshotPendingRecomputation()};
   try{
     const {core, account, inputs} = staged;
     const season = core.season;
@@ -356,7 +357,7 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
   }catch(error){
     restoreStateJournal(journal.state);
     restoreHealth(journal.health);
-    clearXP();
+    restorePendingRecomputation(journal.recomputation);
     return {ok:false, reason:'commit_failed', error};
   }finally{
     commitInProgress = false;

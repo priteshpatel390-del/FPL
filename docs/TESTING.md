@@ -388,7 +388,7 @@ Use the exact draft-PR build in normal iPhone Safari. Do not pinch zoom during t
 
 ## Atomic Foreground Refresh
 
-`tests/atomic-foreground-refresh.test.mjs` holds 96 cases covering the numbered R3.4 contract and the PR #102 correction regressions, grouped where several items share one behavioural setup. `tests/atomic-foreground-refresh-runtime.test.mjs` adds one production-bundle focus test. Together they add 97 cases over the 693-test merged baseline.
+`tests/atomic-foreground-refresh.test.mjs` retains its 96 cases covering the numbered R3.4 contract and the first PR #102 correction regressions. `tests/atomic-foreground-refresh-runtime.test.mjs` retains the production-bundle focus test. `tests/atomic-refresh-rollback-regression.test.mjs` adds two rollback regressions, taking the candidate to 792 tests while retaining all 790 previously passing tests.
 
 Coverage groups:
 
@@ -398,7 +398,7 @@ Coverage groups:
 - **Minute provenance** — season id reuse, schema/model mismatch and missing metadata all fail closed; the seven-day backstop leaves an entry usable; non-cohort players stay persisted but inactive.
 - **Typed transport** — 404 is notfound; a 200 carrying `detail` or failing endpoint validation is failed and therefore carries compatible account state forward.
 - **Account slices and health** — carry keys; entry as the root; Live only on a clean core and clean replacement of every requested slice.
-- **Commit and rollback** — no `await`, dispatch, DOM or storage call inside the commit; an actual forced mid-commit failure restores all four domains including account keys; re-entrancy rejected.
+- **Commit and rollback** — no `await`, dispatch, DOM or storage call inside the commit; an actual later forced failure restores account keys and every commit-owned/module-private mutation, preserves `xpCache` byte-for-byte with the same cached object references, and restores the pending recomputation `Set` in place with its exact prior contents; re-entrancy rejected.
 - **Error classification** — only `collection_failed` may mark FPL Fallback or Unavailable.
 - **Invariants** — the D-13 ordering invariant that made the withdrawn A5-3 finding a non-defect; `S` exposes only data properties.
 - **Race and persistence regressions** — complete later-refresh and direct-wrapper coverage for Understat, Odds and minutes; core/configuration/manual-cohort invalidation; source-time precedence; rejected-result no-write behaviour.

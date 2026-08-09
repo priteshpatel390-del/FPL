@@ -141,6 +141,14 @@ function nextProviderToken(name){ return ++providerToken[name]; }
 function currentProviderToken(name){ return providerToken[name]; }
 
 const pendingRecomputation = new Set();
+function snapshotPendingRecomputation(){
+  return {queue:pendingRecomputation, values:[...pendingRecomputation]};
+}
+function restorePendingRecomputation(snapshot){
+  if(!snapshot) return;
+  pendingRecomputation.clear();
+  for(const name of snapshot.values || []) pendingRecomputation.add(name);
+}
 function queueRecomputation(name){ pendingRecomputation.add(name); }
 function drainRecomputation(){
   const names = [...pendingRecomputation];
@@ -369,6 +377,6 @@ export {
   oddsFixtureRevision, oddsEventRevision, understatSignature, oddsSignature, minutesSignature,
   validUnderstatMap, validOddsMap, provenanceMatches, understatCompatible, oddsCompatible,
   minuteEntryCompatible, nextProviderToken, currentProviderToken, queueRecomputation,
-  drainRecomputation, resetProviderTokens, applyHealthMark, applyProviderResult,
+  snapshotPendingRecomputation, restorePendingRecomputation, drainRecomputation, resetProviderTokens, applyHealthMark, applyProviderResult,
   providerPersistCandidate, HEALTH_STATES
 };
