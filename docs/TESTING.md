@@ -1,5 +1,9 @@
 # TESTING.md
 
+## D1 design closeout and future verification
+
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) is documentation-only and does not add a runtime test claim. Its later implementation gates require schema/migration checks, idempotent duplicate and revision tests, season mismatch rejection, D1/R2 partial-failure and orphan reconciliation, authentication/CORS/CSRF/rate/secret tests, outage tests proving recommendations remain usable, backup/restore, full deterministic verification and physical iPhone acceptance for saved/pending/failed/offline/export states. Existing live-season evidence gates remain unchanged.
+
 <!-- FIXTURES-ACCEPTANCE-2026-08-07 -->
 > **Historical Fixtures acceptance verification:** PR #86 exact head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled** in permanent Verify Teamsheet run `31198545580`, with deterministic byte-identical double builds, root/deployable equality and exact manifest identity. The merged tree was deployed at `e49599a75bbb77618292fdb6100fcffd81685c44`; owner iPhone Safari acceptance passed for GW23 reachability, sticky TEAM behaviour beyond GW12 and GW38 boundary normalisation. No model formula, provider, source or golden expectation changed.
 
