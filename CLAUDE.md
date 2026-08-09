@@ -4,7 +4,9 @@
 
 The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100. Its permanent verification passed **693 tests**. DTR-1 and the physical iPhone form-focus zoom checkpoint are complete and merged.
 
-[Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md) is approved as a documentation-only design decision: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox, and optional downstream Google Sheets reporting. No persistence implementation is approved. The next engineering checkpoint is **Atomic Foreground Refresh**, beginning with investigation and a separate approval gate.
+[Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md) is approved as a documentation-only design decision: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox, and optional downstream Google Sheets reporting. No persistence implementation is approved.
+
+**Atomic Foreground Refresh** is implemented as a merge-gated candidate on `claude/atomic-foreground-refresh-h7umfj` after five design rounds (R2, R3, R3.1, R3.2, R3.3, R3.4). 781 tests pass; deterministic builds verified. Merge and physical iPhone Safari acceptance remain owner-gated and are not claimed. See [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md).
 
 Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 9 August 2026.
 
@@ -12,9 +14,9 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100 |
+| Repository head | `main` `deb4ea26ba96112dba07660e23a61f04d4b6596d`, merge of D1 design closeout PR #101 |
 | Latest application checkpoint | iPhone form-focus zoom PR #100, merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`; DTR-1 remains complete through PR #99 |
-| Permanent repository verification | PR #100 Verify Teamsheet run `31319724304`: 693 passed, 0 failed; exact generated provenance and deterministic build safeguards retained |
+| Permanent repository verification | 693 passed on `main`; 781 on the Atomic Foreground Refresh candidate (693 retained unweakened + 88 added); exact generated provenance and deterministic build safeguards retained |
 | Application tree identity | The accepted PR #100 application tree is preserved by merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
@@ -41,7 +43,7 @@ DTR-1 is complete and merged through PR #99. Its exact generated build passed 69
 
 The iPhone form-focus zoom correction is complete and merged through PR #100. It raised only editable text, number, search, password, select and textarea controls to 16px, preserved pinch zoom and left checkbox/file/range controls and all application logic unchanged. Its exact build passed automated, generated-provenance and physical iPhone gates before merge.
 
-Data Architecture D1 investigation/design is complete and its decision is recorded in [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md). D1 persistence implementation is not approved. The next engineering checkpoint is Atomic Foreground Refresh, beginning with investigation and a separate approval gate. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
+Data Architecture D1 investigation/design is complete and its decision is recorded in [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md). D1 persistence implementation is not approved. Atomic Foreground Refresh is implemented as a merge-gated candidate: it stages collection, applies one synchronous no-throw commit, keys account carry-forward, corrects misleading Live disclosure to Partial on account failure or absence, and separates collection/commit/render/persistence errors. REFRESH-6 through REFRESH-10 are recorded as separately gated. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
 
 ## Owner and communication
 
@@ -55,7 +57,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 4. [Roadmap](docs/ROADMAP.md)
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
-7. The current checkpoint design or acceptance record
+7. The current checkpoint design or acceptance record — currently [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md)
 8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)

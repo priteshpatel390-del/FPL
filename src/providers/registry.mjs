@@ -168,4 +168,24 @@ export function healthSummary(context = {}, now = Date.now()){
 
 export function resetHealth(){ Object.keys(health).forEach(k => delete health[k]); }
 
+/* R3.1 B4 / R3.2 — the health map is module-private and is not reachable from
+   S, so a shallow S snapshot cannot roll it back. These two functions give the
+   refresh commit journal an explicit capture/restore pair. Both are plain
+   clones; neither can throw, so the rollback path stays no-throw. */
+export function snapshotHealth(){
+  const out = {};
+  Object.keys(health).forEach(name => {
+    const row = health[name];
+    out[name] = { ...row, detail: row.detail ? { ...row.detail } : null };
+  });
+  return out;
+}
+export function restoreHealth(snapshot){
+  Object.keys(health).forEach(name => delete health[name]);
+  Object.keys(snapshot || {}).forEach(name => {
+    const row = snapshot[name];
+    health[name] = { ...row, detail: row.detail ? { ...row.detail } : null };
+  });
+}
+
 export { setHealth, setHealthDetail, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable, thresholdFor };

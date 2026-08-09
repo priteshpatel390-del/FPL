@@ -3,7 +3,7 @@
 ## Current sequence after D1 design approval
 
 1. **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
-2. **Atomic Foreground Refresh — next:** investigation first; implementation requires explicit approval.
+2. **Atomic Foreground Refresh — implemented, merge-gated:** design approved through R2/R3/R3.1/R3.2/R3.3/R3.4; implementation candidate on `claude/atomic-foreground-refresh-h7umfj`. Merge and physical iPhone acceptance remain owner-gated. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
 3. Cache and persistence resilience.
 4. Error-boundary separation.
 5. Production-bundle safeguards.
@@ -22,7 +22,7 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Baseline
 
-- Repository head at this checkpoint: `main` `09e595c275b4f3614c09fb502291de6831813999` (DTR-1 through PR #99).
+- Repository head at this checkpoint: `main` `deb4ea26ba96112dba07660e23a61f04d4b6596d` (D1 design closeout through PR #101).
 - Latest substantive application checkpoint: DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999`.
 - Permanent repository verification: run `31301475598`; 691 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic double build; root/deployable equality; exact source and complete build-input identity.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.

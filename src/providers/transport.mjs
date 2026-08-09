@@ -73,27 +73,40 @@ async function gatewayOnce(path, timeout, optional, gatewayBase){
   let data;
   try{ data = await res.json(); }
   catch(error){ return {outcome:'failed', retryable:false, status:'parse'}; }
-  if(data && data.detail){
-    if(optional) return {outcome:'notfound', status:'not-found'};
-    return {outcome:'failed', retryable:false, status:'detail'};
-  }
-  S.source = 'Teamsheet gateway';
-  return {outcome:'value', value:data, status:res.status};
+  /* R3.1 A3 — a 200 carrying a `detail` field is NOT authoritative absence.
+     Official FPL uses `detail` for messages other than "not found", and under
+     the carry-forward contract a false notfound CLEARS a valid squad. Only an
+     HTTP 404 has a defined absence meaning; everything ambiguous is `failed`,
+     which carries forward. Ambiguity must preserve user data, never destroy it. */
+  if(data && data.detail) return {outcome:'failed', retryable:false, status:'detail'};
+  /* R3 A2 — the gateway label is returned, never written to S. Transport is
+     part of the collection phase and must not mutate application state. */
+  return {outcome:'value', value:data, status:res.status, source:'Teamsheet gateway'};
 }
 
-async function api(path, {optional=false, timeout=8000, gatewayBase} = {}){
+async function api(path, {optional=false, timeout=8000, gatewayBase, typed=false} = {}){
   const policy = policyFor('fpl');
   if(optional) policy.attempts = Math.min(policy.attempts, 2);
+  let source = null, absent = false;
   const { result, record } = await withRetry(
     async () => {
       const response = await gatewayOnce(path, timeout, optional, gatewayBase);
-      if(response.outcome === 'value') return {ok:true, value:response.value, status:response.status};
-      if(response.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
+      if(response.outcome === 'value'){ source = response.source || null; return {ok:true, value:response.value, status:response.status}; }
+      if(response.outcome === 'notfound'){ absent = true; return {ok:true, value:null, status:'not-found'}; }
       return {ok:false, retryable:response.retryable, status:response.status};
     },
     {...policy, endpoint:safeEndpoint(path)}
   );
+  /* R3 A2 — `typed` callers receive the retry record and gateway label as data
+     and apply them inside the commit. Untyped callers keep today's behaviour
+     exactly, including the recordRetry write, so no existing call site moves. */
+  if(typed){
+    if(result && result.ok && !absent) return {outcome:'value', value:result.value, status:result.status, source, retryRecord:record};
+    if(absent) return {outcome:'notfound', status:'not-found', retryRecord:record};
+    return {outcome:'failed', status:result ? result.status : 'unreachable', retryable:Boolean(result && result.retryable), retryRecord:record};
+  }
   recordRetry(record);
+  if(source) S.source = source;
   if(result && result.ok) return result.value;
   if(optional) return null;
   throw new Error('feed unreachable: ' + path);
@@ -131,7 +144,7 @@ async function cascadeOnce(url, timeout, {asText=false} = {}){
   return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
 }
 
-async function fetchVia(url, {timeout=12000, asText=false} = {}){
+async function fetchVia(url, {timeout=12000, asText=false, typed=false} = {}){
   const { result, record } = await withRetry(
     async () => {
       const response = await cascadeOnce(url, timeout, {asText});
@@ -140,8 +153,11 @@ async function fetchVia(url, {timeout=12000, asText=false} = {}){
     },
     {...policyFor('understat'), endpoint:safeEndpoint(url)}
   );
+  const value = result && result.ok ? result.value : null;
+  // R3 A2 — see api(): typed callers carry the retry record to the commit.
+  if(typed) return {value, retryRecord:record};
   recordRetry(record);
-  return result && result.ok ? result.value : null;
+  return value;
 }
 
 export {

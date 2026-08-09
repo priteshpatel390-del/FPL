@@ -12,12 +12,15 @@ const NAME_ALIASES = {
   'hull city':'Hull','ipswich town':'Ipswich','luton town':'Luton','leicester city':'Leicester',
   'afc bournemouth':'Bournemouth','crystal palace':'Crystal Palace'
 };
-function mapTeamName(external){
-  if(!S.boot) return null;
+/* R3 A3 — the team list is an explicit argument so provider computation maps
+   against the STAGED core rather than whatever S happens to hold mid-refresh.
+   Defaulting to S.boot.teams keeps every existing caller working unchanged. */
+function mapTeamName(external, teams = S.boot?.teams){
+  if(!Array.isArray(teams)) return null;
   const low = external.toLowerCase().trim();
   const target = (NAME_ALIASES[low] || external).toLowerCase();
-  let hit = S.boot.teams.find(t => t.name.toLowerCase() === target);
-  if(!hit) hit = S.boot.teams.find(t => target.startsWith(t.name.toLowerCase()) || t.name.toLowerCase().startsWith(target.split(' ')[0]));
+  let hit = teams.find(t => t.name.toLowerCase() === target);
+  if(!hit) hit = teams.find(t => target.startsWith(t.name.toLowerCase()) || t.name.toLowerCase().startsWith(target.split(' ')[0]));
   return hit ? hit.id : null;
 }
 
