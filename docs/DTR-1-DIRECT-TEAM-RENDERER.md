@@ -4,9 +4,9 @@ Purpose: implementation and acceptance record for replacing Team's legacy-render
 
 ## Status and approval boundary
 
-DTR-1 was approved for implementation after an investigation traced the complete Team render path, implicit state synchronisation, DOM reuse, event ownership, build-order dependency and protecting tests. The implementation candidate is on `agent/dtr-1-direct-team-renderer`, based on GitHub `main` `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`.
+DTR-1 was approved after an investigation traced the complete Team render path, implicit state synchronisation, DOM reuse, event ownership, build-order dependency and protecting tests. The reviewed source is `a15443f3de889561fd301c4aa1792d19f7b21c83`; its generated-only child is `b45f89baf45e12de09cdb1ad34826756e9e5378b`.
 
-The branch is not merged or physically accepted. Permanent remote CI, exact generated provenance and populated iPhone Safari acceptance remain required. Pritesh must explicitly approve merge.
+DTR-1 passed permanent CI, exact generated provenance and populated iPhone Safari acceptance before Pritesh explicitly approved merge. PR #99 merged at `09e595c275b4f3614c09fb502291de6831813999`.
 
 ## Architectural change
 
@@ -48,11 +48,11 @@ The candidate adds six production-bundle runtime contracts and replaces obsolete
 
 Local complete verification is **691 passed, 0 failed, 0 skipped, 0 cancelled**. Coverage includes final ready/placeholder structure, preview clearing and validation, captain selection/reset, bench roles and unchanged display ordering, Player Detail from bench and all-15 rows, transfer incoming/clear behaviour, module ownership and hostile-string inertness through the final renderer. No existing test or golden expectation was removed, weakened, regenerated or skipped.
 
-Exact two-build reproducibility, root/deployable equality, manifest identity and reachable-source reproduction are recorded after the reviewed source commit is created and generated-only outputs are produced from it.
+Permanent run `31301475598` passed all 691 tests. Two exact-identity builds were byte-identical; root equalled deployable; manifest identity and reachable-source reproduction passed.
 
-## Required physical iPhone Safari acceptance
+## Completed physical iPhone Safari acceptance
 
-Test the exact PR build with a populated legal squad:
+Pritesh tested the exact PR build with a populated legal squad. All intended DTR-1 paths passed:
 
 1. Startup gate owns the viewport; no dock appears during loading.
 2. Team header, decision summary, resources, pitch, controls and actions retain their accepted order and appearance.
@@ -67,4 +67,4 @@ Test the exact PR build with a populated legal squad:
 11. Manual removal produces the placeholder; legal completion restores Team.
 12. Team, Transfers and Settings navigation, Back, focus and scroll receive a smoke check.
 
-VoiceOver is not a project acceptance gate and is not claimed. Post-Gameweek League, outcome, minute-history and accuracy evidence are outside DTR-1.
+The resource-edit check exposed a separate pre-existing defect: focusing a 15px field made Safari zoom strongly and the page remained enlarged after the keyboard closed. It did not block DTR-1 because the CSS was unchanged by DTR-1; it is isolated as UI-19 and requires its own exact-build physical retest. VoiceOver is not a project acceptance gate and is not claimed. Post-Gameweek League, outcome, minute-history and accuracy evidence are outside DTR-1.

@@ -41,29 +41,37 @@ Last reconciled: 2026-08-09. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository checkpoint is A3-R0 PR #98 at `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`. Refresh-Load R1 PR #96 remains the latest merged application-behaviour checkpoint. DTR-1 is the current unmerged application candidate.
+The latest merged repository and application checkpoint is DTR-1 PR #99 at `09e595c275b4f3614c09fb502291de6831813999`. The iPhone form-focus zoom correction is the current unmerged presentation candidate.
 
-- exact reviewed PR #98 remote head: `00f5a3ced9592c3a5719c6b14585703771b5e418`
-- reachable generated source: `5d10cb438636837b46047b09c71dc179726973b2`
-- permanent Verify Teamsheet run: `31283849251`, completed successfully
-- merged complete suite: **685 tests, 685 passed, 0 failed, 0 skipped, 0 cancelled**
-- A3-R0 production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build
-- DTR-1 local candidate: **691 tests, 691 passed, 0 failed, 0 skipped, 0 cancelled**
-- DTR-1 adds six production-bundle direct-render contracts; no existing test or golden expectation was removed, weakened, regenerated or skipped
+- exact reviewed PR #99 source: `a15443f3de889561fd301c4aa1792d19f7b21c83`
+- exact PR #99 generated head: `b45f89baf45e12de09cdb1ad34826756e9e5378b`
+- permanent Verify Teamsheet run: `31301475598`, completed successfully
+- merged complete suite: **691 tests, 691 passed, 0 failed, 0 skipped, 0 cancelled**
+- DTR-1 production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build
+- form-focus candidate: **693 tests, 693 passed, 0 failed, 0 skipped, 0 cancelled** locally
+- `iphone-form-focus-zoom.test.mjs` adds two source contracts; no existing test or golden expectation is removed, weakened, regenerated or skipped
 - model, calculation, provider identity/endpoint and data-source behaviour: unchanged
 
 PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
 
 Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evidence for their tested paths. Leagues has pre-season physical acceptance; post-Gameweek populated checks are deliberately deferred. VoiceOver is not a Teamsheet acceptance gate.
 
-The DTR-1 candidate touches the accepted Team path, so earlier Team device evidence is its required equivalence contract rather than proof that the candidate has passed. Test the exact PR build using [DTR-1 Direct Team Renderer](DTR-1-DIRECT-TEAM-RENDERER.md) before merge.
+The form-focus candidate changes editable-control typography across Team setup/resources, Fixtures, Transfers, player search, Leagues and Ask. Automated contracts cannot prove Safari's native focus scale, keyboard close or viewport recovery; the exact PR build therefore requires the focused device script below before merge.
 
-### DTR-1 direct-renderer candidate
+### DTR-1 direct-renderer merged evidence
 
 - `team-direct-renderer-runtime.test.mjs` runs the production bundle and verifies final ready/placeholder order, no legacy Team summary, 15 direct player actions, GK/1st/2nd/3rd display roles, captain selection/reset, valid and invalid transfer previews, incoming/clear behaviour, bench and all-15 Player Detail horizons, stable module ownership and removal of runtime renderer replacement.
 - `rendering-security.test.mjs` now reaches the shipped direct renderer because `team-decision-home.mjs` is bundled before the `views.mjs` async-initialiser harness boundary.
 - the Team resource, availability, preview, manual-runtime and architecture suites now assert final behaviour and direct ownership instead of requiring the removed post-render DOM surgery.
-- the complete local result is 691/691. Permanent CI, exact source/generated provenance and physical iPhone acceptance remain pending and must not be inferred from local evidence.
+- the complete result is 691/691. Permanent CI, exact source/generated provenance and physical iPhone acceptance passed before PR #99 merged at `09e595c275b4f3614c09fb502291de6831813999`.
+
+### iPhone form-focus zoom candidate
+
+- `iphone-form-focus-zoom.test.mjs` requires the complete current text-entry control inventory—text, number, search, password, select and textarea—to render at a minimum 16px.
+- the viewport must retain normal browser magnification: `maximum-scale` and `user-scalable=no` remain forbidden.
+- checkbox, file and range controls remain outside the text-entry typography selector.
+- the change adds no JavaScript, state, persistence, calculation, provider, route or account-write behaviour.
+- focused automated coverage can establish the CSS contract only. Physical iPhone Safari testing must focus a numeric resource field, close the keyboard without pinching and confirm the page remains at normal scale and still saves the value.
 
 ### Repository Truth A1 merged evidence
 
@@ -357,3 +365,19 @@ Use a populated legal 15-player team and the production deployment. Record portr
 ## T-02 availability-badge centring follow-up — 7 August 2026
 
 Physical iPhone Safari review exposed a right-shifted standalone availability badge caused by the generic `.flag` horizontal margin. The follow-up regression is required to fail before the centring override and pass after `.pitch-availability{margin-left:0}` is applied. Full-suite and deterministic-build evidence is recorded on the follow-up pull request.
+
+## iPhone form-focus zoom owner test script — 9 August 2026
+
+Use the exact draft-PR build in normal iPhone Safari. Do not pinch zoom during the native-recovery checks.
+
+1. Open Team and tap **Edit resources**.
+2. Focus **Free transfers**, change the value, close the keyboard using **Done**, and confirm the page stays at its normal scale.
+3. Save and confirm the resource bar updates once; restore the original value afterward.
+4. Repeat the focus/Done check for **Money in bank**.
+5. Open Settings → Team & Account and focus a text or number field; confirm no focus enlargement and normal save behaviour.
+6. Open Transfers and focus each editable assumption; confirm no enlargement, clipping or horizontal overflow.
+7. Open Fixtures and focus a number field and a select; confirm the interface remains at normal scale after dismissal.
+8. Open Settings → Data & Providers, focus the masked Odds API key password field without changing or revealing its value, dismiss the keyboard and confirm normal scale is retained.
+9. Confirm ordinary pinch zoom still works, then return to normal scale.
+10. Rotate portrait → landscape → portrait and repeat one resource-field focus/Done cycle.
+11. Record any enlarged scale, clipped field, layout shift, accidental value change, duplicate save or failure to recover. VoiceOver is not a Teamsheet acceptance gate.
