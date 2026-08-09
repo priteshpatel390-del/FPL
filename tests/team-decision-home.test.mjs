@@ -82,13 +82,16 @@ test('deadline actions remain advisory and distinguish user previews',()=>{
   assert.doesNotMatch(teamDecisionAction({hasSquad:true}),/submitted|changed your FPL/i);
 });
 
-test('production wiring wraps the verified renderer without changing model modules or routes',()=>{
+test('production wiring uses one stable direct renderer without changing model modules or routes',()=>{
   const source=readFileSync(new URL('../src/ui/team-decision-home.mjs',import.meta.url),'utf8');
+  const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
   const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
   const app=readFileSync(new URL('../app.html',import.meta.url),'utf8');
   const bundle=readFileSync(new URL('../dist/app.bundle.js',import.meta.url),'utf8');
-  assert.match(source,/const legacyRenderSquad=renderSquad/);
-  assert.match(source,/legacyRenderSquad\(\)/);
+  assert.match(source,/function renderTeamDecisionHome/);
+  assert.match(views,/function renderSquad\(\)\{\s*return renderTeamDecisionHome\(\{/);
+  assert.doesNotMatch(source,/legacyRenderSquad|teamDecisionEnhanceRenderedTeam|renderSquad\s*=/);
+  assert.doesNotMatch(views,/legacyRenderSquad|teamDecisionEnhanceRenderedTeam/);
   assert.match(source,/teamDecisionPlaceholderStage/);
   assert.match(source,/Open Transfers/);
   assert.match(source,/User-entered squad|Official FPL public picks/);
@@ -98,7 +101,7 @@ test('production wiring wraps the verified renderer without changing model modul
   assert.doesNotMatch(source,/Preparing your decision home/);
   assert.match(source,/manualToggle\.disabled=!available/);
   assert.match(source,/Manual squad editing is unavailable until verified Official FPL player data loads/);
-  assert.match(source,/teamDecisionRelabelBench\(stage\)/);
+  assert.match(source,/benchRole\?el\('span',\{class:'bench-role'\},benchRole\):null/);
   assert.match(bundle,/\['GK','1st','2nd','3rd'\]/);
   assert.doesNotMatch(app,/Load your team ID above|build your 15 by hand below/);
   assert.doesNotMatch(source,/optimiseTransfers\(|simulatePlayerGameweek\(|localStorage|sessionStorage|sset\(/);

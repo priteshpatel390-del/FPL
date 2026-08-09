@@ -103,13 +103,13 @@ test('captain preview total keeps base XI score separate from the captain uplift
 
 test('preview implementation is session-only and wired to accessible controls',()=>{
   const module=readFileSync(new URL('../src/ui/decision-preview.mjs',import.meta.url),'utf8');
-  const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
+  const team=readFileSync(new URL('../src/ui/team-decision-home.mjs',import.meta.url),'utf8');
   const transfers=readFileSync(new URL('../src/ui/transfer-optimiser-view.mjs',import.meta.url),'utf8');
   assert.doesNotMatch(module,/localStorage|sessionStorage|sset\(|saveCfg/);
-  assert.match(views,/Choose captain/);
-  assert.match(views,/Choose vice-captain/);
-  assert.match(views,/Clear preview/);
-  assert.match(views,/bestXI\(squad,gw\)/);
+  assert.match(team,/Choose captain/);
+  assert.match(team,/Choose vice-captain/);
+  assert.match(team,/Clear preview/);
+  assert.match(team,/bestXI\(squad,gw\)/);
   assert.match(transfers,/Preview on Team/);
   assert.match(transfers,/__teamsheetNavigate/);
 });

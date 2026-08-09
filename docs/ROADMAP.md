@@ -4,22 +4,30 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Baseline
 
-- Repository head at this checkpoint: `main` `b7cfe5844bca1066a15ea422e694c55d827dab3b` (R1 documentation closeout through PR #97).
+- Repository head at this checkpoint: `main` `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f` (A3-R0 through PR #98).
 - Latest substantive application checkpoint: PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`, exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`, generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`.
-- Permanent repository verification: run `31265107597`; 681 passed, 0 failed, 0 skipped, 0 cancelled; deterministic double build; root/deployable equality; exact manifest identity.
+- Permanent repository verification: run `31283849251`; 685 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic double build; root/deployable equality; exact source and complete build-input identity.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
 - Refresh-Load R1 is merged, deployed from `main` and physically accepted for every currently testable iPhone path. Live minute-history reuse awaits a completed checked Gameweek; Odds reuse awaits an enabled Odds configuration.
 
-## Current approved checkpoint — A3-R0 durable build provenance
+## Current approved checkpoint — DTR-1 Direct Team renderer
 
-**Status:** approved for a separate branch and draft PR; merge remains owner-gated.
+**Status:** implementation candidate on `agent/dtr-1-direct-team-renderer`; local 691/691 verification passed. Permanent CI, exact two-commit generated provenance, physical iPhone Safari acceptance and merge remain owner-gated.
 
-**Scope:** add a complete build-input identity; require the generated manifest's source commit to resolve and be an ancestor of the generated-artifact commit; reproduce committed generated files exactly in CI; clarify repository-head, application-checkpoint and generated-source terminology.
+**Scope:** retain one stable `renderSquad()` adapter and make `team-decision-home.mjs` create the accepted final Team DOM directly from unchanged squad, projection, fixture, pitch and decision-preview primitives. Preserve preview synchronisation, all handlers, focus restoration, bench display, accessibility and current tie-order characteristics.
 
-**Finalisation:** commit reviewed source/build/test/documentation changes first, build with that reachable commit as `BUILD_COMMIT`, then commit only `dist/app.bundle.js`, `dist/index.html`, `dist/manifest.json` and root `index.html`. This is provenance-only and requires no physical iPhone test because rendered and interactive behaviour are unchanged.
+**Finalisation:** commit reviewed source/build/test/documentation changes first, build with that reachable commit as `BUILD_COMMIT`, then commit only the four generated deployables. Run permanent CI and the full physical script in [DTR-1 Direct Team Renderer](DTR-1-DIRECT-TEAM-RENDERER.md) before owner merge approval.
 
-**Exclusions:** application/runtime behaviour, Direct Team renderer, routing, providers/endpoints, model/calculation logic, CSP origins, dependencies, toolchain and deployment architecture.
+**Exclusions:** visual redesign; new Team features; any calculation, provider, data source, cache, persistence, route, navigation, security-origin or dependency change; D1 and later roadmap work.
+
+**Evidence:** the direct candidate removes the legacy Team DOM body, runtime function reassignment and post-render DOM surgery. Six new production-bundle contracts cover final/placeholder DOM, captain interactions, transfer previews, Player Detail and ownership; no prior test or golden was removed or weakened.
+
+## Completed checkpoint — A3-R0 durable build provenance
+
+**Status:** complete and merged through PR #98 at `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`.
+
+The generated manifest now carries complete build-input identity. CI requires the generating commit to be a reachable ancestor, verifies exact source inputs and reproduces committed deployables before ordinary builds overwrite them. Permanent run `31283849251` passed 685/685 with deterministic builds and root/deployable equality. No application behaviour changed.
 
 ## Completed checkpoint — Refresh-Load R1
 
@@ -51,7 +59,15 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 **Completion evidence:** exact remote head `967856246a0c17972c43eaf444651bceb8b9f728`, reviewed/merged tree `fd40deff72c458286e77f44a66b79a0e720e700c`, permanent run `31265107597`, 681/681 tests, deterministic builds, root/deployable equality, exact manifest identity, focused physical retest and explicit owner merge approval. Parser repair, offline-shell/service-worker support and atomic-state work remain separate proposals.
 
-## Proposed after-GW1 checkpoint — First live evidence and Leagues acceptance
+## Next investigation — Data Architecture D1
+
+**Status:** investigation/design only after DTR-1; implementation is not pre-approved.
+
+**Objective:** define the correct historical and live data platform for Teamsheet. Compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against retention, query, update, cost, reliability, privacy, export and iPhone-operation requirements. Treat the existing Sheets as field prototypes; classify each field as persist, derive, export or remove. Google Sheets is a potential human-readable reporting/analysis layer, not an assumed core database.
+
+**Boundary:** do not repair Understat or Odds, change providers/calculations, implement storage or migrate AI during the investigation. Present a field contract, architecture options, trade-offs, fallbacks, security and implementation approval gate first.
+
+## Deferred live-evidence checkpoint — First live evidence and Leagues acceptance
 
 **Status:** evidence-gated, not an implementation approval.
 
@@ -76,28 +92,6 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 **Physical acceptance:** all items in [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), plus a weekly Team/Transfers/Fixtures smoke check.
 
 **Approval gate:** investigation report first; every correction receives its own scope and approval.
-
-## Proposed structural checkpoint — Direct Team renderer
-
-**Status:** later, not approved.
-
-**Objective:** replace the legacy-render-then-reconstruct Team boundary with one renderer while preserving accepted output.
-
-**Why it matters:** this is the clearest substantial maintainability and duplicate-DOM opportunity, but it touches a physically accepted path.
-
-**Exact scope:** one Team renderer using existing squad, pitch and decision primitives; explicit dependencies; itemised removal of superseded Team DOM manipulation only after equivalence evidence.
-
-**Exclusions:** new Team features, calculation changes, transfer recommendations, navigation changes and visual redesign.
-
-**Risks:** ordering, focus, manual squad, unavailable-label wrapping, Player Detail or mobile layout regression.
-
-**Dependencies:** stable live data and a frozen behaviour/DOM contract.
-
-**Test requirements:** Team, manual-squad, startup, Player Detail, navigation and security suites; add rendered-behaviour coverage; run the complete build gate.
-
-**Physical acceptance:** full populated Team flow on iPhone Safari, including manual squad and Player Detail.
-
-**Approval gate:** approve the before/after ownership map and exact deletion ledger before implementation.
 
 ## Proposed product checkpoint — Weekly action and primary navigation
 
