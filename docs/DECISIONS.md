@@ -268,7 +268,7 @@ Reason: the accepted Team screen was produced by a full legacy render followed b
 
 Reason: physical DTR-1 testing showed that focusing a Team resource field enlarged the Safari page and closing the keyboard did not restore its scale. Source inspection found that ordinary editable controls inherited the 15px body size, the global search field separately declared 15px and the password control retained the browser's smaller default; iPhone Safari commonly enlarges focused text-entry controls below 16px. Decision: set the current text, number, search, password, select and textarea control families to 16px, leave checkbox/file/range controls unchanged and retain the unrestricted viewport so browser pinch zoom remains available. Consequences: a small editable-control typography increase applies consistently across routes; no body typography, layout architecture, calculation, provider, persistence, route or account-write behaviour changes. Automated evidence cannot prove Safari focus recovery, so the exact PR build requires physical iPhone acceptance before merge.
 
-**D-44 · 2026-08-09 · Implementation candidate · Atomic Foreground Refresh**
+**D-44 · 2026-08-09 · Accepted and merged · Atomic Foreground Refresh**
 
 Decision: foreground, startup and manual refreshes stage all fetched and derived data during a pure collection phase, then apply it through a single synchronous, no-throw, non-reentrant commit. Users see either the previously accepted generation or the completely validated new one, never a mixture.
 
@@ -280,4 +280,15 @@ Rejected: a refresh-level generation counter — `verifiedRefreshPromise` alread
 
 Consequences: **account failure or requested absence now reports Partial rather than a misleading Live.** A transient account failure carries the previous squad forward under a matching key instead of deleting it. Presentation and storage failures are no longer attributed to the Official FPL feed. Manual refresh is queued rather than downgraded. No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank or Mini-League formula changes; no provider, endpoint, origin or gateway change; no R1 cadence, cooldown or fallback change; no change to the approved provider registry or the seven health states; `S.minuteHistory` keeps its model-facing shape so Stage 10 evidence structure is unchanged.
 
-Evidence: the corrected PR #102 candidate passes 792 tests (all prior 790 retained, plus two rollback regressions), including a seeded `xpCache`, a pre-existing recomputation entry, a provider signature mismatch and a genuine later commit failure. The regression proves exact cache value/reference preservation and in-place restoration of the pending recomputation queue. Corrected deterministic/generated provenance and permanent CI remain required before merge. Physical iPhone Safari acceptance has not been performed and is not claimed.
+Evidence: final PR #102 passed 792 tests (all prior 790 retained, plus two rollback regressions), deterministic/generated provenance, permanent Verify Teamsheet run `31335711523`, independent re-review and physical iPhone Safari acceptance. PR #102 merged to `main` at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`.
+
+
+**D-45 · 2026-08-09 · Accepted for implementation · Mobile loading viewport and primary-header consistency**
+
+Reason: physical iPhone Safari acceptance after PR #102 exposed a light page strip beneath the dark startup experience and a separate pre-existing primary-screen hierarchy inconsistency, most visibly the oversized Transfers heading/intro. Source inspection showed that startup colour belonged only to a fixed overlay while the underlying body retained the light app canvas and 100px dock reserve; the gate also mixed fixed inset geometry with `min-height:100dvh`. Team/Fixtures/Settings headings received the intended 17px panel rule, while nested Transfers and Leagues headings bypassed it.
+
+Decision: make the startup-pending document itself own the dark canvas, remove the normal dock reserve during startup, retain a fixed-position fallback and use `100dvh` where supported, account for all four safe-area insets, and preserve the existing single centred startup composition with the normal shell hidden. Establish explicit shared 17px title, 13px intro and 12px spacing tokens across Team, Transfers, Fixtures, Leagues and Settings while retaining each screen's content-specific structure.
+
+Evidence: reviewed source `0e3a0674416aa069a0f06ebee87854df41907ed0` adds six focused regressions and passed the complete **798-test** suite. Generated-only child `b53c8026a5485936582da1ea2374f9bad799e44d` was produced twice from that exact source with byte-identical outputs, root/deployable equality and reachable generated provenance. Physical iPhone Safari acceptance remains pending and merge is not approved.
+
+Consequences: presentation only. No projection, expected-minutes, fixture, captaincy, squad, transfer, rank, League, provider, data-source, Atomic Foreground Refresh, refresh cadence, Team-renderer, route, navigation-information-architecture or Player Detail behaviour changes.

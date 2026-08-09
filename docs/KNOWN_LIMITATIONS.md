@@ -1,5 +1,10 @@
 # KNOWN_LIMITATIONS.md
 
+
+## 9 August 2026 current UI limitation state
+
+Current GitHub `main` at the start of this checkpoint is `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`, merge of Atomic Foreground Refresh PR #102. PR #102 is merged and verified at **792 passed, 0 failed, 0 skipped**, with deterministic/generated provenance, independent re-review and physical iPhone Safari acceptance. The current approved implementation candidate is **Small Mobile UI Consistency + Loading Viewport Fix**. Its reviewed source is `0e3a0674416aa069a0f06ebee87854df41907ed0` and generated-only child is `b53c8026a5485936582da1ea2374f9bad799e44d`. Six focused regressions raise the candidate suite to **798 tests**; the publication gate passed the complete suite, deterministic double build, root/deployable equality and reachable generated provenance. Physical iPhone Safari acceptance of this UI candidate remains required before merge. This current-state block supersedes older 9 August wording below where it describes PR #102 as unmerged or cites the 691/693-test application baseline. The two presentation defects under review are the Safari startup-canvas/light-bottom exposure and primary-screen title/intro inconsistency; neither is yet claimed physically fixed.
+
 ## D1 design limitations
 
 The persistent platform is approved only as a design; no D1 database, R2 bucket, data Worker, authentication, migration, capture or Sheets automation exists. D1/R2 commits cannot be atomic across products and will require an R2-first manifest protocol plus orphan reconciliation. Cost/capacity estimates use synthetic evidence, provider archival rights remain unconfirmed, and all existing live-Gameweek evidence gates remain in force. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md).

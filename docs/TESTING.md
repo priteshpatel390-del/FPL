@@ -1,5 +1,10 @@
 # TESTING.md
 
+
+## 9 August 2026 current verification state
+
+Current GitHub `main` at the start of this checkpoint is `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`, merge of Atomic Foreground Refresh PR #102. PR #102 is merged and verified at **792 passed, 0 failed, 0 skipped**, with deterministic/generated provenance, independent re-review and physical iPhone Safari acceptance. The current approved implementation candidate is **Small Mobile UI Consistency + Loading Viewport Fix**. Its reviewed source is `0e3a0674416aa069a0f06ebee87854df41907ed0` and generated-only child is `b53c8026a5485936582da1ea2374f9bad799e44d`. Six focused regressions raise the candidate suite to **798 tests**; the publication gate passed the complete suite, deterministic double build, root/deployable equality and reachable generated provenance. Physical iPhone Safari acceptance of this UI candidate remains required before merge. This current-state block supersedes older 9 August wording below where it describes PR #102 as unmerged or cites the 691/693-test application baseline. Permanent PR verification must still pass on the final documented head; automated evidence cannot prove Safari chrome/safe-area rendering.
+
 ## D1 design closeout and future verification
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) is documentation-only and does not add a runtime test claim. Its later implementation gates require schema/migration checks, idempotent duplicate and revision tests, season mismatch rejection, D1/R2 partial-failure and orphan reconciliation, authentication/CORS/CSRF/rate/secret tests, outage tests proving recommendations remain usable, backup/restore, full deterministic verification and physical iPhone acceptance for saved/pending/failed/offline/export states. Existing live-season evidence gates remain unchanged.
