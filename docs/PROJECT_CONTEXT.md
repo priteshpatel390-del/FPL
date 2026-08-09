@@ -1,5 +1,11 @@
 # PROJECT_CONTEXT.md
 
+## 9 August 2026 D1 closeout
+
+The current authoritative baseline is `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of PR #100. The iPhone form-focus zoom correction passed 693 tests and physical iPhone Safari acceptance and is complete.
+
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) is an approved design, not an implementation. It selects D1 plus private R2 behind a separate authenticated data Worker, retains local fallback, and limits Google Sheets to optional downstream reporting. The next engineering checkpoint is Atomic Foreground Refresh; implementation remains separately approval-gated.
+
 Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 9 August 2026.
 
 Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Historical Records](HISTORICAL_RECORDS.md).
