@@ -1,4 +1,12 @@
 # DECISIONS.md — Architectural decision record
+
+## 2026-08-09 — D1 historical/live data platform
+
+**Decision:** use Cloudflare D1 for structured records, private R2 for exact immutable canonical evidence, and a separate authenticated data Worker. Preserve local browser fallback/outbox. Keep Google Sheets optional and downstream. Exclude KV and Durable Objects from the core MVP.
+
+**Reason:** Teamsheet needs relational querying, idempotent revisions and exact evidence larger than D1's single-row limit without coupling recommendations to persistence or a mutable Sheet.
+
+**Boundary:** design/documentation only. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md). Implementation requires later explicit approval.
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
 Last updated: 2026-08-08. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
 
