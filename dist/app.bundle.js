@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"1a3daa5db8ec8455","buildInputHash":"6c63d8f0be197f39","commit":"acb3c92d5088cde512b8917419f1d7c8d822ca4b"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"1a3daa5db8ec84554a9a79f36e2805b06865945a775152ae8c5e704fd43eebc1","buildInputHash":"6c63d8f0be197f39fa102a47642782537f4841c7313298ca2bf5166bf0cce869","commit":"acb3c92d5088cde512b8917419f1d7c8d822ca4b","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"],"buildInputFiles":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs","app.html","build.mjs","build-utils.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"cabbd1b6bed7e707","buildInputHash":"234187ccdd9d2c23","commit":"99a4c36c630a07c1cb9d542e43b0d7dcf027a91d"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"cabbd1b6bed7e707d289c8588c7ab18130903be232b955f0e43610b8d71628c9","buildInputHash":"234187ccdd9d2c23e44bff1300998a28de5785f6e66c5f28adcf6cf100f9eda3","commit":"99a4c36c630a07c1cb9d542e43b0d7dcf027a91d","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/applied.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"],"buildInputFiles":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/applied.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs","app.html","build.mjs","build-utils.mjs"]};
 const TRANSFER_WORKER_MODEL_SOURCE = "\nconst POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;\nconst UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);\n// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.\nconst TRANSFER_PROGRESS_INTERVAL = 20000;\n\nfunction playerOf(entry){ return entry?.p || entry; }\nfunction playerId(entry){ return Number(playerOf(entry)?.id); }\nfunction positionOf(entry){ return Number(playerOf(entry)?.element_type); }\nfunction hasKnownPurchasePrice(entry){\n  const raw = entry?.bought ?? entry?.purchasePrice;\n  return raw !== null && raw !== undefined && Number.isFinite(Number(raw));\n}\n\nfunction transferSellPrice(entry){\n  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);\n  if(!Number.isFinite(now)) return 0;\n  const bought = hasKnownPurchasePrice(entry) ? Number(entry?.bought ?? entry?.purchasePrice) : now;\n  if(now <= bought) return now;\n  return bought + Math.floor((now - bought) / 2);\n}\n\nfunction nextFreeTransfers(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);\n}\n\nfunction transferHit(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  const paidTransfers = Math.max(0, n - ft);\n  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };\n}\n\nfunction combinations(items, size, start=0, chosen=[], out=[]){\n  if(chosen.length === size){ out.push(chosen.slice()); return out; }\n  for(let i=start; i<=items.length-(size-chosen.length); i++){\n    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();\n  }\n  return out;\n}\n\nfunction validateSquad(squad, {allowInheritedOverQuota=true}={}){\n  const issues=[];\n  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');\n  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];\n  const ids = players.map(p=>Number(p.id));\n  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');\n  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)] || !Number.isFinite(Number(p.team)))) issues.push('unknown_player');\n  const pos={1:0,2:0,3:0,4:0}, clubs={};\n  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });\n  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });\n  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');\n  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};\n}\n\nfunction bestXIFromPositionRows(byPos){\n  let best=null;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];\n    const total=selected.reduce((a,x)=>a+x.score,0);\n    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;\n    if(!best || total>best.total || (total===best.total && signature<best.signature))\n      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};\n  }\n  return best || {total:0,formation:'—',playerIds:[],signature:''};\n}\n\nfunction bestXIForGW(squad, gw, scorePlayer){\n  const byPos={1:[],2:[],3:[],4:[]};\n  squad.forEach(entry=>{\n    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));\n    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});\n  });\n  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));\n  return bestXIFromPositionRows(byPos);\n}\n\nfunction scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){\n  const perGameweek=[]; let total=0;\n  for(let gw=startGW;gw<startGW+horizon;gw++){\n    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction canonicalTransfers(transfers){\n  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);\n}\nfunction planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }\n\nfunction comparePlans(a,b){\n  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||\n    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||\n    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);\n}\n\nfunction inheritedClubLegal(startCounts, finalCounts, transferCount){\n  for(const [club,count] of Object.entries(finalCounts)){\n    const start=startCounts[club]||0;\n    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;\n    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;\n  }\n  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  return finalExcess <= Math.max(0,startExcess-transferCount);\n}\n\nfunction buildBaseline({squad,bank,freeTransfers,startGW,horizon,scorePlayer}){\n  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer);\n  return {transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter:bank,\n    freeTransfersBefore:freeTransfers,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(freeTransfers,0),grossBestXIPoints:baselineScore.total,\n    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};\n}\n\nfunction buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline,startCounts,pricingMode}){\n  const outIds=new Set(outgoing.map(playerId));\n  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));\n  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});\n  if(!legality.ok || !inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;\n  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);\n  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);\n  const bankAfter=bank+sellTotal-buyTotal;\n  if(bankAfter<0) return null;\n  const hit=transferHit(freeTransfers,outgoing.length);\n  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);\n  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);\n  const rollDifference=nextFT-baseline.freeTransfersNextGW;\n  const grossGain=score.total-baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,\n    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,\n    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\n// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the\n// plan signature, signatures are unique per transfer set and contain only ASCII digits,\n// '>' and '|', so two distinct plans never compare equal.\nfunction retainPlan(plans,plan,limit){\n  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;\n  plans.push(plan);\n  plans.sort(comparePlans);\n  if(plans.length>limit) plans.length=limit;\n  return plans;\n}\n\nfunction normaliseSearch(args){\n  const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,\n    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,\n    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;\n  const legality=validateSquad(squad,{allowInheritedOverQuota:true});\n  if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};\n  if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};\n  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));\n  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));\n  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));\n  const cleanLimit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(Number(maxTransfers)||0)));\n  const cleanMaxResults=Math.max(1,Math.trunc(Number(maxResults)||1));\n  const cleanMaxEvaluations=Math.max(0,Math.trunc(Number(maxEvaluations)||0));\n  const owned=new Set(squad.map(playerId));\n  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));\n  const pricingMode=squad.every(hasKnownPurchasePrice)?'exact':'estimated';\n  const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});\n  baseline.pricingMode=pricingMode;\n  return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,\n    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,\n    onProgress:typeof onProgress==='function'?onProgress:null,\n    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};\n}\n\nfunction completeResult(ctx,plans,evaluations,pruned=0,incomplete=false,profile=null){\n  plans.sort(comparePlans);\n  const base={evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n  if(profile) base.profile=Object.freeze({...profile});\n  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],...base};\n  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),...base};\n}\n\nfunction exhaustiveTransferSearch(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, incomplete=false;\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const candidates=ctx.eligible.filter(p=>required.includes(Number(p.element_type)));\n      for(const incoming of combinations(candidates,n)){\n        if(++evaluations>ctx.maxEvaluations){ incomplete=true; break outer; }\n        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);\n        if(incomingPos.some((v,i)=>v!==required[i])) continue;\n        const ordered=[], used=new Set();\n        for(const out of outgoing){\n          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));\n          if(idx<0) break; used.add(idx); ordered.push(incoming[idx]);\n        }\n        if(ordered.length!==n) continue;\n        const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:ordered,bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n          horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n        if(plan) plans.push(plan);\n      }\n    }\n  }\n  return completeResult(ctx,plans,evaluations,0,incomplete);\n}\n\nfunction prepareScoreRows(ctx){\n  const rows=new Map(), all=[], seen=new Set();\n  for(const entry of ctx.squad){ const p=playerOf(entry),id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }\n  for(const p of ctx.eligible){ const id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }\n  for(const p of all){\n    const values=[];\n    for(let offset=0;offset<ctx.horizon;offset++){\n      const raw=Number(ctx.scorePlayer(p,ctx.startGW+offset));\n      values.push(Number.isFinite(raw)?raw:0);\n    }\n    rows.set(Number(p.id),values);\n  }\n  return rows;\n}\nfunction horizonScore(scoreRows,p){ return (scoreRows.get(Number(p.id))||[]).reduce((sum,value)=>sum+value,0); }\n\nfunction buildCoreByGameweek(core,scoreRows,horizon){\n  const games=[];\n  for(let offset=0;offset<horizon;offset++){\n    const byPos={1:[],2:[],3:[],4:[]};\n    for(const entry of core){\n      const p=playerOf(entry),score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry,p,score});\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    games.push(byPos);\n  }\n  return games;\n}\n\nfunction scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,startGW,horizon){\n  const perGameweek=[]; let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const base=coreByGameweek[offset];\n    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};\n    for(const p of incoming){\n      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry:p,p,score});\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    const xi=bestXIFromPositionRows(byPos);\n    total+=xi.total; perGameweek.push({gw:startGW+offset,...xi});\n  }\n  return {total,perGameweek};\n}\n\n/* ---------------------------------------------------------------------------\n   Exact position-pool machinery.\n\n   Every legal transfer keeps the squad on its exact position quota, so for a\n   fixed outgoing set the final pool at each position always holds exactly\n   POSITION_QUOTAS[pos] players. A horizon best-XI total can therefore be read\n   from per-Gameweek descending score prefix sums rather than rebuilding,\n   re-sorting and re-scanning squad rows for every candidate.\n\n   An incoming slot that is not yet filled is held as a zero placeholder. Zero\n   is optimistic because a real incoming player may score below zero, so a\n   padded pool never understates any descendant of the node.\n   --------------------------------------------------------------------------- */\nconst FORMATIONS=Object.freeze([[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,2,3],[5,3,2],[5,4,1]]);\n// Largest starting count each position reaches across the legal formations.\nconst STARTER_LIMIT=Object.freeze({1:1,2:5,3:5,4:3});\n\nfunction createPoolLevel(horizon){\n  const level={count:{1:0,2:0,3:0,4:0},real:{},values:{},prefix:{}};\n  for(const pos of [1,2,3,4]){\n    const quota=POSITION_QUOTAS[pos];\n    level.real[pos]=new Float64Array(horizon*quota);\n    level.values[pos]=new Float64Array(horizon*quota);\n    level.prefix[pos]=new Float64Array(horizon*(quota+1));\n  }\n  return level;\n}\n\nfunction sortDescInPlace(row,base,length){\n  for(let k=1;k<length;k++){\n    const value=row[base+k]; let j=k-1;\n    while(j>=0&&row[base+j]<value){ row[base+j+1]=row[base+j]; j--; }\n    row[base+j+1]=value;\n  }\n}\n\n// Rebuilds the zero-padded pool and its descending prefix sums for one position.\nfunction refreshPool(level,pos,horizon){\n  const quota=POSITION_QUOTAS[pos],count=level.count[pos],\n    real=level.real[pos],values=level.values[pos],prefix=level.prefix[pos];\n  for(let offset=0;offset<horizon;offset++){\n    const rowBase=offset*quota,prefixBase=offset*(quota+1);\n    for(let k=0;k<quota;k++) values[rowBase+k]=k<count?real[rowBase+k]:0;\n    sortDescInPlace(values,rowBase,quota);\n    let sum=0; prefix[prefixBase]=0;\n    for(let k=0;k<quota;k++){ sum+=values[rowBase+k]; prefix[prefixBase+k+1]=sum; }\n  }\n}\n\nfunction seedPoolLevel(level,core,scoreRows,horizon){\n  const rows={1:[],2:[],3:[],4:[]};\n  for(const entry of core) rows[positionOf(entry)].push(scoreRows.get(playerId(entry)));\n  for(const pos of [1,2,3,4]){\n    const quota=POSITION_QUOTAS[pos],members=rows[pos],real=level.real[pos];\n    level.count[pos]=members.length;\n    for(let offset=0;offset<horizon;offset++){\n      const rowBase=offset*quota;\n      for(let k=0;k<members.length;k++) real[rowBase+k]=Number(members[k]?.[offset])||0;\n      sortDescInPlace(real,rowBase,members.length);\n    }\n    refreshPool(level,pos,horizon);\n  }\n}\n\n// Copies `from` into `to` with one further real member added at `pos`.\nfunction extendPoolLevel(from,to,pos,scoreRow,horizon){\n  for(const other of [1,2,3,4]){\n    to.count[other]=from.count[other];\n    to.real[other].set(from.real[other]);\n    if(other!==pos){ to.values[other].set(from.values[other]); to.prefix[other].set(from.prefix[other]); }\n  }\n  const quota=POSITION_QUOTAS[pos],count=from.count[pos],real=to.real[pos];\n  for(let offset=0;offset<horizon;offset++){\n    const rowBase=offset*quota;\n    real[rowBase+count]=Number(scoreRow?.[offset])||0;\n    sortDescInPlace(real,rowBase,count+1);\n  }\n  to.count[pos]=count+1;\n  refreshPool(to,pos,horizon);\n}\n\nfunction horizonTotalFromPrefixes(gkPrefix,defPrefix,midPrefix,fwdPrefix,horizon){\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const gk=gkPrefix[offset*3+1],defBase=offset*6,midBase=offset*6,fwdBase=offset*4;\n    let best=-Infinity;\n    for(let i=0;i<FORMATIONS.length;i++){\n      const shape=FORMATIONS[i];\n      const value=gk+defPrefix[defBase+shape[0]]+midPrefix[midBase+shape[1]]+fwdPrefix[fwdBase+shape[2]];\n      if(value>best) best=value;\n    }\n    total+=best;\n  }\n  return total;\n}\n\n// Exact horizon best-XI total for a complete pool; an optimistic base while slots remain.\nfunction poolHorizonTotal(level,horizon){\n  return horizonTotalFromPrefixes(level.prefix[1],level.prefix[2],level.prefix[3],level.prefix[4],horizon);\n}\n\n// Admissible identity-preserving marginal of one candidate against a padded pool.\n// Filling a placeholder with score s raises any top-k total by at most\n// max(0, s - kth value of the padded pool), and the largest starting count gives\n// the smallest such threshold, so one gain is valid for every legal formation and\n// for every placeholder still outstanding at that position.\nfunction poolPlayerGain(level,pos,scoreRow,horizon){\n  const quota=POSITION_QUOTAS[pos],values=level.values[pos],index=STARTER_LIMIT[pos]-1;\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const delta=(Number(scoreRow?.[offset])||0)-values[offset*quota+index];\n    if(delta>0) total+=delta;\n  }\n  return total;\n}\n\n/* Cost of moving an identity gain from the branch-level padded pool to the node's\n   padded pool. max(0, s - b) <= max(0, s - a) + max(0, a - b) for every score, so\n   adding this constant per outstanding slot keeps a branch-level gain admissible\n   at any node while leaving the branch-level ordering intact. */\nfunction thresholdDelta(branchLevel,nodeLevel,pos,horizon){\n  const quota=POSITION_QUOTAS[pos],index=STARTER_LIMIT[pos]-1;\n  const branchValues=branchLevel.values[pos],nodeValues=nodeLevel.values[pos];\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const drop=branchValues[offset*quota+index]-nodeValues[offset*quota+index];\n    if(drop>0) total+=drop;\n  }\n  return total;\n}\n\n// Admissible per-formation bound for the last outstanding slot. It preserves the\n// candidate's identity across every Gameweek and applies each formation's own\n// threshold instead of the smallest threshold across formations.\nfunction finalSlotUpperBound(level,pos,scoreRow,horizon){\n  const gkPrefix=level.prefix[1],defPrefix=level.prefix[2],midPrefix=level.prefix[3],fwdPrefix=level.prefix[4];\n  const quota=POSITION_QUOTAS[pos],values=level.values[pos];\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const gk=gkPrefix[offset*3+1],defBase=offset*6,midBase=offset*6,fwdBase=offset*4,\n      valueBase=offset*quota,score=Number(scoreRow?.[offset])||0;\n    let best=-Infinity;\n    for(let i=0;i<FORMATIONS.length;i++){\n      const shape=FORMATIONS[i];\n      const starters=pos===1?1:pos===2?shape[0]:pos===3?shape[1]:shape[2];\n      const delta=score-values[valueBase+starters-1];\n      const value=gk+defPrefix[defBase+shape[0]]+midPrefix[midBase+shape[1]]+fwdPrefix[fwdBase+shape[2]]+(delta>0?delta:0);\n      if(value>best) best=value;\n    }\n    total+=best;\n  }\n  return total;\n}\n\n/* Exact \"best k scores available at or below a price\" tables.\n\n   Candidates are swept in ascending price once per position, so for any budget a\n   binary search returns both how many candidates are affordable and their highest\n   scores in each Gameweek. This replaces a price-filtered scan of the whole\n   position pool at every partial node. */\nconst RELAXED_TOP_K=TRANSFER_RULES.maxTransfers;\n\nfunction buildCostCappedTables(byPositionCost,scoreRows,horizon){\n  const tables={1:null,2:null,3:null,4:null};\n  for(const pos of [1,2,3,4]){\n    const pool=byPositionCost[pos],costs=[];\n    for(const p of pool){\n      const cost=Number(p.now_cost||0);\n      if(!costs.length||costs[costs.length-1]!==cost) costs.push(cost);\n    }\n    const steps=costs.length,available=new Int32Array(steps),top=new Float64Array(horizon*steps*RELAXED_TOP_K);\n    top.fill(-Infinity);\n    for(let offset=0;offset<horizon;offset++){\n      const best=new Float64Array(RELAXED_TOP_K).fill(-Infinity);\n      let index=0,seen=0,i=0;\n      while(i<pool.length){\n        const cost=Number(pool[i].now_cost||0);\n        while(i<pool.length&&Number(pool[i].now_cost||0)===cost){\n          const score=Number(scoreRows.get(Number(pool[i].id))?.[offset])||0;\n          for(let k=0;k<RELAXED_TOP_K;k++) if(score>best[k]){\n            for(let j=RELAXED_TOP_K-1;j>k;j--) best[j]=best[j-1];\n            best[k]=score; break;\n          }\n          seen++; i++;\n        }\n        const base=(offset*steps+index)*RELAXED_TOP_K;\n        for(let k=0;k<RELAXED_TOP_K;k++) top[base+k]=best[k];\n        if(offset===0) available[index]=seen;\n        index++;\n      }\n    }\n    tables[pos]={costs:Float64Array.from(costs),steps,available,top};\n  }\n  return tables;\n}\n\n// Largest table step whose price is within budget, or -1 when nothing is affordable.\nfunction costCappedStep(table,maxCandidateCost){\n  const costs=table.costs;\n  let low=0,high=table.steps-1,found=-1;\n  while(low<=high){\n    const mid=(low+high)>>1;\n    if(costs[mid]<=maxCandidateCost){ found=mid; low=mid+1; } else high=mid-1;\n  }\n  return found;\n}\n\n/* Admissible bound that keeps `fixedRow` at `fixedPos` with its true identity and\n   fills every other outstanding slot with the highest-scoring affordable candidate\n   of that Gameweek. Cross-Gameweek identity, club capacity and candidate reuse are\n   relaxed only in the optimistic direction and the per-player price cap is exact,\n   so no reachable descendant can score higher. -Infinity means no completion can\n   be afforded at all. */\nfunction relaxedHorizonUpperBound(from,scratch,prefixRefs,remainingNeed,horizon,costTables,\n  fixedPos,fixedRow,caps){\n  for(let pos=1;pos<=4;pos++){\n    const quota=POSITION_QUOTAS[pos],count=from.count[pos];\n    const relaxedNeed=remainingNeed[pos]|0,fixed=pos===fixedPos?1:0;\n    if(!relaxedNeed&&!fixed){ prefixRefs[pos]=from.prefix[pos]; continue; }\n    const values=scratch.values[pos],prefix=scratch.prefix[pos],real=from.real[pos];\n    let step=-1,table=null;\n    if(relaxedNeed){\n      table=costTables[pos];\n      step=costCappedStep(table,caps[pos]);\n      if(step<0||table.available[step]<relaxedNeed) return -Infinity;\n    }\n    for(let offset=0;offset<horizon;offset++){\n      const rowBase=offset*quota,prefixBase=offset*(quota+1);\n      for(let k=0;k<count;k++) values[rowBase+k]=real[rowBase+k];\n      let filled=0;\n      if(fixed){ values[rowBase+count]=Number(fixedRow?.[offset])||0; filled=1; }\n      if(relaxedNeed){\n        const base=(offset*table.steps+step)*RELAXED_TOP_K;\n        for(let k=0;k<relaxedNeed;k++) values[rowBase+count+filled+k]=table.top[base+k];\n        filled+=relaxedNeed;\n      }\n      sortDescInPlace(values,rowBase,quota);\n      let sum=0; prefix[prefixBase]=0;\n      for(let k=0;k<quota;k++){ sum+=values[rowBase+k]; prefix[prefixBase+k+1]=sum; }\n    }\n    prefixRefs[pos]=prefix;\n  }\n  return horizonTotalFromPrefixes(prefixRefs[1],prefixRefs[2],prefixRefs[3],prefixRefs[4],horizon);\n}\n\nfunction minimumRemainingDoubtful(byPosition,remainingNeed,usedIds){\n  let total=0;\n  for(const pos of [1,2,3,4]){\n    const count=Number(remainingNeed[pos])||0;\n    if(!count) continue;\n    let available=0,nonDoubtful=0;\n    for(const p of byPosition[pos]){\n      if(usedIds.has(Number(p.id))) continue;\n      available++;\n      if(p.status!=='d') nonDoubtful++;\n    }\n    if(available<count) return Infinity;\n    total+=Math.max(0,count-nonDoubtful);\n  }\n  return total;\n}\n\nfunction optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId){\n  const completion=chosen.slice(),used=new Set(chosen.map(p=>Number(p.id)));\n  for(const pos of [1,2,3,4]){\n    let left=Number(remainingNeed[pos])||0;\n    for(const p of byPositionId[pos]){\n      if(!left) break;\n      if(used.has(Number(p.id))) continue;\n      used.add(Number(p.id)); completion.push(p); left--;\n    }\n    if(left>0) return '';\n  }\n  const incoming=orderedIncomingForOutgoing(outgoing,completion);\n  const transfers=canonicalTransfers(outgoing.map((out,index)=>({\n    outPlayerId:playerId(out),inPlayerId:Number(incoming[index]?.id),position:positionOf(out)\n  })));\n  return planSignature(transfers);\n}\n\nfunction optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPositionCost,byPositionId,usedIds,cost,sellTotal}){\n  const cheapestRest=Object.entries(remainingNeed).reduce((sum,[pos,count])=>\n    sum+cheapestAvailableCost(byPositionCost[pos],count,usedIds),0);\n  const hasRemaining=Object.values(remainingNeed).some(Boolean);\n  return {\n    bankAfter:ctx.bank+sellTotal-cost-cheapestRest,\n    doubtfulIncoming:chosen.filter(p=>p.status==='d').length+minimumRemainingDoubtful(byPosition,remainingNeed,usedIds),\n    // Every real transfer signature is non-empty. The empty string is therefore\n    // universally optimistic for a partial node, without assuming numeric player-ID\n    // order is the same as locale string order for mixed-width identifiers.\n    signature:hasRemaining?'':optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId)\n  };\n}\n\nconst BOUND_EPSILON=1e-9;\n\n/* Comparator-complete rejection for an already-tied optimistic bound. It is only\n   reached when the optimistic net gain and gross score both tie the retained Kth\n   plan, so the optimistic completion signature — the expensive part — is built\n   only when it can change the outcome. */\nfunction tiedBoundCannotBeat(depth,kth,optimisticTie){\n  return comparePlans({\n    netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints,\n    hitCost:depth.hitCost,transferCount:depth.transferCount,freeTransfersNextGW:depth.freeTransfersNextGW,\n    bankAfter:Number.isFinite(optimisticTie?.bankAfter)?optimisticTie.bankAfter:Number.MAX_SAFE_INTEGER,\n    doubtfulIncoming:Number.isFinite(optimisticTie?.doubtfulIncoming)?optimisticTie.doubtfulIncoming:-1,\n    signature:String(optimisticTie?.signature??'')\n  },kth)>0;\n}\n\n// Fixed comparator terms for one transfer depth. netOffset converts any gross\n// best-XI bound into the matching net-gain bound in one addition.\nfunction depthConstants(ctx,transferCount){\n  const hit=transferHit(ctx.freeTransfers,transferCount);\n  const freeTransfersNextGW=nextFreeTransfers(ctx.freeTransfers,transferCount);\n  const rollDifference=freeTransfersNextGW-ctx.baseline.freeTransfersNextGW;\n  return {transferCount,hitCost:hit.hitCost,paidTransfers:hit.paidTransfers,freeTransfersNextGW,\n    netOffset:-ctx.baseline.grossBestXIPoints-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference};\n}\n\n// -1 rejected outright on net gain, 0 undecided until the tie keys, 1 retained.\nfunction boundVerdict(upperGross,depth,kth){\n  if(!kth) return Number.isFinite(upperGross)?1:(upperGross===-Infinity?-1:1);\n  if(!Number.isFinite(upperGross)) return upperGross===-Infinity?-1:1;\n  const upperNet=upperGross+depth.netOffset;\n  if(upperNet<kth.netGain-BOUND_EPSILON) return -1;\n  if(upperNet>kth.netGain+BOUND_EPSILON) return 1;\n  if(upperGross<kth.grossBestXIPoints-BOUND_EPSILON) return -1;\n  if(upperGross>kth.grossBestXIPoints+BOUND_EPSILON) return 1;\n  return 0;\n}\n\nfunction cheapestAvailableCost(poolByCost,count,usedIds,extraUsedId=null){\n  if(count<=0) return 0;\n  let total=0,found=0;\n  for(const p of poolByCost){\n    const id=Number(p.id);\n    if(usedIds.has(id)||id===extraUsedId) continue;\n    total+=Number(p.now_cost||0);\n    if(++found===count) return total;\n  }\n  return Infinity;\n}\n\n// Cheapest `count + 1` still-available prices at a position. One spare entry is\n// enough to price the remaining slots exactly when the candidate being tried is\n// itself one of the cheapest.\nfunction cheapestAvailableCosts(poolByCost,count,usedIds){\n  const rows=[];\n  if(count<=0) return rows;\n  for(const p of poolByCost){\n    if(usedIds.has(Number(p.id))) continue;\n    rows.push({id:Number(p.id),cost:Number(p.now_cost||0)});\n    if(rows.length===count+1) break;\n  }\n  return rows;\n}\n\n// Price of the dearest member of the cheapest `count` still-available candidates.\n// Subtracting it from a cheapest-completion total leaves a true lower bound on the\n// price of every other outstanding slot.\nfunction dearestOfCheapest(rows,count,excludedId){\n  let found=0,last=0;\n  for(let i=0;i<rows.length&&found<count;i++){\n    if(rows[i].id===excludedId) continue;\n    last=rows[i].cost; found++;\n  }\n  return found<count?Infinity:last;\n}\n\nfunction cheapestFrom(rows,count,excludedId){\n  let total=0,found=0;\n  for(let i=0;i<rows.length&&found<count;i++){\n    if(rows[i].id===excludedId) continue;\n    total+=rows[i].cost; found++;\n  }\n  return found<count?Infinity:total;\n}\n\nfunction orderedIncomingForOutgoing(outgoing,chosen){\n  const byPos={1:[],2:[],3:[],4:[]};\n  chosen.forEach(p=>byPos[positionOf(p)].push(p));\n  Object.values(byPos).forEach(rows=>rows.sort((a,b)=>Number(a.id)-Number(b.id)));\n  const used={1:0,2:0,3:0,4:0};\n  return outgoing.map(out=>byPos[positionOf(out)][used[positionOf(out)]++]);\n}\n\nfunction buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts,preparedScore=null}){\n  if(!inheritedClubLegal(ctx.startCounts,clubCounts,outgoing.length)) return null;\n  const hit=transferHit(ctx.freeTransfers,outgoing.length);\n  const score=preparedScore||scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,ctx.startGW,ctx.horizon);\n  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);\n  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;\n  const grossGain=score.total-ctx.baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:core.map(playerId).concat(incoming.map(p=>Number(p.id))).sort((a,b)=>a-b),\n    bankBefore:ctx.bank,bankAfter,freeTransfersBefore:ctx.freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,\n    freeTransfersNextGW:nextFT,grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode:ctx.pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\nfunction outgoingCombinations(squad,size,scoreRows){\n  return combinations(squad,size).map(set=>({\n    set,\n    score:set.reduce((sum,entry)=>sum+horizonScore(scoreRows,playerOf(entry)),0),\n    key:set.map(playerId).sort((a,b)=>a-b).join(',')\n  })).sort((a,b)=>a.score-b.score||a.key.localeCompare(b.key)).map(item=>item.set);\n}\n\nfunction optimiseTransfers(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;\n  const profile={outgoingBranches:0,boundPruned:0,identityBoundPruned:0,relaxedBoundPruned:0,finalSlotPruned:0,\n    orderedBreaks:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};\n  const scoreRows=prepareScoreRows(ctx);\n  const byPosition={1:[],2:[],3:[],4:[]};\n  ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));\n  const byPositionCost={1:[],2:[],3:[],4:[]},byPositionId={1:[],2:[],3:[],4:[]};\n  for(const pos of [1,2,3,4]){\n    byPosition[pos].sort((a,b)=>horizonScore(scoreRows,b)-horizonScore(scoreRows,a)||Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n    byPositionCost[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n    byPositionId[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.id)-Number(b.id));\n  }\n  const costTables=buildCostCappedTables(byPositionCost,scoreRows,ctx.horizon);\n  const allowanceCache=new Map();\n  const clubAllowance=team=>{\n    let allowed=allowanceCache.get(team);\n    if(allowed===undefined){\n      allowed=Math.max(TRANSFER_RULES.maxPerClub,Number(ctx.startCounts[team])||0);\n      allowanceCache.set(team,allowed);\n    }\n    return allowed;\n  };\n  const levels=[]; for(let depth=0;depth<=TRANSFER_RULES.maxTransfers;depth++) levels.push(createPoolLevel(ctx.horizon));\n  const scratch=createPoolLevel(ctx.horizon),prefixRefs={1:null,2:null,3:null,4:null};\n  const retainedKth=()=>plans.length>=ctx.maxResults?plans[plans.length-1]:null;\n\n  outer: for(let n=1;n<=ctx.limit;n++){\n    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});\n    const depth=depthConstants(ctx,n);\n    for(const outgoing of outgoingCombinations(ctx.squad,n,scoreRows)){\n      profile.outgoingBranches++;\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);\n      if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }\n      const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);\n      const budget=ctx.bank+sellTotal;\n      const noneUsed=new Set();\n      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPositionCost[pos],count,noneUsed),0);\n      if(minimumBuy>budget){ pruned++; profile.affordabilityPruned++; continue; }\n      const outIds=new Set(outgoing.map(playerId));\n      const core=ctx.squad.filter(entry=>!outIds.has(playerId(entry)));\n      const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });\n      seedPoolLevel(levels[0],core,scoreRows,ctx.horizon);\n\n      const caps={1:0,2:0,3:0,4:0};\n      for(let rpos=1;rpos<=4;rpos++){\n        const count=need[rpos]|0;\n        caps[rpos]=count?budget-minimumBuy+dearestOfCheapest(\n          cheapestAvailableCosts(byPositionCost[rpos],count,noneUsed),count,null):0;\n      }\n      const branchRelaxed=relaxedHorizonUpperBound(levels[0],scratch,prefixRefs,need,ctx.horizon,costTables,0,null,caps);\n      const branchKth=retainedKth();\n      let branchVerdict=boundVerdict(branchRelaxed,depth,branchKth);\n      if(branchVerdict===0) branchVerdict=tiedBoundCannotBeat(depth,branchKth,optimisticTieBreak({ctx,outgoing,chosen:[],\n        remainingNeed:need,byPosition,byPositionCost,byPositionId,usedIds:noneUsed,cost:0,sellTotal}))?-1:1;\n      if(branchVerdict<0){ pruned++; profile.boundPruned++; profile.relaxedBoundPruned++; continue; }\n\n      // Identity gains and their descending order are immutable for the whole branch.\n      const gainOrder={},gainValue={};\n      for(const pos of [1,2,3,4]){\n        if(!need[pos]) continue;\n        const values=new Map();\n        for(const p of byPosition[pos]) values.set(Number(p.id),poolPlayerGain(levels[0],pos,scoreRows.get(Number(p.id)),ctx.horizon));\n        gainOrder[pos]=byPosition[pos].slice().sort((a,b)=>\n          (values.get(Number(b.id))-values.get(Number(a.id)))||\n          Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n        gainValue[pos]=values;\n      }\n      const bestRemainingGain=(remainingNeed,usedIds,maxCandidateCost,clubCounts)=>{\n        let total=0;\n        for(let pos=1;pos<=4;pos++){\n          let left=remainingNeed[pos]|0;\n          if(!left) continue;\n          for(const p of gainOrder[pos]){\n            const id=Number(p.id);\n            if(usedIds.has(id)) continue;\n            if(Number(p.now_cost||0)>maxCandidateCost) continue;\n            if((clubCounts[p.team]|0)>=clubAllowance(p.team)) continue;\n            total+=gainValue[pos].get(id)||0;\n            if(--left===0) break;\n          }\n          if(left>0) return Infinity;\n        }\n        return total;\n      };\n      let coreByGameweek=null;\n      const preparedCore=()=>coreByGameweek||(coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon));\n\n      const chosen=[],chosenPoolIndexes=[],usedIds=new Set(),clubCounts={...afterOut};\n      function choose(index,cost,level){\n        if(incomplete) return;\n        const pos=required[index],pool=gainOrder[pos],last=index===required.length-1;\n        const remainingAfter={1:0,2:0,3:0,4:0};\n        for(let i=index+1;i<required.length;i++) remainingAfter[required[i]]++;\n        const restGain=last?0:bestRemainingGain(remainingAfter,usedIds,budget-cost,clubCounts);\n        if(restGain===Infinity){ pruned++; profile.boundPruned++; return; }\n        // Exact base for everything already chosen, plus the admissible gain of an\n        // optimistic completion. Both stay valid for every descendant of this node.\n        const slotDelta={1:0,2:0,3:0,4:0}; let restDelta=0;\n        for(let rpos=1;rpos<=4;rpos++){\n          const outstanding=(remainingAfter[rpos]|0)+(rpos===pos?1:0);\n          if(!outstanding) continue;\n          slotDelta[rpos]=thresholdDelta(levels[0],level,rpos,ctx.horizon);\n          restDelta+=(remainingAfter[rpos]|0)*slotDelta[rpos];\n        }\n        const nodeCeiling=poolHorizonTotal(level,ctx.horizon)+restGain+restDelta,slotBonus=slotDelta[pos];\n        // Remaining-slot prices are fixed for the node; one spare entry per position\n        // covers the case where the candidate being tried is itself among the cheapest.\n        const cheapRows={1:null,2:null,3:null,4:null},cheapBase={1:0,2:0,3:0,4:0};\n        let cheapestRestBase=0,restPriceable=true;\n        for(let rpos=1;rpos<=4&&restPriceable;rpos++){\n          const count=remainingAfter[rpos]|0;\n          if(!count) continue;\n          const rows=cheapestAvailableCosts(byPositionCost[rpos],count,usedIds);\n          const total=cheapestFrom(rows,count,null);\n          if(!Number.isFinite(total)) restPriceable=false;\n          else { cheapRows[rpos]=rows; cheapBase[rpos]=total; cheapestRestBase+=total; }\n        }\n        if(!restPriceable){ pruned++; profile.affordabilityPruned++; return; }\n        const startAt=index>0&&required[index-1]===pos?chosenPoolIndexes[index-1]+1:0;\n        for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){\n          const candidate=pool[poolIndex],id=Number(candidate.id),team=candidate.team;\n          const gain=gainValue[pos].get(id)||0;\n          const kth=retainedKth();\n          // Descending identity order: the whole remainder of this pool is hopeless too.\n          if(boundVerdict(nodeCeiling+gain+slotBonus,depth,kth)<0){\n            pruned++; profile.boundPruned++; profile.identityBoundPruned++; profile.orderedBreaks++; break;\n          }\n          const nextCost=cost+Number(candidate.now_cost||0);\n          let cheapestRest=cheapestRestBase;\n          if(cheapRows[pos]){\n            const count=remainingAfter[pos]|0;\n            const replacement=cheapestFrom(cheapRows[pos],count,id);\n            if(!Number.isFinite(replacement)){ pruned++; profile.affordabilityPruned++; continue; }\n            cheapestRest=cheapestRest-cheapBase[pos]+replacement;\n          }\n          if(nextCost+cheapestRest>budget){ pruned++; profile.affordabilityPruned++; continue; }\n          if((clubCounts[team]|0)>=clubAllowance(team)){ pruned++; profile.clubPruned++; continue; }\n\n          if(last){\n            if(kth){\n              let verdict=boundVerdict(finalSlotUpperBound(level,pos,scoreRows.get(id),ctx.horizon),depth,kth);\n              if(verdict===0){\n                chosen.push(candidate);\n                verdict=tiedBoundCannotBeat(depth,kth,optimisticTieBreak({ctx,outgoing,chosen,\n                  remainingNeed:{1:0,2:0,3:0,4:0},byPosition,byPositionCost,byPositionId,usedIds,cost:nextCost,sellTotal}))?-1:1;\n                chosen.pop();\n              }\n              if(verdict<0){ pruned++; profile.boundPruned++; profile.finalSlotPruned++; continue; }\n            }\n            if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }\n            profile.leafEvaluations=evaluations;\n            if(ctx.onProgress&&evaluations%ctx.progressInterval===0)\n              ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});\n            clubCounts[team]=(clubCounts[team]|0)+1;\n            if(inheritedClubLegal(ctx.startCounts,clubCounts,n)){\n              chosen.push(candidate);\n              extendPoolLevel(level,levels[index+1],pos,scoreRows.get(id),ctx.horizon);\n              const incoming=orderedIncomingForOutgoing(outgoing,chosen),bankAfter=budget-nextCost;\n              const gross=poolHorizonTotal(levels[index+1],ctx.horizon);\n              const kthNow=retainedKth();\n              let contend=boundVerdict(gross,depth,kthNow);\n              if(contend===0) contend=tiedBoundCannotBeat(depth,kthNow,{bankAfter,\n                doubtfulIncoming:incoming.filter(p=>p.status==='d').length,\n                signature:planSignature(canonicalTransfers(outgoing.map((out,i)=>({\n                  outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out)}))))})?-1:1;\n              if(contend>=0){\n                const plan=buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek:preparedCore(),scoreRows,bankAfter,clubCounts});\n                if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }\n              }\n              chosen.pop();\n            }\n            clubCounts[team]=(clubCounts[team]|0)-1;\n            continue;\n          }\n\n          clubCounts[team]=(clubCounts[team]|0)+1;\n          for(let rpos=1;rpos<=4;rpos++){\n            const count=remainingAfter[rpos]|0;\n            caps[rpos]=count?budget-nextCost-cheapestRest+dearestOfCheapest(cheapRows[rpos],count,id):0;\n          }\n          const relaxed=relaxedHorizonUpperBound(level,scratch,prefixRefs,remainingAfter,ctx.horizon,costTables,\n            pos,scoreRows.get(id),caps);\n          const identityUpper=nodeCeiling+gain+slotBonus;\n          const upper=Math.min(identityUpper,relaxed);\n          let verdict=boundVerdict(upper,depth,kth);\n          if(verdict===0){\n            chosen.push(candidate);\n            verdict=tiedBoundCannotBeat(depth,kth,optimisticTieBreak({ctx,outgoing,chosen,remainingNeed:remainingAfter,\n              byPosition,byPositionCost,byPositionId,usedIds,cost:nextCost,sellTotal}))?-1:1;\n            chosen.pop();\n          }\n          if(verdict<0){\n            pruned++; profile.boundPruned++;\n            if(identityUpper<=relaxed) profile.identityBoundPruned++; else profile.relaxedBoundPruned++;\n            clubCounts[team]=(clubCounts[team]|0)-1;\n            continue;\n          }\n          chosen.push(candidate); chosenPoolIndexes.push(poolIndex); usedIds.add(id);\n          extendPoolLevel(level,levels[index+1],pos,scoreRows.get(id),ctx.horizon);\n          choose(index+1,nextCost,levels[index+1]);\n          chosen.pop(); chosenPoolIndexes.pop(); usedIds.delete(id);\n          clubCounts[team]=(clubCounts[team]|0)-1;\n          if(incomplete) return;\n        }\n      }\n      choose(0,0,levels[0]);\n      if(incomplete) break outer;\n    }\n  }\n  return completeResult(ctx,plans,evaluations,pruned,incomplete,profile);\n}\n\n";
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
@@ -1019,6 +1019,14 @@ const S = {
   dataIssues:[],
   retryStats:{},
   minuteHistory:{},
+  // R3.4 E2 — same key set as minuteHistory; carries the provenance each entry
+  // needs once entries are retained individually across a commit. Element ids
+  // are reused between seasons, so an id match alone proves nothing.
+  minuteHistoryMeta:{},
+  // R3.4 E4 — in-memory provenance for the applied Understat/Odds values.
+  // Rule B reads this, never persisted storage: the commit is synchronous so
+  // it cannot await, and after a persist_failed memory is the newer record.
+  providerApplied:{understat:null, odds:null},
   lastOptimiser:null
 };
 
@@ -1065,52 +1073,91 @@ function slim(boot, fixtures){
 
 /* D-13 + D-14: the snapshot is validated on EVERY load, fresh or cached,
    before a single assignment is made. A fatal payload returns early with
-   state untouched — a half-populated S is worse than no refresh at all. */
-function hydrate(d){
+   state untouched — a half-populated S is worse than no refresh at all.
+
+   R3 — prepareCore() is the pure half: it validates and derives, returning the
+   values rather than assigning them, so the refresh can stage a complete core
+   without touching S. hydrate() is the assigning half and keeps its exact
+   previous behaviour for the cached-startup path and existing callers. */
+function prepareCore(d){
   const bv = validateBootstrap(d);
   const fx = bv.value === null ? { fixtures: [], issues: [] }
                                : normaliseFixtures(bv.value.fixtures);
   const issues = bv.issues.concat(fx.issues);
-  if(bv.value === null || hasFatal(issues)){
-    S.dataIssues = issues;
-    return { ok:false, issues };
-  }
+  if(bv.value === null || hasFatal(issues)) return { ok:false, issues, core:null };
   const v = bv.value;
   const invalidStrengthTeams = v.teams.filter(team => !teamStrengthsValid(team)).length;
   if(invalidStrengthTeams) issues.push({
     provider:'fpl', endpoint:'/bootstrap-static/', code:'team_strengths_unavailable',
     severity:'partial', count:invalidStrengthTeams, fields:TEAM_STRENGTH_FIELDS.slice()
   });
-  S.boot = {events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types};
-  S.fixtures = fx.fixtures;
-  S.dataIssues = issues;
-  S.teams = {}; v.teams.forEach(t => S.teams[t.id] = t);
-  S.byId = {}; v.elements.forEach(p => S.byId[p.id] = p);
-  S.posName = {}; S.posFull = {};
-  v.element_types.forEach(t => { S.posName[t.id] = t.singular_name_short; S.posFull[t.id] = t.singular_name; });
+  const teams = {}; v.teams.forEach(t => teams[t.id] = t);
+  const byId = {}; v.elements.forEach(p => byId[p.id] = p);
+  const posName = {}, posFull = {};
+  v.element_types.forEach(t => { posName[t.id] = t.singular_name_short; posFull[t.id] = t.singular_name; });
 
   const cur  = v.events.find(e => e.is_current);
   const next = v.events.find(e => e.is_next) || v.events.find(e => !e.finished);
-  S.currentGW = cur ? cur.id : 0;
-  S.nextGW = next ? next.id : 38;
-  S.seasonLive = v.events.some(e => e.finished);
-  S.gamesPlayed = Math.max(1, S.currentGW);
-  S.cachedAt = v.at;
+  const currentGW = cur ? cur.id : 0;
+  const nextGW = next ? next.id : 38;
+  const seasonLive = v.events.some(e => e.finished);
 
   const ts = v.teams;
-  S.strengthsAvailable = ts.length > 0 && ts.every(teamStrengthsValid);
+  const strengthsAvailable = ts.length > 0 && ts.every(teamStrengthsValid);
   const mean = key => {
     const values = ts.map(team => Number(team[key])).filter(validTeamStrength);
     return values.length ? values.reduce((sum,value) => sum + value, 0) / values.length : null;
   };
-  S.avg = {atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
-           defH:mean('strength_defence_home'), defA:mean('strength_defence_away')};
+  const year = +(v.events?.[0]?.deadline_time || '').slice(0,4);
+  return { ok:true, issues, core:{
+    boot:{events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types},
+    events:v.events, teams:v.teams, elements:v.elements, element_types:v.element_types,
+    fixtures:fx.fixtures, teamsById:teams, byId, posName, posFull,
+    currentGW, nextGW, seasonLive, gamesPlayed:Math.max(1, currentGW), cachedAt:v.at,
+    strengthsAvailable,
+    avg:{atkH:mean('strength_attack_home'), atkA:mean('strength_attack_away'),
+         defH:mean('strength_defence_home'), defA:mean('strength_defence_away')},
+    season:Number.isFinite(year) && year > 2000 ? year + '-' + String((year+1)%100).padStart(2,'0') : 'unknown'
+  }};
+}
 
+function hydrate(d){
+  const prepared = prepareCore(d);
+  if(!prepared.ok){ S.dataIssues = prepared.issues; return { ok:false, issues:prepared.issues }; }
+  assignCore(prepared.core, prepared.issues);
+  populatePositionFilter(prepared.core.element_types);
+  return { ok:true, issues:prepared.issues };
+}
+
+/* The core half of the synchronous commit: plain assignments from an
+   already-validated prepared core. No validation, no DOM, no awaits. */
+function assignCore(core, issues){
+  S.boot = core.boot;
+  S.fixtures = core.fixtures;
+  S.dataIssues = issues;
+  S.teams = core.teamsById;
+  S.byId = core.byId;
+  S.posName = core.posName;
+  S.posFull = core.posFull;
+  S.currentGW = core.currentGW;
+  S.nextGW = core.nextGW;
+  S.seasonLive = core.seasonLive;
+  S.gamesPlayed = core.gamesPlayed;
+  S.cachedAt = core.cachedAt;
+  S.strengthsAvailable = core.strengthsAvailable;
+  S.avg = core.avg;
+}
+
+/* R3 §4 — extracted from hydrate(). This is a DOM write, so it can throw and
+   it mutates the document; neither belongs inside the synchronous, no-throw
+   commit. It runs in the post-commit render phase instead, which both the
+   cached and live paths reach. Behaviour is otherwise identical. */
+function populatePositionFilter(elementTypes = S.boot?.element_types){
+  if(typeof document === 'undefined' || !Array.isArray(elementTypes)) return false;
   const sel = $('plPos');
-  if(sel.options.length <= 1)
-    v.element_types.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
-
-  return { ok:true, issues };
+  if(!sel || sel.options.length > 1) return false;
+  elementTypes.forEach(t => sel.add(new Option(t.singular_name_short, t.id)));
+  return true;
 }
 
 function recordIssues(provider, endpoint, issues){
@@ -1121,6 +1168,33 @@ function recordIssues(provider, endpoint, issues){
 function recordRetry(record){
   if(!record || !record.provider) return;
   S.retryStats[record.provider + '|' + record.endpoint] = record;
+}
+
+/* R3 A2 / R3.4 E5 — the refresh commit journal.
+
+   Every key the commit may write, and nothing else. User-owned state (manual,
+   thread, calib, backtest, mini-league selections) and navigation state are
+   deliberately absent: the commit never touches them, so they must survive it.
+
+   retryStats is CLONED rather than referenced. recordRetry() writes into the
+   existing object in place, so snapshotting the reference would restore
+   nothing. The commit assigns a fresh object for the same reason. */
+const REFRESH_OWNED_KEYS = Object.freeze([
+  'boot','fixtures','teams','byId','posName','posFull','currentGW','nextGW',
+  'seasonLive','gamesPlayed','cachedAt','avg','strengthsAvailable','source','teamId',
+  'entry','picks','history','picksGameweek','picksStatus','chipsUsed',
+  'ustat','ustatNote','odds','oddsNote','minuteHistory','minuteHistoryMeta',
+  'providerApplied','dataIssues'
+]);
+function captureStateJournal(){
+  const state = {};
+  REFRESH_OWNED_KEYS.forEach(key => { state[key] = S[key]; });
+  return { state, retryStats:{ ...S.retryStats } };
+}
+function restoreStateJournal(journal){
+  if(!journal) return;
+  REFRESH_OWNED_KEYS.forEach(key => { S[key] = journal.state[key]; });
+  S.retryStats = { ...journal.retryStats };
 }
 
 
@@ -1143,6 +1217,21 @@ async function sset(key, val){
   const s = JSON.stringify(val);
   if(window.storage){ try{ await window.storage.set(key, s); return; }catch(e){} }
   try{ localStorage.setItem(key, s); }catch(e){}
+}
+
+/* R3.1 B4 / R3.2 C7 — a separate refresh-only write surface. sset() above is
+   deliberately untouched, including JSON.stringify outside every guard, so no
+   existing caller's behaviour changes. The refresh persistence phase needs a
+   reportable outcome instead: an unobservable failure cannot be classified as
+   persist_failed. The small duplication is the price of that guarantee. */
+async function ssetChecked(key, val){
+  let s;
+  try{ s = JSON.stringify(val); }catch(e){ return { ok:false, reason:'serialise' }; }
+  if(window.storage){
+    try{ await window.storage.set(key, s); return { ok:true, via:'manager' }; }catch(e){}
+  }
+  try{ localStorage.setItem(key, s); return { ok:true, via:'local' }; }
+  catch(e){ return { ok:false, reason:'quota_or_unavailable' }; }
 }
 
 function stripDeprecatedSecrets(value){
@@ -1515,6 +1604,324 @@ function healthSummary(context = {}, now = Date.now()){
 
 function resetHealth(){ Object.keys(health).forEach(k => delete health[k]); }
 
+/* R3.1 B4 / R3.2 — the health map is module-private and is not reachable from
+   S, so a shallow S snapshot cannot roll it back. These two functions give the
+   refresh commit journal an explicit capture/restore pair. Both are plain
+   clones; neither can throw, so the rollback path stays no-throw. */
+function snapshotHealth(){
+  const out = {};
+  Object.keys(health).forEach(name => {
+    const row = health[name];
+    out[name] = { ...row, detail: row.detail ? { ...row.detail } : null };
+  });
+  return out;
+}
+function restoreHealth(snapshot){
+  Object.keys(health).forEach(name => delete health[name]);
+  Object.keys(snapshot || {}).forEach(name => {
+    const row = snapshot[name];
+    health[name] = { ...row, detail: row.detail ? { ...row.detail } : null };
+  });
+}
+
+
+
+/* ===== src/providers/applied.mjs ===== */
+/* ---------------------------------------------------------------------
+   APPLIED PROVIDER STATE — the single gate through which every supporting
+   provider result reaches S.
+
+   Two rules, deliberately independent (R3.3 D1):
+
+     Rule A — the computation signature. Identifies the inputs an in-flight
+     computation ran against. It decides whether a RETURNED RESULT may be
+     applied, and nothing else.
+
+     Rule B — existing-value compatibility. Decides whether the value already
+     live in S stays active. Expressed in R1's own predicates: a fixture,
+     event or cohort revision makes a value DUE for correction, never
+     unusable. Only provenance and R1's age bounds remove a value.
+
+   Both the refresh commit and the direct provider wrappers call
+   applyProviderResult(), so the two paths cannot diverge (R3.4 E6).
+   --------------------------------------------------------------------- */
+
+const VERSIONS = `${SCHEMA_VERSION}|${MODEL_VERSION}`;
+
+/* ---- Odds key epoch -------------------------------------------------
+   An opaque in-memory counter, never a hash. A hash of a low-entropy key is
+   recoverable, so it would still be key-derived material sitting in a
+   signature. This carries none, is never persisted, and never reaches
+   diagnostics, Provider Health, evidence or exports. */
+let oddsKeyEpoch = 0;
+let lastSeenOddsKey = '';
+function currentOddsKeyEpoch(key = ''){
+  const value = String(key ?? '');
+  if(value !== lastSeenOddsKey){ lastSeenOddsKey = value; oddsKeyEpoch++; }
+  return oddsKeyEpoch;
+}
+function resetOddsKeyEpoch(){ oddsKeyEpoch = 0; lastSeenOddsKey = ''; }
+
+/* ---- Rule A · signature components --------------------------------- */
+function teamIdentity(teams = []){
+  // Names as well as ids: mapTeamName() matches Understat and Odds club names
+  // against team.name, so a rename must invalidate a computation.
+  return (teams || []).map(t => `${t.id}:${t.name}`).sort().join(',');
+}
+function finishedFixtureRevision(fixtures = []){
+  return (fixtures || []).filter(f => f?.finished === true).map(f => +f.id)
+    .filter(id => Number.isInteger(id) && id > 0).sort((a, b) => a - b).join(',');
+}
+function oddsFixtureRevision(fixtures = []){
+  // Associations, not bare timestamps: two fixtures swapping kickoffs must not
+  // produce an identical signature while every hId|aId mapping is wrong.
+  return (fixtures || []).filter(f => f?.finished !== true)
+    .map(f => `${f.id}:${f.team_h}:${f.team_a}:${Date.parse(f.kickoff_time || '') || 0}`)
+    .sort().join(',');
+}
+function oddsEventRevision(events = []){
+  return (events || []).filter(e => e?.finished !== true)
+    .map(e => `${e.id}:${Date.parse(e.deadline_time || '') || 0}`)
+    .sort().join(',');
+}
+function understatSignature(core, config){
+  return `u|${core?.season}|${VERSIONS}|${teamIdentity(core?.teams)}|${finishedFixtureRevision(core?.fixtures)}|${config?.useUstat ? 1 : 0}`;
+}
+function oddsSignature(core, config){
+  return `o|${core?.season}|${VERSIONS}|${teamIdentity(core?.teams)}|${oddsFixtureRevision(core?.fixtures)}|${oddsEventRevision(core?.events)}|${currentOddsKeyEpoch(config?.oddsKey || '')}`;
+}
+function minutesSignature(core, completedRevision, cohortIds = []){
+  // Cohort ids and order only. teamId, useManual and the manual squad reach
+  // this signature solely through the cohort they produce, and a manual
+  // purchase-price edit changes no id and no position (R3.3 D5).
+  return `m|${core?.season}|${VERSIONS}|${completedRevision}|${(cohortIds || []).join(',')}`;
+}
+
+/* ---- Shared validated-map shapes ------------------------------------
+   Moved here so Rule B can reach them without importing a provider module.
+   Both are pure over (value, teams) and validate against the COMMITTED core. */
+function validUnderstatMap(value, teams){
+  if(!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const map = {};
+  for(const [id, row] of Object.entries(value)){
+    const teamId = +id;
+    if(!Number.isInteger(teamId) || !teams?.some(team => +team.id === teamId) || !row || typeof row !== 'object' ||
+       !['xg','xga','atk','def'].every(key => Number.isFinite(+row[key]) && +row[key] > 0)) return null;
+    map[teamId] = {xg:+row.xg, xga:+row.xga, atk:+row.atk, def:+row.def};
+  }
+  return Object.keys(map).length ? map : null;
+}
+function validOddsMap(value, teams){
+  if(!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const map = {};
+  for(const [pair, row] of Object.entries(value)){
+    if(!/^\d+\|\d+$/.test(pair) || !row || typeof row !== 'object' ||
+       !Number.isInteger(+row.hId) || +row.hId <= 0 || !Number.isInteger(+row.aId) || +row.aId <= 0 ||
+       pair !== `${+row.hId}|${+row.aId}` ||
+       !teams?.some(team => +team.id === +row.hId) || !teams?.some(team => +team.id === +row.aId) ||
+       !Number.isFinite(+row.xGH) || +row.xGH <= 0 || !Number.isFinite(+row.xGA) || +row.xGA <= 0) return null;
+    map[pair] = {hId:+row.hId, aId:+row.aId, xGH:+row.xGH, xGA:+row.xGA,
+      kickoff:Number.isFinite(+row.kickoff) ? +row.kickoff : null,
+      providerEventId:typeof row.providerEventId === 'string' ? row.providerEventId.slice(0,120) : Number.isFinite(+row.providerEventId) ? +row.providerEventId : null,
+      fetchedAt:row.fetchedAt != null && Number.isFinite(+row.fetchedAt) ? +row.fetchedAt : null,
+      booksUsed:Math.max(0, Math.trunc(+row.booksUsed || 0)), marketCount:Math.max(0, Math.trunc(+row.marketCount || 0)),
+      staleDropped:Math.max(0, Math.trunc(+row.staleDropped || 0)), confidence:row.confidence === 'low' ? 'low' : 'normal'};
+  }
+  return map;
+}
+
+/* ---- Rule B · existing-value compatibility --------------------------
+   Provenance is read from the IN-MEMORY applied record, never from persisted
+   storage: the commit is synchronous so it cannot await, and after a
+   persist_failed memory holds the newer and authoritative generation. */
+function provenanceMatches(applied, core){
+  return Boolean(applied) && applied.season === core?.season &&
+    applied.schemaVersion === SCHEMA_VERSION && applied.modelVersion === MODEL_VERSION;
+}
+function understatCompatible(applied, value, core, now = Date.now()){
+  if(!provenanceMatches(applied, core)) return false;
+  if(!validUnderstatMap(value, core?.teams)) return false;
+  const fetchedAt = +applied.fetchedAt;
+  return Number.isFinite(fetchedAt) && now - fetchedAt <= SUPPORTING_REFRESH_RULES.understat.maxAgeMs;
+}
+function oddsCompatible(applied, value, core, now = Date.now()){
+  if(!provenanceMatches(applied, core)) return false;
+  if(!validOddsMap(value, core?.teams)) return false;
+  const fetchedAt = +applied.fetchedAt;
+  return Number.isFinite(fetchedAt) && now - fetchedAt <= SUPPORTING_REFRESH_RULES.odds.maxUsableAgeMs;
+}
+/* Per-player, and deliberately without an age bound: R1 treats the seven-day
+   backstop as a correction trigger, so an old entry stays active when its
+   correction fails. Provenance is the only thing that removes an entry. */
+function minuteEntryCompatible(meta, core, cohortIds, playerId){
+  if(!provenanceMatches(meta, core)) return false;
+  const id = +playerId;
+  if(!Number.isInteger(id) || id <= 0) return false;
+  if(!core?.elements?.some(element => +element.id === id)) return false;
+  return (cohortIds || []).some(cohortId => +cohortId === id);
+}
+
+/* ---- Tokens and bounded recomputation ------------------------------- */
+const providerToken = {understat:0, odds:0, minutes:0};
+function nextProviderToken(name){ return ++providerToken[name]; }
+function currentProviderToken(name){ return providerToken[name]; }
+
+const pendingRecomputation = new Set();
+function queueRecomputation(name){ pendingRecomputation.add(name); }
+function drainRecomputation(){
+  const names = [...pendingRecomputation];
+  pendingRecomputation.clear();
+  return names;
+}
+function resetProviderTokens(){
+  providerToken.understat = 0; providerToken.odds = 0; providerToken.minutes = 0;
+  pendingRecomputation.clear();
+}
+
+function applyHealthMark(name, mark){
+  if(!mark) return;
+  const {kind, note = '', consequence = '', lastSuccess = null} = mark;
+  if(kind === 'live') markLive(name, note, consequence, lastSuccess ?? Date.now());
+  else if(kind === 'cached') markCached(name, lastSuccess, note, consequence);
+  else if(kind === 'partial') markPartial(name, note, consequence, lastSuccess ?? Date.now());
+  else if(kind === 'fallback') markFallback(name, note, consequence);
+  else if(kind === 'disabled') markDisabled(name, note, consequence);
+  else if(kind === 'unavailable') markUnavailable(name, note, consequence);
+}
+
+const RETAIN_NOTES = Object.freeze({
+  understat:{note:'Saved team form active · refresh unavailable', consequence:'rolling team xG active'},
+  odds:{note:'Saved market inputs active · refresh unavailable', consequence:'cached market layer active'}
+});
+const CLEAR_NOTES = Object.freeze({
+  understat:{note:'saved team form is no longer compatible', consequence:'FPL strength ratings used'},
+  odds:{note:'saved market inputs are no longer compatible', consequence:'internal team model active'}
+});
+
+/* ---------------------------------------------------------------------
+   THE SHARED GATE.
+
+   Synchronous. Called from inside the refresh commit and from the direct
+   provider wrappers, so both paths resolve identically. Every slice lands in
+   exactly one of REPLACE, RETAIN or CLEAR — there is no fourth state and no
+   partially written slice.
+
+   An immediate recomputation is queued ONLY when the result was discarded
+   because it ran against inputs the commit superseded, i.e. current inputs
+   were never attempted. A current-input failure or a cooldown must not
+   requeue, or a failing provider would spin against its own cooldown. The
+   requeued computation runs against current inputs by construction, so it
+   cannot mismatch again within the same cycle: at most one requeue per
+   provider per apply cycle (R3.3 D3, R3.4 E6).
+   --------------------------------------------------------------------- */
+function applyProviderResult(name, result, ctx = {}){
+  const {core, now = Date.now(), token = null, signature = null, cohortIds = []} = ctx;
+  if(!result || result.outcome === 'skip') return {state:'unchanged', queued:false};
+
+  const tokenStale = token != null && token !== currentProviderToken(name);
+  if(tokenStale) return {state:'unchanged', queued:false, reason:'token_stale'};
+
+  if(result.outcome === 'clear'){
+    applySliceClear(name, result, {disabled:true});
+    return {state:'clear', queued:false, reason:'disabled'};
+  }
+
+  const signatureMismatch = signature != null && result.signature != null && result.signature !== signature;
+  if(result.outcome === 'value' && !signatureMismatch){
+    applySliceReplace(name, result, {core, cohortIds});
+    return {state:'replace', queued:false};
+  }
+
+  // Discarded or failed: does the value already live in S survive Rule B?
+  const retained = applySliceRetain(name, {core, now, cohortIds});
+  const queued = signatureMismatch;
+  if(queued) queueRecomputation(name);
+  if(retained) return {state:'retain', queued, reason:signatureMismatch ? 'signature_mismatch' : result.reason || 'computation_failed'};
+  applySliceClear(name, result, {disabled:false});
+  return {state:'clear', queued, reason:'incompatible_or_expired'};
+}
+
+function applySliceReplace(name, result, {core, cohortIds}){
+  if(name === 'understat'){
+    S.ustat = result.value;
+    S.ustatNote = result.note || '';
+    S.providerApplied = {...S.providerApplied, understat:result.value ? {
+      signature:result.signature, season:core?.season, schemaVersion:SCHEMA_VERSION,
+      modelVersion:MODEL_VERSION, fetchedAt:result.fetchedAt
+    } : null};
+    applyHealthMark('understat', result.healthMark);
+    return;
+  }
+  if(name === 'odds'){
+    S.odds = result.value;
+    S.oddsNote = result.note || '';
+    S.providerApplied = {...S.providerApplied, odds:result.value ? {
+      signature:result.signature, season:core?.season, schemaVersion:SCHEMA_VERSION,
+      modelVersion:MODEL_VERSION, fetchedAt:result.fetchedAt
+    } : null};
+    applyHealthMark('odds', result.healthMark);
+    return;
+  }
+  // Minutes: the admission gate. A history enters S.minuteHistory only when its
+  // metadata matches the committed season/schema/model, the player exists and
+  // the player is in the captured cohort. There is no second way in.
+  const history = {}, meta = {};
+  const cohortSet = cohortIds || [];
+  Object.keys(result.value || {}).forEach(id => {
+    const entryMeta = result.meta?.[id];
+    if(!minuteEntryCompatible(entryMeta, core, cohortSet, id)) return;
+    history[id] = result.value[id];
+    meta[id] = entryMeta;
+  });
+  S.minuteHistory = history;
+  S.minuteHistoryMeta = meta;
+  if(result.healthDetail) setHealthDetail('fpl', result.healthDetail);
+}
+
+function applySliceRetain(name, {core, now, cohortIds}){
+  if(name === 'understat'){
+    if(!understatCompatible(S.providerApplied?.understat, S.ustat, core, now)) return false;
+    applyHealthMark('understat', {kind:'cached', lastSuccess:+S.providerApplied.understat.fetchedAt, ...RETAIN_NOTES.understat});
+    return true;
+  }
+  if(name === 'odds'){
+    if(!oddsCompatible(S.providerApplied?.odds, S.odds, core, now)) return false;
+    applyHealthMark('odds', {kind:'cached', lastSuccess:+S.providerApplied.odds.fetchedAt, ...RETAIN_NOTES.odds});
+    return true;
+  }
+  const history = {}, meta = {};
+  Object.keys(S.minuteHistory || {}).forEach(id => {
+    if(!minuteEntryCompatible(S.minuteHistoryMeta?.[id], core, cohortIds, id)) return;
+    history[id] = S.minuteHistory[id];
+    meta[id] = S.minuteHistoryMeta[id];
+  });
+  S.minuteHistory = history;
+  S.minuteHistoryMeta = meta;
+  return Object.keys(history).length > 0;
+}
+
+function applySliceClear(name, result, {disabled}){
+  if(name === 'understat'){
+    S.ustat = null;
+    S.ustatNote = disabled ? '' : (result?.note || 'Understat unavailable — using FPL strength ratings only.');
+    S.providerApplied = {...S.providerApplied, understat:null};
+    applyHealthMark('understat', disabled ? (result?.healthMark || {kind:'disabled', note:'turned off in settings', consequence:'FPL strength ratings used'})
+      : {kind:'fallback', ...CLEAR_NOTES.understat});
+    return;
+  }
+  if(name === 'odds'){
+    S.odds = null;
+    S.oddsNote = disabled ? '' : (result?.note || 'No compatible validated market inputs are active.');
+    S.providerApplied = {...S.providerApplied, odds:null};
+    applyHealthMark('odds', disabled ? (result?.healthMark || {kind:'disabled', note:'no API key supplied', consequence:'internal team model active'})
+      : {kind:'fallback', ...CLEAR_NOTES.odds});
+    return;
+  }
+  S.minuteHistory = {};
+  S.minuteHistoryMeta = {};
+  if(result?.healthDetail) setHealthDetail('fpl', result.healthDetail);
+}
+
 
 
 /* ===== src/providers/transport.mjs ===== */
@@ -1591,27 +1998,40 @@ async function gatewayOnce(path, timeout, optional, gatewayBase){
   let data;
   try{ data = await res.json(); }
   catch(error){ return {outcome:'failed', retryable:false, status:'parse'}; }
-  if(data && data.detail){
-    if(optional) return {outcome:'notfound', status:'not-found'};
-    return {outcome:'failed', retryable:false, status:'detail'};
-  }
-  S.source = 'Teamsheet gateway';
-  return {outcome:'value', value:data, status:res.status};
+  /* R3.1 A3 — a 200 carrying a `detail` field is NOT authoritative absence.
+     Official FPL uses `detail` for messages other than "not found", and under
+     the carry-forward contract a false notfound CLEARS a valid squad. Only an
+     HTTP 404 has a defined absence meaning; everything ambiguous is `failed`,
+     which carries forward. Ambiguity must preserve user data, never destroy it. */
+  if(data && data.detail) return {outcome:'failed', retryable:false, status:'detail'};
+  /* R3 A2 — the gateway label is returned, never written to S. Transport is
+     part of the collection phase and must not mutate application state. */
+  return {outcome:'value', value:data, status:res.status, source:'Teamsheet gateway'};
 }
 
-async function api(path, {optional=false, timeout=8000, gatewayBase} = {}){
+async function api(path, {optional=false, timeout=8000, gatewayBase, typed=false} = {}){
   const policy = policyFor('fpl');
   if(optional) policy.attempts = Math.min(policy.attempts, 2);
+  let source = null, absent = false;
   const { result, record } = await withRetry(
     async () => {
       const response = await gatewayOnce(path, timeout, optional, gatewayBase);
-      if(response.outcome === 'value') return {ok:true, value:response.value, status:response.status};
-      if(response.outcome === 'notfound') return {ok:true, value:null, status:'not-found'};
+      if(response.outcome === 'value'){ source = response.source || null; return {ok:true, value:response.value, status:response.status}; }
+      if(response.outcome === 'notfound'){ absent = true; return {ok:true, value:null, status:'not-found'}; }
       return {ok:false, retryable:response.retryable, status:response.status};
     },
     {...policy, endpoint:safeEndpoint(path)}
   );
+  /* R3 A2 — `typed` callers receive the retry record and gateway label as data
+     and apply them inside the commit. Untyped callers keep today's behaviour
+     exactly, including the recordRetry write, so no existing call site moves. */
+  if(typed){
+    if(result && result.ok && !absent) return {outcome:'value', value:result.value, status:result.status, source, retryRecord:record};
+    if(absent) return {outcome:'notfound', status:'not-found', retryRecord:record};
+    return {outcome:'failed', status:result ? result.status : 'unreachable', retryable:Boolean(result && result.retryable), retryRecord:record};
+  }
   recordRetry(record);
+  if(source) S.source = source;
   if(result && result.ok) return result.value;
   if(optional) return null;
   throw new Error('feed unreachable: ' + path);
@@ -1649,7 +2069,7 @@ async function cascadeOnce(url, timeout, {asText=false} = {}){
   return {outcome:'failed', retryable:sawRetryable, status:lastStatus};
 }
 
-async function fetchVia(url, {timeout=12000, asText=false} = {}){
+async function fetchVia(url, {timeout=12000, asText=false, typed=false} = {}){
   const { result, record } = await withRetry(
     async () => {
       const response = await cascadeOnce(url, timeout, {asText});
@@ -1658,8 +2078,11 @@ async function fetchVia(url, {timeout=12000, asText=false} = {}){
     },
     {...policyFor('understat'), endpoint:safeEndpoint(url)}
   );
+  const value = result && result.ok ? result.value : null;
+  // R3 A2 — see api(): typed callers carry the retry record to the commit.
+  if(typed) return {value, retryRecord:record};
   recordRetry(record);
-  return result && result.ok ? result.value : null;
+  return value;
 }
 
 
@@ -1678,12 +2101,15 @@ const NAME_ALIASES = {
   'hull city':'Hull','ipswich town':'Ipswich','luton town':'Luton','leicester city':'Leicester',
   'afc bournemouth':'Bournemouth','crystal palace':'Crystal Palace'
 };
-function mapTeamName(external){
-  if(!S.boot) return null;
+/* R3 A3 — the team list is an explicit argument so provider computation maps
+   against the STAGED core rather than whatever S happens to hold mid-refresh.
+   Defaulting to S.boot.teams keeps every existing caller working unchanged. */
+function mapTeamName(external, teams = S.boot?.teams){
+  if(!Array.isArray(teams)) return null;
   const low = external.toLowerCase().trim();
   const target = (NAME_ALIASES[low] || external).toLowerCase();
-  let hit = S.boot.teams.find(t => t.name.toLowerCase() === target);
-  if(!hit) hit = S.boot.teams.find(t => target.startsWith(t.name.toLowerCase()) || t.name.toLowerCase().startsWith(target.split(' ')[0]));
+  let hit = teams.find(t => t.name.toLowerCase() === target);
+  if(!hit) hit = teams.find(t => target.startsWith(t.name.toLowerCase()) || t.name.toLowerCase().startsWith(target.split(' ')[0]));
   return hit ? hit.id : null;
 }
 
@@ -1703,44 +2129,36 @@ function parseUnderstat(html){
   try{ return JSON.parse(json); }catch(e){ return null; }
 }
 
-function understatSeasonKey(){
-  const year=+(S.boot?.events?.[0]?.deadline_time||'').slice(0,4);
+// R3 A3 — season and revision derive from an explicit events/fixtures list so
+// provider computation runs against the STAGED core, not whatever S holds
+// mid-refresh. Defaulting to S keeps every existing caller working unchanged.
+function understatSeasonKey(events=S.boot?.events){
+  const year=+(events?.[0]?.deadline_time||'').slice(0,4);
   return Number.isFinite(year)&&year>2000 ? year+'-'+String((year+1)%100).padStart(2,'0') : 'unknown';
 }
 function understatFixtureRevision(fixtures=S.fixtures){
   return (fixtures||[]).filter(fixture=>fixture?.finished===true).map(fixture=>+fixture.id)
     .filter(id=>Number.isInteger(id)&&id>0).sort((a,b)=>a-b).join(',');
 }
-function validUnderstatMap(value){
-  if(!value||typeof value!=='object'||Array.isArray(value)) return null;
-  const map={};
-  for(const [id,row] of Object.entries(value)){
-    const teamId=+id;
-    if(!Number.isInteger(teamId)||!S.boot?.teams?.some(team=>+team.id===teamId)||!row||typeof row!=='object'||
-       !['xg','xga','atk','def'].every(key=>Number.isFinite(+row[key])&&+row[key]>0)) return null;
-    map[teamId]={xg:+row.xg,xga:+row.xga,atk:+row.atk,def:+row.def};
-  }
-  return Object.keys(map).length?map:null;
-}
 function validUnderstatEnvelope(env,season=understatSeasonKey()){
   return Boolean(env&&typeof env==='object'&&!Array.isArray(env)&&env.schemaVersion===SCHEMA_VERSION&&env.modelVersion===MODEL_VERSION&&env.season===season);
 }
-function understatCacheDecision(env,{revision=understatFixtureRevision(),now=Date.now(),force=false}={}){
-  const map=validUnderstatEnvelope(env)?validUnderstatMap(env.teams):null;
+function understatCacheDecision(env,{revision=understatFixtureRevision(),now=Date.now(),force=false,teams=S.boot?.teams}={}){
+  const map=validUnderstatEnvelope(env)?validUnderstatMap(env.teams,teams):null;
   const age=map&&env?.fetchedAt!=null&&Number.isFinite(+env.fetchedAt)?Math.max(0,now-(+env.fetchedAt)):null;
   const usable=Boolean(map&&age!==null&&age<=SUPPORTING_REFRESH_RULES.understat.maxAgeMs);
   const due=Boolean(force||!usable||env?.fixtureRevision!==revision||age>=SUPPORTING_REFRESH_RULES.understat.maxAgeMs);
   const cooling=Boolean(!force&&env?.retryAfterAt!=null&&Number.isFinite(+env.retryAfterAt)&&now<+env.retryAfterAt);
   return {map,age,usable,due,cooling};
 }
-function normaliseUnderstatTeams(data){
+function normaliseUnderstatTeams(data,teams=S.boot?.teams){
   const map={}; let sumA=0,sumD=0,n=0;
   Object.values(data||{}).forEach(team=>{
     const hist=(team.history||[]).slice(-6);
     if(!hist.length) return;
     const xg=hist.reduce((sum,row)=>sum+num(row.xG),0)/hist.length;
     const xga=hist.reduce((sum,row)=>sum+num(row.xGA),0)/hist.length;
-    const id=mapTeamName(team.title);
+    const id=mapTeamName(team.title,teams);
     if(id&&xg>0&&xga>0){map[id]={xg,xga};sumA+=xg;sumD+=xga;n++;}
   });
   if(!n) return null;
@@ -1748,44 +2166,50 @@ function normaliseUnderstatTeams(data){
   Object.values(map).forEach(value=>{value.atk=value.xg/avgXg;value.def=avgXga/value.xga;});
   return map;
 }
-function applyCachedUnderstat(env,decision,note='Saved validated team form active'){
-  S.ustat=decision.map;
-  const missing=S.boot.teams.filter(team=>!decision.map[team.id]).map(team=>team.short_name);
-  S.ustatNote=`Understat: cached last-6 team xG active${missing.length?`; no data for ${missing.join(', ')}`:''}.`;
-  markCached('understat',+env.fetchedAt,note,missing.length?'FPL ratings fill missing teams':'rolling team xG active');
-  return {source:'cache',cached:Object.keys(decision.map).length,requested:0};
+function cachedUnderstatResult(env,decision,teams,note='Saved validated team form active'){
+  const missing=(teams||[]).filter(team=>!decision.map[team.id]).map(team=>team.short_name);
+  return {outcome:'value',value:decision.map,fetchedAt:+env.fetchedAt,
+    note:`Understat: cached last-6 team xG active${missing.length?`; no data for ${missing.join(', ')}`:''}.`,
+    healthMark:{kind:'cached',lastSuccess:+env.fetchedAt,note,consequence:missing.length?'FPL ratings fill missing teams':'rolling team xG active'},
+    summary:{source:'cache',cached:Object.keys(decision.map).length,requested:0}};
 }
 
-async function loadUnderstat(options={}){
-  const nowFn=options.nowFn||Date.now,getStorage=options.getStorage||sget,setStorage=options.setStorage||sset;
-  const fetchPage=options.fetchPage||(url=>fetchVia(url,{asText:true}));
-  S.ustat = null; S.ustatNote = '';
-  if(!$('useUstat').checked){
-    markDisabled('understat', 'turned off in settings', 'FPL strength ratings used');
-    return;
-  }
-  if(!S.boot) return;
-  const season=understatSeasonKey(),revision=understatFixtureRevision(),now=nowFn();
+/* R3 A2/A3 — PURE. Reads only the staged core and captured configuration,
+   writes nothing to S, the health registry or diagnostics. Everything it
+   would have mutated comes back as data for the commit to apply. */
+async function computeUnderstat(options={}){
+  const nowFn=options.nowFn||Date.now,getStorage=options.getStorage||sget;
+  const fetchPage=options.fetchPage||(url=>fetchVia(url,{asText:true,typed:true}));
+  const core=options.core||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures};
+  const teams=core.teams;
+  const useUstat=options.config ? Boolean(options.config.useUstat) : Boolean($('useUstat').checked);
+  const issues=[],retryRecords=[];
+  if(!useUstat) return {outcome:'clear',value:null,note:'',issues,retryRecords,persist:null,
+    healthMark:{kind:'disabled',note:'turned off in settings',consequence:'FPL strength ratings used'},summary:undefined};
+  if(!teams) return {outcome:'skip',issues,retryRecords,persist:null};
+  const season=core.season||understatSeasonKey(core.events),revision=understatFixtureRevision(core.fixtures),now=nowFn();
   const stored=await getStorage(K_UNDERSTAT);
   const storedValid=validUnderstatEnvelope(stored,season)?stored:null;
   const envelope={schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
     fixtureRevision:typeof storedValid?.fixtureRevision==='string'?storedValid.fixtureRevision:'',
     fetchedAt:storedValid?.fetchedAt!=null&&Number.isFinite(+storedValid.fetchedAt)?+storedValid.fetchedAt:null,
-    teams:validUnderstatMap(storedValid?.teams),
+    teams:validUnderstatMap(storedValid?.teams,teams),
     label:typeof storedValid?.label==='string'?storedValid.label.slice(0,80):'',
     lastFailureAt:storedValid?.lastFailureAt!=null&&Number.isFinite(+storedValid.lastFailureAt)?+storedValid.lastFailureAt:null,
     retryAfterAt:storedValid?.retryAfterAt!=null&&Number.isFinite(+storedValid.retryAfterAt)?+storedValid.retryAfterAt:null,
     failureReason:typeof storedValid?.failureReason==='string'?storedValid.failureReason.slice(0,80):null};
-  const cache=understatCacheDecision(envelope,{revision,now,force:Boolean(options.force)});
-  if(!cache.due) return applyCachedUnderstat(envelope,cache);
+  const cache=understatCacheDecision(envelope,{revision,now,force:Boolean(options.force),teams});
+  const cooldown=()=>({...envelope,lastFailureAt:now,retryAfterAt:now+SUPPORTING_REFRESH_RULES.understat.failureCooldownMs});
+  if(!cache.due) return {...cachedUnderstatResult(envelope,cache,teams),issues,retryRecords,persist:null};
   if(cache.cooling){
-    if(cache.usable) return applyCachedUnderstat(envelope,cache,'Saved team form active · automatic retry cooling down');
-    S.ustatNote='Understat retry cooling down — using FPL strength ratings only.';
-    markFallback('understat','automatic retry cooling down','FPL strength ratings used');
-    return {source:'fallback',cached:0,requested:0,cooling:true};
+    if(cache.usable) return {...cachedUnderstatResult(envelope,cache,teams,'Saved team form active · automatic retry cooling down'),issues,retryRecords,persist:null};
+    return {outcome:'fallback',value:null,note:'Understat retry cooling down — using FPL strength ratings only.',
+      healthMark:{kind:'fallback',note:'automatic retry cooling down',consequence:'FPL strength ratings used'},
+      issues,retryRecords,persist:null,reason:'cooling',summary:{source:'fallback',cached:0,requested:0,cooling:true}};
   }
   let requested=1;
-  const html=await fetchPage('https://understat.com/league/EPL');
+  const first=await fetchPage('https://understat.com/league/EPL');
+  const html=first&&typeof first==='object'&&'value' in first?(first.retryRecords||retryRecords.push(first.retryRecord),first.value):first;
   let data = html ? parseUnderstat(html) : null;
   const uIssues = [];
   if(data){ const v = validateUnderstat(data); uIssues.push(...v.issues); data = v.value; }
@@ -1794,7 +2218,8 @@ async function loadUnderstat(options={}){
   if(!data || matchCount < 40){
     const prevYear = new Date().getMonth() >= 6 ? new Date().getFullYear() - 1 : new Date().getFullYear() - 2;
     requested++;
-    const prev=await fetchPage('https://understat.com/league/EPL/'+prevYear);
+    const second=await fetchPage('https://understat.com/league/EPL/'+prevYear);
+    const prev=second&&typeof second==='object'&&'value' in second?(retryRecords.push(second.retryRecord),second.value):second;
     const pd = prev ? parseUnderstat(prev) : null;
     if(pd){
       const v = validateUnderstat(pd); uIssues.push(...v.issues);
@@ -1802,34 +2227,52 @@ async function loadUnderstat(options={}){
     }
   }
   const collapsed = collapseIssues(uIssues);
-  recordIssues('understat', 'league/EPL', collapsed);
+  issues.push({provider:'understat',endpoint:'league/EPL',issues:collapsed});
   if(!data){
-    const failed={...envelope,lastFailureAt:now,retryAfterAt:now+SUPPORTING_REFRESH_RULES.understat.failureCooldownMs,failureReason:'shape_or_transport_unavailable'};
-    await setStorage(K_UNDERSTAT,failed);
-    if(cache.usable) return applyCachedUnderstat(envelope,cache,'Saved team form active · refresh unavailable');
-    S.ustatNote='Understat unavailable — using FPL strength ratings only.';
-    markFallback('understat','page structure or transport unavailable','FPL strength ratings used');
-    return {source:'fallback',cached:0,requested};
+    if(cache.usable) return {...cachedUnderstatResult(envelope,cache,teams,'Saved team form active · refresh unavailable'),
+      issues,retryRecords,persist:{key:K_UNDERSTAT,value:{...cooldown(),failureReason:'shape_or_transport_unavailable'}}};
+    return {outcome:'fallback',value:null,note:'Understat unavailable — using FPL strength ratings only.',
+      healthMark:{kind:'fallback',note:'page structure or transport unavailable',consequence:'FPL strength ratings used'},
+      issues,retryRecords,persist:{key:K_UNDERSTAT,value:{...cooldown(),failureReason:'shape_or_transport_unavailable'}},
+      reason:'transport',summary:{source:'fallback',cached:0,requested}};
   }
-
-  const map=normaliseUnderstatTeams(data);
+  const map=normaliseUnderstatTeams(data,teams);
   if(!map){
-    const failed={...envelope,lastFailureAt:now,retryAfterAt:now+SUPPORTING_REFRESH_RULES.understat.failureCooldownMs,failureReason:'team_mapping_unavailable'};
-    await setStorage(K_UNDERSTAT,failed);
-    if(cache.usable) return applyCachedUnderstat(envelope,cache,'Saved team form active · refresh could not map teams');
-    S.ustatNote = 'Understat team names could not be matched.';
-    markFallback('understat', 'team mapping failed', 'FPL strength ratings used');
-    return {source:'fallback',cached:0,requested};
+    if(cache.usable) return {...cachedUnderstatResult(envelope,cache,teams,'Saved team form active · refresh could not map teams'),
+      issues,retryRecords,persist:{key:K_UNDERSTAT,value:{...cooldown(),failureReason:'team_mapping_unavailable'}}};
+    return {outcome:'fallback',value:null,note:'Understat team names could not be matched.',
+      healthMark:{kind:'fallback',note:'team mapping failed',consequence:'FPL strength ratings used'},
+      issues,retryRecords,persist:{key:K_UNDERSTAT,value:{...cooldown(),failureReason:'team_mapping_unavailable'}},
+      reason:'mapping',summary:{source:'fallback',cached:0,requested}};
   }
-  S.ustat = map;
-  const missing = S.boot.teams.filter(t => !map[t.id]).map(t => t.short_name);
+  const missing = (teams||[]).filter(t => !map[t.id]).map(t => t.short_name);
   const degraded = missing.length > 0 || collapsed.some(i => i.severity === 'partial');
-  if(degraded) markPartial('understat',label,'FPL ratings fill missing teams',now);
-  else markLive('understat',label,'rolling team xG active',now);
-  S.ustatNote = `Understat: last-6 xG loaded (${label})` + (missing.length ? `; no data for ${missing.join(', ')} — FPL ratings used for them` : '') + '.';
-  await setStorage(K_UNDERSTAT,{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
-    fixtureRevision:revision,fetchedAt:now,teams:map,label,missing,lastFailureAt:null,retryAfterAt:null,failureReason:null});
-  return {source:'live',loaded:Object.keys(map).length,requested};
+  return {outcome:'value',value:map,fetchedAt:now,
+    note:`Understat: last-6 xG loaded (${label})` + (missing.length ? `; no data for ${missing.join(', ')} — FPL ratings used for them` : '') + '.',
+    healthMark:{kind:degraded?'partial':'live',note:label,consequence:degraded?'FPL ratings fill missing teams':'rolling team xG active',lastSuccess:now},
+    issues,retryRecords,
+    persist:{key:K_UNDERSTAT,value:{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
+      fixtureRevision:revision,fetchedAt:now,teams:map,label,missing,lastFailureAt:null,retryAfterAt:null,failureReason:null}},
+    summary:{source:'live',loaded:Object.keys(map).length,requested}};
+}
+
+/* Thin wrapper. Retained so the settings handler and the existing R1 tests
+   keep their exact contract, and routed through the SAME applyProviderResult
+   gate the commit uses so the two paths cannot diverge (R3.4 E6). */
+async function loadUnderstat(options={}){
+  const setStorage=options.setStorage||sset;
+  const core=options.core||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:understatSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const config=options.config||{useUstat:Boolean($('useUstat')?.checked)};
+  const token=nextProviderToken('understat');
+  const result=await computeUnderstat({...options,core,config});
+  if(result.outcome==='skip') return;
+  result.signature=understatSignature(core,config);
+  applyProviderResult('understat',result,{core,now:(options.nowFn||Date.now)(),token,signature:result.signature});
+  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+  (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  return result.summary;
 }
 
 
@@ -1885,8 +2328,8 @@ async function forgetOddsKey(deps = {}){
   return config;
 }
 
-function oddsSeasonKey(){
-  const year=+(S.boot?.events?.[0]?.deadline_time||'').slice(0,4);
+function oddsSeasonKey(events=S.boot?.events){
+  const year=+(events?.[0]?.deadline_time||'').slice(0,4);
   return Number.isFinite(year)&&year>2000 ? year+'-'+String((year+1)%100).padStart(2,'0') : 'unknown';
 }
 function oddsRefreshInterval(now=Date.now(),events=S.boot?.events,fixtures=S.fixtures){
@@ -1905,29 +2348,11 @@ function oddsRefreshInterval(now=Date.now(),events=S.boot?.events,fixtures=S.fix
   return next!==null&&next-now<=SUPPORTING_REFRESH_RULES.odds.nearWindowMs
     ? SUPPORTING_REFRESH_RULES.odds.nearRefreshMs : SUPPORTING_REFRESH_RULES.odds.normalRefreshMs;
 }
-function validOddsMap(value){
-  if(!value||typeof value!=='object'||Array.isArray(value)) return null;
-  const map={};
-  for(const [pair,row] of Object.entries(value)){
-    if(!/^\d+\|\d+$/.test(pair)||!row||typeof row!=='object'||
-       !Number.isInteger(+row.hId)||+row.hId<=0||!Number.isInteger(+row.aId)||+row.aId<=0||
-       pair!==`${+row.hId}|${+row.aId}`||
-       !S.boot?.teams?.some(team=>+team.id===+row.hId)||!S.boot?.teams?.some(team=>+team.id===+row.aId)||
-       !Number.isFinite(+row.xGH)||+row.xGH<=0||!Number.isFinite(+row.xGA)||+row.xGA<=0) return null;
-    map[pair]={hId:+row.hId,aId:+row.aId,xGH:+row.xGH,xGA:+row.xGA,
-      kickoff:Number.isFinite(+row.kickoff)?+row.kickoff:null,
-      providerEventId:typeof row.providerEventId==='string'?row.providerEventId.slice(0,120):Number.isFinite(+row.providerEventId)?+row.providerEventId:null,
-      fetchedAt:row.fetchedAt!=null&&Number.isFinite(+row.fetchedAt)?+row.fetchedAt:null,
-      booksUsed:Math.max(0,Math.trunc(+row.booksUsed||0)),marketCount:Math.max(0,Math.trunc(+row.marketCount||0)),
-      staleDropped:Math.max(0,Math.trunc(+row.staleDropped||0)),confidence:row.confidence==='low'?'low':'normal'};
-  }
-  return map;
-}
 function validOddsEnvelope(env,season=oddsSeasonKey()){
   return Boolean(env&&typeof env==='object'&&!Array.isArray(env)&&env.schemaVersion===SCHEMA_VERSION&&env.modelVersion===MODEL_VERSION&&env.season===season);
 }
-function oddsCacheDecision(env,{now=Date.now(),force=false,refreshMs=oddsRefreshInterval(now)}={}){
-  const map=validOddsEnvelope(env)?validOddsMap(env.derived):null;
+function oddsCacheDecision(env,{now=Date.now(),force=false,refreshMs=oddsRefreshInterval(now),teams=S.boot?.teams}={}){
+  const map=validOddsEnvelope(env)?validOddsMap(env.derived,teams):null;
   const checkedAge=env?.checkedAt!=null&&Number.isFinite(+env.checkedAt)?Math.max(0,now-(+env.checkedAt)):null;
   const hasData=Boolean(map&&Object.keys(map).length);
   const dataAge=hasData&&env?.fetchedAt!=null&&Number.isFinite(+env.fetchedAt)?Math.max(0,now-(+env.fetchedAt)):null;
@@ -1936,12 +2361,12 @@ function oddsCacheDecision(env,{now=Date.now(),force=false,refreshMs=oddsRefresh
   const cooling=Boolean(!force&&env?.retryAfterAt!=null&&Number.isFinite(+env.retryAfterAt)&&now<+env.retryAfterAt);
   return {map,checkedAge,dataAge,usable,due,cooling,refreshMs};
 }
-function applyCachedOdds(env,decision,note='Saved validated market inputs active'){
-  S.odds=decision.map;
+function cachedOddsResult(env,decision,note='Saved validated market inputs active'){
   const priced=Object.keys(decision.map).length;
-  S.oddsNote=`Odds: ${priced} cached fixture${priced===1?'':'s'} priced by the market.`;
-  markCached('odds',+env.fetchedAt,note,'cached market layer active');
-  return {source:'cache',cached:priced,requested:0};
+  return {outcome:'value',value:decision.map,fetchedAt:+env.fetchedAt,
+    note:`Odds: ${priced} cached fixture${priced===1?'':'s'} priced by the market.`,
+    healthMark:{kind:'cached',lastSuccess:+env.fetchedAt,note,consequence:'cached market layer active'},
+    summary:{source:'cache',cached:priced,requested:0}};
 }
 function oddsCooldownMs(status){
   if(status===401) return SUPPORTING_REFRESH_RULES.odds.rejectedCooldownMs;
@@ -1949,48 +2374,54 @@ function oddsCooldownMs(status){
   return SUPPORTING_REFRESH_RULES.odds.transientCooldownMs;
 }
 
-async function loadOdds(options={}){
-  const nowFn=options.nowFn||Date.now,getStorage=options.getStorage||sget,setStorage=options.setStorage||sset;
-  S.odds = null; S.oddsNote = '';
-  const key = $('oddsKey').value.trim();
-  if(!key){
-    markDisabled('odds', 'no API key supplied', 'internal team model active');
-    return;
-  }
-  if(!S.boot) return;
-  const now=nowFn(),season=oddsSeasonKey(),stored=await getStorage(K_ODDS);
+/* R3 A2/A3 — PURE. The key is read from the captured configuration, used only
+   to build the request URL, and never enters the result, the persisted
+   envelope, diagnostics or any signature. */
+async function computeOdds(options={}){
+  const nowFn=options.nowFn||Date.now,getStorage=options.getStorage||sget;
+  const core=options.core||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures};
+  const teams=core.teams;
+  const issues=[],retryRecords=[];
+  const key=(options.config ? String(options.config.oddsKey||'') : $('oddsKey').value).trim();
+  if(!key) return {outcome:'clear',value:null,note:'',issues,retryRecords,persist:null,
+    healthMark:{kind:'disabled',note:'no API key supplied',consequence:'internal team model active'},summary:undefined};
+  if(!teams) return {outcome:'skip',issues,retryRecords,persist:null};
+  const now=nowFn(),season=core.season||oddsSeasonKey(core.events),stored=await getStorage(K_ODDS);
   const storedValid=validOddsEnvelope(stored,season)?stored:null;
   const envelope={schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
     checkedAt:storedValid?.checkedAt!=null&&Number.isFinite(+storedValid.checkedAt)?+storedValid.checkedAt:null,
     fetchedAt:storedValid?.fetchedAt!=null&&Number.isFinite(+storedValid.fetchedAt)?+storedValid.fetchedAt:null,
-    derived:validOddsMap(storedValid?.derived),
+    derived:validOddsMap(storedValid?.derived,teams),
     lastFailureAt:storedValid?.lastFailureAt!=null&&Number.isFinite(+storedValid.lastFailureAt)?+storedValid.lastFailureAt:null,
     retryAfterAt:storedValid?.retryAfterAt!=null&&Number.isFinite(+storedValid.retryAfterAt)?+storedValid.retryAfterAt:null,
     failureReason:typeof storedValid?.failureReason==='string'?storedValid.failureReason.slice(0,80):null};
-  const cache=oddsCacheDecision(envelope,{now,force:Boolean(options.force)});
+  const refreshMs=oddsRefreshInterval(now,core.events,core.fixtures);
+  const cache=oddsCacheDecision(envelope,{now,force:Boolean(options.force),refreshMs,teams});
   if(!cache.due){
-    if(cache.usable) return applyCachedOdds(envelope,cache);
-    S.oddsNote='No recent validated market inputs are active.';
-    markFallback('odds','recent check returned no usable fixtures','internal team model active');
-    return {source:'fallback',cached:0,requested:0};
+    if(cache.usable) return {...cachedOddsResult(envelope,cache),issues,retryRecords,persist:null};
+    return {outcome:'fallback',value:null,note:'No recent validated market inputs are active.',
+      healthMark:{kind:'fallback',note:'recent check returned no usable fixtures',consequence:'internal team model active'},
+      issues,retryRecords,persist:null,reason:'not_due',summary:{source:'fallback',cached:0,requested:0}};
   }
   if(cache.cooling){
-    if(cache.usable) return applyCachedOdds(envelope,cache,'Saved market inputs active · automatic retry cooling down');
-    S.oddsNote='Odds automatic retry cooling down — internal team model active.';
-    markFallback('odds','automatic retry cooling down','internal team model active');
-    return {source:'fallback',cached:0,requested:0,cooling:true};
+    if(cache.usable) return {...cachedOddsResult(envelope,cache,'Saved market inputs active · automatic retry cooling down'),issues,retryRecords,persist:null};
+    return {outcome:'fallback',value:null,note:'Odds automatic retry cooling down — internal team model active.',
+      healthMark:{kind:'fallback',note:'automatic retry cooling down',consequence:'internal team model active'},
+      issues,retryRecords,persist:null,reason:'cooling',summary:{source:'fallback',cached:0,requested:0,cooling:true}};
   }
-  const fail=async(status,note,healthState=HEALTH_STATES.FALLBACK)=>{
-    const failed={...envelope,lastFailureAt:now,retryAfterAt:now+oddsCooldownMs(status),failureReason:status===401?'key_rejected':status===429?'quota_exhausted':'transient_failure'};
-    await setStorage(K_ODDS,failed);
-    if(cache.usable) return applyCachedOdds(envelope,cache,status===401
+  const fail=(status,note,healthState=HEALTH_STATES.FALLBACK)=>{
+    const failed={...envelope,lastFailureAt:now,retryAfterAt:now+oddsCooldownMs(status),
+      failureReason:status===401?'key_rejected':status===429?'quota_exhausted':'transient_failure'};
+    const persist={key:K_ODDS,value:failed};
+    if(cache.usable) return {...cachedOddsResult(envelope,cache,status===401
       ? 'Saved market inputs active · API key rejected'
       : status===429 ? 'Saved market inputs active · quota exhausted'
-      : 'Saved market inputs active · refresh unavailable');
-    S.oddsNote=note;
-    if(healthState===HEALTH_STATES.UNAVAILABLE) markUnavailable('odds',status===401?'API key rejected':'provider unavailable','internal team model active');
-    else markFallback('odds',status===429?'quota exhausted':'direct fetch failed','internal team model active');
-    return {source:'fallback',cached:0,requested:1,status};
+      : 'Saved market inputs active · refresh unavailable'),issues,retryRecords,persist};
+    return {outcome:'fallback',value:null,note,
+      healthMark:healthState===HEALTH_STATES.UNAVAILABLE
+        ? {kind:'unavailable',note:status===401?'API key rejected':'provider unavailable',consequence:'internal team model active'}
+        : {kind:'fallback',note:status===429?'quota exhausted':'direct fetch failed',consequence:'internal team model active'},
+      issues,retryRecords,persist,reason:'transport',summary:{source:'fallback',cached:0,requested:1,status}};
   };
   let data = null;
   const oddsUrl = 'https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key);
@@ -2006,34 +2437,28 @@ async function loadOdds(options={}){
     },
     { ...policyFor('odds'), endpoint: safeEndpoint(oddsUrl) }
   );
-  recordRetry(record);
+  retryRecords.push(record);
   if(result && result.ok) data = result.value;
-  else if(record.finalStatus === 401){
-    return fail(401,'Odds API key rejected — check it at the-odds-api.com.',HEALTH_STATES.UNAVAILABLE);
-  }
-  else if(record.finalStatus === 429){
-    return fail(429,'Odds API quota used up for this period.');
-  }
-  else if(record.finalStatus === 'network' || record.finalStatus === 'parse'){
+  else if(record.finalStatus === 401) return fail(401,'Odds API key rejected — check it at the-odds-api.com.',HEALTH_STATES.UNAVAILABLE);
+  else if(record.finalStatus === 429) return fail(429,'Odds API quota used up for this period.');
+  else if(record.finalStatus === 'network' || record.finalStatus === 'parse')
     return fail(record.finalStatus,'Odds provider unreachable — internal team model active (reduced confidence).');
-  }
-  else if(!result || !result.ok){
-    return fail(record.finalStatus,'Odds provider unavailable — internal team model active.');
-  }
+  else if(!result || !result.ok) return fail(record.finalStatus,'Odds provider unavailable — internal team model active.');
   const oddsV = validateOdds(data);
-  recordIssues('odds', 'v4/sports/soccer_epl/odds', oddsV.issues);
+  issues.push({provider:'odds',endpoint:'v4/sports/soccer_epl/odds',issues:oddsV.issues});
   data = oddsV.value;
   if(!Array.isArray(data) || !data.length){
-    S.oddsNote = 'No EPL odds returned (out of season window, or feed empty).';
-    markFallback('odds', 'feed empty', 'internal team model active');
-    await setStorage(K_ODDS,{...envelope,checkedAt:now,derived:{},fetchedAt:null,lastFailureAt:null,retryAfterAt:null,failureReason:null});
-    return {source:'fallback',cached:0,requested:1};
+    return {outcome:'fallback',value:null,note:'No EPL odds returned (out of season window, or feed empty).',
+      healthMark:{kind:'fallback',note:'feed empty',consequence:'internal team model active'},
+      issues,retryRecords,reason:'empty',
+      persist:{key:K_ODDS,value:{...envelope,checkedAt:now,derived:{},fetchedAt:null,lastFailureAt:null,retryAfterAt:null,failureReason:null}},
+      summary:{source:'fallback',cached:0,requested:1}};
   }
 
   const fetchedAt = now;
   const parsed = [];
   data.forEach(ev => {
-    const hId = mapTeamName(ev.home_team), aId = mapTeamName(ev.away_team);
+    const hId = mapTeamName(ev.home_team, teams), aId = mapTeamName(ev.away_team, teams);
     if(!hId || !aId) return;
     const kickoff = ev.commence_time ? Date.parse(ev.commence_time) : null;
     let h2h = [], overs = [], booksUsed = 0, marketCount = 0, staleDropped = 0;
@@ -2078,7 +2503,7 @@ async function loadOdds(options={}){
 
   const map = {}; let priced = 0;
   const windowMs = ODDS_RULES.kickoffMatchWindowHours * 3.6e6;
-  const upcoming = (S.fixtures||[]).filter(f => !f.finished);
+  const upcoming = (core.fixtures||[]).filter(f => !f.finished);
   parsed.forEach(entry => {
     const fx = upcoming.find(f => f.team_h === entry.hId && f.team_a === entry.aId &&
       (!f.kickoff_time || !entry.kickoff || Math.abs(Date.parse(f.kickoff_time) - entry.kickoff) <= windowMs));
@@ -2091,14 +2516,33 @@ async function loadOdds(options={}){
     priced++;
   });
   const partial = oddsV.issues.some(i => i.severity === 'partial') || parsed.some(p => p.confidence === 'low' || p.staleDropped > 0);
-  if(priced && partial) markPartial('odds', priced + ' fixtures priced', 'market layer active with reduced coverage', fetchedAt);
-  else if(priced) markLive('odds', priced + ' fixtures priced', 'market layer active', fetchedAt);
-  else markFallback('odds', 'no fixtures matched', 'internal team model active');
-  if(priced){ S.odds = map; S.oddsNote = `Odds: ${priced} fixture${priced===1?'':'s'} priced by the market.`; }
-  else S.oddsNote = 'Odds feed answered but no fixtures could be matched.';
-  await setStorage(K_ODDS,{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,checkedAt:now,
-    fetchedAt:priced?now:null,derived:priced?map:{},lastFailureAt:null,retryAfterAt:null,failureReason:null});
-  return {source:priced?'live':'fallback',loaded:priced,requested:1};
+  const persist={key:K_ODDS,value:{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,checkedAt:now,
+    fetchedAt:priced?now:null,derived:priced?map:{},lastFailureAt:null,retryAfterAt:null,failureReason:null}};
+  if(!priced) return {outcome:'fallback',value:null,note:'Odds feed answered but no fixtures could be matched.',
+    healthMark:{kind:'fallback',note:'no fixtures matched',consequence:'internal team model active'},
+    issues,retryRecords,persist,reason:'unmatched',summary:{source:'fallback',loaded:0,requested:1}};
+  return {outcome:'value',value:map,fetchedAt,
+    note:`Odds: ${priced} fixture${priced===1?'':'s'} priced by the market.`,
+    healthMark:{kind:partial?'partial':'live',note:priced+' fixtures priced',
+      consequence:partial?'market layer active with reduced coverage':'market layer active',lastSuccess:fetchedAt},
+    issues,retryRecords,persist,summary:{source:'live',loaded:priced,requested:1}};
+}
+
+/* Thin wrapper — same applyProviderResult gate as the refresh commit. */
+async function loadOdds(options={}){
+  const setStorage=options.setStorage||sset;
+  const core=options.core||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:oddsSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const config=options.config||{oddsKey:$('oddsKey')?.value||''};
+  const token=nextProviderToken('odds');
+  const result=await computeOdds({...options,core,config});
+  if(result.outcome==='skip') return;
+  result.signature=oddsSignature(core,config);
+  applyProviderResult('odds',result,{core,now:(options.nowFn||Date.now)(),token,signature:result.signature});
+  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+  (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  return result.summary;
 }
 
 
@@ -2119,23 +2563,27 @@ function validateElementSummary(payload){
   return {value:history,issues};
 }
 
-function activeSquadIds(useManual=Boolean(globalThis.document?.getElementById?.('useManual')?.checked)){
-  const values = useManual ? S.manual : S.picks?.picks;
+// R3 A3 — the squad source is explicit so the cohort is selected from the
+// STAGED account, not whatever S.picks holds mid-refresh. Note that `bought`
+// is never read: a manual purchase-price edit cannot change the cohort.
+function activeSquadIds(useManual=Boolean(globalThis.document?.getElementById?.('useManual')?.checked), account=null){
+  const source = account || {manual:S.manual, picks:S.picks};
+  const values = useManual ? source.manual : source.picks?.picks;
   return [...new Set((values||[]).map(item=>+(item?.id??item?.element)).filter(id=>Number.isInteger(id)&&id>0))];
 }
 
 function cohort(options={}){
-  const players = S.boot?.elements || [];
+  const players = options.elements || S.boot?.elements || [];
   const byId = new Map(players.map(player=>[+player.id,player]));
-  const priority = activeSquadIds(options.useManual).map(id=>byId.get(id)).filter(Boolean);
+  const priority = activeSquadIds(options.useManual, options.account).map(id=>byId.get(id)).filter(Boolean);
   const priorityIds = new Set(priority.map(player=>+player.id));
   const research = players.filter(player=>!priorityIds.has(+player.id)).slice().sort((a,b) =>
     num(b.selected_by_percent)-num(a.selected_by_percent) || num(b.now_cost)-num(a.now_cost) || num(a.id)-num(b.id));
   return priority.concat(research.slice(0,MINUTES_RULES.detailedCohort));
 }
 
-function seasonKey(){
-  const year = +(S.boot?.events?.[0]?.deadline_time || '').slice(0,4);
+function seasonKey(events=S.boot?.events){
+  const year = +(events?.[0]?.deadline_time || '').slice(0,4);
   return Number.isFinite(year) && year > 2000 ? year + '-' + String((year+1)%100).padStart(2,'0') : 'unknown';
 }
 
@@ -2179,14 +2627,22 @@ function minutesHealthDetail({state,oldestActiveAt=null,active=0,cached=0,reques
   return {label:'Detailed minutes',state,oldestActiveAt,active,cached,requested,loaded,failed,deferred,note};
 }
 
-async function loadMinuteHistories(deps={}){
-  const nowFn=deps.nowFn||Date.now, getStorage=deps.getStorage||sget, setStorage=deps.setStorage||sset;
+/* R3 A2/A3 — PURE. Builds history and per-player metadata as locals and
+   returns them; S.minuteHistory is only ever written by the admission gate in
+   applyProviderResult(). completedDataRevision and the seven-day backstop
+   remain CORRECTION triggers: a validated entry stays usable when its
+   correction fails (R3.2 C2). */
+async function computeMinuteHistories(deps={}){
+  const nowFn=deps.nowFn||Date.now, getStorage=deps.getStorage||sget;
   const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true}));
-  if(!S.seasonLive || !S.boot?.elements?.length){
-    setHealthDetail('fpl',minutesHealthDetail({state:HEALTH_STATES.DISABLED,note:'No completed Gameweek yet'}));
-    return {loaded:0,failed:0,cached:0,requested:0,deferred:0};
+  const core=deps.core||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,seasonLive:S.seasonLive};
+  const issues=[];
+  if(!core.seasonLive || !core.elements?.length){
+    return {outcome:'clear',value:{},meta:{},cohortIds:[],issues,persist:null,
+      healthDetail:minutesHealthDetail({state:HEALTH_STATES.DISABLED,note:'No completed Gameweek yet'}),
+      summary:{loaded:0,failed:0,cached:0,requested:0,deferred:0}};
   }
-  const season = seasonKey();
+  const season = core.season || seasonKey(core.events);
   const cached = await getStorage(K_MINUTES);
   const cacheOk = validEnvelope(cached, season);
   const cachedPlayers={};
@@ -2197,14 +2653,21 @@ async function loadMinuteHistories(deps={}){
   const envelope={schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
     fetchedAt:cacheOk&&cached.fetchedAt!=null&&Number.isFinite(+cached.fetchedAt)?+cached.fetchedAt:null,
     revision:cacheOk&&typeof cached.revision==='string'?cached.revision:'',players:cachedPlayers};
-  const revision=completedDataRevision();
-  const chosen=cohort(deps);
-  S.minuteHistory={};
+  const revision=completedDataRevision(core.events,core.fixtures);
+  const chosen=cohort({...deps,elements:core.elements,account:deps.account});
+  const cohortIds=chosen.map(player=>+player.id);
+  const history={}, meta={};
+  const stamp=(fetchedAt,entryRevision)=>({season,schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    fetchedAt,revision:entryRevision});
   const decisions=new Map();
   chosen.forEach(player=>{
     const entry=envelope.players[player.id], decision=minuteCacheDecision(entry,envelope,{revision,now:nowFn()});
     decisions.set(+player.id,decision);
-    if(decision.usable) S.minuteHistory[player.id]=validCachedEntry(entry).history;
+    if(decision.usable){
+      const valid=validCachedEntry(entry);
+      history[player.id]=valid.history;
+      meta[player.id]=stamp(valid.fetchedAt,entryRevision(valid,envelope));
+    }
   });
   const due=chosen.filter(player=>decisions.get(+player.id).due);
   const results=[];
@@ -2216,22 +2679,23 @@ async function loadMinuteHistories(deps={}){
       const payload=await fetchSummary(player.id);
       const checked=validateElementSummary(payload);
       if(!checked.value) return {id:player.id,ok:false,issues:checked.issues,hasCache:decisions.get(+player.id).usable};
-      S.minuteHistory[player.id]=checked.value;
       return {id:player.id,ok:true,history:checked.value,issues:checked.issues};
     },4);
+    batchResults.forEach(result=>{
+      if(result?.ok){ history[result.id]=result.history; meta[result.id]=stamp(nowFn(),revision); }
+    });
     results.push(...batchResults);
     if(batchResults.length===4&&batchResults.every(result=>!result?.ok)) consecutiveFailedBatches++;
     else consecutiveFailedBatches=0;
   }
-  const allIssues = collapseIssues(results.flatMap(r => r?.issues || []));
-  recordIssues('fpl', '/element-summary/{id}/', allIssues);
+  issues.push({provider:'fpl',endpoint:'/element-summary/{id}/',issues:collapseIssues(results.flatMap(r => r?.issues || []))});
   let loaded=0, failed=0;
   const players = {...envelope.players};
   results.forEach(r => {
     if(r?.ok){ loaded++; players[r.id]={fetchedAt:nowFn(),revision,history:r.history}; }
     else failed++;
   });
-  const active=chosen.filter(player=>Array.isArray(S.minuteHistory[player.id])).length;
+  const active=chosen.filter(player=>Array.isArray(history[player.id])).length;
   const allCurrent=chosen.every(player=>{
     const entry=players[player.id], decision=minuteCacheDecision(entry,{...envelope,players},{revision,now:nowFn()});
     return decision.usable&&!decision.due;
@@ -2241,12 +2705,28 @@ async function loadMinuteHistories(deps={}){
   const nextEnvelope={...envelope,players};
   if(loaded) nextEnvelope.fetchedAt=nowFn();
   if(allCurrent) nextEnvelope.revision=revision;
-  await setStorage(K_MINUTES,nextEnvelope);
   const cachedActive=Math.max(0,active-loaded);
   const state=failed||deferred||active<chosen.length||Boolean(loaded&&cachedActive) ? HEALTH_STATES.PARTIAL : loaded ? HEALTH_STATES.LIVE : HEALTH_STATES.CACHED;
   const note=deferred?'Systemic outage guard stopped further requests':failed?'Saved histories retained where valid':loaded&&cachedActive?'Fresh and cached validated histories active':'Validated histories active';
-  setHealthDetail('fpl',minutesHealthDetail({state,oldestActiveAt,active,cached:cachedActive,requested:results.length,loaded,failed,deferred,note}));
-  return {loaded,failed,cached:cachedActive,requested:results.length,deferred};
+  return {outcome:'value',value:history,meta,cohortIds,issues,
+    persist:{key:K_MINUTES,value:nextEnvelope},
+    healthDetail:minutesHealthDetail({state,oldestActiveAt,active,cached:cachedActive,requested:results.length,loaded,failed,deferred,note}),
+    summary:{loaded,failed,cached:cachedActive,requested:results.length,deferred}};
+}
+
+/* Thin wrapper — same applyProviderResult gate as the refresh commit. */
+async function loadMinuteHistories(deps={}){
+  const setStorage=deps.setStorage||sset;
+  const core=deps.core||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,
+    teams:S.boot?.teams,seasonLive:S.seasonLive,season:seasonKey(S.boot?.events)};
+  const token=nextProviderToken('minutes');
+  const result=await computeMinuteHistories({...deps,core});
+  result.signature=minutesSignature(core,completedDataRevision(core.events,core.fixtures),result.cohortIds);
+  applyProviderResult('minutes',result,{core,now:(deps.nowFn||Date.now)(),token,
+    signature:result.signature,cohortIds:result.cohortIds});
+  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  return result.summary;
 }
 
 
@@ -2754,6 +3234,25 @@ function xpOf(p, fromGW, span){
   return xpCache.get(key);
 }
 const clearXP = () => xpCache.clear();
+
+/* R3.3 D6 — two single-purpose snapshots for the collection-purity contract.
+   A reference-only snapshot cannot detect in-place mutation, because a
+   before/after comparison would compare each mutated object with itself; a
+   value-only snapshot cannot detect a recomputation that rebuilt an equal
+   object. Both are needed, and both are read-only. No rounding: an exact copy,
+   so a NaN or a last-digit change is visible. */
+const xpCacheKeysSorted = () => [...xpCache.keys()].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+function deepCloneValue(value){
+  if(Array.isArray(value)) return value.map(deepCloneValue);
+  if(value && typeof value === 'object'){
+    const out = {};
+    for(const key of Object.keys(value)) out[key] = deepCloneValue(value[key]);
+    return out;
+  }
+  return value;
+}
+const xpCacheValueSnapshot = () => xpCacheKeysSorted().map(key => [key, deepCloneValue(xpCache.get(key))]);
+const xpCacheRefSnapshot = () => xpCacheKeysSorted().map(key => [key, xpCache.get(key)]);
 
 
 
@@ -4559,6 +5058,255 @@ function renderVerifiedState(){
   renderAll();
 }
 
+/* ---------------------------------------------------------------------
+   ATOMIC FOREGROUND REFRESH
+
+   collect  → PURE. Fetches, validates and derives into a staged object.
+              Writes nothing to S, the health registry or diagnostics.
+   commit   → SYNCHRONOUS, no-throw, no-reentrant. Plain assignments only.
+              Because it contains no suspension point and S carries no
+              accessor property, no observer can see it part-way, so the app
+              stays interactive during a foreground refresh.
+   render   → once, after the commit.
+   persist  → after the render, never before the commit.
+   --------------------------------------------------------------------- */
+
+let lifecycleEpoch = 0;
+let commitInProgress = false;
+let pendingRefreshRequest = null;
+
+function captureRefreshInputs(){
+  const config = typeof document === 'undefined' ? {} : currentConfig();
+  return {
+    teamId:String(config.teamId || ''),
+    useUstat:Boolean(config.useUstat),
+    useManual:Boolean(config.useManual),
+    oddsKey:String(config.oddsKey || ''),
+    lifecycleEpoch
+  };
+}
+
+/* R3.4 E5/E7 — account compatibility keys. Every key carries teamId and
+   season, so no combination can mix teams or seasons; picks additionally pins
+   the Gameweek so last week's squad can never present as current. */
+function accountKey(kind, {teamId, season, picksGameweek}){
+  return kind === 'picks'
+    ? `picks|${teamId}|${picksGameweek}|${season}|${SCHEMA_VERSION_TAG}`
+    : `${kind}|${teamId}|${season}|${SCHEMA_VERSION_TAG}`;
+}
+const SCHEMA_VERSION_TAG = 'v1';
+
+function resolveAccountSlice(kind, staged, previous, keys){
+  // value → replace · notfound → clear (authoritative) · failed → carry when
+  // the compatibility key matches, otherwise clear.
+  if(staged.outcome === 'value') return {state:'replace', value:staged.value};
+  if(staged.outcome === 'notfound') return {state:'clear', value:null};
+  const compatible = previous.key && keys[kind] && previous.key === keys[kind];
+  return compatible ? {state:'carry', value:previous.value} : {state:'clear', value:null};
+}
+
+async function collectAccount(teamId, core, options){
+  const blank = {entry:{outcome:'skip'}, picks:{outcome:'skip'}, history:{outcome:'skip'}, picksGameweek:0, issues:[], retryRecords:[]};
+  if(!teamId) return blank;
+  const issues = [], retryRecords = [];
+  const take = response => { if(response?.retryRecord) retryRecords.push(response.retryRecord); return response; };
+  const entryRaw = take(await api('/entry/' + teamId + '/', {optional:true, typed:true}));
+  let entry = {outcome:entryRaw.outcome, value:null};
+  if(entryRaw.outcome === 'value'){
+    const checked = validateEntry(entryRaw.value);
+    issues.push({provider:'fpl', endpoint:'/entry/', issues:checked.issues});
+    entry = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+  }
+  if(entry.outcome !== 'value') return {...blank, entry, issues, retryRecords};
+  const picksGameweek = publicPicksGameweek(core.events, core.currentGW);
+  let picks = {outcome:'notfound', value:null};
+  if(picksGameweek){
+    const picksRaw = take(await api('/entry/' + teamId + '/event/' + picksGameweek + '/picks/', {optional:true, typed:true}));
+    if(picksRaw.outcome === 'value'){
+      const checked = validatePicks(picksRaw.value);
+      issues.push({provider:'fpl', endpoint:'/entry/event/picks/', issues:checked.issues});
+      picks = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+    } else picks = {outcome:picksRaw.outcome, value:null};
+  }
+  const historyRaw = take(await api('/entry/' + teamId + '/history/', {optional:true, typed:true}));
+  let history = {outcome:historyRaw.outcome, value:null};
+  if(historyRaw.outcome === 'value'){
+    const checked = validateHistory(historyRaw.value);
+    issues.push({provider:'fpl', endpoint:'/entry/history/', issues:checked.issues});
+    history = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+  }
+  return {entry, picks, history, picksGameweek, issues, retryRecords};
+}
+
+function picksStatusFor(state, picks, picksGameweek){
+  if(state === 'clear') return picksGameweek ? 'unavailable' : 'gameweek-unavailable';
+  const count = Array.isArray(picks?.picks) ? picks.picks.length : 0;
+  return count === 15 ? 'loaded' : count ? 'incomplete' : 'unavailable';
+}
+
+/* R3.3 D7 / R3.4 E7 — aggregate FPL health. Live requires a clean core AND,
+   when account data was requested, a clean replacement of every slice.
+   Partiality is monotonic: nothing upgrades a partial finding. */
+function aggregateFplHealth({corePartial, requested, slices, source, at}){
+  const anyNotReplaced = requested && slices.some(slice => slice.state !== 'replace');
+  const anyPartial = requested && slices.some(slice => slice.partial);
+  if(corePartial || anyNotReplaced || anyPartial){
+    markPartial('fpl', corePartial ? 'some optional fields were missing' : 'account data is incomplete',
+      corePartial ? 'defaults applied; core season data remains usable' : 'core season data current; squad detail may be older', at);
+    return 'Partial';
+  }
+  markLive('fpl', source || 'live feed', 'core season data current', at);
+  return 'Live';
+}
+
+async function collectRefresh(options = {}){
+  const inputs = options.inputs || captureRefreshInputs();
+  reportLoadPhase(options, 'fpl');
+  if(browserReportsOffline()){
+    const error=new Error('device offline');
+    error.offline=true;
+    throw error;
+  }
+  const [bootRaw, fixturesRaw] = await Promise.all([
+    api('/bootstrap-static/', {typed:true}), api('/fixtures/', {typed:true})
+  ]);
+  const retryRecords = [bootRaw.retryRecord, fixturesRaw.retryRecord].filter(Boolean);
+  if(bootRaw.outcome !== 'value' || fixturesRaw.outcome !== 'value')
+    throw new Error('feed unreachable: /bootstrap-static/');
+  const boot = bootRaw.value, fixtures = fixturesRaw.value;
+  const bs = bootstrapStructure(boot);
+  const fixturesOk = Array.isArray(fixtures);
+  if(!bs.ok || !fixturesOk){
+    const e = new Error('feed shape unusable');
+    e.feedShape = true;
+    e.issues = bs.issues.concat(fixturesOk ? [] :
+      [{ provider:'fpl', endpoint:'/fixtures/', code:'fixtures_not_array',
+         severity:'fatal', count:1, received: fixtures === null ? 'null' : typeof fixtures }]);
+    throw e;
+  }
+  const slimmed = slim(boot, fixtures);
+  const prepared = prepareCore(slimmed);
+  if(!prepared.ok){ const e = new Error('feed shape unusable'); e.feedShape = true; e.issues = prepared.issues; throw e; }
+  const core = prepared.core;
+
+  reportLoadPhase(options, 'team');
+  const account = await collectAccount(inputs.teamId, core, options);
+
+  reportLoadPhase(options, 'providers');
+  const stagedAccount = {
+    picks:account.picks.outcome === 'value' ? account.picks.value : S.picks,
+    manual:S.manual
+  };
+  const providerConfig = {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey, useManual:inputs.useManual};
+  const providerCore = {...core, seasonLive:core.seasonLive};
+  const [understat, odds, minutes] = await Promise.all([
+    computeUnderstat({core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
+    computeOdds({core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
+    computeMinuteHistories({core:providerCore, account:stagedAccount, useManual:inputs.useManual}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], cohortIds:[], persist:null}))
+  ]);
+  understat.signature = understatSignature(providerCore, providerConfig);
+  odds.signature = oddsSignature(providerCore, providerConfig);
+  minutes.signature = minutesSignature(providerCore, completedDataRevision(core.events, core.fixtures), minutes.cohortIds || []);
+
+  return {
+    inputs, core, slimmed, account, understat, odds, minutes,
+    corePartial:prepared.issues.some(i => i.severity === 'partial'),
+    coreIssues:prepared.issues, retryRecords, source:bootRaw.source || S.source || 'live feed'
+  };
+}
+
+/* SYNCHRONOUS. No await, no dynamic import, no dispatchEvent, no DOM call,
+   no storage call. Assignments only, from already-validated plain data. */
+function applyRefreshCommit(staged, {now = Date.now()} = {}){
+  if(commitInProgress) return {ok:false, reason:'reentrant'};
+  commitInProgress = true;
+  const journal = {state:captureStateJournal(), health:snapshotHealth()};
+  try{
+    const {core, account, inputs} = staged;
+    const season = core.season;
+    const previousKeys = S.__accountKeys || {};
+    const keys = {
+      entry:accountKey('entry', {teamId:inputs.teamId, season}),
+      picks:accountKey('picks', {teamId:inputs.teamId, season, picksGameweek:account.picksGameweek}),
+      history:accountKey('history', {teamId:inputs.teamId, season})
+    };
+    // 1 · core
+    assignCore(core, staged.coreIssues.slice());
+    S.source = staged.source;
+    S.teamId = inputs.teamId;
+    // 2 · account — entry is the root: when it clears, every dependant clears.
+    const entryRes = inputs.teamId
+      ? resolveAccountSlice('entry', account.entry, {key:previousKeys.entry, value:S.entry}, keys)
+      : {state:'clear', value:null};
+    let picksRes, historyRes;
+    if(entryRes.state === 'clear'){
+      picksRes = {state:'clear', value:null};
+      historyRes = {state:'clear', value:null};
+    }else{
+      picksRes = resolveAccountSlice('picks', account.picks, {key:previousKeys.picks, value:S.picks}, keys);
+      historyRes = resolveAccountSlice('history', account.history, {key:previousKeys.history, value:S.history}, keys);
+    }
+    S.entry = entryRes.value;
+    S.picks = picksRes.value;
+    S.history = historyRes.value;
+    S.picksGameweek = account.picksGameweek;
+    S.picksStatus = inputs.teamId ? picksStatusFor(picksRes.state, picksRes.value, account.picksGameweek) : 'idle';
+    S.chipsUsed = historyRes.value?.chips ? historyRes.value.chips.map(c => `${c.name} (GW${c.event})`) : [];
+    S.__accountKeys = {
+      entry:entryRes.state === 'clear' ? null : keys.entry,
+      picks:picksRes.state === 'clear' ? null : keys.picks,
+      history:historyRes.state === 'clear' ? null : keys.history
+    };
+    // 3 · diagnostics
+    const retryStats = {...S.retryStats};
+    [...staged.retryRecords, ...(account.retryRecords || []),
+     ...(staged.understat.retryRecords || []), ...(staged.odds.retryRecords || [])]
+      .filter(record => record && record.provider)
+      .forEach(record => { retryStats[record.provider + '|' + record.endpoint] = record; });
+    S.retryStats = retryStats;
+    [...(account.issues || []), ...(staged.understat.issues || []),
+     ...(staged.odds.issues || []), ...(staged.minutes.issues || [])]
+      .forEach(entry => recordIssues(entry.provider, entry.endpoint, entry.issues));
+    // 4 · provider health — the aggregate never upgrades a partial finding
+    const requested = Boolean(inputs.teamId);
+    const fplState = aggregateFplHealth({
+      corePartial:staged.corePartial, requested,
+      slices:[{state:entryRes.state, partial:account.entry.partial},
+              {state:picksRes.state, partial:account.picks.partial},
+              {state:historyRes.state, partial:account.history.partial}],
+      source:staged.source, at:core.cachedAt
+    });
+    // 5 · supporting providers, through the shared gate
+    const applyCtx = {core, now};
+    applyProviderResult('understat', staged.understat, {...applyCtx, signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})});
+    applyProviderResult('odds', staged.odds, {...applyCtx, signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})});
+    applyProviderResult('minutes', staged.minutes, {...applyCtx, cohortIds:staged.minutes.cohortIds || [],
+      signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])});
+    // 6 · derived invalidation
+    clearXP();
+    return {ok:true, fplState};
+  }catch(error){
+    restoreStateJournal(journal.state);
+    restoreHealth(journal.health);
+    clearXP();
+    return {ok:false, reason:'commit_failed', error};
+  }finally{
+    commitInProgress = false;
+  }
+}
+
+async function persistRefresh(staged){
+  const writes = [{key:K_CACHE, value:staged.slimmed}];
+  [staged.understat.persist, staged.odds.persist, staged.minutes.persist]
+    .filter(Boolean).forEach(entry => writes.push(entry));
+  const failures = [];
+  for(const write of writes){
+    const result = await ssetChecked(write.key, write.value);
+    if(!result.ok) failures.push({key:write.key, reason:result.reason});
+  }
+  return failures;
+}
+
 async function loadAll(options = {}){
   const st = $('status');
   const deferRender = Boolean(options.deferRender);
@@ -4578,135 +5326,99 @@ async function loadAll(options = {}){
   } else if(st) {
     st.textContent = 'Fetching season data…';
   }
+  const inputs = options.inputs || captureRefreshInputs();
+  let staged;
   try{
-    if(browserReportsOffline()){
-      const error=new Error('device offline');
-      error.offline=true;
-      throw error;
-    }
-    reportLoadPhase(options,'fpl');
-    const [boot, fixtures] = await Promise.all([api('/bootstrap-static/'), api('/fixtures/')]);
-    const bs = bootstrapStructure(boot);
-    const fixturesOk = Array.isArray(fixtures);
-    if(!bs.ok || !fixturesOk){
-      S.dataIssues = bs.issues.concat(fixturesOk ? [] :
-        [{ provider:'fpl', endpoint:'/fixtures/', code:'fixtures_not_array',
-           severity:'fatal', count:1, received: fixtures === null ? 'null' : typeof fixtures }]);
-      const e = new Error('feed shape unusable'); e.feedShape = true; throw e;
-    }
-    const d = slim(boot, fixtures);
-    await sset(K_CACHE, d);
-    const hydrated = hydrate(d);
-    if(!hydrated.ok){ const e = new Error('feed shape unusable'); e.feedShape = true; throw e; }
-    const partial = hydrated.issues.some(i => i.severity === 'partial');
-    if(partial) markPartial('fpl', 'some optional fields were missing', 'defaults applied; core season data remains usable', d.at);
-    else markLive('fpl', S.source || 'live feed', 'core season data current', d.at);
-    clearXP();
-
-    reportLoadPhase(options,'team');
-    S.teamId = $('teamId').value.replace(/\D/g,'');
-    S.entry = null; S.picks = null; S.picksGameweek = 0; S.picksStatus = 'idle'; S.chipsUsed = [];
-    let teamStatus = '';
-    if(S.teamId){
-      if(st) st.textContent = 'Fetching your team…';
-      const entryV = validateEntry(await api('/entry/' + S.teamId + '/', {optional:true}));
-      recordIssues('fpl', '/entry/', entryV.issues);
-      S.entry = entryV.value;
-      if(!S.entry){
-        if(st) st.textContent = 'Season data loaded, but team ' + S.teamId + ' was not found — check the ID.';
-      } else {
-        const picksGW = publicPicksGameweek();
-        S.picksGameweek = picksGW;
-        if(picksGW){
-          const picksV = validatePicks(await api('/entry/'+S.teamId+'/event/'+picksGW+'/picks/', {optional:true}));
-          recordIssues('fpl', '/entry/event/picks/', picksV.issues);
-          S.picks = picksV.value;
-          const picksCount = Array.isArray(S.picks?.picks) ? S.picks.picks.length : 0;
-          S.picksStatus = picksCount === 15 ? 'loaded' : picksCount ? 'incomplete' : 'unavailable';
-          if(S.picksStatus === 'loaded') teamStatus = ` · public GW${picksGW} squad loaded`;
-          else if(S.picksStatus === 'incomplete') teamStatus = ` · ${picksCount}/15 public GW${picksGW} picks usable`;
-          else teamStatus = ` · public GW${picksGW} squad unavailable`;
-        } else {
-          S.picksStatus = 'gameweek-unavailable';
-          teamStatus = ' · public squad Gameweek unavailable';
-        }
-        const histV = validateHistory(await api('/entry/'+S.teamId+'/history/', {optional:true}));
-        recordIssues('fpl', '/entry/history/', histV.issues);
-        const hist = histV.value;
-        S.history = hist;
-        if(hist && hist.chips) S.chipsUsed = hist.chips.map(c => `${c.name} (GW${c.event})`);
-        if(S.entry.last_deadline_bank != null && !num($('bankIn').value))
-          $('bankIn').value = (S.entry.last_deadline_bank/10).toFixed(1);
-      }
-    }
-    if(S.entry || !S.teamId){
-      if(st) st.textContent = `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}${teamStatus}`;
-    }
-    await saveCfg();
-
-    reportLoadPhase(options,'providers');
-    const optionalResults = await Promise.allSettled([
-      loadUnderstat({force:Boolean(options.forceSupporting)}),
-      loadOdds({force:Boolean(options.forceSupporting)}),
-      loadMinuteHistories()
-    ]);
-    if(!getHealth('understat',{seasonLive:S.seasonLive})) markUnavailable('understat','verification did not resolve','FPL strength ratings used');
-    if(!getHealth('odds',{seasonLive:S.seasonLive})) markDisabled('odds','no approved market input active','internal team model active');
-    if(!getHealth('archive',{seasonLive:S.seasonLive})){
-      if(S.calib) markCached('archive',null,'saved versioned calibration active','position correction active');
-      else markDisabled('archive','no archive calibration active','uncalibrated model outputs shown');
-    }
-    reportLoadPhase(options,'model');
-    renderVerifiedState();
-    return {
-      ok:true,
-      criticalReady:true,
-      source:'live',
-      cacheAccepted,
-      optionalResults,
-      verifiedAt:Date.now()
-    };
+    staged = await collectRefresh({...options, inputs});
   }catch(err){
-    await saveCfg();
-    const shape = !!(err && err.feedShape);
-    const offline = !!(err && err.offline);
-    if(S.boot){
-      markFallback('fpl', shape ? 'live feed shape unusable' : offline ? 'device is offline' : 'live feed unreachable', 'saved season snapshot remains active');
-      if(st) st.textContent = (shape
-        ? 'The season feed came back in an unexpected format — still showing saved data from '
-        : offline ? 'Offline — still showing saved data from '
-        : 'Live feed unreachable — still showing saved data from ') +
-        new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
-    } else if(shape){
-      markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
-      if(st) st.textContent = 'Season data could not be read.';
-      setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
-        "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
-    } else {
-      markUnavailable('fpl', offline ? 'device is offline' : 'official gateway unavailable', 'season data cannot be shown');
-      if(st) st.textContent = offline ? 'Teamsheet is offline and no verified season data is available.' : 'Data feed unreachable.';
-      setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-        offline
-          ? 'Reconnect to the internet, then try Load data again. Without a verified saved snapshot, recommendations remain safely unavailable.'
-          : 'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
-    }
-    reportLoadPhase(options,'model');
-    if(S.boot) renderVerifiedState();
-    else {
-      renderProviderHealth(); renderGlobalDataWarning();
-      if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
-        document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
-    }
-    return {
-      ok:Boolean(S.boot),
-      criticalReady:Boolean(S.boot),
-      source:S.boot?'verified_cache':'unavailable',
-      cacheAccepted:Boolean(S.boot),
-      optionalResults:[],
-      verifiedAt:S.boot?Date.now():null,
-      error:err
-    };
+    return reportCollectionFailure(err, st, cacheAccepted);
   }
+  /* R3 A1 — work that crossed a persisted Safari/BFCache restoration is
+     discarded in full, core included, and recollected immediately. A
+     restoration invalidates time itself for staged data, not one input. */
+  if(staged.inputs.lifecycleEpoch !== lifecycleEpoch){
+    pendingRefreshRequest = {reason:options.reason || 'foreground', force:true};
+    return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'discarded_lifecycle',
+      cacheAccepted, optionalResults:[], verifiedAt:null, discarded:'lifecycle'};
+  }
+  reportLoadPhase(options,'model');
+  const committed = applyRefreshCommit(staged);
+  if(!committed.ok){
+    if(st) st.textContent = 'Could not apply the update — showing the previous verified data.';
+    return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'commit_failed',
+      cacheAccepted, optionalResults:[], verifiedAt:null, errorClass:'commit_failed', error:committed.error};
+  }
+  let renderError = null;
+  try{
+    populatePositionFilter(staged.core.element_types);
+    if(st) st.textContent = statusLine(staged, committed);
+    renderVerifiedState();
+  }catch(error){ renderError = error; if(st) st.textContent = 'Data updated but the display failed to refresh.'; }
+  const persistFailures = await persistRefresh(staged);
+  await saveCfg();
+  for(const name of drainRecomputation()) void recomputeProvider(name);
+  return {
+    ok:true, criticalReady:true, source:'live', cacheAccepted,
+    optionalResults:[staged.understat, staged.odds, staged.minutes],
+    verifiedAt:Date.now(), fplState:committed.fplState,
+    errorClass:renderError ? 'render_failed' : persistFailures.length ? 'persist_failed' : null,
+    persistFailures
+  };
+}
+
+function statusLine(staged, committed){
+  const teamStatus = !staged.inputs.teamId ? ''
+    : S.picksStatus === 'loaded' ? ` · public GW${S.picksGameweek} squad loaded`
+    : S.picksStatus === 'incomplete' ? ` · ${S.picks?.picks?.length || 0}/15 public GW${S.picksGameweek} picks usable`
+    : S.picksStatus === 'gameweek-unavailable' ? ' · public squad Gameweek unavailable'
+    : ` · public GW${S.picksGameweek} squad unavailable`;
+  return `${S.boot.elements.length} players · ${S.source} · updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}${teamStatus}`;
+}
+
+/* A signature-mismatch discard means current inputs were never attempted, so
+   exactly one immediate recomputation is warranted. It runs against current
+   inputs by construction and therefore cannot mismatch again this cycle. */
+async function recomputeProvider(name){
+  if(name === 'understat') return loadUnderstat({force:false});
+  if(name === 'odds') return loadOdds({force:false});
+  if(name === 'minutes') return loadMinuteHistories();
+}
+
+function reportCollectionFailure(err, st, cacheAccepted){
+  const shape = !!(err && err.feedShape);
+  const offline = !!(err && err.offline);
+  if(err && err.issues) S.dataIssues = err.issues;
+  if(S.boot){
+    markFallback('fpl', shape ? 'live feed shape unusable' : offline ? 'device is offline' : 'live feed unreachable', 'saved season snapshot remains active');
+    if(st) st.textContent = (shape
+      ? 'The season feed came back in an unexpected format — still showing saved data from '
+      : offline ? 'Offline — still showing saved data from '
+      : 'Live feed unreachable — still showing saved data from ') +
+      new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
+  } else if(shape){
+    markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
+    if(st) st.textContent = 'Season data could not be read.';
+    setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
+      "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
+  } else {
+    markUnavailable('fpl', offline ? 'device is offline' : 'official gateway unavailable', 'season data cannot be shown');
+    if(st) st.textContent = offline ? 'Teamsheet is offline and no verified season data is available.' : 'Data feed unreachable.';
+    setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
+      offline
+        ? 'Reconnect to the internet, then try Load data again. Without a verified saved snapshot, recommendations remain safely unavailable.'
+        : 'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
+  }
+  if(S.boot){ try{ renderVerifiedState(); }catch(error){} }
+  else {
+    renderProviderHealth(); renderGlobalDataWarning();
+    if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+      document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
+  }
+  return {
+    ok:Boolean(S.boot), criticalReady:Boolean(S.boot),
+    source:S.boot?'verified_cache':'unavailable', cacheAccepted:Boolean(S.boot),
+    optionalResults:[], verifiedAt:S.boot?Date.now():null, errorClass:'collection_failed', error:err
+  };
 }
 
 function shouldRefreshVerifiedData(lastVerifiedAt,now=Date.now(),minAgeMs=VERIFIED_REFRESH_MIN_AGE_MS){
@@ -4747,8 +5459,13 @@ async function dispatchVerifiedData(detail){
   return Promise.allSettled(pending);
 }
 async function runVerifiedRefresh({reason='manual',startup=false,force=false,nowFn=Date.now}={}){
+  /* R3 A5 — an explicit manual refresh during an in-flight foreground refresh
+     is QUEUED, not silently downgraded to the weaker run already in progress.
+     Paired Safari resume events still coalesce on the line below. */
+  if(reason==='manual'&&verifiedRefreshPromise) pendingRefreshRequest={reason:'manual',startup:false,force:true};
   if(verifiedRefreshPromise) return verifiedRefreshPromise;
   if(!force&&!shouldRefreshVerifiedData(lastRefreshAttemptAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_attempted'};
+  const refreshInputs=captureRefreshInputs();
   const blockInteractions=shouldBlockRefreshInteractions({reason,startup});
   verifiedRefreshPromise=(async()=>{
     if(startup) setStartupGateVisible(true);
@@ -4758,6 +5475,7 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
       const report=await loadAll({
         awaitOptional:true,
         deferRender:true,
+        inputs:refreshInputs,
         reason,
         forceSupporting:reason==='manual',
         onPhase:phase=>setStartupPhase(phase.key)
@@ -4782,7 +5500,13 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
     }
   })();
   try{ return await verifiedRefreshPromise; }
-  finally{ verifiedRefreshPromise=null; }
+  finally{
+    verifiedRefreshPromise=null;
+    /* R3 A5 / A1 — a queued manual request, or work discarded by a persisted
+       restoration, runs immediately and bypasses the ten-minute cooldown. */
+    const queued=pendingRefreshRequest; pendingRefreshRequest=null;
+    if(queued) void runVerifiedRefresh({...queued,nowFn});
+  }
 }
 function installVerifiedRefreshTriggers(){
   if(verifiedRefreshTriggersInstalled||typeof document==='undefined') return;
@@ -4792,7 +5516,12 @@ function installVerifiedRefreshTriggers(){
     void runVerifiedRefresh({reason:'foreground'});
   };
   document.addEventListener('visibilitychange',refreshIfDue);
-  globalThis.window?.addEventListener?.('pageshow',refreshIfDue);
+  /* R3 A1 — a persisted restoration advances the page-lifecycle epoch, so any
+     collection that crossed the suspension is discarded before commit. */
+  globalThis.window?.addEventListener?.('pageshow',event=>{
+    if(event&&event.persisted) lifecycleEpoch++;
+    refreshIfDue();
+  });
 }
 
 
@@ -9416,9 +10145,13 @@ function renderTicker(){
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const requestedSpan = clamp(parseInt($('fxSpan').value) || 6, 1, 38);
   const span = Math.min(requestedSpan, 39 - from);
-  $('fxFrom').value = String(from);
+  /* R3.1 B7 — a focused user-owned control keeps the value the owner is
+     typing. The clamped span still drives the calculation below, so no
+     fixture or projection behaviour changes; only the write-back is skipped.
+     These nodes are never replaced by a render, so focus itself survives. */
+  if(!userControlHasFocus('fxFrom')) $('fxFrom').value = String(from);
   $('fxSpan').max = String(39 - from);
-  $('fxSpan').value = String(span);
+  if(!userControlHasFocus('fxSpan')) $('fxSpan').value = String(span);
   const lensControl = $('fxLens'), sort = $('fxSort').value;
   const lensState = fixtureLensState(lensControl.value);
   for(const option of Array.from(lensControl.options || [])){
@@ -9820,6 +10553,17 @@ function searchPlayers(term){
 /* ---------------------------------------------------------------------
    RENDER + WIRING
    --------------------------------------------------------------------- */
+/* R3.1 B7 — the enumerated user-owned controls. A commit render must never
+   overwrite the value of whichever one currently has focus, and must never
+   replace a subtree containing any of them. */
+const USER_OWNED_CONTROL_IDS = Object.freeze(['teamId','ftCount','bankIn','oddsKey','trHorizon','trTop',
+  'pSearch','fxFrom','fxSpan','plPos','plMax','plHorizon','plFit','plOwn']);
+function userControlHasFocus(id){
+  if(typeof document === 'undefined') return false;
+  const node = $(id);
+  return Boolean(node && document.activeElement === node);
+}
+
 function renderRestrictedAppState(){
   setChildren($('gwstrip'),elNode('span',{},'Official FPL data unavailable'));
   renderTicker();
@@ -9852,7 +10596,7 @@ function renderAll(){
   if(S.calib) srcBits.push(`Calibrated against ${S.backtest?.season || 'last season'} (r ${S.backtest?.r ?? '—'}).`);
   setChildren($('srcStatus'),srcBits.map(s=>elNode('div',{},s)));
   setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
-  if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
+  if(!$('fxFrom').value && !userControlHasFocus('fxFrom')) $('fxFrom').value = S.nextGW;
   renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual(); renderMiniLeagues();
   if(typeof document!=='undefined' && typeof document.dispatchEvent==='function' && typeof CustomEvent==='function')
     document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
