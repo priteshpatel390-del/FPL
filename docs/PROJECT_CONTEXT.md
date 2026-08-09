@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 8 August 2026.
+Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 9 August 2026.
 
 Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Historical Records](HISTORICAL_RECORDS.md).
 
@@ -14,11 +14,11 @@ Refresh-Load R1 changed acquisition cadence only: valid detailed histories, norm
 
 | Item | Evidence |
 |---|---|
-| Repository baseline | GitHub `main` `2ddb33c81fa2092598f290d60320364f2e0c35dc`, merge of PR #96 |
+| Repository head | GitHub `main` `b7cfe5844bca1066a15ea422e694c55d827dab3b`, merge of R1 documentation closeout PR #97 |
 | Latest substantive application checkpoint | Refresh-Load R1 PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
 | Application tree | PR #96 head and merge share `fd40deff72c458286e77f44a66b79a0e720e700c` |
 | Permanent automated baseline | Verify Teamsheet run `31265107597`: 681 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #96 head `967856246a0c17972c43eaf444651bceb8b9f728` |
-| Build baseline | Two exact-source production builds were byte-identical; root `index.html` equalled `dist/index.html`; manifest identity recorded source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` and source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a` |
+| Generated application baseline | Two exact-source production builds were byte-identical; root `index.html` equalled `dist/index.html`; the R1 manifest recorded generating source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` and module-source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a` |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
 | Approval boundary | R1 is merged and deployed. The first post-Gameweek live-evidence/Leagues review is investigation-only; any correction, calculation or provider change remains separately owner-gated. |
 
@@ -136,7 +136,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 - real post-Gameweek minute-history cache reuse and revision-triggered refresh have automated coverage but cannot yet have physical live-season evidence;
 - the flattened bundle depends on an explicit module order that is broader than the direct import graph;
 - Team currently layers a decision-first renderer over legacy Team DOM construction;
-- tracked build identity semantics can be misunderstood because generated artefacts record their generating source identity, not necessarily the later documentation-only `main` commit;
+- A3-R0 must replace the tracked deployable's unreachable local generating identity with a reachable ancestor and complete build-input hash before the next application checkpoint;
 - browser automation cannot replace physical Safari layout and interaction evidence.
 
 These are roadmap inputs, not authority to change them.

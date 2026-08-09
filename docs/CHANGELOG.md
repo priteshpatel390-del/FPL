@@ -1,6 +1,12 @@
 # CHANGELOG.md
 
-Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 8 August 2026.
+Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 9 August 2026.
+
+## 2026-08-09 — A3-R0 durable build provenance candidate
+
+- Added a complete ordered build-input hash covering runtime modules, the HTML template and both bundler files while preserving the existing module-only source hash.
+- Added a CI gate that requires the recorded generating commit to be a reachable ancestor, confirms every build input against that commit and reproduces all tracked deployables byte-for-byte before ordinary builds overwrite them.
+- Adopted a two-commit finalisation sequence: reviewed inputs first, generated-only outputs second. Application behaviour, providers, calculations, deployment architecture and Direct Team rendering are unchanged.
 
 ## 2026-08-08 — Refresh-Load R1 merged, deployed and physically accepted
 
