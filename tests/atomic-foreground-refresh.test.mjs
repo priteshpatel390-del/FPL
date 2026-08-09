@@ -30,18 +30,18 @@ globalThis.CustomEvent = class { constructor(type, options){ this.type = type; t
 globalThis.localStorage = {_d:{}, getItem(k){ return this._d[k] ?? null; },
   setItem(k, v){ this._d[k] = String(v); }, removeItem(k){ delete this._d[k]; }};
 
-const { S, prepareCore, captureStateJournal, restoreStateJournal, slim } = await import('../src/state.mjs');
+const { S, prepareCore, assignCore, captureStateJournal, restoreStateJournal, slim } = await import('../src/state.mjs');
 const { SCHEMA_VERSION, MODEL_VERSION, SUPPORTING_REFRESH_RULES, MINUTES_RULES } = await import('../src/config.mjs');
-const { ssetChecked, sset } = await import('../src/storage.mjs');
+const { ssetChecked, sset, K_UNDERSTAT, K_ODDS, K_MINUTES } = await import('../src/storage.mjs');
 const { snapshotHealth, restoreHealth, getHealth, resetHealth, markLive, markCached,
   HEALTH_STATES, APPROVED_PROVIDER_NAMES, setHealth } = await import('../src/providers/registry.mjs');
 const { xpCacheValueSnapshot, xpCacheRefSnapshot, xpOf, clearXP } = await import('../src/model/scoring.mjs');
 const applied = await import('../src/providers/applied.mjs');
 const { gatewayOnce } = await import('../src/providers/transport.mjs');
-const { computeMinuteHistories, cohort, completedDataRevision, minuteCacheDecision, validCachedEntry } =
+const { computeMinuteHistories, loadMinuteHistories, cohort, completedDataRevision, minuteCacheDecision, validCachedEntry } =
   await import('../src/providers/minutes-history.mjs');
-const { computeUnderstat } = await import('../src/providers/understat.mjs');
-const { computeOdds } = await import('../src/providers/odds.mjs');
+const { computeUnderstat, loadUnderstat, understatFixtureRevision } = await import('../src/providers/understat.mjs');
+const { computeOdds, loadOdds } = await import('../src/providers/odds.mjs');
 const main = await import('../src/main.mjs');
 
 /* ---------------------------------------------------------------------
@@ -89,7 +89,7 @@ function resetWorld(){
   S.minuteHistory = {}; S.minuteHistoryMeta = {};
   S.providerApplied = {understat:null, odds:null};
   S.dataIssues = []; S.retryStats = {}; S.manual = []; S.teamId = '';
-  S.__accountKeys = undefined;
+  S.__accountKeys = {entry:null,picks:null,history:null};
   fields.useManual.checked = false; fields.useUstat.checked = true;
   fields.oddsKey.value = ''; fields.teamId.value = '';
   globalThis.document.activeElement = null;
@@ -102,6 +102,13 @@ const oddsMap = () => ({'1|2':{hId:1, aId:2, xGH:1.6, xGA:1.1, kickoff:null, pro
 function appliedRecord(core, fetchedAt, over = {}){
   return {signature:'sig', season:core.season, schemaVersion:SCHEMA_VERSION,
     modelVersion:MODEL_VERSION, fetchedAt, ...over};
+}
+function activateCore(core){
+  assignCore(core, []);
+  S.teamId='';
+}
+function minuteMeta(core,fetchedAt,revision){
+  return {season:core.season,schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,fetchedAt,revision};
 }
 
 /* =====================================================================
@@ -130,6 +137,24 @@ test('1a · collection leaves S, the health registry and xpCache byte-identical'
   await computeMinuteHistories({core:{...core, seasonLive:false}, account:{picks:null, manual:[]}});
   assert.deepEqual({state:deepSnapshot(S), health:deepSnapshot(snapshotHealth()),
     xp:deepSnapshot(xpCacheValueSnapshot())}, before);
+});
+
+test('1a-live · live minute collection uses typed transport without mutating S or retry diagnostics', async () => {
+  const core=coreOf({finishedGw:true});
+  activateCore(core);
+  const before={state:deepSnapshot(S),health:deepSnapshot(snapshotHealth())};
+  const previousFetch=globalThis.fetch,previousBase=globalThis.__TEAMSHEET_FPL_GATEWAY_BASE__;
+  globalThis.__TEAMSHEET_FPL_GATEWAY_BASE__='https://gateway.example.com/fpl';
+  globalThis.fetch=async()=>fakeResponse({body:{history:[{fixture:1,round:1,minutes:90,starts:1}]}});
+  try{
+    const result=await computeMinuteHistories({core,getStorage:async()=>null,nowFn:()=>5000,
+      account:{picks:null,manual:[]}});
+    assert.equal(result.retryRecords.length,core.elements.length);
+    assert.deepEqual({state:deepSnapshot(S),health:deepSnapshot(snapshotHealth())},before);
+  }finally{
+    globalThis.fetch=previousFetch;
+    globalThis.__TEAMSHEET_FPL_GATEWAY_BASE__=previousBase;
+  }
 });
 
 test('1b · compute functions do not mutate frozen staged inputs', async () => {
@@ -521,6 +546,32 @@ test('113 · the gateway no longer writes S.source during collection', () => {
   assert.match(TRANSPORT_SOURCE, /source:'Teamsheet gateway'/);
 });
 
+test('account validator-fatal HTTP 200 responses are failed, never authoritative notfound', async () => {
+  const core=coreOf();
+  const entryFatal=await main.collectAccount('7',core,{apiFn:async()=>({outcome:'value',value:[]})});
+  assert.equal(entryFatal.entry.outcome,'failed');
+
+  const picksFatal=await main.collectAccount('7',core,{apiFn:async path=>
+    path.endsWith('/entry/7/')?{outcome:'value',value:{name:'Team'}}:
+      path.includes('/picks/')?{outcome:'value',value:{}}:{outcome:'value',value:{chips:[]}}});
+  assert.equal(picksFatal.picks.outcome,'failed');
+
+  const historyFatal=await main.collectAccount('7',core,{apiFn:async path=>
+    path.endsWith('/entry/7/')?{outcome:'value',value:{name:'Team'}}:
+      path.includes('/picks/')?{outcome:'value',value:{picks:[]}}:{outcome:'value',value:[]}});
+  assert.equal(historyFatal.history.outcome,'failed');
+});
+
+test('staged minute context carries only account-compatible picks', () => {
+  const core=coreOf(),account={entry:{outcome:'failed'},picks:{outcome:'failed'},history:{outcome:'failed'},picksGameweek:1};
+  S.entry={name:'Old'}; S.picks={picks:[{element:1}]};
+  S.__accountKeys={entry:main.accountKey('entry',{teamId:'7',season:core.season}),
+    picks:main.accountKey('picks',{teamId:'7',season:core.season,picksGameweek:1}),
+    history:main.accountKey('history',{teamId:'7',season:core.season})};
+  assert.deepEqual(main.stagedAccountContext({teamId:'7',manualIds:[]},core,account).picks,S.picks);
+  assert.equal(main.stagedAccountContext({teamId:'8',manualIds:[]},core,account).picks,null);
+});
+
 /* =====================================================================
    F · Account slices, carry keys and health aggregate (R3.4 E5, R3.2 C6)
    ===================================================================== */
@@ -617,14 +668,23 @@ test('16 · a re-entrant commit is rejected rather than interleaved', () => {
 
 test('38 · a forced commit throw restores S, retryStats and the health registry', () => {
   const core = coreOf();
-  S.boot = core.boot; S.entry = {name:'Original'}; S.retryStats = {'fpl|/x/':{provider:'fpl', endpoint:'/x/'}};
+  activateCore(core);
+  S.entry = {name:'Original'};
+  S.__accountKeys={entry:'old-entry',picks:'old-picks',history:'old-history'};
+  S.retryStats = {'fpl|/x/':{provider:'fpl', endpoint:'/x/'}};
   markLive('understat', 'before', 'before');
-  const journal = {state:captureStateJournal(), health:snapshotHealth()};
-  S.entry = {name:'Half-written'}; S.retryStats['fpl|/y/'] = {provider:'fpl', endpoint:'/y/'};
-  markCached('understat', 1, 'after', 'after');
-  restoreStateJournal(journal.state);
-  restoreHealth(journal.health);
+  const staged={core,coreIssues:[],corePartial:false,source:'new',retryRecords:[],slimmed:{},
+    inputs:{teamId:'7',useUstat:false,useManual:false,oddsKey:'',manualIds:[],lifecycleEpoch:0},
+    account:{entry:{outcome:'value',value:{name:'New'}},picks:{outcome:'value',value:{picks:[]}},
+      history:{outcome:'value',value:{chips:[]}},picksGameweek:1,issues:null,retryRecords:[]},
+    understat:{outcome:'clear',issues:[],retryRecords:[],persist:null},
+    odds:{outcome:'clear',issues:[],retryRecords:[],persist:null},
+    minutes:{outcome:'clear',issues:[],retryRecords:[],persist:null,cohortIds:[]}};
+  const result=main.applyRefreshCommit(staged,{now:1});
+  assert.equal(result.ok,false);
+  assert.equal(result.reason,'commit_failed');
   assert.deepEqual(S.entry, {name:'Original'});
+  assert.deepEqual(S.__accountKeys,{entry:'old-entry',picks:'old-picks',history:'old-history'});
   assert.deepEqual(Object.keys(S.retryStats), ['fpl|/x/']);
   assert.equal(getHealth('understat').state, HEALTH_STATES.LIVE);
   assert.equal(getHealth('understat').note, 'before');
@@ -651,7 +711,7 @@ test('42 · the rollback path performs only assignments', () => {
 });
 
 test('115 · providerApplied and minuteHistoryMeta are inside the commit journal', () => {
-  assert.match(STATE_SOURCE, /'providerApplied','dataIssues'/);
+  assert.match(STATE_SOURCE, /'providerApplied','__accountKeys','dataIssues'/);
   assert.match(STATE_SOURCE, /'minuteHistory','minuteHistoryMeta'/);
 });
 
@@ -734,7 +794,7 @@ test('94 · the two storage surfaces are independent', async () => {
 
 test('18 · K_CACHE is written only after a successful commit', () => {
   const commitIndex = MAIN_SOURCE.indexOf('const committed = applyRefreshCommit(staged);');
-  const persistIndex = MAIN_SOURCE.indexOf('const persistFailures = await persistRefresh(staged);');
+  const persistIndex = MAIN_SOURCE.indexOf('const persistFailures = await persistRefresh(staged, committed);');
   assert.ok(commitIndex > 0 && persistIndex > commitIndex, 'persistence follows the commit');
   assert.match(MAIN_SOURCE, /const writes = \[\{key:K_CACHE, value:staged\.slimmed\}\]/);
   const collect = MAIN_SOURCE.slice(MAIN_SOURCE.indexOf('async function collectRefresh'), MAIN_SOURCE.indexOf('function applyRefreshCommit'));
@@ -753,10 +813,116 @@ test('112 · persistence lag — Rule B validates the newer in-memory record, no
   delete globalThis.localStorage._d['fpl:understat-team-inputs'];
 });
 
+test('112-full · a complete later refresh cannot replace newer memory with older storage for any provider', async () => {
+  const now=Date.now(),boot=payload({finishedGw:true}),fx=fixtures();
+  fx[0].finished=true;
+  const core=prepareCore(slim(boot,fx)).core,revision=completedDataRevision(core.events,core.fixtures);
+  activateCore(core);
+  fields.useUstat.checked=true; fields.oddsKey.value='test-key'; fields.teamId.value='';
+  const newerUstat={1:{xg:1.8,xga:1,atk:1.2,def:1.1},2:{xg:1.1,xga:1.5,atk:.8,def:.9}};
+  const newerOdds={'1|2':{...oddsMap()['1|2'],xGH:1.9,fetchedAt:now-100}};
+  S.ustat=newerUstat; S.odds=newerOdds;
+  S.providerApplied={understat:appliedRecord(core,now-100),odds:appliedRecord(core,now-100)};
+  S.minuteHistory=Object.fromEntries(core.elements.map(player=>[player.id,[{fixture:1,round:1,minutes:90,starts:1}]]));
+  S.minuteHistoryMeta=Object.fromEntries(core.elements.map(player=>[player.id,minuteMeta(core,now-100,revision)]));
+  const old=now-1000;
+  globalThis.localStorage._d[K_UNDERSTAT]=JSON.stringify({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    season:core.season,fixtureRevision:understatFixtureRevision(fx),fetchedAt:old,teams:ustatMap()});
+  globalThis.localStorage._d[K_ODDS]=JSON.stringify({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    season:core.season,checkedAt:now-500,fetchedAt:old,derived:{'1|2':{...oddsMap()['1|2'],fetchedAt:old}}});
+  globalThis.localStorage._d[K_MINUTES]=JSON.stringify({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    season:core.season,fetchedAt:old,revision,players:Object.fromEntries(core.elements.map(player=>[player.id,
+      {fetchedAt:old,revision,history:[{fixture:1,round:1,minutes:30,starts:0}]}]))});
+  const result=await main.loadAll({deferRender:true,inputs:main.captureRefreshInputs(),
+    apiFn:async path=>path==='/bootstrap-static/'?{outcome:'value',value:boot,source:'test'}:
+      path==='/fixtures/'?{outcome:'value',value:fx,source:'test'}:{outcome:'failed'},
+    understatDeps:{nowFn:()=>now},oddsDeps:{nowFn:()=>now},minutesDeps:{nowFn:()=>now}});
+  assert.equal(result.ok,true);
+  assert.deepEqual(S.ustat,newerUstat);
+  assert.deepEqual(S.odds,newerOdds);
+  assert.ok(Object.values(S.minuteHistoryMeta).every(meta=>meta.fetchedAt===now-100));
+  assert.equal(JSON.parse(globalThis.localStorage._d[K_UNDERSTAT]).fetchedAt,old);
+  assert.equal(JSON.parse(globalThis.localStorage._d[K_ODDS]).fetchedAt,old);
+  assert.ok(Object.values(JSON.parse(globalThis.localStorage._d[K_MINUTES]).players).every(entry=>entry.fetchedAt===old));
+});
+
+test('112-direct · direct provider wrappers reject older cache candidates and do not persist them', async () => {
+  const now=Date.now(),core=coreOf({finishedGw:true}),revision=completedDataRevision(core.events,core.fixtures),writes=[];
+  activateCore(core); fields.useUstat.checked=true; fields.oddsKey.value='test-key';
+  S.ustat=ustatMap(); S.odds={'1|2':{...oddsMap()['1|2'],fetchedAt:now-100}};
+  S.providerApplied={understat:appliedRecord(core,now-100),odds:appliedRecord(core,now-100)};
+  S.minuteHistory=Object.fromEntries(core.elements.map(player=>[player.id,[{fixture:1,round:1,minutes:90,starts:1}]]));
+  S.minuteHistoryMeta=Object.fromEntries(core.elements.map(player=>[player.id,minuteMeta(core,now-100,revision)]));
+  const old=now-1000,setStorage=async(key,value)=>writes.push({key,value});
+  await loadUnderstat({nowFn:()=>now,getStorage:async()=>({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    season:core.season,fixtureRevision:understatFixtureRevision(core.fixtures),fetchedAt:old,teams:ustatMap()}),setStorage});
+  await loadOdds({nowFn:()=>now,getStorage:async()=>({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    season:core.season,checkedAt:now-500,fetchedAt:old,derived:{'1|2':{...oddsMap()['1|2'],fetchedAt:old}}}),setStorage});
+  await loadMinuteHistories({nowFn:()=>now,getStorage:async()=>({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    season:core.season,fetchedAt:old,revision,players:Object.fromEntries(core.elements.map(player=>[player.id,
+      {fetchedAt:old,revision,history:[{fixture:1,round:1,minutes:30,starts:0}]}]))}),setStorage});
+  assert.deepEqual(writes,[]);
+  assert.equal(S.providerApplied.understat.fetchedAt,now-100);
+  assert.equal(S.providerApplied.odds.fetchedAt,now-100);
+  assert.ok(Object.values(S.minuteHistoryMeta).every(meta=>meta.fetchedAt===now-100));
+});
+
+test('a direct provider result calculated against an old core is discarded and recomputed', async () => {
+  const now=Date.now(),oldCore=coreOf(),newCore=coreOf({teamNames:['Arsenal renamed','Chelsea','Everton','Fulham']});
+  activateCore(oldCore); fields.useUstat.checked=true;
+  S.ustat=ustatMap(); S.providerApplied={understat:appliedRecord(oldCore,now-100),odds:null};
+  let release;
+  const storage=new Promise(resolve=>{release=resolve;});
+  const writes=[];
+  const pending=loadUnderstat({nowFn:()=>now,getStorage:()=>storage,setStorage:async(...args)=>writes.push(args)});
+  await Promise.resolve();
+  activateCore(newCore);
+  release({schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season:oldCore.season,
+    fixtureRevision:understatFixtureRevision(oldCore.fixtures),fetchedAt:now-500,teams:ustatMap()});
+  await pending;
+  assert.deepEqual(writes,[]);
+  assert.deepEqual(applied.drainRecomputation(),['understat']);
+  assert.deepEqual(S.ustat,ustatMap());
+});
+
 test('Rule B reads no storage', () => {
   const ruleB = APPLIED_SOURCE.slice(APPLIED_SOURCE.indexOf('function provenanceMatches'),
     APPLIED_SOURCE.indexOf('const providerToken'));
   assert.doesNotMatch(ruleB, /sget|localStorage|await/);
+});
+
+test('captured Team ID, provider settings and manual cohort changes invalidate staged work', () => {
+  fields.teamId.value='7'; fields.useUstat.checked=true; fields.oddsKey.value='key-a'; fields.useManual.checked=false;
+  S.manual=[{id:1}];
+  const cases=[
+    ()=>{fields.teamId.value='8';},
+    ()=>{fields.useUstat.checked=false;},
+    ()=>{fields.oddsKey.value='key-b';},
+    ()=>{fields.useManual.checked=true;},
+    ()=>{S.manual.push({id:2});}
+  ];
+  for(const mutate of cases){
+    fields.teamId.value='7'; fields.useUstat.checked=true; fields.oddsKey.value='key-a'; fields.useManual.checked=false;
+    S.manual=[{id:1}];
+    const captured=main.captureRefreshInputs();
+    mutate();
+    assert.equal(main.refreshInputsAreCurrent(captured),false);
+  }
+});
+
+test('loadAll discards the complete staged generation when captured inputs changed', async () => {
+  const core=coreOf(); activateCore(core); S.source='previous';
+  fields.teamId.value='7'; fields.useUstat.checked=false; fields.oddsKey.value=''; fields.useManual.checked=false;
+  const captured=main.captureRefreshInputs();
+  fields.teamId.value='8';
+  const boot=payload(),fx=fixtures();
+  const result=await main.loadAll({deferRender:true,inputs:captured,
+    apiFn:async path=>path==='/bootstrap-static/'?{outcome:'value',value:boot,source:'new'}:
+      path==='/fixtures/'?{outcome:'value',value:fx,source:'new'}:{outcome:'failed'},
+    understatDeps:{getStorage:async()=>null},oddsDeps:{getStorage:async()=>null},
+    minutesDeps:{getStorage:async()=>null}});
+  assert.equal(result.discarded,'inputs');
+  assert.equal(S.source,'previous');
 });
 
 /* =====================================================================

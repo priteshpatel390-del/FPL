@@ -23,9 +23,9 @@ One finding raised during investigation was **withdrawn**: the pre-validation `K
 ```
 requestRefresh(reason)
    └─ queue if in flight (manual is queued, never downgraded)
-        ├─ captureRefreshInputs()   → the epoch is a captured value, not a counter
+        ├─ captureRefreshInputs()   → immutable config plus manual-cohort identity
         ├─ collectRefresh(inputs)   → PURE: no writes to S, health or diagnostics
-        ├─ lifecycle-epoch check    → work crossing a persisted restoration is discarded in full
+        ├─ lifecycle/input checks   → suspended or configuration-stale work is discarded in full
         ├─ applyRefreshCommit()     ══ SYNCHRONOUS · NO-THROW · NO-REENTRANT ══
         ├─ render once
         ├─ await persistence        → ssetChecked, so persist_failed is observable
@@ -34,7 +34,9 @@ requestRefresh(reason)
 
 **Why synchronous is sufficient.** Every renderer reads `S` synchronously from an event-loop task. A mutation block with no suspension point cannot be interleaved. The codebase contains no `MutationObserver`, `IntersectionObserver`, `Proxy` or accessor property on `S`, so a plain assignment cannot dispatch to user code. Test 22a locks that. No interaction lock is therefore needed, and the accepted D-36 behaviour that foreground refresh stays interactive is preserved.
 
-**No refresh generation.** `verifiedRefreshPromise` already makes refreshes a singleton, so a counter guarding "an older refresh commits after a newer one" would defend an unreachable scenario. The genuine overlap is provider-level — the settings handlers call providers outside that guard — and is handled by per-provider tokens.
+**No refresh generation.** `verifiedRefreshPromise` already makes refreshes a singleton, so a counter guarding "an older refresh commits after a newer one" would defend an unreachable scenario. The captured Team ID, manual mode/cohort, Understat setting and transient Odds key must still match immediately before commit. The genuine provider overlap is handled by tokens allocated for both refresh and direct-provider work; direct wrappers additionally compare their result with the live core/configuration before application.
+
+**Monotonic source time.** A compatible in-memory Understat, Odds or per-player minute value cannot be replaced by a candidate with an older original `fetchedAt`. Persistence writes are derived only after the application verdict. Rejected/stale work cannot write, and a current-input failure envelope is merged with newer compatible memory before its cooldown metadata may persist.
 
 ## Two independent rules per provider
 
@@ -63,7 +65,7 @@ An opaque in-memory counter, incremented when the trimmed key value changes. Nev
 
 `outcome:'value'` → replace · `outcome:'notfound'` (HTTP 404 only) → clear · `outcome:'failed'` → carry when the key matches, otherwise clear.
 
-A 200 response carrying a `detail` field is **failed**, not notfound. Ambiguity must preserve user data, never destroy it — a false notfound would clear a valid squad, which is the defect this checkpoint exists to fix.
+A 200 response carrying a `detail` field or failing endpoint validation is **failed**, not notfound. Entry transport/validation failure does not prevent independent picks/history collection; only an authoritative entry 404 clears all dependent account state. Ambiguity must preserve compatible user data, never destroy it.
 
 ## FPL health aggregation
 
@@ -94,7 +96,7 @@ Revision change and the seven-day backstop remain **correction triggers**. There
 
 Four domains, restored together in reverse commit order:
 
-- refresh-owned keys of `S` (`REFRESH_OWNED_KEYS`)
+- refresh-owned keys of `S` (`REFRESH_OWNED_KEYS`), including `S.__accountKeys`
 - `S.retryStats`, **cloned** — `recordRetry` writes in place, so a reference snapshot restores nothing
 - the health registry, via `snapshotHealth()` / `restoreHealth()` — module-private, unreachable from `S`
 - `xpCache`, cleared rather than restored — it is a pure memo, so clearing is always safe and restoring stale entries would not be
@@ -108,12 +110,14 @@ Four domains, restored together in reverse commit order:
 | `src/state.mjs` | `prepareCore` / `assignCore`, commit journal, `populatePositionFilter` extracted from `hydrate` |
 | `src/storage.mjs` | `ssetChecked` added; `sset` byte-identical |
 | `src/providers/transport.mjs` | typed result; `notfound` restricted to 404; no `S.source` write during collection |
-| `src/providers/{understat,odds,minutes-history}.mjs` | pure `compute*` plus wrappers through the shared gate |
+| `src/providers/{understat,odds,minutes-history}.mjs` | pure `compute*`, typed minute transport, and live-input-validated wrappers through the shared gate |
 | `src/providers/common.mjs` | `mapTeamName(external, teams)` |
 | `src/providers/registry.mjs` | `snapshotHealth` / `restoreHealth` |
 | `src/model/scoring.mjs` | `xpCacheValueSnapshot` / `xpCacheRefSnapshot` |
 | `src/ui/views.mjs` | focused-control value preservation |
 | `build.mjs` | `applied.mjs` added to `ORDER` |
+
+Review correction adds executable regression coverage for live minute-transport purity, configuration/core races, monotonic refresh and direct-wrapper precedence, rejected persistence, malformed HTTP-200 account payloads, actual commit rollback including account keys, and production-render focus retention.
 
 ## Limitations
 

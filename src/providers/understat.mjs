@@ -6,7 +6,7 @@ import { validateUnderstat, collapseIssues } from './validate.mjs';
 import { recordIssues, recordRetry } from '../state.mjs';
 import { MODEL_VERSION, SCHEMA_VERSION, SUPPORTING_REFRESH_RULES } from '../config.mjs';
 import { K_UNDERSTAT, sget, sset } from '../storage.mjs';
-import { validUnderstatMap, understatSignature, nextProviderToken, applyProviderResult } from './applied.mjs';
+import { validUnderstatMap, understatSignature, nextProviderToken, applyProviderResult, providerPersistCandidate } from './applied.mjs';
 /* ---------------------------------------------------------------------
    UNDERSTAT LAYER — rolling actual xG replaces trusting FPL's slow-moving
    strength ratings. Parses the teamsData JSON embedded in the league page.
@@ -159,10 +159,17 @@ async function loadUnderstat(options={}){
   const result=await computeUnderstat({...options,core,config});
   if(result.outcome==='skip') return;
   result.signature=understatSignature(core,config);
-  applyProviderResult('understat',result,{core,now:(options.nowFn||Date.now)(),token,signature:result.signature});
-  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
-  (result.retryRecords||[]).forEach(record=>recordRetry(record));
-  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  const currentCore=options.currentCore||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:understatSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const currentConfig=options.currentConfig||{useUstat:Boolean($('useUstat')?.checked)};
+  const verdict=applyProviderResult('understat',result,{core:currentCore,now:(options.nowFn||Date.now)(),token,
+    signature:understatSignature(currentCore,currentConfig)});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('understat',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
   return result.summary;
 }
 

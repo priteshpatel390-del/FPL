@@ -1,5 +1,5 @@
-import { S, recordIssues } from '../state.mjs';
-import { minutesSignature, nextProviderToken, applyProviderResult } from './applied.mjs';
+import { S, recordIssues, recordRetry } from '../state.mjs';
+import { minutesSignature, nextProviderToken, applyProviderResult, providerPersistCandidate } from './applied.mjs';
 import { num } from '../util.mjs';
 import { MODEL_VERSION, SCHEMA_VERSION, MINUTES_RULES } from '../config.mjs';
 import { api, pool } from './transport.mjs';
@@ -92,9 +92,9 @@ function minutesHealthDetail({state,oldestActiveAt=null,active=0,cached=0,reques
    correction fails (R3.2 C2). */
 async function computeMinuteHistories(deps={}){
   const nowFn=deps.nowFn||Date.now, getStorage=deps.getStorage||sget;
-  const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true}));
+  const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true,typed:true}));
   const core=deps.core||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,seasonLive:S.seasonLive};
-  const issues=[];
+  const issues=[],retryRecords=[];
   if(!core.seasonLive || !core.elements?.length){
     return {outcome:'clear',value:{},meta:{},cohortIds:[],issues,persist:null,
       healthDetail:minutesHealthDetail({state:HEALTH_STATES.DISABLED,note:'No completed Gameweek yet'}),
@@ -134,7 +134,10 @@ async function computeMinuteHistories(deps={}){
     if(consecutiveFailedBatches>=2){ deferred=due.length-offset; break; }
     const batch=due.slice(offset,offset+4);
     const batchResults=await pool(batch,async player=>{
-      const payload=await fetchSummary(player.id);
+      const response=await fetchSummary(player.id);
+      const typed=response&&typeof response==='object'&&typeof response.outcome==='string';
+      if(typed&&response.retryRecord) retryRecords.push(response.retryRecord);
+      const payload=typed&&response.outcome==='value'?response.value:typed?null:response;
       const checked=validateElementSummary(payload);
       if(!checked.value) return {id:player.id,ok:false,issues:checked.issues,hasCache:decisions.get(+player.id).usable};
       return {id:player.id,ok:true,history:checked.value,issues:checked.issues};
@@ -166,7 +169,7 @@ async function computeMinuteHistories(deps={}){
   const cachedActive=Math.max(0,active-loaded);
   const state=failed||deferred||active<chosen.length||Boolean(loaded&&cachedActive) ? HEALTH_STATES.PARTIAL : loaded ? HEALTH_STATES.LIVE : HEALTH_STATES.CACHED;
   const note=deferred?'Systemic outage guard stopped further requests':failed?'Saved histories retained where valid':loaded&&cachedActive?'Fresh and cached validated histories active':'Validated histories active';
-  return {outcome:'value',value:history,meta,cohortIds,issues,
+  return {outcome:'value',value:history,meta,cohortIds,issues,retryRecords,
     persist:{key:K_MINUTES,value:nextEnvelope},
     healthDetail:minutesHealthDetail({state,oldestActiveAt,active,cached:cachedActive,requested:results.length,loaded,failed,deferred,note}),
     summary:{loaded,failed,cached:cachedActive,requested:results.length,deferred}};
@@ -180,10 +183,20 @@ async function loadMinuteHistories(deps={}){
   const token=nextProviderToken('minutes');
   const result=await computeMinuteHistories({...deps,core});
   result.signature=minutesSignature(core,completedDataRevision(core.events,core.fixtures),result.cohortIds);
-  applyProviderResult('minutes',result,{core,now:(deps.nowFn||Date.now)(),token,
-    signature:result.signature,cohortIds:result.cohortIds});
-  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
-  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  const currentCore=deps.currentCore||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,
+    teams:S.boot?.teams,seasonLive:S.seasonLive,season:seasonKey(S.boot?.events)};
+  const currentUseManual=deps.currentUseManual??Boolean(globalThis.document?.getElementById?.('useManual')?.checked);
+  const currentCohortIds=cohort({elements:currentCore.elements,useManual:currentUseManual,
+    account:{picks:S.picks,manual:S.manual}}).map(player=>+player.id);
+  const currentSignature=minutesSignature(currentCore,completedDataRevision(currentCore.events,currentCore.fixtures),currentCohortIds);
+  const verdict=applyProviderResult('minutes',result,{core:currentCore,now:(deps.nowFn||Date.now)(),token,
+    signature:currentSignature,cohortIds:currentCohortIds});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('minutes',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
   return result.summary;
 }
 

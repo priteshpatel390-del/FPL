@@ -6,7 +6,7 @@ import { ODDS_RULES, MODEL_VERSION, SCHEMA_VERSION, SUPPORTING_REFRESH_RULES } f
 import { HEALTH_STATES, markDisabled } from './registry.mjs';
 import { validateOdds } from './validate.mjs';
 import { recordIssues, recordRetry } from '../state.mjs';
-import { validOddsMap, oddsSignature, nextProviderToken, applyProviderResult } from './applied.mjs';
+import { validOddsMap, oddsSignature, nextProviderToken, applyProviderResult, providerPersistCandidate } from './applied.mjs';
 import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from './retry.mjs';
 import { K_CFG, K_ODDS, sget, sset } from '../storage.mjs';
 /* ---------------------------------------------------------------------
@@ -269,10 +269,17 @@ async function loadOdds(options={}){
   const result=await computeOdds({...options,core,config});
   if(result.outcome==='skip') return;
   result.signature=oddsSignature(core,config);
-  applyProviderResult('odds',result,{core,now:(options.nowFn||Date.now)(),token,signature:result.signature});
-  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
-  (result.retryRecords||[]).forEach(record=>recordRetry(record));
-  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  const currentCore=options.currentCore||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:oddsSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const currentConfig=options.currentConfig||{oddsKey:$('oddsKey')?.value||''};
+  const verdict=applyProviderResult('odds',result,{core:currentCore,now:(options.nowFn||Date.now)(),token,
+    signature:oddsSignature(currentCore,currentConfig)});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('odds',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
   return result.summary;
 }
 

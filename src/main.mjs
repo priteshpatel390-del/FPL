@@ -9,7 +9,7 @@ import { computeUnderstat, loadUnderstat, understatSeasonKey } from './providers
 import { computeOdds, loadOdds } from './providers/odds.mjs';
 import { computeMinuteHistories, loadMinuteHistories, completedDataRevision } from './providers/minutes-history.mjs';
 import { understatSignature, oddsSignature, minutesSignature, nextProviderToken, applyProviderResult,
-  drainRecomputation } from './providers/applied.mjs';
+  drainRecomputation, providerPersistCandidate } from './providers/applied.mjs';
 import { snapshotHealth, restoreHealth } from './providers/registry.mjs';
 import { clearXP } from './model/xp.mjs';
 import { HEALTH_STATES, healthRows, getHealth, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable } from './providers/registry.mjs';
@@ -119,8 +119,16 @@ function captureRefreshInputs(){
     useUstat:Boolean(config.useUstat),
     useManual:Boolean(config.useManual),
     oddsKey:String(config.oddsKey || ''),
+    manualIds:(S.manual||[]).map(item=>+item.id).filter(id=>Number.isInteger(id)&&id>0),
     lifecycleEpoch
   };
+}
+
+function refreshInputsAreCurrent(inputs){
+  const current=captureRefreshInputs();
+  return inputs.teamId===current.teamId&&inputs.useUstat===current.useUstat&&
+    inputs.useManual===current.useManual&&inputs.oddsKey===current.oddsKey&&
+    inputs.manualIds.join(',')===current.manualIds.join(',');
 }
 
 /* R3.4 E5/E7 — account compatibility keys. Every key carries teamId and
@@ -142,37 +150,51 @@ function resolveAccountSlice(kind, staged, previous, keys){
   return compatible ? {state:'carry', value:previous.value} : {state:'clear', value:null};
 }
 
-async function collectAccount(teamId, core, options){
+async function collectAccount(teamId, core, options={}){
   const blank = {entry:{outcome:'skip'}, picks:{outcome:'skip'}, history:{outcome:'skip'}, picksGameweek:0, issues:[], retryRecords:[]};
   if(!teamId) return blank;
   const issues = [], retryRecords = [];
   const take = response => { if(response?.retryRecord) retryRecords.push(response.retryRecord); return response; };
-  const entryRaw = take(await api('/entry/' + teamId + '/', {optional:true, typed:true}));
+  const apiFn=options.apiFn||api;
+  const entryRaw = take(await apiFn('/entry/' + teamId + '/', {optional:true, typed:true}));
   let entry = {outcome:entryRaw.outcome, value:null};
   if(entryRaw.outcome === 'value'){
     const checked = validateEntry(entryRaw.value);
     issues.push({provider:'fpl', endpoint:'/entry/', issues:checked.issues});
-    entry = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+    entry = {outcome:checked.value ? 'value' : 'failed', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
   }
-  if(entry.outcome !== 'value') return {...blank, entry, issues, retryRecords};
+  if(entry.outcome === 'notfound') return {...blank, entry, issues, retryRecords};
   const picksGameweek = publicPicksGameweek(core.events, core.currentGW);
   let picks = {outcome:'notfound', value:null};
   if(picksGameweek){
-    const picksRaw = take(await api('/entry/' + teamId + '/event/' + picksGameweek + '/picks/', {optional:true, typed:true}));
+    const picksRaw = take(await apiFn('/entry/' + teamId + '/event/' + picksGameweek + '/picks/', {optional:true, typed:true}));
     if(picksRaw.outcome === 'value'){
       const checked = validatePicks(picksRaw.value);
       issues.push({provider:'fpl', endpoint:'/entry/event/picks/', issues:checked.issues});
-      picks = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+      picks = {outcome:checked.value ? 'value' : 'failed', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
     } else picks = {outcome:picksRaw.outcome, value:null};
   }
-  const historyRaw = take(await api('/entry/' + teamId + '/history/', {optional:true, typed:true}));
+  const historyRaw = take(await apiFn('/entry/' + teamId + '/history/', {optional:true, typed:true}));
   let history = {outcome:historyRaw.outcome, value:null};
   if(historyRaw.outcome === 'value'){
     const checked = validateHistory(historyRaw.value);
     issues.push({provider:'fpl', endpoint:'/entry/history/', issues:checked.issues});
-    history = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+    history = {outcome:checked.value ? 'value' : 'failed', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
   }
   return {entry, picks, history, picksGameweek, issues, retryRecords};
+}
+
+function stagedAccountContext(inputs,core,account){
+  if(!inputs.teamId) return {picks:null,manual:inputs.manualIds.map(id=>({id}))};
+  const previousKeys=S.__accountKeys||{},keys={
+    entry:accountKey('entry',{teamId:inputs.teamId,season:core.season}),
+    picks:accountKey('picks',{teamId:inputs.teamId,season:core.season,picksGameweek:account.picksGameweek}),
+    history:accountKey('history',{teamId:inputs.teamId,season:core.season})
+  };
+  const entry=resolveAccountSlice('entry',account.entry,{key:previousKeys.entry,value:S.entry},keys);
+  const picks=entry.state==='clear'?{state:'clear',value:null}:
+    resolveAccountSlice('picks',account.picks,{key:previousKeys.picks,value:S.picks},keys);
+  return {picks:picks.value,manual:inputs.manualIds.map(id=>({id}))};
 }
 
 function picksStatusFor(state, picks, picksGameweek){
@@ -198,6 +220,7 @@ function aggregateFplHealth({corePartial, requested, slices, source, at}){
 
 async function collectRefresh(options = {}){
   const inputs = options.inputs || captureRefreshInputs();
+  const apiFn=options.apiFn||api;
   reportLoadPhase(options, 'fpl');
   if(browserReportsOffline()){
     const error=new Error('device offline');
@@ -205,7 +228,7 @@ async function collectRefresh(options = {}){
     throw error;
   }
   const [bootRaw, fixturesRaw] = await Promise.all([
-    api('/bootstrap-static/', {typed:true}), api('/fixtures/', {typed:true})
+    apiFn('/bootstrap-static/', {typed:true}), apiFn('/fixtures/', {typed:true})
   ]);
   const retryRecords = [bootRaw.retryRecord, fixturesRaw.retryRecord].filter(Boolean);
   if(bootRaw.outcome !== 'value' || fixturesRaw.outcome !== 'value')
@@ -230,23 +253,21 @@ async function collectRefresh(options = {}){
   const account = await collectAccount(inputs.teamId, core, options);
 
   reportLoadPhase(options, 'providers');
-  const stagedAccount = {
-    picks:account.picks.outcome === 'value' ? account.picks.value : S.picks,
-    manual:S.manual
-  };
+  const stagedAccount=stagedAccountContext(inputs,core,account);
   const providerConfig = {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey, useManual:inputs.useManual};
   const providerCore = {...core, seasonLive:core.seasonLive};
+  const providerTokens={understat:nextProviderToken('understat'),odds:nextProviderToken('odds'),minutes:nextProviderToken('minutes')};
   const [understat, odds, minutes] = await Promise.all([
-    computeUnderstat({core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
-    computeOdds({core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
-    computeMinuteHistories({core:providerCore, account:stagedAccount, useManual:inputs.useManual}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], cohortIds:[], persist:null}))
+    computeUnderstat({...options.understatDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
+    computeOdds({...options.oddsDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
+    computeMinuteHistories({...options.minutesDeps,core:providerCore, account:stagedAccount, useManual:inputs.useManual}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], cohortIds:[], persist:null}))
   ]);
   understat.signature = understatSignature(providerCore, providerConfig);
   odds.signature = oddsSignature(providerCore, providerConfig);
   minutes.signature = minutesSignature(providerCore, completedDataRevision(core.events, core.fixtures), minutes.cohortIds || []);
 
   return {
-    inputs, core, slimmed, account, understat, odds, minutes,
+    inputs, core, slimmed, account, understat, odds, minutes, providerTokens,
     corePartial:prepared.issues.some(i => i.severity === 'partial'),
     coreIssues:prepared.issues, retryRecords, source:bootRaw.source || S.source || 'live feed'
   };
@@ -294,17 +315,7 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
       picks:picksRes.state === 'clear' ? null : keys.picks,
       history:historyRes.state === 'clear' ? null : keys.history
     };
-    // 3 · diagnostics
-    const retryStats = {...S.retryStats};
-    [...staged.retryRecords, ...(account.retryRecords || []),
-     ...(staged.understat.retryRecords || []), ...(staged.odds.retryRecords || [])]
-      .filter(record => record && record.provider)
-      .forEach(record => { retryStats[record.provider + '|' + record.endpoint] = record; });
-    S.retryStats = retryStats;
-    [...(account.issues || []), ...(staged.understat.issues || []),
-     ...(staged.odds.issues || []), ...(staged.minutes.issues || [])]
-      .forEach(entry => recordIssues(entry.provider, entry.endpoint, entry.issues));
-    // 4 · provider health — the aggregate never upgrades a partial finding
+    // 3 · provider health and supporting slices, through the shared gate
     const requested = Boolean(inputs.teamId);
     const fplState = aggregateFplHealth({
       corePartial:staged.corePartial, requested,
@@ -313,15 +324,35 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
               {state:historyRes.state, partial:account.history.partial}],
       source:staged.source, at:core.cachedAt
     });
-    // 5 · supporting providers, through the shared gate
-    const applyCtx = {core, now};
-    applyProviderResult('understat', staged.understat, {...applyCtx, signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})});
-    applyProviderResult('odds', staged.odds, {...applyCtx, signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})});
-    applyProviderResult('minutes', staged.minutes, {...applyCtx, cohortIds:staged.minutes.cohortIds || [],
-      signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])});
-    // 6 · derived invalidation
+    const applyCtx = {core, now, resolveOnDiscard:true};
+    const providerVerdicts={
+      understat:applyProviderResult('understat', staged.understat, {...applyCtx, token:staged.providerTokens?.understat,
+        signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})}),
+      odds:applyProviderResult('odds', staged.odds, {...applyCtx, token:staged.providerTokens?.odds,
+        signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})}),
+      minutes:applyProviderResult('minutes', staged.minutes, {...applyCtx, token:staged.providerTokens?.minutes,
+        cohortIds:staged.minutes.cohortIds || [],
+        signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])})
+    };
+    // 4 · diagnostics from current work only
+    const applicable=name=>!providerVerdicts[name]?.discarded;
+    const retryStats = {...S.retryStats};
+    [...staged.retryRecords, ...(account.retryRecords || []),
+     ...(applicable('understat')?staged.understat.retryRecords || []:[]),
+     ...(applicable('odds')?staged.odds.retryRecords || []:[]),
+     ...(applicable('minutes')?staged.minutes.retryRecords || []:[])]
+      .filter(record => record && record.provider)
+      .forEach(record => { retryStats[record.provider + '|' + record.endpoint] = record; });
+    S.retryStats = retryStats;
+    [...account.issues, ...(applicable('understat')?staged.understat.issues || []:[]),
+     ...(applicable('odds')?staged.odds.issues || []:[]),
+     ...(applicable('minutes')?staged.minutes.issues || []:[])]
+      .forEach(entry => recordIssues(entry.provider, entry.endpoint, entry.issues));
+    const providerWrites=Object.entries(providerVerdicts).map(([name,verdict])=>
+      providerPersistCandidate(name,staged[name],verdict)).filter(Boolean);
+    // 5 · derived invalidation
     clearXP();
-    return {ok:true, fplState};
+    return {ok:true, fplState, providerVerdicts, providerWrites};
   }catch(error){
     restoreStateJournal(journal.state);
     restoreHealth(journal.health);
@@ -332,10 +363,9 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
   }
 }
 
-async function persistRefresh(staged){
+async function persistRefresh(staged, committed={}){
   const writes = [{key:K_CACHE, value:staged.slimmed}];
-  [staged.understat.persist, staged.odds.persist, staged.minutes.persist]
-    .filter(Boolean).forEach(entry => writes.push(entry));
+  (committed.providerWrites||[]).forEach(entry => writes.push(entry));
   const failures = [];
   for(const write of writes){
     const result = await ssetChecked(write.key, write.value);
@@ -378,6 +408,11 @@ async function loadAll(options = {}){
     return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'discarded_lifecycle',
       cacheAccepted, optionalResults:[], verifiedAt:null, discarded:'lifecycle'};
   }
+  if(!refreshInputsAreCurrent(staged.inputs)){
+    pendingRefreshRequest = {reason:options.reason || 'foreground', force:true};
+    return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'discarded_inputs',
+      cacheAccepted, optionalResults:[], verifiedAt:null, discarded:'inputs'};
+  }
   reportLoadPhase(options,'model');
   const committed = applyRefreshCommit(staged);
   if(!committed.ok){
@@ -391,7 +426,7 @@ async function loadAll(options = {}){
     if(st) st.textContent = statusLine(staged, committed);
     renderVerifiedState();
   }catch(error){ renderError = error; if(st) st.textContent = 'Data updated but the display failed to refresh.'; }
-  const persistFailures = await persistRefresh(staged);
+  const persistFailures = await persistRefresh(staged, committed);
   await saveCfg();
   for(const name of drainRecomputation()) void recomputeProvider(name);
   return {
@@ -578,7 +613,10 @@ export {
   runVerifiedRefresh,
   installVerifiedRefreshTriggers,
   captureRefreshInputs,
+  refreshInputsAreCurrent,
   collectRefresh,
+  collectAccount,
+  stagedAccountContext,
   applyRefreshCommit,
   persistRefresh,
   resolveAccountSlice,

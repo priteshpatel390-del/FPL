@@ -388,18 +388,20 @@ Use the exact draft-PR build in normal iPhone Safari. Do not pinch zoom during t
 
 ## Atomic Foreground Refresh
 
-`tests/atomic-foreground-refresh.test.mjs` holds the approved contract: 88 cases covering the numbered R3.4 items, grouped where several items share one behavioural setup.
+`tests/atomic-foreground-refresh.test.mjs` holds 96 cases covering the numbered R3.4 contract and the PR #102 correction regressions, grouped where several items share one behavioural setup. `tests/atomic-foreground-refresh-runtime.test.mjs` adds one production-bundle focus test. Together they add 97 cases over the 693-test merged baseline.
 
 Coverage groups:
 
-- **Collection purity** — deep state-snapshot comparison across `S`, the health registry and `xpCache`; frozen staged inputs; no in-place `S.retryStats` write; health marks returned as data.
+- **Collection purity** — deep state-snapshot comparison across `S`, the health registry and `xpCache`; frozen staged inputs; live typed minute transport; no in-place `S.retryStats`/source write; health marks returned as data.
 - **Rule A / Rule B separation** — a revision change keeps a usable value active and Cached; only provenance and R1 age bounds clear a slice; a club rename and a kickoff swap invalidate the computation signature.
 - **Bounded recomputation** — one requeue per provider per apply cycle on a signature mismatch; none for a current-input failure, a cooling skip or a disabled provider.
 - **Minute provenance** — season id reuse, schema/model mismatch and missing metadata all fail closed; the seven-day backstop leaves an entry usable; non-cohort players stay persisted but inactive.
-- **Typed transport** — 404 is notfound; a 200 carrying `detail` is failed and therefore carries a squad forward.
+- **Typed transport** — 404 is notfound; a 200 carrying `detail` or failing endpoint validation is failed and therefore carries compatible account state forward.
 - **Account slices and health** — carry keys; entry as the root; Live only on a clean core and clean replacement of every requested slice.
-- **Commit and rollback** — no `await`, dispatch, DOM or storage call inside the commit; four-domain restore; re-entrancy rejected.
+- **Commit and rollback** — no `await`, dispatch, DOM or storage call inside the commit; an actual forced mid-commit failure restores all four domains including account keys; re-entrancy rejected.
 - **Error classification** — only `collection_failed` may mark FPL Fallback or Unavailable.
 - **Invariants** — the D-13 ordering invariant that made the withdrawn A5-3 finding a non-defect; `S` exposes only data properties.
+- **Race and persistence regressions** — complete later-refresh and direct-wrapper coverage for Understat, Odds and minutes; core/configuration/manual-cohort invalidation; source-time precedence; rejected-result no-write behaviour.
+- **Focused production render** — the actual built bundle preserves `document.activeElement` and the raw focused `fxFrom`/`fxSpan` value through `renderAll()`.
 
 `tests/startup-refresh.test.mjs` line 77–79 previously pinned the pre-atomic provider call shape (`loadUnderstat({force:Boolean(options.forceSupporting)})`). Providers now receive the staged core and captured configuration, so those three assertions were replaced with ones that pin the staged context **as well as** the `forceSupporting` propagation they always covered. No assertion was removed or weakened.

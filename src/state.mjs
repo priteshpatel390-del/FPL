@@ -17,6 +17,7 @@ const S = {
   // Rule B reads this, never persisted storage: the commit is synchronous so
   // it cannot await, and after a persist_failed memory is the newer record.
   providerApplied:{understat:null, odds:null},
+  __accountKeys:{entry:null,picks:null,history:null},
   lastOptimiser:null
 };
 
@@ -174,7 +175,7 @@ const REFRESH_OWNED_KEYS = Object.freeze([
   'seasonLive','gamesPlayed','cachedAt','avg','strengthsAvailable','source','teamId',
   'entry','picks','history','picksGameweek','picksStatus','chipsUsed',
   'ustat','ustatNote','odds','oddsNote','minuteHistory','minuteHistoryMeta',
-  'providerApplied','dataIssues'
+  'providerApplied','__accountKeys','dataIssues'
 ]);
 function captureStateJournal(){
   const state = {};

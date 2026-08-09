@@ -193,7 +193,13 @@ function applyProviderResult(name, result, ctx = {}){
   if(!result || result.outcome === 'skip') return {state:'unchanged', queued:false};
 
   const tokenStale = token != null && token !== currentProviderToken(name);
-  if(tokenStale) return {state:'unchanged', queued:false, reason:'token_stale'};
+  if(tokenStale){
+    if(!ctx.resolveOnDiscard)
+      return {state:'unchanged', queued:false, reason:'token_stale', discarded:true};
+    const retained = applySliceRetain(name, {core, now, cohortIds});
+    if(!retained) applySliceClear(name, result, {disabled:false});
+    return {state:retained?'retain':'clear', queued:false, reason:'token_stale', discarded:true};
+  }
 
   if(result.outcome === 'clear'){
     applySliceClear(name, result, {disabled:true});
@@ -202,17 +208,32 @@ function applyProviderResult(name, result, ctx = {}){
 
   const signatureMismatch = signature != null && result.signature != null && result.signature !== signature;
   if(result.outcome === 'value' && !signatureMismatch){
-    applySliceReplace(name, result, {core, cohortIds});
-    return {state:'replace', queued:false};
+    if((name === 'understat' || name === 'odds') && olderThanActive(name, result, {core, now})){
+      applySliceRetain(name, {core, now, cohortIds});
+      return {state:'retain', queued:false, reason:'older_candidate', discarded:true};
+    }
+    const applied = applySliceReplace(name, result, {core, cohortIds});
+    return {state:applied?.state || 'replace', queued:false,
+      reason:applied?.reason || null, discarded:Boolean(applied?.discarded)};
   }
 
   // Discarded or failed: does the value already live in S survive Rule B?
   const retained = applySliceRetain(name, {core, now, cohortIds});
   const queued = signatureMismatch;
   if(queued) queueRecomputation(name);
-  if(retained) return {state:'retain', queued, reason:signatureMismatch ? 'signature_mismatch' : result.reason || 'computation_failed'};
+  if(retained) return {state:'retain', queued, reason:signatureMismatch ? 'signature_mismatch' : result.reason || 'computation_failed', discarded:signatureMismatch};
   applySliceClear(name, result, {disabled:false});
-  return {state:'clear', queued, reason:'incompatible_or_expired'};
+  return {state:'clear', queued, reason:signatureMismatch?'signature_mismatch':'incompatible_or_expired', discarded:signatureMismatch};
+}
+
+function olderThanActive(name, result, {core, now}){
+  const applied=S.providerApplied?.[name];
+  const compatible=name==='understat'
+    ? understatCompatible(applied,S.ustat,core,now)
+    : oddsCompatible(applied,S.odds,core,now);
+  if(!compatible) return false;
+  const candidate=+result.fetchedAt, active=+applied?.fetchedAt;
+  return Number.isFinite(active)&&(!Number.isFinite(candidate)||candidate<active);
 }
 
 function applySliceReplace(name, result, {core, cohortIds}){
@@ -224,7 +245,7 @@ function applySliceReplace(name, result, {core, cohortIds}){
       modelVersion:MODEL_VERSION, fetchedAt:result.fetchedAt
     } : null};
     applyHealthMark('understat', result.healthMark);
-    return;
+    return {state:'replace'};
   }
   if(name === 'odds'){
     S.odds = result.value;
@@ -234,22 +255,36 @@ function applySliceReplace(name, result, {core, cohortIds}){
       modelVersion:MODEL_VERSION, fetchedAt:result.fetchedAt
     } : null};
     applyHealthMark('odds', result.healthMark);
-    return;
+    return {state:'replace'};
   }
   // Minutes: the admission gate. A history enters S.minuteHistory only when its
   // metadata matches the committed season/schema/model, the player exists and
   // the player is in the captured cohort. There is no second way in.
-  const history = {}, meta = {};
-  const cohortSet = cohortIds || [];
-  Object.keys(result.value || {}).forEach(id => {
-    const entryMeta = result.meta?.[id];
-    if(!minuteEntryCompatible(entryMeta, core, cohortSet, id)) return;
-    history[id] = result.value[id];
-    meta[id] = entryMeta;
+  const history = {}, meta = {}, cohortSet = cohortIds || [];
+  let acceptedCandidate=false, retainedNewer=false;
+  const ids=new Set([...Object.keys(result.value||{}),...Object.keys(S.minuteHistory||{})]);
+  ids.forEach(id=>{
+    const candidateMeta=result.meta?.[id], activeMeta=S.minuteHistoryMeta?.[id];
+    const candidateOk=minuteEntryCompatible(candidateMeta,core,cohortSet,id)&&Array.isArray(result.value?.[id]);
+    const activeOk=minuteEntryCompatible(activeMeta,core,cohortSet,id)&&Array.isArray(S.minuteHistory?.[id]);
+    if(activeOk&&(!candidateOk||+activeMeta.fetchedAt>+candidateMeta.fetchedAt)){
+      history[id]=S.minuteHistory[id]; meta[id]=activeMeta; retainedNewer=true; return;
+    }
+    if(candidateOk){ history[id]=result.value[id]; meta[id]=candidateMeta; acceptedCandidate=true; }
   });
   S.minuteHistory = history;
   S.minuteHistoryMeta = meta;
-  if(result.healthDetail) setHealthDetail('fpl', result.healthDetail);
+  if(result.healthDetail){
+    const times=Object.values(meta).map(item=>+item.fetchedAt).filter(Number.isFinite);
+    const detail=retainedNewer?{...result.healthDetail,
+      state:acceptedCandidate?HEALTH_STATES.PARTIAL:HEALTH_STATES.CACHED,
+      oldestActiveAt:times.length?Math.min(...times):null,active:Object.keys(history).length,
+      note:acceptedCandidate?'Fresh and newer in-memory histories active':'Newer in-memory histories retained'}:result.healthDetail;
+    setHealthDetail('fpl',detail);
+  }
+  return acceptedCandidate ? {state:'replace'}
+    : retainedNewer ? {state:'retain',reason:'older_candidate',discarded:true}
+    : {state:'replace'};
 }
 
 function applySliceRetain(name, {core, now, cohortIds}){
@@ -296,10 +331,44 @@ function applySliceClear(name, result, {disabled}){
   if(result?.healthDetail) setHealthDetail('fpl', result.healthDetail);
 }
 
+/* A persistence candidate is derived only after the application gate has
+   resolved the result. Discarded work never writes. A current-input failure
+   may still persist its R1 cooldown, but it is merged with newer compatible
+   in-memory data so storage cannot be downgraded after an earlier write
+   failure. */
+function providerPersistCandidate(name,result,verdict){
+  if(!result?.persist||verdict?.discarded) return null;
+  const entry=result.persist, value=entry.value;
+  if(!value||typeof value!=='object') return entry;
+  if(name==='understat'){
+    const applied=S.providerApplied?.understat;
+    if(applied&&S.ustat&&+applied.fetchedAt>+(value.fetchedAt??-Infinity))
+      return {key:entry.key,value:{...value,season:applied.season,schemaVersion:applied.schemaVersion,
+        modelVersion:applied.modelVersion,fetchedAt:+applied.fetchedAt,teams:S.ustat}};
+    return entry;
+  }
+  if(name==='odds'){
+    const applied=S.providerApplied?.odds;
+    if(applied&&S.odds&&+applied.fetchedAt>+(value.fetchedAt??-Infinity))
+      return {key:entry.key,value:{...value,season:applied.season,schemaVersion:applied.schemaVersion,
+        modelVersion:applied.modelVersion,fetchedAt:+applied.fetchedAt,derived:S.odds}};
+    return entry;
+  }
+  const players={...(value.players||{})};
+  Object.keys(S.minuteHistory||{}).forEach(id=>{
+    const meta=S.minuteHistoryMeta?.[id], stored=players[id];
+    if(meta&&Array.isArray(S.minuteHistory[id])&&+meta.fetchedAt>+(stored?.fetchedAt??-Infinity))
+      players[id]={fetchedAt:+meta.fetchedAt,revision:meta.revision||'',history:S.minuteHistory[id]};
+  });
+  const times=Object.values(players).map(item=>+item?.fetchedAt).filter(Number.isFinite);
+  return {key:entry.key,value:{...value,fetchedAt:times.length?Math.max(...times):value.fetchedAt,players}};
+}
+
 export {
   VERSIONS, currentOddsKeyEpoch, resetOddsKeyEpoch, teamIdentity, finishedFixtureRevision,
   oddsFixtureRevision, oddsEventRevision, understatSignature, oddsSignature, minutesSignature,
   validUnderstatMap, validOddsMap, provenanceMatches, understatCompatible, oddsCompatible,
   minuteEntryCompatible, nextProviderToken, currentProviderToken, queueRecomputation,
-  drainRecomputation, resetProviderTokens, applyHealthMark, applyProviderResult, HEALTH_STATES
+  drainRecomputation, resetProviderTokens, applyHealthMark, applyProviderResult,
+  providerPersistCandidate, HEALTH_STATES
 };
