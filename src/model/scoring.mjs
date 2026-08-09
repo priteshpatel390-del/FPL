@@ -157,5 +157,25 @@ function xpOf(p, fromGW, span){
 }
 const clearXP = () => xpCache.clear();
 
+/* R3.3 D6 — two single-purpose snapshots for the collection-purity contract.
+   A reference-only snapshot cannot detect in-place mutation, because a
+   before/after comparison would compare each mutated object with itself; a
+   value-only snapshot cannot detect a recomputation that rebuilt an equal
+   object. Both are needed, and both are read-only. No rounding: an exact copy,
+   so a NaN or a last-digit change is visible. */
+const xpCacheKeysSorted = () => [...xpCache.keys()].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+function deepCloneValue(value){
+  if(Array.isArray(value)) return value.map(deepCloneValue);
+  if(value && typeof value === 'object'){
+    const out = {};
+    for(const key of Object.keys(value)) out[key] = deepCloneValue(value[key]);
+    return out;
+  }
+  return value;
+}
+const xpCacheValueSnapshot = () => xpCacheKeysSorted().map(key => [key, deepCloneValue(xpCache.get(key))]);
+const xpCacheRefSnapshot = () => xpCacheKeysSorted().map(key => [key, xpCache.get(key)]);
+
 export { availability, per90, expectedMinutes, priceBaseline, playerFixtureXP, projectXP, xpOf, clearXP,
+  xpCacheValueSnapshot, xpCacheRefSnapshot,
   played90, seasonAppearances, populationRate, rareRate, bonusPerAppearance, penaltyMissRate };

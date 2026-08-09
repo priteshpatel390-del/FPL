@@ -3,9 +3,10 @@ import { $ } from '../util.mjs';
 import { fetchT } from './transport.mjs';
 import { mapTeamName } from './common.mjs';
 import { ODDS_RULES, MODEL_VERSION, SCHEMA_VERSION, SUPPORTING_REFRESH_RULES } from '../config.mjs';
-import { HEALTH_STATES, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable } from './registry.mjs';
+import { HEALTH_STATES, markDisabled } from './registry.mjs';
 import { validateOdds } from './validate.mjs';
 import { recordIssues, recordRetry } from '../state.mjs';
+import { validOddsMap, oddsSignature, nextProviderToken, applyProviderResult, providerPersistCandidate } from './applied.mjs';
 import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from './retry.mjs';
 import { K_CFG, K_ODDS, sget, sset } from '../storage.mjs';
 /* ---------------------------------------------------------------------
@@ -58,8 +59,8 @@ async function forgetOddsKey(deps = {}){
   return config;
 }
 
-function oddsSeasonKey(){
-  const year=+(S.boot?.events?.[0]?.deadline_time||'').slice(0,4);
+function oddsSeasonKey(events=S.boot?.events){
+  const year=+(events?.[0]?.deadline_time||'').slice(0,4);
   return Number.isFinite(year)&&year>2000 ? year+'-'+String((year+1)%100).padStart(2,'0') : 'unknown';
 }
 function oddsRefreshInterval(now=Date.now(),events=S.boot?.events,fixtures=S.fixtures){
@@ -78,29 +79,11 @@ function oddsRefreshInterval(now=Date.now(),events=S.boot?.events,fixtures=S.fix
   return next!==null&&next-now<=SUPPORTING_REFRESH_RULES.odds.nearWindowMs
     ? SUPPORTING_REFRESH_RULES.odds.nearRefreshMs : SUPPORTING_REFRESH_RULES.odds.normalRefreshMs;
 }
-function validOddsMap(value){
-  if(!value||typeof value!=='object'||Array.isArray(value)) return null;
-  const map={};
-  for(const [pair,row] of Object.entries(value)){
-    if(!/^\d+\|\d+$/.test(pair)||!row||typeof row!=='object'||
-       !Number.isInteger(+row.hId)||+row.hId<=0||!Number.isInteger(+row.aId)||+row.aId<=0||
-       pair!==`${+row.hId}|${+row.aId}`||
-       !S.boot?.teams?.some(team=>+team.id===+row.hId)||!S.boot?.teams?.some(team=>+team.id===+row.aId)||
-       !Number.isFinite(+row.xGH)||+row.xGH<=0||!Number.isFinite(+row.xGA)||+row.xGA<=0) return null;
-    map[pair]={hId:+row.hId,aId:+row.aId,xGH:+row.xGH,xGA:+row.xGA,
-      kickoff:Number.isFinite(+row.kickoff)?+row.kickoff:null,
-      providerEventId:typeof row.providerEventId==='string'?row.providerEventId.slice(0,120):Number.isFinite(+row.providerEventId)?+row.providerEventId:null,
-      fetchedAt:row.fetchedAt!=null&&Number.isFinite(+row.fetchedAt)?+row.fetchedAt:null,
-      booksUsed:Math.max(0,Math.trunc(+row.booksUsed||0)),marketCount:Math.max(0,Math.trunc(+row.marketCount||0)),
-      staleDropped:Math.max(0,Math.trunc(+row.staleDropped||0)),confidence:row.confidence==='low'?'low':'normal'};
-  }
-  return map;
-}
 function validOddsEnvelope(env,season=oddsSeasonKey()){
   return Boolean(env&&typeof env==='object'&&!Array.isArray(env)&&env.schemaVersion===SCHEMA_VERSION&&env.modelVersion===MODEL_VERSION&&env.season===season);
 }
-function oddsCacheDecision(env,{now=Date.now(),force=false,refreshMs=oddsRefreshInterval(now)}={}){
-  const map=validOddsEnvelope(env)?validOddsMap(env.derived):null;
+function oddsCacheDecision(env,{now=Date.now(),force=false,refreshMs=oddsRefreshInterval(now),teams=S.boot?.teams}={}){
+  const map=validOddsEnvelope(env)?validOddsMap(env.derived,teams):null;
   const checkedAge=env?.checkedAt!=null&&Number.isFinite(+env.checkedAt)?Math.max(0,now-(+env.checkedAt)):null;
   const hasData=Boolean(map&&Object.keys(map).length);
   const dataAge=hasData&&env?.fetchedAt!=null&&Number.isFinite(+env.fetchedAt)?Math.max(0,now-(+env.fetchedAt)):null;
@@ -109,12 +92,12 @@ function oddsCacheDecision(env,{now=Date.now(),force=false,refreshMs=oddsRefresh
   const cooling=Boolean(!force&&env?.retryAfterAt!=null&&Number.isFinite(+env.retryAfterAt)&&now<+env.retryAfterAt);
   return {map,checkedAge,dataAge,usable,due,cooling,refreshMs};
 }
-function applyCachedOdds(env,decision,note='Saved validated market inputs active'){
-  S.odds=decision.map;
+function cachedOddsResult(env,decision,note='Saved validated market inputs active'){
   const priced=Object.keys(decision.map).length;
-  S.oddsNote=`Odds: ${priced} cached fixture${priced===1?'':'s'} priced by the market.`;
-  markCached('odds',+env.fetchedAt,note,'cached market layer active');
-  return {source:'cache',cached:priced,requested:0};
+  return {outcome:'value',value:decision.map,fetchedAt:+env.fetchedAt,
+    note:`Odds: ${priced} cached fixture${priced===1?'':'s'} priced by the market.`,
+    healthMark:{kind:'cached',lastSuccess:+env.fetchedAt,note,consequence:'cached market layer active'},
+    summary:{source:'cache',cached:priced,requested:0}};
 }
 function oddsCooldownMs(status){
   if(status===401) return SUPPORTING_REFRESH_RULES.odds.rejectedCooldownMs;
@@ -122,48 +105,54 @@ function oddsCooldownMs(status){
   return SUPPORTING_REFRESH_RULES.odds.transientCooldownMs;
 }
 
-async function loadOdds(options={}){
-  const nowFn=options.nowFn||Date.now,getStorage=options.getStorage||sget,setStorage=options.setStorage||sset;
-  S.odds = null; S.oddsNote = '';
-  const key = $('oddsKey').value.trim();
-  if(!key){
-    markDisabled('odds', 'no API key supplied', 'internal team model active');
-    return;
-  }
-  if(!S.boot) return;
-  const now=nowFn(),season=oddsSeasonKey(),stored=await getStorage(K_ODDS);
+/* R3 A2/A3 — PURE. The key is read from the captured configuration, used only
+   to build the request URL, and never enters the result, the persisted
+   envelope, diagnostics or any signature. */
+async function computeOdds(options={}){
+  const nowFn=options.nowFn||Date.now,getStorage=options.getStorage||sget;
+  const core=options.core||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures};
+  const teams=core.teams;
+  const issues=[],retryRecords=[];
+  const key=(options.config ? String(options.config.oddsKey||'') : $('oddsKey').value).trim();
+  if(!key) return {outcome:'clear',value:null,note:'',issues,retryRecords,persist:null,
+    healthMark:{kind:'disabled',note:'no API key supplied',consequence:'internal team model active'},summary:undefined};
+  if(!teams) return {outcome:'skip',issues,retryRecords,persist:null};
+  const now=nowFn(),season=core.season||oddsSeasonKey(core.events),stored=await getStorage(K_ODDS);
   const storedValid=validOddsEnvelope(stored,season)?stored:null;
   const envelope={schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
     checkedAt:storedValid?.checkedAt!=null&&Number.isFinite(+storedValid.checkedAt)?+storedValid.checkedAt:null,
     fetchedAt:storedValid?.fetchedAt!=null&&Number.isFinite(+storedValid.fetchedAt)?+storedValid.fetchedAt:null,
-    derived:validOddsMap(storedValid?.derived),
+    derived:validOddsMap(storedValid?.derived,teams),
     lastFailureAt:storedValid?.lastFailureAt!=null&&Number.isFinite(+storedValid.lastFailureAt)?+storedValid.lastFailureAt:null,
     retryAfterAt:storedValid?.retryAfterAt!=null&&Number.isFinite(+storedValid.retryAfterAt)?+storedValid.retryAfterAt:null,
     failureReason:typeof storedValid?.failureReason==='string'?storedValid.failureReason.slice(0,80):null};
-  const cache=oddsCacheDecision(envelope,{now,force:Boolean(options.force)});
+  const refreshMs=oddsRefreshInterval(now,core.events,core.fixtures);
+  const cache=oddsCacheDecision(envelope,{now,force:Boolean(options.force),refreshMs,teams});
   if(!cache.due){
-    if(cache.usable) return applyCachedOdds(envelope,cache);
-    S.oddsNote='No recent validated market inputs are active.';
-    markFallback('odds','recent check returned no usable fixtures','internal team model active');
-    return {source:'fallback',cached:0,requested:0};
+    if(cache.usable) return {...cachedOddsResult(envelope,cache),issues,retryRecords,persist:null};
+    return {outcome:'fallback',value:null,note:'No recent validated market inputs are active.',
+      healthMark:{kind:'fallback',note:'recent check returned no usable fixtures',consequence:'internal team model active'},
+      issues,retryRecords,persist:null,reason:'not_due',summary:{source:'fallback',cached:0,requested:0}};
   }
   if(cache.cooling){
-    if(cache.usable) return applyCachedOdds(envelope,cache,'Saved market inputs active · automatic retry cooling down');
-    S.oddsNote='Odds automatic retry cooling down — internal team model active.';
-    markFallback('odds','automatic retry cooling down','internal team model active');
-    return {source:'fallback',cached:0,requested:0,cooling:true};
+    if(cache.usable) return {...cachedOddsResult(envelope,cache,'Saved market inputs active · automatic retry cooling down'),issues,retryRecords,persist:null};
+    return {outcome:'fallback',value:null,note:'Odds automatic retry cooling down — internal team model active.',
+      healthMark:{kind:'fallback',note:'automatic retry cooling down',consequence:'internal team model active'},
+      issues,retryRecords,persist:null,reason:'cooling',summary:{source:'fallback',cached:0,requested:0,cooling:true}};
   }
-  const fail=async(status,note,healthState=HEALTH_STATES.FALLBACK)=>{
-    const failed={...envelope,lastFailureAt:now,retryAfterAt:now+oddsCooldownMs(status),failureReason:status===401?'key_rejected':status===429?'quota_exhausted':'transient_failure'};
-    await setStorage(K_ODDS,failed);
-    if(cache.usable) return applyCachedOdds(envelope,cache,status===401
+  const fail=(status,note,healthState=HEALTH_STATES.FALLBACK)=>{
+    const failed={...envelope,lastFailureAt:now,retryAfterAt:now+oddsCooldownMs(status),
+      failureReason:status===401?'key_rejected':status===429?'quota_exhausted':'transient_failure'};
+    const persist={key:K_ODDS,value:failed};
+    if(cache.usable) return {...cachedOddsResult(envelope,cache,status===401
       ? 'Saved market inputs active · API key rejected'
       : status===429 ? 'Saved market inputs active · quota exhausted'
-      : 'Saved market inputs active · refresh unavailable');
-    S.oddsNote=note;
-    if(healthState===HEALTH_STATES.UNAVAILABLE) markUnavailable('odds',status===401?'API key rejected':'provider unavailable','internal team model active');
-    else markFallback('odds',status===429?'quota exhausted':'direct fetch failed','internal team model active');
-    return {source:'fallback',cached:0,requested:1,status};
+      : 'Saved market inputs active · refresh unavailable'),issues,retryRecords,persist};
+    return {outcome:'fallback',value:null,note,
+      healthMark:healthState===HEALTH_STATES.UNAVAILABLE
+        ? {kind:'unavailable',note:status===401?'API key rejected':'provider unavailable',consequence:'internal team model active'}
+        : {kind:'fallback',note:status===429?'quota exhausted':'direct fetch failed',consequence:'internal team model active'},
+      issues,retryRecords,persist,reason:'transport',summary:{source:'fallback',cached:0,requested:1,status}};
   };
   let data = null;
   const oddsUrl = 'https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h,totals&oddsFormat=decimal&apiKey=' + encodeURIComponent(key);
@@ -179,34 +168,28 @@ async function loadOdds(options={}){
     },
     { ...policyFor('odds'), endpoint: safeEndpoint(oddsUrl) }
   );
-  recordRetry(record);
+  retryRecords.push(record);
   if(result && result.ok) data = result.value;
-  else if(record.finalStatus === 401){
-    return fail(401,'Odds API key rejected — check it at the-odds-api.com.',HEALTH_STATES.UNAVAILABLE);
-  }
-  else if(record.finalStatus === 429){
-    return fail(429,'Odds API quota used up for this period.');
-  }
-  else if(record.finalStatus === 'network' || record.finalStatus === 'parse'){
+  else if(record.finalStatus === 401) return fail(401,'Odds API key rejected — check it at the-odds-api.com.',HEALTH_STATES.UNAVAILABLE);
+  else if(record.finalStatus === 429) return fail(429,'Odds API quota used up for this period.');
+  else if(record.finalStatus === 'network' || record.finalStatus === 'parse')
     return fail(record.finalStatus,'Odds provider unreachable — internal team model active (reduced confidence).');
-  }
-  else if(!result || !result.ok){
-    return fail(record.finalStatus,'Odds provider unavailable — internal team model active.');
-  }
+  else if(!result || !result.ok) return fail(record.finalStatus,'Odds provider unavailable — internal team model active.');
   const oddsV = validateOdds(data);
-  recordIssues('odds', 'v4/sports/soccer_epl/odds', oddsV.issues);
+  issues.push({provider:'odds',endpoint:'v4/sports/soccer_epl/odds',issues:oddsV.issues});
   data = oddsV.value;
   if(!Array.isArray(data) || !data.length){
-    S.oddsNote = 'No EPL odds returned (out of season window, or feed empty).';
-    markFallback('odds', 'feed empty', 'internal team model active');
-    await setStorage(K_ODDS,{...envelope,checkedAt:now,derived:{},fetchedAt:null,lastFailureAt:null,retryAfterAt:null,failureReason:null});
-    return {source:'fallback',cached:0,requested:1};
+    return {outcome:'fallback',value:null,note:'No EPL odds returned (out of season window, or feed empty).',
+      healthMark:{kind:'fallback',note:'feed empty',consequence:'internal team model active'},
+      issues,retryRecords,reason:'empty',
+      persist:{key:K_ODDS,value:{...envelope,checkedAt:now,derived:{},fetchedAt:null,lastFailureAt:null,retryAfterAt:null,failureReason:null}},
+      summary:{source:'fallback',cached:0,requested:1}};
   }
 
   const fetchedAt = now;
   const parsed = [];
   data.forEach(ev => {
-    const hId = mapTeamName(ev.home_team), aId = mapTeamName(ev.away_team);
+    const hId = mapTeamName(ev.home_team, teams), aId = mapTeamName(ev.away_team, teams);
     if(!hId || !aId) return;
     const kickoff = ev.commence_time ? Date.parse(ev.commence_time) : null;
     let h2h = [], overs = [], booksUsed = 0, marketCount = 0, staleDropped = 0;
@@ -251,7 +234,7 @@ async function loadOdds(options={}){
 
   const map = {}; let priced = 0;
   const windowMs = ODDS_RULES.kickoffMatchWindowHours * 3.6e6;
-  const upcoming = (S.fixtures||[]).filter(f => !f.finished);
+  const upcoming = (core.fixtures||[]).filter(f => !f.finished);
   parsed.forEach(entry => {
     const fx = upcoming.find(f => f.team_h === entry.hId && f.team_a === entry.aId &&
       (!f.kickoff_time || !entry.kickoff || Math.abs(Date.parse(f.kickoff_time) - entry.kickoff) <= windowMs));
@@ -264,18 +247,44 @@ async function loadOdds(options={}){
     priced++;
   });
   const partial = oddsV.issues.some(i => i.severity === 'partial') || parsed.some(p => p.confidence === 'low' || p.staleDropped > 0);
-  if(priced && partial) markPartial('odds', priced + ' fixtures priced', 'market layer active with reduced coverage', fetchedAt);
-  else if(priced) markLive('odds', priced + ' fixtures priced', 'market layer active', fetchedAt);
-  else markFallback('odds', 'no fixtures matched', 'internal team model active');
-  if(priced){ S.odds = map; S.oddsNote = `Odds: ${priced} fixture${priced===1?'':'s'} priced by the market.`; }
-  else S.oddsNote = 'Odds feed answered but no fixtures could be matched.';
-  await setStorage(K_ODDS,{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,checkedAt:now,
-    fetchedAt:priced?now:null,derived:priced?map:{},lastFailureAt:null,retryAfterAt:null,failureReason:null});
-  return {source:priced?'live':'fallback',loaded:priced,requested:1};
+  const persist={key:K_ODDS,value:{schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,checkedAt:now,
+    fetchedAt:priced?now:null,derived:priced?map:{},lastFailureAt:null,retryAfterAt:null,failureReason:null}};
+  if(!priced) return {outcome:'fallback',value:null,note:'Odds feed answered but no fixtures could be matched.',
+    healthMark:{kind:'fallback',note:'no fixtures matched',consequence:'internal team model active'},
+    issues,retryRecords,persist,reason:'unmatched',summary:{source:'fallback',loaded:0,requested:1}};
+  return {outcome:'value',value:map,fetchedAt,
+    note:`Odds: ${priced} fixture${priced===1?'':'s'} priced by the market.`,
+    healthMark:{kind:partial?'partial':'live',note:priced+' fixtures priced',
+      consequence:partial?'market layer active with reduced coverage':'market layer active',lastSuccess:fetchedAt},
+    issues,retryRecords,persist,summary:{source:'live',loaded:priced,requested:1}};
+}
+
+/* Thin wrapper — same applyProviderResult gate as the refresh commit. */
+async function loadOdds(options={}){
+  const setStorage=options.setStorage||sset;
+  const core=options.core||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:oddsSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const config=options.config||{oddsKey:$('oddsKey')?.value||''};
+  const token=nextProviderToken('odds');
+  const result=await computeOdds({...options,core,config});
+  if(result.outcome==='skip') return;
+  result.signature=oddsSignature(core,config);
+  const currentCore=options.currentCore||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:oddsSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const currentConfig=options.currentConfig||{oddsKey:$('oddsKey')?.value||''};
+  const verdict=applyProviderResult('odds',result,{core:currentCore,now:(options.nowFn||Date.now)(),token,
+    signature:oddsSignature(currentCore,currentConfig)});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('odds',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
+  return result.summary;
 }
 
 export {
   poissonOver, solveLambda, scrubOddsSecret, forgetOddsKey, oddsSeasonKey,
-  oddsRefreshInterval, validOddsMap, validOddsEnvelope, oddsCacheDecision,
-  oddsCooldownMs, loadOdds
+  oddsRefreshInterval, validOddsEnvelope, oddsCacheDecision,
+  oddsCooldownMs, computeOdds, loadOdds
 };

@@ -1,4 +1,5 @@
-import { S, recordIssues } from '../state.mjs';
+import { S, recordIssues, recordRetry } from '../state.mjs';
+import { minutesSignature, nextProviderToken, applyProviderResult, providerPersistCandidate } from './applied.mjs';
 import { num } from '../util.mjs';
 import { MODEL_VERSION, SCHEMA_VERSION, MINUTES_RULES } from '../config.mjs';
 import { api, pool } from './transport.mjs';
@@ -20,23 +21,27 @@ function validateElementSummary(payload){
   return {value:history,issues};
 }
 
-function activeSquadIds(useManual=Boolean(globalThis.document?.getElementById?.('useManual')?.checked)){
-  const values = useManual ? S.manual : S.picks?.picks;
+// R3 A3 — the squad source is explicit so the cohort is selected from the
+// STAGED account, not whatever S.picks holds mid-refresh. Note that `bought`
+// is never read: a manual purchase-price edit cannot change the cohort.
+function activeSquadIds(useManual=Boolean(globalThis.document?.getElementById?.('useManual')?.checked), account=null){
+  const source = account || {manual:S.manual, picks:S.picks};
+  const values = useManual ? source.manual : source.picks?.picks;
   return [...new Set((values||[]).map(item=>+(item?.id??item?.element)).filter(id=>Number.isInteger(id)&&id>0))];
 }
 
 function cohort(options={}){
-  const players = S.boot?.elements || [];
+  const players = options.elements || S.boot?.elements || [];
   const byId = new Map(players.map(player=>[+player.id,player]));
-  const priority = activeSquadIds(options.useManual).map(id=>byId.get(id)).filter(Boolean);
+  const priority = activeSquadIds(options.useManual, options.account).map(id=>byId.get(id)).filter(Boolean);
   const priorityIds = new Set(priority.map(player=>+player.id));
   const research = players.filter(player=>!priorityIds.has(+player.id)).slice().sort((a,b) =>
     num(b.selected_by_percent)-num(a.selected_by_percent) || num(b.now_cost)-num(a.now_cost) || num(a.id)-num(b.id));
   return priority.concat(research.slice(0,MINUTES_RULES.detailedCohort));
 }
 
-function seasonKey(){
-  const year = +(S.boot?.events?.[0]?.deadline_time || '').slice(0,4);
+function seasonKey(events=S.boot?.events){
+  const year = +(events?.[0]?.deadline_time || '').slice(0,4);
   return Number.isFinite(year) && year > 2000 ? year + '-' + String((year+1)%100).padStart(2,'0') : 'unknown';
 }
 
@@ -80,14 +85,22 @@ function minutesHealthDetail({state,oldestActiveAt=null,active=0,cached=0,reques
   return {label:'Detailed minutes',state,oldestActiveAt,active,cached,requested,loaded,failed,deferred,note};
 }
 
-async function loadMinuteHistories(deps={}){
-  const nowFn=deps.nowFn||Date.now, getStorage=deps.getStorage||sget, setStorage=deps.setStorage||sset;
-  const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true}));
-  if(!S.seasonLive || !S.boot?.elements?.length){
-    setHealthDetail('fpl',minutesHealthDetail({state:HEALTH_STATES.DISABLED,note:'No completed Gameweek yet'}));
-    return {loaded:0,failed:0,cached:0,requested:0,deferred:0};
+/* R3 A2/A3 — PURE. Builds history and per-player metadata as locals and
+   returns them; S.minuteHistory is only ever written by the admission gate in
+   applyProviderResult(). completedDataRevision and the seven-day backstop
+   remain CORRECTION triggers: a validated entry stays usable when its
+   correction fails (R3.2 C2). */
+async function computeMinuteHistories(deps={}){
+  const nowFn=deps.nowFn||Date.now, getStorage=deps.getStorage||sget;
+  const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true,typed:true}));
+  const core=deps.core||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,seasonLive:S.seasonLive};
+  const issues=[],retryRecords=[];
+  if(!core.seasonLive || !core.elements?.length){
+    return {outcome:'clear',value:{},meta:{},cohortIds:[],issues,persist:null,
+      healthDetail:minutesHealthDetail({state:HEALTH_STATES.DISABLED,note:'No completed Gameweek yet'}),
+      summary:{loaded:0,failed:0,cached:0,requested:0,deferred:0}};
   }
-  const season = seasonKey();
+  const season = core.season || seasonKey(core.events);
   const cached = await getStorage(K_MINUTES);
   const cacheOk = validEnvelope(cached, season);
   const cachedPlayers={};
@@ -98,14 +111,21 @@ async function loadMinuteHistories(deps={}){
   const envelope={schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,season,
     fetchedAt:cacheOk&&cached.fetchedAt!=null&&Number.isFinite(+cached.fetchedAt)?+cached.fetchedAt:null,
     revision:cacheOk&&typeof cached.revision==='string'?cached.revision:'',players:cachedPlayers};
-  const revision=completedDataRevision();
-  const chosen=cohort(deps);
-  S.minuteHistory={};
+  const revision=completedDataRevision(core.events,core.fixtures);
+  const chosen=cohort({...deps,elements:core.elements,account:deps.account});
+  const cohortIds=chosen.map(player=>+player.id);
+  const history={}, meta={};
+  const stamp=(fetchedAt,entryRevision)=>({season,schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,
+    fetchedAt,revision:entryRevision});
   const decisions=new Map();
   chosen.forEach(player=>{
     const entry=envelope.players[player.id], decision=minuteCacheDecision(entry,envelope,{revision,now:nowFn()});
     decisions.set(+player.id,decision);
-    if(decision.usable) S.minuteHistory[player.id]=validCachedEntry(entry).history;
+    if(decision.usable){
+      const valid=validCachedEntry(entry);
+      history[player.id]=valid.history;
+      meta[player.id]=stamp(valid.fetchedAt,entryRevision(valid,envelope));
+    }
   });
   const due=chosen.filter(player=>decisions.get(+player.id).due);
   const results=[];
@@ -114,25 +134,29 @@ async function loadMinuteHistories(deps={}){
     if(consecutiveFailedBatches>=2){ deferred=due.length-offset; break; }
     const batch=due.slice(offset,offset+4);
     const batchResults=await pool(batch,async player=>{
-      const payload=await fetchSummary(player.id);
+      const response=await fetchSummary(player.id);
+      const typed=response&&typeof response==='object'&&typeof response.outcome==='string';
+      if(typed&&response.retryRecord) retryRecords.push(response.retryRecord);
+      const payload=typed&&response.outcome==='value'?response.value:typed?null:response;
       const checked=validateElementSummary(payload);
       if(!checked.value) return {id:player.id,ok:false,issues:checked.issues,hasCache:decisions.get(+player.id).usable};
-      S.minuteHistory[player.id]=checked.value;
       return {id:player.id,ok:true,history:checked.value,issues:checked.issues};
     },4);
+    batchResults.forEach(result=>{
+      if(result?.ok){ history[result.id]=result.history; meta[result.id]=stamp(nowFn(),revision); }
+    });
     results.push(...batchResults);
     if(batchResults.length===4&&batchResults.every(result=>!result?.ok)) consecutiveFailedBatches++;
     else consecutiveFailedBatches=0;
   }
-  const allIssues = collapseIssues(results.flatMap(r => r?.issues || []));
-  recordIssues('fpl', '/element-summary/{id}/', allIssues);
+  issues.push({provider:'fpl',endpoint:'/element-summary/{id}/',issues:collapseIssues(results.flatMap(r => r?.issues || []))});
   let loaded=0, failed=0;
   const players = {...envelope.players};
   results.forEach(r => {
     if(r?.ok){ loaded++; players[r.id]={fetchedAt:nowFn(),revision,history:r.history}; }
     else failed++;
   });
-  const active=chosen.filter(player=>Array.isArray(S.minuteHistory[player.id])).length;
+  const active=chosen.filter(player=>Array.isArray(history[player.id])).length;
   const allCurrent=chosen.every(player=>{
     const entry=players[player.id], decision=minuteCacheDecision(entry,{...envelope,players},{revision,now:nowFn()});
     return decision.usable&&!decision.due;
@@ -142,15 +166,42 @@ async function loadMinuteHistories(deps={}){
   const nextEnvelope={...envelope,players};
   if(loaded) nextEnvelope.fetchedAt=nowFn();
   if(allCurrent) nextEnvelope.revision=revision;
-  await setStorage(K_MINUTES,nextEnvelope);
   const cachedActive=Math.max(0,active-loaded);
   const state=failed||deferred||active<chosen.length||Boolean(loaded&&cachedActive) ? HEALTH_STATES.PARTIAL : loaded ? HEALTH_STATES.LIVE : HEALTH_STATES.CACHED;
   const note=deferred?'Systemic outage guard stopped further requests':failed?'Saved histories retained where valid':loaded&&cachedActive?'Fresh and cached validated histories active':'Validated histories active';
-  setHealthDetail('fpl',minutesHealthDetail({state,oldestActiveAt,active,cached:cachedActive,requested:results.length,loaded,failed,deferred,note}));
-  return {loaded,failed,cached:cachedActive,requested:results.length,deferred};
+  return {outcome:'value',value:history,meta,cohortIds,issues,retryRecords,
+    persist:{key:K_MINUTES,value:nextEnvelope},
+    healthDetail:minutesHealthDetail({state,oldestActiveAt,active,cached:cachedActive,requested:results.length,loaded,failed,deferred,note}),
+    summary:{loaded,failed,cached:cachedActive,requested:results.length,deferred}};
+}
+
+/* Thin wrapper — same applyProviderResult gate as the refresh commit. */
+async function loadMinuteHistories(deps={}){
+  const setStorage=deps.setStorage||sset;
+  const core=deps.core||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,
+    teams:S.boot?.teams,seasonLive:S.seasonLive,season:seasonKey(S.boot?.events)};
+  const token=nextProviderToken('minutes');
+  const result=await computeMinuteHistories({...deps,core});
+  result.signature=minutesSignature(core,completedDataRevision(core.events,core.fixtures),result.cohortIds);
+  const currentCore=deps.currentCore||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,
+    teams:S.boot?.teams,seasonLive:S.seasonLive,season:seasonKey(S.boot?.events)};
+  const currentUseManual=deps.currentUseManual??Boolean(globalThis.document?.getElementById?.('useManual')?.checked);
+  const currentCohortIds=cohort({elements:currentCore.elements,useManual:currentUseManual,
+    account:{picks:S.picks,manual:S.manual}}).map(player=>+player.id);
+  const currentSignature=minutesSignature(currentCore,completedDataRevision(currentCore.events,currentCore.fixtures),currentCohortIds);
+  const verdict=applyProviderResult('minutes',result,{core:currentCore,now:(deps.nowFn||Date.now)(),token,
+    signature:currentSignature,cohortIds:currentCohortIds});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('minutes',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
+  return result.summary;
 }
 
 export {
   validateElementSummary, activeSquadIds, cohort, seasonKey, validEnvelope,
-  completedDataRevision, validCachedEntry, minuteCacheDecision, loadMinuteHistories
+  completedDataRevision, validCachedEntry, minuteCacheDecision, entryRevision,
+  computeMinuteHistories, loadMinuteHistories
 };

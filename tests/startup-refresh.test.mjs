@@ -74,9 +74,14 @@ test('startup and foreground paths use the same deferred verified refresh',()=>{
   assert.match(VIEWS_SOURCE,/installVerifiedRefreshTriggers\(\)/);
   assert.match(VIEWS_SOURCE,/runVerifiedRefresh\(\{reason:'manual',force:true\}\)/);
   assert.match(MAIN_SOURCE,/deferRender:true/);
-  assert.match(MAIN_SOURCE,/loadUnderstat\(\{force:Boolean\(options\.forceSupporting\)\}\)/);
-  assert.match(MAIN_SOURCE,/loadOdds\(\{force:Boolean\(options\.forceSupporting\)\}\)/);
-  assert.match(MAIN_SOURCE,/loadMinuteHistories\(\)/);
+  /* Atomic Foreground Refresh (R3 A3): supporting providers are computed
+     against the STAGED core and captured configuration rather than reading S
+     mid-refresh, so the pre-atomic call shape no longer exists. These three
+     assertions replace it and are strictly stronger — they pin the staged
+     context as well as the forceSupporting propagation they always covered. */
+  assert.match(MAIN_SOURCE,/computeUnderstat\(\{\.\.\.options\.understatDeps,core:providerCore,\s*config:providerConfig,\s*force:Boolean\(options\.forceSupporting\)\}\)/);
+  assert.match(MAIN_SOURCE,/computeOdds\(\{\.\.\.options\.oddsDeps,core:providerCore,\s*config:providerConfig,\s*force:Boolean\(options\.forceSupporting\)\}\)/);
+  assert.match(MAIN_SOURCE,/computeMinuteHistories\(\{\.\.\.options\.minutesDeps,core:providerCore,\s*account:stagedAccount,\s*useManual:inputs\.useManual\}\)/);
   assert.match(MAIN_SOURCE,/forceSupporting:reason==='manual'/);
   assert.match(VIEWS_SOURCE,/oddsKey[\s\S]*loadOdds\(\{force:true\}\)/);
   assert.match(VIEWS_SOURCE,/useUstat[\s\S]*loadUnderstat\(\{force:true\}\)/);

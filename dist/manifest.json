@@ -1,9 +1,9 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "1a3daa5db8ec84554a9a79f36e2805b06865945a775152ae8c5e704fd43eebc1",
-  "buildInputHash": "6c63d8f0be197f39fa102a47642782537f4841c7313298ca2bf5166bf0cce869",
-  "commit": "acb3c92d5088cde512b8917419f1d7c8d822ca4b",
+  "sourceHash": "3c984dace11b989f00170507736c6b45a80a77e3d68ecc5523745410c5b09f29",
+  "buildInputHash": "36caca995522192c5c564bc5edaf7a47226e6b54b3c8f6c4aa8acc66ce9bc8d5",
+  "commit": "3da4bb58ea67a12facbdcaa72b2761e455f53df7",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -14,6 +14,7 @@
     "src/storage.mjs",
     "src/ui/mini-leagues-state.mjs",
     "src/providers/registry.mjs",
+    "src/providers/applied.mjs",
     "src/providers/transport.mjs",
     "src/providers/common.mjs",
     "src/providers/understat.mjs",
@@ -66,6 +67,7 @@
     "src/storage.mjs",
     "src/ui/mini-leagues-state.mjs",
     "src/providers/registry.mjs",
+    "src/providers/applied.mjs",
     "src/providers/transport.mjs",
     "src/providers/common.mjs",
     "src/providers/understat.mjs",

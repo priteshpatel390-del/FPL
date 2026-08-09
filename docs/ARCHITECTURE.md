@@ -242,3 +242,15 @@ The reconciled architecture keeps Claude's exact position-pool prefix sums, admi
 The app-scoped controller additionally owns a one-shot cancellation settlement callback for the currently awaited Worker result. Cancel, material invalidation and force-start replacement settle that wait with an internal `AbortError`; the existing outer controller treats it as intentional cancellation and releases the superseded job's retained data.
 
 For comparator ties, a partial search node uses `''` as its optimistic signature because every real transfer signature is non-empty. The exact unchanged canonical signature is used once the branch is complete. This is more conservative pruning and cannot alter final ordering.
+
+## Atomic Foreground Refresh
+
+The refresh lifecycle is a four-phase pipeline: **collect → commit → render → persist**.
+
+Collection is pure — it writes nothing to `S`, the health registry or diagnostics, and returns everything it would have mutated as data. The commit is synchronous, no-throw and non-reentrant, containing plain assignments only. Because it holds no suspension point, and `S` carries no accessor property or `Proxy`, no observer can see it part-way; that is what allows a foreground refresh to remain interactive without an inert lock.
+
+`src/providers/applied.mjs` owns the supporting-provider boundary: per-provider tokens, computation signatures (Rule A), existing-value compatibility (Rule B, expressed in R1's own predicates), and `applyProviderResult()` — the single gate shared by the refresh commit and the exported provider wrappers.
+
+Persistence follows the commit and uses `ssetChecked`, so a write failure is classified `persist_failed` rather than being silently swallowed. `sset` is unchanged for every other caller.
+
+See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md) for the full design, the two-rule model, account compatibility keys, minute-history provenance and the error-classification table.

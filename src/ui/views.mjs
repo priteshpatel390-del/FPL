@@ -28,9 +28,13 @@ function renderTicker(){
   const from = clamp(parseInt($('fxFrom').value) || S.nextGW, 1, 38);
   const requestedSpan = clamp(parseInt($('fxSpan').value) || 6, 1, 38);
   const span = Math.min(requestedSpan, 39 - from);
-  $('fxFrom').value = String(from);
+  /* R3.1 B7 — a focused user-owned control keeps the value the owner is
+     typing. The clamped span still drives the calculation below, so no
+     fixture or projection behaviour changes; only the write-back is skipped.
+     These nodes are never replaced by a render, so focus itself survives. */
+  if(!userControlHasFocus('fxFrom')) $('fxFrom').value = String(from);
   $('fxSpan').max = String(39 - from);
-  $('fxSpan').value = String(span);
+  if(!userControlHasFocus('fxSpan')) $('fxSpan').value = String(span);
   const lensControl = $('fxLens'), sort = $('fxSort').value;
   const lensState = fixtureLensState(lensControl.value);
   for(const option of Array.from(lensControl.options || [])){
@@ -432,6 +436,17 @@ function searchPlayers(term){
 /* ---------------------------------------------------------------------
    RENDER + WIRING
    --------------------------------------------------------------------- */
+/* R3.1 B7 — the enumerated user-owned controls. A commit render must never
+   overwrite the value of whichever one currently has focus, and must never
+   replace a subtree containing any of them. */
+const USER_OWNED_CONTROL_IDS = Object.freeze(['teamId','ftCount','bankIn','oddsKey','trHorizon','trTop',
+  'pSearch','fxFrom','fxSpan','plPos','plMax','plHorizon','plFit','plOwn']);
+function userControlHasFocus(id){
+  if(typeof document === 'undefined') return false;
+  const node = $(id);
+  return Boolean(node && document.activeElement === node);
+}
+
 function renderRestrictedAppState(){
   setChildren($('gwstrip'),elNode('span',{},'Official FPL data unavailable'));
   renderTicker();
@@ -464,7 +479,7 @@ function renderAll(){
   if(S.calib) srcBits.push(`Calibrated against ${S.backtest?.season || 'last season'} (r ${S.backtest?.r ?? '—'}).`);
   setChildren($('srcStatus'),srcBits.map(s=>elNode('div',{},s)));
   setChildren($('chipState'),S.chipsUsed.length ? noteNode('plain',elNode('b',{},'Chips already used:'),` ${S.chipsUsed.join(', ')}.`) : null);
-  if(!$('fxFrom').value) $('fxFrom').value = S.nextGW;
+  if(!$('fxFrom').value && !userControlHasFocus('fxFrom')) $('fxFrom').value = S.nextGW;
   renderTicker(); renderPlayers(); renderSquad(); renderTransfers(); renderManual(); renderMiniLeagues();
   if(typeof document!=='undefined' && typeof document.dispatchEvent==='function' && typeof CustomEvent==='function')
     document.dispatchEvent(new CustomEvent('teamsheet:data-rendered'));
