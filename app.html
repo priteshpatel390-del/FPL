@@ -16,16 +16,18 @@
   --pitch:#1F5C3A; --claret:#7A1E38; --amber:#C9922B; --info:#2E6F9E;
   --fdr1:#137A4B; --fdr2:#4FA06B; --fdr3:#B9B08A; --fdr4:#C4703C; --fdr5:#9E2B2B;
   --r:10px; --shadow:0 1px 0 rgba(20,38,28,.06), 0 6px 18px -12px rgba(20,38,28,.35);
+  --page-title-size:17px; --page-intro-size:13px; --page-head-gap:12px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
-body.startup-pending{overflow:hidden}
+body.startup-pending{overflow:hidden;padding-bottom:0;min-height:100vh;min-height:100dvh;background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%)}
 body.startup-pending > header,
 body.startup-pending > main,
 body.startup-pending > nav.tabs{visibility:hidden}
-.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:calc(24px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) calc(24px + env(safe-area-inset-left,0px));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+@supports (height:100dvh){.startup-gate{inset:0 0 auto;height:100dvh}}
 .startup-gate[hidden]{display:none}
 .startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
 .startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
@@ -437,6 +439,9 @@ h2[tabindex="-1"]:focus{outline:none}
 .settings-view .btn.sm,.settings-view button{min-height:44px}
 .settings-view input:not([type=checkbox]):not([type=file]),.settings-view select{min-height:44px}
 .route-header{position:relative;margin-bottom:12px;padding-top:2px}.route-header h2{font-size:20px;margin-top:0}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
+#view-squad>h2,#view-fixtures>h2,#view-transfers .transfer-workspace-head>h2,#leagueHub .league-hub-head h2,.settings-header>h2{font-size:var(--page-title-size);line-height:1.2;margin:0 0 2px}
+#view-squad>.hint,#view-fixtures>.hint,#view-transfers .transfer-workspace-head>.hint,#leagueHub>.hint,.settings-header>.hint{color:var(--ink-soft);font-size:var(--page-intro-size);margin:3px 0 var(--page-head-gap)}
+.settings-header>.hint{margin-bottom:0}
 .route-back{display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0 0 4px;color:var(--claret);font-size:27px;font-weight:700;line-height:1;text-decoration:none;border-radius:50%}
 .route-back:hover{background:#F7EEF0;text-decoration:none}.route-back:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .settings-subview>.panel:last-child{margin-bottom:0}
@@ -469,7 +474,6 @@ h2[tabindex="-1"]:focus{outline:none}
 }
 
 /* Teamsheet 2.0.2 — pitch-first Team decision home */
-#view-squad>.hint{margin:3px 0 8px}
 .team-home-header{display:grid;gap:7px;margin:2px 0 10px}
 .team-home-header h3{font-size:19px}
 .team-home-chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -527,7 +531,7 @@ h2[tabindex="-1"]:focus{outline:none}
 
 /* Teamsheet 2.0.3 — Transfers decision workspace */
 #view-transfers>.hint{margin-bottom:10px}
-.transfer-workspace-head{display:grid;gap:8px;margin-bottom:12px}
+.transfer-workspace-head{display:block;margin-bottom:0}
 .transfer-context-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .transfer-context-chip{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;background:#F7F9F5;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.2}
 .transfer-context-chip.deadline{background:#FCF8EF;color:#745614}
