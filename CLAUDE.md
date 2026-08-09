@@ -1,5 +1,11 @@
 # CLAUDE.md — onboarding for every future development session
 
+## 9 August 2026 reconciliation
+
+The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100. Its permanent verification passed **693 tests**. DTR-1 and the physical iPhone form-focus zoom checkpoint are complete and merged.
+
+[Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md) is approved as a documentation-only design decision: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox, and optional downstream Google Sheets reporting. No persistence implementation is approved. The next engineering checkpoint is **Atomic Foreground Refresh**, beginning with investigation and a separate approval gate.
+
 Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 9 August 2026.
 
 ## Current baseline
