@@ -1,5 +1,11 @@
 # PROJECT_CONTEXT.md
 
+## 9 August 2026 D1 closeout
+
+The current authoritative baseline is `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of PR #100. The iPhone form-focus zoom correction passed 693 tests and physical iPhone Safari acceptance and is complete.
+
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) is an approved design, not an implementation. It selects D1 plus private R2 behind a separate authenticated data Worker, retains local fallback, and limits Google Sheets to optional downstream reporting. The next engineering checkpoint is Atomic Foreground Refresh; implementation remains separately approval-gated.
+
 Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 9 August 2026.
 
 Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Historical Records](HISTORICAL_RECORDS.md).
@@ -14,13 +20,13 @@ Refresh-Load R1 changed acquisition cadence only: valid detailed histories, norm
 
 | Item | Evidence |
 |---|---|
-| Repository head | GitHub `main` `09e595c275b4f3614c09fb502291de6831813999`, merge of DTR-1 PR #99 |
-| Latest substantive application checkpoint | DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999` |
-| Application tree | The accepted PR #99 generated tree is preserved by the merge |
-| Permanent automated baseline | Verify Teamsheet run `31301475598`: 691 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #99 head `b45f89baf45e12de09cdb1ad34826756e9e5378b` |
+| Repository head | GitHub `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100 |
+| Latest application checkpoint | iPhone form-focus zoom PR #100, merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`; DTR-1 remains complete through PR #99 |
+| Application tree | The accepted PR #100 tree is preserved by the merge |
+| Permanent automated baseline | PR #100 Verify Teamsheet run `31319724304`: 693 passed, 0 failed |
 | Generated application baseline | PR #99 reproduced committed deployables from reachable source `a15443f3de889561fd301c4aa1792d19f7b21c83`; double builds were byte-identical and root equalled deployable |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | The iPhone form-focus zoom correction is approved on a separate branch; permanent CI, exact generated provenance, physical iPhone acceptance and merge remain owner-gated. D1 and post-Gameweek work are investigation/design only. |
+| Approval boundary | D1 design is approved and documented, but persistence implementation is not. Atomic Foreground Refresh is next and begins with investigation; implementation remains owner-gated. |
 
 ## Physical iPhone Safari baseline
 

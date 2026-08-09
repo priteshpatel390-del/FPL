@@ -1,5 +1,23 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## Current sequence after D1 design approval
+
+1. **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
+2. **Atomic Foreground Refresh — next:** investigation first; implementation requires explicit approval.
+3. Cache and persistence resilience.
+4. Error-boundary separation.
+5. Production-bundle safeguards.
+6. Documentation/state-ownership cleanup where appropriate.
+7. Understat repair.
+8. Odds API repair.
+9. Approved D1 persistent historical/live implementation.
+10. Route-aware rendering/performance work.
+11. Claude-to-ChatGPT migration.
+12. Cloudflare automation expansion.
+13. AI agents and richer external intelligence.
+
+Small stale-code cleanup remains low priority. Live-Gameweek evidence gates remain unchanged.
+
 Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 9 August 2026.
 
 ## Baseline

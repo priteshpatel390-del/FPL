@@ -27,6 +27,7 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## Current operational and acceptance records
 
+- [Data Architecture D1](DATA-ARCHITECTURE-D1.md) — approved historical/live persistence design; implementation remains deferred.
 - [DTR-1 direct Team renderer](DTR-1-DIRECT-TEAM-RENDERER.md) — current implementation and pending physical-acceptance record.
 - [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) — authoritative accepted/deferred League boundary as of 8 August 2026.
 - [Leagues hub design](LEAGUES-HUB-DESIGN.md) — accepted hub-first and Official-versus-manual management design.

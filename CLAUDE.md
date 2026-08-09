@@ -1,15 +1,21 @@
 # CLAUDE.md — onboarding for every future development session
 
+## 9 August 2026 reconciliation
+
+The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100. Its permanent verification passed **693 tests**. DTR-1 and the physical iPhone form-focus zoom checkpoint are complete and merged.
+
+[Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md) is approved as a documentation-only design decision: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox, and optional downstream Google Sheets reporting. No persistence implementation is approved. The next engineering checkpoint is **Atomic Foreground Refresh**, beginning with investigation and a separate approval gate.
+
 Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 9 August 2026.
 
 ## Current baseline
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `09e595c275b4f3614c09fb502291de6831813999`, merge of DTR-1 PR #99 |
-| Latest substantive application checkpoint | DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999` |
-| Permanent repository verification | Verify Teamsheet run `31301475598`: 691 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic byte-identical double build; root/deployable equality; exact source and complete build-input identity |
-| Application tree identity | The accepted PR #99 generated build is preserved by merge `09e595c275b4f3614c09fb502291de6831813999` |
+| Repository head | `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100 |
+| Latest application checkpoint | iPhone form-focus zoom PR #100, merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`; DTR-1 remains complete through PR #99 |
+| Permanent repository verification | PR #100 Verify Teamsheet run `31319724304`: 693 passed, 0 failed; exact generated provenance and deterministic build safeguards retained |
+| Application tree identity | The accepted PR #100 application tree is preserved by merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
@@ -33,9 +39,9 @@ Audit A3 and A3-R0 are complete and merged. A3-R0 binds generated files to all b
 
 DTR-1 is complete and merged through PR #99. Its exact generated build passed 691/691 tests, permanent CI, reachable two-commit provenance and populated physical iPhone Safari acceptance before Pritesh explicitly approved merge. The device pass exposed a pre-existing Safari form-focus zoom defect: editable controls inherited 15px text and the page remained enlarged after the keyboard closed.
 
-The current approved checkpoint is the narrow iPhone form-focus zoom correction on `agent/iphone-form-focus-zoom`. It raises only editable text, number, search, password, select and textarea controls to 16px, preserves pinch zoom and leaves checkbox/file/range controls and all application logic unchanged. Automated, generated-provenance, draft-PR and exact-device gates remain required before merge.
+The iPhone form-focus zoom correction is complete and merged through PR #100. It raised only editable text, number, search, password, select and textarea controls to 16px, preserved pinch zoom and left checkbox/file/range controls and all application logic unchanged. Its exact build passed automated, generated-provenance and physical iPhone gates before merge.
 
-After the zoom checkpoint is accepted or closed, the next planned task is Data Architecture D1 investigation/design for Teamsheet's historical and live data platform. D1 is not approved for implementation and must compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against actual requirements. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
+Data Architecture D1 investigation/design is complete and its decision is recorded in [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md). D1 persistence implementation is not approved. The next engineering checkpoint is Atomic Foreground Refresh, beginning with investigation and a separate approval gate. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
 
 ## Owner and communication
 

@@ -1,4 +1,8 @@
 # DATA_SOURCES.md
+
+## Future historical persistence (approved design only)
+
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) approves D1 plus private R2 behind a separate data Worker as the future evidence platform. Only accepted normalised inputs actually used may be retained. Raw provider responses/HTML, Odds keys, keyed URLs and secrets must not be retained. Permanent Understat- or Odds-derived retention requires a separate provider-rights review. Google Sheets is downstream reporting only. No provider, endpoint, cadence or runtime acquisition behaviour changes under this decision.
 Purpose: reference for every external source. Audience: provider work, Stage 3+.
 Last reconciled: 2026-08-08. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
 this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DECISIONS D-05/D-06/D-09/D-10.
