@@ -1,4 +1,8 @@
 # SECURITY.md
+
+## Future D1/R2 security boundary (design only)
+
+The approved [Data Architecture D1](DATA-ARCHITECTURE-D1.md) requires a separate authenticated data Worker, private R2, short-lived browser authentication, origin/CSRF/rate/payload controls and Worker secrets. The static client must never contain a permanent service token, database credential, Odds key relay, or Anthropic/OpenAI secret. Manager/team, manual-squad and league/rival data remain device-only in the MVP. Future AI access must use audited, field-allowlisted, read-only views. No security/runtime implementation is authorised by the design decision.
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
 Last reconciled: 2026-08-08. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
 
