@@ -6,7 +6,7 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3 and A3-R0 are merged. No formula, recommendation or new-provider checkpoint is approved.
+Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0 and DTR-1 are merged. No formula, recommendation or new-provider checkpoint is approved.
 
 Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Understat parser repair, atomic foreground-state replacement and model/data-source expansion remain separately gated. The next substantive checkpoint requires a completed, officially checked Gameweek and begins with investigation/evidence only.
 
@@ -14,13 +14,13 @@ Refresh-Load R1 changed acquisition cadence only: valid detailed histories, norm
 
 | Item | Evidence |
 |---|---|
-| Repository head | GitHub `main` `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`, merge of A3-R0 PR #98 |
-| Latest substantive application checkpoint | Refresh-Load R1 PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
-| Application tree | PR #96 head and merge share `fd40deff72c458286e77f44a66b79a0e720e700c` |
-| Permanent automated baseline | Verify Teamsheet run `31283849251`: 685 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #98 head `00f5a3ced9592c3a5719c6b14585703771b5e418` |
-| Generated application baseline | A3-R0 reproduced committed deployables from reachable source `5d10cb438636837b46047b09c71dc179726973b2`; double builds were byte-identical; root equalled deployable; module-source hash `95d57ddc3b63494cef850a034ec6be0ab50fcbb3193c736225d3ecf3f6e3bf7a`; complete build-input hash `c05926…` |
+| Repository head | GitHub `main` `09e595c275b4f3614c09fb502291de6831813999`, merge of DTR-1 PR #99 |
+| Latest substantive application checkpoint | DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999` |
+| Application tree | The accepted PR #99 generated tree is preserved by the merge |
+| Permanent automated baseline | Verify Teamsheet run `31301475598`: 691 passed, 0 failed, 0 skipped, 0 cancelled on exact PR #99 head `b45f89baf45e12de09cdb1ad34826756e9e5378b` |
+| Generated application baseline | PR #99 reproduced committed deployables from reachable source `a15443f3de889561fd301c4aa1792d19f7b21c83`; double builds were byte-identical and root equalled deployable |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | DTR-1 implementation is approved on a separate branch; permanent CI, exact generated provenance, physical iPhone acceptance and merge remain owner-gated. D1 and post-Gameweek work are investigation/design only. |
+| Approval boundary | The iPhone form-focus zoom correction is approved on a separate branch; permanent CI, exact generated provenance, physical iPhone acceptance and merge remain owner-gated. D1 and post-Gameweek work are investigation/design only. |
 
 ## Physical iPhone Safari baseline
 
@@ -135,7 +135,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 
 - real post-Gameweek minute-history cache reuse and revision-triggered refresh have automated coverage but cannot yet have physical live-season evidence;
 - the flattened bundle still depends on an explicit module order that is broader than the direct import graph;
-- the DTR-1 candidate touches a physically accepted Team path and requires exact-device equivalence before merge;
+- the form-focus correction changes editable-control typography across multiple routes and requires exact-device focus/keyboard recovery evidence before merge;
 - browser automation cannot replace physical Safari layout and interaction evidence.
 
 These are roadmap inputs, not authority to change them.
@@ -144,11 +144,11 @@ These are roadmap inputs, not authority to change them.
 
 ### Completed now
 
-**Audit A3/A3-R0:** architecture investigation and durable reachable-source build provenance are complete and merged through PR #98. **DTR-1:** implementation candidate directly renders the accepted Team DOM and passes 691 local tests; remote verification, generated provenance, physical iPhone acceptance and merge remain pending.
+**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete, permanently verified, physically accepted and merged through PR #99 at `09e595c275b4f3614c09fb502291de6831813999`.
 
 ### Next planned checkpoint
 
-After DTR-1 acceptance, begin Data Architecture D1 investigation/design. This must define historical/live requirements and compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
+Complete the approved iPhone form-focus zoom checkpoint, including exact-build physical Safari focus/recovery testing. Then begin Data Architecture D1 investigation/design. D1 must define historical/live requirements and compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
 
 ### After real Gameweek data
 

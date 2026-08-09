@@ -4,24 +4,30 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Baseline
 
-- Repository head at this checkpoint: `main` `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f` (A3-R0 through PR #98).
-- Latest substantive application checkpoint: PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`, exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`, generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209`.
-- Permanent repository verification: run `31283849251`; 685 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic double build; root/deployable equality; exact source and complete build-input identity.
+- Repository head at this checkpoint: `main` `09e595c275b4f3614c09fb502291de6831813999` (DTR-1 through PR #99).
+- Latest substantive application checkpoint: DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999`.
+- Permanent repository verification: run `31301475598`; 691 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic double build; root/deployable equality; exact source and complete build-input identity.
 - Transfers, Player Detail, Team and Fixtures tested paths are physically accepted on iPhone Safari.
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
 - Refresh-Load R1 is merged, deployed from `main` and physically accepted for every currently testable iPhone path. Live minute-history reuse awaits a completed checked Gameweek; Odds reuse awaits an enabled Odds configuration.
 
-## Current approved checkpoint — DTR-1 Direct Team renderer
+## Current approved checkpoint — iPhone form-focus zoom correction
 
-**Status:** implementation candidate on `agent/dtr-1-direct-team-renderer`; local 691/691 verification passed. Permanent CI, exact two-commit generated provenance, physical iPhone Safari acceptance and merge remain owner-gated.
+**Status:** narrow implementation candidate on `agent/iphone-form-focus-zoom`. Permanent CI, exact two-commit generated provenance, physical iPhone Safari acceptance and merge remain owner-gated.
 
-**Scope:** retain one stable `renderSquad()` adapter and make `team-decision-home.mjs` create the accepted final Team DOM directly from unchanged squad, projection, fixture, pitch and decision-preview primitives. Preserve preview synchronisation, all handlers, focus restoration, bench display, accessibility and current tie-order characteristics.
+**Scope:** render text, number, search, password, select and textarea controls at a minimum 16px so iPhone Safari does not auto-zoom on focus. Preserve browser pinch zoom and leave checkbox, file and range controls unchanged.
 
-**Finalisation:** commit reviewed source/build/test/documentation changes first, build with that reachable commit as `BUILD_COMMIT`, then commit only the four generated deployables. Run permanent CI and the full physical script in [DTR-1 Direct Team Renderer](DTR-1-DIRECT-TEAM-RENDERER.md) before owner merge approval.
+**Finalisation:** commit reviewed source/test/documentation changes first, build with that reachable commit as `BUILD_COMMIT`, then commit only the four generated deployables. Run permanent CI and physically verify focus, keyboard close, scale recovery and save behaviour on the exact PR build before owner merge approval.
 
-**Exclusions:** visual redesign; new Team features; any calculation, provider, data source, cache, persistence, route, navigation, security-origin or dependency change; D1 and later roadmap work.
+**Exclusions:** disabling zoom through viewport restrictions; body typography changes; control redesign; calculation, provider, data source, cache, persistence, route, navigation, security-origin or dependency changes; D1 and later roadmap work.
 
-**Evidence:** the direct candidate removes the legacy Team DOM body, runtime function reassignment and post-render DOM surgery. Six new production-bundle contracts cover final/placeholder DOM, captain interactions, transfer previews, Player Detail and ownership; no prior test or golden was removed or weakened.
+**Evidence:** physical DTR-1 testing showed the resource field triggered strong Safari zoom and remained enlarged after the keyboard closed. Source inspection found the 15px inherited control size across the app and a separate 15px global search override. Focused regressions require every current text-entry control family to be 16px while rejecting viewport zoom suppression.
+
+## Completed checkpoint — DTR-1 Direct Team renderer
+
+**Status:** complete and merged through PR #99 at `09e595c275b4f3614c09fb502291de6831813999` after 691/691 permanent tests, exact generated provenance, deterministic builds, populated physical iPhone Safari acceptance and explicit owner approval.
+
+DTR-1 replaced the legacy Team render/reconstruct boundary with one direct renderer while preserving the accepted design, calculations, providers, data sources, routes and persistence. Its exact-device pass exposed the separate pre-existing form-focus zoom issue now isolated above.
 
 ## Completed checkpoint — A3-R0 durable build provenance
 

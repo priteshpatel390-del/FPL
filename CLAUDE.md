@@ -6,10 +6,10 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`, merge of A3-R0 PR #98 |
-| Latest substantive application checkpoint | PR #96, merge `2ddb33c81fa2092598f290d60320364f2e0c35dc`; exact reviewed remote head `967856246a0c17972c43eaf444651bceb8b9f728`; generated source `d1b6ac0527d7b785962d7c7a02a7f266f42ba209` |
-| Permanent repository verification | Verify Teamsheet run `31283849251`: 685 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic byte-identical double build; root/deployable equality; exact source and complete build-input identity |
-| Application tree identity | Reviewed PR #96 head and merge share Git tree `fd40deff72c458286e77f44a66b79a0e720e700c` |
+| Repository head | `main` `09e595c275b4f3614c09fb502291de6831813999`, merge of DTR-1 PR #99 |
+| Latest substantive application checkpoint | DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999` |
+| Permanent repository verification | Verify Teamsheet run `31301475598`: 691 passed, 0 failed, 0 skipped, 0 cancelled; reachable-source reproduction; deterministic byte-identical double build; root/deployable equality; exact source and complete build-input identity |
+| Application tree identity | The accepted PR #99 generated build is preserved by merge `09e595c275b4f3614c09fb502291de6831813999` |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
@@ -31,9 +31,11 @@ The first PR #96 iPhone pass accepted online startup, build identity, short back
 
 Audit A3 and A3-R0 are complete and merged. A3-R0 binds generated files to all build inputs, requires their recorded source commit to be a reachable ancestor and reproduces committed deployables exactly before ordinary CI builds overwrite them.
 
-DTR-1 is the current approved implementation candidate. It replaces Team's legacy-render-then-reconstruct path with one direct renderer while preserving the accepted design and every calculation/provider/data-source boundary. Local verification is 691/691; permanent CI, exact two-commit generated provenance, populated physical iPhone Safari acceptance and explicit merge approval remain pending. See [DTR-1 Direct Team Renderer](docs/DTR-1-DIRECT-TEAM-RENDERER.md).
+DTR-1 is complete and merged through PR #99. Its exact generated build passed 691/691 tests, permanent CI, reachable two-commit provenance and populated physical iPhone Safari acceptance before Pritesh explicitly approved merge. The device pass exposed a pre-existing Safari form-focus zoom defect: editable controls inherited 15px text and the page remained enlarged after the keyboard closed.
 
-After DTR-1 is accepted or closed, the next planned task is Data Architecture D1 investigation/design for Teamsheet's historical and live data platform. D1 is not approved for implementation and must compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against actual requirements. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
+The current approved checkpoint is the narrow iPhone form-focus zoom correction on `agent/iphone-form-focus-zoom`. It raises only editable text, number, search, password, select and textarea controls to 16px, preserves pinch zoom and leaves checkbox/file/range controls and all application logic unchanged. Automated, generated-provenance, draft-PR and exact-device gates remain required before merge.
+
+After the zoom checkpoint is accepted or closed, the next planned task is Data Architecture D1 investigation/design for Teamsheet's historical and live data platform. D1 is not approved for implementation and must compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against actual requirements. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
 
 ## Owner and communication
 
