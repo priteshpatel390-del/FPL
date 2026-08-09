@@ -1,6 +1,11 @@
 # CLAUDE.md — onboarding for every future development session
 
 
+## 9 August 2026 physical UI correction
+
+The first PR #103 candidate (`0e3a0674416aa069a0f06ebee87854df41907ed0` source, `b53c8026a5485936582da1ea2374f9bad799e44d` generated) passed 798 automated tests and permanent Verify Teamsheet run `31338489146`, but **failed physical iPhone Safari acceptance**: the light startup strip remained and the five primary-route header boxes still presented inconsistent structure/rhythm. The corrected review source is `aec0c4f55ac051fd5016d7e93a70415de2dbc308` with generated-only child `a7bea9e1a96fda958239099a3ec64aef8cc30874`. It adds two regressions, retains all 798 prior tests and passes **800 tests** before publication. The correction gives Safari an explicit opaque dark startup background colour beneath the gradient and gives Team, Transfers, Fixtures, Leagues and Settings one shared `primary-page-header` box/title/intro contract while preserving the Leagues Manage action. Physical iPhone Safari retest remains required; merge is not approved.
+
+
 ## 9 August 2026 current checkpoint
 
 Current GitHub `main` at the start of this checkpoint is `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`, merge of Atomic Foreground Refresh PR #102. PR #102 is merged and verified at **792 passed, 0 failed, 0 skipped**, with deterministic/generated provenance, independent re-review and physical iPhone Safari acceptance. The current approved implementation candidate is **Small Mobile UI Consistency + Loading Viewport Fix**. Its reviewed source is `0e3a0674416aa069a0f06ebee87854df41907ed0` and generated-only child is `b53c8026a5485936582da1ea2374f9bad799e44d`. Six focused regressions raise the candidate suite to **798 tests**; the publication gate passed the complete suite, deterministic double build, root/deployable equality and reachable generated provenance. Physical iPhone Safari acceptance of this UI candidate remains required before merge. This current-state block supersedes older 9 August wording below where it describes PR #102 as unmerged or cites the 691/693-test application baseline.

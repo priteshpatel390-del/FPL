@@ -3,6 +3,8 @@
 
 ## Mobile viewport and primary-screen presentation boundary
 
+**Physical correction:** the first candidate passed automation but failed iPhone Safari. The corrected boundary now requires an explicit opaque startup document/gate background colour beneath the decorative gradient, and the five primary routes share one structural `primary-page-header` presentation block rather than only selector-level font tokens. Leagues retains its Manage action as an action variant. This remains presentation-only.
+
 The current mobile UI candidate keeps startup ownership in the existing gate: header, main and the primary dock remain hidden/inert until `teamsheet:startup-ready`. During startup the document canvas itself now carries the dark loading background with `100vh` fallback and `100dvh` modern sizing, while the fixed gate uses all four safe-area insets. Primary Team, Transfers, Fixtures, Leagues and Settings titles/intros use explicit shared presentation tokens instead of depending on whether an `h2` is a direct `.panel` child. This is presentation-only: routing, navigation information architecture, refresh orchestration and football calculations remain unchanged.
 
 ## Approved future persistence boundary (D1 design)
