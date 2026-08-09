@@ -1,0 +1,85 @@
+name: Mobile UI physical correction publisher
+
+on:
+  push:
+    branches:
+      - agent/mobile-ui-consistency-builder
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/mobile-ui-consistency-builder
+          fetch-depth: 0
+
+      - name: Capture correction helper
+        run: |
+          set -eu
+          cp scripts/mobile-ui-physical-correction.py /tmp/mobile-ui-physical-correction.py
+
+      - name: Correct, verify and publish PR candidate
+        env:
+          EXPECTED_HEAD: a3eab11d1119e8b38cfb49307fcefc042bb7fd7c
+        run: |
+          set -eux
+          git fetch origin agent/mobile-ui-consistency
+          git checkout -B agent/mobile-ui-consistency origin/agent/mobile-ui-consistency
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          python /tmp/mobile-ui-physical-correction.py source
+          git diff --check
+          git add app.html src/ui/app-shell.mjs tests/mobile-ui-consistency.test.mjs
+          test "$(git diff --cached --name-only | sort | tr '\n' ' ')" = "app.html src/ui/app-shell.mjs tests/mobile-ui-consistency.test.mjs "
+          git commit -m "Correct mobile loading canvas and primary headers"
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          export BUILD_COMMIT="$SOURCE_SHA"
+
+          ./run-tests.sh | tee /tmp/mobile-ui-tests.log
+          grep -Eq '# tests +800' /tmp/mobile-ui-tests.log
+          grep -Eq '# pass +800' /tmp/mobile-ui-tests.log
+          grep -Eq '# fail +0' /tmp/mobile-ui-tests.log
+
+          node build.mjs
+          rm -rf /tmp/mobile-ui-build-a
+          mkdir -p /tmp/mobile-ui-build-a/dist
+          cp dist/app.bundle.js /tmp/mobile-ui-build-a/dist/app.bundle.js
+          cp dist/index.html /tmp/mobile-ui-build-a/dist/index.html
+          cp dist/manifest.json /tmp/mobile-ui-build-a/dist/manifest.json
+          cp index.html /tmp/mobile-ui-build-a/index.html
+          node build.mjs
+          cmp /tmp/mobile-ui-build-a/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/mobile-ui-build-a/dist/index.html dist/index.html
+          cmp /tmp/mobile-ui-build-a/dist/manifest.json dist/manifest.json
+          cmp /tmp/mobile-ui-build-a/index.html index.html
+          cmp dist/index.html index.html
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; import {hashBuildInputs} from './build-utils.mjs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); if(m.buildInputHash!==hashBuildInputs(m.moduleOrder)) throw new Error('manifest build-input mismatch'); console.log('Manifest identity verified:',m.commit,m.buildInputHash);"
+
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          test "$(git diff --cached --name-only | sort | tr '\n' ' ')" = "dist/app.bundle.js dist/index.html dist/manifest.json index.html "
+          git commit -m "Regenerate corrected mobile UI build"
+          GENERATED_SHA="$(git rev-parse HEAD)"
+
+          SOURCE_SHA="$SOURCE_SHA" GENERATED_SHA="$GENERATED_SHA" python /tmp/mobile-ui-physical-correction.py docs
+          git diff --check
+          node --test tests/documentation-integrity.test.mjs
+          git add CLAUDE.md docs/ARCHITECTURE.md docs/DECISIONS.md docs/KNOWN_LIMITATIONS.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md
+          test -n "$(git diff --cached --name-only)"
+          git commit -m "Document failed iPhone check and corrected candidate"
+          DOCS_SHA="$(git rev-parse HEAD)"
+
+          node scripts/verify-build-provenance.mjs
+          git log --oneline -4
+          echo "source=$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "generated=$GENERATED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "docs=$DOCS_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "tests=800 passed" >> "$GITHUB_STEP_SUMMARY"
+          git push origin HEAD:agent/mobile-ui-consistency
