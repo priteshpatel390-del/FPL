@@ -1,5 +1,5 @@
-/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"cabbd1b6bed7e707","buildInputHash":"234187ccdd9d2c23","commit":"99a4c36c630a07c1cb9d542e43b0d7dcf027a91d"} */
-const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"cabbd1b6bed7e707d289c8588c7ab18130903be232b955f0e43610b8d71628c9","buildInputHash":"234187ccdd9d2c23e44bff1300998a28de5785f6e66c5f28adcf6cf100f9eda3","commit":"99a4c36c630a07c1cb9d542e43b0d7dcf027a91d","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/applied.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"],"buildInputFiles":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/applied.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs","app.html","build.mjs","build-utils.mjs"]};
+/* BUILD {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"37580a5c4ebaec54","buildInputHash":"c5f2a9a76b463bad","commit":"8974e2ff896db17a9a3c795490f6a6498a64521f"} */
+const BUILD_INFO = {"modelVersion":"2.4.0","rulesVersion":"2026-27.3","sourceHash":"37580a5c4ebaec54681bd490d441c64580acb1283149e1ea8f82fcb9ffdaabb6","buildInputHash":"c5f2a9a76b463bad230b68dce8a593e07e674ffdfe4c5a4fb21338e4bce258e7","commit":"8974e2ff896db17a9a3c795490f6a6498a64521f","moduleOrder":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/applied.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs"],"buildInputFiles":["src/config.mjs","src/util.mjs","src/providers/retry.mjs","src/providers/validate.mjs","src/providers/outcome-validate.mjs","src/state.mjs","src/storage.mjs","src/ui/mini-leagues-state.mjs","src/providers/registry.mjs","src/providers/applied.mjs","src/providers/transport.mjs","src/providers/common.mjs","src/providers/understat.mjs","src/providers/odds.mjs","src/providers/minutes-history.mjs","src/ui/data-warning.mjs","src/model/fixtures.mjs","src/model/minutes.mjs","src/model/scoring-rules.mjs","src/model/scoring.mjs","src/model/simulation.mjs","src/squad.mjs","src/model/squad-simulation.mjs","src/model/transfers.mjs","src/model/walk-forward.mjs","src/model/archive-replay.mjs","src/model/backtest.mjs","src/main.mjs","src/ui/app-shell.mjs","src/ui/team-pitch.mjs","src/ui/player-detail.mjs","src/ui/decision-preview.mjs","src/evidence/snapshot.mjs","src/evidence/outcome.mjs","src/evidence/metrics.mjs","src/evidence/review.mjs","src/ui/transfer-optimiser-view.mjs","src/ui/transfer-performance.mjs","src/ui/mini-leagues-view.mjs","src/ui/team-decision-home.mjs","src/ui/views.mjs","src/ui/manual-squad-runtime.mjs","src/ui/backtest-copy.mjs","src/ui/markdown.mjs","src/ui/security-wiring.mjs","src/ui/evidence-recovery.mjs","src/ui/download.mjs","src/ui/evidence.mjs","src/ui/outcomes.mjs","src/ui/metrics.mjs","src/ui/review.mjs","app.html","build.mjs","build-utils.mjs"]};
 const TRANSFER_WORKER_MODEL_SOURCE = "\nconst POSITION_QUOTAS = TRANSFER_RULES.positionQuotas;\nconst UNAVAILABLE = new Set(TRANSFER_RULES.unavailableStatuses);\n// Reporting cadence only. It never changes which plans are evaluated, retained or ranked.\nconst TRANSFER_PROGRESS_INTERVAL = 20000;\n\nfunction playerOf(entry){ return entry?.p || entry; }\nfunction playerId(entry){ return Number(playerOf(entry)?.id); }\nfunction positionOf(entry){ return Number(playerOf(entry)?.element_type); }\nfunction hasKnownPurchasePrice(entry){\n  const raw = entry?.bought ?? entry?.purchasePrice;\n  return raw !== null && raw !== undefined && Number.isFinite(Number(raw));\n}\n\nfunction transferSellPrice(entry){\n  const now = Number(entry?.p?.now_cost ?? entry?.now_cost);\n  if(!Number.isFinite(now)) return 0;\n  const bought = hasKnownPurchasePrice(entry) ? Number(entry?.bought ?? entry?.purchasePrice) : now;\n  if(now <= bought) return now;\n  return bought + Math.floor((now - bought) / 2);\n}\n\nfunction nextFreeTransfers(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  return Math.min(TRANSFER_RULES.maxFreeTransfers, Math.max(0, ft - n) + 1);\n}\n\nfunction transferHit(freeTransfers, transferCount){\n  const ft = Math.max(0, Math.min(TRANSFER_RULES.maxFreeTransfers, Math.trunc(Number(freeTransfers) || 0)));\n  const n = Math.max(0, Math.trunc(Number(transferCount) || 0));\n  const paidTransfers = Math.max(0, n - ft);\n  return { paidTransfers, hitCost: paidTransfers * TRANSFER_RULES.pointsPerPaidTransfer };\n}\n\nfunction combinations(items, size, start=0, chosen=[], out=[]){\n  if(chosen.length === size){ out.push(chosen.slice()); return out; }\n  for(let i=start; i<=items.length-(size-chosen.length); i++){\n    chosen.push(items[i]); combinations(items,size,i+1,chosen,out); chosen.pop();\n  }\n  return out;\n}\n\nfunction validateSquad(squad, {allowInheritedOverQuota=true}={}){\n  const issues=[];\n  if(!Array.isArray(squad) || squad.length !== 15) issues.push('squad_size');\n  const players = Array.isArray(squad) ? squad.map(playerOf).filter(Boolean) : [];\n  const ids = players.map(p=>Number(p.id));\n  if(new Set(ids).size !== ids.length) issues.push('duplicate_player');\n  if(players.some(p=>!Number.isFinite(Number(p.id)) || !POSITION_QUOTAS[Number(p.element_type)] || !Number.isFinite(Number(p.team)))) issues.push('unknown_player');\n  const pos={1:0,2:0,3:0,4:0}, clubs={};\n  players.forEach(p=>{ pos[p.element_type]=(pos[p.element_type]||0)+1; clubs[p.team]=(clubs[p.team]||0)+1; });\n  Object.entries(POSITION_QUOTAS).forEach(([k,v])=>{ if(pos[k]!==v) issues.push(`position_${k}`); });\n  if(!allowInheritedOverQuota && Object.values(clubs).some(n=>n>TRANSFER_RULES.maxPerClub)) issues.push('club_quota');\n  return {ok:issues.length===0, issues:[...new Set(issues)], positionCounts:pos, clubCounts:clubs};\n}\n\nfunction bestXIFromPositionRows(byPos){\n  let best=null;\n  for(let d=3;d<=5;d++) for(let m=2;m<=5;m++){\n    const f=10-d-m; if(f<1||f>3) continue;\n    if(byPos[1].length<1||byPos[2].length<d||byPos[3].length<m||byPos[4].length<f) continue;\n    const selected=[byPos[1][0],...byPos[2].slice(0,d),...byPos[3].slice(0,m),...byPos[4].slice(0,f)];\n    const total=selected.reduce((a,x)=>a+x.score,0);\n    const signature=`${d}-${m}-${f}|${selected.map(x=>x.p.id).sort((a,b)=>a-b).join(',')}`;\n    if(!best || total>best.total || (total===best.total && signature<best.signature))\n      best={total,formation:`${d}-${m}-${f}`,playerIds:selected.map(x=>Number(x.p.id)),signature};\n  }\n  return best || {total:0,formation:'—',playerIds:[],signature:''};\n}\n\nfunction bestXIForGW(squad, gw, scorePlayer){\n  const byPos={1:[],2:[],3:[],4:[]};\n  squad.forEach(entry=>{\n    const p=playerOf(entry), raw=Number(scorePlayer(p,gw));\n    byPos[p.element_type].push({entry,p,score:Number.isFinite(raw)?raw:0});\n  });\n  Object.values(byPos).forEach(arr=>arr.sort((a,b)=>b.score-a.score || Number(a.p.id)-Number(b.p.id)));\n  return bestXIFromPositionRows(byPos);\n}\n\nfunction scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer){\n  const perGameweek=[]; let total=0;\n  for(let gw=startGW;gw<startGW+horizon;gw++){\n    const xi=bestXIForGW(squad,gw,scorePlayer); total+=xi.total; perGameweek.push({gw,...xi});\n  }\n  return {total,perGameweek};\n}\n\nfunction canonicalTransfers(transfers){\n  return transfers.slice().sort((a,b)=>a.position-b.position||a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);\n}\nfunction planSignature(transfers){ return canonicalTransfers(transfers).map(t=>`${t.outPlayerId}>${t.inPlayerId}`).join('|'); }\n\nfunction comparePlans(a,b){\n  return b.netGain-a.netGain || b.grossBestXIPoints-a.grossBestXIPoints || a.hitCost-b.hitCost ||\n    a.transferCount-b.transferCount || b.freeTransfersNextGW-a.freeTransfersNextGW || b.bankAfter-a.bankAfter ||\n    a.doubtfulIncoming-b.doubtfulIncoming || a.signature.localeCompare(b.signature);\n}\n\nfunction inheritedClubLegal(startCounts, finalCounts, transferCount){\n  for(const [club,count] of Object.entries(finalCounts)){\n    const start=startCounts[club]||0;\n    if(start<=TRANSFER_RULES.maxPerClub && count>TRANSFER_RULES.maxPerClub) return false;\n    if(start>TRANSFER_RULES.maxPerClub && count>start) return false;\n  }\n  const startExcess=Object.values(startCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  const finalExcess=Object.values(finalCounts).reduce((a,n)=>a+Math.max(0,n-TRANSFER_RULES.maxPerClub),0);\n  return finalExcess <= Math.max(0,startExcess-transferCount);\n}\n\nfunction buildBaseline({squad,bank,freeTransfers,startGW,horizon,scorePlayer}){\n  const baselineScore=scoreSquadAcrossHorizon(squad,startGW,horizon,scorePlayer);\n  return {transferCount:0,transfers:[],finalSquadIds:squad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter:bank,\n    freeTransfersBefore:freeTransfers,paidTransfers:0,hitCost:0,freeTransfersNextGW:nextFreeTransfers(freeTransfers,0),grossBestXIPoints:baselineScore.total,\n    grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:baselineScore.perGameweek,doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};\n}\n\nfunction buildPlan({startSquad,outgoing,incoming,bank,freeTransfers,startGW,horizon,scorePlayer,baseline,startCounts,pricingMode}){\n  const outIds=new Set(outgoing.map(playerId));\n  const finalSquad=startSquad.filter(e=>!outIds.has(playerId(e))).concat(incoming.map(p=>({p,bought:p.now_cost})));\n  const legality=validateSquad(finalSquad,{allowInheritedOverQuota:true});\n  if(!legality.ok || !inheritedClubLegal(startCounts,legality.clubCounts,outgoing.length)) return null;\n  const sellTotal=outgoing.reduce((a,e)=>a+transferSellPrice(e),0);\n  const buyTotal=incoming.reduce((a,p)=>a+Number(p.now_cost||0),0);\n  const bankAfter=bank+sellTotal-buyTotal;\n  if(bankAfter<0) return null;\n  const hit=transferHit(freeTransfers,outgoing.length);\n  const score=scoreSquadAcrossHorizon(finalSquad,startGW,horizon,scorePlayer);\n  const nextFT=nextFreeTransfers(freeTransfers,outgoing.length);\n  const rollDifference=nextFT-baseline.freeTransfersNextGW;\n  const grossGain=score.total-baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:finalSquad.map(playerId).sort((a,b)=>a-b),bankBefore:bank,bankAfter,\n    freeTransfersBefore:freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,freeTransfersNextGW:nextFT,\n    grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\n// Bounded top-K retention. comparePlans() is a total order — its final tiebreak is the\n// plan signature, signatures are unique per transfer set and contain only ASCII digits,\n// '>' and '|', so two distinct plans never compare equal.\nfunction retainPlan(plans,plan,limit){\n  if(plans.length>=limit && comparePlans(plan,plans[plans.length-1])>0) return plans;\n  plans.push(plan);\n  plans.sort(comparePlans);\n  if(plans.length>limit) plans.length=limit;\n  return plans;\n}\n\nfunction normaliseSearch(args){\n  const {squad,players,bank=0,freeTransfers=1,startGW=1,horizon=6,maxTransfers=TRANSFER_RULES.maxTransfers,\n    maxResults=20,maxEvaluations=TRANSFER_RULES.maxEvaluations,scorePlayer,\n    onProgress,progressInterval=TRANSFER_PROGRESS_INTERVAL}=args;\n  const legality=validateSquad(squad,{allowInheritedOverQuota:true});\n  if(!legality.ok) return {error:{status:'invalid-input',issues:legality.issues,plans:[],evaluations:0}};\n  if(typeof scorePlayer!=='function') return {error:{status:'projection-unavailable',issues:['score_player_missing'],plans:[],evaluations:0}};\n  const cleanBank=Math.max(0,Math.trunc(Number(bank)||0));\n  const cleanFT=Math.max(0,Math.min(TRANSFER_RULES.maxFreeTransfers,Math.trunc(Number(freeTransfers)||0)));\n  const cleanHorizon=Math.max(1,Math.min(TRANSFER_RULES.maxHorizon,Math.trunc(Number(horizon)||1)));\n  const cleanLimit=Math.min(TRANSFER_RULES.maxTransfers,Math.max(0,Math.trunc(Number(maxTransfers)||0)));\n  const cleanMaxResults=Math.max(1,Math.trunc(Number(maxResults)||1));\n  const cleanMaxEvaluations=Math.max(0,Math.trunc(Number(maxEvaluations)||0));\n  const owned=new Set(squad.map(playerId));\n  const eligible=(players||[]).filter(p=>p&&!owned.has(Number(p.id))&&POSITION_QUOTAS[p.element_type]&&!UNAVAILABLE.has(p.status)).sort((a,b)=>Number(a.id)-Number(b.id));\n  const pricingMode=squad.every(hasKnownPurchasePrice)?'exact':'estimated';\n  const baseline=buildBaseline({squad,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,scorePlayer});\n  baseline.pricingMode=pricingMode;\n  return {squad,eligible,bank:cleanBank,freeTransfers:cleanFT,startGW,horizon:cleanHorizon,limit:cleanLimit,maxResults:cleanMaxResults,\n    maxEvaluations:cleanMaxEvaluations,scorePlayer,baseline,startCounts:legality.clubCounts,pricingMode,\n    onProgress:typeof onProgress==='function'?onProgress:null,\n    progressInterval:Math.max(1,Math.trunc(Number(progressInterval)||TRANSFER_PROGRESS_INTERVAL))};\n}\n\nfunction completeResult(ctx,plans,evaluations,pruned=0,incomplete=false,profile=null){\n  plans.sort(comparePlans);\n  const base={evaluations,pruned,baseline:ctx.baseline,pricingMode:ctx.pricingMode};\n  if(profile) base.profile=Object.freeze({...profile});\n  if(incomplete) return {status:'search-incomplete',issues:['evaluation_limit'],plans:[ctx.baseline],...base};\n  return {status:'ok',issues:[],plans:plans.slice(0,ctx.maxResults),...base};\n}\n\nfunction exhaustiveTransferSearch(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, incomplete=false;\n  outer: for(let n=1;n<=ctx.limit;n++){\n    for(const outgoing of combinations(ctx.squad,n)){\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const candidates=ctx.eligible.filter(p=>required.includes(Number(p.element_type)));\n      for(const incoming of combinations(candidates,n)){\n        if(++evaluations>ctx.maxEvaluations){ incomplete=true; break outer; }\n        const incomingPos=incoming.map(p=>Number(p.element_type)).sort((a,b)=>a-b);\n        if(incomingPos.some((v,i)=>v!==required[i])) continue;\n        const ordered=[], used=new Set();\n        for(const out of outgoing){\n          const idx=incoming.findIndex((p,i)=>!used.has(i)&&Number(p.element_type)===positionOf(out));\n          if(idx<0) break; used.add(idx); ordered.push(incoming[idx]);\n        }\n        if(ordered.length!==n) continue;\n        const plan=buildPlan({startSquad:ctx.squad,outgoing,incoming:ordered,bank:ctx.bank,freeTransfers:ctx.freeTransfers,startGW:ctx.startGW,\n          horizon:ctx.horizon,scorePlayer:ctx.scorePlayer,baseline:ctx.baseline,startCounts:ctx.startCounts,pricingMode:ctx.pricingMode});\n        if(plan) plans.push(plan);\n      }\n    }\n  }\n  return completeResult(ctx,plans,evaluations,0,incomplete);\n}\n\nfunction prepareScoreRows(ctx){\n  const rows=new Map(), all=[], seen=new Set();\n  for(const entry of ctx.squad){ const p=playerOf(entry),id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }\n  for(const p of ctx.eligible){ const id=Number(p.id); if(!seen.has(id)){seen.add(id);all.push(p);} }\n  for(const p of all){\n    const values=[];\n    for(let offset=0;offset<ctx.horizon;offset++){\n      const raw=Number(ctx.scorePlayer(p,ctx.startGW+offset));\n      values.push(Number.isFinite(raw)?raw:0);\n    }\n    rows.set(Number(p.id),values);\n  }\n  return rows;\n}\nfunction horizonScore(scoreRows,p){ return (scoreRows.get(Number(p.id))||[]).reduce((sum,value)=>sum+value,0); }\n\nfunction buildCoreByGameweek(core,scoreRows,horizon){\n  const games=[];\n  for(let offset=0;offset<horizon;offset++){\n    const byPos={1:[],2:[],3:[],4:[]};\n    for(const entry of core){\n      const p=playerOf(entry),score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry,p,score});\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    games.push(byPos);\n  }\n  return games;\n}\n\nfunction scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,startGW,horizon){\n  const perGameweek=[]; let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const base=coreByGameweek[offset];\n    const byPos={1:base[1].slice(),2:base[2].slice(),3:base[3].slice(),4:base[4].slice()};\n    for(const p of incoming){\n      const score=Number(scoreRows.get(Number(p.id))?.[offset])||0;\n      byPos[p.element_type].push({entry:p,p,score});\n    }\n    Object.values(byPos).forEach(rows=>rows.sort((a,b)=>b.score-a.score||Number(a.p.id)-Number(b.p.id)));\n    const xi=bestXIFromPositionRows(byPos);\n    total+=xi.total; perGameweek.push({gw:startGW+offset,...xi});\n  }\n  return {total,perGameweek};\n}\n\n/* ---------------------------------------------------------------------------\n   Exact position-pool machinery.\n\n   Every legal transfer keeps the squad on its exact position quota, so for a\n   fixed outgoing set the final pool at each position always holds exactly\n   POSITION_QUOTAS[pos] players. A horizon best-XI total can therefore be read\n   from per-Gameweek descending score prefix sums rather than rebuilding,\n   re-sorting and re-scanning squad rows for every candidate.\n\n   An incoming slot that is not yet filled is held as a zero placeholder. Zero\n   is optimistic because a real incoming player may score below zero, so a\n   padded pool never understates any descendant of the node.\n   --------------------------------------------------------------------------- */\nconst FORMATIONS=Object.freeze([[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,2,3],[5,3,2],[5,4,1]]);\n// Largest starting count each position reaches across the legal formations.\nconst STARTER_LIMIT=Object.freeze({1:1,2:5,3:5,4:3});\n\nfunction createPoolLevel(horizon){\n  const level={count:{1:0,2:0,3:0,4:0},real:{},values:{},prefix:{}};\n  for(const pos of [1,2,3,4]){\n    const quota=POSITION_QUOTAS[pos];\n    level.real[pos]=new Float64Array(horizon*quota);\n    level.values[pos]=new Float64Array(horizon*quota);\n    level.prefix[pos]=new Float64Array(horizon*(quota+1));\n  }\n  return level;\n}\n\nfunction sortDescInPlace(row,base,length){\n  for(let k=1;k<length;k++){\n    const value=row[base+k]; let j=k-1;\n    while(j>=0&&row[base+j]<value){ row[base+j+1]=row[base+j]; j--; }\n    row[base+j+1]=value;\n  }\n}\n\n// Rebuilds the zero-padded pool and its descending prefix sums for one position.\nfunction refreshPool(level,pos,horizon){\n  const quota=POSITION_QUOTAS[pos],count=level.count[pos],\n    real=level.real[pos],values=level.values[pos],prefix=level.prefix[pos];\n  for(let offset=0;offset<horizon;offset++){\n    const rowBase=offset*quota,prefixBase=offset*(quota+1);\n    for(let k=0;k<quota;k++) values[rowBase+k]=k<count?real[rowBase+k]:0;\n    sortDescInPlace(values,rowBase,quota);\n    let sum=0; prefix[prefixBase]=0;\n    for(let k=0;k<quota;k++){ sum+=values[rowBase+k]; prefix[prefixBase+k+1]=sum; }\n  }\n}\n\nfunction seedPoolLevel(level,core,scoreRows,horizon){\n  const rows={1:[],2:[],3:[],4:[]};\n  for(const entry of core) rows[positionOf(entry)].push(scoreRows.get(playerId(entry)));\n  for(const pos of [1,2,3,4]){\n    const quota=POSITION_QUOTAS[pos],members=rows[pos],real=level.real[pos];\n    level.count[pos]=members.length;\n    for(let offset=0;offset<horizon;offset++){\n      const rowBase=offset*quota;\n      for(let k=0;k<members.length;k++) real[rowBase+k]=Number(members[k]?.[offset])||0;\n      sortDescInPlace(real,rowBase,members.length);\n    }\n    refreshPool(level,pos,horizon);\n  }\n}\n\n// Copies `from` into `to` with one further real member added at `pos`.\nfunction extendPoolLevel(from,to,pos,scoreRow,horizon){\n  for(const other of [1,2,3,4]){\n    to.count[other]=from.count[other];\n    to.real[other].set(from.real[other]);\n    if(other!==pos){ to.values[other].set(from.values[other]); to.prefix[other].set(from.prefix[other]); }\n  }\n  const quota=POSITION_QUOTAS[pos],count=from.count[pos],real=to.real[pos];\n  for(let offset=0;offset<horizon;offset++){\n    const rowBase=offset*quota;\n    real[rowBase+count]=Number(scoreRow?.[offset])||0;\n    sortDescInPlace(real,rowBase,count+1);\n  }\n  to.count[pos]=count+1;\n  refreshPool(to,pos,horizon);\n}\n\nfunction horizonTotalFromPrefixes(gkPrefix,defPrefix,midPrefix,fwdPrefix,horizon){\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const gk=gkPrefix[offset*3+1],defBase=offset*6,midBase=offset*6,fwdBase=offset*4;\n    let best=-Infinity;\n    for(let i=0;i<FORMATIONS.length;i++){\n      const shape=FORMATIONS[i];\n      const value=gk+defPrefix[defBase+shape[0]]+midPrefix[midBase+shape[1]]+fwdPrefix[fwdBase+shape[2]];\n      if(value>best) best=value;\n    }\n    total+=best;\n  }\n  return total;\n}\n\n// Exact horizon best-XI total for a complete pool; an optimistic base while slots remain.\nfunction poolHorizonTotal(level,horizon){\n  return horizonTotalFromPrefixes(level.prefix[1],level.prefix[2],level.prefix[3],level.prefix[4],horizon);\n}\n\n// Admissible identity-preserving marginal of one candidate against a padded pool.\n// Filling a placeholder with score s raises any top-k total by at most\n// max(0, s - kth value of the padded pool), and the largest starting count gives\n// the smallest such threshold, so one gain is valid for every legal formation and\n// for every placeholder still outstanding at that position.\nfunction poolPlayerGain(level,pos,scoreRow,horizon){\n  const quota=POSITION_QUOTAS[pos],values=level.values[pos],index=STARTER_LIMIT[pos]-1;\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const delta=(Number(scoreRow?.[offset])||0)-values[offset*quota+index];\n    if(delta>0) total+=delta;\n  }\n  return total;\n}\n\n/* Cost of moving an identity gain from the branch-level padded pool to the node's\n   padded pool. max(0, s - b) <= max(0, s - a) + max(0, a - b) for every score, so\n   adding this constant per outstanding slot keeps a branch-level gain admissible\n   at any node while leaving the branch-level ordering intact. */\nfunction thresholdDelta(branchLevel,nodeLevel,pos,horizon){\n  const quota=POSITION_QUOTAS[pos],index=STARTER_LIMIT[pos]-1;\n  const branchValues=branchLevel.values[pos],nodeValues=nodeLevel.values[pos];\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const drop=branchValues[offset*quota+index]-nodeValues[offset*quota+index];\n    if(drop>0) total+=drop;\n  }\n  return total;\n}\n\n// Admissible per-formation bound for the last outstanding slot. It preserves the\n// candidate's identity across every Gameweek and applies each formation's own\n// threshold instead of the smallest threshold across formations.\nfunction finalSlotUpperBound(level,pos,scoreRow,horizon){\n  const gkPrefix=level.prefix[1],defPrefix=level.prefix[2],midPrefix=level.prefix[3],fwdPrefix=level.prefix[4];\n  const quota=POSITION_QUOTAS[pos],values=level.values[pos];\n  let total=0;\n  for(let offset=0;offset<horizon;offset++){\n    const gk=gkPrefix[offset*3+1],defBase=offset*6,midBase=offset*6,fwdBase=offset*4,\n      valueBase=offset*quota,score=Number(scoreRow?.[offset])||0;\n    let best=-Infinity;\n    for(let i=0;i<FORMATIONS.length;i++){\n      const shape=FORMATIONS[i];\n      const starters=pos===1?1:pos===2?shape[0]:pos===3?shape[1]:shape[2];\n      const delta=score-values[valueBase+starters-1];\n      const value=gk+defPrefix[defBase+shape[0]]+midPrefix[midBase+shape[1]]+fwdPrefix[fwdBase+shape[2]]+(delta>0?delta:0);\n      if(value>best) best=value;\n    }\n    total+=best;\n  }\n  return total;\n}\n\n/* Exact \"best k scores available at or below a price\" tables.\n\n   Candidates are swept in ascending price once per position, so for any budget a\n   binary search returns both how many candidates are affordable and their highest\n   scores in each Gameweek. This replaces a price-filtered scan of the whole\n   position pool at every partial node. */\nconst RELAXED_TOP_K=TRANSFER_RULES.maxTransfers;\n\nfunction buildCostCappedTables(byPositionCost,scoreRows,horizon){\n  const tables={1:null,2:null,3:null,4:null};\n  for(const pos of [1,2,3,4]){\n    const pool=byPositionCost[pos],costs=[];\n    for(const p of pool){\n      const cost=Number(p.now_cost||0);\n      if(!costs.length||costs[costs.length-1]!==cost) costs.push(cost);\n    }\n    const steps=costs.length,available=new Int32Array(steps),top=new Float64Array(horizon*steps*RELAXED_TOP_K);\n    top.fill(-Infinity);\n    for(let offset=0;offset<horizon;offset++){\n      const best=new Float64Array(RELAXED_TOP_K).fill(-Infinity);\n      let index=0,seen=0,i=0;\n      while(i<pool.length){\n        const cost=Number(pool[i].now_cost||0);\n        while(i<pool.length&&Number(pool[i].now_cost||0)===cost){\n          const score=Number(scoreRows.get(Number(pool[i].id))?.[offset])||0;\n          for(let k=0;k<RELAXED_TOP_K;k++) if(score>best[k]){\n            for(let j=RELAXED_TOP_K-1;j>k;j--) best[j]=best[j-1];\n            best[k]=score; break;\n          }\n          seen++; i++;\n        }\n        const base=(offset*steps+index)*RELAXED_TOP_K;\n        for(let k=0;k<RELAXED_TOP_K;k++) top[base+k]=best[k];\n        if(offset===0) available[index]=seen;\n        index++;\n      }\n    }\n    tables[pos]={costs:Float64Array.from(costs),steps,available,top};\n  }\n  return tables;\n}\n\n// Largest table step whose price is within budget, or -1 when nothing is affordable.\nfunction costCappedStep(table,maxCandidateCost){\n  const costs=table.costs;\n  let low=0,high=table.steps-1,found=-1;\n  while(low<=high){\n    const mid=(low+high)>>1;\n    if(costs[mid]<=maxCandidateCost){ found=mid; low=mid+1; } else high=mid-1;\n  }\n  return found;\n}\n\n/* Admissible bound that keeps `fixedRow` at `fixedPos` with its true identity and\n   fills every other outstanding slot with the highest-scoring affordable candidate\n   of that Gameweek. Cross-Gameweek identity, club capacity and candidate reuse are\n   relaxed only in the optimistic direction and the per-player price cap is exact,\n   so no reachable descendant can score higher. -Infinity means no completion can\n   be afforded at all. */\nfunction relaxedHorizonUpperBound(from,scratch,prefixRefs,remainingNeed,horizon,costTables,\n  fixedPos,fixedRow,caps){\n  for(let pos=1;pos<=4;pos++){\n    const quota=POSITION_QUOTAS[pos],count=from.count[pos];\n    const relaxedNeed=remainingNeed[pos]|0,fixed=pos===fixedPos?1:0;\n    if(!relaxedNeed&&!fixed){ prefixRefs[pos]=from.prefix[pos]; continue; }\n    const values=scratch.values[pos],prefix=scratch.prefix[pos],real=from.real[pos];\n    let step=-1,table=null;\n    if(relaxedNeed){\n      table=costTables[pos];\n      step=costCappedStep(table,caps[pos]);\n      if(step<0||table.available[step]<relaxedNeed) return -Infinity;\n    }\n    for(let offset=0;offset<horizon;offset++){\n      const rowBase=offset*quota,prefixBase=offset*(quota+1);\n      for(let k=0;k<count;k++) values[rowBase+k]=real[rowBase+k];\n      let filled=0;\n      if(fixed){ values[rowBase+count]=Number(fixedRow?.[offset])||0; filled=1; }\n      if(relaxedNeed){\n        const base=(offset*table.steps+step)*RELAXED_TOP_K;\n        for(let k=0;k<relaxedNeed;k++) values[rowBase+count+filled+k]=table.top[base+k];\n        filled+=relaxedNeed;\n      }\n      sortDescInPlace(values,rowBase,quota);\n      let sum=0; prefix[prefixBase]=0;\n      for(let k=0;k<quota;k++){ sum+=values[rowBase+k]; prefix[prefixBase+k+1]=sum; }\n    }\n    prefixRefs[pos]=prefix;\n  }\n  return horizonTotalFromPrefixes(prefixRefs[1],prefixRefs[2],prefixRefs[3],prefixRefs[4],horizon);\n}\n\nfunction minimumRemainingDoubtful(byPosition,remainingNeed,usedIds){\n  let total=0;\n  for(const pos of [1,2,3,4]){\n    const count=Number(remainingNeed[pos])||0;\n    if(!count) continue;\n    let available=0,nonDoubtful=0;\n    for(const p of byPosition[pos]){\n      if(usedIds.has(Number(p.id))) continue;\n      available++;\n      if(p.status!=='d') nonDoubtful++;\n    }\n    if(available<count) return Infinity;\n    total+=Math.max(0,count-nonDoubtful);\n  }\n  return total;\n}\n\nfunction optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId){\n  const completion=chosen.slice(),used=new Set(chosen.map(p=>Number(p.id)));\n  for(const pos of [1,2,3,4]){\n    let left=Number(remainingNeed[pos])||0;\n    for(const p of byPositionId[pos]){\n      if(!left) break;\n      if(used.has(Number(p.id))) continue;\n      used.add(Number(p.id)); completion.push(p); left--;\n    }\n    if(left>0) return '';\n  }\n  const incoming=orderedIncomingForOutgoing(outgoing,completion);\n  const transfers=canonicalTransfers(outgoing.map((out,index)=>({\n    outPlayerId:playerId(out),inPlayerId:Number(incoming[index]?.id),position:positionOf(out)\n  })));\n  return planSignature(transfers);\n}\n\nfunction optimisticTieBreak({ctx,outgoing,chosen,remainingNeed,byPosition,byPositionCost,byPositionId,usedIds,cost,sellTotal}){\n  const cheapestRest=Object.entries(remainingNeed).reduce((sum,[pos,count])=>\n    sum+cheapestAvailableCost(byPositionCost[pos],count,usedIds),0);\n  const hasRemaining=Object.values(remainingNeed).some(Boolean);\n  return {\n    bankAfter:ctx.bank+sellTotal-cost-cheapestRest,\n    doubtfulIncoming:chosen.filter(p=>p.status==='d').length+minimumRemainingDoubtful(byPosition,remainingNeed,usedIds),\n    // Every real transfer signature is non-empty. The empty string is therefore\n    // universally optimistic for a partial node, without assuming numeric player-ID\n    // order is the same as locale string order for mixed-width identifiers.\n    signature:hasRemaining?'':optimisticSignatureLower(outgoing,chosen,remainingNeed,byPositionId)\n  };\n}\n\nconst BOUND_EPSILON=1e-9;\n\n/* Comparator-complete rejection for an already-tied optimistic bound. It is only\n   reached when the optimistic net gain and gross score both tie the retained Kth\n   plan, so the optimistic completion signature — the expensive part — is built\n   only when it can change the outcome. */\nfunction tiedBoundCannotBeat(depth,kth,optimisticTie){\n  return comparePlans({\n    netGain:kth.netGain,grossBestXIPoints:kth.grossBestXIPoints,\n    hitCost:depth.hitCost,transferCount:depth.transferCount,freeTransfersNextGW:depth.freeTransfersNextGW,\n    bankAfter:Number.isFinite(optimisticTie?.bankAfter)?optimisticTie.bankAfter:Number.MAX_SAFE_INTEGER,\n    doubtfulIncoming:Number.isFinite(optimisticTie?.doubtfulIncoming)?optimisticTie.doubtfulIncoming:-1,\n    signature:String(optimisticTie?.signature??'')\n  },kth)>0;\n}\n\n// Fixed comparator terms for one transfer depth. netOffset converts any gross\n// best-XI bound into the matching net-gain bound in one addition.\nfunction depthConstants(ctx,transferCount){\n  const hit=transferHit(ctx.freeTransfers,transferCount);\n  const freeTransfersNextGW=nextFreeTransfers(ctx.freeTransfers,transferCount);\n  const rollDifference=freeTransfersNextGW-ctx.baseline.freeTransfersNextGW;\n  return {transferCount,hitCost:hit.hitCost,paidTransfers:hit.paidTransfers,freeTransfersNextGW,\n    netOffset:-ctx.baseline.grossBestXIPoints-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference};\n}\n\n// -1 rejected outright on net gain, 0 undecided until the tie keys, 1 retained.\nfunction boundVerdict(upperGross,depth,kth){\n  if(!kth) return Number.isFinite(upperGross)?1:(upperGross===-Infinity?-1:1);\n  if(!Number.isFinite(upperGross)) return upperGross===-Infinity?-1:1;\n  const upperNet=upperGross+depth.netOffset;\n  if(upperNet<kth.netGain-BOUND_EPSILON) return -1;\n  if(upperNet>kth.netGain+BOUND_EPSILON) return 1;\n  if(upperGross<kth.grossBestXIPoints-BOUND_EPSILON) return -1;\n  if(upperGross>kth.grossBestXIPoints+BOUND_EPSILON) return 1;\n  return 0;\n}\n\nfunction cheapestAvailableCost(poolByCost,count,usedIds,extraUsedId=null){\n  if(count<=0) return 0;\n  let total=0,found=0;\n  for(const p of poolByCost){\n    const id=Number(p.id);\n    if(usedIds.has(id)||id===extraUsedId) continue;\n    total+=Number(p.now_cost||0);\n    if(++found===count) return total;\n  }\n  return Infinity;\n}\n\n// Cheapest `count + 1` still-available prices at a position. One spare entry is\n// enough to price the remaining slots exactly when the candidate being tried is\n// itself one of the cheapest.\nfunction cheapestAvailableCosts(poolByCost,count,usedIds){\n  const rows=[];\n  if(count<=0) return rows;\n  for(const p of poolByCost){\n    if(usedIds.has(Number(p.id))) continue;\n    rows.push({id:Number(p.id),cost:Number(p.now_cost||0)});\n    if(rows.length===count+1) break;\n  }\n  return rows;\n}\n\n// Price of the dearest member of the cheapest `count` still-available candidates.\n// Subtracting it from a cheapest-completion total leaves a true lower bound on the\n// price of every other outstanding slot.\nfunction dearestOfCheapest(rows,count,excludedId){\n  let found=0,last=0;\n  for(let i=0;i<rows.length&&found<count;i++){\n    if(rows[i].id===excludedId) continue;\n    last=rows[i].cost; found++;\n  }\n  return found<count?Infinity:last;\n}\n\nfunction cheapestFrom(rows,count,excludedId){\n  let total=0,found=0;\n  for(let i=0;i<rows.length&&found<count;i++){\n    if(rows[i].id===excludedId) continue;\n    total+=rows[i].cost; found++;\n  }\n  return found<count?Infinity:total;\n}\n\nfunction orderedIncomingForOutgoing(outgoing,chosen){\n  const byPos={1:[],2:[],3:[],4:[]};\n  chosen.forEach(p=>byPos[positionOf(p)].push(p));\n  Object.values(byPos).forEach(rows=>rows.sort((a,b)=>Number(a.id)-Number(b.id)));\n  const used={1:0,2:0,3:0,4:0};\n  return outgoing.map(out=>byPos[positionOf(out)][used[positionOf(out)]++]);\n}\n\nfunction buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek,scoreRows,bankAfter,clubCounts,preparedScore=null}){\n  if(!inheritedClubLegal(ctx.startCounts,clubCounts,outgoing.length)) return null;\n  const hit=transferHit(ctx.freeTransfers,outgoing.length);\n  const score=preparedScore||scoreCoreWithIncoming(coreByGameweek,incoming,scoreRows,ctx.startGW,ctx.horizon);\n  const nextFT=nextFreeTransfers(ctx.freeTransfers,outgoing.length);\n  const rollDifference=nextFT-ctx.baseline.freeTransfersNextGW;\n  const grossGain=score.total-ctx.baseline.grossBestXIPoints;\n  const netGain=grossGain-hit.hitCost+TRANSFER_RULES.rollValue*rollDifference;\n  const transfers=canonicalTransfers(outgoing.map((out,i)=>({outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out),sellPrice:transferSellPrice(out),buyPrice:Number(incoming[i].now_cost)})));\n  return {transferCount:outgoing.length,transfers,finalSquadIds:core.map(playerId).concat(incoming.map(p=>Number(p.id))).sort((a,b)=>a-b),\n    bankBefore:ctx.bank,bankAfter,freeTransfersBefore:ctx.freeTransfers,paidTransfers:hit.paidTransfers,hitCost:hit.hitCost,\n    freeTransfersNextGW:nextFT,grossBestXIPoints:score.total,grossGain,rollDifference,netGain,perGameweekBestXI:score.perGameweek,\n    doubtfulIncoming:incoming.filter(p=>p.status==='d').length,signature:planSignature(transfers),pricingMode:ctx.pricingMode,\n    warnings:incoming.filter(p=>p.status==='d').map(p=>`${p.web_name||p.id} doubtful (${p.chance_of_playing_next_round??'?'}%)`)};\n}\n\nfunction outgoingCombinations(squad,size,scoreRows){\n  return combinations(squad,size).map(set=>({\n    set,\n    score:set.reduce((sum,entry)=>sum+horizonScore(scoreRows,playerOf(entry)),0),\n    key:set.map(playerId).sort((a,b)=>a-b).join(',')\n  })).sort((a,b)=>a.score-b.score||a.key.localeCompare(b.key)).map(item=>item.set);\n}\n\nfunction optimiseTransfers(args){\n  const ctx=normaliseSearch(args); if(ctx.error) return ctx.error;\n  const plans=[ctx.baseline]; let evaluations=0, pruned=0, incomplete=false;\n  const profile={outgoingBranches:0,boundPruned:0,identityBoundPruned:0,relaxedBoundPruned:0,finalSlotPruned:0,\n    orderedBreaks:0,affordabilityPruned:0,clubPruned:0,leafEvaluations:0,materialisedPlans:0};\n  const scoreRows=prepareScoreRows(ctx);\n  const byPosition={1:[],2:[],3:[],4:[]};\n  ctx.eligible.forEach(p=>byPosition[p.element_type].push(p));\n  const byPositionCost={1:[],2:[],3:[],4:[]},byPositionId={1:[],2:[],3:[],4:[]};\n  for(const pos of [1,2,3,4]){\n    byPosition[pos].sort((a,b)=>horizonScore(scoreRows,b)-horizonScore(scoreRows,a)||Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n    byPositionCost[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n    byPositionId[pos]=byPosition[pos].slice().sort((a,b)=>Number(a.id)-Number(b.id));\n  }\n  const costTables=buildCostCappedTables(byPositionCost,scoreRows,ctx.horizon);\n  const allowanceCache=new Map();\n  const clubAllowance=team=>{\n    let allowed=allowanceCache.get(team);\n    if(allowed===undefined){\n      allowed=Math.max(TRANSFER_RULES.maxPerClub,Number(ctx.startCounts[team])||0);\n      allowanceCache.set(team,allowed);\n    }\n    return allowed;\n  };\n  const levels=[]; for(let depth=0;depth<=TRANSFER_RULES.maxTransfers;depth++) levels.push(createPoolLevel(ctx.horizon));\n  const scratch=createPoolLevel(ctx.horizon),prefixRefs={1:null,2:null,3:null,4:null};\n  const retainedKth=()=>plans.length>=ctx.maxResults?plans[plans.length-1]:null;\n\n  outer: for(let n=1;n<=ctx.limit;n++){\n    ctx.onProgress?.({depth:n,maxDepth:ctx.limit,evaluations});\n    const depth=depthConstants(ctx,n);\n    for(const outgoing of outgoingCombinations(ctx.squad,n,scoreRows)){\n      profile.outgoingBranches++;\n      const required=outgoing.map(positionOf).sort((a,b)=>a-b);\n      const need={1:0,2:0,3:0,4:0}; required.forEach(pos=>need[pos]++);\n      if(Object.entries(need).some(([pos,count])=>byPosition[pos].length<count)){ pruned++; continue; }\n      const sellTotal=outgoing.reduce((sum,e)=>sum+transferSellPrice(e),0);\n      const budget=ctx.bank+sellTotal;\n      const noneUsed=new Set();\n      const minimumBuy=Object.entries(need).reduce((sum,[pos,count])=>sum+cheapestAvailableCost(byPositionCost[pos],count,noneUsed),0);\n      if(minimumBuy>budget){ pruned++; profile.affordabilityPruned++; continue; }\n      const outIds=new Set(outgoing.map(playerId));\n      const core=ctx.squad.filter(entry=>!outIds.has(playerId(entry)));\n      const afterOut={...ctx.startCounts}; outgoing.forEach(e=>{ afterOut[playerOf(e).team]=(afterOut[playerOf(e).team]||0)-1; });\n      seedPoolLevel(levels[0],core,scoreRows,ctx.horizon);\n\n      const caps={1:0,2:0,3:0,4:0};\n      for(let rpos=1;rpos<=4;rpos++){\n        const count=need[rpos]|0;\n        caps[rpos]=count?budget-minimumBuy+dearestOfCheapest(\n          cheapestAvailableCosts(byPositionCost[rpos],count,noneUsed),count,null):0;\n      }\n      const branchRelaxed=relaxedHorizonUpperBound(levels[0],scratch,prefixRefs,need,ctx.horizon,costTables,0,null,caps);\n      const branchKth=retainedKth();\n      let branchVerdict=boundVerdict(branchRelaxed,depth,branchKth);\n      if(branchVerdict===0) branchVerdict=tiedBoundCannotBeat(depth,branchKth,optimisticTieBreak({ctx,outgoing,chosen:[],\n        remainingNeed:need,byPosition,byPositionCost,byPositionId,usedIds:noneUsed,cost:0,sellTotal}))?-1:1;\n      if(branchVerdict<0){ pruned++; profile.boundPruned++; profile.relaxedBoundPruned++; continue; }\n\n      // Identity gains and their descending order are immutable for the whole branch.\n      const gainOrder={},gainValue={};\n      for(const pos of [1,2,3,4]){\n        if(!need[pos]) continue;\n        const values=new Map();\n        for(const p of byPosition[pos]) values.set(Number(p.id),poolPlayerGain(levels[0],pos,scoreRows.get(Number(p.id)),ctx.horizon));\n        gainOrder[pos]=byPosition[pos].slice().sort((a,b)=>\n          (values.get(Number(b.id))-values.get(Number(a.id)))||\n          Number(a.now_cost||0)-Number(b.now_cost||0)||Number(a.id)-Number(b.id));\n        gainValue[pos]=values;\n      }\n      const bestRemainingGain=(remainingNeed,usedIds,maxCandidateCost,clubCounts)=>{\n        let total=0;\n        for(let pos=1;pos<=4;pos++){\n          let left=remainingNeed[pos]|0;\n          if(!left) continue;\n          for(const p of gainOrder[pos]){\n            const id=Number(p.id);\n            if(usedIds.has(id)) continue;\n            if(Number(p.now_cost||0)>maxCandidateCost) continue;\n            if((clubCounts[p.team]|0)>=clubAllowance(p.team)) continue;\n            total+=gainValue[pos].get(id)||0;\n            if(--left===0) break;\n          }\n          if(left>0) return Infinity;\n        }\n        return total;\n      };\n      let coreByGameweek=null;\n      const preparedCore=()=>coreByGameweek||(coreByGameweek=buildCoreByGameweek(core,scoreRows,ctx.horizon));\n\n      const chosen=[],chosenPoolIndexes=[],usedIds=new Set(),clubCounts={...afterOut};\n      function choose(index,cost,level){\n        if(incomplete) return;\n        const pos=required[index],pool=gainOrder[pos],last=index===required.length-1;\n        const remainingAfter={1:0,2:0,3:0,4:0};\n        for(let i=index+1;i<required.length;i++) remainingAfter[required[i]]++;\n        const restGain=last?0:bestRemainingGain(remainingAfter,usedIds,budget-cost,clubCounts);\n        if(restGain===Infinity){ pruned++; profile.boundPruned++; return; }\n        // Exact base for everything already chosen, plus the admissible gain of an\n        // optimistic completion. Both stay valid for every descendant of this node.\n        const slotDelta={1:0,2:0,3:0,4:0}; let restDelta=0;\n        for(let rpos=1;rpos<=4;rpos++){\n          const outstanding=(remainingAfter[rpos]|0)+(rpos===pos?1:0);\n          if(!outstanding) continue;\n          slotDelta[rpos]=thresholdDelta(levels[0],level,rpos,ctx.horizon);\n          restDelta+=(remainingAfter[rpos]|0)*slotDelta[rpos];\n        }\n        const nodeCeiling=poolHorizonTotal(level,ctx.horizon)+restGain+restDelta,slotBonus=slotDelta[pos];\n        // Remaining-slot prices are fixed for the node; one spare entry per position\n        // covers the case where the candidate being tried is itself among the cheapest.\n        const cheapRows={1:null,2:null,3:null,4:null},cheapBase={1:0,2:0,3:0,4:0};\n        let cheapestRestBase=0,restPriceable=true;\n        for(let rpos=1;rpos<=4&&restPriceable;rpos++){\n          const count=remainingAfter[rpos]|0;\n          if(!count) continue;\n          const rows=cheapestAvailableCosts(byPositionCost[rpos],count,usedIds);\n          const total=cheapestFrom(rows,count,null);\n          if(!Number.isFinite(total)) restPriceable=false;\n          else { cheapRows[rpos]=rows; cheapBase[rpos]=total; cheapestRestBase+=total; }\n        }\n        if(!restPriceable){ pruned++; profile.affordabilityPruned++; return; }\n        const startAt=index>0&&required[index-1]===pos?chosenPoolIndexes[index-1]+1:0;\n        for(let poolIndex=startAt;poolIndex<pool.length;poolIndex++){\n          const candidate=pool[poolIndex],id=Number(candidate.id),team=candidate.team;\n          const gain=gainValue[pos].get(id)||0;\n          const kth=retainedKth();\n          // Descending identity order: the whole remainder of this pool is hopeless too.\n          if(boundVerdict(nodeCeiling+gain+slotBonus,depth,kth)<0){\n            pruned++; profile.boundPruned++; profile.identityBoundPruned++; profile.orderedBreaks++; break;\n          }\n          const nextCost=cost+Number(candidate.now_cost||0);\n          let cheapestRest=cheapestRestBase;\n          if(cheapRows[pos]){\n            const count=remainingAfter[pos]|0;\n            const replacement=cheapestFrom(cheapRows[pos],count,id);\n            if(!Number.isFinite(replacement)){ pruned++; profile.affordabilityPruned++; continue; }\n            cheapestRest=cheapestRest-cheapBase[pos]+replacement;\n          }\n          if(nextCost+cheapestRest>budget){ pruned++; profile.affordabilityPruned++; continue; }\n          if((clubCounts[team]|0)>=clubAllowance(team)){ pruned++; profile.clubPruned++; continue; }\n\n          if(last){\n            if(kth){\n              let verdict=boundVerdict(finalSlotUpperBound(level,pos,scoreRows.get(id),ctx.horizon),depth,kth);\n              if(verdict===0){\n                chosen.push(candidate);\n                verdict=tiedBoundCannotBeat(depth,kth,optimisticTieBreak({ctx,outgoing,chosen,\n                  remainingNeed:{1:0,2:0,3:0,4:0},byPosition,byPositionCost,byPositionId,usedIds,cost:nextCost,sellTotal}))?-1:1;\n                chosen.pop();\n              }\n              if(verdict<0){ pruned++; profile.boundPruned++; profile.finalSlotPruned++; continue; }\n            }\n            if(++evaluations>ctx.maxEvaluations){ incomplete=true; return; }\n            profile.leafEvaluations=evaluations;\n            if(ctx.onProgress&&evaluations%ctx.progressInterval===0)\n              ctx.onProgress({depth:n,maxDepth:ctx.limit,evaluations});\n            clubCounts[team]=(clubCounts[team]|0)+1;\n            if(inheritedClubLegal(ctx.startCounts,clubCounts,n)){\n              chosen.push(candidate);\n              extendPoolLevel(level,levels[index+1],pos,scoreRows.get(id),ctx.horizon);\n              const incoming=orderedIncomingForOutgoing(outgoing,chosen),bankAfter=budget-nextCost;\n              const gross=poolHorizonTotal(levels[index+1],ctx.horizon);\n              const kthNow=retainedKth();\n              let contend=boundVerdict(gross,depth,kthNow);\n              if(contend===0) contend=tiedBoundCannotBeat(depth,kthNow,{bankAfter,\n                doubtfulIncoming:incoming.filter(p=>p.status==='d').length,\n                signature:planSignature(canonicalTransfers(outgoing.map((out,i)=>({\n                  outPlayerId:playerId(out),inPlayerId:Number(incoming[i].id),position:positionOf(out)}))))})?-1:1;\n              if(contend>=0){\n                const plan=buildPreparedPlan({ctx,outgoing,incoming,core,coreByGameweek:preparedCore(),scoreRows,bankAfter,clubCounts});\n                if(plan){ profile.materialisedPlans++; retainPlan(plans,plan,ctx.maxResults); }\n              }\n              chosen.pop();\n            }\n            clubCounts[team]=(clubCounts[team]|0)-1;\n            continue;\n          }\n\n          clubCounts[team]=(clubCounts[team]|0)+1;\n          for(let rpos=1;rpos<=4;rpos++){\n            const count=remainingAfter[rpos]|0;\n            caps[rpos]=count?budget-nextCost-cheapestRest+dearestOfCheapest(cheapRows[rpos],count,id):0;\n          }\n          const relaxed=relaxedHorizonUpperBound(level,scratch,prefixRefs,remainingAfter,ctx.horizon,costTables,\n            pos,scoreRows.get(id),caps);\n          const identityUpper=nodeCeiling+gain+slotBonus;\n          const upper=Math.min(identityUpper,relaxed);\n          let verdict=boundVerdict(upper,depth,kth);\n          if(verdict===0){\n            chosen.push(candidate);\n            verdict=tiedBoundCannotBeat(depth,kth,optimisticTieBreak({ctx,outgoing,chosen,remainingNeed:remainingAfter,\n              byPosition,byPositionCost,byPositionId,usedIds,cost:nextCost,sellTotal}))?-1:1;\n            chosen.pop();\n          }\n          if(verdict<0){\n            pruned++; profile.boundPruned++;\n            if(identityUpper<=relaxed) profile.identityBoundPruned++; else profile.relaxedBoundPruned++;\n            clubCounts[team]=(clubCounts[team]|0)-1;\n            continue;\n          }\n          chosen.push(candidate); chosenPoolIndexes.push(poolIndex); usedIds.add(id);\n          extendPoolLevel(level,levels[index+1],pos,scoreRows.get(id),ctx.horizon);\n          choose(index+1,nextCost,levels[index+1]);\n          chosen.pop(); chosenPoolIndexes.pop(); usedIds.delete(id);\n          clubCounts[team]=(clubCounts[team]|0)-1;\n          if(incomplete) return;\n        }\n      }\n      choose(0,0,levels[0]);\n      if(incomplete) break outer;\n    }\n  }\n  return completeResult(ctx,plans,evaluations,pruned,incomplete,profile);\n}\n\n";
 if (typeof top !== 'undefined' && typeof self !== 'undefined' && top !== self) top.location = self.location;
 
@@ -1027,6 +1027,7 @@ const S = {
   // Rule B reads this, never persisted storage: the commit is synchronous so
   // it cannot await, and after a persist_failed memory is the newer record.
   providerApplied:{understat:null, odds:null},
+  __accountKeys:{entry:null,picks:null,history:null},
   lastOptimiser:null
 };
 
@@ -1184,7 +1185,7 @@ const REFRESH_OWNED_KEYS = Object.freeze([
   'seasonLive','gamesPlayed','cachedAt','avg','strengthsAvailable','source','teamId',
   'entry','picks','history','picksGameweek','picksStatus','chipsUsed',
   'ustat','ustatNote','odds','oddsNote','minuteHistory','minuteHistoryMeta',
-  'providerApplied','dataIssues'
+  'providerApplied','__accountKeys','dataIssues'
 ]);
 function captureStateJournal(){
   const state = {};
@@ -1819,7 +1820,13 @@ function applyProviderResult(name, result, ctx = {}){
   if(!result || result.outcome === 'skip') return {state:'unchanged', queued:false};
 
   const tokenStale = token != null && token !== currentProviderToken(name);
-  if(tokenStale) return {state:'unchanged', queued:false, reason:'token_stale'};
+  if(tokenStale){
+    if(!ctx.resolveOnDiscard)
+      return {state:'unchanged', queued:false, reason:'token_stale', discarded:true};
+    const retained = applySliceRetain(name, {core, now, cohortIds});
+    if(!retained) applySliceClear(name, result, {disabled:false});
+    return {state:retained?'retain':'clear', queued:false, reason:'token_stale', discarded:true};
+  }
 
   if(result.outcome === 'clear'){
     applySliceClear(name, result, {disabled:true});
@@ -1828,17 +1835,32 @@ function applyProviderResult(name, result, ctx = {}){
 
   const signatureMismatch = signature != null && result.signature != null && result.signature !== signature;
   if(result.outcome === 'value' && !signatureMismatch){
-    applySliceReplace(name, result, {core, cohortIds});
-    return {state:'replace', queued:false};
+    if((name === 'understat' || name === 'odds') && olderThanActive(name, result, {core, now})){
+      applySliceRetain(name, {core, now, cohortIds});
+      return {state:'retain', queued:false, reason:'older_candidate', discarded:true};
+    }
+    const applied = applySliceReplace(name, result, {core, cohortIds});
+    return {state:applied?.state || 'replace', queued:false,
+      reason:applied?.reason || null, discarded:Boolean(applied?.discarded)};
   }
 
   // Discarded or failed: does the value already live in S survive Rule B?
   const retained = applySliceRetain(name, {core, now, cohortIds});
   const queued = signatureMismatch;
   if(queued) queueRecomputation(name);
-  if(retained) return {state:'retain', queued, reason:signatureMismatch ? 'signature_mismatch' : result.reason || 'computation_failed'};
+  if(retained) return {state:'retain', queued, reason:signatureMismatch ? 'signature_mismatch' : result.reason || 'computation_failed', discarded:signatureMismatch};
   applySliceClear(name, result, {disabled:false});
-  return {state:'clear', queued, reason:'incompatible_or_expired'};
+  return {state:'clear', queued, reason:signatureMismatch?'signature_mismatch':'incompatible_or_expired', discarded:signatureMismatch};
+}
+
+function olderThanActive(name, result, {core, now}){
+  const applied=S.providerApplied?.[name];
+  const compatible=name==='understat'
+    ? understatCompatible(applied,S.ustat,core,now)
+    : oddsCompatible(applied,S.odds,core,now);
+  if(!compatible) return false;
+  const candidate=+result.fetchedAt, active=+applied?.fetchedAt;
+  return Number.isFinite(active)&&(!Number.isFinite(candidate)||candidate<active);
 }
 
 function applySliceReplace(name, result, {core, cohortIds}){
@@ -1850,7 +1872,7 @@ function applySliceReplace(name, result, {core, cohortIds}){
       modelVersion:MODEL_VERSION, fetchedAt:result.fetchedAt
     } : null};
     applyHealthMark('understat', result.healthMark);
-    return;
+    return {state:'replace'};
   }
   if(name === 'odds'){
     S.odds = result.value;
@@ -1860,22 +1882,36 @@ function applySliceReplace(name, result, {core, cohortIds}){
       modelVersion:MODEL_VERSION, fetchedAt:result.fetchedAt
     } : null};
     applyHealthMark('odds', result.healthMark);
-    return;
+    return {state:'replace'};
   }
   // Minutes: the admission gate. A history enters S.minuteHistory only when its
   // metadata matches the committed season/schema/model, the player exists and
   // the player is in the captured cohort. There is no second way in.
-  const history = {}, meta = {};
-  const cohortSet = cohortIds || [];
-  Object.keys(result.value || {}).forEach(id => {
-    const entryMeta = result.meta?.[id];
-    if(!minuteEntryCompatible(entryMeta, core, cohortSet, id)) return;
-    history[id] = result.value[id];
-    meta[id] = entryMeta;
+  const history = {}, meta = {}, cohortSet = cohortIds || [];
+  let acceptedCandidate=false, retainedNewer=false;
+  const ids=new Set([...Object.keys(result.value||{}),...Object.keys(S.minuteHistory||{})]);
+  ids.forEach(id=>{
+    const candidateMeta=result.meta?.[id], activeMeta=S.minuteHistoryMeta?.[id];
+    const candidateOk=minuteEntryCompatible(candidateMeta,core,cohortSet,id)&&Array.isArray(result.value?.[id]);
+    const activeOk=minuteEntryCompatible(activeMeta,core,cohortSet,id)&&Array.isArray(S.minuteHistory?.[id]);
+    if(activeOk&&(!candidateOk||+activeMeta.fetchedAt>+candidateMeta.fetchedAt)){
+      history[id]=S.minuteHistory[id]; meta[id]=activeMeta; retainedNewer=true; return;
+    }
+    if(candidateOk){ history[id]=result.value[id]; meta[id]=candidateMeta; acceptedCandidate=true; }
   });
   S.minuteHistory = history;
   S.minuteHistoryMeta = meta;
-  if(result.healthDetail) setHealthDetail('fpl', result.healthDetail);
+  if(result.healthDetail){
+    const times=Object.values(meta).map(item=>+item.fetchedAt).filter(Number.isFinite);
+    const detail=retainedNewer?{...result.healthDetail,
+      state:acceptedCandidate?HEALTH_STATES.PARTIAL:HEALTH_STATES.CACHED,
+      oldestActiveAt:times.length?Math.min(...times):null,active:Object.keys(history).length,
+      note:acceptedCandidate?'Fresh and newer in-memory histories active':'Newer in-memory histories retained'}:result.healthDetail;
+    setHealthDetail('fpl',detail);
+  }
+  return acceptedCandidate ? {state:'replace'}
+    : retainedNewer ? {state:'retain',reason:'older_candidate',discarded:true}
+    : {state:'replace'};
 }
 
 function applySliceRetain(name, {core, now, cohortIds}){
@@ -1920,6 +1956,39 @@ function applySliceClear(name, result, {disabled}){
   S.minuteHistory = {};
   S.minuteHistoryMeta = {};
   if(result?.healthDetail) setHealthDetail('fpl', result.healthDetail);
+}
+
+/* A persistence candidate is derived only after the application gate has
+   resolved the result. Discarded work never writes. A current-input failure
+   may still persist its R1 cooldown, but it is merged with newer compatible
+   in-memory data so storage cannot be downgraded after an earlier write
+   failure. */
+function providerPersistCandidate(name,result,verdict){
+  if(!result?.persist||verdict?.discarded) return null;
+  const entry=result.persist, value=entry.value;
+  if(!value||typeof value!=='object') return entry;
+  if(name==='understat'){
+    const applied=S.providerApplied?.understat;
+    if(applied&&S.ustat&&+applied.fetchedAt>+(value.fetchedAt??-Infinity))
+      return {key:entry.key,value:{...value,season:applied.season,schemaVersion:applied.schemaVersion,
+        modelVersion:applied.modelVersion,fetchedAt:+applied.fetchedAt,teams:S.ustat}};
+    return entry;
+  }
+  if(name==='odds'){
+    const applied=S.providerApplied?.odds;
+    if(applied&&S.odds&&+applied.fetchedAt>+(value.fetchedAt??-Infinity))
+      return {key:entry.key,value:{...value,season:applied.season,schemaVersion:applied.schemaVersion,
+        modelVersion:applied.modelVersion,fetchedAt:+applied.fetchedAt,derived:S.odds}};
+    return entry;
+  }
+  const players={...(value.players||{})};
+  Object.keys(S.minuteHistory||{}).forEach(id=>{
+    const meta=S.minuteHistoryMeta?.[id], stored=players[id];
+    if(meta&&Array.isArray(S.minuteHistory[id])&&+meta.fetchedAt>+(stored?.fetchedAt??-Infinity))
+      players[id]={fetchedAt:+meta.fetchedAt,revision:meta.revision||'',history:S.minuteHistory[id]};
+  });
+  const times=Object.values(players).map(item=>+item?.fetchedAt).filter(Number.isFinite);
+  return {key:entry.key,value:{...value,fetchedAt:times.length?Math.max(...times):value.fetchedAt,players}};
 }
 
 
@@ -2268,10 +2337,17 @@ async function loadUnderstat(options={}){
   const result=await computeUnderstat({...options,core,config});
   if(result.outcome==='skip') return;
   result.signature=understatSignature(core,config);
-  applyProviderResult('understat',result,{core,now:(options.nowFn||Date.now)(),token,signature:result.signature});
-  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
-  (result.retryRecords||[]).forEach(record=>recordRetry(record));
-  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  const currentCore=options.currentCore||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:understatSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const currentConfig=options.currentConfig||{useUstat:Boolean($('useUstat')?.checked)};
+  const verdict=applyProviderResult('understat',result,{core:currentCore,now:(options.nowFn||Date.now)(),token,
+    signature:understatSignature(currentCore,currentConfig)});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('understat',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
   return result.summary;
 }
 
@@ -2538,10 +2614,17 @@ async function loadOdds(options={}){
   const result=await computeOdds({...options,core,config});
   if(result.outcome==='skip') return;
   result.signature=oddsSignature(core,config);
-  applyProviderResult('odds',result,{core,now:(options.nowFn||Date.now)(),token,signature:result.signature});
-  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
-  (result.retryRecords||[]).forEach(record=>recordRetry(record));
-  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  const currentCore=options.currentCore||{events:S.boot?.events,teams:S.boot?.teams,fixtures:S.fixtures,
+    season:oddsSeasonKey(S.boot?.events),elements:S.boot?.elements};
+  const currentConfig=options.currentConfig||{oddsKey:$('oddsKey')?.value||''};
+  const verdict=applyProviderResult('odds',result,{core:currentCore,now:(options.nowFn||Date.now)(),token,
+    signature:oddsSignature(currentCore,currentConfig)});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('odds',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
   return result.summary;
 }
 
@@ -2634,9 +2717,9 @@ function minutesHealthDetail({state,oldestActiveAt=null,active=0,cached=0,reques
    correction fails (R3.2 C2). */
 async function computeMinuteHistories(deps={}){
   const nowFn=deps.nowFn||Date.now, getStorage=deps.getStorage||sget;
-  const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true}));
+  const fetchSummary=deps.fetchSummary||(id=>api('/element-summary/'+id+'/',{optional:true,typed:true}));
   const core=deps.core||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,seasonLive:S.seasonLive};
-  const issues=[];
+  const issues=[],retryRecords=[];
   if(!core.seasonLive || !core.elements?.length){
     return {outcome:'clear',value:{},meta:{},cohortIds:[],issues,persist:null,
       healthDetail:minutesHealthDetail({state:HEALTH_STATES.DISABLED,note:'No completed Gameweek yet'}),
@@ -2676,7 +2759,10 @@ async function computeMinuteHistories(deps={}){
     if(consecutiveFailedBatches>=2){ deferred=due.length-offset; break; }
     const batch=due.slice(offset,offset+4);
     const batchResults=await pool(batch,async player=>{
-      const payload=await fetchSummary(player.id);
+      const response=await fetchSummary(player.id);
+      const typed=response&&typeof response==='object'&&typeof response.outcome==='string';
+      if(typed&&response.retryRecord) retryRecords.push(response.retryRecord);
+      const payload=typed&&response.outcome==='value'?response.value:typed?null:response;
       const checked=validateElementSummary(payload);
       if(!checked.value) return {id:player.id,ok:false,issues:checked.issues,hasCache:decisions.get(+player.id).usable};
       return {id:player.id,ok:true,history:checked.value,issues:checked.issues};
@@ -2708,7 +2794,7 @@ async function computeMinuteHistories(deps={}){
   const cachedActive=Math.max(0,active-loaded);
   const state=failed||deferred||active<chosen.length||Boolean(loaded&&cachedActive) ? HEALTH_STATES.PARTIAL : loaded ? HEALTH_STATES.LIVE : HEALTH_STATES.CACHED;
   const note=deferred?'Systemic outage guard stopped further requests':failed?'Saved histories retained where valid':loaded&&cachedActive?'Fresh and cached validated histories active':'Validated histories active';
-  return {outcome:'value',value:history,meta,cohortIds,issues,
+  return {outcome:'value',value:history,meta,cohortIds,issues,retryRecords,
     persist:{key:K_MINUTES,value:nextEnvelope},
     healthDetail:minutesHealthDetail({state,oldestActiveAt,active,cached:cachedActive,requested:results.length,loaded,failed,deferred,note}),
     summary:{loaded,failed,cached:cachedActive,requested:results.length,deferred}};
@@ -2722,10 +2808,20 @@ async function loadMinuteHistories(deps={}){
   const token=nextProviderToken('minutes');
   const result=await computeMinuteHistories({...deps,core});
   result.signature=minutesSignature(core,completedDataRevision(core.events,core.fixtures),result.cohortIds);
-  applyProviderResult('minutes',result,{core,now:(deps.nowFn||Date.now)(),token,
-    signature:result.signature,cohortIds:result.cohortIds});
-  (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
-  if(result.persist) await setStorage(result.persist.key,result.persist.value);
+  const currentCore=deps.currentCore||{events:S.boot?.events,fixtures:S.fixtures,elements:S.boot?.elements,
+    teams:S.boot?.teams,seasonLive:S.seasonLive,season:seasonKey(S.boot?.events)};
+  const currentUseManual=deps.currentUseManual??Boolean(globalThis.document?.getElementById?.('useManual')?.checked);
+  const currentCohortIds=cohort({elements:currentCore.elements,useManual:currentUseManual,
+    account:{picks:S.picks,manual:S.manual}}).map(player=>+player.id);
+  const currentSignature=minutesSignature(currentCore,completedDataRevision(currentCore.events,currentCore.fixtures),currentCohortIds);
+  const verdict=applyProviderResult('minutes',result,{core:currentCore,now:(deps.nowFn||Date.now)(),token,
+    signature:currentSignature,cohortIds:currentCohortIds});
+  if(!verdict.discarded){
+    (result.issues||[]).forEach(entry=>recordIssues(entry.provider,entry.endpoint,entry.issues));
+    (result.retryRecords||[]).forEach(record=>recordRetry(record));
+  }
+  const persist=providerPersistCandidate('minutes',result,verdict);
+  if(persist) await setStorage(persist.key,persist.value);
   return result.summary;
 }
 
@@ -5082,8 +5178,16 @@ function captureRefreshInputs(){
     useUstat:Boolean(config.useUstat),
     useManual:Boolean(config.useManual),
     oddsKey:String(config.oddsKey || ''),
+    manualIds:(S.manual||[]).map(item=>+item.id).filter(id=>Number.isInteger(id)&&id>0),
     lifecycleEpoch
   };
+}
+
+function refreshInputsAreCurrent(inputs){
+  const current=captureRefreshInputs();
+  return inputs.teamId===current.teamId&&inputs.useUstat===current.useUstat&&
+    inputs.useManual===current.useManual&&inputs.oddsKey===current.oddsKey&&
+    inputs.manualIds.join(',')===current.manualIds.join(',');
 }
 
 /* R3.4 E5/E7 — account compatibility keys. Every key carries teamId and
@@ -5105,37 +5209,51 @@ function resolveAccountSlice(kind, staged, previous, keys){
   return compatible ? {state:'carry', value:previous.value} : {state:'clear', value:null};
 }
 
-async function collectAccount(teamId, core, options){
+async function collectAccount(teamId, core, options={}){
   const blank = {entry:{outcome:'skip'}, picks:{outcome:'skip'}, history:{outcome:'skip'}, picksGameweek:0, issues:[], retryRecords:[]};
   if(!teamId) return blank;
   const issues = [], retryRecords = [];
   const take = response => { if(response?.retryRecord) retryRecords.push(response.retryRecord); return response; };
-  const entryRaw = take(await api('/entry/' + teamId + '/', {optional:true, typed:true}));
+  const apiFn=options.apiFn||api;
+  const entryRaw = take(await apiFn('/entry/' + teamId + '/', {optional:true, typed:true}));
   let entry = {outcome:entryRaw.outcome, value:null};
   if(entryRaw.outcome === 'value'){
     const checked = validateEntry(entryRaw.value);
     issues.push({provider:'fpl', endpoint:'/entry/', issues:checked.issues});
-    entry = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+    entry = {outcome:checked.value ? 'value' : 'failed', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
   }
-  if(entry.outcome !== 'value') return {...blank, entry, issues, retryRecords};
+  if(entry.outcome === 'notfound') return {...blank, entry, issues, retryRecords};
   const picksGameweek = publicPicksGameweek(core.events, core.currentGW);
   let picks = {outcome:'notfound', value:null};
   if(picksGameweek){
-    const picksRaw = take(await api('/entry/' + teamId + '/event/' + picksGameweek + '/picks/', {optional:true, typed:true}));
+    const picksRaw = take(await apiFn('/entry/' + teamId + '/event/' + picksGameweek + '/picks/', {optional:true, typed:true}));
     if(picksRaw.outcome === 'value'){
       const checked = validatePicks(picksRaw.value);
       issues.push({provider:'fpl', endpoint:'/entry/event/picks/', issues:checked.issues});
-      picks = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+      picks = {outcome:checked.value ? 'value' : 'failed', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
     } else picks = {outcome:picksRaw.outcome, value:null};
   }
-  const historyRaw = take(await api('/entry/' + teamId + '/history/', {optional:true, typed:true}));
+  const historyRaw = take(await apiFn('/entry/' + teamId + '/history/', {optional:true, typed:true}));
   let history = {outcome:historyRaw.outcome, value:null};
   if(historyRaw.outcome === 'value'){
     const checked = validateHistory(historyRaw.value);
     issues.push({provider:'fpl', endpoint:'/entry/history/', issues:checked.issues});
-    history = {outcome:checked.value ? 'value' : 'notfound', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
+    history = {outcome:checked.value ? 'value' : 'failed', value:checked.value, partial:checked.issues.some(i => i.severity === 'partial')};
   }
   return {entry, picks, history, picksGameweek, issues, retryRecords};
+}
+
+function stagedAccountContext(inputs,core,account){
+  if(!inputs.teamId) return {picks:null,manual:inputs.manualIds.map(id=>({id}))};
+  const previousKeys=S.__accountKeys||{},keys={
+    entry:accountKey('entry',{teamId:inputs.teamId,season:core.season}),
+    picks:accountKey('picks',{teamId:inputs.teamId,season:core.season,picksGameweek:account.picksGameweek}),
+    history:accountKey('history',{teamId:inputs.teamId,season:core.season})
+  };
+  const entry=resolveAccountSlice('entry',account.entry,{key:previousKeys.entry,value:S.entry},keys);
+  const picks=entry.state==='clear'?{state:'clear',value:null}:
+    resolveAccountSlice('picks',account.picks,{key:previousKeys.picks,value:S.picks},keys);
+  return {picks:picks.value,manual:inputs.manualIds.map(id=>({id}))};
 }
 
 function picksStatusFor(state, picks, picksGameweek){
@@ -5161,6 +5279,7 @@ function aggregateFplHealth({corePartial, requested, slices, source, at}){
 
 async function collectRefresh(options = {}){
   const inputs = options.inputs || captureRefreshInputs();
+  const apiFn=options.apiFn||api;
   reportLoadPhase(options, 'fpl');
   if(browserReportsOffline()){
     const error=new Error('device offline');
@@ -5168,7 +5287,7 @@ async function collectRefresh(options = {}){
     throw error;
   }
   const [bootRaw, fixturesRaw] = await Promise.all([
-    api('/bootstrap-static/', {typed:true}), api('/fixtures/', {typed:true})
+    apiFn('/bootstrap-static/', {typed:true}), apiFn('/fixtures/', {typed:true})
   ]);
   const retryRecords = [bootRaw.retryRecord, fixturesRaw.retryRecord].filter(Boolean);
   if(bootRaw.outcome !== 'value' || fixturesRaw.outcome !== 'value')
@@ -5193,23 +5312,21 @@ async function collectRefresh(options = {}){
   const account = await collectAccount(inputs.teamId, core, options);
 
   reportLoadPhase(options, 'providers');
-  const stagedAccount = {
-    picks:account.picks.outcome === 'value' ? account.picks.value : S.picks,
-    manual:S.manual
-  };
+  const stagedAccount=stagedAccountContext(inputs,core,account);
   const providerConfig = {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey, useManual:inputs.useManual};
   const providerCore = {...core, seasonLive:core.seasonLive};
+  const providerTokens={understat:nextProviderToken('understat'),odds:nextProviderToken('odds'),minutes:nextProviderToken('minutes')};
   const [understat, odds, minutes] = await Promise.all([
-    computeUnderstat({core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
-    computeOdds({core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
-    computeMinuteHistories({core:providerCore, account:stagedAccount, useManual:inputs.useManual}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], cohortIds:[], persist:null}))
+    computeUnderstat({...options.understatDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
+    computeOdds({...options.oddsDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
+    computeMinuteHistories({...options.minutesDeps,core:providerCore, account:stagedAccount, useManual:inputs.useManual}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], cohortIds:[], persist:null}))
   ]);
   understat.signature = understatSignature(providerCore, providerConfig);
   odds.signature = oddsSignature(providerCore, providerConfig);
   minutes.signature = minutesSignature(providerCore, completedDataRevision(core.events, core.fixtures), minutes.cohortIds || []);
 
   return {
-    inputs, core, slimmed, account, understat, odds, minutes,
+    inputs, core, slimmed, account, understat, odds, minutes, providerTokens,
     corePartial:prepared.issues.some(i => i.severity === 'partial'),
     coreIssues:prepared.issues, retryRecords, source:bootRaw.source || S.source || 'live feed'
   };
@@ -5257,17 +5374,7 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
       picks:picksRes.state === 'clear' ? null : keys.picks,
       history:historyRes.state === 'clear' ? null : keys.history
     };
-    // 3 · diagnostics
-    const retryStats = {...S.retryStats};
-    [...staged.retryRecords, ...(account.retryRecords || []),
-     ...(staged.understat.retryRecords || []), ...(staged.odds.retryRecords || [])]
-      .filter(record => record && record.provider)
-      .forEach(record => { retryStats[record.provider + '|' + record.endpoint] = record; });
-    S.retryStats = retryStats;
-    [...(account.issues || []), ...(staged.understat.issues || []),
-     ...(staged.odds.issues || []), ...(staged.minutes.issues || [])]
-      .forEach(entry => recordIssues(entry.provider, entry.endpoint, entry.issues));
-    // 4 · provider health — the aggregate never upgrades a partial finding
+    // 3 · provider health and supporting slices, through the shared gate
     const requested = Boolean(inputs.teamId);
     const fplState = aggregateFplHealth({
       corePartial:staged.corePartial, requested,
@@ -5276,15 +5383,35 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
               {state:historyRes.state, partial:account.history.partial}],
       source:staged.source, at:core.cachedAt
     });
-    // 5 · supporting providers, through the shared gate
-    const applyCtx = {core, now};
-    applyProviderResult('understat', staged.understat, {...applyCtx, signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})});
-    applyProviderResult('odds', staged.odds, {...applyCtx, signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})});
-    applyProviderResult('minutes', staged.minutes, {...applyCtx, cohortIds:staged.minutes.cohortIds || [],
-      signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])});
-    // 6 · derived invalidation
+    const applyCtx = {core, now, resolveOnDiscard:true};
+    const providerVerdicts={
+      understat:applyProviderResult('understat', staged.understat, {...applyCtx, token:staged.providerTokens?.understat,
+        signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})}),
+      odds:applyProviderResult('odds', staged.odds, {...applyCtx, token:staged.providerTokens?.odds,
+        signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})}),
+      minutes:applyProviderResult('minutes', staged.minutes, {...applyCtx, token:staged.providerTokens?.minutes,
+        cohortIds:staged.minutes.cohortIds || [],
+        signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])})
+    };
+    // 4 · diagnostics from current work only
+    const applicable=name=>!providerVerdicts[name]?.discarded;
+    const retryStats = {...S.retryStats};
+    [...staged.retryRecords, ...(account.retryRecords || []),
+     ...(applicable('understat')?staged.understat.retryRecords || []:[]),
+     ...(applicable('odds')?staged.odds.retryRecords || []:[]),
+     ...(applicable('minutes')?staged.minutes.retryRecords || []:[])]
+      .filter(record => record && record.provider)
+      .forEach(record => { retryStats[record.provider + '|' + record.endpoint] = record; });
+    S.retryStats = retryStats;
+    [...account.issues, ...(applicable('understat')?staged.understat.issues || []:[]),
+     ...(applicable('odds')?staged.odds.issues || []:[]),
+     ...(applicable('minutes')?staged.minutes.issues || []:[])]
+      .forEach(entry => recordIssues(entry.provider, entry.endpoint, entry.issues));
+    const providerWrites=Object.entries(providerVerdicts).map(([name,verdict])=>
+      providerPersistCandidate(name,staged[name],verdict)).filter(Boolean);
+    // 5 · derived invalidation
     clearXP();
-    return {ok:true, fplState};
+    return {ok:true, fplState, providerVerdicts, providerWrites};
   }catch(error){
     restoreStateJournal(journal.state);
     restoreHealth(journal.health);
@@ -5295,10 +5422,9 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
   }
 }
 
-async function persistRefresh(staged){
+async function persistRefresh(staged, committed={}){
   const writes = [{key:K_CACHE, value:staged.slimmed}];
-  [staged.understat.persist, staged.odds.persist, staged.minutes.persist]
-    .filter(Boolean).forEach(entry => writes.push(entry));
+  (committed.providerWrites||[]).forEach(entry => writes.push(entry));
   const failures = [];
   for(const write of writes){
     const result = await ssetChecked(write.key, write.value);
@@ -5341,6 +5467,11 @@ async function loadAll(options = {}){
     return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'discarded_lifecycle',
       cacheAccepted, optionalResults:[], verifiedAt:null, discarded:'lifecycle'};
   }
+  if(!refreshInputsAreCurrent(staged.inputs)){
+    pendingRefreshRequest = {reason:options.reason || 'foreground', force:true};
+    return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'discarded_inputs',
+      cacheAccepted, optionalResults:[], verifiedAt:null, discarded:'inputs'};
+  }
   reportLoadPhase(options,'model');
   const committed = applyRefreshCommit(staged);
   if(!committed.ok){
@@ -5354,7 +5485,7 @@ async function loadAll(options = {}){
     if(st) st.textContent = statusLine(staged, committed);
     renderVerifiedState();
   }catch(error){ renderError = error; if(st) st.textContent = 'Data updated but the display failed to refresh.'; }
-  const persistFailures = await persistRefresh(staged);
+  const persistFailures = await persistRefresh(staged, committed);
   await saveCfg();
   for(const name of drainRecomputation()) void recomputeProvider(name);
   return {
