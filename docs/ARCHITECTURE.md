@@ -1,4 +1,8 @@
 # ARCHITECTURE.md
+
+## Approved future persistence boundary (D1 design)
+
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) selects Cloudflare D1 for relational/queryable records and private R2 for exact content-addressed evidence, mediated by a separate authenticated data Worker. This is a future boundary only: the existing Official FPL gateway and deterministic browser calculation path remain independent, and persistence failure must not change recommendations. Google Sheets is downstream reporting only. No infrastructure or runtime implementation is approved.
 Purpose: detailed technical architecture. Audience: developers before changing code.
 Last reconciled: 2026-08-08. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
