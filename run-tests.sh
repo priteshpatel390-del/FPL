@@ -1,3 +1,5 @@
 #!/bin/sh
-# Stage-1 test entrypoint (no npm needed)
-node build.mjs && exec node --test tests/*.test.mjs
+set -e
+node build.mjs
+node --test tests/*.test.mjs
+node scripts/a3-state-ownership-build-probe.mjs
