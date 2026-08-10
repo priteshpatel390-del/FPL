@@ -276,3 +276,25 @@ Collection is pure — it writes nothing to `S`, the health registry or diagnost
 Persistence follows the commit and uses `ssetChecked`, so a write failure is classified `persist_failed` rather than being silently swallowed. `sset` is unchanged for every other caller.
 
 See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md) for the full design, the two-rule model, account compatibility keys, minute-history provenance and the error-classification table.
+
+## Failure ownership (A3 error-boundary separation, EB-1)
+
+Every failure in the refresh lifecycle has exactly one owner, and only a provider-owned failure may move Provider Health.
+
+| Failure | Class | Provider Health | State | Retry |
+|---|---|---|---|---|
+| Official FPL transport/gateway failure | `collection_failed` | Fallback with a verified snapshot, Unavailable without one — genuine provider evidence | previous verified state stays active when one exists | transport-owned only |
+| Official FPL validation/shape failure | `collection_failed` with `feedShape` | Unavailable on genuine validation evidence | restricted; no unverified core is admitted | none; a fatal validation result is not retried generically |
+| Supporting-provider transport/parse/mapping failure | none — an expected provider outcome | that provider's own row only | Rule B decides retain or clear | provider cadence and cooldowns only |
+| Atomic commit failure | `commit_failed` | restored exactly by the commit journal | exact rollback of commit-owned state | none |
+| Render failure after a successful commit | `render_failed` | unchanged | newly committed data stays accepted | none |
+| Persistence failure | `persist_failed` | unchanged | newly accepted state stays active for the session | none |
+| Collection failure plus recovery-render failure | `collection_failed` primary, `secondaryErrorClass:'render_failed'` | the real provider classification survives | previous verified state stays active | none |
+| Unexpected supporting-layer computation exception | `internal_error` | **not** mutated — an application exception is not provider evidence | Rule B still decides retain or clear; a clear removes the stale row rather than publishing a false provider result | none |
+| Unexpected refresh-lifecycle exception | `internal_error` | unchanged; no acquisition is attributed | previously accepted data stays active | none |
+
+`ownApplicationError()` in `src/main.mjs` implements the supporting-layer rule. It wraps — rather than replaces — the single `applyProviderResult()` gate, so an application exception cannot diverge from the ordinary retain/clear decision and cannot keep an incompatible old value alive. A cleared detailed-minute layer removes only the minute detail from the otherwise truthful core FPL row; detailed minutes never relabel the core feed.
+
+The application boundary is narrow by design: it sits at the verified-refresh lifecycle edge and begins before `captureRefreshInputs()`, so startup, manual and foreground refreshes all own an otherwise escaping exception. There is no global `window.onerror` or `unhandledrejection` layer, because one would hide real defects. Users never see raw exception text; the underlying error stays on the returned report for tests and diagnostics.
+
+See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md).

@@ -2,7 +2,9 @@
 
 ## 10 August 2026 — current checkpoint status
 
-`fpl:calib` compatibility and resilience has moved from investigation/design to an owner-approved, verified draft implementation in PR #107. The candidate fails closed on every current unverified calibration record, preserves stored bytes, keeps standard uncalibrated projections active, and does not introduce a production calibration generator or tune factors. Source `862eefc32b0edb070290ad9ce82d85b1123b0596` plus generated-only child `69e539647ae687f49605633505e7147da76125e2` passed 842 tests and normal Verify Teamsheet run #123. The checkpoint remains unmerged; PERSIST-4 closes only after owner-approved merge and main verification. A3 Error-Boundary Separation remains next and begins with investigation/design only.
+**`fpl:calib` compatibility and resilience is merged.** PR #107 is merged at `main` `d112c673310149a4463def1758242460450600dc`, over source `862eefc32b0edb070290ad9ce82d85b1123b0596`, generated-only child `69e539647ae687f49605633505e7147da76125e2` and documentation child `6ba905d`. Permanent Verify Teamsheet run #127 / `31396393124` passed every stage on the merge commit itself, on an **842-test** baseline. The merged behaviour fails closed on every current unverified calibration record, preserves the stored bytes, keeps standard uncalibrated projections active, and adds no production calibration generator or tuned factors. PERSIST-4 is therefore closed.
+
+**A3 Error-Boundary Separation, Package EB-1, is the current checkpoint.** Investigation and design are complete and Pritesh explicitly approved implementation; the candidate is draft PR #108 on `agent/a3-error-boundary-separation`. It separates who owns a failure — provider acquisition, provider validation, the atomic commit, rendering, persistence and unexpected application exceptions — without touching provider endpoints, retry cadence, weighting or any model calculation. See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md). PR #108 remains draft and is not approved for merge.
 
 
 
@@ -25,11 +27,9 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-Post-A3 Checkpoint 0 is merged through PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb`, which is the current `main`. Data Architecture D1 remains an approved future design only.
+The current `main` is `d112c673310149a4463def1758242460450600dc`, the merge of `fpl:calib` compatibility PR #107. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106) and `fpl:calib` compatibility (PR #107) are all merged and verified. Data Architecture D1 remains an approved future design only.
 
-The current work is the separate narrow **0C manual-squad dead-handler cleanup**, explicitly approved for implementation after Checkpoint 0C's investigation established that the legacy per-button listeners are unreachable. See [Post-A3 0C cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md). `fpl:calib` is deliberately excluded from it.
-
-After 0C is merged and verified, the next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is separately model-gated. A3 error-boundary separation follows it. Neither is pre-approved.
+The current work is **A3 error-boundary separation, Package EB-1** — owner-approved implementation, draft PR #108. See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md). Nothing after it is pre-approved.
 
 ## Completed before the current sequence
 
@@ -42,8 +42,8 @@ After 0C is merged and verified, the next checkpoint is **`fpl:calib` compatibil
 Nothing below item 1 is approved for implementation. Each entry begins with investigation and design, and each requires explicit owner approval before any code is written.
 
 1. **Post-A3 Checkpoint 0 housekeeping — complete and merged through PR #105.** Automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). Its 0C investigation produced the separately approved cleanup described below, which is the current work.
-2. **`fpl:calib` compatibility and resilience — next.** Investigation and design first. This checkpoint is **separately model-gated**: `fpl:calib` feeds projections, so any change to how a legacy calibration record is accepted, rejected or identified crosses the model approval gate and requires the full existing/proposed behaviour, inputs, fallbacks, assumptions, limitations, trade-offs and validating-evidence presentation before approval. A3 cache and persistence resilience deliberately left `fpl:calib` untouched; [PERSIST-4](KNOWN_LIMITATIONS.md) records that gap and is **retained as open until this checkpoint completes**. No implementation is approved.
-3. **A3 error-boundary separation — after `fpl:calib`.** Investigation and design first. Not pre-approved.
+2. **`fpl:calib` compatibility and resilience — complete and merged through PR #107** at `main` `d112c67`. The checkpoint was separately model-gated and was approved and merged as a fail-closed compatibility change only: no production calibration generator, no tuned factors and no accuracy claim. [PERSIST-4](KNOWN_LIMITATIONS.md) is closed by it.
+3. **A3 error-boundary separation (Package EB-1) — current.** Investigation and design are complete and implementation is owner-approved; the candidate is draft PR #108. It fixes failure ownership only: recovery-render failures become explicitly observable instead of being swallowed, unexpected supporting-layer exceptions stay application-owned instead of manufacturing Understat/Odds provider evidence, and startup/manual/foreground refreshes classify an otherwise escaping exception at a narrow lifecycle boundary. Provider endpoints, validation, retry cadence, weighting, the Rule-B retain/clear decision and every model calculation are unchanged. Merge is not approved. See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md).
 4. **Production-bundle safeguards.**
 5. **State-ownership cleanup.**
 6. **Route-aware rendering and performance work.**

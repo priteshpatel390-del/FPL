@@ -63,13 +63,30 @@ Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository checkpoint is post-A3 Checkpoint 0 PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb`, whose automatic push-triggered Verify Teamsheet run #110 / `31383479683` passed on the exact merge commit. That merged baseline is **835 tests, 835 passed, 0 failed, 0 skipped, 0 cancelled**.
+The latest merged repository checkpoint is `fpl:calib` compatibility and resilience PR #107 at `main` `d112c673310149a4463def1758242460450600dc`, whose automatic push-triggered Verify Teamsheet run #127 / `31396393124` passed every stage on the exact merge commit. That merged baseline is **842 tests, 842 passed, 0 failed, 0 skipped, 0 cancelled**, reproduced locally at the same commit.
 
-The current unmerged candidate is the narrow 0C manual-squad dead-handler cleanup: **836 tests, 836 passed, 0 failed, 0 skipped, 0 cancelled** — all 835 baseline tests retained plus one new ownership regression, `manual squad add/remove interaction has exactly one validating runtime owner`, in `tests/manual-squad-runtime.test.mjs`.
+The current unmerged candidate is A3 error-boundary separation (EB-1): **855 tests, 855 passed, 0 failed, 0 skipped, 0 cancelled** — all 842 baseline tests retained plus the thirteen new regressions in `tests/error-boundary-separation.test.mjs`.
 
-`manual squad builder has no unchecked squad persistence path` in `tests/persistence-resilience.test.mjs` was re-pointed, not weakened. Its assertions previously described the two verified `K_SQUAD` writes inside the unreachable `views.mjs` listeners. It now requires **zero** squad-persistence calls anywhere in the `views.mjs` manual region — stricter than before — and asserts the two verified writes and the `squadPersistence.ok`-gated configuration save in `src/ui/manual-squad-runtime.mjs`, which is the live owner. The behavioural half of the guarantee stays covered by the untouched A3 cases that exercise `manualSquadCommitAddition()` directly.
+Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updated in place, none weakened:
 
-The PR #104 evidence below remains the last application checkpoint before this one.
+- test 73 (`the wrapper path and the commit path share one apply gate`) is **unchanged**. EB-1 deliberately wraps rather than replaces the shared gate, so the literal `applyProviderResult('understat' | 'odds' | 'minutes'` call sites remain in the commit path and the original assertion still holds.
+- test 61-63's `errorClass` regex now pins the extended expression that adds the `internal_error` class. The same exact-source guarantee applies to the new text.
+- test 63 (`a throw in the failure-path render …`) previously pinned the literal empty catch `if(S.boot){ try{ renderVerifiedState(); }catch(error){} }` — the defect EB-1A exists to remove. It now asserts the stronger property: the recovery render is still guarded and still cannot escape `loadAll`, the caught error is recorded rather than discarded, the failure path never rethrows or re-enters acquisition, and the result carries `collection_failed` plus a separate `secondaryErrorClass`. The behavioural proof lives in the new file.
+
+### A3 error-boundary coverage
+
+`tests/error-boundary-separation.test.mjs` drives `loadAll()` and `runVerifiedRefresh()` against a working minimal DOM — a genuine node implementation, so the restricted no-core render path executes instead of throwing and disguising itself as the very render failure under test. It covers:
+
+- successful acquisition and commit followed by a render throw: `render_failed`, committed data retained, FPL Live unchanged, no acquisition retry;
+- a genuine collection failure with a verified snapshot plus a recovery-render throw: `collection_failed` stays primary, `secondaryErrorClass:'render_failed'`, the previously accepted core object stays identical and FPL Fallback remains justified;
+- a gateway failure with no usable cache: FPL Unavailable, restricted, no unverified core admitted;
+- a fatal feed-shape failure: acquisition/validation ownership retained, `feedShape` preserved and exactly one bootstrap request — no generic application retry;
+- a no-core failure-state render throw: the provider classification survives, the application failure is owned and nothing escapes;
+- unexpected Understat, Odds and minute-history computation exceptions: `internal_error`, the underlying error observable on the report, **no** provider-health row manufactured, Rule B's retain/clear decision preserved, and the core FPL row and its minute detail left truthful;
+- normal Understat-only and Odds-only provider failures for contrast: a genuine provider failure still publishes a provider-owned Fallback row where an application exception publishes none;
+- refresh-lifecycle ownership: a throw during `captureRefreshInputs()` is classified `internal_error`, the startup gate, interaction lock and refresh promise are all released, Provider Health is untouched, no raw exception text reaches the user, and the queued-manual-refresh and no-retry structure is pinned at source.
+
+The PR #104 evidence below remains historical.
 
 - PR #104 merged `main` complete suite: **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled**
 - exact PR #104 reviewed head: `4e434b940e2bcb473374573db5da16f6a645d9eb`; source `502a1f7ac0e0456743f3ddb0695433decf8976d1`; generated-only child `02216b8`

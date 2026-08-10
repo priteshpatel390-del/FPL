@@ -1,8 +1,17 @@
 # CLAUDE.md — onboarding for every future development session
 
-## 10 August 2026 — `fpl:calib` compatibility candidate
+## 10 August 2026 — A3 error-boundary separation candidate (EB-1)
 
-Pritesh approved the model-gated fail-closed Package A. Draft PR #107 has source/tests/docs commit `862eefc32b0edb070290ad9ce82d85b1123b0596` and generated-only child `69e539647ae687f49605633505e7147da76125e2`. Verify Teamsheet run #123 passed the normal repository gate on the exact PR head; the source suite is 842 passed, 0 failed, 0 skipped, 0 cancelled. The candidate rejects every existing unverified `fpl:calib` record from active model state while preserving its bytes, uses standard uncalibrated projections, and keeps the Stage 7 walk-forward check diagnostic-only. No calibration values, raw model formula or production calibration methodology were added. PR #107 remains draft and must not be merged without Pritesh's explicit approval. PERSIST-4 is implemented and verified in the candidate but remains open until merge.
+Pritesh approved implementation of Package EB-1 after investigation and design. The candidate is draft PR #108 on `agent/a3-error-boundary-separation`, based on `main` `d112c673310149a4463def1758242460450600dc`.
+
+EB-1 fixes failure **ownership** only. A recovery-render failure after a genuine Official FPL collection failure is now recorded as a secondary `render_failed` beside the unchanged primary `collection_failed` instead of being swallowed by an empty catch. An unexpected exception escaping Understat, Odds or minute-history computation is now application-owned `internal_error`: it still passes through the one shared `applyProviderResult()` gate so Rule B's retain/clear decision is unchanged, but it no longer manufactures Understat/Odds/FPL Provider Health. Startup, manual and foreground refreshes own an otherwise escaping exception at a narrow lifecycle boundary that begins before `captureRefreshInputs()`; no global `window.onerror` or `unhandledrejection` layer was added.
+
+Evidence: **855 passed, 0 failed, 0 skipped, 0 cancelled** against the 842-test `main` baseline, with all 842 retained. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed. No physical iPhone testing was performed and none is claimed. PR #108 remains draft and must not be merged, or marked ready for review, without Pritesh's explicit approval. See [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md).
+
+
+## 10 August 2026 — `fpl:calib` compatibility is merged
+
+PR #107 is merged at `main` `d112c673310149a4463def1758242460450600dc`, over source/tests/docs commit `862eefc32b0edb070290ad9ce82d85b1123b0596`, generated-only child `69e539647ae687f49605633505e7147da76125e2` and documentation child `6ba905d`. Permanent Verify Teamsheet run #127 / `31396393124` passed every stage on the merge commit, on an 842-test baseline. The merged behaviour rejects every existing unverified `fpl:calib` record from active model state while preserving its bytes, uses standard uncalibrated projections, and keeps the Stage 7 walk-forward check diagnostic-only. No calibration values, raw model formula or production calibration methodology were added. PERSIST-4 is closed.
 
 
 ## 10 August 2026 — Post-A3 0C manual-squad dead-handler cleanup
@@ -34,11 +43,9 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-PR #104 is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, which is the current `main`. Data Architecture D1 remains an approved future design only.
+The current `main` is `d112c673310149a4463def1758242460450600dc`, the merge of `fpl:calib` compatibility PR #107. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106) and `fpl:calib` compatibility (PR #107) are all merged and verified. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) is closed. Data Architecture D1 remains an approved future design only.
 
-Post-A3 Checkpoint 0 is complete and merged through PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb`; see [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). The current approved implementation is the separate **0C manual-squad dead-handler cleanup**; see [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md). `fpl:calib` is deliberately excluded from it.
-
-After 0C is merged and verified, the next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is **separately model-gated** — `fpl:calib` feeds projections, so changing how a legacy calibration record is accepted, rejected or identified crosses the model approval gate. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) stays open until that checkpoint completes. **A3 error-boundary separation** follows it, also beginning with investigation and design. Neither is pre-approved. The full sequence is in [Roadmap](docs/ROADMAP.md).
+The current approved implementation is **A3 error-boundary separation, Package EB-1** — draft PR #108; see [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md). Nothing after it is pre-approved. The full sequence is in [Roadmap](docs/ROADMAP.md).
 
 ## 9 August 2026 reconciliation
 
@@ -54,12 +61,12 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`, merge of post-A3 Checkpoint 0 housekeeping PR #105 |
-| Latest merged application checkpoint | PR #104, reviewed head `4e434b940e2bcb473374573db5da16f6a645d9eb`, source `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`. PR #105 changed CI configuration, tests and documentation only. |
-| Permanent repository verification | 835 passed, 0 failed on `main` `dd74365…` — Verify Teamsheet run #110 / `31383479683`, event `push`, every stage passed. This is the first merge verified automatically by the Checkpoint 0A trigger. |
-| Local reproduction at the merge commit | 835 passed, 0 failed; provenance, deterministic double build, root/deployable equality and manifest identity all pass at `dd74365…` |
-| Current unmerged candidate | Post-A3 0C manual-squad dead-handler cleanup — removes only the two proven-unreachable per-button listeners from `src/ui/views.mjs`, keeps `manual-squad-runtime.mjs` byte-unchanged as the sole validating owner, and adds an ownership regression. 836 passed, 0 failed. |
-| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102) and the PR #103 presentation checkpoint. For PR #104 physical testing was explicitly waived by Pritesh; none was performed. |
+| Repository head | `main` `d112c673310149a4463def1758242460450600dc`, merge of `fpl:calib` compatibility and resilience PR #107 |
+| Latest merged application checkpoint | PR #107, source `862eefc32b0edb070290ad9ce82d85b1123b0596`, generated-only child `69e539647ae687f49605633505e7147da76125e2`, documentation child `6ba905d`. PR #106 was the narrow 0C cleanup; PR #105 changed CI configuration, tests and documentation only. |
+| Permanent repository verification | 842 passed, 0 failed on `main` `d112c67…` — Verify Teamsheet run #127 / `31396393124`, event `push`, every stage passed on the merge commit itself. |
+| Local reproduction at the merge commit | 842 passed, 0 failed at `d112c67…` |
+| Current unmerged candidate | A3 error-boundary separation (EB-1), draft PR #108 — separates provider, commit, render, persistence and application-owned failures in `src/main.mjs` only; no provider endpoint, retry cadence, weighting or model change. 855 passed, 0 failed, 0 skipped, 0 cancelled, over the 842-test baseline. |
+| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102) and the PR #103 presentation checkpoint. For PR #104 physical testing was explicitly waived by Pritesh. No physical testing has been performed for PR #107 or the PR #108 candidate. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
@@ -88,6 +95,8 @@ Data Architecture D1 investigation/design is complete and its decision is record
 
 A3 cache and persistence resilience is merged through PR #104. It hardens the browser persistence boundary only: exact schema/season compatibility for the main `fpl:cache`, season/version ownership for user-owned records, verified writes that mean restorable, safe manual-squad/config ordering, and truthful session-only warnings when a write fails. Physical iPhone testing was explicitly waived by Pritesh for that checkpoint. The first completed and officially `data_checked` Gameweek remains an evidence gate for real minute history, Stage 10 outcomes and populated Leagues behaviour.
 
+A3 error-boundary separation (EB-1) is the current owner-approved implementation, unmerged in draft PR #108. It changes failure ownership only. Provider transport and validation evidence keeps sole ownership of Provider Health; commit, render, persistence and unexpected application exceptions may not move it, and none of them causes a provider retry. `ownApplicationError()` wraps the shared `applyProviderResult()` gate so the Rule-B retain/clear decision stays identical for an application exception. The boundary is narrow — the verified-refresh lifecycle edge — and no global `window.onerror` or `unhandledrejection` layer exists. See [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md).
+
 ## Owner and communication
 
 Pritesh is a non-developer but rigorous reviewer who primarily works from an iPhone. Lead with the outcome, then evidence, risks and recommendation. Distinguish fact, inference, proposal and limitation. Never claim success, accuracy, deployment or physical-device acceptance without evidence.
@@ -100,7 +109,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 4. [Roadmap](docs/ROADMAP.md)
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
-7. The current checkpoint design or acceptance record — currently [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md), over the merged [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) and [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
+7. The current checkpoint design or acceptance record — currently [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md), over the merged [`fpl:calib` compatibility and resilience](docs/FPL-CALIB-COMPATIBILITY-RESILIENCE.md), [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md), [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) and [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
 8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)
