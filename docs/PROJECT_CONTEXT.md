@@ -1,11 +1,14 @@
 # PROJECT_CONTEXT.md
 
-## 10 August 2026 — `fpl:calib` compatibility candidate
+## Historical checkpoint snapshot — before PR #107 merge: A3 Error-Boundary Separation
 
-Draft PR #107 implements the owner-approved fail-closed compatibility boundary for legacy/unverified `fpl:calib`. Source/tests/docs are at `862eefc32b0edb070290ad9ce82d85b1123b0596`; generated-only child `69e539647ae687f49605633505e7147da76125e2` passed normal Verify Teamsheet run #123, with 842 passed and no failures/skips/cancellations. Existing calibration bytes are preserved but cannot activate; standard uncalibrated projections are used. The current Stage 7 walk-forward remains diagnostic-only and no production calibration methodology or factor change is introduced. This is contract-correctness work, not an accuracy improvement claim. PR #107 is still draft and PERSIST-4 is not closed until merge. Error-boundary separation remains the next post-merge investigation checkpoint.
+GitHub `main` is `d112c673310149a4463def1758242460450600dc`, merge of PR #107. Push-triggered Verify Teamsheet run #127 / `31396393124` succeeded with **842 passed, 0 failed, 0 skipped, 0 cancelled** plus committed provenance, deterministic rebuild, build identity and production-artifact preservation. The `fpl:calib` compatibility checkpoint is complete and PERSIST-4 is closed: unverified stored calibration remains byte-preserved but inert and standard uncalibrated projections remain active.
 
+Pritesh approved A3 Error-Boundary Separation Package EB-1 for implementation. Draft PR #108 is current. The candidate fixes two proven ownership defects without changing provider acquisition policy: a recovery-render exception can no longer disappear behind a real Official FPL collection failure, and an unexpected supporting-layer computation exception can no longer be manufactured into Understat/Odds provider degradation. Existing provider failures, Rule-B supporting-value retain/clear behaviour, Atomic Foreground Refresh rollback and PR #104 persistence semantics are preserved. Unexpected refresh-lifecycle exceptions receive fixed application copy without mutating Provider Health or installing a global swallow boundary.
 
+EB-1 evidence: **855 passed, 0 failed, 0 skipped, 0 cancelled** over the 842-test `main` baseline, with all 842 retained and none weakened; committed deployment provenance from reachable source; two byte-identical production builds with root `index.html` equal to `dist/index.html`; exact manifest build identity. Every temporary diagnostic workflow used while developing the candidate has been removed from the final tree, so the permanent Verify Teamsheet workflow is the only gate. Permanent Verify Teamsheet on the published head remains an outstanding review gate. No physical iPhone testing has been performed or claimed for EB-1; because EB-1 changes user-visible failure copy, an owner device pass is advisable before merge.
 
+After EB-1, Production-Bundle Safeguards is next and begins with investigation/design only.
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
 The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
@@ -40,7 +43,7 @@ Teamsheet is a healthy, strongly verified FPL decision product. The complete Tea
 
 Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is now merged through PR #102. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
 
-## Evidence baseline
+## Historical evidence baseline — before PR #107 merge
 
 | Item | Evidence |
 |---|---|

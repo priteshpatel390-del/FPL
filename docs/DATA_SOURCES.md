@@ -1,10 +1,10 @@
 # DATA_SOURCES.md
 
-## 10 August 2026 — calibration storage candidate
+## 10 August 2026 — provider evidence versus application error ownership
 
-In draft PR #107, `fpl:calib` no longer behaves like an unowned generic JSON record at restore. Every currently stored calibration record is treated as contract-unverified and cannot enter active model state; its bytes are preserved. No new external source, endpoint, archive, provider or acquisition cadence is introduced. The pinned 2025/26 vaastav walk-forward remains diagnostic-only. A future persisted production calibration requires a separately approved compatibility/methodology contract. Candidate verification: 842/842 tests and Verify Teamsheet run #123.
+PR #107 is merged at `main` `d112c673310149a4463def1758242460450600dc`; `fpl:calib` now fails closed on every current unverified stored record while preserving its bytes. EB-1 does not add or change any source, endpoint, field, cadence, retry policy or provider fallback.
 
-
+For current refreshes, Provider Health may change only from actual provider-layer evidence: transport/acquisition outcome, response validation, accepted provider cache/fallback use or explicit provider configuration. Commit, persistence, rendering and unexpected application exceptions are not provider evidence. Expected Understat/Odds/minute failures continue to return their existing structured results. Unexpected supporting computation exceptions are application-owned but still use the existing Rule-B data retain/clear decision so stale incompatible values cannot survive.
 ## Future historical persistence (approved design only)
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) approves D1 plus private R2 behind a separate data Worker as the future evidence platform. Only accepted normalised inputs actually used may be retained. Raw provider responses/HTML, Odds keys, keyed URLs and secrets must not be retained. Permanent Understat- or Odds-derived retention requires a separate provider-rights review. Google Sheets is downstream reporting only. No provider, endpoint, cadence or runtime acquisition behaviour changes under this decision.
@@ -74,8 +74,7 @@ preferences (Understat toggle, transfer horizon, result count, locally held Odds
 season-owned account section (Team ID, free transfers, bank, manual-team mode); a previous-season or
 invalid account section is dropped while valid preferences survive, and an unversioned legacy record
 can only contribute preferences. `fpl:squad` version 1 and `fpl:mini-leagues` version 3 are season-owned
-and fail closed, so an unversioned or previous-season record is not restored. `fpl:calib` is unchanged
-and remains behind the separate model approval gate.
+and fail closed, so an unversioned or previous-season record is not restored. `fpl:calib` is fail-closed after merged PR #107: existing unverified bytes are preserved but are not restored into active model state.
 
 The Refresh-Load R1 supporting caches (`fpl:minutes-history`, `fpl:understat-team-inputs`,
 `fpl:odds-derived-inputs`) keep their own schema/model/season contracts and cadence rules unchanged.
