@@ -6,13 +6,17 @@ import { loadApp, syntheticWorld } from './harness.mjs';
 
 const secret = 'sk-ant-test-DO-NOT-KEEP';
 
-test('SEC-3: legacy claudeKey is removed and the scrubbed config is persisted', async () => {
+test('SEC-3: legacy claudeKey is removed while unversioned account state fails closed', async () => {
   const { T } = loadApp();
   localStorage.setItem('fpl:config', JSON.stringify({ teamId:'123', oddsKey:'odds-ok', claudeKey:secret }));
   const cfg = await T.loadCfg();
-  assert.deepEqual(cfg, { teamId:'123', oddsKey:'odds-ok' });
-  assert.deepEqual(JSON.parse(localStorage.getItem('fpl:config')), { teamId:'123', oddsKey:'odds-ok' });
-  assert.equal(localStorage.getItem('fpl:config').includes(secret), false);
+  assert.deepEqual(cfg, { oddsKey:'odds-ok' });
+  const stored = JSON.parse(localStorage.getItem('fpl:config'));
+  assert.equal(stored.version, 1);
+  assert.deepEqual(stored.preferences, { oddsKey:'odds-ok' });
+  assert.equal(stored.account, null);
+  assert.equal(JSON.stringify(stored).includes(secret), false);
+  assert.equal(JSON.stringify(stored).includes('123'), false);
 });
 
 test('SEC-3: saveCfg never writes an Anthropic key field', async () => {
