@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { FPL_RULES, SCHEMA_VERSION } from '../src/config.mjs';
 import {
   K_CFG,K_SQUAD,K_CACHE,
@@ -17,6 +18,7 @@ import {
   migrateMiniLeagueState,persistMiniLeagueState
 } from '../src/ui/mini-leagues-state.mjs';
 import { manualSquadCommitAddition } from '../src/ui/manual-squad-runtime.mjs';
+import { forgetOddsKey } from '../src/providers/odds.mjs';
 
 class MemoryStorage{
   constructor(){this.map=new Map();this.failWrites=false;this.lieOnRead=false;}
@@ -233,4 +235,17 @@ test('Mini-League write failure keeps the session state and preserves the prior 
   assert.equal(state.selectedLeagueId,'8');
   assert.equal(S.miniLeagues.selectedLeagueId,'8');
   assert.equal(globalThis.localStorage.getItem(K_MINI_LEAGUES),before);
+});
+
+test('forgetting the Odds key decodes and rewrites the versioned config through verified persistence',async()=>{
+  assert.equal((await ssetVerified(K_CFG,{teamId:'123',ft:2,bank:1.4,useManual:false,useUstat:true,oddsKey:'sentinel'})).ok,true);
+  const field={value:'sentinel'};
+  const result=await forgetOddsKey({field});
+  assert.equal(field.value,'');
+  assert.deepEqual(result,{useUstat:true,teamId:'123',ft:2,bank:1.4,useManual:false});
+  assert.deepEqual(await loadCfg(),result);
+  const stored=JSON.parse(globalThis.localStorage.getItem(K_CFG));
+  assert.equal(stored.version,CONFIG_STATE_VERSION);
+  assert.equal(Object.prototype.hasOwnProperty.call(stored.preferences,'oddsKey'),false);
+  assert.equal(JSON.stringify(stored).includes('sentinel'),false);
 });
