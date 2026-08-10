@@ -20,11 +20,11 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-PR #104 is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, which is the current `main`. Data Architecture D1 remains an approved future design only.
+Post-A3 Checkpoint 0 is merged through PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb`, which is the current `main`. Data Architecture D1 remains an approved future design only.
 
-The current work is post-A3 Checkpoint 0 housekeeping: automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation, and an investigation of duplicate manual-squad handlers whose correction is proposed but not approved. `fpl:calib` is deliberately excluded from this housekeeping implementation.
+The current work is the separate narrow **0C manual-squad dead-handler cleanup**, explicitly approved for implementation after Checkpoint 0C's investigation established that the legacy per-button listeners are unreachable. See [Post-A3 0C cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md). `fpl:calib` is deliberately excluded from it.
 
-The next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is separately model-gated. A3 error-boundary separation follows it. Neither is pre-approved.
+After 0C is merged and verified, the next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is separately model-gated. A3 error-boundary separation follows it. Neither is pre-approved.
 
 ## Completed before the current sequence
 
@@ -36,7 +36,7 @@ The next checkpoint is **`fpl:calib` compatibility and resilience**, which begin
 
 Nothing below item 1 is approved for implementation. Each entry begins with investigation and design, and each requires explicit owner approval before any code is written.
 
-1. **Post-A3 Checkpoint 0 housekeeping — current.** Automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
+1. **Post-A3 Checkpoint 0 housekeeping — complete and merged through PR #105.** Automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). Its 0C investigation produced the separately approved cleanup described below, which is the current work.
 2. **`fpl:calib` compatibility and resilience — next.** Investigation and design first. This checkpoint is **separately model-gated**: `fpl:calib` feeds projections, so any change to how a legacy calibration record is accepted, rejected or identified crosses the model approval gate and requires the full existing/proposed behaviour, inputs, fallbacks, assumptions, limitations, trade-offs and validating-evidence presentation before approval. A3 cache and persistence resilience deliberately left `fpl:calib` untouched; [PERSIST-4](KNOWN_LIMITATIONS.md) records that gap and is **retained as open until this checkpoint completes**. No implementation is approved.
 3. **A3 error-boundary separation — after `fpl:calib`.** Investigation and design first. Not pre-approved.
 4. **Production-bundle safeguards.**
@@ -45,13 +45,13 @@ Nothing below item 1 is approved for implementation. Each entry begins with inve
 7. **Small stale-code cleanup and remaining reviewed deletion work.**
 8. **A3 documentation and architecture closeout.**
 
-### Separate proposed narrow checkpoint — duplicate manual-squad handler correction
+### Separate approved narrow checkpoint — duplicate manual-squad handler correction (0C)
 
-Recorded here as its own candidate so it is **not** absorbed into item 2 or item 3. It is **proposed only, not approved and not scheduled**, and it is deliberately unnumbered because its position in the sequence has not been decided.
+Recorded here as its own candidate so it is **not** absorbed into item 2 or item 3. Pritesh explicitly approved this narrow implementation after Checkpoint 0 merged. It remains deliberately unnumbered because it is a small intervening cleanup rather than a new A3 remediation item.
 
 Post-A3 Checkpoint 0C established, with empirical evidence, that the per-button manual-squad add and remove listeners in `src/ui/views.mjs` are unreachable, because `src/ui/manual-squad-runtime.mjs` installs a capture-phase document listener on the same selectors and calls `stopImmediatePropagation()`. The dead path omits the position, club and budget checks and the FPL-T1 optimiser deferral, so it is a latent hazard rather than a live defect. The proposed correction removes the dead listeners, leaves `manual-squad-runtime.mjs` as the single owner, and adds a regression test proving the validating implementation runs.
 
-It touches manual-squad handling and therefore sits inside the squad-legality approval boundary. Full findings and the proposal are in [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
+It touches manual-squad handling and therefore sits inside the squad-legality approval boundary. The original findings are in [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md); the approved implementation, its test-ownership judgement call and its verification are in [Post-A3 0C cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md).
 
 ## Deferred beyond the current sequence
 

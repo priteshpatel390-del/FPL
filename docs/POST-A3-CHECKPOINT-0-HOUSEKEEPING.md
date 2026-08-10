@@ -1,10 +1,10 @@
 # Post-A3 Checkpoint 0 — housekeeping
 
-Status: implementation candidate on `claude/teamsheet-post-a3-closeout-crqojj`. Items 0A and 0B are implemented. Item 0C is **investigation only**; its proposed correction is not implemented and is not approved.
+Status: complete and merged through PR #105 at `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`. Items 0A and 0B are complete; 0A was proven by the automatic push-triggered Verify Teamsheet run #110 / `31383479683` on the exact merge commit. Item 0C was **investigation only** in this checkpoint. Its correction was subsequently approved by Pritesh and is implemented separately in [Post-A3 0C manual-squad dead-handler cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md).
 
-Baseline: GitHub `main` `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, merge of A3 cache and persistence resilience PR #104.
+Baseline for this historical checkpoint: GitHub `main` `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, merge of A3 cache and persistence resilience PR #104.
 
-This checkpoint is deliberately small. It changes no application runtime source. It touches continuous integration configuration, tests and documentation only.
+This checkpoint was deliberately small. It changed no application runtime source. It touched continuous integration configuration, tests and documentation only.
 
 ## 0A — Verify Teamsheet did not automatically verify `main`
 

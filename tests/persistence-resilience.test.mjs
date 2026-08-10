@@ -397,9 +397,18 @@ test('forgetting the Odds key decodes and rewrites the versioned config through 
 });
 
 test('manual squad builder has no unchecked squad persistence path',()=>{
-  const source=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
-  const manual=source.slice(source.indexOf('function renderManual()'),source.indexOf('/* ---------------------------------------------------------------------\n   RENDER + WIRING'));
+  // The manual-squad add/remove interaction is owned solely by the capture-phase
+  // runtime, so this guard follows the persistence to its live owner. The views
+  // builder must hold no squad-persistence path of its own, checked or unchecked.
+  const views=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
+  const manual=views.slice(views.indexOf('function renderManual()'),views.indexOf('/* ---------------------------------------------------------------------\n   RENDER + WIRING'));
   assert.doesNotMatch(manual,/\bsset\(K_SQUAD/);
-  assert.equal((manual.match(/ssetVerified\(K_SQUAD/g)||[]).length,2);
-  assert.match(manual,/const persisted = await ssetVerified\(K_SQUAD, S\.manual\);[\s\S]*if\(persisted\.ok\) await saveCfg\(\);/);
+  assert.equal((manual.match(/ssetVerified\(K_SQUAD/g)||[]).length,0);
+
+  const runtime=readFileSync(new URL('../src/ui/manual-squad-runtime.mjs',import.meta.url),'utf8');
+  assert.doesNotMatch(runtime,/\bsset\(K_SQUAD/);
+  assert.equal((runtime.match(/ssetVerified\(K_SQUAD/g)||[]).length,2);
+  assert.match(runtime,/persist:value=>ssetVerified\(K_SQUAD,value\)/);
+  assert.match(runtime,/const persistence=await ssetVerified\(K_SQUAD,S\.manual\)/);
+  assert.match(runtime,/const squadPersistence=await manualPersistenceCall\(persist,manual\);[\s\S]*?const configurationPersistence=squadPersistence\.ok[\s\S]*?await manualPersistenceCall\(saveConfiguration\)/);
 });

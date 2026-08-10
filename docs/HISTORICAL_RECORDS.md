@@ -27,7 +27,8 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## Current operational and acceptance records
 
-- [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) — automatic `main` verification, post-merge documentation reconciliation and the duplicate manual-squad handler investigation; the 0C correction is proposed only.
+- [Post-A3 0C manual-squad dead-handler cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md) — owner-approved removal of the proven-unreachable per-button manual-squad listeners; the validating capture-phase runtime remains the sole interaction owner.
+- [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) — automatic `main` verification, post-merge documentation reconciliation and the duplicate manual-squad handler investigation; merged through PR #105, with the 0C correction approved and implemented separately.
 - [A3 cache and persistence resilience](A3-CACHE-PERSISTENCE-RESILIENCE.md) — browser-side cache/persistence compatibility, verified user-owned writes and session-only persistence warnings; merged through PR #104.
 - [Data Architecture D1](DATA-ARCHITECTURE-D1.md) — approved historical/live persistence design; implementation remains deferred.
 - [DTR-1 direct Team renderer](DTR-1-DIRECT-TEAM-RENDERER.md) — current implementation and pending physical-acceptance record.
