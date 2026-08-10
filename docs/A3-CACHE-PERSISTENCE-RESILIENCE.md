@@ -1,8 +1,8 @@
 # A3 — Cache and Persistence Resilience
 
-Status: implementation candidate for PR #104 on `agent/a3-cache-persistence-resilience`; owner-approved implementation scope, corrected after independent review, not approved for merge and not marked ready for review.
+Status: **complete and merged** through PR #104 at `main` `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, from reviewed head `4e434b940e2bcb473374573db5da16f6a645d9eb`. Owner-approved implementation scope, corrected after independent review, explicitly approved for merge on 10 August 2026. Physical iPhone Safari testing was **explicitly waived by Pritesh**; none was performed and none is claimed.
 
-Baseline: GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043` (PR #103 merge), accepted baseline 803 tests with deterministic/provenance gates and physical iPhone Safari acceptance.
+Baseline it was built on: GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043` (PR #103 merge), accepted baseline 803 tests with deterministic/provenance gates and physical iPhone Safari acceptance. Final evidence: 832 tests, 0 failed, with permanent Verify Teamsheet run #105 / `31377157889` on the reviewed head.
 
 ## Scope
 

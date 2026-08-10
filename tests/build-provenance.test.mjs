@@ -36,3 +36,30 @@ test('CI verifies committed provenance before any test build overwrites generate
   const suite = workflow.indexOf('./run-tests.sh');
   assert.ok(provenance > -1 && suite > -1 && provenance < suite);
 });
+
+test('CI verifies every merge commit on main, not only pull-request heads', () => {
+  const workflow = readFileSync('.github/workflows/verify.yml', 'utf8');
+  const triggers = workflow.slice(workflow.indexOf('\non:'), workflow.indexOf('\npermissions:'));
+  assert.match(triggers, /^\s*pull_request:/m);
+  assert.match(triggers, /^\s*push:\s*\n\s*branches:\s*\n\s*-\s*main\s*$/m);
+  assert.match(triggers, /^\s*workflow_dispatch:/m);
+});
+
+test('only pull-request verifications are cancellable, so no permanent record is destroyed', () => {
+  const workflow = readFileSync('.github/workflows/verify.yml', 'utf8');
+  // A push to main and a manual run share the refs/heads/main concurrency
+  // group, so neither may cancel: either one cancelling would discard the
+  // other's permanent verification of an exact revision.
+  assert.match(workflow, /cancel-in-progress:\s*\$\{\{\s*github\.event_name\s*==\s*'pull_request'\s*\}\}/);
+  assert.doesNotMatch(workflow, /cancel-in-progress:\s*true/);
+});
+
+test('the verified revision resolves to the merge commit on a push to main', () => {
+  const workflow = readFileSync('.github/workflows/verify.yml', 'utf8');
+  // github.sha is the merge commit for a push event, and the pull-request head
+  // otherwise, so both trigger paths verify the exact revision they name.
+  const fallbacks = workflow.match(/github\.event\.pull_request\.head\.sha \|\| github\.sha/g) || [];
+  assert.equal(fallbacks.length, 2);
+  assert.match(workflow, /BUILD_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
+  assert.match(workflow, /test "\$\(git rev-parse HEAD\)" = "\$BUILD_COMMIT"/);
+});
