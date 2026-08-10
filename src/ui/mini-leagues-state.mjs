@@ -88,7 +88,19 @@ function migrateMiniLeagueState({stored,legacyConfig,legacyLeagues,entry}={}){
   const discovered=entryClassicLeagues(entry);
   return normaliseMiniLeagueState({saved:discovered,selectedLeagueId:discovered[0]?.id||''});
 }
-function syncMiniLeagueAlias(){ S.leagues=S.miniLeagues.saved; }
+
+/* `S.miniLeagues` is the only writable runtime preference representation.
+   `S.leagues` remains as a read-only compatibility bridge for legacy readers;
+   assigning to it cannot replace canonical preferences after initialisation. */
+function installMiniLeagueAlias(){
+  Object.defineProperty(S,'leagues',{
+    enumerable:true,
+    configurable:true,
+    get(){ return Array.isArray(S.miniLeagues?.saved) ? S.miniLeagues.saved : []; },
+    set(){ /* legacy compatibility writes are intentionally ignored */ }
+  });
+}
+function syncMiniLeagueAlias(){ return S.leagues; }
 async function persistMiniLeagueState(options={}){
   const state=normaliseMiniLeagueState(S.miniLeagues);
   S.miniLeagues=state;
@@ -168,5 +180,5 @@ function miniLeaguePinnedRivals(leagueId){ return normaliseMiniLeagueState(S.min
 function miniLeagueComparisonRivals(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).comparisonRivalsByLeague[miniLeagueId(leagueId)]||[]; }
 
 S.miniLeagues=emptyMiniLeagueState();
-S.leagues=[];
+installMiniLeagueAlias();
 export { MINI_LEAGUE_STATE_VERSION, K_MINI_LEAGUES, MAX_PINNED_RIVALS, MAX_COMPARISON_RIVALS, miniLeagueId, miniLeagueRecord, miniLeagueRivalRecord, uniqueRivalRecords, normaliseMiniLeagueState, miniLeagueStoredCompatibility, entryClassicLeagues, migrateMiniLeagueState, initMiniLeagueState, mergeDiscoveredMiniLeagues, persistMiniLeagueState, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, rememberLeague, selectMiniLeague, removeMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, setMiniLeagueComparisonRivals, clearMiniLeagueComparisonRivals, miniLeagueSelectedRivalId, miniLeaguePinnedRivals, miniLeagueComparisonRivals };

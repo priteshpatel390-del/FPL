@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { S, SHARED_STATE_KEYS, REFRESH_OWNED_KEYS } from '../src/state.mjs';
+import '../src/ui/mini-leagues-state.mjs';
 
 const SRC_ROOT=fileURLToPath(new URL('../src/',import.meta.url));
 
@@ -44,4 +45,22 @@ test('shared state inventory matches S and contains every refresh-owned slot',()
   const declared=new Set(SHARED_STATE_KEYS);
   const missing=REFRESH_OWNED_KEYS.filter(key=>!declared.has(key));
   assert.deepEqual(missing,[],'refresh ownership must remain an explicit subset of shared state');
+});
+
+test('legacy Mini-League alias cannot replace canonical runtime preferences',()=>{
+  const canonical={
+    version:3,
+    season:'2026-27',
+    selectedLeagueId:'123',
+    selectedRivalByLeague:{},
+    comparisonRivalsByLeague:{},
+    saved:[{id:'123',name:'Canonical',primary:false}],
+    pinnedRivals:{}
+  };
+  S.miniLeagues=canonical;
+  const legacy=[{id:'999',name:'Legacy',primary:false}];
+  S.leagues=legacy;
+  assert.equal(S.miniLeagues,canonical,'legacy compatibility writes must not replace the canonical object');
+  assert.equal(S.leagues,canonical.saved,'the alias must always read from canonical saved leagues');
+  assert.notEqual(S.leagues,legacy,'the attempted legacy write must remain non-authoritative');
 });
