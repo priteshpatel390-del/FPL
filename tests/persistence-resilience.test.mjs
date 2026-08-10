@@ -6,11 +6,11 @@ import {
   K_CFG,K_SQUAD,K_CACHE,
   MAIN_CACHE_VERSION,CONFIG_STATE_VERSION,MANUAL_SQUAD_STATE_VERSION,
   MAIN_CACHE_RECORD_TYPE,MANUAL_SQUAD_RECORD_TYPE,
-  sget,sgetResult,ssetChecked,ssetVerified,loadCfg,
+  sget,sgetResult,ssetChecked,ssetVerified,loadCfg,saveCfg,
   mainCacheEnvelope,decodeMainCacheRecord,legacyMainCacheMatchesSeason,
   manualSquadEnvelope,decodeManualSquadRecord,configEnvelope,decodeConfigRecord,
   preserveManualModeForPersistence,setManualSquadPersistenceReady,isManualSquadPersistenceReady,
-  clearPersistenceWarning
+  clearPersistenceWarning,persistenceWarningSnapshot
 } from '../src/storage.mjs';
 import { S } from '../src/state.mjs';
 import {
@@ -45,10 +45,31 @@ function previousCachePayload(){
   ],teams:[],element_types:[],elements:[],fixtures:[]};
 }
 function resetStorage(){
+  delete globalThis.document;
   globalThis.window={};
   globalThis.localStorage=new MemoryStorage();
   setManualSquadPersistenceReady(true);
-  for(const scope of ['cache','configuration','manual-squad','mini-leagues']) clearPersistenceWarning(scope);
+  for(const scope of ['cache','configuration','configuration-compatibility','manual-squad','mini-leagues']) clearPersistenceWarning(scope);
+}
+function manualToggleDocument(checked=true){
+  const useManual={checked};
+  globalThis.document={getElementById:id=>id==='useManual'?useManual:null};
+  return useManual;
+}
+function configurationDocument(){
+  const fields={
+    teamId:{value:''},ftCount:{value:'1'},bankIn:{value:'0'},useManual:{checked:false},useUstat:{checked:false},
+    trHorizon:{value:'7'},trTop:{value:'9'},oddsKey:{value:'local-key'}
+  };
+  const nodes={};
+  const main={prepend(node){nodes[node.id]=node;}};
+  globalThis.document={
+    getElementById(id){return fields[id]||nodes[id]||null;},
+    createElement(){return {id:'',className:'',hidden:false,textContent:'',setAttribute(){}};},
+    querySelector(selector){return selector==='main'?main:null;},
+    body:main
+  };
+  return {fields,nodes};
 }
 test.beforeEach(resetStorage);
 
@@ -151,6 +172,25 @@ test('current config restores account fields while a previous-season account is 
   assert.deepEqual(decoded.config,{useUstat:true});
 });
 
+test('compatibility warning survives the automatic successful configuration save and remains visible after startup',async()=>{
+  globalThis.localStorage.setItem(K_CFG,JSON.stringify({
+    teamId:'1234567',ft:4,bank:1.7,useManual:true,useUstat:false,transferHorizon:7,transferResults:9,oddsKey:'local-key'
+  }));
+  const dom=configurationDocument();
+  const cfg=await loadCfg();
+  assert.deepEqual(cfg,{useUstat:false,transferHorizon:7,transferResults:9,oddsKey:'local-key'});
+  assert.match(persistenceWarningSnapshot()['configuration-compatibility'],/Older unversioned team\/account values/);
+  assert.equal(dom.nodes.persistenceStatus.hidden,false);
+  assert.match(dom.nodes.persistenceStatus.textContent,/Older unversioned team\/account values/);
+
+  const result=await saveCfg();
+  assert.equal(result.ok,true);
+  assert.equal(persistenceWarningSnapshot().configuration,undefined);
+  assert.match(persistenceWarningSnapshot()['configuration-compatibility'],/Older unversioned team\/account values/);
+  assert.equal(dom.nodes.persistenceStatus.hidden,false);
+  assert.match(dom.nodes.persistenceStatus.textContent,/Older unversioned team\/account values/);
+});
+
 test('manual-mode persistence preserves the prior durable flag while a squad write is unresolved',()=>{
   const current={teamId:'1',ft:1,bank:0,useManual:true,useUstat:true};
   assert.equal(preserveManualModeForPersistence(current,{useManual:false},false).useManual,false);
@@ -167,6 +207,23 @@ test('manual squad writes are versioned and season-bound',async()=>{
   assert.equal(stored.season,FPL_RULES.season);
   assert.deepEqual(await sget(K_SQUAD),squad);
   assert.equal(isManualSquadPersistenceReady(),true);
+});
+
+test('missing manual squad disables restored manual mode for the session and falls back safely',async()=>{
+  const toggle=manualToggleDocument(true);
+  assert.equal(await sget(K_SQUAD),null);
+  assert.equal(toggle.checked,false);
+  assert.equal(isManualSquadPersistenceReady(),false);
+  assert.match(persistenceWarningSnapshot()['manual-squad'],/Manual team mode was disabled/);
+});
+
+test('rejected legacy manual squad disables restored manual mode for the session',async()=>{
+  globalThis.localStorage.setItem(K_SQUAD,JSON.stringify([{id:1,bought:45}]));
+  const toggle=manualToggleDocument(true);
+  assert.equal(await sget(K_SQUAD),null);
+  assert.equal(toggle.checked,false);
+  assert.equal(isManualSquadPersistenceReady(),false);
+  assert.match(persistenceWarningSnapshot()['manual-squad'],/Manual team mode was disabled/);
 });
 
 test('legacy and previous-season manual squads fail closed',async()=>{
