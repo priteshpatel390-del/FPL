@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Check out exact revision
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
@@ -78,7 +78,7 @@ jobs:
           node --input-type=module -e "import {readFileSync} from 'node:fs'; import {hashBuildInputs} from './build-utils.mjs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); if(m.buildInputHash!==hashBuildInputs(m.moduleOrder)) throw new Error('manifest build-input mismatch'); console.log('Manifest identity verified:',m.commit,m.buildInputHash);"
 
       - name: Preserve verified production outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: teamsheet-production-${{ env.BUILD_COMMIT }}
           path: |
