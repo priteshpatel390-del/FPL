@@ -58,18 +58,23 @@ Last reconciled: 2026-08-09. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository and application checkpoint is DTR-1 PR #99 at `09e595c275b4f3614c09fb502291de6831813999`. The iPhone form-focus zoom correction is the current unmerged presentation candidate.
+The latest merged repository and application checkpoint is PR #103 at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. A3 cache and persistence resilience is the current unmerged candidate.
 
-- exact reviewed PR #99 source: `a15443f3de889561fd301c4aa1792d19f7b21c83`
-- exact PR #99 generated head: `b45f89baf45e12de09cdb1ad34826756e9e5378b`
-- permanent Verify Teamsheet run: `31301475598`, completed successfully
-- merged complete suite: **691 tests, 691 passed, 0 failed, 0 skipped, 0 cancelled**
-- DTR-1 production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build
-- form-focus candidate: **693 tests, 693 passed, 0 failed, 0 skipped, 0 cancelled** locally
-- `iphone-form-focus-zoom.test.mjs` adds two source contracts; no existing test or golden expectation is removed, weakened, regenerated or skipped
+- merged `main` complete suite: **803 tests, 803 passed, 0 failed, 0 skipped, 0 cancelled**
+- exact PR #103 source: `646eee13960c343fbe07e3a76496717fd9837c0e`; generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`
+- permanent Verify Teamsheet run #90 / `31356255017`, completed successfully on the exact generated head
+- merged production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build
+- A3 persistence candidate: **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled** locally
+- `persistence-resilience.test.mjs` adds cache/config/manual-squad/Mini-League compatibility, verified-write and authoritative-backend regressions; no existing test or golden expectation is removed, weakened, regenerated or skipped
 - model, calculation, provider identity/endpoint and data-source behaviour: unchanged
 
-PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
+Earlier baselines in this file are retained as historical records and are superseded by the figures above. PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
+
+### A3 persistence coverage
+
+`tests/persistence-resilience.test.mjs` proves the browser persistence contracts directly rather than through the bundle: the versioned main-cache envelope, previous-season and unsupported-schema rejection, narrow deadline-verified legacy acceptance, malformed JSON, failed replacement preserving the previous durable bytes, legacy configuration migration with account-state removal, manual-squad version/season fail-closed behaviour, squad-before-config write ordering, Mini-League version/season rejection and version-safe Odds-key removal.
+
+It also fixes the authoritative-backend durability contract. When a storage manager is selected, the read order only consults `localStorage` if the manager read is itself unusable, so a fallback written after a manager write failure can be permanently unreadable. Coverage therefore separates two cases that are not the same contract: a manager that fails to write but can still read is a reported persistence failure with no divergent local copy written, while a wholly unusable manager keeps its existing genuinely restorable `localStorage` fallback. The pre-existing Atomic Foreground Refresh contract that `ssetChecked` falls through to `localStorage` when the manager is unavailable is retained unchanged.
 
 Transfers, Player Detail, Team and Fixtures have populated iPhone acceptance evidence for their tested paths. Leagues has pre-season physical acceptance; post-Gameweek populated checks are deliberately deferred. VoiceOver is not a Teamsheet acceptance gate.
 

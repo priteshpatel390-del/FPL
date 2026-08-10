@@ -115,6 +115,16 @@ The shell creates explicit hosts for outcome, metric, review, export, recovery, 
 
 Player Explorer retains the same filters, projection ordering and Player Detail controller. CSS presents its existing rows as stacked cards on narrow screens. Help & About reads public `BUILD_INFO` fields and documents existing recommendation, uncertainty, privacy and operational boundaries without introducing state or network access.
 
+## Browser persistence boundary
+
+`src/storage.mjs` owns every durable browser record other than the Stage 10 evidence stores. Persistence is a separate concern from data acquisition: a local write failure is a local persistence failure and never changes Official FPL or optional-provider health.
+
+Records carry explicit compatibility identity. The main `fpl:cache` is written as a `teamsheet.main-fpl-cache` envelope with a cache version, the repository schema version, the exact `FPL_RULES.season` and a fetched timestamp; the immediately preceding raw shape is accepted only when its Official FPL event deadlines establish the current season. `fpl:config` version 1 separates season-independent preferences from a season-owned account section. `fpl:squad` version 1 and `fpl:mini-leagues` version 3 are season-owned and fail closed. Incompatible records are rejected before application state is mutated rather than promoted to current data. `fpl:calib` is deliberately unchanged and remains behind the model approval gate.
+
+Three write surfaces exist and are not interchangeable. `sset()` is the untouched legacy fire-and-forget writer. `ssetChecked()` is the refresh persistence surface: it reports serialisation and browser write outcomes so the Atomic Foreground Refresh phase can classify `persist_failed`. `ssetVerified()` is the user-owned surface: it writes and reads the value back, so success means the record is actually restorable.
+
+Both reporting surfaces respect backend authority. When a storage manager is selected it owns both the write and the subsequent read, and the read order only consults `localStorage` when the manager read is itself unusable. A `localStorage` fallback is therefore attempted only when it is the backend the next read will use; otherwise the write is reported as a failure and no divergent copy is created. A failed user-owned write leaves the change active for the current session and raises a persistence warning stating that it may revert after reload.
+
 ## Provider Health and storage
 Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Core Official FPL freshness remains the FPL row's primary state; R1 adds a separate detailed-minute age/cache-use detail so optional history failure cannot mislabel a current core feed.
 
@@ -200,7 +210,7 @@ The durable route remains `#/transfers`. `src/ui/transfer-optimiser-view.mjs` is
 
 ## Teamsheet 2.0.4 Mini-League boundary
 
-`src/ui/mini-leagues-state.mjs` owns version-1 local selection state only: selected league, saved/primary leagues, selected rival and at most five pinned rival identifiers per league. It migrates the previous `fpl:config.leagueId` and `fpl:leagues` records deterministically. Standings, points and rival squads remain session-only and are not written to persistent storage or Stage 10 evidence.
+`src/ui/mini-leagues-state.mjs` owns local selection state only: selected league, saved/primary leagues, selected rival and at most five pinned rival identifiers per league. It migrates the previous `fpl:config.leagueId` and `fpl:leagues` records deterministically. The record is now version 3 and season-owned; a version-1/2 or season-mismatched record is not promoted, and current Official FPL league membership is rediscovered instead. Standings, points and rival squads remain session-only and are not written to persistent storage or Stage 10 evidence.
 
 `src/ui/mini-leagues-view.mjs` owns `#/leagues`, `#/leagues/standings`, `#/leagues/rival` and `#/leagues/manage`. Routes contain no league or manager identifier. The view consumes the existing Official FPL transport and validators, loads page 1 plus pages surrounding the manager's official membership rank, and loads further standings only on request. Rival public picks are fetched one selected manager at a time. Points gaps and squad overlap are simple arithmetic/set derivations from official fields; no rank prediction, differential score, protect/chase strategy or model recommendation is introduced.
 

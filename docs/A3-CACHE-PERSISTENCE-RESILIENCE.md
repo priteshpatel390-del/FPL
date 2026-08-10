@@ -1,6 +1,6 @@
 # A3 — Cache and Persistence Resilience
 
-Status: implementation candidate on `agent/a3-cache-persistence-resilience`; owner-approved implementation scope, not approved for merge.
+Status: implementation candidate for PR #104 on `agent/a3-cache-persistence-resilience`; owner-approved implementation scope, corrected after independent review, not approved for merge and not marked ready for review.
 
 Baseline: GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043` (PR #103 merge), accepted baseline 803 tests with deterministic/provenance gates and physical iPhone Safari acceptance.
 
@@ -74,11 +74,23 @@ The accepted ordering remains collection → synchronous atomic commit → rende
 
 `src/main.mjs` is unchanged by this checkpoint.
 
+## Independent-review correction — authoritative backend durability
+
+An independent review of the first candidate found one real persistence defect and it is corrected in this checkpoint.
+
+`src/storage.mjs` reads through `rawStoredText()`, which asks the storage manager first and only consults `localStorage` when the manager read itself throws. The original `ssetChecked()` and `ssetVerified()` fell through to `localStorage` whenever the manager *write* failed and then reported success. When a manager can still serve reads but not writes, that fallback creates a copy no later read can ever return, reported as a durable save — and for `useManual` sequencing a false squad success could durably enable manual-team mode.
+
+The correction makes both surfaces respect the real read order. After a manager failure they probe which backend the next read will use. The `localStorage` fallback is attempted, and reported as saved, only when `localStorage` is that backend; otherwise the operation is reported as a persistence failure and no divergent copy is written.
+
+The coarser alternative — treating any manager failure as a persistence failure — was rejected on repository evidence. It broke the merged Atomic Foreground Refresh contract (`tests/atomic-foreground-refresh.test.mjs`, case 76) that `ssetChecked` falls through to `localStorage` when the manager is unavailable. That contract is legitimate: when the manager cannot serve reads either, the `localStorage` copy genuinely is restorable, so reporting success is factually correct. The two situations are different persistence contracts and both are now covered.
+
+New reason codes `manager_write_failed` (checked surface) and `manager_unverified` (verified surface) are internal classification only; no user-facing copy exposes them.
+
 ## Validation
 
-Final reviewed source/test head for local validation: `3b6dc0f12ed239381f94f320644621560bd38047`.
+Final source/test commit: `502a1f7ac0e0456743f3ddb0695433decf8976d1`. Generated-only child: `02216b8`.
 
-All **823 candidate test cases passed locally**. The execution sandbox cannot complete the CPU-heavy `transfer-exact-correction.test.mjs` as one process within its short command ceiling, so its ten unchanged subtests were executed in bounded name-pattern groups; all ten passed. No test was skipped, deleted or weakened. The other 69 test files ran in bounded complete-file batches, including the two exact-transfer performance/scale files.
+The complete suite passes **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled** through `./run-tests.sh` as a single run. No test was skipped, deleted or weakened, and no golden expectation changed.
 
 Focused persistence coverage includes:
 
@@ -90,25 +102,30 @@ Focused persistence coverage includes:
 - storage-manager read fallback;
 - local storage unavailable;
 - quota/write and read-back verification failure;
+- a selected storage manager owning the verified write and the reload read;
+- a manager write failure never being reported as a verified `localStorage` success, with the previous durable bytes intact and no divergent copy written;
+- the previous durable squad still reloading after an unrestorable manager write;
+- a manager cache write failure reported as `persist_failed` rather than a divergent local copy;
+- a wholly unusable manager still falling back to a genuinely restorable local write;
+- an authoritative-manager squad failure being unable to durably enable manual mode;
 - legacy configuration migration and season-account rejection;
 - manual-squad version/season rejection;
 - manual squad write failure and config sequencing;
 - removal of unchecked manual-squad builder writers;
 - Mini-League version/season rejection and failed write preservation;
 - version-safe Odds-key removal;
-- existing Atomic Refresh persistence/error-boundary regressions.
+- existing Atomic Refresh persistence/error-boundary regressions, retained unchanged.
 
-Two exact-identity production builds were byte-identical with `BUILD_COMMIT=3b6dc0f12ed239381f94f320644621560bd38047`. Root `index.html` equals `dist/index.html`. Manifest build identity matched the current build inputs.
+Committed build provenance verified from reachable source `502a1f7ac0e0456743f3ddb0695433decf8976d1`. Two exact-identity production builds were byte-identical, root `index.html` equals `dist/index.html`, and manifest build identity matched the build inputs.
 
-Validated hashes:
+Validated hashes for the committed deployables:
 
-- build-input hash: `be1d47badfff0ad625566a0bdda55656245fa89d4c9ed3045782bf9cefd0216d`;
-- source hash: `41799cb5ac38e6f7945d90bdb0e975adce1d09c8f8dc692269fa7b4a270ee772`;
-- `dist/app.bundle.js`: `0c159173e13a40bc7328cee651d532bf20ce63cabc1e637ad91546a1f78f9348`;
-- `dist/index.html` / root `index.html`: `0bac7afece9ce33789dc6be66081487973d810d20a7028ee2b1aa355529e5f8e`;
-- `dist/manifest.json`: `edf63befeea6c2767e720d6c909f513113ba8c9f2c5e74c80bc5a741d9ad420d`.
+- build-input hash: `da6f316b0d14c0ac72ed5e96db3811bf0e1f137b3cfd993b921a23177fd96f6b`;
+- `dist/app.bundle.js`: `ccf9044847de26861f1b05993df95457f74e079111cda8a285dc4687e5a34e01`;
+- `dist/index.html` / root `index.html`: `fa3e25be9fc6985f66f910d5a3a164cc952a8fb51b12027a40f979eb77c154be`;
+- `dist/manifest.json`: `51f32fd402191d625afc97a387c598d2961965db21ebd4b1d7c5ba3bf8d4a7b0`.
 
-Permanent GitHub Actions provenance/full-suite verification is still required on the final generated head before review can be considered complete.
+Permanent Verify Teamsheet must pass on the exact final PR head; earlier runs on superseded heads do not discharge that gate.
 
 ## Explicit exclusions
 
@@ -120,11 +137,9 @@ No changes were made to projection formulas, expected minutes, scoring, fixtures
 
 Before merge consideration:
 
-1. commit the generated outputs produced from source/test head `3b6dc0f12ed239381f94f320644621560bd38047` as a generated-only commit;
-2. update affected canonical summary/roadmap documentation as needed;
-3. open a draft PR;
-4. obtain permanent GitHub Actions full-suite, deterministic-build, root/deployable, build-identity and reachable-provenance success on the exact generated head;
-5. perform any physical iPhone Safari check warranted by the new failure-only persistence warning UI;
-6. obtain explicit owner approval before merge.
+1. permanent GitHub Actions full-suite, deterministic-build, root/deployable, build-identity and reachable-provenance success on the exact final PR head;
+2. independent review of the final diff;
+3. an owner decision on whether the failure-only persistence warning warrants a physical iPhone Safari check;
+4. explicit owner approval before merge.
 
-No merge is approved by this document.
+No merge is approved by this document. No physical device testing has been performed for this checkpoint.

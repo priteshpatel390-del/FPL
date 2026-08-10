@@ -99,6 +99,19 @@ Hindsight comparisons are labelled and have no recommendation pathway. No compos
 ## Stage 10.5 storage and import hardening
 Untrusted JSON now rejects prototype-bearing keys before canonicalisation. Metric and transfer validators enforce supported versions, exact public shapes, identity consistency and forbidden-evidence checks. Diagnostic text strips queries/fragments, numeric manager/league paths and raw or encoded secret-shaped values. Phase journals may complete only a hash-verified local transaction; imports and unproven orphans remain recovery-only. CSV text beginning with line-feed and other formula-control prefixes is neutralised while genuine numeric negatives remain numeric.
 
+## A3 user-persistence boundary
+
+User-owned browser records are fail-closed on identity and verified on write.
+
+- Season/version ownership is required before a stored record is restored. The main `fpl:cache`, `fpl:config`, `fpl:squad` and `fpl:mini-leagues` records each carry an explicit version and, where the value belongs to a season, the exact current season. An unversioned, previous-season, unsupported-schema or malformed record is rejected before application state is mutated rather than being promoted to current data. This is a safety boundary, not only a compatibility one: stale account, squad or league state must never be presented as current.
+- User-owned writes are read back before being reported as saved. `ssetVerified()` writes and re-reads the record, so "saved" means restorable rather than merely attempted.
+- Backend authority is respected. When a storage manager is selected it owns both the write and the next read; `localStorage` is only consulted when the manager read is unusable. A fallback copy is therefore written only when it is the backend the next read will use, so a failed manager write cannot produce a divergent copy that is reported as durable but can never be read.
+- A failed write is disclosed, not swallowed. The change stays active for the current session and the app states that it may revert after reload. Local persistence failure is never attributed to Official FPL or an optional provider.
+- Ordering protects account state. A manual squad must persist successfully before configuration may durably record `useManual=true`, so a failed squad save cannot leave a durable manual-team setting pointing at stale or absent squad bytes.
+- Legacy migration drops rather than guesses. An unversioned configuration record contributes only season-independent preferences; its account state is discarded, and deprecated `claudeKey` material is removed during migration and never rewritten.
+
+`fpl:calib` is deliberately outside this boundary and remains behind the separate model approval gate.
+
 ## Teamsheet 2.0.4 League privacy boundary
 
 FPL league and manager identifiers are public endpoint identifiers but reveal user-specific competitive relationships when stored together. Teamsheet therefore keeps them out of hash routes, page titles, Provider Health detail, retry issue text and Stage 10 evidence. Versioned local persistence contains only selected/saved league IDs and labels plus selected/pinned rival IDs and labels. Official standings, scores and rival squads are session-only.
@@ -107,7 +120,7 @@ Requests remain read-only through the existing Official FPL transport. No cookie
 
 ## Teamsheet 2.0.5 selected-rival privacy boundary
 
-The version-2 Mini-League state may persist an explicitly confirmed comparison group of no more than five public rival IDs and locally displayed labels. It does not persist standings, scores, public picks, captaincy, chip state or derived exposure.
+The version-3 season-owned Mini-League state may persist an explicitly confirmed comparison group of no more than five public rival IDs and locally displayed labels. It does not persist standings, scores, public picks, captaincy, chip state or derived exposure.
 
 The new `#/leagues/exposure` route contains no league, manager, player, Team or Gameweek identifier. Public picks requests remain read-only through the existing Official FPL transport, use bounded concurrency and do not introduce authentication, cookies, account writes, a CSP origin or a provider. Raw rival identifiers remain excluded from Provider Health, Stage 10 evidence and endpoint diagnostics. Removing a league clears its selected comparison group locally.
 
