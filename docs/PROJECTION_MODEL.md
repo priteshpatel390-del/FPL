@@ -1,4 +1,9 @@
 # PROJECTION_MODEL.md — projection engine reference
+
+## 10 August 2026 — persisted calibration compatibility candidate
+
+PR #107 does not change the projection formula or any calibration factor. It changes only whether unverified persisted calibration may enter model state: all currently stored `fpl:calib` records fail closed, remain stored but inert, and the standard uncalibrated model is used. The existing `S.calib` multiplier semantics remain byte-unchanged for any future separately approved compatible activation path. The current walk-forward evaluation remains a historical diagnostic and does not produce or persist production calibration. This checkpoint makes no predictive-accuracy claim. Verified candidate head: `69e539647ae687f49605633505e7147da76125e2`, 842/842 tests.
+
 Purpose: precise record of the current deterministic projection engine, expected-minutes boundary and Stage 8 uncertainty layer.
 Audience: anyone touching model code. Last updated: 2026-07-29.
 Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.

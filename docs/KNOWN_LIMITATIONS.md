@@ -1,5 +1,10 @@
 # KNOWN_LIMITATIONS.md
 
+## 10 August 2026 — PERSIST-4 implementation candidate
+
+Draft PR #107 implements the approved fail-closed response to PERSIST-4: existing unverified `fpl:calib` bytes are preserved but are not restored into `S.calib`, so standard uncalibrated projections remain active. No safe legacy migration is claimed, no production calibration generator/methodology is added and no accuracy improvement is claimed. Candidate head `69e539647ae687f49605633505e7147da76125e2` passed the normal repository gate and 842 tests. PERSIST-4 remains formally open until PR #107 is explicitly approved, merged and `main` is verified.
+
+
 
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
@@ -102,7 +107,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | PERSIST-1 | A failed browser write may only survive for the current session | The change stays active and the app states explicitly that it was not saved; a reload returns the last durable value, the default or a rediscovered Official FPL value | By design of a local-only store | Accepted-labelled |
 | PERSIST-2 | Fail-closed compatibility can require the user to re-enter data | Unversioned, previous-season, unsupported-schema or malformed configuration, manual-squad and Mini-League records are dropped rather than guessed, so Team ID, resources, a manual squad or league selections may need re-entering after a season or schema change | By design; guessing season ownership is unsafe | Accepted-labelled |
 | PERSIST-3 | Durability is only as good as the browser backend | Verified writes prove a record is restorable at the moment it is written; they cannot prevent later eviction by the browser, private-mode clearing, quota pressure or device loss, and no server-side copy exists | D1/R2 design remains unimplemented | Open (gated) |
-| PERSIST-4 | `fpl:calib` is unchanged and remains outside this boundary | A legacy calibration record can still affect projections without carrying a current season/model identity; correcting it crosses the model approval gate | `fpl:calib` compatibility and resilience checkpoint — investigation/design first, separately model-gated, no implementation approved | Open (gated) — **retained until that checkpoint completes** |
+| PERSIST-4 | `fpl:calib` lacked a compatibility-owned restore contract | PR #107 candidate fails closed on every current unverified calibration record, preserves the stored bytes and keeps standard uncalibrated projections active; no production calibration methodology is introduced | `fpl:calib` compatibility and resilience — owner-approved implementation candidate | **Verified in draft PR #107; remains open until explicit merge approval and main verification** |
 | PERSIST-5 | The storage-manager persistence paths have no physical device evidence | Teamsheet itself never installs `window.storage`, so the authoritative-backend contracts are proven by automated tests against stub backends only, not on a host that provides one | Requires a host that supplies a storage manager | Open (evidence gap) |
 | REFRESH-7 | Fire-and-forget evidence, outcome and metrics consumers can straddle a commit and read mixed state | Not addressed by this checkpoint | Separate design | Open (gated) |
 | REFRESH-8 | No `online` event listener, so reconnection does not itself trigger recovery | Recovery still depends on the next `visibilitychange`/`pageshow` or manual Load data | Separate design | Open (gated) |

@@ -1,5 +1,10 @@
 # DATA_SOURCES.md
 
+## 10 August 2026 — calibration storage candidate
+
+In draft PR #107, `fpl:calib` no longer behaves like an unowned generic JSON record at restore. Every currently stored calibration record is treated as contract-unverified and cannot enter active model state; its bytes are preserved. No new external source, endpoint, archive, provider or acquisition cadence is introduced. The pinned 2025/26 vaastav walk-forward remains diagnostic-only. A future persisted production calibration requires a separately approved compatibility/methodology contract. Candidate verification: 842/842 tests and Verify Teamsheet run #123.
+
+
 ## Future historical persistence (approved design only)
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) approves D1 plus private R2 behind a separate data Worker as the future evidence platform. Only accepted normalised inputs actually used may be retained. Raw provider responses/HTML, Odds keys, keyed URLs and secrets must not be retained. Permanent Understat- or Odds-derived retention requires a separate provider-rights review. Google Sheets is downstream reporting only. No provider, endpoint, cadence or runtime acquisition behaviour changes under this decision.

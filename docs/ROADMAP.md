@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## 10 August 2026 — current checkpoint status
+
+`fpl:calib` compatibility and resilience has moved from investigation/design to an owner-approved, verified draft implementation in PR #107. The candidate fails closed on every current unverified calibration record, preserves stored bytes, keeps standard uncalibrated projections active, and does not introduce a production calibration generator or tune factors. Source `862eefc32b0edb070290ad9ce82d85b1123b0596` plus generated-only child `69e539647ae687f49605633505e7147da76125e2` passed 842 tests and normal Verify Teamsheet run #123. The checkpoint remains unmerged; PERSIST-4 closes only after owner-approved merge and main verification. A3 Error-Boundary Separation remains next and begins with investigation/design only.
+
+
 
 ## 10 August 2026 — A3 cache and persistence resilience is merged
 

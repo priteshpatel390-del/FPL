@@ -1,5 +1,10 @@
 # CLAUDE.md — onboarding for every future development session
 
+## 10 August 2026 — `fpl:calib` compatibility candidate
+
+Pritesh approved the model-gated fail-closed Package A. Draft PR #107 has source/tests/docs commit `862eefc32b0edb070290ad9ce82d85b1123b0596` and generated-only child `69e539647ae687f49605633505e7147da76125e2`. Verify Teamsheet run #123 passed the normal repository gate on the exact PR head; the source suite is 842 passed, 0 failed, 0 skipped, 0 cancelled. The candidate rejects every existing unverified `fpl:calib` record from active model state while preserving its bytes, uses standard uncalibrated projections, and keeps the Stage 7 walk-forward check diagnostic-only. No calibration values, raw model formula or production calibration methodology were added. PR #107 remains draft and must not be merged without Pritesh's explicit approval. PERSIST-4 is implemented and verified in the candidate but remains open until merge.
+
+
 ## 10 August 2026 — Post-A3 0C manual-squad dead-handler cleanup
 
 Post-A3 Checkpoint 0 PR #105 is merged at `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`. Checkpoint 0A's new automatic push trigger was proven immediately: Verify Teamsheet run #110 / `31383479683` ran on the exact merge commit and passed every stage, on an 835-test baseline.
