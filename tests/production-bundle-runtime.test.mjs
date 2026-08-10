@@ -55,7 +55,21 @@ globalThis.__PB_NORMALISE_ROUTE__ = normaliseTeamsheetRoute;
   const relativeTarget = `dist/.production-bundle-runtime-${process.pid}.js`;
   writeFileSync(relativeTarget, runtimeBundle);
   const previousTarget = process.env.APP_TARGET;
+  const previousTimers = {
+    setTimeout: globalThis.setTimeout,
+    clearTimeout: globalThis.clearTimeout,
+    setInterval: globalThis.setInterval,
+    clearInterval: globalThis.clearInterval
+  };
   process.env.APP_TARGET = relativeTarget;
+
+  // The production suffix installs browser scheduling hooks. This probe only
+  // verifies synchronous bundle wiring, so inert timers prevent those hooks
+  // from keeping the Node test process alive after the assertions complete.
+  globalThis.setTimeout = () => 0;
+  globalThis.clearTimeout = () => {};
+  globalThis.setInterval = () => 0;
+  globalThis.clearInterval = () => {};
 
   try{
     const { T } = loadApp({}, { interactive:true });
@@ -74,6 +88,10 @@ globalThis.__PB_NORMALISE_ROUTE__ = normaliseTeamsheetRoute;
     assert.equal(globalThis.__PB_NORMALISE_ROUTE__('#more'), '#/settings');
     assert.match(runtimeBundle, /globalThis\.__teamsheetNavigate\s*=\s*navigateTeamsheetRoute/);
   } finally {
+    globalThis.setTimeout = previousTimers.setTimeout;
+    globalThis.clearTimeout = previousTimers.clearTimeout;
+    globalThis.setInterval = previousTimers.setInterval;
+    globalThis.clearInterval = previousTimers.clearInterval;
     if(previousTarget === undefined) delete process.env.APP_TARGET;
     else process.env.APP_TARGET = previousTarget;
     delete globalThis.__PB_RENDER_THREAD__;
