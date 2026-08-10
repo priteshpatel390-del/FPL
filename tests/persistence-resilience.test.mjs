@@ -249,3 +249,11 @@ test('forgetting the Odds key decodes and rewrites the versioned config through 
   assert.equal(Object.prototype.hasOwnProperty.call(stored.preferences,'oddsKey'),false);
   assert.equal(JSON.stringify(stored).includes('sentinel'),false);
 });
+
+test('manual squad builder has no unchecked squad persistence path',()=>{
+  const source=readFileSync(new URL('../src/ui/views.mjs',import.meta.url),'utf8');
+  const manual=source.slice(source.indexOf('function renderManual()'),source.indexOf('/* ---------------------------------------------------------------------\n   RENDER + WIRING'));
+  assert.doesNotMatch(manual,/\bsset\(K_SQUAD/);
+  assert.equal((manual.match(/ssetVerified\(K_SQUAD/g)||[]).length,2);
+  assert.match(manual,/const persisted = await ssetVerified\(K_SQUAD, S\.manual\);[\s\S]*if\(persisted\.ok\) await saveCfg\(\);/);
+});
