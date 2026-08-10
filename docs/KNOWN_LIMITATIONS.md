@@ -1,14 +1,16 @@
 # KNOWN_LIMITATIONS.md
 
-## 10 August 2026 — A3 error-boundary separation candidate (EB-1)
+## 10 August 2026 — A3 error-boundary separation (EB-1) is merged and accepted
 
-Draft PR #108 implements the approved EB-1 failure-ownership package. Two confirmed defects are addressed: a recovery-render failure after a genuine Official FPL collection failure was silently swallowed, and an unexpected internal exception escaping Understat or Odds computation was converted into fabricated provider degradation. Both are now application-owned and separately observable, while genuine provider transport/validation evidence continues to own Provider Health. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed. The candidate passes **856 tests, 0 failed** against the 842-test `main` baseline. EB-1 is not merged, and no physical iPhone acceptance has been performed for it.
+PR #108 is merged at `main` `ba5daa2000345ddde3d8e6f6d381d44603e7cd29`. The two confirmed failure-ownership defects are addressed: a recovery-render failure after a genuine Official FPL collection failure is no longer silently swallowed, and an unexpected internal exception escaping Understat/Odds/minute-history computation is no longer converted into fabricated provider degradation. Genuine provider transport/validation evidence continues to own Provider Health. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed.
+
+The merged tree contains **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent Verify Teamsheet run #154 / `31410817472` passed every stage on exact merge commit `ba5daa20…`.
+
+Physical iPhone Safari acceptance passed the executable EB-1 paths: normal online startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. The clean no-core private-tab offline-first path was not physically executable because Safari could not load the uncached static GitHub Pages shell while already offline; automated coverage remains authoritative for that application state. The acceptance session used an incomplete manual squad, so recommendation-survival was not independently observed on device. See ERR-1 to ERR-4 below and [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md).
 
 ## 10 August 2026 — PERSIST-4 is closed
 
 `fpl:calib` compatibility and resilience is merged through PR #107 at `main` `d112c673310149a4463def1758242460450600dc`. Existing unverified `fpl:calib` bytes are preserved but are not restored into `S.calib`, so standard uncalibrated projections remain active. No safe legacy migration is claimed, no production calibration generator/methodology was added and no accuracy improvement is claimed. Permanent Verify Teamsheet run #127 / `31396393124` passed every stage on the merge commit, on an 842-test baseline. PERSIST-4 is therefore closed.
-
-
 
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
@@ -28,7 +30,7 @@ The persistent platform is approved only as a design; no D1 database, R2 bucket,
 
 Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 10 August 2026.
 
-Current evidence boundary: A3 cache and persistence resilience is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd` after 832 passing tests, reachable exact build provenance and deterministic builds; physical iPhone testing for that checkpoint was explicitly waived by the owner. The focus-zoom correction that DTR-1's device pass exposed is merged through PR #100 and was physically accepted. Leagues post-Gameweek evidence remains deferred.
+Current evidence boundary: A3 Error-Boundary Separation is merged at `ba5daa2000345ddde3d8e6f6d381d44603e7cd29` after 856 passing tests and successful post-merge Verify Teamsheet run #154. Its executable iPhone Safari paths were physically accepted; the clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
 
 Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), [Historical Records](HISTORICAL_RECORDS.md).
 
@@ -113,10 +115,10 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | PERSIST-3 | Durability is only as good as the browser backend | Verified writes prove a record is restorable at the moment it is written; they cannot prevent later eviction by the browser, private-mode clearing, quota pressure or device loss, and no server-side copy exists | D1/R2 design remains unimplemented | Open (gated) |
 | PERSIST-4 | `fpl:calib` lacked a compatibility-owned restore contract | Fails closed on every current unverified calibration record, preserves the stored bytes and keeps standard uncalibrated projections active; no production calibration methodology is introduced | `fpl:calib` compatibility and resilience | **CLOSED and merged 2026-08-10 through PR #107 (`d112c673310149a4463def1758242460450600dc`), verified by Verify Teamsheet run #127** |
 | PERSIST-5 | The storage-manager persistence paths have no physical device evidence | Teamsheet itself never installs `window.storage`, so the authoritative-backend contracts are proven by automated tests against stub backends only, not on a host that provides one | Requires a host that supplies a storage manager | Open (evidence gap) |
-| ERR-1 | A recovery-render failure after a genuine Official FPL collection failure was silently swallowed | EB-1 keeps the recovery render guarded so it still cannot escape `loadAll`, but records the caught error and returns it as `secondaryErrorClass:'render_failed'` beside the primary `collection_failed`; the real provider Fallback/Unavailable classification and the previously verified state both survive | A3 error-boundary separation | **Addressed in draft PR #108; open until merge and `main` verification** |
-| ERR-2 | An unexpected internal exception from Understat or Odds computation was converted into fabricated provider degradation | EB-1 marks such results application-owned. They still pass through the one shared apply gate so Rule B's retain/clear decision is unchanged, but the pre-application Provider Health is restored afterwards and a cleared supporting value removes its row rather than publishing a false provider result | A3 error-boundary separation | **Addressed in draft PR #108; open until merge and `main` verification** |
+| ERR-1 | A recovery-render failure after a genuine Official FPL collection failure was silently swallowed | EB-1 keeps the recovery render guarded so it still cannot escape `loadAll`, but records the caught error and returns it as `secondaryErrorClass:'render_failed'` beside the primary `collection_failed`; the real provider Fallback/Unavailable classification and the previously verified state both survive | A3 error-boundary separation | **CLOSED and merged 2026-08-10 through PR #108 (`ba5daa2000345ddde3d8e6f6d381d44603e7cd29`)** |
+| ERR-2 | An unexpected internal exception from Understat or Odds computation was converted into fabricated provider degradation | EB-1 marks such results application-owned. They still pass through the one shared apply gate so Rule B's retain/clear decision is unchanged, but the pre-application Provider Health is restored afterwards and a cleared supporting value removes its row rather than publishing a false provider result | A3 error-boundary separation | **CLOSED and merged 2026-08-10 through PR #108 (`ba5daa2000345ddde3d8e6f6d381d44603e7cd29`)** |
 | ERR-3 | The application error boundary is deliberately narrow | EB-1 owns unexpected exceptions only at the verified-refresh lifecycle edge (startup, manual and foreground). No global `window.onerror` or `unhandledrejection` layer is installed, so an unexpected exception raised by an unrelated event handler still surfaces as an ordinary uncaught browser error | By design; a global swallowing layer would hide real defects | Accepted-labelled |
-| ERR-4 | EB-1 has no physical iPhone evidence | The changed failure copy and restricted-state behaviour are proven by automated regressions only. No physical iPhone Safari acceptance has been performed for the error-boundary checkpoint, and none is claimed | Owner device pass, if required | Open (evidence gap) |
+| ERR-4 | The clean/no-core offline EB-1 application state has no physical iPhone app evidence | Normal startup, manual refresh, saved-data offline refresh and return-online recovery passed on physical iPhone Safari. In a clean Private tab while already offline, Safari could not load the uncached static Pages shell, so the no-core application state could not execute; automated regressions own that path. The acceptance squad was incomplete, so recommendation-survival was not separately observed on device. | Static offline-shell limitation / automated EB-1 coverage | Accepted evidence limitation; executable EB-1 paths physically accepted 2026-08-10 |
 | REFRESH-7 | Fire-and-forget evidence, outcome and metrics consumers can straddle a commit and read mixed state | Not addressed by this checkpoint | Separate design | Open (gated) |
 | REFRESH-8 | No `online` event listener, so reconnection does not itself trigger recovery | Recovery still depends on the next `visibilitychange`/`pageshow` or manual Load data | Separate design | Open (gated) |
 | REFRESH-9 | Leagues rival cache keyed on `S.currentGW` can orphan in-flight records across a commit | Not addressed by this checkpoint | Separate design | Open (gated) |
@@ -217,11 +219,9 @@ Physical testing of the actual repository build on an iPhone Safari was not perf
 - Evidence, outcome and metric storage remains bounded local recovery. Reorganisation does not create a permanent archive or migration engine.
 - A persistent screenshot-regression suite remains absent, so later visual changes still require human device review.
 
-
 ## Teamsheet 2.0.7 implementation acceptance status
 
 Teamsheet 2.0.7 is complete and merged through PR #68. Its Safari foreground-resume correction passed owner retest. VoiceOver is not a Teamsheet acceptance gate and no physical screen-reader claim is made. FPL-1 is closed. Subsequent FPL-T1 and Track A work is merged through PRs #69–#72, UX-A1 through PR #74, UX-A2 through PR #76 and the Player Detail dock-layering correction through PR #78. Remaining feature-specific populated acceptance is tracked under FPL-2 for Leagues only; Team and Fixtures have since passed their tested populated iPhone paths.
-
 
 ### Physical iPhone Safari foreground resume
 
