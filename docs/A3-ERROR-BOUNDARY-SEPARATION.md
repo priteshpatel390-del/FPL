@@ -4,6 +4,12 @@ Status: owner-approved implementation candidate (Package EB-1) on `agent/a3-erro
 
 Baseline: `main` `d112c673310149a4463def1758242460450600dc`, the merge of `fpl:calib` compatibility PR #107.
 
+## Candidate selection
+
+Two independent EB-1 implementations were produced concurrently and both reached a passing permanent `Verify Teamsheet` run: one on `agent/a3-error-boundary-separation` (848 tests, run #150 / `31405674786`) and one on `claude/a3-error-boundary-separation-zqx6hs` (856 tests, run #152 / `31407039275`). They converged on the same design and the same failure-ownership contract.
+
+Pritesh selected the second on 10 August 2026 and it is now the single canonical candidate on `agent/a3-error-boundary-separation`. It was chosen because it keeps the literal `applyProviderResult()` call sites in the commit path — leaving the pre-existing shared-gate contract test completely untouched rather than rewriting it around a new wrapper name — because it appends the supporting-data note to the truthful Official FPL status line instead of replacing that line, and because it carries broader regression coverage. Before selection, the one regression the superseded candidate had and this one lacked, covering the Rule-B **retain** branch under an application exception, was ported across so no proven behaviour was lost. The superseded branch is retained unmodified as history.
+
 ## Purpose
 
 Separate provider evidence from downstream application failures without changing provider acquisition policy, model behaviour, persistence contracts or Atomic Foreground Refresh orchestration.
