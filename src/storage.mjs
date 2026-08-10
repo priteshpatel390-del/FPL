@@ -231,9 +231,14 @@ function reportReadResult(key,result){
     return;
   }
   if(key===K_SQUAD){
-    if(result.ok){ setManualSquadPersistenceReady(true); clearPersistenceWarning('manual-squad'); return; }
-    if(result.found||result.reason==='malformed'){
-      setManualSquadPersistenceReady(false);
+    if(result.ok&&result.found){ setManualSquadPersistenceReady(true); clearPersistenceWarning('manual-squad'); return; }
+    setManualSquadPersistenceReady(false);
+    const manualControl=globalThis.document?.getElementById?.('useManual');
+    const manualRequested=Boolean(manualControl?.checked);
+    if(manualRequested) manualControl.checked=false;
+    if(manualRequested){
+      setPersistenceWarning('manual-squad','Manual team mode was disabled because no compatible current-season manual squad could be restored. Official FPL picks will be used where available.');
+    }else if(result.found||result.reason==='malformed'){
       setPersistenceWarning('manual-squad','A saved manual squad could not be verified for the current season and was not restored. Rebuild or resave it before relying on it after reload.');
     }
   }
@@ -241,7 +246,7 @@ function reportReadResult(key,result){
 async function sget(key){
   const result=await sgetResult(key);
   reportReadResult(key,result);
-  return result.ok?result.value:null;
+  return result.ok&&result.found?result.value:null;
 }
 async function sset(key, val){
   const s = JSON.stringify(val);
@@ -342,24 +347,24 @@ async function ssetVerified(key,val){
 async function loadCfg(){
   const read=await readStoredJson(K_CFG);
   if(!read.ok){
-    if(read.reason==='malformed') setPersistenceWarning('configuration','Saved settings were unreadable and were not restored. New changes will be kept only if browser storage succeeds.');
+    if(read.reason==='malformed') setPersistenceWarning('configuration-compatibility','Saved settings were unreadable and were not restored. Re-enter any season/account values you still need.');
     else if(read.reason==='unavailable') setPersistenceWarning('configuration','Browser storage is unavailable. Settings changes can work for this session but may revert after reload.');
     return null;
   }
   if(!read.found) return null;
   const decoded=decodeConfigRecord(read.value);
   if(!decoded.ok){
-    setPersistenceWarning('configuration','Saved settings use an unsupported format and were not restored.');
+    setPersistenceWarning('configuration-compatibility','Saved settings use an unsupported format and were not restored. Re-enter any season/account values you still need.');
     return null;
   }
   if(decoded.legacy){
+    setPersistenceWarning('configuration-compatibility','Older unversioned team/account values could not be verified for the current season and were not restored. Re-enter your Team ID and current resources if needed.');
     const write=await ssetVerified(K_CFG,decoded.config);
     if(!write.ok) setPersistenceWarning('configuration','Season-independent settings were recovered, but Teamsheet could not save the upgraded settings record. Changes may revert after reload.');
-    else setPersistenceWarning('configuration','Older unversioned team/account values could not be verified for the current season and were not restored. Re-enter your Team ID and current resources if needed.');
   }else if(decoded.reason==='account_season_mismatch'){
-    setPersistenceWarning('configuration','Saved team/account values belong to another season and were not restored. Season-independent settings were kept.');
+    setPersistenceWarning('configuration-compatibility','Saved team/account values belong to another season and were not restored. Season-independent settings were kept.');
   }else if(decoded.reason==='account_invalid'){
-    setPersistenceWarning('configuration','Saved team/account values were invalid and were not restored. Season-independent settings were kept.');
+    setPersistenceWarning('configuration-compatibility','Saved team/account values were invalid and were not restored. Season-independent settings were kept.');
   }
   return decoded.config;
 }
