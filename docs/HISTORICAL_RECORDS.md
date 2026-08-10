@@ -27,6 +27,7 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## Current operational and acceptance records
 
+- [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md) — owner-approved EB-1 failure-ownership package; provider evidence, commit, render, persistence and application-owned exceptions are separated without changing provider or model behaviour.
 - [`fpl:calib` compatibility and resilience](FPL-CALIB-COMPATIBILITY-RESILIENCE.md) — owner-approved fail-closed compatibility implementation candidate; legacy/unverified calibration is kept inert and standard uncalibrated projections remain active unless a future production methodology is separately approved.
 - [Post-A3 0C manual-squad dead-handler cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md) — owner-approved removal of the proven-unreachable per-button manual-squad listeners; the validating capture-phase runtime remains the sole interaction owner.
 - [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) — automatic `main` verification, post-merge documentation reconciliation and the duplicate manual-squad handler investigation; merged through PR #105, with the 0C correction approved and implemented separately.

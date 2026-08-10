@@ -1,5 +1,13 @@
 # DECISIONS.md — Architectural decision record
 
+## D-EB1 · 2026-08-10 · Accepted · Failure ownership is explicit and provider evidence is never fabricated
+
+**Decision:** every failure in the refresh lifecycle has exactly one owner, and only genuine provider transport or validation evidence may move Provider Health. Unexpected application exceptions — including ones escaping optional supporting-provider computation — are classified `internal_error` and are never converted into provider degradation. A recovery-render failure after a genuine collection failure is recorded as a secondary `render_failed` beside the primary `collection_failed` instead of being swallowed.
+
+**Reason:** two confirmed defects. An empty catch on the failure-path render made a real UI failure invisible while the app still claimed the previous verified state was on screen. Separately, any internal exception thrown while computing Understat or Odds was collapsed into a generic provider `fallback`, so an application bug was reported to the user as a named provider being degraded. Provider Health is evidence about the outside world; application code throwing is not evidence about a provider.
+
+**Boundary:** the ownership wrapper `ownApplicationError()` wraps rather than replaces `applyProviderResult()`, so Rule B's retain/clear decision is byte-for-byte the ordinary one and an incompatible old supporting value can never be kept alive because application code threw. Where Rule B clears, the stale provider row is removed rather than published as a false result; a cleared detailed-minute layer removes only the minute detail from the core FPL row. The application boundary is deliberately narrow — the verified-refresh lifecycle edge, beginning before `captureRefreshInputs()` — with **no** global `window.onerror` or `unhandledrejection` layer, because a global swallowing layer would hide real defects. Raw exception text never reaches the user; the error stays on the returned report for tests and diagnostics. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed. See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md).
+
 ## 2026-08-09 — D1 historical/live data platform
 
 **Decision:** use Cloudflare D1 for structured records, private R2 for exact immutable canonical evidence, and a separate authenticated data Worker. Preserve local browser fallback/outbox. Keep Google Sheets optional and downstream. Exclude KV and Durable Objects from the core MVP.
