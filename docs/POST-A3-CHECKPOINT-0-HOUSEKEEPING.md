@@ -122,13 +122,17 @@ Assessment: low risk, because the deleted code is proven unreachable. It is stil
 
 Not proposed here: any change to `manualSquadApplyStatus` status-text ownership, the `renderManual()` counter text it overwrites, or any other manual-squad behaviour.
 
+### Status in the sequence
+
+This correction is recorded in [ROADMAP.md](ROADMAP.md) as a **separate proposed narrow checkpoint**. It is deliberately **not** folded into the `fpl:calib` checkpoint or into A3 error-boundary separation, and it is deliberately unnumbered because its position in the sequence has not been decided. It is proposed only: not approved, not scheduled and not implemented.
+
 ## Deliberate exclusions
 
-- `fpl:calib` is untouched. It remains behind the separate model approval gate.
+- `fpl:calib` is untouched. It remains behind the separate model approval gate, and is the subject of the next checkpoint — **`fpl:calib` compatibility and resilience**, investigation and design first. [PERSIST-4](KNOWN_LIMITATIONS.md) is retained as open until that checkpoint completes, and nothing about its implementation is approved.
 - No projection, expected-minutes, scoring, fixture, captaincy, squad-selection, transfer, simulation, rank, Mini-League/rival or strategy change.
 - No provider, endpoint, gateway, security-boundary, cache-cadence or persistence-behaviour change.
 - No application runtime source change of any kind.
-- No error-boundary separation work; that remains the next checkpoint and begins with investigation.
+- No `fpl:calib` work and no error-boundary separation work. Those are the next two checkpoints, in that order, and each begins with investigation.
 
 ## Physical device evidence
 

@@ -24,7 +24,7 @@ PR #104 is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, which is the cu
 
 The current work is **post-A3 Checkpoint 0 housekeeping**: automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation, and an investigation of duplicate manual-squad handlers. See [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). The duplicate-handler correction is investigated and proposed only; it is not implemented and not approved. `fpl:calib` is deliberately excluded from this housekeeping.
 
-The next substantive A3 remediation checkpoint is **error-boundary separation**, which begins with investigation and design and is not pre-approved.
+The next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is **separately model-gated** — `fpl:calib` feeds projections, so changing how a legacy calibration record is accepted, rejected or identified crosses the model approval gate. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) stays open until that checkpoint completes. **A3 error-boundary separation** follows it, also beginning with investigation and design. Neither is pre-approved. The full sequence is in [Roadmap](docs/ROADMAP.md).
 
 ## 9 August 2026 reconciliation
 

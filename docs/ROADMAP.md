@@ -22,24 +22,47 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 PR #104 is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, which is the current `main`. Data Architecture D1 remains an approved future design only.
 
-The current work is post-A3 Checkpoint 0 housekeeping: automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation, and an investigation of duplicate manual-squad handlers whose correction is proposed but not approved. `fpl:calib` is deliberately excluded. The next A3 remediation checkpoint is error-boundary separation.
+The current work is post-A3 Checkpoint 0 housekeeping: automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation, and an investigation of duplicate manual-squad handlers whose correction is proposed but not approved. `fpl:calib` is deliberately excluded from this housekeeping implementation.
 
-## Current sequence after D1 design approval
+The next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is separately model-gated. A3 error-boundary separation follows it. Neither is pre-approved.
 
-1. **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
-2. **Atomic Foreground Refresh — complete and merged:** PR #102 is merged and physically accepted. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
-3. **Cache and persistence resilience — complete and merged** through PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet run #105 and independent review of the final diff all passed. Physical iPhone testing was explicitly waived by the owner.
-4. **Post-A3 Checkpoint 0 housekeeping — current:** automatic `main` verification, documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). The 0C correction is proposed only.
-5. Error-boundary separation.
-6. Production-bundle safeguards.
-7. Documentation/state-ownership cleanup where appropriate.
-8. Understat repair.
-9. Odds API repair.
-10. Approved D1 persistent historical/live implementation.
-11. Route-aware rendering/performance work.
-12. Claude-to-ChatGPT migration.
-13. Cloudflare automation expansion.
-14. AI agents and richer external intelligence.
+## Completed before the current sequence
+
+- **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
+- **Atomic Foreground Refresh — complete and merged:** PR #102 is merged and physically accepted. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
+- **Cache and persistence resilience — complete and merged** through PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet run #105 and independent review of the final diff all passed. Physical iPhone testing was explicitly waived by the owner.
+
+## Current sequence
+
+Nothing below item 1 is approved for implementation. Each entry begins with investigation and design, and each requires explicit owner approval before any code is written.
+
+1. **Post-A3 Checkpoint 0 housekeeping — current.** Automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
+2. **`fpl:calib` compatibility and resilience — next.** Investigation and design first. This checkpoint is **separately model-gated**: `fpl:calib` feeds projections, so any change to how a legacy calibration record is accepted, rejected or identified crosses the model approval gate and requires the full existing/proposed behaviour, inputs, fallbacks, assumptions, limitations, trade-offs and validating-evidence presentation before approval. A3 cache and persistence resilience deliberately left `fpl:calib` untouched; [PERSIST-4](KNOWN_LIMITATIONS.md) records that gap and is **retained as open until this checkpoint completes**. No implementation is approved.
+3. **A3 error-boundary separation — after `fpl:calib`.** Investigation and design first. Not pre-approved.
+4. **Production-bundle safeguards.**
+5. **State-ownership cleanup.**
+6. **Route-aware rendering and performance work.**
+7. **Small stale-code cleanup and remaining reviewed deletion work.**
+8. **A3 documentation and architecture closeout.**
+
+### Separate proposed narrow checkpoint — duplicate manual-squad handler correction
+
+Recorded here as its own candidate so it is **not** absorbed into item 2 or item 3. It is **proposed only, not approved and not scheduled**, and it is deliberately unnumbered because its position in the sequence has not been decided.
+
+Post-A3 Checkpoint 0C established, with empirical evidence, that the per-button manual-squad add and remove listeners in `src/ui/views.mjs` are unreachable, because `src/ui/manual-squad-runtime.mjs` installs a capture-phase document listener on the same selectors and calls `stopImmediatePropagation()`. The dead path omits the position, club and budget checks and the FPL-T1 optimiser deferral, so it is a latent hazard rather than a live defect. The proposed correction removes the dead listeners, leaves `manual-squad-runtime.mjs` as the single owner, and adds a regression test proving the validating implementation runs.
+
+It touches manual-squad handling and therefore sits inside the squad-legality approval boundary. Full findings and the proposal are in [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
+
+## Deferred beyond the current sequence
+
+Longer-horizon product work, unchanged and unsequenced relative to the eight items above. None is approved.
+
+- Understat repair.
+- Odds API repair.
+- Approved D1 persistent historical/live implementation.
+- Claude-to-ChatGPT migration.
+- Cloudflare automation expansion.
+- AI agents and richer external intelligence.
 
 Small stale-code cleanup remains low priority. Live-Gameweek evidence gates remain unchanged.
 

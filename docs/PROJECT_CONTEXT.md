@@ -17,7 +17,7 @@ PR #104's reviewed head was `4e434b940e2bcb473374573db5da16f6a645d9eb`, over sou
 
 The current work is **post-A3 Checkpoint 0 housekeeping**: automatic Verify Teamsheet verification of `main`, this documentation reconciliation, and an investigation of duplicate manual-squad handlers. It changes no application runtime source. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
 
-Data Architecture D1 remains an approved design only; D1/R2/Worker persistence implementation is not approved. The next substantive A3 remediation checkpoint is **error-boundary separation**, beginning with investigation/design.
+Data Architecture D1 remains an approved design only; D1/R2/Worker persistence implementation is not approved. The next checkpoint is **`fpl:calib` compatibility and resilience** — investigation/design first, separately model-gated — followed by **A3 error-boundary separation**. Neither is pre-approved. See [Roadmap](ROADMAP.md) for the full sequence.
 
 ## 9 August 2026 D1 closeout
 
@@ -46,7 +46,7 @@ Refresh-Load R1 changed acquisition cadence only: valid detailed histories, norm
 | Generated application baseline | PR #104 reproduced committed deployables from reachable source before the test build; double builds were byte-identical and root equalled deployable. Independently reproduced locally at the merge commit `9b31f373…`. |
 | Current unmerged candidate | Post-A3 Checkpoint 0 housekeeping on `claude/teamsheet-post-a3-closeout-crqojj`: CI trigger correction, documentation reconciliation and the 0C investigation. No application runtime source change. |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | D1 design is approved and documented, but D1/R2/Worker persistence implementation is not. PR #104 hardened browser-side persistence only. Error-boundary separation follows and begins with investigation. The Checkpoint 0C duplicate-handler correction is proposed only and not approved. |
+| Approval boundary | D1 design is approved and documented, but D1/R2/Worker persistence implementation is not. PR #104 hardened browser-side persistence only and left `fpl:calib` untouched. The `fpl:calib` compatibility and resilience checkpoint is next, is separately model-gated and begins with investigation; PERSIST-4 stays open until it completes. Error-boundary separation follows it. The Checkpoint 0C duplicate-handler correction is a separate proposed narrow checkpoint, proposed only and not approved. |
 
 ## Physical iPhone Safari baseline
 
@@ -180,7 +180,7 @@ These are roadmap inputs, not authority to change them.
 
 ### Next planned checkpoint
 
-Begin **A3 error-boundary separation** with investigation/design and a fresh latest-`main` baseline; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
+Begin **`fpl:calib` compatibility and resilience** with investigation/design and a fresh latest-`main` baseline. It is **separately model-gated**, because `fpl:calib` feeds projections and any change to how a legacy calibration record is accepted, rejected or identified crosses the model approval gate. [PERSIST-4](KNOWN_LIMITATIONS.md) is retained as open until that checkpoint completes; nothing about its implementation is approved. **A3 error-boundary separation** follows it, also beginning with investigation/design. The full sequence is in [Roadmap](ROADMAP.md). Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
 
 ### After real Gameweek data
 
