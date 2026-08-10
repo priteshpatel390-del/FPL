@@ -27,6 +27,7 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## Current operational and acceptance records
 
+- [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md) — investigation found real avoidable inactive-route/shared-render work but did not demonstrate material user-visible lag; M1 measurement tooling is approved as test/investigation-only, while route-aware optimisation remains separately approval-gated. The record also fixes the future recheck trigger around live-season Mini-League load, material rendering/workload changes and physical iPhone symptoms.
 - [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md) — completed, merged and post-merge verified through PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`; `state.mjs` is the declared shared-slot inventory and the legacy Mini-League alias is one-way, without a state-management rewrite.
 - [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md) — complete, merged and post-merge verified through PR #108; provider evidence, commit, render, persistence and application-owned exceptions are separated without changing provider or model behaviour, with the recorded executable iPhone paths physically accepted.
 - [`fpl:calib` compatibility and resilience](FPL-CALIB-COMPATIBILITY-RESILIENCE.md) — complete and merged through PR #107; legacy/unverified calibration remains inert and standard uncalibrated projections stay active unless a future production methodology is separately approved.
