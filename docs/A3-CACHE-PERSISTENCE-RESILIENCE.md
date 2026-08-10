@@ -58,7 +58,7 @@ The Odds-key forget action now reads the decoded configuration contract and writ
 
 Unversioned and previous-season manual squads fail closed because player IDs alone cannot establish season ownership safely.
 
-The active manual-squad runtime keeps a valid user change in memory even if browser persistence fails, but reports that it is session-only. For additions, the squad must save successfully before configuration is allowed to persist the new manual-team setting. A failed squad save therefore cannot create a durable `useManual=true` state pointing at stale squad bytes.
+Every manual-squad writer uses verified persistence. A valid add/remove remains active in memory even if browser persistence fails, but the app reports that it is session-only. For additions, the squad must save successfully before configuration is allowed to persist the new manual-team setting. A failed squad save therefore cannot create a durable `useManual=true` state pointing at stale squad bytes.
 
 ## Mini-League/rival preference contract
 
@@ -76,9 +76,9 @@ The accepted ordering remains collection → synchronous atomic commit → rende
 
 ## Validation
 
-Final reviewed source/build-input identity for local validation: `2f814a9cd009966845baafcd7586a9c0dfddaa01`.
+Final reviewed source/test head for local validation: `3b6dc0f12ed239381f94f320644621560bd38047`.
 
-All 822 candidate test cases passed locally. The execution sandbox cannot complete the CPU-heavy `transfer-exact-correction.test.mjs` as one process within its command ceiling, so its ten unchanged subtests were executed in bounded name-pattern groups; all ten passed. No test was skipped, deleted or weakened. The two other exact-transfer performance/scale files ran intact and passed.
+All **823 candidate test cases passed locally**. The execution sandbox cannot complete the CPU-heavy `transfer-exact-correction.test.mjs` as one process within its short command ceiling, so its ten unchanged subtests were executed in bounded name-pattern groups; all ten passed. No test was skipped, deleted or weakened. The other 69 test files ran in bounded complete-file batches, including the two exact-transfer performance/scale files.
 
 Focused persistence coverage includes:
 
@@ -93,19 +93,20 @@ Focused persistence coverage includes:
 - legacy configuration migration and season-account rejection;
 - manual-squad version/season rejection;
 - manual squad write failure and config sequencing;
+- removal of unchecked manual-squad builder writers;
 - Mini-League version/season rejection and failed write preservation;
 - version-safe Odds-key removal;
 - existing Atomic Refresh persistence/error-boundary regressions.
 
-Two exact-identity production builds were byte-identical with `BUILD_COMMIT=2f814a9cd009966845baafcd7586a9c0dfddaa01`. Root `index.html` equals `dist/index.html`. Manifest build identity matched the current build inputs.
+Two exact-identity production builds were byte-identical with `BUILD_COMMIT=3b6dc0f12ed239381f94f320644621560bd38047`. Root `index.html` equals `dist/index.html`. Manifest build identity matched the current build inputs.
 
 Validated hashes:
 
-- build-input hash: `7553567bb74b4f2072fbd1c79ca384c19524584bc480b9a5f456e48bc019f6ba`;
-- source hash: `d6566f58d7d06f8f77f9bf69a0061f9e4e6efe5592c3ef4fb3f6482b76713ce3`;
-- `dist/app.bundle.js`: `8a58d519e89cd89115eab82dff8f6e4741ce8505be7b652ea5c43cbddfac3806`;
-- `dist/index.html` / root `index.html`: `a1fa35cba719b99f9de8d7893922610ca151d6800c4e555ab4151c8cdfe6df58`;
-- `dist/manifest.json`: `9b109541c17c2f5cee09e76e5c335669e150fe92f0cd91019bf54d595eb9e210`.
+- build-input hash: `be1d47badfff0ad625566a0bdda55656245fa89d4c9ed3045782bf9cefd0216d`;
+- source hash: `41799cb5ac38e6f7945d90bdb0e975adce1d09c8f8dc692269fa7b4a270ee772`;
+- `dist/app.bundle.js`: `0c159173e13a40bc7328cee651d532bf20ce63cabc1e637ad91546a1f78f9348`;
+- `dist/index.html` / root `index.html`: `0bac7afece9ce33789dc6be66081487973d810d20a7028ee2b1aa355529e5f8e`;
+- `dist/manifest.json`: `edf63befeea6c2767e720d6c909f513113ba8c9f2c5e74c80bc5a741d9ad420d`.
 
 Permanent GitHub Actions provenance/full-suite verification is still required on the final generated head before review can be considered complete.
 
@@ -119,7 +120,7 @@ No changes were made to projection formulas, expected minutes, scoring, fixtures
 
 Before merge consideration:
 
-1. commit the generated outputs produced from source `2f814a9cd009966845baafcd7586a9c0dfddaa01` as a generated-only commit;
+1. commit the generated outputs produced from source/test head `3b6dc0f12ed239381f94f320644621560bd38047` as a generated-only commit;
 2. update affected canonical summary/roadmap documentation as needed;
 3. open a draft PR;
 4. obtain permanent GitHub Actions full-suite, deterministic-build, root/deployable, build-identity and reachable-provenance success on the exact generated head;
