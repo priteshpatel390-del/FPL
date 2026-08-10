@@ -1,10 +1,10 @@
 # `fpl:calib` compatibility and resilience
 
-Status: implementation candidate under review. Owner-approved design package: fail closed on legacy/unverified calibration. This record must not be treated as merged or accepted until PR verification and owner review complete.
+Status: **complete, merged and post-merge verified through PR #107 at `main` `d112c673310149a4463def1758242460450600dc`.** The accepted package fails closed on legacy/unverified calibration while preserving stored bytes and standard uncalibrated projections. Permanent Verify Teamsheet run #127 / `31396393124` passed every stage on the exact merge commit, on an 842-test baseline. PERSIST-4 is closed.
 
-## Baseline
+## Historical baseline for this checkpoint
 
-Implementation branch starts from `main` `b2d390db80f033d5cfade8dbd79f69523eef0990`, merge of PR #106. Baseline evidence at that merge: 836 passed, 0 failed, 0 skipped, 0 cancelled; Verify Teamsheet run #113 succeeded on the exact merge SHA.
+Implementation branch started from `main` `b2d390db80f033d5cfade8dbd79f69523eef0990`, merge of PR #106. Baseline evidence at that merge: 836 passed, 0 failed, 0 skipped, 0 cancelled; Verify Teamsheet run #113 succeeded on the exact merge SHA.
 
 ## Confirmed pre-change defect
 
@@ -46,7 +46,7 @@ Focused regressions cover:
 - current walk-forward code has no calibration persistence writer and does not assign `S.calib`;
 - the existing scoring calibration formula remains unchanged.
 
-The full repository suite, deterministic double build, provenance and build-identity gates remain mandatory before this checkpoint may be called complete.
+The completed checkpoint passed the full repository suite, committed deployment provenance, deterministic double build, root/deployable equality and exact build identity. The merged baseline was **842 tests, 842 passed, 0 failed, 0 skipped, 0 cancelled**; permanent Verify Teamsheet run #127 / `31396393124` repeated the complete gate on the merge commit.
 
 ## Model and accuracy statement
 
