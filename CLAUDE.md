@@ -75,7 +75,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 4. [Roadmap](docs/ROADMAP.md)
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
-7. The current checkpoint design or acceptance record — currently [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md)
+7. The current checkpoint design or acceptance record — currently [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
 8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)
