@@ -1,14 +1,17 @@
 # CLAUDE.md — onboarding for every future development session
 
 
-## 9 August 2026 physical UI correction
+## 10 August 2026 — PR #103 physical acceptance closeout
 
-The first PR #103 candidate (`0e3a0674416aa069a0f06ebee87854df41907ed0` source, `b53c8026a5485936582da1ea2374f9bad799e44d` generated) passed 798 automated tests and permanent Verify Teamsheet run `31338489146`, but **failed physical iPhone Safari acceptance**: the light startup strip remained and the five primary-route header boxes still presented inconsistent structure/rhythm. The corrected review source is `aec0c4f55ac051fd5016d7e93a70415de2dbc308` with generated-only child `a7bea9e1a96fda958239099a3ec64aef8cc30874`. It adds two regressions, retains all 798 prior tests and passes **800 tests** before publication. The correction gives Safari an explicit opaque dark startup background colour beneath the gradient and gives Team, Transfers, Fixtures, Leagues and Settings one shared `primary-page-header` box/title/intro contract while preserving the Leagues Manage action. Physical iPhone Safari retest remains required; merge is not approved.
+The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
 
+Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari chrome without a light strip; Team, Transfers, Fixtures, Leagues and Settings use the accepted shared header hierarchy; the refined editable/selectable controls are visually proportionate while retaining the no-focus-zoom behaviour; and the Leagues primary box now aligns vertically with the other primary screens. Pritesh explicitly approved PR #103 for merge on 10 August 2026.
 
-## 9 August 2026 current checkpoint
+No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
 
-Current GitHub `main` at the start of this checkpoint is `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`, merge of Atomic Foreground Refresh PR #102. PR #102 is merged and verified at **792 passed, 0 failed, 0 skipped**, with deterministic/generated provenance, independent re-review and physical iPhone Safari acceptance. The current approved implementation candidate is **Small Mobile UI Consistency + Loading Viewport Fix**. Its reviewed source is `0e3a0674416aa069a0f06ebee87854df41907ed0` and generated-only child is `b53c8026a5485936582da1ea2374f9bad799e44d`. Six focused regressions raise the candidate suite to **798 tests**; the publication gate passed the complete suite, deterministic double build, root/deployable equality and reachable generated provenance. Physical iPhone Safari acceptance of this UI candidate remains required before merge. This current-state block supersedes older 9 August wording below where it describes PR #102 as unmerged or cites the 691/693-test application baseline.
+## 10 August 2026 — current checkpoint
+
+Atomic Foreground Refresh PR #102 is merged and physically accepted at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`. PR #103 has completed automated, deterministic/provenance and physical iPhone gates and has explicit owner merge approval. Data Architecture D1 remains an approved design only; persistence implementation is not approved. After PR #103 merge, the next substantive A3 remediation checkpoint is cache and persistence resilience, beginning with investigation/design and a fresh latest-main baseline unless repository evidence has progressed.
 
 ## 9 August 2026 reconciliation
 
