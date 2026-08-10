@@ -1,10 +1,10 @@
 # Post-A3 0C — manual-squad dead-handler cleanup
 
-Status: owner-approved implementation candidate. Merge remains gated on Pritesh's explicit approval.
+Status: **complete and merged through PR #106 at `main` `b2d390db80f033d5cfade8dbd79f69523eef0990`.** Reviewed head `be9141415aaa67f8da03c63b8c086999285397c7` retained all 835 baseline tests and added one focused ownership regression: **836 passed, 0 failed, 0 skipped, 0 cancelled**. Deterministic build/provenance gates passed. No physical device testing was performed or claimed for this checkpoint.
 
-Baseline: GitHub `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`, merge of post-A3 Checkpoint 0 PR #105. That baseline has **835 passing tests** and, from Checkpoint 0A, automatic push-triggered Verify Teamsheet coverage of `main` — proven by run #110 / `31383479683` on the exact merge commit.
+Historical baseline: GitHub `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`, merge of post-A3 Checkpoint 0 PR #105. That baseline had **835 passing tests** and, from Checkpoint 0A, automatic push-triggered Verify Teamsheet coverage of `main` — proven by run #110 / `31383479683` on the exact merge commit.
 
-This checkpoint is deliberately narrow. It removes proven-unreachable code and changes no live behaviour.
+This checkpoint was deliberately narrow. It removed proven-unreachable code and changed no live behaviour.
 
 ## Existing behaviour (fact)
 
@@ -49,12 +49,12 @@ The behavioural half of the same guarantee is already independently protected by
 
 ## Behaviour intentionally unchanged
 
-No position, club, budget, purchase-price, persistence, manual-mode, optimiser, projection, expected-minutes, captaincy, transfer, fixture, simulation, rank, Mini-League, provider, data-source, navigation, Team or Transfers behaviour changes. Atomic Foreground Refresh and Refresh-Load R1 are untouched. `fpl:calib` remains untouched and separately model-gated.
+No position, club, budget, purchase-price, persistence, manual-mode, optimiser, projection, expected-minutes, captaincy, transfer, fixture, simulation, rank, Mini-League, provider, data-source, navigation, Team or Transfers behaviour changes. Atomic Foreground Refresh and Refresh-Load R1 are untouched. `fpl:calib` was untouched by this checkpoint and was separately resolved later through PR #107.
 
 ## Verification
 
 - Complete repository suite: **836 tests, 836 passed, 0 failed, 0 skipped, 0 cancelled** — the 835 baseline tests plus the one new ownership regression.
 - Deterministic double production build with byte-identical output, root/deployable equality, exact build identity and reachable committed generated provenance.
-- Permanent Verify Teamsheet on the exact pull-request head.
+- Exact merged change: source/tests/docs commit `08d1c45285087527209e2c91c50e5e673b7e3af6`, generated-only child and reviewed head `be9141415aaa67f8da03c63b8c086999285397c7`, merge commit `b2d390db80f033d5cfade8dbd79f69523eef0990`.
 
-Physical iPhone testing is not automatically claimed and not automatically waived; it is assessed after automated verification and independent diff review, and recorded here with whatever was actually performed.
+Physical device status: **none performed and none claimed.** That is a recorded evidence limitation, not an assertion of physical Safari acceptance.
