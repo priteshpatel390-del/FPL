@@ -1,5 +1,15 @@
 # TESTING.md
 
+## 10 August 2026 — EB-1 merged verification and iPhone acceptance closeout
+
+A3 Error-Boundary Separation Package EB-1 is merged through PR #108 at `main` `ba5daa2000345ddde3d8e6f6d381d44603e7cd29` from reviewed head `13224f53d7df95a295ee5f69124e99eb64e7a9e9`.
+
+The merged tree contains **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**. All 842 pre-EB-1 tests were retained and the fourteen additions remain in `tests/error-boundary-separation.test.mjs`. Exact candidate head `13224f53…` passed permanent Verify Teamsheet run #153 / `31408465921`. After merge, permanent run #154 / `31410817472` repeated the gate on exact merge commit `ba5daa20…` and passed committed deployment provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation.
+
+Physical iPhone Safari acceptance passed the executable EB-1 paths on the exact candidate: normal online startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. A clean Private Safari tab opened while already offline could not load the uncached GitHub Pages application shell, so the no-core clean-offline application state remains automated-test evidence rather than a device failure. The acceptance session used an incomplete manual squad, so device evidence proves retained verified core data but does not independently prove survival of a previously available recommendation. GitHub Pages was restored to `main` before merge.
+
+No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, optimisation, simulation, rank, Mini-League/rival, provider endpoint, retry cadence or weighting behaviour changed. Production-Bundle Safeguards is next and begins with investigation/design only; no implementation is approved.
+
 ## 10 August 2026 — `fpl:calib` compatibility coverage candidate
 
 PR #107 adds six focused calibration-compatibility regressions: legacy bytes are preserved but rejected; malformed JSON fails closed; speculative versioned records remain rejected before a methodology is approved; startup activation remains behind `sget(K_CAL)`; the current walk-forward path remains diagnostic-only with no calibration writer; and the existing scoring multiplier formula is unchanged. The full suite is 842 passed, 0 failed, 0 skipped, 0 cancelled. Normal Verify Teamsheet run #123 passed provenance, the complete suite, deterministic double build, root/deployable equality, build identity and artifact preservation on head `69e539647ae687f49605633505e7147da76125e2`.
@@ -37,7 +47,6 @@ PR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-on
 
 <!-- PR80-REPOSITORY-VERIFICATION-2026-08-07 -->
 > **Repository PR verification - introduced with Team UX PR #80:** The verify.yml workflow runs the existing completion gate automatically for pull requests and supports manual workflow dispatch. It checks out the exact PR revision, runs the complete test suite, performs two production builds with that revision as build identity, compares generated outputs byte-for-byte, verifies root/deployable equality and manifest identity, and retains verified production outputs as a short-lived review artifact. It has read-only repository permission, performs no deployment and adds no project dependency. Corrected T-01/T-02 source reached **649 passed, 0 failed, 0 skipped, 0 cancelled** with deterministic builds. A 390x844 first-paint mobile rendering with script execution disabled showed only the startup gate; header, main and the fixed dock were hidden. **Physical iPhone Safari T-01 acceptance subsequently passed on 7 August 2026** against the corrected PR #80 preview: the startup experience owned the viewport and no bottom navigation dock was visible during loading. T-02 could not be physically exercised on the owner's current squad because no player was flagged; that visual check is unperformed rather than claimed, while its starting/bench availability and accessibility wording remain covered by focused automated regressions.
-
 <!-- UX-A2-DOCK-LAYERING-TESTING-2026-08-07 -->
 > **Historical merged baseline — PR #78 dock-layering correction:** the focused regression first failed against the pre-correction merged ordering, then passed after the narrow CSS correction. The complete suite is **645 passed, 0 failed, 0 skipped, 0 cancelled**. Two builds using exact source `44154da4190d35b6d6b747f537c19a060892bc14` are byte-identical for all generated outputs, and root `index.html` equals `dist/index.html`. Populated physical iPhone Safari acceptance passed on 7 August 2026. PR #78 merged at `ebb8838e7bfd081371a0639c9b4bdacfc9b92bc6`; GitHub Pages deployment succeeded and the Cloudflare Workers production build succeeded for `teamsheet-fpl-gateway`. `UI-14` is closed.
 
@@ -63,9 +72,13 @@ Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository checkpoint is `fpl:calib` compatibility and resilience PR #107 at `main` `d112c673310149a4463def1758242460450600dc`, whose automatic push-triggered Verify Teamsheet run #127 / `31396393124` passed every stage on the exact merge commit. That merged baseline is **842 tests, 842 passed, 0 failed, 0 skipped, 0 cancelled**, reproduced locally at the same commit.
+The latest merged repository checkpoint is A3 Error-Boundary Separation PR #108 at `main` `ba5daa2000345ddde3d8e6f6d381d44603e7cd29`. The merged baseline is **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**. Automatic push-triggered Verify Teamsheet run #154 / `31410817472` completed successfully on that exact merge commit and passed every provenance, complete-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage.
 
-The current unmerged candidate is A3 error-boundary separation (EB-1): **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled** — all 842 baseline tests retained plus the fourteen new regressions in `tests/error-boundary-separation.test.mjs`.
+The exact pre-merge PR #108 head `13224f53d7df95a295ee5f69124e99eb64e7a9e9` passed permanent Verify Teamsheet run #153 / `31408465921`. All 842 pre-EB-1 tests were retained plus the fourteen regressions in `tests/error-boundary-separation.test.mjs`; no test or golden was deleted, weakened, regenerated or skipped.
+
+There is no current unmerged implementation candidate. **Production-Bundle Safeguards** is the next remediation and begins with investigation/design only. Its exact test additions and safeguards must be proposed from repository evidence before implementation approval.
+
+Physical EB-1 device evidence covers normal online startup, manual online refresh, saved-data in-app offline refresh and return-online recovery. The clean/private offline-first state could not execute because Safari could not load an uncached GitHub Pages shell while already offline, so automated regressions remain the evidence for that path. Because the acceptance session used an incomplete manual squad, recommendation-survival was not independently demonstrated on device even though verified core-state retention was observed.
 
 Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updated in place, none weakened:
 
@@ -117,7 +130,6 @@ The form-focus candidate changes editable-control typography across Team setup/r
 - the complete result is 691/691. Permanent CI, exact source/generated provenance and physical iPhone acceptance passed before PR #99 merged at `09e595c275b4f3614c09fb502291de6831813999`.
 
 ### iPhone form-focus zoom candidate
-
 - `iphone-form-focus-zoom.test.mjs` requires the complete current text-entry control inventory—text, number, search, password, select and textarea—to render at a minimum 16px.
 - the viewport must retain normal browser magnification: `maximum-scale` and `user-scalable=no` remain forbidden.
 - checkbox, file and range controls remain outside the text-entry typography selector.
@@ -277,7 +289,6 @@ Teamsheet 2.0.4 is merged through PR #59 at `a2841b0831193f645548cfc4155809b82a5
 - absence of legacy threat/differential thresholds, projected-rank language and protect/chase logic;
 - iPhone-width wrapping/touch-target structure, route focus, live regions and reduced motion;
 - deterministic bundle ordering and unchanged model/rules boundaries.
-
 Two exact-identity production builds were byte-identical and root `index.html` matched `dist/index.html`. Automated tests do not prove real Official FPL availability or physical iPhone density. Physical testing had not been performed at this 2.0.4 checkpoint; the later PR #92/#93 Leagues sequence established pre-season iPhone acceptance while correctly deferring post-Gameweek populated evidence. VoiceOver is not a Teamsheet acceptance gate.
 
 ## Teamsheet 2.0.5 Mini-League intelligence verification
@@ -354,10 +365,9 @@ The correction removes runtime source rewriting entirely:
 
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
-The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #96 with **681 passing tests**, recorded at the top of this document.
+The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #108 with **856 passing tests**, recorded at the top of this document.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
-
 The reconciled branch passes **609 tests**. Added contracts prove that explicit cancellation and force-start supersession settle their pending calculation promises, and that mixed-width player IDs with reversed input order preserve exact production-versus-exhaustive results.
 
 Claude's controlled-shape, fixed-depth, re-score, prefix-sum, tied-comparator and Official-scale suites remain intact. The seed-7 automated profile completed with **21 exact leaf evaluations** across **575 outgoing branches**. Automated timing is not physical-iPhone evidence.
