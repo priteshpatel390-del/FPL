@@ -1,16 +1,14 @@
 # PROJECT_CONTEXT.md
 
-## 10 August 2026 — current baseline after EB-1 merge
+## 10 August 2026 — current baseline after Production-Bundle Safeguards
 
-GitHub `main` is `ba5daa2000345ddde3d8e6f6d381d44603e7cd29`, merge of A3 Error-Boundary Separation PR #108 from reviewed head `13224f53d7df95a295ee5f69124e99eb64e7a9e9`.
+GitHub `main` is `5a1a036082aba1a9c297e8d6194cc1ae4f476041`, merge of A3 Production-Bundle Safeguards PR #111 from corrected reviewed head `79c09774ee52a4aaf708677a7967546665852022`.
 
-EB-1 is complete. It fixes failure ownership only: recovery-render exceptions after genuine Official FPL collection failures are separately observable rather than swallowed, unexpected supporting-layer computation exceptions remain application-owned rather than manufacturing Understat/Odds degradation, and unexpected refresh-lifecycle exceptions are classified at the narrow verified-refresh boundary without installing a global swallow handler. Provider endpoints, validation rules, retry cadence, weighting, Rule-B retain/clear behaviour and every model calculation are unchanged.
+Production-Bundle Safeguards is complete. It changed tests/harness only: the complete generated bundle must parse as one classic script; the runtime harness may suppress only live asynchronous startup while retaining every late production module; and the generated production bundle must execute the late runtime replacements and navigation contract under the existing zero-dependency harness. No production/runtime source, model, provider, persistence, bundler order or deployment behaviour changed.
 
-The merged tree contains **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent Verify Teamsheet run #154 / `31410817472` passed every stage on exact merge commit `ba5daa20…`, including committed deployment provenance, complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation.
+The exact-main post-merge Verify Teamsheet run #159 / `31422588548` passed **859 tests, 859 passed, 0 failed, 0 skipped, 0 cancelled**, together with committed deployment provenance, complete production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. GitHub Pages deployment run #116 also succeeded on that exact merge commit.
 
-Physical iPhone Safari acceptance passed the executable EB-1 paths on the exact PR #108 candidate: normal online startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. A clean Private Safari tab opened while already offline could not load the uncached GitHub Pages shell, so the no-core clean-offline application state remains automated-test evidence rather than a device failure. The acceptance session used an incomplete manual squad, so device evidence proves retained verified core data but not survival of a previously available recommendation. GitHub Pages was restored to `main` before merge.
-
-The next A3 remediation is **Production-Bundle Safeguards**, beginning with investigation and design only. No implementation after EB-1 is pre-approved.
+The current A3 remediation is **State-Ownership Cleanup**. Investigation/design found no critical/high ownership defect and no evidence for a general state-management rewrite. Two medium architectural risks were confirmed: the cross-module `S` object did not provide a complete mechanically enforceable shared-slot inventory, and Mini-League preferences had a legacy writable compatibility alias that could become conditionally authoritative. Pritesh approved the narrow implementation package on 10 August 2026. Draft PR #112 is the current candidate and must not be merged without complete validation and explicit approval. See [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md).
 
 ## Historical checkpoint snapshot — before PR #108 merge: A3 Error-Boundary Separation
 
@@ -20,7 +18,7 @@ GitHub `main` was `d112c673310149a4463def1758242460450600dc`, merge of PR #107. 
 
 Pritesh had approved A3 Error-Boundary Separation Package EB-1 for implementation. Draft PR #108 was current. The candidate fixed two proven ownership defects without changing provider acquisition policy: a recovery-render exception could no longer disappear behind a real Official FPL collection failure, and an unexpected supporting-layer computation exception could no longer be manufactured into Understat/Odds provider degradation. Existing provider failures, Rule-B supporting-value retain/clear behaviour, Atomic Foreground Refresh rollback and PR #104 persistence semantics were preserved. Unexpected refresh-lifecycle exceptions received fixed application copy without mutating Provider Health or installing a global swallow boundary.
 
-Candidate evidence at that point was **856 passed, 0 failed, 0 skipped, 0 cancelled** over the 842-test `main` baseline, with all 842 retained and none weakened; committed deployment provenance from reachable source; two byte-identical production builds with root `index.html` equal to `dist/index.html`; exact manifest build identity. Physical acceptance and merge were still outstanding at that snapshot; both are now complete as recorded above.
+Candidate evidence at that point was **856 passed, 0 failed, 0 skipped, 0 cancelled** over the 842-test `main` baseline, with all 842 retained and none weakened; committed deployment provenance from reachable source; two byte-identical production builds with root `index.html` equal to `dist/index.html`; exact manifest build identity. Physical acceptance and merge were still outstanding at that snapshot; both are now complete as recorded in repository history.
 
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
@@ -36,7 +34,7 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 PR #104's reviewed head was `4e434b940e2bcb473374573db5da16f6a645d9eb`, over source/test commit `502a1f7ac0e0456743f3ddb0695433decf8976d1` and generated-only child `02216b8`. It passes **832 tests, 0 failed**, verified committed build provenance, deterministic byte-identical builds and root/deployable equality, with permanent Verify Teamsheet run #105 / `31377157889` on the reviewed head. Physical iPhone acceptance was **explicitly waived by Pritesh**; none was performed and none is claimed.
 
-The work that followed was post-A3 Checkpoint 0 housekeeping, then 0C, `fpl:calib` compatibility and EB-1. Those checkpoints are now complete; see the current baseline above and [Roadmap](ROADMAP.md).
+The work that followed was post-A3 Checkpoint 0 housekeeping, then 0C, `fpl:calib` compatibility, EB-1 and Production-Bundle Safeguards. Those checkpoints are now complete; see the current baseline above and [Roadmap](ROADMAP.md).
 
 ## 9 August 2026 D1 closeout
 
@@ -50,9 +48,9 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache and persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility and A3 Error-Boundary Separation are merged. No formula, recommendation or new-provider checkpoint is approved.
+Teamsheet is a strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache and persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation and A3 Production-Bundle Safeguards are merged. No formula, recommendation or new-provider checkpoint is approved.
 
-Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is merged through PR #102. EB-1 changes failure ownership only. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
+Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is merged through PR #102. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
 
 ## Historical evidence baseline — before PR #107 merge
 
@@ -169,6 +167,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 - Optional providers fail gracefully; Understat remains team-level and Odds remains direct-only.
 - Validated supporting inputs use separate local caches; Understat raw HTML and Odds secrets are never stored in those caches.
 - Stage 10 evidence flows one way from frozen prediction to outcome to evaluation to review and cannot feed back into live recommendations.
+- `src/state.mjs` is the declared cross-module `S` slot inventory; domain modules remain the semantic owners of their own mutable state.
 
 ## Current product gaps
 
@@ -183,7 +182,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 ## Current technical risks
 
 - real post-Gameweek minute-history cache reuse and revision-triggered refresh have automated coverage but cannot yet have physical live-season evidence;
-- the flattened bundle still depends on an explicit module order that is broader than the direct import graph;
+- the flattened bundle still depends on an explicit module order that is broader than the direct import graph, protected by PR #111's complete-bundle safeguards;
 - browser persistence failure handling is proven by automated tests only; Teamsheet never installs a `window.storage` manager itself, so the authoritative-backend paths have no physical-device or real-host evidence;
 - browser automation cannot replace physical Safari layout and interaction evidence.
 
@@ -193,15 +192,15 @@ These are roadmap inputs, not authority to change them.
 
 ### Completed now
 
-**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103. **A3 cache and persistence resilience:** complete and merged through PR #104 with physical iPhone testing explicitly waived. **Post-A3 Checkpoint 0:** complete and merged through PR #105. **0C manual-squad dead-handler cleanup:** complete and merged through PR #106. **`fpl:calib` compatibility:** complete and merged through PR #107. **A3 Error-Boundary Separation (EB-1):** complete, physically accepted on the executable device paths, merged and post-merge verified through PR #108 at `ba5daa20…`.
+**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103. **A3 cache and persistence resilience:** complete and merged through PR #104 with physical iPhone testing explicitly waived. **Post-A3 Checkpoint 0:** complete and merged through PR #105. **0C manual-squad dead-handler cleanup:** complete and merged through PR #106. **`fpl:calib` compatibility:** complete and merged through PR #107. **A3 Error-Boundary Separation (EB-1):** complete, physically accepted on the executable device paths, merged and post-merge verified through PR #108. **A3 Production-Bundle Safeguards:** complete and merged through PR #111 at `5a1a036…`, with exact-main 859/859 verification.
 
 ### Current checkpoint
 
-**Production-Bundle Safeguards — investigation and design only.** Establish the current production-bundle execution contract, the intentional and accidental file-order/global-scope/runtime-replacement dependencies, the gap between source-module tests and complete-bundle tests, and the smallest safe set of permanent safeguards. Do not change the bundler, module order, source runtime, generated deployable or dependency model without a separate explicit implementation approval.
+**A3 State-Ownership Cleanup — approved narrow implementation on draft PR #112.** Keep the existing distributed architecture; explicitly inventory legitimate shared `S` slots; make the Mini-League compatibility alias one-way; add focused regressions; reconcile stale checkpoint documentation. This candidate is not complete until the full existing suite, deterministic production build, provenance/build identity and generated-only publication structure pass.
 
 ### Next planned checkpoints
 
-After Production-Bundle Safeguards, the A3 sequence remains **State-Ownership Cleanup**, **Route-Aware Rendering and Performance**, **small stale-code cleanup**, then **A3 documentation/architecture closeout**. Each begins with investigation/design and requires explicit approval before implementation. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
+After State-Ownership Cleanup, the A3 sequence remains **Route-Aware Rendering and Performance**, **small stale-code cleanup**, then **A3 documentation/architecture closeout**. None is implementation-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
 
 ### After real Gameweek data
 
@@ -209,4 +208,4 @@ Perform the deferred Leagues acceptance and begin genuine Stage 10 evidence revi
 
 ## Non-negotiable limits
 
-Refresh-Load R1 changes acquisition cadence and validated local persistence only. A3 cache and persistence resilience changes browser persistence compatibility, verification and disclosure only. `fpl:calib` compatibility rejects unverified stored calibration without introducing a methodology or tuned values. EB-1 changes failure ownership only. None of those checkpoints authorises any new provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, D1 persistence, Cloudflare or Pages architecture change. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.
+Refresh-Load R1 changes acquisition cadence and validated local persistence only. A3 cache and persistence resilience changes browser persistence compatibility, verification and disclosure only. `fpl:calib` compatibility rejects unverified stored calibration without introducing a methodology or tuned values. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. State-Ownership Cleanup may clarify ownership and remove the Mini-League writable-alias ambiguity only. None of those checkpoints authorises any new provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League intelligence, strategy, route-performance, navigation, D1 persistence, Cloudflare or Pages architecture change. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.

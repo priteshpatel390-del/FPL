@@ -88,11 +88,21 @@ function migrateMiniLeagueState({stored,legacyConfig,legacyLeagues,entry}={}){
   const discovered=entryClassicLeagues(entry);
   return normaliseMiniLeagueState({saved:discovered,selectedLeagueId:discovered[0]?.id||''});
 }
-function syncMiniLeagueAlias(){ S.leagues=S.miniLeagues.saved; }
+
+/* `S.miniLeagues` is the only writable runtime preference representation.
+   `S.leagues` remains as a read-only compatibility bridge for legacy readers;
+   assigning to it cannot replace canonical preferences after initialisation. */
+function installMiniLeagueAlias(){
+  Object.defineProperty(S,'leagues',{
+    enumerable:true,
+    configurable:true,
+    get(){ return Array.isArray(S.miniLeagues?.saved) ? S.miniLeagues.saved : []; },
+    set(){ /* legacy compatibility writes are intentionally ignored */ }
+  });
+}
 async function persistMiniLeagueState(options={}){
   const state=normaliseMiniLeagueState(S.miniLeagues);
   S.miniLeagues=state;
-  syncMiniLeagueAlias();
   const result=await ssetVerified(K_MINI_LEAGUES,state);
   if(result.ok) clearPersistenceWarning('mini-leagues');
   else setPersistenceWarning('mini-leagues','Mini-League changes are active for this session, but Teamsheet could not save them on this device. They may revert after reload.');
@@ -105,7 +115,6 @@ async function initMiniLeagueState(legacyConfig={}){
   const legacyLeagues=legacyResult.ok&&legacyResult.found?legacyResult.value:null;
   const compatibility=miniLeagueStoredCompatibility(stored);
   S.miniLeagues=migrateMiniLeagueState({stored,legacyConfig,legacyLeagues,entry:S.entry});
-  syncMiniLeagueAlias();
   const persisted=await persistMiniLeagueState({withResult:true});
   if(persisted.result.ok&&((storedResult.found&&!compatibility.ok)||(!storedResult.ok&&storedResult.reason==='malformed')))
     setPersistenceWarning('mini-leagues','Saved Mini-League and rival preferences could not be verified for the current season and were not restored. Current leagues will be rediscovered from Official FPL.');
@@ -168,5 +177,5 @@ function miniLeaguePinnedRivals(leagueId){ return normaliseMiniLeagueState(S.min
 function miniLeagueComparisonRivals(leagueId){ return normaliseMiniLeagueState(S.miniLeagues).comparisonRivalsByLeague[miniLeagueId(leagueId)]||[]; }
 
 S.miniLeagues=emptyMiniLeagueState();
-S.leagues=[];
+installMiniLeagueAlias();
 export { MINI_LEAGUE_STATE_VERSION, K_MINI_LEAGUES, MAX_PINNED_RIVALS, MAX_COMPARISON_RIVALS, miniLeagueId, miniLeagueRecord, miniLeagueRivalRecord, uniqueRivalRecords, normaliseMiniLeagueState, miniLeagueStoredCompatibility, entryClassicLeagues, migrateMiniLeagueState, initMiniLeagueState, mergeDiscoveredMiniLeagues, persistMiniLeagueState, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, rememberLeague, selectMiniLeague, removeMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, setMiniLeagueComparisonRivals, clearMiniLeagueComparisonRivals, miniLeagueSelectedRivalId, miniLeaguePinnedRivals, miniLeagueComparisonRivals };

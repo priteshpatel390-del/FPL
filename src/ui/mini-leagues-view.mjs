@@ -485,7 +485,8 @@ function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
   renderMiniLeagueHub(); renderMiniLeagueLanding(); renderMiniLeagueStandings(); renderMiniLeagueRival(); renderMiniLeagueExposure();
 }
 function renderLeagueChips(){
-  if(Array.isArray(S.leagues)&&S.leagues!==S.miniLeagues.saved) S.miniLeagues={...S.miniLeagues,saved:S.leagues};
+  /* `S.leagues` is a read-only bridge onto canonical `S.miniLeagues.saved`, so
+     rendering never copies a legacy value back into canonical preferences. */
   const legacy=$('leagueChips');
   if(legacy) setChildren(legacy,(S.miniLeagues.saved||[]).map(row=>el('button',{class:'chip',type:'button'},row.name||row.id)));
   renderLeagueManageList();

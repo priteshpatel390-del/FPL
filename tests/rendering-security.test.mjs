@@ -28,10 +28,16 @@ test('XSS-1: hostile team, player and provider values are inert across core rend
 
 test('XSS-1: hostile entry and saved-league names render as text nodes', () => {
   const {T,doc}=loadApp(); syntheticWorld(T);
-  T.S.entry={name:payloads[0]}; T.S.leagues=[{id:'1',name:payloads[1]}];
+  T.S.entry={name:payloads[0]};
+  // Canonical Mini-League preferences are the only writable representation.
+  T.S.miniLeagues={...T.S.miniLeagues,saved:[{id:'1',name:payloads[1]}]};
+  // The legacy alias stays non-authoritative, so this write must not render.
+  T.S.leagues=[{id:'2',name:payloads[0]}];
   T.renderAll(); T.renderLeagueChips();
   assertInert(doc.gwstrip,payloads[0]);
   assertInert(doc.leagueChips,payloads[1]);
+  assert.equal(visibleText(doc.leagueChips).includes(payloads[0]),false,
+    'a legacy S.leagues write must not reach saved-league rendering');
 });
 
 test('XSS-1: manual squad pills and player-search results keep hostile names inert', () => {
