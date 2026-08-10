@@ -53,6 +53,18 @@ A declared `S` key therefore means only that the value is intentionally shared a
 
 The persisted v3 Mini-League record and its migration/season-compatibility rules are unchanged.
 
+## Corrections found during implementation review
+
+Reviewing the first candidate against a freshly built bundle found three defects, all corrected inside the approved boundary:
+
+1. **A real regression.** `tests/rendering-security.test.mjs` seeded its hostile saved-league name through the legacy `S.leagues` alias. Once the alias became read-only that write was ignored, no chip rendered and the XSS assertion failed. The test now seeds canonical `S.miniLeagues.saved`, keeps both original inertness assertions unchanged, and additionally proves a legacy alias write never reaches saved-league rendering. Nothing was weakened, deleted or skipped.
+2. **A stale documentation index.** `docs/A3-STATE-OWNERSHIP-CLEANUP.md` was not listed in [Historical Records](HISTORICAL_RECORDS.md), which the permanent documentation-integrity test requires.
+3. **Residual reverse-authority code.** `renderLeagueChips()` still contained `S.miniLeagues={...S.miniLeagues,saved:S.leagues}`, and `syncMiniLeagueAlias()` had become a no-op with two dead call sites. Both were removed so the one-way rule is structural rather than merely unreachable. A source regression now rejects any module that rebuilds canonical Mini-League state from the legacy alias.
+
+The trailing newline lost from `src/state.mjs` in the first candidate was also restored.
+
+Each new regression was mutation-checked: restoring a writable alias, restoring the reverse-authority write and introducing an undeclared shared slot each fail the suite.
+
 ## Explicit exclusions
 
 This checkpoint does not change:
