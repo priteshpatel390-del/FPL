@@ -1,11 +1,11 @@
 # PROJECTION_MODEL.md — projection engine reference
 
-## 10 August 2026 — persisted calibration compatibility candidate
+## 10 August 2026 — persisted calibration compatibility boundary
 
-PR #107 does not change the projection formula or any calibration factor. It changes only whether unverified persisted calibration may enter model state: all currently stored `fpl:calib` records fail closed, remain stored but inert, and the standard uncalibrated model is used. The existing `S.calib` multiplier semantics remain byte-unchanged for any future separately approved compatible activation path. The current walk-forward evaluation remains a historical diagnostic and does not produce or persist production calibration. This checkpoint makes no predictive-accuracy claim. Verified candidate head: `69e539647ae687f49605633505e7147da76125e2`, 842/842 tests.
+`fpl:calib` compatibility is complete and merged through PR #107 at `main` `d112c673310149a4463def1758242460450600dc`. It does not change the projection formula or any calibration factor. It changes only whether unverified persisted calibration may enter model state: all currently stored `fpl:calib` records fail closed, remain stored but inert, and the standard uncalibrated model is used. The existing `S.calib` multiplier semantics remain byte-unchanged for any future separately approved compatible activation path. The current walk-forward evaluation remains a historical diagnostic and does not produce or persist production calibration. This checkpoint makes no predictive-accuracy claim. Its verified candidate reached 842/842 tests; subsequent A3 engineering through State-Ownership Cleanup leaves the model/rules boundary unchanged and current `main` is verified at 864/864.
 
 Purpose: precise record of the current deterministic projection engine, expected-minutes boundary and Stage 8 uncertainty layer.
-Audience: anyone touching model code. Last updated: 2026-07-29.
+Audience: anyone touching model code. Last updated: 2026-08-10.
 Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.
 
 ## Versions and configuration
@@ -46,7 +46,7 @@ For a live-season fixture:
 - Bonus: awarded season bonus per estimated appearance, shrunk toward the positional population prior and multiplied by pAppear.
 - Yellow cards, red cards, own goals, penalty misses and goalkeeper penalty saves: explicit sparse-event expectations with positional shrinkage.
 
-All components are inspectable. Non-finite components are zeroed. Position calibration remains inherited and the final calibrated total is floored at zero.
+All components are inspectable. Non-finite components are zeroed. The existing optional position-calibration multiplier path is unchanged; unverified persisted calibration no longer activates it, and the final total is floored at zero.
 
 ## Pre-season fallback
 Before the season is live, deterministic projections continue to use the established price-implied positional baseline, ownership tilt and fixture adjustment. Stage 8 detailed simulation is disabled in pre-season because this path does not expose sufficiently credible event-level rates for precise distributions.
