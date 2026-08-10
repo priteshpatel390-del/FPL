@@ -1,10 +1,10 @@
 # ARCHITECTURE.md
 
-## 10 August 2026 — calibration persistence boundary candidate
+## 10 August 2026 — current state-ownership and calibration-persistence boundaries
 
-PR #107 (draft) makes `fpl:calib` a fail-closed restore boundary: generic stored JSON no longer reaches `S.calib`; every currently stored calibration record is rejected as contract-unverified, left byte-for-byte in storage, and standard uncalibrated projection state remains active. The existing live scoring multiplier code is unchanged and the Stage 7 walk-forward path remains diagnostic-only. A future production calibration record requires a separately approved season/model/rules/methodology/dataset contract before any activation path may be added. Verified candidate head `69e539647ae687f49605633505e7147da76125e2` passed Verify Teamsheet run #123.
+GitHub `main` is `691d9f929284d51c233b61d099c34cafe1030db6`, merge of A3 State-Ownership Cleanup PR #112 from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. `src/state.mjs` now declares the legitimate cross-module `S` slot inventory while semantic ownership remains distributed across the existing domain modules. `S.miniLeagues` is the canonical writable Mini-League preference state; the legacy `S.leagues` compatibility alias is read-only and cannot become an alternative authority. This is a narrow ownership hardening, not a general state-management rewrite.
 
-
+`fpl:calib` compatibility is also complete through PR #107. Unverified stored calibration records fail closed before reaching `S.calib`, remain byte-preserved but inert, and standard uncalibrated projections remain active. The existing live scoring multiplier code is unchanged and the Stage 7 walk-forward path remains diagnostic-only. A future production calibration record still requires a separately approved season/model/rules/methodology/dataset contract before any activation path may be added.
 
 ## Mobile viewport and primary-screen presentation boundary
 
@@ -16,7 +16,7 @@ The accepted PR #103 mobile presentation boundary keeps startup ownership in the
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) selects Cloudflare D1 for relational/queryable records and private R2 for exact content-addressed evidence, mediated by a separate authenticated data Worker. This is a future boundary only: the existing Official FPL gateway and deterministic browser calculation path remain independent, and persistence failure must not change recommendations. Google Sheets is downstream reporting only. No infrastructure or runtime implementation is approved.
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last reconciled: 2026-08-08. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last reconciled: 2026-08-10. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
 
 ## Directory structure
 ```
@@ -28,7 +28,7 @@ index.html              generated GitHub Pages deployment copy; never hand-edit
 src/
   config.mjs            model/rules versions and FPL, minutes, scoring, transfer, simulation, odds rules
   util.mjs              shared parsing and DOM-builder primitives
-  state.mjs             core state, bootstrap slimming/hydration, minute histories and last rendered optimiser result
+  state.mjs             declared shared S-slot inventory plus core state/bootstrap helpers
   storage.mjs           configuration and cache envelopes
   providers/            validation, transport, retry, health, outcome validation and optional data loaders
   model/
@@ -86,8 +86,18 @@ Minutes never imports scoring. Scoring may reuse exported minutes helpers. Simul
 
 The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records; review observes only stored snapshot, outcome, evaluation and transfer-horizon records. Metrics and review do not import or execute current scoring, minutes, simulation or optimiser functions and never write into runtime model state.
 
+## Shared state ownership boundary
+
+`src/state.mjs` exports `SHARED_STATE_KEYS` as the explicit inventory of legitimate cross-module `S` slots. That inventory is an architectural declaration, not a transfer of semantic ownership: provider, preview, navigation, worker, persistence and domain modules continue to own the values they already owned. A zero-dependency source regression rejects undeclared direct `S.key` and static `S['key']` usage and requires refresh-owned keys to remain an explicit subset of the shared inventory.
+
+Mini-League preference ownership is one-way. `S.miniLeagues` is the only writable runtime preference representation; `S.leagues` exists only as a compatibility read and an attempted legacy write cannot replace canonical preferences. Persisted version-3 Mini-League records, migration and season-compatibility behaviour are unchanged.
+
+The source regression is intentionally not a general JavaScript data-flow proof for arbitrary computed property access. The known dynamic refresh-owned loop is governed separately by its explicit key set. No Proxy, state framework or centralised reducer/store is introduced.
+
 ## Build boundary
 The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome, metric and review modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.
+
+PR #111's Production-Bundle Safeguards make the flattened-bundle dependency explicit in verification: the complete generated bundle must parse as one classic script; the runtime harness may suppress only live asynchronous startup while retaining every late production module; and the generated bundle must execute the late runtime replacements and navigation contract. These are safeguards around the existing bundler order, not a bundler rewrite.
 
 `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` owns temporary transfer/captain preview state. `ui/views.mjs` composes those helpers with existing model outputs. Dynamic projection bars use native progress elements and uncertainty geometry uses namespace-correct SVG attributes. `util.mjs` rejects style attributes and runtime style objects.
 
@@ -124,7 +134,7 @@ Player Explorer retains the same filters, projection ordering and Player Detail 
 
 `src/storage.mjs` owns every durable browser record other than the Stage 10 evidence stores. Persistence is a separate concern from data acquisition: a local write failure is a local persistence failure and never changes Official FPL or optional-provider health.
 
-Records carry explicit compatibility identity. The main `fpl:cache` is written as a `teamsheet.main-fpl-cache` envelope with a cache version, the repository schema version, the exact `FPL_RULES.season` and a fetched timestamp; the immediately preceding raw shape is accepted only when its Official FPL event deadlines establish the current season. `fpl:config` version 1 separates season-independent preferences from a season-owned account section. `fpl:squad` version 1 and `fpl:mini-leagues` version 3 are season-owned and fail closed. Incompatible records are rejected before application state is mutated rather than promoted to current data. `fpl:calib` is deliberately unchanged and remains behind the model approval gate.
+Records carry explicit compatibility identity. The main `fpl:cache` is written as a `teamsheet.main-fpl-cache` envelope with a cache version, the repository schema version, the exact `FPL_RULES.season` and a fetched timestamp; the immediately preceding raw shape is accepted only when its Official FPL event deadlines establish the current season. `fpl:config` version 1 separates season-independent preferences from a season-owned account section. `fpl:squad` version 1 and `fpl:mini-leagues` version 3 are season-owned and fail closed. Incompatible records are rejected before application state is mutated rather than promoted to current data. `fpl:calib` restore is separately fail-closed through PR #107: stored bytes may remain, but unverified records are not admitted into `S.calib`; any future production calibration methodology or compatible activation remains behind the model approval gate.
 
 Three write surfaces exist and are not interchangeable. `sset()` is the untouched legacy fire-and-forget writer. `ssetChecked()` is the refresh persistence surface: it reports serialisation and browser write outcomes so the Atomic Foreground Refresh phase can classify `persist_failed`. `ssetVerified()` is the user-owned surface: it writes and reads the value back, so success means the record is actually restorable.
 
@@ -152,7 +162,7 @@ Committed deployables use a two-commit finalisation sequence. The first commit c
 Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source/generated style attributes, forbids runtime style APIs and removes both `style-src-attr` and `unsafe-inline`. Stage 10 metric records reuse allowlist construction, forbidden-secret checks, canonical hashes and recovery-only storage boundaries.
 
 ## Testing
-Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. R1 adds request-count/order, revision/age, missing-only refresh, outage-guard, timestamp, provider-cadence, cache-validation, secret-free persistence, manual-bypass and definite-offline disclosure coverage. Stage 10.3 retains pure metric and storage suites covering exact calculations, identity/revision rules, blank/double/postponed fixtures, fixture-minute allocation, legal automatic substitutions, captain fallback, frozen transfer horizons, sample safeguards, deterministic serialisation, tamper detection and non-mutation. Existing production formula and golden suites remain unchanged.
+Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. R1 adds request-count/order, revision/age, missing-only refresh, outage-guard, timestamp, provider-cadence, cache-validation, secret-free persistence, manual-bypass and definite-offline disclosure coverage. Stage 10.3 retains pure metric and storage suites covering exact calculations, identity/revision rules, blank/double/postponed fixtures, fixture-minute allocation, legal automatic substitutions, captain fallback, frozen transfer horizons, sample safeguards, deterministic serialisation, tamper detection and non-mutation. PR #111 adds complete production-bundle safeguards and PR #112 adds focused shared-state ownership regressions. Existing production formula and golden suites remain unchanged.
 
 ## Future serverless architecture
 Static UI shape can remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
@@ -167,7 +177,7 @@ Capture uses the official FPL event deadline, samples same-origin HTTP `Date` be
 ## Stage 10.1 verified-startup orchestration
 `main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying foreground returns use the same path. Cached FPL data may be hydrated as fallback, but rendering is deferred while approved sources settle. R1 changes which supporting requests are due, not this orchestration boundary. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture.
 
-Startup and explicit manual loading own the interaction gate. Foreground refresh keeps the previously rendered interface interactive while provider state is replaced before the final render; a fully atomic foreground-state replacement remains a separately gated structural improvement. R1 reduces the duration/frequency of that exposure but does not claim to solve it.
+Startup and explicit manual loading own the interaction gate. Atomic Foreground Refresh is merged through PR #102: a qualifying foreground refresh keeps the previously rendered interface interactive while collection is staged, then applies one synchronous commit before render and persistence. Rollback restores commit-owned and module-private state on a failed commit. This architecture is complete; Route-Aware Rendering and Performance is a separate future measurement/design checkpoint and does not reopen refresh atomicity.
 
 ## Stage 10.2 official-outcome boundary
 `providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL player totals, filtered fixtures and optional manager outcomes. Duplicate player IDs and conflicting fixture identities fail closed.
@@ -207,7 +217,7 @@ The global shell owns one persistent Ask composer, one fixed five-column safe-ar
 
 The wrapper requires a complete legal 15 before exposing a recommendation; otherwise it renders a labelled decorative pitch placeholder. Connected/manual/cache/preview provenance, base-XI xP, captain uplift, total including captain, one presentation-priority risk and an advisory deadline action are explicit. Team setup remains after the immediate pitch, while captaincy and all-15 research are collapsed progressively.
 
-The existing Stage 10.1 verified startup and foreground interaction lock are unchanged. Official FPL transport reliability, authoritative bank/free-transfer retrieval and atomic non-blocking foreground refresh remain separately gated.
+Atomic Foreground Refresh is now the accepted non-blocking foreground orchestration boundary. Official FPL transport reliability and authoritative bank/free-transfer retrieval remain separate concerns; the Team presentation wrapper itself does not own them.
 
 ## Teamsheet 2.0.3 transfer presentation boundary
 
