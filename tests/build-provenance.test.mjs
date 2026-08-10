@@ -45,9 +45,12 @@ test('CI verifies every merge commit on main, not only pull-request heads', () =
   assert.match(triggers, /^\s*workflow_dispatch:/m);
 });
 
-test('a push verification of a merge commit is never cancelled by a later push', () => {
+test('only pull-request verifications are cancellable, so no permanent record is destroyed', () => {
   const workflow = readFileSync('.github/workflows/verify.yml', 'utf8');
-  assert.match(workflow, /cancel-in-progress:\s*\$\{\{\s*github\.event_name\s*!=\s*'push'\s*\}\}/);
+  // A push to main and a manual run share the refs/heads/main concurrency
+  // group, so neither may cancel: either one cancelling would discard the
+  // other's permanent verification of an exact revision.
+  assert.match(workflow, /cancel-in-progress:\s*\$\{\{\s*github\.event_name\s*==\s*'pull_request'\s*\}\}/);
   assert.doesNotMatch(workflow, /cancel-in-progress:\s*true/);
 });
 

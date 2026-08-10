@@ -10,11 +10,14 @@ on:
 permissions:
   contents: read
 
-# A merge commit is the permanent record, so a push to main must always reach a
-# complete verification result. Superseded pull-request pushes stay cancellable.
+# Only pull-request runs are cancellable, because only they get superseded by a
+# newer push to the same branch. A push to main and a manual run both produce a
+# permanent record of an exact revision and must always reach a result; they
+# share the refs/heads/main group, so allowing either to cancel would let one
+# destroy the other's evidence.
 concurrency:
   group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'push' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:

@@ -31,13 +31,17 @@ on:
   workflow_dispatch:
 ```
 
-A second, less obvious defect was corrected at the same time. The workflow used `cancel-in-progress: true` for every event. Two merges landing in quick succession share the concurrency group `refs/heads/main`, so the earlier merge commit's run would be cancelled and that commit would permanently lack a verification result — reintroducing the same gap this item exists to close. Cancellation is now restricted to non-push events:
+A second, less obvious defect was corrected at the same time. The workflow used `cancel-in-progress: true` for every event. Two merges landing in quick succession share the concurrency group `refs/heads/main`, so the earlier merge commit's run would be cancelled and that commit would permanently lack a verification result — reintroducing the same gap this item exists to close.
+
+The first correction restricted cancellation to non-push events. Independent review of this checkpoint found that insufficient: `workflow_dispatch` run against `main` also resolves `github.ref` to `refs/heads/main`, so it shares the same concurrency group as a push run, and it would still have evaluated `cancel-in-progress: true`. A manual run started while a merge verification was in flight would therefore have cancelled it — the exact failure this item exists to prevent, and a realistic one, since a manual run against `main` is the recommended way to create a permanent record on demand.
+
+Cancellation is now restricted to pull-request runs only:
 
 ```yaml
-cancel-in-progress: ${{ github.event_name != 'push' }}
+cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 ```
 
-Superseded pull-request pushes remain cancellable, which is the behaviour that keeps PR feedback fast.
+Superseded pull-request pushes remain cancellable, which keeps PR feedback fast. A push run and a manual run on `main` never cancel each other; because they share a concurrency group, the later one queues until the earlier finishes, so both still produce a complete record.
 
 ### Why the existing job body needs no change (fact, verified locally)
 
