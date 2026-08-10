@@ -1,9 +1,13 @@
 # ROADMAP.md — current and proposed checkpoints
 
 
-## 10 August 2026 — A3 cache and persistence resilience implementation candidate
+## 10 August 2026 — A3 cache and persistence resilience is merged
 
-Implementation is owner-approved on branch `agent/a3-cache-persistence-resilience` (PR #104, draft), based on GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Final source/test head `502a1f7ac0e0456743f3ddb0695433decf8976d1` with generated-only child `02216b8` keeps Atomic Foreground Refresh ordering unchanged while adding a schema/season-bound main `fpl:cache`, verified user-owned saves, season-bound manual-squad and Mini-League preference records, and explicit session-only warnings when browser persistence fails. Independent review found and corrected one real defect: a failed authoritative storage-manager write could fall back to `localStorage` and be reported as a durable save even though no later read could return it. The existing Refresh-Load R1 supporting-cache cadence/compatibility rules and Stage 10 evidence stores are unchanged. Legacy `fpl:calib` remains deliberately untouched behind the separate model approval gate. Local validation accounts for **832 passing tests, 0 failed**, verified committed build provenance and two byte-identical production builds from the final head. Permanent Verify Teamsheet has passed on the exact published head and the PR description carries that run evidence; this file deliberately records no run ID, and any later head requires fresh permanent verification. Independent review of the final diff is complete. An owner decision on physical iPhone testing and explicit owner merge approval remain required, and PR #104 stays draft and unmerged until then. No physical device testing has been performed or claimed.
+PR #104 is merged at `main` `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, from reviewed head `4e434b940e2bcb473374573db5da16f6a645d9eb` over source/test commit `502a1f7ac0e0456743f3ddb0695433decf8976d1` and generated-only child `02216b8`.
+
+It keeps Atomic Foreground Refresh ordering unchanged while adding a schema/season-bound main `fpl:cache`, verified user-owned saves, season-bound manual-squad and Mini-League preference records, and explicit session-only warnings when browser persistence fails. Independent review found and corrected one real defect: a failed authoritative storage-manager write could fall back to `localStorage` and be reported as a durable save even though no later read could return it. The Refresh-Load R1 supporting-cache cadence/compatibility rules and Stage 10 evidence stores are unchanged. Legacy `fpl:calib` remains deliberately untouched behind the separate model approval gate.
+
+Evidence: **832 passing tests, 0 failed**, verified committed build provenance, two byte-identical production builds, and permanent Verify Teamsheet run #105 / `31377157889` on the reviewed head. Pritesh explicitly waived physical iPhone testing and explicitly approved the merge. No physical device testing was performed, and none is claimed.
 
 
 ## 10 August 2026 — PR #103 physical acceptance closeout
@@ -16,27 +20,30 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-PR #103 is merged at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Cache and persistence resilience is the current owner-approved implementation candidate on `agent/a3-cache-persistence-resilience`; it is not approved for merge. Data Architecture D1 remains an approved future design only. After this checkpoint is merged and verified, the next A3 remediation checkpoint is error-boundary separation.
+PR #104 is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, which is the current `main`. Data Architecture D1 remains an approved future design only.
+
+The current work is post-A3 Checkpoint 0 housekeeping: automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation, and an investigation of duplicate manual-squad handlers whose correction is proposed but not approved. `fpl:calib` is deliberately excluded. The next A3 remediation checkpoint is error-boundary separation.
 
 ## Current sequence after D1 design approval
 
 1. **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
 2. **Atomic Foreground Refresh — complete and merged:** PR #102 is merged and physically accepted. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
-3. **Cache and persistence resilience — current implementation candidate:** owner-approved scope is implemented on `agent/a3-cache-persistence-resilience` as draft PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet on the published head and independent review of the final diff all pass. An owner decision on physical iPhone testing and explicit merge approval remain gated.
-4. Error-boundary separation.
-5. Production-bundle safeguards.
-6. Documentation/state-ownership cleanup where appropriate.
-7. Understat repair.
-8. Odds API repair.
-9. Approved D1 persistent historical/live implementation.
-10. Route-aware rendering/performance work.
-11. Claude-to-ChatGPT migration.
-12. Cloudflare automation expansion.
-13. AI agents and richer external intelligence.
+3. **Cache and persistence resilience — complete and merged** through PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet run #105 and independent review of the final diff all passed. Physical iPhone testing was explicitly waived by the owner.
+4. **Post-A3 Checkpoint 0 housekeeping — current:** automatic `main` verification, documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). The 0C correction is proposed only.
+5. Error-boundary separation.
+6. Production-bundle safeguards.
+7. Documentation/state-ownership cleanup where appropriate.
+8. Understat repair.
+9. Odds API repair.
+10. Approved D1 persistent historical/live implementation.
+11. Route-aware rendering/performance work.
+12. Claude-to-ChatGPT migration.
+13. Cloudflare automation expansion.
+14. AI agents and richer external intelligence.
 
 Small stale-code cleanup remains low priority. Live-Gameweek evidence gates remain unchanged.
 
-Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 9 August 2026.
+Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 10 August 2026.
 
 ## Baseline
 

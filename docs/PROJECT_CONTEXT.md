@@ -11,11 +11,13 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-PR #103 is merged; GitHub `main` is `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Atomic Foreground Refresh PR #102 and the D1 design closeout PR #101 are merged before it.
+**A3 Cache & Persistence Resilience is merged.** GitHub `main` is `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, the merge of PR #104. Small mobile UI consistency PR #103, Atomic Foreground Refresh PR #102 and the D1 design closeout PR #101 are merged before it.
 
-**A3 Cache & Persistence Resilience is the current checkpoint and is implemented, not proposed.** It exists as draft PR #104 on `agent/a3-cache-persistence-resilience`: source/test commit `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`, documentation head `05cbfbc479ac024d923aa0e4bb525d03d0d777cb`. It passes **832 tests, 0 failed**, verified committed build provenance, deterministic byte-identical builds and root/deployable equality. The PR description carries the exact permanent Verify Teamsheet run evidence for its head; any later head requires fresh verification.
+PR #104's reviewed head was `4e434b940e2bcb473374573db5da16f6a645d9eb`, over source/test commit `502a1f7ac0e0456743f3ddb0695433decf8976d1` and generated-only child `02216b8`. It passes **832 tests, 0 failed**, verified committed build provenance, deterministic byte-identical builds and root/deployable equality, with permanent Verify Teamsheet run #105 / `31377157889` on the reviewed head. Physical iPhone acceptance was **explicitly waived by Pritesh**; none was performed and none is claimed.
 
-PR #104 remains **draft and unmerged**, with no physical iPhone acceptance performed or claimed. Data Architecture D1 remains an approved design only; D1/R2/Worker persistence implementation is not approved. The next substantive A3 remediation checkpoint after PR #104 merges is **error-boundary separation**, beginning with investigation/design.
+The current work is **post-A3 Checkpoint 0 housekeeping**: automatic Verify Teamsheet verification of `main`, this documentation reconciliation, and an investigation of duplicate manual-squad handlers. It changes no application runtime source. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
+
+Data Architecture D1 remains an approved design only; D1/R2/Worker persistence implementation is not approved. The next substantive A3 remediation checkpoint is **error-boundary separation**, beginning with investigation/design.
 
 ## 9 August 2026 D1 closeout
 
@@ -29,7 +31,7 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh and the small mobile UI consistency checkpoint are merged. A3 cache and persistence resilience is implemented as draft PR #104 and is not merged. No formula, recommendation or new-provider checkpoint is approved.
+Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint and A3 cache and persistence resilience are merged. No formula, recommendation or new-provider checkpoint is approved.
 
 Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is now merged through PR #102. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
 
@@ -37,14 +39,14 @@ Refresh-Load R1 changed acquisition cadence only: valid detailed histories, norm
 
 | Item | Evidence |
 |---|---|
-| Repository head | GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043`, merge of small mobile UI consistency PR #103 |
-| Latest merged application checkpoint | PR #103, source `646eee13960c343fbe07e3a76496717fd9837c0e` with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` |
-| Application tree | The accepted PR #103 tree is preserved by the merge |
-| Permanent automated baseline | PR #103 Verify Teamsheet run #90 / `31356255017`: 803 passed, 0 failed |
-| Generated application baseline | PR #103 reproduced committed deployables from reachable source before the test build; double builds were byte-identical and root equalled deployable |
-| Current unmerged candidate | A3 cache and persistence resilience, draft PR #104: source `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`, documentation head `05cbfbc479ac024d923aa0e4bb525d03d0d777cb`, **832 passed, 0 failed**. Exact permanent-run evidence is recorded in the PR description; a later head requires fresh verification. |
+| Repository head | GitHub `main` `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, merge of A3 cache and persistence resilience PR #104 |
+| Latest merged application checkpoint | PR #104, reviewed head `4e434b940e2bcb473374573db5da16f6a645d9eb`, source `502a1f7ac0e0456743f3ddb0695433decf8976d1` with generated-only child `02216b8` |
+| Application tree | The reviewed PR #104 tree is preserved by the merge |
+| Permanent automated baseline | PR #104 Verify Teamsheet run #105 / `31377157889` on reviewed head `4e434b9`: 832 passed, 0 failed. The merge commit received no automatic run, because `verify.yml` did not trigger on pushes to `main`; Checkpoint 0A corrects that for future merges. |
+| Generated application baseline | PR #104 reproduced committed deployables from reachable source before the test build; double builds were byte-identical and root equalled deployable. Independently reproduced locally at the merge commit `9b31f373…`. |
+| Current unmerged candidate | Post-A3 Checkpoint 0 housekeeping on `claude/teamsheet-post-a3-closeout-crqojj`: CI trigger correction, documentation reconciliation and the 0C investigation. No application runtime source change. |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | D1 design is approved and documented, but D1/R2/Worker persistence implementation is not. PR #104 hardens browser-side persistence only and remains owner-gated for merge; error-boundary separation follows it and begins with investigation. |
+| Approval boundary | D1 design is approved and documented, but D1/R2/Worker persistence implementation is not. PR #104 hardened browser-side persistence only. Error-boundary separation follows and begins with investigation. The Checkpoint 0C duplicate-handler correction is proposed only and not approved. |
 
 ## Physical iPhone Safari baseline
 
@@ -170,15 +172,15 @@ These are roadmap inputs, not authority to change them.
 
 ### Completed now
 
-**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103 at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`.
+**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103 at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. **A3 cache and persistence resilience:** complete and merged through PR #104 at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, with physical iPhone testing explicitly waived by the owner. It hardens the browser persistence boundary only: exact schema/season compatibility for the main `fpl:cache`, season/version ownership for user-owned records, verified writes that mean restorable, safe manual-squad/config ordering, and truthful session-only warnings when a write fails.
 
 ### Current checkpoint
 
-**A3 cache and persistence resilience** is implemented as draft PR #104 and awaits an owner decision on physical iPhone testing and explicit merge approval. It hardens the browser persistence boundary only: exact schema/season compatibility for the main `fpl:cache`, season/version ownership for user-owned records, verified writes that mean restorable, safe manual-squad/config ordering, and truthful session-only warnings when a write fails.
+**Post-A3 Checkpoint 0 housekeeping** — deliberately small and limited to continuous integration, documentation and investigation. It makes Verify Teamsheet run automatically on every merge to `main`, reconciles canonical documentation after the PR #104 merge, and records an investigation of duplicate manual-squad handlers whose proposed correction is **not implemented and not approved**. No application runtime source changes. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
 
 ### Next planned checkpoint
 
-After PR #104 merges, begin **A3 error-boundary separation** with investigation/design and a fresh latest-`main` baseline; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
+Begin **A3 error-boundary separation** with investigation/design and a fresh latest-`main` baseline; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
 
 ### After real Gameweek data
 

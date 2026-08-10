@@ -51,18 +51,18 @@ PR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-on
 
 > **Historical FPL-T1 review verification:** the owner-controlled Official FPL gateway review reached **590 passed, 0 failed, 0 skipped** with deterministic builds, exact Worker/CSP configuration and successful physical iPhone live bootstrap transport. FPL-T1 subsequently merged through PR #69 and Track A through PRs #70 and #72. This historical 590-test checkpoint is not the current repository baseline.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last reconciled: 2026-08-09. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
 
 ## Stack
 `node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
 
 ## Current verified baseline
 
-The latest merged repository and application checkpoint is PR #103 at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. A3 cache and persistence resilience is the current unmerged candidate.
+The latest merged repository and application checkpoint is PR #104 at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`. Post-A3 Checkpoint 0 housekeeping is the current unmerged candidate; it adds continuous-integration regression tests only.
 
-- merged `main` complete suite: **803 tests, 803 passed, 0 failed, 0 skipped, 0 cancelled**
-- exact PR #103 source: `646eee13960c343fbe07e3a76496717fd9837c0e`; generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`
-- permanent Verify Teamsheet run #90 / `31356255017`, completed successfully on the exact generated head
+- merged `main` complete suite: **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled**
+- exact PR #104 reviewed head: `4e434b940e2bcb473374573db5da16f6a645d9eb`; source `502a1f7ac0e0456743f3ddb0695433decf8976d1`; generated-only child `02216b8`
+- permanent Verify Teamsheet run #105 / `31377157889`, completed successfully on the reviewed head. The merge commit itself received no automatic run because `verify.yml` did not trigger on pushes to `main`; the complete suite and every build gate were reproduced locally at `9b31f373…`, and Checkpoint 0A makes future merges verify automatically.
 - merged production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build
 - A3 persistence candidate: **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled** locally
 - `persistence-resilience.test.mjs` adds cache/config/manual-squad/Mini-League compatibility, verified-write and authoritative-backend regressions; no existing test or golden expectation is removed, weakened, regenerated or skipped

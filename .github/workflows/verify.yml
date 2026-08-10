@@ -2,14 +2,19 @@ name: Verify Teamsheet
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# A merge commit is the permanent record, so a push to main must always reach a
+# complete verification result. Superseded pull-request pushes stay cancellable.
 concurrency:
   group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
   verify:

@@ -17,9 +17,9 @@ The PR #103 startup-canvas, primary-header, form-control visual/no-zoom and Leag
 
 The persistent platform is approved only as a design; no D1 database, R2 bucket, data Worker, authentication, migration, capture or Sheets automation exists. D1/R2 commits cannot be atomic across products and will require an R2-first manifest protocol plus orphan reconciliation. Cost/capacity estimates use synthetic evidence, provider archival rights remain unconfirmed, and all existing live-Gameweek evidence gates remain in force. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md).
 
-Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 9 August 2026.
+Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 10 August 2026.
 
-Current evidence boundary: DTR-1 is merged at `09e595c275b4f3614c09fb502291de6831813999` after 691 passing tests, reachable exact build provenance and populated physical iPhone Safari acceptance. Its device pass exposed a pre-existing focus-zoom defect in 15px editable controls; the narrow correction remains unmerged and exact-device acceptance is pending. Leagues post-Gameweek evidence remains deferred.
+Current evidence boundary: A3 cache and persistence resilience is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd` after 832 passing tests, reachable exact build provenance and deterministic builds; physical iPhone testing for that checkpoint was explicitly waived by the owner. The focus-zoom correction that DTR-1's device pass exposed is merged through PR #100 and was physically accepted. Leagues post-Gameweek evidence remains deferred.
 
 Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), [Historical Records](HISTORICAL_RECORDS.md).
 
