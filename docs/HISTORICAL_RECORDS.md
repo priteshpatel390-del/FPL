@@ -28,14 +28,14 @@ Purpose: make the repository's operational guidance and immutable project histor
 ## Current operational and acceptance records
 
 - [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md) — completed, merged and post-merge verified through PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`; `state.mjs` is the declared shared-slot inventory and the legacy Mini-League alias is one-way, without a state-management rewrite.
-- [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md) — owner-approved EB-1 failure-ownership package; provider evidence, commit, render, persistence and application-owned exceptions are separated without changing provider or model behaviour.
-- [`fpl:calib` compatibility and resilience](FPL-CALIB-COMPATIBILITY-RESILIENCE.md) — owner-approved fail-closed compatibility implementation candidate; legacy/unverified calibration is kept inert and standard uncalibrated projections remain active unless a future production methodology is separately approved.
-- [Post-A3 0C manual-squad dead-handler cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md) — owner-approved removal of the proven-unreachable per-button manual-squad listeners; the validating capture-phase runtime remains the sole interaction owner.
+- [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md) — complete, merged and post-merge verified through PR #108; provider evidence, commit, render, persistence and application-owned exceptions are separated without changing provider or model behaviour, with the recorded executable iPhone paths physically accepted.
+- [`fpl:calib` compatibility and resilience](FPL-CALIB-COMPATIBILITY-RESILIENCE.md) — complete and merged through PR #107; legacy/unverified calibration remains inert and standard uncalibrated projections stay active unless a future production methodology is separately approved.
+- [Post-A3 0C manual-squad dead-handler cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md) — complete and merged through PR #106; the proven-unreachable per-button listeners are removed and the validating capture-phase runtime remains the sole interaction owner.
 - [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) — automatic `main` verification, post-merge documentation reconciliation and the duplicate manual-squad handler investigation; merged through PR #105, with the 0C correction approved and implemented separately.
 - [A3 cache and persistence resilience](A3-CACHE-PERSISTENCE-RESILIENCE.md) — browser-side cache/persistence compatibility, verified user-owned writes and session-only persistence warnings; merged through PR #104.
 - [Data Architecture D1](DATA-ARCHITECTURE-D1.md) — approved historical/live persistence design; implementation remains deferred.
-- [DTR-1 direct Team renderer](DTR-1-DIRECT-TEAM-RENDERER.md) — current implementation and pending physical-acceptance record.
-- [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md) — staged collection and single synchronous commit; merge and physical iPhone acceptance owner-gated.
+- [DTR-1 direct Team renderer](DTR-1-DIRECT-TEAM-RENDERER.md) — complete, physically accepted and merged through PR #99; the accepted Team DOM is now created directly rather than rendered then reconstructed.
+- [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md) — complete, physically accepted and merged through PR #102; foreground collection is staged and applied through one synchronous commit with rollback protection.
 - [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) — authoritative accepted/deferred League boundary as of 8 August 2026.
 - [Leagues hub design](LEAGUES-HUB-DESIGN.md) — accepted hub-first and Official-versus-manual management design.
 - [Fixtures acceptance merge record](FIXTURES-ACCEPTANCE-MERGE-RECORD.md) — accepted populated Fixtures path through GW38.
