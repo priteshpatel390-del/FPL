@@ -1,8 +1,12 @@
 # A3 State-Ownership Cleanup
 
-Status: **implementation candidate on draft PR #112; not merged and not accepted yet.**
+Status: **complete, merged, accepted and post-merge verified through PR #112.**
 
-Baseline for this checkpoint is GitHub `main` `5a1a036082aba1a9c297e8d6194cc1ae4f476041`, merge of PR #111 (A3 Production-Bundle Safeguards). Exact-main Verify Teamsheet run #159 / `31422588548` passed **859 tests, 859 passed, 0 failed, 0 skipped, 0 cancelled** together with committed build provenance, production build, deterministic rebuild, root/deployable equality, build identity and production-output preservation.
+This checkpoint began from GitHub `main` `5a1a036082aba1a9c297e8d6194cc1ae4f476041`, merge of PR #111 (A3 Production-Bundle Safeguards). Exact-main Verify Teamsheet run #159 / `31422588548` passed **859 tests, 859 passed, 0 failed, 0 skipped, 0 cancelled** together with committed build provenance, production build, deterministic rebuild, root/deployable equality, build identity and production-output preservation.
+
+The final reviewed PR #112 head was `620daf14d1c354668b16df74daf05e29d8a1eb25`. PR #112 merged to `main` as `691d9f929284d51c233b61d099c34cafe1030db6` on 10 August 2026. Post-merge Verify Teamsheet run #167 / `31430700053` completed successfully on that exact merge commit with **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**; committed deployment provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation all passed. GitHub Pages deployment run #117 / `31430697347` also completed successfully on the same exact merge commit.
+
+No physical iPhone testing was performed for this checkpoint and none is claimed. The checkpoint introduced no broad state-management rewrite and changed no model, provider, persistence-format, error-boundary, Atomic Foreground Refresh, routing-performance or bundler behaviour.
 
 ## Investigation outcome
 
@@ -17,15 +21,15 @@ Neither risk was classified as a demonstrated user-visible defect.
 
 ## Approved implementation boundary
 
-Pritesh approved the narrow hardening option on 10 August 2026. The candidate may only:
+Pritesh approved the narrow hardening option on 10 August 2026. The completed package only:
 
-- declare the legitimate cross-module `S` slots centrally as an inventory;
-- keep semantic ownership with the existing domain modules;
-- add a zero-dependency source regression that rejects undeclared direct `S.<key>` / static `S['key']` usage and proves refresh-owned keys remain an explicit subset;
-- make the Mini-League compatibility alias one-way so `S.miniLeagues` remains the only writable runtime preference representation;
-- add a focused regression proving an attempted legacy alias write cannot replace canonical preferences;
-- reconcile stale canonical checkpoint/baseline wording left after PR #111;
-- regenerate deployables only through the existing deterministic build.
+- declares the legitimate cross-module `S` slots centrally as an inventory;
+- keeps semantic ownership with the existing domain modules;
+- adds a zero-dependency source regression that rejects undeclared direct `S.<key>` / static `S['key']` usage and proves refresh-owned keys remain an explicit subset;
+- makes the Mini-League compatibility alias one-way so `S.miniLeagues` remains the only writable runtime preference representation;
+- adds a focused regression proving an attempted legacy alias write cannot replace canonical preferences;
+- reconciles checkpoint/baseline documentation needed by the implementation candidate;
+- regenerates deployables only through the existing deterministic build.
 
 ## Ownership contract
 
@@ -79,9 +83,9 @@ This checkpoint does not change:
 - framework/dependency architecture;
 - Stage 10 evidence feedback rules.
 
-## Validation gate
+## Final validation evidence
 
-Before this checkpoint can be called complete, the final candidate must retain all 859 baseline tests and add the focused ownership regressions, then pass:
+The completed checkpoint retained all 859 baseline tests and added five focused ownership regressions. Final reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25` passed **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled** together with:
 
 - `./run-tests.sh`;
 - complete production build;
@@ -90,6 +94,15 @@ Before this checkpoint can be called complete, the final candidate must retain a
 - exact build identity and committed provenance;
 - all PR #111 production-bundle safeguards.
 
-Physical iPhone testing is not required by default because the approved package has no intended visual/device interaction change. If final review finds a user-visible runtime change, device acceptance becomes separately required.
+Post-merge Verify Teamsheet run #167 / `31430700053` repeated the permanent repository gate successfully on exact merge commit `691d9f929284d51c233b61d099c34cafe1030db6`. GitHub Pages deployment run #117 / `31430697347` succeeded for that same commit.
 
-No merge is authorised by this document. PR #112 remains draft until evidence is complete and Pritesh explicitly approves merge.
+Physical iPhone testing was not required because the approved package had no intended visual/device interaction change. No physical device testing was performed and none is claimed.
+
+## Remaining limitations
+
+- The shared-slot source regression covers direct `S.key` and static `S['key']` access. It is not a general JavaScript data-flow proof for arbitrary computed property access; the known dynamic access is the explicit `REFRESH_OWNED_KEYS` lifecycle loop, whose keys are separately required to be a subset of the declared shared inventory.
+- `SHARED_STATE_KEYS` is captured when `state.mjs` initialises, so inventory equality describes the declared cross-module surface while semantic write ownership remains a module-level contract rather than a runtime capability system.
+- Persisted v3 Mini-League records, migration and season-compatibility behaviour are unchanged; this checkpoint does not add new live-data or device evidence for those paths.
+- The final candidate received automated, mutation and repository verification evidence; no physical iPhone testing is claimed.
+
+PR #112 is a permanent completed checkpoint record. Any Route-Aware Rendering and Performance work remains separately approval-gated and must begin with investigation, measurement and evidence before any optimisation or implementation is proposed.
