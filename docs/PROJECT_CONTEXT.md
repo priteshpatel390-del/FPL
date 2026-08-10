@@ -1,14 +1,14 @@
 # PROJECT_CONTEXT.md
 
-## 10 August 2026 — current baseline after Production-Bundle Safeguards
+## 10 August 2026 — current baseline after A3 State-Ownership Cleanup
 
-GitHub `main` is `5a1a036082aba1a9c297e8d6194cc1ae4f476041`, merge of A3 Production-Bundle Safeguards PR #111 from corrected reviewed head `79c09774ee52a4aaf708677a7967546665852022`.
+GitHub `main` is `691d9f929284d51c233b61d099c34cafe1030db6`, merge of A3 State-Ownership Cleanup PR #112 from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`.
 
-Production-Bundle Safeguards is complete. It changed tests/harness only: the complete generated bundle must parse as one classic script; the runtime harness may suppress only live asynchronous startup while retaining every late production module; and the generated production bundle must execute the late runtime replacements and navigation contract under the existing zero-dependency harness. No production/runtime source, model, provider, persistence, bundler order or deployment behaviour changed.
+A3 State-Ownership Cleanup is complete, merged and accepted. It declares the legitimate cross-module `S` slots centrally in `src/state.mjs` without making that module the semantic owner of every value, makes the legacy `S.leagues` Mini-League compatibility alias one-way so `S.miniLeagues` remains canonical, and adds focused ownership regressions. It is deliberately not a general state-management rewrite. No model, provider, persistence-format, error-boundary, Atomic Foreground Refresh, routing-performance or bundler behaviour changed.
 
-The exact-main post-merge Verify Teamsheet run #159 / `31422588548` passed **859 tests, 859 passed, 0 failed, 0 skipped, 0 cancelled**, together with committed deployment provenance, complete production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. GitHub Pages deployment run #116 also succeeded on that exact merge commit.
+The exact-main post-merge Verify Teamsheet run #167 / `31430700053` passed **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**, together with committed deployment provenance, complete production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. GitHub Pages deployment run #117 / `31430697347` also succeeded on that exact merge commit. No physical iPhone testing was performed for PR #112 and none is claimed.
 
-The current A3 remediation is **State-Ownership Cleanup**. Investigation/design found no critical/high ownership defect and no evidence for a general state-management rewrite. Two medium architectural risks were confirmed: the cross-module `S` object did not provide a complete mechanically enforceable shared-slot inventory, and Mini-League preferences had a legacy writable compatibility alias that could become conditionally authoritative. Pritesh approved the narrow implementation package on 10 August 2026. Draft PR #112 is the current candidate and must not be merged without complete validation and explicit approval. See [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md).
+The next substantive checkpoint is **Route-Aware Rendering and Performance**. It begins with investigation, measurement and evidence only. Implementation is not approved; the first step is to establish whether inactive-route rendering creates a material performance problem before proposing optimisation.
 
 ## Historical checkpoint snapshot — before PR #108 merge: A3 Error-Boundary Separation
 
@@ -34,7 +34,7 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 PR #104's reviewed head was `4e434b940e2bcb473374573db5da16f6a645d9eb`, over source/test commit `502a1f7ac0e0456743f3ddb0695433decf8976d1` and generated-only child `02216b8`. It passes **832 tests, 0 failed**, verified committed build provenance, deterministic byte-identical builds and root/deployable equality, with permanent Verify Teamsheet run #105 / `31377157889` on the reviewed head. Physical iPhone acceptance was **explicitly waived by Pritesh**; none was performed and none is claimed.
 
-The work that followed was post-A3 Checkpoint 0 housekeeping, then 0C, `fpl:calib` compatibility, EB-1 and Production-Bundle Safeguards. Those checkpoints are now complete; see the current baseline above and [Roadmap](ROADMAP.md).
+The work that followed was post-A3 Checkpoint 0 housekeeping, then 0C, `fpl:calib` compatibility, EB-1, Production-Bundle Safeguards and State-Ownership Cleanup. Those checkpoints are now complete; see the current baseline above and [Roadmap](ROADMAP.md).
 
 ## 9 August 2026 D1 closeout
 
@@ -48,9 +48,9 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 ## Outcome
 
-Teamsheet is a strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache and persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation and A3 Production-Bundle Safeguards are merged. No formula, recommendation or new-provider checkpoint is approved.
+Teamsheet is a strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache and persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards and A3 State-Ownership Cleanup are merged. No formula, recommendation or new-provider checkpoint is approved.
 
-Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is merged through PR #102. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
+Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is merged through PR #102. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. State-Ownership Cleanup clarifies shared-state inventory and removes reverse authority from the legacy Mini-League alias only. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
 
 ## Historical evidence baseline — before PR #107 merge
 
@@ -79,7 +79,7 @@ Atomic Foreground Refresh (PR #102) and the small mobile UI consistency checkpoi
 
 EB-1 (PR #108) additionally passed physical iPhone Safari acceptance for normal online startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. The clean uncached private-tab offline-first application state could not be exercised because Safari itself could not load the static Pages shell while offline; that path remains automated-only evidence. The incomplete manual squad used during acceptance means recommendation-survival was not independently observed on device.
 
-Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative. A3 cache and persistence resilience has **no** physical device evidence because testing was explicitly waived for that checkpoint.
+Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative. A3 cache and persistence resilience has **no** physical device evidence because testing was explicitly waived for that checkpoint. A3 State-Ownership Cleanup also has **no** physical device evidence; none was required or performed for its non-visual ownership boundary.
 
 Refresh-Load R1's first PR #96 device pass additionally accepted online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It exposed one merge blocker: an offline in-app refresh could be described as newly loaded/live when Safari satisfied gateway requests from HTTP cache. The corrected build prevents network acquisition when Safari definitively reports offline, preserves the saved snapshot and labels FPL Fallback. Pritesh physically retested and accepted that exact path, then verified the accepted build identity after Pages returned to `main`. A full offline hard reload cannot load the static Pages application shell and is explicitly outside R1.
 
@@ -184,6 +184,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 - real post-Gameweek minute-history cache reuse and revision-triggered refresh have automated coverage but cannot yet have physical live-season evidence;
 - the flattened bundle still depends on an explicit module order that is broader than the direct import graph, protected by PR #111's complete-bundle safeguards;
 - browser persistence failure handling is proven by automated tests only; Teamsheet never installs a `window.storage` manager itself, so the authoritative-backend paths have no physical-device or real-host evidence;
+- the shared-state inventory regression guards direct/static `S` property access but is not a general data-flow proof for arbitrary computed property access;
 - browser automation cannot replace physical Safari layout and interaction evidence.
 
 These are roadmap inputs, not authority to change them.
@@ -192,15 +193,15 @@ These are roadmap inputs, not authority to change them.
 
 ### Completed now
 
-**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103. **A3 cache and persistence resilience:** complete and merged through PR #104 with physical iPhone testing explicitly waived. **Post-A3 Checkpoint 0:** complete and merged through PR #105. **0C manual-squad dead-handler cleanup:** complete and merged through PR #106. **`fpl:calib` compatibility:** complete and merged through PR #107. **A3 Error-Boundary Separation (EB-1):** complete, physically accepted on the executable device paths, merged and post-merge verified through PR #108. **A3 Production-Bundle Safeguards:** complete and merged through PR #111 at `5a1a036…`, with exact-main 859/859 verification.
+**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103. **A3 cache and persistence resilience:** complete and merged through PR #104 with physical iPhone testing explicitly waived. **Post-A3 Checkpoint 0:** complete and merged through PR #105. **0C manual-squad dead-handler cleanup:** complete and merged through PR #106. **`fpl:calib` compatibility:** complete and merged through PR #107. **A3 Error-Boundary Separation (EB-1):** complete, physically accepted on the executable device paths, merged and post-merge verified through PR #108. **A3 Production-Bundle Safeguards:** complete and merged through PR #111 at `5a1a036…`, with exact-main 859/859 verification. **A3 State-Ownership Cleanup:** complete and merged through PR #112 at `691d9f9…`, with exact-main 864/864 post-merge verification and no physical device testing performed or claimed.
 
-### Current checkpoint
+### Next substantive checkpoint
 
-**A3 State-Ownership Cleanup — approved narrow implementation on draft PR #112.** Keep the existing distributed architecture; explicitly inventory legitimate shared `S` slots; make the Mini-League compatibility alias one-way; add focused regressions; reconcile stale checkpoint documentation. This candidate is not complete until the full existing suite, deterministic production build, provenance/build identity and generated-only publication structure pass.
+**Route-Aware Rendering and Performance — investigation and design only.** Begin by measuring current rendering work and user-relevant cost, including whether inactive routes are rebuilt unnecessarily and whether that produces a material mobile performance problem. Do not optimise or change routing/rendering behaviour until evidence supports a bounded proposal and Pritesh separately approves implementation.
 
-### Next planned checkpoints
+### Later planned checkpoints
 
-After State-Ownership Cleanup, the A3 sequence remains **Route-Aware Rendering and Performance**, **small stale-code cleanup**, then **A3 documentation/architecture closeout**. None is implementation-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
+After Route-Aware Rendering and Performance, the A3 sequence retains **small stale-code cleanup** and **A3 documentation/architecture closeout** as separately gated work. Neither is implementation-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
 
 ### After real Gameweek data
 
@@ -208,4 +209,4 @@ Perform the deferred Leagues acceptance and begin genuine Stage 10 evidence revi
 
 ## Non-negotiable limits
 
-Refresh-Load R1 changes acquisition cadence and validated local persistence only. A3 cache and persistence resilience changes browser persistence compatibility, verification and disclosure only. `fpl:calib` compatibility rejects unverified stored calibration without introducing a methodology or tuned values. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. State-Ownership Cleanup may clarify ownership and remove the Mini-League writable-alias ambiguity only. None of those checkpoints authorises any new provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League intelligence, strategy, route-performance, navigation, D1 persistence, Cloudflare or Pages architecture change. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.
+Refresh-Load R1 changes acquisition cadence and validated local persistence only. A3 cache and persistence resilience changes browser persistence compatibility, verification and disclosure only. `fpl:calib` compatibility rejects unverified stored calibration without introducing a methodology or tuned values. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. State-Ownership Cleanup clarifies ownership and removes the Mini-League writable-alias ambiguity only. None of those checkpoints authorises any new provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League intelligence, strategy, route-performance, navigation, D1 persistence, Cloudflare or Pages architecture change. Route-Aware Rendering and Performance is not implementation-approved. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.

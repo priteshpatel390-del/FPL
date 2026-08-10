@@ -1,6 +1,16 @@
 # TESTING.md
 
-## 10 August 2026 — EB-1 merged verification and iPhone acceptance closeout
+## 10 August 2026 — current verified baseline after A3 State-Ownership Cleanup
+
+The latest merged repository checkpoint is A3 State-Ownership Cleanup PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`, from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. The merged baseline is **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent post-merge Verify Teamsheet run #167 / `31430700053` passed committed deployment provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation on that exact merge commit. GitHub Pages deployment run #117 / `31430697347` also succeeded on the same commit.
+
+PR #112 retained all 859 Production-Bundle Safeguards tests and added five focused ownership regressions. They enforce the declared cross-module `S` inventory, refresh-owned-key subset and one-way Mini-League compatibility authority without introducing a general state framework. No model, provider, persistence-format, error-boundary, Atomic Foreground Refresh, routing-performance or bundler behaviour changed. No physical iPhone testing was performed for PR #112 and none is claimed.
+
+The permanent `verify.yml` completion gate runs `./run-tests.sh`, committed deployment provenance, two exact-identity production builds, deterministic byte comparison, root/deployable equality and exact manifest identity. Its GitHub-owned action runtimes are now `actions/checkout@v5` and `actions/upload-artifact@v6`, both on Node 24. This changes CI action runtime only; it adds no project dependency or application behaviour.
+
+The next substantive checkpoint is **Route-Aware Rendering and Performance**, beginning with investigation, measurement and evidence only. Implementation is not approved.
+
+## Historical checkpoint — 10 August 2026 EB-1 merged verification and iPhone acceptance closeout
 
 A3 Error-Boundary Separation Package EB-1 is merged through PR #108 at `main` `ba5daa2000345ddde3d8e6f6d381d44603e7cd29` from reviewed head `13224f53d7df95a295ee5f69124e99eb64e7a9e9`.
 
@@ -8,11 +18,11 @@ The merged tree contains **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancell
 
 Physical iPhone Safari acceptance passed the executable EB-1 paths on the exact candidate: normal online startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. A clean Private Safari tab opened while already offline could not load the uncached GitHub Pages application shell, so the no-core clean-offline application state remains automated-test evidence rather than a device failure. The acceptance session used an incomplete manual squad, so device evidence proves retained verified core data but does not independently prove survival of a previously available recommendation. GitHub Pages was restored to `main` before merge.
 
-No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, optimisation, simulation, rank, Mini-League/rival, provider endpoint, retry cadence or weighting behaviour changed. Production-Bundle Safeguards is next and begins with investigation/design only; no implementation is approved.
+No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, optimisation, simulation, rank, Mini-League/rival, provider endpoint, retry cadence or weighting behaviour changed. At that historical checkpoint Production-Bundle Safeguards was next; it and the later State-Ownership Cleanup are now complete and merged as recorded above.
 
-## 10 August 2026 — `fpl:calib` compatibility coverage candidate
+## Historical candidate verification — `fpl:calib` compatibility
 
-PR #107 adds six focused calibration-compatibility regressions: legacy bytes are preserved but rejected; malformed JSON fails closed; speculative versioned records remain rejected before a methodology is approved; startup activation remains behind `sget(K_CAL)`; the current walk-forward path remains diagnostic-only with no calibration writer; and the existing scoring multiplier formula is unchanged. The full suite is 842 passed, 0 failed, 0 skipped, 0 cancelled. Normal Verify Teamsheet run #123 passed provenance, the complete suite, deterministic double build, root/deployable equality, build identity and artifact preservation on head `69e539647ae687f49605633505e7147da76125e2`.
+PR #107 added six focused calibration-compatibility regressions: legacy bytes are preserved but rejected; malformed JSON fails closed; speculative versioned records remain rejected before a methodology is approved; startup activation remains behind `sget(K_CAL)`; the current walk-forward path remains diagnostic-only with no calibration writer; and the existing scoring multiplier formula is unchanged. The full suite was 842 passed, 0 failed, 0 skipped, 0 cancelled. Normal Verify Teamsheet run #123 passed provenance, the complete suite, deterministic double build, root/deployable equality, build identity and artifact preservation on head `69e539647ae687f49605633505e7147da76125e2`. PR #107 subsequently merged and PERSIST-4 is closed; this paragraph remains the candidate-era evidence record.
 
 
 
@@ -72,13 +82,13 @@ Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository checkpoint is A3 Error-Boundary Separation PR #108 at `main` `ba5daa2000345ddde3d8e6f6d381d44603e7cd29`. The merged baseline is **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**. Automatic push-triggered Verify Teamsheet run #154 / `31410817472` completed successfully on that exact merge commit and passed every provenance, complete-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage.
+The latest merged repository checkpoint is A3 State-Ownership Cleanup PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`. The merged baseline is **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**. Automatic push-triggered Verify Teamsheet run #167 / `31430700053` completed successfully on that exact merge commit and passed every provenance, complete-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage.
 
-The exact pre-merge PR #108 head `13224f53d7df95a295ee5f69124e99eb64e7a9e9` passed permanent Verify Teamsheet run #153 / `31408465921`. All 842 pre-EB-1 tests were retained plus the fourteen regressions in `tests/error-boundary-separation.test.mjs`; no test or golden was deleted, weakened, regenerated or skipped.
+The exact pre-merge PR #112 head `620daf14d1c354668b16df74daf05e29d8a1eb25` passed the same 864-test baseline and all PR #111 production-bundle safeguards. All 859 pre-State-Ownership tests were retained plus five focused ownership regressions; no test or golden was deleted, weakened, regenerated or skipped.
 
-There is no current unmerged implementation candidate. **Production-Bundle Safeguards** is the next remediation and begins with investigation/design only. Its exact test additions and safeguards must be proposed from repository evidence before implementation approval.
+There is no current substantive implementation candidate. **Route-Aware Rendering and Performance** is next and begins with investigation/design plus measurement only. Implementation is not approved; test additions must follow evidence rather than presuppose an optimisation.
 
-Physical EB-1 device evidence covers normal online startup, manual online refresh, saved-data in-app offline refresh and return-online recovery. The clean/private offline-first state could not execute because Safari could not load an uncached GitHub Pages shell while already offline, so automated regressions remain the evidence for that path. Because the acceptance session used an incomplete manual squad, recommendation-survival was not independently demonstrated on device even though verified core-state retention was observed.
+Physical PR #112 device testing was not required for its non-visual ownership boundary and was not performed. Existing physical evidence for EB-1 remains limited to normal online startup, manual online refresh, saved-data in-app offline refresh and return-online recovery. The clean/private offline-first state could not execute because Safari could not load an uncached GitHub Pages shell while already offline, so automated regressions remain the evidence for that path. Because the EB-1 acceptance session used an incomplete manual squad, recommendation-survival was not independently demonstrated on device even though verified core-state retention was observed.
 
 Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updated in place, none weakened:
 
@@ -183,7 +193,7 @@ The form-focus candidate changes editable-control typography across Team setup/r
 15. `decision-preview.test.mjs` — Stage 9.4 transfer-copy non-mutation, optimiser-final-squad agreement, captain/vice rules, stale-state invalidation, deterministic signatures, score separation and no-persistence wiring.
 16. `provider-health-ui.test.mjs` — Provider Health age/status palette, saved-core-data materiality, quiet healthy/optional states and Settings/full-detail wiring.
 17. Stage 9.6 coverage in `team-pitch.test.mjs` and `security-completion.test.mjs` — deterministic palette classes, DOM-helper style rejection, progress/SVG wiring, CSP concession removal and source/deployable scans.
-18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax.
+18. `build-bundle.test.mjs` — generated-bundle guard plus direct fixture tests for import/export stripping and surviving module syntax; PR #111 extends complete-bundle parsing, late-module retention and late runtime replacement/navigation execution safeguards.
 19. `evidence-snapshot.test.mjs` and `evidence-storage.test.mjs` — Stage 10.1 deadline boundaries, network-clock grades, provider cutoff, immutable hashes, strict approved-provider import validation, privacy, chunking, compression, bounded recovery, non-official restore, quota failures and delete/reset.
 20. `startup-refresh.test.mjs` — silent startup gate, refresh-age rule, shared startup/foreground orchestration, definite-offline acquisition/disclosure, deferred provider settlement, non-blocking automatic evidence and recovery-only UI wiring.
 21. `outcome-collection.test.mjs` — Stage 10.2 endpoint validation, blank/double/postponed Gameweeks, delayed checking, corrections, squad facts, snapshot-safe records and tamper detection.
@@ -203,6 +213,7 @@ The form-focus candidate changes editable-control typography across Team setup/r
 35. `player-detail-scroll-rotation.test.mjs` — UX-A2 dialog scroll behaviour and PR #78 stacking regression. Exact background-offset capture on a fresh open and restoration on a normal close, proved against a simulated mobile-Safari lock that clamps the page to the top; root and body lock application and removal; internal scroll reset on every open; `preventScroll` focus on the close control and on the restored trigger; identical close/backdrop/Escape outcomes; player replacement while open preserving the original offset and trigger; route-driven close that unlocks but restores neither scroll nor focus; a no-op route change while closed; detached and hidden trigger rejection; documented viewport-property fallback; and the CSS contracts for flex scrolling with `min-height:0`, `vh` declared before `dvh`, compact-landscape full-height sizing, four-sided safe areas, **Player Detail layering above the fixed primary dock**, the dialog-not-a-route boundary, no runtime inline styling and no data/model reach.
 36. `refresh-load-r1.test.mjs` — detailed-history request suppression/delta ordering/outage guard/timestamp preservation, Understat normalised cache/cadence/cooldown/manual bypass, Odds key-free derived cache/near-deadline cadence/expiry/cooldown and supporting-data health separation.
 37. `documentation-integrity.test.mjs` — canonical maintainer references, local Markdown link resolution, complete documentation indexing and unique decision/limitation identifiers. This is repository guidance protection only and does not exercise or alter application behaviour.
+38. State-Ownership Cleanup focused regressions — declared shared-slot inventory, undeclared direct/static `S` property rejection, refresh-owned-key subset, one-way Mini-League compatibility authority and hostile saved-league rendering through canonical state.
 
 Two forms of Transfers evidence are deliberately separate. Oracle equality is proved only on controlled pools, where an exhaustive comparison is tractable. On the Official-scale pool the claim is only that the exact search completes below the unchanged ceiling and returns `status: 'ok'`; it is not an exactness proof, and a lower evaluation count is never presented as improved prediction accuracy.
 
@@ -365,7 +376,7 @@ The correction removes runtime source rewriting entirely:
 
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
-The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #108 with **856 passing tests**, recorded at the top of this document.
+The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #112 with **864 passing tests**, recorded at the top of this document.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 The reconciled branch passes **609 tests**. Added contracts prove that explicit cancellation and force-start supersession settle their pending calculation promises, and that mixed-width player IDs with reversed input order preserve exact production-versus-exhaustive results.

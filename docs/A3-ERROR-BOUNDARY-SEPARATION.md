@@ -4,7 +4,7 @@ Status: **complete, physically accepted on the executable iPhone Safari paths, m
 
 Post-merge verification: permanent Verify Teamsheet run #154 / `31410817472` completed successfully on the exact merge commit. The complete merged suite remains **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**; committed deployment provenance, the production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation all passed.
 
-The next A3 remediation is **Production-Bundle Safeguards**, beginning with investigation and design only. No implementation after EB-1 is pre-approved.
+Production-Bundle Safeguards and the later A3 State-Ownership Cleanup are now complete and merged. The next substantive A3 checkpoint is **Route-Aware Rendering and Performance**, beginning with investigation, measurement and evidence only; implementation is not approved.
 
 ## Candidate selection and merge
 
