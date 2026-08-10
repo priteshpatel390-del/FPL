@@ -1,5 +1,13 @@
 # DECISIONS.md — Architectural decision record
 
+## D-SO1 · 2026-08-10 · Accepted · Shared-state inventory is explicit while semantic ownership stays distributed
+
+**Decision:** `src/state.mjs` declares the legitimate cross-module `S` slot inventory, but it does not become the semantic owner of every value. Existing domain modules retain their established ownership. `S.miniLeagues` is the only writable runtime Mini-League preference representation; the legacy `S.leagues` alias is a one-way read-only compatibility bridge. Zero-dependency source regressions reject undeclared direct `S.key` / static `S['key']` access and require refresh-owned keys to remain an explicit subset of the declared inventory.
+
+**Reason:** A3 State-Ownership investigation found two medium architectural risks but no critical/high ownership defect and no evidence for a general state-management rewrite. The cross-module `S` object lacked a complete mechanically enforceable shared-slot inventory, and the writable Mini-League compatibility alias could become conditionally authoritative over canonical preferences.
+
+**Boundary:** this is narrow ownership hardening, not a new state framework, reducer or central runtime capability system. The source regression is not a general JavaScript data-flow proof for arbitrary computed property access; that remains an accepted limitation. PR #112 merged at `main` `691d9f929284d51c233b61d099c34cafe1030db6` from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. Post-merge Verify Teamsheet run #167 / `31430700053` passed **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled** plus committed provenance, deterministic rebuild, root/deployable equality and exact build identity. No model, provider, persistence-format, error-boundary, Atomic Foreground Refresh, routing-performance or bundler behaviour changed. No physical iPhone testing was performed or claimed. See [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md).
+
 ## D-EB1 · 2026-08-10 · Accepted · Failure ownership is explicit and provider evidence is never fabricated
 
 **Decision:** every failure in the refresh lifecycle has exactly one owner, and only genuine provider transport or validation evidence may move Provider Health. Unexpected application exceptions — including ones escaping optional supporting-provider computation — are classified `internal_error` and are never converted into provider degradation. A recovery-render failure after a genuine collection failure is recorded as a secondary `render_failed` beside the primary `collection_failed` instead of being swallowed.
@@ -16,7 +24,7 @@
 
 **Boundary:** design/documentation only. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md). Implementation requires later explicit approval.
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-08-08. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
+Last updated: 2026-08-10. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
 
 ID reconciliation note: on 8 August 2026 the later duplicate `D-36` and `D-37` labels were reassigned to `D-38` and `D-39`. The underlying decision dates, wording and meaning are unchanged.
 
