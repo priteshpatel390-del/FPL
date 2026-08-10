@@ -1,0 +1,100 @@
+name: PR 103 acceptance closeout publisher
+
+on:
+  push:
+    branches:
+      - agent/mobile-ui-closeout-builder
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/mobile-ui-closeout-builder
+          fetch-depth: 0
+
+      - name: Document accepted PR candidate and publish
+        env:
+          EXPECTED_HEAD: 81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777
+        run: |
+          set -eux
+          git fetch origin agent/mobile-ui-consistency
+          git checkout -B agent/mobile-ui-consistency origin/agent/mobile-ui-consistency
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_between(path, start, end, replacement):
+              p=Path(path); text=p.read_text()
+              pattern=re.escape(start)+r'[\s\S]*?(?='+re.escape(end)+r')'
+              new,count=re.subn(pattern,replacement.rstrip()+"\n\n",text,count=1)
+              if count!=1: raise SystemExit(f'{path}: expected one section replacement, got {count}')
+              p.write_text(new)
+
+          closeout=(
+          "## 10 August 2026 — PR #103 physical acceptance closeout\n\n"
+          "The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.\n\n"
+          "Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari chrome without a light strip; Team, Transfers, Fixtures, Leagues and Settings use the accepted shared header hierarchy; the refined editable/selectable controls are visually proportionate while retaining the no-focus-zoom behaviour; and the Leagues primary box now aligns vertically with the other primary screens. Pritesh explicitly approved PR #103 for merge on 10 August 2026.\n\n"
+          "No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit."
+          )
+
+          current=(
+          "## 10 August 2026 — current checkpoint\n\n"
+          "Atomic Foreground Refresh PR #102 is merged and physically accepted at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`. PR #103 has completed automated, deterministic/provenance and physical iPhone gates and has explicit owner merge approval. Data Architecture D1 remains an approved design only; persistence implementation is not approved. After PR #103 merge, the next substantive A3 remediation checkpoint is cache and persistence resilience, beginning with investigation/design and a fresh latest-main baseline unless repository evidence has progressed."
+          )
+
+          replace_between('CLAUDE.md','## 9 August 2026 physical UI correction','## 9 August 2026 reconciliation',closeout+'\n\n'+current)
+          replace_between('docs/PROJECT_CONTEXT.md','## 9 August 2026 physical UI correction','## 9 August 2026 D1 closeout',closeout+'\n\n'+current)
+          replace_between('docs/ROADMAP.md','## 9 August 2026 physical UI correction','## Current sequence after D1 design approval',closeout+'\n\n'+current)
+          replace_between('docs/KNOWN_LIMITATIONS.md','## 9 August 2026 physical UI correction','## D1 design limitations',closeout+'\n\n## 10 August 2026 — current UI limitation state\n\nThe PR #103 startup-canvas, primary-header, form-control visual/no-zoom and Leagues vertical-alignment findings are physically accepted and no longer open UI defects. The separate post-Gameweek populated Leagues evidence gate remains deferred until Official FPL publishes the required live facts.\n')
+          replace_between('docs/TESTING.md','## 9 August 2026 physical UI correction','## D1 design closeout',closeout+'\n\n## 10 August 2026 — final verification state\n\nPR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` pass **803/803** tests. Publication run `31356159321` passed before branch publication; permanent Verify Teamsheet run #90 / `31356255017` passed every exact-revision, committed-provenance, full-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage. Physical iPhone Safari acceptance passed all four presentation findings and merge is explicitly owner-approved.\n')
+
+          p=Path('docs/ARCHITECTURE.md'); text=p.read_text()
+          old='**Physical correction:** the first candidate passed automation but failed iPhone Safari. The corrected boundary now requires an explicit opaque startup document/gate background colour beneath the decorative gradient, and the five primary routes share one structural `primary-page-header` presentation block rather than only selector-level font tokens. Leagues retains its Manage action as an action variant. This remains presentation-only.'
+          new='**Physical correction:** the first candidate passed automation but failed iPhone Safari. The accepted boundary requires an explicit opaque startup document/gate background colour beneath the decorative gradient, and the five primary routes share one structural `primary-page-header` presentation block rather than only selector-level font tokens. Leagues retains its Manage action as an action variant. The later form-control visual refinement preserved the 16px focus-safety contract, and the empty Leagues live-status placeholder no longer contributes vertical space. Final physical iPhone Safari acceptance passed on 10 August 2026. This remains presentation-only.'
+          if old not in text: raise SystemExit('ARCHITECTURE physical correction block not found')
+          text=text.replace(old,new,1).replace('The current mobile UI candidate keeps startup ownership in the existing gate:', 'The accepted PR #103 mobile presentation boundary keeps startup ownership in the existing gate:',1)
+          p.write_text(text)
+
+          p=Path('docs/DECISIONS.md'); text=p.read_text()
+          text=text.replace('**D-43 · 2026-08-09 · Accepted for implementation · Preserve browser zoom while preventing iPhone form-focus enlargement**','**D-43 · 2026-08-09 · Accepted · Preserve browser zoom while preventing iPhone form-focus enlargement**',1)
+          text=text.replace('Automated evidence cannot prove Safari focus recovery, so the exact PR build requires physical iPhone acceptance before merge.','Physical iPhone Safari acceptance passed on PR #100. PR #103 later retained the 16px focus-safety declaration while refining perceived glyph size and control chrome; the owner physically reconfirmed both visual proportion and no-focus-zoom behaviour.',1)
+          text=text.replace('**D-45 · 2026-08-09 · Accepted for implementation · Mobile loading viewport and primary-header consistency**','**D-45 · 2026-08-09 · Accepted · Mobile loading viewport and primary presentation consistency**',1)
+          old="Evidence: the first source `0e3a0674416aa069a0f06ebee87854df41907ed0` / generated child `b53c8026a5485936582da1ea2374f9bad799e44d` passed 798 tests and permanent run `31338489146` but failed physical iPhone Safari acceptance for the remaining startup strip and inconsistent primary header boxes. Corrected source `aec0c4f55ac051fd5016d7e93a70415de2dbc308` adds two physical-findings regressions, retains all 798 prior tests and passes **800 tests**; generated-only child `a7bea9e1a96fda958239099a3ec64aef8cc30874` is deterministically reproduced with root/deployable equality and reachable provenance before publication. Corrected physical iPhone Safari retest remains pending and merge is not approved."
+          new="Evidence: the first source `0e3a0674416aa069a0f06ebee87854df41907ed0` / generated child `b53c8026a5485936582da1ea2374f9bad799e44d` passed 798 tests and permanent run `31338489146` but failed physical iPhone Safari acceptance. The startup/header correction reached 800 tests and passed device retest; the subsequent form-control refinement retained the 16px focus-safety contract and passed visual/no-zoom device retest; the final Leagues alignment source `646eee13960c343fbe07e3a76496717fd9837c0e` with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` passes **803 tests**, deterministic/root/provenance gates and permanent Verify Teamsheet run #90 / `31356255017`. Physical iPhone Safari acceptance passed the final Leagues alignment and Pritesh explicitly approved PR #103 for merge on 10 August 2026."
+          if old not in text: raise SystemExit('DECISIONS D-45 evidence block not found')
+          text=text.replace(old,new,1)
+          p.write_text(text)
+
+          p=Path('docs/KNOWN_LIMITATIONS.md'); text=p.read_text()
+          old='| UI-19 | Focusing 15px editable fields makes iPhone Safari zoom strongly and the page can remain enlarged after the keyboard closes | The approved narrow candidate raises text-like editable controls to 16px without disabling pinch zoom; exact-build iPhone verification remains required | iPhone form-focus zoom checkpoint | Implementation candidate; physical/remote acceptance pending |'
+          new='| UI-19 | Focusing sub-16px editable fields made iPhone Safari zoom strongly and the page could remain enlarged after the keyboard closed | PR #100 raised text-like editable controls to a focus-safe 16px without disabling pinch zoom; PR #103 retained that declaration while refining visual x-height/chrome. Physical iPhone Safari testing confirmed normal scale after keyboard close. | iPhone form-focus zoom checkpoint / PR #103 refinement | **CLOSED by physical acceptance; PR #103 merge approved 2026-08-10** |'
+          if old not in text: raise SystemExit('KNOWN_LIMITATIONS UI-19 row not found')
+          p.write_text(text.replace(old,new,1))
+          PY
+
+          git diff --check
+          git add CLAUDE.md docs/ARCHITECTURE.md docs/DECISIONS.md docs/KNOWN_LIMITATIONS.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md
+          test "$(git diff --cached --name-only | sort | tr '\n' ' ')" = "CLAUDE.md docs/ARCHITECTURE.md docs/DECISIONS.md docs/KNOWN_LIMITATIONS.md docs/PROJECT_CONTEXT.md docs/ROADMAP.md docs/TESTING.md "
+          git commit -m "Document PR 103 physical acceptance"
+          DOCS_SHA="$(git rev-parse HEAD)"
+
+          node scripts/verify-build-provenance.mjs
+          ./run-tests.sh | tee /tmp/pr103-closeout-tests.log
+          grep -Eq '# tests +803' /tmp/pr103-closeout-tests.log
+          grep -Eq '# pass +803' /tmp/pr103-closeout-tests.log
+          grep -Eq '# fail +0' /tmp/pr103-closeout-tests.log
+
+          git push origin HEAD:agent/mobile-ui-consistency
+          echo "docs=$DOCS_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "tests=803 passed" >> "$GITHUB_STEP_SUMMARY"
