@@ -1,0 +1,96 @@
+name: Leagues vertical alignment publisher
+
+on:
+  push:
+    branches:
+      - agent/leagues-vertical-alignment-builder
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/leagues-vertical-alignment-builder
+          fetch-depth: 0
+
+      - name: Correct, verify and publish PR candidate
+        env:
+          EXPECTED_HEAD: 76f6ab7824c2522a05b345746ce35dc7aa6bd07c
+        run: |
+          set -eux
+          git fetch origin agent/mobile-ui-consistency
+          git checkout -B agent/mobile-ui-consistency origin/agent/mobile-ui-consistency
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          python - <<'PY'
+          from pathlib import Path
+
+          app_path=Path('app.html')
+          app=app_path.read_text()
+          old=".status{font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}"
+          new=old+"\n#leagueLiveStatus:empty{display:none}"
+          if app.count(old)!=1:
+              raise SystemExit(f'league status CSS anchor: expected 1 match, found {app.count(old)}')
+          if '#leagueLiveStatus:empty{display:none}' in app:
+              raise SystemExit('league empty-status collapse already present')
+          app_path.write_text(app.replace(old,new,1))
+
+          test_path=Path('tests/mobile-ui-consistency.test.mjs')
+          tests=test_path.read_text()
+          addition=r'''
+
+          test('empty Leagues live status contributes no pre-header vertical space',()=>{
+            assert.match(app,/#leagueLiveStatus:empty\{display:none\}/);
+            assert.match(app,/<div id="leagueDataWarning"><\/div>\s*<p class="status" id="leagueLiveStatus" aria-live="polite"><\/p>\s*<section class="panel league-route" id="leagueHub"/);
+          });
+          '''
+          if 'empty Leagues live status contributes no pre-header vertical space' in tests:
+              raise SystemExit('Leagues vertical-alignment regression already present')
+          test_path.write_text(tests.rstrip()+addition)
+          PY
+
+          git diff --check
+          git add app.html tests/mobile-ui-consistency.test.mjs
+          test "$(git diff --cached --name-only | sort | tr '\n' ' ')" = "app.html tests/mobile-ui-consistency.test.mjs "
+          git commit -m "Align Leagues primary header vertically"
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          export BUILD_COMMIT="$SOURCE_SHA"
+
+          ./run-tests.sh | tee /tmp/leagues-alignment-tests.log
+          grep -Eq '# tests +803' /tmp/leagues-alignment-tests.log
+          grep -Eq '# pass +803' /tmp/leagues-alignment-tests.log
+          grep -Eq '# fail +0' /tmp/leagues-alignment-tests.log
+
+          node build.mjs
+          rm -rf /tmp/leagues-build-a
+          mkdir -p /tmp/leagues-build-a/dist
+          cp dist/app.bundle.js /tmp/leagues-build-a/dist/app.bundle.js
+          cp dist/index.html /tmp/leagues-build-a/dist/index.html
+          cp dist/manifest.json /tmp/leagues-build-a/dist/manifest.json
+          cp index.html /tmp/leagues-build-a/index.html
+          node build.mjs
+          cmp /tmp/leagues-build-a/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/leagues-build-a/dist/index.html dist/index.html
+          cmp /tmp/leagues-build-a/dist/manifest.json dist/manifest.json
+          cmp /tmp/leagues-build-a/index.html index.html
+          cmp dist/index.html index.html
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; import {hashBuildInputs} from './build-utils.mjs'; const m=JSON.parse(readFileSync('dist/manifest.json','utf8')); if(m.commit!==process.env.BUILD_COMMIT) throw new Error('manifest commit mismatch'); if(m.buildInputHash!==hashBuildInputs(m.moduleOrder)) throw new Error('manifest build-input mismatch'); console.log('Manifest identity verified:',m.commit,m.buildInputHash);"
+
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          test "$(git diff --cached --name-only | sort | tr '\n' ' ')" = "dist/app.bundle.js dist/index.html dist/manifest.json index.html "
+          git commit -m "Regenerate Leagues alignment build"
+          GENERATED_SHA="$(git rev-parse HEAD)"
+
+          node scripts/verify-build-provenance.mjs
+          echo "source=$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "generated=$GENERATED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "tests=803 passed" >> "$GITHUB_STEP_SUMMARY"
+          git push origin HEAD:agent/mobile-ui-consistency
