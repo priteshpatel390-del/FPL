@@ -32,6 +32,24 @@ class MemoryStorage{
   removeItem(key){this.map.delete(key);}
 }
 
+/* A3 authoritative-backend stubs. A storage manager is "selected" whenever
+   window.storage exists; the read order in rawStoredText() only falls back to
+   localStorage when the manager read itself throws. */
+function workingManager(){
+  const map=new Map();
+  return {map,set:async(key,text)=>{map.set(key,String(text));},get:async key=>({value:map.has(key)?map.get(key):null})};
+}
+function writeFailingManager(){
+  const manager=workingManager();
+  return {...manager,set:async()=>{throw new Error('manager write failed');}};
+}
+function unusableManager(){
+  return {
+    set:async()=>{throw new Error('manager write failed');},
+    get:async()=>{throw new Error('manager read failed');}
+  };
+}
+
 function currentCachePayload(){
   return {at:1786200000000,events:[
     {id:1,deadline_time:'2026-08-14T17:30:00Z'},
@@ -147,6 +165,77 @@ test('verified writes surface quota and read-back verification failures',async()
   globalThis.localStorage.failWrites=false;
   globalThis.localStorage.lieOnRead=true;
   assert.deepEqual(await ssetVerified('plain',{a:1}),{ok:false,reason:'verify_failed'});
+});
+
+test('a selected storage manager owns verified writes and serves the reload read',async()=>{
+  globalThis.window.storage=workingManager();
+  const squad=[{id:1,bought:45}];
+  assert.deepEqual(await ssetVerified(K_SQUAD,squad),{ok:true,via:'manager'});
+  assert.equal(globalThis.localStorage.getItem(K_SQUAD),null);
+  assert.deepEqual(await sget(K_SQUAD),squad);
+  assert.equal(isManualSquadPersistenceReady(),true);
+});
+
+test('a failed manager write is never reported as a verified localStorage success',async()=>{
+  globalThis.window.storage=writeFailingManager();
+  const durable=JSON.stringify(manualSquadEnvelope([{id:1,bought:45}]));
+  globalThis.localStorage.setItem(K_SQUAD,durable);
+  const result=await ssetVerified(K_SQUAD,[{id:2,bought:50}]);
+  assert.deepEqual(result,{ok:false,reason:'manager_unverified'});
+  assert.equal(globalThis.localStorage.getItem(K_SQUAD),durable);
+  assert.equal(isManualSquadPersistenceReady(),false);
+  assert.match(persistenceWarningSnapshot()['manual-squad'],/could not verify that it was saved/);
+});
+
+test('the previous durable squad still reloads after an unrestorable manager write',async()=>{
+  const previous=[{id:1,bought:45}];
+  assert.equal((await ssetVerified(K_SQUAD,previous)).ok,true);
+  const durable=globalThis.localStorage.getItem(K_SQUAD);
+  globalThis.window.storage=writeFailingManager();
+  assert.equal((await ssetVerified(K_SQUAD,[{id:2,bought:50}])).ok,false);
+  assert.equal(globalThis.localStorage.getItem(K_SQUAD),durable);
+  delete globalThis.window.storage;
+  assert.deepEqual(await sget(K_SQUAD),previous);
+  assert.equal(isManualSquadPersistenceReady(),true);
+});
+
+test('a failed manager cache write is a persistence failure, not a divergent local copy',async()=>{
+  const durable=JSON.stringify(mainCacheEnvelope(currentCachePayload()));
+  globalThis.localStorage.setItem(K_CACHE,durable);
+  globalThis.window.storage=writeFailingManager();
+  const result=await ssetChecked(K_CACHE,{...currentCachePayload(),at:1786300000000});
+  assert.deepEqual(result,{ok:false,reason:'manager_write_failed'});
+  assert.equal(globalThis.localStorage.getItem(K_CACHE),durable);
+  assert.match(persistenceWarningSnapshot().cache,/could not update the saved offline copy/);
+});
+
+test('an unusable storage manager still falls back to a genuinely restorable local write',async()=>{
+  globalThis.window.storage=unusableManager();
+  const payload=currentCachePayload();
+  assert.deepEqual(await ssetChecked(K_CACHE,payload),{ok:true,via:'local'});
+  assert.deepEqual(await sget(K_CACHE),payload);
+  const squad=[{id:1,bought:45}];
+  assert.deepEqual(await ssetVerified(K_SQUAD,squad),{ok:true,via:'local'});
+  assert.deepEqual(await sget(K_SQUAD),squad);
+  assert.equal(isManualSquadPersistenceReady(),true);
+  assert.equal(persistenceWarningSnapshot()['manual-squad'],undefined);
+});
+
+test('an authoritative-manager squad failure cannot durably enable manual mode',async()=>{
+  globalThis.window.storage=writeFailingManager();
+  const manual=[];
+  const player={id:1,element_type:1,team:1,web_name:'Keeper',now_cost:45};
+  let configCalls=0;
+  const result=await manualSquadCommitAddition({
+    manual,player,byId:{1:player},
+    persist:value=>ssetVerified(K_SQUAD,value),
+    saveConfiguration:async()=>{configCalls++;return {ok:true};}
+  });
+  assert.equal(result.ok,true);
+  assert.equal(manual.length,1);
+  assert.equal(result.persistence.squad.reason,'manager_unverified');
+  assert.equal(result.persistence.configuration.reason,'skipped_after_squad_failure');
+  assert.equal(configCalls,0);
 });
 
 test('legacy configuration retains only season-independent preferences and removes account state',async()=>{

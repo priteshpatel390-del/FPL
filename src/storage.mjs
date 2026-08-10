@@ -206,6 +206,18 @@ async function rawStoredText(key){
     return {ok:true,found:text!==null&&text!==undefined,text:text??null,via:'local'};
   }catch(error){ return {ok:false,found:false,text:null,reason:'unavailable'}; }
 }
+/* A3 — authoritative-backend durability.
+   rawStoredText() only consults localStorage when the storage manager read is
+   itself unusable. So after a manager write failure a localStorage copy is
+   restorable only when the manager cannot serve the read either; otherwise the
+   copy is divergent and permanently invisible to every later read. This probe
+   asks the real read order which backend is authoritative for the key, so a
+   fallback is only attempted — and only reported as saved — when the value can
+   actually be read back. */
+async function localFallbackReachable(key){
+  const probe=await rawStoredText(key);
+  return probe.via==='local';
+}
 async function readStoredJson(key){
   const raw=await rawStoredText(key);
   if(!raw.ok||!raw.found) return {...raw,value:null};
@@ -293,7 +305,7 @@ async function ssetChecked(key, val){
   let result;
   if(globalThis.window?.storage){
     try{ await globalThis.window.storage.set(key, s); result={ok:true,via:'manager'}; }
-    catch(e){}
+    catch(e){ if(!await localFallbackReachable(key)) result={ok:false,reason:'manager_write_failed'}; }
   }
   if(!result){
     try{ globalThis.localStorage.setItem(key, s); result={ok:true,via:'local'}; }
@@ -324,7 +336,13 @@ async function ssetVerified(key,val){
       const result={ok:false,reason:'verify_failed'};
       if(key===K_SQUAD){ setManualSquadPersistenceReady(false); setPersistenceWarning('manual-squad','The manual-squad change is active for this session, but Teamsheet could not verify that it was saved. It may revert after reload.'); }
       return result;
-    }catch(error){}
+    }catch(error){
+      if(!await localFallbackReachable(key)){
+        const result={ok:false,reason:'manager_unverified'};
+        if(key===K_SQUAD){ setManualSquadPersistenceReady(false); setPersistenceWarning('manual-squad','The manual-squad change is active for this session, but Teamsheet could not verify that it was saved. It may revert after reload.'); }
+        return result;
+      }
+    }
   }
   try{
     if(!globalThis.localStorage||typeof globalThis.localStorage.setItem!=='function'||typeof globalThis.localStorage.getItem!=='function') throw new Error('unavailable');
