@@ -410,7 +410,7 @@ function renderManual(){
     + (S.manual.length === 15 ? ' — complete' : '');
   list.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', async () => {
     S.manual.splice(+b.dataset.rm, 1);
-    await sset(K_SQUAD, S.manual); renderManual(); renderAll();
+    await ssetVerified(K_SQUAD, S.manual); renderManual(); renderAll();
   }));
 }
 function searchPlayers(term){
@@ -426,9 +426,10 @@ function searchPlayers(term){
     const id = +d.dataset.add;
     if(S.manual.length >= 15) return;
     if(!S.manual.some(m => m.id === id)) S.manual.push({id, bought:S.byId[id].now_cost});
-    await sset(K_SQUAD, S.manual);
+    const persisted = await ssetVerified(K_SQUAD, S.manual);
     $('pSearch').value = ''; box.hidden = true;
-    $('useManual').checked = true; await saveCfg();
+    $('useManual').checked = true;
+    if(persisted.ok) await saveCfg();
     renderManual(); renderAll();
   }));
 }
