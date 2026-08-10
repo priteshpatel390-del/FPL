@@ -1,6 +1,11 @@
 # CLAUDE.md — onboarding for every future development session
 
 
+## 10 August 2026 — A3 cache and persistence resilience implementation candidate
+
+Implementation is owner-approved on branch `agent/a3-cache-persistence-resilience` (PR #104, draft), based on GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Final source/test head `502a1f7ac0e0456743f3ddb0695433decf8976d1` with generated-only child `02216b8` keeps Atomic Foreground Refresh ordering unchanged while adding a schema/season-bound main `fpl:cache`, verified user-owned saves, season-bound manual-squad and Mini-League preference records, and explicit session-only warnings when browser persistence fails. Independent review found and corrected one real defect: a failed authoritative storage-manager write could fall back to `localStorage` and be reported as a durable save even though no later read could return it. The existing Refresh-Load R1 supporting-cache cadence/compatibility rules and Stage 10 evidence stores are unchanged. Legacy `fpl:calib` remains deliberately untouched behind the separate model approval gate. Local validation accounts for **832 passing tests, 0 failed**, verified committed build provenance and two byte-identical production builds from the final head. Permanent Verify Teamsheet has passed on the exact published head and the PR description carries that run evidence; this file deliberately records no run ID, and any later head requires fresh permanent verification. Independent review of the final diff is complete. An owner decision on physical iPhone testing and explicit owner merge approval remain required, and PR #104 stays draft and unmerged until then. No physical device testing has been performed or claimed.
+
+
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
 The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
@@ -11,7 +16,7 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-Atomic Foreground Refresh PR #102 is merged and physically accepted at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`. PR #103 has completed automated, deterministic/provenance and physical iPhone gates and has explicit owner merge approval. Data Architecture D1 remains an approved design only; persistence implementation is not approved. After PR #103 merge, the next substantive A3 remediation checkpoint is cache and persistence resilience, beginning with investigation/design and a fresh latest-main baseline unless repository evidence has progressed.
+PR #103 is merged at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Cache and persistence resilience is the current owner-approved implementation candidate on `agent/a3-cache-persistence-resilience` (draft PR #104); it has completed automated, deterministic/provenance and permanent-CI gates plus independent review, and it is not approved for merge. Data Architecture D1 remains an approved future design only. After this checkpoint is merged and verified, the next A3 remediation checkpoint is error-boundary separation.
 
 ## 9 August 2026 reconciliation
 
@@ -27,11 +32,12 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `deb4ea26ba96112dba07660e23a61f04d4b6596d`, merge of D1 design closeout PR #101 |
-| Latest application checkpoint | iPhone form-focus zoom PR #100, merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`; DTR-1 remains complete through PR #99 |
-| Permanent repository verification | 693 passed on `main`; corrected Atomic Foreground Refresh candidate baseline is 792 (all prior 790 retained + 2 rollback regressions); permanent CI/generated provenance required on the published correction |
-| Application tree identity | The accepted PR #100 application tree is preserved by merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c` |
-| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience and R1 online/cached/manual/background/in-app-offline behaviour |
+| Repository head | `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043`, merge of small mobile UI consistency PR #103 |
+| Latest merged application checkpoint | PR #103, source `646eee13960c343fbe07e3a76496717fd9837c0e`, generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`; Atomic Foreground Refresh complete through PR #102 |
+| Permanent repository verification | 803 passed on `main` (Verify Teamsheet run #90 / `31356255017`); the unmerged A3 persistence candidate is 832 passed, 0 failed |
+| Application tree identity | The accepted PR #103 application tree is preserved by merge `473cfdb3295d2b896a00c0aa7b1308814bf2e043` |
+| Current unmerged candidate | A3 cache and persistence resilience, draft PR #104: source `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`, documentation head `05cbfbc479ac024d923aa0e4bb525d03d0d777cb` |
+| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102) and the PR #103 presentation checkpoint. None for PR #104. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
@@ -70,7 +76,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 4. [Roadmap](docs/ROADMAP.md)
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
-7. The current checkpoint design or acceptance record — currently [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md)
+7. The current checkpoint design or acceptance record — currently [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
 8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)

@@ -11,35 +11,40 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-Atomic Foreground Refresh PR #102 is merged and physically accepted at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`. PR #103 has completed automated, deterministic/provenance and physical iPhone gates and has explicit owner merge approval. Data Architecture D1 remains an approved design only; persistence implementation is not approved. After PR #103 merge, the next substantive A3 remediation checkpoint is cache and persistence resilience, beginning with investigation/design and a fresh latest-main baseline unless repository evidence has progressed.
+PR #103 is merged; GitHub `main` is `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Atomic Foreground Refresh PR #102 and the D1 design closeout PR #101 are merged before it.
+
+**A3 Cache & Persistence Resilience is the current checkpoint and is implemented, not proposed.** It exists as draft PR #104 on `agent/a3-cache-persistence-resilience`: source/test commit `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`, documentation head `05cbfbc479ac024d923aa0e4bb525d03d0d777cb`. It passes **832 tests, 0 failed**, verified committed build provenance, deterministic byte-identical builds and root/deployable equality. The PR description carries the exact permanent Verify Teamsheet run evidence for its head; any later head requires fresh verification.
+
+PR #104 remains **draft and unmerged**, with no physical iPhone acceptance performed or claimed. Data Architecture D1 remains an approved design only; D1/R2/Worker persistence implementation is not approved. The next substantive A3 remediation checkpoint after PR #104 merges is **error-boundary separation**, beginning with investigation/design.
 
 ## 9 August 2026 D1 closeout
 
-The current authoritative baseline is `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of PR #100. The iPhone form-focus zoom correction passed 693 tests and physical iPhone Safari acceptance and is complete.
+At that closeout the authoritative baseline was `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of PR #100; it has since been superseded — see the current checkpoint above. The iPhone form-focus zoom correction passed 693 tests and physical iPhone Safari acceptance and is complete.
 
-[Data Architecture D1](DATA-ARCHITECTURE-D1.md) is an approved design, not an implementation. It selects D1 plus private R2 behind a separate authenticated data Worker, retains local fallback, and limits Google Sheets to optional downstream reporting. The next engineering checkpoint is Atomic Foreground Refresh; implementation remains separately approval-gated.
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) is an approved design, not an implementation. It selects D1 plus private R2 behind a separate authenticated data Worker, retains local fallback, and limits Google Sheets to optional downstream reporting. The engineering checkpoint that followed it, Atomic Foreground Refresh, is now merged; D1 implementation itself remains separately approval-gated.
 
-Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 9 August 2026.
+Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 10 August 2026.
 
 Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Historical Records](HISTORICAL_RECORDS.md).
 
 ## Outcome
 
-Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0 and DTR-1 are merged. No formula, recommendation or new-provider checkpoint is approved.
+Teamsheet is a healthy, strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh and the small mobile UI consistency checkpoint are merged. A3 cache and persistence resilience is implemented as draft PR #104 and is not merged. No formula, recommendation or new-provider checkpoint is approved.
 
-Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Understat parser repair, atomic foreground-state replacement and model/data-source expansion remain separately gated. The next substantive checkpoint requires a completed, officially checked Gameweek and begins with investigation/evidence only.
+Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is now merged through PR #102. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
 
 ## Evidence baseline
 
 | Item | Evidence |
 |---|---|
-| Repository head | GitHub `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100 |
-| Latest application checkpoint | iPhone form-focus zoom PR #100, merge `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`; DTR-1 remains complete through PR #99 |
-| Application tree | The accepted PR #100 tree is preserved by the merge |
-| Permanent automated baseline | PR #100 Verify Teamsheet run `31319724304`: 693 passed, 0 failed |
-| Generated application baseline | PR #99 reproduced committed deployables from reachable source `a15443f3de889561fd301c4aa1792d19f7b21c83`; double builds were byte-identical and root equalled deployable |
+| Repository head | GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043`, merge of small mobile UI consistency PR #103 |
+| Latest merged application checkpoint | PR #103, source `646eee13960c343fbe07e3a76496717fd9837c0e` with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` |
+| Application tree | The accepted PR #103 tree is preserved by the merge |
+| Permanent automated baseline | PR #103 Verify Teamsheet run #90 / `31356255017`: 803 passed, 0 failed |
+| Generated application baseline | PR #103 reproduced committed deployables from reachable source before the test build; double builds were byte-identical and root equalled deployable |
+| Current unmerged candidate | A3 cache and persistence resilience, draft PR #104: source `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`, documentation head `05cbfbc479ac024d923aa0e4bb525d03d0d777cb`, **832 passed, 0 failed**. Exact permanent-run evidence is recorded in the PR description; a later head requires fresh verification. |
 | Deployment architecture | Static GitHub Pages single-file app plus a separate owner-controlled Cloudflare Worker for allowlisted read-only Official FPL transport |
-| Approval boundary | D1 design is approved and documented, but persistence implementation is not. Atomic Foreground Refresh is next and begins with investigation; implementation remains owner-gated. |
+| Approval boundary | D1 design is approved and documented, but D1/R2/Worker persistence implementation is not. PR #104 hardens browser-side persistence only and remains owner-gated for merge; error-boundary separation follows it and begins with investigation. |
 
 ## Physical iPhone Safari baseline
 
@@ -51,7 +56,9 @@ Pritesh has physically accepted the tested populated paths for:
 - Fixtures horizontal scrolling and remaining-season horizons through GW38;
 - the Leagues all-league hub, league selection/switching, primary persistence, back navigation, pre-season standings/exposure states and Official FPL versus manually added league management.
 
-Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative.
+Atomic Foreground Refresh (PR #102) and the small mobile UI consistency checkpoint (PR #103) additionally have completed physical iPhone Safari acceptance on their merged builds.
+
+Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative. A3 cache and persistence resilience has **no** physical device evidence.
 
 Refresh-Load R1's first PR #96 device pass additionally accepted online startup, exact build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It exposed one merge blocker: an offline in-app refresh could be described as newly loaded/live when Safari satisfied gateway requests from HTTP cache. The corrected build prevents network acquisition when Safari definitively reports offline, preserves the saved snapshot and labels FPL Fallback. Pritesh physically retested and accepted that exact path, then verified the accepted build identity after Pages returned to `main`. A full offline hard reload cannot load the static Pages application shell and is explicitly outside R1.
 
@@ -154,7 +161,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 
 - real post-Gameweek minute-history cache reuse and revision-triggered refresh have automated coverage but cannot yet have physical live-season evidence;
 - the flattened bundle still depends on an explicit module order that is broader than the direct import graph;
-- the form-focus correction changes editable-control typography across multiple routes and requires exact-device focus/keyboard recovery evidence before merge;
+- browser persistence failure handling is proven by automated tests only; Teamsheet never installs a `window.storage` manager itself, so the authoritative-backend paths have no physical-device or real-host evidence;
 - browser automation cannot replace physical Safari layout and interaction evidence.
 
 These are roadmap inputs, not authority to change them.
@@ -163,11 +170,15 @@ These are roadmap inputs, not authority to change them.
 
 ### Completed now
 
-**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete, permanently verified, physically accepted and merged through PR #99 at `09e595c275b4f3614c09fb502291de6831813999`.
+**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103 at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`.
+
+### Current checkpoint
+
+**A3 cache and persistence resilience** is implemented as draft PR #104 and awaits an owner decision on physical iPhone testing and explicit merge approval. It hardens the browser persistence boundary only: exact schema/season compatibility for the main `fpl:cache`, season/version ownership for user-owned records, verified writes that mean restorable, safe manual-squad/config ordering, and truthful session-only warnings when a write fails.
 
 ### Next planned checkpoint
 
-Complete the approved iPhone form-focus zoom checkpoint, including exact-build physical Safari focus/recovery testing. Then begin Data Architecture D1 investigation/design. D1 must define historical/live requirements and compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
+After PR #104 merges, begin **A3 error-boundary separation** with investigation/design and a fresh latest-`main` baseline; no implementation is pre-approved. Separately, after the first completed and officially `data_checked` Gameweek, investigate real minute-history caching, Stage 10 outcome capture and populated Leagues data without changing calculations.
 
 ### After real Gameweek data
 
@@ -175,4 +186,4 @@ Perform the deferred Leagues acceptance and begin genuine Stage 10 evidence revi
 
 ## Non-negotiable limits
 
-Refresh-Load R1 changes acquisition cadence and validated local persistence only. It changes no provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, Cloudflare or Pages architecture. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.
+Refresh-Load R1 changes acquisition cadence and validated local persistence only. A3 cache and persistence resilience changes browser persistence compatibility, verification and disclosure only, and leaves `fpl:calib` untouched behind the model approval gate. Neither changes any provider/source/endpoint, model, fixture, scoring, expected-minutes, squad, captaincy, simulation, transfer, rank, Mini-League, strategy, route, navigation, Cloudflare or Pages architecture. Historical aggregate r=0.80 remains method-flattered and is not a validated accuracy claim.

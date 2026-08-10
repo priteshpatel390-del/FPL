@@ -8,7 +8,7 @@ import { validateOdds } from './validate.mjs';
 import { recordIssues, recordRetry } from '../state.mjs';
 import { validOddsMap, oddsSignature, nextProviderToken, applyProviderResult, providerPersistCandidate } from './applied.mjs';
 import { policyFor, withRetry, isRetryableStatus, safeEndpoint } from './retry.mjs';
-import { K_CFG, K_ODDS, sget, sset } from '../storage.mjs';
+import { K_CFG, K_ODDS, sget, sset, ssetVerified, loadCfg, setPersistenceWarning, clearPersistenceWarning } from '../storage.mjs';
 /* ---------------------------------------------------------------------
    ODDS LAYER — bookmaker match odds converted to market-implied goals.
    --------------------------------------------------------------------- */
@@ -45,8 +45,13 @@ function scrubOddsSecret(value, key = ''){
 
 async function forgetOddsKey(deps = {}){
   const field = deps.field || $('oddsKey');
-  const getConfig = deps.getConfig || (() => sget(K_CFG));
-  const setConfig = deps.setConfig || (value => sset(K_CFG, value));
+  const getConfig = deps.getConfig || (() => loadCfg());
+  const setConfig = deps.setConfig || (async value => {
+    const result=await ssetVerified(K_CFG,value);
+    if(result.ok) clearPersistenceWarning('configuration');
+    else setPersistenceWarning('configuration','Settings changed for this session, but Teamsheet could not save them on this device. They may revert after reload.');
+    return result;
+  });
   const current = await getConfig();
   const config = current && typeof current === 'object' && !Array.isArray(current)
     ? { ...current } : {};

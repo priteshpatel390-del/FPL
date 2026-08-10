@@ -19,7 +19,7 @@ test('Leagues has separate all-league hub, selected-league overview, standings, 
 test('League subroutes remain semantic and identifiers stay in local state',()=>{
   includesAll(shell,["'#/leagues/detail'","'#/leagues/standings'","'#/leagues/rival'","'#/leagues/exposure'","'#/leagues/manage'","route.startsWith('#/leagues')"]);
   excludesAll(shell,[':leagueId',':managerId','leagueId/rival','managerId']);
-  includesAll(state,["'fpl:mini-leagues'",'MINI_LEAGUE_STATE_VERSION = 2','selectedLeagueId','selectedRivalByLeague','comparisonRivalsByLeague','pinnedRivals']);
+  includesAll(state,["'fpl:mini-leagues'",'MINI_LEAGUE_STATE_VERSION = 3','selectedLeagueId','selectedRivalByLeague','comparisonRivalsByLeague','pinnedRivals']);
 });
 
 test('League persistence stores choices only, not standings or rival squads',()=>{
@@ -126,7 +126,7 @@ test('new modules are in the deterministic bundle before the startup view',()=>{
 test('Mini-League intelligence adds an ID-free on-demand exposure route',()=>{
   includesAll(shell,['#/leagues/exposure',"title:'Rival exposure'","primary:'leagues'"]);
   includesAll(view,["id:'leagueExposure'","'data-league-route':'#/leagues/exposure'",'MAX_COMPARISON_RIVALS','loadMiniLeagueExposure','pool(group,async row=>','},2)','selected rivals only','No public squad request is made until you press Load rival exposure']);
-  includesAll(state,['MINI_LEAGUE_STATE_VERSION = 2','comparisonRivalsByLeague','MAX_COMPARISON_RIVALS = 5']);
+  includesAll(state,['MINI_LEAGUE_STATE_VERSION = 3','comparisonRivalsByLeague','MAX_COMPARISON_RIVALS = 5']);
   const routeHandler=view.slice(view.indexOf("document.addEventListener('teamsheet:route-change'"),view.indexOf("document.addEventListener('teamsheet:data-rendered'"));
   excludesAll(routeHandler,['loadMiniLeagueExposure']);
   excludesAll(view,['projected rival score','projected league position','must protect','must chase','effective ownership','optimiseTransfers(','xpOf(']);

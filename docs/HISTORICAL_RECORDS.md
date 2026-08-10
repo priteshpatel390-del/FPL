@@ -1,6 +1,6 @@
 # Historical Records Index
 
-Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 8 August 2026.
+Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 10 August 2026.
 
 ## How to use this index
 
@@ -27,6 +27,7 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## Current operational and acceptance records
 
+- [A3 cache and persistence resilience](A3-CACHE-PERSISTENCE-RESILIENCE.md) — browser-side cache/persistence compatibility, verified user-owned writes and session-only persistence warnings; merge owner-gated.
 - [Data Architecture D1](DATA-ARCHITECTURE-D1.md) — approved historical/live persistence design; implementation remains deferred.
 - [DTR-1 direct Team renderer](DTR-1-DIRECT-TEAM-RENDERER.md) — current implementation and pending physical-acceptance record.
 - [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md) — staged collection and single synchronous commit; merge and physical iPhone acceptance owner-gated.

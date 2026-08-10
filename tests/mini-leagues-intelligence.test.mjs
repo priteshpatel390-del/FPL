@@ -15,7 +15,7 @@ const rival=(id,name,payload,extra={})=>({rival:{id:String(id),name},picks:paylo
 
 test('comparison state is versioned, bounded and does not seed v1 pins as network selections',()=>{
   const migrated=migrateMiniLeagueState({stored:{version:1,selectedLeagueId:'7',saved:[{id:'7',name:'Friends'}],pinnedRivals:{7:[{id:'1',name:'A'}]}}});
-  assert.equal(migrated.version,2);
+  assert.equal(migrated.version,3);
   assert.deepEqual(migrated.comparisonRivalsByLeague,{});
   const state=normaliseMiniLeagueState({version:2,selectedLeagueId:'7',saved:[{id:'7',name:'Friends'}],comparisonRivalsByLeague:{7:Array.from({length:8},(_,i)=>({id:String(i+1),name:`R${i+1}`}))}});
   assert.equal(state.comparisonRivalsByLeague['7'].length,MAX_COMPARISON_RIVALS);

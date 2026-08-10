@@ -49,6 +49,34 @@ substitute for genuine pre-deadline provider snapshots.
 Config, manual squad, saved leagues, calibration, cache envelope. Never stores Anthropic keys
 (D-08); odds key accepted-temporary with Stage-3 hygiene (forget action, scrubbing).
 
+A storage manager (`window.storage`) is the authoritative backend whenever the host provides one;
+`localStorage` is consulted only when the manager read is unusable. Reads and writes honour that
+same order, so a record is treated as durable only when the backend that will serve the next read
+actually holds it.
+
+Main Official FPL cache (`fpl:cache`): written as a `teamsheet.main-fpl-cache` envelope carrying the
+cache version, repository schema version, exact `FPL_RULES.season`, fetched timestamp and the slim
+Official FPL snapshot. A versioned record is used only when cache version, schema and season all
+match, and the payload still passes the existing validators before state is mutated. The immediately
+preceding raw shape is accepted only when its Official FPL event deadline years establish the current
+season; previous-season, unsupported-schema, malformed and structurally incompatible records are
+ignored rather than promoted. Model or build identity is deliberately not an acceptance gate here,
+because this cache stores Official FPL facts rather than derived projections, and no arbitrary
+maximum age is imposed — same-season older data keeps its existing stale/offline behaviour.
+
+User-owned records carry season/version ownership. `fpl:config` version 1 separates season-independent
+preferences (Understat toggle, transfer horizon, result count, locally held Odds configuration) from a
+season-owned account section (Team ID, free transfers, bank, manual-team mode); a previous-season or
+invalid account section is dropped while valid preferences survive, and an unversioned legacy record
+can only contribute preferences. `fpl:squad` version 1 and `fpl:mini-leagues` version 3 are season-owned
+and fail closed, so an unversioned or previous-season record is not restored. `fpl:calib` is unchanged
+and remains behind the separate model approval gate.
+
+The Refresh-Load R1 supporting caches (`fpl:minutes-history`, `fpl:understat-team-inputs`,
+`fpl:odds-derived-inputs`) keep their own schema/model/season contracts and cadence rules unchanged.
+A local write failure is reported as a local persistence problem only; it never becomes an Official FPL
+or optional-provider health state.
+
 ## Explicitly rejected sources
 Sentiment/social/trends/etc. (owner spec §6); player-level Understat (D-05); FBref & Transfermarkt
 scraping without owner licensing approval; subscription predicted-lineup scraping (a provider-
@@ -151,7 +179,7 @@ No provider or network origin is added. The existing Official FPL endpoints are 
 | `/leagues-classic/{id}/standings/?page_standings={page}` | `league.name`, `standings.results[].{entry,entry_name,player_name,rank,last_rank,total,event_total}`, `has_next` | Official current table, movement and simple points gaps. Page 1 and pages around the official rank load first; further pages are user requested. |
 | `/entry/{id}/event/{gw}/picks/` | `picks[].{element,position,multiplier,is_captain,is_vice_captain}`, `active_chip` | On-demand selected-rival squad, captaincy and exact set comparison. No league-wide fan-out. |
 
-League names/IDs, primary/selected choice, selected rival, pins and the explicitly confirmed at-most-five comparison group persist locally under `fpl:mini-leagues` version 2. Standings, points, rival squads and derived exposure are session-only and are not model inputs, Stage 10 evidence or exports. Opening the hub makes no standings request. Connected Official FPL memberships cannot be misleadingly removed locally; only a league confirmed absent from the connected entry is labelled manually added and removable. Public endpoint failure preserves only a clearly labelled in-session stale result where one exists; no value is manufactured.
+League names/IDs, primary/selected choice, selected rival, pins and the explicitly confirmed at-most-five comparison group persist locally under `fpl:mini-leagues` version 3, season-owned and fail-closed against older or previous-season records. Standings, points, rival squads and derived exposure are session-only and are not model inputs, Stage 10 evidence or exports. Opening the hub makes no standings request. Connected Official FPL memberships cannot be misleadingly removed locally; only a league confirmed absent from the connected entry is labelled manually added and removable. Public endpoint failure preserves only a clearly labelled in-session stale result where one exists; no value is manufactured.
 
 ## Teamsheet 2.0.5 selected-rival exposure contract
 
@@ -164,4 +192,4 @@ No provider, origin or endpoint family is added. The existing Official FPL stand
 - Incomplete, unavailable and stale records remain visible but are excluded from the default denominator.
 - Counts are labelled as selected-rival facts rather than whole-league ownership or effective ownership.
 - Optional `entry_rank`, `entry_last_rank`, `last_rank`, `event_total`, `multiplier`, captain, vice-captain and active-chip fields are validated before aggregation. Invalid optional context degrades to unavailable without discarding otherwise valid player ownership.
-- Standings, picks and derived exposure remain session-only. Only the explicit selected rival IDs and labels persist under `fpl:mini-leagues` version 2.
+- Standings, picks and derived exposure remain session-only. Only the explicit selected rival IDs and labels persist under `fpl:mini-leagues` version 3.

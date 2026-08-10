@@ -1,6 +1,11 @@
 # ROADMAP.md — current and proposed checkpoints
 
 
+## 10 August 2026 — A3 cache and persistence resilience implementation candidate
+
+Implementation is owner-approved on branch `agent/a3-cache-persistence-resilience` (PR #104, draft), based on GitHub `main` `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Final source/test head `502a1f7ac0e0456743f3ddb0695433decf8976d1` with generated-only child `02216b8` keeps Atomic Foreground Refresh ordering unchanged while adding a schema/season-bound main `fpl:cache`, verified user-owned saves, season-bound manual-squad and Mini-League preference records, and explicit session-only warnings when browser persistence fails. Independent review found and corrected one real defect: a failed authoritative storage-manager write could fall back to `localStorage` and be reported as a durable save even though no later read could return it. The existing Refresh-Load R1 supporting-cache cadence/compatibility rules and Stage 10 evidence stores are unchanged. Legacy `fpl:calib` remains deliberately untouched behind the separate model approval gate. Local validation accounts for **832 passing tests, 0 failed**, verified committed build provenance and two byte-identical production builds from the final head. Permanent Verify Teamsheet has passed on the exact published head and the PR description carries that run evidence; this file deliberately records no run ID, and any later head requires fresh permanent verification. Independent review of the final diff is complete. An owner decision on physical iPhone testing and explicit owner merge approval remain required, and PR #104 stays draft and unmerged until then. No physical device testing has been performed or claimed.
+
+
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
 The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
@@ -11,13 +16,13 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## 10 August 2026 — current checkpoint
 
-Atomic Foreground Refresh PR #102 is merged and physically accepted at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`. PR #103 has completed automated, deterministic/provenance and physical iPhone gates and has explicit owner merge approval. Data Architecture D1 remains an approved design only; persistence implementation is not approved. After PR #103 merge, the next substantive A3 remediation checkpoint is cache and persistence resilience, beginning with investigation/design and a fresh latest-main baseline unless repository evidence has progressed.
+PR #103 is merged at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`. Cache and persistence resilience is the current owner-approved implementation candidate on `agent/a3-cache-persistence-resilience`; it is not approved for merge. Data Architecture D1 remains an approved future design only. After this checkpoint is merged and verified, the next A3 remediation checkpoint is error-boundary separation.
 
 ## Current sequence after D1 design approval
 
 1. **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
-2. **Atomic Foreground Refresh — implemented, merge-gated:** design approved through R2/R3/R3.1/R3.2/R3.3/R3.4; implementation candidate on `claude/atomic-foreground-refresh-h7umfj`. Merge and physical iPhone acceptance remain owner-gated. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
-3. Cache and persistence resilience.
+2. **Atomic Foreground Refresh — complete and merged:** PR #102 is merged and physically accepted. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
+3. **Cache and persistence resilience — current implementation candidate:** owner-approved scope is implemented on `agent/a3-cache-persistence-resilience` as draft PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet on the published head and independent review of the final diff all pass. An owner decision on physical iPhone testing and explicit merge approval remain gated.
 4. Error-boundary separation.
 5. Production-bundle safeguards.
 6. Documentation/state-ownership cleanup where appropriate.
@@ -42,13 +47,13 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 - Leagues is accepted for the currently available pre-season data. Populated post-Gameweek acceptance remains deferred, not failed.
 - Refresh-Load R1 is merged, deployed from `main` and physically accepted for every currently testable iPhone path. Live minute-history reuse awaits a completed checked Gameweek; Odds reuse awaits an enabled Odds configuration.
 
-## Current approved checkpoint — iPhone form-focus zoom correction
+## Historical checkpoint — iPhone form-focus zoom correction
 
-**Status:** narrow implementation candidate on `agent/iphone-form-focus-zoom`. Permanent CI, exact two-commit generated provenance, physical iPhone Safari acceptance and merge remain owner-gated.
+**Status:** complete, permanently verified, physically accepted and merged through PR #100 at `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`. Retained below as the scope/evidence record.
 
 **Scope:** render text, number, search, password, select and textarea controls at a minimum 16px so iPhone Safari does not auto-zoom on focus. Preserve browser pinch zoom and leave checkbox, file and range controls unchanged.
 
-**Finalisation:** commit reviewed source/test/documentation changes first, build with that reachable commit as `BUILD_COMMIT`, then commit only the four generated deployables. Run permanent CI and physically verify focus, keyboard close, scale recovery and save behaviour on the exact PR build before owner merge approval.
+**Finalisation (as performed):** reviewed source/test/documentation changes were committed first, built with that reachable commit as `BUILD_COMMIT`, then the four generated deployables were committed. Permanent CI passed and focus, keyboard close, scale recovery and save behaviour were physically verified on the exact PR build before owner merge approval.
 
 **Exclusions:** disabling zoom through viewport restrictions; body typography changes; control redesign; calculation, provider, data source, cache, persistence, route, navigation, security-origin or dependency changes; D1 and later roadmap work.
 

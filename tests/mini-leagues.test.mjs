@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { FPL_RULES } from '../src/config.mjs';
 import { S } from '../src/state.mjs';
 import { MINI_LEAGUE_STATE_VERSION, MAX_COMPARISON_RIVALS, miniLeagueId, normaliseMiniLeagueState, migrateMiniLeagueState, entryClassicLeagues } from '../src/ui/mini-leagues-state.mjs';
 import { miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeagueStatusCopy } from '../src/ui/mini-leagues-view.mjs';
@@ -15,12 +16,17 @@ test('league identifiers are numeric, bounded and never manufactured',()=>{
   assert.equal(miniLeagueId(null),'');
 });
 
-test('legacy saved leagues migrate deterministically with configured selection',()=>{
-  const state=migrateMiniLeagueState({legacyConfig:{leagueId:'22'},legacyLeagues:[{id:'11',name:'Friends'},{id:'22',name:'Work'},{id:'11',name:'Duplicate'}]});
+test('season-unknown saved leagues are not promoted into the current season',()=>{
+  const state=migrateMiniLeagueState({
+    stored:{version:2,selectedLeagueId:'22',saved:[{id:'22',name:'Old work league'}]},
+    legacyConfig:{leagueId:'22'},
+    legacyLeagues:[{id:'11',name:'Old friends'}],
+    entry:{leagues:{classic:[{id:33,name:'Current league'}]}}
+  });
   assert.equal(state.version,MINI_LEAGUE_STATE_VERSION);
-  assert.equal(state.selectedLeagueId,'22');
-  assert.deepEqual(state.saved.map(x=>x.id),['11','22']);
-  assert.equal(state.saved[0].name,'Friends');
+  assert.equal(state.season,FPL_RULES.season);
+  assert.equal(state.selectedLeagueId,'33');
+  assert.deepEqual(state.saved.map(x=>x.id),['33']);
 });
 
 test('versioned state deduplicates leagues and caps pinned rivals',()=>{
@@ -96,9 +102,11 @@ test('source keeps official and factual boundaries and removes unsupported tacti
   for(const forbidden of ['covered on the template','win or lose the league','Biggest threats','projected league position','must chase','must protect']) assert.equal(source.includes(forbidden),false,forbidden);
 });
 
-test('version 1 state migrates to an empty explicit comparison group',()=>{
+test('version 1 season-unknown state is discarded rather than silently promoted',()=>{
   const state=migrateMiniLeagueState({stored:{version:1,selectedLeagueId:'7',saved:[{id:'7',name:'A'}],pinnedRivals:{7:[{id:'2',name:'Pinned'}]}}});
   assert.equal(state.version,MINI_LEAGUE_STATE_VERSION);
+  assert.equal(state.season,FPL_RULES.season);
+  assert.deepEqual(state.saved,[]);
   assert.deepEqual(state.comparisonRivalsByLeague,{});
   assert.equal(MAX_COMPARISON_RIVALS,5);
 });
