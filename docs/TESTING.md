@@ -1,5 +1,10 @@
 # TESTING.md
 
+## 10 August 2026 — `fpl:calib` compatibility coverage candidate
+
+PR #107 adds six focused calibration-compatibility regressions: legacy bytes are preserved but rejected; malformed JSON fails closed; speculative versioned records remain rejected before a methodology is approved; startup activation remains behind `sget(K_CAL)`; the current walk-forward path remains diagnostic-only with no calibration writer; and the existing scoring multiplier formula is unchanged. The full suite is 842 passed, 0 failed, 0 skipped, 0 cancelled. Normal Verify Teamsheet run #123 passed provenance, the complete suite, deterministic double build, root/deployable equality, build identity and artifact preservation on head `69e539647ae687f49605633505e7147da76125e2`.
+
+
 
 ## 10 August 2026 — PR #103 physical acceptance closeout
 

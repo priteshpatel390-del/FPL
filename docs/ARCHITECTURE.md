@@ -1,5 +1,10 @@
 # ARCHITECTURE.md
 
+## 10 August 2026 — calibration persistence boundary candidate
+
+PR #107 (draft) makes `fpl:calib` a fail-closed restore boundary: generic stored JSON no longer reaches `S.calib`; every currently stored calibration record is rejected as contract-unverified, left byte-for-byte in storage, and standard uncalibrated projection state remains active. The existing live scoring multiplier code is unchanged and the Stage 7 walk-forward path remains diagnostic-only. A future production calibration record requires a separately approved season/model/rules/methodology/dataset contract before any activation path may be added. Verified candidate head `69e539647ae687f49605633505e7147da76125e2` passed Verify Teamsheet run #123.
+
+
 
 ## Mobile viewport and primary-screen presentation boundary
 

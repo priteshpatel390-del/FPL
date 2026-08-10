@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+## 10 August 2026 — `fpl:calib` compatibility candidate
+
+Draft PR #107 implements the owner-approved fail-closed compatibility boundary for legacy/unverified `fpl:calib`. Source/tests/docs are at `862eefc32b0edb070290ad9ce82d85b1123b0596`; generated-only child `69e539647ae687f49605633505e7147da76125e2` passed normal Verify Teamsheet run #123, with 842 passed and no failures/skips/cancellations. Existing calibration bytes are preserved but cannot activate; standard uncalibrated projections are used. The current Stage 7 walk-forward remains diagnostic-only and no production calibration methodology or factor change is introduced. This is contract-correctness work, not an accuracy improvement claim. PR #107 is still draft and PERSIST-4 is not closed until merge. Error-boundary separation remains the next post-merge investigation checkpoint.
+
+
 
 ## 10 August 2026 — PR #103 physical acceptance closeout
 

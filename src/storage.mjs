@@ -227,6 +227,7 @@ async function readStoredJson(key){
 function decodeStoredValue(key,value){
   if(key===K_CACHE) return decodeMainCacheRecord(value);
   if(key===K_SQUAD) return decodeManualSquadRecord(value);
+  if(key===K_CAL) return {ok:false,reason:'calibration_contract_unverified'};
   return {ok:true,value};
 }
 async function sgetResult(key){
@@ -236,6 +237,12 @@ async function sgetResult(key){
   return {...read,...decoded};
 }
 function reportReadResult(key,result){
+  if(key===K_CAL){
+    if(result.ok&&result.found){ clearPersistenceWarning('calibration-compatibility'); return; }
+    if(result.found||result.reason==='malformed')
+      setPersistenceWarning('calibration-compatibility','Saved calibration could not be verified for this model and season and is not being applied. Standard uncalibrated projections are active.');
+    return;
+  }
   if(key===K_CACHE){
     if(result.ok){ clearPersistenceWarning('cache'); return; }
     if(result.found||result.reason==='malformed')

@@ -1,5 +1,10 @@
 # SECURITY.md
 
+## 10 August 2026 — calibration trust boundary candidate
+
+Draft PR #107 extends fail-closed local trust handling to `fpl:calib` without adding a network or secret boundary. Unverified saved calibration cannot mutate active model state; rejected bytes are retained locally and a fixed warning states that standard uncalibrated projections are active. No provider health state is changed, no key/identifier is exposed, and no D1/R2/backend work is introduced. The candidate is verified at head `69e539647ae687f49605633505e7147da76125e2` but remains unmerged.
+
+
 ## Future D1/R2 security boundary (design only)
 
 The approved [Data Architecture D1](DATA-ARCHITECTURE-D1.md) requires a separate authenticated data Worker, private R2, short-lived browser authentication, origin/CSRF/rate/payload controls and Worker secrets. The static client must never contain a permanent service token, database credential, Odds key relay, or Anthropic/OpenAI secret. Manager/team, manual-squad and league/rival data remain device-only in the MVP. Future AI access must use audited, field-allowlisted, read-only views. No security/runtime implementation is authorised by the design decision.
