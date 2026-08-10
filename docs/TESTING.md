@@ -65,7 +65,7 @@ Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 The latest merged repository checkpoint is `fpl:calib` compatibility and resilience PR #107 at `main` `d112c673310149a4463def1758242460450600dc`, whose automatic push-triggered Verify Teamsheet run #127 / `31396393124` passed every stage on the exact merge commit. That merged baseline is **842 tests, 842 passed, 0 failed, 0 skipped, 0 cancelled**, reproduced locally at the same commit.
 
-The current unmerged candidate is A3 error-boundary separation (EB-1): **855 tests, 855 passed, 0 failed, 0 skipped, 0 cancelled** — all 842 baseline tests retained plus the thirteen new regressions in `tests/error-boundary-separation.test.mjs`.
+The current unmerged candidate is A3 error-boundary separation (EB-1): **856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled** — all 842 baseline tests retained plus the fourteen new regressions in `tests/error-boundary-separation.test.mjs`.
 
 Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updated in place, none weakened:
 
@@ -82,7 +82,8 @@ Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updat
 - a gateway failure with no usable cache: FPL Unavailable, restricted, no unverified core admitted;
 - a fatal feed-shape failure: acquisition/validation ownership retained, `feedShape` preserved and exactly one bootstrap request — no generic application retry;
 - a no-core failure-state render throw: the provider classification survives, the application failure is owned and nothing escapes;
-- unexpected Understat, Odds and minute-history computation exceptions: `internal_error`, the underlying error observable on the report, **no** provider-health row manufactured, Rule B's retain/clear decision preserved, and the core FPL row and its minute detail left truthful;
+- unexpected Understat, Odds and minute-history computation exceptions: `internal_error`, the underlying error observable on the report, **no** provider-health row manufactured, and the core FPL row and its minute detail left truthful;
+- both halves of Rule B under an application exception: where the accepted value is incompatible it is cleared and its stale row removed, and where it is still compatible it is retained with its prior provider success evidence neither advanced nor overwritten;
 - normal Understat-only and Odds-only provider failures for contrast: a genuine provider failure still publishes a provider-owned Fallback row where an application exception publishes none;
 - refresh-lifecycle ownership: a throw during `captureRefreshInputs()` is classified `internal_error`, the startup gate, interaction lock and refresh promise are all released, Provider Health is untouched, no raw exception text reaches the user, and the queued-manual-refresh and no-retry structure is pinned at source.
 

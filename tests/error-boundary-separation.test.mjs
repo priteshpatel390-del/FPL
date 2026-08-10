@@ -51,7 +51,8 @@ globalThis.localStorage={
 globalThis.renderAll=()=>{};
 
 const {S}=await import('../src/state.mjs');
-const {resetHealth,getHealth,HEALTH_STATES}=await import('../src/providers/registry.mjs');
+const {resetHealth,getHealth,markLive,HEALTH_STATES}=await import('../src/providers/registry.mjs');
+const {SCHEMA_VERSION,MODEL_VERSION}=await import('../src/config.mjs');
 const applied=await import('../src/providers/applied.mjs');
 const main=await import('../src/main.mjs');
 
@@ -174,6 +175,33 @@ test('unexpected Understat computation exception does not manufacture Understat 
   assert.equal(getHealth('fpl').state,HEALTH_STATES.LIVE);
   assert.match(S.ustatNote,/Supporting team-form processing failed/);
   assert.match(fields.status.textContent,/supporting data layer could not be processed/i);
+});
+
+/* The clear branch above proves no false row is published. This proves the
+   other half of Rule B: when the accepted value is still compatible it is
+   retained, and the prior provider success evidence is neither advanced nor
+   overwritten by the application failure. */
+test('unexpected Understat computation exception retains a compatible accepted value and its prior health evidence',async()=>{
+  const initial=await main.loadAll({apiFn:apiSuccess});
+  assert.equal(initial.ok,true);
+  const accepted={1:{xg:1.5,xga:1.1,atk:1.05,def:0.95}};
+  const acceptedAt=Date.now();
+  S.ustat=accepted;
+  S.providerApplied={...S.providerApplied,understat:{
+    signature:'accepted-signature',season:'2026-27',
+    schemaVersion:SCHEMA_VERSION,modelVersion:MODEL_VERSION,fetchedAt:acceptedAt
+  }};
+  markLive('understat','accepted provider result','rolling team xG active',acceptedAt);
+  fields.useUstat.checked=true;
+  const forced=new Error('forced-understat-retain-internal-error');
+  const report=await main.loadAll({apiFn:apiSuccess,understatDeps:{getStorage:async()=>{throw forced;}}});
+  assert.equal(report.errorClass,'internal_error');
+  assert.equal(S.ustat,accepted,'Rule B retains the compatible in-memory provider value');
+  const health=getHealth('understat',{},acceptedAt+1);
+  assert.equal(health.state,HEALTH_STATES.LIVE);
+  assert.equal(health.note,'accepted provider result');
+  assert.equal(health.lastSuccess,acceptedAt,'an application failure must not advance or replace provider success evidence');
+  assert.equal(getHealth('fpl').state,HEALTH_STATES.LIVE);
 });
 
 test('unexpected Odds computation exception does not manufacture Odds provider health',async()=>{

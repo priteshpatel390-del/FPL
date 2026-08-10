@@ -68,7 +68,7 @@ The global FPL data warning is unchanged and was not turned into a generic appli
 
 ## Tests
 
-**855 tests, 855 passed, 0 failed, 0 skipped, 0 cancelled**, against the 842-test `main` baseline. All 842 are retained; the thirteen additions are in `tests/error-boundary-separation.test.mjs`. Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updated in place and none was weakened — see [Testing](TESTING.md) for the exact accounting, including why the shared-gate test 73 needed no change and why test 63 is now stricter than the empty-catch string it used to pin.
+**856 tests, 856 passed, 0 failed, 0 skipped, 0 cancelled**, against the 842-test `main` baseline. All 842 are retained; the fourteen additions are in `tests/error-boundary-separation.test.mjs`. Three pinned assertions in `tests/atomic-foreground-refresh.test.mjs` were updated in place and none was weakened — see [Testing](TESTING.md) for the exact accounting, including why the shared-gate test 73 needed no change and why test 63 is now stricter than the empty-catch string it used to pin.
 
 ## Explicit exclusions
 

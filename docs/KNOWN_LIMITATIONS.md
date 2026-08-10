@@ -2,7 +2,7 @@
 
 ## 10 August 2026 — A3 error-boundary separation candidate (EB-1)
 
-Draft PR #108 implements the approved EB-1 failure-ownership package. Two confirmed defects are addressed: a recovery-render failure after a genuine Official FPL collection failure was silently swallowed, and an unexpected internal exception escaping Understat or Odds computation was converted into fabricated provider degradation. Both are now application-owned and separately observable, while genuine provider transport/validation evidence continues to own Provider Health. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed. The candidate passes **855 tests, 0 failed** against the 842-test `main` baseline. EB-1 is not merged, and no physical iPhone acceptance has been performed for it.
+Draft PR #108 implements the approved EB-1 failure-ownership package. Two confirmed defects are addressed: a recovery-render failure after a genuine Official FPL collection failure was silently swallowed, and an unexpected internal exception escaping Understat or Odds computation was converted into fabricated provider degradation. Both are now application-owned and separately observable, while genuine provider transport/validation evidence continues to own Provider Health. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed. The candidate passes **856 tests, 0 failed** against the 842-test `main` baseline. EB-1 is not merged, and no physical iPhone acceptance has been performed for it.
 
 ## 10 August 2026 — PERSIST-4 is closed
 
