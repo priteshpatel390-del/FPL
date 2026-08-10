@@ -731,7 +731,7 @@ test('114 · value and applied metadata are assigned in one synchronous block', 
 test('61-63 · error classes are separated and only collection may blame the feed', () => {
   assert.match(MAIN_SOURCE, /errorClass:'collection_failed'/);
   assert.match(MAIN_SOURCE, /errorClass:'commit_failed'/);
-  assert.match(MAIN_SOURCE, /errorClass:renderError \? 'render_failed' : persistFailures\.length \? 'persist_failed' : null/);
+  assert.match(MAIN_SOURCE, /errorClass:renderError \? 'render_failed' : persistFailures\.length \? 'persist_failed' : internalErrors\.length \? 'internal_error' : null/);
   const commitFailure = MAIN_SOURCE.slice(MAIN_SOURCE.indexOf("if(!committed.ok){"), MAIN_SOURCE.indexOf('let renderError'));
   assert.doesNotMatch(commitFailure, /markFallback|markUnavailable/);
   const renderBlock = MAIN_SOURCE.slice(MAIN_SOURCE.indexOf('let renderError'), MAIN_SOURCE.indexOf('const persistFailures'));
@@ -747,8 +747,19 @@ test('59 · a render throw leaves committed data intact and does not blame the f
   assert.match(collectionOnly, /markFallback\('fpl'/);
 });
 
-test('63 · a throw in the failure-path render does not escape loadAll', () => {
-  assert.match(MAIN_SOURCE, /if\(S\.boot\)\{ try\{ renderVerifiedState\(\); \}catch\(error\)\{\} \}/);
+/* EB-1A · the recovery render stays guarded so it still cannot escape loadAll,
+   but its failure is no longer discarded. The caught error is recorded and
+   returned as a secondary application-owned class beside the primary
+   collection failure, and the failure path never rethrows or retries.
+   The behavioural proof is in tests/error-boundary-separation.test.mjs. */
+test('63 · a throw in the failure-path render is recorded and does not escape loadAll', () => {
+  const failurePath = MAIN_SOURCE.slice(MAIN_SOURCE.indexOf('function reportCollectionFailure'),
+    MAIN_SOURCE.indexOf('function reportUnexpectedApplicationError'));
+  assert.match(failurePath, /\}catch\(error\)\{\s*renderError=error;/);
+  assert.doesNotMatch(failurePath, /catch\s*\(\s*error\s*\)\s*\{\s*\}/);
+  assert.doesNotMatch(failurePath, /\bthrow\b|loadAll|collectRefresh/);
+  assert.match(failurePath, /errorClass:'collection_failed'/);
+  assert.match(failurePath, /secondaryErrorClass:renderError\?'render_failed':null, renderError/);
 });
 
 /* =====================================================================

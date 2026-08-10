@@ -10,7 +10,7 @@ import { computeOdds, loadOdds } from './providers/odds.mjs';
 import { computeMinuteHistories, loadMinuteHistories, completedDataRevision } from './providers/minutes-history.mjs';
 import { understatSignature, oddsSignature, minutesSignature, nextProviderToken, applyProviderResult,
   drainRecomputation, providerPersistCandidate, snapshotPendingRecomputation, restorePendingRecomputation } from './providers/applied.mjs';
-import { snapshotHealth, restoreHealth } from './providers/registry.mjs';
+import { snapshotHealth, restoreHealth, setHealthDetail } from './providers/registry.mjs';
 import { clearXP } from './model/xp.mjs';
 import { HEALTH_STATES, healthRows, getHealth, markLive, markCached, markFallback, markPartial, markDisabled, markUnavailable } from './providers/registry.mjs';
 import { renderGlobalDataWarning } from './ui/data-warning.mjs';
@@ -218,6 +218,44 @@ function aggregateFplHealth({corePartial, requested, slices, source, at}){
   return 'Live';
 }
 
+function internalProviderResult(name,error,extra={}){
+  const note=name==='understat'
+    ? 'Supporting team-form processing failed — FPL strength ratings are being used.'
+    : name==='odds'
+      ? 'Supporting market processing failed — the internal team model is being used.'
+      : '';
+  return {outcome:'fallback',reason:'internal_error',applicationOwned:true,internalError:error,
+    note,issues:[],retryRecords:[],persist:null,...extra};
+}
+
+/* An application-owned exception must still pass through the one shared apply
+   gate, so `apply` is the ordinary applyProviderResult() call and Rule B keeps
+   deciding retain/clear exactly as it does for a provider result: an
+   incompatible old supporting value is never kept alive because application
+   code threw. The gate marks Provider Health while resolving retain/clear, so
+   the pre-application provider evidence is restored afterwards — an
+   application exception is not provider evidence. If Rule B clears the active
+   supporting value, that provider's old health row is removed rather than left
+   describing a superseded provider result as still active. A cleared
+   detailed-minute layer removes only the minute detail from the otherwise
+   truthful core FPL row. */
+function ownApplicationError(name,result,apply){
+  if(!result?.applicationOwned) return apply();
+  const healthBefore=snapshotHealth();
+  const verdict=apply();
+  const restored={...healthBefore};
+  if(verdict.state==='clear'&&(name==='understat'||name==='odds')) delete restored[name];
+  restoreHealth(restored);
+  if(name==='minutes'&&verdict.state==='clear'&&restored.fpl) setHealthDetail('fpl',null);
+  return {...verdict,applicationError:result.internalError||null};
+}
+
+function stagedInternalErrors(staged){
+  return ['understat','odds','minutes'].map(name=>({name,result:staged?.[name]}))
+    .filter(item=>item.result?.applicationOwned)
+    .map(item=>({layer:item.name,error:item.result.internalError||null}));
+}
+
 async function collectRefresh(options = {}){
   const inputs = options.inputs || captureRefreshInputs();
   const apiFn=options.apiFn||api;
@@ -258,9 +296,12 @@ async function collectRefresh(options = {}){
   const providerCore = {...core, seasonLive:core.seasonLive};
   const providerTokens={understat:nextProviderToken('understat'),odds:nextProviderToken('odds'),minutes:nextProviderToken('minutes')};
   const [understat, odds, minutes] = await Promise.all([
-    computeUnderstat({...options.understatDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
-    computeOdds({...options.oddsDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], persist:null})),
-    computeMinuteHistories({...options.minutesDeps,core:providerCore, account:stagedAccount, useManual:inputs.useManual}).catch(() => ({outcome:'fallback', reason:'threw', issues:[], retryRecords:[], cohortIds:[], persist:null}))
+    computeUnderstat({...options.understatDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)})
+      .catch(error => internalProviderResult('understat',error)),
+    computeOdds({...options.oddsDeps,core:providerCore, config:providerConfig, force:Boolean(options.forceSupporting)})
+      .catch(error => internalProviderResult('odds',error)),
+    computeMinuteHistories({...options.minutesDeps,core:providerCore, account:stagedAccount, useManual:inputs.useManual})
+      .catch(error => internalProviderResult('minutes',error,{cohortIds:[]}))
   ]);
   understat.signature = understatSignature(providerCore, providerConfig);
   odds.signature = oddsSignature(providerCore, providerConfig);
@@ -327,13 +368,16 @@ function applyRefreshCommit(staged, {now = Date.now()} = {}){
     });
     const applyCtx = {core, now, resolveOnDiscard:true};
     const providerVerdicts={
-      understat:applyProviderResult('understat', staged.understat, {...applyCtx, token:staged.providerTokens?.understat,
-        signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})}),
-      odds:applyProviderResult('odds', staged.odds, {...applyCtx, token:staged.providerTokens?.odds,
-        signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})}),
-      minutes:applyProviderResult('minutes', staged.minutes, {...applyCtx, token:staged.providerTokens?.minutes,
-        cohortIds:staged.minutes.cohortIds || [],
-        signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])})
+      understat:ownApplicationError('understat', staged.understat, () =>
+        applyProviderResult('understat', staged.understat, {...applyCtx, token:staged.providerTokens?.understat,
+          signature:understatSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})})),
+      odds:ownApplicationError('odds', staged.odds, () =>
+        applyProviderResult('odds', staged.odds, {...applyCtx, token:staged.providerTokens?.odds,
+          signature:oddsSignature(core, {useUstat:inputs.useUstat, oddsKey:inputs.oddsKey})})),
+      minutes:ownApplicationError('minutes', staged.minutes, () =>
+        applyProviderResult('minutes', staged.minutes, {...applyCtx, token:staged.providerTokens?.minutes,
+          cohortIds:staged.minutes.cohortIds || [],
+          signature:minutesSignature(core, completedDataRevision(core.events, core.fixtures), staged.minutes.cohortIds || [])}))
     };
     // 4 · diagnostics from current work only
     const applicable=name=>!providerVerdicts[name]?.discarded;
@@ -421,10 +465,17 @@ async function loadAll(options = {}){
     return {ok:Boolean(S.boot), criticalReady:Boolean(S.boot), source:'commit_failed',
       cacheAccepted, optionalResults:[], verifiedAt:null, errorClass:'commit_failed', error:committed.error};
   }
+  /* The Official FPL summary stays, because the core feed genuinely did update.
+     A neutral application-owned note is appended instead, so a supporting-layer
+     exception never reads as an Official FPL or named-provider failure. */
+  const internalErrors=stagedInternalErrors(staged);
+  const supportingNote=!internalErrors.length ? ''
+    : internalErrors.length===1 ? ' · a supporting data layer could not be processed'
+    : ' · some supporting data could not be processed';
   let renderError = null;
   try{
     populatePositionFilter(staged.core.element_types);
-    if(st) st.textContent = statusLine(staged, committed);
+    if(st) st.textContent = statusLine(staged, committed) + supportingNote;
     renderVerifiedState();
   }catch(error){ renderError = error; if(st) st.textContent = 'Data updated but the display failed to refresh.'; }
   const persistFailures = await persistRefresh(staged, committed);
@@ -434,8 +485,8 @@ async function loadAll(options = {}){
     ok:true, criticalReady:true, source:'live', cacheAccepted,
     optionalResults:[staged.understat, staged.odds, staged.minutes],
     verifiedAt:Date.now(), fplState:committed.fplState,
-    errorClass:renderError ? 'render_failed' : persistFailures.length ? 'persist_failed' : null,
-    persistFailures
+    errorClass:renderError ? 'render_failed' : persistFailures.length ? 'persist_failed' : internalErrors.length ? 'internal_error' : null,
+    renderError, internalErrors, persistFailures
   };
 }
 
@@ -460,37 +511,66 @@ async function recomputeProvider(name){
 function reportCollectionFailure(err, st, cacheAccepted){
   const shape = !!(err && err.feedShape);
   const offline = !!(err && err.offline);
+  const hasCore=Boolean(S.boot);
+  let statusText='',tickerTitle='',tickerCopy='';
   if(err && err.issues) S.dataIssues = err.issues;
-  if(S.boot){
+  if(hasCore){
     markFallback('fpl', shape ? 'live feed shape unusable' : offline ? 'device is offline' : 'live feed unreachable', 'saved season snapshot remains active');
-    if(st) st.textContent = (shape
+    statusText=(shape
       ? 'The season feed came back in an unexpected format — still showing saved data from '
       : offline ? 'Offline — still showing saved data from '
       : 'Live feed unreachable — still showing saved data from ') +
       new Date(S.cachedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '.';
   } else if(shape){
     markUnavailable('fpl', 'feed shape unusable', 'season data cannot be shown');
-    if(st) st.textContent = 'Season data could not be read.';
-    setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},"Season data isn't usable right now"),
-      "The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly."));
+    statusText='Season data could not be read.';
+    tickerTitle="Season data isn't usable right now";
+    tickerCopy="The feed answered, but the data wasn't in the shape this app expects. That's a problem at the source rather than anything to do with your settings — please try again shortly.";
   } else {
     markUnavailable('fpl', offline ? 'device is offline' : 'official gateway unavailable', 'season data cannot be shown');
-    if(st) st.textContent = offline ? 'Teamsheet is offline and no verified season data is available.' : 'Data feed unreachable.';
-    setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},'No connection to the FPL feed'),
-      offline
-        ? 'Reconnect to the internet, then try Load data again. Without a verified saved snapshot, recommendations remain safely unavailable.'
-        : 'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.'));
+    statusText=offline ? 'Teamsheet is offline and no verified season data is available.' : 'Data feed unreachable.';
+    tickerTitle='No connection to the FPL feed';
+    tickerCopy=offline
+      ? 'Reconnect to the internet, then try Load data again. Without a verified saved snapshot, recommendations remain safely unavailable.'
+      : 'Teamsheet could not reach its approved Official FPL gateway. Try Load data again shortly. Previously verified data will be used when available; without it, recommendations remain safely unavailable.';
   }
-  if(S.boot){ try{ renderVerifiedState(); }catch(error){} }
-  else {
-    renderProviderHealth(); renderGlobalDataWarning();
-    if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
-      document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
+  let renderError=null;
+  try{
+    if(st) st.textContent=statusText;
+    if(!hasCore&&tickerTitle) setChildren($('ticker'),el('div',{class:'empty'},el('strong',{},tickerTitle),tickerCopy));
+    if(hasCore) renderVerifiedState();
+    else {
+      renderProviderHealth(); renderGlobalDataWarning();
+      if(typeof document!=='undefined'&&typeof document.dispatchEvent==='function'&&typeof CustomEvent==='function')
+        document.dispatchEvent(new CustomEvent('teamsheet:restricted',{detail:{reason:shape?'feed_shape':'transport_unavailable'}}));
+    }
+  }catch(error){
+    renderError=error;
+    try{
+      if(st) st.textContent=hasCore
+        ? 'Live FPL refresh failed; previous verified data remains active, but the display also failed to refresh.'
+        : 'Official FPL data could not be loaded, and Teamsheet could not refresh the error display.';
+    }catch{}
   }
   return {
-    ok:Boolean(S.boot), criticalReady:Boolean(S.boot),
-    source:S.boot?'verified_cache':'unavailable', cacheAccepted:Boolean(S.boot),
-    optionalResults:[], verifiedAt:S.boot?Date.now():null, errorClass:'collection_failed', error:err
+    ok:hasCore, criticalReady:hasCore,
+    source:hasCore?'verified_cache':'unavailable', cacheAccepted:hasCore,
+    optionalResults:[], verifiedAt:hasCore?Date.now():null, errorClass:'collection_failed', error:err,
+    secondaryErrorClass:renderError?'render_failed':null, renderError
+  };
+}
+
+function reportUnexpectedApplicationError(error){
+  const hasCore=Boolean(S.boot);
+  const st=$('status');
+  try{
+    if(st) st.textContent=hasCore
+      ? 'Teamsheet hit an application error while updating. Previously accepted data remains active.'
+      : 'Teamsheet hit an application error before verified data became available. Try Load data again.';
+  }catch{}
+  return {
+    ok:hasCore,criticalReady:hasCore,source:hasCore?'application_error_with_state':'application_error',
+    cacheAccepted:false,optionalResults:[],verifiedAt:null,errorClass:'internal_error',error
   };
 }
 
@@ -538,13 +618,13 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
   if(reason==='manual'&&verifiedRefreshPromise) pendingRefreshRequest={reason:'manual',startup:false,force:true};
   if(verifiedRefreshPromise) return verifiedRefreshPromise;
   if(!force&&!shouldRefreshVerifiedData(lastRefreshAttemptAt,nowFn())) return {ok:true,criticalReady:Boolean(S.boot),skipped:true,reason:'recently_attempted'};
-  const refreshInputs=captureRefreshInputs();
   const blockInteractions=shouldBlockRefreshInteractions({reason,startup});
   verifiedRefreshPromise=(async()=>{
-    if(startup) setStartupGateVisible(true);
-    if(blockInteractions) setRefreshInteractionLock(true,{startup});
-    setStartupPhase('cache');
     try{
+      if(startup) setStartupGateVisible(true);
+      if(blockInteractions) setRefreshInteractionLock(true,{startup});
+      setStartupPhase('cache');
+      const refreshInputs=captureRefreshInputs();
       const report=await loadAll({
         awaitOptional:true,
         deferRender:true,
@@ -558,6 +638,14 @@ async function runVerifiedRefresh({reason='manual',startup=false,force=false,now
         document.body?.classList?.remove('data-restricted');
         void dispatchVerifiedData({reason,verifiedAt:lastVerifiedRefreshAt,source:report.source});
       }else{
+        setStartupPhase('restricted');
+        document.body?.classList?.add('data-restricted');
+      }
+      return report;
+    }catch(error){
+      const report=reportUnexpectedApplicationError(error);
+      if(report.criticalReady) document.body?.classList?.remove('data-restricted');
+      else {
         setStartupPhase('restricted');
         document.body?.classList?.add('data-restricted');
       }
