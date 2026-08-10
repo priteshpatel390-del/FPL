@@ -63,3 +63,8 @@ test('shared primary header box owns inset, border, background and action varian
   assert.match(app,/\.primary-page-header-action\{grid-template-columns:minmax\(0,1fr\) auto;align-items:start;gap:10px\}/);
   assert.match(app,/<a class="btn ghost sm" href="#\/leagues\/manage">Manage leagues<\/a>/);
 });
+
+test('empty Leagues live status contributes no pre-header vertical space',()=>{
+  assert.match(app,/#leagueLiveStatus:empty\{display:none\}/);
+  assert.match(app,/<div id="leagueDataWarning"><\/div>\s*<p class="status" id="leagueLiveStatus" aria-live="polite"><\/p>\s*<section class="panel league-route" id="leagueHub"/);
+});
