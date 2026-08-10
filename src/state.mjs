@@ -1,9 +1,17 @@
 import { $ } from './util.mjs';
 import { normaliseFixtures, validateBootstrap, hasFatal } from './providers/validate.mjs';
+
+/* Shared cross-module state inventory.
+
+   Declaring a slot here does not make state.mjs its semantic owner. Domain
+   modules still own the values they write (providers, calibration,
+   Mini-Leagues, and so on). This object is only the explicit inventory of
+   mutable values intentionally shared through S; tests reject undeclared
+   direct S.<key> usage so lifecycle ownership cannot silently expand. */
 const S = {
   boot:null, fixtures:null, entry:null, picks:null, history:null,
   picksGameweek:0, picksStatus:'idle', strengthsAvailable:false,
-  teams:{}, byId:{}, posName:{}, avg:null,
+  teams:{}, byId:{}, posName:{}, posFull:{}, avg:null,
   teamId:'', currentGW:0, nextGW:1, seasonLive:false, gamesPlayed:1,
   source:'', cachedAt:null, manual:[], chipsUsed:[], thread:[],
   dataIssues:[],
@@ -18,8 +26,18 @@ const S = {
   // it cannot await, and after a persist_failed memory is the newer record.
   providerApplied:{understat:null, odds:null},
   __accountKeys:{entry:null,picks:null,history:null},
-  lastOptimiser:null
+  lastOptimiser:null,
+
+  // Supporting-provider runtime slices. providers/* remains their owner.
+  ustat:null, ustatNote:'', odds:null, oddsNote:'',
+  // Historical calibration/backtest runtime mirrors. model/backtest.mjs owns
+  // their lifecycle; verified browser persistence remains owned by storage.mjs.
+  calib:null, backtest:null,
+  // Mini-League preferences are owned by mini-leagues-state.mjs; fetched
+  // standings/rival/exposure session data is owned by mini-leagues-view.mjs.
+  miniLeagues:null, leagues:[], miniLeagueData:null
 };
+const SHARED_STATE_KEYS = Object.freeze(Object.keys(S));
 
 /* ---------------------------------------------------------------------
    SLIM + CACHE — bootstrap is far too large to store whole, so only the
@@ -189,7 +207,7 @@ function restoreStateJournal(journal){
 }
 
 export {
-  S, KEEP, TEAM_STRENGTH_FIELDS, validTeamStrength, teamStrengthsValid,
+  S, SHARED_STATE_KEYS, KEEP, TEAM_STRENGTH_FIELDS, validTeamStrength, teamStrengthsValid,
   slim, hydrate, prepareCore, assignCore, populatePositionFilter, recordIssues, recordRetry,
   REFRESH_OWNED_KEYS, captureStateJournal, restoreStateJournal
 };
