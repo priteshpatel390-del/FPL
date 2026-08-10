@@ -90,9 +90,9 @@ The Stage 10 evidence dependency is one-way: snapshot observes model state; outc
 
 `src/state.mjs` exports `SHARED_STATE_KEYS` as the explicit inventory of legitimate cross-module `S` slots. That inventory is an architectural declaration, not a transfer of semantic ownership: provider, preview, navigation, worker, persistence and domain modules continue to own the values they already owned. A zero-dependency source regression rejects undeclared direct `S.key` and static `S['key']` usage and requires refresh-owned keys to remain an explicit subset of the shared inventory.
 
-Mini-League preference ownership is one-way. `S.miniLeagues` is the only writable runtime preference representation; `S.leagues` exists only as a compatibility read and an attempted legacy write cannot replace canonical preferences. Persisted version-3 Mini-League records, migration and season-compatibility behaviour are unchanged.
+Mini-League preference ownership is one-way. `S.miniLeagues` is the only writable runtime preference representation; `S.leagues` exists only as a compatibility read and an attempted legacy write cannot replace canonical preferences. The bridge is deliberately implemented as a getter/setter accessor, so it has no independent writable data slot. Persisted version-3 Mini-League records, migration and season-compatibility behaviour are unchanged.
 
-The source regression is intentionally not a general JavaScript data-flow proof for arbitrary computed property access. The known dynamic refresh-owned loop is governed separately by its explicit key set. No Proxy, state framework or centralised reducer/store is introduced.
+The source regression is intentionally not a general JavaScript data-flow proof for arbitrary computed property access. The known dynamic refresh-owned loop is governed separately by its explicit key set. No Proxy, state framework or centralised reducer/store is introduced. Atomic Foreground Refresh depends only on `REFRESH_OWNED_KEYS` remaining ordinary data properties; the Mini-League accessor is outside that commit-owned set.
 
 ## Build boundary
 The bundler flattens application modules in a fixed, explicit order. Stage 8 modules are bundled after deterministic scoring and before downstream squad/transfer consumers. Stage 10 snapshot, outcome, metric and review modules are bundled after decision-preview state and before their UI orchestrators. Helper names in flattened scope remain unique.
@@ -180,7 +180,7 @@ Capture uses the official FPL event deadline, samples same-origin HTTP `Date` be
 Startup and explicit manual loading own the interaction gate. Atomic Foreground Refresh is merged through PR #102: a qualifying foreground refresh keeps the previously rendered interface interactive while collection is staged, then applies one synchronous commit before render and persistence. Rollback restores commit-owned and module-private state on a failed commit. This architecture is complete; Route-Aware Rendering and Performance is a separate future measurement/design checkpoint and does not reopen refresh atomicity.
 
 ## Stage 10.2 official-outcome boundary
-`providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL player totals, filtered fixtures and optional manager outcomes. Duplicate player IDs and conflicting fixture identities fail closed.
+`providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL player totals, filtered fixtures and optional manager outcomes. Duplicate player IDs and conflicting fixtures fail closed.
 
 `evidence/outcome.mjs` normalises allowlisted facts, requires every assigned fixture plus official event `finished` and `data_checked` before finalisation, links to the eligible Stage 10.1 snapshot without mutating it and emits immutable provisional, complete or corrected revisions with deterministic hashes.
 
@@ -279,7 +279,7 @@ For comparator ties, a partial search node uses `''` as its optimistic signature
 
 The refresh lifecycle is a four-phase pipeline: **collect → commit → render → persist**.
 
-Collection is pure — it writes nothing to `S`, the health registry or diagnostics, and returns everything it would have mutated as data. The commit is synchronous, no-throw and non-reentrant, containing plain assignments only. Because it holds no suspension point, and `S` carries no accessor property or `Proxy`, no observer can see it part-way; that is what allows a foreground refresh to remain interactive without an inert lock.
+Collection is pure — it writes nothing to `S`, the health registry or diagnostics, and returns everything it would have mutated as data. The commit is synchronous, no-throw and non-reentrant, containing plain assignments only to the explicit `REFRESH_OWNED_KEYS` data-property subset. Because it holds no suspension point, those commit-owned properties have no accessors, and `S` is not a `Proxy`, no observer can see the accepted refresh state part-way through the commit. The later `S.leagues` compatibility accessor introduced by PR #112 is outside `REFRESH_OWNED_KEYS` and is never written by the refresh commit, so it does not change the atomicity argument.
 
 `src/providers/applied.mjs` owns the supporting-provider boundary: per-provider tokens, computation signatures (Rule A), existing-value compatibility (Rule B, expressed in R1's own predicates), and `applyProviderResult()` — the single gate shared by the refresh commit and the exported provider wrappers.
 
