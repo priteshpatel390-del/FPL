@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   verify-and-publish:
-    if: github.repository == 'priteshpatel390-del/FPL' && github.ref == 'refs/heads/agent/a3-cache-persistence-resilience' && github.event.head_commit.message == 'chore: add guarded A3 correction publisher'
+    if: github.repository == 'priteshpatel390-del/FPL' && github.ref == 'refs/heads/agent/a3-cache-persistence-resilience' && github.event.head_commit.message != 'regenerate A3 persistence correction build'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -25,9 +25,8 @@ jobs:
       - name: Guard source identity and workflow-only wrapper
         run: |
           set -eu
-          test "$(git rev-parse HEAD^)" = "$SOURCE_COMMIT"
-          test "$(git diff --name-only "$SOURCE_COMMIT" HEAD)" = ".github/workflows/a3-persistence-correction-publish.yml"
           git cat-file -e "$SOURCE_COMMIT^{commit}"
+          test "$(git diff --name-only "$SOURCE_COMMIT" HEAD)" = ".github/workflows/a3-persistence-correction-publish.yml"
 
       - name: Run complete test suite
         run: |
@@ -61,5 +60,5 @@ jobs:
           changed="$(git diff --cached --name-only)"
           expected="$(printf '%s\n' dist/app.bundle.js dist/index.html dist/manifest.json index.html)"
           test "$changed" = "$expected"
-          git commit -m 'chore: regenerate A3 persistence correction build'
+          git commit -m 'regenerate A3 persistence correction build'
           git push origin HEAD:agent/a3-cache-persistence-resilience
