@@ -27,7 +27,7 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## Current operational and acceptance records
 
-- [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md) — owner-approved narrow ownership-hardening candidate; `state.mjs` becomes the declared shared-slot inventory and the legacy Mini-League alias becomes one-way, without a state-management rewrite.
+- [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md) — completed, merged and post-merge verified through PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`; `state.mjs` is the declared shared-slot inventory and the legacy Mini-League alias is one-way, without a state-management rewrite.
 - [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md) — owner-approved EB-1 failure-ownership package; provider evidence, commit, render, persistence and application-owned exceptions are separated without changing provider or model behaviour.
 - [`fpl:calib` compatibility and resilience](FPL-CALIB-COMPATIBILITY-RESILIENCE.md) — owner-approved fail-closed compatibility implementation candidate; legacy/unverified calibration is kept inert and standard uncalibrated projections remain active unless a future production methodology is separately approved.
 - [Post-A3 0C manual-squad dead-handler cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md) — owner-approved removal of the proven-unreachable per-button manual-squad listeners; the validating capture-phase runtime remains the sole interaction owner.
