@@ -1,6 +1,6 @@
 # Atomic Foreground Refresh
 
-Purpose: the design and implementation record for the Atomic Foreground Refresh checkpoint. Audience: all future sessions. Status: implementation candidate; merge and physical iPhone acceptance remain owner-gated.
+Purpose: the design and implementation record for the Atomic Foreground Refresh checkpoint. Audience: all future sessions. Status: **complete, physically accepted and merged through PR #102 at `main` `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`.** Final candidate evidence was 792 passing tests with deterministic/generated provenance and permanent Verify Teamsheet run `31335711523`; independent re-review and physical iPhone Safari acceptance passed before merge.
 
 Approved basis: R2 as amended by R3 A1–A8, R3.1 B1–B8, R3.2 C1–C8, R3.3 D1–D7 and R3.4 E1–E7, plus the three binding approval clarifications.
 
@@ -32,7 +32,7 @@ requestRefresh(reason)
         └─ drain bounded recomputation
 ```
 
-**Why synchronous is sufficient.** Every renderer reads `S` synchronously from an event-loop task. A mutation block with no suspension point cannot be interleaved. The codebase contains no `MutationObserver`, `IntersectionObserver`, `Proxy` or accessor property on `S`, so a plain assignment cannot dispatch to user code. Test 22a locks that. No interaction lock is therefore needed, and the accepted D-36 behaviour that foreground refresh stays interactive is preserved.
+**Why synchronous is sufficient.** Every renderer reads `S` synchronously from an event-loop task. A mutation block with no suspension point cannot be interleaved. At the PR #102 checkpoint, the commit-owned `S` keys were ordinary data properties and `S` was not a `Proxy`, so a plain assignment could not dispatch to user code; the approved structural test locked that boundary. PR #112 later introduced a deliberate getter/setter accessor only for the legacy `S.leagues` Mini-League compatibility bridge. That accessor is outside `REFRESH_OWNED_KEYS` and the refresh commit never writes it, so the atomicity argument remains scoped to the commit-owned data-property subset and is unchanged.
 
 **No refresh generation.** `verifiedRefreshPromise` already makes refreshes a singleton, so a counter guarding "an older refresh commits after a newer one" would defend an unreachable scenario. The captured Team ID, manual mode/cohort, Understat setting and transient Odds key must still match immediately before commit. The genuine provider overlap is handled by tokens allocated for both refresh and direct-provider work; direct wrappers additionally compare their result with the live core/configuration before application.
 
@@ -125,5 +125,5 @@ Review correction adds executable regression coverage for live minute-transport 
 
 - **REFRESH-10** — an open player card may show a superseded generation; automatic rerendering is excluded from this checkpoint by approval. Focus restore on close may target a detached node.
 - **REFRESH-4**, **REFRESH-6**, **REFRESH-7**, **REFRESH-8**, **REFRESH-9** remain open and separately gated. `persist_failed` gives REFRESH-6 a defined and observable class but does not resolve quota handling.
-- Physical iPhone Safari acceptance has **not** been performed. No device claim is made.
+- Physical iPhone Safari acceptance was completed on the final PR #102 build before merge. That evidence applies only to the recorded tested paths and does not establish universal device behaviour.
 - This checkpoint improves state consistency. It does **not** validate minute-history behaviour, Stage 10 outcomes, transfer-horizon evidence, populated Mini-League behaviour, recommendation accuracy or provider contribution. Those gates are unchanged.
