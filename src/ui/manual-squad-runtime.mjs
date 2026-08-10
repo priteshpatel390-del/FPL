@@ -1,6 +1,6 @@
 import { TRANSFER_RULES } from '../config.mjs';
 import { S } from '../state.mjs';
-import { K_SQUAD, sset, saveCfg } from '../storage.mjs';
+import { K_SQUAD, ssetVerified, saveCfg, setManualSquadPersistenceReady } from '../storage.mjs';
 
 const MANUAL_SQUAD_POSITION_LABELS = Object.freeze({1:'GKP',2:'DEF',3:'MID',4:'FWD'});
 
@@ -152,6 +152,16 @@ function manualSquadCreateRouteAwareTransferRenderer(renderTransferView,routePro
   };
 }
 
+function manualPersistenceOutcome(value){
+  if(value===false) return {ok:false,reason:'rejected'};
+  if(value&&typeof value==='object'&&Object.prototype.hasOwnProperty.call(value,'ok')) return value;
+  return {ok:true,via:'caller'};
+}
+async function manualPersistenceCall(fn,...args){
+  try{ return manualPersistenceOutcome(await fn(...args)); }
+  catch(error){ return {ok:false,reason:'exception',error}; }
+}
+
 async function manualSquadCommitAddition({
   manual,player,byId,persist=async()=>{},saveConfiguration=async()=>{},
   renderManualView=()=>{},renderTeamView=()=>{},dispatchRendered=()=>{}
@@ -159,15 +169,23 @@ async function manualSquadCommitAddition({
   const decision=manualSquadAddDecision(manual,player,byId);
   if(!decision.ok) return {ok:false,message:decision.message,validation:manualSquadValidation(manual,byId)};
   manual.push({id:Number(player.id),bought:Number(player.now_cost)});
-  await persist(manual);
-  await saveConfiguration();
+  const squadPersistence=await manualPersistenceCall(persist,manual);
+  const configurationPersistence=squadPersistence.ok
+    ? await manualPersistenceCall(saveConfiguration)
+    : {ok:false,reason:'skipped_after_squad_failure'};
   renderManualView();
   let teamRenderError=null;
   try{ renderTeamView(); }
   catch(error){ teamRenderError=error; }
   try{ dispatchRendered(); }
   catch(error){}
-  return {ok:true,message:'',validation:manualSquadValidation(manual,byId),teamRenderError};
+  return {
+    ok:true,
+    message:'',
+    validation:manualSquadValidation(manual,byId),
+    teamRenderError,
+    persistence:{squad:squadPersistence,configuration:configurationPersistence}
+  };
 }
 
 function manualSquadInstallBrowserRuntime({
@@ -201,25 +219,28 @@ function manualSquadInstallBrowserRuntime({
         const player=S.byId?.[id];
         const decision=manualSquadAddDecision(S.manual,player,S.byId);
         if(!decision.ok){ manualSquadApplyStatus(documentRef,S.manual,S.byId,decision.message); return; }
+        const useManual=documentRef.getElementById?.('useManual');
+        if(useManual) useManual.checked=true;
         const result=await manualSquadCommitAddition({
           manual:S.manual,
           player,
           byId:S.byId,
-          persist:value=>sset(K_SQUAD,value),
-          saveConfiguration:async()=>{
-            const useManual=documentRef.getElementById?.('useManual');
-            if(useManual) useManual.checked=true;
-            await saveCfg();
-          },
+          persist:value=>ssetVerified(K_SQUAD,value),
+          saveConfiguration:()=>saveCfg(),
           renderManualView,
           renderTeamView,
           dispatchRendered:()=>documentRef.dispatchEvent?.(new CustomEvent('teamsheet:data-rendered'))
         });
+        setManualSquadPersistenceReady(Boolean(result.persistence?.squad?.ok));
         const search=documentRef.getElementById?.('pSearch');
         const results=documentRef.getElementById?.('pResults');
         if(search) search.value='';
         if(results) results.hidden=true;
-        if(result.teamRenderError)
+        if(!result.persistence?.squad?.ok)
+          manualSquadApplyStatus(documentRef,S.manual,S.byId,'Change active for this session, but Teamsheet could not save the manual squad. It may revert after reload.');
+        else if(!result.persistence?.configuration?.ok)
+          manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved, but the manual-team setting could not be saved. It may need to be re-enabled after reload.');
+        else if(result.teamRenderError)
           manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved. Team analysis could not refresh; reopen Team.');
         else manualSquadApplyStatus(documentRef);
         return;
@@ -228,12 +249,19 @@ function manualSquadInstallBrowserRuntime({
       const index=Number(target.dataset.rm);
       if(!Number.isInteger(index)||index<0||index>=S.manual.length) return;
       S.manual.splice(index,1);
-      await sset(K_SQUAD,S.manual);
+      const persistence=await ssetVerified(K_SQUAD,S.manual);
+      setManualSquadPersistenceReady(Boolean(persistence.ok));
       renderManualView();
       try{ renderTeamView(); }
-      catch(error){ manualSquadApplyStatus(documentRef,S.manual,S.byId,'Squad saved. Team analysis could not refresh; reopen Team.'); return; }
+      catch(error){
+        const suffix=persistence.ok?'Squad saved. ':'Change active for this session, but the manual squad was not saved. ';
+        manualSquadApplyStatus(documentRef,S.manual,S.byId,suffix+'Team analysis could not refresh; reopen Team.');
+        return;
+      }
       documentRef.dispatchEvent?.(new CustomEvent('teamsheet:data-rendered'));
-      manualSquadApplyStatus(documentRef);
+      if(!persistence.ok)
+        manualSquadApplyStatus(documentRef,S.manual,S.byId,'Change active for this session, but Teamsheet could not save the manual squad. It may revert after reload.');
+      else manualSquadApplyStatus(documentRef);
     })();
   },true);
 
