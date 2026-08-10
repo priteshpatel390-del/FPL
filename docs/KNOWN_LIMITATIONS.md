@@ -1,6 +1,14 @@
 # KNOWN_LIMITATIONS.md
 
-## 10 August 2026 — A3 error-boundary separation (EB-1) is merged and accepted
+## 10 August 2026 — current evidence boundary after A3 State-Ownership Cleanup
+
+A3 State-Ownership Cleanup is complete and merged through PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`, from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. Permanent post-merge Verify Teamsheet run #167 / `31430700053` passed **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**, committed deployment provenance, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. GitHub Pages run #117 / `31430697347` also succeeded on that exact merge commit.
+
+The checkpoint closes the two medium ownership risks it targeted: the legitimate cross-module `S` surface is now explicitly inventoried, and the legacy Mini-League compatibility alias can no longer become a reverse authority over canonical `S.miniLeagues` preferences. It is not a general state-management framework. No physical iPhone testing was performed or claimed for PR #112.
+
+One deliberate ownership limitation remains and is recorded as `STATE-1` below: the zero-dependency source regression guards direct/static `S` property access and the explicit refresh-owned subset, but it is not a general JavaScript data-flow proof for arbitrary computed property access. Route-Aware Rendering and Performance is the next substantive checkpoint and begins with measurement/evidence only; implementation is not approved.
+
+## Historical checkpoint — 10 August 2026 A3 error-boundary separation (EB-1)
 
 PR #108 is merged at `main` `ba5daa2000345ddde3d8e6f6d381d44603e7cd29`. The two confirmed failure-ownership defects are addressed: a recovery-render failure after a genuine Official FPL collection failure is no longer silently swallowed, and an unexpected internal exception escaping Understat/Odds/minute-history computation is no longer converted into fabricated provider degradation. Genuine provider transport/validation evidence continues to own Provider Health. No provider endpoint, validation rule, retry cadence, weighting or model calculation changed.
 
@@ -30,7 +38,7 @@ The persistent platform is approved only as a design; no D1 database, R2 bucket,
 
 Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 10 August 2026.
 
-Current evidence boundary: A3 Error-Boundary Separation is merged at `ba5daa2000345ddde3d8e6f6d381d44603e7cd29` after 856 passing tests and successful post-merge Verify Teamsheet run #154. Its executable iPhone Safari paths were physically accepted; the clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
+Current evidence boundary: A3 State-Ownership Cleanup is merged at `691d9f929284d51c233b61d099c34cafe1030db6` after 864 passing tests and successful post-merge Verify Teamsheet run #167. It has no physical device evidence because the checkpoint was non-visual and none was required or performed. A3 Error-Boundary Separation's executable iPhone Safari paths were physically accepted; its clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience also remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
 
 Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), [Historical Records](HISTORICAL_RECORDS.md).
 
@@ -44,6 +52,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | DUP-1 | Duplicate fixtures could double-count projections | Fixed by provider-boundary identity/deduplication | Stage 3 | **CLOSED 2026-07-26** |
 | BUILD-1 | Custom bundler could leave parts of multi-line module declarations in production output | Complete static import/export declarations are stripped and surviving module syntax is rejected | Stage 5 review | **CLOSED 2026-07-28** |
 | BUILD-2 | The tracked R1 deployable reproduced exactly but recorded an unreachable local generating commit, and its source hash covered runtime modules rather than every build input | A3-R0 added complete input identity, reachable-ancestor verification and exact committed-artifact reproduction before ordinary builds | A3-R0 | **CLOSED and merged 2026-08-09 through PR #98 (`5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`)** |
+| STATE-1 | Shared-state inventory enforcement is intentionally source-structural rather than a general JavaScript data-flow proof | Direct `S.key`, static `S['key']` and the explicit refresh-owned subset are mechanically guarded, but arbitrary future computed-property access would require separate review rather than being proven impossible by the current regression | State-Ownership Cleanup / future ownership audits | Open (accepted) |
 | UI-18 | Team on `main` used a legacy-render-then-reconstruct boundary | DTR-1 directly creates the accepted final DOM and passed 691/691 permanent tests, generated provenance and physical iPhone Safari acceptance before merge | DTR-1 | **CLOSED and merged 2026-08-09 through PR #99 (`09e595c275b4f3614c09fb502291de6831813999`)** |
 | UI-19 | Focusing sub-16px editable fields made iPhone Safari zoom strongly and the page could remain enlarged after the keyboard closed | PR #100 raised text-like editable controls to a focus-safe 16px without disabling pinch zoom; PR #103 retained that declaration while refining visual x-height/chrome. Physical iPhone Safari testing confirmed normal scale after keyboard close. | iPhone form-focus zoom checkpoint / PR #103 refinement | **CLOSED by physical acceptance; PR #103 merge approved 2026-08-10** |
 | RET-1 | `Retry-After` is not honoured | Fixed capped backoff may retry sooner than a provider requests | Serverless reconsideration | Open (accepted) |
