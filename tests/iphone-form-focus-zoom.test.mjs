@@ -39,3 +39,31 @@ test('zoom prevention does not disable browser magnification or resize non-text 
   assert.match(app,/input type="checkbox"/);
   assert.match(app,/input\[type=range\]/);
 });
+
+test('focus-safe controls use a smaller visual x-height without dropping the 16px declaration',()=>{
+  const ordinary=ruleBody('input[type=text],input[type=number],input[type=search],input[type=password],select');
+  assert.match(ordinary,/(?:^|;)font-size:16px(?:;|$)/);
+  assert.match(ordinary,/(?:^|;)font-size-adjust:\.48(?:;|$)/);
+  assert.doesNotMatch(ordinary,/(?:^|;)(?:zoom|transform):/);
+
+  for(const selector of ['textarea','.global-ask input']){
+    const body=ruleBody(selector);
+    assert.match(body,/(?:^|;)font-size:16px(?:;|$)/);
+    assert.match(body,/(?:^|;)font-size-adjust:\.48(?:;|$)/);
+  }
+});
+
+test('mobile form chrome is compact while field labels retain a clear subordinate hierarchy',()=>{
+  const ordinary=ruleBody('input[type=text],input[type=number],input[type=search],input[type=password],select');
+  assert.match(ordinary,/(?:^|;)line-height:1\.25(?:;|$)/);
+  assert.match(ordinary,/(?:^|;)padding:8px 10px(?:;|$)/);
+
+  const label=ruleBody('label.fld');
+  assert.match(label,/(?:^|;)gap:5px(?:;|$)/);
+  assert.match(label,/(?:^|;)font-size:12\.5px(?:;|$)/);
+  assert.match(label,/(?:^|;)line-height:1\.3(?:;|$)/);
+
+  const textarea=ruleBody('textarea');
+  assert.match(textarea,/(?:^|;)line-height:1\.25(?:;|$)/);
+  assert.match(textarea,/(?:^|;)padding:9px 10px(?:;|$)/);
+});

@@ -1,5 +1,18 @@
 # TESTING.md
 
+
+## 10 August 2026 — PR #103 physical acceptance closeout
+
+The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
+
+Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari chrome without a light strip; Team, Transfers, Fixtures, Leagues and Settings use the accepted shared header hierarchy; the refined editable/selectable controls are visually proportionate while retaining the no-focus-zoom behaviour; and the Leagues primary box now aligns vertically with the other primary screens. Pritesh explicitly approved PR #103 for merge on 10 August 2026.
+
+No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
+
+## 10 August 2026 — final verification state
+
+PR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` pass **803/803** tests. Publication run `31356159321` passed before branch publication; permanent Verify Teamsheet run #90 / `31356255017` passed every exact-revision, committed-provenance, full-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage. Physical iPhone Safari acceptance passed all four presentation findings and merge is explicitly owner-approved.
+
 ## D1 design closeout and future verification
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) is documentation-only and does not add a runtime test claim. Its later implementation gates require schema/migration checks, idempotent duplicate and revision tests, season mismatch rejection, D1/R2 partial-failure and orphan reconciliation, authentication/CORS/CSRF/rate/secret tests, outage tests proving recommendations remain usable, backup/restore, full deterministic verification and physical iPhone acceptance for saved/pending/failed/offline/export states. Existing live-season evidence gates remain unchanged.

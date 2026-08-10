@@ -16,16 +16,18 @@
   --pitch:#1F5C3A; --claret:#7A1E38; --amber:#C9922B; --info:#2E6F9E;
   --fdr1:#137A4B; --fdr2:#4FA06B; --fdr3:#B9B08A; --fdr4:#C4703C; --fdr5:#9E2B2B;
   --r:10px; --shadow:0 1px 0 rgba(20,38,28,.06), 0 6px 18px -12px rgba(20,38,28,.35);
+  --page-title-size:17px; --page-intro-size:13px; --page-head-gap:12px; --page-header-bg:#F7F9F5;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:100px}
-body.startup-pending{overflow:hidden}
+body.startup-pending{overflow:hidden;padding-bottom:0;min-height:100vh;min-height:100dvh;background-color:#10251A;background-image:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%)}
 body.startup-pending > header,
 body.startup-pending > main,
 body.startup-pending > nav.tabs{visibility:hidden}
-.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;min-height:100dvh;padding:calc(24px + env(safe-area-inset-top,0)) 24px calc(24px + env(safe-area-inset-bottom,0));background:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+.startup-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:calc(24px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) calc(24px + env(safe-area-inset-left,0px));background-color:#10251A;background-image:linear-gradient(155deg,#10251A 0%,#173B28 58%,#6A1D34 140%);color:#fff;text-align:center}
+@supports (height:100dvh){.startup-gate{inset:0 0 auto;height:100dvh}}
 .startup-gate[hidden]{display:none}
 .startup-card{width:min(100%,360px);display:grid;justify-items:center;gap:14px}
 .startup-wordmark{font-family:'Bricolage Grotesque','Public Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.035em}
@@ -59,7 +61,7 @@ main{max-width:980px;margin:0 auto;padding:16px}
 .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
 
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
-input[type=text],input[type=number],input[type=search],input[type=password],select{font:inherit;font-size:16px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+input[type=text],input[type=number],input[type=search],input[type=password],select{font:inherit;font-size:16px;font-size-adjust:.48;line-height:1.25;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:0}
 input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible,textarea:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .btn{background:var(--ink);color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:600}
 .btn:hover{background:#20392B}
@@ -68,7 +70,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible
 .btn.claret{background:var(--claret)}
 .btn.sm{padding:6px 10px;font-size:12.5px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-weight:500}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;line-height:1.3;color:var(--ink-soft);font-weight:500}
 .check{display:flex;gap:8px;align-items:center;min-height:44px;font-size:12.5px;color:var(--ink-soft);font-weight:500;padding-bottom:0}
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
@@ -149,7 +151,7 @@ table.data td.num,table.data th.num{text-align:right;font-family:'IBM Plex Mono'
 .capbody .why{font-size:12px;color:var(--ink-soft);margin-top:2px}
 @media(min-width:720px){.capgrid{grid-template-columns:1fr 1fr}}
 
-textarea{width:100%;font:inherit;font-size:16px;padding:11px;border:1px solid var(--line);border-radius:8px;resize:vertical;min-height:80px;background:#fff;color:var(--ink)}
+textarea{width:100%;font:inherit;font-size:16px;font-size-adjust:.48;line-height:1.25;padding:9px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;min-height:80px;background:#fff;color:var(--ink)}
 .answer{background:#F7F9F5;border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:10px;font-size:14px}
 .answer h4{margin:10px 0 4px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px}
 .answer ul{margin:6px 0;padding-left:20px}
@@ -163,6 +165,7 @@ textarea{width:100%;font:inherit;font-size:16px;padding:11px;border:1px solid va
 @keyframes spin{to{transform:rotate(360deg)}}
 
 .status{font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+#leagueLiveStatus:empty{display:none}
 .sliders{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
 .sliders label{font-size:12px;color:var(--ink-soft);font-weight:500}
 .sliders input[type=range]{width:100%;accent-color:var(--pitch)}
@@ -416,7 +419,7 @@ button,input,select,textarea{touch-action:manipulation}
 html{min-height:100%;min-height:100dvh;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{min-height:100%;min-height:100dvh;padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
 .global-ask{position:relative;width:min(100%,620px);margin-top:12px}
-.global-ask input{width:100%;min-height:48px;padding:10px 52px 10px 15px;border:1px solid rgba(255,255,255,.32);border-radius:24px;background:rgba(255,255,255,.12);color:#fff;font-size:16px;box-shadow:none}
+.global-ask input{width:100%;min-height:48px;padding:10px 52px 10px 15px;border:1px solid rgba(255,255,255,.32);border-radius:24px;background:rgba(255,255,255,.12);color:#fff;font-size:16px;font-size-adjust:.48;line-height:1.25;box-shadow:none}
 .global-ask input::placeholder{color:#C7D3CC}.global-ask input:focus-visible{outline:2.5px solid #fff;outline-offset:2px}
 .global-ask-send{position:absolute;right:2px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--claret);color:#fff;font-size:23px;line-height:1;font-weight:700}
 .global-ask-send:disabled{background:rgba(255,255,255,.18);color:#AEBBB4;cursor:default}.global-ask-send:not(:disabled):active{transform:translateY(-50%) scale(.96)}
@@ -437,6 +440,14 @@ h2[tabindex="-1"]:focus{outline:none}
 .settings-view .btn.sm,.settings-view button{min-height:44px}
 .settings-view input:not([type=checkbox]):not([type=file]),.settings-view select{min-height:44px}
 .route-header{position:relative;margin-bottom:12px;padding-top:2px}.route-header h2{font-size:20px;margin-top:0}.route-header .hint{margin:3px 0 0;color:var(--ink-soft);font-size:13px}
+.primary-page-header{display:grid;gap:0;margin:0 0 var(--page-head-gap);padding:12px 13px;border:1px solid var(--line);border-radius:var(--r);background:var(--page-header-bg);box-shadow:none}
+.primary-page-header-copy{min-width:0}
+.primary-page-header .eyebrow{display:block;margin:0 0 3px}
+.primary-page-header h2{font-size:var(--page-title-size);line-height:1.2;margin:0}
+.primary-page-header .hint{color:var(--ink-soft);font-size:var(--page-intro-size);line-height:1.4;margin:3px 0 0}
+.primary-page-header-action{grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px}
+.primary-page-header-action>.btn{align-self:start}
+#leagueHub{gap:0}
 .route-back{display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0 0 4px;color:var(--claret);font-size:27px;font-weight:700;line-height:1;text-decoration:none;border-radius:50%}
 .route-back:hover{background:#F7EEF0;text-decoration:none}.route-back:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}
 .settings-subview>.panel:last-child{margin-bottom:0}
@@ -469,7 +480,6 @@ h2[tabindex="-1"]:focus{outline:none}
 }
 
 /* Teamsheet 2.0.2 — pitch-first Team decision home */
-#view-squad>.hint{margin:3px 0 8px}
 .team-home-header{display:grid;gap:7px;margin:2px 0 10px}
 .team-home-header h3{font-size:19px}
 .team-home-chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -527,7 +537,6 @@ h2[tabindex="-1"]:focus{outline:none}
 
 /* Teamsheet 2.0.3 — Transfers decision workspace */
 #view-transfers>.hint{margin-bottom:10px}
-.transfer-workspace-head{display:grid;gap:8px;margin-bottom:12px}
 .transfer-context-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .transfer-context-chip{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;background:#F7F9F5;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.2}
 .transfer-context-chip.deadline{background:#FCF8EF;color:#745614}
@@ -599,7 +608,7 @@ h2[tabindex="-1"]:focus{outline:none}
 /* Teamsheet 2.0.4 — Mini Leagues official decision foundation */
 .league-view{display:grid;gap:10px}.league-route{display:grid;gap:10px}.league-route[hidden]{display:none}
 .league-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:9px}.league-picker{min-height:44px;max-width:240px;overflow-wrap:anywhere;text-align:left;padding:8px 11px}
-.league-hub-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.league-hub-head>div{min-width:0}.league-hub-head>.btn{flex:0 0 auto}.league-hub-groups{display:grid;gap:15px;margin-top:4px}.league-hub-group{display:grid;gap:7px}.league-hub-group h3{font-size:15px}.league-hub-list{display:grid;gap:6px}.league-hub-row{appearance:none;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(92px,auto) 16px;align-items:center;gap:9px;min-height:58px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.league-hub-row:hover{background:#F7F9F5}.league-hub-row:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}.league-hub-copy{display:grid;gap:2px;min-width:0}.league-hub-copy strong{font-size:13px;line-height:1.2;overflow-wrap:anywhere}.league-hub-copy small{font-size:10.5px;color:var(--ink-soft)}.league-hub-rank{display:grid;gap:1px;text-align:right;justify-items:end}.league-hub-rank strong{font-size:13px;line-height:1.2;white-space:nowrap}.league-hub-rank small{max-width:150px;font-size:9.5px;line-height:1.2;color:var(--ink-soft);overflow-wrap:anywhere}.league-hub-chevron{font-size:19px;line-height:1;color:var(--claret);text-align:right}
+.league-hub-head>div{min-width:0}.league-hub-head>.btn{flex:0 0 auto}.league-hub-groups{display:grid;gap:15px;margin-top:4px}.league-hub-group{display:grid;gap:7px}.league-hub-group h3{font-size:15px}.league-hub-list{display:grid;gap:6px}.league-hub-row{appearance:none;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(92px,auto) 16px;align-items:center;gap:9px;min-height:58px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.league-hub-row:hover{background:#F7F9F5}.league-hub-row:focus-visible{outline:2.5px solid var(--info);outline-offset:2px}.league-hub-copy{display:grid;gap:2px;min-width:0}.league-hub-copy strong{font-size:13px;line-height:1.2;overflow-wrap:anywhere}.league-hub-copy small{font-size:10.5px;color:var(--ink-soft)}.league-hub-rank{display:grid;gap:1px;text-align:right;justify-items:end}.league-hub-rank strong{font-size:13px;line-height:1.2;white-space:nowrap}.league-hub-rank small{max-width:150px;font-size:9.5px;line-height:1.2;color:var(--ink-soft);overflow-wrap:anywhere}.league-hub-chevron{font-size:19px;line-height:1;color:var(--claret);text-align:right}
 .league-hero{display:grid;gap:6px;padding:12px 13px;border-radius:13px;background:linear-gradient(145deg,#173B28,#10251A);color:#fff;box-shadow:var(--shadow)}
 .league-hero .eyebrow{color:#B9C9BF}.league-hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}.league-hero h3{font-size:17px;line-height:1.15;overflow-wrap:anywhere}.league-hero .btn.ghost{color:#fff;border-color:rgba(255,255,255,.56)}.league-hero .btn.ghost:hover{background:rgba(255,255,255,.12)}
 .league-position-line{display:flex;align-items:center;justify-content:space-between;gap:9px}.league-position{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}.league-position strong{font-family:'Bricolage Grotesque',sans-serif;font-size:30px;line-height:1}.league-position span{color:#D8E2DB;font-size:12px}.league-position-line>.flag{flex:0 0 auto;margin-left:0}
@@ -686,9 +695,13 @@ h2[tabindex="-1"]:focus{outline:none}
 
   <!-- FIXTURES -->
   <section class="view panel" id="view-fixtures">
-    <span class="eyebrow">Signature view</span>
-    <h2>Fixtures</h2>
-    <p class="hint">Compare upcoming fixture difficulty across gameweeks. Teamsheet uses validated attack/defence strength ratings when available, otherwise Official FPL's 1–5 difficulty.</p>
+    <div class="primary-page-header">
+      <div class="primary-page-header-copy">
+        <span class="eyebrow">Signature view</span>
+        <h2>Fixtures</h2>
+        <p class="hint">Compare upcoming fixture difficulty across gameweeks. Teamsheet uses validated attack/defence strength ratings when available, otherwise Official FPL's 1–5 difficulty.</p>
+      </div>
+    </div>
     <div id="fixtureDataWarning"></div>
     <div class="row mb-12">
       <label class="fld">From GW<input type="number" id="fxFrom" min="1" max="38" class="input-w-72"></label>
@@ -733,9 +746,13 @@ h2[tabindex="-1"]:focus{outline:none}
 
   <!-- SQUAD -->
   <section class="view panel" id="view-squad" hidden>
-    <span class="eyebrow">Gameweek plan</span>
-    <h2>Team</h2>
-    <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>
+    <div class="primary-page-header">
+      <div class="primary-page-header-copy">
+        <span class="eyebrow">Gameweek plan</span>
+        <h2>Team</h2>
+        <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>
+      </div>
+    </div>
     <div id="squadOut"><div class="empty"><strong>No squad yet</strong>Enter your Team ID in Team setup below. Manual squad editing will become available after the verified player list loads.</div></div>
     <details id="manualWrap" class="mt-16">
       <summary>Build or edit a squad by hand</summary>
@@ -752,10 +769,12 @@ h2[tabindex="-1"]:focus{outline:none}
 
   <!-- TRANSFERS -->
   <section class="view panel" id="view-transfers" hidden>
-    <div class="transfer-workspace-head">
-      <span class="eyebrow">Decision workspace</span>
-      <h2>Transfers</h2>
-      <p class="hint">Compare making no transfer with the strongest legal plans returned by the existing optimiser. Model comparisons are decision support, not promised FPL points.</p>
+    <div class="transfer-workspace-head primary-page-header">
+      <div class="primary-page-header-copy">
+        <span class="eyebrow">Decision workspace</span>
+        <h2>Transfers</h2>
+        <p class="hint">Compare making no transfer with the strongest legal plans returned by the existing optimiser. Model comparisons are decision support, not promised FPL points.</p>
+      </div>
     </div>
     <fieldset class="transfer-assumptions" aria-describedby="transferAssumptionHelp">
       <legend>Planning assumptions</legend>
@@ -777,11 +796,10 @@ h2[tabindex="-1"]:focus{outline:none}
     <div id="leagueDataWarning"></div>
     <p class="status" id="leagueLiveStatus" aria-live="polite"></p>
     <section class="panel league-route" id="leagueHub" data-league-route="#/leagues">
-      <div class="league-hub-head">
-        <div><span class="eyebrow">Competitive context</span><h2 tabindex="-1">Leagues</h2></div>
+      <div class="league-hub-head primary-page-header primary-page-header-action">
+        <div class="primary-page-header-copy"><span class="eyebrow">Competitive context</span><h2 tabindex="-1">Leagues</h2><p class="hint">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p></div>
         <a class="btn ghost sm" href="#/leagues/manage">Manage leagues</a>
       </div>
-      <p class="hint">Your current position across every connected classic league. Tap a league for its table, nearby rivals and deeper context.</p>
       <div id="leagueHubOut"><div class="empty"><strong>Loading your leagues</strong>Teamsheet will list the classic leagues attached to your connected FPL team.</div></div>
     </section>
     <section class="panel league-route" id="leagueLanding" data-league-route="#/leagues/detail" hidden>

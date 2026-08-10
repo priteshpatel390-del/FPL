@@ -1,5 +1,18 @@
 # CLAUDE.md — onboarding for every future development session
 
+
+## 10 August 2026 — PR #103 physical acceptance closeout
+
+The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
+
+Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari chrome without a light strip; Team, Transfers, Fixtures, Leagues and Settings use the accepted shared header hierarchy; the refined editable/selectable controls are visually proportionate while retaining the no-focus-zoom behaviour; and the Leagues primary box now aligns vertically with the other primary screens. Pritesh explicitly approved PR #103 for merge on 10 August 2026.
+
+No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
+
+## 10 August 2026 — current checkpoint
+
+Atomic Foreground Refresh PR #102 is merged and physically accepted at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`. PR #103 has completed automated, deterministic/provenance and physical iPhone gates and has explicit owner merge approval. Data Architecture D1 remains an approved design only; persistence implementation is not approved. After PR #103 merge, the next substantive A3 remediation checkpoint is cache and persistence resilience, beginning with investigation/design and a fresh latest-main baseline unless repository evidence has progressed.
+
 ## 9 August 2026 reconciliation
 
 The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100. Its permanent verification passed **693 tests**. DTR-1 and the physical iPhone form-focus zoom checkpoint are complete and merged.

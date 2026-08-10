@@ -268,10 +268,11 @@ function setupAppShell(){
   askView.insertBefore(askRouteBack,askView.firstChild);
 
   const settingsView=teamsheetElement('section',{id:'view-settings',class:'view settings-view',hidden:'hidden'});
-  const settingsHeader=teamsheetElement('div',{class:'panel settings-header'},
-    teamsheetElement('span',{class:'eyebrow'},'Advanced tools, kept out of the way'),
-    teamsheetElement('h2',{id:'settingsTitle',tabindex:'-1'},'Settings'),
-    teamsheetElement('p',{class:'hint'},'Connect your team, research players, review evidence and resolve data issues without cluttering weekly decisions.'));
+  const settingsHeader=teamsheetElement('div',{class:'panel settings-header primary-page-header'},
+    teamsheetElement('div',{class:'primary-page-header-copy'},
+      teamsheetElement('span',{class:'eyebrow'},'Advanced tools, kept out of the way'),
+      teamsheetElement('h2',{id:'settingsTitle',tabindex:'-1'},'Settings'),
+      teamsheetElement('p',{class:'hint'},'Connect your team, research players, review evidence and resolve data issues without cluttering weekly decisions.')));
   const settingsLanding=teamsheetElement('div',{id:'settingsLanding',class:'settings-grid'},
     teamsheetSettingsCard('#/settings/team-account','◈','Team & Account','Manual squad editing, connection guidance and account links.'),
     teamsheetSettingsCard('#/settings/research','↗','Research Tools','Player Explorer and supporting research outside the main decision journeys.'),

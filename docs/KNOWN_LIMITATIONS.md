@@ -1,5 +1,18 @@
 # KNOWN_LIMITATIONS.md
 
+
+## 10 August 2026 — PR #103 physical acceptance closeout
+
+The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
+
+Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari chrome without a light strip; Team, Transfers, Fixtures, Leagues and Settings use the accepted shared header hierarchy; the refined editable/selectable controls are visually proportionate while retaining the no-focus-zoom behaviour; and the Leagues primary box now aligns vertically with the other primary screens. Pritesh explicitly approved PR #103 for merge on 10 August 2026.
+
+No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
+
+## 10 August 2026 — current UI limitation state
+
+The PR #103 startup-canvas, primary-header, form-control visual/no-zoom and Leagues vertical-alignment findings are physically accepted and no longer open UI defects. The separate post-Gameweek populated Leagues evidence gate remains deferred until Official FPL publishes the required live facts.
+
 ## D1 design limitations
 
 The persistent platform is approved only as a design; no D1 database, R2 bucket, data Worker, authentication, migration, capture or Sheets automation exists. D1/R2 commits cannot be atomic across products and will require an R2-first manifest protocol plus orphan reconciliation. Cost/capacity estimates use synthetic evidence, provider archival rights remain unconfirmed, and all existing live-Gameweek evidence gates remain in force. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md).
@@ -21,7 +34,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | BUILD-1 | Custom bundler could leave parts of multi-line module declarations in production output | Complete static import/export declarations are stripped and surviving module syntax is rejected | Stage 5 review | **CLOSED 2026-07-28** |
 | BUILD-2 | The tracked R1 deployable reproduced exactly but recorded an unreachable local generating commit, and its source hash covered runtime modules rather than every build input | A3-R0 added complete input identity, reachable-ancestor verification and exact committed-artifact reproduction before ordinary builds | A3-R0 | **CLOSED and merged 2026-08-09 through PR #98 (`5ee735f864aaea2b6c423dfaeb267f18f5fe3b2f`)** |
 | UI-18 | Team on `main` used a legacy-render-then-reconstruct boundary | DTR-1 directly creates the accepted final DOM and passed 691/691 permanent tests, generated provenance and physical iPhone Safari acceptance before merge | DTR-1 | **CLOSED and merged 2026-08-09 through PR #99 (`09e595c275b4f3614c09fb502291de6831813999`)** |
-| UI-19 | Focusing 15px editable fields makes iPhone Safari zoom strongly and the page can remain enlarged after the keyboard closes | The approved narrow candidate raises text-like editable controls to 16px without disabling pinch zoom; exact-build iPhone verification remains required | iPhone form-focus zoom checkpoint | Implementation candidate; physical/remote acceptance pending |
+| UI-19 | Focusing sub-16px editable fields made iPhone Safari zoom strongly and the page could remain enlarged after the keyboard closed | PR #100 raised text-like editable controls to a focus-safe 16px without disabling pinch zoom; PR #103 retained that declaration while refining visual x-height/chrome. Physical iPhone Safari testing confirmed normal scale after keyboard close. | iPhone form-focus zoom checkpoint / PR #103 refinement | **CLOSED by physical acceptance; PR #103 merge approved 2026-08-10** |
 | RET-1 | `Retry-After` is not honoured | Fixed capped backoff may retry sooner than a provider requests | Serverless reconsideration | Open (accepted) |
 | RET-2 | No general transport-level per-provider circuit breaker | R1 adds a minute-history-specific two-failed-batch guard and provider cooldowns, but other pooled endpoint families retain their existing bounded retries | Future provider hardening only with separate approval | Open |
 | HEALTH-1 | Provider Health is session-scoped | No multi-session incident history; compact global status and full Settings detail reflect only the current session | No planned stage | Accepted |

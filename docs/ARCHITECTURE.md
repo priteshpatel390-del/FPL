@@ -1,5 +1,12 @@
 # ARCHITECTURE.md
 
+
+## Mobile viewport and primary-screen presentation boundary
+
+**Physical correction:** the first candidate passed automation but failed iPhone Safari. The accepted boundary requires an explicit opaque startup document/gate background colour beneath the decorative gradient, and the five primary routes share one structural `primary-page-header` presentation block rather than only selector-level font tokens. Leagues retains its Manage action as an action variant. The later form-control visual refinement preserved the 16px focus-safety contract, and the empty Leagues live-status placeholder no longer contributes vertical space. Final physical iPhone Safari acceptance passed on 10 August 2026. This remains presentation-only.
+
+The accepted PR #103 mobile presentation boundary keeps startup ownership in the existing gate: header, main and the primary dock remain hidden/inert until `teamsheet:startup-ready`. During startup the document canvas itself now carries the dark loading background with `100vh` fallback and `100dvh` modern sizing, while the fixed gate uses all four safe-area insets. Primary Team, Transfers, Fixtures, Leagues and Settings titles/intros use explicit shared presentation tokens instead of depending on whether an `h2` is a direct `.panel` child. This is presentation-only: routing, navigation information architecture, refresh orchestration and football calculations remain unchanged.
+
 ## Approved future persistence boundary (D1 design)
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) selects Cloudflare D1 for relational/queryable records and private R2 for exact content-addressed evidence, mediated by a separate authenticated data Worker. This is a future boundary only: the existing Official FPL gateway and deterministic browser calculation path remain independent, and persistence failure must not change recommendations. Google Sheets is downstream reporting only. No infrastructure or runtime implementation is approved.
