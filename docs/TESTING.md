@@ -58,9 +58,15 @@ Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository and application checkpoint is PR #104 at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`. Post-A3 Checkpoint 0 housekeeping is the current unmerged candidate; it adds continuous-integration regression tests only.
+The latest merged repository checkpoint is post-A3 Checkpoint 0 PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb`, whose automatic push-triggered Verify Teamsheet run #110 / `31383479683` passed on the exact merge commit. That merged baseline is **835 tests, 835 passed, 0 failed, 0 skipped, 0 cancelled**.
 
-- merged `main` complete suite: **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled**
+The current unmerged candidate is the narrow 0C manual-squad dead-handler cleanup: **836 tests, 836 passed, 0 failed, 0 skipped, 0 cancelled** — all 835 baseline tests retained plus one new ownership regression, `manual squad add/remove interaction has exactly one validating runtime owner`, in `tests/manual-squad-runtime.test.mjs`.
+
+`manual squad builder has no unchecked squad persistence path` in `tests/persistence-resilience.test.mjs` was re-pointed, not weakened. Its assertions previously described the two verified `K_SQUAD` writes inside the unreachable `views.mjs` listeners. It now requires **zero** squad-persistence calls anywhere in the `views.mjs` manual region — stricter than before — and asserts the two verified writes and the `squadPersistence.ok`-gated configuration save in `src/ui/manual-squad-runtime.mjs`, which is the live owner. The behavioural half of the guarantee stays covered by the untouched A3 cases that exercise `manualSquadCommitAddition()` directly.
+
+The PR #104 evidence below remains the last application checkpoint before this one.
+
+- PR #104 merged `main` complete suite: **832 tests, 832 passed, 0 failed, 0 skipped, 0 cancelled**
 - exact PR #104 reviewed head: `4e434b940e2bcb473374573db5da16f6a645d9eb`; source `502a1f7ac0e0456743f3ddb0695433decf8976d1`; generated-only child `02216b8`
 - permanent Verify Teamsheet run #105 / `31377157889`, completed successfully on the reviewed head. The merge commit itself received no automatic run because `verify.yml` did not trigger on pushes to `main`; the complete suite and every build gate were reproduced locally at `9b31f373…`, and Checkpoint 0A makes future merges verify automatically.
 - merged production builds: byte-identical; root equals deployable; exact module-source and complete build-input identity; committed deployables reproduced from reachable source before the test build

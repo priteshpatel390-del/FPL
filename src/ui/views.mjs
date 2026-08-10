@@ -408,10 +408,6 @@ function renderManual(){
   S.manual.forEach(m => { const p = S.byId[m.id]; if(p && counts[p.element_type]!==undefined) counts[p.element_type]++; });
   $('manualCount').textContent = `${S.manual.length}/15 · ${counts[1]} GKP, ${counts[2]} DEF, ${counts[3]} MID, ${counts[4]} FWD`
     + (S.manual.length === 15 ? ' — complete' : '');
-  list.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', async () => {
-    S.manual.splice(+b.dataset.rm, 1);
-    await ssetVerified(K_SQUAD, S.manual); renderManual(); renderAll();
-  }));
 }
 function searchPlayers(term){
   const box = $('pResults');
@@ -422,16 +418,6 @@ function searchPlayers(term){
     elNode('span', {class:'pmeta'}, `${S.posName[p.element_type]||''} · ${S.teams[p.team]?.short_name||''} · £${(p.now_cost/10).toFixed(1)}m`)))
     : elNode('div', {}, 'No player by that name'));
   box.hidden = false;
-  box.querySelectorAll('[data-add]').forEach(d => d.addEventListener('click', async () => {
-    const id = +d.dataset.add;
-    if(S.manual.length >= 15) return;
-    if(!S.manual.some(m => m.id === id)) S.manual.push({id, bought:S.byId[id].now_cost});
-    const persisted = await ssetVerified(K_SQUAD, S.manual);
-    $('pSearch').value = ''; box.hidden = true;
-    $('useManual').checked = true;
-    if(persisted.ok) await saveCfg();
-    renderManual(); renderAll();
-  }));
 }
 
 /* ---------------------------------------------------------------------

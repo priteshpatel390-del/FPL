@@ -161,3 +161,32 @@ test('direct Team renderer precedes the stable views adapter and manual runtime'
   const runtime=build.indexOf("'src/ui/manual-squad-runtime.mjs'");
   assert.ok(teamHome>=0&&views>teamHome&&runtime>views);
 });
+
+test('manual squad add/remove interaction has exactly one validating runtime owner',()=>{
+  const views=readFileSync('src/ui/views.mjs','utf8');
+  const runtime=readFileSync('src/ui/manual-squad-runtime.mjs','utf8');
+
+  // Rendering must keep producing the hooks the live runtime delegates from.
+  assert.ok(views.includes('dataset:{rm:i}'),'renderManual must still render the data-rm hook');
+  assert.ok(views.includes('dataset:{add:p.id}'),'searchPlayers must still render the data-add hook');
+
+  // views.mjs must never own those clicks again.
+  assert.doesNotMatch(views,/querySelectorAll\('\[data-rm\]'\)/);
+  assert.doesNotMatch(views,/querySelectorAll\('\[data-add\]'\)/);
+  assert.doesNotMatch(views,/\[data-add\][\s\S]{0,80}addEventListener\('click'/);
+  assert.doesNotMatch(views,/\[data-rm\][\s\S]{0,80}addEventListener\('click'/);
+
+  // The sole live owner remains the capture-phase validating runtime.
+  assert.match(runtime,/documentRef\.addEventListener\('click',event=>\{/);
+  assert.match(runtime,/\[data-add\],\[data-rm\]/);
+  assert.match(runtime,/event\.stopImmediatePropagation\?\.\(\)/);
+  assert.match(runtime,/manualSquadAddDecision\(S\.manual,player,S\.byId\)/);
+  assert.match(runtime,/\},true\);/);
+
+  // Removing the legacy handlers removed the fallback, so the shipped bundle
+  // must actually invoke the installer -- not merely define it.
+  const bundle=readFileSync('dist/app.bundle.js','utf8');
+  assert.ok(bundle.includes('function manualSquadInstallBrowserRuntime('),'bundle must define the runtime installer');
+  assert.ok(bundle.split('manualSquadInstallBrowserRuntime(').length>2,'bundle must invoke the runtime installer, not only define it');
+  assert.ok(bundle.includes("documentRef.addEventListener('click',event=>{"),'bundle must retain the capture-phase click owner');
+});

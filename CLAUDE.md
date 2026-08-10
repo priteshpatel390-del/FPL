@@ -1,5 +1,14 @@
 # CLAUDE.md — onboarding for every future development session
 
+## 10 August 2026 — Post-A3 0C manual-squad dead-handler cleanup
+
+Post-A3 Checkpoint 0 PR #105 is merged at `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`. Checkpoint 0A's new automatic push trigger was proven immediately: Verify Teamsheet run #110 / `31383479683` ran on the exact merge commit and passed every stage, on an 835-test baseline.
+
+Pritesh explicitly approved the separate narrow **0C cleanup**. It removes only the two proven-unreachable per-button manual-squad listeners from `src/ui/views.mjs`, keeps the rendered `data-rm`/`data-add` hooks, keeps `src/ui/manual-squad-runtime.mjs` byte-unchanged as the sole validating interaction owner, and adds an ownership regression. One existing A3 test, `manual squad builder has no unchecked squad persistence path`, was re-pointed from the deleted code to the live runtime and made stricter on `views.mjs`; nothing was weakened, deleted or skipped. No football rule or model behaviour changes. See [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md).
+
+`fpl:calib` compatibility and resilience remains the next substantive checkpoint after 0C and begins with investigation and design only, under the separate model gate.
+
+
 
 ## 10 August 2026 — A3 cache and persistence resilience is merged
 
@@ -22,9 +31,9 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 PR #104 is merged at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, which is the current `main`. Data Architecture D1 remains an approved future design only.
 
-The current work is **post-A3 Checkpoint 0 housekeeping**: automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation, and an investigation of duplicate manual-squad handlers. See [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). The duplicate-handler correction is investigated and proposed only; it is not implemented and not approved. `fpl:calib` is deliberately excluded from this housekeeping.
+Post-A3 Checkpoint 0 is complete and merged through PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb`; see [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md). The current approved implementation is the separate **0C manual-squad dead-handler cleanup**; see [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md). `fpl:calib` is deliberately excluded from it.
 
-The next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is **separately model-gated** — `fpl:calib` feeds projections, so changing how a legacy calibration record is accepted, rejected or identified crosses the model approval gate. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) stays open until that checkpoint completes. **A3 error-boundary separation** follows it, also beginning with investigation and design. Neither is pre-approved. The full sequence is in [Roadmap](docs/ROADMAP.md).
+After 0C is merged and verified, the next checkpoint is **`fpl:calib` compatibility and resilience**, which begins with investigation and design and is **separately model-gated** — `fpl:calib` feeds projections, so changing how a legacy calibration record is accepted, rejected or identified crosses the model approval gate. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) stays open until that checkpoint completes. **A3 error-boundary separation** follows it, also beginning with investigation and design. Neither is pre-approved. The full sequence is in [Roadmap](docs/ROADMAP.md).
 
 ## 9 August 2026 reconciliation
 
@@ -40,11 +49,11 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `9b31f373a23d26c49f81c688a2ca6fde98086cbd`, merge of A3 cache and persistence resilience PR #104 |
-| Latest merged application checkpoint | PR #104, reviewed head `4e434b940e2bcb473374573db5da16f6a645d9eb`, source `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8` |
-| Permanent repository verification | 832 passed, 0 failed on the reviewed PR #104 head (Verify Teamsheet run #105 / `31377157889`). The merge commit itself received no automatic run, because `verify.yml` did not trigger on pushes to `main`; Checkpoint 0A corrects that for future merges. |
-| Local reproduction at the merge commit | 832 passed, 0 failed; provenance, deterministic double build, root/deployable equality and manifest identity all pass at `9b31f373…` |
-| Current unmerged candidate | Post-A3 Checkpoint 0 housekeeping on `claude/teamsheet-post-a3-closeout-crqojj` — CI trigger, documentation reconciliation and the 0C investigation. No application runtime source changes. |
+| Repository head | `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`, merge of post-A3 Checkpoint 0 housekeeping PR #105 |
+| Latest merged application checkpoint | PR #104, reviewed head `4e434b940e2bcb473374573db5da16f6a645d9eb`, source `502a1f7ac0e0456743f3ddb0695433decf8976d1`, generated-only child `02216b8`. PR #105 changed CI configuration, tests and documentation only. |
+| Permanent repository verification | 835 passed, 0 failed on `main` `dd74365…` — Verify Teamsheet run #110 / `31383479683`, event `push`, every stage passed. This is the first merge verified automatically by the Checkpoint 0A trigger. |
+| Local reproduction at the merge commit | 835 passed, 0 failed; provenance, deterministic double build, root/deployable equality and manifest identity all pass at `dd74365…` |
+| Current unmerged candidate | Post-A3 0C manual-squad dead-handler cleanup — removes only the two proven-unreachable per-button listeners from `src/ui/views.mjs`, keeps `manual-squad-runtime.mjs` byte-unchanged as the sole validating owner, and adds an ownership regression. 836 passed, 0 failed. |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102) and the PR #103 presentation checkpoint. For PR #104 physical testing was explicitly waived by Pritesh; none was performed. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
@@ -86,7 +95,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 4. [Roadmap](docs/ROADMAP.md)
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
-7. The current checkpoint design or acceptance record — currently [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md), over the merged [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
+7. The current checkpoint design or acceptance record — currently [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md), over the merged [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) and [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
 8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)
