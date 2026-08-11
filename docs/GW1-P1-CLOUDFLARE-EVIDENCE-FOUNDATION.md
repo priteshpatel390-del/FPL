@@ -1,10 +1,11 @@
 # GW1-P1 — Cloudflare Evidence Foundation
 
-Status: **backend foundation implemented; live functional and preview/version-route security acceptance passed; Teamsheet client integration remains separate GW1-P2 work**  
+Status: **complete and merged** at `main` `58b834a1824c4977a442e7b3e309e2bbf3d05da1` through PR #118  
 Approved scope: Pritesh, 11 August 2026  
 Base: `main` `43f109b306071aa0c3c1c45985876fecb3da7aa5`  
 Branch: `agent/gw1-p1-cloudflare-evidence-foundation`  
-Draft PR: `#118`
+PR: `#118` (merged)  
+Successor: [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)
 
 ## Outcome
 
@@ -290,6 +291,6 @@ GW1-P1 does not change:
 
 GW1-P1 provides and production-validates the backend foundation only. Its functional backend paths have recorded physical iPhone Safari acceptance, and the Preview URL security closeout is now recorded from owner-supplied live Cloudflare dashboard evidence. Teamsheet browser integration remains outside this checkpoint.
 
-GW1-P2 remains separately approval-gated and will connect the existing Stage 10 browser flow to this service with the persistent local pending-upload/outbox contract. Until GW1-P2 is implemented and accepted, Teamsheet does not automatically send genuine pre-deadline snapshots to Cloudflare.
+GW1-P2 is now implemented as a separate approval-gated checkpoint and connects the existing Stage 10 browser flow to this service with the persistent local outbox contract. Until GW1-P2 passes its owner physical acceptance gate, automatic browser upload of genuine pre-deadline snapshots is not an accepted behaviour.
 
 Provider-retention flags remain false unless Understat/Odds archival rights receive a separate approved decision.

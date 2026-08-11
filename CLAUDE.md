@@ -1,10 +1,19 @@
 # CLAUDE.md — onboarding for every future development session
 
-## 11 August 2026 — current GW1-P1 state
+## 11 August 2026 — current GW1-P2 state
 
-Latest merged GitHub `main` is `43f109b306071aa0c3c1c45985876fecb3da7aa5`. **GW1-P1 — Cloudflare Evidence Foundation** is the current unmerged checkpoint in draft PR #118 on branch `agent/gw1-p1-cloudflare-evidence-foundation`.
+Latest merged GitHub `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, the merge of **GW1-P1 — Cloudflare Evidence Foundation** through PR #118. That tree passes **883 tests, 883 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical builds, root/deployable equality and verified committed build provenance.
 
-GW1-P1 implements only the backend half of the approved D1 evidence architecture: a separate Cloudflare Access-authenticated evidence Worker, private content-addressed R2 evidence, minimal D1 manifest/receipt/index state, independent canonical Stage 10 validation, idempotency and orphan reconciliation. The deterministic Teamsheet recommendation path remains independent. The browser is **not connected** to this service in GW1-P1; persistent pending-upload/outbox integration and automatic in-app cloud custody are GW1-P2 and remain separately approval-gated.
+**GW1-P2 — Browser evidence delivery and durable outbox** is the current unmerged checkpoint, on branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`. It connects the existing Stage 10 browser capture path to the GW1-P1 archive through a durable local outbox, a transport-independent delivery state machine, content-hash idempotency and fail-closed provider retention. Cloud custody remains a one-way side effect: the FPL recommendation never reads, waits for, or fails because of the archive.
+
+Two GW1-P2 gates are open and must not be reported as closed:
+
+1. **Transport acceptance.** The direct credentialled cross-origin transport is approved as a *feasibility implementation only*, not as the accepted permanent iPhone transport. Acceptance requires the owner's physical iPhone Safari test with **Prevent Cross-Site Tracking ON**. Disabling that setting is a diagnostic comparison and must never become a product requirement. If the transport fails under normal privacy settings, stop and return with a revised Option B versus Option C comparison; do not implement either without separate approval, and do not remove the transport-independent outbox/delivery work.
+2. **Durable-retention cap.** `OUTBOX_RULES.pinLimit` is **provisional at 4** pending an explicit owner decision. Measured evidence is recorded in [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md). Never adopt a smaller durability guarantee silently.
+
+Cloudflare Access CORS/preflight state is a live dashboard fact and is **not** evidenced by repository configuration. `TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must never be printed, pasted or logged while configuring or testing it.
+
+GW1-P1 implemented only the backend half of the approved D1 evidence architecture: a separate Cloudflare Access-authenticated evidence Worker, private content-addressed R2 evidence, minimal D1 manifest/receipt/index state, independent canonical Stage 10 validation, idempotency and orphan reconciliation. The deterministic Teamsheet recommendation path remains independent. The browser was **not connected** to this service in GW1-P1; that connection is the GW1-P2 work described above.
 
 The repository GW1-P1 record documents Pritesh's physical iPhone Safari functional production acceptance of the Access/D1/R2/ingest/idempotency/forced-failure/reconciliation paths using deliberately synthetic evidence. Do not generalise that acceptance beyond the recorded paths or claim new device testing without owner evidence.
 
@@ -90,13 +99,14 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 
 | Item | Current evidence |
 |---|---|
-| Latest merged `main` | `43f109b306071aa0c3c1c45985876fecb3da7aa5` |
-| Current checkpoint | GW1-P1 — Cloudflare Evidence Foundation, draft PR #118, backend-only |
-| Current implementation boundary | Separate Access-authenticated evidence Worker; private R2; minimal D1 manifest/receipt/index; canonical Stage 10 validation; idempotency; orphan reconciliation. Browser sync/outbox is excluded. |
-| Functional production acceptance | Repository record documents Pritesh's physical iPhone Safari acceptance of Access, D1/R2, positive ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. |
-| Current security state | Repository config explicitly disables Cloudflare Preview URLs and tests that invariant. Owner-supplied live Cloudflare Domains evidence on 11 August 2026 showed production Access-`Restricted` and the wildcard Preview hostname disabled, closing that acceptance item. It is owner dashboard evidence, not independent assistant testing. |
+| Latest merged `main` | `58b834a1824c4977a442e7b3e309e2bbf3d05da1` (PR #118 merge) |
+| Current checkpoint | GW1-P2 — Browser evidence delivery and durable outbox, draft PR, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d` |
+| Current implementation boundary | Pure outbox state machine; browser delivery service; bounded retries and single-flight; content-hash idempotency; pending-record persistence across restart; fail-closed provider retention; minimal Settings → Evidence status/action; CSP/meta wiring; exact-origin credentialled CORS. |
+| GW1-P1 functional production acceptance | Repository record documents Pritesh's physical iPhone Safari acceptance of Access, D1/R2, positive ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. |
+| GW1-P1 security state | Repository config explicitly disables Cloudflare Preview URLs and tests that invariant. Owner-supplied live Cloudflare Domains evidence on 11 August 2026 showed production Access-`Restricted` and the wildcard Preview hostname disabled. It is owner dashboard evidence, not independent assistant testing. |
+| GW1-P2 open gates | Owner physical iPhone Safari transport acceptance with Prevent Cross-Site Tracking ON; the provisional `pinLimit` durability decision; live Cloudflare Access CORS/preflight configuration. None is closed. |
 | Final repository gate | The final exact PR head must pass Verify Teamsheet after all config/doc changes. Earlier green runs are historical once the head changes. |
-| Merge gate | PR #118 must not merge until Pritesh explicitly approves it. |
+| Merge gate | The GW1-P2 PR must stay draft and must not merge until Pritesh performs the physical acceptance test and explicitly approves it. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
@@ -105,7 +115,7 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 
 Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3/A3-R0, DTR-1, Atomic Foreground Refresh, A3 cache/persistence, `fpl:calib` compatibility, EB-1, Production-Bundle Safeguards, State-Ownership Cleanup, Route-Aware M1 and A3-SC-1 are complete and merged. A3 closeout is complete.
 
-**GW1-P1 implementation is approved only within its existing backend boundary.** Narrow backend security/config/test/documentation corrections may be made on the existing GW1-P1 branch. The browser/client evidence sync and persistent pending-upload/outbox are GW1-P2 and are not approved by GW1-P1. Do not start GW1-P2 until PR #118 is merged and Pritesh separately approves that checkpoint.
+GW1-P1 is merged at `58b834a…`. **GW1-P2 is approved only within the boundary recorded in [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)**, with the two open gates named above. Nothing beyond that boundary is approved: no Option B delivery window, no hosting change, no broader D1 schema expansion, no scheduled collection, no Sheets automation, no provider repair and no model work.
 
 The approved GW1-P1 evidence flow is:
 
@@ -130,7 +140,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
 7. [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md)
-8. [GW1-P1 Cloudflare Evidence Foundation](docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md)
+8. [GW1-P1 Cloudflare Evidence Foundation](docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)
 9. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 10. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 11. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)

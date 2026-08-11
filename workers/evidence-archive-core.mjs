@@ -214,9 +214,19 @@ function allowedOrigins(env={}){
   }
   return values;
 }
+/* GW1-P2 — the Teamsheet browser sends its Cloudflare Access session with the
+   evidence upload, which makes the request credentialled. A credentialled CORS
+   response is only accepted by the browser when it names one exact origin and
+   allows credentials; the wildcard is forbidden by the CORS specification and
+   is never emitted here. This widens nothing: the origin still has to pass
+   allowedOrigins(), and Access still has to authenticate the request. */
 function corsHeaders(origin){
   const headers=new Headers({'Vary':'Origin','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Cache-Control':'no-store'});
-  if(origin){headers.set('Access-Control-Allow-Origin',origin);headers.set('Access-Control-Expose-Headers','X-Teamsheet-Content-Hash');}
+  if(origin){
+    headers.set('Access-Control-Allow-Origin',origin);
+    headers.set('Access-Control-Allow-Credentials','true');
+    headers.set('Access-Control-Expose-Headers','X-Teamsheet-Content-Hash');
+  }
   return headers;
 }
 function jsonResponse(body,status=200,origin=null,extra={}){

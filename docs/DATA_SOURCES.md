@@ -2,7 +2,7 @@
 
 ## 11 August 2026 — GW1-P1 evidence-backend status; provider acquisition unchanged
 
-GW1-P1 implements the backend-only Cloudflare custody foundation selected by D1: a separate authenticated evidence Worker, private R2 canonical objects and a minimal D1 manifest/receipt/index. This does **not** add or change a football-data provider, endpoint, acquisition cadence, retry policy, cache, fallback or model input. The Teamsheet browser is not connected to the archive until GW1-P2.
+GW1-P1 implements the backend-only Cloudflare custody foundation selected by D1: a separate authenticated evidence Worker, private R2 canonical objects and a minimal D1 manifest/receipt/index. This does **not** add or change a football-data provider, endpoint, acquisition cadence, retry policy, cache, fallback or model input. GW1-P2 connects the Teamsheet browser to that archive as a one-way evidence side effect and likewise adds no provider, endpoint, cadence, cache, fallback or model input; a record whose provider material is not approved for retention is never uploaded and is never stripped to make it archivable.
 
 Permanent retention of provider-derived material remains fail-closed. Understat archival rights remain unresolved and Odds permanent retention requires the separately approved governance position. The evidence Worker defaults both retention flags to false and rejects an already-canonical snapshot whose retained provider material is not permitted rather than stripping it and changing its hash.
 
@@ -94,7 +94,7 @@ The Refresh-Load R1 supporting caches (`fpl:minutes-history`, `fpl:understat-tea
 A local write failure is reported as a local persistence problem only; it never becomes an Official FPL
 or optional-provider health state.
 
-GW1-P1 does not replace any of these browser records. Its server archive is a separate one-way evidence destination; until GW1-P2, normal browser capture is not automatically uploaded and local recovery/export semantics remain unchanged.
+GW1-P1 does not replace any of these browser records. Its server archive is a separate one-way evidence destination. GW1-P2 uploads a copy of the already-stored canonical record and changes no local recovery or export semantics; a record that cannot be archived stays saved on the device.
 
 ## Explicitly rejected sources
 Sentiment/social/trends/etc. (owner spec §6); player-level Understat (D-05); FBref & Transfermarkt

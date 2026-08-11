@@ -318,7 +318,9 @@ function setupAppShell(){
     teamsheetSettingsCard('#/settings/evidence/exports','↓','Exports','Owner-controlled JSON, Markdown and CSV downloads.')
   ]));
   evidencePanel.hidden=false;
-  addRoute(teamsheetSettingsContent('#/settings/evidence/deadline','Deadline evidence','Prospective records captured before the Official FPL deadline.',evidencePanel));
+  addRoute(teamsheetSettingsContent('#/settings/evidence/deadline','Deadline evidence','Prospective records captured before the Official FPL deadline.',
+    evidencePanel,
+    teamsheetElement('div',{id:'evidenceDeliveryHost'})));
   addRoute(teamsheetSettingsContent('#/settings/evidence/outcomes','Official outcomes','Completed and corrected Official FPL outcome records.',teamsheetElement('div',{id:'outcomesHost'})));
   addRoute(teamsheetSettingsContent('#/settings/evidence/metrics','Performance metrics','Descriptive evaluation from matched official evidence only.',teamsheetElement('div',{id:'metricsHost'})));
   addRoute(teamsheetSettingsContent('#/settings/evidence/review','Operating review','Weekly and season summaries from immutable local evidence.',teamsheetElement('div',{id:'reviewHost'})));

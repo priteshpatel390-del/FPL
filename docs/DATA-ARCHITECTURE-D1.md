@@ -1,10 +1,10 @@
 # Data Architecture D1 — historical and live data platform
 
-Status: **approved architecture; GW1-P1 backend foundation implemented/deployed and live-accepted; Teamsheet client integration deferred to GW1-P2**  
+Status: **approved architecture; GW1-P1 backend foundation merged at `main` `58b834a…`; GW1-P2 browser delivery implemented and pending owner physical acceptance**  
 Approved by: Pritesh, 9 August 2026  
 Repository baseline investigated: `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`  
 Original scope: architecture investigation and documentation only  
-Current implementation note: the later separately approved GW1-P1 checkpoint implements the backend-only Cloudflare foundation in draft PR #118; it does not connect the Teamsheet browser or change Stage 10/local evidence semantics.
+Current implementation note: GW1-P1 implemented the backend-only Cloudflare foundation and is merged through PR #118. GW1-P2 implements the browser delivery client and durable outbox on top of it without changing Stage 10 canonicalisation, hashing or local custody semantics.
 
 ## Outcome
 
@@ -18,7 +18,7 @@ Teamsheet's target persistent platform is:
 
 Cloudflare KV and Durable Objects are not part of the core minimum viable platform. They may be considered later only for a measured cache or coordination requirement.
 
-The original 9 August decision did not itself authorise infrastructure or application implementation. Pritesh later separately approved **GW1-P1 — Cloudflare Evidence Foundation**, which implements the backend Worker, private R2 archive, minimal D1 evidence manifest/receipt layer, validation, idempotency and orphan reconciliation only. **GW1-P2 browser sync/persistent outbox integration is not implemented.** Persistence remains a one-way evidence side effect: the current deterministic calculation path must continue to work when the data Worker, D1 or R2 is unavailable.
+The original 9 August decision did not itself authorise infrastructure or application implementation. Pritesh later separately approved **GW1-P1 — Cloudflare Evidence Foundation**, which implements the backend Worker, private R2 archive, minimal D1 evidence manifest/receipt layer, validation, idempotency and orphan reconciliation only. GW1-P2 browser delivery and the persistent outbox are now implemented, pending owner physical acceptance. Persistence remains a one-way evidence side effect: the current deterministic calculation path must continue to work when the data Worker, D1 or R2 is unavailable.
 
 ## Data boundary
 
@@ -163,7 +163,7 @@ Normal Gameweek operation must require no database console. Health, last capture
 1. **Foundation — GW1-P1 backend implemented:** separate evidence Worker, D1 migration and private R2.
 2. **Canonical ingestion — GW1-P1 backend implemented for accepted pre-deadline evidence:** Stage 10 validation, canonical hashes, idempotency, R2-first/D1-commit protocol, owner authentication and orphan reconciliation.
 3. **Migration:** dry-run surviving local Stage 10 JSON; do not treat Sheet rows as prospective evidence without timing/provenance.
-4. **Automatic capture — GW1-P2, not implemented:** non-blocking local outbox with honest offline/pending/saved/failed states.
+4. **Automatic capture — GW1-P2, implemented and pending owner physical acceptance:** non-blocking local outbox with honest offline/pending/saved/failed states.
 5. **Scheduled global collection:** Official FPL global facts after the ingestion contract and live timing are proven.
 6. **Sheets reporting:** manual first; optional one-way automated reporting later.
 7. **Provider and AI access:** separate rights/security approval and read-only constrained views.
@@ -190,7 +190,7 @@ Other limitations:
 - provider archival rights remain unconfirmed and retention remains fail-closed;
 - D1/R2 cross-product commits are recoverable, not atomic;
 - Sheets prototypes are not canonical prospective evidence;
-- until GW1-P2, normal Teamsheet browser operation does not automatically upload Stage 10 evidence to the Cloudflare archive.
+- automatic browser upload is implemented by GW1-P2 but is not an accepted behaviour until its owner physical iPhone acceptance passes under normal Safari privacy settings.
 
 ## Current approval boundary
 
@@ -198,4 +198,4 @@ Approved and implemented under the later GW1-P1 checkpoint: the backend-only Clo
 
 Not approved by GW1-P1: Teamsheet browser integration, persistent local outbox upload, migration, automatic capture, scheduled collection, Sheets automation, provider repair/change, model or recommendation changes, AI migration or agents.
 
-After GW1-P1 is merged, the next relevant persistence checkpoint is **GW1-P2 browser integration/outbox design and approval**. Do not start it as part of GW1-P1 closeout.
+GW1-P1 is merged and GW1-P2 is implemented under its own approval. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md) for its boundary, its open transport-acceptance and durable-retention gates, and the deployment gates repository configuration cannot evidence.

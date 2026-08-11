@@ -1,12 +1,17 @@
 # ROADMAP.md — current and proposed checkpoints
 
-## 11 August 2026 — current checkpoint: GW1-P1 final closeout
+## 11 August 2026 — current checkpoint: GW1-P2 browser evidence delivery
 
-**GW1-P1 — Cloudflare Evidence Foundation is implemented on draft PR #118 and is in final closeout.** Latest merged `main` remains `43f109b306071aa0c3c1c45985876fecb3da7aa5`. The checkpoint is backend-only: separate authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt state, canonical Stage 10 validation, idempotency and orphan reconciliation. Repository records also capture owner-performed physical iPhone Safari production functional acceptance.
+**GW1-P1 — Cloudflare Evidence Foundation is complete and merged** at `main` `58b834a1824c4977a442e7b3e309e2bbf3d05da1` through PR #118. That tree passes 883 tests, 883 passed, 0 failed, 0 skipped, 0 cancelled, with deterministic builds, root/deployable equality and verified committed provenance. Preview/version URL security is closed in repository configuration and by owner-supplied live Cloudflare Domains dashboard evidence on 11 August 2026.
 
-Preview/version URL security is closed: the repository candidate explicitly disables Cloudflare Preview URLs and tests that invariant, and owner-supplied live Cloudflare Domains dashboard evidence on 11 August 2026 showed the production route Access-`Restricted` with the wildcard Preview hostname disabled. Canonical documentation reconciliation, exact final-head repository verification after every documentation/config change, and final PR diff/description review remain the closing work.
+**GW1-P2 — Browser evidence delivery and durable outbox is the current checkpoint**, implemented on branch `claude/gw1-p2-evidence-delivery-design-ejsb0d` as a draft pull request. It adds a pure outbox state machine, a browser delivery service, bounded retries and single-flight behaviour, content-hash idempotency, pending-record persistence across restart, fail-closed provider retention, a minimal Settings → Evidence status/action, CSP/meta wiring and exact-origin credentialled CORS. The canonical Stage 10 record, its hashing and its local custody semantics are unchanged, and the recommendation never waits for the archive.
 
-**Do not start GW1-P2 in this checkpoint.** Teamsheet browser sync/persistent outbox upload remains unimplemented and separately approval-gated. Existing Stage 10/local evidence semantics therefore remain unchanged during normal app use. Provider archival rights remain fail-closed; Understat/Odds repair, provider weighting, model/calculation work, Sheets automation, agents and scheduled collectors remain outside GW1-P1.
+Two gates are open and neither may be reported as closed:
+
+1. **Transport acceptance.** The direct credentialled cross-origin transport is approved as a feasibility implementation only. Acceptance requires the owner's physical iPhone Safari test with Prevent Cross-Site Tracking ON; disabling it is a diagnostic comparison and must never become a product requirement. On failure, stop and return with a revised Option B versus Option C comparison rather than implementing either.
+2. **Durable-retention cap.** The pinned-record limit is provisional pending an explicit owner decision against the measured storage evidence.
+
+Cloudflare Access CORS/preflight configuration is a live dashboard gate that repository configuration cannot evidence. Understat/Odds archival rights remain fail-closed; provider repair, weighting, model/calculation work, Sheets automation, agents, scheduled collectors and any hosting change remain outside GW1-P2. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
 
 ## Historical — 11 August 2026 A3 checkpoint status
 
@@ -79,7 +84,7 @@ The owner-approved correction removed the dead listeners, left `manual-squad-run
 
 Longer-horizon product work remains separately gated. Nothing below is implementation-approved by GW1-P1 closeout:
 
-- **GW1-P2 Teamsheet browser evidence integration and persistent local outbox/upload.** This is the next relevant persistence checkpoint after GW1-P1 merges; do not pull it into PR #118.
+- Option B (a Worker-origin delivery window) and Option C (same-site hosting). Neither is approved; either may only be proposed if GW1-P2's Option A transport fails the owner's physical iPhone acceptance.
 - Understat repair.
 - Odds API repair.
 - Broader D1 historical/live schema expansion beyond the minimal GW1-P1 evidence manifest/receipt foundation.
