@@ -1,0 +1,49 @@
+name: A3-SC-1 temporary build helper
+
+on:
+  push:
+    branches:
+      - agent/a3-small-stale-code-cleanup
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUILD_COMMIT: 87ddea69810fa33498bf732aec37ab20b46f21b3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Run complete test suite
+        run: ./run-tests.sh
+      - name: Build production output twice
+        run: |
+          set -eu
+          node build.mjs
+          rm -rf /tmp/a3-sc1-build
+          mkdir -p /tmp/a3-sc1-build/dist
+          cp dist/app.bundle.js /tmp/a3-sc1-build/dist/app.bundle.js
+          cp dist/index.html /tmp/a3-sc1-build/dist/index.html
+          cp dist/manifest.json /tmp/a3-sc1-build/dist/manifest.json
+          cp index.html /tmp/a3-sc1-build/index.html
+          node build.mjs
+          cmp /tmp/a3-sc1-build/dist/app.bundle.js dist/app.bundle.js
+          cmp /tmp/a3-sc1-build/dist/index.html dist/index.html
+          cmp /tmp/a3-sc1-build/dist/manifest.json dist/manifest.json
+          cmp /tmp/a3-sc1-build/index.html index.html
+          cmp dist/index.html index.html
+      - name: Upload verified production output
+        uses: actions/upload-artifact@v6
+        with:
+          name: a3-sc1-production
+          path: |
+            dist/app.bundle.js
+            dist/index.html
+            dist/manifest.json
+            index.html
+          if-no-files-found: error
+          retention-days: 1
