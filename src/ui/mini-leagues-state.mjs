@@ -146,7 +146,6 @@ async function upsertMiniLeague(id,name='',options={}){
   if(options.select!==false) state.selectedLeagueId=id;
   S.miniLeagues=state; await persistMiniLeagueState(); return selectedMiniLeague();
 }
-async function rememberLeague(id,name){ return upsertMiniLeague(id,name,{select:true}); }
 async function selectMiniLeague(id){ return upsertMiniLeague(id,'',{select:true}); }
 async function removeMiniLeague(id){
   id=miniLeagueId(id); const state=normaliseMiniLeagueState(S.miniLeagues);
@@ -178,4 +177,4 @@ function miniLeagueComparisonRivals(leagueId){ return normaliseMiniLeagueState(S
 
 S.miniLeagues=emptyMiniLeagueState();
 installMiniLeagueAlias();
-export { MINI_LEAGUE_STATE_VERSION, K_MINI_LEAGUES, MAX_PINNED_RIVALS, MAX_COMPARISON_RIVALS, miniLeagueId, miniLeagueRecord, miniLeagueRivalRecord, uniqueRivalRecords, normaliseMiniLeagueState, miniLeagueStoredCompatibility, entryClassicLeagues, migrateMiniLeagueState, initMiniLeagueState, mergeDiscoveredMiniLeagues, persistMiniLeagueState, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, rememberLeague, selectMiniLeague, removeMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, setMiniLeagueComparisonRivals, clearMiniLeagueComparisonRivals, miniLeagueSelectedRivalId, miniLeaguePinnedRivals, miniLeagueComparisonRivals };
+export { MINI_LEAGUE_STATE_VERSION, K_MINI_LEAGUES, MAX_PINNED_RIVALS, MAX_COMPARISON_RIVALS, miniLeagueId, miniLeagueRecord, miniLeagueRivalRecord, uniqueRivalRecords, normaliseMiniLeagueState, miniLeagueStoredCompatibility, entryClassicLeagues, migrateMiniLeagueState, initMiniLeagueState, mergeDiscoveredMiniLeagues, persistMiniLeagueState, selectedMiniLeague, miniLeagueMembership, upsertMiniLeague, selectMiniLeague, removeMiniLeague, selectMiniLeagueRival, togglePinnedMiniLeagueRival, setMiniLeagueComparisonRivals, clearMiniLeagueComparisonRivals, miniLeagueSelectedRivalId, miniLeaguePinnedRivals, miniLeagueComparisonRivals };
