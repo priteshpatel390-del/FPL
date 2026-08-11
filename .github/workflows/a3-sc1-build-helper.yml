@@ -14,6 +14,7 @@ jobs:
     timeout-minutes: 20
     env:
       BUILD_COMMIT: 87ddea69810fa33498bf732aec37ab20b46f21b3
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -36,15 +37,23 @@ jobs:
           cmp /tmp/a3-sc1-build/dist/manifest.json dist/manifest.json
           cmp /tmp/a3-sc1-build/index.html index.html
           cmp dist/index.html index.html
-      - name: Commit verified production output
+      - name: Publish verified production output through GitHub API
         run: |
-          set -eu
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
-          if git diff --cached --quiet; then
+          set -euo pipefail
+          paths=(dist/app.bundle.js dist/index.html dist/manifest.json index.html)
+          if git diff --quiet -- "${paths[@]}"; then
             echo "Generated output already current."
             exit 0
           fi
-          git commit -m "Build generated output for A3-SC-1"
-          git push origin HEAD:agent/a3-small-stale-code-cleanup
+          parent=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$GITHUB_REF_NAME" --jq '.object.sha')
+          base_tree=$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$parent" --jq '.tree.sha')
+          tree_json='[]'
+          for path in "${paths[@]}"; do
+            content=$(base64 -w0 "$path")
+            blob=$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" -f content="$content" -f encoding=base64 --jq '.sha')
+            tree_json=$(jq -c --arg path "$path" --arg sha "$blob" '. + [{path:$path,mode:"100644",type:"blob",sha:$sha}]' <<<"$tree_json")
+          done
+          new_tree=$(jq -n --arg base_tree "$base_tree" --argjson tree "$tree_json" '{base_tree:$base_tree,tree:$tree}' | gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input - --jq '.sha')
+          new_commit=$(jq -n --arg message "Build generated output for A3-SC-1" --arg tree "$new_tree" --arg parent "$parent" '{message:$message,tree:$tree,parents:[$parent]}' | gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input - --jq '.sha')
+          jq -n --arg sha "$new_commit" '{sha:$sha,force:false}' | gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/$GITHUB_REF_NAME" --input -
+          echo "Published generated commit $new_commit"
