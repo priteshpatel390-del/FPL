@@ -396,3 +396,57 @@ test('the production bundle carries the delivery surface and keeps capture indep
     'Stage 10 capture must not depend on the delivery layer');
   assert.equal(source.includes('fetch('),false,'Stage 10 capture must not contact the archive');
 });
+
+test('storage evidence is read-only, never writes and degrades without an estimate API',async()=>{
+  reset();
+  await seed(25);
+  const before = JSON.stringify(globalThis.localStorage.data);
+  const bytes = delivery.teamsheetStorageBytes();
+  assert.ok(Number.isFinite(bytes) && bytes > 0,'Teamsheet storage use is reported');
+  assert.equal(JSON.stringify(globalThis.localStorage.data),before,'reading storage evidence writes nothing');
+
+  /* No navigator.storage: the reading is reported as unavailable rather than
+     invented, and nothing throws. */
+  assert.equal(await delivery.browserStorageEstimate(),null);
+  let line = await delivery.storageEvidenceLine();
+  assert.match(line,/Teamsheet data on this device: /);
+  assert.match(line,/does not report a storage estimate/);
+
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis,'navigator');
+  Object.defineProperty(globalThis,'navigator',
+    {value:{storage:{estimate:async()=>({usage:1234567,quota:52428800})}},configurable:true,writable:true});
+  try{
+    assert.deepEqual(await delivery.browserStorageEstimate(),{usage:1234567,quota:52428800});
+    line = await delivery.storageEvidenceLine();
+    assert.match(line,/browser reports 1\.2 MB used of 50\.0 MB available/);
+  }finally{
+    if(descriptor) Object.defineProperty(globalThis,'navigator',descriptor);
+    else delete globalThis.navigator;
+  }
+  assert.equal(JSON.stringify(globalThis.localStorage.data),before,'the estimate path writes nothing either');
+});
+
+test('a failing storage estimate never breaks the evidence panel',async()=>{
+  reset();
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis,'navigator');
+  Object.defineProperty(globalThis,'navigator',
+    {value:{storage:{estimate:async()=>{ throw new Error('not allowed'); }}},configurable:true,writable:true});
+  try{
+    assert.equal(await delivery.browserStorageEstimate(),null);
+    assert.match(await delivery.storageEvidenceLine(),/does not report a storage estimate/);
+  }finally{
+    if(descriptor) Object.defineProperty(globalThis,'navigator',descriptor);
+    else delete globalThis.navigator;
+  }
+  assert.equal(delivery.formatBytes(null),'unavailable');
+  assert.equal(delivery.formatBytes(512),'512 B');
+  assert.equal(delivery.formatBytes(1024*1024),'1.0 MB');
+});
+
+test('no persistence technology beyond the existing string store is introduced',()=>{
+  for(const path of ['../src/evidence/outbox.mjs','../src/ui/evidence-delivery.mjs']){
+    const source = readFileSync(new URL(path,import.meta.url),'utf8');
+    for(const forbidden of ['indexedDB','IDBDatabase','openDatabase','caches.open','FileSystemHandle'])
+      assert.equal(source.includes(forbidden),false,`${path} must not introduce ${forbidden}`);
+  }
+});

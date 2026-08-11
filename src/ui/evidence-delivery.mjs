@@ -204,6 +204,51 @@ function scheduleDelivery(delayMs = DELIVERY_ENQUEUE_DELAY_MS){
   return deliveryTimer;
 }
 
+/* Non-destructive storage evidence for the acceptance gate. Both readings are
+   observational: the Teamsheet total is the summed length of this origin's own
+   stored strings, and the browser estimate is whatever navigator.storage
+   reports where it exists. Nothing is written, filled, evicted or probed, and
+   no fill-until-quota test is performed against real evidence. */
+function teamsheetStorageBytes(){
+  const store = globalThis.localStorage;
+  if(!store || typeof store.key !== 'function') return null;
+  let bytes = 0;
+  try{
+    for(let i = 0; i < store.length; i++){
+      const key = store.key(i);
+      if(!key || !key.startsWith('fpl:')) continue;
+      bytes += key.length + String(store.getItem(key) || '').length;
+    }
+  }catch(error){ return null; }
+  return bytes;
+}
+async function browserStorageEstimate(){
+  try{
+    const estimate = await globalThis.navigator?.storage?.estimate?.();
+    if(!estimate) return null;
+    const usage = Number(estimate.usage), quota = Number(estimate.quota);
+    return {usage:Number.isFinite(usage)?usage:null,quota:Number.isFinite(quota)?quota:null};
+  }catch(error){ return null; }
+}
+function formatBytes(value){
+  /* null/undefined mean "not readable", which must never render as 0 B — an
+     unreadable store and an empty store are different facts. */
+  if(value === null || value === undefined || typeof value === 'boolean') return 'unavailable';
+  if(!Number.isFinite(Number(value))) return 'unavailable';
+  const bytes = Number(value);
+  if(bytes < 1024) return `${bytes} B`;
+  if(bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/(1024*1024)).toFixed(1)} MB`;
+}
+async function storageEvidenceLine(){
+  const teamsheet = teamsheetStorageBytes();
+  const estimate = await browserStorageEstimate();
+  const parts = [`Teamsheet data on this device: ${formatBytes(teamsheet)}`];
+  if(estimate) parts.push(`browser reports ${formatBytes(estimate.usage)} used of ${formatBytes(estimate.quota)} available`);
+  else parts.push('this browser does not report a storage estimate');
+  return parts.join(' · ') + '.';
+}
+
 /* Every user-facing string below is fixed here. No server message, status
    code, header, URL, identity or configuration detail reaches the page. */
 const DELIVERY_COPY = Object.freeze({
@@ -238,7 +283,8 @@ function ensureDeliveryUi(){
     el('div',{class:'evidence-actions'},
       el('button',{class:'btn ghost',id:'evidenceSignInBtn',type:'button'},'Connect evidence archive'),
       el('button',{class:'btn ghost',id:'evidenceRetryBtn',type:'button'},'Try archiving now')),
-    el('p',{class:'status evidence-message',id:'evidenceDeliveryMessage'},'Archiving is optional. Teamsheet works fully without it.'));
+    el('p',{class:'status evidence-message',id:'evidenceDeliveryMessage'},'Archiving is optional. Teamsheet works fully without it.'),
+    el('p',{class:'status',id:'evidenceStorageEvidence'},'Storage use is being read.'));
   host.appendChild(panel);
 }
 async function renderDeliveryStatus(){
@@ -254,6 +300,8 @@ async function renderDeliveryStatus(){
   if(signIn) signIn.disabled = !configured;
   const retry = $('evidenceRetryBtn');
   if(retry) retry.disabled = !configured || deliveryBusy;
+  const storage = $('evidenceStorageEvidence');
+  if(storage) storage.textContent = await storageEvidenceLine();
   return summary;
 }
 function openArchiveSignIn(){
@@ -319,6 +367,10 @@ export {
   loadOutbox,
   saveOutbox,
   pinnedEvidenceIds,
+  teamsheetStorageBytes,
+  browserStorageEstimate,
+  formatBytes,
+  storageEvidenceLine,
   enqueueEvidenceForDelivery,
   deliverRow,
   flushOutbox,

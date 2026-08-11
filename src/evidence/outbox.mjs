@@ -18,10 +18,16 @@ const ARCHIVE_VERSION = '1.0.0';
 const OUTBOX_SNAPSHOT_SCHEMA_VERSION = '1.0.0';
 const OUTBOX_ORIGIN = 'local_capture';
 
-/* PROVISIONAL — pinLimit is the durable-retention guarantee and is the one
-   value measured evidence must settle. See docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md:
-   one stored record measured 484.8 KB (gzip+base64), so pinning six would put
-   ~2.9 MB of evidence beside ~1.6 MB of existing supporting stores. */
+/* pinLimit is the durable-retention policy for the first acceptance cycle. One
+   stored record measured 484.8 KB (gzip+base64) and the existing supporting
+   stores measured ~1.6 MB, so six pins would place ~2.9 MB of evidence beside
+   them (docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+
+   Four is a deliberately conservative bound, NOT a value proven safe: the
+   usable storage ceiling on the target device is unmeasured, and quoted
+   per-origin figures are not a measurement of it. The panel reports real
+   usage and navigator.storage.estimate() so the bound can be revisited from
+   device evidence rather than assumption. Do not raise it without that. */
 const OUTBOX_RULES = Object.freeze({
   rowLimit:6,
   pinLimit:4,

@@ -64,9 +64,13 @@ Measured on this branch, at full-season scale (700 players, 380 fixtures, 38 Gam
 | Existing `fpl:cache` at full season | 655.5 KB |
 | Existing `fpl:minutes-history` at full season | 956.8 KB |
 
-Pinning six pending records would place ~2908 KB of evidence beside ~1614 KB of existing supporting stores — about 4.5 MB before the Stage 10 outcome, metric and review stores are counted at all. Those stores are bounded but real: each keeps a current record plus up to six superseded full records at up to 3 MB each. Against a Safari `localStorage` budget of roughly 5 MB per origin, six pins leaves no usable headroom.
+Pinning six pending records would place ~2908 KB of evidence beside ~1614 KB of existing supporting stores — about 4.5 MB before the Stage 10 outcome, metric and review stores are counted at all. Those stores are bounded but real: each keeps a current record plus up to six superseded full records at up to 3 MB each.
 
-`OUTBOX_RULES.pinLimit` is therefore set to **4** as a provisional value, giving ~1939 KB of evidence and ~3553 KB total against the same baseline. **This is an unresolved owner decision, not an accepted guarantee.** The measurement, the worst case and the exact loss behaviour are recorded here precisely so the smaller durability guarantee is not adopted silently.
+**What is evidenced and what is not.** The record and supporting-store sizes above are measured on this branch and are valid evidence. **The usable browser-storage ceiling on the owner's current iPhone is not evidenced.** Commonly quoted per-origin `localStorage` figures are not a measurement of this device, this iOS version or this origin, and iOS additionally evicts script-writable storage for sites without recent user interaction. No number in this document should be read as a proven quota.
+
+`OUTBOX_RULES.pinLimit` is therefore set to **4** as a deliberately conservative bounded-outbox policy for the first acceptance cycle, giving ~1939 KB of evidence and ~3553 KB total against the same baseline. It is **not** claimed to be proven safe, because the ceiling it would have to be safe against is unmeasured. It is the smallest change that keeps more than the pre-GW1-P2 two-record guarantee while leaving room for the other Stage 10 stores. It must not be raised to 5 or 6 in this checkpoint.
+
+Before final PR readiness, non-destructive storage evidence is to be read from the physical iPhone: current Teamsheet storage usage and `navigator.storage.estimate()` where the browser supports it. The Settings → Evidence panel reports both read-only. **No destructive fill-until-quota test may ever be run against real Teamsheet data.**
 
 Loss behaviour when the pin limit is exceeded: the **oldest** non-terminal row is released, its backing record becomes eligible for the normal bounded sweep, and the row transitions to `expired_local` with a visible status. Evidence is never discarded without a recorded row, and the newest pending evidence is always the evidence retained.
 
@@ -104,11 +108,26 @@ Repository configuration is not proof of Cloudflare dashboard state. These are s
 | 1 | Browser CSP permits the archive origin | Repository — `build.mjs` derives `connect-src` from the validated meta tag; permanently tested |
 | 2 | Worker returns exact-origin CORS | Repository — `corsHeaders()`; permanently tested |
 | 3 | Worker returns `Access-Control-Allow-Credentials: true` | Repository — `corsHeaders()`; permanently tested |
-| 4 | **Cloudflare Access handles the unauthenticated `OPTIONS` preflight** | **Cloudflare dashboard — not evidenced by this repository.** The Access application's own CORS settings must allow the app origin and allow credentials, because Access answers the preflight before the Worker does. |
+| 4 | **Cloudflare Access handles the unauthenticated `OPTIONS` preflight** | **Cloudflare dashboard — not evidenced by this repository, and not confirmed as performed.** See the approved configuration below. |
 | 5 | Authenticated main request reaches the Worker | Live test only |
 | 6 | Live iPhone Safari result under normal privacy settings | **Owner physical acceptance only** |
 
 While configuring or testing gates 4–6, `TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must never be printed, pasted, screenshotted or logged.
+
+### Approved Access CORS configuration (owner action — not yet confirmed performed)
+
+For the Access application protecting the evidence Worker:
+
+- **bypass Access authentication for `OPTIONS` requests only**;
+- let the Worker enforce its own exact-origin CORS policy;
+- keep `POST`/`GET` and every non-`OPTIONS` evidence route Access protected;
+- do not widen the allowed origin;
+- do not set a wildcard `Access-Control-Allow-Origin` anywhere;
+- expose no `TEAM_DOMAIN`, `POLICY_AUD`, cookie, JWT or other secret.
+
+This arrangement is safe by construction and the safety is permanently tested rather than assumed. `handleEvidenceArchiveRequest()` answers `OPTIONS` before it authenticates, so a bypassed preflight is served correctly; `tests/evidence-archive-worker.test.mjs` proves that with authentication denied the preflight still returns 204 with exact-origin credentialled headers, while `POST /v1/evidence/predeadline`, `GET /v1/health`, `GET /v1/evidence/{hash}` and `POST /v1/admin/reconcile` all still return 403 `unauthorised`. A foreign or absent `Origin` is refused at the preflight itself, so the bypass never becomes an open cross-origin surface.
+
+**Repository configuration is not proof of the live Cloudflare setting.** This configuration must not be described as performed until the owner confirms it.
 
 ## Acceptance gate — amendment 1
 

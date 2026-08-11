@@ -175,3 +175,38 @@ test('an accepted upload exposes only the content-hash header to the browser',as
   assert.equal(response.headers.get('X-Teamsheet-Content-Hash'),record.identity.contentHash);
   assert.equal(response.headers.get('Cache-Control'),'no-store');
 });
+
+/* GW1-P2 — the approved Cloudflare Access configuration bypasses Access for
+   OPTIONS only, leaving the Worker to enforce its own exact-origin CORS. This
+   proves that arrangement is safe: an unauthenticated preflight is answered
+   correctly, and bypassing Access for OPTIONS exposes no data route, because
+   every non-OPTIONS route still fails closed without a valid identity. */
+test('an unauthenticated preflight is answered while every data route stays Access protected',async()=>{
+  const storage=env();
+  const denied=async()=>{const error=new Error('no identity');error.code='unauthorised';throw error;};
+
+  const preflight=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'OPTIONS'}),storage,{authVerifier:denied});
+  assert.equal(preflight.status,204,'the preflight must not require an Access identity');
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),ORIGIN);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Credentials'),'true');
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin')==='*',false);
+
+  for(const [path,method] of [['/v1/evidence/predeadline','POST'],['/v1/health','GET'],
+    ['/v1/admin/reconcile','POST'],[`/v1/evidence/${'a'.repeat(64)}`,'GET']]){
+    const response=await handleEvidenceArchiveRequest(
+      request(path,{method,body:method==='POST'?{}:null}),storage,{authVerifier:denied});
+    assert.equal(response.status,403,`${method} ${path} must stay Access protected`);
+    assert.deepEqual(await response.json(),{error:'unauthorised'});
+  }
+
+  /* A foreign origin is refused at the preflight, so bypassing Access for
+     OPTIONS never becomes an open cross-origin surface. */
+  const foreign=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'OPTIONS',origin:'https://evil.example'}),storage,{authVerifier:denied});
+  assert.equal(foreign.status,403);
+  assert.equal(foreign.headers.get('Access-Control-Allow-Origin'),null);
+  const originless=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'OPTIONS',origin:null}),storage,{authVerifier:denied});
+  assert.equal(originless.status,403);
+});
