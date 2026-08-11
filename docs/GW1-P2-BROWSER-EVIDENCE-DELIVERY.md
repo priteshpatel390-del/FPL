@@ -114,18 +114,25 @@ Repository configuration is not proof of Cloudflare dashboard state. These are s
 
 While configuring or testing gates 4–6, `TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must never be printed, pasted, screenshotted or logged.
 
-### Approved Access CORS configuration (owner action — not yet confirmed performed)
+### Approved Access CORS configuration (owner action — not confirmed performed)
 
-For the Access application protecting the evidence Worker:
+The single required setting is:
 
-- **bypass Access authentication for `OPTIONS` requests only**;
-- let the Worker enforce its own exact-origin CORS policy;
-- keep `POST`/`GET` and every non-`OPTIONS` evidence route Access protected;
-- do not widen the allowed origin;
-- do not set a wildcard `Access-Control-Allow-Origin` anywhere;
-- expose no `TEAM_DOMAIN`, `POLICY_AUD`, cookie, JWT or other secret.
+> Cloudflare Zero Trust → Access controls → Applications → `teamsheet-evidence-archive` → Configure → Advanced settings → Cross-Origin Resource Sharing (CORS) → enable **“Bypass OPTIONS requests to origin”**
 
-This arrangement is safe by construction and the safety is permanently tested rather than assumed. `handleEvidenceArchiveRequest()` answers `OPTIONS` before it authenticates, so a bypassed preflight is served correctly; `tests/evidence-archive-worker.test.mjs` proves that with authentication denied the preflight still returns 204 with exact-origin credentialled headers, while `POST /v1/evidence/predeadline`, `GET /v1/health`, `GET /v1/evidence/{hash}` and `POST /v1/admin/reconcile` all still return 403 `unauthorised`. A foreign or absent `Origin` is refused at the preflight itself, so the bypass never becomes an open cross-origin surface.
+That is the whole change. **No Access-layer allowed-origin response is configured in this mode**, because the Worker is the sole owner of exact allowed-origin CORS enforcement. Configuring both would create a second, divergent origin policy outside the tested contract.
+
+No Access policy for `POST`, `GET` or any other method changes. Only `OPTIONS` passes through Access without authentication.
+
+The arrangement is safe by construction, and the safety is permanently tested rather than assumed. `handleEvidenceArchiveRequest()` answers `OPTIONS` before it authenticates, so a bypassed preflight is served correctly. `tests/evidence-archive-worker.test.mjs` proves, with authentication denied throughout:
+
+- approved exact origin `OPTIONS` → **204**;
+- `Access-Control-Allow-Credentials: true` present;
+- wildcard `Access-Control-Allow-Origin` never emitted;
+- absent or foreign `Origin` → **403** with no CORS headers;
+- `POST /v1/evidence/predeadline`, `GET /v1/health`, `GET /v1/evidence/{hash}` and `POST /v1/admin/reconcile` → **403 `unauthorised`**.
+
+So the bypass exposes no data route and never becomes an open cross-origin surface.
 
 **Repository configuration is not proof of the live Cloudflare setting.** This configuration must not be described as performed until the owner confirms it.
 
