@@ -484,13 +484,6 @@ function renderMiniLeagues(route=globalThis.location?.hash||'#/leagues'){
   }
   renderMiniLeagueHub(); renderMiniLeagueLanding(); renderMiniLeagueStandings(); renderMiniLeagueRival(); renderMiniLeagueExposure();
 }
-function renderLeagueChips(){
-  /* `S.leagues` is a read-only bridge onto canonical `S.miniLeagues.saved`, so
-     rendering never copies a legacy value back into canonical preferences. */
-  const legacy=$('leagueChips');
-  if(legacy) setChildren(legacy,(S.miniLeagues.saved||[]).map(row=>el('button',{class:'chip',type:'button'},row.name||row.id)));
-  renderLeagueManageList();
-}
 async function initMiniLeagues(legacyConfig={}){
   ensureMiniLeagueExposureSection(); await initMiniLeagueState(legacyConfig); miniLeagueReady=true;
   const picker=$('leaguePickerButton'); picker?.addEventListener('click',()=>miniLeagueNavigate('#/leagues'));
@@ -503,4 +496,4 @@ async function initMiniLeagues(legacyConfig={}){
   if(initialRoute==='#/leagues/exposure') $('leagueExposure')?.querySelector?.('h2')?.focus?.({preventScroll:true});
 }
 
-export { MINI_LEAGUE_PAGE_SIZE, miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSelectionKey, miniLeagueExposureSummary, miniLeagueStatusCopy, initMiniLeagues, renderMiniLeagues, renderLeagueChips, loadMiniLeagueStandings, loadNextMiniLeagueStandingsPage, loadMiniLeagueRival, loadMiniLeagueExposure };
+export { MINI_LEAGUE_PAGE_SIZE, miniLeagueOrdinal, miniLeagueMovement, miniLeagueNearestRows, miniLeagueCompareSquads, miniLeaguePickFacts, miniLeagueExposureLabel, miniLeagueExposureSelectionKey, miniLeagueExposureSummary, miniLeagueStatusCopy, initMiniLeagues, renderMiniLeagues, loadMiniLeagueStandings, loadNextMiniLeagueStandingsPage, loadMiniLeagueRival, loadMiniLeagueExposure };
