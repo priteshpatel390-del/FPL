@@ -1,11 +1,13 @@
 # PROJECTION_MODEL.md — projection engine reference
 
-## 10 August 2026 — persisted calibration compatibility boundary
+## 11 August 2026 — persisted calibration compatibility boundary
 
-`fpl:calib` compatibility is complete and merged through PR #107 at `main` `d112c673310149a4463def1758242460450600dc`. It does not change the projection formula or any calibration factor. It changes only whether unverified persisted calibration may enter model state: all currently stored `fpl:calib` records fail closed, remain stored but inert, and the standard uncalibrated model is used. The existing `S.calib` multiplier semantics remain byte-unchanged for any future separately approved compatible activation path. The current walk-forward evaluation remains a historical diagnostic and does not produce or persist production calibration. This checkpoint makes no predictive-accuracy claim. Its verified candidate reached 842/842 tests; subsequent A3 engineering through State-Ownership Cleanup leaves the model/rules boundary unchanged and current `main` is verified at 864/864.
+`fpl:calib` compatibility is complete and merged through PR #107 at `main` `d112c673310149a4463def1758242460450600dc`. It does not change the projection formula or any calibration factor. It changes only whether unverified persisted calibration may enter model state: all currently stored `fpl:calib` records fail closed, remain stored but inert, and the standard uncalibrated model is used. The existing `S.calib` multiplier semantics remain byte-unchanged for any future separately approved compatible activation path. The current walk-forward evaluation remains a historical diagnostic and does not produce or persist production calibration. This checkpoint makes no predictive-accuracy claim.
+
+Subsequent A3 engineering through A3-SC-1 / PR #116 leaves this model/rules boundary unchanged. The A3 engineering baseline entering documentation closeout is **868 tests**, with permanent Verify Teamsheet run #194 / `31470879289` passing the repository gate on exact PR #116 merge commit `1060e60d3affadabdf97924c7ece85cc62d8e360`. Current repository verification belongs in [TESTING.md](TESTING.md); historical 842/864/866 counts remain checkpoint evidence rather than current model claims.
 
 Purpose: precise record of the current deterministic projection engine, expected-minutes boundary and Stage 8 uncertainty layer.
-Audience: anyone touching model code. Last updated: 2026-08-10.
+Audience: anyone touching model code. Last updated: 2026-08-11.
 Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.
 
 ## Versions and configuration

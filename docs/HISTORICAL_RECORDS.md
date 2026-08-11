@@ -1,6 +1,6 @@
 # Historical Records Index
 
-Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 10 August 2026.
+Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 11 August 2026.
 
 ## How to use this index
 
@@ -25,10 +25,25 @@ Purpose: make the repository's operational guidance and immutable project histor
 - [Root onboarding](../CLAUDE.md) and [Build & Test](../README-BUILD.md).
 - [Cloudflare Worker operations](../workers/README.md).
 
+## A3 remediation closeout index
+
+A3 engineering remediation is complete through A3-SC-1 / PR #116. The documentation/architecture reconciliation represented by this index is the final A3 closeout layer; no A3-specific engineering or documentation task follows it. The repository's canonical sequence treats the separate 0C correction as a narrow follow-up to Checkpoint 0 rather than renumbering every later item.
+
+1. Post-A3 Checkpoint 0 housekeeping — complete through PR #105; separate 0C manual-squad dead-handler cleanup complete through PR #106.
+2. `fpl:calib` compatibility and resilience — complete through PR #107.
+3. A3 Error-Boundary Separation — complete through PR #108.
+4. Production-Bundle Safeguards — complete through PR #111.
+5. State-Ownership Cleanup — complete through PR #112.
+6. Route-Aware Rendering & Performance M1 — measurement-only work complete through PR #115; route-aware optimisation remains unapproved.
+7. A3 Small Stale-Code Cleanup — complete through PR #116.
+8. Documentation/architecture closeout — this reconciliation; final A3 closeout layer.
+
+Separately tracked live-season evidence gates, D1 implementation, Understat repair, Odds API repair, ChatGPT migration, Cloudflare/agent expansion and route-aware optimisation are not unfinished A3 engineering remediation or closeout work.
+
 ## Current operational and acceptance records
 
-- [A3-SC-1 Small Stale-Code Cleanup](A3-SC-1-SMALL-STALE-CODE-CLEANUP.md) — narrow reviewed deletion of two unreachable Mini-League convenience helpers, with the saved-league XSS assertion re-pointed to the live management renderer; implementation candidate in draft PR #116 and **not merged**.
-- [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md) — investigation found real avoidable inactive-route/shared-render work but did not demonstrate material user-visible lag; M1 measurement tooling is approved as test/investigation-only, while route-aware optimisation remains separately approval-gated. The record also fixes the future recheck trigger around live-season Mini-League load, material rendering/workload changes and physical iPhone symptoms.
+- [A3-SC-1 Small Stale-Code Cleanup](A3-SC-1-SMALL-STALE-CODE-CLEANUP.md) — complete, merged and post-merge verified through PR #116 at A3 engineering baseline `1060e60d3affadabdf97924c7ece85cc62d8e360`; candidate-era CI evidence is preserved in the record and the brittle `selectMiniLeague` exact-source-string assertion remains separate deferred test-hardening debt.
+- [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md) — M1 measurement tooling is complete and merged through PR #115; investigation found real avoidable inactive-route/shared-render work but did not demonstrate material user-visible lag. Route-aware optimisation remains separately approval-gated, with future recheck triggers around live-season Mini-League load, material rendering/workload changes and physical iPhone symptoms.
 - [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md) — completed, merged and post-merge verified through PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`; `state.mjs` is the declared shared-slot inventory and the legacy Mini-League alias is one-way, without a state-management rewrite.
 - [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md) — complete, merged and post-merge verified through PR #108; provider evidence, commit, render, persistence and application-owned exceptions are separated without changing provider or model behaviour, with the recorded executable iPhone paths physically accepted.
 - [`fpl:calib` compatibility and resilience](FPL-CALIB-COMPATIBILITY-RESILIENCE.md) — complete and merged through PR #107; legacy/unverified calibration remains inert and standard uncalibrated projections stay active unless a future production methodology is separately approved.

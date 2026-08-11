@@ -2,11 +2,13 @@
 
 ## 11 August 2026 — current state
 
-GitHub `main` is `02ea634464cc415ac43d4b9cb13b4005fc276646`, the merge of **Route-Aware Rendering and Performance M1** PR #115. The merged tree contains **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**, and permanent Verify Teamsheet run #183 / `31459954883` passed every stage on that exact merge commit.
+The A3 engineering baseline entering documentation/architecture closeout is GitHub `main` `1060e60d3affadabdf97924c7ece85cc62d8e360`, the merge of **A3-SC-1 Small Stale-Code Cleanup** PR #116 from reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3`. The reviewed tree contains **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent post-merge Verify Teamsheet run #194 / `31470879289` passed the repository gate on that exact merge commit, and GitHub Pages run #120 / `31470878300` succeeded for the same commit.
 
-M1 delivered measurement instrumentation only. `scripts/measure-route-rendering.mjs` reads the generated bundle and runs an instrumented copy through the existing harness; it is deliberately outside every production build input. **Route-aware optimisation itself remains unapproved** — do not change route scheduling or rendering behaviour without separate explicit approval. See [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md).
+A3-SC-1 removed only the two proven-unreachable Mini-League helpers `renderLeagueChips()` and `rememberLeague()` plus stale test-side consumers, and added structural regressions. No physical iPhone testing was performed or claimed for PR #116. Its first CI failure demonstrated that future stale-code investigations must search production source, test source, shared harness/export lists, mocks/fixtures, runtime replacement mechanisms, generated bundle/deployable surfaces and DOM/event references. The brittle `selectMiniLeague` exact-source-string assertion remains separate deferred test-hardening debt.
 
-The current checkpoint is **A3-SC-1 Small Stale-Code Cleanup**, an approved narrow deletion of two unreachable Mini-League helpers. It is an open, unmerged candidate in draft PR #116 and must not be merged without Pritesh's explicit approval. See [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md).
+Route-Aware Rendering and Performance M1 is complete and merged through PR #115. M1 delivered measurement instrumentation only. `scripts/measure-route-rendering.mjs` reads the generated bundle and runs an instrumented copy through the existing harness; it is deliberately outside every production build input. **Route-aware optimisation itself remains unapproved** — do not change route scheduling or rendering behaviour without separate explicit approval. See [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md).
+
+A3 engineering remediation is complete through PR #116. **This documentation and architecture reconciliation is the final A3 closeout layer; no A3-specific engineering or documentation task follows it.** It reconciles current-state, architecture, roadmap, limitation, testing and historical wording without changing application source, tests, build inputs, generated deployables, model/provider behaviour or any separately gated future programme. See [Roadmap](docs/ROADMAP.md) and [Historical Records](docs/HISTORICAL_RECORDS.md).
 
 ## Historical checkpoint — 10 August 2026 A3 State-Ownership Cleanup is merged and accepted
 
@@ -34,7 +36,6 @@ At that historical checkpoint, Production-Bundle Safeguards was the next A3 reme
 
 PR #107 is merged at `main` `d112c673310149a4463def1758242460450600dc`, over source/tests/docs commit `862eefc32b0edb070290ad9ce82d85b1123b0596`, generated-only child `69e539647ae687f49605633505e7147da76125e2` and documentation child `6ba905d`. Permanent Verify Teamsheet run #127 / `31396393124` passed every stage on the merge commit, on an 842-test baseline. The merged behaviour rejects every existing unverified `fpl:calib` record from active model state while preserving its bytes, uses standard uncalibrated projections, and keeps the Stage 7 walk-forward check diagnostic-only. No calibration values, raw model formula or production calibration methodology were added. PERSIST-4 is closed.
 
-
 ## 10 August 2026 — Post-A3 0C manual-squad dead-handler cleanup
 
 Post-A3 Checkpoint 0 PR #105 is merged at `main` `dd74365256fe6d9338b720ffecf1913e48ac77eb`. Checkpoint 0A's new automatic push trigger was proven immediately: Verify Teamsheet run #110 / `31383479683` ran on the exact merge commit and passed every stage, on an 835-test baseline.
@@ -42,8 +43,6 @@ Post-A3 Checkpoint 0 PR #105 is merged at `main` `dd74365256fe6d9338b720ffecf191
 Pritesh explicitly approved the separate narrow **0C cleanup**. It removes only the two proven-unreachable per-button manual-squad listeners from `src/ui/views.mjs`, keeps the rendered `data-rm`/`data-add` hooks, keeps `src/ui/manual-squad-runtime.mjs` byte-unchanged as the sole validating interaction owner, and adds an ownership regression. One existing A3 test, `manual squad builder has no unchecked squad persistence path`, was re-pointed from the deleted code to the live runtime and made stricter on `views.mjs`; nothing was weakened, deleted or skipped. No football rule or model behaviour changes. See [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md).
 
 `fpl:calib` compatibility and resilience was the next substantive checkpoint after 0C and is now merged as recorded above.
-
-
 
 ## 10 August 2026 — A3 cache and persistence resilience is merged
 
@@ -53,7 +52,6 @@ The checkpoint keeps Atomic Foreground Refresh ordering unchanged while adding a
 
 Evidence: **832 passing tests, 0 failed**, verified committed build provenance, two byte-identical production builds, and permanent Verify Teamsheet run #105 / `31377157889` on the reviewed head `4e434b9`. Pritesh **explicitly waived physical iPhone testing** for this checkpoint and explicitly approved the merge. No physical device testing was performed, and none is claimed.
 
-
 ## 10 August 2026 — PR #103 physical acceptance closeout
 
 The final Small Mobile UI Consistency + Loading Viewport Fix application source is `646eee13960c343fbe07e3a76496717fd9837c0e`, with generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777`. The final candidate retains every prior test and passes **803 tests, 0 failed**, deterministic byte-identical builds, root/deployable equality, exact build identity and reachable generated provenance. Permanent Verify Teamsheet run #90 / `31356255017` passed on the exact generated head.
@@ -62,15 +60,15 @@ Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari
 
 No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
 
-## 11 August 2026 — current checkpoint
+## 11 August 2026 — A3 closeout boundary
 
-The current `main` is `02ea634464cc415ac43d4b9cb13b4005fc276646`, the merge of Route-Aware Rendering and Performance M1 PR #115. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106), `fpl:calib` compatibility (PR #107), EB-1 (PR #108), Production-Bundle Safeguards (PR #111), State-Ownership Cleanup (PR #112) and Route-Aware M1 (PR #115) are all merged and verified. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) is closed. Data Architecture D1 remains an approved future design only.
+A3 engineering remediation is complete through PR #116. The A3 engineering baseline entering closeout is `1060e60d3affadabdf97924c7ece85cc62d8e360`. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106), `fpl:calib` compatibility (PR #107), EB-1 (PR #108), Production-Bundle Safeguards (PR #111), State-Ownership Cleanup (PR #112), Route-Aware M1 (PR #115) and A3-SC-1 (PR #116) are all merged. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) is closed. Data Architecture D1 remains an approved future design only.
 
-The current checkpoint is **A3-SC-1 Small Stale-Code Cleanup**, open and unmerged in draft PR #116. Route-aware optimisation remains a separate, unapproved future checkpoint: M1 delivered measurement only and did not demonstrate material user-visible lag, so do not pull optimisation forward. The full sequence is in [Roadmap](docs/ROADMAP.md).
+This documentation/architecture reconciliation is the final A3 closeout layer and is documentation-only. Route-aware optimisation, D1 implementation, Understat repair, Odds API repair, ChatGPT migration, Cloudflare/agent work and live-season evidence gates remain separate and unapproved/deferred as applicable. The full sequence is in [Roadmap](docs/ROADMAP.md).
 
 ## 9 August 2026 reconciliation
 
-The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100. Its permanent verification passed **693 tests**. DTR-1 and the physical iPhone form-focus zoom checkpoint are complete and merged.
+The authoritative baseline at that historical checkpoint was `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, merge of iPhone form-focus zoom PR #100. Its permanent verification passed **693 tests**. DTR-1 and the physical iPhone form-focus zoom checkpoint are complete and merged.
 
 [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md) is approved as a documentation-only design decision: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox, and optional downstream Google Sheets reporting. No persistence implementation is approved.
 
@@ -82,13 +80,12 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `02ea634464cc415ac43d4b9cb13b4005fc276646`, merge of Route-Aware Rendering and Performance M1 PR #115 |
-| Latest merged engineering checkpoint | PR #115. It adds route-rendering measurement instrumentation that stays outside every production build input; it does not change route scheduling, rendering behaviour or any production output. Route-aware optimisation remains unapproved. |
-| Permanent repository verification | 866 tests in the merged tree; Verify Teamsheet run #183 / `31459954883` completed successfully on exact merge commit `02ea634…`, and every provenance/build/determinism/identity stage passed. |
-| Candidate verification before merge | The A3-SC-1 candidate is verified against this `02ea634…` base; exact head evidence is recorded in [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md). |
-| GitHub Pages | Pages deploys from `main`. The deployment for `02ea634…` was not independently re-verified during A3-SC-1; per-checkpoint Pages evidence remains in the individual records. |
-| Current unmerged candidate | **A3-SC-1 Small Stale-Code Cleanup**, open and unmerged in draft PR #116. It removes two unreachable Mini-League helpers only. |
-| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102), PR #103 presentation and EB-1 (PR #108) normal startup/manual refresh/saved-data offline refresh/online recovery. PR #104 testing was explicitly waived. PR #112 had no physical iPhone testing and none is claimed. EB-1 clean private-tab offline-first could not load the uncached static shell and remains automated-only evidence. |
+| A3 engineering baseline entering closeout | `1060e60d3affadabdf97924c7ece85cc62d8e360`, merge of A3-SC-1 PR #116 |
+| Latest merged engineering checkpoint | PR #116. It removes two proven-unreachable Mini-League helpers plus stale test-side consumers and adds structural regressions; it changes no intended application behaviour. |
+| Permanent repository verification | Reviewed PR #116 head `097fabb…` passed 868/868 in Verify Teamsheet run #193 / `31469449540`. Permanent post-merge run #194 / `31470879289` passed the full repository gate on exact merge commit `1060e60…`. |
+| GitHub Pages | Pages run #120 / `31470878300` succeeded for exact PR #116 merge commit `1060e60…`. |
+| A3 closeout status | **This documentation/architecture reconciliation is the final A3 closeout layer.** No A3-specific engineering or documentation task follows it. |
+| Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102), PR #103 presentation and EB-1 (PR #108) normal startup/manual refresh/saved-data offline refresh/online recovery. PR #104 testing was explicitly waived. PR #112, PR #115 and PR #116 had no physical iPhone testing and none is claimed. EB-1 clean private-tab offline-first could not load the uncached static shell and remains automated-only evidence. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
@@ -103,7 +100,7 @@ Repository Truth A1, Safe Hygiene A2 and Refresh-Load R1 are complete and merged
 - disclose supporting-data cache age/use separately from core Official FPL freshness;
 - preserve every model formula, provider endpoint, gateway rule and the existing complete-state orchestration.
 
-Understat parser repair, atomic foreground-state replacement, core bootstrap reduction, new providers/endpoints and every formula or recommendation change remain excluded. R1 passed exact automated verification and the currently testable physical iPhone paths before Pritesh explicitly approved its merge. No future branch may be merged without Pritesh's explicit approval.
+Understat parser repair, atomic foreground-state replacement, core bootstrap reduction, new providers/endpoints and every formula or recommendation change remained excluded from R1. Atomic Foreground Refresh was implemented later through PR #102. R1 passed exact automated verification and the currently testable physical iPhone paths before Pritesh explicitly approved its merge. No future branch may be merged without Pritesh's explicit approval.
 
 The first PR #96 iPhone pass accepted online startup, build identity, short background return, Provider Health, manual refresh, cached repeat launch and in-app offline resilience. It also proved that a full offline hard reload cannot load the static application shell, which remains outside R1. The in-app offline refresh exposed misleading fresh/live FPL disclosure; source `d1b6ac0…` stops before networking when Safari definitively reports offline, preserves the saved snapshot timestamp and labels FPL as Fallback. Pritesh physically retested and accepted that corrected path, then verified the same build identity after GitHub Pages returned to `main`.
 
@@ -123,9 +120,11 @@ Production-Bundle Safeguards is complete and merged through PR #111 at `5a1a036�
 
 A3 State-Ownership Cleanup is complete and merged through PR #112 at `691d9f9…`. It makes shared-state inventory explicit and Mini-League compatibility ownership one-way without changing the domain ownership architecture. No physical iPhone testing was performed or claimed.
 
-Route-Aware Rendering and Performance reached its **M1 measurement stage only**, merged through PR #115 at `02ea634…`. M1 found real avoidable inactive-route work but did **not** demonstrate material user-visible lag, and its instrumentation stays outside every production build input. Route-aware **optimisation remains not implementation-approved**: return for explicit approval before any routing/rendering optimisation or production source change.
+Route-Aware Rendering and Performance M1 is complete and merged through PR #115 at `02ea634…`. M1 found real avoidable inactive-route work but did **not** demonstrate material user-visible lag, and its instrumentation stays outside every production build input. Route-aware **optimisation remains not implementation-approved**: return for explicit approval before any routing/rendering optimisation or production source change.
 
-A3-SC-1 Small Stale-Code Cleanup is the current approved narrow checkpoint, open and unmerged in draft PR #116. It removes only `renderLeagueChips()` and `rememberLeague()`; it must not be broadened into a general cleanup.
+A3-SC-1 Small Stale-Code Cleanup is complete and merged through PR #116 at `1060e60…`. It removed only `renderLeagueChips()` and `rememberLeague()` plus stale test consumers, added structural regressions, and had no physical iPhone testing. The brittle `selectMiniLeague` exact-source-string assertion remains deferred test-hardening debt.
+
+The documentation/architecture reconciliation represented by these canonical docs is the final A3 closeout layer. It must not pull D1 implementation, Understat/Odds repair, route-aware optimisation, ChatGPT migration, Cloudflare/agent work, live-season evidence gates or other later work into A3.
 
 ## Owner and communication
 
@@ -139,7 +138,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 4. [Roadmap](docs/ROADMAP.md)
 5. [Known Limitations](docs/KNOWN_LIMITATIONS.md)
 6. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md)
-7. The most recent completed checkpoint record — [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), over [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md), the merged [`fpl:calib` compatibility and resilience](docs/FPL-CALIB-COMPATIBILITY-RESILIENCE.md), [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md), [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) and [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
+7. The most recent completed A3 engineering records — [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md), the merged [`fpl:calib` compatibility and resilience](docs/FPL-CALIB-COMPATIBILITY-RESILIENCE.md), [Post-A3 0C cleanup](docs/POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md), [Post-A3 Checkpoint 0](docs/POST-A3-CHECKPOINT-0-HOUSEKEEPING.md) and [A3 cache and persistence resilience](docs/A3-CACHE-PERSISTENCE-RESILIENCE.md)
 8. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 9. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 10. Historical material only when needed: [Historical Records](docs/HISTORICAL_RECORDS.md)

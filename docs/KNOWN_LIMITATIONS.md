@@ -1,12 +1,14 @@
 # KNOWN_LIMITATIONS.md
 
-## 11 August 2026 — current evidence boundary after Route-Aware M1
+## 11 August 2026 — current evidence boundary entering A3 documentation closeout
 
-GitHub `main` is `02ea634464cc415ac43d4b9cb13b4005fc276646`, merge of Route-Aware Rendering and Performance M1 PR #115. Exact-main Verify Teamsheet run #183 / `31459954883` passed **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled** together with committed provenance, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. No physical iPhone testing was performed or claimed for PR #115.
+The A3 engineering baseline entering documentation/architecture closeout is GitHub `main` `1060e60d3affadabdf97924c7ece85cc62d8e360`, merge of A3-SC-1 PR #116 from reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3`. The reviewed tree passed **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled** in Verify Teamsheet run #193 / `31469449540`. Permanent post-merge Verify Teamsheet run #194 / `31470879289` passed the repository gate on that exact merge commit, and GitHub Pages run #120 / `31470878300` succeeded for the same commit.
 
-M1 is measurement instrumentation only and demonstrated real avoidable inactive-route work **without** demonstrating material user-visible lag. That absence of evidence is itself a limitation: no performance claim, in either direction, is supported for a physical iPhone. Route-aware optimisation is not approved.
+A3-SC-1 is complete. It removed two proven-unreachable Mini-League helpers and stale test-side consumers with no intended behaviour change. No physical iPhone testing was performed or claimed for PR #116. Its remaining brittle `selectMiniLeague` exact-source-string assertion is test-hardening debt, not a demonstrated product defect.
 
-A3-SC-1 Small Stale-Code Cleanup is an approved but **unmerged** candidate in draft PR #116. It removes two unreachable Mini-League helpers and has no intended behaviour change; no physical device testing has been performed for it and none is claimed.
+Route-Aware Rendering and Performance M1 is complete through PR #115. It is measurement instrumentation only and demonstrated real avoidable inactive-route work **without** demonstrating material user-visible lag. That absence of evidence remains a limitation: no performance claim, in either direction, is supported for a physical iPhone. Route-aware optimisation is not approved.
+
+A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation is the final A3 closeout layer; no A3-specific engineering or documentation task follows it. Separately gated live-season evidence, D1 implementation, Understat/Odds repair, ChatGPT migration and Cloudflare/agent expansion are not A3 engineering defects or unfinished A3 closeout work.
 
 ## Historical — 10 August 2026 evidence boundary after A3 State-Ownership Cleanup
 
@@ -44,9 +46,9 @@ The PR #103 startup-canvas, primary-header, form-control visual/no-zoom and Leag
 
 The persistent platform is approved only as a design; no D1 database, R2 bucket, data Worker, authentication, migration, capture or Sheets automation exists. D1/R2 commits cannot be atomic across products and will require an R2-first manifest protocol plus orphan reconciliation. Cost/capacity estimates use synthetic evidence, provider archival rights remain unconfirmed, and all existing live-Gameweek evidence gates remain in force. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md).
 
-Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 10 August 2026.
+Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 11 August 2026.
 
-Current evidence boundary: Route-Aware M1 is merged at `02ea634464cc415ac43d4b9cb13b4005fc276646` after 866 passing tests and successful post-merge Verify Teamsheet run #183; the preceding A3 State-Ownership Cleanup was merged at `691d9f929284d51c233b61d099c34cafe1030db6` after 864 passing tests and run #167. It has no physical device evidence because the checkpoint was non-visual and none was required or performed. A3 Error-Boundary Separation's executable iPhone Safari paths were physically accepted; its clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience also remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
+Current evidence boundary: A3 engineering remediation is complete through PR #116 at baseline `1060e60d3affadabdf97924c7ece85cc62d8e360`. The reviewed PR #116 tree passed 868/868; permanent post-merge Verify Teamsheet run #194 passed the repository gate and Pages run #120 succeeded on that exact merge commit. PR #116, Route-Aware M1/PR #115 and State-Ownership Cleanup/PR #112 have no physical device evidence and none is claimed. A3 Error-Boundary Separation's executable iPhone Safari paths were physically accepted; its clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience also remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
 
 Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), [Historical Records](HISTORICAL_RECORDS.md).
 
