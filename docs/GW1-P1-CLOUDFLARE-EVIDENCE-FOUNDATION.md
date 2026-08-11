@@ -1,6 +1,6 @@
 # GW1-P1 — Cloudflare Evidence Foundation
 
-Status: **backend foundation implemented and live-production acceptance passed; Teamsheet client integration remains separate GW1-P2 work**  
+Status: **backend foundation implemented and live functional acceptance passed; final preview/version-route security closeout pending; Teamsheet client integration remains separate GW1-P2 work**  
 Approved scope: Pritesh, 11 August 2026  
 Base: `main` `43f109b306071aa0c3c1c45985876fecb3da7aa5`  
 Branch: `agent/gw1-p1-cloudflare-evidence-foundation`  
@@ -172,6 +172,23 @@ There is no public/raw R2 read endpoint.
 
 Temporary owner-only acceptance routes used on 11 August 2026 are **not part of the final production source**.
 
+## Preview/version URL security closeout
+
+Cloudflare documents Preview URLs as a separate Workers routing surface. When `workers_dev` is enabled and `preview_urls` is not explicitly configured, current Wrangler behaviour enables Preview URLs by default. When enabled, versioned and aliased Preview URLs are publicly reachable unless their own Cloudflare Access protection is enabled; protecting the production `workers.dev` hostname alone does not establish protection for Preview URLs.
+
+GW1-P1 therefore does not rely on an independent second Access policy for ephemeral version/alias hostnames. Both the verified source config and isolated deployment config explicitly set:
+
+`"preview_urls": false`
+
+Cloudflare documents that disabling Preview URLs disables routing to both versioned and aliased Preview URLs. `tests/evidence-archive-layout.test.mjs` permanently requires the source/deploy configs to remain byte-identical and `preview_urls` to remain false.
+
+Official references:
+
+- https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/
+- https://developers.cloudflare.com/workers/configuration/routing/workers-dev/
+
+**Live closure is still required after deploying this config.** Before PR #118 can be called merge-ready, the production Worker must show Preview URLs disabled under **Workers & Pages -> teamsheet-evidence-archive -> Settings -> Domains & Routes**, or equivalent live evidence must demonstrate that a previously generated version/alias preview hostname no longer routes to the Worker. The existing Access-protected production `workers.dev` route remains enabled.
+
 ## Live production acceptance — 11 August 2026
 
 Acceptance was performed against the owner-controlled `teamsheet-evidence-archive` Worker using physical iPhone Safari and deliberately synthetic season `2099-00`, GW38 records. The synthetic records were incomplete, provider-disabled and explicitly non-official so they could not be mistaken for genuine FPL evidence.
@@ -246,7 +263,8 @@ Permanent tests cover:
 - origin/auth/method/route fail-closed behaviour;
 - safe manifest read-back and rate limiting;
 - source/deploy mirror parity;
-- separate Worker/D1/R2/migration configuration.
+- separate Worker/D1/R2/migration configuration;
+- explicit disabling of Cloudflare versioned/aliased Preview URLs.
 
 The complete repository suite plus deterministic/provenance/build-identity gates remain mandatory for the final PR head. Exact final-head verification is recorded in PR #118 rather than embedded here as a mutable candidate SHA.
 
@@ -270,7 +288,7 @@ GW1-P1 does not change:
 
 ## Remaining boundary
 
-GW1-P1 provides and production-validates the backend foundation only.
+GW1-P1 provides and production-validates the backend foundation only. Its functional backend paths have recorded physical iPhone Safari acceptance, while the newly explicit Preview URL disable still requires post-deployment live confirmation before final merge readiness.
 
 GW1-P2 remains separately approval-gated and will connect the existing Stage 10 browser flow to this service with the persistent local pending-upload/outbox contract. Until GW1-P2 is implemented and accepted, Teamsheet does not automatically send genuine pre-deadline snapshots to Cloudflare.
 

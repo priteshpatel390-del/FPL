@@ -1,18 +1,34 @@
 # SECURITY.md
 
+## 11 August 2026 — GW1-P1 cloud-evidence security reconciliation
+
+GW1-P1 adds a second, deliberately isolated Cloudflare Worker for canonical Stage 10 evidence custody. The evidence Worker is protected by owner-only Cloudflare Access, validates `Cf-Access-Jwt-Assertion` itself, writes exact canonical evidence only to private R2, and stores only the minimal manifest/receipt/index state in D1. `TEAM_DOMAIN` and `POLICY_AUD` remain runtime configuration and are not committed.
+
+The Teamsheet browser is **not** connected to this service in GW1-P1. No permanent browser service token, generic SQL/R2 route, new provider acquisition path or application secret is introduced. Normal in-app cloud custody and the persistent pending-upload/outbox contract remain GW1-P2.
+
+Cloudflare Preview URLs are a separate routing surface from the production `workers.dev` hostname. The GW1-P1 candidate therefore explicitly sets `preview_urls: false` in both byte-identical evidence Wrangler configs and tests that invariant. The production `workers.dev` route remains enabled behind its accepted Access policy. Because repository configuration is not proof of the currently deployed dashboard state, post-deployment confirmation that **Settings -> Domains & Routes -> Preview URLs** is disabled remains a final GW1-P1 security acceptance item.
+
 ## 10 August 2026 — error disclosure and trust ownership
 
 PR #107 is merged and the fail-closed calibration trust boundary is active. EB-1 adds no network origin, credential, secret, provider or backend. Its security consequence is narrower: raw unexpected exception objects remain available only to returned diagnostic/test objects, while user-visible error copy stays fixed and safe. Application exceptions cannot be converted into Provider Health evidence, and no `window.onerror` or `unhandledrejection` swallowing/logging layer is introduced.
 
 Provider warnings continue to avoid raw endpoints, relay errors, keys and identifiers. Odds-key scrubbing, direct-only transport, CSP, Official FPL gateway controls and Stage 10 privacy boundaries are unchanged.
-## Future D1/R2 security boundary (design only)
 
-The approved [Data Architecture D1](DATA-ARCHITECTURE-D1.md) requires a separate authenticated data Worker, private R2, short-lived browser authentication, origin/CSRF/rate/payload controls and Worker secrets. The static client must never contain a permanent service token, database credential, Odds key relay, or Anthropic/OpenAI secret. Manager/team, manual-squad and league/rival data remain device-only in the MVP. Future AI access must use audited, field-allowlisted, read-only views. No security/runtime implementation is authorised by the design decision.
+## GW1-P1 D1/R2 security boundary
+
+The approved [Data Architecture D1](DATA-ARCHITECTURE-D1.md) selected a separate authenticated data Worker, private R2, short-lived browser authentication, origin/CSRF/rate/payload controls and Worker-held runtime configuration. GW1-P1 implements the backend-only foundation of that boundary: owner-authenticated routes, exact-origin CORS, payload/rate limits, private R2, D1 manifest/receipts, bounded reconciliation and generic/redacted failures. The static client still contains no permanent service token, database credential, Odds key relay or Anthropic/OpenAI secret.
+
+Manager/team, manual-squad and league/rival data remain outside the GW1-P1 server contract. Understat/Odds permanent retention defaults fail-closed pending separately approved rights. Future AI access remains constrained to audited, field-allowlisted, read-only views and is not part of GW1-P1.
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
-Last reconciled: 2026-08-08. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md.
+Last reconciled: 2026-08-11. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
 
 ## Current architecture
-Static single-file application on GitHub Pages plus one owner-controlled, zero-dependency Cloudflare Worker used only as a narrow read-only transport to Official FPL. The Worker is deployed at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev` and accepts only the approved allowlisted FPL paths; it is not a generic proxy. Stage 3 security hardening remains complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`.
+Static single-file application on GitHub Pages plus two owner-controlled, zero-dependency Cloudflare service boundaries:
+
+- the existing narrow read-only Official FPL transport gateway at `https://teamsheet-fpl-gateway.fpltsheet.workers.dev`;
+- the separate GW1-P1 evidence archive Worker, protected by Cloudflare Access and backed by private R2 plus D1.
+
+The browser currently calls only the Official FPL gateway. GW1-P1 does not add application/client evidence sync; that remains GW1-P2. Stage 3 security hardening remains complete and merged through PR #6 at `3f662b7e133ce2995da74c5e52165ae84744e120`.
 
 - Odds transport is DIRECT ONLY. The key cannot enter the FPL/Understat relay cascade.
 - Anthropic secrets are banned client-side. Legacy `claudeKey` storage is removed on migration.
@@ -27,6 +43,16 @@ Static single-file application on GitHub Pages plus one owner-controlled, zero-d
 The production gateway uses a fixed Official FPL upstream host and an exact path/query allowlist. It supports only `GET`, `HEAD` and CORS `OPTIONS`, forwards only `Accept: application/json`, omits browser credentials and rejects unknown paths, traversal, arbitrary URLs, non-JSON responses and every redirect without following or exposing its destination. Browser CORS is limited to approved exact origins, but this is not authentication. Redacted observability can record only bounded error type/message data; permanent tests strip URLs, query values and numeric identifiers. Live transport and the tested Transfers, Player Detail, Team, Fixtures and Leagues pre-season paths are accepted; populated post-Gameweek League evidence remains deliberately deferred.
 
 Safe Hygiene A2 removed an unused browser-transport `BASE` constant and export only. Runtime Official FPL requests continue to derive their exact gateway base from the validated configuration/meta boundary, so the merged removal changed no upstream host, endpoint, request, credential, CORS, cache, fallback or trust behaviour.
+
+## GW1-P1 evidence archive security
+
+Every non-preflight evidence route requires a valid Cloudflare Access JWT. The zero-dependency verifier accepts RS256 only, resolves the current Access JWKS from the configured `*.cloudflareaccess.com` team domain, selects by `kid`, verifies signature/issuer/audience/time claims and requires a non-empty subject. Auth failures exposed to the browser are generic; raw JWTs and cookies are never logged.
+
+The archive exposes only fixed health/ingest/manifest/reconciliation routes. It has no generic D1 query surface and no raw R2 download endpoint. R2 remains private and D1/R2 are available only through Worker bindings. Exact allowed origins, request-size limits and authenticated-subject rate limits are enforced. Diagnostics use bounded redacted failure categories and must not contain manager/team names, FPL Team ID, league/rival IDs, Access JWT/cookies, Odds keys or keyed Odds URLs.
+
+The persistence order is security- and integrity-relevant: an accepted canonical record is written and verified in R2 before D1 may claim custody. If R2 fails there is no D1 claim; if D1 fails after R2, the object is an invisible orphan that may later be reconciled only after the same canonical/body/metadata checks. Reconciliation preserves the original R2 upload time rather than inventing earlier custody.
+
+The source and isolated deployment Wrangler configs explicitly disable `preview_urls`. This removes routing to both versioned and aliased Preview URLs after deployment under current Cloudflare behaviour. The repository test prevents accidental reversion to an implicit preview setting, but live Cloudflare route state must still be checked after the hardened config is deployed.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:
@@ -62,13 +88,17 @@ GitHub Pages cannot send CSP headers and meta CSP ignores `frame-ancestors`. A b
 
 Stage 10.3 adds no network origin and no CSP relaxation. Metrics are computed from locally stored validated evidence only.
 
+GW1-P1 likewise changes no application CSP/connect origin because the browser is not yet connected to the evidence Worker. Any future client origin/auth wiring belongs to GW1-P2 and must receive its own security review.
+
 ## Deferred triggers
-The approved narrow Official FPL transport Worker is implemented and deployed. Environment-held secrets, authenticated/private FPL access, server rate limiting, real CSP headers and hosted Anthropic support remain deferred until separately approved. The Worker stores no FPL credentials or application secrets.
+The approved narrow Official FPL transport Worker and the separate GW1-P1 evidence backend are implemented. Evidence Access runtime configuration is Worker-side only. Hosted AI, any OpenAI/Anthropic server secret, moving the existing client-held Odds key server-side, authenticated/private FPL access, server-enforced application CSP headers and other provider-secret migrations remain separately deferred and approval-gated.
 
 ## Stage 10 evidence security
 Evidence construction is allowlist-only and rejects secret-shaped keys or values before finalisation. It never serialises configuration or core state wholesale. Numeric entry and league identifiers are redacted from retry/issue endpoints; FPL Team ID, manager name and league IDs are omitted. A random 128-bit device-local reference is used instead.
 
 Imported JSON is accepted only after schema, section-hash, whole-record-hash and identity verification. Browser recovery records use native gzip where available, but exports are complete unencrypted JSON and must be handled as user-controlled files. Delete controls remove local records; they cannot remove files already exported by the browser.
+
+GW1-P1 accepts only the existing canonical `preDeadlineSnapshot` `local_capture` record and independently revalidates its frozen Stage 10 contract. `recovery_import` cannot become server prospective evidence. Server metadata is kept outside the canonical record so custody does not alter its hash.
 
 ## Verified startup and recovery trust boundary (Stage 10.1)
 The startup screen is an orchestration gate: access is released only after the approved provider cycle completes or the app enters explicit restricted mode. Refreshes suppress intermediate renders, temporarily make decision controls inert and apply one final state, preventing action on a visible mixture of old and new data.
@@ -115,7 +145,7 @@ User-owned browser records are fail-closed on identity and verified on write.
 - Ordering protects account state. A manual squad must persist successfully before configuration may durably record `useManual=true`, so a failed squad save cannot leave a durable manual-team setting pointing at stale or absent squad bytes.
 - Legacy migration drops rather than guesses. An unversioned configuration record contributes only season-independent preferences; its account state is discarded, and deprecated `claudeKey` material is removed during migration and never rewritten.
 
-`fpl:calib` is deliberately outside this boundary and remains behind the separate model approval gate.
+The GW1-P1 backend does not change these browser persistence semantics. Until GW1-P2 connects the outbox/upload path, a normal Teamsheet session cannot treat Cloudflare custody as a replacement for local persistence.
 
 ## Teamsheet 2.0.4 League privacy boundary
 

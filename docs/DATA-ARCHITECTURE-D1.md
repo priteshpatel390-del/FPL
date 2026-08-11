@@ -1,9 +1,10 @@
 # Data Architecture D1 — historical and live data platform
 
-Status: **approved design; implementation deferred**  
+Status: **approved architecture; GW1-P1 backend foundation implemented/deployed and live-accepted; Teamsheet client integration deferred to GW1-P2**  
 Approved by: Pritesh, 9 August 2026  
 Repository baseline investigated: `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`  
-Scope: architecture investigation and documentation only
+Original scope: architecture investigation and documentation only  
+Current implementation note: the later separately approved GW1-P1 checkpoint implements the backend-only Cloudflare foundation in draft PR #118; it does not connect the Teamsheet browser or change Stage 10/local evidence semantics.
 
 ## Outcome
 
@@ -17,16 +18,7 @@ Teamsheet's target persistent platform is:
 
 Cloudflare KV and Durable Objects are not part of the core minimum viable platform. They may be considered later only for a measured cache or coordination requirement.
 
-This decision does not authorise infrastructure or application implementation. Persistence must remain a one-way evidence side effect: the current deterministic calculation path must continue to work when the data Worker, D1 or R2 is unavailable.
-
-## Decision drivers
-
-- Stage 10 already defines allowlisted, hash-verified pre-deadline snapshots, outcomes, evaluations and deterministic exports.
-- Browser retention is deliberately recovery-oriented and can be lost through eviction or device replacement.
-- Structured historical analysis needs relational identities, joins, unique constraints, transactions and append-only revisions.
-- A synthetic complete prediction snapshot is approximately 2.2 MB uncompressed, above D1's 2 MB row/string/BLOB limit. Exact canonical evidence therefore belongs in R2 while queryable fields are normalised into D1.
-- Google Sheets prototypes useful information but is unsuitable as runtime authority: external imports can break, schemas are human-mutable, and relational corrections/idempotency are awkward.
-- No persistence failure may silently alter a recommendation or be described as a live-data failure.
+The original 9 August decision did not itself authorise infrastructure or application implementation. Pritesh later separately approved **GW1-P1 — Cloudflare Evidence Foundation**, which implements the backend Worker, private R2 archive, minimal D1 evidence manifest/receipt layer, validation, idempotency and orphan reconciliation only. **GW1-P2 browser sync/persistent outbox integration is not implemented.** Persistence remains a one-way evidence side effect: the current deterministic calculation path must continue to work when the data Worker, D1 or R2 is unavailable.
 
 ## Data boundary
 
@@ -96,9 +88,13 @@ A proposed R2 key is:
 
 `evidence/v1/{type}/{season}/{gw}/{sha256}.json.gz`
 
+GW1-P1 deliberately implements only the evidence-critical subset needed for canonical pre-deadline custody; the broader logical model above remains later work and is not implied by the existence of the backend foundation.
+
 ## Cloudflare service boundary
 
 The existing Official FPL Worker remains a narrow, read-only, allowlisted transport gateway. Persistence belongs in a separate service so authentication, writes, schedules or archive faults cannot enlarge the gateway blast radius or interrupt current live acquisition.
+
+GW1-P1 now implements that separate evidence service. The Teamsheet browser does not call it yet; automatic browser custody remains GW1-P2.
 
 Operation classes:
 
@@ -128,7 +124,7 @@ Browser writes require short-lived authentication, allowed-origin enforcement, C
 | Unauthorised access | Return 401/403 without record detail; log only redacted metadata |
 | Export failure | Preserve D1/R2; record export failure and retain manual export |
 
-D1 and R2 cannot share one transaction. The R2-first/D1-manifest protocol is recoverable rather than atomic and requires orphan-reconciliation tests and an operating procedure.
+D1 and R2 cannot share one transaction. The R2-first/D1-manifest protocol is recoverable rather than atomic and requires orphan-reconciliation tests and an operating procedure. GW1-P1 implements and tests that R2-first/D1-second contract for the accepted canonical pre-deadline evidence type.
 
 ## Google Sheets role
 
@@ -152,31 +148,33 @@ Sheets is not a runtime dependency, source of truth, ingestion path or backup. A
 - Future AI access uses audited, field-allowlisted, read-only views.
 - Permanent retention of Understat- or Odds-derived records requires a provider-rights review; current technical use does not itself approve archival or redistribution.
 
+GW1-P1 keeps provider-derived permanent retention fail-closed by default. It must not strip provider material from an already-canonical record merely to make it archivable, because doing so would change the canonical hash.
+
 ## Cost and operations
 
 At current personal-use scale, expected D1 row volume and compressed R2 evidence should fit Cloudflare free allowances. The repository synthetic snapshot compresses to roughly 153 KB, so several personal seasons should be small. This is an estimate, not live-season evidence.
 
 Capacity and cost must be measured in staging before multi-user claims. Global records should be deduplicated; only small owner overlays should multiply by user. Workers execution/authentication may become the first paid requirement at moderate scale.
 
-Normal Gameweek operation must require no database console. Health, last capture and pending/failed writes should be visible in Teamsheet. Migrations, backup/restore and deployments remain reviewed GitHub workflows; direct mobile dashboard editing is not an operating model. D1 Time Travel is recovery protection, not an independent permanent backup.
+Normal Gameweek operation must require no database console. Health, last capture and pending/failed writes should be visible in Teamsheet only after the separately approved GW1-P2 client work. Migrations, backup/restore and deployments remain reviewed GitHub workflows; direct mobile dashboard editing is not an operating model. D1 Time Travel is recovery protection, not an independent permanent backup.
 
-## Deferred implementation phases
+## Implementation phases
 
-1. **Foundation:** separate staging Worker, D1 migrations, private R2 and health/read-only endpoint.
-2. **Canonical ingestion:** Stage 10 validation, hashes, idempotency, R2-first/D1-commit protocol, revisions and owner authentication.
+1. **Foundation — GW1-P1 backend implemented:** separate evidence Worker, D1 migration and private R2.
+2. **Canonical ingestion — GW1-P1 backend implemented for accepted pre-deadline evidence:** Stage 10 validation, canonical hashes, idempotency, R2-first/D1-commit protocol, owner authentication and orphan reconciliation.
 3. **Migration:** dry-run surviving local Stage 10 JSON; do not treat Sheet rows as prospective evidence without timing/provenance.
-4. **Automatic capture:** non-blocking local outbox with honest offline/pending/saved/failed states.
+4. **Automatic capture — GW1-P2, not implemented:** non-blocking local outbox with honest offline/pending/saved/failed states.
 5. **Scheduled global collection:** Official FPL global facts after the ingestion contract and live timing are proven.
 6. **Sheets reporting:** manual first; optional one-way automated reporting later.
 7. **Provider and AI access:** separate rights/security approval and read-only constrained views.
 
-The persistent implementation remains after Atomic Foreground Refresh, cache/persistence resilience, error-boundary separation, production-bundle safeguards, appropriate documentation/state cleanup, Understat repair and Odds repair.
+GW1-P1 does not repair Understat or Odds and does not make either provider a prerequisite for the backend foundation. Provider acquisition/weighting and permanent-retention rights remain separate approval gates. Browser integration must not begin until GW1-P1 is merged and a separate GW1-P2 scope is approved.
 
-Each implementation checkpoint requires its own branch and approval, migrations and rollback, contract/idempotency/revision/season tests, D1/R2 partial-failure tests, security tests, outage tests proving deterministic recommendations remain available, the full suite, deterministic build verification where relevant, staging backup/restore, and physical iPhone acceptance for affected flows.
+Each later implementation checkpoint requires its own branch and approval, migrations and rollback where applicable, contract/idempotency/revision/season tests, D1/R2 partial-failure tests, security tests, outage tests proving deterministic recommendations remain available, the full suite, deterministic build verification where relevant, staging backup/restore, and physical iPhone acceptance for affected flows.
 
 ## Evidence gates and limitations
 
-This design does not manufacture evidence for:
+This architecture and the GW1-P1 backend foundation do not manufacture evidence for:
 
 - completed-Gameweek minute-history behaviour;
 - Stage 10 outcome/correction validation;
@@ -189,14 +187,15 @@ Other limitations:
 
 - estimates use synthetic evidence rather than a completed live season;
 - D1 query throughput and partitioning require measurement before moderate multi-user use;
-- provider archival rights remain unconfirmed;
+- provider archival rights remain unconfirmed and retention remains fail-closed;
 - D1/R2 cross-product commits are recoverable, not atomic;
-- Sheets prototypes are not canonical prospective evidence.
+- Sheets prototypes are not canonical prospective evidence;
+- until GW1-P2, normal Teamsheet browser operation does not automatically upload Stage 10 evidence to the Cloudflare archive.
 
-## Approval boundary
+## Current approval boundary
 
-Approved now: this architecture decision and documentation closeout only.
+Approved and implemented under the later GW1-P1 checkpoint: the backend-only Cloudflare evidence foundation recorded in [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md).
 
-Not approved: database creation, R2 bucket creation, Worker or Cron changes, application integration, migration, automatic capture, Sheets automation, provider repair/change, model or recommendation changes, AI migration, agents, deployment or production data collection.
+Not approved by GW1-P1: Teamsheet browser integration, persistent local outbox upload, migration, automatic capture, scheduled collection, Sheets automation, provider repair/change, model or recommendation changes, AI migration or agents.
 
-The next engineering checkpoint after this documentation closeout is **Atomic Foreground Refresh**, beginning with investigation and an explicit implementation approval gate.
+After GW1-P1 is merged, the next relevant persistence checkpoint is **GW1-P2 browser integration/outbox design and approval**. Do not start it as part of GW1-P1 closeout.

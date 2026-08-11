@@ -20,7 +20,9 @@ The small `evidence-archive.mjs` entrypoint is the Cloudflare runtime adapter. T
 
 Cloudflare Access is mandatory for non-preflight routes. `TEAM_DOMAIN` and `POLICY_AUD` are owner-controlled runtime configuration and must not be guessed or hard-coded. Understat/Odds permanent-retention flags default to false until separately approved.
 
-The backend foundation received live production acceptance on 11 August 2026. The Teamsheet browser is still not connected to this Worker in GW1-P1; browser sync/outbox integration is the later GW1-P2 checkpoint.
+The evidence Wrangler configuration keeps the accepted Access-protected production `workers.dev` route enabled but explicitly sets `preview_urls` to `false`, so versioned and aliased Preview URL routing is not an alternate service surface. The source config and isolated deployment config must remain byte-identical. After any deployment that changes this setting, verify the live Worker under **Settings -> Domains & Routes** before treating preview-route security as accepted.
+
+The backend foundation received live production functional acceptance on 11 August 2026. The Teamsheet browser is still not connected to this Worker in GW1-P1; browser sync/outbox integration is the later GW1-P2 checkpoint.
 
 See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md`.
 
