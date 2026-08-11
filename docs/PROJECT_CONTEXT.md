@@ -8,7 +8,7 @@ GW1-P1 implements only the backend half of the approved D1 evidence architecture
 
 The repository record documents owner-performed physical iPhone Safari functional production acceptance of Access, D1/R2, canonical ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. No new physical device testing is claimed by this documentation closeout.
 
-The final preview/version-route security audit found that the evidence Wrangler configuration relied on the implicit Preview URL default while `workers_dev` was enabled. The GW1-P1 candidate now explicitly sets `preview_urls:false` in both byte-identical evidence deployment configs and permanently tests that invariant. **Live post-deployment Cloudflare route evidence is still required before the preview/version security item can be accepted.**
+The final preview/version-route security audit found that the evidence Wrangler configuration relied on the implicit Preview URL default while `workers_dev` was enabled. The GW1-P1 candidate now explicitly sets `preview_urls:false` in both byte-identical evidence deployment configs and permanently tests that invariant. Repository configuration alone never proves deployed Cloudflare route state. **Live route state was confirmed on 11 August 2026 at 19:22 BST from owner-supplied Cloudflare dashboard evidence**: production `teamsheet-evidence-archive.fpltsheet.workers.dev` enabled and **Restricted** behind Access, and the wildcard Preview hostname disabled. That closes the preview/version security item as owner-supplied dashboard evidence, not as independent assistant testing.
 
 The Teamsheet browser is deliberately **not connected** to this backend in GW1-P1. Persistent pending-upload/outbox integration and automatic in-app cloud custody are GW1-P2 and remain separately approval-gated. Existing Stage 10 local capture, recovery and export semantics are unchanged. Understat/Odds permanent archival remains fail-closed pending separately approved retention rights. No provider acquisition, provider weighting, projection, expected-minutes, fixture, squad, captaincy, transfer, simulation, rank, Mini-League or UI behaviour changes in GW1-P1.
 
@@ -102,7 +102,7 @@ Atomic Foreground Refresh (PR #102) and the small mobile UI consistency checkpoi
 
 EB-1 (PR #108) additionally passed physical iPhone Safari acceptance for normal online startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. The clean uncached private-tab offline-first application state could not be exercised because Safari itself could not load the static Pages shell while offline; that path remains automated-only evidence. The incomplete manual squad used during acceptance means recommendation-survival was not independently observed on device.
 
-GW1-P1's repository record additionally documents Pritesh's physical iPhone Safari production functional acceptance of the evidence Worker using deliberately synthetic evidence. That acceptance covers the recorded Access/D1/R2/ingest/idempotency/failure/reconciliation paths only. The later Preview URL hardening was not part of that functional device session and requires separate live Cloudflare route-state confirmation after deployment.
+GW1-P1's repository record additionally documents Pritesh's physical iPhone Safari production functional acceptance of the evidence Worker using deliberately synthetic evidence. That acceptance covers the recorded Access/D1/R2/ingest/idempotency/failure/reconciliation paths only. The later Preview URL hardening was not part of that functional device session; its live route state was confirmed separately on 11 August 2026 at 19:22 BST from an owner-supplied Cloudflare Domains dashboard screenshot showing production **Restricted** and the wildcard Preview hostname disabled. Owner-supplied dashboard evidence is not independent assistant device testing.
 
 Do not generalise those checks beyond the recorded paths. [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative. A3 cache and persistence resilience has **no** physical device evidence because testing was explicitly waived for that checkpoint. A3 State-Ownership Cleanup, Route-Aware M1 and A3-SC-1 also have **no** physical device evidence; none is claimed for those non-visual/measurement/cleanup checkpoints.
 
@@ -215,7 +215,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 - the shared-state inventory regression guards direct/static `S` property access but is not a general data-flow proof for arbitrary computed property access;
 - D1 and R2 cannot share one transaction, so the GW1-P1 custody protocol is recoverable rather than atomic and depends on verified orphan handling;
 - permanent Understat/Odds-derived archival rights remain unresolved and the server retention flags remain fail-closed;
-- repository `preview_urls:false` is not proof of the currently deployed Cloudflare route state; post-deployment live evidence is required before final GW1-P1 security acceptance;
+- repository `preview_urls:false` is not proof of the currently deployed Cloudflare route state; the current live state rests on owner-supplied 11 August 2026 dashboard evidence at a single moment, and any later redeploy or dashboard change could alter it without a repository change;
 - browser automation cannot replace physical Safari layout and interaction evidence.
 
 These are roadmap inputs, not authority to change them.
@@ -224,7 +224,7 @@ These are roadmap inputs, not authority to change them.
 
 ### Current checkpoint
 
-**GW1-P1 — Cloudflare Evidence Foundation final closeout.** Implementation is already approved and exists on draft PR #118. The remaining work is limited to final canonical documentation reconciliation, explicit Preview URL hardening, exact-final-head repository verification, live post-deployment route-state confirmation and PR cleanup/review. Do not merge without Pritesh's explicit approval.
+**GW1-P1 — Cloudflare Evidence Foundation final closeout.** Implementation is already approved and exists on draft PR #118. The remaining work is limited to final canonical documentation reconciliation, exact-final-head repository verification and PR cleanup/review. Explicit Preview URL hardening and its owner-supplied live route-state confirmation are already recorded. Do not merge without Pritesh's explicit approval.
 
 ### Completed merged foundation
 

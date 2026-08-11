@@ -8,11 +8,11 @@ GW1-P1 implements only the backend half of the approved D1 evidence architecture
 
 The repository GW1-P1 record documents Pritesh's physical iPhone Safari functional production acceptance of the Access/D1/R2/ingest/idempotency/forced-failure/reconciliation paths using deliberately synthetic evidence. Do not generalise that acceptance beyond the recorded paths or claim new device testing without owner evidence.
 
-The final preview/version-route audit found one security hardening gap: with `workers_dev` enabled, the evidence Wrangler configs relied on Cloudflare's implicit Preview URL behaviour. The GW1-P1 candidate now explicitly sets `preview_urls:false` in both byte-identical evidence configs and permanently tests that invariant. **Repository configuration is not proof of the deployed Cloudflare route state; live post-deployment confirmation that Preview URLs are disabled remains a GW1-P1 acceptance gate.**
+The final preview/version-route audit found one security hardening gap: with `workers_dev` enabled, the evidence Wrangler configs relied on Cloudflare's implicit Preview URL behaviour. The GW1-P1 candidate now explicitly sets `preview_urls:false` in both byte-identical evidence configs and permanently tests that invariant. Repository configuration is never by itself proof of deployed Cloudflare route state. **Live route-state closure was recorded on 11 August 2026 at 19:22 BST from owner-supplied Cloudflare dashboard evidence**: the Workers & Pages Domains screen showed the production `teamsheet-evidence-archive.fpltsheet.workers.dev` route enabled and **Restricted** behind its Access policy, and the wildcard Preview hostname `*-teamsheet-evidence-archive.fpltsheet.workers.dev` disabled. That is owner-supplied dashboard evidence, not independent assistant dashboard or device testing.
 
 Provider archival rights remain fail-closed: permanent Understat-derived retention is unresolved and Odds-derived permanent retention requires its approved governance position. GW1-P1 must not strip provider material from an already-canonical snapshot to make it archivable because that would change its hash. No provider acquisition, weighting, model, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, UI or client-sync behaviour changes in this checkpoint.
 
-Current closeout sequence: canonical documentation reconciliation, Preview URL hardening/live route confirmation, full exact-final-head repository verification, final PR diff/description cleanup, then move PR #118 from draft to ready **only if every gate is evidenced**. Do not start GW1-P2 and do not merge PR #118 without Pritesh's explicit approval.
+Closeout sequence: canonical documentation reconciliation, Preview URL hardening, live route confirmation, full exact-final-head repository verification, final PR diff/description cleanup, then move PR #118 from draft to ready **only if every gate is evidenced**. The hardening and the owner-supplied live route confirmation are recorded; the remaining gate is exact-final-head verification of the last documentation commit plus PR hygiene. Do not start GW1-P2 and do not merge PR #118 without Pritesh's explicit approval.
 
 ## Historical — 11 August 2026 A3 engineering state entering documentation closeout
 
@@ -94,7 +94,7 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 | Current checkpoint | GW1-P1 — Cloudflare Evidence Foundation, draft PR #118, backend-only |
 | Current implementation boundary | Separate Access-authenticated evidence Worker; private R2; minimal D1 manifest/receipt/index; canonical Stage 10 validation; idempotency; orphan reconciliation. Browser sync/outbox is excluded. |
 | Functional production acceptance | Repository record documents Pritesh's physical iPhone Safari acceptance of Access, D1/R2, positive ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. |
-| Current security gate | Repository config now explicitly disables Cloudflare Preview URLs; live post-deployment Domains & Routes evidence remains required before final security acceptance. |
+| Current security state | Repository config explicitly disables Cloudflare Preview URLs and tests that invariant. Owner-supplied live Cloudflare Domains evidence on 11 August 2026 showed production Access-`Restricted` and the wildcard Preview hostname disabled, closing that acceptance item. It is owner dashboard evidence, not independent assistant testing. |
 | Final repository gate | The final exact PR head must pass Verify Teamsheet after all config/doc changes. Earlier green runs are historical once the head changes. |
 | Merge gate | PR #118 must not merge until Pritesh explicitly approves it. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
@@ -170,7 +170,7 @@ It does not yet provide a validated projected-rank model, protect/balanced/chase
 - Official FPL reads use the owner-controlled, allowlisted Cloudflare gateway and still pass client validators.
 - GW1-P1 uses a **separate** Access-authenticated evidence Worker backed by private R2 and D1. The browser does not call it yet.
 - Every non-preflight evidence route requires the Worker's own validation of `Cf-Access-Jwt-Assertion`; `TEAM_DOMAIN` and `POLICY_AUD` are runtime configuration and must not be printed or hard-coded.
-- Evidence Wrangler config keeps the accepted production `workers.dev` route enabled and explicitly disables `preview_urls`; live route-state confirmation is required after deployment.
+- Evidence Wrangler config keeps the accepted production `workers.dev` route enabled and explicitly disables `preview_urls`. Live route-state confirmation is always required separately after deployment; for the current candidate it is recorded from owner-supplied 11 August 2026 Cloudflare Domains dashboard evidence.
 - Provider and user strings use DOM builders; AI output uses restricted Markdown.
 - The Odds key is masked, direct-only, forgettable and scrubbed from diagnostics.
 - The generated single script and style are SHA-256 locked by CSP.

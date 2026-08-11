@@ -6,7 +6,7 @@ Latest merged `main` is `43f109b306071aa0c3c1c45985876fecb3da7aa5`. GW1-P1 is th
 
 This backend is deliberately outside the deterministic recommendation path. The Teamsheet browser does **not** call the evidence Worker in GW1-P1, so normal Stage 10/local evidence capture, recovery and export semantics are unchanged. Persistent browser outbox/upload integration is GW1-P2 and remains separately approval-gated. Provider acquisition, model/calculation behaviour and the existing Official FPL gateway are unchanged.
 
-The evidence Worker keeps its Access-protected production `workers.dev` route, while both source and isolated deployment Wrangler configs explicitly set `preview_urls:false`. This is the repository control for the separate Cloudflare version/alias preview routing surface. Live post-deployment confirmation that Preview URLs are disabled remains part of GW1-P1 security acceptance.
+The evidence Worker keeps its Access-protected production `workers.dev` route, while both source and isolated deployment Wrangler configs explicitly set `preview_urls:false`. This is the repository control for the separate Cloudflare version/alias preview routing surface. Live confirmation was recorded on 11 August 2026 from owner-supplied Cloudflare Domains dashboard evidence showing production Access-`Restricted` and the wildcard Preview hostname disabled.
 
 ## Historical — 11 August 2026 A3 ownership and architecture closeout boundary
 

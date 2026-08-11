@@ -6,7 +6,7 @@ GW1-P1 adds a second, deliberately isolated Cloudflare Worker for canonical Stag
 
 The Teamsheet browser is **not** connected to this service in GW1-P1. No permanent browser service token, generic SQL/R2 route, new provider acquisition path or application secret is introduced. Normal in-app cloud custody and the persistent pending-upload/outbox contract remain GW1-P2.
 
-Cloudflare Preview URLs are a separate routing surface from the production `workers.dev` hostname. The GW1-P1 candidate therefore explicitly sets `preview_urls: false` in both byte-identical evidence Wrangler configs and tests that invariant. The production `workers.dev` route remains enabled behind its accepted Access policy. Because repository configuration is not proof of the currently deployed dashboard state, post-deployment confirmation that **Settings -> Domains & Routes -> Preview URLs** is disabled remains a final GW1-P1 security acceptance item.
+Cloudflare Preview URLs are a separate routing surface from the production `workers.dev` hostname. The GW1-P1 candidate therefore explicitly sets `preview_urls: false` in both byte-identical evidence Wrangler configs and tests that invariant. The production `workers.dev` route remains enabled behind its accepted Access policy. Repository configuration is never by itself proof of the currently deployed dashboard state, so live route evidence is required. That evidence was supplied by the project owner on 11 August 2026 at 19:22 BST as a physical iPhone Safari screenshot of the Worker's Cloudflare **Domains** screen: production `teamsheet-evidence-archive.fpltsheet.workers.dev` enabled and marked **Restricted** with the Access sign-in requirement, and the wildcard Preview hostname `*-teamsheet-evidence-archive.fpltsheet.workers.dev` disabled. This closes the preview/version security acceptance item. It is owner-supplied dashboard evidence and is not claimed as independent assistant dashboard or device testing.
 
 ## 10 August 2026 — error disclosure and trust ownership
 
@@ -52,7 +52,7 @@ The archive exposes only fixed health/ingest/manifest/reconciliation routes. It 
 
 The persistence order is security- and integrity-relevant: an accepted canonical record is written and verified in R2 before D1 may claim custody. If R2 fails there is no D1 claim; if D1 fails after R2, the object is an invisible orphan that may later be reconciled only after the same canonical/body/metadata checks. Reconciliation preserves the original R2 upload time rather than inventing earlier custody.
 
-The source and isolated deployment Wrangler configs explicitly disable `preview_urls`. This removes routing to both versioned and aliased Preview URLs after deployment under current Cloudflare behaviour. The repository test prevents accidental reversion to an implicit preview setting, but live Cloudflare route state must still be checked after the hardened config is deployed.
+The source and isolated deployment Wrangler configs explicitly disable `preview_urls`. This removes routing to both versioned and aliased Preview URLs after deployment under current Cloudflare behaviour. The repository test prevents accidental reversion to an implicit preview setting. Live Cloudflare route state must always be checked separately after a hardened config is deployed; for the current GW1-P1 candidate that check is recorded above from owner-supplied 11 August 2026 dashboard evidence.
 
 ## Odds-key hygiene
 The Odds API key remains client-side as the accepted-temporary SEC-2 limitation. Current controls:

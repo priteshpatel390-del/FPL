@@ -4,7 +4,7 @@
 
 GW1-P1 now provides a deployed/tested backend evidence destination: separate authenticated Worker, private R2 and minimal D1 manifest/receipt state. This closes the old statement that no server-side/cloud archive exists, but it does **not** make automatic in-app cloud custody available. The Teamsheet browser still writes its existing Stage 10/local evidence only; persistent pending-upload/outbox integration is GW1-P2.
 
-The backend remains a one-way side effect and cannot be treated as recommendation availability. Permanent Understat/Odds-derived archival remains fail-closed pending approved retention rights. The current GW1-P1 candidate also explicitly disables Cloudflare Preview URLs in repository configuration; live **Settings -> Domains & Routes** confirmation after deployment remains required before the preview/version security item is closed.
+The backend remains a one-way side effect and cannot be treated as recommendation availability. Permanent Understat/Odds-derived archival remains fail-closed pending approved retention rights. The current GW1-P1 candidate also explicitly disables Cloudflare Preview URLs in repository configuration, and owner-supplied live Cloudflare **Domains** dashboard evidence on 11 August 2026 showed production Access-`Restricted` with the wildcard Preview hostname disabled. That closes the preview/version security item. The residual limitation is one of provenance rather than an open gap: it is owner-supplied dashboard evidence at a single moment, not independent assistant testing or continuous monitoring, and a future redeploy could change live route state without any repository change.
 
 ## Historical — 11 August 2026 A3 documentation-closeout evidence boundary
 
