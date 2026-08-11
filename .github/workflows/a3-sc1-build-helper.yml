@@ -1,4 +1,4 @@
-name: A3-SC-1 temporary build helper
+name: A3-SC-1 temporary generated-output publisher
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - agent/a3-small-stale-code-cleanup
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build-only:
+  publish-generated-output:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -34,14 +34,12 @@ jobs:
           cmp /tmp/a3-sc1-build/dist/manifest.json dist/manifest.json
           cmp /tmp/a3-sc1-build/index.html index.html
           cmp dist/index.html index.html
-      - name: Upload deterministic production output
-        uses: actions/upload-artifact@v4
-        with:
-          name: a3-sc1-production-output
-          path: |
-            dist/app.bundle.js
-            dist/index.html
-            dist/manifest.json
-            index.html
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit generated output and remove helper
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git rm .github/workflows/a3-sc1-build-helper.yml
+          git commit -m "build: regenerate deployables for A3-SC-1"
+          git push origin HEAD:agent/a3-small-stale-code-cleanup
