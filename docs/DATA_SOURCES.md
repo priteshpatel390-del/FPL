@@ -1,16 +1,25 @@
 # DATA_SOURCES.md
 
+## 11 August 2026 — GW1-P1 evidence-backend status; provider acquisition unchanged
+
+GW1-P1 implements the backend-only Cloudflare custody foundation selected by D1: a separate authenticated evidence Worker, private R2 canonical objects and a minimal D1 manifest/receipt/index. This does **not** add or change a football-data provider, endpoint, acquisition cadence, retry policy, cache, fallback or model input. The Teamsheet browser is not connected to the archive until GW1-P2.
+
+Permanent retention of provider-derived material remains fail-closed. Understat archival rights remain unresolved and Odds permanent retention requires the separately approved governance position. The evidence Worker defaults both retention flags to false and rejects an already-canonical snapshot whose retained provider material is not permitted rather than stripping it and changing its hash.
+
 ## 10 August 2026 — provider evidence versus application error ownership
 
 PR #107 is merged at `main` `d112c673310149a4463def1758242460450600dc`; `fpl:calib` now fails closed on every current unverified stored record while preserving its bytes. EB-1 does not add or change any source, endpoint, field, cadence, retry policy or provider fallback.
 
 For current refreshes, Provider Health may change only from actual provider-layer evidence: transport/acquisition outcome, response validation, accepted provider cache/fallback use or explicit provider configuration. Commit, persistence, rendering and unexpected application exceptions are not provider evidence. Expected Understat/Odds/minute failures continue to return their existing structured results. Unexpected supporting computation exceptions are application-owned but still use the existing Rule-B data retain/clear decision so stale incompatible values cannot survive.
-## Future historical persistence (approved design only)
 
-[Data Architecture D1](DATA-ARCHITECTURE-D1.md) approves D1 plus private R2 behind a separate data Worker as the future evidence platform. Only accepted normalised inputs actually used may be retained. Raw provider responses/HTML, Odds keys, keyed URLs and secrets must not be retained. Permanent Understat- or Odds-derived retention requires a separate provider-rights review. Google Sheets is downstream reporting only. No provider, endpoint, cadence or runtime acquisition behaviour changes under this decision.
+## GW1-P1 historical evidence persistence
+
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) approves D1 plus private R2 behind a separate data Worker as the evidence platform. GW1-P1 implements the backend foundation and canonical pre-deadline ingestion path only. Only accepted normalised inputs actually used may be retained where retention is approved. Raw provider responses/HTML, Odds keys, keyed URLs and secrets must not be retained. Permanent Understat- or Odds-derived retention requires a separate provider-rights review. Google Sheets is downstream reporting only.
+
+The backend does not alter provider acquisition. Normal Teamsheet Stage 10 evidence remains local/manual until the separately approved GW1-P2 browser outbox/sync path is implemented.
 Purpose: reference for every external source. Audience: provider work, Stage 3+.
-Last reconciled: 2026-08-08. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
-this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DECISIONS D-05/D-06/D-09/D-10.
+Last reconciled: 2026-08-11. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
+this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DECISIONS D-05/D-06/D-09/D-10, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
 
 ## Official FPL API — foundation
 Purpose: players/prices/teams/fixtures/GWs/ownership/status/news/minutes/points/BPS/DC/xG-xA/entry/
@@ -33,6 +42,8 @@ pending ablation. R1 persists only validated normalised team inputs—never raw 
 Fallback: FPL strengths, confidence reduced. Future: survives only if prospective ablation shows
 out-of-sample value; ClubElo remains an unimplemented prior/anchor candidate (D-10).
 
+Permanent server archival of Understat-derived Stage 10 material is **not approved by GW1-P1**. The archive retention gate remains false until rights are explicitly resolved.
+
 ## The Odds API — market layer
 Purpose: h2h+totals (UK region) → devigged, outlier-filtered, staleness-cut market-implied team
 goals; 65% blend where a fixture is confidently quoted (weight unvalidated — D-09). Authority: high.
@@ -41,6 +52,8 @@ Transport: DIRECT ONLY (D-06/SEC-1) — key never relayed. Licensing: clean. Quo
 per-event provenance retained (id, kickoff, fetchedAt, books, markets, confidence). Matching: teams
 + kickoff proximity (72h). Fallback: internal team model, reduced confidence. Historical: none on
 free tier → prospective logging from GW1 2026-27 (ODDS-2).
+
+Permanent server archival of Odds-derived Stage 10 material remains disabled until the approved governance/retention position permits it. The API key and keyed URL are never archive inputs.
 
 ## vaastav historical archive
 Purpose: per-GW per-player CSVs for backtesting/calibration. Transport: raw.githubusercontent,
@@ -80,6 +93,8 @@ The Refresh-Load R1 supporting caches (`fpl:minutes-history`, `fpl:understat-tea
 `fpl:odds-derived-inputs`) keep their own schema/model/season contracts and cadence rules unchanged.
 A local write failure is reported as a local persistence problem only; it never becomes an Official FPL
 or optional-provider health state.
+
+GW1-P1 does not replace any of these browser records. Its server archive is a separate one-way evidence destination; until GW1-P2, normal browser capture is not automatically uploaded and local recovery/export semantics remain unchanged.
 
 ## Explicitly rejected sources
 Sentiment/social/trends/etc. (owner spec §6); player-level Understat (D-05); FBref & Transfermarkt
@@ -146,6 +161,7 @@ A pre-deadline record stores the normalized FPL, Understat, odds, archive-calibr
 
 The same-origin GitHub Pages response `Date` header is sampled before and after capture solely as deadline-timing evidence. It is not a model provider, is not blended into projections and is not an external timestamp authority. If it is unavailable, conflicts with the device clock by more than 60 seconds or completes inside the two-minute cutoff, the record remains exportable but cannot become official.
 
+GW1-P1 can archive this existing canonical record only after revalidation and only when its provider-derived contents pass the retention gate. It does not change how the record is constructed or whether the client marks it Official-eligible.
 
 ## Automatic approved-source startup gate (Stage 10.1 amendment)
 Runtime provider identity is closed to `fpl`, `understat`, `odds` and `archive`. Provider Health refuses any unregistered name, and evidence import requires one unique provenance row for every approved provider with a valid known state and usage/count/timestamp fields. This is a trust boundary, not a recommendation to add more feeds.

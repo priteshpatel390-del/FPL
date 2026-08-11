@@ -1,6 +1,14 @@
 # ARCHITECTURE.md
 
-## 11 August 2026 — current A3 ownership and architecture closeout boundary
+## 11 August 2026 — current GW1-P1 architecture boundary
+
+Latest merged `main` is `43f109b306071aa0c3c1c45985876fecb3da7aa5`. GW1-P1 is the current unmerged checkpoint in draft PR #118. It implements the backend-only portion of the approved D1 architecture: a separate owner-authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt/index state, exact Stage 10 revalidation, canonical hash identity, R2-first/D1-second custody, idempotent duplicate handling and bounded orphan reconciliation.
+
+This backend is deliberately outside the deterministic recommendation path. The Teamsheet browser does **not** call the evidence Worker in GW1-P1, so normal Stage 10/local evidence capture, recovery and export semantics are unchanged. Persistent browser outbox/upload integration is GW1-P2 and remains separately approval-gated. Provider acquisition, model/calculation behaviour and the existing Official FPL gateway are unchanged.
+
+The evidence Worker keeps its Access-protected production `workers.dev` route, while both source and isolated deployment Wrangler configs explicitly set `preview_urls:false`. This is the repository control for the separate Cloudflare version/alias preview routing surface. Live confirmation was recorded on 11 August 2026 from owner-supplied Cloudflare Domains dashboard evidence showing production Access-`Restricted` and the wildcard Preview hostname disabled.
+
+## Historical — 11 August 2026 A3 ownership and architecture closeout boundary
 
 The A3 engineering baseline entering documentation/architecture closeout is GitHub `main` `1060e60d3affadabdf97924c7ece85cc62d8e360`, merge of A3-SC-1 PR #116. PR #116 removed two proven-unreachable Mini-League helpers and stale test-side consumers only; it did not change runtime ownership, routes, persistence formats, provider behaviour, model logic or build architecture. Route-Aware Rendering and Performance M1 is also complete through PR #115, but its instrumentation stays outside every production build input and **route-aware optimisation remains unapproved**.
 
@@ -8,7 +16,7 @@ The current ownership architecture remains the one established by A3 State-Owner
 
 `fpl:calib` compatibility is complete through PR #107. Unverified stored calibration records fail closed before reaching `S.calib`, remain byte-preserved but inert, and standard uncalibrated projections remain active. The existing live scoring multiplier code is unchanged and the Stage 7 walk-forward path remains diagnostic-only. A future production calibration record still requires a separately approved season/model/rules/methodology/dataset contract before any activation path may be added.
 
-A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation is the final A3 closeout layer; no A3-specific engineering or documentation task follows it, and it does not authorise D1 implementation, route-aware optimisation, provider repair, model changes, ChatGPT migration or Cloudflare/agent expansion.
+A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation was the final A3 closeout layer; no A3-specific engineering or documentation task follows it. The later separately approved GW1-P1 backend work does not reopen A3.
 
 ## Mobile viewport and primary-screen presentation boundary
 
@@ -16,11 +24,15 @@ A3 engineering remediation is complete through PR #116. This documentation/archi
 
 The accepted PR #103 mobile presentation boundary keeps startup ownership in the existing gate: header, main and the primary dock remain hidden/inert until `teamsheet:startup-ready`. During startup the document canvas itself now carries the dark loading background with `100vh` fallback and `100dvh` modern sizing, while the fixed gate uses all four safe-area insets. Primary Team, Transfers, Fixtures, Leagues and Settings titles/intros use explicit shared presentation tokens instead of depending on whether an `h2` is a direct `.panel` child. This is presentation-only: routing, navigation information architecture, refresh orchestration and football calculations remain unchanged.
 
-## Approved future persistence boundary (D1 design)
+## GW1-P1 cloud evidence persistence boundary
 
-[Data Architecture D1](DATA-ARCHITECTURE-D1.md) selects Cloudflare D1 for relational/queryable records and private R2 for exact content-addressed evidence, mediated by a separate authenticated data Worker. This is a future boundary only: the existing Official FPL gateway and deterministic browser calculation path remain independent, and persistence failure must not change recommendations. Google Sheets is downstream reporting only. No infrastructure or runtime implementation is approved.
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) selects Cloudflare D1 for relational/queryable records and private R2 for exact content-addressed evidence, mediated by a separate authenticated data Worker. GW1-P1 implements the backend foundation for canonical pre-deadline Stage 10 evidence only. The existing Official FPL gateway and deterministic browser calculation path remain independent, and persistence failure must not change recommendations. Google Sheets is downstream reporting only.
+
+The accepted custody order is `validate/recanonicalise -> canonical SHA-256 -> R2 create/verify -> D1 manifest/receipt -> ACK`. D1 must never point to a missing R2 object. A D1 failure after successful R2 storage creates an invisible orphan; reconciliation may promote it only after the same canonical/body/metadata verification and must preserve the original R2 upload time. Duplicate ingestion is idempotent.
+
+The browser/client half of D1 is **not** implemented in GW1-P1. Existing Stage 10 browser storage remains the current recovery/export boundary; a durable pending-upload/outbox and automatic upload belong to GW1-P2. Understat/Odds permanent archival remains fail-closed pending separately approved rights.
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last reconciled: 2026-08-11. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md.
+Last reconciled: 2026-08-11. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md, DATA-ARCHITECTURE-D1.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
 
 ## Directory structure
 ```
@@ -73,7 +85,7 @@ src/
 tests/                  characterisation, model, simulation, provider, security, evidence, metric and build tests
 docs/                   canonical guidance plus indexed historical project records
 dist/                   generated deployable; never hand-edit
-workers/                separately deployed, allowlisted Official FPL Cloudflare gateway
+workers/                two separately deployed Cloudflare boundaries: Official FPL gateway plus GW1-P1 authenticated evidence archive/D1/R2 deployment root
 .github/workflows/      permanent exact-revision pull-request verification
 ```
 
@@ -88,7 +100,9 @@ Configuration and state feed providers, storage and model modules. Official FPL 
 
 Minutes never imports scoring. Scoring may reuse exported minutes helpers. Simulation imports both but neither imports simulation, preventing cycles.
 
-The Stage 10 evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records; review observes only stored snapshot, outcome, evaluation and transfer-horizon records. Metrics and review do not import or execute current scoring, minutes, simulation or optimiser functions and never write into runtime model state.
+The Stage 10 application evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records; review observes only stored snapshot, outcome, evaluation and transfer-horizon records. Metrics and review do not import or execute current scoring, minutes, simulation or optimiser functions and never write into runtime model state.
+
+GW1-P1 adds a second one-way boundary after canonical snapshot construction. The evidence archive accepts only the frozen canonical record, independently revalidates/recanonicalises it, then persists it. No archive response or D1/R2 availability is an input to projection, squad, transfer, captaincy, rank or provider logic. Until GW1-P2, there is no runtime application call into this backend at all.
 
 ## Shared state ownership boundary
 
@@ -104,6 +118,8 @@ The bundler flattens application modules in a fixed, explicit order. Stage 8 mod
 PR #111's Production-Bundle Safeguards make the flattened-bundle dependency explicit in verification: the complete generated bundle must parse as one classic script; the runtime harness may suppress only live asynchronous startup while retaining every late production module; and the generated bundle must execute the late runtime replacements and navigation contract. These are safeguards around the existing bundler order, not a bundler rewrite.
 
 `ui/team-pitch.mjs` remains visual-only; `ui/player-detail.mjs` owns dialog behaviour; `ui/decision-preview.mjs` owns temporary transfer/captain preview state. `ui/views.mjs` composes those helpers with existing model outputs. Dynamic projection bars use native progress elements and uncertainty geometry uses namespace-correct SVG attributes. `util.mjs` rejects style attributes and runtime style objects.
+
+GW1-P1 Worker/config/migration files are outside the application bundler input set. Their isolated deployment mirror is required to be byte-identical to the reviewed source files. The application `dist/` outputs must remain unchanged by GW1-P1.
 
 ## Expected-minutes boundary
 `model/minutes.mjs` returns `{pStart,pAppear,p60,expMin,confidence,confidenceLabel,source}`. Completed team fixtures are the aggregate denominator; detailed histories use recency weighting and shrinkage. Official availability is applied once.
@@ -144,6 +160,8 @@ Three write surfaces exist and are not interchangeable. `sset()` is the untouche
 
 Both reporting surfaces respect backend authority. When a storage manager is selected it owns both the write and the subsequent read, and the read order only consults `localStorage` when the manager read is itself unusable. A `localStorage` fallback is therefore attempted only when it is the backend the next read will use; otherwise the write is reported as a failure and no divergent copy is created. A failed user-owned write leaves the change active for the current session and raises a persistence warning stating that it may revert after reload.
 
+GW1-P1 does not change this browser-persistence contract. The Cloudflare archive is a separate backend destination. Only GW1-P2 may introduce the durable pending-upload/outbox and automatic upload semantics, and those must remain non-blocking relative to recommendations.
+
 ## Provider Health and storage
 Provider Health remains session-scoped with Live, Cached, Stale, Fallback, Partial, Disabled and Unavailable states. Core Official FPL freshness remains the FPL row's primary state; R1 adds a separate detailed-minute age/cache-use detail so optional history failure cannot mislabel a current core feed.
 
@@ -162,26 +180,36 @@ When the browser definitively reports `navigator.onLine === false`, core refresh
 
 Committed deployables use a two-commit finalisation sequence. The first commit contains the reviewed source/build inputs; the build is stamped with that immutable source commit; a second commit contains only the generated outputs. CI requires the manifest source commit to resolve and be an ancestor of the reviewed head, confirms every declared build input matches that source commit and reproduces all four tracked outputs byte-for-byte before any ordinary test build can overwrite them. Same inputs and identity must produce byte-identical artefacts, and the root deployment copy must match `dist/index.html` exactly.
 
+The evidence Worker is deployed separately from the application build and separately from the Official FPL gateway. Its source/deployment mirror parity, Worker name/main, D1 migration root, private R2 binding and explicit Preview URL disable are repository-tested. A repository config change is not by itself proof that the live Cloudflare route state has been redeployed; live Domains & Routes evidence is required where security acceptance depends on it.
+
 ## Security posture
 Dynamic provider/user strings use DOM builders; AI output uses a restricted Markdown AST. Odds requests remain direct-only and diagnostics are scrubbed. The single inline production script and style element are SHA-256 hash locked by CSP. Stage 9.6 removes all source/generated style attributes, forbids runtime style APIs and removes both `style-src-attr` and `unsafe-inline`. Stage 10 metric records reuse allowlist construction, forbidden-secret checks, canonical hashes and recovery-only storage boundaries.
+
+GW1-P1 adds an owner-authenticated server custody boundary without adding an application credential. R2 remains private, D1/R2 have no generic browser surface, Access JWTs/cookies and user identifiers are excluded from logs/storage, and provider-retention flags default fail-closed. See [Security](SECURITY.md) for the exact route/auth/preview controls.
 
 ## Testing
 Characterisation tests execute the built production bundle. Direct imports cover formulas and contracts. R1 adds request-count/order, revision/age, missing-only refresh, outage-guard, timestamp, provider-cadence, cache-validation, secret-free persistence, manual-bypass and definite-offline disclosure coverage. Stage 10.3 retains pure metric and storage suites covering exact calculations, identity/revision rules, blank/double/postponed fixtures, fixture-minute allocation, legal automatic substitutions, captain fallback, frozen transfer horizons, sample safeguards, deterministic serialisation, tamper detection and non-mutation. PR #111 adds complete production-bundle safeguards, PR #112 adds focused shared-state ownership regressions, PR #115 adds measurement-only route-render instrumentation regressions, and PR #116 adds structural stale-code regressions across source, generated bundle and shared harness. Existing production formula and golden suites remain unchanged.
 
+GW1-P1 adds backend tests for canonical Stage 10 parity/mutation rejection, retention gates, R2-before-D1 ordering, R2 read-back/hash equality, duplicate/idempotency and first-custody preservation, idempotency conflicts, R2 failure, D1-after-R2 orphan recovery, Access RS256 verification, exact origin/method/route/rate boundaries, Cloudflare runtime adapter behaviour, source/deployment mirror parity, D1/R2 config and explicit `preview_urls:false`.
+
 ## Future serverless architecture
-Static UI shape can remain while selected provider calls move behind approved serverless functions for secret storage, headers, origin controls, rate limiting and server-side validation. This remains deferred until hosted AI or another approved trigger requires it.
+The project is no longer wholly static from an infrastructure perspective: the Official FPL gateway and GW1-P1 evidence backend are deployed Cloudflare Workers. The static UI shape remains and the browser recommendation path remains client-side. Hosted AI, provider-secret migration, server-enforced application headers, scheduled collection and other server-side capabilities remain separately deferred until approved triggers require them.
 
 ## Stage 10 prospective-evidence boundary
 `evidence/snapshot.mjs` reads already validated runtime state and existing model functions, then emits an explicit allowlisted record. It never serialises `S` or configuration wholesale. Every record includes exact build/model/rules identity, canonical inputs and outputs, provider consequences, whole-record SHA-256 and section/provider hashes. Import recomputes those hashes and fails closed on tampering or an unknown schema.
 
 Capture uses the official FPL event deadline, samples same-origin HTTP `Date` before and after collection and applies the approved timing policy. This is timing evidence, not external timestamp notarisation. All-player live uncertainty retains 5,000 samples; invariant component reuse is performance-only.
 
-`ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive.
+`ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive target, but until GW1-P2 it remains the only automatic Teamsheet persistence path for genuine captures.
+
+GW1-P1's server archive consumes the same canonical pre-deadline record without changing it and separates `client_official_eligible` from server custody timing. The existing client timing decision is not upgraded into external notarisation merely because Cloudflare receives the record.
 
 ## Stage 10.1 verified-startup orchestration
 `main.mjs` owns one concurrency-deduplicated verified refresh. Startup and qualifying foreground returns use the same path. Cached FPL data may be hydrated as fallback, but rendering is deferred while approved sources settle. R1 changes which supporting requests are due, not this orchestration boundary. The final state is rendered once, then a `teamsheet:data-verified` event supports awaited automatic evidence capture.
 
 Startup and explicit manual loading own the interaction gate. Atomic Foreground Refresh is merged through PR #102: a qualifying foreground refresh keeps the previously rendered interface interactive while collection is staged, then applies one synchronous commit before render and persistence. Rollback restores commit-owned and module-private state on a failed commit. This architecture is complete. Route-Aware Rendering and Performance M1 is also complete as measurement tooling only; route-aware optimisation remains a separate, unapproved future checkpoint and does not reopen refresh atomicity.
+
+GW1-P1 does not hook this startup/foreground lifecycle. Upload orchestration, pending state and retry after `teamsheet:data-verified` are GW1-P2 work.
 
 ## Stage 10.2 official-outcome boundary
 `providers/outcome-validate.mjs` owns strict endpoint-specific validation for Official FPL player totals, filtered fixtures and optional manager outcomes. Duplicate player IDs and conflicting fixtures fail closed.
@@ -189,6 +217,8 @@ Startup and explicit manual loading own the interaction gate. Atomic Foreground 
 `evidence/outcome.mjs` normalises allowlisted facts, requires every assigned fixture plus official event `finished` and `data_checked` before finalisation, links to the eligible Stage 10.1 snapshot without mutating it and emits immutable provisional, complete or corrected revisions with deterministic hashes.
 
 `ui/outcomes.mjs` runs after the verified render, deduplicates checks, processes missed Gameweeks sequentially and retains bounded gzip recovery. Outcome work never blocks access or writes into model state.
+
+GW1-P1 archive v1 does not add outcome ingestion. Expanding server custody beyond the accepted pre-deadline record type is later separately scoped work.
 
 ## Stage 10.3 metric boundary
 `evidence/metrics.mjs` accepts only an officially eligible complete snapshot and a complete/corrected linked outcome with exact season, Gameweek, deadline, manager reference, snapshot ID and hash agreement. It creates immutable `gameweekEvaluation` revisions and later `transferHorizonEvaluation` revisions when every frozen horizon Gameweek is authoritative.
@@ -206,10 +236,12 @@ Weekly review covers source identity, completeness, points, fixture-minutes, unc
 
 The deterministic export boundary emits one hash-verifiable JSON evidence/review bundle, one Markdown review and eight individually selectable CSV tables. CSV is UTF-8 BOM + CRLF + RFC 4180, preserves numeric zero, leaves structural null blank and neutralises formula-like text including leading whitespace, tab and carriage return. Derived exports omit manager references; exact canonical source records remain unchanged inside JSON for hash verification. Exports warn above 10 MiB and fail above 25 MiB without truncation.
 
-`ui/review.mjs` remains subordinate under Settings → Evidence & Performance. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, backend, scheduler or persistent review cache. This is the current Teamsheet 2.0 placement and does not change the review architecture. Verified source `1eca9a8817da41597d0632c819142237d31627fb` passes 413 tests with deterministic exact-identity builds.
+`ui/review.mjs` remains subordinate under Settings → Evidence & Performance. It performs on-demand generation, keeps Google Sheets import manual and introduces no origin, authentication, scheduler or persistent review cache. GW1-P1's backend archive does not turn Sheets into a source of truth or automatic export destination.
 
 ## Stage 10.5 recovery architecture
 Stage 10 storage uses verified payload writes, phase journals, index/current-pointer commitment and bounded pruning. Recovery trusts local origin only when a valid journal links the candidate ID and hash; unproven or imported records remain recovery-only. Shared diagnostics expose corruption/storage states without raw payloads, URLs or secrets. Downloads are owner-controlled browser requests rather than acknowledged durable backups.
+
+GW1-P1 does not make recovery imports server-official. Archive v1 accepts `local_capture` only and rejects `recovery_import` even when its internal hashes are valid.
 
 ## Teamsheet 2.0.1 iPhone shell amendment
 

@@ -1,12 +1,20 @@
 # ROADMAP.md — current and proposed checkpoints
 
-## 11 August 2026 — current checkpoint status
+## 11 August 2026 — current checkpoint: GW1-P1 final closeout
+
+**GW1-P1 — Cloudflare Evidence Foundation is implemented on draft PR #118 and is in final closeout.** Latest merged `main` remains `43f109b306071aa0c3c1c45985876fecb3da7aa5`. The checkpoint is backend-only: separate authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt state, canonical Stage 10 validation, idempotency and orphan reconciliation. Repository records also capture owner-performed physical iPhone Safari production functional acceptance.
+
+Preview/version URL security is closed: the repository candidate explicitly disables Cloudflare Preview URLs and tests that invariant, and owner-supplied live Cloudflare Domains dashboard evidence on 11 August 2026 showed the production route Access-`Restricted` with the wildcard Preview hostname disabled. Canonical documentation reconciliation, exact final-head repository verification after every documentation/config change, and final PR diff/description review remain the closing work.
+
+**Do not start GW1-P2 in this checkpoint.** Teamsheet browser sync/persistent outbox upload remains unimplemented and separately approval-gated. Existing Stage 10/local evidence semantics therefore remain unchanged during normal app use. Provider archival rights remain fail-closed; Understat/Odds repair, provider weighting, model/calculation work, Sheets automation, agents and scheduled collectors remain outside GW1-P1.
+
+## Historical — 11 August 2026 A3 checkpoint status
 
 **A3-SC-1 Small Stale-Code Cleanup is complete, merged and post-merge verified.** PR #116 merged at A3 engineering baseline `1060e60d3affadabdf97924c7ece85cc62d8e360` from reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3`. The reviewed tree passed **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled** in Verify Teamsheet run #193 / `31469449540`. Permanent post-merge Verify Teamsheet run #194 / `31470879289` passed the repository gate on the exact merge commit, and GitHub Pages run #120 / `31470878300` succeeded for the same commit. No physical iPhone testing was performed or claimed for PR #116.
 
 A3-SC-1 removed only the two proven-unreachable Mini-League helpers `renderLeagueChips()` and `rememberLeague()` plus stale test-side consumers. It added structural regressions and changed no intended application behaviour. The brittle `selectMiniLeague` exact-source-string assertion remains deliberately untouched as future narrow test-hardening debt.
 
-**A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation is the final A3 closeout layer.** It reconciles canonical current-state, architecture, roadmap, limitation, testing and historical wording; no A3-specific engineering or documentation task follows it, and it does not authorise implementation work outside that documentation boundary.
+**A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation was the final A3 closeout layer.** It reconciled canonical current-state, architecture, roadmap, limitation, testing and historical wording; no A3-specific engineering or documentation task follows it, and it did not authorise implementation work outside that documentation boundary.
 
 Route-Aware Rendering and Performance M1 is complete through PR #115 at `02ea634464cc415ac43d4b9cb13b4005fc276646`. Exact-main Verify Teamsheet run #183 / `31459954883` passed **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**. M1 delivered measurement instrumentation only, deliberately outside every production build input. It changed no route scheduling, rendering behaviour or production output. **Route-aware optimisation is not implementation-approved.** See [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md).
 
@@ -40,7 +48,7 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## Completed before the current sequence
 
-- **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md); no infrastructure or runtime implementation exists.
+- **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md). The later separately approved GW1-P1 backend foundation is now implemented on draft PR #118; Teamsheet browser integration/persistent outbox remains GW1-P2 and is not part of this checkpoint.
 - **Atomic Foreground Refresh — complete and merged:** PR #102 is merged and physically accepted. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
 - **Cache and persistence resilience — complete and merged** through PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet run #105 and independent review of the final diff all passed. Physical iPhone testing was explicitly waived by the owner.
 - **Production-Bundle Safeguards — complete and merged** through PR #111 at `main` `5a1a036…`; exact-main run #159 passed 859/859 and the three complete-bundle safeguards are permanent tests.
@@ -50,7 +58,7 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## A3 remediation and closeout sequence
 
-The engineering remediation entries below are complete. **Item 8 is this final documentation/architecture reconciliation; no further A3-specific engineering or documentation task follows it.** Route-aware optimisation is not part of the remediation sequence and remains separately unapproved.
+The engineering remediation entries below are complete. **Item 8 was the final documentation/architecture reconciliation; no further A3-specific engineering or documentation task follows it.** Route-aware optimisation is not part of the remediation sequence and remains separately unapproved.
 
 1. **Post-A3 Checkpoint 0 housekeeping — complete and merged through PR #105.** Automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
 2. **`fpl:calib` compatibility and resilience — complete and merged through PR #107** at `main` `d112c67`. The checkpoint was separately model-gated and was approved and merged as a fail-closed compatibility change only: no production calibration generator, no tuned factors and no accuracy claim. [PERSIST-4](KNOWN_LIMITATIONS.md) is closed by it.
@@ -59,7 +67,7 @@ The engineering remediation entries below are complete. **Item 8 is this final d
 5. **State-ownership cleanup — complete, merged and post-merge verified through PR #112** at `main` `691d9f9…`. `state.mjs` is the explicit shared-slot inventory rather than a new semantic state owner; the legacy Mini-League alias is one-way; focused lifecycle/ownership regressions are permanent. No wholesale state-management rewrite. See [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md).
 6. **Route-aware rendering and performance — M1 measurement complete and merged through PR #115** at `main` `02ea634…`. Measurement demonstrated real avoidable inactive-route and shared-render work but did not demonstrate material user-visible lag, and the instrumentation stays outside every production build input. **Optimisation is not approved.** See [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md).
 7. **Small stale-code cleanup (A3-SC-1) — complete and merged through PR #116** at A3 engineering baseline `1060e60…`. It used a reviewed deletion list limited to `renderLeagueChips()` and `rememberLeague()` plus stale test-side consumers; no opportunistic broad cleanup. The brittle `selectMiniLeague` exact-source-string assertion remains deferred test-hardening debt. See [A3-SC-1 Small Stale-Code Cleanup](A3-SC-1-SMALL-STALE-CODE-CLEANUP.md).
-8. **A3 documentation and architecture closeout — this documentation-only reconciliation; final A3 closeout layer.** No application, test, build, generated, model, provider or later-programme implementation belongs in this package.
+8. **A3 documentation and architecture closeout — complete.** Documentation-only reconciliation; no application, test, build, generated, model, provider or later-programme implementation belonged in that package.
 
 ### Separate narrow checkpoint — duplicate manual-squad handler correction (0C) — complete
 
@@ -67,13 +75,14 @@ Post-A3 Checkpoint 0C established, with empirical evidence, that the per-button 
 
 The owner-approved correction removed the dead listeners, left `manual-squad-runtime.mjs` as the single owner, added a regression proving the validating implementation runs and merged through PR #106. The original findings are in [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md); implementation and verification are in [Post-A3 0C cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md).
 
-## Deferred beyond the current sequence
+## Deferred beyond GW1-P1
 
-Longer-horizon product work remains separately gated. Nothing below is implementation-approved by A3 closeout:
+Longer-horizon product work remains separately gated. Nothing below is implementation-approved by GW1-P1 closeout:
 
+- **GW1-P2 Teamsheet browser evidence integration and persistent local outbox/upload.** This is the next relevant persistence checkpoint after GW1-P1 merges; do not pull it into PR #118.
 - Understat repair.
 - Odds API repair.
-- Approved D1 persistent historical/live implementation.
+- Broader D1 historical/live schema expansion beyond the minimal GW1-P1 evidence manifest/receipt foundation.
 - Claude-to-ChatGPT migration.
 - Cloudflare automation expansion.
 - AI agents and richer external intelligence.
@@ -85,7 +94,7 @@ Purpose: open, next and deferred work only. Historical stage and merge records a
 
 ## Historical baseline — D1 design closeout era
 
-Retained as the scope/evidence record of that checkpoint. **This is not the current baseline.** Current repository head, verification and acceptance evidence are in [Project Context](PROJECT_CONTEXT.md) and `CLAUDE.md`.
+Retained as the scope/evidence record of that checkpoint. **This is not the current baseline.** Current repository head, verification and acceptance evidence are in [Project Context](PROJECT_CONTEXT.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and `CLAUDE.md`.
 
 - Repository head at that checkpoint: `main` `deb4ea26ba96112dba07660e23a61f04d4b6596d` (D1 design closeout through PR #101).
 - Latest substantive application checkpoint at that time: DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999`.
@@ -104,7 +113,7 @@ Retained as the scope/evidence record of that checkpoint. **This is not the curr
 
 **Exclusions:** disabling zoom through viewport restrictions; body typography changes; control redesign; calculation, provider, data source, cache, persistence, route, navigation, security-origin or dependency changes; D1 and later roadmap work.
 
-**Evidence:** physical DTR-1 testing showed the resource field triggered strong Safari zoom and remained enlarged after the keyboard closed. Source inspection found the 15px inherited control size across the app and a separate 15px global search override. Focused regressions require every current text-entry control family to be 16px while rejecting viewport zoom suppression.
+**Risks:** automated CSS contracts cannot prove physical Safari focus behaviour; the accepted evidence is limited to the tested owner device/browser path.
 
 ## Completed checkpoint — DTR-1 Direct Team renderer
 
@@ -150,11 +159,11 @@ The generated manifest now carries complete build-input identity. CI requires th
 
 ## Historical investigation — Data Architecture D1
 
-**Status:** investigation/design complete and merged through PR #101 as documentation only; implementation is not pre-approved.
+**Status:** investigation/design complete and merged through PR #101 as documentation only; the original design checkpoint did not authorise implementation. The later GW1-P1 backend checkpoint was separately approved and is now in draft PR #118.
 
 **Objective:** define the correct historical and live data platform for Teamsheet. Compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against retention, query, update, cost, reliability, privacy, export and iPhone-operation requirements. Treat the existing Sheets as field prototypes; classify each field as persist, derive, export or remove. Google Sheets is a potential human-readable reporting/analysis layer, not an assumed core database.
 
-**Boundary:** do not repair Understat or Odds, change providers/calculations, implement storage or migrate AI without a separate approved checkpoint. The accepted design is recorded in [Data Architecture D1](DATA-ARCHITECTURE-D1.md).
+**Boundary at the time:** do not repair Understat or Odds, change providers/calculations, implement storage or migrate AI without a separate approved checkpoint. The accepted design is recorded in [Data Architecture D1](DATA-ARCHITECTURE-D1.md). GW1-P1 later implemented only the backend evidence foundation; those original exclusions otherwise remain.
 
 ## Deferred live-evidence checkpoint — First live evidence and Leagues acceptance
 
@@ -278,4 +287,4 @@ The generated manifest now carries complete build-input identity. CI requires th
 
 ## Completed foundation summary
 
-Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3-R0, DTR-1, iPhone form-focus zoom, Data Architecture D1 design, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache/persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards, A3 State-Ownership Cleanup, Route-Aware Rendering and Performance M1, and A3-SC-1 are complete and merged. Their exact records remain in the repository history and [Historical Records](HISTORICAL_RECORDS.md); they are not open implementation work. Together with this documentation/architecture reconciliation, the A3 remediation programme has no remaining A3-specific engineering or documentation task. Separately gated work above remains outside A3.
+Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3-R0, DTR-1, iPhone form-focus zoom, Data Architecture D1 design, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache/persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards, A3 State-Ownership Cleanup, Route-Aware Rendering and Performance M1, and A3-SC-1 are complete and merged. Their exact records remain in the repository history and [Historical Records](HISTORICAL_RECORDS.md); they are not open implementation work. The later GW1-P1 backend foundation is the current unmerged checkpoint and therefore is not included in this merged-foundation list. Separately gated work above remains outside A3 and GW1-P1.

@@ -1,6 +1,12 @@
 # KNOWN_LIMITATIONS.md
 
-## 11 August 2026 — current evidence boundary entering A3 documentation closeout
+## 11 August 2026 — current GW1-P1 evidence boundary
+
+GW1-P1 now provides a deployed/tested backend evidence destination: separate authenticated Worker, private R2 and minimal D1 manifest/receipt state. This closes the old statement that no server-side/cloud archive exists, but it does **not** make automatic in-app cloud custody available. The Teamsheet browser still writes its existing Stage 10/local evidence only; persistent pending-upload/outbox integration is GW1-P2.
+
+The backend remains a one-way side effect and cannot be treated as recommendation availability. Permanent Understat/Odds-derived archival remains fail-closed pending approved retention rights. The current GW1-P1 candidate also explicitly disables Cloudflare Preview URLs in repository configuration, and owner-supplied live Cloudflare **Domains** dashboard evidence on 11 August 2026 showed production Access-`Restricted` with the wildcard Preview hostname disabled. That closes the preview/version security item. The residual limitation is one of provenance rather than an open gap: it is owner-supplied dashboard evidence at a single moment, not independent assistant testing or continuous monitoring, and a future redeploy could change live route state without any repository change.
+
+## Historical — 11 August 2026 A3 documentation-closeout evidence boundary
 
 The A3 engineering baseline entering documentation/architecture closeout is GitHub `main` `1060e60d3affadabdf97924c7ece85cc62d8e360`, merge of A3-SC-1 PR #116 from reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3`. The reviewed tree passed **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled** in Verify Teamsheet run #193 / `31469449540`. Permanent post-merge Verify Teamsheet run #194 / `31470879289` passed the repository gate on that exact merge commit, and GitHub Pages run #120 / `31470878300` succeeded for the same commit.
 
@@ -42,15 +48,17 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 The PR #103 startup-canvas, primary-header, form-control visual/no-zoom and Leagues vertical-alignment findings are physically accepted and no longer open UI defects. The separate post-Gameweek populated Leagues evidence gate remains deferred until Official FPL publishes the required live facts.
 
-## D1 design limitations
+## D1/GW1-P1 persistence limitations
 
-The persistent platform is approved only as a design; no D1 database, R2 bucket, data Worker, authentication, migration, capture or Sheets automation exists. D1/R2 commits cannot be atomic across products and will require an R2-first manifest protocol plus orphan reconciliation. Cost/capacity estimates use synthetic evidence, provider archival rights remain unconfirmed, and all existing live-Gameweek evidence gates remain in force. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md).
+The Cloudflare evidence backend now exists under GW1-P1: an authenticated evidence Worker, private R2, minimal D1 manifest/receipt schema, canonical validation/idempotency and R2-orphan reconciliation have been implemented and have recorded live functional acceptance. D1/R2 commits are still cross-product recoverable rather than atomic, and cost/capacity estimates still use synthetic evidence. Provider archival rights remain unconfirmed and Understat/Odds permanent retention remains fail-closed.
+
+Automatic Teamsheet custody is **not** implemented. The browser has no GW1-P2 persistent outbox/upload integration, so genuine Stage 10 captures continue to have the existing local/manual semantics in normal app use. The new explicit `preview_urls:false` hardening also requires live post-deployment route confirmation before GW1-P1 security closeout is complete. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md) and [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md).
 
 Purpose: register of current, accepted and deliberately deferred limitations, with closed rows retained for traceability. Audience: all sessions. Last reconciled: 11 August 2026.
 
-Current evidence boundary: A3 engineering remediation is complete through PR #116 at baseline `1060e60d3affadabdf97924c7ece85cc62d8e360`. The reviewed PR #116 tree passed 868/868; permanent post-merge Verify Teamsheet run #194 passed the repository gate and Pages run #120 succeeded on that exact merge commit. PR #116, Route-Aware M1/PR #115 and State-Ownership Cleanup/PR #112 have no physical device evidence and none is claimed. A3 Error-Boundary Separation's executable iPhone Safari paths were physically accepted; its clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience also remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
+Current evidence boundary: GW1-P1 backend functional acceptance is recorded, but PR #118 remains unmerged and its final exact-head verification plus preview-route live confirmation remain completion gates. A3 engineering remediation is complete through PR #116 at baseline `1060e60d3affadabdf97924c7ece85cc62d8e360`. The reviewed PR #116 tree passed 868/868; permanent post-merge Verify Teamsheet run #194 passed the repository gate and Pages run #120 succeeded on that exact merge commit. PR #116, Route-Aware M1/PR #115 and State-Ownership Cleanup/PR #112 have no physical device evidence and none is claimed. A3 Error-Boundary Separation's executable iPhone Safari paths were physically accepted; its clean uncached offline-shell path remains automated-only because static Pages cannot load in a new offline context. A3 cache and persistence resilience also remains physically untested by explicit owner waiver. Leagues post-Gameweek evidence remains deferred.
 
-Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), [Historical Records](HISTORICAL_RECORDS.md).
+Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md), [Leagues pre-season acceptance](LEAGUES-PRESEASON-ACCEPTANCE.md), [Historical Records](HISTORICAL_RECORDS.md).
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
@@ -108,7 +116,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | RANK-1 | Projected final Gameweek score and rank movement are not yet designed or validated | Teamsheet must not manufacture live-rank precision or blur projection with confirmed Official FPL results | Separate design and explicit approval | Open (expected) |
 | STRAT-1 | No protect, balanced or chase Mini-League strategy model is approved | League position may be described, but it cannot silently alter production recommendations | Separate design and explicit approval | Open (gated) |
 | EVID-1 | Browser timing evidence is not externally notarised | Same-origin HTTP `Date` plus clock-skew checks support leakage review but cannot prove capture time to an independent third party | Future serverless only with separate approval | Open (accepted) |
-| EVID-2 | Local evidence can be cleared and JSON exports are unencrypted | The owner must export and retain files safely; bounded compressed local copies are recovery only | Stage 10.4 operating workflow | Open (accepted) |
+| EVID-2 | Local evidence can be cleared and JSON exports are unencrypted | GW1-P1 adds a private server archive destination, but until GW1-P2 the normal Teamsheet browser does not upload to it automatically; local evidence can still be cleared and manual JSON exports remain unencrypted | GW1-P2 browser custody integration | Open (accepted until GW1-P2) |
 | EVID-3 | Physical iPhone capture/export/import acceptance | Owner accepted the silent loader and startup behaviour; local-preview chrome was distinguished from app UI | Stage 10.1 review | **CLOSED 2026-07-29** |
 | EVID-4 | Prospective sample size begins at zero | No validation or calibration claim is possible until enough live Gameweeks and observations are collected | Stage 10.2–10.5 | Open (expected) |
 | OUTCOME-1 | Static GitHub Pages cannot collect while the app is fully closed or suspended | Missed Gameweeks are collected when Teamsheet next opens; guaranteed closed-app timing needs a separately approved backend | Future serverless only with separate approval | Open (accepted) |
@@ -131,7 +139,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 | REFRESH-6 | Storage-quota and serialisation write failures are silently swallowed by `sset` | `ssetChecked` gives the refresh persistence phase an observable `persist_failed` class; full quota handling and eviction remain out of scope | Separate design | Open (gated) |
 | PERSIST-1 | A failed browser write may only survive for the current session | The change stays active and the app states explicitly that it was not saved; a reload returns the last durable value, the default or a rediscovered Official FPL value | By design of a local-only store | Accepted-labelled |
 | PERSIST-2 | Fail-closed compatibility can require the user to re-enter data | Unversioned, previous-season, unsupported-schema or malformed configuration, manual-squad and Mini-League records are dropped rather than guessed, so Team ID, resources, a manual squad or league selections may need re-entering after a season or schema change | By design; guessing season ownership is unsafe | Accepted-labelled |
-| PERSIST-3 | Durability is only as good as the browser backend | Verified writes prove a record is restorable at the moment it is written; they cannot prevent later eviction by the browser, private-mode clearing, quota pressure or device loss, and no server-side copy exists | D1/R2 design remains unimplemented | Open (gated) |
+| PERSIST-3 | Durability during normal Teamsheet use is still only as good as the browser backend | GW1-P1 provides a server archive destination, but the browser is not connected until GW1-P2. A verified local write can still later be evicted/cleared or lost with the device, and normal app capture has no automatic server copy yet | GW1-P2 persistent outbox/upload | Open (gated) |
 | PERSIST-4 | `fpl:calib` lacked a compatibility-owned restore contract | Fails closed on every current unverified calibration record, preserves the stored bytes and keeps standard uncalibrated projections active; no production calibration methodology is introduced | `fpl:calib` compatibility and resilience | **CLOSED and merged 2026-08-10 through PR #107 (`d112c673310149a4463def1758242460450600dc`), verified by Verify Teamsheet run #127** |
 | PERSIST-5 | The storage-manager persistence paths have no physical device evidence | Teamsheet itself never installs `window.storage`, so the authoritative-backend contracts are proven by automated tests against stub backends only, not on a host that provides one | Requires a host that supplies a storage manager | Open (evidence gap) |
 | ERR-1 | A recovery-render failure after a genuine Official FPL collection failure was silently swallowed | EB-1 keeps the recovery render guarded so it still cannot escape `loadAll`, but records the caught error and returns it as `secondaryErrorClass:'render_failed'` beside the primary `collection_failed`; the real provider Fallback/Unavailable classification and the previously verified state both survive | A3 error-boundary separation | **CLOSED and merged 2026-08-10 through PR #108 (`ba5daa2000345ddde3d8e6f6d381d44603e7cd29`)** |
@@ -190,12 +198,12 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 - Hindsight oracle and alternative comparisons are descriptive only and must not be presented as retrospective recommendations.
 - Provider-state comparisons are observational and cannot prove causal value or uptime quality.
 - Confidence intervals, clustered resampling, multiple-comparison control and statistical significance remain separately scoped future work.
-- Metric records are bounded browser recovery, not a permanent database or externally authenticated archive.
+- Metric records are bounded browser recovery, not a permanent database or externally authenticated archive during normal app use until GW1-P2 uploads them.
 - Stage 10.3 implementation and 397 passing tests prove contract integrity, not prediction accuracy or probability calibration.
 
 ## Stage 10.4 operating-review limitations
 - Review quality cannot exceed retained evidence quality. Pruned or missing exact snapshot/outcome/evaluation payloads are reported as partial and cannot be reconstructed.
-- Local Stage 10 retention remains recovery-oriented rather than a permanent season archive; a season JSON bundle may therefore be partial on one device.
+- Local Stage 10 retention remains recovery-oriented rather than a permanent season archive in normal app use until GW1-P2; a season JSON bundle may therefore be partial on one device.
 - Google Sheets import is manual. The app does not authenticate to Drive, select a workbook, append rows or run unattended exports.
 - No XLSX or ZIP export exists. The eight CSV files are downloaded individually to avoid browser multi-download and mobile reliability problems.
 - Exports above 25 MiB fail rather than truncate; no compression or automatic splitting is implemented.
@@ -205,7 +213,7 @@ Related: [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Security
 
 ## Stage 10.5 hardening limitations
 - Safari can acknowledge only that a download was requested; Pritesh must confirm the file in Files or Downloads.
-- Browser storage and exported JSON remain unencrypted and are not a permanent database.
+- Browser storage and exported JSON remain unencrypted and are not a permanent database during normal app use until GW1-P2 connects the archive.
 - Static GitHub Pages cannot perform guaranteed closed-app collection.
 - Recovery-only imports cannot become official/current or automatically recreate every local metric view.
 - No migration engine exists because no older supported Stage 10 schema currently requires one.
@@ -235,7 +243,7 @@ Physical testing of the actual repository build on an iPhone Safari was not perf
 - Player Explorer mobile cards change presentation only; a persistent watchlist and multi-player comparison remain unimplemented and require separate product approval.
 - The warning classifier intentionally covers core Official FPL availability only. Optional-provider detail remains in Settings unless an existing recommendation path already exposes a material consequence.
 - Browser Back focus restoration depends on the opener remaining in the current DOM. If it is unavailable, the exact route heading receives focus.
-- Evidence, outcome and metric storage remains bounded local recovery. Reorganisation does not create a permanent archive or migration engine.
+- Evidence, outcome and metric storage remains bounded local recovery in normal app use until GW1-P2. Reorganisation does not create a migration engine.
 - A persistent screenshot-regression suite remains absent, so later visual changes still require human device review.
 
 ## Teamsheet 2.0.7 implementation acceptance status

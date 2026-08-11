@@ -1,6 +1,16 @@
 # TESTING.md
 
-## 11 August 2026 — current verified A3 engineering baseline
+## 11 August 2026 — current GW1-P1 final-gate boundary
+
+GW1-P1 is the current unmerged checkpoint in draft PR #118. The backend implementation adds permanent Node coverage for canonical Stage 10 parity/mutation rejection, provider-retention gates, R2-before-D1 ordering and R2 read-back verification, duplicate/idempotent ingestion, first-custody preservation, idempotency conflict, R2 failure with no D1 claim, D1-after-R2 orphan recovery, Access RS256 validation, route/origin/method/rate boundaries, safe manifest reads, Cloudflare runtime adapter behaviour and source/deployment mirror parity.
+
+The final preview/version-route audit adds one more repository invariant: both byte-identical evidence Wrangler configs must explicitly set `preview_urls:false`. This prevents the Cloudflare version/alias Preview URL surface from silently following `workers_dev:true` again. Repository verification can prove the config and test contract but never the live route state; **live Cloudflare route state is always a separate acceptance item** and must be evidenced under the Worker's Domains settings or an equivalent negative routing check. For this candidate that separate item is satisfied by owner-supplied 11 August 2026 Cloudflare Domains dashboard evidence recorded in [SECURITY.md](SECURITY.md) and the [GW1-P1 record](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md); it is not a repository-testable fact and is not independent assistant testing.
+
+The final PR candidate must run the complete repository gate after every final config/doc change. Required evidence is: exact final head, exact test count with zero failures/skips/cancellations, production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality and production-output preservation. A prior green run on an older head is not final evidence. No physical iPhone testing is newly claimed by this documentation closeout; the production functional acceptance described in the GW1-P1 record was performed by Pritesh on the earlier accepted backend candidate.
+
+GW1-P2 browser saved/pending/failed/offline/upload states are **not** GW1-P1 tests. They remain a separate future client-integration acceptance gate.
+
+## Historical — 11 August 2026 A3 engineering baseline
 
 The A3 engineering baseline entering documentation/architecture closeout is GitHub `main` `1060e60d3affadabdf97924c7ece85cc62d8e360`, merge of A3-SC-1 Small Stale-Code Cleanup PR #116 from reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3`. The reviewed tree passed **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled** in permanent Verify Teamsheet run #193 / `31469449540`, together with committed provenance, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation.
 
@@ -40,9 +50,13 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 PR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` pass **803/803** tests. Publication run `31356159321` passed before branch publication; permanent Verify Teamsheet run #90 / `31356255017` passed every exact-revision, committed-provenance, full-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage. Physical iPhone Safari acceptance passed all four presentation findings and merge is explicitly owner-approved.
 
-## D1 design closeout and future verification
+## GW1-P1 evidence-backend verification and GW1-P2 future verification
 
-[Data Architecture D1](DATA-ARCHITECTURE-D1.md) is documentation-only and does not add a runtime test claim. Its later implementation gates require schema/migration checks, idempotent duplicate and revision tests, season mismatch rejection, D1/R2 partial-failure and orphan reconciliation, authentication/CORS/CSRF/rate/secret tests, outage tests proving recommendations remain usable, backup/restore, full deterministic verification and physical iPhone acceptance for saved/pending/failed/offline/export states. Existing live-season evidence gates remain unchanged.
+[Data Architecture D1](DATA-ARCHITECTURE-D1.md) was originally a documentation-only decision. The separately approved GW1-P1 backend checkpoint now implements and tests the canonical pre-deadline archive foundation. Its permanent backend suites are `tests/evidence-archive-worker.test.mjs`, `tests/evidence-archive-cloudflare.test.mjs` and `tests/evidence-archive-layout.test.mjs`.
+
+GW1-P1 verification covers exact Stage 10 record parity, canonical/hash mutation rejection, fail-closed provider retention, R2-first/D1-second ordering, duplicate/idempotency behaviour, R2 and D1 partial-failure contracts, orphan reconciliation with first-upload preservation, Access JWT validation, exact CORS/method/route/payload/rate boundaries, generic/redacted failures, source/deploy parity, D1/R2/migration configuration and explicit Preview URL disable. The full repository deterministic/provenance/build gates remain mandatory even though GW1-P1 changes no application build input.
+
+The **future GW1-P2** client gate remains separate: persistent local outbox compatibility, non-blocking upload, honest saved/pending/failed/offline states, retry/recovery across reload, no recommendation dependency, and physical iPhone acceptance of those browser states. Existing live-season evidence gates also remain unchanged.
 
 <!-- FIXTURES-ACCEPTANCE-2026-08-07 -->
 > **Historical Fixtures acceptance verification:** PR #86 exact head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled** in permanent Verify Teamsheet run `31198545580`, with deterministic byte-identical double builds, root/deployable equality and exact manifest identity. The merged tree was deployed at `e49599a75bbb77618292fdb6100fcffd81685c44`; owner iPhone Safari acceptance passed for GW23 reachability, sticky TEAM behaviour beyond GW12 and GW38 boundary normalisation. No model formula, provider, source or golden expectation changed.
@@ -72,12 +86,17 @@ PR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-on
 
 > **Historical FPL-T1 review verification:** the owner-controlled Official FPL gateway review reached **590 passed, 0 failed, 0 skipped** with deterministic builds, exact Worker/CSP configuration and successful physical iPhone live bootstrap transport. FPL-T1 subsequently merged through PR #69 and Track A through PRs #70 and #72. This historical 590-test checkpoint is not the current repository baseline.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last reconciled: 2026-08-11. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md.
+Last reconciled: 2026-08-11. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
 
-## Stack
-`node:test` only, zero dependencies, Node 18 or newer. Entry point: `./run-tests.sh`. It builds first because the generated production bundle is itself a test target.
+## Current GW1-P1 verification state
 
-## Current verified baseline
+PR #118 must be judged by its **final exact head**, not by an earlier green candidate. The exact final test count and final Verify Teamsheet run belong in the PR description once the final config/documentation commit has completed the permanent workflow. Until that run is green, the prior successful runs are historical evidence only.
+
+GW1-P1 changes no application build input or generated application deployable. Nevertheless the repository completion gate still requires the ordinary production build, deterministic rebuild, committed provenance, root/deployable equality, exact manifest/build identity and production-output preservation so a backend/docs checkpoint cannot accidentally drift the deployed app.
+
+Live production functional acceptance already recorded in `GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md` was performed by Pritesh on physical iPhone Safari. The newly explicit `preview_urls:false` config requires separate post-deployment live proof; no automated test can substitute for the Cloudflare route state.
+
+## Historical A3 verified baseline
 
 The A3 engineering baseline entering documentation/architecture closeout is PR #116 merge commit `1060e60d3affadabdf97924c7ece85cc62d8e360`. The reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3` passed **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled** in Verify Teamsheet run #193 / `31469449540`, with committed provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. Post-merge run #194 / `31470879289` passed the repository gate on the exact merge commit.
 
@@ -117,7 +136,7 @@ The PR #104 evidence below remains historical.
 - `persistence-resilience.test.mjs` adds cache/config/manual-squad/Mini-League compatibility, verified-write and authoritative-backend regressions; no existing test or golden expectation is removed, weakened, regenerated or skipped
 - model, calculation, provider identity/endpoint and data-source behaviour: unchanged
 
-Earlier baselines in this file are retained as historical records and are superseded by the figures above. PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
+Earlier baselines in this file are retained as historical records and are superseded by the current GW1-P1 final-gate section above. PR #94 was documentation/test-infrastructure only and preserved the then-current PR #92 application baseline. Its three documentation-integrity tests raised the repository suite from 664 to 667 without creating a new application-behaviour claim.
 
 ### A3 persistence coverage
 
@@ -213,6 +232,7 @@ The form-focus candidate changes editable-control typography across Team setup/r
 38. State-Ownership Cleanup focused regressions — declared shared-slot inventory, undeclared direct/static `S` property rejection, refresh-owned-key subset, one-way Mini-League compatibility authority and hostile saved-league rendering through canonical state.
 39. `route-render-performance.test.mjs` — PR #115 measurement-only evidence for known route/render relationships, inactive work, duplicate Mini-League rendering, hidden Transfers preparation, production-output preservation and the M1 tooling-outside-build-input boundary. It does not assert that an optimisation is required.
 40. `stale-code-cleanup.test.mjs` — PR #116 structural proof that the deleted Mini-League helpers and old `#leagueChips` target remain absent while live state/render owners remain; it also pins absence from the generated bundle and shared harness so stale test-side consumers fail directly.
+41. `evidence-archive-worker.test.mjs`, `evidence-archive-cloudflare.test.mjs` and `evidence-archive-layout.test.mjs` — GW1-P1 canonical archive contract, provider-retention fail-closed behaviour, R2/D1 ordering and read-back, duplicate/idempotency and custody preservation, orphan recovery, Access/JWKS/runtime boundaries, safe route/rate/origin behaviour, isolated source/deploy parity and explicit Cloudflare Preview URL disabling.
 
 Two forms of Transfers evidence are deliberately separate. Oracle equality is proved only on controlled pools, where an exhaustive comparison is tractable. On the Official-scale pool the claim is only that the exact search completes below the unchanged ceiling and returns `status: 'ok'`; it is not an exactness proof, and a lower evaluation count is never presented as improved prediction accuracy.
 
@@ -224,7 +244,7 @@ This historical evidence does not replace physical iPhone Safari or live populat
 ## Golden discipline
 Goldens are reviewed repository data, not verification output. `UPDATE_GOLDEN=1` may be used only during an explicitly reviewed stage update. Final verification runs against committed goldens without regenerating them.
 
-Stages 8–10.3 change no deterministic projection formula and require no golden regeneration. Stage 10.3 adds downstream evaluation and presentation only.
+Stages 8–10.3 change no deterministic projection formula and require no golden regeneration. Stage 10.3 adds downstream evaluation and presentation only. GW1-P1 changes no application formula or golden expectation.
 
 ## Harness
 `tests/harness.mjs` stubs DOM, storage and fetch, then loads `dist/app.bundle.js`. Characterisation therefore exercises the production bundling path rather than a separate test-only implementation.
@@ -237,13 +257,14 @@ The existing `selectMiniLeague` exact-source-string assertion is deliberately br
 
 ## Required checks before completion
 1. Run `./run-tests.sh` with every committed test green and no golden regeneration.
-2. For a generated checkpoint, verify the committed manifest source resolves, is an ancestor of the artifact commit, matches every declared build input and reproduces all tracked generated files byte-for-byte.
+2. For a generated checkpoint, verify the committed manifest source resolves, is an ancestor of the artifact commit, matches every declared build input and reproduces all tracked generated files byte-for-byte. For a non-build-input checkpoint such as GW1-P1, prove the committed application deployables remain unchanged and still reproduce from their recorded source.
 3. Build twice with the same exact source commit in `BUILD_COMMIT`.
 4. Compare `dist/index.html`, `dist/app.bundle.js` and `dist/manifest.json` byte-for-byte, then verify the generated root `index.html` deployment copy is identical to `dist/index.html`.
 5. Independently verify CSP/build identity through the committed security tests and emitted manifest.
 6. Confirm `BUILD_INFO`, manifest module order, module-source hash, complete build-input hash, commit identity and generated files agree.
-7. Commit reviewed inputs first, then commit only verified generated artefacts; documentation-only pull requests must confirm generated files are absent from their diff.
+7. Commit reviewed inputs first, then commit only verified generated artefacts when generated files actually change; documentation/backend-only pull requests must confirm generated application files are absent from their diff.
 8. Remove temporary verification workflows before merge.
+9. Where a security conclusion depends on Cloudflare route/dashboard state, obtain live post-deployment evidence; repository tests cannot manufacture that evidence.
 
 ## Philosophy
 Never delete or weaken a test to make a change pass. A green suite proves deterministic agreement with encoded contracts; it does not prove improved prediction accuracy or calibrated uncertainty. Stage 10 metrics must remain descriptive until enough genuine prospective observations exist.
@@ -378,7 +399,7 @@ The correction removes runtime source rewriting entirely:
 
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
-The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current A3 engineering baseline is PR #116 with **868 passing tests**, recorded at the top of this document.
+The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current A3 engineering baseline before GW1-P1 was PR #116 with **868 passing tests**, recorded above.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 The reconciled branch passes **609 tests**. Added contracts prove that explicit cancellation and force-start supersession settle their pending calculation promises, and that mixed-width player IDs with reversed input order preserve exact production-versus-exhaustive results.
