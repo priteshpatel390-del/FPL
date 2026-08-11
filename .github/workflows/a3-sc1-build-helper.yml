@@ -6,7 +6,7 @@ on:
       - agent/a3-small-stale-code-cleanup
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify-and-build:
@@ -36,14 +36,15 @@ jobs:
           cmp /tmp/a3-sc1-build/dist/manifest.json dist/manifest.json
           cmp /tmp/a3-sc1-build/index.html index.html
           cmp dist/index.html index.html
-      - name: Upload verified production output
-        uses: actions/upload-artifact@v6
-        with:
-          name: a3-sc1-production
-          path: |
-            dist/app.bundle.js
-            dist/index.html
-            dist/manifest.json
-            index.html
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit verified production output
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          if git diff --cached --quiet; then
+            echo "Generated output already current."
+            exit 0
+          fi
+          git commit -m "Build generated output for A3-SC-1"
+          git push origin HEAD:agent/a3-small-stale-code-cleanup
