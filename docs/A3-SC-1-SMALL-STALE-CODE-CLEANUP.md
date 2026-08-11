@@ -86,4 +86,4 @@ The exact-source-string `selectMiniLeague` test assertion remains brittle by des
 
 ## Closeout status
 
-Pritesh approved the narrow A3-SC-1 implementation and subsequently approved its merge. PR #116 is merged and closed. A3-SC-1 is therefore complete; the remaining A3 work after this checkpoint is documentation/architecture closeout only.
+Pritesh approved the narrow A3-SC-1 implementation and subsequently approved its merge. PR #116 is merged and closed. A3-SC-1 is therefore complete. The documentation/architecture reconciliation that follows is the final A3 closeout layer rather than further engineering remediation; separately tracked future work does not reopen A3-SC-1.
