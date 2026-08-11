@@ -1,6 +1,6 @@
 # GW1-P1 — Cloudflare Evidence Foundation
 
-Status: **backend foundation implemented and live functional acceptance passed; final preview/version-route security closeout pending; Teamsheet client integration remains separate GW1-P2 work**  
+Status: **backend foundation implemented; live functional and preview/version-route security acceptance passed; Teamsheet client integration remains separate GW1-P2 work**  
 Approved scope: Pritesh, 11 August 2026  
 Base: `main` `43f109b306071aa0c3c1c45985876fecb3da7aa5`  
 Branch: `agent/gw1-p1-cloudflare-evidence-foundation`  
@@ -187,7 +187,7 @@ Official references:
 - https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/
 - https://developers.cloudflare.com/workers/configuration/routing/workers-dev/
 
-**Live closure is still required after deploying this config.** Before PR #118 can be called merge-ready, the production Worker must show Preview URLs disabled under **Workers & Pages -> teamsheet-evidence-archive -> Settings -> Domains & Routes**, or equivalent live evidence must demonstrate that a previously generated version/alias preview hostname no longer routes to the Worker. The existing Access-protected production `workers.dev` route remains enabled.
+**Live security closure passed on 11 August 2026 at 19:22 BST using owner-supplied physical iPhone Safari dashboard evidence.** The Cloudflare Workers & Pages Domains screen showed the production `teamsheet-evidence-archive.fpltsheet.workers.dev` route enabled and marked **Restricted** with the Access-policy sign-in requirement, while the wildcard Preview hostname `*-teamsheet-evidence-archive.fpltsheet.workers.dev` was disabled. This records owner-provided live dashboard evidence at that moment; it is not claimed as independent dashboard/device testing by the assistant. The Access-protected production `workers.dev` route remains intentionally enabled.
 
 ## Live production acceptance — 11 August 2026
 
@@ -288,7 +288,7 @@ GW1-P1 does not change:
 
 ## Remaining boundary
 
-GW1-P1 provides and production-validates the backend foundation only. Its functional backend paths have recorded physical iPhone Safari acceptance, while the newly explicit Preview URL disable still requires post-deployment live confirmation before final merge readiness.
+GW1-P1 provides and production-validates the backend foundation only. Its functional backend paths have recorded physical iPhone Safari acceptance, and the Preview URL security closeout is now recorded from owner-supplied live Cloudflare dashboard evidence. Teamsheet browser integration remains outside this checkpoint.
 
 GW1-P2 remains separately approval-gated and will connect the existing Stage 10 browser flow to this service with the persistent local pending-upload/outbox contract. Until GW1-P2 is implemented and accepted, Teamsheet does not automatically send genuine pre-deadline snapshots to Cloudflare.
 
