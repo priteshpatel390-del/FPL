@@ -27,7 +27,7 @@ Purpose: make the repository's operational guidance and immutable project histor
 
 ## A3 remediation closeout index
 
-A3 engineering remediation is complete through A3-SC-1 / PR #116. Documentation/architecture closeout is the remaining A3 closeout task until its own documentation-only PR is merged and post-merge verified. The repository's canonical sequence treats the separate 0C correction as a narrow follow-up to Checkpoint 0 rather than renumbering every later item.
+A3 engineering remediation is complete through A3-SC-1 / PR #116. The documentation/architecture reconciliation represented by this index is the final A3 closeout layer; no A3-specific engineering or documentation task follows it. The repository's canonical sequence treats the separate 0C correction as a narrow follow-up to Checkpoint 0 rather than renumbering every later item.
 
 1. Post-A3 Checkpoint 0 housekeeping — complete through PR #105; separate 0C manual-squad dead-handler cleanup complete through PR #106.
 2. `fpl:calib` compatibility and resilience — complete through PR #107.
@@ -36,9 +36,9 @@ A3 engineering remediation is complete through A3-SC-1 / PR #116. Documentation/
 5. State-Ownership Cleanup — complete through PR #112.
 6. Route-Aware Rendering & Performance M1 — measurement-only work complete through PR #115; route-aware optimisation remains unapproved.
 7. A3 Small Stale-Code Cleanup — complete through PR #116.
-8. Documentation/architecture closeout — current documentation-only closeout task.
+8. Documentation/architecture closeout — this reconciliation; final A3 closeout layer.
 
-Separately tracked live-season evidence gates, D1 implementation, Understat repair, Odds API repair, ChatGPT migration, Cloudflare/agent expansion and route-aware optimisation are not unfinished A3 engineering remediation.
+Separately tracked live-season evidence gates, D1 implementation, Understat repair, Odds API repair, ChatGPT migration, Cloudflare/agent expansion and route-aware optimisation are not unfinished A3 engineering remediation or closeout work.
 
 ## Current operational and acceptance records
 
