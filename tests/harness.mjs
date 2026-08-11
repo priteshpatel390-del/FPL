@@ -101,7 +101,7 @@ export function loadApp(fieldValues = {}, { interactive = false } = {}) {
   (0, eval)(src + `\nObject.assign(globalThis.__EXPORTS__, { S, hydrate, matchContext, multToDiff, runScore,
     teamFixtures, playerFixtureXP, projectXP, priceBaseline, availability, expectedMinutes, bestXI,
     sellPrice, mySquad, parseCSV, pearson, poissonOver, solveLambda, mapTeamName, parseUnderstat,
-    runBacktest, rememberLeague, renderLeagueChips, renderTicker, renderPlayers, renderSquad, renderTransfers,
+    runBacktest, initMiniLeagues, renderMiniLeagues, renderTicker, renderPlayers, renderSquad, renderTransfers,
     renderManual, searchPlayers, transferPlannerMoveList, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
     clearXP, flagsFor, priceMomentum, decisionPreviewSnapshot, decisionPreviewSelectTransfer, decisionPreviewClearAll,
     transferPerformanceStart, transferPerformanceCancel, transferPerformanceSnapshot });

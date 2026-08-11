@@ -1,12 +1,20 @@
 # ROADMAP.md — current and proposed checkpoints
 
-## 10 August 2026 — current checkpoint status
+## 11 August 2026 — current checkpoint status
+
+**Route-Aware Rendering and Performance M1 is complete, merged and post-merge verified.** PR #115 merged at `main` `02ea634464cc415ac43d4b9cb13b4005fc276646`. Exact-main Verify Teamsheet run #183 / `31459954883` passed **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**, together with committed provenance, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. No physical iPhone testing was performed or claimed.
+
+M1 delivered measurement instrumentation only, deliberately outside every production build input. It changed no route scheduling, rendering behaviour or production output. **Route-aware optimisation is not implementation-approved.** See [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md).
+
+**A3-SC-1 Small Stale-Code Cleanup is the current checkpoint** — approved, implemented and open as an unmerged candidate in draft PR #116. It removes only the two unreachable Mini-League helpers `renderLeagueChips()` and `rememberLeague()`. Merge remains separately approval-gated. See [A3-SC-1 Small Stale-Code Cleanup](A3-SC-1-SMALL-STALE-CODE-CLEANUP.md).
+
+## Historical — 10 August 2026 checkpoint status
 
 **A3 State-Ownership Cleanup is complete, merged and post-merge verified.** PR #112 merged at `main` `691d9f929284d51c233b61d099c34cafe1030db6` from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. Exact-main Verify Teamsheet run #167 / `31430700053` passed **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**, together with committed provenance, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. GitHub Pages deployment run #117 / `31430697347` also succeeded on that exact merge commit. No physical iPhone testing was performed or claimed.
 
 The completed checkpoint keeps `src/state.mjs` as an explicit cross-module shared-slot inventory rather than a new semantic state owner and makes the legacy Mini-League alias one-way so `S.miniLeagues` remains the only writable runtime preference representation. It is not a general state-management rewrite and changes no model, provider/data-source, persistence-format, error-boundary, Atomic Foreground Refresh, routing-performance or bundler behaviour. See [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md).
 
-**Route-Aware Rendering and Performance is the next substantive checkpoint.** It begins with investigation, measurement and evidence only. Implementation is not approved. The first step is to establish whether inactive-route rendering creates a material user-relevant performance cost before any optimisation is proposed.
+At that checkpoint Route-Aware Rendering and Performance was the next substantive work, beginning with investigation and measurement only. Its M1 measurement stage has since merged through PR #115; optimisation remains unapproved, as recorded in the current-status section above.
 
 ## 10 August 2026 — `fpl:calib` compatibility and resilience is merged
 
@@ -35,18 +43,19 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 - **Cache and persistence resilience — complete and merged** through PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet run #105 and independent review of the final diff all passed. Physical iPhone testing was explicitly waived by the owner.
 - **Production-Bundle Safeguards — complete and merged** through PR #111 at `main` `5a1a036…`; exact-main run #159 passed 859/859 and the three complete-bundle safeguards are permanent tests.
 - **State-Ownership Cleanup — complete and merged** through PR #112 at `main` `691d9f9…`; exact-main run #167 passed 864/864, the shared-state inventory and one-way Mini-League compatibility ownership are permanent, and no physical iPhone testing was performed or claimed.
+- **Route-Aware Rendering and Performance M1 — complete and merged** through PR #115 at `main` `02ea634…`; exact-main run #183 passed 866/866. M1 is measurement instrumentation only and route-aware optimisation remains unapproved.
 
 ## Current A3 remediation sequence
 
-Nothing after the completed State-Ownership Cleanup is implementation-approved. Each later open entry begins with investigation/design and requires explicit owner approval before code is written.
+Route-aware optimisation and the documentation/architecture closeout are not implementation-approved. Each open entry begins with investigation/design and requires explicit owner approval before code is written. A3-SC-1 is the one approved open implementation and is bounded to its reviewed deletion list.
 
 1. **Post-A3 Checkpoint 0 housekeeping — complete and merged through PR #105.** Automatic Verify Teamsheet verification of `main`, post-merge documentation reconciliation and the duplicate manual-squad handler investigation. See [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md).
 2. **`fpl:calib` compatibility and resilience — complete and merged through PR #107** at `main` `d112c67`. The checkpoint was separately model-gated and was approved and merged as a fail-closed compatibility change only: no production calibration generator, no tuned factors and no accuracy claim. [PERSIST-4](KNOWN_LIMITATIONS.md) is closed by it.
 3. **A3 error-boundary separation (Package EB-1) — complete, physically accepted on the executable paths, merged and post-merge verified through PR #108** at `main` `ba5daa20…`. It fixes failure ownership only: recovery-render failures are explicitly observable instead of swallowed, unexpected supporting-layer exceptions stay application-owned instead of manufacturing Understat/Odds provider evidence, and startup/manual/foreground refreshes classify otherwise escaping exceptions at a narrow lifecycle boundary. Provider endpoints, validation, retry cadence, weighting, Rule-B retain/clear and every model calculation are unchanged. See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md).
 4. **Production-Bundle Safeguards — complete and merged through PR #111** at `main` `5a1a036…`. It is test/harness-only and protects complete generated-bundle parsing, late-module retention and execution of late runtime replacements/navigation under the zero-dependency harness.
 5. **State-ownership cleanup — complete, merged and post-merge verified through PR #112** at `main` `691d9f9…`. `state.mjs` is the explicit shared-slot inventory rather than a new semantic state owner; the legacy Mini-League alias is one-way; focused lifecycle/ownership regressions are permanent. No wholesale state-management rewrite. See [A3 State-Ownership Cleanup](A3-STATE-OWNERSHIP-CLEANUP.md).
-6. **Route-aware rendering and performance work — next substantive checkpoint, investigation/design only.** Measure current rendering work and user-relevant cost first; do not optimise inactive-route rendering without evidence. **Implementation is not approved.**
-7. **Small stale-code cleanup and remaining reviewed deletion work.** Use a reviewed deletion list; no opportunistic broad cleanup. **Not approved.**
+6. **Route-aware rendering and performance — M1 measurement complete and merged through PR #115** at `main` `02ea634…`. Measurement demonstrated real avoidable inactive-route and shared-render work but did not demonstrate material user-visible lag, and the instrumentation stays outside every production build input. **Optimisation is not approved.** See [Route-Aware Rendering and Performance](ROUTE-AWARE-RENDERING-PERFORMANCE.md).
+7. **Small stale-code cleanup (A3-SC-1) — approved and implemented as an unmerged candidate in draft PR #116.** It uses a reviewed deletion list limited to `renderLeagueChips()` and `rememberLeague()`; no opportunistic broad cleanup. Merge remains separately approval-gated. See [A3-SC-1 Small Stale-Code Cleanup](A3-SC-1-SMALL-STALE-CODE-CLEANUP.md).
 8. **A3 documentation and architecture closeout.** Reconcile canonical documents after the engineering remediations are complete.
 
 ### Separate narrow checkpoint — duplicate manual-squad handler correction (0C) — complete

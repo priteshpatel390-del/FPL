@@ -1,6 +1,14 @@
 # CLAUDE.md — onboarding for every future development session
 
-## 10 August 2026 — A3 State-Ownership Cleanup is merged and accepted
+## 11 August 2026 — current state
+
+GitHub `main` is `02ea634464cc415ac43d4b9cb13b4005fc276646`, the merge of **Route-Aware Rendering and Performance M1** PR #115. The merged tree contains **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**, and permanent Verify Teamsheet run #183 / `31459954883` passed every stage on that exact merge commit.
+
+M1 delivered measurement instrumentation only. `scripts/measure-route-rendering.mjs` reads the generated bundle and runs an instrumented copy through the existing harness; it is deliberately outside every production build input. **Route-aware optimisation itself remains unapproved** — do not change route scheduling or rendering behaviour without separate explicit approval. See [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md).
+
+The current checkpoint is **A3-SC-1 Small Stale-Code Cleanup**, an approved narrow deletion of two unreachable Mini-League helpers. It is an open, unmerged candidate in draft PR #116 and must not be merged without Pritesh's explicit approval. See [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md).
+
+## Historical checkpoint — 10 August 2026 A3 State-Ownership Cleanup is merged and accepted
 
 A3 State-Ownership Cleanup is complete. PR #112 merged at `main` `691d9f929284d51c233b61d099c34cafe1030db6` from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`.
 
@@ -8,7 +16,7 @@ The checkpoint makes `src/state.mjs` the explicit inventory of legitimate cross-
 
 Evidence: the merged tree contains **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent Verify Teamsheet run #167 / `31430700053` passed every stage on exact merge commit `691d9f9…`, including committed provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. GitHub Pages deployment run #117 / `31430697347` also succeeded on that exact merge commit. No physical iPhone testing was performed for PR #112 and none is claimed. See [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md).
 
-The next substantive checkpoint is **Route-Aware Rendering and Performance**. Begin with investigation, measurement and evidence only. Implementation is not approved; do not optimise inactive-route rendering until repository/runtime evidence establishes a material problem and Pritesh separately approves a bounded implementation.
+At that checkpoint the next substantive work was **Route-Aware Rendering and Performance**, to begin with investigation, measurement and evidence only. Its M1 measurement stage has since been implemented and merged through PR #115; route-aware optimisation remains unapproved, as recorded in the current-state section above.
 
 ## Historical checkpoint — 10 August 2026 A3 error-boundary separation (EB-1)
 
@@ -54,11 +62,11 @@ Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari
 
 No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
 
-## 10 August 2026 — current checkpoint
+## 11 August 2026 — current checkpoint
 
-The current `main` is `691d9f929284d51c233b61d099c34cafe1030db6`, the merge of A3 State-Ownership Cleanup PR #112. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106), `fpl:calib` compatibility (PR #107), EB-1 (PR #108), Production-Bundle Safeguards (PR #111) and State-Ownership Cleanup (PR #112) are all merged and verified. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) is closed. Data Architecture D1 remains an approved future design only.
+The current `main` is `02ea634464cc415ac43d4b9cb13b4005fc276646`, the merge of Route-Aware Rendering and Performance M1 PR #115. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106), `fpl:calib` compatibility (PR #107), EB-1 (PR #108), Production-Bundle Safeguards (PR #111), State-Ownership Cleanup (PR #112) and Route-Aware M1 (PR #115) are all merged and verified. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) is closed. Data Architecture D1 remains an approved future design only.
 
-The next substantive checkpoint is **Route-Aware Rendering and Performance** and begins with investigation/design plus measurement only. Implementation is not approved. The first step is evidence of actual rendering cost; do not pull optimisation forward. The full sequence is in [Roadmap](docs/ROADMAP.md).
+The current checkpoint is **A3-SC-1 Small Stale-Code Cleanup**, open and unmerged in draft PR #116. Route-aware optimisation remains a separate, unapproved future checkpoint: M1 delivered measurement only and did not demonstrate material user-visible lag, so do not pull optimisation forward. The full sequence is in [Roadmap](docs/ROADMAP.md).
 
 ## 9 August 2026 reconciliation
 
@@ -68,18 +76,18 @@ The authoritative baseline is now `main` `6e725485564a51ee2a17bc08e5c8bf95e8c277
 
 **Atomic Foreground Refresh** is complete, physically accepted and merged through PR #102, after five design rounds (R2, R3, R3.1, R3.2, R3.3, R3.4) and the PR #102 correctness review. See [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md).
 
-Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 10 August 2026.
+Read this first. GitHub `main` is the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 11 August 2026.
 
 ## Current baseline
 
 | Item | Current evidence |
 |---|---|
-| Repository head | `main` `691d9f929284d51c233b61d099c34cafe1030db6`, merge of A3 State-Ownership Cleanup PR #112 |
-| Latest merged engineering checkpoint | PR #112, reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. It declares the cross-module `S` inventory and makes the legacy Mini-League alias one-way; no broad state-management rewrite or model/provider/persistence-format/routing-performance/bundler behaviour change. |
-| Permanent repository verification | 864 tests in the merged tree; Verify Teamsheet run #167 / `31430700053` completed successfully on exact merge commit `691d9f9…`, and every provenance/build/determinism/identity stage passed. |
-| Candidate verification before merge | Exact PR #112 head `620daf14…` passed 864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled, plus committed provenance, two byte-identical production builds, root/deployable equality, exact manifest build identity and the PR #111 production-bundle safeguards. |
-| GitHub Pages | Deployment run #117 / `31430697347` succeeded on exact merge commit `691d9f9…`. |
-| Current unmerged candidate | None. Route-Aware Rendering and Performance is next and begins with investigation/design and measurement only; implementation is not approved. |
+| Repository head | `main` `02ea634464cc415ac43d4b9cb13b4005fc276646`, merge of Route-Aware Rendering and Performance M1 PR #115 |
+| Latest merged engineering checkpoint | PR #115. It adds route-rendering measurement instrumentation that stays outside every production build input; it does not change route scheduling, rendering behaviour or any production output. Route-aware optimisation remains unapproved. |
+| Permanent repository verification | 866 tests in the merged tree; Verify Teamsheet run #183 / `31459954883` completed successfully on exact merge commit `02ea634…`, and every provenance/build/determinism/identity stage passed. |
+| Candidate verification before merge | The A3-SC-1 candidate is verified against this `02ea634…` base; exact head evidence is recorded in [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md). |
+| GitHub Pages | Pages deploys from `main`. The deployment for `02ea634…` was not independently re-verified during A3-SC-1; per-checkpoint Pages evidence remains in the individual records. |
+| Current unmerged candidate | **A3-SC-1 Small Stale-Code Cleanup**, open and unmerged in draft PR #116. It removes two unreachable Mini-League helpers only. |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102), PR #103 presentation and EB-1 (PR #108) normal startup/manual refresh/saved-data offline refresh/online recovery. PR #104 testing was explicitly waived. PR #112 had no physical iPhone testing and none is claimed. EB-1 clean private-tab offline-first could not load the uncached static shell and remains automated-only evidence. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
@@ -115,7 +123,9 @@ Production-Bundle Safeguards is complete and merged through PR #111 at `5a1a036�
 
 A3 State-Ownership Cleanup is complete and merged through PR #112 at `691d9f9…`. It makes shared-state inventory explicit and Mini-League compatibility ownership one-way without changing the domain ownership architecture. No physical iPhone testing was performed or claimed.
 
-Route-Aware Rendering and Performance is the next substantive remediation and is **not implementation-approved**. Begin with investigation/design only, measure current route rendering and user-relevant cost first, then return for explicit approval before any routing/rendering optimisation or source change.
+Route-Aware Rendering and Performance reached its **M1 measurement stage only**, merged through PR #115 at `02ea634…`. M1 found real avoidable inactive-route work but did **not** demonstrate material user-visible lag, and its instrumentation stays outside every production build input. Route-aware **optimisation remains not implementation-approved**: return for explicit approval before any routing/rendering optimisation or production source change.
+
+A3-SC-1 Small Stale-Code Cleanup is the current approved narrow checkpoint, open and unmerged in draft PR #116. It removes only `renderLeagueChips()` and `rememberLeague()`; it must not be broadened into a general cleanup.
 
 ## Owner and communication
 
