@@ -2,13 +2,15 @@
 
 ## 10 August 2026 — current verified baseline after A3 State-Ownership Cleanup
 
-The latest merged repository checkpoint is A3 State-Ownership Cleanup PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`, from reviewed head `620daf14d1c354668b16df74daf05e29d8a1eb25`. The merged baseline is **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent post-merge Verify Teamsheet run #167 / `31430700053` passed committed deployment provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation on that exact merge commit. GitHub Pages deployment run #117 / `31430697347` also succeeded on the same commit.
+The latest merged repository checkpoint is Route-Aware Rendering and Performance M1 PR #115 at `main` `02ea634464cc415ac43d4b9cb13b4005fc276646`. The merged baseline is **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent post-merge Verify Teamsheet run #183 / `31459954883` passed committed deployment provenance, the complete suite, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation on that exact merge commit.
+
+The current unmerged candidate is A3-SC-1 Small Stale-Code Cleanup in draft PR #116, based on that `02ea634…` commit. Its exact head evidence is recorded in [A3-SC-1 Small Stale-Code Cleanup](A3-SC-1-SMALL-STALE-CODE-CLEANUP.md).
 
 PR #112 retained all 859 Production-Bundle Safeguards tests and added five focused ownership regressions. They enforce the declared cross-module `S` inventory, refresh-owned-key subset and one-way Mini-League compatibility authority without introducing a general state framework. No model, provider, persistence-format, error-boundary, Atomic Foreground Refresh, routing-performance or bundler behaviour changed. No physical iPhone testing was performed for PR #112 and none is claimed.
 
 The permanent `verify.yml` completion gate runs `./run-tests.sh`, committed deployment provenance, two exact-identity production builds, deterministic byte comparison, root/deployable equality and exact manifest identity. Its GitHub-owned action runtimes are now `actions/checkout@v5` and `actions/upload-artifact@v6`, both on Node 24. This changes CI action runtime only; it adds no project dependency or application behaviour.
 
-The next substantive checkpoint is **Route-Aware Rendering and Performance**, beginning with investigation, measurement and evidence only. Implementation is not approved.
+Route-Aware Rendering and Performance reached its M1 measurement stage only, merged through PR #115. Route-aware **optimisation is not approved**, so test additions must follow evidence rather than presuppose an optimisation.
 
 ## Historical checkpoint — 10 August 2026 EB-1 merged verification and iPhone acceptance closeout
 
@@ -82,11 +84,11 @@ Last reconciled: 2026-08-10. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE
 
 ## Current verified baseline
 
-The latest merged repository checkpoint is A3 State-Ownership Cleanup PR #112 at `main` `691d9f929284d51c233b61d099c34cafe1030db6`. The merged baseline is **864 tests, 864 passed, 0 failed, 0 skipped, 0 cancelled**. Automatic push-triggered Verify Teamsheet run #167 / `31430700053` completed successfully on that exact merge commit and passed every provenance, complete-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage.
+The latest merged repository checkpoint is Route-Aware Rendering and Performance M1 PR #115 at `main` `02ea634464cc415ac43d4b9cb13b4005fc276646`. The merged baseline is **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**. Automatic push-triggered Verify Teamsheet run #183 / `31459954883` completed successfully on that exact merge commit and passed every provenance, complete-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage.
 
-The exact pre-merge PR #112 head `620daf14d1c354668b16df74daf05e29d8a1eb25` passed the same 864-test baseline and all PR #111 production-bundle safeguards. All 859 pre-State-Ownership tests were retained plus five focused ownership regressions; no test or golden was deleted, weakened, regenerated or skipped.
+The preceding A3 State-Ownership Cleanup PR #112 merged at `691d9f929284d51c233b61d099c34cafe1030db6` on an **864-test** baseline, retaining all 859 pre-State-Ownership tests plus five focused ownership regressions; no test or golden was deleted, weakened, regenerated or skipped at any of these checkpoints.
 
-There is no current substantive implementation candidate. **Route-Aware Rendering and Performance** is next and begins with investigation/design plus measurement only. Implementation is not approved; test additions must follow evidence rather than presuppose an optimisation.
+The current implementation candidate is **A3-SC-1 Small Stale-Code Cleanup** in draft PR #116, based on `02ea634…` and unmerged. Route-aware **optimisation** remains unapproved; test additions must follow evidence rather than presuppose an optimisation.
 
 Physical PR #112 device testing was not required for its non-visual ownership boundary and was not performed. Existing physical evidence for EB-1 remains limited to normal online startup, manual online refresh, saved-data in-app offline refresh and return-online recovery. The clean/private offline-first state could not execute because Safari could not load an uncached GitHub Pages shell while already offline, so automated regressions remain the evidence for that path. Because the EB-1 acceptance session used an incomplete manual squad, recommendation-survival was not independently demonstrated on device even though verified core-state retention was observed.
 
@@ -376,7 +378,7 @@ The correction removes runtime source rewriting entirely:
 
 One existing assertion was replaced rather than removed: `transfer-optimiser-view.test.mjs` previously required that module to call `optimiseTransfers({...})` directly. That call *was* the synchronous main-thread search, so the assertion is now the stronger pair — the presentation module must not be able to enter the optimiser at all, and the worker must be the only entry point. `final-mobile-polish.test.mjs` and `settings-organisation.test.mjs` now read both Transfers modules so their wording and route-warning contracts still apply after the split.
 
-The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #112 with **864 passing tests**, recorded at the top of this document.
+The historical PR #69 implementation baseline was **590 passed, 0 failed, 0 skipped** with two byte-identical exact-source builds and root/deployable equality. Subsequent Track A corrections and regressions moved the accepted merged checkpoint to **613 passed, 0 failed, 0 skipped** and populated physical iPhone Safari acceptance for the tested calculation/lifecycle paths. The current substantive application baseline is PR #115 with **866 passing tests**, recorded at the top of this document.
 
 ## 2026-08-06 — Concurrent continuation reconciliation
 The reconciled branch passes **609 tests**. Added contracts prove that explicit cancellation and force-start supersession settle their pending calculation promises, and that mixed-width player IDs with reversed input order preserve exact production-versus-exhaustive results.
