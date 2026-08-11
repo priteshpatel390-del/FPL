@@ -8,7 +8,7 @@ A3-SC-1 is complete. It removed two proven-unreachable Mini-League helpers and s
 
 Route-Aware Rendering and Performance M1 is complete through PR #115. It is measurement instrumentation only and demonstrated real avoidable inactive-route work **without** demonstrating material user-visible lag. That absence of evidence remains a limitation: no performance claim, in either direction, is supported for a physical iPhone. Route-aware optimisation is not approved.
 
-A3 engineering remediation is complete through PR #116. Documentation/architecture closeout is the remaining A3 closeout task; separately gated live-season evidence, D1 implementation, Understat/Odds repair, ChatGPT migration and Cloudflare/agent expansion are not A3 engineering defects.
+A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation is the final A3 closeout layer; no A3-specific engineering or documentation task follows it. Separately gated live-season evidence, D1 implementation, Understat/Odds repair, ChatGPT migration and Cloudflare/agent expansion are not A3 engineering defects or unfinished A3 closeout work.
 
 ## Historical — 10 August 2026 evidence boundary after A3 State-Ownership Cleanup
 
