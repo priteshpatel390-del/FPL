@@ -8,7 +8,7 @@ A3-SC-1 removed only the two proven-unreachable Mini-League helpers `renderLeagu
 
 Route-Aware Rendering and Performance M1 is complete and merged through PR #115. M1 delivered measurement instrumentation only. `scripts/measure-route-rendering.mjs` reads the generated bundle and runs an instrumented copy through the existing harness; it is deliberately outside every production build input. **Route-aware optimisation itself remains unapproved** — do not change route scheduling or rendering behaviour without separate explicit approval. See [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md).
 
-The current A3 checkpoint is **documentation and architecture closeout only**. A3 engineering remediation is complete through PR #116; the closeout must reconcile current-state, architecture, roadmap, limitation, testing and historical wording without changing application source, tests, build inputs, generated deployables, model/provider behaviour or any separately gated future programme. See [Roadmap](docs/ROADMAP.md) and [Historical Records](docs/HISTORICAL_RECORDS.md).
+A3 engineering remediation is complete through PR #116. **This documentation and architecture reconciliation is the final A3 closeout layer; no A3-specific engineering or documentation task follows it.** It reconciles current-state, architecture, roadmap, limitation, testing and historical wording without changing application source, tests, build inputs, generated deployables, model/provider behaviour or any separately gated future programme. See [Roadmap](docs/ROADMAP.md) and [Historical Records](docs/HISTORICAL_RECORDS.md).
 
 ## Historical checkpoint — 10 August 2026 A3 State-Ownership Cleanup is merged and accepted
 
@@ -60,11 +60,11 @@ Physical iPhone Safari acceptance is complete: the startup canvas reaches Safari
 
 No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, data-source, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed. At documentation closeout, GitHub `main` remained `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d`; the eventual merge commit must be read from latest `main` rather than inferred from this pre-merge documentation commit.
 
-## 11 August 2026 — current checkpoint
+## 11 August 2026 — A3 closeout boundary
 
 A3 engineering remediation is complete through PR #116. The A3 engineering baseline entering closeout is `1060e60d3affadabdf97924c7ece85cc62d8e360`. Post-A3 Checkpoint 0 (PR #105), the 0C manual-squad dead-handler cleanup (PR #106), `fpl:calib` compatibility (PR #107), EB-1 (PR #108), Production-Bundle Safeguards (PR #111), State-Ownership Cleanup (PR #112), Route-Aware M1 (PR #115) and A3-SC-1 (PR #116) are all merged. [PERSIST-4](docs/KNOWN_LIMITATIONS.md) is closed. Data Architecture D1 remains an approved future design only.
 
-The current checkpoint is **A3 documentation and architecture closeout**. It is documentation-only. Route-aware optimisation, D1 implementation, Understat repair, Odds API repair, ChatGPT migration, Cloudflare/agent work and live-season evidence gates remain separate and unapproved/deferred as applicable. The full sequence is in [Roadmap](docs/ROADMAP.md).
+This documentation/architecture reconciliation is the final A3 closeout layer and is documentation-only. Route-aware optimisation, D1 implementation, Understat repair, Odds API repair, ChatGPT migration, Cloudflare/agent work and live-season evidence gates remain separate and unapproved/deferred as applicable. The full sequence is in [Roadmap](docs/ROADMAP.md).
 
 ## 9 August 2026 reconciliation
 
@@ -84,7 +84,7 @@ Read this first. GitHub `main` is the permanent source of truth; repository evid
 | Latest merged engineering checkpoint | PR #116. It removes two proven-unreachable Mini-League helpers plus stale test-side consumers and adds structural regressions; it changes no intended application behaviour. |
 | Permanent repository verification | Reviewed PR #116 head `097fabb…` passed 868/868 in Verify Teamsheet run #193 / `31469449540`. Permanent post-merge run #194 / `31470879289` passed the full repository gate on exact merge commit `1060e60…`. |
 | GitHub Pages | Pages run #120 / `31470878300` succeeded for exact PR #116 merge commit `1060e60…`. |
-| Current A3 task | **Documentation and architecture closeout only.** Engineering remediation is complete through PR #116. |
+| A3 closeout status | **This documentation/architecture reconciliation is the final A3 closeout layer.** No A3-specific engineering or documentation task follows it. |
 | Physical iPhone Safari acceptance | Tested paths accepted for Transfers, Player Detail, Team, Fixtures, the Leagues pre-season experience, R1 online/cached/manual/background/in-app-offline behaviour, Atomic Foreground Refresh (PR #102), PR #103 presentation and EB-1 (PR #108) normal startup/manual refresh/saved-data offline refresh/online recovery. PR #104 testing was explicitly waived. PR #112, PR #115 and PR #116 had no physical iPhone testing and none is claimed. EB-1 clean private-tab offline-first could not load the uncached static shell and remains automated-only evidence. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
@@ -124,7 +124,7 @@ Route-Aware Rendering and Performance M1 is complete and merged through PR #115 
 
 A3-SC-1 Small Stale-Code Cleanup is complete and merged through PR #116 at `1060e60…`. It removed only `renderLeagueChips()` and `rememberLeague()` plus stale test consumers, added structural regressions, and had no physical iPhone testing. The brittle `selectMiniLeague` exact-source-string assertion remains deferred test-hardening debt.
 
-A3 documentation/architecture closeout is the current A3 task. It must not pull D1 implementation, Understat/Odds repair, route-aware optimisation, ChatGPT migration, Cloudflare/agent work, live-season evidence gates or other later work forward.
+The documentation/architecture reconciliation represented by these canonical docs is the final A3 closeout layer. It must not pull D1 implementation, Understat/Odds repair, route-aware optimisation, ChatGPT migration, Cloudflare/agent work, live-season evidence gates or other later work into A3.
 
 ## Owner and communication
 
