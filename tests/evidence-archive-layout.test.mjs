@@ -28,6 +28,7 @@ test('evidence archive Cloudflare build root is isolated and byte-identical to t
   const evidence = JSON.parse(deployConfig);
   assert.equal(evidence.name, 'teamsheet-evidence-archive');
   assert.equal(evidence.main, 'evidence-archive.mjs');
+  assert.equal(evidence.preview_urls, false);
   assert.equal(evidence.d1_databases[0].migrations_dir, 'evidence-migrations');
   assert.notEqual(evidence.name, gateway.name);
   assert.notEqual(evidence.main, gateway.main);
