@@ -8,7 +8,7 @@ The current ownership architecture remains the one established by A3 State-Owner
 
 `fpl:calib` compatibility is complete through PR #107. Unverified stored calibration records fail closed before reaching `S.calib`, remain byte-preserved but inert, and standard uncalibrated projections remain active. The existing live scoring multiplier code is unchanged and the Stage 7 walk-forward path remains diagnostic-only. A future production calibration record still requires a separately approved season/model/rules/methodology/dataset contract before any activation path may be added.
 
-A3 engineering remediation is complete through PR #116. The remaining A3 closeout work is documentation/architecture reconciliation only; it does not itself authorise D1 implementation, route-aware optimisation, provider repair, model changes, ChatGPT migration or Cloudflare/agent expansion.
+A3 engineering remediation is complete through PR #116. This documentation/architecture reconciliation is the final A3 closeout layer; no A3-specific engineering or documentation task follows it, and it does not authorise D1 implementation, route-aware optimisation, provider repair, model changes, ChatGPT migration or Cloudflare/agent expansion.
 
 ## Mobile viewport and primary-screen presentation boundary
 
