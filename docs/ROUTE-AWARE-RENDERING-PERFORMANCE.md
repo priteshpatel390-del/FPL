@@ -1,8 +1,10 @@
 # Route-Aware Rendering and Performance
 
-Status: **M1 measurement instrumentation approved and implemented as a review candidate; route-aware optimisation remains unapproved.**
+Status: **M1 measurement instrumentation complete, merged and post-merge verified through PR #115; route-aware optimisation remains unapproved.**
 
 Base investigated: GitHub `main` `5b177d35842e73bfdc47944263ef7a807f5430a5`, merge of PR #114. At the investigation gate there were 864 tests on `main`, Verify Teamsheet run #181 and GitHub Pages run #118 were successful on that exact commit, and no open PR overlapped this checkpoint.
+
+Final M1 merge: PR #115 merged at `02ea634464cc415ac43d4b9cb13b4005fc276646`. Permanent exact-main Verify Teamsheet run #183 / `31459954883` passed **866 tests, 866 passed, 0 failed, 0 skipped, 0 cancelled**, together with committed provenance, production build, deterministic rebuild, root/deployable equality, exact build identity and production-output preservation. No physical iPhone testing was performed or claimed for M1.
 
 ## Outcome of the investigation
 
@@ -21,7 +23,7 @@ These are demonstrated architecture/call-path findings, not proof of perceptible
 
 ## Approved M1 boundary
 
-Pritesh approved **M1 measurement instrumentation only** on 10 August 2026. M1 must not optimise or alter route scheduling.
+Pritesh approved **M1 measurement instrumentation only** on 10 August 2026. M1 does not optimise or alter route scheduling.
 
 The implementation deliberately stays outside every production build input. `scripts/measure-route-rendering.mjs` reads the exact generated `dist/app.bundle.js`, removes only the live startup IIFE using the same production-bundle boundary already protected by the test suite, inserts a temporary test-only probe before late runtime replacements, executes that instrumented copy through the existing zero-dependency harness, records measurements, and deletes the temporary file.
 
@@ -72,7 +74,7 @@ No fixed millisecond budget is approved before a real browser/device baseline ex
 
 ## M1 regression boundary
 
-`tests/route-render-performance.test.mjs` must prove that:
+`tests/route-render-performance.test.mjs` proves that:
 
 - the production-bundle probe can observe the known route/render relationships;
 - ordinary route navigation does not become a global render;
@@ -84,7 +86,7 @@ No fixed millisecond budget is approved before a real browser/device baseline ex
 - the four generated production outputs are byte-for-byte unchanged before and after the measurement run;
 - M1 tooling remains outside `manifest.buildInputFiles`.
 
-Because no build input changes, M1 requires **no generated-only commit**. The committed deployables must remain exactly the pre-M1 bytes and normal provenance/deterministic build CI must prove that they are still exactly reproducible from the unchanged production inputs.
+Because no build input changed, M1 required **no generated-only commit**. The committed deployables remained exactly the pre-M1 bytes and normal provenance/deterministic build CI proved that they remained exactly reproducible from the unchanged production inputs.
 
 ## Explicit exclusions
 
@@ -117,4 +119,4 @@ If none of those triggers occurs and M1 measurements remain marginal, the correc
 
 ## Approval status after M1
 
-M1 measurement tooling is approved. **No route-aware optimisation is approved.** Any future deduplication, active-route/dirty-generation rendering, hidden-Transfers scheduling change or Mini-League render narrowing requires a separate evidence-backed proposal and explicit owner approval.
+M1 measurement tooling is merged and complete. **No route-aware optimisation is approved.** Any future deduplication, active-route/dirty-generation rendering, hidden-Transfers scheduling change or Mini-League render narrowing requires a separate evidence-backed proposal and explicit owner approval.
