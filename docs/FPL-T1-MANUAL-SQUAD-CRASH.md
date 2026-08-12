@@ -1,6 +1,6 @@
 # FPL-T1 — Manual squad completion and legality corrections
 
-Status: approved by Pritesh on 5 August 2026, implemented and automatically verified on draft PR #69. Physical iPhone Safari retest remains required.
+Status: **historical record — complete and merged.** Approved by Pritesh on 5 August 2026, implemented and automatically verified on then-draft PR #69, which merged at `00a35bacd2396a125a8a914bff9980b4f18b257f`. The "physical iPhone Safari retest remains required" wording was true only at this checkpoint; the later integrated FPL-T1/Track A acceptance is recorded in `CHANGELOG.md` and `TRANSFERS-EXACT-PERFORMANCE.md`.
 
 ## Physical acceptance defect: fifteenth-player crash
 

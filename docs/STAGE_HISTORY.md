@@ -1,8 +1,8 @@
 # STAGE_HISTORY.md — engineering diary
 
-## FPL-T1 — Owner-controlled Official FPL gateway (draft PR #69)
-Approved and implemented after Teamsheet 2.0.7. The fixed-host, allowlisted Cloudflare Worker is deployed at the stable production origin; live bootstrap transport passed on physical iPhone Safari. The app is pinned to the exact `/fpl` base and verified at **547 passed, 0 failed, 0 skipped** with deterministic builds. No provider fields, model or football calculations changed. Full populated application acceptance and explicit merge approval remain pending.
-Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-07-30.
+## FPL-T1 — Owner-controlled Official FPL gateway (PR #69, merged)
+Approved and implemented after Teamsheet 2.0.7. The fixed-host, allowlisted Cloudflare Worker is deployed at the stable production origin; live bootstrap transport passed on physical iPhone Safari. The app is pinned to the exact `/fpl` base and verified at **547 passed, 0 failed, 0 skipped** with deterministic builds. No provider fields, model or football calculations changed. At the time this entry was written, full populated application acceptance and explicit merge approval remained pending; both were subsequently completed and PR #69 merged at `00a35bacd2396a125a8a914bff9980b4f18b257f`.
+Purpose: permanent per-stage record. Audience: retrospective/context. Last updated: 2026-08-06.
 Related: stage design and item records, TEAMSHEET2-PRODUCT-BLUEPRINT.md, ROADMAP.md, DECISIONS.md, CHANGELOG.md, AUDIT.md.
 
 ## Teamsheet 2.0 Product Blueprint — documentation integration (2026-07-30)

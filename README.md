@@ -6,7 +6,7 @@ Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's 
 
 This section describes the tree it lives in. It deliberately does not restate the current `main` commit SHA — GitHub owns that fact and it changes on every merge. Read it live with `git rev-parse origin/main`.
 
-**Repository test baseline: 904 tests, 904 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance.
+**Repository test baseline: 907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance.
 
 The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on PR #121. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited; the rule is derived from verified Official FPL event data and normal weekly behaviour resumes at the deadline instant. No optimiser mathematics changed. Pritesh physically accepted it on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / run `31583716004`. The preceding GW1 readiness audit found **zero blockers**; the application is suitable for GW1 subject to the separate live-only gates below.
 

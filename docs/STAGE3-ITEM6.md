@@ -1,6 +1,6 @@
 # Stage 3.6 — AI/Markdown sanitisation implementation record
 
-Status: **VERIFIED — ready for merge.**
+Status: **historical record — complete and merged.** Stage 3.6 AI/Markdown sanitisation shipped and remains covered by `tests/markdown-sanitisation.test.mjs`. The "ready for merge" wording was true only at this checkpoint and is not current state.
 Date: 2026-07-28.
 
 ## Approved scope

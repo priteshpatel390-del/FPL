@@ -1,6 +1,6 @@
 # Stage 3 item 4 — Provider Health
 
-Status: implemented and verified on `stage3-item4-provider-health`; pending owner review.
+Status: **historical record — complete.** Provider Health shipped with Stage 3 and remains a live application surface. The "pending owner review" wording below was true only on the original `stage3-item4-provider-health` branch and is not current state.
 Date: 2026-07-27.
 Decision: D-16.
 

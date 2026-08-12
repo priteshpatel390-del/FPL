@@ -111,7 +111,7 @@ const OPERATIONAL_SPINE = Object.freeze([
   'CLAUDE.md', 'README.md', 'docs/PROJECT_CONTEXT.md', 'docs/ROADMAP.md',
   'docs/ARCHITECTURE.md', 'docs/TESTING.md', 'docs/KNOWN_LIMITATIONS.md'
 ]);
-const CURRENT_TEST_BASELINE = 904;
+const CURRENT_TEST_BASELINE = 907;
 const HISTORICAL_HEADING = /^#{2,4}\s+.*\b(historical|superseded|previous checkpoint)\b/i;
 
 // The prose before the first historical heading: everything that claims to be current.
@@ -133,7 +133,7 @@ test('no current-state section restates a merged main commit SHA as the current 
 });
 
 test('current-state sections agree on one repository test baseline', () => {
-  const superseded = [898, 883, 868, 866, 864, 859, 856, 842, 835, 832, 803];
+  const superseded = [904, 898, 883, 868, 866, 864, 859, 856, 842, 835, 832, 803];
   for (const path of OPERATIONAL_SPINE) {
     const section = currentStateSection(path);
     for (const count of superseded) {
@@ -200,6 +200,53 @@ test('planning states the GW5 to GW6 international break, never GW2 to GW3', () 
       assert.match(line, /not GW2|was incorrect|previous planning assumption/i,
         `${path} still presents a GW2 → GW3 international break as current planning`);
     }
+  }
+});
+
+/* CHANGELOG currency guard.
+   -------------------------
+   The high-level change record silently fell more than twenty merged checkpoints behind the
+   rest of the documentation: its reconciliation marker still read 9 August while the whole
+   operational spine had been reconciled to 12 August. Nothing detected that, because every
+   individual document was internally consistent.
+
+   This compares declared metadata dates only — never prose, PR numbers or test counts — so it
+   stays durable and cannot falsely reject a historical record. It fires exactly when the
+   CHANGELOG stops being reconciled alongside the guidance it summarises. Both accepted
+   formats are the ones already used in the tree: `12 August 2026` and `2026-08-12`. */
+
+const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+
+function declaredDate(text) {
+  const iso = /\b(?:Last reconciled|Last updated|Current as of):\s*(\d{4})-(\d{2})-(\d{2})/i.exec(text);
+  if (iso) return Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  const long = /\b(?:Last reconciled|Last updated|Current as of):\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/i.exec(text);
+  if (!long) return null;
+  const month = MONTHS.indexOf(long[2].toLowerCase());
+  return month === -1 ? null : Date.UTC(Number(long[3]), month, Number(long[1]));
+}
+
+const asDay = value => new Date(value).toISOString().slice(0, 10);
+
+test('the CHANGELOG is reconciled no earlier than the guidance it summarises', () => {
+  const changelog = read('docs/CHANGELOG.md');
+  const reconciled = declaredDate(changelog);
+  assert.notEqual(reconciled, null, 'docs/CHANGELOG.md declares no parseable reconciliation date');
+
+  // Its own newest dated entry cannot be newer than its reconciliation marker.
+  const entryDates = [...changelog.matchAll(/^##\s+(?:\[[^\]]+\]\s+—\s+)?(\d{4})-(\d{2})-(\d{2})\b/gm)]
+    .map(match => Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  assert.ok(entryDates.length >= 10, 'the CHANGELOG entry-date parser found too few entries');
+  const newestEntry = Math.max(...entryDates);
+  assert.ok(reconciled >= newestEntry,
+    `docs/CHANGELOG.md records an entry dated ${asDay(newestEntry)} but declares "Last reconciled: ${asDay(reconciled)}"`);
+
+  // Nor may it lag behind the current-state spine it is meant to summarise.
+  for (const path of OPERATIONAL_SPINE) {
+    const declared = declaredDate(read(path));
+    if (declared === null) continue;
+    assert.ok(reconciled >= declared,
+      `${path} was reconciled on ${asDay(declared)} but docs/CHANGELOG.md still declares ${asDay(reconciled)}; the change record is behind the guidance`);
   }
 });
 

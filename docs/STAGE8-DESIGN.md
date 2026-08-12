@@ -1,6 +1,6 @@
 # STAGE8-DESIGN.md — Uncertainty and squad simulation
 
-Status: Approved and implemented on draft PR #16. Last updated: 2026-07-28.
+Status: **historical record — complete and merged.** Approved and implemented through PR #16; the Stage 8 uncertainty and squad-simulation layer shipped and remains production behaviour. The "draft PR" wording was true only at this checkpoint. Last updated: 2026-07-28.
 
 ## Scope
 

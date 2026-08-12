@@ -2,7 +2,7 @@
 
 ## Current repository baseline
 
-**904 tests, 904 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions. This document describes the tree it lives in and does not restate the current `main` commit SHA.
+**907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions, and 904 was the baseline before the pre-GW1 housekeeping closeout added its own. This document describes the tree it lives in and does not restate the current `main` commit SHA.
 
 ### GW1 readiness safety guard coverage
 
