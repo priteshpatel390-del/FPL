@@ -1,5 +1,13 @@
 # DATA_SOURCES.md
 
+## 12 August 2026 — candidate external sources are research, not approval
+
+This file remains the authoritative record of **approved** sources. Runtime provider identity is closed to `APPROVED_PROVIDER_NAMES` — exactly `fpl`, `understat`, `odds`, `archive` — and a permanent test pins that set.
+
+[External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) carries a dated 12 August 2026 research matrix covering ClubElo, football-data.org, API-Football/API-SPORTS, TheSportsDB, Wikidata and the Football-Data.co.uk CSV archive, plus a role-based selection order and a rights/retention classification scheme. **None of those is an approved source, and appearing in that matrix is not approval to acquire, integrate, retain or weight it.** A terms page permitting API calls is not automatically a licence to retain or republish the underlying competition data, so provider terms and underlying data rights must both be assessed. That research is time-sensitive and must be re-verified from first-party sources before any implementation approval.
+
+The existing positions here are unchanged by that record: Understat stays team-level only under D-05 with its acquisition still fragile and its parser deliberately unrepaired; the Odds API stays the market layer with its direct-only key boundary under D-06/SEC-1; the 45% and 65% blend weights stay unvalidated under D-09; and ClubElo stays an unimplemented candidate prior/anchor under D-10. Adding any source still requires an approved purpose, field contract, reliability assessment, validation/ablation plan, fallback, security/privacy review, cost and tests.
+
 ## 11 August 2026 — GW1-P1 evidence-backend status; provider acquisition unchanged
 
 GW1-P1 implements the backend-only Cloudflare custody foundation selected by D1: a separate authenticated evidence Worker, private R2 canonical objects and a minimal D1 manifest/receipt/index. This does **not** add or change a football-data provider, endpoint, acquisition cadence, retry policy, cache, fallback or model input. GW1-P2 connects the Teamsheet browser to that archive as a one-way evidence side effect and likewise adds no provider, endpoint, cadence, cache, fallback or model input; a record whose provider material is not approved for retention is never uploaded and is never stripped to make it archivable.
@@ -55,6 +63,8 @@ free tier → prospective logging from GW1 2026-27 (ODDS-2).
 
 Permanent server archival of Odds-derived Stage 10 material remains disabled until the approved governance/retention position permits it. The API key and keyed URL are never archive inputs.
 
+Scope of the prospective-logging gap: a Stage 10 pre-deadline record already preserves the **normalised** derived Odds inputs that actually affected the prediction whenever Odds is healthy at capture, so the primary market-layer on/off ablation is supported by ordinary capture and export with no code change. What is not preserved, and is not reconstructible on the free tier, is individual bookmaker prices, intraday line movement and anything else needing raw quotations. See ODDS-2 in [Known Limitations](KNOWN_LIMITATIONS.md) and [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) §9.
+
 ## vaastav historical archive
 Purpose: per-GW per-player CSVs for backtesting/calibration. Transport: raw.githubusercontent,
 direct, CORS-open, user-initiated download with progress. The 2025/26 dataset is pinned to commit
@@ -100,6 +110,8 @@ GW1-P1 does not replace any of these browser records. Its server archive is a se
 Sentiment/social/trends/etc. (owner spec §6); player-level Understat (D-05); FBref & Transfermarkt
 scraping without owner licensing approval; subscription predicted-lineup scraping (a provider-
 neutral startProbability interface may ingest a PERMITTED source later — Stage 4 optional input).
+
+The candidate sources researched in [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) are neither rejected here nor approved above: they are unevaluated research candidates whose rights, coverage and reliability positions remain open.
 
 ## Endpoint validation inventory (D-14, Stage 3 item 2)
 Every externally fetched payload and its cached equivalent, the consumer that

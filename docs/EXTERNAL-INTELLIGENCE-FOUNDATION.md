@@ -6,11 +6,11 @@ Purpose: preserve the external-intelligence investigation, define the safe futur
 
 Audience: future provider, model, expected-minutes, fixture, transfer and evidence work.
 
-Related: [Project Context](PROJECT_CONTEXT.md), [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Data Sources](DATA_SOURCES.md), [Security](SECURITY.md), [Projection Model](PROJECTION_MODEL.md), [Testing](TESTING.md), [Stage 10 Operations](STAGE10-OPERATIONS.md).
+Related: [Project Context](PROJECT_CONTEXT.md), [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Data Sources](DATA_SOURCES.md), [Security](SECURITY.md), [Projection Model](PROJECTION_MODEL.md), [Testing](TESTING.md), [Stage 10 Operations](STAGE10-OPERATIONS.md), [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md), [Historical Records](HISTORICAL_RECORDS.md).
 
 Research date: 12 August 2026. External pricing, terms, coverage and access rules are time-sensitive and **must be re-verified from first-party sources before any implementation approval**.
 
-Repository baseline reviewed when this record was created: GitHub `main` `dd0c07b67d948f26efdc9c82b89c1965a6c494d1`, 904/904 repository tests. This SHA is a historical creation baseline, not a substitute for reading live `main` in a later session.
+This record deliberately states **no** current repository status. It carries no merged `main` SHA, no current test baseline and no current checkpoint claim; those live only in [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md), [Testing](TESTING.md) and `CLAUDE.md`, and the merged `main` SHA is read live with `git rev-parse origin/main`. Nothing below goes stale when the repository moves on.
 
 ---
 

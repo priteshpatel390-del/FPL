@@ -15,24 +15,25 @@ GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unacc
 1. **Canonical documentation reconciliation** — merged through PR #120.
 2. **GW1 Readiness Audit — investigation only.** Concluded *go with conditions*: zero blockers, two should-fix items.
 3. **GW1 readiness safety guard** — the approved narrow fix for both items, delivered on PR #121 and physically accepted.
+4. **External Intelligence Foundation — documentation only.** The forward research and shadow-architecture record for external football information: provider-neutral observation contract, hard `shadow_only` boundary, dated free-source research, double-counting controls and a pre-registered ablation method. It authorises **no** provider, endpoint, retention, model, calculation or recommendation change and does not alter the freeze. See [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md).
 
 ### Immediate operating state — pre-GW1 freeze
 
-4. **Code freeze and operational rehearsal.** Make only separately approved fixes; every change still passes the full repository gate.
-5. Operate GW1 and collect prospective evidence, using local Stage 10 capture, recovery and owner-controlled export as the pre-deadline evidence path.
+5. **Code freeze and operational rehearsal.** Make only separately approved fixes; every change still passes the full repository gate.
+6. Operate GW1 and collect prospective evidence, using local Stage 10 capture, recovery and owner-controlled export as the pre-deadline evidence path. Confirm the Stage 10 record truthfully reports whether Odds affected the model, then export it — that capture is what makes the primary market-layer ablation possible later, and no pre-GW1 code change is needed for it.
 
 The next work is **not** post-GW1 model or provider enhancement.
 
 ### GW1-P2 live acceptance — a separate gating stream
 
-6. Perform the decisive GW1-P2 physical iPhone Safari acceptance once a genuine Stage 10 record can exist, from **20 August 2026 at 18:30 BST**.
-7. Do not merge PR #119 before successful live acceptance, final exact-head verification and explicit owner approval.
+7. Perform the decisive GW1-P2 physical iPhone Safari acceptance once a genuine Stage 10 record can exist, from **20 August 2026 at 18:30 BST**.
+8. Do not merge PR #119 before successful live acceptance, final exact-head verification and explicit owner approval.
 
 This stream runs alongside GW1 operation. Because cloud custody is a one-way side effect that the recommendation never depends on, a failure or delay here does not block GW1; it only leaves local capture/export as the evidence path for longer.
 
 ### Evidence-led review
 
-8. Review accumulated prospective evidence at the **GW5 → GW6** international break.
+9. Review accumulated prospective evidence at the **GW5 → GW6** international break, following the ordered review method — evidence integrity, then current model performance, then predeclared current-layer ablations, then error-source diagnosis, then the next experiment — recorded in [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) §15. GW1–GW5 is an evidence-collection period, not a validation sample: anything designed from it must face untouched future Gameweeks before any predictive claim.
 
 ### GW1-P2 acceptance boundary
 
@@ -64,7 +65,7 @@ Longer-horizon product work remains separately gated. Nothing below is implement
 - Broader D1 historical/live schema expansion beyond the minimal GW1-P1 evidence manifest/receipt foundation.
 - Claude-to-ChatGPT migration.
 - Cloudflare automation expansion.
-- AI agents and richer external intelligence.
+- AI agents and richer external intelligence. Every step of the post-GW1 sequence in [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) — the provider-neutral shadow observation foundation, the Stage 10 replay/ablation harness, competition/workload facts, role-change tracking, richer minutes evidence, a ClubElo structural experiment, the Understat decision, team-news/tactical facts and matchup microstats — is a proposal only and needs its own evidence-led approval. Recording a source in that document's research matrix is not approval to acquire, integrate, retain or weight it.
 - Route-aware optimisation unless future workload/responsiveness evidence justifies a separate proposal.
 - Any GW1-P2 transport alternative (Option B or Option C) unless the decisive Option A acceptance fails and a separate evidence-led comparison is approved.
 
@@ -77,6 +78,7 @@ The brittle `selectMiniLeague` exact-source-string assertion is deferred narrow 
 - **GW1-P1 — Cloudflare Evidence Foundation** is complete and merged through PR #118.
 - **GW1-P2 — Browser Evidence Delivery + Durable Outbox** is implemented as a draft candidate but remains acceptance-incomplete.
 - **GW1 readiness — pre-deadline Transfers safety guard** is complete and physically accepted, delivered on PR #121.
+- **External Intelligence Foundation** is complete as a documentation-only research and shadow-architecture record. It authorises no implementation.
 
 Historical roadmap entries below remain historical snapshots. They must not override this current sequence or live GitHub state.
 
@@ -340,6 +342,8 @@ The generated manifest now carries complete build-input identity. CI requires th
 **Physical acceptance:** explanation clarity, source visibility and degraded-state honesty if promoted into the product.
 
 **Approval gate:** approve source and shadow evaluation first; separately approve any effect on recommendations.
+
+**Method:** this pilot is Step 9 of the post-GW1 sequence in [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) and must follow the contracts recorded there — provider-neutral normalisation, canonical Official FPL identity with no display-name-only matching, separate `observedAt` / `effectiveAt` / `fetchedAt` timing so post-deadline knowledge cannot leak into a pre-deadline decision, an explicit rights/retention classification and a hard `shadow_only` boundary. A predicted line-up is one piece of evidence about expected minutes, never a direct `pStart = 1/0` instruction.
 
 ## Deliberately deferred
 
