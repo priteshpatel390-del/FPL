@@ -22,9 +22,11 @@ Cloudflare Access is mandatory for non-preflight routes. `TEAM_DOMAIN` and `POLI
 
 The evidence Wrangler configuration keeps the accepted Access-protected production `workers.dev` route enabled but explicitly sets `preview_urls` to `false`, so versioned and aliased Preview URL routing is not an alternate service surface. The source config and isolated deployment config must remain byte-identical. After any deployment that changes this setting, verify the live Worker under **Settings -> Domains & Routes** before treating preview-route security as accepted.
 
-The backend foundation received live production functional acceptance on 11 August 2026. The Teamsheet browser is still not connected to this Worker in GW1-P1; browser sync/outbox integration is the later GW1-P2 checkpoint.
+GW1-P1 is complete and merged through PR #118 at `main` `58b834a1824c4977a442e7b3e309e2bbf3d05da1`. The backend foundation received live production functional acceptance on 11 August 2026. The Teamsheet browser was deliberately not connected **by GW1-P1 itself**.
 
-See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md`.
+GW1-P2 is the separate active browser-delivery/outbox candidate in draft PR #119. Its repository implementation connects the browser capture path to this Worker, but automatic cross-site archive delivery remains **unaccepted** until the genuine Stage 10 physical iPhone Safari test succeeds with Prevent Cross-Site Tracking ON. Owner-performed preparation has confirmed the Access OPTIONS-bypass configuration, top-level Access sign-in and `/v1/health`; those facts do not prove the background credentialled POST.
+
+See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md` and `docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md`.
 
 ## Allowed origins
 
