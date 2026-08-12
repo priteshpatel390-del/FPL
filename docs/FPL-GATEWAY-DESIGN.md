@@ -1,6 +1,6 @@
 # FPL-T1 — Official FPL gateway design and implementation
 
-Status: **implemented and deployed for review on draft PR #69; live bootstrap transport verified on physical iPhone Safari; full populated application acceptance pending.**
+Status: **historical record — complete and merged.** FPL-T1 merged through PR #69 at `00a35bacd2396a125a8a914bff9980b4f18b257f`, and the owner-controlled allowlisted gateway is the live Official FPL transport. The wording that follows was written while the PR was draft and is not current state: **implemented and deployed for review on then-draft PR #69; live bootstrap transport verified on physical iPhone Safari; full populated application acceptance pending at that checkpoint.**
 
 ## Outcome
 

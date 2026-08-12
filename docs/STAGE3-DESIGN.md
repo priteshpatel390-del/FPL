@@ -1,4 +1,6 @@
-# Stage 3 — Approved design and implementation record (in progress)
+# Stage 3 — Approved design and implementation record (complete)
+
+Status: **historical record — Stage 3 is complete.** Its security architecture, DOM-builder rendering, Provider Health and Markdown sanitisation shipped and remain in the application; odds-key hygiene and the hash-based CSP were closed by `STAGE3-SECURITY-COMPLETION.md`. Any "in progress" or "pending" wording below was true only at Stage 3's own checkpoint and is not current state.
 
 ## 1. Security architecture
 

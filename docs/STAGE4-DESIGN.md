@@ -1,6 +1,6 @@
 # Stage 4 — Expected Minutes
 
-Status: owner-approved design; implementation in progress on `stage4-expected-minutes`.
+Status: **historical record — complete.** The Stage 4 expected-minutes model shipped and remains the production boundary described in `PROJECTION_MODEL.md`. The "implementation in progress" wording referred only to the original `stage4-expected-minutes` branch and is not current state.
 
 ## Existing behaviour replaced
 Live-season expected minutes were `season minutes / current GW`, clamped to 0–90. Appearance and

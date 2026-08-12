@@ -6,7 +6,7 @@ Purpose: authoritative checkpoint record for the completed Fixtures populated/li
 
 ## Final application checkpoint
 
-- Current `main`: `e49599a75bbb77618292fdb6100fcffd81685c44` — merge of PR #86, **Extend Fixtures horizon through GW38**.
+- `main` at this checkpoint: `e49599a75bbb77618292fdb6100fcffd81685c44` — merge of PR #86, **Extend Fixtures horizon through GW38**. Read the current `main` live with `git rev-parse origin/main`.
 - Exact reviewed PR #86 head: `be90b4f25b90472a3f30b3b765e56d23d8d95862`.
 - Reviewed head and merge commit share Git tree: `007ef40c5b4810777cfefec027cc80bf90fc19e0`.
 - Permanent Verify Teamsheet run `31198545580`: **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled**.
