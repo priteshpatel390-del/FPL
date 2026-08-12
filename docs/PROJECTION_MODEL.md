@@ -7,7 +7,7 @@
 Subsequent A3 engineering through A3-SC-1 / PR #116 leaves this model/rules boundary unchanged. The A3 engineering baseline entering documentation closeout is **868 tests**, with permanent Verify Teamsheet run #194 / `31470879289` passing the repository gate on exact PR #116 merge commit `1060e60d3affadabdf97924c7ece85cc62d8e360`. Current repository verification belongs in [TESTING.md](TESTING.md); historical 842/864/866 counts remain checkpoint evidence rather than current model claims.
 
 Purpose: precise record of the current deterministic projection engine, expected-minutes boundary and Stage 8 uncertainty layer.
-Audience: anyone touching model code. Last updated: 2026-08-11.
+Audience: anyone touching model code. Last updated: 2026-08-12.
 Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, EXTERNAL-INTELLIGENCE-FOUNDATION.md, src/model/*.
 
 ## External-intelligence boundary — this engine is unchanged

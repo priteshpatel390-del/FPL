@@ -26,7 +26,7 @@ For current refreshes, Provider Health may change only from actual provider-laye
 
 The backend does not alter provider acquisition. Normal Teamsheet Stage 10 evidence remains local/manual until the separately approved GW1-P2 browser outbox/sync path is implemented.
 Purpose: reference for every external source. Audience: provider work, Stage 3+.
-Last reconciled: 2026-08-11. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
+Last reconciled: 2026-08-12. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
 this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DECISIONS D-05/D-06/D-09/D-10, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
 
 ## Official FPL API — foundation
