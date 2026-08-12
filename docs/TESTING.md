@@ -1,6 +1,6 @@
 # TESTING.md
 
-## 11 August 2026 — current GW1-P2 final-gate boundary
+## 12 August 2026 — current GW1-P2 final-gate boundary
 
 GW1-P2 is the current unmerged checkpoint. It adds two permanent suites: `tests/evidence-outbox.test.mjs` covers the pure delivery state machine (envelope contract against the real Worker validator, canonical-byte and hash immutability, fixed enqueue time, terminal success/duplicate, permanent rejection, retention fail-closed, bounded backoff and Retry-After, the separate authentication schedule, the amendment-4 configuration-versus-identity 403 split, pinning and visible release, idempotent enqueue, compatibility drops and closed-set outcome strings). `tests/evidence-delivery.test.mjs` covers storage and transport (exact endpoint contract, byte-identical upload, duplicate handling, offline-to-restart-to-success, Access interception and opaque redirect, backend faults with idempotent retry, blocked provider material never sent, recovery imports never queued, pending-record survival, corrupt/unwritable storage, single-flight concurrency, no secret or account identifier persisted, generic user copy, CSP reachability and bundle presence). Existing Worker and CSP suites gained credentialled-CORS and archive-origin regressions.
 
@@ -54,13 +54,13 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 PR #103 final source `646eee13960c343fbe07e3a76496717fd9837c0e` and generated-only child `81cc9130ac2c7b8206f3bd5f6a2cf85bb5ba0777` pass **803/803** tests. Publication run `31356159321` passed before branch publication; permanent Verify Teamsheet run #90 / `31356255017` passed every exact-revision, committed-provenance, full-suite, production-build, deterministic-byte, build-identity and artifact-preservation stage. Physical iPhone Safari acceptance passed all four presentation findings and merge is explicitly owner-approved.
 
-## GW1-P1 evidence-backend verification and GW1-P2 future verification
+## GW1-P1 evidence-backend verification and the GW1-P2 client gate
 
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) was originally a documentation-only decision. The separately approved GW1-P1 backend checkpoint now implements and tests the canonical pre-deadline archive foundation. Its permanent backend suites are `tests/evidence-archive-worker.test.mjs`, `tests/evidence-archive-cloudflare.test.mjs` and `tests/evidence-archive-layout.test.mjs`.
 
 GW1-P1 verification covers exact Stage 10 record parity, canonical/hash mutation rejection, fail-closed provider retention, R2-first/D1-second ordering, duplicate/idempotency behaviour, R2 and D1 partial-failure contracts, orphan reconciliation with first-upload preservation, Access JWT validation, exact CORS/method/route/payload/rate boundaries, generic/redacted failures, source/deploy parity, D1/R2/migration configuration and explicit Preview URL disable. The full repository deterministic/provenance/build gates remain mandatory even though GW1-P1 changes no application build input.
 
-The **future GW1-P2** client gate remains separate: persistent local outbox compatibility, non-blocking upload, honest saved/pending/failed/offline states, retry/recovery across reload, no recommendation dependency, and physical iPhone acceptance of those browser states. Existing live-season evidence gates also remain unchanged.
+The **GW1-P2** client gate remains separate from GW1-P1's backend gate: persistent local outbox compatibility, non-blocking upload, honest saved/pending/failed/offline states, retry/recovery across reload and no recommendation dependency are now covered by the two GW1-P2 suites named in the current-boundary section above. Physical iPhone acceptance of those browser states is still outstanding and is not a repository-testable fact. Existing live-season evidence gates also remain unchanged.
 
 <!-- FIXTURES-ACCEPTANCE-2026-08-07 -->
 > **Historical Fixtures acceptance verification:** PR #86 exact head `be90b4f25b90472a3f30b3b765e56d23d8d95862` passed **660 tests, 660 passed, 0 failed, 0 skipped, 0 cancelled** in permanent Verify Teamsheet run `31198545580`, with deterministic byte-identical double builds, root/deployable equality and exact manifest identity. The merged tree was deployed at `e49599a75bbb77618292fdb6100fcffd81685c44`; owner iPhone Safari acceptance passed for GW23 reachability, sticky TEAM behaviour beyond GW12 and GW38 boundary normalisation. No model formula, provider, source or golden expectation changed.
@@ -90,15 +90,15 @@ The **future GW1-P2** client gate remains separate: persistent local outbox comp
 
 > **Historical FPL-T1 review verification:** the owner-controlled Official FPL gateway review reached **590 passed, 0 failed, 0 skipped** with deterministic builds, exact Worker/CSP configuration and successful physical iPhone live bootstrap transport. FPL-T1 subsequently merged through PR #69 and Track A through PRs #70 and #72. This historical 590-test checkpoint is not the current repository baseline.
 Purpose: test architecture and rules of engagement. Audience: every session before coding.
-Last reconciled: 2026-08-11. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
+Last reconciled: 2026-08-12. Related: tests/, CLAUDE.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md, GW1-P2-BROWSER-EVIDENCE-DELIVERY.md.
 
-## Current GW1-P1 verification state
+## Exact-head verification rule
 
-PR #118 must be judged by its **final exact head**, not by an earlier green candidate. The exact final test count and final Verify Teamsheet run belong in the PR description once the final config/documentation commit has completed the permanent workflow. Until that run is green, the prior successful runs are historical evidence only.
+Every candidate must be judged by its **final exact head**, not by an earlier green candidate. The exact final test count and final Verify Teamsheet run belong in the PR description once the final source/config/documentation commit has completed the permanent workflow. Until that run is green, the prior successful runs are historical evidence only. This rule applied to PR #118 and applies now to PR #119 and to any documentation-only PR.
 
-GW1-P1 changes no application build input or generated application deployable. Nevertheless the repository completion gate still requires the ordinary production build, deterministic rebuild, committed provenance, root/deployable equality, exact manifest/build identity and production-output preservation so a backend/docs checkpoint cannot accidentally drift the deployed app.
+A checkpoint that changes no application build input or generated application deployable — including a documentation-only checkpoint — still requires the ordinary production build, deterministic rebuild, committed provenance, root/deployable equality, exact manifest/build identity and production-output preservation, so a backend or docs checkpoint cannot accidentally drift the deployed app.
 
-Live production functional acceptance already recorded in `GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md` was performed by Pritesh on physical iPhone Safari. The newly explicit `preview_urls:false` config requires separate post-deployment live proof; no automated test can substitute for the Cloudflare route state.
+Live production functional acceptance recorded in `GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md` was performed by Pritesh on physical iPhone Safari, and the explicit `preview_urls:false` config received its separate post-deployment live proof from owner-supplied Cloudflare Domains dashboard evidence on 11 August 2026. No automated test can substitute for live Cloudflare route state, Access dashboard state or Safari cross-site cookie behaviour; those remain owner acceptance items in every checkpoint.
 
 ## Historical A3 verified baseline
 

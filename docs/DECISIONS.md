@@ -1,12 +1,26 @@
 # DECISIONS.md — Architectural decision record
 
+## D-GW1P2 · 2026-08-12 · Accepted · The browser reaches the evidence archive through a durable outbox, and delivery is never a recommendation dependency
+
+**Decision:** connect the existing Stage 10 browser capture path to the merged GW1-P1 archive through a durable local outbox and a transport-independent delivery state machine. The canonical record is delivered exactly as stored — delivery must not re-canonicalise, re-hash, strip, restamp or regenerate it — and content-hash idempotency, bounded retry/backoff, single-flight concurrency and fail-closed provider retention are owned by the client. Cloud custody stays a one-way side effect: the recommendation never reads, waits for or fails because of the archive, and a record that cannot be archived stays saved on the device.
+
+**Reason:** GW1-P1 deliberately built the server custody, validation and failure contract first. With that contract proven, the browser half can inherit it rather than define a competing one. A durable outbox is required because an iPhone Safari session is frequently interrupted, so upload cannot be assumed to complete inside the capturing session.
+
+**Boundary:** the direct credentialled cross-origin transport is approved as a **feasibility implementation only**, not as the accepted permanent iPhone transport. No model, expected-minutes, fixture, simulation, squad, captaincy, transfer, rank, Mini-League or provider-acquisition behaviour changes. `OUTBOX_RULES.pinLimit` is held at **4** as a conservative first-cycle policy; the usable device storage ceiling is not evidenced, so that value is not claimed to be proven safe, and no alternative persistence technology may be introduced without a separate proposal.
+
+**Current status:** delivered on draft PR #119 over base `main` `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`, Verify Teamsheet #255 / `31537859087` passing 931/931. **PR #119 is unmerged and acceptance-incomplete.** The decisive gate is the owner's physical iPhone Safari test with **Prevent Cross-Site Tracking ON** once a genuine Stage 10 record can exist, from **20 August 2026 at 18:30 BST**. If it fails, stop and return with an evidence-led Option B versus Option C comparison; do not make disabling that Safari setting a product requirement and do not implement either alternative without separate approval. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+
 ## D-GW1P1 · 2026-08-11 · Accepted · The D1 evidence architecture is implemented backend-first, with the browser deliberately not connected
 
 **Decision:** implement the backend half of the 2026-08-09 D1 design as a separate Cloudflare Access-authenticated `teamsheet-evidence-archive` Worker with private content-addressed R2 canonical objects and a minimal D1 manifest/receipt/index. The Worker independently revalidates the frozen Stage 10 record, recomputes canonical SHA-256 identity, writes and verifies R2 **before** D1 may claim custody, makes duplicate ingestion idempotent and recovers `R2 success / D1 failure` orphans without fabricating earlier custody. Understat- and Odds-derived permanent archival stays fail-closed.
 
 **Reason:** the existing Stage 10 pre-deadline snapshot needed a secure permanent destination before any client integration was designed. Building the custody, validation and failure contract first means the later browser work inherits a proven server contract instead of defining one.
 
-**Boundary:** backend only. No `src/` change, no Stage 10 capture/local-persistence change, no provider acquisition/weighting change and no model, fixture, minutes, squad, captaincy, transfer, simulation, rank or Mini-League change. The Teamsheet browser does **not** call this service: automatic client upload and the persistent pending-upload/outbox are GW1-P2 and remain separately approval-gated. Backend availability is never a recommendation dependency — cloud persistence is a one-way side effect. Delivered on draft PR #118 over base `main` `43f109b306071aa0c3c1c45985876fecb3da7aa5`; PR #118 is unmerged and requires Pritesh's explicit merge approval. See [GW1-P1 — Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md).
+**Boundary:** backend only. No `src/` change, no Stage 10 capture/local-persistence change, no provider acquisition/weighting change and no model, fixture, minutes, squad, captaincy, transfer, simulation, rank or Mini-League change. The Teamsheet browser does **not** call this service under this decision: automatic client upload and the persistent pending-upload/outbox were GW1-P2 and were separately approval-gated when this decision was recorded. Backend availability is never a recommendation dependency — cloud persistence is a one-way side effect. See [GW1-P1 — Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md).
+
+**Delivery wording as recorded on 2026-08-11 (historical):** *"Delivered on draft PR #118 over base `main` `43f109b306071aa0c3c1c45985876fecb3da7aa5`; PR #118 is unmerged and requires Pritesh's explicit merge approval."*
+
+**Current status:** Pritesh approved the merge and **PR #118 is merged** at `main` `58b834a1824c4977a442e7b3e309e2bbf3d05da1`. The architectural decision above is unchanged; only its delivery status has moved on. The browser connection it deferred has since been separately approved and implemented as **D-GW1P2** above, which remains unmerged and acceptance-incomplete.
 
 ## D-SO1 · 2026-08-10 · Accepted · Shared-state inventory is explicit while semantic ownership stays distributed
 
@@ -30,9 +44,9 @@
 
 **Reason:** Teamsheet needs relational querying, idempotent revisions and exact evidence larger than D1's single-row limit without coupling recommendations to persistence or a mutable Sheet.
 
-**Boundary:** design/documentation only. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md). Implementation requires later explicit approval. That later approval was given separately on 11 August 2026 and is recorded as **D-GW1P1** above; it authorised the backend half only.
+**Boundary:** design/documentation only. See [Data Architecture D1](DATA-ARCHITECTURE-D1.md). Implementation requires later explicit approval. That later approval was given separately on 11 August 2026 and is recorded as **D-GW1P1** above; it authorised the backend half only. The browser half was approved separately again and is recorded as **D-GW1P2** above.
 Purpose: permanent chronological log of approved decisions. Audience: all future sessions.
-Last updated: 2026-08-11. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
+Last updated: 2026-08-12. Related: PROJECT_CONTEXT.md, ROADMAP.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md. Status values: Accepted/Superseded.
 
 ID reconciliation note: on 8 August 2026 the later duplicate `D-36` and `D-37` labels were reassigned to `D-38` and `D-39`. The underlying decision dates, wording and meaning are unchanged.
 
