@@ -22,6 +22,14 @@ The GW1 readiness audit that preceded PR #121 found **zero blockers** and two sh
 
 Until PR #119 is accepted and merged, **local Stage 10 capture, recovery and owner-controlled export remain the operating fallback** for pre-deadline evidence. That fallback is complete and merged; nothing about GW1 operation waits on PR #119.
 
+### Planning record — External Intelligence Foundation, documentation only
+
+[External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) is the canonical research and shadow-architecture record for future external football information. It is **documentation only and approves nothing**: no provider, endpoint, API key, acquisition cadence, retention right, model, weighting, expected-minutes, fixture, squad, captaincy, transfer, simulation, rank or Mini-League change is authorised by it, and it does not alter the pre-GW1 freeze.
+
+Read it before any future provider, external-data, expected-minutes-evidence or ablation proposal. It fixes three things that later work must not quietly undo: external observations must normalise into a **provider-neutral contract** with separate `observedAt` / `effectiveAt` / `fetchedAt` timing, canonical Official FPL identity and an explicit rights/retention classification; any first implementation must be **`shadow_only`**, with no path from shadow storage into projected points, the optimiser, captaincy, transfers or Mini-Leagues without separate explicit approval; and the layers — structural strength, recent performance, market expectation, availability/expected minutes, calendar/workload, set-piece and role, matchup microstats, transfer economics, competitive strategy — must stay separate rather than collapsing into one confidence score. Its free-source research is dated 12 August 2026 and must be re-verified from first-party sources before any implementation approval.
+
+Its one operationally relevant conclusion for now: current Stage 10 **already** preserves the normalised Odds inputs that affected a prediction when Odds is healthy, so the primary market-layer on/off ablation needs no new pre-GW1 code — only a genuine, healthy, exported capture. Raw bookmaker prices and intraday line movement are not preserved and are not reconstructible on the free tier, and that lost optionality does **not** justify breaking the freeze.
+
 ### Immediate operating state
 
 Pre-GW1 code freeze and operational rehearsal. The next work is **not** post-GW1 model or provider enhancement. In order:
@@ -141,6 +149,7 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 | GW1-P2 unresolved limitation | The bounded outbox `pinLimit` stays at 4. The usable iPhone storage ceiling is not evidenced and must not be claimed as proven. |
 | Final repository gate | The final exact PR head must pass Verify Teamsheet after all config/doc changes. Earlier green runs are historical once the head changes. |
 | GW1-P2 merge gate | PR #119 must stay draft and must not merge until Pritesh performs the physical acceptance test and explicitly approves it. |
+| External intelligence planning | [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) — documentation only. Provider-neutral contract, hard `shadow_only` boundary, dated free-source research, double-counting controls and a pre-registered ablation method. Approves no provider, retention, model or calculation change |
 | Immediate operating state | Pre-GW1 code freeze and operational rehearsal. Not post-GW1 model or provider work. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
@@ -153,6 +162,8 @@ Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3/A3-R0, DTR-1, Atomic F
 GW1 readiness remediation is complete: the audit found no blockers, and its two should-fix items are addressed. It authorised **no** model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change, and none was made.
 
 **GW1-P2 is approved only within the boundary recorded in [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)**, with the open acceptance gate and the unresolved retention limitation named above. Nothing beyond that boundary is approved: no Option B delivery window, no hosting change, no broader D1 schema expansion, no scheduled collection, no Sheets automation, no provider repair and no model work.
+
+The [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) record is approved as **documentation and research only**. Recording a source in its research matrix is not approval to acquire, integrate, retain or weight it; recording a future sequence is not approval to start it. `APPROVED_PROVIDER_NAMES` remains exactly `fpl`, `understat`, `odds`, `archive`, and a permanent test pins that. Every item in that record's post-GW1 sequence — including the shadow foundation itself — needs its own evidence-led proposal and explicit approval before any code is written.
 
 The approved GW1-P1 evidence flow is:
 
@@ -180,7 +191,8 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 8. [GW1-P1 Cloudflare Evidence Foundation](docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)
 9. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 10. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
-11. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
+11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md)
+12. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
 
 ## What Teamsheet is
 

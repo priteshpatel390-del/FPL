@@ -1,5 +1,13 @@
 # SECURITY.md
 
+## 12 August 2026 — external intelligence adds no origin, key or secret
+
+The External Intelligence Foundation checkpoint is documentation only. It adds **no** network origin, endpoint, credential, API key, relay, storage surface or CSP change, and the deployed application is byte-unchanged. The generated single script and style remain SHA-256 locked by CSP, so no researched source could be contacted from the current build even if someone tried.
+
+[External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) does set security conditions that a future, separately approved implementation must satisfy. Raw provider payloads are transient by default even where normalised facts may be retained, so only the fields needed to reproduce an accepted observation and its provenance are kept. Every source carries an explicit rights/retention classification and an unresolved position fails closed rather than defaulting to retention. No API key, keyed URL, cookie, token or account identifier may enter a shadow record — the contingency Shadow Odds shape in that document is deliberately limited to normalised derived values for exactly this reason, and the existing direct-only Odds boundary under D-06/SEC-1 is unchanged and unrelaxed. A shadow failure must not alter production behaviour or manufacture Provider Health, and no bookmaker-level raw export may be created that would amount to reconstructing a provider's feed for others.
+
+Existing boundaries are untouched: Anthropic keys remain banned client-side, Understat remains team-level relay-only, permanent Understat- and Odds-derived server retention remains fail-closed, and League and manager identifiers stay out of routes, page titles, provider diagnostics and Stage 10 evidence.
+
 ## 11 August 2026 — GW1-P1 cloud-evidence security reconciliation
 
 GW1-P1 adds a second, deliberately isolated Cloudflare Worker for canonical Stage 10 evidence custody. The evidence Worker is protected by owner-only Cloudflare Access, validates `Cf-Access-Jwt-Assertion` itself, writes exact canonical evidence only to private R2, and stores only the minimal manifest/receipt/index state in D1. `TEAM_DOMAIN` and `POLICY_AUD` remain runtime configuration and are not committed.
@@ -24,7 +32,7 @@ The approved [Data Architecture D1](DATA-ARCHITECTURE-D1.md) selected a separate
 
 Manager/team, manual-squad and league/rival data remain outside the GW1-P1 server contract. Understat/Odds permanent retention defaults fail-closed pending separately approved rights. Future AI access remains constrained to audited, field-allowlisted, read-only views and is not part of GW1-P1.
 Purpose: security posture record. Audience: all sessions; Stage 3 implementers especially.
-Last reconciled: 2026-08-11. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
+Last reconciled: 2026-08-12. Related: STAGE3-DESIGN.md, STAGE10-ITEM3.md, KNOWN_LIMITATIONS.md, DECISIONS.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md, EXTERNAL-INTELLIGENCE-FOUNDATION.md.
 
 ## Current architecture
 Static single-file application on GitHub Pages plus two owner-controlled, zero-dependency Cloudflare service boundaries:

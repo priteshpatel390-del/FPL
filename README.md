@@ -18,6 +18,8 @@ GitHub Pages serves `main` from `/` and was observed built after the temporary P
 
 The detailed current state and approval boundary live in [Project Context](docs/PROJECT_CONTEXT.md). Historical checkpoint evidence is indexed in [Historical Records](docs/HISTORICAL_RECORDS.md).
 
+Forward research planning for external football information lives in [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md). It is documentation only: it approves no provider, retention, model or calculation change, and it does not alter the pre-GW1 freeze.
+
 ## Planning correction
 
 The first relevant 2026/27 international break is between **GW5 and GW6**, not GW2 and GW3. GW1 readiness remediation is complete, so the immediate operating state is pre-GW1 code freeze and operational rehearsal; GW1–GW5 is the initial stability/prospective-evidence period; the GW5 → GW6 break is the first major evidence-led review opportunity, subject to evidence actually available. This calendar correction authorises no model, provider, fixture, expected-minutes, scoring or recommendation change.
@@ -63,6 +65,7 @@ Every development session must read [`CLAUDE.md`](CLAUDE.md) first, then the can
 8. Before evidence-custody work: [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md), [GW1-P1 Cloudflare Evidence Foundation](docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
 9. Before calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md).
 10. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md).
+11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md).
 
 ## Change discipline
 

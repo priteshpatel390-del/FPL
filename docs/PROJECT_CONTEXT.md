@@ -2,7 +2,7 @@
 
 Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 12 August 2026.
 
-Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Data Architecture D1](DATA-ARCHITECTURE-D1.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md), [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md), [Historical Records](HISTORICAL_RECORDS.md).
+Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Data Architecture D1](DATA-ARCHITECTURE-D1.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md), [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md), [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md), [Historical Records](HISTORICAL_RECORDS.md).
 
 ## Canonical current state
 
@@ -43,6 +43,14 @@ This does **not** prove the decisive cross-site application transport. The brows
 The genuine Stage 10 window opens **20 August 2026 at 18:30 BST**. The remaining acceptance question is whether normal physical iPhone Safari, with **Prevent Cross-Site Tracking ON**, can automatically perform the credentialled cross-site background upload from GitHub Pages to the Access-protected evidence Worker, then retain correct archive/reload/idempotency/canonical-hash behaviour.
 
 If Option A fails under normal Safari privacy settings, stop. Do not make disabling Prevent Cross-Site Tracking a product requirement and do not implement Option B or Option C without a separate evidence-led comparison and explicit approval.
+
+### External intelligence planning — documentation only, changes nothing
+
+[External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) is the canonical forward record for external football information. It **approves nothing** and changes no behaviour: no provider, endpoint, API key, acquisition cadence, retention right, weighting, model, expected-minutes, fixture, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change follows from it, and it does not alter the pre-GW1 freeze. `APPROVED_PROVIDER_NAMES` remains exactly `fpl`, `understat`, `odds`, `archive`.
+
+It records the current production model/data map; the layer separation between structural strength, recent performance, market expectation, availability/expected minutes, calendar/workload, set-piece and role, matchup microstats, transfer economics and competitive strategy; a provider-neutral observation contract with first-class `observedAt` / `effectiveAt` / `fetchedAt` timing, canonical Official FPL identity and explicit rights/retention classification; a hard `shadow_only` boundary with no path from shadow storage into projection or recommendation; dated free-source research; double-counting controls; and a pre-registered ablation method. Its external pricing, terms and coverage research is dated 12 August 2026 and must be re-verified from first-party sources before any implementation approval.
+
+One conclusion is operationally relevant now: current Stage 10 already preserves the normalised Odds inputs that actually affected a prediction when Odds is healthy, so the primary market-layer on/off ablation is supported by capture and export alone and needs no pre-GW1 code. Raw bookmaker prices and intraday line movement are **not** preserved and are not reconstructible on the free tier; that lost optionality does not justify breaking the freeze.
 
 ## Immediate sequence
 
@@ -186,7 +194,7 @@ Player Explorer lives under Settings → Research Tools. Ask Teamsheet has a glo
 
 - No single synthesised weekly action across Team, Transfers and Fixtures.
 - No validated projected-rank or tactical Mini-League strategy model.
-- No cited team-news, predicted-line-up, press-conference, cup-congestion or travel intelligence.
+- No cited team-news, predicted-line-up, press-conference, cup-congestion or travel intelligence. The evaluation path for those is planned but unimplemented and unapproved in [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md).
 - Bank and free transfers are not yet authoritative account-derived values.
 - Hosted Ask Teamsheet remains unavailable.
 - Prospective 2026/27 accuracy and calibration evidence has not yet accumulated.
@@ -235,7 +243,7 @@ GW1-P2 is not in this merged list because PR #119 remains unmerged.
 
 ### Next only after GW1-P2 acceptance and separate approval
 
-Understat repair, Odds repair, broader D1 schema expansion, Google Sheets automation, hosted AI/ChatGPT migration, scheduled collectors, Cloudflare automation expansion, agents and route-aware optimisation remain separately gated. The GW1 Readiness Audit begins as investigation only.
+Understat repair, Odds repair, broader D1 schema expansion, Google Sheets automation, hosted AI/ChatGPT migration, scheduled collectors, Cloudflare automation expansion, agents and route-aware optimisation remain separately gated. So does every step of the [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) post-GW1 sequence, including the shadow observation foundation itself. The GW1 Readiness Audit is complete: it concluded *go with conditions* with zero blockers, and PR #121 addressed both of its should-fix items.
 
 ### After real Gameweek data
 

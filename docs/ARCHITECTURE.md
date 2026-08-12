@@ -16,6 +16,12 @@ The evidence backend is deliberately outside the deterministic recommendation pa
 
 The evidence Worker keeps its Access-protected production `workers.dev` route, while both source and isolated deployment Wrangler configs explicitly set `preview_urls:false`. This is the repository control for the separate Cloudflare version/alias preview routing surface. Live confirmation was recorded on 11 August 2026 from owner-supplied Cloudflare Domains dashboard evidence showing production Access-`Restricted` and the wildcard Preview hostname disabled. Owner-performed preparation has since also enabled Cloudflare Access `Bypass OPTIONS requests to origin`, leaving the Worker as the sole owner of exact-origin CORS with no Access-layer allowed-origin response configured.
 
+### External intelligence boundary — no shadow layer exists
+
+There is currently **no** external-intelligence acquisition, normalisation or shadow store in this repository. The runtime provider surface is closed to `APPROVED_PROVIDER_NAMES` — exactly `fpl`, `understat`, `odds`, `archive` — and a permanent test pins that set.
+
+[External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) records the architecture a future, separately approved implementation must follow: a provider-neutral normalised observation contract with explicit identity, value, timing, source, quality, provenance, rights and boundary sections; canonical Official FPL identity with display-name-only matching rejected; `observedAt`, `effectiveAt` and `fetchedAt` kept distinct so post-deadline knowledge cannot leak into a pre-deadline decision; a rights/retention classification that fails closed when unresolved; and a hard `shadow_only` boundary with no import path from a shadow store into fixture context, expected minutes, scoring, best XI, captaincy, transfers, simulation, rank or Mini-Leagues. The boundary is intended to be as strong as Stage 10's one-way evidence architecture: observation first, no automatic feedback loop. That record is documentation only and authorises no implementation.
+
 ## Historical — 11 August 2026 GW1-P1 architecture boundary
 
 **Historical snapshot; superseded by the current boundary above.**
@@ -46,7 +52,7 @@ The accepted custody order is `validate/recanonicalise -> canonical SHA-256 -> R
 
 The browser/client half of D1 is **not** implemented by GW1-P1. On merged `main`, existing Stage 10 browser storage remains the recovery/export boundary. The durable pending-upload/outbox and automatic upload belong to GW1-P2, which is implemented on the unmerged PR #119 candidate and is not an accepted behaviour until its physical acceptance passes. Understat/Odds permanent archival remains fail-closed pending separately approved rights.
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last reconciled: 2026-08-12. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md, DATA-ARCHITECTURE-D1.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md, GW1-P2-BROWSER-EVIDENCE-DELIVERY.md.
+Last reconciled: 2026-08-12. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md, DATA-ARCHITECTURE-D1.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md, GW1-P2-BROWSER-EVIDENCE-DELIVERY.md, EXTERNAL-INTELLIGENCE-FOUNDATION.md.
 
 ## Directory structure
 ```

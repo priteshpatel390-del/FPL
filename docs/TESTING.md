@@ -267,6 +267,12 @@ Stages 8–10.3 change no deterministic projection formula and require no golden
 
 A3-SC-1 demonstrated that the harness itself can be a consumer of production-bundle symbols. A stale-code search that omits the harness, export lists or other test-side consumers is therefore incomplete even when production source and generated output show no runtime consumer.
 
+## External Intelligence Foundation — documentation only, no new coverage
+
+The External Intelligence Foundation checkpoint adds no test and changes no test. It is a documentation-only research record, so the repository baseline is unchanged by it. The invariant that matters most for that record is already pinned elsewhere: `APPROVED_PROVIDER_NAMES` must remain exactly `fpl`, `understat`, `odds`, `archive`, asserted in `tests/atomic-foreground-refresh.test.mjs`. Its presence in `docs/` is held by the existing `documentation-integrity` historical-index regression, which is what a new unindexed record fails against.
+
+That record deliberately defers its own structural tests to the future implementation proposal that would need them. When a shadow observation foundation is separately approved, its proposal must bring tests proving that production model modules do not import the shadow store; that production results are identical with shadow data absent, present, stale, malformed or conflicting; that a shadow provider failure cannot move Provider Health; that shadow writes cannot mutate `S` model or provider inputs; that shadow storage failure cannot block the verified refresh or recommendation path; that unknown rights classifications fail closed for durable retention; that secrets, keys and keyed URLs never enter shadow records; and that display-name-only entity matching is rejected. None of those tests exists today, and none should, because nothing they would guard exists yet.
+
 ## Deferred narrow test-hardening
 
 The existing `selectMiniLeague` exact-source-string assertion is deliberately brittle and remains green. Hardening it is deferred to a later, narrowly scoped testing task. Do not weaken, delete or silently rewrite it as part of unrelated work.
