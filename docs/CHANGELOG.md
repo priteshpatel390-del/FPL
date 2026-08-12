@@ -6,6 +6,14 @@ Entries record **merged** outcomes only. Work that was opened but never merged i
 
 **Not shipped, deliberately absent from the entries below:** GW1-P2 — Browser evidence delivery and durable outbox (PR #119) is an implemented candidate that remains draft, unmerged and acceptance-incomplete, so it has no entry here; PR #109 and PR #113 were verification/probe pull requests that were closed without merging and shipped nothing.
 
+## 2026-08-12 — Pre-GW1 repository housekeeping closeout
+
+- Audited all 86 tracked Markdown files as current guidance, historical/checkpoint evidence or reference/design records, then corrected stale present-tense status without rewriting valid historical SHAs, dates or test counts.
+- Reconciled this high-level CHANGELOG from its 9 August state through the then-current merged history and retained unmerged work as explicitly not shipped.
+- Replaced the brittle exact-format `selectMiniLeague` source assertion with behavioural execution of the real function, a whitespace-insensitive structural ownership/delegation contract and mutation-sensitivity coverage. Production Mini-League code and behaviour remained unchanged.
+- The repository baseline moved from 904 to **907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**. No `src/`, `workers/`, generated deployable or production build input changed.
+- Merged through PR #124 at `41dae03d54b60988f89fb75e80ca9ceee532a52e`; post-merge Verify Teamsheet #271 / run `31623367093` succeeded on that exact merge commit. PR #119 remained untouched, draft and unmerged.
+
 ## 2026-08-12 — External Intelligence Foundation recorded (documentation only)
 
 - Added `EXTERNAL-INTELLIGENCE-FOUNDATION.md` as the canonical research and shadow-architecture record for future external football information, then reconciled its metadata dates. Merged through PR #122 at `1c66b3dafa4e040cc398a1a40edf288a29f46363` and PR #123 at `00742ab58f1ffa7fb1bb4dc50271f9ec8b55bf50`.
