@@ -1,9 +1,9 @@
 # STAGE10-OPERATIONS.md — Live-season evidence operations
-Purpose: phone-first operating and disaster-recovery procedure for Stage 10. Last updated: 2026-07-30.
+Purpose: phone-first operating and disaster-recovery procedure for Stage 10. Last updated: 2026-08-12.
 
 ## Before every deadline
 1. Open Teamsheet in Safari during the preferred 20–10 minute window.
-2. Let the verified refresh complete, then open More → Deadline evidence.
+2. Let the verified refresh complete, then open Settings → Evidence & Performance → Deadline evidence.
 3. Confirm the current Gameweek is Official-eligible. “Recorded only” is valid diagnostic evidence but is not official.
 4. If capture is still due, keep the visible page open. Teamsheet retries every five minutes, at most three times for the same verified dataset and timing priority, and stops at the two-minute safety cutoff.
 5. Use Diagnostic capture only before the cutoff when automatic capture has not succeeded.
@@ -12,7 +12,7 @@ Purpose: phone-first operating and disaster-recovery procedure for Stage 10. Las
 ## After a Gameweek
 1. Open Teamsheet after Official FPL marks the event checked.
 2. Provisional outcomes remain outside metrics. Complete or corrected outcomes create immutable downstream revisions.
-3. Confirm the evaluated Gameweek appears in Operating review.
+3. Confirm the evaluated Gameweek appears in Settings → Evidence & Performance → Operating review.
 4. Request the weekly operating-review JSON and verify it in Files. Import only the required CSV tables into Google Sheets.
 5. After a correction, retain the earlier export if an audit trail is wanted and request the corrected weekly bundle.
 

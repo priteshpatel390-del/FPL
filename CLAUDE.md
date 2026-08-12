@@ -100,8 +100,9 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 
 | Item | Current evidence |
 |---|---|
-| Latest merged `main` | `58b834a1824c4977a442e7b3e309e2bbf3d05da1` (PR #118 merge) |
-| Current application checkpoint | GW1-P2 — Browser evidence delivery and durable outbox, draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, head `252c5eba0381c8aa5afb7bda1686dd102326c6df`, Verify Teamsheet #255 / `31537859087` passing 931/931 |
+| Latest merged `main` | `be9d3c98ceff3549574535815a41cd75bb93d0f6` (PR #120 documentation-reconciliation merge over the PR #118 GW1-P1 merge `58b834a1824c4977a442e7b3e309e2bbf3d05da1`), 883/883 tests |
+| Current implementation checkpoint | GW1 readiness — pre-deadline Transfers safety guard, branch `agent/gw1-readiness-safety-guard`. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited. Derived from verified Official FPL event data; no optimiser mathematics changes. See [GW1 readiness safety guard](docs/GW1-READINESS-SAFETY-GUARD.md) |
+| Current application candidate | GW1-P2 — Browser evidence delivery and durable outbox, draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, head `252c5eba0381c8aa5afb7bda1686dd102326c6df`, Verify Teamsheet #255 / `31537859087` passing 931/931 |
 | Current implementation boundary | Pure outbox state machine; browser delivery service; bounded retries and single-flight; content-hash idempotency; pending-record persistence across restart; fail-closed provider retention; minimal Settings → Evidence status/action; CSP/meta wiring; exact-origin credentialled CORS. |
 | GW1-P1 functional production acceptance | Repository record documents Pritesh's physical iPhone Safari acceptance of Access, D1/R2, positive ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. |
 | GW1-P1 security state | Repository config explicitly disables Cloudflare Preview URLs and tests that invariant. Owner-supplied live Cloudflare Domains evidence on 11 August 2026 showed production Access-`Restricted` and the wildcard Preview hostname disabled. It is owner dashboard evidence, not independent assistant testing. |

@@ -8,7 +8,7 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 Live GitHub is authoritative over this document and all historical handovers.
 
-Latest merged `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, merge of **GW1-P1 — Cloudflare Evidence Foundation** PR #118. GW1-P1 is complete and merged. Its final reviewed head `7b739e5e6d68775da04d179346269ae295c1332a` passed Verify Teamsheet #251 / `31526697241` with **883/883 tests** and deterministic/provenance/build-identity gates.
+Latest merged `main` is `be9d3c98ceff3549574535815a41cd75bb93d0f6`, merge of the **canonical documentation reconciliation** PR #120 over **GW1-P1 — Cloudflare Evidence Foundation** PR #118 at `58b834a1824c4977a442e7b3e309e2bbf3d05da1`. GW1-P1 is complete and merged. Its final reviewed head `7b739e5e6d68775da04d179346269ae295c1332a` passed Verify Teamsheet #251 / `31526697241` with **883/883 tests** and deterministic/provenance/build-identity gates; PR #120 changed documentation only and its merge commit passed Verify Teamsheet #260 / `31575507007` on the same 883-test baseline.
 
 The active application candidate is **GW1-P2 — Browser Evidence Delivery + Durable Outbox**, draft PR #119 on `claude/gw1-p2-evidence-delivery-design-ejsb0d`, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Verify Teamsheet #255 / `31537859087` passed on that head with **931/931 tests**, no failures/skips/cancellations, deterministic production build and provenance/build-identity gates.
 
@@ -36,9 +36,9 @@ If Option A fails under normal Safari privacy settings, stop. Do not make disabl
 
 ## Immediate sequence
 
-1. Canonical documentation reconciliation — this checkpoint.
-2. **GW1 Readiness Audit — investigation only**.
-3. Only genuine blocker fixes, each separately approved.
+1. Canonical documentation reconciliation — complete and merged through PR #120.
+2. **GW1 Readiness Audit — investigation only**. Concluded *go with conditions*: no blockers, two items to fix before GW1.
+3. **GW1 readiness safety guard — this checkpoint.** The approved narrow fix for those two items. Only genuine blocker fixes follow, each separately approved.
 4. Physical rehearsal and code freeze.
 5. Live GW1-P2 acceptance when the real Stage 10 window opens.
 6. GW1 operations and prospective evidence collection.
@@ -192,7 +192,9 @@ These are roadmap inputs, not authority to change them.
 
 ### Current checkpoint
 
-**Canonical documentation reconciliation after the GW1-P1 merge.** Documentation only, on draft PR #120. It records the merged GW1-P1 state, the GW1-P2 candidate, the owner-performed live acceptance preparation and the GW5 → GW6 planning correction. It changes no application, model, provider, Worker, schema, hosting or generated behaviour, and does not merge without Pritesh's explicit approval.
+**GW1 readiness — pre-deadline Transfers safety guard.** The narrow implementation checkpoint that follows the GW1 readiness audit's *go with conditions* outcome. Before the first Official FPL deadline of a season, Transfers stops presenting the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited until that deadline. The rule is derived from verified Official FPL event data, no optimiser mathematics changes and normal weekly behaviour resumes at the deadline instant. It also corrects demonstrably stale operator and current-status documentation text. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
+
+**Canonical documentation reconciliation after the GW1-P1 merge.** Complete and merged through PR #120 at `main` `be9d3c98ceff3549574535815a41cd75bb93d0f6`, with Verify Teamsheet #260 / `31575507007` and Pages #125 / `31575506352` passing on that exact merge commit at **883/883 tests**. It recorded the merged GW1-P1 state, the GW1-P2 candidate, the owner-performed live acceptance preparation and the GW5 → GW6 planning correction, and changed no application, model, provider, Worker, schema, hosting or generated behaviour.
 
 ### Current application candidate
 

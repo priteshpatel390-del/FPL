@@ -371,7 +371,49 @@ function transferPerformanceCreateWorker(){
   finally{ URL.revokeObjectURL(url); }
 }
 
+/* Pre-GW1 unlimited-change guard.
+
+   While the guard owns the Transfers screen no optimiser work may run, no cached or paused
+   result may be repainted, and no previewed transfer plan may survive on the Team pitch.
+   Suspension is idempotent, so every guarded entry point can call it safely. */
+function transferPerformanceInitialSquadSuspend(){
+  if(transferPerformanceAutoTimer!=null){
+    globalThis.clearTimeout?.(transferPerformanceAutoTimer);
+    transferPerformanceAutoTimer=null;
+  }
+  if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
+  transferPerformanceCache.clear();
+  transferPerformanceCancelledSignature='';
+  transferPerformanceFailure=null;
+  transferPerformanceBusyDetail=null;
+  S.lastOptimiser=null;
+  transferPlannerRenderedControlSignature=null;
+  transferPlannerClearPreview();
+}
+
+function transferPerformanceRenderInitialSquad(windowState){
+  const out=$('transferOut');
+  if(!out) return;
+  transferPlannerSetAssumptionsVisible(false);
+  out.setAttribute('aria-busy','false');
+  setChildren(out,
+    transferPlannerContext(),
+    transferPlannerInitialSquadNotice(windowState),
+    transferPlannerInitialSquadGuidance());
+  transferPerformanceStatus(`Unlimited squad changes until the GW${INITIAL_SQUAD_WINDOW_GAMEWEEK} deadline. No transfer comparison applies yet.`);
+}
+
+// Returns the guard window when it owns the screen, having already suspended background work.
+function transferPerformanceInitialSquadClaim({render=transferPerformanceVisible()}={}){
+  const windowState=initialSquadWindow();
+  if(!windowState.active) return null;
+  transferPerformanceInitialSquadSuspend();
+  if(render) transferPerformanceRenderInitialSquad(windowState);
+  return windowState;
+}
+
 async function transferPerformanceStart(initialSnapshot=transferPerformanceSnapshot(),{force=false}={}){
+  if(transferPerformanceInitialSquadClaim()) return;
   if(initialSnapshot?.error){
     if(transferPerformanceVisible()) transferPerformanceRenderError(initialSnapshot.error[0],initialSnapshot.error[1]);
     return;
@@ -476,6 +518,7 @@ function transferPerformanceCancel(message='Calculation cancelled.',{render=true
 }
 
 function transferPerformanceEnsure(snapshot=transferPerformanceSnapshot()){
+  if(transferPerformanceInitialSquadClaim({render:true})) return;
   if(snapshot.error){
     if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
     if(transferPerformanceVisible()) transferPerformanceRenderError(snapshot.error[0],snapshot.error[1]);
@@ -500,6 +543,7 @@ function transferPerformanceScheduleAuto(){
   if(transferPerformanceAutoTimer!=null) globalThis.clearTimeout?.(transferPerformanceAutoTimer);
   transferPerformanceAutoTimer=globalThis.setTimeout?.(()=>{
     transferPerformanceAutoTimer=null;
+    if(transferPerformanceInitialSquadClaim()) return;
     const snapshot=transferPerformanceSnapshot();
     if(snapshot.error){
       if(transferPerformanceActive) transferPerformanceCancel('',{render:false,explicit:false});
@@ -518,6 +562,8 @@ function renderTransfers(){
   const out=$('transferOut');
   if(!out) return;
   renderRouteDataWarning('transferDataWarning',{showUnavailable:false});
+  if(transferPerformanceInitialSquadClaim({render:true})) return;
+  transferPlannerSetAssumptionsVisible(true);
   transferPlannerSyncVisibleAssumptions();
   transferPlannerRenderedControlSignature=transferPerformanceControlSignature();
   transferPerformanceEnsure(transferPerformanceSnapshot());
@@ -558,6 +604,9 @@ export {
   transferPerformancePreparingDetail,
   transferPerformanceSearchingDetail,
   transferPerformanceSnapshot,
+  transferPerformanceInitialSquadSuspend,
+  transferPerformanceRenderInitialSquad,
+  transferPerformanceInitialSquadClaim,
   transferPerformanceStart,
   transferPerformanceCancel,
   transferPerformanceScheduleAuto,

@@ -70,6 +70,29 @@ test('historical index accounts for every Markdown record in docs', () => {
   assert.deepEqual(missing, [], `documentation records missing from historical index: ${missing.join(', ')}`);
 });
 
+/* The live Stage 10 operating procedure is followed on a phone during a real deadline window,
+   so a navigation path it names must actually exist. `More` was renamed to `Settings` and its
+   evidence surfaces moved under `#/settings/evidence/*`; the doc kept sending the operator to
+   a menu that is no longer reachable. This pins every owner path it names to a declared route
+   title, so a future navigation change cannot silently strand the procedure again. */
+test('the live Stage 10 operating procedure names owner paths that still exist', () => {
+  const procedure = read('docs/STAGE10-OPERATIONS.md');
+  const shell = read('src/ui/app-shell.mjs');
+
+  assert.doesNotMatch(procedure, /\bMore\s*→/, 'the More menu no longer exists in the application');
+
+  const titles = new Set([...shell.matchAll(/title:'([^']+)'/g)].map(match => match[1]));
+  assert.ok(titles.has('Settings'), 'the route title parser found no Settings route');
+
+  const paths = [...procedure.matchAll(/Settings(?:\s*→\s*[A-Za-z][A-Za-z &]*[A-Za-z])+/g)].map(match => match[0]);
+  assert.ok(paths.length >= 2, 'the operating procedure should name the owner path for its evidence steps');
+  for (const path of paths) {
+    for (const segment of path.split('→').map(part => part.trim())) {
+      assert.ok(titles.has(segment), `Stage 10 operations names a route that no longer exists: ${segment} (in "${path}")`);
+    }
+  }
+});
+
 test('decision and limitation identifiers are unique', () => {
   const decisionIds = read('docs/DECISIONS.md').split(/\r?\n/).flatMap(line => {
     const match = /^(?:#{2,3}\s+|\*\*)(D-[A-Za-z0-9.-]+)\b/.exec(line);
