@@ -1,10 +1,16 @@
 # ARCHITECTURE.md
 
-## 12 August 2026 — current architecture boundary
+## Current architecture boundary
 
-Latest merged `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, the merge of **GW1-P1 — Cloudflare Evidence Foundation** PR #118. GW1-P1 is complete and merged. It implements the backend-only portion of the approved D1 architecture: a separate owner-authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt/index state, exact Stage 10 revalidation, canonical hash identity, R2-first/D1-second custody, idempotent duplicate handling and bounded orphan reconciliation.
+This document describes the tree it lives in and does not restate the current `main` commit SHA — read that live with `git rev-parse origin/main`.
 
-**GW1-P2 — Browser evidence delivery and durable outbox** is the current unmerged candidate in draft PR #119, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. It connects the existing Stage 10 browser capture path to that merged backend through a durable local outbox, a transport-independent delivery state machine, content-hash idempotency and fail-closed provider retention. It is repository-verified but **acceptance-incomplete**: the decisive credentialled cross-site upload from physical iPhone Safari with Prevent Cross-Site Tracking ON is unproven, so on deployed `main` no browser call into the evidence Worker exists. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+**GW1-P1 — Cloudflare Evidence Foundation** is complete and merged through PR #118. It implements the backend-only portion of the approved D1 architecture: a separate owner-authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt/index state, exact Stage 10 revalidation, canonical hash identity, R2-first/D1-second custody, idempotent duplicate handling and bounded orphan reconciliation.
+
+### Pre-GW1 Transfers safety boundary
+
+The **GW1 readiness safety guard** delivered on PR #121 adds one presentation and scheduling boundary in front of the existing Transfers path, and nothing else. `initialSquadWindow()` in `src/ui/transfer-optimiser-view.mjs` derives the pre-first-deadline unlimited-change window from verified Official FPL event data already held in state; `transferPerformanceInitialSquadClaim()` in `src/ui/transfer-performance.mjs` is the single runtime guard, consulted by route rendering, the ensure path, calculation start and the automatic scheduling timer, so no background optimiser work, cached result or previewed plan survives while the window is open. The optimiser, its worker model source, pruning and every calculation module are unchanged, and the guard cannot enter the optimiser. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
+
+**GW1-P2 — Browser evidence delivery and durable outbox** is an unmerged candidate in draft PR #119, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. It connects the existing Stage 10 browser capture path to that merged backend through a durable local outbox, a transport-independent delivery state machine, content-hash idempotency and fail-closed provider retention. It is repository-verified but **acceptance-incomplete**: the decisive credentialled cross-site upload from physical iPhone Safari with Prevent Cross-Site Tracking ON is unproven, so on deployed `main` no browser call into the evidence Worker exists. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
 
 The evidence backend is deliberately outside the deterministic recommendation path under both checkpoints. Cloud custody is a one-way side effect: the recommendation never reads, waits for or fails because of the archive, and Stage 10 local capture, recovery and export semantics are unchanged. Provider acquisition, model/calculation behaviour and the existing Official FPL gateway are unchanged.
 

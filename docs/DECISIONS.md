@@ -1,5 +1,19 @@
 # DECISIONS.md — Architectural decision record
 
+## D-GW1R1 · 2026-08-12 · Accepted · Teamsheet does not present a weekly transfer optimiser during a period when Official FPL charges nothing for a transfer
+
+**Decision:** before the first Official FPL deadline of a season, the Transfers screen presents no weekly optimiser result, no free-transfer count, no hit cost and no ranked plan, collects no free-transfer or bank assumption, and instead states that initial squad changes are unlimited and points the manager at Team and the Team-setup manual squad builder. Normal weekly behaviour resumes at the deadline instant and for every later Gameweek.
+
+**Reason:** Official FPL allows unlimited changes to the initial squad until the first deadline, so free transfers, transfer costs and points hits do not exist in that window. A `−4 hit` or a `keep 2 free transfers` statement describes rules that are not yet in force, which is actively misleading rather than merely unhelpful. The GW1 readiness audit raised it as a should-fix item.
+
+**Approach:** the window is derived only from verified Official FPL event data already held in state — `nextGW` is 1, no Gameweek is current, none is finished, the GW1 event's `deadline_time` parses, and the current instant is strictly before it. No season calendar date is hard-coded, and a permanent test rejects any dated literal in either Transfers module. Every path that cannot prove the window falls back to the existing weekly behaviour; it never invents an unlimited-change state. A single runtime guard is consulted by route rendering, the ensure path, calculation start and the automatic scheduling timer, and claiming the screen cancels in-flight work and clears the result cache, the recorded optimiser result and any previewed plan.
+
+**Rejected:** hard-coding the season's first deadline date, which would silently rot; treating the deadline instant as still inside the window, which would misstate the rules for the Gameweek that has just begun; and inferring the window from `is_next` alone without the corroborating current/finished conditions, which would trust a contradictory feed.
+
+**Boundary:** presentation and scheduling only. `optimiseTransfers()`, `exhaustiveTransferSearch()`, `transferHit()`, pruning, admissibility, the free-transfer rollover utility and the embedded worker model source are byte-unchanged, and the guard cannot enter the optimiser. No projection, expected-minutes, scoring, fixture, deadline-calculation, squad-legality, captaincy, bench, simulation, rank, Mini-League, provider, routing or hosting behaviour changes. The guard asserts nothing about squad legality, budget or the correctness of the initial 15 players.
+
+**Status:** delivered on **PR #121**, physically accepted by Pritesh on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / `31583716004` with **898/898 tests** — the then-current count for that application head — and the deterministic/provenance/build-identity gates. Its three residual limitations are registered as `GW1R-1` to `GW1R-3`. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
+
 ## D-GW1P2 · 2026-08-12 · Accepted · The browser reaches the evidence archive through a durable outbox, and delivery is never a recommendation dependency
 
 **Decision:** connect the existing Stage 10 browser capture path to the merged GW1-P1 archive through a durable local outbox and a transport-independent delivery state machine. The canonical record is delivered exactly as stored — delivery must not re-canonicalise, re-hash, strip, restamp or regenerate it — and content-hash idempotency, bounded retry/backoff, single-flight concurrency and fail-closed provider retention are owned by the client. Cloud custody stays a one-way side effect: the recommendation never reads, waits for or fails because of the archive, and a record that cannot be archived stays saved on the device.

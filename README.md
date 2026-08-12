@@ -2,21 +2,25 @@
 
 Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's complete 15-player squad. It provides an explainable best XI, captaincy and bench order, exact transfer-plan comparisons, fixture planning, and factual Official FPL League context. The application remains vanilla JavaScript ES modules with the repository's zero-dependency build/test toolchain and GitHub Pages deployment.
 
-## Current repository baseline — 12 August 2026
+## Current repository baseline
 
-Latest merged `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, the merge of **GW1-P1 — Cloudflare Evidence Foundation** through PR #118. PR #118 is complete and merged. Its final reviewed head `7b739e5e6d68775da04d179346269ae295c1332a` passed Verify Teamsheet #251 / run `31526697241`: **883 tests, 883 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic build, provenance and build-identity gates.
+This section describes the tree it lives in. It deliberately does not restate the current `main` commit SHA — GitHub owns that fact and it changes on every merge. Read it live with `git rev-parse origin/main`.
 
-**GW1-P2 — Browser Evidence Delivery + Durable Outbox** is the active implemented candidate in draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Verify Teamsheet #255 / run `31537859087` passed on that exact head: **931 tests, 931 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic production build and provenance/build-identity gates.
+**Repository test baseline: 904 tests, 904 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance.
 
-GW1-P2 is **not accepted and not merged**. The decisive remaining gate is the physical iPhone Safari credentialled cross-site background upload with **Prevent Cross-Site Tracking ON** once a genuine Stage 10 record can exist. The configured Stage 10 window opens **20 August 2026 at 18:30 BST**. Do not merge PR #119 before that acceptance and final verification.
+The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on PR #121. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited; the rule is derived from verified Official FPL event data and normal weekly behaviour resumes at the deadline instant. No optimiser mathematics changed. Pritesh physically accepted it on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / run `31583716004`. The preceding GW1 readiness audit found **zero blockers**; the application is suitable for GW1 subject to the separate live-only gates below.
 
-Current GitHub Pages serves `main` from `/` and has been observed built after the temporary PR #119 acceptance-preparation deployment was restored.
+**GW1-P2 — Browser Evidence Delivery + Durable Outbox** is a separate implemented candidate in draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Verify Teamsheet #255 / run `31537859087` passed on that exact head: **931 tests, 931 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic production build and provenance/build-identity gates.
+
+GW1-P2 is **not accepted and not merged**, and it is **not a GW1 blocker** — cloud custody is a one-way side effect that the recommendation never depends on. The decisive remaining gate is the physical iPhone Safari credentialled cross-site background upload with **Prevent Cross-Site Tracking ON** once a genuine Stage 10 record can exist. The configured Stage 10 window opens **20 August 2026 at 18:30 BST**. Do not merge PR #119 before that acceptance and final verification. Until then, local Stage 10 capture, recovery and owner-controlled export remain the operating pre-deadline evidence path.
+
+GitHub Pages serves `main` from `/` and was observed built after the temporary PR #121 acceptance-preparation deployment was restored.
 
 The detailed current state and approval boundary live in [Project Context](docs/PROJECT_CONTEXT.md). Historical checkpoint evidence is indexed in [Historical Records](docs/HISTORICAL_RECORDS.md).
 
 ## Planning correction
 
-The first relevant 2026/27 international break is between **GW5 and GW6**, not GW2 and GW3. Pre-GW1 readiness remains the immediate priority; GW1–GW5 is the initial stability/prospective-evidence period; the GW5 → GW6 break is the first major evidence-led review opportunity, subject to evidence actually available. This calendar correction authorises no model, provider, fixture, expected-minutes, scoring or recommendation change.
+The first relevant 2026/27 international break is between **GW5 and GW6**, not GW2 and GW3. GW1 readiness remediation is complete, so the immediate operating state is pre-GW1 code freeze and operational rehearsal; GW1–GW5 is the initial stability/prospective-evidence period; the GW5 → GW6 break is the first major evidence-led review opportunity, subject to evidence actually available. This calendar correction authorises no model, provider, fixture, expected-minutes, scoring or recommendation change.
 
 ## Source, generated output and deployment
 
