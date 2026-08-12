@@ -1,8 +1,8 @@
 # GW1-P2 — Browser evidence delivery and durable outbox
 
-## Status — 12 August 2026
+## Status
 
-**Implemented candidate; acceptance incomplete; draft/unmerged.**
+**Implemented candidate; acceptance incomplete; draft/unmerged.** It is a separate stream from GW1 application readiness and **does not gate GW1**: cloud custody is a one-way side effect the recommendation never depends on, and local Stage 10 capture, recovery and owner-controlled export remain the operating pre-deadline evidence path until this candidate is accepted and merged.
 
 - PR: #119 — `GW1-P2 — Browser evidence delivery and durable outbox`
 - Branch: `claude/gw1-p2-evidence-delivery-design-ejsb0d`

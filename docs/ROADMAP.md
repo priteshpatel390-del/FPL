@@ -2,22 +2,37 @@
 
 Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 12 August 2026.
 
-## 12 August 2026 — current sequence
+## Current sequence
 
-Latest merged `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, merge of GW1-P1 PR #118. GW1-P1 is complete and merged.
+This document describes the tree it lives in. It does not restate the current `main` commit SHA — read that live with `git rev-parse origin/main`.
 
-GW1-P2 is the active implemented candidate in **draft PR #119**, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Its exact-head Verify Teamsheet #255 / `31537859087` passed **931/931 tests** plus deterministic/provenance/build-identity gates. It is not accepted and not merged.
+**GW1 readiness remediation is complete.** The readiness audit found **zero blockers** and two should-fix items; both were addressed by the **GW1 readiness — pre-deadline Transfers safety guard** checkpoint delivered on **PR #121**, which Pritesh physically accepted on iPhone Safari at head `f720230…` (Verify Teamsheet #262 / `31583716004`, then-current **898/898**). No readiness engineering item remains open, and readiness work authorised no model, provider or calculation change.
 
-### Before GW1
+GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unaccepted stream on **draft PR #119**, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`; its exact-head Verify Teamsheet #255 / `31537859087` passed **931/931 tests** plus deterministic/provenance/build-identity gates. It is not accepted and not merged, and **it does not gate GW1**.
 
-1. **Canonical documentation reconciliation** — current docs-only checkpoint.
-2. **GW1 Readiness Audit — investigation only** after this reconciliation is merged.
-3. Fix only genuine readiness blockers, each under its own approval gate.
-4. Physical rehearsal.
-5. Code freeze.
-6. Perform the decisive GW1-P2 physical iPhone Safari acceptance once a genuine Stage 10 record can exist on **20 August 2026 at 18:30 BST**.
+### Completed before GW1
+
+1. **Canonical documentation reconciliation** — merged through PR #120.
+2. **GW1 Readiness Audit — investigation only.** Concluded *go with conditions*: zero blockers, two should-fix items.
+3. **GW1 readiness safety guard** — the approved narrow fix for both items, delivered on PR #121 and physically accepted.
+
+### Immediate operating state — pre-GW1 freeze
+
+4. **Code freeze and operational rehearsal.** Make only separately approved fixes; every change still passes the full repository gate.
+5. Operate GW1 and collect prospective evidence, using local Stage 10 capture, recovery and owner-controlled export as the pre-deadline evidence path.
+
+The next work is **not** post-GW1 model or provider enhancement.
+
+### GW1-P2 live acceptance — a separate gating stream
+
+6. Perform the decisive GW1-P2 physical iPhone Safari acceptance once a genuine Stage 10 record can exist, from **20 August 2026 at 18:30 BST**.
 7. Do not merge PR #119 before successful live acceptance, final exact-head verification and explicit owner approval.
-8. Operate GW1 and collect prospective evidence.
+
+This stream runs alongside GW1 operation. Because cloud custody is a one-way side effect that the recommendation never depends on, a failure or delay here does not block GW1; it only leaves local capture/export as the evidence path for longer.
+
+### Evidence-led review
+
+8. Review accumulated prospective evidence at the **GW5 → GW6** international break.
 
 ### GW1-P2 acceptance boundary
 
@@ -33,7 +48,7 @@ The previous planning assumption of a major review after GW2 was incorrect. The 
 
 Therefore:
 
-- pre-GW1 readiness remains the immediate priority;
+- GW1 readiness remediation is complete, so the immediate operating state is pre-GW1 code freeze and operational rehearsal;
 - **GW1–GW5** is the initial stability and prospective-evidence collection period;
 - the **GW5 → GW6 international break** is the first major evidence-led review/improvement opportunity;
 - by then Teamsheet may have up to five Gameweeks of prospective evidence, depending on what was genuinely captured and validated.
@@ -42,7 +57,7 @@ This timing statement authorises **no** model, fixture, expected-minutes, scorin
 
 ## Deferred beyond GW1-P2
 
-Longer-horizon product work remains separately gated. Nothing below is implementation-approved by the current checkpoint:
+Longer-horizon product work remains separately gated. Nothing below is implementation-approved by GW1 readiness work or by either GW1-P checkpoint:
 
 - Understat repair.
 - Odds API repair.
@@ -60,7 +75,8 @@ The brittle `selectMiniLeague` exact-source-string assertion is deferred narrow 
 - Teamsheet 2.0 product sequence and A3 engineering remediation are complete through their recorded merged checkpoints.
 - Data Architecture D1 was approved as the evidence architecture.
 - **GW1-P1 — Cloudflare Evidence Foundation** is complete and merged through PR #118.
-- **GW1-P2 — Browser Evidence Delivery + Durable Outbox** is implemented as the current draft candidate but remains acceptance-incomplete.
+- **GW1-P2 — Browser Evidence Delivery + Durable Outbox** is implemented as a draft candidate but remains acceptance-incomplete.
+- **GW1 readiness — pre-deadline Transfers safety guard** is complete and physically accepted, delivered on PR #121.
 
 Historical roadmap entries below remain historical snapshots. They must not override this current sequence or live GitHub state.
 
@@ -122,6 +138,8 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 - **Route-Aware Rendering and Performance M1 — complete and merged** through PR #115 at `main` `02ea634…`; exact-main run #183 passed 866/866. M1 is measurement instrumentation only and route-aware optimisation remains unapproved.
 - **A3-SC-1 Small Stale-Code Cleanup — complete and merged** through PR #116 at A3 engineering baseline `1060e60…`; reviewed-head run #193 passed 868/868 and post-merge run #194 passed the exact-main repository gate. No physical iPhone testing was performed or claimed.
 - **GW1-P1 Cloudflare Evidence Foundation — complete and merged** through PR #118 at `main` `58b834a…`; reviewed head `7b739e5…` passed Verify Teamsheet #251 / `31526697241` on an 883-test baseline. Backend only.
+- **Canonical documentation reconciliation — complete and merged** through PR #120 at `main` `be9d3c9…`; post-merge run #260 passed the exact-main repository gate on the then-current 883-test baseline. Documentation only.
+- **GW1 readiness — pre-deadline Transfers safety guard — complete and physically accepted**, delivered on PR #121; head `f720230…` passed Verify Teamsheet #262 / `31583716004` on the then-current **898**-test baseline, and Pritesh physically accepted the guarded Transfers screen on iPhone Safari. Presentation and scheduling only; no optimiser mathematics changed. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
 
 ## A3 remediation and closeout sequence
 

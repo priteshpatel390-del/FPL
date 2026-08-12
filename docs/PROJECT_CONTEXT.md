@@ -4,15 +4,25 @@ Purpose: current product and engineering state. Audience: every session after `C
 
 Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Data Architecture D1](DATA-ARCHITECTURE-D1.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md), [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md), [Historical Records](HISTORICAL_RECORDS.md).
 
-## 12 August 2026 — canonical current state
+## Canonical current state
 
-Live GitHub is authoritative over this document and all historical handovers.
+Live GitHub is authoritative over this document and all historical handovers. This section describes the tree it lives in and deliberately does not restate the current `main` commit SHA — that changes on every merge and duplicating it here is how this documentation went stale before. Read it live with `git rev-parse origin/main`, and read live pull-request state from GitHub.
 
-Latest merged `main` is `be9d3c98ceff3549574535815a41cd75bb93d0f6`, merge of the **canonical documentation reconciliation** PR #120 over **GW1-P1 — Cloudflare Evidence Foundation** PR #118 at `58b834a1824c4977a442e7b3e309e2bbf3d05da1`. GW1-P1 is complete and merged. Its final reviewed head `7b739e5e6d68775da04d179346269ae295c1332a` passed Verify Teamsheet #251 / `31526697241` with **883/883 tests** and deterministic/provenance/build-identity gates; PR #120 changed documentation only and its merge commit passed Verify Teamsheet #260 / `31575507007` on the same 883-test baseline.
+**Repository test baseline: 904 tests, 904 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. The 898 recorded below is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raise it to 904, and no application code changed between the two. Earlier counts (883, 868, 864, 856, …) are historical checkpoint evidence and are not current claims.
 
-The active application candidate is **GW1-P2 — Browser Evidence Delivery + Durable Outbox**, draft PR #119 on `claude/gw1-p2-evidence-delivery-design-ejsb0d`, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Verify Teamsheet #255 / `31537859087` passed on that head with **931/931 tests**, no failures/skips/cancellations, deterministic production build and provenance/build-identity gates.
+### Application — ready for GW1
 
-GW1-P2 is implementation-complete as a candidate but **acceptance-incomplete**. It remains draft and unmerged. Cloud custody is a one-way side effect and the recommendation path must not read, wait for or fail because of the archive.
+The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on **PR #121** from `agent/gw1-readiness-safety-guard`. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited, pointing the manager at Team and the Team-setup manual squad builder. The window is derived only from verified Official FPL event data; the deadline instant, later Gameweeks and any missing or unparseable deadline all restore normal weekly behaviour. **No optimiser mathematics changed.**
+
+**Pritesh physically accepted it on iPhone Safari** at the exact candidate head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / `31583716004` on the then-current 898-test baseline. GitHub Pages was pointed at the branch for that acceptance and then restored to `main`, each observed built (Pages #126 branch, **#127 `main`**).
+
+The GW1 readiness audit that preceded PR #121 concluded **go with conditions**: **zero blockers** and two should-fix items, both addressed by PR #121. The application is suitable for GW1 subject only to the separate live-only gates recorded below. Readiness work authorised **no** model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change, and none was made. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
+
+### Cloud evidence custody — a separate, unaccepted stream
+
+**GW1-P2 — Browser Evidence Delivery + Durable Outbox** is an implemented candidate on draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Verify Teamsheet #255 / `31537859087` passed on that head with **931/931 tests**, no failures/skips/cancellations, deterministic production build and provenance/build-identity gates.
+
+GW1-P2 is implementation-complete as a candidate but **acceptance-incomplete**. It remains draft and unmerged, and **it is not a GW1 blocker**: cloud custody is a one-way side effect and the recommendation path never reads, waits for or fails because of the archive. Until PR #119 is accepted and merged, **local Stage 10 capture, recovery and owner-controlled export remain the operating pre-deadline evidence path**; that fallback is complete and merged.
 
 ### Owner-performed live acceptance preparation
 
@@ -36,20 +46,28 @@ If Option A fails under normal Safari privacy settings, stop. Do not make disabl
 
 ## Immediate sequence
 
-1. Canonical documentation reconciliation — complete and merged through PR #120.
-2. **GW1 Readiness Audit — investigation only**. Concluded *go with conditions*: no blockers, two items to fix before GW1.
-3. **GW1 readiness safety guard — this checkpoint.** The approved narrow fix for those two items. Only genuine blocker fixes follow, each separately approved.
-4. Physical rehearsal and code freeze.
-5. Live GW1-P2 acceptance when the real Stage 10 window opens.
-6. GW1 operations and prospective evidence collection.
+Completed:
+
+1. Canonical documentation reconciliation — merged through PR #120.
+2. **GW1 Readiness Audit — investigation only**. Concluded *go with conditions*: zero blockers, two items to fix before GW1.
+3. **GW1 readiness safety guard** — the approved narrow fix for those two items, delivered on PR #121 and physically accepted on iPhone Safari.
+
+Immediate operating state and what follows:
+
+4. **Pre-GW1 code freeze and operational rehearsal.** Only separately approved fixes.
+5. Operate GW1 and collect prospective evidence.
+6. Live GW1-P2 acceptance when the real Stage 10 window opens on 20 August 2026 at 18:30 BST — a separate gating stream, not a GW1 blocker.
+7. Evidence-led review at the GW5 → GW6 international break.
+
+The next work is **not** post-GW1 model or provider enhancement. Every such change remains separately approval-gated and evidence-led.
 
 The first relevant 2026/27 international break is **GW5 → GW6**, not GW2 → GW3. Treat GW1–GW5 as the initial stability/prospective-evidence period and the GW5 → GW6 break as the first major evidence-led review opportunity, subject to evidence actually available. This planning correction does not authorise model/provider changes.
 
 ## Outcome
 
-Teamsheet is a strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache and persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards, A3 State-Ownership Cleanup, Route-Aware M1, A3-SC-1 and **GW1-P1** are merged. A3 engineering remediation and documentation closeout are complete.
+Teamsheet is a strongly verified FPL decision product. The complete Teamsheet 2.0 migration, owner-controlled Official FPL gateway, exact persistent Transfers work, Team, Player Detail, Fixtures, Leagues pre-season acceptance, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, Audit A3, A3-R0, DTR-1, the iPhone form-focus zoom correction, the Data Architecture D1 design closeout, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache and persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards, A3 State-Ownership Cleanup, Route-Aware M1, A3-SC-1 and **GW1-P1** are merged. A3 engineering remediation and documentation closeout are complete, and GW1 readiness remediation is complete through PR #121.
 
-**GW1-P2 is the current unmerged candidate.** It connects the existing Stage 10 browser capture path to the merged GW1-P1 backend and does not change the deterministic recommendation path. Until GW1-P2 passes its physical acceptance and is merged, a normal Teamsheet browser session on `main` does not automatically upload genuine Stage 10 evidence to that backend. No formula, recommendation or new-provider checkpoint is approved by GW1-P1 or GW1-P2.
+**GW1-P2 remains the unmerged application candidate.** It connects the existing Stage 10 browser capture path to the merged GW1-P1 backend and does not change the deterministic recommendation path. Until GW1-P2 passes its physical acceptance and is merged, a normal Teamsheet browser session does not automatically upload genuine Stage 10 evidence to that backend, and local capture/export is the pre-deadline evidence path. No formula, recommendation or new-provider checkpoint is approved by GW1-P1, GW1-P2 or GW1 readiness work.
 
 Refresh-Load R1 changed acquisition cadence only: valid detailed histories, normalised Understat team inputs and key-free derived Odds inputs can be reused without repeating their network requests. Atomic foreground-state replacement is merged through PR #102. EB-1 changes failure ownership only. Production-Bundle Safeguards changes test/harness coverage only. State-Ownership Cleanup clarifies shared-state inventory and removes reverse authority from the legacy Mini-League alias only. Route-Aware M1 changes measurement tooling only. A3-SC-1 removes proven-unreachable code only. Understat parser repair and model/data-source expansion remain separately gated. Real minute-history reuse, Stage 10 outcome capture and populated Leagues behaviour still require a completed, officially `data_checked` Gameweek and begin with investigation/evidence only.
 
@@ -58,6 +76,7 @@ Refresh-Load R1 changed acquisition cadence only: valid detailed histories, norm
 Pritesh has physically accepted the tested populated paths for:
 
 - Transfers, including the six-Gameweek exact calculation, result persistence, cancellation/restart, app switching, stale-result protection and **No hit** wording;
+- the pre-GW1 Transfers unlimited-changes guard: the guarded screen with no free-transfer, hit or ranked-plan advice and no planning-assumption inputs, with Team, the manual squad builder and navigation unaffected;
 - Player Detail scrolling, rotation, background restoration and dock layering;
 - Team startup ownership, availability presentation, reserve-goalkeeper bench position and outfield bench order;
 - Fixtures horizontal scrolling and remaining-season horizons through GW38;
@@ -190,19 +209,27 @@ These are roadmap inputs, not authority to change them.
 
 ## Current and next
 
-### Current checkpoint
+### Most recent application checkpoint
 
-**GW1 readiness — pre-deadline Transfers safety guard.** The narrow implementation checkpoint that follows the GW1 readiness audit's *go with conditions* outcome. Before the first Official FPL deadline of a season, Transfers stops presenting the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited until that deadline. The rule is derived from verified Official FPL event data, no optimiser mathematics changes and normal weekly behaviour resumes at the deadline instant. It also corrects demonstrably stale operator and current-status documentation text. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
+**GW1 readiness — pre-deadline Transfers safety guard**, delivered on PR #121. The narrow implementation checkpoint that followed the GW1 readiness audit's *go with conditions* outcome. Before the first Official FPL deadline of a season, Transfers stops presenting the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited until that deadline. The rule is derived from verified Official FPL event data, no optimiser mathematics changes and normal weekly behaviour resumes at the deadline instant. Physically accepted on iPhone Safari at head `f720230…`, Verify Teamsheet #262 / `31583716004` on the then-current 898-test baseline. It also carried the surgical operator and current-status documentation corrections. See [GW1 readiness safety guard](GW1-READINESS-SAFETY-GUARD.md).
 
-**Canonical documentation reconciliation after the GW1-P1 merge.** Complete and merged through PR #120 at `main` `be9d3c98ceff3549574535815a41cd75bb93d0f6`, with Verify Teamsheet #260 / `31575507007` and Pages #125 / `31575506352` passing on that exact merge commit at **883/883 tests**. It recorded the merged GW1-P1 state, the GW1-P2 candidate, the owner-performed live acceptance preparation and the GW5 → GW6 planning correction, and changed no application, model, provider, Worker, schema, hosting or generated behaviour.
+**GW1 readiness remediation is complete.** No further readiness engineering item is open.
 
-### Current application candidate
+### Previous checkpoint — historical
 
-**GW1-P2 — Browser Evidence Delivery + Durable Outbox** on draft PR #119. Implementation is complete and repository-verified; the decisive physical iPhone Safari transport acceptance is outstanding and the PR must stay draft until it passes.
+**Canonical documentation reconciliation after the GW1-P1 merge.** Merged through PR #120 at `be9d3c98ceff3549574535815a41cd75bb93d0f6`, with Verify Teamsheet #260 / `31575507007` and Pages #125 / `31575506352` passing on that exact merge commit at the then-current **883/883** baseline. It recorded the merged GW1-P1 state, the GW1-P2 candidate, the owner-performed live acceptance preparation and the GW5 → GW6 planning correction, and changed no application, model, provider, Worker, schema, hosting or generated behaviour. That SHA and test count are permanent evidence for PR #120, not the current repository baseline.
+
+### Unmerged application candidate
+
+**GW1-P2 — Browser Evidence Delivery + Durable Outbox** on draft PR #119. Implementation is complete and repository-verified; the decisive physical iPhone Safari transport acceptance is outstanding and the PR must stay draft until it passes and Pritesh explicitly approves merge. It is a separate gating stream and is not a GW1 blocker.
+
+### Immediate operating state
+
+Pre-GW1 code freeze and operational rehearsal.
 
 ### Completed merged foundation
 
-**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103. **A3 cache and persistence resilience:** complete and merged through PR #104 with physical iPhone testing explicitly waived. **Post-A3 Checkpoint 0:** complete and merged through PR #105. **0C manual-squad dead-handler cleanup:** complete and merged through PR #106. **`fpl:calib` compatibility:** complete and merged through PR #107. **A3 Error-Boundary Separation (EB-1):** complete, physically accepted on the executable device paths, merged and post-merge verified through PR #108. **A3 Production-Bundle Safeguards:** complete and merged through PR #111. **A3 State-Ownership Cleanup:** complete and merged through PR #112. **Route-Aware Rendering and Performance M1:** measurement instrumentation only, complete and merged through PR #115. **A3-SC-1 Small Stale-Code Cleanup:** complete and merged through PR #116. **A3 documentation/architecture reconciliation:** complete. **GW1-P1 — Cloudflare Evidence Foundation:** backend only, complete and merged through PR #118 at `58b834a…`.
+**Audit A3/A3-R0:** complete and merged through PR #98. **DTR-1:** complete and merged through PR #99. **iPhone form-focus zoom:** complete and merged through PR #100. **Data Architecture D1 design closeout:** merged through PR #101 as documentation only. **Atomic Foreground Refresh:** complete, physically accepted and merged through PR #102. **Small mobile UI consistency:** complete, physically accepted and merged through PR #103. **A3 cache and persistence resilience:** complete and merged through PR #104 with physical iPhone testing explicitly waived. **Post-A3 Checkpoint 0:** complete and merged through PR #105. **0C manual-squad dead-handler cleanup:** complete and merged through PR #106. **`fpl:calib` compatibility:** complete and merged through PR #107. **A3 Error-Boundary Separation (EB-1):** complete, physically accepted on the executable device paths, merged and post-merge verified through PR #108. **A3 Production-Bundle Safeguards:** complete and merged through PR #111. **A3 State-Ownership Cleanup:** complete and merged through PR #112. **Route-Aware Rendering and Performance M1:** measurement instrumentation only, complete and merged through PR #115. **A3-SC-1 Small Stale-Code Cleanup:** complete and merged through PR #116. **A3 documentation/architecture reconciliation:** complete. **GW1-P1 — Cloudflare Evidence Foundation:** backend only, complete and merged through PR #118 at `58b834a…`. **Canonical documentation reconciliation:** documentation only, complete and merged through PR #120. **GW1 readiness — pre-deadline Transfers safety guard:** complete, physically accepted and delivered on PR #121.
 
 GW1-P2 is not in this merged list because PR #119 remains unmerged.
 

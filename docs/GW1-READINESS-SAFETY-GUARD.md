@@ -1,14 +1,22 @@
 # GW1-READINESS-SAFETY-GUARD.md — pre-deadline Transfers safety guard
 
+Status: **complete and physically accepted.** Delivered on PR #121.
+
 Purpose: the record for the narrow implementation checkpoint that followed the GW1 readiness audit. Audience: any session touching the Transfers screen or the pre-season application state. Last updated: 12 August 2026.
 
-Related: [Project Context](PROJECT_CONTEXT.md), [Architecture](ARCHITECTURE.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Stage 10 operations](STAGE10-OPERATIONS.md), [Historical Records](HISTORICAL_RECORDS.md).
+Related: [Project Context](PROJECT_CONTEXT.md), [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Testing](TESTING.md), [Stage 10 operations](STAGE10-OPERATIONS.md), [Historical Records](HISTORICAL_RECORDS.md).
 
-## Baseline
+## Baseline and evidence
 
 Branch `agent/gw1-readiness-safety-guard`, created from `main` `be9d3c98ceff3549574535815a41cd75bb93d0f6` — the merge of the canonical documentation reconciliation PR #120. The GW1 readiness audit concluded **go with conditions**: zero blockers and two items to fix before GW1. This checkpoint implements exactly those two items and nothing else.
 
-GW1-P2 draft PR #119 is untouched by this checkpoint.
+The accepted application candidate is head `f72023043813566fe8b11da2d959e374d34bca39`, over source commit `c221eab4b42d9a869818fc735b3932b891778a57` and its generated-only child `5379ac7c8695e2ad5428a2c30c4e6fb6bd9b7c7f`. That head passed **Verify Teamsheet #262 / `31583716004`** with **898 tests, 898 passed, 0 failed, 0 skipped, 0 cancelled**, committed build provenance, two exact-identity production builds, root/deployable equality, exact build identity and production-output preservation. 898 is the then-current count for that application head; the pre-merge documentation reconciliation described below adds six documentation-integrity regressions, raising the repository baseline to **904** without touching application code or generated output.
+
+**Physical iPhone Safari acceptance passed.** Pritesh exercised the guarded pre-deadline Transfers screen on the exact candidate: the unlimited-changes notice was shown, no free-transfer, hit or ranked-plan advice appeared, Team and the manual squad builder remained usable, and navigation behaved normally. GitHub Pages was pointed at this branch for that acceptance (Pages #126) and then **restored to `main` and observed built (Pages #127)**.
+
+Documentation added after that acceptance is documentation-only and changes no build input, so the accepted application code and generated deployables are unchanged by it.
+
+The GW1 readiness verdict follows: the application is suitable for GW1 subject only to the separate live-only gates recorded in [Project Context](PROJECT_CONTEXT.md). GW1-P2 draft PR #119 is untouched by this checkpoint and remains a separate, unaccepted stream that does not gate GW1.
 
 ## Problem
 
@@ -71,15 +79,23 @@ No optimiser mathematics changed. `optimiseTransfers()`, `exhaustiveTransferSear
 
 ## Documentation corrections
 
-Only demonstrably stale operator and current-status text was corrected:
+Two rounds, both documentation-only.
 
-- `docs/STAGE10-OPERATIONS.md` — the live pre-deadline and post-Gameweek procedures pointed at a `More →` menu that no longer exists. They now name the current owner path, `Settings → Evidence & Performance → Deadline evidence` and `… → Operating review`. Historical Stage 10 records that describe the navigation of their own era were deliberately left unchanged.
-- `docs/PROJECT_CONTEXT.md` — the canonical documentation reconciliation was still described as the current checkpoint and `main` was still recorded at the pre-PR-#120 commit. Both now record the merged state, and this checkpoint is named as the current one.
+**Round 1 — the surgical corrections shipped with the implementation.**
+
+- `docs/STAGE10-OPERATIONS.md` — the live pre-deadline and post-Gameweek procedures pointed at a `More →` menu that no longer exists. They now name the current owner paths `Settings → Evidence & Performance → Deadline evidence` and `… → Operating review`. Historical Stage 10 records that describe the navigation of their own era were deliberately left unchanged.
+- `docs/PROJECT_CONTEXT.md` — the canonical documentation reconciliation was still described as the current checkpoint and `main` was still recorded at the pre-PR-#120 commit.
 - `docs/HISTORICAL_RECORDS.md` — the Data Architecture D1 index entry still said implementation remains deferred, which contradicts the merged GW1-P1 backend evidence foundation. The entry now separates the merged backend half, the unmerged GW1-P2 browser half and the still-deferred remainder, without rewriting chronology.
 
-No broad documentation cleanup was performed.
+**Round 2 — the pre-merge canonical reconciliation.** A wider audit after physical acceptance found the same class of staleness in files PR #120 had not reached: `README.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md` and `docs/KNOWN_LIMITATIONS.md` all still named `58b834a…` as the latest merged `main`, contradicting `CLAUDE.md`'s own baseline table.
+
+The durable fix is structural rather than another SHA rewrite. **Canonical current-state documents no longer restate the merged `main` commit SHA at all**; they state the checkpoint, the accepted candidate head, the permanent CI evidence and the current test baseline, and direct the reader to `git rev-parse origin/main` for the live SHA. GitHub already owns that fact, and duplicating it across seven files is precisely what went stale. Exact SHAs remain wherever they are permanent evidence scoped to a named historical event — `GW1-P1 merged through PR #118 at 58b834a…` stays true forever.
+
+This means **no canonical current-state claim becomes false when PR #121 merges**, so no post-merge documentation cleanup is required.
 
 ## Limitations
+
+These are registered as `GW1R-1` to `GW1R-3` in [Known Limitations](KNOWN_LIMITATIONS.md).
 
 - The rule depends on the device clock, exactly as the existing deadline countdown and Stage 10 timing surfaces already do. A device clock set far enough in the past could in principle hold the guard open past the real deadline; conditions 2 and 3 above make that require a simultaneously stale Official FPL payload.
 - The pre-deadline state is testable on a physical device now. The after-deadline transition cannot be physically tested before the real GW1 deadline, because no approved non-production deadline-override mechanism exists and none was invented. That transition is covered by automated tests only.

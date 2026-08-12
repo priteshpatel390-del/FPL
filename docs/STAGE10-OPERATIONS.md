@@ -1,6 +1,12 @@
 # STAGE10-OPERATIONS.md — Live-season evidence operations
 Purpose: phone-first operating and disaster-recovery procedure for Stage 10. Last updated: 2026-08-12.
 
+## What is live today
+
+**Local capture, recovery and owner-controlled export are the operating evidence path.** Automatic cloud custody is implemented as the GW1-P2 candidate on draft PR #119, but it is unaccepted and unmerged, so it is not part of this procedure and must not be relied on. Every step below is therefore local and owner-driven, and it stays that way until PR #119 passes its physical acceptance and is merged. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+
+Navigation note: evidence surfaces live under **Settings → Evidence & Performance**. The former `More` area no longer exists; older Stage 10 records describing it are historical.
+
 ## Before every deadline
 1. Open Teamsheet in Safari during the preferred 20–10 minute window.
 2. Let the verified refresh complete, then open Settings → Evidence & Performance → Deadline evidence.

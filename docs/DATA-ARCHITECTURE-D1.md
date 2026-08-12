@@ -1,6 +1,6 @@
 # Data Architecture D1 — historical and live data platform
 
-Status: **approved architecture; GW1-P1 backend foundation merged at `main` `58b834a…`; GW1-P2 browser delivery implemented and pending owner physical acceptance**  
+Status: **approved architecture; partially implemented.** The GW1-P1 backend evidence foundation is merged through PR #118 at `58b834a…`. GW1-P2 browser delivery is implemented on the unmerged PR #119 candidate and is pending owner physical acceptance. The wider structured-record and downstream-reporting scope remains deferred. **D1 is not wholly deferred.**  
 Approved by: Pritesh, 9 August 2026  
 Repository baseline investigated: `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`  
 Original scope: architecture investigation and documentation only  
