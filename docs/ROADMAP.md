@@ -1,12 +1,78 @@
 # ROADMAP.md — current and proposed checkpoints
 
-## 11 August 2026 — current checkpoint: GW1-P1 final closeout
+Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 12 August 2026.
 
-**GW1-P1 — Cloudflare Evidence Foundation is implemented on draft PR #118 and is in final closeout.** Latest merged `main` remains `43f109b306071aa0c3c1c45985876fecb3da7aa5`. The checkpoint is backend-only: separate authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt state, canonical Stage 10 validation, idempotency and orphan reconciliation. Repository records also capture owner-performed physical iPhone Safari production functional acceptance.
+## 12 August 2026 — current sequence
 
-Preview/version URL security is closed: the repository candidate explicitly disables Cloudflare Preview URLs and tests that invariant, and owner-supplied live Cloudflare Domains dashboard evidence on 11 August 2026 showed the production route Access-`Restricted` with the wildcard Preview hostname disabled. Canonical documentation reconciliation, exact final-head repository verification after every documentation/config change, and final PR diff/description review remain the closing work.
+Latest merged `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, merge of GW1-P1 PR #118. GW1-P1 is complete and merged.
 
-**Do not start GW1-P2 in this checkpoint.** Teamsheet browser sync/persistent outbox upload remains unimplemented and separately approval-gated. Existing Stage 10/local evidence semantics therefore remain unchanged during normal app use. Provider archival rights remain fail-closed; Understat/Odds repair, provider weighting, model/calculation work, Sheets automation, agents and scheduled collectors remain outside GW1-P1.
+GW1-P2 is the active implemented candidate in **draft PR #119**, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Its exact-head Verify Teamsheet #255 / `31537859087` passed **931/931 tests** plus deterministic/provenance/build-identity gates. It is not accepted and not merged.
+
+### Before GW1
+
+1. **Canonical documentation reconciliation** — current docs-only checkpoint.
+2. **GW1 Readiness Audit — investigation only** after this reconciliation is merged.
+3. Fix only genuine readiness blockers, each under its own approval gate.
+4. Physical rehearsal.
+5. Code freeze.
+6. Perform the decisive GW1-P2 physical iPhone Safari acceptance once a genuine Stage 10 record can exist on **20 August 2026 at 18:30 BST**.
+7. Do not merge PR #119 before successful live acceptance, final exact-head verification and explicit owner approval.
+8. Operate GW1 and collect prospective evidence.
+
+### GW1-P2 acceptance boundary
+
+Owner-performed preparation has established that Access `Bypass OPTIONS requests to origin` was configured, top-level iPhone Safari Access authentication worked, the protected `/v1/health` route worked, non-destructive storage telemetry was observed, and Pages branch switching/restoration was exercised.
+
+The decisive credentialled cross-site application POST with **Prevent Cross-Site Tracking ON** remains unproven. If it fails, stop and return with an evidence-led Option B versus Option C comparison. Do not disable Safari privacy protection as a product requirement and do not implement either alternative without separate approval.
+
+The bounded outbox `pinLimit` remains conservative at four. The usable iPhone storage ceiling is not evidenced, so that value is not claimed to be proven safe and must not be raised in this checkpoint.
+
+### Early-season evidence period
+
+The previous planning assumption of a major review after GW2 was incorrect. The first relevant 2026/27 international break is **between GW5 and GW6**.
+
+Therefore:
+
+- pre-GW1 readiness remains the immediate priority;
+- **GW1–GW5** is the initial stability and prospective-evidence collection period;
+- the **GW5 → GW6 international break** is the first major evidence-led review/improvement opportunity;
+- by then Teamsheet may have up to five Gameweeks of prospective evidence, depending on what was genuinely captured and validated.
+
+This timing statement authorises **no** model, fixture, expected-minutes, scoring, provider, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change. Any such change remains separately approval-gated and evidence-led.
+
+## Deferred beyond GW1-P2
+
+Longer-horizon product work remains separately gated. Nothing below is implementation-approved by the current checkpoint:
+
+- Understat repair.
+- Odds API repair.
+- Broader D1 historical/live schema expansion beyond the minimal GW1-P1 evidence manifest/receipt foundation.
+- Claude-to-ChatGPT migration.
+- Cloudflare automation expansion.
+- AI agents and richer external intelligence.
+- Route-aware optimisation unless future workload/responsiveness evidence justifies a separate proposal.
+- Any GW1-P2 transport alternative (Option B or Option C) unless the decisive Option A acceptance fails and a separate evidence-led comparison is approved.
+
+The brittle `selectMiniLeague` exact-source-string assertion is deferred narrow test-hardening debt. Live-Gameweek evidence gates remain unchanged: real minute-history behaviour, Stage 10 outcome/correction evidence and populated Mini-League ranking/rival/pagination acceptance require the relevant official post-Gameweek facts.
+
+## Completed foundations relevant to the current path
+
+- Teamsheet 2.0 product sequence and A3 engineering remediation are complete through their recorded merged checkpoints.
+- Data Architecture D1 was approved as the evidence architecture.
+- **GW1-P1 — Cloudflare Evidence Foundation** is complete and merged through PR #118.
+- **GW1-P2 — Browser Evidence Delivery + Durable Outbox** is implemented as the current draft candidate but remains acceptance-incomplete.
+
+Historical roadmap entries below remain historical snapshots. They must not override this current sequence or live GitHub state.
+
+## Historical — 11 August 2026 checkpoint: GW1-P1 final closeout
+
+**Historical snapshot; GW1-P1 has since merged through PR #118 as recorded above.**
+
+At that checkpoint **GW1-P1 — Cloudflare Evidence Foundation was implemented on draft PR #118 and was in final closeout.** Latest merged `main` was `43f109b306071aa0c3c1c45985876fecb3da7aa5`. The checkpoint is backend-only: separate authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt state, canonical Stage 10 validation, idempotency and orphan reconciliation. Repository records also capture owner-performed physical iPhone Safari production functional acceptance.
+
+Preview/version URL security is closed: the repository candidate explicitly disables Cloudflare Preview URLs and tests that invariant, and owner-supplied live Cloudflare Domains dashboard evidence on 11 August 2026 showed the production route Access-`Restricted` with the wildcard Preview hostname disabled. Canonical documentation reconciliation, exact final-head repository verification after every documentation/config change, and final PR diff/description review were the closing work.
+
+At that time GW1-P2 was not to be started, and Teamsheet browser sync/persistent outbox upload was unimplemented and separately approval-gated. It has since been separately approved and implemented as the PR #119 candidate. Provider archival rights remain fail-closed; Understat/Odds repair, provider weighting, model/calculation work, Sheets automation, agents and scheduled collectors remain outside both GW1-P1 and GW1-P2.
 
 ## Historical — 11 August 2026 A3 checkpoint status
 
@@ -48,13 +114,14 @@ No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, r
 
 ## Completed before the current sequence
 
-- **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md). The later separately approved GW1-P1 backend foundation is now implemented on draft PR #118; Teamsheet browser integration/persistent outbox remains GW1-P2 and is not part of this checkpoint.
+- **Data Architecture D1 design — complete:** approved architecture is recorded in [DATA-ARCHITECTURE-D1.md](DATA-ARCHITECTURE-D1.md). The later separately approved GW1-P1 backend foundation is merged through PR #118; the separately approved GW1-P2 Teamsheet browser integration/persistent outbox is implemented on the unmerged PR #119 candidate.
 - **Atomic Foreground Refresh — complete and merged:** PR #102 is merged and physically accepted. See [Atomic Foreground Refresh](ATOMIC-FOREGROUND-REFRESH.md).
 - **Cache and persistence resilience — complete and merged** through PR #104; 832 tests, committed build provenance, deterministic double-build validation, permanent Verify Teamsheet run #105 and independent review of the final diff all passed. Physical iPhone testing was explicitly waived by the owner.
 - **Production-Bundle Safeguards — complete and merged** through PR #111 at `main` `5a1a036…`; exact-main run #159 passed 859/859 and the three complete-bundle safeguards are permanent tests.
 - **State-Ownership Cleanup — complete and merged** through PR #112 at `main` `691d9f9…`; exact-main run #167 passed 864/864, the shared-state inventory and one-way Mini-League compatibility ownership are permanent, and no physical iPhone testing was performed or claimed.
 - **Route-Aware Rendering and Performance M1 — complete and merged** through PR #115 at `main` `02ea634…`; exact-main run #183 passed 866/866. M1 is measurement instrumentation only and route-aware optimisation remains unapproved.
 - **A3-SC-1 Small Stale-Code Cleanup — complete and merged** through PR #116 at A3 engineering baseline `1060e60…`; reviewed-head run #193 passed 868/868 and post-merge run #194 passed the exact-main repository gate. No physical iPhone testing was performed or claimed.
+- **GW1-P1 Cloudflare Evidence Foundation — complete and merged** through PR #118 at `main` `58b834a…`; reviewed head `7b739e5…` passed Verify Teamsheet #251 / `31526697241` on an 883-test baseline. Backend only.
 
 ## A3 remediation and closeout sequence
 
@@ -75,26 +142,9 @@ Post-A3 Checkpoint 0C established, with empirical evidence, that the per-button 
 
 The owner-approved correction removed the dead listeners, left `manual-squad-runtime.mjs` as the single owner, added a regression proving the validating implementation runs and merged through PR #106. The original findings are in [Post-A3 Checkpoint 0](POST-A3-CHECKPOINT-0-HOUSEKEEPING.md); implementation and verification are in [Post-A3 0C cleanup](POST-A3-0C-MANUAL-SQUAD-DEAD-HANDLER-CLEANUP.md).
 
-## Deferred beyond GW1-P1
-
-Longer-horizon product work remains separately gated. Nothing below is implementation-approved by GW1-P1 closeout:
-
-- **GW1-P2 Teamsheet browser evidence integration and persistent local outbox/upload.** This is the next relevant persistence checkpoint after GW1-P1 merges; do not pull it into PR #118.
-- Understat repair.
-- Odds API repair.
-- Broader D1 historical/live schema expansion beyond the minimal GW1-P1 evidence manifest/receipt foundation.
-- Claude-to-ChatGPT migration.
-- Cloudflare automation expansion.
-- AI agents and richer external intelligence.
-- Route-aware optimisation unless future workload/responsiveness evidence justifies a separate proposal.
-
-The brittle `selectMiniLeague` exact-source-string assertion is deferred narrow test-hardening debt. Live-Gameweek evidence gates remain unchanged: real minute-history behaviour, Stage 10 outcome/correction evidence and populated Mini-League ranking/rival/pagination acceptance require the relevant official post-Gameweek facts.
-
-Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 11 August 2026.
-
 ## Historical baseline — D1 design closeout era
 
-Retained as the scope/evidence record of that checkpoint. **This is not the current baseline.** Current repository head, verification and acceptance evidence are in [Project Context](PROJECT_CONTEXT.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and `CLAUDE.md`.
+Retained as the scope/evidence record of that checkpoint. **This is not the current baseline.** Current repository head, verification and acceptance evidence are in [Project Context](PROJECT_CONTEXT.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md), [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md) and `CLAUDE.md`.
 
 - Repository head at that checkpoint: `main` `deb4ea26ba96112dba07660e23a61f04d4b6596d` (D1 design closeout through PR #101).
 - Latest substantive application checkpoint at that time: DTR-1 PR #99, reviewed source `a15443f3de889561fd301c4aa1792d19f7b21c83`, generated head `b45f89baf45e12de09cdb1ad34826756e9e5378b`, merge `09e595c275b4f3614c09fb502291de6831813999`.
@@ -159,11 +209,11 @@ The generated manifest now carries complete build-input identity. CI requires th
 
 ## Historical investigation — Data Architecture D1
 
-**Status:** investigation/design complete and merged through PR #101 as documentation only; the original design checkpoint did not authorise implementation. The later GW1-P1 backend checkpoint was separately approved and is now in draft PR #118.
+**Status:** investigation/design complete and merged through PR #101 as documentation only; the original design checkpoint did not authorise implementation. The later GW1-P1 backend checkpoint was separately approved and is merged through PR #118. The later GW1-P2 browser checkpoint was separately approved and is implemented on the unmerged PR #119 candidate.
 
 **Objective:** define the correct historical and live data platform for Teamsheet. Compare Cloudflare D1, KV, R2, Durable Objects and Google Sheets against retention, query, update, cost, reliability, privacy, export and iPhone-operation requirements. Treat the existing Sheets as field prototypes; classify each field as persist, derive, export or remove. Google Sheets is a potential human-readable reporting/analysis layer, not an assumed core database.
 
-**Boundary at the time:** do not repair Understat or Odds, change providers/calculations, implement storage or migrate AI without a separate approved checkpoint. The accepted design is recorded in [Data Architecture D1](DATA-ARCHITECTURE-D1.md). GW1-P1 later implemented only the backend evidence foundation; those original exclusions otherwise remain.
+**Boundary at the time:** do not repair Understat or Odds, change providers/calculations, implement storage or migrate AI without a separate approved checkpoint. The accepted design is recorded in [Data Architecture D1](DATA-ARCHITECTURE-D1.md). GW1-P1 later implemented the backend evidence foundation and GW1-P2 later implemented the browser delivery client; those original exclusions otherwise remain.
 
 ## Deferred live-evidence checkpoint — First live evidence and Leagues acceptance
 
@@ -287,4 +337,4 @@ The generated manifest now carries complete build-input identity. CI requires th
 
 ## Completed foundation summary
 
-Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3-R0, DTR-1, iPhone form-focus zoom, Data Architecture D1 design, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache/persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards, A3 State-Ownership Cleanup, Route-Aware Rendering and Performance M1, and A3-SC-1 are complete and merged. Their exact records remain in the repository history and [Historical Records](HISTORICAL_RECORDS.md); they are not open implementation work. The later GW1-P1 backend foundation is the current unmerged checkpoint and therefore is not included in this merged-foundation list. Separately gated work above remains outside A3 and GW1-P1.
+Stages 1–10.5, Teamsheet 2.0.1–2.0.7, the Official FPL gateway, exact persistent Transfers, UX-A1, UX-A2, Team populated acceptance, Fixtures populated acceptance, the Leagues pre-season checkpoint, Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3-R0, DTR-1, iPhone form-focus zoom, Data Architecture D1 design, Atomic Foreground Refresh, the small mobile UI consistency checkpoint, A3 cache/persistence resilience, Post-A3 Checkpoint 0/0C, `fpl:calib` compatibility, A3 Error-Boundary Separation, A3 Production-Bundle Safeguards, A3 State-Ownership Cleanup, Route-Aware Rendering and Performance M1, A3-SC-1 and GW1-P1 are complete and merged. Their exact records remain in the repository history and [Historical Records](HISTORICAL_RECORDS.md); they are not open implementation work. GW1-P2 is not included in this merged-foundation list because PR #119 remains unmerged. Separately gated work above remains outside GW1-P1 and GW1-P2.

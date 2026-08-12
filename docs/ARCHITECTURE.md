@@ -1,12 +1,20 @@
 # ARCHITECTURE.md
 
-## 11 August 2026 — current GW1-P1 architecture boundary
+## 12 August 2026 — current architecture boundary
 
-Latest merged `main` is `43f109b306071aa0c3c1c45985876fecb3da7aa5`. GW1-P1 is the current unmerged checkpoint in draft PR #118. It implements the backend-only portion of the approved D1 architecture: a separate owner-authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt/index state, exact Stage 10 revalidation, canonical hash identity, R2-first/D1-second custody, idempotent duplicate handling and bounded orphan reconciliation.
+Latest merged `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, the merge of **GW1-P1 — Cloudflare Evidence Foundation** PR #118. GW1-P1 is complete and merged. It implements the backend-only portion of the approved D1 architecture: a separate owner-authenticated evidence Worker, private R2 canonical objects, minimal D1 manifest/receipt/index state, exact Stage 10 revalidation, canonical hash identity, R2-first/D1-second custody, idempotent duplicate handling and bounded orphan reconciliation.
 
-This backend is deliberately outside the deterministic recommendation path. The Teamsheet browser does **not** call the evidence Worker in GW1-P1, so normal Stage 10/local evidence capture, recovery and export semantics are unchanged. Persistent browser outbox/upload integration is GW1-P2 and remains separately approval-gated. Provider acquisition, model/calculation behaviour and the existing Official FPL gateway are unchanged.
+**GW1-P2 — Browser evidence delivery and durable outbox** is the current unmerged candidate in draft PR #119, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. It connects the existing Stage 10 browser capture path to that merged backend through a durable local outbox, a transport-independent delivery state machine, content-hash idempotency and fail-closed provider retention. It is repository-verified but **acceptance-incomplete**: the decisive credentialled cross-site upload from physical iPhone Safari with Prevent Cross-Site Tracking ON is unproven, so on deployed `main` no browser call into the evidence Worker exists. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
 
-The evidence Worker keeps its Access-protected production `workers.dev` route, while both source and isolated deployment Wrangler configs explicitly set `preview_urls:false`. This is the repository control for the separate Cloudflare version/alias preview routing surface. Live confirmation was recorded on 11 August 2026 from owner-supplied Cloudflare Domains dashboard evidence showing production Access-`Restricted` and the wildcard Preview hostname disabled.
+The evidence backend is deliberately outside the deterministic recommendation path under both checkpoints. Cloud custody is a one-way side effect: the recommendation never reads, waits for or fails because of the archive, and Stage 10 local capture, recovery and export semantics are unchanged. Provider acquisition, model/calculation behaviour and the existing Official FPL gateway are unchanged.
+
+The evidence Worker keeps its Access-protected production `workers.dev` route, while both source and isolated deployment Wrangler configs explicitly set `preview_urls:false`. This is the repository control for the separate Cloudflare version/alias preview routing surface. Live confirmation was recorded on 11 August 2026 from owner-supplied Cloudflare Domains dashboard evidence showing production Access-`Restricted` and the wildcard Preview hostname disabled. Owner-performed preparation has since also enabled Cloudflare Access `Bypass OPTIONS requests to origin`, leaving the Worker as the sole owner of exact-origin CORS with no Access-layer allowed-origin response configured.
+
+## Historical — 11 August 2026 GW1-P1 architecture boundary
+
+**Historical snapshot; superseded by the current boundary above.**
+
+At that checkpoint the latest merged `main` was `43f109b306071aa0c3c1c45985876fecb3da7aa5` and GW1-P1 was the current unmerged checkpoint in draft PR #118. The Teamsheet browser did **not** call the evidence Worker in GW1-P1 itself; persistent browser outbox/upload integration was GW1-P2 and was separately approval-gated at that time.
 
 ## Historical — 11 August 2026 A3 ownership and architecture closeout boundary
 
@@ -30,9 +38,9 @@ The accepted PR #103 mobile presentation boundary keeps startup ownership in the
 
 The accepted custody order is `validate/recanonicalise -> canonical SHA-256 -> R2 create/verify -> D1 manifest/receipt -> ACK`. D1 must never point to a missing R2 object. A D1 failure after successful R2 storage creates an invisible orphan; reconciliation may promote it only after the same canonical/body/metadata verification and must preserve the original R2 upload time. Duplicate ingestion is idempotent.
 
-The browser/client half of D1 is **not** implemented in GW1-P1. Existing Stage 10 browser storage remains the current recovery/export boundary; a durable pending-upload/outbox and automatic upload belong to GW1-P2. Understat/Odds permanent archival remains fail-closed pending separately approved rights.
+The browser/client half of D1 is **not** implemented by GW1-P1. On merged `main`, existing Stage 10 browser storage remains the recovery/export boundary. The durable pending-upload/outbox and automatic upload belong to GW1-P2, which is implemented on the unmerged PR #119 candidate and is not an accepted behaviour until its physical acceptance passes. Understat/Odds permanent archival remains fail-closed pending separately approved rights.
 Purpose: detailed technical architecture. Audience: developers before changing code.
-Last reconciled: 2026-08-11. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md, DATA-ARCHITECTURE-D1.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.
+Last reconciled: 2026-08-12. Related: PROJECT_CONTEXT.md, TEAMSHEET2-PRODUCT-BLUEPRINT.md, DATA_SOURCES.md, TESTING.md, SECURITY.md, DATA-ARCHITECTURE-D1.md, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md, GW1-P2-BROWSER-EVIDENCE-DELIVERY.md.
 
 ## Directory structure
 ```
@@ -102,7 +110,7 @@ Minutes never imports scoring. Scoring may reuse exported minutes helpers. Simul
 
 The Stage 10 application evidence dependency is one-way: snapshot observes model state; outcome observes post-deadline Official FPL facts; metrics observes only stored snapshot and outcome records; review observes only stored snapshot, outcome, evaluation and transfer-horizon records. Metrics and review do not import or execute current scoring, minutes, simulation or optimiser functions and never write into runtime model state.
 
-GW1-P1 adds a second one-way boundary after canonical snapshot construction. The evidence archive accepts only the frozen canonical record, independently revalidates/recanonicalises it, then persists it. No archive response or D1/R2 availability is an input to projection, squad, transfer, captaincy, rank or provider logic. Until GW1-P2, there is no runtime application call into this backend at all.
+GW1-P1 adds a second one-way boundary after canonical snapshot construction. The evidence archive accepts only the frozen canonical record, independently revalidates/recanonicalises it, then persists it. No archive response or D1/R2 availability is an input to projection, squad, transfer, captaincy, rank or provider logic. On merged `main` there is no runtime application call into this backend at all; the GW1-P2 candidate adds one as a one-way side effect that preserves this independence.
 
 ## Shared state ownership boundary
 
@@ -200,7 +208,7 @@ The project is no longer wholly static from an infrastructure perspective: the O
 
 Capture uses the official FPL event deadline, samples same-origin HTTP `Date` before and after collection and applies the approved timing policy. This is timing evidence, not external timestamp notarisation. All-player live uncertainty retains 5,000 samples; invariant component reuse is performance-only.
 
-`ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive target, but until GW1-P2 it remains the only automatic Teamsheet persistence path for genuine captures.
+`ui/evidence.mjs` keeps three small metadata rows and two compressed full recovery records. Writes and deletion are verified and failures are surfaced. Exports remain complete, canonical, unencrypted JSON. Local recovery is not the canonical long-term archive target, but on merged `main` it remains the only automatic Teamsheet persistence path for genuine captures; that stays true until GW1-P2 is accepted and merged.
 
 GW1-P1's server archive consumes the same canonical pre-deadline record without changing it and separates `client_official_eligible` from server custody timing. The existing client timing decision is not upgraded into external notarisation merely because Cloudflare receives the record.
 
