@@ -28,7 +28,7 @@ Predicted line-ups may contain useful tactical/rotation information that factual
 Focused Step 5 research refined the candidate position:
 
 - **Fantasy Football Scout (FFS):** high-value editorial prior art with all-20-club predicted line-ups and deadline-near revisions, but current terms reviewed on 13 August 2026 prohibit mass/systematic automated extraction and creating another electronic database from site material without permission. **Not currently suitable for systematic Teamsheet prospective collection without permission.**
-- **Sportmonks:** structured line-up data can distinguish predictive from confirmed line-up state and may be useful in an expanded future protocol. First-party terms are materially clearer on API-data storage than API-Football's, but this does not approve collection or a predicted-lineup experiment.
+- **Sportmonks:** structured line-up data can distinguish predictive from confirmed line-up state and may be useful in an expanded future protocol. First-party terms are materially clearer on API-data storage than API-Football's, but this does not approve collection or a predicted-lineup experiment. Under the owner's £0 recurring-subscription constraint (§10) this remains a **research comparator only**, not a pilot or implementation candidate.
 - **API-Football:** useful for official/near-kickoff line-ups and outcomes, but not established here as a genuine FPL-deadline predicted-XI product; provider rights remain clarification-gated for retained Teamsheet research data.
 
 No predicted-lineup provider is approved for collection or production use.
@@ -80,6 +80,8 @@ This remains materially different from completed-match workload, which is genera
 ## 10. Cost / free-tier constraints
 
 FFS access/subscription boundaries are time-sensitive, but rights—not headline price—currently block systematic Teamsheet capture without permission. Sportmonks PL access appears to require trial or paid coverage and must be re-verified before any provider proposal. No subscription/account/spend is approved here.
+
+**Owner cost constraint — 13 August 2026.** External-intelligence implementation proposals must have **£0 recurring subscription cost**. Paid Sportmonks access therefore remains a **research comparator only** and is not a pilot or implementation candidate unless the owner explicitly changes that constraint; a temporary trial of a normally paid product does not satisfy it. This caveat does not reopen this branch, change its priority or imply that a zero-cost predicted-lineup solution exists — none was found. See [Research Programme](../README.md) §2.
 
 ## 11. Rights / licensing / retention
 

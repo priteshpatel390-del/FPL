@@ -62,7 +62,9 @@ They may be used as prior-workload observations only when the completed match ge
 
 Sportmonks' Premier League path appears to require trial/paid access, while API-Football offers lower-cost/free technical entry. Cost is secondary to rights, coverage and provenance. Current plan prices, quotas and included competitions must be re-verified immediately before any implementation proposal.
 
-No account creation, subscription or spend is approved by this research record.
+**Owner cost constraint — 13 August 2026.** External-intelligence implementation proposals must have **£0 recurring subscription cost**. Paid Sportmonks access therefore remains a **research comparator only** and is not a pilot or implementation candidate unless the owner explicitly changes that constraint; a temporary trial of a normally paid product does not satisfy it. See [Research Programme](../README.md) §2.
+
+No account creation, subscription, trial or spend is approved by this research record.
 
 ## 11. Rights / licensing / retention
 
@@ -124,7 +126,7 @@ Valid historical or prospective workload observations with trustworthy identity/
 
 ## 21. Current recommendation
 
-**Research complete. Non-PL workload remains a medium/high-value expanded-protocol research class but is lower priority than factual availability and predicted-lineup evidence. Completed-match workload is generally reconstructible later, so it creates no essential pre-GW1 capture requirement. Sportmonks is the strongest currently researched structured candidate if a later workload trial is approved; API-Football remains rights-clarification gated. Do not alter expected minutes or add a workload provider now.**
+**Research complete. Non-PL workload remains a medium/high-value expanded-protocol research class but is lower priority than factual availability and predicted-lineup evidence. Completed-match workload is generally reconstructible later, so it creates no essential pre-GW1 capture requirement. No workload source or provider is approved, and no workload trial is proposed or pending. Sportmonks was the strongest structured candidate found by the Step 5 research recorded above, but under the owner's £0 recurring-subscription constraint it is a research comparator only, so it is not the intended next step; API-Football remains rights-clarification gated; official and open sources retain acquisition/rights limitations. No fatigue coefficient is approved. Do not alter expected minutes or add a workload provider now.**
 
 ## 22. Explicit implementation approval gate
 
