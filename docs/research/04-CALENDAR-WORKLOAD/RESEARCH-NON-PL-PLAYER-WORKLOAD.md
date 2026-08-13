@@ -21,19 +21,20 @@ European/domestic-cup minutes may reveal rotation load that Premier League histo
 
 ## 4. Candidate sources / repositories / approaches
 
-Research identified these serious candidates, all unapproved for production:
+Focused Step 5 research refined the serious candidates, all still unapproved for collection or production:
 
-- **Sportmonks — high-value research candidate:** structured fixtures, line-ups, events and player statistics across broad football coverage. Headline 13 August 2026 pricing/coverage is time-sensitive and must be re-verified with detailed rights/retention terms before any collection proposal.
-- **API-Football — high-value research candidate:** structured fixtures, events, line-ups, player statistics and sidelined/injury information. Free/paid access, exact competition coverage and rights/retention require implementation-time re-verification.
+- **Sportmonks — strongest structured research candidate:** first-party terms reviewed on 13 August 2026 materially permit storage, transfer and distribution of API-delivered data subject to contractual restrictions, while its football product exposes stable player/team/fixture IDs plus line-up and sidelined information. Premier League access appears to require trial or paid coverage rather than permanent free access. Exact current plan, competition scope and terms must be re-verified before any proposal.
+- **API-Football — technically capable but rights-unclear:** structured fixtures, official line-ups, injuries/sidelined information and player statistics are available, but first-party terms state that API-Sports does not itself grant the necessary third-party sports-data licence. Durable Teamsheet retention therefore remains **RIGHTS CLARIFICATION REQUIRED**.
 - **StatsBomb Open Data — medium-value historical-methodology candidate:** useful event/line-up data for selected competitions/seasons, not a complete live workload feed; its user agreement/attribution and exact included competitions govern use.
-- **football-data.org — medium-value candidate pending full re-verification:** prior Teamsheet research found it potentially useful, but current 2026 features, price, coverage and rights were not sufficiently re-verified in this investigation.
 - **Official UEFA/FA/EFL match records — high-authority verification references, medium acquisition practicality:** public match centres do not themselves establish bulk automated acquisition or retention rights.
 
 No candidate is an approved provider or dependency.
 
 ## 5. Exact fields or observations required
 
-Minimum useful factual observations are: stable provider player ID plus canonical FPL player ID, provider/canonical club identity, competition and fixture ID, opponent, scheduled/actual kickoff UTC, venue, started, minutes, substitution on/off detail, extra-time exposure, match final status, and source observation/update/retrieval timestamps.
+The lightweight factual workload record should retain: canonical/provider player identity, canonical/provider club identity, competition and fixture ID, opponent, scheduled/actual kickoff UTC, venue, started, minutes, substitution on/off detail where available, extra-time exposure, match completion status, and source observation/update/retrieval provenance.
+
+A 120-minute cup match must retain the true 120-minute exposure; workload facts must not be clamped to the Premier League expected-minutes 0–90 range.
 
 Rest hours, fixture density, travel distance and rotation risk are derived features, not source facts. Fatigue is a hypothesis, not an observation.
 
@@ -43,7 +44,9 @@ Relevant scope is competitive senior football that can plausibly alter a Premier
 
 ## 7. Freshness / update cadence
 
-Completed-match workload is normally reconstructible later, so it does not require pre-deadline capture merely to avoid losing the observation. Post-match corrections still require observation/update/retrieval provenance. Pre-match states from any provider are a different evidence class and need point-in-time handling.
+Completed-match workload is normally reconstructible later, so it does not require pre-deadline capture merely to avoid losing the observation. Post-match corrections still require observation/update/retrieval provenance.
+
+If a later experiment depends on what future schedule was known at the FPL deadline, that schedule state becomes a separate mutable pre-deadline evidence class and would need point-in-time freezing. Do not conflate completed workload with future congestion forecasts.
 
 ## 8. Reliability
 
@@ -51,61 +54,77 @@ A future source trial should compare starts/minutes/substitutions/extra-time fac
 
 ## 9. Historical availability
 
-**Research conclusion:** actual non-PL starts, minutes, substitutions and extra time are generally **Class A — valid historically** when a trustworthy stable event archive exists. They are completed-event facts, not pre-deadline predictions. This is materially different from mutable predicted line-ups or team-news states.
+**Research conclusion:** actual non-PL starts, minutes, substitutions and extra time are generally **Class A — valid historically** when a trustworthy stable event archive exists. They are completed-event facts, not pre-deadline predictions.
 
-Do not create unnecessary pre-deadline storage for reconstructible workload facts.
+They may be used as prior-workload observations only when the completed match genuinely preceded the relevant FPL deadline. Do not create unnecessary pre-deadline storage for reconstructible workload facts.
 
 ## 10. Cost / free-tier constraints
 
-13 August 2026 research found realistic commercial/free-entry options among API-Football and Sportmonks, but price, quota, required competition coverage and plan boundaries are time-sensitive. Re-verify first-party terms before any implementation proposal.
+Sportmonks' Premier League path appears to require trial/paid access, while API-Football offers lower-cost/free technical entry. Cost is secondary to rights, coverage and provenance. Current plan prices, quotas and included competitions must be re-verified immediately before any implementation proposal.
+
+No account creation, subscription or spend is approved by this research record.
 
 ## 11. Rights / licensing / retention
 
-Detailed 2026 retention, derived-data, bulk-storage and redistribution clauses for the serious commercial candidates were not fully established. That is an implementation-blocking re-verification item. Public accessibility or an API plan does not imply durable storage/redistribution rights; software/open-data licences do not grant rights to unrelated provider data.
+Rights remain a hard pre-collection gate.
+
+- **Sportmonks:** reviewed first-party terms materially permit API-data storage/transfer/distribution subject to contractual restrictions; exact current entitlement, retention/deletion expectations and derived-data scope still require implementation-time verification.
+- **API-Football:** technical access does not itself grant the underlying competition-data licence required for durable Teamsheet use. **RIGHTS CLARIFICATION REQUIRED**.
+- **Official/open sources:** public visibility or an open software repository does not grant unrelated bulk-data retention rights.
+
+If acquisition/retention/derived-data rights are unresolved, a future research store must fail closed.
 
 ## 12. Security / privacy
 
-Public football facts only; nevertheless no credential, keyed URL or secret belongs in retained observations. A future provider proposal must follow canonical secret-handling and acquisition rules.
+Public football facts only; nevertheless no credential, keyed URL or secret belongs in retained observations. Any future keyed provider must follow canonical server-side secret-handling and acquisition rules.
 
 ## 13. Canonical identity / mapping requirements
 
 Official FPL player IDs remain canonical, with stable provider IDs recorded alongside them. Name matching may generate candidates only; it must not silently establish identity. Transfers, youth promotions, accents, abbreviations and duplicate names require explicit mapping review. Team mapping likewise needs canonical FPL team IDs plus provider IDs/aliases.
 
+Unresolved mappings remain visible in coverage statistics but are quarantined from candidate metrics and production.
+
 ## 14. Proposed provider-neutral / shadow contract
 
-Research-only minimum provenance is: provider, source URL/endpoint or source record ID, evidence class, observation, source timestamp, `retrieved_at`, revision/version/hash where permitted, canonical player/team IDs, provider IDs, raw-versus-normalised designation, and rights/retention classification.
+Workload belongs in the **expanded** expected-minutes protocol, not the minimum factual-availability protocol.
 
-This is a research requirement, not an approved production schema. Any future workload observations must remain shadow-only until separately approved.
+A future workload record should be isolated from production and linked to the exact Stage 10 production snapshot used as the control. The conceptual path is completed workload observation -> isolated research store -> shadow candidate/evaluator -> research report, with no read path back into production.
+
+This is a research requirement, not an approved runtime schema or store.
 
 ## 15. Fallback behaviour
 
-Current Official FPL-only expected-minutes behaviour remains unchanged when workload observations are absent, invalid or unavailable. A future research source failure must not affect production decisions.
+Current Official FPL-only expected-minutes behaviour remains unchanged when workload observations are absent, invalid, rights-blocked or unavailable. A future research source failure must not affect production decisions.
 
 ## 16. Failure modes
 
-Player identity collision, transfer between clubs, missing substitution detail, extra-time accounting, duplicate appearances, postponed/abandoned fixtures, late corrections, partial competition coverage, stale provider data, provider-ID changes and rights/access changes.
+Player identity collision, transfer between clubs, missing substitution detail, extra-time accounting, duplicate appearances, postponed/abandoned fixtures, late corrections, partial competition coverage, stale provider data, provider-ID changes, rights/access changes and incorrectly treating a post-deadline match as prior workload.
 
 ## 17. Double-counting / leakage risks
 
-Recent Premier League minutes, availability/team news, fixture-density effects and predicted line-ups may already encode or react to workload. Future evaluation must test incremental signal conditional on the production baseline rather than treating correlated observations as independent. Completed match facts may be used as prior-workload observations only when they genuinely preceded the decision deadline; future match outcomes must never leak backwards.
+Recent Premier League minutes, availability/team news, fixture-density effects and predicted line-ups may already encode or react to workload. Future evaluation must test incremental signal conditional on the exact production baseline rather than treating correlated observations as independent. Future match outcomes must never leak backwards.
 
 ## 18. Validation / ablation plan
 
-If later approved, compare unchanged production expected-minutes outputs with a predeclared workload-evidence shadow variant. Evaluate `pStart`, `pAppear` and `p60` separately with proper probability/calibration metrics and `expMin` with MAE/RMSE/bias/error distributions. Then assess downstream xP/XI/bench/captain/transfer effects while holding other components constant.
+Do not design a fatigue coefficient during initial collection. First establish whether factual non-PL exposure can be reconstructed reliably and whether it explains repeated residual expected-minutes errors.
 
-An improvement in minutes MAE alone is not evidence of improved FPL decisions. Anything designed using GW1–GW5 outcomes must later face untouched future Gameweeks.
+Only after a separate approval may a fixed workload candidate be paired against the exact frozen Stage 10 baseline. Evaluate `pStart`, `pAppear` and `p60` separately with proper probability/calibration metrics and `expMin` with MAE/bias plus RMSE/error distribution secondary. Then assess downstream xP/XI/bench/captain/transfer effects while holding other components constant.
+
+Anything designed using GW1–GW5 outcomes must later face untouched future Gameweeks.
 
 ## 19. Required tests
 
-Future implementation would require player/fixture mapping, transfer identity, extra-time arithmetic, substitution/minute bounds, postponed/abandoned handling, correction provenance, stale/missing fallback, rights/provenance, deterministic isolation and structural no-production-effect tests. Production calculation/recommendation modules must not depend on the shadow store.
+Any future implementation would require player/fixture mapping, transfer identity, 120-minute/extra-time arithmetic, substitution/minute bounds, postponed/abandoned handling, correction provenance, stale/missing fallback, rights fail-closed behaviour, secret isolation, deterministic isolation and structural no-production-effect tests.
+
+Production calculation/recommendation modules must not depend on the research store, provider or parser.
 
 ## 20. Evidence required before production use
 
-Prospective or valid historical player-level observations with trustworthy identity/provenance, a predeclared paired ablation against frozen production, and untouched future evaluation demonstrating incremental expected-minutes value. Any provider additionally requires separate purpose/fields/reliability/rights/security/fallback approval.
+Valid historical or prospective workload observations with trustworthy identity/provenance, a separately approved fixed candidate design, paired evaluation against the exact Stage 10 production baseline, and untouched future evidence demonstrating incremental expected-minutes value. Any provider additionally requires separate purpose/fields/reliability/rights/security/fallback approval.
 
 ## 21. Current recommendation
 
-**Research complete. Non-PL workload is a medium/high-value research class but is lower priority than factual availability and predicted-lineup evidence. Most useful completed-match workload is reconstructible, so it creates no essential pre-GW1 capture requirement. Do not alter expected minutes or add a workload provider now.**
+**Research complete. Non-PL workload remains a medium/high-value expanded-protocol research class but is lower priority than factual availability and predicted-lineup evidence. Completed-match workload is generally reconstructible later, so it creates no essential pre-GW1 capture requirement. Sportmonks is the strongest currently researched structured candidate if a later workload trial is approved; API-Football remains rights-clarification gated. Do not alter expected minutes or add a workload provider now.**
 
 ## 22. Explicit implementation approval gate
 
