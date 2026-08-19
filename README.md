@@ -1,21 +1,28 @@
 # Teamsheet — FPL Decision Desk
 
-Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's complete 15-player squad. It provides an explainable best XI, captaincy and bench order, exact transfer-plan comparisons, fixture planning, and factual Official FPL League context.
+Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's complete 15-player squad. It provides an explainable best XI, captaincy and bench order, exact transfer-plan comparisons, fixture planning, and factual Official FPL League context. The application remains vanilla JavaScript ES modules with the repository's zero-dependency build/test toolchain and GitHub Pages deployment.
 
 ## Current repository baseline
 
-The baseline after merged Safe Hygiene A2 on 8 August 2026 is:
+This section describes the tree it lives in. It deliberately does not restate the current `main` commit SHA — GitHub owns that fact and it changes on every merge. Read it live with `git rev-parse origin/main`.
 
-| Item | Evidence |
-|---|---|
-| GitHub `main` | `2eee62b77291af06552e3d1952b6e1a6355ca7e0` — merge of PR #95 |
-| Latest substantive application state | PR #92, merge `6f0501ffc0aff368f9a60aae6de0d552ec2c44a5`, exact reviewed head `130b0a298d4b21c2758e3199b9a82e2e3b0fc58f` |
-| Automated repository baseline | 667 passed, 0 failed, 0 skipped, 0 cancelled; two byte-identical exact-identity builds; root/deployable equality; exact manifest identity |
-| Current review candidate | Refresh-Load R1 plus the iPhone-found offline-disclosure correction adds 14 tests for a 681-test candidate suite; the focused device retest and merge remain separately gated |
-| Physical iPhone Safari baseline | Accepted tested paths for Transfers, Player Detail, Team, Fixtures and the Leagues pre-season experience |
-| Deliberately deferred | Populated League rank, standings, gaps, rivals, exposure and relevant large-league pagination until Official FPL publishes post-Gameweek data |
+**Repository test baseline: 907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance.
+
+The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on PR #121. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited; the rule is derived from verified Official FPL event data and normal weekly behaviour resumes at the deadline instant. No optimiser mathematics changed. Pritesh physically accepted it on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / run `31583716004`. The preceding GW1 readiness audit found **zero blockers**; the application is suitable for GW1 subject to the separate live-only gates below.
+
+**GW1-P2 — Browser Evidence Delivery + Durable Outbox** is a separate implemented candidate in draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`; its exact head moves with each reconciliation commit and is read live from PR #119 rather than restated here. The candidate has been reconciled with current `main` by merge, and that reconciled tree passes **955 tests, 955 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic production build and provenance/build-identity gates. Its exact-head Verify Teamsheet result is recorded on the pull request.
+
+GW1-P2 is **not accepted and not merged**, and it is **not a GW1 blocker** — cloud custody is a one-way side effect that the recommendation never depends on. The decisive remaining gate is the physical iPhone Safari credentialled cross-site background upload with **Prevent Cross-Site Tracking ON** once a genuine Stage 10 record can exist. The configured Stage 10 window opens **20 August 2026 at 18:30 BST**. Do not merge PR #119 before that acceptance and final verification. Until then, local Stage 10 capture, recovery and owner-controlled export remain the operating pre-deadline evidence path.
+
+GitHub Pages serves `main` from `/` and was observed built after the temporary PR #121 acceptance-preparation deployment was restored.
 
 The detailed current state and approval boundary live in [Project Context](docs/PROJECT_CONTEXT.md). Historical checkpoint evidence is indexed in [Historical Records](docs/HISTORICAL_RECORDS.md).
+
+Forward research planning for external football information lives in [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md). It is documentation only: it approves no provider, retention, model or calculation change, and it does not alter the pre-GW1 freeze.
+
+## Planning correction
+
+The first relevant 2026/27 international break is between **GW5 and GW6**, not GW2 and GW3. GW1 readiness remediation is complete, so the immediate operating state is pre-GW1 code freeze and operational rehearsal; GW1–GW5 is the initial stability/prospective-evidence period; the GW5 → GW6 break is the first major evidence-led review opportunity, subject to evidence actually available. This calendar correction authorises no model, provider, fixture, expected-minutes, scoring or recommendation change.
 
 ## Source, generated output and deployment
 
@@ -24,7 +31,7 @@ The detailed current state and approval boundary live in [Project Context](docs/
 - `build.mjs` and `build-utils.mjs` form the zero-dependency deterministic bundler.
 - `dist/` and root `index.html` are generated. Never edit them by hand.
 - GitHub Pages serves the generated root `index.html`, which must be byte-identical to `dist/index.html`.
-- `workers/` contains the separately deployed, allowlisted Cloudflare gateway for read-only Official FPL transport.
+- `workers/` contains two separately deployed Cloudflare boundaries: the allowlisted read-only Official FPL gateway and the Access-authenticated GW1-P1 evidence archive.
 - `tests/` uses Node's built-in test runner. `.github/workflows/verify.yml` applies the permanent pull-request verification gate.
 
 ## Build and verify
@@ -46,6 +53,8 @@ The permanent GitHub workflow additionally rebuilds twice, compares every produc
 
 ## Maintainer reading order
 
+Every development session must read [`CLAUDE.md`](CLAUDE.md) first, then the canonical documents it names. Historical records remain valuable, but current-state sections and live GitHub state take precedence over historical snapshots.
+
 1. [CLAUDE.md](CLAUDE.md) — working rules, current baseline and approval gate.
 2. [Project Context](docs/PROJECT_CONTEXT.md) — current product and engineering state.
 3. [Architecture](docs/ARCHITECTURE.md) — runtime, build and ownership map.
@@ -53,8 +62,10 @@ The permanent GitHub workflow additionally rebuilds twice, compares every produc
 5. [Roadmap](docs/ROADMAP.md) — open, proposed and deferred checkpoints only.
 6. [Known Limitations](docs/KNOWN_LIMITATIONS.md) — present constraints and deferred evidence.
 7. [Teamsheet 2.0 Product Blueprint](docs/TEAMSHEET2-PRODUCT-BLUEPRINT.md) — approved product direction.
-8. Before calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md).
-9. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md).
+8. Before evidence-custody work: [Data Architecture D1](docs/DATA-ARCHITECTURE-D1.md), [GW1-P1 Cloudflare Evidence Foundation](docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+9. Before calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md).
+10. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md).
+11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md).
 
 ## Change discipline
 

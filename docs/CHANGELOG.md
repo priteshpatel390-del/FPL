@@ -1,14 +1,94 @@
 # CHANGELOG.md
 
-Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 9 August 2026.
+Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 12 August 2026.
 
-## 2026-08-09 — DTR-1 direct Team renderer candidate
+Entries record **merged** outcomes only. Work that was opened but never merged is not listed as shipped; where it matters for context it is named explicitly as unmerged.
 
-- Replaced Team's legacy-render-then-reconstruct path with one stable `renderSquad()` adapter and one direct final-DOM renderer.
+**Not shipped, deliberately absent from the entries below:** GW1-P2 — Browser evidence delivery and durable outbox (PR #119) is an implemented candidate that remains draft, unmerged and acceptance-incomplete, so it has no entry here; PR #109 and PR #113 were verification/probe pull requests that were closed without merging and shipped nothing.
+
+## 2026-08-12 — Pre-GW1 repository housekeeping closeout
+
+- Audited all 86 tracked Markdown files as current guidance, historical/checkpoint evidence or reference/design records, then corrected stale present-tense status without rewriting valid historical SHAs, dates or test counts.
+- Reconciled this high-level CHANGELOG from its 9 August state through the then-current merged history and retained unmerged work as explicitly not shipped.
+- Replaced the brittle exact-format `selectMiniLeague` source assertion with behavioural execution of the real function, a whitespace-insensitive structural ownership/delegation contract and mutation-sensitivity coverage. Production Mini-League code and behaviour remained unchanged.
+- The repository baseline moved from 904 to **907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**. No `src/`, `workers/`, generated deployable or production build input changed.
+- Merged through PR #124 at `41dae03d54b60988f89fb75e80ca9ceee532a52e`; post-merge Verify Teamsheet #271 / run `31623367093` succeeded on that exact merge commit. PR #119 remained untouched, draft and unmerged.
+
+## 2026-08-12 — External Intelligence Foundation recorded (documentation only)
+
+- Added `EXTERNAL-INTELLIGENCE-FOUNDATION.md` as the canonical research and shadow-architecture record for future external football information, then reconciled its metadata dates. Merged through PR #122 at `1c66b3dafa4e040cc398a1a40edf288a29f46363` and PR #123 at `00742ab58f1ffa7fb1bb4dc50271f9ec8b55bf50`.
+- Fixed a provider-neutral observation contract with separate `observedAt` / `effectiveAt` / `fetchedAt` timing, canonical Official FPL identity and explicit rights/retention classification; a hard `shadow_only` boundary with no path into projection or recommendation; separated intelligence layers; double-counting controls; and a pre-registered ablation method.
+- Recorded that current Stage 10 already preserves the normalised Odds inputs behind a healthy prediction, so the primary market-layer ablation needs no pre-GW1 code. Raw bookmaker prices and intraday line movement are not preserved and are not reconstructible on the free tier.
+- **Approves nothing.** No provider, endpoint, key, cadence, retention right, weighting, model, expected-minutes, fixture, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change follows from it. `APPROVED_PROVIDER_NAMES` remains exactly `fpl`, `understat`, `odds`, `archive`, and its free-source research is dated and must be re-verified before any implementation approval.
+- Repository baseline reached **904 tests, 904 passed, 0 failed, 0 skipped, 0 cancelled** — the then-current count at that checkpoint.
+
+## 2026-08-12 — GW1 readiness: pre-deadline Transfers safety guard
+
+- Before the first Official FPL deadline of a season, the Transfers screen now suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited, pointing the manager at Team and the manual squad builder. Merged through PR #121 at `dd0c07b67d948f26efdc9c82b89c1965a6c494d1`.
+- The window is derived only from verified Official FPL event data; the deadline instant, later Gameweeks and any missing or unparseable deadline all restore normal weekly behaviour. **No optimiser mathematics changed.**
+- The preceding GW1 readiness audit found **zero blockers** and two should-fix items; this checkpoint addressed both. It authorised no model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change, and none was made.
+- Physically accepted by Pritesh on iPhone Safari at candidate head `f72023043813566fe8b11da2d959e374d34bca39`, then passing Verify Teamsheet #262 on the then-current 898-test baseline.
+
+## 2026-08-11 — GW1-P1 Cloudflare evidence foundation merged
+
+- Implemented the backend half of the approved D1 evidence architecture: a separate Cloudflare Access-authenticated evidence Worker, private content-addressed R2 evidence, minimal D1 manifest/receipt/index state, independent canonical Stage 10 validation, idempotency and orphan reconciliation. Merged through PR #118 at `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, with canonical documentation reconciled by PR #120 at `be9d3c98ceff3549574535815a41cd75bb93d0f6`.
+- D1 never points to an R2 object that does not exist: if R2 succeeds and D1 fails there is no ACK, and the orphan is recoverable later only under the same canonical/body/metadata checks without fabricating earlier custody.
+- The browser was deliberately **not** connected to this service, so the deterministic recommendation path stays independent and local Stage 10 capture/export remained the operating evidence path.
+- Explicitly disabled Cloudflare Preview URLs in both byte-identical evidence configs and permanently tested that invariant. Provider archival rights remain fail-closed. Owner-recorded physical iPhone Safari acceptance covered Access, ingest, duplicate handling, forced R2/D1 failure and reconciliation using deliberately synthetic evidence.
+- Baseline at merge: **883 tests**.
+
+## 2026-08-11 — A3 engineering remediation closed
+
+- **A3-SC-1** removed the two proven-unreachable Mini-League helpers `renderLeagueChips()` and `rememberLeague()` plus stale test-side consumers, and added structural regressions; merged through PR #116 at `1060e60d3affadabdf97924c7ece85cc62d8e360` on an **868-test** baseline. Its first CI failure established that stale-code investigations must search production source, test source, shared harness/export lists, mocks/fixtures, runtime replacement mechanisms, generated bundle surfaces and DOM/event references.
+- **A3 documentation and architecture closeout** reconciled the canonical records as the final A3 layer; merged through PR #117 at `43f109b306071aa0c3c1c45985876fecb3da7aa5`. No A3-specific engineering task follows it.
+- **Route-Aware Rendering and Performance M1** added measurement instrumentation only — `scripts/measure-route-rendering.mjs`, deliberately outside every production build input — merged through PR #115 at `02ea634464cc415ac43d4b9cb13b4005fc276646`. Route-aware optimisation itself remains unapproved.
+
+## 2026-08-10 — A3 state ownership, bundle safeguards and error boundaries
+
+- **State-Ownership Cleanup** made `src/state.mjs` the explicit inventory of legitimate cross-module `S` slots without making it the semantic owner of every value; `S.miniLeagues` stays the canonical writable Mini-League preference state and the legacy `S.leagues` alias became a one-way read-only bridge. Merged through PR #112 at `691d9f929284d51c233b61d099c34cafe1030db6` on an **864-test** baseline, with post-merge documentation and verification-runtime reconciliation through PR #114 at `5b177d35842e73bfdc47944263ef7a807f5430a5`.
+- **Production-Bundle Safeguards** merged through PR #111 at `5a1a036082aba1a9c297e8d6194cc1ae4f476041`.
+- **Error-boundary separation (EB-1)** fixed failure *ownership* only: a recovery-render failure after a genuine collection failure is recorded as a secondary `render_failed` beside the unchanged primary `collection_failed`; an unexpected provider-computation exception became application-owned `internal_error` passing through the one shared `applyProviderResult()` gate, so Rule B's retain/clear decision is unchanged and no Understat/Odds/FPL Provider Health is manufactured. No global `window.onerror` layer was added. Merged through PR #108 at `ba5daa2000345ddde3d8e6f6d381d44603e7cd29` on an **856-test** baseline, with acceptance reconciled by PR #110 at `a1f3cc14fd8921fbcff8ad766d1ff3b1e4b5a5ad`.
+- EB-1 passed physical iPhone Safari acceptance on its executable paths — normal startup, manual online refresh, in-app offline refresh retaining saved verified data, and return-online recovery. The clean-offline no-core path could not be exercised because an uncached Pages shell cannot load offline, so it remains automated-test evidence only.
+
+## 2026-08-10 — `fpl:calib` compatibility and post-A3 housekeeping
+
+- **`fpl:calib` compatibility** rejects every existing unverified `fpl:calib` record from active model state while preserving its bytes, uses standard uncalibrated projections and keeps the Stage 7 walk-forward check diagnostic-only. No calibration values, raw model formula or production calibration methodology were added. Merged through PR #107 at `d112c673310149a4463def1758242460450600dc` on an **842-test** baseline; PERSIST-4 is closed.
+- **Post-A3 Checkpoint 0** merged through PR #105 at `dd74365256fe6d9338b720ffecf1913e48ac77eb` on an **835-test** baseline, immediately proving its own new automatic push trigger. The separately approved **0C cleanup** then removed the two proven-unreachable per-button manual-squad listeners from `src/ui/views.mjs`, keeping the rendered `data-rm`/`data-add` hooks and leaving `manual-squad-runtime.mjs` byte-unchanged as the sole validating interaction owner; merged through PR #106 at `b2d390db80f033d5cfade8dbd79f69523eef0990`. One existing test was re-pointed at the live runtime and made stricter; nothing was weakened, deleted or skipped.
+
+## 2026-08-10 — A3 cache and persistence resilience
+
+- Kept Atomic Foreground Refresh ordering unchanged while adding a schema/season-bound main `fpl:cache`, verified user-owned saves, season-bound manual-squad and Mini-League preference records, and explicit session-only warnings when browser persistence fails. Merged through PR #104 at `9b31f373a23d26c49f81c688a2ca6fde98086cbd`.
+- Independent review found and corrected a real defect: a failed authoritative storage-manager write could fall back to `localStorage` and be reported as a durable save that no later read could return.
+- Refresh-Load R1 supporting-cache cadence/compatibility rules and Stage 10 evidence stores were unchanged; legacy `fpl:calib` was deliberately left behind its separate model gate until PR #107.
+- Verified at **832 tests**. Pritesh explicitly waived physical iPhone testing for this checkpoint; none was performed and none is claimed.
+
+## 2026-08-10 — Small mobile UI consistency and loading viewport fix
+
+- Fixed the startup canvas so it reaches Safari chrome without a light strip, applied the accepted shared header hierarchy across Team, Transfers, Fixtures, Leagues and Settings, refined editable/selectable controls while retaining no-focus-zoom behaviour, and aligned the Leagues primary box with the other primary screens. Merged through PR #103 at `473cfdb3295d2b896a00c0aa7b1308814bf2e043`.
+- Verified at **803 tests** with deterministic byte-identical builds; physically accepted on iPhone Safari and explicitly approved for merge.
+- No projection, expected-minutes, scoring, fixture, captaincy, squad, transfer, rank, Mini-League/rival, provider, Atomic Foreground Refresh, navigation, Team-renderer or Player Detail behaviour changed.
+
+## 2026-08-09 — Atomic Foreground Refresh merged and physically accepted
+
+- Replaced incremental in-place refresh mutation with staged collection followed by one synchronous commit, so a partially failed refresh can no longer leave mixed-generation state visible. Merged through PR #102 at `d5f2572ee4d95c3c242ecbc97ee46802a6f0273d` after five design rounds and a dedicated correctness review.
+- Collection writes nothing to `S`, the health registry or diagnostics; the commit performs plain assignments only, with no `await`, dispatch, DOM or storage call inside it, and carries a four-domain rollback.
+- No provider, endpoint, data source, model, fixture, scoring, squad, captaincy, transfer or rank behaviour changed.
+
+## 2026-08-09 — D1 data architecture approved as documentation
+
+- Recorded the approved target data architecture: Cloudflare D1 for structured records, private R2 for exact immutable evidence, a separate authenticated data Worker, local browser fallback/outbox and optional downstream Google Sheets reporting. Merged through PR #101 at `deb4ea26ba96112dba07660e23a61f04d4b6596d`.
+- Documentation only — it authorised no infrastructure or application implementation. The backend was implemented later and separately as GW1-P1.
+
+## 2026-08-09 — iPhone Safari form-focus zoom fixed
+
+- Stopped iPhone Safari zooming when form controls take focus, verified on a physical device. Merged through PR #100 at `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`, whose permanent verification passed **693 tests**.
+
+## 2026-08-09 — DTR-1 direct Team renderer merged
+
+- Replaced Team's legacy-render-then-reconstruct path with one stable `renderSquad()` adapter and one direct final-DOM renderer. Merged through PR #99 at `09e595c275b4f3614c09fb502291de6831813999`.
 - Removed runtime renderer reassignment, async-yield timing ownership, legacy Team DOM construction, heading/class-based extraction, bench node surgery and post-render availability annotation.
 - Preserved preview synchronisation and fail-closed clearing, current captaincy tie characteristics, bench calculation/display semantics, all Player Detail and captain/vice handlers, focus restoration, routes, providers, data sources, persistence, CSS, product design and every calculation/golden expectation.
-- Added six production-bundle direct-render contracts and moved Team security coverage onto the actual shipped renderer. The complete local suite is 691/691; no existing test was removed, weakened or skipped.
-- Permanent CI, reachable two-commit generated provenance, populated physical iPhone Safari acceptance and explicit merge approval remain pending.
+- Added six production-bundle direct-render contracts and moved Team security coverage onto the actual shipped renderer. The reviewed suite was 691/691; no existing test was removed, weakened or skipped.
 
 ## 2026-08-09 — A3-R0 durable build provenance merged
 

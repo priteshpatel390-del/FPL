@@ -1,17 +1,59 @@
 # CLAUDE.md — onboarding for every future development session
 
-## 11 August 2026 — current GW1-P2 state
+## Research programme control centre — mandatory before external-intelligence work
 
-Latest merged GitHub `main` is `58b834a1824c4977a442e7b3e309e2bbf3d05da1`, the merge of **GW1-P1 — Cloudflare Evidence Foundation** through PR #118. That tree passes **883 tests, 883 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical builds, root/deployable equality and verified committed build provenance.
+The permanent pre-GW1 and later external-intelligence research programme is indexed at [docs/research/README.md](docs/research/README.md). The original [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) remains the unmoved historical/root investigation; the research index does not replace or duplicate it.
 
-**GW1-P2 — Browser evidence delivery and durable outbox** is the current unmerged checkpoint, on branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`. It connects the existing Stage 10 browser capture path to the GW1-P1 archive through a durable local outbox, a transport-independent delivery state machine, content-hash idempotency and fail-closed provider retention. Cloud custody remains a one-way side effect: the FPL recommendation never reads, waits for, or fails because of the archive.
+Before any provider evaluation, external-data proposal, expected-minutes evidence proposal, shadow observation/store proposal, external-repository adoption, model ablation or other external-intelligence implementation proposal, read **both** the Foundation and `docs/research/README.md`, then read the relevant topic branch record. A branch marked `Research complete`, `Awaiting evidence` or `Ready for approval` still does not approve a provider, data source, retention right, model input, weight, formula or runtime path. Time-sensitive access, pricing/free-tier, terms, licensing, retention rights, source maintenance and reliability must be re-verified before implementation. Production behaviour remains governed by the canonical docs and the normal explicit owner approval gates.
 
-Two GW1-P2 gates are open and must not be reported as closed:
+## Current state — read this section first
 
-1. **Transport acceptance.** The direct credentialled cross-origin transport is approved as a *feasibility implementation only*, not as the accepted permanent iPhone transport. Acceptance requires the owner's physical iPhone Safari test with **Prevent Cross-Site Tracking ON**. Disabling that setting is a diagnostic comparison and must never become a product requirement. If the transport fails under normal privacy settings, stop and return with a revised Option B versus Option C comparison; do not implement either without separate approval, and do not remove the transport-independent outbox/delivery work.
-2. **Durable-retention cap.** `OUTBOX_RULES.pinLimit` is held at **4** as a deliberately conservative bounded-outbox policy for the first acceptance cycle. The measured record and supporting-store sizes are valid evidence; the usable storage ceiling on the owner's iPhone is **not** evidenced, so four is not claimed to be proven safe. Do not raise it to 5 or 6 in this checkpoint, and do not introduce IndexedDB or any other persistence technology without a separate proposal. Non-destructive device evidence is read from the Settings → Evidence panel; never run a destructive fill-until-quota test against real evidence. See [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+**This file describes the tree it lives in.** It deliberately does not restate the current `main` commit SHA: GitHub owns that fact, it changes on every merge, and duplicating it here is how this documentation went stale before. Read the live SHA with `git rev-parse origin/main`, and read live pull-request state from GitHub. Everything below is a durable statement about the work itself.
 
-Cloudflare Access CORS/preflight state is a live dashboard fact and is **not** evidenced by repository configuration. The approved arrangement enables only Access's “Bypass OPTIONS requests to origin” setting; the Worker remains the sole owner of exact allowed-origin CORS enforcement, no Access-layer allowed-origin response is configured, and no Access policy for `POST`, `GET` or any other method changes. Do not describe that dashboard configuration as performed until Pritesh confirms it. `TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must never be printed, pasted or logged while configuring or testing it.
+### Two independent streams
+
+Do not collapse these. They have different scopes, different gates and different owners.
+
+**Stream 1 — the Teamsheet application. Ready for GW1.**
+
+The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on **PR #121**. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited; the rule is derived from verified Official FPL event data and normal weekly behaviour resumes at the deadline instant. No optimiser mathematics changed. **Pritesh physically accepted it on iPhone Safari** on the exact candidate head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / `31583716004` with **898 tests, 898 passed, 0 failed, 0 skipped, 0 cancelled** (the then-current baseline for that application head; the same PR's documentation reconciliation raises the repository baseline to **904** without touching application code), deterministic byte-identical builds, root/deployable equality and verified committed build provenance. GitHub Pages was pointed at the branch for that acceptance and then restored to `main`, each observed built (Pages #126 branch, **#127 `main`**). See [GW1 readiness safety guard](docs/GW1-READINESS-SAFETY-GUARD.md).
+
+**907 is the current repository test baseline.** The 898 above is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout then added one documentation-integrity regression and split the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts, reaching 907. No application code changed across any of those steps. Earlier counts (904, 898, 883, 868, 864, …) are historical checkpoint evidence, not current claims.
+
+The GW1 readiness audit that preceded PR #121 found **zero blockers** and two should-fix items; PR #121 addressed both. The application is suitable for GW1 subject only to the separate live-only gates named below. No model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League behaviour was authorised or changed by readiness work.
+
+**Stream 2 — automatic cloud evidence custody. Still unaccepted, and not a GW1 blocker.**
+
+**GW1-P2 — Browser evidence delivery and durable outbox** is an implemented candidate on **draft, unmerged PR #119**, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`; its exact head moves with each reconciliation commit and is read live from PR #119 rather than restated here. It connects the existing Stage 10 browser capture path to the GW1-P1 archive through a durable local outbox, a transport-independent delivery state machine, content-hash idempotency and fail-closed provider retention. Cloud custody remains a one-way side effect: the FPL recommendation never reads, waits for, or fails because of the archive, so **GW1-P2 is not a recommendation dependency and does not gate GW1**.
+
+Until PR #119 is accepted and merged, **local Stage 10 capture, recovery and owner-controlled export remain the operating fallback** for pre-deadline evidence. That fallback is complete and merged; nothing about GW1 operation waits on PR #119.
+
+### Planning record — External Intelligence Foundation, documentation only
+
+[External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) is the canonical research and shadow-architecture record for future external football information. It is **documentation only and approves nothing**: no provider, endpoint, API key, acquisition cadence, retention right, model, weighting, expected-minutes, fixture, squad, captaincy, transfer, simulation, rank or Mini-League change is authorised by it, and it does not alter the pre-GW1 freeze.
+
+Read it before any future provider, external-data, expected-minutes-evidence or ablation proposal. It fixes three things that later work must not quietly undo: external observations must normalise into a **provider-neutral contract** with separate `observedAt` / `effectiveAt` / `fetchedAt` timing, canonical Official FPL identity and an explicit rights/retention classification; any first implementation must be **`shadow_only`**, with no path from shadow storage into projected points, the optimiser, captaincy, transfers or Mini-Leagues without separate explicit approval; and the layers — structural strength, recent performance, market expectation, availability/expected minutes, calendar/workload, set-piece and role, matchup microstats, transfer economics, competitive strategy — must stay separate rather than collapsing into one confidence score. Its free-source research is dated 12 August 2026 and must be re-verified from first-party sources before any implementation approval.
+
+Its one operationally relevant conclusion for now: current Stage 10 **already** preserves the normalised Odds inputs that affected a prediction when Odds is healthy, so the primary market-layer on/off ablation needs no new pre-GW1 code — only a genuine, healthy, exported capture. Raw bookmaker prices and intraday line movement are not preserved and are not reconstructible on the free tier, and that lost optionality does **not** justify breaking the freeze.
+
+### Immediate operating state
+
+Pre-GW1 code freeze and operational rehearsal. The next work is **not** post-GW1 model or provider enhancement. In order:
+
+1. Hold the freeze; make only separately approved fixes.
+2. Operate GW1 and collect prospective evidence.
+3. Perform the GW1-P2 live acceptance when the genuine Stage 10 window opens, **20 August 2026 at 18:30 BST**.
+4. Review evidence at the **GW5 → GW6** international break.
+
+### GW1-P2 gate detail
+
+Separate what is done from what is unproven. Do not collapse these three into one status:
+
+1. **Completed owner preparation — recorded, do not repeat or re-request.** Cloudflare Access `Bypass OPTIONS requests to origin` was enabled and saved for `teamsheet-evidence-archive`. No Access-layer allowed-origin response was configured, so the Worker remains the sole owner of exact allowed-origin CORS enforcement and no Access policy for `POST`, `GET` or any other method changed. Top-level physical iPhone Safari Cloudflare Access authentication succeeded and protected `GET /v1/health` returned `{"ok":true,"archiveVersion":"1.0.0","schemaVersion":"1.0.0","migrationVersion":1}`. Settings → Evidence showed the expected pre-window state, non-destructive storage telemetry showed approximately 546.2 KB of Teamsheet-owned data, and GitHub Pages was switched to the PR #119 branch and restored to `main`, each observed built. `TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must still never be printed, pasted or logged.
+2. **The decisive application POST is still unproven — this is the open acceptance gate.** None of the above proves the credentialled cross-site background upload from `priteshpatel390-del.github.io` to `teamsheet-evidence-archive.fpltsheet.workers.dev`. The direct credentialled cross-origin transport is approved as a *feasibility implementation only*, not as the accepted permanent iPhone transport. Acceptance requires the owner's physical iPhone Safari test with **Prevent Cross-Site Tracking ON**, against a genuine Stage 10 record, from the configured window opening **20 August 2026 at 18:30 BST**. Disabling that setting is a diagnostic comparison and must never become a product requirement. If the transport fails under normal privacy settings, stop and return with a revised Option B versus Option C comparison; do not implement either without separate approval, and do not remove the transport-independent outbox/delivery work.
+3. **Durable-retention cap — an unresolved limitation, not a gate to close by testing harder.** `OUTBOX_RULES.pinLimit` is held at **4** as a deliberately conservative bounded-outbox policy for the first acceptance cycle. The measured record and supporting-store sizes are valid evidence; the usable storage ceiling on the owner's iPhone is **not** evidenced, so four is not claimed to be proven safe and browser-reported available-space estimates are not a quota guarantee. Do not raise it to 5 or 6 in this checkpoint, and do not introduce IndexedDB or any other persistence technology without a separate proposal. Non-destructive device evidence is read from the Settings → Evidence panel; never run a destructive fill-until-quota test against real evidence. See [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).
+
+The first relevant 2026/27 international break is **GW5 → GW6**, not GW2 → GW3. GW1–GW5 is the initial stability/prospective-evidence period and the GW5 → GW6 break is the first major evidence-led review opportunity. This planning correction does not pull any model or provider change forward.
 
 GW1-P1 implemented only the backend half of the approved D1 evidence architecture: a separate Cloudflare Access-authenticated evidence Worker, private content-addressed R2 evidence, minimal D1 manifest/receipt/index state, independent canonical Stage 10 validation, idempotency and orphan reconciliation. The deterministic Teamsheet recommendation path remains independent. The browser was **not connected** to this service in GW1-P1; that connection is the GW1-P2 work described above.
 
@@ -21,13 +63,13 @@ The final preview/version-route audit found one security hardening gap: with `wo
 
 Provider archival rights remain fail-closed: permanent Understat-derived retention is unresolved and Odds-derived permanent retention requires its approved governance position. GW1-P1 must not strip provider material from an already-canonical snapshot to make it archivable because that would change its hash. No provider acquisition, weighting, model, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, UI or client-sync behaviour changes in this checkpoint.
 
-That GW1-P1 closeout sequence is complete and PR #118 is merged. The GW1-P2 closeout sequence is: exact-final-head repository verification after every source/config/documentation change, the owner's Cloudflare Access CORS confirmation, non-destructive device storage evidence, then the physical iPhone Safari acceptance test under normal privacy settings. **PR #119 stays draft and unmerged until Pritesh completes that physical acceptance and explicitly approves it.**
+That GW1-P1 closeout sequence is complete and PR #118 is merged. The GW1-P2 closeout sequence is: exact-final-head repository verification after every source/config/documentation change; the owner's Cloudflare Access OPTIONS-bypass configuration and non-destructive device storage evidence — **both recorded as performed**; then the outstanding physical iPhone Safari acceptance test against a genuine Stage 10 record under normal privacy settings. **PR #119 stays draft and unmerged until Pritesh completes that physical acceptance and explicitly approves it.**
 
 ## Historical — 11 August 2026 A3 engineering state entering documentation closeout
 
 The A3 engineering baseline entering documentation/architecture closeout was GitHub `main` `1060e60d3affadabdf97924c7ece85cc62d8e360`, the merge of **A3-SC-1 Small Stale-Code Cleanup** PR #116 from reviewed head `097fabb6065afc4c322238985eb7f237a503a7c3`. The reviewed tree contains **868 tests, 868 passed, 0 failed, 0 skipped, 0 cancelled**. Permanent post-merge Verify Teamsheet run #194 / `31470879289` passed the repository gate on that exact merge commit, and GitHub Pages run #120 / `31470878300` succeeded for the same commit.
 
-A3-SC-1 removed only the two proven-unreachable Mini-League helpers `renderLeagueChips()` and `rememberLeague()` plus stale test-side consumers, and added structural regressions. No physical iPhone testing was performed or claimed for PR #116. Its first CI failure demonstrated that future stale-code investigations must search production source, test source, shared harness/export lists, mocks/fixtures, runtime replacement mechanisms, generated bundle/deployable surfaces and DOM/event references. The brittle `selectMiniLeague` exact-source-string assertion remains separate deferred test-hardening debt.
+A3-SC-1 removed only the two proven-unreachable Mini-League helpers `renderLeagueChips()` and `rememberLeague()` plus stale test-side consumers, and added structural regressions. No physical iPhone testing was performed or claimed for PR #116. Its first CI failure demonstrated that future stale-code investigations must search production source, test source, shared harness/export lists, mocks/fixtures, runtime replacement mechanisms, generated bundle/deployable surfaces and DOM/event references. At that checkpoint, the brittle `selectMiniLeague` exact-source-string assertion remained separate deferred test-hardening debt. It was subsequently hardened in the pre-GW1 housekeeping closeout (PR #124) without changing production Mini-League behaviour.
 
 Route-Aware Rendering and Performance M1 is complete and merged through PR #115. M1 delivered measurement instrumentation only. `scripts/measure-route-rendering.mjs` reads the generated bundle and runs an instrumented copy through the existing harness; it is deliberately outside every production build input. **Route-aware optimisation itself remains unapproved** — do not change route scheduling or rendering behaviour without separate explicit approval. See [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md).
 
@@ -93,29 +135,41 @@ The authoritative baseline at that historical checkpoint was `main` `6e725485564
 
 **Atomic Foreground Refresh** is complete, physically accepted and merged through PR #102, after five design rounds (R2, R3, R3.1, R3.2, R3.3, R3.4) and the PR #102 correctness review. See [Atomic Foreground Refresh](docs/ATOMIC-FOREGROUND-REFRESH.md).
 
-Read this first. GitHub `main` plus the live state of the active pull request are the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 11 August 2026.
+Read this first. GitHub `main` plus the live state of the active pull request are the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 12 August 2026.
 
 ## Current baseline
 
 | Item | Current evidence |
 |---|---|
-| Latest merged `main` | `58b834a1824c4977a442e7b3e309e2bbf3d05da1` (PR #118 merge) |
-| Current checkpoint | GW1-P2 — Browser evidence delivery and durable outbox, draft PR, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d` |
-| Current implementation boundary | Pure outbox state machine; browser delivery service; bounded retries and single-flight; content-hash idempotency; pending-record persistence across restart; fail-closed provider retention; minimal Settings → Evidence status/action; CSP/meta wiring; exact-origin credentialled CORS. |
+| Latest merged `main` | Read it live: `git rev-parse origin/main`. Deliberately not restated here — see the note at the top of this file. |
+| Repository test baseline | **907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical builds, root/deployable equality, exact build identity and verified committed build provenance |
+| Most recent application checkpoint | GW1 readiness — pre-deadline Transfers safety guard, delivered on PR #121 from `agent/gw1-readiness-safety-guard`. Physically accepted by Pritesh on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, Verify Teamsheet #262 / `31583716004` passing 898/898 — the then-current count for that application head, before this PR's documentation-integrity additions. See [GW1 readiness safety guard](docs/GW1-READINESS-SAFETY-GUARD.md) |
+| GW1 readiness verdict | Audit found **0 blockers** and two should-fix items; PR #121 addressed both. The application is suitable for GW1 subject only to the separate live-only gates in this table |
+| Unmerged application candidate | GW1-P2 — Browser evidence delivery and durable outbox, draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`. Reconciled with current `main` by merge; the reconciled tree passes **955 tests, 955 passed, 0 failed, 0 skipped, 0 cancelled** with the full deterministic/provenance/build-identity gates. Its exact head and exact-head Verify Teamsheet result are read live from the pull request. Not accepted, not merged, **not a GW1 blocker** |
+| Pre-deadline evidence fallback | Until PR #119 is accepted and merged, local Stage 10 capture, recovery and owner-controlled export remain the operating path. That fallback is complete and merged |
+| GW1-P2 implementation boundary | Pure outbox state machine; browser delivery service; bounded retries and single-flight; content-hash idempotency; pending-record persistence across restart; fail-closed provider retention; minimal Settings → Evidence status/action; CSP/meta wiring; exact-origin credentialled CORS. |
 | GW1-P1 functional production acceptance | Repository record documents Pritesh's physical iPhone Safari acceptance of Access, D1/R2, positive ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. |
 | GW1-P1 security state | Repository config explicitly disables Cloudflare Preview URLs and tests that invariant. Owner-supplied live Cloudflare Domains evidence on 11 August 2026 showed production Access-`Restricted` and the wildcard Preview hostname disabled. It is owner dashboard evidence, not independent assistant testing. |
-| GW1-P2 open gates | Owner physical iPhone Safari transport acceptance with Prevent Cross-Site Tracking ON; the provisional `pinLimit` durability decision; live Cloudflare Access CORS/preflight configuration. None is closed. |
+| GW1-P2 completed preparation | Cloudflare Access `Bypass OPTIONS requests to origin` enabled and saved with no Access-layer allowed-origin response; top-level iPhone Safari Access sign-in; protected `GET /v1/health`; expected pre-window Evidence state; non-destructive storage telemetry; Pages branch switch and restoration. |
+| GW1-P2 open acceptance gate | The decisive credentialled cross-site background POST from physical iPhone Safari with Prevent Cross-Site Tracking ON, against a genuine Stage 10 record from 20 August 2026 at 18:30 BST. Unproven. |
+| GW1-P2 unresolved limitation | The bounded outbox `pinLimit` stays at 4. The usable iPhone storage ceiling is not evidenced and must not be claimed as proven. |
 | Final repository gate | The final exact PR head must pass Verify Teamsheet after all config/doc changes. Earlier green runs are historical once the head changes. |
-| Merge gate | The GW1-P2 PR must stay draft and must not merge until Pritesh performs the physical acceptance test and explicitly approves it. |
+| GW1-P2 merge gate | PR #119 must stay draft and must not merge until Pritesh performs the physical acceptance test and explicitly approves it. |
+| External intelligence planning | [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) — documentation only. Provider-neutral contract, hard `shadow_only` boundary, dated free-source research, double-counting controls and a pre-registered ablation method. Approves no provider, retention, model or calculation change |
+| Immediate operating state | Pre-GW1 code freeze and operational rehearsal. Not post-GW1 model or provider work. |
 | Deferred live-season acceptance | Published League rank/movement, populated standings and gaps, nearby/pairwise rivals, selected-rival squad/captain/vice/chip exposure, stale/incomplete rival handling and relevant large-league pagination |
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
 
 ## Current approval boundary
 
-Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3/A3-R0, DTR-1, Atomic Foreground Refresh, A3 cache/persistence, `fpl:calib` compatibility, EB-1, Production-Bundle Safeguards, State-Ownership Cleanup, Route-Aware M1 and A3-SC-1 are complete and merged. A3 closeout is complete.
+Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3/A3-R0, DTR-1, Atomic Foreground Refresh, A3 cache/persistence, `fpl:calib` compatibility, EB-1, Production-Bundle Safeguards, State-Ownership Cleanup, Route-Aware M1 and A3-SC-1 are complete and merged. A3 closeout is complete. GW1-P1 is merged through PR #118 at `58b834a…`, and the GW1 readiness safety guard is delivered and physically accepted on PR #121.
 
-GW1-P1 is merged at `58b834a…`. **GW1-P2 is approved only within the boundary recorded in [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)**, with the two open gates named above. Nothing beyond that boundary is approved: no Option B delivery window, no hosting change, no broader D1 schema expansion, no scheduled collection, no Sheets automation, no provider repair and no model work.
+GW1 readiness remediation is complete: the audit found no blockers, and its two should-fix items are addressed. It authorised **no** model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League change, and none was made.
+
+**GW1-P2 is approved only within the boundary recorded in [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)**, with the open acceptance gate and the unresolved retention limitation named above. Nothing beyond that boundary is approved: no Option B delivery window, no hosting change, no broader D1 schema expansion, no scheduled collection, no Sheets automation, no provider repair and no model work.
+
+The [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) record is approved as **documentation and research only**. Recording a source in its research matrix is not approval to acquire, integrate, retain or weight it; recording a future sequence is not approval to start it. `APPROVED_PROVIDER_NAMES` remains exactly `fpl`, `understat`, `odds`, `archive`, and a permanent test pins that. Every item in that record's post-GW1 sequence — including the shadow foundation itself — needs its own evidence-led proposal and explicit approval before any code is written.
 
 The approved GW1-P1 evidence flow is:
 
@@ -143,7 +197,8 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 8. [GW1-P1 Cloudflare Evidence Foundation](docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md) and [GW1-P2 Browser evidence delivery](docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md)
 9. Before provider or security work: [Data Sources](docs/DATA_SOURCES.md) and [Security](docs/SECURITY.md)
 10. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
-11. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
+11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md)
+12. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
 
 ## What Teamsheet is
 
@@ -152,12 +207,12 @@ Teamsheet is a team-first, decision-first FPL application for the manager's comp
 The app currently provides:
 
 - a best XI, captain, vice-captain and bench order;
-- exact legal zero-to-three-transfer comparisons with a mandatory no-transfer baseline;
+- exact legal zero-to-three-transfer comparisons with a mandatory no-transfer baseline, suppressed in favour of an explicit unlimited-changes notice before the first Official FPL deadline of a season;
 - fixture-run and swing-window planning through GW38;
 - an all-league hub, selected-league detail, targeted standings and explicitly loaded rival comparisons;
 - settings, provider health, evidence, outcomes, descriptive metrics, review and deterministic exports.
 
-It does not yet provide a validated projected-rank model, protect/balanced/chase strategy, cited team-news intelligence, automated Google Sheets sync or prospectively proven model accuracy. GW1-P1 adds a server-side evidence destination but does **not** yet give the normal Teamsheet browser automatic cloud custody; that is GW1-P2.
+It does not yet provide a validated projected-rank model, protect/balanced/chase strategy, cited team-news intelligence, automated Google Sheets sync or prospectively proven model accuracy. Merged GW1-P1 adds a server-side evidence destination but does **not** give the normal Teamsheet browser automatic cloud custody. GW1-P2 implements that custody, but it is unmerged and acceptance-incomplete, so the app has no automatic cloud custody and local Stage 10 capture/export remains the pre-deadline evidence path.
 
 ## Non-negotiable engineering rules
 
@@ -173,12 +228,12 @@ It does not yet provide a validated projected-rank model, protect/balanced/chase
 - Understat remains team-level only. Optional-provider failure must degrade gracefully.
 - Supporting caches contain only validated model inputs: no Understat HTML and no Odds key or keyed URL.
 - Preserve mobile-first iPhone usability and the accepted physical behaviours touched by a future change.
-- For GW1-P1 specifically, R2 remains private, the evidence Worker exposes no generic SQL/R2 browser access, Access errors stay generic, sensitive auth/account/provider-key material is never logged/stored, and backend availability must never become a recommendation dependency.
+- For the evidence archive specifically, R2 remains private, the evidence Worker exposes no generic SQL/R2 browser access, Access errors stay generic, sensitive auth/account/provider-key material is never logged/stored, and backend availability must never become a recommendation dependency. GW1-P2's client adds no permanent browser service token and persists no secret, cookie, team domain, policy audience or account identifier.
 
 ## Current security and data boundaries
 
 - Official FPL reads use the owner-controlled, allowlisted Cloudflare gateway and still pass client validators.
-- GW1-P1 uses a **separate** Access-authenticated evidence Worker backed by private R2 and D1. The browser does not call it yet.
+- GW1-P1 uses a **separate** Access-authenticated evidence Worker backed by private R2 and D1. On merged `main` the browser does not call it; the unmerged GW1-P2 candidate adds an exact-origin credentialled call as a one-way side effect. No wildcard `Access-Control-Allow-Origin` exists anywhere.
 - Every non-preflight evidence route requires the Worker's own validation of `Cf-Access-Jwt-Assertion`; `TEAM_DOMAIN` and `POLICY_AUD` are runtime configuration and must not be printed or hard-coded.
 - Evidence Wrangler config keeps the accepted production `workers.dev` route enabled and explicitly disables `preview_urls`. Live route-state confirmation is always required separately after deployment; for the current candidate it is recorded from owner-supplied 11 August 2026 Cloudflare Domains dashboard evidence.
 - Provider and user strings use DOM builders; AI output uses restricted Markdown.

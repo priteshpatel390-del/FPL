@@ -543,6 +543,7 @@ h2[tabindex="-1"]:focus{outline:none}
 .transfer-context-chip.deadline{background:#FCF8EF;color:#745614}
 .transfer-context-chip.source{background:#E5EEF5;color:var(--info)}
 .transfer-assumptions{border:1px solid var(--line);border-radius:12px;padding:10px 11px 11px;margin:0 0 12px;background:#F7F9F5}
+.transfer-assumptions[hidden]{display:none}
 .transfer-assumptions legend{padding:0 5px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px}
 .transfer-assumption-help{margin:0 0 9px;color:var(--ink-soft);font-size:11px}
 .transfer-assumption-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
@@ -777,7 +778,7 @@ h2[tabindex="-1"]:focus{outline:none}
         <p class="hint">Compare making no transfer with the strongest legal plans returned by the existing optimiser. Model comparisons are decision support, not promised FPL points.</p>
       </div>
     </div>
-    <fieldset class="transfer-assumptions" aria-describedby="transferAssumptionHelp">
+    <fieldset class="transfer-assumptions" id="transferAssumptions" aria-describedby="transferAssumptionHelp">
       <legend>Planning assumptions</legend>
       <p class="transfer-assumption-help" id="transferAssumptionHelp">Free transfers and bank are user-entered and not verified by the public FPL feed. Changes here also update Team setup.</p>
       <div class="transfer-assumption-grid">

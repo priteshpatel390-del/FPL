@@ -1,6 +1,6 @@
 # Stage 6 — Transfer Optimiser
 
-Status: owner-approved, implemented and verified on draft PR #14; awaiting explicit owner merge approval.
+Status: **historical record — complete and merged.** The Stage 6 exact zero-to-three-transfer optimiser shipped and remains production behaviour. The "awaiting explicit owner merge approval" wording was true only while PR #14 was draft and is not current state.
 
 ## Objective
 Replace isolated swap suggestions with exact, deterministic search of complete legal zero-to-three-transfer plans.

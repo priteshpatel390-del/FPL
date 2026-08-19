@@ -7,8 +7,14 @@
 Subsequent A3 engineering through A3-SC-1 / PR #116 leaves this model/rules boundary unchanged. The A3 engineering baseline entering documentation closeout is **868 tests**, with permanent Verify Teamsheet run #194 / `31470879289` passing the repository gate on exact PR #116 merge commit `1060e60d3affadabdf97924c7ece85cc62d8e360`. Current repository verification belongs in [TESTING.md](TESTING.md); historical 842/864/866 counts remain checkpoint evidence rather than current model claims.
 
 Purpose: precise record of the current deterministic projection engine, expected-minutes boundary and Stage 8 uncertainty layer.
-Audience: anyone touching model code. Last updated: 2026-08-11.
-Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, src/model/*.
+Audience: anyone touching model code. Last updated: 2026-08-12.
+Related: STAGE5-DESIGN.md, STAGE8-DESIGN.md, STAGE10-ITEM3.md, AUDIT.md, KNOWN_LIMITATIONS.md, DECISIONS.md, EXTERNAL-INTELLIGENCE-FOUNDATION.md, src/model/*.
+
+## External-intelligence boundary — this engine is unchanged
+
+No external-intelligence source feeds this engine, and none may. [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) is documentation only: it changes no formula, weight, constant, expected-minutes contract or fallback recorded below, and it approves no provider. Its `shadow_only` boundary means a future shadow store must have no path into the layers documented here — fixture context, expected minutes, per-fixture scoring, multi-Gameweek projection or the Stage 8 uncertainty layer — until a separate owner-approved change explicitly creates one.
+
+That record also pre-registers how a future change would have to earn its way in: predeclared ablation variants named before outcomes are inspected; expected minutes evaluated on the outputs the model actually claims (`pStart`, `pAppear`, `p60` by Brier score and calibration, `expMin` by MAE/RMSE) rather than on projected points alone; and explicit double-counting controls, because the 45% Understat and 65% Odds blends already overlap with any further team-strength or public-news source. It records one inference worth keeping in view — where both supporting layers are present, the current sequential blends imply roughly 19.25% FPL structural, 15.75% Understat and 65% Odds composition. **That is an arithmetic observation about the existing code, not an approved weighting, not evidence those proportions are optimal, and not a licence to change D-09.** The historical aggregate r=0.80 remains method-flattered.
 
 ## Versions and configuration
 - `MODEL_VERSION`: `2.4.0`

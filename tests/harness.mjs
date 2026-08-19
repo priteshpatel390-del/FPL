@@ -104,7 +104,8 @@ export function loadApp(fieldValues = {}, { interactive = false } = {}) {
     runBacktest, initMiniLeagues, renderMiniLeagues, renderTicker, renderPlayers, renderSquad, renderTransfers,
     renderManual, searchPlayers, transferPlannerMoveList, renderAll, sget, sset, saveCfg, loadCfg, stripDeprecatedSecrets, ask,
     clearXP, flagsFor, priceMomentum, decisionPreviewSnapshot, decisionPreviewSelectTransfer, decisionPreviewClearAll,
-    transferPerformanceStart, transferPerformanceCancel, transferPerformanceSnapshot });
+    transferPerformanceStart, transferPerformanceCancel, transferPerformanceSnapshot,
+    initialSquadWindow, INITIAL_SQUAD_WINDOW_GAMEWEEK, INITIAL_SQUAD_WINDOW_REASONS });
     \nglobalThis.loadOdds = loadOdds; globalThis.loadUnderstat = loadUnderstat;`);
   delete globalThis.__EXPORTS__;
   return { T: exports, doc: made, workers: browser?.workers || [],

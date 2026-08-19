@@ -18,6 +18,6 @@ Approved decisions:
 - production safe pruning verified against an independent exhaustive reference
 - pure optimiser module with UI rendering kept downstream
 
-Implementation is verified on draft PR #14. Verified source commit `5181299c8773c118220bdd8c18e80eb053eaf592` passed 254/254 tests and deterministic two-build comparison. Generated artefacts were committed at `212b071687aa1ec6fc99e2006db824eb99291657`; the temporary workflow was removed at `026848dc5b11dded156e0e7fc873d5a457f59067`.
+Implementation was verified on then-draft PR #14. Verified source commit `5181299c8773c118220bdd8c18e80eb053eaf592` passed 254/254 tests and deterministic two-build comparison. Generated artefacts were committed at `212b071687aa1ec6fc99e2006db824eb99291657`; the temporary workflow was removed at `026848dc5b11dded156e0e7fc873d5a457f59067`.
 
-This approval authorised implementation only. Merge still requires Pritesh’s explicit review approval.
+This approval authorised implementation only, and at the time it was written merge still required Pritesh's explicit review approval. That gate has since been satisfied: Stage 6 is complete and merged, and the optimiser is production behaviour.

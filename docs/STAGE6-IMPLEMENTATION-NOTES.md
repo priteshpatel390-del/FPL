@@ -1,6 +1,6 @@
 # Stage 6 implementation notes
 
-Status: implemented and verified on draft PR #14; awaiting owner review and explicit merge approval.
+Status: **historical record — complete and merged.** The scope below shipped through PR #14. The "awaiting owner review and explicit merge approval" wording was true only while that PR was draft and is not current state.
 
 ## Implemented scope
 - versioned transfer rules and model/rules version bump

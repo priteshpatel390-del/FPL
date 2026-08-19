@@ -1,6 +1,6 @@
 # Stage 9.4 — Temporary decision previews
 
-Status: approved by Pritesh and implemented/verified on draft PR #23 on 28 July 2026.
+Status: **historical record — complete and merged.** Approved by Pritesh and implemented/verified on then-draft PR #23 on 28 July 2026; Stage 9 as a whole is complete (see `STAGE9-6-SCOPE.md`).
 
 ## Scope
 

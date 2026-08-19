@@ -63,7 +63,7 @@ Finalised at source commit `b08b2e5641bf04c4b358fb70612dcdba0c2856dd`.
 - Root `index.html` identical to `dist/index.html`.
 - Source hash `4ae27c9b5a0de799ccc3f4a3a0f8406f76df05f574de7246d7c2aceb04005e6f`, independently recomputed outside the build.
 - Model/rules remain `2.4.0` / `2026-27.3`.
-- Physical populated/unconnected/loading iPhone acceptance remains required before merge.
+- Physical populated/unconnected/loading iPhone acceptance was still required before merge at the time this record was written; that gate was satisfied and PR #49 merged, as the status above records.
 
 ## Physical iPhone review findings
 

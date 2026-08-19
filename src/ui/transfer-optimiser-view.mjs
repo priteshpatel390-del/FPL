@@ -16,7 +16,43 @@ const TRANSFER_PRESENTATION_STATES = Object.freeze({
   BASELINE_ONLY:'baseline-only',
   UNAVAILABLE:'unavailable'
 });
+// Official FPL allows unlimited changes to the initial squad until the first deadline of a
+// season, so free transfers, transfer costs and points hits do not exist yet. The weekly
+// optimiser is a valid decision aid only after that deadline has passed.
+const INITIAL_SQUAD_WINDOW_GAMEWEEK = 1;
+const INITIAL_SQUAD_WINDOW_REASONS = Object.freeze({
+  OPEN:'before_first_deadline',
+  NOT_FIRST_GAMEWEEK:'not_first_gameweek',
+  DEADLINE_UNAVAILABLE:'deadline_unavailable',
+  DEADLINE_PASSED:'deadline_passed'
+});
 let transferPlannerRenderedControlSignature = null;
+
+/* The pre-GW1 unlimited-change window, derived only from verified Official FPL event data
+   already held in state. No season calendar date is hard-coded, and every path that cannot
+   prove the window fails conservatively to normal weekly behaviour rather than claiming an
+   unlimited-change state that may not exist. */
+function initialSquadWindow(state = S, now = Date.now()){
+  const inactive = reason => ({active:false,reason,gameweek:INITIAL_SQUAD_WINDOW_GAMEWEEK,deadlineMs:null,remainingMs:null});
+  const nextGW = Number(state?.nextGW);
+  const currentGW = Number(state?.currentGW);
+  // is_next is GW1 and no Gameweek is current or finished: the only shape in which Official
+  // FPL has not yet run its first deadline. A contradictory feed falls through to normal.
+  if(nextGW !== INITIAL_SQUAD_WINDOW_GAMEWEEK || currentGW !== 0 || state?.seasonLive === true)
+    return inactive(INITIAL_SQUAD_WINDOW_REASONS.NOT_FIRST_GAMEWEEK);
+  const events = state?.boot?.events;
+  if(!Array.isArray(events)) return inactive(INITIAL_SQUAD_WINDOW_REASONS.DEADLINE_UNAVAILABLE);
+  const event = events.find(item => Number(item?.id) === INITIAL_SQUAD_WINDOW_GAMEWEEK);
+  const deadlineMs = Date.parse(event?.deadline_time);
+  const nowMs = Number(now);
+  if(!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs))
+    return inactive(INITIAL_SQUAD_WINDOW_REASONS.DEADLINE_UNAVAILABLE);
+  // The deadline instant itself already belongs to the normal weekly regime.
+  if(nowMs >= deadlineMs) return {active:false,reason:INITIAL_SQUAD_WINDOW_REASONS.DEADLINE_PASSED,
+    gameweek:INITIAL_SQUAD_WINDOW_GAMEWEEK,deadlineMs,remainingMs:deadlineMs-nowMs};
+  return {active:true,reason:INITIAL_SQUAD_WINDOW_REASONS.OPEN,
+    gameweek:INITIAL_SQUAD_WINDOW_GAMEWEEK,deadlineMs,remainingMs:deadlineMs-nowMs};
+}
 
 function transferPlannerControlSignature(...values){
   return values.map(value=>String(value ?? '')).join('|');
@@ -276,6 +312,49 @@ function transferPlannerContext(){
     el('span',{class:'transfer-context-chip source'},transferPlannerSourceLabel()));
 }
 
+function transferPlannerInitialSquadStamp(windowState={}){
+  const deadlineMs=Number(windowState.deadlineMs);
+  if(!Number.isFinite(deadlineMs)) return `GW${INITIAL_SQUAD_WINDOW_GAMEWEEK} deadline unavailable`;
+  const stamp=new Date(deadlineMs).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return `GW${INITIAL_SQUAD_WINDOW_GAMEWEEK} deadline ${stamp}`;
+}
+
+/* Owner-facing copy for the pre-GW1 window. It states the Official FPL rule, states that the
+   weekly optimiser is deliberately not running, and points at the screens that do apply. It
+   deliberately shows no free-transfer count, no hit cost and no ranked plan. */
+function transferPlannerInitialSquadNotice(windowState={}){
+  return el('section',{class:'transfer-decision-hero state-initial-squad','aria-labelledby':'transferInitialSquadTitle'},
+    el('span',{class:'eyebrow'},'Before the first deadline'),
+    el('h3',{id:'transferInitialSquadTitle'},`Unlimited squad changes until the GW${INITIAL_SQUAD_WINDOW_GAMEWEEK} deadline`),
+    el('p',{},'Official FPL lets you change your initial squad as often as you like until the first deadline of the season, so free transfers, transfer costs and points hits do not apply yet.'),
+    el('div',{class:'transfer-hero-facts'},
+      el('span',{},'Unlimited changes'),
+      el('span',{},'No free transfers or hits yet'),
+      el('span',{},transferPlannerInitialSquadStamp(windowState))));
+}
+
+function transferPlannerInitialSquadGuidance(){
+  return el('div',{class:'transfer-card-stack'},
+    el('article',{class:'transfer-card'},
+      el('span',{class:'eyebrow'},'Why no transfer plan is shown'),
+      el('h3',{},'Weekly transfer planning starts after the first deadline'),
+      el('p',{class:'transfer-card-lead'},`Teamsheet's weekly Transfers optimiser compares making no transfer with legal one-to-three transfer plans, including free-transfer rollover and points hits. None of those rules exist before the GW${INITIAL_SQUAD_WINDOW_GAMEWEEK} deadline, so ranking transfer plans now would be misleading rather than helpful.`),
+      el('p',{class:'transfer-card-lead'},'It becomes available automatically once the deadline has passed. Nothing needs to be switched on.')),
+    el('article',{class:'transfer-card'},
+      el('span',{class:'eyebrow'},'What to do now'),
+      el('h3',{},'Review your initial squad on Team'),
+      el('p',{class:'transfer-card-lead'},'Team shows the projected XI, captain, vice-captain and bench order for your current 15 players. Use the manual squad builder in Team setup to change who those 15 players are, then confirm the same squad inside Official FPL.'),
+      el('div',{class:'transfer-actions'},
+        el('button',{type:'button',class:'btn',onclick:()=>{ globalThis.__teamsheetNavigate?.('#/team'); }},'Open Team'))));
+}
+
+function transferPlannerSetAssumptionsVisible(visible){
+  const assumptions=$('transferAssumptions');
+  if(!assumptions) return false;
+  assumptions.hidden=!visible;
+  return true;
+}
+
 function transferPlannerBlocking(out,title,detail){
   S.lastOptimiser=null;
   setChildren(out,transferPlannerContext(),el('div',{class:'note bad',role:'alert'},el('b',{},title),` ${detail}`));
@@ -343,6 +422,13 @@ installTransferPlannerCommittedControlRefresh();
 export {
   TRANSFER_PLANNER_COMMITTED_CONTROL_IDS,
   TRANSFER_PRESENTATION_STATES,
+  INITIAL_SQUAD_WINDOW_GAMEWEEK,
+  INITIAL_SQUAD_WINDOW_REASONS,
+  initialSquadWindow,
+  transferPlannerInitialSquadStamp,
+  transferPlannerInitialSquadNotice,
+  transferPlannerInitialSquadGuidance,
+  transferPlannerSetAssumptionsVisible,
   transferPlannerControlSignature,
   transferPlannerRefreshRequired,
   transferPlannerHasActivePreview,

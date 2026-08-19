@@ -2,7 +2,7 @@
 
 ## Outcome
 
-The Team populated-live acceptance sequence is complete through PR #83. Current `main` is `385e5102c0e86e4b926503bffceba08bd6d831c3`.
+The Team populated-live acceptance sequence is complete through PR #83. At that checkpoint `main` was `385e5102c0e86e4b926503bffceba08bd6d831c3`; read the current `main` live with `git rev-parse origin/main`.
 
 PR sequence:
 - PR #80 — startup ownership and availability clarity — merged at `99c02593026ddd9f9ac99a21c413e9c996cea31b`.

@@ -132,7 +132,10 @@ test('offline stays pending, survives a restart and later succeeds without a new
 
   const posted = [];
   const online = async(url,init)=>{ posted.push(JSON.parse(init.body)); return jsonResponse(201,{ok:true,manifest:manifestFor(item)}); };
-  await restarted.flushOutbox({fetchFn:online,nowFn:()=>base+OUTBOX_RULES.maxBackoffMs*4});
+  /* The row was enqueued on the real clock, so the synthetic retry clock is measured from
+     it rather than from the fixture deadline. A fixed calendar instant silently stopped
+     being "after the backoff" once the real date passed it, which hid this assertion. */
+  await restarted.flushOutbox({fetchFn:online,nowFn:()=>Date.now()+OUTBOX_RULES.maxBackoffMs*4});
   assert.equal(posted.length,1);
   assert.equal(posted[0].enqueuedAt,enqueuedAt);
   assert.equal(stableStringify(posted[0].record),canonical,'the record is delivered, never regenerated');
@@ -199,7 +202,7 @@ test('an R2 or D1 backend fault leaves the record pending and recoverable',async
     assert.equal((await delivery.loadOutbox())[0].state,OUTBOX_STATES.PENDING,error);
     const retried = [];
     await delivery.flushOutbox({fetchFn:async(url,init)=>{ retried.push(JSON.parse(init.body)); return jsonResponse(200,{ok:true,duplicate:true,manifest:manifestFor(item)}); },
-      nowFn:()=>base+OUTBOX_RULES.maxBackoffMs*4});
+      nowFn:()=>Date.now()+OUTBOX_RULES.maxBackoffMs*4});
     assert.equal(retried[0].idempotencyKey,item.identity.contentHash,'the retry is idempotent by content hash');
     assert.equal((await delivery.loadOutbox())[0].state,OUTBOX_STATES.DUPLICATE,error);
   }

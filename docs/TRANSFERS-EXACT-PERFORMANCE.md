@@ -1,7 +1,9 @@
 # Transfers Track A — Exact Performance and Persistent Calculation
 
 <!-- TRANSFERS-TRACK-A-2026-08-06 -->
-Status: **Owner-approved and implemented for review on `agent/transfers-exact-performance`; stacked on draft PR #70 over draft PR #69. The first physical iPhone Safari test failed and the approved corrective change is implemented but not yet physically retested. No merge is approved.**
+Status: **historical record — complete, merged and physically accepted.** Track A merged through PR #70 at `78b2729c51419a36c5e6f757fa54830100b5435c`, integrated with FPL-T1 (PR #69) and PR #72, and the populated iPhone Safari Transfers lifecycle acceptance passed; see `CHANGELOG.md`.
+
+The wording below was written mid-checkpoint and is not current state: *"Owner-approved and implemented for review on `agent/transfers-exact-performance`; stacked on draft PR #70 over draft PR #69. The first physical iPhone Safari test failed and the approved corrective change is implemented but not yet physically retested. No merge is approved."*
 
 ## Product outcome
 
