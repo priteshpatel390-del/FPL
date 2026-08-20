@@ -1,9 +1,9 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "f9a79d05c447000eeb1dc0bc4ba66d10aefb17c621040fda0825843a833cd10b",
-  "buildInputHash": "4ac94aacdf06c3beafafd30f807762fc6d45021d5f6cff6036b96df9dffdfa00",
-  "commit": "c221eab4b42d9a869818fc735b3932b891778a57",
+  "sourceHash": "377ab9c56c285d6911fc7ae0fe31e2d5de958fc0b78a6cc3918b04d583ab0a20",
+  "buildInputHash": "14b0cb3f17476106a7a3d39e31cfe410776bc36c5f0297420964d7fd5405ec7c",
+  "commit": "557a3b76c2190db9f3410eedf69f935e6846ba71",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
@@ -53,6 +53,7 @@
     "src/ui/evidence-recovery.mjs",
     "src/ui/download.mjs",
     "src/ui/evidence.mjs",
+    "src/ui/evidence-transport-probe.mjs",
     "src/ui/outcomes.mjs",
     "src/ui/metrics.mjs",
     "src/ui/review.mjs"
@@ -106,6 +107,7 @@
     "src/ui/evidence-recovery.mjs",
     "src/ui/download.mjs",
     "src/ui/evidence.mjs",
+    "src/ui/evidence-transport-probe.mjs",
     "src/ui/outcomes.mjs",
     "src/ui/metrics.mjs",
     "src/ui/review.mjs",
