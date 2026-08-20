@@ -111,7 +111,7 @@ const OPERATIONAL_SPINE = Object.freeze([
   'CLAUDE.md', 'README.md', 'docs/PROJECT_CONTEXT.md', 'docs/ROADMAP.md',
   'docs/ARCHITECTURE.md', 'docs/TESTING.md', 'docs/KNOWN_LIMITATIONS.md'
 ]);
-const CURRENT_TEST_BASELINE = 907;
+const CURRENT_TEST_BASELINE = 934;
 const HISTORICAL_HEADING = /^#{2,4}\s+.*\b(historical|superseded|previous checkpoint)\b/i;
 
 // The prose before the first historical heading: everything that claims to be current.
@@ -133,7 +133,7 @@ test('no current-state section restates a merged main commit SHA as the current 
 });
 
 test('current-state sections agree on one repository test baseline', () => {
-  const superseded = [904, 898, 883, 868, 866, 864, 859, 856, 842, 835, 832, 803];
+  const superseded = [907, 904, 898, 883, 868, 866, 864, 859, 856, 842, 835, 832, 803];
   for (const path of OPERATIONAL_SPINE) {
     const section = currentStateSection(path);
     for (const count of superseded) {

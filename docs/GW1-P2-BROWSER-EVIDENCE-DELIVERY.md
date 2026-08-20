@@ -81,7 +81,9 @@ The physical evidence does **not** isolate the precise technical cause. It does 
 
 The implemented path depends on authenticated cross-site browser transport, and current Apple/WebKit and Cloudflare documentation make cross-site browser session/cookie handling a plausible architectural explanation class. That remains an **inference**, not an experimentally isolated cause.
 
-Further Option A diagnosis is not required before comparing alternatives because the repository's predeclared decision rule was behavioural: if Option A failed under normal Safari privacy settings, stop, preserve Safari privacy and return for an evidence-led Option B versus Option C decision.
+Further Option A diagnosis was not required before comparing alternatives because the repository's predeclared decision rule was behavioural: if Option A failed under normal Safari privacy settings, stop, preserve Safari privacy and return for an evidence-led Option B versus Option C decision.
+
+A separately approved diagnostic checkpoint, [GW1-P2D-P1 Diagnostic transport probe](GW1-P2D-DIAGNOSTIC-TRANSPORT-PROBE.md), now exists to isolate the failed stage before any replacement architecture is chosen. It adds owner-initiated diagnostic instrumentation only; it implements no transport fix, changes no Worker and proves no cause by itself. Its physical result, once obtained, is the evidence that should inform the Option B versus Option C decision recorded below.
 
 ## Option B — Worker-origin delivery window
 

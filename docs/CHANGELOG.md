@@ -1,10 +1,10 @@
 # CHANGELOG.md
 
-Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 12 August 2026.
+Purpose: high-level change record. Current operational status lives in `PROJECT_CONTEXT.md`; detailed acceptance and merge evidence is indexed in `HISTORICAL_RECORDS.md`. Last reconciled: 20 August 2026.
 
 Entries record **merged** outcomes only. Work that was opened but never merged is not listed as shipped; where it matters for context it is named explicitly as unmerged.
 
-**Not shipped, deliberately absent from the entries below:** GW1-P2 — Browser evidence delivery and durable outbox (PR #119) is an implemented candidate that remains draft, unmerged and acceptance-incomplete, so it has no entry here; PR #109 and PR #113 were verification/probe pull requests that were closed without merging and shipped nothing.
+**Not shipped, deliberately absent from the entries below:** GW1-P2 — Browser evidence delivery and durable outbox (PR #119) is an implemented candidate that remains draft, unmerged and acceptance-incomplete, so it has no entry here; GW1-P2D-P1 — Diagnostic transport probe is an unmerged diagnostic candidate pending the owner's physical iPhone test and likewise has no entry; PR #109 and PR #113 were verification/probe pull requests that were closed without merging and shipped nothing.
 
 ## 2026-08-12 — Pre-GW1 repository housekeeping closeout
 
