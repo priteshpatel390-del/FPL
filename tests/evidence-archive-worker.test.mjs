@@ -131,3 +131,82 @@ test('deployment config keeps evidence service separate and provider retention f
   assert.equal('POLICY_AUD' in config.vars,false);assert.equal('TEAM_DOMAIN' in config.vars,false);assert.notEqual(config.main,'fpl-gateway.mjs');
   const sql=readFileSync('workers/evidence-migrations/0001_evidence_foundation.sql','utf8');for(const table of ['schema_migrations','evidence_records','ingest_receipts','rate_limit_windows'])assert.match(sql,new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`));assert.match(sql,/content_hash TEXT PRIMARY KEY/);assert.match(sql,/FOREIGN KEY/);
 });
+
+/* GW1-P2 — the Teamsheet browser sends its Cloudflare Access session with the
+   upload, so the response must satisfy the credentialled CORS rules exactly.
+   These assertions also prove the wildcard is never emitted and that allowing
+   credentials does not widen the origin, method or route allowlists. */
+test('credentialled browser delivery receives exact-origin CORS and never a wildcard',async()=>{
+  const storage=env(),authVerifier=async()=>({sub:'owner'});
+  const response=await handleEvidenceArchiveRequest(request('/v1/health'),storage,{authVerifier});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'),ORIGIN);
+  assert.equal(response.headers.get('Access-Control-Allow-Credentials'),'true');
+  assert.equal(response.headers.get('Access-Control-Allow-Origin')==='*',false);
+  assert.equal(response.headers.get('Vary'),'Origin');
+
+  const preflight=await handleEvidenceArchiveRequest(request('/v1/evidence/predeadline',{method:'OPTIONS'}),storage,{authVerifier});
+  assert.equal(preflight.status,204);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),ORIGIN);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Credentials'),'true');
+  assert.equal(preflight.headers.get('Access-Control-Allow-Methods'),'GET, POST, OPTIONS');
+  assert.equal(preflight.headers.get('Access-Control-Allow-Headers'),'Content-Type');
+
+  const foreign=await handleEvidenceArchiveRequest(request('/v1/health',{origin:'https://evil.example'}),storage,{authVerifier});
+  assert.equal(foreign.status,403);
+  assert.equal(foreign.headers.get('Access-Control-Allow-Origin'),null);
+  assert.equal(foreign.headers.get('Access-Control-Allow-Credentials'),null);
+
+  const unauthorised=await handleEvidenceArchiveRequest(request('/v1/health'),storage,
+    {authVerifier:async()=>{const error=new Error('no');error.code='unauthorised';throw error;}});
+  assert.equal(unauthorised.status,403);
+  assert.deepEqual(await unauthorised.json(),{error:'unauthorised'},'the client is told nothing beyond the category');
+});
+
+test('an accepted upload exposes only the content-hash header to the browser',async()=>{
+  const storage=env(),authVerifier=async()=>({sub:'owner'});
+  const record=await snapshot();
+  const response=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'POST',body:envelope(record,record.identity.contentHash)}),
+    storage,{authVerifier});
+  assert.equal(response.status,201);
+  assert.equal(response.headers.get('Access-Control-Allow-Credentials'),'true');
+  assert.equal(response.headers.get('Access-Control-Expose-Headers'),'X-Teamsheet-Content-Hash');
+  assert.equal(response.headers.get('X-Teamsheet-Content-Hash'),record.identity.contentHash);
+  assert.equal(response.headers.get('Cache-Control'),'no-store');
+});
+
+/* GW1-P2 — the approved Cloudflare Access configuration bypasses Access for
+   OPTIONS only, leaving the Worker to enforce its own exact-origin CORS. This
+   proves that arrangement is safe: an unauthenticated preflight is answered
+   correctly, and bypassing Access for OPTIONS exposes no data route, because
+   every non-OPTIONS route still fails closed without a valid identity. */
+test('an unauthenticated preflight is answered while every data route stays Access protected',async()=>{
+  const storage=env();
+  const denied=async()=>{const error=new Error('no identity');error.code='unauthorised';throw error;};
+
+  const preflight=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'OPTIONS'}),storage,{authVerifier:denied});
+  assert.equal(preflight.status,204,'the preflight must not require an Access identity');
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),ORIGIN);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Credentials'),'true');
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin')==='*',false);
+
+  for(const [path,method] of [['/v1/evidence/predeadline','POST'],['/v1/health','GET'],
+    ['/v1/admin/reconcile','POST'],[`/v1/evidence/${'a'.repeat(64)}`,'GET']]){
+    const response=await handleEvidenceArchiveRequest(
+      request(path,{method,body:method==='POST'?{}:null}),storage,{authVerifier:denied});
+    assert.equal(response.status,403,`${method} ${path} must stay Access protected`);
+    assert.deepEqual(await response.json(),{error:'unauthorised'});
+  }
+
+  /* A foreign origin is refused at the preflight, so bypassing Access for
+     OPTIONS never becomes an open cross-origin surface. */
+  const foreign=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'OPTIONS',origin:'https://evil.example'}),storage,{authVerifier:denied});
+  assert.equal(foreign.status,403);
+  assert.equal(foreign.headers.get('Access-Control-Allow-Origin'),null);
+  const originless=await handleEvidenceArchiveRequest(
+    request('/v1/evidence/predeadline',{method:'OPTIONS',origin:null}),storage,{authVerifier:denied});
+  assert.equal(originless.status,403);
+});

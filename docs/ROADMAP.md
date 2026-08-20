@@ -8,7 +8,7 @@ This document describes the tree it lives in. It does not restate the current `m
 
 **GW1 readiness remediation is complete.** The readiness audit found **zero blockers** and two should-fix items; both were addressed by the **GW1 readiness — pre-deadline Transfers safety guard** checkpoint delivered on **PR #121**, which Pritesh physically accepted on iPhone Safari at head `f720230…` (Verify Teamsheet #262 / `31583716004`, then-current **898/898**). No readiness engineering item remains open, and readiness work authorised no model, provider or calculation change.
 
-GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unaccepted stream on **draft PR #119**, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`; its exact-head Verify Teamsheet #255 / `31537859087` passed **931/931 tests** plus deterministic/provenance/build-identity gates. It is not accepted and not merged, and **it does not gate GW1**.
+GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unaccepted stream on **draft PR #119**, reconciled with current `main` by merge; its exact head moves with each reconciliation commit and is read live from PR #119 rather than restated here. The reconciled tree passes **955/955 tests** plus deterministic/provenance/build-identity gates, and its exact-head Verify Teamsheet result is recorded on the pull request. It is not accepted and not merged, and **it does not gate GW1**.
 
 ### Completed before GW1
 

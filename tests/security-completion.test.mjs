@@ -78,6 +78,12 @@ test('CSP removes every unsafe-inline concession and retains provider origins', 
   assert.match(readFileSync('app.html','utf8'),/name="teamsheet-fpl-gateway" content="https:\/\/teamsheet-fpl-gateway\.fpltsheet\.workers\.dev\/fpl"/);
 assert.ok(policy.includes('https://teamsheet-fpl-gateway.fpltsheet.workers.dev'));
 assert.equal(policy.includes('*-teamsheet-fpl-gateway'),false);
+  /* GW1-P2 — the evidence archive is reachable, and only at its exact
+     production origin: no wildcard, preview or version hostname. */
+  assert.match(readFileSync('app.html','utf8'),/name="teamsheet-evidence-archive" content="https:\/\/teamsheet-evidence-archive\.fpltsheet\.workers\.dev\/v1\/evidence\/predeadline"/);
+  assert.ok(policy.includes('https://teamsheet-evidence-archive.fpltsheet.workers.dev'));
+  assert.equal(policy.includes('*-teamsheet-evidence-archive'),false);
+  assert.equal(policy.includes('*.workers.dev'),false);
   assert.ok(policy.includes("object-src 'none'"));
   assert.ok(policy.includes("base-uri 'none'"));
   assert.ok(policy.includes("form-action 'self'"));

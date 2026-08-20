@@ -20,7 +20,7 @@ The GW1 readiness audit that preceded PR #121 concluded **go with conditions**: 
 
 ### Cloud evidence custody — a separate, unaccepted stream
 
-**GW1-P2 — Browser Evidence Delivery + Durable Outbox** is an implemented candidate on draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`. Verify Teamsheet #255 / `31537859087` passed on that head with **931/931 tests**, no failures/skips/cancellations, deterministic production build and provenance/build-identity gates.
+**GW1-P2 — Browser Evidence Delivery + Durable Outbox** is an implemented candidate on draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, reconciled with current `main` by merge; its exact head moves with each reconciliation commit and is read live from PR #119 rather than restated here. The reconciled tree passes **955/955 tests**, no failures/skips/cancellations, deterministic production build and provenance/build-identity gates; its exact-head Verify Teamsheet result is recorded on the pull request.
 
 GW1-P2 is implementation-complete as a candidate but **acceptance-incomplete**. It remains draft and unmerged, and **it is not a GW1 blocker**: cloud custody is a one-way side effect and the recommendation path never reads, waits for or fails because of the archive. Until PR #119 is accepted and merged, **local Stage 10 capture, recovery and owner-controlled export remain the operating pre-deadline evidence path**; that fallback is complete and merged.
 
