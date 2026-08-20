@@ -26,6 +26,14 @@ GW1-P1 is complete and merged through PR #118 at `main` `58b834a1824c4977a442e7b
 
 GW1-P2 is the separate active browser-delivery/outbox candidate in draft PR #119. Its repository implementation connects the browser capture path to this Worker, but automatic cross-site archive delivery remains **unaccepted** until the genuine Stage 10 physical iPhone Safari test succeeds with Prevent Cross-Site Tracking ON. Owner-performed preparation has confirmed the Access OPTIONS-bypass configuration, top-level Access sign-in and `/v1/health`; those facts do not prove the background credentialled POST.
 
+### GW1-P2D credentialled-CORS remediation
+
+A physical iPhone Safari diagnostic on 20 August 2026 isolated the failed signed-in transport to the preflight boundary: the approved-origin `OPTIONS /v1/evidence/predeadline` reached this Worker and returned `204`, but no corresponding `POST` reached the Worker for the same diagnostic reference. The merged GW1-P1 runtime adapter did not explicitly permit credentials on approved-origin CORS responses.
+
+The P2D-P3 remediation keeps the existing exact origin allowlist and adds `Access-Control-Allow-Credentials: true` only when the core response has already granted that exact approved origin. This is a browser CORS permission, not authentication: Cloudflare Access remains mandatory on non-OPTIONS routes, wildcard origins remain forbidden, and missing or foreign origins receive no credential grant. No Access policy, cookie, route, D1/R2 binding, evidence schema or Stage 10 record changes are part of this repair.
+
+This source change does not by itself prove Safari will transmit the Access credential. A live Worker deployment and a separate physical diagnostic retest are still required before Option A can be called viable.
+
 See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md` and `docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md`.
 
 ## Allowed origins
@@ -40,3 +48,4 @@ Both Workers are zero-dependency ES modules. Relevant contracts are exercised by
 - `tests/evidence-archive-worker.test.mjs`
 - `tests/evidence-archive-cloudflare.test.mjs`
 - `tests/evidence-archive-layout.test.mjs`
+- `tests/gw1-p2d-cors-remediation.test.mjs`
