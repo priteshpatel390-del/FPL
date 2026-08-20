@@ -25,7 +25,7 @@ const ORDER = [
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
   'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
   'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/views.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
-  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
+  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/evidence-transport-probe.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
@@ -73,6 +73,27 @@ if(gatewayMeta[0][1].trim()){
     throw new Error('Teamsheet FPL gateway meta content must be an exact HTTPS /fpl base URL');
   gatewayOrigin = gatewayUrl.origin;
 }
+/* GW1-P2D-P1 — the diagnostic probe origin is declared exactly like the
+   Official FPL gateway: at most one meta tag, an exact HTTPS origin and the
+   single approved archive path. The origin reaches connect-src only from this
+   validated tag, so no wildcard, preview or version hostname can be admitted,
+   and an absent tag simply leaves the diagnostic unconfigured and inert. This
+   admits a connect-src origin for the diagnostic only; this build contains no
+   evidence delivery path. */
+const probeMeta = [...template.matchAll(/<meta\s+name=["']teamsheet-evidence-transport-probe["']\s+content=["']([^"']*)["']\s*\/?\s*>/g)];
+if(probeMeta.length > 1) throw new Error(`Build allows at most one Teamsheet evidence transport probe meta tag; found ${probeMeta.length}`);
+let transportProbeOrigin = null;
+if(probeMeta[0]?.[1]?.trim()){
+  const probeUrl = new URL(probeMeta[0][1].trim());
+  const probeLocal = probeUrl.hostname === 'localhost' || probeUrl.hostname === '127.0.0.1';
+  if((probeUrl.protocol !== 'https:' && !(probeLocal && probeUrl.protocol === 'http:')) ||
+     probeUrl.username || probeUrl.password || probeUrl.search || probeUrl.hash ||
+     probeUrl.pathname !== '/v1/evidence/predeadline')
+    throw new Error('Teamsheet evidence transport probe meta content must be an exact HTTPS /v1/evidence/predeadline URL');
+  if(/^\*|^[^.]*-teamsheet-evidence-archive\./.test(probeUrl.hostname))
+    throw new Error('Teamsheet evidence transport probe meta content must not use a wildcard or preview hostname');
+  transportProbeOrigin = probeUrl.origin;
+}
 const scriptContent = '\n' + bundle + '\n';
 const scriptHash = sha256Csp(scriptContent);
 const styleHash = sha256Csp(styleContent);
@@ -83,6 +104,7 @@ const connectOrigins = [
   'https://raw.githubusercontent.com', 'https://api.anthropic.com'
 ];
 if(gatewayOrigin) connectOrigins.push(gatewayOrigin);
+if(transportProbeOrigin) connectOrigins.push(transportProbeOrigin);
 const csp = [
   "default-src 'none'",
   `script-src '${scriptHash}'`,

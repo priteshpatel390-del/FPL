@@ -1,6 +1,6 @@
 # ROADMAP.md — current and proposed checkpoints
 
-Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 12 August 2026.
+Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 20 August 2026.
 
 ## Current sequence
 
@@ -8,7 +8,7 @@ This document describes the tree it lives in. It does not restate the current `m
 
 **GW1 readiness remediation is complete.** The readiness audit found **zero blockers** and two should-fix items; both were addressed by the **GW1 readiness — pre-deadline Transfers safety guard** checkpoint delivered on **PR #121**, which Pritesh physically accepted on iPhone Safari at head `f720230…` (Verify Teamsheet #262 / `31583716004`, then-current **898/898**). No readiness engineering item remains open, and readiness work authorised no model, provider or calculation change.
 
-GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unaccepted stream on **draft PR #119**, exact head `252c5eba0381c8aa5afb7bda1686dd102326c6df`; its exact-head Verify Teamsheet #255 / `31537859087` passed **931/931 tests** plus deterministic/provenance/build-identity gates. It is not accepted and not merged, and **it does not gate GW1**.
+GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unaccepted stream on **draft PR #119**, exact head `414eb58f6207b3e2a78515a93d0c4c98685b3863`; its own exact-head candidate verification is separate historical evidence for that head and is not the repository baseline. It is not accepted and not merged, and **it does not gate GW1**. Its Option A physical acceptance failed on 20 August 2026 with the cause unisolated, and the GW1-P2D-P1 diagnostic transport probe is the approved next step.
 
 ### Completed before GW1
 
@@ -24,10 +24,10 @@ GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unacc
 
 The next work is **not** post-GW1 model or provider enhancement.
 
-### GW1-P2 live acceptance — a separate gating stream
+### GW1-P2 transport diagnosis — a separate non-gating stream
 
-7. Perform the decisive GW1-P2 physical iPhone Safari acceptance once a genuine Stage 10 record can exist, from **20 August 2026 at 18:30 BST**.
-8. Do not merge PR #119 before successful live acceptance, final exact-head verification and explicit owner approval.
+7. Perform the GW1-P2D-P1 physical iPhone diagnostic test, with Prevent Cross-Site Tracking ON throughout, to isolate the stage at which the Option A transport failed. See [GW1-P2D-P1 Diagnostic transport probe](GW1-P2D-DIAGNOSTIC-TRANSPORT-PROBE.md).
+8. Only then return for an evidence-led decision on a replacement transport architecture. Do not merge PR #119, and do not implement Option B or Option C, without a separate explicit owner approval.
 
 This stream runs alongside GW1 operation. Because cloud custody is a one-way side effect that the recommendation never depends on, a failure or delay here does not block GW1; it only leaves local capture/export as the evidence path for longer.
 
@@ -39,7 +39,7 @@ This stream runs alongside GW1 operation. Because cloud custody is a one-way sid
 
 Owner-performed preparation has established that Access `Bypass OPTIONS requests to origin` was configured, top-level iPhone Safari Access authentication worked, the protected `/v1/health` route worked, non-destructive storage telemetry was observed, and Pages branch switching/restoration was exercised.
 
-The decisive credentialled cross-site application POST with **Prevent Cross-Site Tracking ON** remains unproven. If it fails, stop and return with an evidence-led Option B versus Option C comparison. Do not disable Safari privacy protection as a product requirement and do not implement either alternative without separate approval.
+The decisive credentialled cross-site application POST with **Prevent Cross-Site Tracking ON** failed on 20 August 2026: the automatic `Waiting to archive` → `Archived` transition was never observed. The predeclared rule was followed and the test was stopped rather than weakening Safari privacy. **The cause remains unisolated** and must not be attributed to Safari, ITP, Access, CORS, the Worker or scheduling. Do not disable Safari privacy protection as a product requirement and do not implement either alternative without separate approval.
 
 The bounded outbox `pinLimit` remains conservative at four. The usable iPhone storage ceiling is not evidenced, so that value is not claimed to be proven safe and must not be raised in this checkpoint.
 
@@ -67,7 +67,7 @@ Longer-horizon product work remains separately gated. Nothing below is implement
 - Cloudflare automation expansion.
 - AI agents and richer external intelligence. Every step of the post-GW1 sequence in [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md) — the provider-neutral shadow observation foundation, the Stage 10 replay/ablation harness, competition/workload facts, role-change tracking, richer minutes evidence, a ClubElo structural experiment, the Understat decision, team-news/tactical facts and matchup microstats — is a proposal only and needs its own evidence-led approval. Recording a source in that document's research matrix is not approval to acquire, integrate, retain or weight it.
 - Route-aware optimisation unless future workload/responsiveness evidence justifies a separate proposal.
-- Any GW1-P2 transport alternative (Option B or Option C) unless the decisive Option A acceptance fails and a separate evidence-led comparison is approved.
+- Any GW1-P2 transport alternative (Option B or Option C). Option A acceptance has now failed, but a replacement architecture still requires the diagnostic result and a separate evidence-led approval.
 
 The brittle `selectMiniLeague` exact-source-string assertion is deferred narrow test-hardening debt. Live-Gameweek evidence gates remain unchanged: real minute-history behaviour, Stage 10 outcome/correction evidence and populated Mini-League ranking/rival/pagination acceptance require the relevant official post-Gameweek facts.
 

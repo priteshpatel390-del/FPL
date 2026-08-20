@@ -57,6 +57,7 @@ const TEAMSHEET_ROUTE_TABLE = Object.freeze({
   '#/settings/data/calibration':Object.freeze({title:'Calibration',primary:'settings',settings:'data',parent:'#/settings/data'}),
   '#/settings/data/recovery':Object.freeze({title:'Recovery',primary:'settings',settings:'data',parent:'#/settings/data'}),
   '#/settings/data/storage':Object.freeze({title:'Local storage',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/connection-check':Object.freeze({title:'Connection check',primary:'settings',settings:'data',parent:'#/settings/data'}),
   '#/settings/help':Object.freeze({title:'Help & About',primary:'settings',settings:'help',parent:'#/settings'}),
   '#/settings/help/recommendations':Object.freeze({title:'Recommendations',primary:'settings',settings:'help',parent:'#/settings/help'}),
   '#/settings/help/uncertainty':Object.freeze({title:'Expected points & uncertainty',primary:'settings',settings:'help',parent:'#/settings/help'}),
@@ -350,7 +351,8 @@ function setupAppShell(){
     teamsheetSettingsCard('#/settings/data/optional-sources','+','Optional sources','Odds and Understat controls.'),
     teamsheetSettingsCard('#/settings/data/calibration','≈','Calibration','Deadline-safe historical diagnostic.'),
     teamsheetSettingsCard('#/settings/data/recovery','↺','Recovery','Restore verified backups and inspect recovery warnings.'),
-    teamsheetSettingsCard('#/settings/data/storage','×','Local storage','Delete specific local evidence datasets.')
+    teamsheetSettingsCard('#/settings/data/storage','×','Local storage','Delete specific local evidence datasets.'),
+    teamsheetSettingsCard('#/settings/data/connection-check','⇄','Connection check','Diagnostic archive connection test. Sends no evidence.')
   ]));
   addRoute(teamsheetSettingsContent('#/settings/data/providers','Provider Health','Full technical source status remains here; healthy states do not occupy the main header.',healthPanel));
   addRoute(teamsheetSettingsContent('#/settings/data/optional-sources','Optional sources','Configure approved supporting inputs without changing provider transport or model rules.',optionalPanel));
@@ -363,6 +365,11 @@ function setupAppShell(){
     teamsheetElement('div',{id:'evidenceStorageHost'}),
     teamsheetElement('div',{id:'outcomeStorageHost'}),
     teamsheetElement('div',{id:'metricStorageHost'})));
+  /* GW1-P2D-P1 — the diagnostic connection check has its own route, separate
+     from every evidence surface, so an owner can never reach it while looking
+     for evidence capture, export or recovery. */
+  addRoute(teamsheetSettingsContent('#/settings/data/connection-check','Connection check','A diagnostic only. It sends one deliberately invalid test message and never sends, changes or deletes saved deadline evidence.',
+    teamsheetElement('div',{id:'evidenceTransportProbeHost'})));
 
   addRoute(teamsheetSettingsMenu('#/settings/help','Help & About','Plain-English guidance for interpreting Teamsheet and this build.',[
     teamsheetSettingsCard('#/settings/help/recommendations','?','Recommendations','What Teamsheet does and what remains your decision.'),
