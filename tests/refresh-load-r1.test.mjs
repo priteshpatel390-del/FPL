@@ -186,7 +186,7 @@ test('fresh Odds cache suppresses a call and persisted rejection cooldown contai
     const report=await loadOdds({...store,nowFn:()=>now});
     assert.equal(report.source,'cache');
     assert.equal(requests,0);
-    assert.equal(getHealth('odds').state,HEALTH_STATES.CACHED);
+    assert.equal(getHealth('odds',{},now).state,HEALTH_STATES.CACHED);
 
     store=memory();
     globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({})});
