@@ -21,6 +21,7 @@ import {
   probeAttempts, resetProbeAttempts, runTransportProbe
 } from '../src/ui/evidence-transport-probe.mjs';
 import { handleEvidenceArchiveRequest, validateEnvelope } from '../workers/evidence-archive-core.mjs';
+import { normaliseTeamsheetRoute, teamsheetRouteMeta } from '../src/ui/app-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(ROOT, path), 'utf8');
@@ -409,10 +410,14 @@ test('the generated bundle carries the diagnostic and preserves the CSP and buil
 
 test('the diagnostic route is separate from every evidence surface and never says archive now', () => {
   const shell = read('src/ui/app-shell.mjs');
-  assert.match(shell, /#\/settings\/data\/connection-check/, 'the diagnostic needs its own owner-reachable route');
   assert.match(shell, /id:'evidenceTransportProbeHost'/);
-  const routeLine = shell.split(/\r?\n/).find(line => line.includes("'#/settings/data/connection-check','Connection check'"));
-  assert.ok(routeLine, 'the diagnostic route must declare a Connection check title');
+  /* Rendering the route is not the same as registering it: PR #136 did the
+     first without the second and the screen was unreachable on a phone.
+     Reachability is proven by executing the real router, not by matching
+     source text — see tests/settings-route-activation.test.mjs. */
+  assert.equal(normaliseTeamsheetRoute('#/settings/data/connection-check'), '#/settings/data/connection-check',
+    'the diagnostic route must be registered, or navigating to it silently falls back to the section menu');
+  assert.equal(teamsheetRouteMeta('#/settings/data/connection-check').title, 'Connection check');
   for (const forbidden of [/archive now/i, /upload/i, /send evidence/i, /try archiving/i]) {
     assert.doesNotMatch(PROBE_CODE, forbidden,
       `probe copy matches ${forbidden}; it must never read as evidence custody`);

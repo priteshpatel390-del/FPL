@@ -57,6 +57,7 @@ const TEAMSHEET_ROUTE_TABLE = Object.freeze({
   '#/settings/data/calibration':Object.freeze({title:'Calibration',primary:'settings',settings:'data',parent:'#/settings/data'}),
   '#/settings/data/recovery':Object.freeze({title:'Recovery',primary:'settings',settings:'data',parent:'#/settings/data'}),
   '#/settings/data/storage':Object.freeze({title:'Local storage',primary:'settings',settings:'data',parent:'#/settings/data'}),
+  '#/settings/data/connection-check':Object.freeze({title:'Connection check',primary:'settings',settings:'data',parent:'#/settings/data'}),
   '#/settings/help':Object.freeze({title:'Help & About',primary:'settings',settings:'help',parent:'#/settings'}),
   '#/settings/help/recommendations':Object.freeze({title:'Recommendations',primary:'settings',settings:'help',parent:'#/settings/help'}),
   '#/settings/help/uncertainty':Object.freeze({title:'Expected points & uncertainty',primary:'settings',settings:'help',parent:'#/settings/help'}),

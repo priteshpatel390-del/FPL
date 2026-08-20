@@ -116,6 +116,37 @@ A `2xx` must never be read as success: it would mean the archive accepted a payl
 
 The owner's procedure is recorded in the pull request and must be followed without disabling Prevent Cross-Site Tracking. Repeated blind attempts are not part of it.
 
+### The URL that serves Teamsheet
+
+Teamsheet is a GitHub **project** site, so the only address that serves it is:
+
+`https://priteshpatel390-del.github.io/FPL/`
+
+The user-site root `https://priteshpatel390-del.github.io/` returns a GitHub Pages 404 and must never be used as the Teamsheet URL. Nothing in the application depends on this: the app is hash-routed and its assets are inlined into one file, so it is agnostic to the `/FPL/` base path. This is a procedure correction only and was not connected to the navigation defect below.
+
+### Which build identity the phone shows
+
+`Settings → Help & About → About this build` renders `BUILD_INFO.commit`, which is the `commit` field of `dist/manifest.json`. Generated output cannot contain its own commit hash, so the repository's provenance design builds from a **source commit** and then commits the generated files as a child of it. Two different identities are therefore both correct:
+
+| Identity | Where it is read | What it means |
+|---|---|---|
+| **Source commit** | On the phone, `About this build` → `Commit` | The exact reviewed source that produced the deployed bytes |
+| **Final PR head** | On GitHub, the pull-request head | The generated-only child commit that carries those bytes |
+
+**The owner compares the source commit**, because that is what the phone can show. To find the expected value for any candidate, read the `commit` field of `dist/manifest.json` at the pull-request head; the pull request states it explicitly. `scripts/verify-build-provenance.mjs` independently proves that this commit is a reachable ancestor of the head and reproduces the committed bytes exactly, so matching it is a complete identity check.
+
+An earlier version of this procedure told the owner to expect the final PR head on the phone. That was a defect in the instructions, not in the application, and build-provenance semantics were not changed to accommodate it.
+
+## Physical UI defect found on 20 August 2026, and fixed
+
+The first physical attempt never reached the transport experiment. On the deployed candidate, tapping `Settings → Data & Diagnostics → Connection check` did nothing visible.
+
+**Cause, reproduced by executing the real shell:** the checkpoint added the Connection check card and its destination section, but never registered `#/settings/data/connection-check` in `TEAMSHEET_ROUTE_TABLE`. `normaliseTeamsheetRoute()` deliberately collapses any unregistered `#/settings/<section>/...` path back to that section's menu, so the tap re-activated `#/settings/data`, the hash was rewritten back, and the destination section stayed hidden — indistinguishable from nothing happening.
+
+**Fix:** one route-table entry. No change to the diagnostic request shape, payload, credentials mode, redirect mode, endpoint, CORS, Access, Worker, Stage 10 behaviour or evidence storage.
+
+**This was a client-side route-registry omission and nothing more.** It is not evidence about Safari, ITP, cookies, CORS, Cloudflare Access or the Worker. The transport experiment had not started when it occurred, so it supports no transport conclusion whatsoever.
+
 ## Current approval boundary
 
 This checkpoint authorises diagnostic observability only. It does not authorise a transport fix, a Worker redeployment, an Access or Cloudflare change, a hosting or DNS change, PR #119 modification or merge, any Stage 10 change, or any provider or model change. Choosing a replacement architecture remains a separate, separately approved decision informed by the physical result.
