@@ -46,7 +46,9 @@ test('GW1-P2C2 keeps both Worker migration allowlists exact and rollback-safe',(
   }
 
   const archive = JSON.parse(text('workers/evidence-wrangler.jsonc'));
+  assert.equal(archive.workers_dev,true,'workers.dev remains available only as rollback/diagnostic infrastructure');
   assert.equal(archive.preview_urls,false);
+  assert.deepEqual(archive.routes,[{pattern:'archive.fpltsheet.co.uk',custom_domain:true}]);
   assert.deepEqual(archive.d1_databases.map(row=>row.binding),['EVIDENCE_DB']);
   assert.deepEqual(archive.r2_buckets.map(row=>row.binding),['EVIDENCE_BUCKET']);
 });
