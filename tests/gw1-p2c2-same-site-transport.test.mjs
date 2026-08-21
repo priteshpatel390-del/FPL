@@ -11,6 +11,14 @@ const LEGACY_ARCHIVE_ORIGIN = 'https://teamsheet-evidence-archive.fpltsheet.work
 function text(path){
   return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 }
+function exactMigrationOrigins(path){
+  const wrangler = JSON.parse(text(path));
+  return String(wrangler.vars?.ALLOWED_ORIGINS || '').split(',').map(value=>value.trim()).filter(Boolean);
+}
+
+test('GitHub Pages custom hostname is prepared through the reviewed repository CNAME',()=>{
+  assert.equal(text('CNAME'),'app.fpltsheet.co.uk\n');
+});
 
 test('GW1-P2C2 production build emits only the approved sibling-subdomain archive target',()=>{
   const build = text('build.mjs');
@@ -29,12 +37,18 @@ test('GW1-P2C2 production build emits only the approved sibling-subdomain archiv
   assert.equal(connect.includes('*.workers.dev'),false);
 });
 
-test('GW1-P2C2 keeps the Official FPL gateway migration allowlist exact and rollback-safe',()=>{
-  const wrangler = JSON.parse(text('workers/wrangler.jsonc'));
-  const origins = String(wrangler.vars?.ALLOWED_ORIGINS || '').split(',').map(value=>value.trim()).filter(Boolean);
-  assert.deepEqual(origins,[LEGACY_APP_ORIGIN,APP_ORIGIN]);
-  assert.equal(origins.some(origin=>origin.includes('*')),false);
-  assert.equal(new Set(origins).size,origins.length);
+test('GW1-P2C2 keeps both Worker migration allowlists exact and rollback-safe',()=>{
+  for(const path of ['workers/wrangler.jsonc','workers/evidence-wrangler.jsonc']){
+    const origins = exactMigrationOrigins(path);
+    assert.deepEqual(origins,[LEGACY_APP_ORIGIN,APP_ORIGIN],path);
+    assert.equal(origins.some(origin=>origin.includes('*')),false,path);
+    assert.equal(new Set(origins).size,origins.length,path);
+  }
+
+  const archive = JSON.parse(text('workers/evidence-wrangler.jsonc'));
+  assert.equal(archive.preview_urls,false);
+  assert.deepEqual(archive.d1_databases.map(row=>row.binding),['EVIDENCE_DB']);
+  assert.deepEqual(archive.r2_buckets.map(row=>row.binding),['EVIDENCE_BUCKET']);
 });
 
 test('the browser delivery semantics remain credentialled CORS and independent of recommendations',()=>{
