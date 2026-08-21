@@ -1,5 +1,13 @@
 # GW1-P2 — Browser evidence delivery and durable outbox
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## 21 August 2026 superseding physical result and next transport checkpoint
+
+The controlled PR #137 diagnostic produced **Outcome B** under normal iPhone Safari privacy settings. The credentialled OPTIONS request reached `teamsheet-evidence-archive.fpltsheet.workers.dev` and the remediated Worker returned **204** with the required credentialled-CORS response; the subsequent POST did **not** reach the Worker, and Teamsheet received no HTTP status. Therefore the earlier CORS defect is closed, but the remaining failure cannot legitimately be assigned to one specific browser/Access cause and says nothing about D1/R2 processing because ingestion was never reached.
+
+Option A (`github.io` → `workers.dev`) is exhausted. The approved next repository checkpoint is GW1-P2C2: preserve the durable outbox and exact credentialled-CORS design while preparing `https://app.fpltsheet.co.uk` → `https://archive.fpltsheet.co.uk/v1/evidence/predeadline`. This is same-site but cross-origin. It remains **unaccepted live architecture** until separately deployed and physically retested with normal privacy settings.
+
+
 ## Status
 
 **Option A physical acceptance failed; PR #119 remains draft/unmerged; Option C same-site transport is the preferred separately gated next architecture.**

@@ -1,5 +1,15 @@
 # ARCHITECTURE.md
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## Current browser evidence topology decision — 21 August 2026
+
+GW1-P2C2 prepares a sibling-subdomain transport: the Teamsheet application at `https://app.fpltsheet.co.uk` and the Access-protected evidence archive at `https://archive.fpltsheet.co.uk/v1/evidence/predeadline`. Sharing `fpltsheet.co.uk` makes the intended topology same-site, but the hosts are different origins; browser delivery therefore continues to use `mode:'cors'`, `credentials:'include'`, an exact `Access-Control-Allow-Origin`, and `Access-Control-Allow-Credentials: true`. Wildcard origin policy is forbidden.
+
+The browser evidence path remains deliberately one-way and non-authoritative: canonical Stage 10 capture is stored locally first, then the durable outbox retries delivery independently. The recommendation path never reads, waits for or fails because of archive custody. PR #137 remains the single Cloudflare adapter authority for credential permission; GW1-P2C2 does not duplicate that policy into the archive core. During migration, the Official FPL gateway may accept exactly the existing GitHub Pages origin and the new app origin; this is rollback support, not a wildcard or provider-semantic change.
+
+This section describes the repository candidate architecture, **not deployed state**. DNS, Pages custom-domain routing, Worker Custom Domain/Access routing and physical Safari behaviour require separate live verification.
+
+
 ## Current architecture boundary
 
 This document describes the tree it lives in and does not restate the current `main` commit SHA — read that live with `git rev-parse origin/main`.

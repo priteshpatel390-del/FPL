@@ -1,5 +1,13 @@
 # PROJECT_CONTEXT.md
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## Current transport checkpoint — 21 August 2026
+
+The previously pending GW1-P2 physical cross-site acceptance has now produced **Outcome B**: on iPhone Safari with normal privacy settings, the PR #137 CORS-remediated credentialled OPTIONS request reached the evidence Worker and returned 204, while the POST did not reach the Worker and exposed no HTTP status to Teamsheet. This closes further Option A (`github.io` → `workers.dev`) tweaking as the chosen path without attributing the remaining failure to one unproven browser or Access mechanism.
+
+GW1-P2C2 is the approved **repository-only** preparation for sibling hosts `app.fpltsheet.co.uk` and `archive.fpltsheet.co.uk`. Draft PR #139 carries the durable browser evidence outbox/delivery semantics forward, changes only the browser/archive transport boundary, retains exact CORS, and leaves recommendation/model/provider behaviour untouched. The custom domains are **not live** in this repository checkpoint; existing production hosting remains authoritative until separately approved infrastructure rollout and physical acceptance.
+
+
 Purpose: current product and engineering state. Audience: every session after `CLAUDE.md`. Last reconciled: 12 August 2026.
 
 Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](ROADMAP.md), [Known Limitations](KNOWN_LIMITATIONS.md), [Teamsheet 2.0 Product Blueprint](TEAMSHEET2-PRODUCT-BLUEPRINT.md), [Data Architecture D1](DATA-ARCHITECTURE-D1.md), [GW1-P1 Cloudflare Evidence Foundation](GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md), [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md), [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md), [Historical Records](HISTORICAL_RECORDS.md).
@@ -8,7 +16,7 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 Live GitHub is authoritative over this document and all historical handovers. This section describes the tree it lives in and deliberately does not restate the current `main` commit SHA — that changes on every merge and duplicating it here is how this documentation went stale before. Read it live with `git rev-parse origin/main`, and read live pull-request state from GitHub.
 
-**Repository test baseline: 907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. The 898 recorded below is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout then reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. No application code changed across any of those steps. Earlier counts (904, 898, 883, 868, 864, 856, …) are historical checkpoint evidence and are not current claims.
+**Repository test baseline: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. This is the tree this file lives in; merged `main` separately holds the then-current 907/907 until an approved merge. The 898 recorded below is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout then reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. The GW1-P2C2 candidate then reached 971 by restoring the reconciled PR #119 browser-delivery behavioural suite and adding same-site migration coverage. No application code changed across any of those steps. Earlier counts (940, 918, 907, 904, 898, 883, 868, 864, 856, …) are historical checkpoint evidence and are not current claims.
 
 ### Application — ready for GW1
 
