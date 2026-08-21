@@ -10,11 +10,17 @@ import {
   validateSnapshotRecord,
   boundedSnapshotIndex
 } from '../evidence/snapshot.mjs';
+/* GW1-P2 — the pure outbox contract only. src/ui/evidence.mjs never imports
+   the delivery layer: capture and local custody must not depend on, or be
+   delayed by, anything that talks to Cloudflare. Delivery observes the
+   teamsheet:evidence-stored event instead. */
+import { normaliseOutbox, pinnedSnapshotIds } from '../evidence/outbox.mjs';
 
 const K_EVIDENCE_MANAGER = 'fpl:evidence-manager-ref';
 const K_EVIDENCE_INDEX = 'fpl:evidence-index';
 const K_EVIDENCE_PREFIX = 'fpl:evidence:snapshot:';
 const K_EVIDENCE_JOURNAL = 'fpl:evidence:pending:v1';
+const K_EVIDENCE_OUTBOX = 'fpl:evidence:outbox:v1';
 const MAX_EVIDENCE_IMPORT_BYTES = 25 * 1024 * 1024;
 const EVIDENCE_ORIGINS = Object.freeze({LOCAL:'local_capture',RECOVERY:'recovery_import'});
 const AUTO_CAPTURE_PRIORITY = Object.freeze({open:1,due_soon:2,ideal:3,final_window:4});
@@ -126,6 +132,24 @@ async function loadEvidenceRecord(snapshotId){
     return checked.record;
   }catch(error){recordStage10Diagnostic('payload_corrupt',{recordType:'preDeadlineSnapshot',recordId:snapshotId,severity:'error',message:error.message});return null;}
 }
+/* GW1-P2 durable-retention support. A record still owed to the archive must
+   not be evicted merely because two newer records exist, so the bounded local
+   sweep keeps the newest records AND every pinned outbox record. Reading the
+   outbox here is deliberately read-only and failure-tolerant: an unreadable
+   outbox degrades to the exact pre-GW1-P2 retention behaviour. */
+async function loadOutboxRows(){
+  try{
+    const raw = await rawEvidenceGet(K_EVIDENCE_OUTBOX);
+    return raw ? normaliseOutbox(JSON.parse(raw)) : [];
+  }catch(error){ return []; }
+}
+async function evidenceRetentionPlan(nextIndex,knownIds){
+  const rows = await loadOutboxRows();
+  const keep = new Set(nextIndex.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
+  pinnedSnapshotIds(rows).forEach(snapshotId=>keep.add(snapshotId));
+  const candidates = new Set([...knownIds,...rows.map(row=>row.snapshotId)]);
+  return {keep,toDelete:[...candidates].filter(snapshotId=>!keep.has(snapshotId))};
+}
 async function writeEvidenceJournal(record,origin,phase){
   const journal=stage10Journal({recordType:'preDeadlineSnapshot',recordId:record.identity.snapshotId,contentHash:record.identity.contentHash,logicalKey:record.identity.duplicateKey,origin,phase});
   await rawEvidenceSet(K_EVIDENCE_JOURNAL,stableStringify(journal));
@@ -140,7 +164,8 @@ async function recoverEvidenceJournal(){
   const index=await loadEvidenceIndex(),record=await loadEvidenceRecord(journal.recordId);
   if(record&&record.identity.contentHash===journal.contentHash){
     const origin=journal.origin===EVIDENCE_ORIGINS.LOCAL?EVIDENCE_ORIGINS.LOCAL:EVIDENCE_ORIGINS.RECOVERY;
-    const next=boundedSnapshotIndex(index,record,{origin}),keep=new Set(next.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
+    const next=boundedSnapshotIndex(index,record,{origin});
+    const {keep}=await evidenceRetentionPlan(next,index.map(row=>row.snapshotId));
     await rawEvidenceSet(K_EVIDENCE_INDEX,stableStringify(next));
     for(const row of index){if(!keep.has(row.snapshotId))await rawEvidenceDelete(K_EVIDENCE_PREFIX+row.snapshotId).catch(()=>{});}
     activeEvidenceRecord=record;recordStage10Diagnostic('recovery_completed',{recordType:'preDeadlineSnapshot',recordId:journal.recordId,severity:'info'});
@@ -150,14 +175,21 @@ async function recoverEvidenceJournal(){
   }
   await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});return true;
 }
+async function announceEvidenceStored(record){
+  if(typeof document==='undefined'||typeof document.dispatchEvent!=='function'||typeof CustomEvent!=='function') return [];
+  const pending=[];
+  const detail={record,snapshotId:record.identity.snapshotId,contentHash:record.identity.contentHash,
+    origin:EVIDENCE_ORIGINS.LOCAL,waitUntil(promise){pending.push(Promise.resolve(promise).catch(()=>null));}};
+  document.dispatchEvent(new CustomEvent('teamsheet:evidence-stored',{detail}));
+  return Promise.allSettled(pending);
+}
 async function storeEvidenceRecord(record,{origin=EVIDENCE_ORIGINS.LOCAL}={}){
   if(!Object.values(EVIDENCE_ORIGINS).includes(origin)) throw new Error('Evidence origin is not supported');
   const checked = await validateSnapshotRecord(record);
   if(!checked.ok) throw new Error(`Evidence record rejected: ${checked.reason}`);
   const existing = await loadEvidenceIndex(),nextIndex = boundedSnapshotIndex(existing,checked.record,{origin});
-  const keep = new Set(nextIndex.slice(0,EVIDENCE_RULES.localFullRecordLimit).map(row=>row.snapshotId));
   const knownIds = new Set(existing.map(row=>row.snapshotId).concat(checked.record.identity.snapshotId));
-  const toDelete = [...knownIds].filter(snapshotId=>!keep.has(snapshotId));
+  const {keep,toDelete} = await evidenceRetentionPlan(nextIndex,knownIds);
   await writeEvidenceJournal(checked.record,origin,'prepared');
   try{
     if(keep.has(checked.record.identity.snapshotId)){
@@ -176,6 +208,11 @@ async function storeEvidenceRecord(record,{origin=EVIDENCE_ORIGINS.LOCAL}={}){
     for(const snapshotId of toDelete) await rawEvidenceDelete(K_EVIDENCE_PREFIX+snapshotId).catch(()=>{});
     activeEvidenceRecord = checked.record;
     await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});
+    /* Only a local_capture record may ever be offered to the archive. A
+       restored file stays recovery-only: valid internal hashes do not make it
+       prospective server evidence. The dispatch is fire-and-forget, so a
+       delivery fault cannot fail or delay the verified local write above. */
+    if(origin===EVIDENCE_ORIGINS.LOCAL) await announceEvidenceStored(checked.record);
     return nextIndex;
   }catch(error){if(/quota|storage|space|full/i.test(error.message))recordStage10Diagnostic('storage_full',{recordType:'preDeadlineSnapshot',recordId:checked.record.identity.snapshotId,severity:'error',message:error.message});throw error;}
 }
@@ -192,6 +229,7 @@ async function clearEvidenceStorage(){
   }
   await rawEvidenceDelete(K_EVIDENCE_INDEX);
   await rawEvidenceDelete(K_EVIDENCE_JOURNAL).catch(()=>{});
+  await rawEvidenceDelete(K_EVIDENCE_OUTBOX).catch(()=>{});
   await rawEvidenceDelete(K_EVIDENCE_MANAGER);
   activeEvidenceRecord=null;
   return true;
@@ -425,6 +463,7 @@ export {
   K_EVIDENCE_INDEX,
   K_EVIDENCE_PREFIX,
   K_EVIDENCE_JOURNAL,
+  K_EVIDENCE_OUTBOX,
   MAX_EVIDENCE_IMPORT_BYTES,
   EVIDENCE_ORIGINS,
   AUTO_CAPTURE_PRIORITY,
@@ -441,6 +480,8 @@ export {
   evidenceManagerRef,
   loadEvidenceIndex,
   loadEvidenceRecord,
+  evidenceRetentionPlan,
+  announceEvidenceStored,
   storeEvidenceRecord,
   recoverEvidenceJournal,
   captureWindowPriority,
