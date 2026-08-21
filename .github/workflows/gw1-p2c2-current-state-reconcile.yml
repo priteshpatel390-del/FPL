@@ -1,0 +1,94 @@
+name: Reconcile GW1-P2C2 current-state docs
+
+on:
+  push:
+    branches:
+      - agent/gw1-p2c2-same-site-repository-prep
+    paths:
+      - '.github/workflows/gw1-p2c2-current-state-reconcile.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Remove stale current-state claims without rewriting history
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def sub(path, pattern, replacement, flags=re.S):
+              p=Path(path)
+              text=p.read_text()
+              new,n=re.subn(pattern,replacement,text,count=1,flags=flags)
+              if n != 1:
+                  raise SystemExit(f'{path}: expected one replacement, got {n}')
+              p.write_text(new)
+
+          sub('README.md',
+              r'\*\*GW1-P2 — Browser Evidence Delivery \+ Durable Outbox\*\*.*?Until then, local Stage 10 capture, recovery and owner-controlled export remain the operating pre-deadline evidence path\.',
+              '''**GW1-P2C2 — Same-site custom-domain transport repository preparation** is the current unmerged evidence-custody candidate on draft PR #139. The 21 August physical iPhone Safari diagnostic closed Option A (`github.io` → `workers.dev`) as unsuccessful after the corrected credentialled OPTIONS reached the Worker and returned 204 but the POST never reached it. PR #139 selectively carries forward PR #119's durable outbox/browser-delivery semantics while preparing `https://app.fpltsheet.co.uk` → `https://archive.fpltsheet.co.uk/v1/evidence/predeadline`. The hosts are same-site but cross-origin, so exact-origin credentialled CORS and Cloudflare Access remain mandatory.\n\nPR #139 is repository preparation only and is **not accepted or merged**. The root `CNAME` prepares the reviewed GitHub Pages hostname and the evidence Wrangler config declares the future archive Worker Custom Domain, but no live Pages, DNS, Worker Custom Domain, Access or deployment change is claimed. Local Stage 10 capture, recovery and owner-controlled export remain the operating fallback.''')
+          sub('README.md',
+              r'GitHub Pages serves `main` from `/` and was observed built after the temporary PR #121 acceptance-preparation deployment was restored\.',
+              '''The current live GitHub Pages deployment remains the existing `main` deployment until a separately approved rollout. The PR #139 repository candidate prepares `app.fpltsheet.co.uk` through the reviewed root `CNAME`; repository configuration is not evidence that the custom hostname is live.''', flags=0)
+
+          sub('CLAUDE.md',
+              r'\*\*Stream 2 — automatic cloud evidence custody\. Still unaccepted, and not a GW1 blocker\.\*\*.*?### Planning record — External Intelligence Foundation, documentation only',
+              '''**Stream 2 — automatic cloud evidence custody. GW1-P2C2 repository candidate; still unaccepted live, and not a GW1 blocker.**\n\nThe 21 August physical iPhone Safari diagnostic exhausted Option A (`github.io` → `workers.dev`): PR #137's corrected credentialled OPTIONS reached the evidence Worker and returned 204, but the POST never reached the Worker. The result proves the earlier CORS omission and its correction; it does not prove one remaining Safari/Access cause and says nothing about D1/R2 ingestion because POST processing was not reached.\n\nThe approved repository-only successor is draft PR #139, which selectively carries forward PR #119's durable local outbox, canonical-byte delivery, content-hash idempotency, bounded retry and fail-closed retention semantics. The target is `https://app.fpltsheet.co.uk` → `https://archive.fpltsheet.co.uk/v1/evidence/predeadline`. The root `CNAME` and evidence Wrangler Custom Domain declaration are reviewed preparation only; no live DNS, Pages, Worker Custom Domain, Access or deployment change is claimed. Both Workers temporarily retain the exact old GitHub Pages origin beside the new app origin for rollback; no wildcard is permitted.\n\nUntil this architecture is separately deployed and physically accepted, **local Stage 10 capture, recovery and owner-controlled export remain the operating fallback**. Cloud custody is still a one-way side effect and never a recommendation dependency.\n\n### Planning record — External Intelligence Foundation, documentation only''')
+          sub('CLAUDE.md',
+              r'### Immediate operating state\n\n.*?The first relevant 2026/27 international break is \*\*GW5 → GW6\*\*, not GW2 → GW3\. GW1–GW5 is the initial stability/prospective-evidence period and the GW5 → GW6 break is the first major evidence-led review opportunity\. This planning correction does not pull any model or provider change forward\.',
+              '''### Immediate operating state\n\nThe immediate evidence-custody sequence is now:\n\n1. Complete exact-final-head verification and review of draft PR #139.\n2. Do **not** merge or change live infrastructure until Pritesh explicitly approves the rollout.\n3. Under a later approval, configure/verify `app.fpltsheet.co.uk` and `archive.fpltsheet.co.uk` from the reviewed repository representation while preserving Access and exact CORS.\n4. Perform one controlled invalid physical iPhone Safari transport probe with Prevent Cross-Site Tracking ON. The later acceptance requires observable `Origin: https://app.fpltsheet.co.uk`, expected `Sec-Fetch-Site: same-site`, OPTIONS 204, a matching POST reaching the Worker, deterministic `422 envelope_schema`, and Teamsheet reading the response. Do not use the genuine GW1 Stage 10 record as a transport test.\n5. Only after successful acceptance decide whether the legacy GitHub Pages rollback origin can be removed.\n6. Review accumulated prospective evidence at the **GW5 → GW6** international break.\n\nThe bounded outbox `pinLimit` remains four. The usable iPhone storage ceiling is not evidenced; do not raise the cap or introduce another persistence technology without separate approval. No model/provider work is pulled forward by this transport sequence.\n\nThe first relevant 2026/27 international break is **GW5 → GW6**, not GW2 → GW3. GW1–GW5 is the initial stability/prospective-evidence period and the GW5 → GW6 break is the first major evidence-led review opportunity. This planning correction does not pull any model or provider change forward.''')
+          sub('CLAUDE.md',
+              r'That GW1-P1 closeout sequence is complete and PR #118 is merged\. The GW1-P2 closeout sequence is:.*?\*\*PR #119 stays draft and unmerged until Pritesh completes that physical acceptance and explicitly approves it\.\*\*',
+              '''That GW1-P1 closeout sequence is complete and PR #118 is merged. PR #119 remains a stale, unmerged source of approved outbox semantics and must not be merged wholesale. The active repository candidate is GW1-P2C2 draft PR #139; its next gate is exact-final-head repository verification and owner review, followed only under separate approval by live custom-domain rollout and physical iPhone Safari acceptance.''')
+
+          sub('docs/PROJECT_CONTEXT.md',
+              r'### Cloud evidence custody — a separate, unaccepted stream\n\n.*?### Owner-performed live acceptance preparation',
+              '''### Cloud evidence custody — GW1-P2C2 repository candidate, live acceptance still outstanding\n\nThe 21 August Outcome B diagnostic exhausted the original Option A cross-site topology after the remediated OPTIONS reached the Worker with HTTP 204 but no POST followed. PR #119 remains draft/open at its live GitHub head and is not a merge candidate; only its approved transport-independent outbox semantics are selectively carried forward.\n\nDraft PR #139 is the current repository candidate. It prepares the exact app/archive sibling hosts, keeps PR #137 as the sole credentialled-CORS adapter authority, retains both exact application origins temporarily for rollback, adds a reviewed root `CNAME` for `app.fpltsheet.co.uk`, and declares `archive.fpltsheet.co.uk` as the future Worker Custom Domain in the evidence Wrangler configuration. These are repository facts, not live-hosting facts.\n\nCloud custody remains non-blocking and local Stage 10 capture/recovery/export remains the operating fallback until the new topology is separately deployed and physically accepted.\n\n### Historical Option A owner-performed live acceptance preparation''')
+
+          sub('docs/ARCHITECTURE.md',
+              r'\*\*GW1-P2 — Browser evidence delivery and durable outbox\*\*.*?### External intelligence boundary — no shadow layer exists',
+              '''**GW1-P2C2 — Same-site custom-domain transport** is the current unmerged repository candidate in draft PR #139. It selectively reuses PR #119's durable outbox/delivery semantics while replacing the browser archive target with the exact sibling-domain endpoint. The application remains on GitHub Pages and the root `CNAME` prepares `app.fpltsheet.co.uk`; the evidence Worker remains the same service and `evidence-wrangler.jsonc` declaratively prepares `archive.fpltsheet.co.uk` as a Worker Custom Domain. `workers_dev:true` stays during migration, but the generated browser configuration and CSP no longer target the archive `workers.dev` origin.\n\nBoth Worker repository allowlists contain exactly the legacy GitHub Pages origin and the intended app custom origin during the rollback window. PR #137 remains the single adapter authority for credential permission. D1/R2 bindings, archive core, Stage 10 schema/canonicalisation and every recommendation/model/provider path are unchanged. No repository statement here proves that DNS, TLS, Pages routing, Access or the Worker Custom Domain is live.\n\n### External intelligence boundary — no shadow layer exists''')
+
+          sub('docs/DECISIONS.md',
+              r'\*\*Current status:\*\* delivered on draft PR #119.*?See \[GW1-P2 Browser evidence delivery\]\(GW1-P2-BROWSER-EVIDENCE-DELIVERY\.md\)\.',
+              '''**Historical implementation status:** PR #119 implemented the durable-outbox/browser-delivery candidate and remains draft/open; its live head and verification evidence must be read from GitHub rather than the earlier frozen SHA. The 21 August physical diagnostic later exhausted its Option A `github.io` → `workers.dev` transport after corrected OPTIONS returned 204 but POST never reached the Worker. The approved durable-outbox semantics survive and are selectively carried into D-GW1P2C2 above; PR #119 must not be merged wholesale. See [GW1-P2 Browser evidence delivery](GW1-P2-BROWSER-EVIDENCE-DELIVERY.md).''')
+
+          sub('docs/ROADMAP.md',
+              r'GW1-P1 is complete and merged through PR #118\. GW1-P2 is a separate, still-unaccepted stream on \*\*draft PR #119\*\*.*?\*\*it does not gate GW1\*\*\.',
+              '''GW1-P1 is complete and merged through PR #118. The original GW1-P2 Option A candidate on draft PR #119 is superseded as the active transport path after the 21 August physical failure. Its durable outbox semantics remain approved and are selectively carried into **GW1-P2C2 draft PR #139**, the current repository-only candidate. Cloud custody still does not gate GW1.''')
+          sub('docs/ROADMAP.md',
+              r'### GW1-P2 live acceptance — a separate gating stream\n\n.*?### Evidence-led review',
+              '''### GW1-P2C2 repository and later live-acceptance stream\n\n7. Complete exact-final-head repository verification and owner review of draft PR #139.\n8. Do not merge or alter live infrastructure before explicit owner approval.\n9. Under a later approval, configure the reviewed Pages/Worker custom domains and preserve Access plus both exact migration origins.\n10. Run one controlled invalid physical iPhone Safari transport probe under normal privacy settings; require same-site request evidence, OPTIONS 204, a matching POST, deterministic `422 envelope_schema`, and a response readable by Teamsheet.\n11. Only after successful acceptance consider removing the legacy GitHub Pages rollback origin.\n\nThis stream runs alongside normal GW1 operation. Local capture/export remains available and recommendations never depend on archive availability.\n\n### Evidence-led review''')
+          sub('docs/ROADMAP.md',
+              r'### GW1-P2 acceptance boundary\n\n.*?The bounded outbox `pinLimit` remains conservative at four\. The usable iPhone storage ceiling is not evidenced, so that value is not claimed to be proven safe and must not be raised in this checkpoint\.',
+              '''### GW1-P2C2 acceptance boundary\n\nThe old cross-site acceptance gate has been executed and failed: on 21 August the corrected credentialled OPTIONS reached the Worker and returned 204, while POST did not reach the Worker. Option A is exhausted; do not resume speculative CORS/SameSite tweaking on that topology.\n\nThe open acceptance gate now belongs to the sibling-domain architecture and occurs only after separately approved live rollout. Repository preparation proves configuration/build/security contracts, not live DNS/TLS/Access/Safari behaviour. The bounded outbox `pinLimit` remains conservative at four. The usable iPhone storage ceiling is not evidenced, so that value is not claimed to be proven safe and must not be raised in this checkpoint.''')
+
+          sub('docs/KNOWN_LIMITATIONS.md',
+              r'## Current GW1-P2 evidence boundary\n\n.*?## Historical — 11 August 2026 A3 documentation-closeout evidence boundary',
+              '''## Current GW1-P2C2 evidence boundary\n\nGW1-P1 is merged and provides the existing authenticated archive backend. The original Option A browser transport is no longer an unknown: the 21 August physical iPhone Safari diagnostic showed the corrected credentialled OPTIONS reaching the Worker with HTTP 204 while the subsequent POST never reached it. That does **not** identify a single remaining browser/Access root cause and provides no evidence against D1/R2 or POST validation.\n\nDraft PR #139 is the repository-only sibling-domain candidate. `app.fpltsheet.co.uk` is represented by the reviewed root `CNAME`; `archive.fpltsheet.co.uk` is declared as the future evidence Worker Custom Domain; and both Worker configs temporarily allow exactly the legacy and new application origins. None of those repository facts proves live DNS, certificates, Pages routing, Access cookies or physical Safari behaviour.\n\nThe outbox pin limit remains four and the usable storage ceiling on the owner's iPhone remains unmeasured. iOS may purge script-writable local data after periods without interaction, so a pending record can still be lost before archive custody. Provider retention remains fail-closed, cloud custody remains a one-way side effect, and local Stage 10 recovery/export is still the operational fallback.\n\nLive custom-domain rollout and the controlled invalid physical iPhone transport probe are later approval gates. Removal of the legacy application origin is also a later approved cleanup, not part of this repository candidate.\n\n## Historical — 11 August 2026 A3 documentation-closeout evidence boundary''')
+
+          sub('docs/SECURITY.md',
+              r'PR #137\'s Worker adapter remains the single browser CORS credential authority\..*?Live DNS/Access/Custom Domain state is outside repository evidence and requires separate verification\.',
+              '''PR #137's Worker adapter remains the single browser CORS credential authority. GW1-P2C2 does not weaken archive JWT validation, D1/R2 privacy, provider-retention fail-closed behaviour or the separation between cloud custody and recommendations. Both the FPL gateway and evidence archive repository configs use the same two exact application origins during migration; this is temporary rollback support, not trust of arbitrary `fpltsheet.co.uk` subdomains. The root `CNAME` prepares the exact Pages hostname and the evidence Wrangler config declares exactly `archive.fpltsheet.co.uk` as a future Worker Custom Domain while keeping preview URLs disabled. Live DNS/Pages/Access/Custom Domain state is outside repository evidence and requires separate verification.''')
+          sub('docs/SECURITY.md',
+              r'\*\*Owner confirmation of that live configuration is recorded\.\*\*.*?`TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must never be printed, pasted or logged while configuring or testing it\.',
+              '''**Historical Option A live configuration evidence is recorded.** Pritesh enabled Access “Bypass OPTIONS requests to origin” with no Access-layer allowed-origin response, and top-level Access/health checks succeeded. The 21 August diagnostic then proved that the PR #137 preflight correction worked but the cross-site POST still did not reach the Worker. That closes Option A rather than leaving it as a future test. The sibling-domain candidate must preserve the same Access boundary and exact credentialled-CORS policy; whether the Access session behaves correctly in the new same-site topology remains a later physical acceptance question. `TEAM_DOMAIN`, `POLICY_AUD`, Access JWTs and cookies must never be printed, pasted or logged while configuring or testing it.''')
+
+          for path in ['README.md','CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ARCHITECTURE.md','docs/DECISIONS.md','docs/ROADMAP.md','docs/KNOWN_LIMITATIONS.md','docs/SECURITY.md']:
+              if '252c5eba0381c8aa5afb7bda1686dd102326c6df' in Path(path).read_text() and path in ['README.md','CLAUDE.md','docs/PROJECT_CONTEXT.md','docs/ROADMAP.md']:
+                  raise SystemExit(f'{path}: stale frozen PR #119 head remains in a current-state document')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md CLAUDE.md docs/PROJECT_CONTEXT.md docs/ARCHITECTURE.md docs/DECISIONS.md docs/ROADMAP.md docs/KNOWN_LIMITATIONS.md docs/SECURITY.md
+          git diff --cached --check
+          git commit -m 'docs: reconcile GW1-P2C2 canonical current state'
+          git push origin HEAD:agent/gw1-p2c2-same-site-repository-prep
