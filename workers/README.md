@@ -60,6 +60,9 @@ Both Workers are zero-dependency ES modules. Relevant contracts are exercised by
 - `tests/evidence-archive-layout.test.mjs`
 - `tests/gw1-p2d-cors-remediation.test.mjs`
 - `tests/gw1-p2c2-same-site-transport.test.mjs`
+- `tests/evidence-delivery.test.mjs`
+
+`tests/gw1-p2c2-same-site-transport.test.mjs` builds its Worker environment from the Wrangler `vars` in this directory, so a configuration that stopped carrying the exact application origin fails on behaviour rather than passing as unexercised text.
 
 Repository tests can prove exact configuration, CORS contracts, build/CSP output, Worker mirror parity and unchanged bindings. They cannot prove live DNS/TLS, Access cookie behaviour or physical Safari transmission. No Worker deployment, Custom Domain activation, DNS change, Access change, D1/R2 change or physical iPhone test is authorised or performed by GW1-P2C2 repository preparation.
 

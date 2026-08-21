@@ -30,6 +30,10 @@ Both Worker repository allowlists temporarily contain exactly two application or
 
 PR #119 is not merged wholesale. Only its transport-independent browser evidence outbox/delivery behaviour is carried forward: immutable local canonical record, content-hash idempotency, retry/backoff, Access identity-gap classification, fail-closed provider retention, bounded pinning and generic user-facing status. PR #137 remains the single Cloudflare adapter authority for credentialled-CORS response permission; its header is not duplicated into the archive core.
 
+`src/ui/evidence-delivery.mjs`, `src/evidence/outbox.mjs` and `src/ui/evidence.mjs` are **byte-identical to PR #119**, so the carried-forward semantics are the approved ones rather than a re-implementation. Only the transport target moved.
+
+PR #119's behavioural suite was initially not carried across with them, which left the delivery module covered by source-level assertions alone. It has been restored as `tests/evidence-delivery.test.mjs` with exactly two assumptions adapted, both consequences of Option A being exhausted: the ingestion endpoint and Access sign-in origin are now `archive.fpltsheet.co.uk`, and the emitted-endpoint assertion reads the generated deployable rather than the `app.html` template, because `build.mjs` deliberately still tolerates the legacy value in the template during migration and rewrites it on the way out. `workers.dev` is deliberately retained in that suite's forbidden-persistence list so the exhausted origin cannot reappear in stored delivery state.
+
 ## Migration and rollback
 
 The Official FPL gateway repository configuration accepts exactly two application origins during migration: the existing `https://priteshpatel390-del.github.io` origin and the intended `https://app.fpltsheet.co.uk` origin. This is temporary rollback support. It is not a wildcard and does not change Official FPL provider semantics.
@@ -52,7 +56,14 @@ Rollback before live acceptance is therefore straightforward: do not activate, o
 
 ## Repository validation
 
-The source candidate completed the normal `./run-tests.sh` before the final Pages/Worker-config hardening. The permanent Verify Teamsheet workflow on the exact final head is the authoritative final count and must pass committed provenance, the complete suite, two deterministic builds, root/deployable equality, exact build identity and production-output preservation. Repository validation cannot establish live DNS/Access routing or physical Safari behaviour.
+The candidate tree runs **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. The permanent Verify Teamsheet workflow on the exact final head is the authoritative final count and must pass committed provenance, the complete suite, two deterministic builds, root/deployable equality, exact build identity and production-output preservation.
+
+Coverage is behavioural rather than textual where the behaviour can be executed:
+
+- `tests/evidence-delivery.test.mjs` drives the real delivery module against injected transports and asserts that canonical Stage 10 bytes are posted unchanged and are never rewritten locally, that the idempotency key is the content hash, that a pending record survives a simulated restart without being restamped or regenerated, that Access identity gaps stay distinct from contract rejection, that a Worker configuration rejection pauses rather than hammering a closed service, that 5xx/429 retry with bounded backoff while 4xx is terminal, that provider-retention material is blocked locally and never uploaded or stripped, that concurrent flushes send a record at most once, and that no archive fault of any kind mutates the stored canonical record.
+- `tests/gw1-p2c2-same-site-transport.test.mjs` drives both Workers from their own deployed Wrangler `ALLOWED_ORIGINS` values. Neither Worker hard-codes the new application origin — `DEFAULT_ALLOWED_ORIGINS` in both sources remains the single legacy GitHub Pages origin — so this proves the deployed configuration actually admits `https://app.fpltsheet.co.uk` with an exact-origin credentialled preflight, that every other origin (foreign, plaintext, suffix-lookalike, apex and preview/version hostname) stays fail-closed with no `Access-Control-Allow-Credentials`, that the approved origin unlocks only the exact ingestion path and method, and that the Official FPL gateway admits the same origin while keeping its read-only `GET, HEAD, OPTIONS` contract and granting no credentials.
+
+Repository validation cannot establish live DNS/TLS, Cloudflare Access cookie behaviour, actual Worker Custom Domain routing or physical Safari transmission.
 
 ## Live rollout gate — not approved by this document
 
