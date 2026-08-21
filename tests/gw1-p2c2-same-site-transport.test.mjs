@@ -38,7 +38,9 @@ test('GW1-P2C2 production build emits only the approved sibling-subdomain archiv
 });
 
 test('GW1-P2C2 keeps both Worker migration allowlists exact and rollback-safe',()=>{
-  for(const path of ['workers/wrangler.jsonc','workers/evidence-wrangler.jsonc']){
+  // The deployable archive build root is what Cloudflare actually reads, so the exact
+  // migration allowlist is pinned there too, not only in the verified source config.
+  for(const path of ['workers/wrangler.jsonc','workers/evidence-wrangler.jsonc','workers/evidence-archive/wrangler.jsonc']){
     const origins = exactMigrationOrigins(path);
     assert.deepEqual(origins,[LEGACY_APP_ORIGIN,APP_ORIGIN],path);
     assert.equal(origins.some(origin=>origin.includes('*')),false,path);
