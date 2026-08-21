@@ -1,0 +1,51 @@
+name: Stage GW1-P2C2 build artifact
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gw1-p2c2-build-artifact.yml'
+      - 'app.html'
+      - 'build.mjs'
+      - 'build-utils.mjs'
+      - 'src/**'
+      - 'tests/**'
+      - 'workers/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage:
+    name: Build and test source revision
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Run normal build and complete test suite
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
+          ./run-tests.sh
+      - name: Rebuild and preserve exact outputs
+        run: |
+          set -eu
+          node build.mjs
+          cmp dist/index.html index.html
+      - name: Upload staged production outputs
+        uses: actions/upload-artifact@v6
+        with:
+          name: gw1-p2c2-staged-${{ env.BUILD_COMMIT }}
+          path: |
+            dist/app.bundle.js
+            dist/index.html
+            dist/manifest.json
+            index.html
+          if-no-files-found: error
+          retention-days: 1
