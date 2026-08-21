@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   stage:
@@ -49,3 +49,13 @@ jobs:
             index.html
           if-no-files-found: error
           retention-days: 1
+      - name: Commit exact generated outputs
+        if: github.event_name == 'pull_request'
+        run: |
+          set -eu
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/app.bundle.js dist/index.html dist/manifest.json index.html
+          git diff --cached --quiet && { echo 'Expected generated outputs to differ from the committed baseline'; exit 1; }
+          git commit -m 'build: generate GW1-P2C2 deployables'
+          git push origin "HEAD:${{ github.head_ref }}"
