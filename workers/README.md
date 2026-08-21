@@ -24,7 +24,7 @@ The evidence Wrangler configuration keeps the accepted Access-protected producti
 
 GW1-P1 is complete and merged through PR #118 at `main` `58b834a1824c4977a442e7b3e309e2bbf3d05da1`. The backend foundation received live production functional acceptance on 11 August 2026. The Teamsheet browser was deliberately not connected **by GW1-P1 itself**.
 
-GW1-P2 is the separate active browser-delivery/outbox candidate in draft PR #119. Its repository implementation connects the browser capture path to this Worker, but automatic cross-site archive delivery remains **unaccepted** until the genuine Stage 10 physical iPhone Safari test succeeds with Prevent Cross-Site Tracking ON. Owner-performed preparation has confirmed the Access OPTIONS-bypass configuration, top-level Access sign-in and `/v1/health`; those facts do not prove the background credentialled POST.
+GW1-P2 is the separate browser-delivery/outbox candidate in draft PR #119. Its durable-outbox and canonical-byte delivery principles remain the approved browser-delivery semantics, but the original cross-site `github.io -> workers.dev` transport is no longer the target architecture after the 21 August physical diagnostic described below. PR #119 remains stale and must not be merged wholesale.
 
 ### GW1-P2D credentialled-CORS remediation
 
@@ -32,13 +32,15 @@ A physical iPhone Safari diagnostic on 20 August 2026 isolated the failed signed
 
 The P2D-P3 remediation keeps the existing exact origin allowlist and adds `Access-Control-Allow-Credentials: true` only when the core response has already granted that exact approved origin. This is a browser CORS permission, not authentication: Cloudflare Access remains mandatory on non-OPTIONS routes, wildcard origins remain forbidden, and missing or foreign origins receive no credential grant. No Access policy, cookie, route, D1/R2 binding, evidence schema or Stage 10 record changes are part of this repair.
 
-This source change does not by itself prove Safari will transmit the Access credential. A live Worker deployment and a separate physical diagnostic retest are still required before Option A can be called viable.
+On 21 August 2026 the exact remediated Worker version `301ba53b-0fd1-4174-a4d6-d6f162b3f03c` was deployed for the controlled physical iPhone Safari diagnostic with Prevent Cross-Site Tracking ON. Diagnostic `7e5212a2` produced exactly one matching Worker event: approved-origin `OPTIONS /v1/evidence/predeadline?probe=7e5212a2` requesting `POST` and `content-type`, with `Sec-Fetch-Site: cross-site`; the Worker returned `204`. No corresponding `POST` reached the Worker and Teamsheet received no HTTP response/status. This confirms the credentialled-CORS defect and its preflight correction, but it does **not** prove Safari third-party-cookie behaviour is the sole remaining cause. It also provides no evidence against D1, R2, archive validation, Stage 10 canonicalisation or POST processing because the POST never reached the Worker.
+
+Option A is therefore exhausted for the physical iPhone Safari acceptance target. Further speculative CORS/SameSite changes on the cross-site `github.io -> workers.dev` topology are not approved. The next approved repository checkpoint is GW1-P2C2, preparing the sibling-subdomain same-site/cross-origin design `https://app.fpltsheet.co.uk -> https://archive.fpltsheet.co.uk`; that later design still requires exact-origin credentialled CORS and Cloudflare Access. Repository preparation is not proof that the new live topology works in Safari; live DNS/hosting/Access deployment and a later physical acceptance test remain separate approval gates.
 
 See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md` and `docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md`.
 
 ## Allowed origins
 
-Both Workers default to the production GitHub Pages origin `https://priteshpatel390-del.github.io`. Additional review origins, where a checkpoint explicitly allows them, must be supplied as exact origins rather than wildcards.
+Both Workers currently default to the production GitHub Pages origin `https://priteshpatel390-del.github.io`. Additional review or migration origins, where a checkpoint explicitly allows them, must be supplied as exact origins rather than wildcards.
 
 ## Verification
 
