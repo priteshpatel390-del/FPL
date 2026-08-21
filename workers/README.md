@@ -1,5 +1,13 @@
 # Teamsheet Cloudflare Workers
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## GW1-P2C2 repository target — 21 August 2026
+
+The next repository candidate uses `https://archive.fpltsheet.co.uk/v1/evidence/predeadline` for browser evidence delivery and `https://app.fpltsheet.co.uk` as the intended application origin. These are planned sibling custom domains only; this repository change does **not** prove DNS, Worker Custom Domain, Cloudflare Access or GitHub Pages configuration has been changed. The existing `workers.dev` deployment remains the historical/live record until a separately approved rollout.
+
+The Official FPL gateway repository config temporarily retains the current GitHub Pages origin and adds the new app origin as an exact migration/rollback allowlist. The evidence archive still requires exact-origin credentialled CORS and PR #137 remains the adapter-level authority for `Access-Control-Allow-Credentials: true`. Do not add wildcard origins, expose Access secrets, or treat repository configuration as evidence of deployed Cloudflare state.
+
+
 This directory contains two deliberately separate Cloudflare service boundaries.
 
 ## Official FPL gateway

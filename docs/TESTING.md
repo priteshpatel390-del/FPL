@@ -1,5 +1,13 @@
 # TESTING.md
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## GW1-P2C2 candidate evidence — 21 August 2026
+
+`main` retains the canonical **907/907** merged baseline until an approved merge. On the GW1-P2C2 branch, the normal `./run-tests.sh` completed with **918 tests, 918 passed, 0 failed, 0 skipped, 0 cancelled** before generated deployment bytes were committed. Focused coverage pins the exact custom archive endpoint/CSP, the dual exact-origin migration allowlist, credentialled browser delivery semantics and PR #137's single adapter-level credential authority; the carried-forward outbox tests cover deterministic persistence/state-machine behaviour.
+
+This branch result is repository evidence only. Final PR acceptance still requires the permanent Verify Teamsheet workflow on the exact final head, including committed provenance, the complete suite, two deterministic builds, root/deployable equality, exact build identity and preservation of committed production outputs. No repository test substitutes for the later physical iPhone Safari custom-domain acceptance.
+
+
 ## Current repository baseline
 
 **907 tests, 907 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions, and 904 was the baseline before the pre-GW1 housekeeping closeout added its own. This document describes the tree it lives in and does not restate the current `main` commit SHA.

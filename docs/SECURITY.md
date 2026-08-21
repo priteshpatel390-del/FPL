@@ -1,5 +1,13 @@
 # SECURITY.md
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## GW1-P2C2 transport security boundary — 21 August 2026
+
+The repository candidate narrows browser archive delivery to the exact endpoint `https://archive.fpltsheet.co.uk/v1/evidence/predeadline` from the intended application origin `https://app.fpltsheet.co.uk`. Sibling hosts are same-site but cross-origin, so the archive must still return the exact approved `Access-Control-Allow-Origin` together with `Access-Control-Allow-Credentials: true`; `*`, preview wildcards and reflective arbitrary origins remain forbidden. Cloudflare Access remains an authentication boundary and its JWTs/cookies, audience values and team-domain details must never be persisted, rendered or logged by Teamsheet.
+
+PR #137's Worker adapter remains the single browser CORS credential authority. GW1-P2C2 does not weaken archive JWT validation, D1/R2 privacy, provider-retention fail-closed behaviour or the separation between cloud custody and recommendations. The dual Official FPL gateway allowlist is temporary exact-origin rollback support, not a trust expansion to arbitrary `fpltsheet.co.uk` subdomains. Live DNS/Access/Custom Domain state is outside repository evidence and requires separate verification.
+
+
 ## 12 August 2026 — external intelligence adds no origin, key or secret
 
 The External Intelligence Foundation checkpoint is documentation only. It adds **no** network origin, endpoint, credential, API key, relay, storage surface or CSP change, and the deployed application is byte-unchanged. The generated single script and style remain SHA-256 locked by CSP, so no researched source could be contacted from the current build even if someone tried.

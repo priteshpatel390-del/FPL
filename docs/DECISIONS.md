@@ -1,5 +1,17 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## 21 August 2026 — GW1-P2C2 sibling same-site custom-domain transport
+
+**Decision:** stop iterating the failed `github.io` → `workers.dev` Option A transport after the controlled physical diagnostic in which the corrected OPTIONS preflight reached the Worker and returned 204 but the POST never arrived. Prepare, in the repository only, sibling hosts `app.fpltsheet.co.uk` and `archive.fpltsheet.co.uk`.
+
+**Preserved behaviour:** immutable Stage 10 evidence, content-hash identity, durable local outbox, retry/idempotency/fail-closed retention semantics, Access authentication, exact credentialled CORS, and complete separation from recommendation/model/provider calculations. PR #119 is not merged wholesale; only its transport-independent browser outbox/delivery work is carried forward. PR #137 remains the sole adapter-level credentialled-CORS authority.
+
+**Migration/rollback:** the Official FPL gateway exact allowlist may contain both `https://priteshpatel390-del.github.io` and `https://app.fpltsheet.co.uk` during migration. The production build candidate emits only `https://archive.fpltsheet.co.uk/v1/evidence/predeadline` for archive delivery; the exhausted archive `workers.dev` origin is not retained in generated CSP.
+
+**Not decided or approved here:** live DNS, Pages domain activation, Worker Custom Domain/Access deployment, removal of the rollback origin, physical Safari acceptance, any provider/data-source addition, or any model/calculation change.
+
+
 ## D-XIF1 · 2026-08-12 · Accepted · External intelligence is provider-neutral and shadow-only before it can ever influence a recommendation
 
 **Decision:** future external football information enters Teamsheet only through a provider-neutral normalised observation contract, and its first implementation must be `shadow_only`. The required flow is `external fact -> validate -> normalise -> rights/retention gate -> shadow store -> evaluate -> separate approval -> optional production use`. There is no path from shadow storage into fixture context, expected minutes, scoring, best XI, captaincy, transfers, simulation, rank or Mini-Leagues until a later owner-approved change explicitly creates one, and a shadow failure must not alter production behaviour or manufacture Provider Health.

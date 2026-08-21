@@ -1,5 +1,13 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## GW1-P2C2 limitations — 21 August 2026
+
+The sibling-domain repository candidate does **not** prove that the live custom-domain transport works on iPhone Safari. The only controlled physical result so far is the superseded Option A topology: credentialled OPTIONS reached the Worker and returned 204 after PR #137, while POST never reached the Worker. No conclusion about D1/R2 ingestion can be drawn from that missing POST, and no single remaining browser/Access cause has been proven.
+
+`app.fpltsheet.co.uk` and `archive.fpltsheet.co.uk` are repository targets until separately deployed and verified. The existing GitHub Pages origin is intentionally retained in the Official FPL gateway allowlist as a migration rollback path; removing it requires later evidence and approval. Cloud custody remains non-blocking and local evidence/recovery/export remains the operational fallback.
+
+
 ## Current GW1 readiness limitation boundary
 
 GW1 readiness remediation is complete through PR #121. The readiness audit found **zero blockers**; its two should-fix items are closed and neither remains an open limitation. Three narrow limitations belong to the pre-GW1 Transfers guard itself and are recorded as `GW1R-1` to `GW1R-3` in the register below: the window depends on the device clock, it is re-evaluated on render rather than on a timer, and its after-deadline transition has automated evidence only because no approved non-production deadline-override mechanism exists.

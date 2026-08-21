@@ -1,5 +1,13 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+## Current gate — GW1-P2C2, 21 August 2026
+
+Option A cross-site acceptance is closed as unsuccessful after the 21 August iPhone Safari diagnostic: corrected OPTIONS reached the Worker (204), but POST did not reach it. The next sequence is deliberately gated: **(1)** complete and review draft PR #139 repository preparation; **(2)** obtain explicit approval for live custom-domain rollout; **(3)** configure/verify `app.fpltsheet.co.uk` and `archive.fpltsheet.co.uk` without weakening Access/CORS; **(4)** perform one controlled physical iPhone Safari acceptance under normal privacy settings; **(5)** only then decide whether GW1-P2 is accepted and whether the legacy rollback origin can be removed.
+
+Do not pull post-GW1 provider/model work into this sequence. Local Stage 10 evidence/recovery/export remains the fallback and GW1 recommendation behaviour does not depend on cloud custody.
+
+
 Purpose: open, next and deferred work only. Historical stage and merge records are indexed in [Historical Records](HISTORICAL_RECORDS.md). Last reconciled: 12 August 2026.
 
 ## Current sequence

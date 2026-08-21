@@ -1,5 +1,15 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- GW1-P2C2-CURRENT-2026-08-21 -->
+### Current checkpoint — 21 August 2026: GW1-P2C2 repository preparation
+
+**Supersedes older GW1-P2 text below where it describes the physical cross-site POST as still pending.** The 21 August controlled iPhone Safari diagnostic on the deployed PR #137 CORS remediation reached the evidence Worker with the credentialled OPTIONS request and received HTTP 204, but the subsequent POST never reached the Worker and Teamsheet received no HTTP status. That result proves the earlier missing `Access-Control-Allow-Credentials: true` defect was real and was corrected; it does **not** prove a single browser/Access root cause for the remaining cross-site failure. Option A (`github.io` → `workers.dev`) is therefore exhausted rather than accepted.
+
+The approved next checkpoint is **GW1-P2C2 — sibling same-site custom-domain transport repository preparation**, implemented only on draft PR #139. The intended browser origins are `https://app.fpltsheet.co.uk` and `https://archive.fpltsheet.co.uk`; they are same-site but remain cross-origin, so exact-origin credentialled CORS remains mandatory. PR #139 selectively carries forward PR #119's durable outbox/browser-delivery semantics, preserves PR #137 as the single credentialled-CORS adapter authority, emits the exact archive ingestion endpoint `https://archive.fpltsheet.co.uk/v1/evidence/predeadline`, and temporarily keeps the existing GitHub Pages origin beside the new app origin in the Official FPL gateway allowlist for rollback.
+
+**No live custom-domain architecture is claimed.** DNS, GitHub Pages custom-domain configuration, Cloudflare Worker Custom Domain/Access configuration, deployment and physical iPhone Safari acceptance are separate future approval gates. `main` remains the operating source of truth until an approved merge. No model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League calculation changed in GW1-P2C2.
+
+
 ## Research programme control centre — mandatory before external-intelligence work
 
 The permanent pre-GW1 and later external-intelligence research programme is indexed at [docs/research/README.md](docs/research/README.md). The original [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md) remains the unmoved historical/root investigation; the research index does not replace or duplicate it.
