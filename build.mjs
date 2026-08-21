@@ -23,11 +23,13 @@ const ORDER = [
   'src/model/squad-simulation.mjs', 'src/model/transfers.mjs', 'src/model/walk-forward.mjs',
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
-  'src/evidence/snapshot.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
+  'src/evidence/snapshot.mjs', 'src/evidence/outbox.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
   'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/views.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
-  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
+  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/evidence-delivery.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
+
+const EVIDENCE_ARCHIVE_ENDPOINT = 'https://archive.fpltsheet.co.uk/v1/evidence/predeadline';
 
 const transferWorkerModelSource = stripModuleSyntax(readFileSync('src/model/transfers.mjs', 'utf8'));
 const moduleInputs = [];
@@ -73,6 +75,22 @@ if(gatewayMeta[0][1].trim()){
     throw new Error('Teamsheet FPL gateway meta content must be an exact HTTPS /fpl base URL');
   gatewayOrigin = gatewayUrl.origin;
 }
+
+/* GW1-P2C2 — archive transport is build-owned so the production artefact has
+   one exact reviewed endpoint while app.html remains a generic source template.
+   Sibling subdomains are same-site but still cross-origin, so the archive
+   origin is also admitted to connect-src and exact-origin credentialled CORS
+   remains mandatory at the Worker. */
+const evidenceMeta = [...template.matchAll(/<meta\s+name=["']teamsheet-evidence-archive["']/g)];
+if(evidenceMeta.length) throw new Error('app.html must not hard-code a Teamsheet evidence archive meta tag');
+const evidenceUrl = new URL(EVIDENCE_ARCHIVE_ENDPOINT);
+if(evidenceUrl.protocol !== 'https:' || evidenceUrl.username || evidenceUrl.password || evidenceUrl.search || evidenceUrl.hash ||
+   evidenceUrl.hostname !== 'archive.fpltsheet.co.uk' || evidenceUrl.pathname !== '/v1/evidence/predeadline')
+  throw new Error('Teamsheet evidence archive endpoint must be the exact approved custom-domain ingestion URL');
+if(evidenceUrl.hostname.includes('*') || evidenceUrl.hostname.endsWith('.workers.dev'))
+  throw new Error('Teamsheet evidence archive endpoint must not use a wildcard, preview or workers.dev hostname');
+const evidenceArchiveOrigin = evidenceUrl.origin;
+
 const scriptContent = '\n' + bundle + '\n';
 const scriptHash = sha256Csp(scriptContent);
 const styleHash = sha256Csp(styleContent);
@@ -83,6 +101,7 @@ const connectOrigins = [
   'https://raw.githubusercontent.com', 'https://api.anthropic.com'
 ];
 if(gatewayOrigin) connectOrigins.push(gatewayOrigin);
+connectOrigins.push(evidenceArchiveOrigin);
 const csp = [
   "default-src 'none'",
   `script-src '${scriptHash}'`,
@@ -98,12 +117,15 @@ const csp = [
 ].join('; ');
 
 let html = template
-  .replace('</title>', `</title>\n<meta http-equiv="Content-Security-Policy" content="${csp}">`)
+  .replace('</title>', `</title>\n<meta name="teamsheet-evidence-archive" content="${EVIDENCE_ARCHIVE_ENDPOINT}">\n<meta http-equiv="Content-Security-Policy" content="${csp}">`)
   .replace('<script src="app.js"></script>', () => '<script>' + scriptContent + '</script>');
 
 const emittedScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
 const emittedStyles = [...html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)];
 const emittedCsp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)">/.exec(html)?.[1];
+const emittedEvidenceMeta = [...html.matchAll(/<meta\s+name="teamsheet-evidence-archive"\s+content="([^"]+)"\s*>/g)];
+if(emittedEvidenceMeta.length !== 1 || emittedEvidenceMeta[0][1] !== EVIDENCE_ARCHIVE_ENDPOINT)
+  throw new Error('Generated deployable must contain exactly the approved evidence archive endpoint');
 if(emittedScripts.length !== 1) throw new Error(`CSP verification requires exactly one inline script; found ${emittedScripts.length}`);
 if(emittedStyles.length !== 1) throw new Error(`CSP verification requires exactly one inline style block; found ${emittedStyles.length}`);
 if(!emittedCsp) throw new Error('CSP verification could not find the emitted policy');
@@ -111,6 +133,8 @@ const verifiedScriptHash = sha256Csp(emittedScripts[0][1]);
 const verifiedStyleHash = sha256Csp(emittedStyles[0][1]);
 if(!emittedCsp.includes(`script-src '${verifiedScriptHash}'`)) throw new Error('CSP script hash does not match emitted script bytes');
 if(!emittedCsp.includes(`style-src-elem '${verifiedStyleHash}'`)) throw new Error('CSP style hash does not match emitted style bytes');
+if(!emittedCsp.includes(`connect-src `) || !emittedCsp.includes(evidenceArchiveOrigin)) throw new Error('CSP must admit the exact archive origin');
+if(/\.workers\.dev\/v1\/evidence\/predeadline/.test(html)) throw new Error('Generated deployable must not retain the old evidence workers.dev endpoint');
 if(emittedCsp.includes("'unsafe-inline'")) throw new Error('CSP must not allow unsafe-inline for scripts or styles');
 if(emittedCsp.includes('style-src-attr')) throw new Error('CSP must not include a style-src-attr concession');
 if(/\sstyle\s*=/.test(html)) throw new Error('Generated deployable contains an inline style attribute');
