@@ -6,6 +6,12 @@
   "workers_dev": true,
   "preview_urls": false,
   "observability": { "enabled": true },
+  "routes": [
+    {
+      "pattern": "archive.fpltsheet.co.uk",
+      "custom_domain": true
+    }
+  ],
   "vars": {
     "ALLOWED_ORIGINS": "https://priteshpatel390-del.github.io,https://app.fpltsheet.co.uk",
     "ALLOW_UNDERSTAT_RETENTION": "false",
