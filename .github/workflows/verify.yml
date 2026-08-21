@@ -41,6 +41,17 @@ jobs:
           test "$(git rev-parse HEAD)" = "$BUILD_COMMIT"
           echo "Verifying $BUILD_COMMIT"
 
+      - name: Preserve exact source checkout for GW1-P2C2 preparation
+        uses: actions/upload-artifact@v6
+        with:
+          name: gw1-p2c2-source-${{ env.BUILD_COMMIT }}
+          path: |
+            .
+            !.git/**
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Verify committed deployment provenance
         run: |
           set -eu
