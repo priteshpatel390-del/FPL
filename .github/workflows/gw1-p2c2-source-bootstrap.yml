@@ -1,0 +1,32 @@
+name: GW1-P2C2 Source Bootstrap
+
+on:
+  push:
+    branches:
+      - agent/gw1-p2c2-same-site-custom-domain
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    name: Preserve exact branch source
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Confirm revision
+        run: |
+          set -eu
+          echo "Preserving $(git rev-parse HEAD)"
+      - name: Upload exact source tree
+        uses: actions/upload-artifact@v6
+        with:
+          name: gw1-p2c2-source-${{ github.sha }}
+          path: .
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
