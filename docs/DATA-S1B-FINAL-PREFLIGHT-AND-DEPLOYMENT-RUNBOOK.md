@@ -71,8 +71,10 @@ export DESIGN_CONFIG="workers/data-platform/wrangler.jsonc"
 export MIGRATIONS_DIR="workers/data-platform/migrations"
 export PRODUCTION_DB_NAME="teamsheet-data"
 export VALIDATION_DB_NAME="teamsheet-data-s1b-validation-20260822"
+export VALIDATION_WORKER_NAME="teamsheet-data-platform-s1b-validation-20260822"
 export WORKER_NAME="teamsheet-data-platform"
 export DATA_HOST="data.fpltsheet.co.uk"
+export VALIDATION_CONFIG="${HOME}/.local/share/teamsheet-tools/data-s1b/wrangler.validation.json"
 export PRODUCTION_CONFIG="${HOME}/.local/share/teamsheet-tools/data-s1b/wrangler.production.jsonc"
 export EVIDENCE_ROOT="${HOME}/.local/share/teamsheet-tools/data-s1b/evidence"
 
@@ -82,7 +84,7 @@ test "$("${NODE_BIN}" --version)" = "v24.15.0"
 test "$("${NODE_BIN}" "${WRANGLER_JS}" --version)" = "4.125.0"
 test -f "${DESIGN_CONFIG}"
 test -f "${MIGRATIONS_DIR}/0001_shadow_data_foundation.sql"
-mkdir -p "$(dirname "${PRODUCTION_CONFIG}")" "${EVIDENCE_ROOT}"
+mkdir -p "$(dirname "${VALIDATION_CONFIG}")" "$(dirname "${PRODUCTION_CONFIG}")" "${EVIDENCE_ROOT}"
 ```
 
 Securely inject a separately approved deployment credential. It is not the
@@ -115,10 +117,67 @@ This phase needs its own explicit approval. Create exactly one disposable databa
 "${NODE_BIN}" "${WRANGLER_JS}" d1 create "${VALIDATION_DB_NAME}"
 ```
 
-Capture its UUID without exposing account identifiers, create a temporary
-owner-controlled validation config outside the repository with the same binding,
-name, migrations directory, and that exact UUID, then prove exactly one matching
-database exists. Apply the unchanged migration:
+Capture its UUID without exposing account identifiers, prove exactly one matching
+database exists, and securely enter the exact returned value:
+
+```bash
+read -r -p "Disposable validation D1 UUID: " VALIDATION_DB_ID
+export VALIDATION_DB_ID
+case "${VALIDATION_DB_ID}" in
+  ????????-????-????-????-????????????) ;;
+  *) printf 'Invalid validation D1 UUID\n' >&2; exit 1 ;;
+esac
+```
+
+Create this exact owner-controlled validation overlay outside the repository. It
+has the deterministic temporary Worker name, DATA-S1 entry point, no public
+hostname configuration, and exactly one binding to the captured disposable UUID:
+
+```bash
+cat > "${VALIDATION_CONFIG}" <<JSON
+{
+  "name": "${VALIDATION_WORKER_NAME}",
+  "main": "/workspace/FPL/workers/data-platform/data-platform.mjs",
+  "compatibility_date": "2026-08-22",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "d1_databases": [{
+    "binding": "TEAMSHEET_DATA_DB",
+    "database_name": "${VALIDATION_DB_NAME}",
+    "database_id": "${VALIDATION_DB_ID}",
+    "migrations_dir": "/workspace/FPL/workers/data-platform/migrations"
+  }]
+}
+JSON
+chmod 600 "${VALIDATION_CONFIG}"
+```
+
+Before any use, reject placeholders, a malformed or mismatched UUID, a wrong
+Worker/database/binding, an extra binding, or any route/Custom Domain key. Record
+the accepted external overlay's SHA-256:
+
+```bash
+"${NODE_BIN}" -e '
+  const fs = require("node:fs");
+  const [path, worker, database, uuid] = process.argv.slice(1);
+  const config = JSON.parse(fs.readFileSync(path, "utf8"));
+  const db = config.d1_databases;
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidPattern.test(uuid) || /[<>]/.test(uuid)) throw new Error("invalid UUID");
+  if (config.name !== worker) throw new Error("wrong validation Worker");
+  if (config.main !== "/workspace/FPL/workers/data-platform/data-platform.mjs") throw new Error("wrong entry point");
+  if (config.workers_dev !== false || config.preview_urls !== false) throw new Error("public development endpoint enabled");
+  if ("routes" in config || "route" in config || "custom_domain" in config) throw new Error("route or Custom Domain present");
+  if (!Array.isArray(db) || db.length !== 1) throw new Error("binding count is not one");
+  if (db[0].binding !== "TEAMSHEET_DATA_DB" || db[0].database_name !== database || db[0].database_id !== uuid) throw new Error("D1 binding mismatch");
+  if (db[0].migrations_dir !== "/workspace/FPL/workers/data-platform/migrations") throw new Error("wrong migrations directory");
+' "${VALIDATION_CONFIG}" "${VALIDATION_WORKER_NAME}" "${VALIDATION_DB_NAME}" "${VALIDATION_DB_ID}"
+test "$(stat -c '%a' "${VALIDATION_CONFIG}")" = "600"
+sha256sum "${VALIDATION_CONFIG}" | tee "${EVIDENCE_ROOT}/validation-config.sha256"
+```
+
+Apply the unchanged migration:
 
 ```bash
 "${NODE_BIN}" "${WRANGLER_JS}" d1 migrations apply "${VALIDATION_DB_NAME}" \
@@ -140,9 +199,14 @@ Using `wrangler d1 execute --remote --config "${VALIDATION_CONFIG}"`, record:
 For real Worker-binding validation, make an external validation overlay pointing
 to the disposable UUID. Under separate approval, use this exact order:
 
-1. Deploy the temporary validation Worker with `--no-x-provision`,
-   `workers_dev: false`, `preview_urls: false`, no Workers Route, and no Custom
-   Domain.
+1. Deploy the temporary validation Worker from the verified overlay with
+   `--no-x-provision`; the overlay fixes `workers_dev: false`,
+   `preview_urls: false`, no Workers Route, and no Custom Domain:
+
+   ```bash
+   "${NODE_BIN}" "${WRANGLER_JS}" deploy \
+     --no-x-provision --config "${VALIDATION_CONFIG}"
+   ```
 2. Immediately use read-only inventories to prove its binding has the disposable
    UUID and it has no route, domain, preview, or `workers.dev` endpoint.
 3. On the now-existing temporary Worker, enable Worker-level Cloudflare Access for
