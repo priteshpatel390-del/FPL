@@ -1,11 +1,13 @@
 # Research — Shadow Implementation Design
 
-Status: **Planned**  
+Status: **Approved for implementation**
 Programme root: [External Intelligence Foundation](../../EXTERNAL-INTELLIGENCE-FOUNDATION.md) §§4–6, 10, 14  
 Control centre: [Research Programme](../README.md)  
 Production effect: **None**  
-Implementation approval: **Not granted**  
-Research date: **TBD**
+Implementation approval: **Not granted** (historical programme field; superseded for DATA-S1 only by the dated closeout below)
+Research date: **22 August 2026**
+
+> **DATA-S1 closeout — 22 August 2026:** The separately approved implementation is recorded in [DATA-S1 Shadow Structured Data Foundation](../../DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md). It creates an isolated D1-only, provider-neutral, `shadow_only` repository foundation. No live infrastructure, provider, browser integration or production read path was created. The original planning text below is retained as historical design context where useful.
 
 ## 1. Research question
 

@@ -319,3 +319,11 @@ The populated Transfers workflow was physically tested on Pritesh's iPhone Safar
 ## Track A acceptance boundary — 2026-08-06
 
 The target populated iPhone Safari Transfers paths are accepted. This does not establish universal browser performance, VoiceOver behaviour or full live acceptance for every Team, Fixtures or Leagues path. Player Detail has since received populated iPhone acceptance for the tested PR #78 correction path. Remaining feature-specific live acceptance stays under FPL-2 for Leagues only; Team and Fixtures have since passed.
+
+
+<!-- DATA-S1-2026-08-22 -->
+## DATA-S1 repository foundation — 22 August 2026
+
+The separately approved [DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. The separately approved intended sequence is DATA-S2 Official FPL history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates.
+
+Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.

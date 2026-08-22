@@ -359,3 +359,11 @@ At that closeout the authoritative baseline was `main` `6e725485564a51ee2a17bc08
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) was approved at that checkpoint as a design only. It selected D1 plus private R2 behind a separate authenticated data Worker, retained local fallback and limited Google Sheets to optional downstream reporting. **A later, separately approved GW1-P1 checkpoint authorised and implemented the backend-only foundation, which is now merged through PR #118.** A further separately approved GW1-P2 checkpoint authorised the Teamsheet browser integration, pending-upload/outbox and automatic upload now implemented on the unmerged PR #119 candidate.
 
 Historical records remain valid for their recorded dates; they must not be read as current status where the current-state section above or live GitHub says otherwise.
+
+
+<!-- DATA-S1-2026-08-22 -->
+## DATA-S1 repository foundation — 22 August 2026
+
+The separately approved [DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. The separately approved intended sequence is DATA-S2 Official FPL history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates.
+
+Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.

@@ -131,3 +131,5 @@ Valid historical or prospective workload observations with trustworthy identity/
 ## 22. Explicit implementation approval gate
 
 No provider integration, workload store, fatigue feature, expected-minutes use or downstream recommendation effect is approved. Any such step requires a separate provider/model proposal and Pritesh's explicit approval.
+
+> **Dated cost-policy supersession — 22 August 2026:** The owner has superseded the blanket £0 recurring-cost constraint used when this historical research conclusion was reached. Free remains preferred where genuinely comparable; small recurring paid options may now be considered only after explicit current pricing, rights and value/cost justification, preferably through a shadow trial. The original conclusion and its historical context above are intentionally preserved. This amendment approves no provider, acquisition, subscription, retention or production use.

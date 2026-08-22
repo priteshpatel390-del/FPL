@@ -137,3 +137,7 @@ Separately tracked live-season evidence gates, D1 implementation, Understat repa
 - [UX-A2 scope](UX-A2-SCOPE.md).
 
 No historical file is archived by location in this checkpoint. “Historical” is a reading classification only; Git history and every listed record remain intact.
+
+## 22 August 2026 — DATA-S1 shadow structured-data foundation
+
+[DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) records the separately approved, repository-only provider-neutral D1 foundation. It is `shadow_only`, structurally isolated from production, and was not deployed. No provider, R2, Google Sheets, C5 custody or model behaviour changed.
