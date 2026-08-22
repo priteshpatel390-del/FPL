@@ -1,5 +1,6 @@
 # Historical Records Index
 
+- [GW1-P2C5 Stage 10 production-path acceptance candidate](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE.md) — unmerged, undeployed implementation candidate for one unmistakably synthetic `2099-00`/GW38 infrastructure acceptance; physical execution and live custody remain unproven.
 - [GW1-P2C4 Genuine GW1 Stage 10 custody reconciliation](GW1-P2C4-GENUINE-GW1-STAGE10-CUSTODY-RECONCILIATION.md) — read-only live acceptance found no exact D1 manifest and no objects under the canonical 2026–27 GW1 R2 prefix, so genuine cloud custody is not present; browser acknowledgement and the original local full hash remain unverified, and no replay, reconciliation or write was performed.
 - [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md) — sanitized physical sibling-domain browser transport PASS, with genuine Stage 10/D1/R2 custody explicitly unproven and rollback retained.
 

@@ -23,9 +23,9 @@ const ORDER = [
   'src/model/squad-simulation.mjs', 'src/model/transfers.mjs', 'src/model/walk-forward.mjs',
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
-  'src/evidence/snapshot.mjs', 'src/evidence/outbox.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
+  'src/evidence/snapshot.mjs', 'src/evidence/stage10-acceptance.mjs', 'src/evidence/outbox.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
   'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/views.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
-  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/evidence-delivery.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
+  'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/evidence-delivery.mjs', 'src/ui/stage10-acceptance.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 

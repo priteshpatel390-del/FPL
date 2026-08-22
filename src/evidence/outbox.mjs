@@ -12,6 +12,7 @@
    itself as an earlier capture. Server custody time comes only from R2. */
 
 import { canonicalise, stableStringify } from './snapshot.mjs';
+import { isExactStage10AcceptanceIdentity } from './stage10-acceptance.mjs';
 
 const OUTBOX_VERSION = 1;
 const ARCHIVE_VERSION = '1.0.0';
@@ -189,7 +190,7 @@ function normaliseOutbox(value,{season = null,now = Date.now()} = {}){
     .map(usableOutboxRow)
     .filter(row => {
       if(!row || seen.has(row.contentHash)) return false;
-      if(season && row.season !== season) return false;
+      if(season && row.season !== season && !isExactStage10AcceptanceIdentity(row)) return false;
       if(TERMINAL_STATES.includes(row.state) &&
          now - Date.parse(row.enqueuedAt) > OUTBOX_RULES.terminalRetentionMs) return false;
       seen.add(row.contentHash);
