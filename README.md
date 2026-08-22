@@ -1,8 +1,8 @@
 # Teamsheet — FPL Decision Desk
 
-## Current repository checkpoint — DATA-S1 draft PR #145
+## Current repository checkpoint — DATA-S1A post-merge control reconciliation
 
-C5 is closed. DATA-S1 is the current repository-only candidate, is not live deployed, and passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. The delivered GW1 readiness checkpoint remains PR #121. Later DATA-S2, DATA-S3, DATA-S4 and DATA-S5 work requires separate approval.
+DATA-S1 is merged in PR #145 and repository-verified at **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. It is **not live deployed**: no DATA-S1 Worker, D1, migration, Access, DNS/Custom Domain, service token, route or provider acquisition is claimed. DATA-S1A is the current repository-only reconciliation. The separately gated sequence is DATA-S1B live Cloudflare deployment/acceptance, then DATA-S2, DATA-S3, DATA-S4 and DATA-S5. See the [DATA-S1B deployment plan](docs/DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md). The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
 
 
 ## Historical Stage 10 infrastructure acceptance

@@ -1,9 +1,9 @@
 # TESTING.md
 
 <!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-## Current repository gate — DATA-S1 draft PR #145 second remediation
+## Current repository gate — DATA-S1A post-merge reconciliation
 
-**Supersedes older current baseline claims below.** The remediated DATA-S1 candidate passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
+**Supersedes older current baseline claims below.** The merged DATA-S1 repository foundation passed **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## Historical GW1-P2C5 live acceptance evidence
@@ -549,6 +549,6 @@ Coverage groups:
 <!-- DATA-S1-2026-08-22 -->
 ## DATA-S1 repository foundation — 22 August 2026
 
-The separately approved [DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. The separately approved intended sequence is DATA-S2 Official FPL history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates.
+The separately approved [DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. PR #145 is merged and repository-verified, but DATA-S1 remains **not live deployed**. DATA-S1A is the current control reconciliation. The separately owner-gated sequence is DATA-S1B live Cloudflare preflight/deployment/acceptance, DATA-S2 Official FPL structured history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates. See the [DATA-S1B plan](DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md).
 
 Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.
