@@ -78,14 +78,65 @@ export VALIDATION_CONFIG="${HOME}/.local/share/teamsheet-tools/data-s1b/wrangler
 export PRODUCTION_CONFIG="${HOME}/.local/share/teamsheet-tools/data-s1b/wrangler.production.jsonc"
 export EVIDENCE_ROOT="${HOME}/.local/share/teamsheet-tools/data-s1b/evidence"
 
-test "$(git rev-parse HEAD)" = "45ad8c6ca7319b5d2f220c77feba5458d4d32eca"
-test -z "$(git status --porcelain=v1)"
 test "$("${NODE_BIN}" --version)" = "v24.15.0"
 test "$("${NODE_BIN}" "${WRANGLER_JS}" --version)" = "4.125.0"
 test -f "${DESIGN_CONFIG}"
 test -f "${MIGRATIONS_DIR}/0001_shadow_data_foundation.sql"
 mkdir -p "$(dirname "${VALIDATION_CONFIG}")" "$(dirname "${PRODUCTION_CONFIG}")" "${EVIDENCE_ROOT}"
+
+resolve_authoritative_main() {
+  git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main |
+    awk '$2 == "refs/heads/main" { print $1 }'
+}
+
+resolved_main="$(resolve_authoritative_main)"
+"${NODE_BIN}" -e '
+  if (!/^[0-9a-f]{40}$/.test(process.argv[1])) {
+    throw new Error("authoritative main did not resolve to one commit SHA");
+  }
+' "${resolved_main}"
+readonly EXECUTION_MAIN_SHA="${resolved_main}"
+unset resolved_main
+
+assert_execution_main() {
+  test "$(git branch --show-current)" = "main"
+  test -z "$(git status --porcelain=v1)"
+  test "$(git rev-parse HEAD)" = "${EXECUTION_MAIN_SHA}"
+  test "$(resolve_authoritative_main)" = "${EXECUTION_MAIN_SHA}"
+}
+assert_execution_main
+
+CI_JSON="$(curl --fail --silent --show-error \
+  --header 'Accept: application/vnd.github+json' \
+  "https://api.github.com/repos/priteshpatel390-del/FPL/actions/runs?head_sha=${EXECUTION_MAIN_SHA}&status=success&per_page=100")"
+CI_EVIDENCE="$(printf '%s' "${CI_JSON}" | "${NODE_BIN}" -e '
+  let input = "";
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", chunk => { input += chunk; });
+  process.stdin.on("end", () => {
+    const sha = process.argv[1];
+    const runs = JSON.parse(input).workflow_runs || [];
+    const exact = runs.find(run =>
+      run.name === "Verify Teamsheet" &&
+      run.head_sha === sha &&
+      run.head_branch === "main" &&
+      run.conclusion === "success"
+    );
+    if (!exact) throw new Error("no successful exact-main Verify Teamsheet run");
+    process.stdout.write(`Verify Teamsheet run ${exact.id}: success`);
+  });
+' "${EXECUTION_MAIN_SHA}")"
+readonly CI_EVIDENCE
+unset CI_JSON
+printf '%s\n' "${EXECUTION_MAIN_SHA}" | tee "${EVIDENCE_ROOT}/execution-main-sha.txt"
+printf '%s\n' "${CI_EVIDENCE}" | tee "${EVIDENCE_ROOT}/execution-main-ci.txt"
 ```
+
+`EXECUTION_MAIN_SHA` is the immutable execution baseline, not the historical
+preflight baseline recorded at the top of this document. `assert_execution_main`
+must run immediately before every mutation below. It stops on a detached,
+non-`main`, dirty, stale, or drifted checkout; the exact-SHA API check stops when
+Verify Teamsheet is not green on that same current `main` commit.
 
 Securely inject a separately approved deployment credential. It is not the
 read-only preflight token and must never be printed or committed.
@@ -107,13 +158,15 @@ Before each mutation, repeat the successful read-only inventories through the
 Cloudflare API: Workers, D1, Custom Domains, Access apps/policies/service tokens,
 DNS, exact and wildcard routes, and per-Worker Builds triggers/history. Reconfirm
 the exact main/CI evidence and dashboard plan/cost evidence. Stop on drift,
-collision, a non-Free plan, or any unexplained resource.
+collision, a non-Free plan, or any unexplained resource. Run
+`assert_execution_main` immediately before every mutation command.
 
 ## Phase 2 — disposable D1 validation
 
 This phase needs its own explicit approval. Create exactly one disposable database:
 
 ```bash
+assert_execution_main
 "${NODE_BIN}" "${WRANGLER_JS}" d1 create "${VALIDATION_DB_NAME}"
 ```
 
@@ -180,6 +233,7 @@ sha256sum "${VALIDATION_CONFIG}" | tee "${EVIDENCE_ROOT}/validation-config.sha25
 Apply the unchanged migration:
 
 ```bash
+assert_execution_main
 "${NODE_BIN}" "${WRANGLER_JS}" d1 migrations apply "${VALIDATION_DB_NAME}" \
   --remote --config "${VALIDATION_CONFIG}"
 ```
@@ -204,6 +258,7 @@ to the disposable UUID. Under separate approval, use this exact order:
    `preview_urls: false`, no Workers Route, and no Custom Domain:
 
    ```bash
+   assert_execution_main
    "${NODE_BIN}" "${WRANGLER_JS}" deploy \
      --no-x-provision --config "${VALIDATION_CONFIG}"
    ```
@@ -234,16 +289,28 @@ prove removal. Any failed validation blocks production.
 This phase needs separate approval after Phase 2 passes.
 
 ```bash
+assert_execution_main
 "${NODE_BIN}" "${WRANGLER_JS}" d1 create "${PRODUCTION_DB_NAME}"
 ```
 
-Capture the returned UUID as `PRODUCTION_DB_ID`, rerun D1 inventory, and require
-exactly one `teamsheet-data`. Create `PRODUCTION_CONFIG` outside the repository:
+Rerun D1 inventory and require exactly one `teamsheet-data`. Securely enter the
+exact UUID returned by the create command and reject a malformed value:
 
-```jsonc
+```bash
+read -r -p "Production D1 UUID: " PRODUCTION_DB_ID
+export PRODUCTION_DB_ID
+case "${PRODUCTION_DB_ID}" in
+  ????????-????-????-????-????????????) ;;
+  *) printf 'Invalid production D1 UUID\n' >&2; exit 1 ;;
+esac
+```
+
+Generate `PRODUCTION_CONFIG` outside the repository using that exact value:
+
+```bash
+cat > "${PRODUCTION_CONFIG}" <<JSON
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "teamsheet-data-platform",
+  "name": "${WORKER_NAME}",
   "main": "/workspace/FPL/workers/data-platform/data-platform.mjs",
   "compatibility_date": "2026-08-22",
   "workers_dev": false,
@@ -251,25 +318,52 @@ exactly one `teamsheet-data`. Create `PRODUCTION_CONFIG` outside the repository:
   "observability": { "enabled": true },
   "d1_databases": [{
     "binding": "TEAMSHEET_DATA_DB",
-    "database_name": "teamsheet-data",
-    "database_id": "<EXACT_PRODUCTION_DB_UUID>",
+    "database_name": "${PRODUCTION_DB_NAME}",
+    "database_id": "${PRODUCTION_DB_ID}",
     "migrations_dir": "/workspace/FPL/workers/data-platform/migrations"
   }]
 }
-```
-
-Restrict permissions and record its hash:
-
-```bash
+JSON
 chmod 600 "${PRODUCTION_CONFIG}"
-sha256sum "${PRODUCTION_CONFIG}" | tee "${EVIDENCE_ROOT}/production-config.sha256"
 ```
 
-Reject placeholders, a missing/mismatched UUID, any extra binding, or any route.
-Then perform the non-mutating dry run (which is prohibited until specifically
-approved):
+Before any dry-run, migration, or deployment, reject placeholders, malformed or
+mismatched UUIDs, the wrong Worker/database/binding, extra bindings, public
+development endpoints, routes, or Custom Domains. Record the verified external
+overlay's SHA-256 and use its immutable hash to detect later changes:
 
 ```bash
+"${NODE_BIN}" -e '
+  const fs = require("node:fs");
+  const [path, worker, database, uuid] = process.argv.slice(1);
+  const config = JSON.parse(fs.readFileSync(path, "utf8"));
+  const db = config.d1_databases;
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const forbidden = ["routes", "route", "custom_domain", "custom_domains", "domain", "domains"];
+  if (!uuidPattern.test(uuid) || /[<>]/.test(uuid)) throw new Error("invalid UUID");
+  if (config.name !== worker) throw new Error("wrong production Worker");
+  if (config.main !== "/workspace/FPL/workers/data-platform/data-platform.mjs") throw new Error("wrong entry point");
+  if (config.workers_dev !== false || config.preview_urls !== false) throw new Error("public development endpoint enabled");
+  if (forbidden.some(key => key in config)) throw new Error("route or Custom Domain present");
+  if (!Array.isArray(db) || db.length !== 1) throw new Error("binding count is not one");
+  if (db[0].binding !== "TEAMSHEET_DATA_DB" || db[0].database_name !== database || db[0].database_id !== uuid) throw new Error("D1 binding mismatch");
+  if (db[0].migrations_dir !== "/workspace/FPL/workers/data-platform/migrations") throw new Error("wrong migrations directory");
+' "${PRODUCTION_CONFIG}" "${WORKER_NAME}" "${PRODUCTION_DB_NAME}" "${PRODUCTION_DB_ID}"
+test "$(stat -c '%a' "${PRODUCTION_CONFIG}")" = "600"
+sha256sum "${PRODUCTION_CONFIG}" | tee "${EVIDENCE_ROOT}/production-config.sha256"
+readonly PRODUCTION_CONFIG_SHA="$(sha256sum "${PRODUCTION_CONFIG}" | awk '{ print $1 }')"
+assert_production_config() {
+  test "$(sha256sum "${PRODUCTION_CONFIG}" | awk '{ print $1 }')" = "${PRODUCTION_CONFIG_SHA}"
+}
+assert_production_config
+```
+
+Then perform the non-mutating dry run (which is prohibited until specifically
+approved) only from the verified overlay:
+
+```bash
+assert_execution_main
+assert_production_config
 "${NODE_BIN}" "${WRANGLER_JS}" deploy \
   --dry-run --no-x-provision --config "${PRODUCTION_CONFIG}" \
   --outdir "${EVIDENCE_ROOT}/production-dry-run"
@@ -280,6 +374,8 @@ was provisioned. Apply migration 0001 and repeat the schema/foreign-key/index
 checks used for validation:
 
 ```bash
+assert_execution_main
+assert_production_config
 "${NODE_BIN}" "${WRANGLER_JS}" d1 migrations apply "${PRODUCTION_DB_NAME}" \
   --remote --config "${PRODUCTION_CONFIG}"
 ```
@@ -293,6 +389,8 @@ This phase needs separate approval after the production schema passes.
    and no Custom Domain:
 
    ```bash
+   assert_execution_main
+   assert_production_config
    "${NODE_BIN}" "${WRANGLER_JS}" deploy \
      --no-x-provision --config "${PRODUCTION_CONFIG}"
    ```
