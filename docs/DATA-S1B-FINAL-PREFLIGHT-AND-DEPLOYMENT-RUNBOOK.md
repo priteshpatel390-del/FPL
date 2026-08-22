@@ -138,11 +138,26 @@ Using `wrangler d1 execute --remote --config "${VALIDATION_CONFIG}"`, record:
 5. transaction/batch failure leaves no partial acceptance fixture.
 
 For real Worker-binding validation, make an external validation overlay pointing
-to the disposable UUID, deploy only under a separately approved temporary,
-Access-protected validation identity, and use the synthetic fixture from the
-acceptance plan. Do not expose it publicly or reuse the production hostname. POST
-once for HTTP 201/`inserted`, replay byte-for-byte for HTTP 200/`existing`, then
-change `value_boolean` with the same idempotency tuple for HTTP
+to the disposable UUID. Under separate approval, use this exact order:
+
+1. Deploy the temporary validation Worker with `--no-x-provision`,
+   `workers_dev: false`, `preview_urls: false`, no Workers Route, and no Custom
+   Domain.
+2. Immediately use read-only inventories to prove its binding has the disposable
+   UUID and it has no route, domain, preview, or `workers.dev` endpoint.
+3. On the now-existing temporary Worker, enable Worker-level Cloudflare Access for
+   **All traffic**.
+4. Create its dedicated validation service token and exactly one **Service Auth**
+   policy whose sole Include rule is that token. Add no Allow, Bypass, human
+   identity, public-health exception, or shared credential.
+5. Verify through read-only inventory that Worker-level Access is active.
+6. Only then attach any separately approved temporary validation hostname. Never
+   reuse the production hostname.
+7. Run the Access negative and positive checks before sending the synthetic
+   fixture from the acceptance plan.
+
+POST once for HTTP 201/`inserted`, replay byte-for-byte for HTTP 200/`existing`,
+then change `value_boolean` with the same idempotency tuple for HTTP
 409/`idempotency_conflict`. Verify replay immediately before `fetched_at` excludes
 the row, replay at/after it includes it, and a quarantined row is excluded.
 
@@ -209,27 +224,37 @@ checks used for validation:
 
 This phase needs separate approval after the production schema passes.
 
-1. In the Cloudflare dashboard, create a Worker-level Access application for
-   `teamsheet-data-platform`, select **All traffic**, and create exactly one
-   **Service Auth** policy whose sole Include rule is one new, dedicated DATA-S1
-   Service Token. Do not add Allow, Bypass, human identity, public health, shared
-   archive credentials, or browser credentials. Securely retain the client ID and
-   secret; the secret is displayed only once.
-2. Deploy the reviewed Worker with provisioning disabled:
+1. Deploy the reviewed Worker with provisioning disabled. At this point the config
+   must still have `workers_dev: false`, `preview_urls: false`, no Workers Route,
+   and no Custom Domain:
 
    ```bash
    "${NODE_BIN}" "${WRANGLER_JS}" deploy \
      --no-x-provision --config "${PRODUCTION_CONFIG}"
    ```
 
-3. Immediately rerun D1 inventory. Stop and request rollback approval if any
-   second database exists or the live binding UUID differs.
-4. In Workers & Pages, add exactly one Worker Custom Domain,
+2. Immediately use read-only Worker, binding, domain, DNS, and route inventories
+   to prove the deployed `teamsheet-data-platform` Worker has the exact production
+   D1 UUID and has no externally reachable Workers Route, Custom Domain, Preview
+   URL, or `workers.dev` endpoint. Rerun D1 inventory and stop for a separate
+   rollback decision if any second database exists or the live binding differs.
+3. In **Workers & Pages**, select the now-existing `teamsheet-data-platform`
+   Worker, open **Access**, and enable Worker-level Cloudflare Access for **All
+   traffic**.
+4. Create one new, dedicated DATA-S1 Service Token and exactly one **Service Auth**
+   policy whose sole Include rule is that token. Do not add Allow, Bypass, human
+   identity, public-health exception, shared archive credentials, or browser
+   credentials. Securely retain the client ID and one-time-displayed secret.
+5. Verify through read-only inventory that Worker-level Access is active for **All
+   traffic** before attaching any hostname. Failure or ambiguity is a hard stop.
+6. Only then, in Workers & Pages, add exactly one Worker Custom Domain,
    `data.fpltsheet.co.uk`, to `teamsheet-data-platform`. Do not add a Workers
    Route, `workers.dev` hostname, Preview URL, or second public hostname.
-5. Wait for active DNS/TLS and verify through read-only inventories that the
+7. Wait for active DNS/TLS and verify through read-only inventories that the
    Custom Domain exists, there is still no Workers Route, `workers_dev` and
    previews are disabled, and Access covers all Worker traffic.
+8. Perform the negative and positive Access checks in Phase 5 before any synthetic
+   production write.
 
 ## Phase 5 — live acceptance
 
