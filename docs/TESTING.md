@@ -6,12 +6,12 @@
 **Supersedes older current baseline claims below.** The remediated DATA-S1 candidate passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-## GW1-P2C5 live acceptance evidence
+## Historical GW1-P2C5 live acceptance evidence
 
 Separate from the unchanged 971-test repository baseline, one physical iPhone Safari acceptance passed for the fixed synthetic `2099-00`/GW38 fixture: browser terminal `Archived`, exact accepted D1 receipt, exact D1 manifest and exact R2 metadata with matching identity, size, stored SHA-256 and R2-first/D1-second timestamps. This is live infrastructure evidence, not an automated-test substitute and not evidence of natural Stage 10 capture or Official eligibility. The temporary implementation PR #143 was closed unmerged and production restored to `main`. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
-## GW1-P2C3B acceptance evidence
+## Historical GW1-P2C3B acceptance evidence
 
 The historical GW1-P2C2 automated baseline was **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. Separately, owner-supplied physical evidence from a real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly demonstrated same-site browser transport: OPTIONS 204, matching deliberately invalid `{}` POST 422, and readable `{"error":"envelope_schema"}`. No additional physical probe was performed for this repository closeout.
 

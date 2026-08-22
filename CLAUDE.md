@@ -6,14 +6,14 @@
 **This section supersedes the older C5/GW1-P2 current-state wording below.** C5 is closed. The current repository candidate is DATA-S1 on draft PR #145: an isolated, provider-neutral, D1-only `shadow_only` foundation. It is not deployed and has no production, browser, model, provider-health, R2 or Sheets path. The remediated candidate baseline is **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, subject to the final exact-head rerun recorded in PR #145. Older counts and C5/GW1-P2 descriptions below remain historical checkpoint evidence. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-### Current checkpoint — 22 August 2026: GW1-P2C5 synthetic production-path acceptance PASS
+### Historical checkpoint — 22 August 2026: GW1-P2C5 synthetic production-path acceptance PASS
 
 GW1-P2C5 passed the production infrastructure path with one unmistakably synthetic `2099-00`/GW38 record on a physical iPhone in normal Safari with Prevent Cross-Site Tracking enabled. The normal local storage/event/outbox/scheduled-delivery path reached the unchanged archive Worker; sanitized read-only reconciliation found the exact accepted D1 receipt, exact D1 manifest and exact private R2 metadata, with R2-first/D1-second timestamps and matching identity, size and stored SHA-256. The browser reached terminal **Archived** status. See [GW1-P2C5 closeout](docs/GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
 The temporary candidate was removed from production by restoring GitHub Pages to authoritative `main`; draft PR #143 was closed unmerged and retained as history. The accepted synthetic cloud record remains untouched. This is synthetic infrastructure acceptance only: natural Stage 10 capture, genuine prospective custody, natural GW2 capture and Official eligibility remain separate future observational gates. Historic GW1 recovery remains parked. No Worker, Access, DNS, D1/R2 configuration, model, provider, timing or calculation behaviour changed.
 
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
-### Current checkpoint — 22 August 2026: GW1-P2C3B same-site transport closeout
+### Historical checkpoint — 22 August 2026: GW1-P2C3B same-site transport closeout
 
 **Supersedes older GW1-P2/GW1-P2C2 current-state wording below where it describes sibling-domain deployment or physical browser transport acceptance as pending.** The live sibling origins are `https://app.fpltsheet.co.uk` and `https://archive.fpltsheet.co.uk`. On a real physical iPhone in normal Safari with **Prevent Cross-Site Tracking ON**, an authenticated, deliberately invalid `{}` request directly demonstrated `Sec-Fetch-Site: same-site`: OPTIONS reached the Worker and returned 204; the matching POST reached it and returned 422; Safari read `{"error":"envelope_schema"}`. **GW1-P2C3B browser transport acceptance therefore passes, for transport only.**
 
@@ -21,7 +21,7 @@ No genuine Stage 10 record was sent. This result proves neither genuine evidence
 
 
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
-### Current checkpoint — 21 August 2026: GW1-P2C2 repository preparation
+### Historical checkpoint — 21 August 2026: GW1-P2C2 repository preparation
 
 **Supersedes older GW1-P2 text below where it describes the physical cross-site POST as still pending.** The 21 August controlled iPhone Safari diagnostic on the deployed PR #137 CORS remediation reached the evidence Worker with the credentialled OPTIONS request and received HTTP 204, but the subsequent POST never reached the Worker and Teamsheet received no HTTP status. That result proves the earlier missing `Access-Control-Allow-Credentials: true` defect was real and was corrected; it does **not** prove a single browser/Access root cause for the remaining cross-site failure. Option A (`github.io` → `workers.dev`) is therefore exhausted rather than accepted.
 

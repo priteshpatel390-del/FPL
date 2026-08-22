@@ -8,12 +8,12 @@ The delivered GW1 readiness checkpoint remains PR #121; it is retained as applic
 **Supersedes older current-state evidence-stream wording below.** C5 is closed. DATA-S1 is the current repository candidate: a separate provider-neutral `shadow_only` D1 foundation with no live deployment and no production/browser/model/provider-health/R2/Sheets read path. Its remediated exact-head baseline is **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. Historical 971 and earlier counts remain evidence for their own trees, not this candidate.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-## Current evidence-path checkpoint — 22 August 2026
+## Historical evidence-path checkpoint — 22 August 2026
 
 GW1-P2C5 passes the production Stage 10 infrastructure path for one unmistakably synthetic `2099-00`/GW38 fixture. Physical iPhone Safari reached terminal `Archived`; exact read-only D1/R2 reconciliation found one accepted receipt, one matching manifest and one exact R2 object with consistent identity, size, stored SHA-256 and R2-first/D1-second timestamps. The temporary candidate was removed by restoring Pages to authoritative `main`, and PR #143 was closed unmerged. This does not prove natural capture, genuine prospective custody or Official eligibility; natural GW2 observation remains a separate gate. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
-## Current transport checkpoint — 22 August 2026
+## Historical transport checkpoint — 22 August 2026
 
 GW1-P2C3B closes the sibling-domain **browser transport** gate as PASS. On a real physical iPhone in normal Safari with Prevent Cross-Site Tracking ON, the authenticated `app.fpltsheet.co.uk` → `archive.fpltsheet.co.uk` invocation directly showed `Sec-Fetch-Site: same-site`; OPTIONS returned 204, its matching deliberately invalid `{}` POST returned 422, and Safari read `{"error":"envelope_schema"}`. This supersedes older current-state wording below that calls deployment or physical same-site transport acceptance pending.
 
@@ -21,7 +21,7 @@ The boundary is strict: no genuine Stage 10 record was submitted, and genuine ev
 
 
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
-## Current transport checkpoint — 21 August 2026
+## Historical transport checkpoint — 21 August 2026
 
 The previously pending GW1-P2 physical cross-site acceptance has now produced **Outcome B**: on iPhone Safari with normal privacy settings, the PR #137 CORS-remediated credentialled OPTIONS request reached the evidence Worker and returned 204, while the POST did not reach the Worker and exposed no HTTP status to Teamsheet. This closes further Option A (`github.io` → `workers.dev`) tweaking as the chosen path without attributing the remaining failure to one unproven browser or Access mechanism.
 
