@@ -1,5 +1,10 @@
 # SECURITY.md
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+## GW1-P2C5 security closeout
+
+Only sanitized C5 facts are retained: fixed synthetic identity, browser terminal status, accepted receipt/manifest fields, non-sensitive R2 metadata, sizes, stored SHA-256 and custody timestamps. No evidence body, Access identity/JWT/cookie, subject hash, IP/network data, secret or authorization material is recorded. Read-only D1 queries wrote zero rows; the R2 operation was metadata-only. The synthetic record remains untouched, the temporary client was closed unmerged, and Worker/Access/DNS/D1/R2 configuration did not change. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## GW1-P2C3B security record
 

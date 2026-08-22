@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+## Current evidence-path checkpoint — 22 August 2026
+
+GW1-P2C5 passes the production Stage 10 infrastructure path for one unmistakably synthetic `2099-00`/GW38 fixture. Physical iPhone Safari reached terminal `Archived`; exact read-only D1/R2 reconciliation found one accepted receipt, one matching manifest and one exact R2 object with consistent identity, size, stored SHA-256 and R2-first/D1-second timestamps. The temporary candidate was removed by restoring Pages to authoritative `main`, and PR #143 was closed unmerged. This does not prove natural capture, genuine prospective custody or Official eligibility; natural GW2 observation remains a separate gate. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## Current transport checkpoint — 22 August 2026
 

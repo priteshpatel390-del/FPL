@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+## GW1-P2C5 live acceptance evidence
+
+Separate from the unchanged 971-test repository baseline, one physical iPhone Safari acceptance passed for the fixed synthetic `2099-00`/GW38 fixture: browser terminal `Archived`, exact accepted D1 receipt, exact D1 manifest and exact R2 metadata with matching identity, size, stored SHA-256 and R2-first/D1-second timestamps. This is live infrastructure evidence, not an automated-test substitute and not evidence of natural Stage 10 capture or Official eligibility. The temporary implementation PR #143 was closed unmerged and production restored to `main`. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## GW1-P2C3B acceptance evidence
 
