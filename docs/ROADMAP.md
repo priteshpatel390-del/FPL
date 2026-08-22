@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
+## Current checkpoint — DATA-S1 candidate
+
+C5 is closed. Draft PR #145 is the current, repository-only DATA-S1 remediation candidate; it is not deployed and changes no production calculation or UI. After independent review, each later step remains separately approval-gated: DATA-S2 Official FPL structured history, DATA-S3 Official outcome automation, DATA-S4 provider trials, DATA-S5 downstream Sheets export, then any production/model approval.
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## GW1-P2C5 closeout — synthetic infrastructure gate complete
 

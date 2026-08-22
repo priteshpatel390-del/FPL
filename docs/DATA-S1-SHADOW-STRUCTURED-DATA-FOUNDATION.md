@@ -35,3 +35,7 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## Exclusions and next gates
 
 No live Worker/database/migration/Access/DNS/R2 action occurred. No provider was contacted, subscribed or acquired. No browser, production model, Provider Health, Official FPL gateway, evidence custody, Google Sheets or application behavior changed. The intended separately approved sequence is DATA-S2 Official FPL structured history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, later production/provider/model approvals, then deferred real-team product acceptance.
+
+## Independent-review remediation
+
+Before migration 0001 was deployed, PR #145 was hardened to canonicalise every supplied timestamp to UTC ISO-8601 while leaving unknown optional event/source times null; derive immutable observation IDs from a stable, allowlisted normalised-field SHA-256 contract; distinguish inserted, exact-existing and conflicting idempotency outcomes; require run/source consistency and verified mapping provenance (with an explicit canonical-native Official FPL path); provide accepted-only keyset replay pagination; enforce rights-row consistency; broaden recursive credential detection; and record only server-generated, minimal rejection metadata when safe run/source identity exists. The accepted query never exposes quarantined rows.

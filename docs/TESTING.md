@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
+## Current repository gate — DATA-S1 draft PR #145
+
+**Supersedes older current baseline claims below.** The remediated DATA-S1 candidate passes **983 tests, 983 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output.
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## GW1-P2C5 live acceptance evidence
 
@@ -8,7 +13,7 @@ Separate from the unchanged 971-test repository baseline, one physical iPhone Sa
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## GW1-P2C3B acceptance evidence
 
-The permanent automated baseline remains **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. Separately, owner-supplied physical evidence from a real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly demonstrated same-site browser transport: OPTIONS 204, matching deliberately invalid `{}` POST 422, and readable `{"error":"envelope_schema"}`. No additional physical probe was performed for this repository closeout.
+The historical GW1-P2C2 automated baseline was **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. Separately, owner-supplied physical evidence from a real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly demonstrated same-site browser transport: OPTIONS 204, matching deliberately invalid `{}` POST 422, and readable `{"error":"envelope_schema"}`. No additional physical probe was performed for this repository closeout.
 
 This is transport-only evidence. Automated tests and the physical invalid-body invocation do not prove genuine Stage 10 custody, D1/R2 persistence or idempotency; literal physical ACAO, ACAC and `Vary` response values were not directly captured. Older wording below that says the sibling-domain physical transport test remains pending is superseded.
 
@@ -23,7 +28,7 @@ This branch result is repository evidence only. Final PR acceptance still requir
 
 ## Current repository baseline
 
-**971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (940, 918, 907, 904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions; 904 was the baseline before the pre-GW1 housekeeping closeout added its own; and 907 is the then-current merged `main` baseline this unmerged candidate builds on. This document describes the tree it lives in and does not restate the current `main` commit SHA.
+**Historical GW1-P2C2 result: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (940, 918, 907, 904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions; 904 was the baseline before the pre-GW1 housekeeping closeout added its own; and 907 is the then-current merged `main` baseline this unmerged candidate builds on. This document describes the tree it lives in and does not restate the current `main` commit SHA.
 
 ### GW1 readiness safety guard coverage
 

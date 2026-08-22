@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
+## Current repository checkpoint — DATA-S1 draft PR #145 remediation candidate
+
+**Supersedes older current-state evidence-stream wording below.** C5 is closed. DATA-S1 is the current repository candidate: a separate provider-neutral `shadow_only` D1 foundation with no live deployment and no production/browser/model/provider-health/R2/Sheets read path. Its remediated exact-head baseline is **983 tests, 983 passed, 0 failed, 0 skipped, 0 cancelled**. Historical 971 and earlier counts remain evidence for their own trees, not this candidate.
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## Current evidence-path checkpoint — 22 August 2026
 
@@ -29,7 +34,7 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 Live GitHub is authoritative over this document and all historical handovers. This section describes the tree it lives in and deliberately does not restate the current `main` commit SHA — that changes on every merge and duplicating it here is how this documentation went stale before. Read it live with `git rev-parse origin/main`, and read live pull-request state from GitHub.
 
-**Repository test baseline: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. This is the tree this file lives in; merged `main` separately holds the then-current 907/907 until an approved merge. The 898 recorded below is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout then reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. The GW1-P2C2 candidate then reached 971 by restoring the reconciled PR #119 browser-delivery behavioural suite and adding same-site migration coverage. No application code changed across any of those steps. Earlier counts (940, 918, 907, 904, 898, 883, 868, 864, 856, …) are historical checkpoint evidence and are not current claims.
+**Historical GW1-P2C2 candidate baseline: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. This is the tree this file lives in; merged `main` separately holds the then-current 907/907 until an approved merge. The 898 recorded below is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout then reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. The GW1-P2C2 candidate then reached 971 by restoring the reconciled PR #119 browser-delivery behavioural suite and adding same-site migration coverage. No application code changed across any of those steps. Earlier counts (940, 918, 907, 904, 898, 883, 868, 864, 856, …) are historical checkpoint evidence and are not current claims.
 
 ### Application — ready for GW1
 
