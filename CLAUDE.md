@@ -1,5 +1,13 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+### Current checkpoint — 22 August 2026: GW1-P2C3B same-site transport closeout
+
+**Supersedes older GW1-P2/GW1-P2C2 current-state wording below where it describes sibling-domain deployment or physical browser transport acceptance as pending.** The live sibling origins are `https://app.fpltsheet.co.uk` and `https://archive.fpltsheet.co.uk`. On a real physical iPhone in normal Safari with **Prevent Cross-Site Tracking ON**, an authenticated, deliberately invalid `{}` request directly demonstrated `Sec-Fetch-Site: same-site`: OPTIONS reached the Worker and returned 204; the matching POST reached it and returned 422; Safari read `{"error":"envelope_schema"}`. **GW1-P2C3B browser transport acceptance therefore passes, for transport only.**
+
+No genuine Stage 10 record was sent. This result proves neither genuine evidence custody nor valid archival, D1 receipt/manifest creation, R2 object creation, persistence, idempotency, duplicate handling, or any recommendation/model behaviour. The literal physical returned values of `Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials` and `Vary` were not directly captured. Sanitized evidence is recorded in [GW1-P2C3B Same-site transport closeout](docs/GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md). The legacy GitHub Pages origin allowlist, legacy `workers.dev` archive hostname, its Access protection and existing rollback deployments/versions remain intentionally retained; cleanup is a separate checkpoint. No application, Worker, configuration or live-infrastructure behaviour changes in this closeout.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ### Current checkpoint — 21 August 2026: GW1-P2C2 repository preparation
 

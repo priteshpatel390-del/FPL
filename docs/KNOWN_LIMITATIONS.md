@@ -1,5 +1,11 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## Current same-site transport limitation boundary
+
+GW1-P2C3B passes browser transport only: real iPhone Safari with Prevent Cross-Site Tracking ON directly observed same-site OPTIONS 204 and a matching invalid `{}` POST returning readable 422 `envelope_schema`. Because no genuine Stage 10 record was sent, genuine custody, valid archival, D1 receipt/manifest creation, R2 object creation, persistence, idempotency and duplicate handling remain unproven. Literal physical ACAO, ACAC and `Vary` response values were not directly captured. Legacy rollback paths remain intentionally retained.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## GW1-P2C2 limitations — 21 August 2026
 

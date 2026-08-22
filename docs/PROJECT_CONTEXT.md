@@ -1,5 +1,13 @@
 # PROJECT_CONTEXT.md
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## Current transport checkpoint — 22 August 2026
+
+GW1-P2C3B closes the sibling-domain **browser transport** gate as PASS. On a real physical iPhone in normal Safari with Prevent Cross-Site Tracking ON, the authenticated `app.fpltsheet.co.uk` → `archive.fpltsheet.co.uk` invocation directly showed `Sec-Fetch-Site: same-site`; OPTIONS returned 204, its matching deliberately invalid `{}` POST returned 422, and Safari read `{"error":"envelope_schema"}`. This supersedes older current-state wording below that calls deployment or physical same-site transport acceptance pending.
+
+The boundary is strict: no genuine Stage 10 record was submitted, and genuine evidence custody, valid archival, D1/R2 persistence, idempotency and duplicate handling remain unproven. Literal physical ACAO, ACAC and `Vary` response values were not directly captured. Rollback origins, hostnames, Access protection and deployments remain retained. See [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md).
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## Current transport checkpoint — 21 August 2026
 

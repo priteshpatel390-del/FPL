@@ -1,5 +1,11 @@
 # GW1-P2C2 — Same-site custom-domain transport
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## Subsequent physical closeout — GW1-P2C3B
+
+The repository preparation described below was subsequently deployed and its browser transport gate passed. A real physical iPhone in normal Safari with Prevent Cross-Site Tracking ON directly reported `Sec-Fetch-Site: same-site`; authenticated OPTIONS returned 204, its matching deliberately invalid `{}` POST returned 422, and Safari read `{"error":"envelope_schema"}`. This proves transport only—not genuine Stage 10 custody, D1/R2 persistence or idempotency—and literal physical ACAO, ACAC and `Vary` response values were not directly captured. See [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md). Legacy rollback paths remain retained.
+
+
 Status: **repository implementation candidate only — draft PR #139; no live infrastructure change authorised or claimed.**
 
 ## Evidence that forced the decision
