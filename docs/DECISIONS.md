@@ -1,5 +1,12 @@
 # DECISIONS.md — Architectural decision record
 
+## D-GW1P2C3B — Accept sibling-domain browser transport only
+
+**Decision:** Record the real physical iPhone Safari result for `app.fpltsheet.co.uk` → `archive.fpltsheet.co.uk` as a browser transport PASS only. Prevent Cross-Site Tracking remained ON; `Sec-Fetch-Site: same-site` was directly observed; OPTIONS returned 204; the matching deliberately invalid `{}` POST returned 422; and Safari read `{"error":"envelope_schema"}`.
+
+**Boundary:** No genuine Stage 10 record was sent. Genuine custody, D1/R2 persistence, idempotency and duplicate handling remain unproven, and literal physical ACAO/ACAC/`Vary` values were not directly captured. Retain every legacy rollback path. See [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md).
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## 21 August 2026 — GW1-P2C2 sibling same-site custom-domain transport
 

@@ -1,5 +1,11 @@
 # Teamsheet Cloudflare Workers
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## GW1-P2C3B transport closeout
+
+The sibling origins are live and their physical browser transport gate has passed: real iPhone Safari with Prevent Cross-Site Tracking ON directly reported `Sec-Fetch-Site: same-site`; OPTIONS returned 204 and the matching deliberately invalid `{}` POST returned readable 422 `envelope_schema`. This proves transport only, not genuine Stage 10 custody or D1/R2 persistence. No Worker implementation/configuration or live infrastructure changes in this closeout. The GitHub Pages migration origin, legacy `workers.dev` archive hostname, its Access protection and existing deployments/versions remain retained for rollback.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## GW1-P2C2 repository target — 21 August 2026
 

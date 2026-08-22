@@ -1,5 +1,13 @@
 # TESTING.md
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## GW1-P2C3B acceptance evidence
+
+The permanent automated baseline remains **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. Separately, owner-supplied physical evidence from a real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly demonstrated same-site browser transport: OPTIONS 204, matching deliberately invalid `{}` POST 422, and readable `{"error":"envelope_schema"}`. No additional physical probe was performed for this repository closeout.
+
+This is transport-only evidence. Automated tests and the physical invalid-body invocation do not prove genuine Stage 10 custody, D1/R2 persistence or idempotency; literal physical ACAO, ACAC and `Vary` response values were not directly captured. Older wording below that says the sibling-domain physical transport test remains pending is superseded.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## GW1-P2C2 candidate evidence — 21 August 2026
 

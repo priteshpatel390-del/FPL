@@ -1,5 +1,7 @@
 # Historical Records Index
 
+- [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md) — sanitized physical sibling-domain browser transport PASS, with genuine Stage 10/D1/R2 custody explicitly unproven and rollback retained.
+
 Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 12 August 2026.
 
 Historical records legitimately state the commit SHAs, test counts and merge states that were true at their own checkpoint. Those values are permanent evidence and must not be rewritten to match today. Current status lives only in [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md) and `CLAUDE.md`.

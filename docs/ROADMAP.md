@@ -1,5 +1,11 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## GW1-P2C3B closeout — completed transport gate
+
+The physical sibling-domain browser transport gate is complete and **PASS (transport only)**. Real iPhone Safari with Prevent Cross-Site Tracking ON directly observed same-site OPTIONS 204 and matching invalid-body POST 422 with readable `envelope_schema`. Genuine Stage 10 custody, valid archival, D1/R2 persistence and idempotency remain separate future evidence gates. Rollback cleanup also remains a separate future checkpoint. Older entries below are historical and must not be read as saying same-site deployment or transport acceptance is still pending.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## Current gate — GW1-P2C2, 21 August 2026
 

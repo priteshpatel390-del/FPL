@@ -1,5 +1,11 @@
 # ARCHITECTURE.md
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## Deployed same-site transport status — 22 August 2026
+
+The application and evidence archive sibling origins are live at `https://app.fpltsheet.co.uk` and `https://archive.fpltsheet.co.uk`. GW1-P2C3B physically accepted only their browser transport: real iPhone Safari with Prevent Cross-Site Tracking ON directly reported `Sec-Fetch-Site: same-site`; OPTIONS returned 204 and the matching invalid `{}` POST returned a readable 422 `envelope_schema` response. This supersedes older current-state wording below that calls the custom-domain topology or its physical transport gate pending. It does not establish genuine Stage 10 custody or D1/R2 persistence. Legacy origin/hostname/Access/deployment rollback paths remain retained.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## Current browser evidence topology decision — 21 August 2026
 

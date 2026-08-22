@@ -1,5 +1,11 @@
 # GW1-P2 — Browser evidence delivery and durable outbox
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## Same-site transport closeout — 22 August 2026
+
+Option C sibling-domain transport has now passed its physical browser **transport-only** acceptance. A real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly showed `Sec-Fetch-Site: same-site`; authenticated OPTIONS returned 204, the matching deliberately invalid `{}` POST returned 422, and Safari read `{"error":"envelope_schema"}`. This supersedes older statements below that Option C is unimplemented, undeployed or awaiting physical transport acceptance. No genuine Stage 10 record was sent, so custody, D1/R2 persistence, idempotency and duplicate handling remain unproven. See [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md).
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## 21 August 2026 superseding physical result and next transport checkpoint
 

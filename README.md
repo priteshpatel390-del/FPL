@@ -1,5 +1,12 @@
 # Teamsheet — FPL Decision Desk
 
+## Current same-site transport acceptance
+
+GW1-P2C3B records a **transport-only PASS** on the deployed sibling origins. A real physical iPhone running normal Safari with **Prevent Cross-Site Tracking ON** directly emitted `Sec-Fetch-Site: same-site`; authenticated OPTIONS returned 204, the matching deliberately invalid `{}` POST returned 422, and Safari read `{"error":"envelope_schema"}`. No genuine Stage 10 evidence was sent, so genuine custody, D1/R2 persistence and idempotency remain unproven. See [GW1-P2C3B Same-site transport closeout](docs/GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md).
+
+Rollback paths remain retained. This documentation closeout and the required one-LF `CNAME` normalization change no application or live-infrastructure behaviour.
+
+
 Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's complete 15-player squad. It provides an explainable best XI, captaincy and bench order, exact transfer-plan comparisons, fixture planning, and factual Official FPL League context. The application remains vanilla JavaScript ES modules with the repository's zero-dependency build/test toolchain and GitHub Pages deployment.
 
 ## Current repository baseline

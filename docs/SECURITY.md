@@ -1,5 +1,11 @@
 # SECURITY.md
 
+<!-- GW1-P2C3B-CURRENT-2026-08-22 -->
+## GW1-P2C3B security record
+
+Only sanitized transport facts are committed: physical iPhone Safari with Prevent Cross-Site Tracking ON directly reported same-site transport; OPTIONS returned 204; matching invalid `{}` POST returned readable 422 `envelope_schema`. No raw Worker log JSON, IP/location/network data, Access JWT/cookie/email/audience/account identifier, authorization material, TLS fingerprint data, secret or token is stored here. Literal physical ACAO, ACAC and `Vary` response values were not directly captured. Existing exact-origin controls and all legacy rollback protection remain unchanged.
+
+
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
 ## GW1-P2C2 transport security boundary — 21 August 2026
 
