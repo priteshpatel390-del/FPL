@@ -1,5 +1,10 @@
 # ARCHITECTURE.md
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+## Production evidence-path acceptance status
+
+GW1-P2C5 physically and operationally accepts the existing one-way browser custody architecture for a single synthetic fixture: local storage precedes the normal event/outbox/scheduled delivery; the unchanged Worker validated and stored R2 before committing the accepted D1 manifest/receipt; the browser reached terminal `Archived`. Read-only reconciliation matched identity, stored size, stored SHA-256 and custody timestamps. The temporary client mechanism was never merged and production was restored to `main`. The architecture remains unchanged, and this synthetic PASS does not establish natural capture, genuine prospective custody or Official eligibility. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## Deployed same-site transport status — 22 August 2026
 

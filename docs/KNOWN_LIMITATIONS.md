@@ -1,5 +1,10 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+## Post-C5 evidence boundary
+
+The synthetic production infrastructure path is accepted: physical iPhone Safari, normal scheduling, unchanged Worker validation, exact R2/D1 custody and browser terminal acknowledgement passed for the fixed `2099-00`/GW38 fixture. This removes the infrastructure-path uncertainty only. It does not prove natural capture, genuine evidence completeness/custody, deadline timing or Official eligibility. Natural GW2 observation remains required. The temporary acceptance mechanism was closed unmerged and removed from production by restoring authoritative `main`; the accepted synthetic cloud record remains intentionally untouched. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## Current same-site transport limitation boundary
 

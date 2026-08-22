@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+## GW1-P2C5 closeout — synthetic infrastructure gate complete
+
+GW1-P2C5 is complete and **PASS for the synthetic production path only**: one physical iPhone acceptance reached browser `Archived`, and exact read-only D1/R2 reconciliation confirmed the accepted receipt, manifest, object identity, integrity metadata and R2-first custody. The temporary candidate is no longer deployed and PR #143 is closed unmerged. The next evidence gate is observational, not implementation work: natural GW2 Stage 10 capture, genuine prospective custody and Official eligibility remain unproven. Historic GW1 recovery remains parked. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## GW1-P2C3B closeout — completed transport gate
 

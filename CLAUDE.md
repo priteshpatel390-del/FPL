@@ -1,5 +1,12 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- GW1-P2C5-CURRENT-2026-08-22 -->
+### Current checkpoint — 22 August 2026: GW1-P2C5 synthetic production-path acceptance PASS
+
+GW1-P2C5 passed the production infrastructure path with one unmistakably synthetic `2099-00`/GW38 record on a physical iPhone in normal Safari with Prevent Cross-Site Tracking enabled. The normal local storage/event/outbox/scheduled-delivery path reached the unchanged archive Worker; sanitized read-only reconciliation found the exact accepted D1 receipt, exact D1 manifest and exact private R2 metadata, with R2-first/D1-second timestamps and matching identity, size and stored SHA-256. The browser reached terminal **Archived** status. See [GW1-P2C5 closeout](docs/GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
+
+The temporary candidate was removed from production by restoring GitHub Pages to authoritative `main`; draft PR #143 was closed unmerged and retained as history. The accepted synthetic cloud record remains untouched. This is synthetic infrastructure acceptance only: natural Stage 10 capture, genuine prospective custody, natural GW2 capture and Official eligibility remain separate future observational gates. Historic GW1 recovery remains parked. No Worker, Access, DNS, D1/R2 configuration, model, provider, timing or calculation behaviour changed.
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ### Current checkpoint — 22 August 2026: GW1-P2C3B same-site transport closeout
 
