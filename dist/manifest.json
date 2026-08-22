@@ -3,7 +3,7 @@
   "rulesVersion": "2026-27.3",
   "sourceHash": "3fcfd800e1bdfe53d799194f28e2f7b6a0b313485dc9151014b0af9d7a4fa2a4",
   "buildInputHash": "212fa1369b9291e467ea517d7d605e534a661dfe4c0dfb34a76586d5b4edb27a",
-  "commit": "2b74128b550333f5e78b3c82143c33afa1124035",
+  "commit": "885ee43acb53ac2d3e5a95524fd2589353c3313b",
   "moduleOrder": [
     "src/config.mjs",
     "src/util.mjs",
