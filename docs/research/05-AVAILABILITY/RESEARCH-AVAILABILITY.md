@@ -320,3 +320,6 @@ No new essential pre-GW1 evidence-preservation requirement was found. Missing ea
 - **no production effect**.
 
 Automation, shadow storage, provider registration and any expected-minutes or recommendation effect would each require their own later separate approvals after pilot evidence. A pilot approval would authorise the pilot only.
+
+
+> **Dated cost-policy supersession — 22 August 2026:** The owner has superseded the blanket £0 recurring-cost constraint used when this historical research conclusion was reached. Free remains preferred where genuinely comparable; small recurring paid options may now be considered only after explicit current pricing, rights and value/cost justification, preferably through a shadow trial. The original conclusion and its historical context above are intentionally preserved. This amendment approves no provider, acquisition, subscription, retention or production use.

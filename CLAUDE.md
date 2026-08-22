@@ -1,14 +1,19 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
+### Current checkpoint — DATA-S1 draft PR #145 remediation candidate
+
+**This section supersedes the older C5/GW1-P2 current-state wording below.** C5 is closed. The current repository candidate is DATA-S1 on draft PR #145: an isolated, provider-neutral, D1-only `shadow_only` foundation. It is not deployed and has no production, browser, model, provider-health, R2 or Sheets path. The remediated candidate baseline is **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, subject to the final exact-head rerun recorded in PR #145. Older counts and C5/GW1-P2 descriptions below remain historical checkpoint evidence. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-### Current checkpoint — 22 August 2026: GW1-P2C5 synthetic production-path acceptance PASS
+### Historical checkpoint — 22 August 2026: GW1-P2C5 synthetic production-path acceptance PASS
 
 GW1-P2C5 passed the production infrastructure path with one unmistakably synthetic `2099-00`/GW38 record on a physical iPhone in normal Safari with Prevent Cross-Site Tracking enabled. The normal local storage/event/outbox/scheduled-delivery path reached the unchanged archive Worker; sanitized read-only reconciliation found the exact accepted D1 receipt, exact D1 manifest and exact private R2 metadata, with R2-first/D1-second timestamps and matching identity, size and stored SHA-256. The browser reached terminal **Archived** status. See [GW1-P2C5 closeout](docs/GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
 The temporary candidate was removed from production by restoring GitHub Pages to authoritative `main`; draft PR #143 was closed unmerged and retained as history. The accepted synthetic cloud record remains untouched. This is synthetic infrastructure acceptance only: natural Stage 10 capture, genuine prospective custody, natural GW2 capture and Official eligibility remain separate future observational gates. Historic GW1 recovery remains parked. No Worker, Access, DNS, D1/R2 configuration, model, provider, timing or calculation behaviour changed.
 
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
-### Current checkpoint — 22 August 2026: GW1-P2C3B same-site transport closeout
+### Historical checkpoint — 22 August 2026: GW1-P2C3B same-site transport closeout
 
 **Supersedes older GW1-P2/GW1-P2C2 current-state wording below where it describes sibling-domain deployment or physical browser transport acceptance as pending.** The live sibling origins are `https://app.fpltsheet.co.uk` and `https://archive.fpltsheet.co.uk`. On a real physical iPhone in normal Safari with **Prevent Cross-Site Tracking ON**, an authenticated, deliberately invalid `{}` request directly demonstrated `Sec-Fetch-Site: same-site`: OPTIONS reached the Worker and returned 204; the matching POST reached it and returned 422; Safari read `{"error":"envelope_schema"}`. **GW1-P2C3B browser transport acceptance therefore passes, for transport only.**
 
@@ -16,7 +21,7 @@ No genuine Stage 10 record was sent. This result proves neither genuine evidence
 
 
 <!-- GW1-P2C2-CURRENT-2026-08-21 -->
-### Current checkpoint — 21 August 2026: GW1-P2C2 repository preparation
+### Historical checkpoint — 21 August 2026: GW1-P2C2 repository preparation
 
 **Supersedes older GW1-P2 text below where it describes the physical cross-site POST as still pending.** The 21 August controlled iPhone Safari diagnostic on the deployed PR #137 CORS remediation reached the evidence Worker with the credentialled OPTIONS request and received HTTP 204, but the subsequent POST never reached the Worker and Teamsheet received no HTTP status. That result proves the earlier missing `Access-Control-Allow-Credentials: true` defect was real and was corrected; it does **not** prove a single browser/Access root cause for the remaining cross-site failure. Option A (`github.io` → `workers.dev`) is therefore exhausted rather than accepted.
 
@@ -31,11 +36,13 @@ The permanent pre-GW1 and later external-intelligence research programme is inde
 
 Before any provider evaluation, external-data proposal, expected-minutes evidence proposal, shadow observation/store proposal, external-repository adoption, model ablation or other external-intelligence implementation proposal, read **both** the Foundation and `docs/research/README.md`, then read the relevant topic branch record. A branch marked `Research complete`, `Awaiting evidence` or `Ready for approval` still does not approve a provider, data source, retention right, model input, weight, formula or runtime path. Time-sensitive access, pricing/free-tier, terms, licensing, retention rights, source maintenance and reliability must be re-verified before implementation. Production behaviour remains governed by the canonical docs and the normal explicit owner approval gates.
 
-## Current state — read this section first
+## Historical operating state before C5 closeout and DATA-S1
+
+> **Superseded historical record:** The instructions and open gates in this section describe the repository before C5 closed. They are retained as evidence only and are not current operating instructions. The DATA-S1 control section at the top of this file is authoritative.
 
 **This file describes the tree it lives in.** It deliberately does not restate the current `main` commit SHA: GitHub owns that fact, it changes on every merge, and duplicating it here is how this documentation went stale before. Read the live SHA with `git rev-parse origin/main`, and read live pull-request state from GitHub. Everything below is a durable statement about the work itself.
 
-### Two independent streams
+### Historical two-stream framing
 
 Do not collapse these. They have different scopes, different gates and different owners.
 
@@ -43,7 +50,7 @@ Do not collapse these. They have different scopes, different gates and different
 
 The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on **PR #121**. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited; the rule is derived from verified Official FPL event data and normal weekly behaviour resumes at the deadline instant. No optimiser mathematics changed. **Pritesh physically accepted it on iPhone Safari** on the exact candidate head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / `31583716004` with **898 tests, 898 passed, 0 failed, 0 skipped, 0 cancelled** (the then-current baseline for that application head; the same PR's documentation reconciliation raises the repository baseline to **904** without touching application code), deterministic byte-identical builds, root/deployable equality and verified committed build provenance. GitHub Pages was pointed at the branch for that acceptance and then restored to `main`, each observed built (Pages #126 branch, **#127 `main`**). See [GW1 readiness safety guard](docs/GW1-READINESS-SAFETY-GUARD.md).
 
-**971 is the current repository test baseline for the tree this file lives in.** The 898 above is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. 907 remains the then-current merged `main` baseline until an approved merge. The GW1-P2C2 candidate then added the reconciled PR #119 browser-delivery behavioural suite and the same-site migration coverage, reaching 971. No application code changed across any of those steps. Earlier counts (940, 918, 907, 904, 898, 883, 868, 864, …) are historical checkpoint evidence, not current claims.
+**Historical GW1-P2C2 candidate baseline: 971 tests for that earlier tree.** The 898 above is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. 907 remains the then-current merged `main` baseline until an approved merge. The GW1-P2C2 candidate then added the reconciled PR #119 browser-delivery behavioural suite and the same-site migration coverage, reaching 971. No application code changed across any of those steps. Earlier counts (940, 918, 907, 904, 898, 883, 868, 864, …) are historical checkpoint evidence, not current claims.
 
 The GW1 readiness audit that preceded PR #121 found **zero blockers** and two should-fix items; PR #121 addressed both. The application is suitable for GW1 subject only to the separate live-only gates named below. No model, provider, fixture, expected-minutes, scoring, squad, captaincy, transfer, optimiser, simulation, rank or Mini-League behaviour was authorised or changed by readiness work.
 
@@ -61,7 +68,7 @@ Read it before any future provider, external-data, expected-minutes-evidence or 
 
 Its one operationally relevant conclusion for now: current Stage 10 **already** preserves the normalised Odds inputs that affected a prediction when Odds is healthy, so the primary market-layer on/off ablation needs no new pre-GW1 code — only a genuine, healthy, exported capture. Raw bookmaker prices and intraday line movement are not preserved and are not reconstructible on the free tier, and that lost optionality does **not** justify breaking the freeze.
 
-### Immediate operating state
+### Historical immediate operating state
 
 Pre-GW1 code freeze and operational rehearsal. The next work is **not** post-GW1 model or provider enhancement. In order:
 
@@ -70,7 +77,7 @@ Pre-GW1 code freeze and operational rehearsal. The next work is **not** post-GW1
 3. Perform the GW1-P2 live acceptance when the genuine Stage 10 window opens, **20 August 2026 at 18:30 BST**.
 4. Review evidence at the **GW5 → GW6** international break.
 
-### GW1-P2 gate detail
+### Historical GW1-P2 gate detail
 
 Separate what is done from what is unproven. Do not collapse these three into one status:
 
@@ -162,12 +169,12 @@ The authoritative baseline at that historical checkpoint was `main` `6e725485564
 
 Read this first. GitHub `main` plus the live state of the active pull request are the permanent source of truth; repository evidence overrides conversations, old uploads and generated deployables. Last reconciled: 12 August 2026.
 
-## Current baseline
+## Historical pre-C5 baseline table
 
 | Item | Current evidence |
 |---|---|
 | Latest merged `main` | Read it live: `git rev-parse origin/main`. Deliberately not restated here — see the note at the top of this file. |
-| Repository test baseline | **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical builds, root/deployable equality, exact build identity and verified committed build provenance. Merged `main` separately holds the then-current 907/907 until an approved merge |
+| Historical GW1-P2C2 repository test baseline | **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical builds, root/deployable equality, exact build identity and verified committed build provenance. Merged `main` separately holds the then-current 907/907 until an approved merge |
 | Most recent application checkpoint | GW1 readiness — pre-deadline Transfers safety guard, delivered on PR #121 from `agent/gw1-readiness-safety-guard`. Physically accepted by Pritesh on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, Verify Teamsheet #262 / `31583716004` passing 898/898 — the then-current count for that application head, before this PR's documentation-integrity additions. See [GW1 readiness safety guard](docs/GW1-READINESS-SAFETY-GUARD.md) |
 | GW1 readiness verdict | Audit found **0 blockers** and two should-fix items; PR #121 addressed both. The application is suitable for GW1 subject only to the separate live-only gates in this table |
 | Unmerged application candidate | GW1-P2 — Browser evidence delivery and durable outbox, draft PR #119, branch `claude/gw1-p2-evidence-delivery-design-ejsb0d`, head `252c5eba0381c8aa5afb7bda1686dd102326c6df`, Verify Teamsheet #255 / `31537859087` passing 931/931. Not accepted, not merged, **not a GW1 blocker** |
@@ -176,7 +183,7 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 | GW1-P1 functional production acceptance | Repository record documents Pritesh's physical iPhone Safari acceptance of Access, D1/R2, positive ingest/read-back, duplicate handling, forced R2 failure, forced D1-after-R2 failure and orphan reconciliation. |
 | GW1-P1 security state | Repository config explicitly disables Cloudflare Preview URLs and tests that invariant. Owner-supplied live Cloudflare Domains evidence on 11 August 2026 showed production Access-`Restricted` and the wildcard Preview hostname disabled. It is owner dashboard evidence, not independent assistant testing. |
 | GW1-P2 completed preparation | Cloudflare Access `Bypass OPTIONS requests to origin` enabled and saved with no Access-layer allowed-origin response; top-level iPhone Safari Access sign-in; protected `GET /v1/health`; expected pre-window Evidence state; non-destructive storage telemetry; Pages branch switch and restoration. |
-| GW1-P2 open acceptance gate | The decisive credentialled cross-site background POST from physical iPhone Safari with Prevent Cross-Site Tracking ON, against a genuine Stage 10 record from 20 August 2026 at 18:30 BST. Unproven. |
+| Historical GW1-P2 open acceptance gate | The decisive credentialled cross-site background POST from physical iPhone Safari with Prevent Cross-Site Tracking ON, against a genuine Stage 10 record from 20 August 2026 at 18:30 BST. Unproven. |
 | GW1-P2 unresolved limitation | The bounded outbox `pinLimit` stays at 4. The usable iPhone storage ceiling is not evidenced and must not be claimed as proven. |
 | Final repository gate | The final exact PR head must pass Verify Teamsheet after all config/doc changes. Earlier green runs are historical once the head changes. |
 | GW1-P2 merge gate | PR #119 must stay draft and must not merge until Pritesh performs the physical acceptance test and explicitly approves it. |
@@ -186,7 +193,7 @@ Read this first. GitHub `main` plus the live state of the active pull request ar
 
 [Leagues pre-season acceptance](docs/LEAGUES-PRESEASON-ACCEPTANCE.md) is authoritative for what was accepted and what remains deferred. The deferred checks are not defects while Official FPL has not published the required post-Gameweek facts.
 
-## Current approval boundary
+## Historical approval boundary before C5 closeout
 
 Repository Truth A1, Safe Hygiene A2, Refresh-Load R1, A3/A3-R0, DTR-1, Atomic Foreground Refresh, A3 cache/persistence, `fpl:calib` compatibility, EB-1, Production-Bundle Safeguards, State-Ownership Cleanup, Route-Aware M1 and A3-SC-1 are complete and merged. A3 closeout is complete. GW1-P1 is merged through PR #118 at `58b834a…`, and the GW1 readiness safety guard is delivered and physically accepted on PR #121.
 
@@ -288,3 +295,11 @@ It does not yet provide a validated projected-rank model, protect/balanced/chase
 ## Completion report for every implementation item
 
 Report the exact changes, deliberate exclusions, test count and result, deterministic-build evidence, root/deployable result, documentation updates, judgement calls, remaining limitations, physical-device/live-infrastructure evidence actually performed, branch, commit and pull-request link/state.
+
+
+<!-- DATA-S1-2026-08-22 -->
+## DATA-S1 repository foundation — 22 August 2026
+
+The separately approved [DATA-S1 Shadow Structured Data Foundation](docs/DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. The separately approved intended sequence is DATA-S2 Official FPL history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates.
+
+Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.

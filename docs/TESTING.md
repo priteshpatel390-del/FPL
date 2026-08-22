@@ -1,14 +1,19 @@
 # TESTING.md
 
+<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
+## Current repository gate — DATA-S1 draft PR #145 second remediation
+
+**Supersedes older current baseline claims below.** The remediated DATA-S1 candidate passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-## GW1-P2C5 live acceptance evidence
+## Historical GW1-P2C5 live acceptance evidence
 
 Separate from the unchanged 971-test repository baseline, one physical iPhone Safari acceptance passed for the fixed synthetic `2099-00`/GW38 fixture: browser terminal `Archived`, exact accepted D1 receipt, exact D1 manifest and exact R2 metadata with matching identity, size, stored SHA-256 and R2-first/D1-second timestamps. This is live infrastructure evidence, not an automated-test substitute and not evidence of natural Stage 10 capture or Official eligibility. The temporary implementation PR #143 was closed unmerged and production restored to `main`. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
-## GW1-P2C3B acceptance evidence
+## Historical GW1-P2C3B acceptance evidence
 
-The permanent automated baseline remains **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. Separately, owner-supplied physical evidence from a real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly demonstrated same-site browser transport: OPTIONS 204, matching deliberately invalid `{}` POST 422, and readable `{"error":"envelope_schema"}`. No additional physical probe was performed for this repository closeout.
+The historical GW1-P2C2 automated baseline was **971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**. Separately, owner-supplied physical evidence from a real iPhone in normal Safari with Prevent Cross-Site Tracking ON directly demonstrated same-site browser transport: OPTIONS 204, matching deliberately invalid `{}` POST 422, and readable `{"error":"envelope_schema"}`. No additional physical probe was performed for this repository closeout.
 
 This is transport-only evidence. Automated tests and the physical invalid-body invocation do not prove genuine Stage 10 custody, D1/R2 persistence or idempotency; literal physical ACAO, ACAC and `Vary` response values were not directly captured. Older wording below that says the sibling-domain physical transport test remains pending is superseded.
 
@@ -23,7 +28,7 @@ This branch result is repository evidence only. Final PR acceptance still requir
 
 ## Current repository baseline
 
-**971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (940, 918, 907, 904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions; 904 was the baseline before the pre-GW1 housekeeping closeout added its own; and 907 is the then-current merged `main` baseline this unmerged candidate builds on. This document describes the tree it lives in and does not restate the current `main` commit SHA.
+**Historical GW1-P2C2 result: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (940, 918, 907, 904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions; 904 was the baseline before the pre-GW1 housekeeping closeout added its own; and 907 is the then-current merged `main` baseline this unmerged candidate builds on. This document describes the tree it lives in and does not restate the current `main` commit SHA.
 
 ### GW1 readiness safety guard coverage
 
@@ -539,3 +544,11 @@ Coverage groups:
 - **Focused production render** — the actual built bundle preserves `document.activeElement` and the raw focused `fxFrom`/`fxSpan` value through `renderAll()`.
 
 `tests/startup-refresh.test.mjs` line 77–79 previously pinned the pre-atomic provider call shape (`loadUnderstat({force:Boolean(options.forceSupporting)})`). Providers now receive the staged core and captured configuration, so those three assertions were replaced with ones that pin the staged context **as well as** the `forceSupporting` propagation they always covered. No assertion was removed or weakened.
+
+
+<!-- DATA-S1-2026-08-22 -->
+## DATA-S1 repository foundation — 22 August 2026
+
+The separately approved [DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. The separately approved intended sequence is DATA-S2 Official FPL history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates.
+
+Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.

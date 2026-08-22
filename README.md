@@ -1,10 +1,15 @@
 # Teamsheet — FPL Decision Desk
 
-## Current Stage 10 infrastructure acceptance
+## Current repository checkpoint — DATA-S1 draft PR #145
+
+C5 is closed. DATA-S1 is the current repository-only candidate, is not live deployed, and passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. The delivered GW1 readiness checkpoint remains PR #121. Later DATA-S2, DATA-S3, DATA-S4 and DATA-S5 work requires separate approval.
+
+
+## Historical Stage 10 infrastructure acceptance
 
 GW1-P2C5 is **PASS for the synthetic production infrastructure path only**. One fixed `2099-00`/GW38 incomplete, non-Official fixture traversed the real physical iPhone Safari → production local storage/event/outbox/scheduled-delivery → unchanged Worker → R2 → D1 manifest/accepted receipt → browser `Archived` path. Sanitized read-only reconciliation matched its exact identity, size, stored SHA-256 and R2-first/D1-second custody timestamps. The temporary candidate was then removed from production by restoring authoritative `main`, and PR #143 was closed unmerged. Natural Stage 10 capture, genuine prospective custody and GW2 Official eligibility remain unproven. See [GW1-P2C5 closeout](docs/GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
-## Current same-site transport acceptance
+## Historical same-site transport acceptance
 
 GW1-P2C3B records a **transport-only PASS** on the deployed sibling origins. A real physical iPhone running normal Safari with **Prevent Cross-Site Tracking ON** directly emitted `Sec-Fetch-Site: same-site`; authenticated OPTIONS returned 204, the matching deliberately invalid `{}` POST returned 422, and Safari read `{"error":"envelope_schema"}`. No genuine Stage 10 evidence was sent, so genuine custody, D1/R2 persistence and idempotency remain unproven. See [GW1-P2C3B Same-site transport closeout](docs/GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md).
 

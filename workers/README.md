@@ -73,3 +73,7 @@ Both Workers are zero-dependency ES modules. Relevant contracts are exercised by
 Repository tests can prove exact configuration, CORS contracts, build/CSP output, Worker mirror parity and unchanged bindings. They cannot prove live DNS/TLS, Access cookie behaviour or physical Safari transmission. No Worker deployment, Custom Domain activation, DNS change, Access change, D1/R2 change or physical iPhone test is authorised or performed by GW1-P2C2 repository preparation.
 
 See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md`, `docs/GW1-P2-BROWSER-EVIDENCE-DELIVERY.md` and `docs/GW1-P2C2-SAME-SITE-CUSTOM-DOMAIN-TRANSPORT.md`.
+
+## DATA-S1 data platform (repository only)
+
+`data-platform/` is the separate provider-neutral `teamsheet-data-platform` service concept. It binds only the future `teamsheet-data` D1 database as `TEAMSHEET_DATA_DB`, permits only `shadow_only`, has no browser/CORS/R2/scheduled/provider integration, and is not deployed. It must never be folded into the evidence archive or imported by the production application/model.

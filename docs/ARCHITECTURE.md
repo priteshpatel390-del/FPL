@@ -1,7 +1,12 @@
 # ARCHITECTURE.md
 
+## Current repository architecture checkpoint — DATA-S1 draft PR #145
+
+C5 is closed. DATA-S1 is the current repository-only, non-deployed, separate D1 shadow architecture candidate and passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. It has no production read path. The delivered GW1 readiness checkpoint remains PR #121. DATA-S2 through DATA-S5 remain separately approval-gated.
+
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-## Production evidence-path acceptance status
+## Historical production evidence-path acceptance status
 
 GW1-P2C5 physically and operationally accepts the existing one-way browser custody architecture for a single synthetic fixture: local storage precedes the normal event/outbox/scheduled delivery; the unchanged Worker validated and stored R2 before committing the accepted D1 manifest/receipt; the browser reached terminal `Archived`. Read-only reconciliation matched identity, stored size, stored SHA-256 and custody timestamps. The temporary client mechanism was never merged and production was restored to `main`. The architecture remains unchanged, and this synthetic PASS does not establish natural capture, genuine prospective custody or Official eligibility. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 
@@ -385,3 +390,11 @@ Every failure in the refresh lifecycle has exactly one owner, and only a provide
 The application boundary is narrow by design: it sits at the verified-refresh lifecycle edge and begins before `captureRefreshInputs()`, so startup, manual and foreground refreshes all own an otherwise escaping exception. There is no global `window.onerror` or `unhandledrejection` layer, because one would hide real defects. Users never see raw exception text; the underlying error stays on the returned report for tests and diagnostics.
 
 See [A3 error-boundary separation](A3-ERROR-BOUNDARY-SEPARATION.md).
+
+
+<!-- DATA-S1-2026-08-22 -->
+## DATA-S1 repository foundation — 22 August 2026
+
+The separately approved [DATA-S1 Shadow Structured Data Foundation](DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. The separately approved intended sequence is DATA-S2 Official FPL history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates.
+
+Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.
