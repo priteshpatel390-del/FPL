@@ -1,7 +1,12 @@
 # ARCHITECTURE.md
 
+## Current repository architecture checkpoint — DATA-S1 draft PR #145
+
+C5 is closed. DATA-S1 is the current repository-only, non-deployed, separate D1 shadow architecture candidate and passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. It has no production read path. The delivered GW1 readiness checkpoint remains PR #121. DATA-S2 through DATA-S5 remain separately approval-gated.
+
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
-## Production evidence-path acceptance status
+## Historical production evidence-path acceptance status
 
 GW1-P2C5 physically and operationally accepts the existing one-way browser custody architecture for a single synthetic fixture: local storage precedes the normal event/outbox/scheduled delivery; the unchanged Worker validated and stored R2 before committing the accepted D1 manifest/receipt; the browser reached terminal `Archived`. Read-only reconciliation matched identity, stored size, stored SHA-256 and custody timestamps. The temporary client mechanism was never merged and production was restored to `main`. The architecture remains unchanged, and this synthetic PASS does not establish natural capture, genuine prospective custody or Official eligibility. See [GW1-P2C5 closeout](GW1-P2C5-STAGE10-PRODUCTION-PATH-ACCEPTANCE-CLOSEOUT.md).
 

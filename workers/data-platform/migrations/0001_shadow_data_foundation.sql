@@ -4,8 +4,9 @@ CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL 
 INSERT INTO schema_migrations VALUES (1, 'shadow_data_foundation', '2026-08-22T00:00:00.000Z');
 
 CREATE TABLE data_sources (
- source_id TEXT PRIMARY KEY, source_key TEXT NOT NULL UNIQUE, source_name TEXT NOT NULL,
- source_kind TEXT NOT NULL, created_at TEXT NOT NULL
+ source_id TEXT PRIMARY KEY, source_key TEXT NOT NULL UNIQUE CHECK(source_key=lower(source_key)), source_name TEXT NOT NULL,
+ source_kind TEXT NOT NULL, created_at TEXT NOT NULL,
+ CHECK((source_key='official-fpl' AND source_kind='official_fpl') OR source_key<>'official-fpl')
 );
 CREATE TABLE data_source_revisions (
  source_revision_id TEXT PRIMARY KEY, source_id TEXT NOT NULL REFERENCES data_sources(source_id), revision INTEGER NOT NULL,
@@ -69,6 +70,6 @@ CREATE TABLE observation_relations (
 CREATE TABLE observation_heads (logical_key TEXT PRIMARY KEY, observation_id TEXT NOT NULL REFERENCES shadow_observations(observation_id), updated_at TEXT NOT NULL);
 CREATE TABLE observation_rejections (
  rejection_id TEXT PRIMARY KEY, run_id TEXT REFERENCES ingestion_runs(run_id), source_revision_id TEXT REFERENCES data_source_revisions(source_revision_id),
- reason_code TEXT NOT NULL CHECK(reason_code IN ('rights_unknown','rights_inconsistent','durable_storage_blocked','local_research_only','attribution_missing','secret_detected','keyed_url_detected','mapping_unresolved','mapping_ambiguous','mapping_source_mismatch','mapping_target_mismatch','schema_invalid','timestamp_invalid','value_invalid','mode_invalid')),
+ reason_code TEXT NOT NULL CHECK(reason_code IN ('rights_unknown','rights_inconsistent','durable_storage_blocked','local_research_only','attribution_missing','secret_detected','keyed_url_detected','mapping_unresolved','mapping_ambiguous','mapping_source_mismatch','mapping_target_mismatch','mapping_type_mismatch','entity_type_mismatch','schema_invalid','timestamp_invalid','value_invalid','mode_invalid')),
  category TEXT, subject_type TEXT, safe_fingerprint TEXT, created_at TEXT NOT NULL
 );

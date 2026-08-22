@@ -3,6 +3,8 @@
 <!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
 ## Current checkpoint — DATA-S1 candidate
 
+The delivered GW1 readiness checkpoint remains PR #121; it is retained as application evidence and is not superseded as product behaviour by DATA-S1.
+
 C5 is closed. Draft PR #145 is the current, repository-only DATA-S1 remediation candidate; it is not deployed and changes no production calculation or UI. After independent review, each later step remains separately approval-gated: DATA-S2 Official FPL structured history, DATA-S3 Official outcome automation, DATA-S4 provider trials, DATA-S5 downstream Sheets export, then any production/model approval.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
@@ -41,7 +43,9 @@ GW1-P1 is complete and merged through PR #118. GW1-P2 is a separate, still-unacc
 3. **GW1 readiness safety guard** — the approved narrow fix for both items, delivered on PR #121 and physically accepted.
 4. **External Intelligence Foundation — documentation only.** The forward research and shadow-architecture record for external football information: provider-neutral observation contract, hard `shadow_only` boundary, dated free-source research, double-counting controls and a pre-registered ablation method. It authorises **no** provider, endpoint, retention, model, calculation or recommendation change and does not alter the freeze. See [External Intelligence Foundation](EXTERNAL-INTELLIGENCE-FOUNDATION.md).
 
-### Immediate operating state — pre-GW1 freeze
+### Historical immediate operating state — pre-GW1 freeze
+
+> Superseded by the C5 closeout and current DATA-S1 control section above. The sequence below is retained as historical planning evidence and is not an instruction to repeat elapsed acceptance work.
 
 5. **Code freeze and operational rehearsal.** Make only separately approved fixes; every change still passes the full repository gate.
 6. Operate GW1 and collect prospective evidence, using local Stage 10 capture, recovery and owner-controlled export as the pre-deadline evidence path. Confirm the Stage 10 record truthfully reports whether Odds affected the model, then export it — that capture is what makes the primary market-layer ablation possible later, and no pre-GW1 code change is needed for it.

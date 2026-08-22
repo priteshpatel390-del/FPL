@@ -111,7 +111,7 @@ const OPERATIONAL_SPINE = Object.freeze([
   'CLAUDE.md', 'README.md', 'docs/PROJECT_CONTEXT.md', 'docs/ROADMAP.md',
   'docs/ARCHITECTURE.md', 'docs/TESTING.md', 'docs/KNOWN_LIMITATIONS.md'
 ]);
-const CURRENT_TEST_BASELINE = 971;
+const CURRENT_TEST_BASELINE = 985;
 const HISTORICAL_HEADING = /^#{2,4}\s+.*\b(historical|superseded|previous checkpoint)\b/i;
 
 // The prose before the first historical heading: everything that claims to be current.

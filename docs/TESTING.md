@@ -1,9 +1,9 @@
 # TESTING.md
 
 <!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-## Current repository gate — DATA-S1 draft PR #145
+## Current repository gate — DATA-S1 draft PR #145 second remediation
 
-**Supersedes older current baseline claims below.** The remediated DATA-S1 candidate passes **983 tests, 983 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output.
+**Supersedes older current baseline claims below.** The remediated DATA-S1 candidate passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## GW1-P2C5 live acceptance evidence

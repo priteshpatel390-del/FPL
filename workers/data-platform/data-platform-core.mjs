@@ -7,6 +7,7 @@ export const MAPPING_METHODS=Object.freeze(['provider_id_crosswalk','manually_ve
 export const ADMISSION_STATES=Object.freeze(['accepted','quarantined']);
 export const QUALITY_STATES=Object.freeze(['fresh','stale','conflicting','uncertain']);
 export const VALUE_TYPES=Object.freeze(['number','text','boolean']);
+export const OFFICIAL_FPL_SOURCE_KEY='official-fpl';
 const FORBIDDEN_KEY=/^(?:api[-_]?key|api[-_]?token|token|secret|client[-_]?secret|client[-_]?id|access[-_]?key|private[-_]?key|auth|auth[-_]?token|password|passwd|authorization|cf[-_]?access[-_]?jwt[-_]?assertion|cookie|openai[-_]?api[-_]?key|anthropic[-_]?api[-_]?key|odds[-_]?api[-_]?key|account[-_]?id|manager[-_]?id|team[-_]?id|league[-_]?id|rival[-_]?id)$/i;
 const SECRET_VALUE=/(?:\bbearer\s+\S+|\b(?:sk|ant)-[A-Za-z0-9_-]{8,})/i;
 const CREDENTIAL_PARAM=/^(?:key|token|api[_-]?key|apikey|access[_-]?token|access[_-]?key|auth|auth[_-]?token|client[_-]?secret|signature|sig)$/i;
@@ -43,12 +44,13 @@ export function canonicalTimestamp(value,{required=false}={}){
   const ms=Date.parse(value);if(!Number.isFinite(ms))throw new Error('timestamp_invalid');return new Date(ms).toISOString();
 }
 export function canonicalFplId({season,type,id}){if(!/^\d{4}-\d{2}$/.test(season||'')||!['player','team','fixture','competition'].includes(type)||!/^\d+$/.test(String(id)))throw new Error('canonical_identity_invalid');return `${season}:fpl:${type}:${id}`;}
-export function validateMapping(mapping,{sourceRevisionId,canonicalEntityId}={}){
+export function validateMapping(mapping,{sourceRevisionId,canonicalEntityId,providerEntityType}={}){
   if(!mapping||!MAPPING_METHODS.includes(mapping.mapping_method)||!String(mapping.provider_entity_id||'').trim())return {ok:false,reason:'mapping_unresolved'};
   if(mapping.mapping_status==='ambiguous')return {ok:false,reason:'mapping_ambiguous'};
   if(mapping.mapping_status!=='verified')return {ok:false,reason:'mapping_unresolved'};
   if(sourceRevisionId&&mapping.source_revision_id!==sourceRevisionId)return {ok:false,reason:'mapping_source_mismatch'};
   if(canonicalEntityId&&mapping.canonical_entity_id!==canonicalEntityId)return {ok:false,reason:'mapping_target_mismatch'};
+  if(providerEntityType&&mapping.provider_entity_type!==providerEntityType)return {ok:false,reason:'mapping_type_mismatch'};
   return {ok:true};
 }
 export function canonicaliseObservation(value){
