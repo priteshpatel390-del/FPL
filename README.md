@@ -1,8 +1,10 @@
 # Teamsheet — FPL Decision Desk
 
-## Current repository checkpoint — DATA-S1A post-merge control reconciliation
+## Current repository checkpoint — DATA-S1B mutation-free preflight PASS
 
-DATA-S1 is merged in PR #145 and repository-verified at **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. It is **not live deployed**: no DATA-S1 Worker, D1, migration, Access, DNS/Custom Domain, service token, route or provider acquisition is claimed. DATA-S1A is the current repository-only reconciliation. The separately gated sequence is DATA-S1B live Cloudflare deployment/acceptance, then DATA-S2, DATA-S3, DATA-S4 and DATA-S5. See the [DATA-S1B deployment plan](docs/DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md). The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
+The DATA-S1B mutation-free live preflight is complete and **PASS**. Its final phase-gated procedure is the [DATA-S1B Final Preflight and Deployment Runbook](docs/DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED**: this checkpoint created no DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding. Owner evidence records **Workers Free — Active**, with current and projected billable usage of **$0.00**; deployment must remain within Workers Free and D1 Free limits and stop rather than upgrade the plan.
+
+The reviewed PR #147 candidate passes **986 tests, 0 failed, 0 skipped, 0 cancelled**, deterministic build/provenance gates and exact-head Verify Teamsheet. Its merge authorizes **no Cloudflare mutation**. After merge, latest GitHub `main` must be re-read and Verify Teamsheet must pass on that exact merge commit. Only then may the owner consider the next separately gated live mutation, **Phase 2 disposable D1 validation**. DATA-S2 remains blocked until DATA-S1B live deployment and acceptance fully close. The delivered GW1 readiness checkpoint remains PR #121 as historical application evidence. No model, provider, fixture, captaincy, squad, transfer, simulation, rank, Mini-League or application behaviour changed.
 
 
 ## Historical Stage 10 infrastructure acceptance
@@ -22,7 +24,7 @@ Teamsheet is a mobile-first Fantasy Premier League decision app for a manager's 
 
 This section describes the tree it lives in. It deliberately does not restate the current `main` commit SHA — GitHub owns that fact and it changes on every merge. Read it live with `git rev-parse origin/main`.
 
-**Repository test baseline: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. This describes the tree this file lives in; the merged `main` baseline is separately the then-current 907/907 until an approved merge.
+**Reviewed repository candidate baseline: 986 tests, 986 passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic byte-identical production builds, root/deployable equality, exact build identity, verified committed build provenance and exact-head Verify Teamsheet. Post-merge `main` remains a separate exact-merge verification gate.
 
 The most recent application checkpoint is **GW1 readiness — pre-deadline Transfers safety guard**, delivered on PR #121. Before the first Official FPL deadline of a season the Transfers screen suppresses the weekly free-transfer/hit optimiser and states that initial squad changes are unlimited; the rule is derived from verified Official FPL event data and normal weekly behaviour resumes at the deadline instant. No optimiser mathematics changed. Pritesh physically accepted it on iPhone Safari at head `f72023043813566fe8b11da2d959e374d34bca39`, which passed Verify Teamsheet #262 / run `31583716004`. The preceding GW1 readiness audit found **zero blockers**; the application is suitable for GW1 subject to the separate live-only gates below.
 

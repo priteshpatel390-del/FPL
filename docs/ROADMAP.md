@@ -1,11 +1,13 @@
 # ROADMAP.md — current and proposed checkpoints
 
-<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-## Current checkpoint — DATA-S1A post-merge control reconciliation
+<!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
+## Current checkpoint — DATA-S1B mutation-free preflight PASS
 
 The delivered GW1 readiness checkpoint remains PR #121; it is retained as application evidence and is not superseded as product behaviour by DATA-S1.
 
-C5 is closed and DATA-S1 is merged in PR #145 and repository-verified. DATA-S1A is the current repository-only control reconciliation and changes no runtime behaviour. DATA-S1 remains not deployed. After DATA-S1A review and merge, separately owner-gated DATA-S1B live preflight/deployment/acceptance is next; it must close before separately gated DATA-S2 Official FPL structured history, DATA-S3 Official outcomes automation, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then any production/model approval.
+The DATA-S1B mutation-free live preflight is complete and **PASS**, with the final phase-gated procedure recorded in the [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED**. No DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding was created. Owner evidence records **Workers Free — Active** and current/projected billable usage **$0.00**; deployment must remain within Workers Free/D1 Free limits and stop rather than upgrade.
+
+The reviewed PR #147 candidate baseline is **986 tests passed, 0 failed, 0 skipped, 0 cancelled**, deterministic build/provenance gates and exact-head Verify Teamsheet. Merge authorizes **no Cloudflare mutation**. After merge, re-read latest GitHub `main` and require green Verify Teamsheet on the exact merge commit. Only then may the owner consider the next separately gated live mutation, **Phase 2 disposable D1 validation**. DATA-S2 remains blocked until DATA-S1B live deployment and acceptance fully close. No model, provider, fixture, captaincy, squad, transfer, simulation, rank, Mini-League or application behaviour changed.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## GW1-P2C5 closeout — synthetic infrastructure gate complete
