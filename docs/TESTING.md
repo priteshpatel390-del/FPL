@@ -1,9 +1,11 @@
 # TESTING.md
 
-<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-## Current repository gate — DATA-S1A post-merge reconciliation
+<!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
+## Current repository gate — DATA-S1B mutation-free preflight PASS
 
-**Supersedes older current baseline claims below.** The merged DATA-S1 repository foundation passed **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, plus research-document integrity, two byte-identical production builds, root/deployable equality and reachable committed provenance. C5 is closed and its unchanged files remain protected by byte-identity and existing regression tests. DATA-S1 is not deployed and does not change application/model output. The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
+**Supersedes older current baseline claims below; their historical results remain evidence for their own commits.** The DATA-S1B mutation-free live preflight is complete and **PASS**, with the final phase-gated procedure in the [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED**. No DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding was created. Owner evidence records **Workers Free — Active** and current/projected billable usage **$0.00**; execution must remain within Workers Free/D1 Free limits and stop rather than upgrade.
+
+The reviewed PR #147 candidate gate is **986 tests passed, 0 failed, 0 skipped, 0 cancelled**, research/document integrity, deterministic byte-identical builds, root/deployable equality, exact build identity, committed provenance and exact-head Verify Teamsheet. Merge authorizes **no Cloudflare mutation**. After merge, re-read latest GitHub `main` and require the same Verify Teamsheet gate on the exact merge commit. Only then may the owner consider the separately gated **Phase 2 disposable D1 validation**. DATA-S2 remains blocked until DATA-S1B live deployment/acceptance fully closes. The delivered GW1 readiness checkpoint remains PR #121 as historical application evidence. No model, provider, fixture, captaincy, squad, transfer, simulation, rank, Mini-League or application behaviour changed.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## Historical GW1-P2C5 live acceptance evidence
@@ -28,7 +30,7 @@ This branch result is repository evidence only. Final PR acceptance still requir
 
 ## Current repository baseline
 
-**Historical GW1-P2C2 result: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (940, 918, 907, 904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims — 898 in particular is the then-current count on the physically accepted PR #121 application head, before the same PR's documentation-integrity regressions; 904 was the baseline before the pre-GW1 housekeeping closeout added its own; and 907 is the then-current merged `main` baseline this unmerged candidate builds on. This document describes the tree it lives in and does not restate the current `main` commit SHA.
+**Current reviewed candidate result: 986 tests, 986 passed, 0 failed, 0 skipped, 0 cancelled**, with production build, committed provenance, deterministic exact-identity rebuild, root/deployable equality, exact build identity and production-output preservation. Earlier counts recorded elsewhere in this file (985, 971, 940, 918, 907, 904, 898, 883, 868, 866, 864, 859, 856, 842, …) are permanent checkpoint evidence for their own commits and are not current claims. This document does not restate the current `main` commit SHA; exact-head PR verification and exact-merge post-merge verification remain separate required gates.
 
 ### GW1 readiness safety guard coverage
 

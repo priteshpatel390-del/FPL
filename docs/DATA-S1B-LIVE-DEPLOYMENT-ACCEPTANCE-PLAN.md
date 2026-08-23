@@ -4,6 +4,12 @@ Status: **design only; separately owner-gated; no live action approved**
 Predecessor: DATA-S1 repository foundation merged in PR #145 and repository-verified
 Required predecessor checkpoint: DATA-S1A control reconciliation independently reviewed and merged
 
+The completed 22 August 2026 mutation-free preflight verdict and the exact,
+phase-gated deployment runbook are recorded in
+[DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md).
+That record is review material only: it does not approve any command in the
+deployment runbook.
+
 ## Control boundary and sequence
 
 DATA-S1B is the next checkpoint after DATA-S1A. It must safely deploy and accept the isolated DATA-S1 foundation before DATA-S2 is allowed to depend on it. The sequence is therefore:

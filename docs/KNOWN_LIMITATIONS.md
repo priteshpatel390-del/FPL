@@ -1,9 +1,11 @@
 # KNOWN_LIMITATIONS.md
 
-<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-## Current DATA-S1 limitations
+<!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
+## Current DATA-S1B limitation boundary
 
-C5 is closed. DATA-S1 is merged in PR #145 and repository-verified at **985/985**. It is **not deployed**: no live Worker, D1 database/migration, Access application/policy, DNS/Custom Domain, service token, route or administrative source/mapping API exists or is claimed. It has no provider acquisition, R2, browser, production model, Provider Health or Sheets path. DATA-S1A is current; separately owner-gated DATA-S1B deployment/acceptance is next and must close before separately gated DATA-S2.
+The DATA-S1B mutation-free live preflight is complete and **PASS**, and its final phase-gated procedure is the [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED**: this checkpoint created no DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding. Owner evidence records **Workers Free — Active** and current/projected billable usage **$0.00**. Workers Free/D1 Free limits are accepted constraints; any need to exceed them must stop rather than upgrade the plan.
+
+The reviewed PR #147 candidate baseline is **986 tests passed, 0 failed, 0 skipped, 0 cancelled**, deterministic build/provenance gates and exact-head Verify Teamsheet. Merge authorizes **no Cloudflare mutation**. After merge, latest GitHub `main` and exact-merge Verify Teamsheet must be re-read before the owner may consider the separately gated **Phase 2 disposable D1 validation**. DATA-S2 remains blocked until DATA-S1B live deployment/acceptance fully closes. The delivered GW1 readiness checkpoint remains PR #121 as historical application evidence. No application, model, provider, fixture, captaincy, squad, transfer, simulation, rank or Mini-League behaviour changed.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## Post-C5 evidence boundary

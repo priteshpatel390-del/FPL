@@ -1,9 +1,11 @@
 # CLAUDE.md — onboarding for every future development session
 
-<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-### Current checkpoint — DATA-S1A post-merge control reconciliation
+<!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
+### Current checkpoint — DATA-S1B mutation-free preflight PASS
 
-**This section supersedes older C5/GW1-P2 and pre-merge DATA-S1 wording below.** DATA-S1 is merged in PR #145 and repository-verified on its merge commit: **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**, deterministic builds, root/deployable equality and committed provenance. It remains **NOT LIVE DEPLOYED**: no DATA-S1 Worker, D1, migration, Access policy/application, DNS/Custom Domain, service token, route or provider acquisition is claimed. DATA-S1A is the current repository-only documentation/control checkpoint. After independent review and merge, DATA-S1B live Cloudflare preflight/deployment/acceptance is the next separately owner-gated checkpoint; only after its acceptance may separately gated DATA-S2 begin. See the [DATA-S1B plan](docs/DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md). The delivered GW1 readiness checkpoint remains PR #121; it is historical application evidence and is not superseded as product behaviour by DATA-S1.
+**This section supersedes older current C5, DATA-S1 and DATA-S1A wording below; historical records remain unchanged.** The DATA-S1B mutation-free live preflight is complete and **PASS**, and the final phase-gated deployment procedure is recorded in the [DATA-S1B Final Preflight and Deployment Runbook](docs/DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED**. This checkpoint created no DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding. Owner evidence records **Workers Free — Active** with current and projected billable usage of **$0.00**; execution must remain within Workers Free and D1 Free limits and stop rather than upgrade the plan.
+
+The reviewed PR #147 repository candidate baseline is **986 tests passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic build/provenance gates and exact-head Verify Teamsheet. PR #147 merge authorizes **no Cloudflare mutation**. After merge, re-read latest GitHub `main` and require Verify Teamsheet to pass on that exact merge commit. Only then may the owner consider the next separately gated live mutation: **Phase 2 disposable D1 validation** from the approved runbook. DATA-S2 remains blocked until DATA-S1B live deployment and acceptance fully close. The delivered GW1 readiness checkpoint remains PR #121 as historical application evidence. No model, provider, fixture, captaincy, squad, transfer, simulation, rank, Mini-League or application behaviour changed.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ### Historical checkpoint — 22 August 2026: GW1-P2C5 synthetic production-path acceptance PASS

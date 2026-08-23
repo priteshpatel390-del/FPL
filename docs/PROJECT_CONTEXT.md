@@ -1,11 +1,13 @@
 # PROJECT_CONTEXT.md
 
-<!-- DATA-S1-REMEDIATION-CURRENT-2026-08-22 -->
-## Current repository checkpoint — DATA-S1A post-merge control reconciliation
+<!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
+## Current repository checkpoint — DATA-S1B mutation-free preflight PASS
 
 The delivered GW1 readiness checkpoint remains PR #121; it is retained as application evidence and is not superseded as product behaviour by DATA-S1.
 
-**Supersedes older current-state evidence-stream and pre-merge DATA-S1 wording below.** DATA-S1 is merged in PR #145 and repository-verified at **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. It remains **not live deployed** and has no production/browser/model/provider-health/R2/Sheets read path. DATA-S1A is the current repository-only control reconciliation; [DATA-S1B](DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md) is the next, separately owner-gated live deployment/acceptance checkpoint before separately gated DATA-S2.
+**Supersedes older current-state evidence-stream and DATA-S1A wording below.** The DATA-S1B mutation-free live preflight is complete and **PASS**; its final phase-gated procedure is the [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED**. This checkpoint created no DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding. Owner evidence records **Workers Free — Active**, current/projected billable usage **$0.00**, and a hard requirement to remain within Workers Free/D1 Free limits and stop rather than upgrade.
+
+The reviewed PR #147 candidate baseline is **986 tests passed, 0 failed, 0 skipped, 0 cancelled**, plus deterministic build/provenance gates and exact-head Verify Teamsheet. Merge authorizes **no Cloudflare mutation**. After merge, re-read latest GitHub `main` and require Verify Teamsheet on the exact merge commit; only then may the owner consider the separately gated **Phase 2 disposable D1 validation**. DATA-S2 remains blocked until DATA-S1B live deployment/acceptance fully closes. No model, provider, fixture, captaincy, squad, transfer, simulation, rank, Mini-League or application behaviour changed.
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## Historical evidence-path checkpoint — 22 August 2026
@@ -36,7 +38,7 @@ Related: [Architecture](ARCHITECTURE.md), [Decisions](DECISIONS.md), [Roadmap](R
 
 Live GitHub is authoritative over this document and all historical handovers. This section describes the tree it lives in and deliberately does not restate the current `main` commit SHA — that changes on every merge and duplicating it here is how this documentation went stale before. Read it live with `git rev-parse origin/main`, and read live pull-request state from GitHub.
 
-**Historical GW1-P2C2 candidate baseline: 971 tests, 971 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity and verified committed build provenance. This is the tree this file lives in; merged `main` separately holds the then-current 907/907 until an approved merge. The 898 recorded below is the then-current count on the physically accepted application head; the documentation-integrity regressions added by the same PR's reconciliation raised it to 904, and the pre-GW1 housekeeping closeout then reached 907 by adding one documentation-integrity regression and splitting the hardened `selectMiniLeague` coverage into behavioural and mutation-sensitivity contracts. The GW1-P2C2 candidate then reached 971 by restoring the reconciled PR #119 browser-delivery behavioural suite and adding same-site migration coverage. No application code changed across any of those steps. Earlier counts (940, 918, 907, 904, 898, 883, 868, 864, 856, …) are historical checkpoint evidence and are not current claims.
+**Reviewed repository candidate baseline: 986 tests, 986 passed, 0 failed, 0 skipped, 0 cancelled**, with deterministic byte-identical production builds, root/deployable equality, exact build identity, verified committed build provenance and exact-head Verify Teamsheet. Post-merge `main` must separately pass the same gate on its exact merge commit. Earlier counts (985, 971, 940, 918, 907, 904, 898, 883, 868, 864, 856, …) remain historical checkpoint evidence and are not current claims.
 
 ### Application — ready for GW1
 

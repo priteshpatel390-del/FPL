@@ -1,8 +1,10 @@
 # ARCHITECTURE.md
 
-## Current repository architecture checkpoint — DATA-S1A post-merge reconciliation
+## Current repository architecture checkpoint — DATA-S1B mutation-free preflight PASS
 
-C5 is closed. DATA-S1 is the merged, repository-verified, non-deployed, separate D1 shadow architecture and passes **985 tests, 985 passed, 0 failed, 0 skipped, 0 cancelled**. It has no production read path. The delivered GW1 readiness checkpoint remains PR #121. DATA-S2 through DATA-S5 remain separately approval-gated.
+The DATA-S1B mutation-free live preflight is complete and **PASS**; the final phase-gated architecture/deployment procedure is recorded in the [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED** and has no production read path. This checkpoint created no DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding. Owner evidence records **Workers Free — Active** and current/projected billable usage **$0.00**; deployment must stay within Workers Free/D1 Free limits and stop rather than upgrade.
+
+The reviewed PR #147 candidate baseline is **986 tests passed, 0 failed, 0 skipped, 0 cancelled**, deterministic build/provenance gates and exact-head Verify Teamsheet. Merge authorizes **no Cloudflare mutation**. After merge, latest GitHub `main` must be re-read and verified green on the exact merge commit before the owner may consider the separately gated **Phase 2 disposable D1 validation**. DATA-S2 remains blocked until DATA-S1B live deployment/acceptance fully closes. The delivered GW1 readiness checkpoint remains PR #121 as historical application evidence. No model, provider, fixture, captaincy, squad, transfer, simulation, rank, Mini-League or application architecture/behaviour changed.
 
 
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
