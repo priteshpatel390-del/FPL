@@ -1,5 +1,19 @@
 import {MAX_REQUEST_BYTES,OFFICIAL_FPL_SOURCE_KEY,PLATFORM_VERSION,boundedLimit,canonicalTimestamp,decodeCursor,encodeCursor,observationIdentity,validateMapping,validateObservation} from './data-platform-core.mjs';
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json','cache-control':'no-store','x-content-type-options':'nosniff'}});
+const authError=(body,status,challenge=false)=>{const response=json(body,status);if(challenge)response.headers.set('www-authenticate','Bearer');return response;};
+async function authenticate(request,env){
+  const secret=env?.DATA_S1_HTTP_AUTH_TOKEN;
+  if(typeof secret!=='string'||!secret||/\s/.test(secret))return authError({error:'service_unavailable'},503);
+  const cryptoImpl=env?.crypto||globalThis.crypto;
+  if(typeof cryptoImpl?.subtle?.digest!=='function'||typeof cryptoImpl?.subtle?.timingSafeEqual!=='function')return authError({error:'service_unavailable'},503);
+  const match=/^Bearer ([^\s]+)$/.exec(request.headers.get('authorization')||'');
+  if(!match)return authError({error:'unauthorized'},401,true);
+  try{
+    const encode=value=>new TextEncoder().encode(value);
+    const [presented,expected]=await Promise.all([cryptoImpl.subtle.digest('SHA-256',encode(match[1])),cryptoImpl.subtle.digest('SHA-256',encode(secret))]);
+    return cryptoImpl.subtle.timingSafeEqual(presented,expected)?null:authError({error:'unauthorized'},401,true);
+  }catch{return authError({error:'service_unavailable'},503);}
+}
 async function body(request){const length=Number(request.headers.get('content-length')||0);if(length>MAX_REQUEST_BYTES)throw new Error('request_too_large');const text=await request.text();if(new TextEncoder().encode(text).length>MAX_REQUEST_BYTES)throw new Error('request_too_large');return JSON.parse(text);}
 async function safeRejection(db,input,reason,cryptoImpl){
   if(!input?.ingestion_run_id||!input?.source_revision_id)return;
@@ -21,6 +35,7 @@ async function reconcileInsertFailure(db,row,identity){
 }
 function insertStatement(){return `INSERT INTO shadow_observations (observation_id,logical_key,ingestion_run_id,source_revision_id,category,subject_type,subject_entity_id,fixture_entity_id,competition_entity_id,subject_mapping_id,fixture_mapping_id,competition_mapping_id,provenance_kind,metric,value_type,value_number,value_text,value_boolean,unit,observed_at,effective_at,fetched_at,expires_at,source_timestamp,provider_record_id,transform_version,validation_version,input_revision,admission_state,quality_state,conflict_group_id,mode,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;}
 async function fetchHandler(request,env){
+  const authenticationFailure=await authenticate(request,env);if(authenticationFailure)return authenticationFailure;
   const url=new URL(request.url);if(request.method==='GET'&&url.pathname==='/v1/health')return json({ok:true,platformVersion:PLATFORM_VERSION,mode:'shadow_only'});if(!env.TEAMSHEET_DATA_DB)return json({error:'storage_unavailable'},503);const db=env.TEAMSHEET_DATA_DB;
   if(request.method==='GET'&&url.pathname==='/v1/shadow/observations'){
     let asOf;try{asOf=canonicalTimestamp(url.searchParams.get('as_of'),{required:true});}catch{return json({error:'as_of_invalid'},400);}const cursorRaw=url.searchParams.get('cursor');const cursor=cursorRaw?decodeCursor(cursorRaw):null;if(cursorRaw&&(!cursor||cursor.asOf!==asOf))return json({error:'cursor_invalid'},400);const limit=boundedLimit(url.searchParams.get('limit'));
