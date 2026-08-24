@@ -14,7 +14,7 @@ This record defines the approved replacement: every DATA-S1 application request 
 
 The production `teamsheet-data-platform` Worker, production `teamsheet-data` D1 database, binding `TEAMSHEET_DATA_DB`, and custom domain `data.fpltsheet.co.uk` already exist. Worker-level Cloudflare Access remains the live outer protection at this repository checkpoint.
 
-The bearer-authentication code in this branch has not been deployed. No production `DATA_S1_HTTP_AUTH_TOKEN` has been created. No live bearer-authentication success is claimed. No Phase 5B production synthetic record has been created by this checkpoint.
+The bearer-authentication code in this branch has not been deployed. No production DATA_S1_HTTP_AUTH_TOKEN has been created. No live bearer-authentication success is claimed. No Phase 5B production synthetic record has been created by this checkpoint.
 
 ## Authentication contract
 
