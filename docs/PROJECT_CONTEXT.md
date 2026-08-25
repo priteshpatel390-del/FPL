@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S1C-CURRENT-2026-08-25 -->
+## Current repository checkpoint — DATA-S1C private Service Binding + RPC candidate
+
+**Supersedes the older DATA-S1B preflight current-state wording below.** Live handover evidence records the production `teamsheet-data-platform` Worker, `teamsheet-data` D1, `TEAMSHEET_DATA_DB` binding and `data.fpltsheet.co.uk` Custom Domain as existing, with Access still the proven outer protection. This repository-only candidate adds split named read/ingest RPC entrypoints over the shared DATA-S1 operations and a private read-only acceptance caller with no D1. Its candidate baseline is **993 tests passed, 0 failed, 0 skipped, 0 cancelled** plus deterministic build/provenance/identity gates. It performs and proves no live Cloudflare change. See [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current repository checkpoint — DATA-S1B mutation-free preflight PASS
 

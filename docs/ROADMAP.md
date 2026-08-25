@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S1C-2026-08-25 -->
+## Current checkpoint — DATA-S1C repository candidate
+
+Private Service Binding/RPC preparation is implemented for review only: split named read/ingest entrypoints share DATA-S1 operations, and the neutral read-only acceptance caller has no D1 or public route. The next gate is separate approval for the ordered live acceptance in [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md). DATA-S2 and all production writes remain blocked.
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current checkpoint — DATA-S1B mutation-free preflight PASS
 

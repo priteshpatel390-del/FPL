@@ -1,5 +1,10 @@
 # ARCHITECTURE.md
 
+<!-- DATA-S1C-2026-08-25 -->
+## DATA-S1 private service boundary
+
+The DATA-S1 repository target is `private caller -> named Service Binding RPC -> teamsheet-data-platform -> TEAMSHEET_DATA_DB`. Read and ingest are separate named entrypoints, both backed by the same operations as the retained bearer-protected HTTP adapter. Only `teamsheet-data-platform` owns D1; callers cannot receive the binding or issue arbitrary SQL. The acceptance caller is read-only and owns no storage or public route. This architecture is not deployed or live-accepted by DATA-S1C. See [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
+
 ## Current repository architecture checkpoint — DATA-S1B mutation-free preflight PASS
 
 The DATA-S1B mutation-free live preflight is complete and **PASS**; the final phase-gated architecture/deployment procedure is recorded in the [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md). DATA-S1 remains **NOT LIVE DEPLOYED** and has no production read path. This checkpoint created no DATA-S1 Worker, production or validation D1, migration, Access configuration, service token, DNS/Custom Domain, route or production binding. Owner evidence records **Workers Free — Active** and current/projected billable usage **$0.00**; deployment must stay within Workers Free/D1 Free limits and stop rather than upgrade.
