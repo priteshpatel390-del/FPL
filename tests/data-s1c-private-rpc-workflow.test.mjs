@@ -24,7 +24,7 @@ test('DATA-S1C workflow binds execution to the immutable exact canonical main SH
 });
 
 test('DATA-S1C workflow uses only approved secrets and exact temporary toolchain',()=>{
-  assert.deepEqual([...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(match=>match[1]).sort(),['CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_API_TOKEN']);
+  assert.deepEqual([...new Set([...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(match=>match[1]))].sort(),['CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_API_TOKEN']);
   assert.match(workflow,/actions\/checkout@v5/);
   assert.match(workflow,/actions\/setup-node@v5/);
   assert.match(workflow,/node-version: 24\.19\.0/);
@@ -58,4 +58,33 @@ test('DATA-S1C workflow forbids mutation, debug leakage and retains unconditiona
   assert.match(workflow,/name: Clean temporary acceptance files\n        if: always\(\)/);
   assert.match(workflow,/rm -rf "\$RUNNER_TEMP"\/teamsheet-data-s1c-\*/);
   assert.match(workflow,/name: Write sanitized acceptance summary\n        if: always\(\)/);
+});
+
+test('DATA-S1C persistent topology PRE-state precedes every functional attempt and POST-state is unconditional',()=>{
+  const pre=workflow.indexOf('- name: Capture persistent topology PRE-state');
+  const functional=workflow.indexOf('- name: Run bounded private acceptance');
+  const post=workflow.indexOf('- name: Verify persistent topology POST-state');
+  const cleanup=workflow.indexOf('- name: Clean temporary acceptance files');
+  const enforce=workflow.indexOf('- name: Enforce functional and topology results');
+  assert.ok(pre>0&&pre<functional&&functional<post&&post<cleanup&&cleanup<enforce);
+  assert.match(workflow,/name: Run bounded private acceptance\n        id: acceptance\n        continue-on-error: true/);
+  assert.match(workflow,/name: Verify persistent topology POST-state\n        if: always\(\)/);
+  assert.match(workflow,/PRE_ESTABLISHED: \$\{\{ steps\.topology_pre\.outputs\.established \}\}/);
+  assert.match(workflow,/NOT RUN — PRE-STATE NOT ESTABLISHED/);
+  const functionalStep=workflow.slice(functional,post);
+  for(const failure of ['Ephemeral probe startup failed.','Private acceptance transport failed.','transport_fetch','health','query'])assert.ok(functionalStep.includes(failure),failure);
+});
+
+test('DATA-S1C final enforcement preserves functional failure and independently rejects topology drift',()=>{
+  const post=workflow.slice(workflow.indexOf('- name: Verify persistent topology POST-state'),workflow.indexOf('- name: Clean temporary acceptance files'));
+  const enforcement=workflow.slice(workflow.indexOf('- name: Enforce functional and topology results'));
+  assert.match(post,/result=FAIL/);
+  assert.match(post,/caller\" = \"\$PRE_CALLER/);
+  assert.match(post,/target\" = \"\$PRE_TARGET/);
+  assert.match(post,/topology_result=\$result/);
+  assert.match(enforcement,/if: always\(\)/);
+  assert.match(enforcement,/FUNCTIONAL_OUTCOME: \$\{\{ steps\.acceptance\.outcome \}\}/);
+  assert.match(enforcement,/test \"\$FUNCTIONAL_OUTCOME\" = success/);
+  assert.match(enforcement,/test \"\$TOPOLOGY_RESULT\" = PASS/);
+  assert.match(enforcement,/test \"\$CLEANUP_RESULT\" = YES/);
 });

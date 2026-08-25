@@ -69,8 +69,43 @@ jobs:
           npm install --prefix "$TOOL_DIR" --no-save --no-package-lock wrangler@4.125.0 >"$RUNNER_TEMP/teamsheet-data-s1c-npm.log" 2>&1
           test "$("$TOOL_DIR/node_modules/.bin/wrangler" --version 2>/dev/null)" = 4.125.0
 
+      - name: Capture persistent topology PRE-state
+        id: topology_pre
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN"
+          printf '::add-mask::%s\n' "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Required API token is unavailable.' >&2; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Required account identifier is unavailable.' >&2; exit 1; }
+          STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
+          mkdir -p "$STATE_DIR"
+          read_version(){
+            local service="$1" destination="$2" http
+            http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
+            test "$http" = 200 || return 1
+            node - "$STATE_DIR/$destination.json" <<'EOF'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(body.success!==true||!Array.isArray(body.result))process.exit(1);
+          const active=body.result.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
+          if(active.length!==1||typeof active[0]!=='string')process.exit(1);
+          process.stdout.write(active[0]);
+          EOF
+          }
+          caller="$(read_version teamsheet-data-platform-acceptance-caller caller-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
+          target="$(read_version teamsheet-data-platform target-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
+          test "$caller" = 43d28a3a-5720-48b3-950e-b081e33bcc8b
+          test "$target" = 5edbe951-4be4-46bc-b2cf-17b550396105
+          printf 'caller=%s\ntarget=%s\nestablished=YES\n' "$caller" "$target" >>"$GITHUB_OUTPUT"
+
       - name: Run bounded private acceptance
         id: acceptance
+        continue-on-error: true
         env:
           RUN_SHA: ${{ github.sha }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -145,7 +180,46 @@ jobs:
             result.query=checks.some(key=>result[key]==='FAIL')?'FAIL':'PASS'; return reply();
           }};
           PROBE_SOURCE_END
-          read_versions(){
+          "$WRANGLER" dev --config "$PROBE_DIR/wrangler.jsonc" --ip 127.0.0.1 --port "$PORT" >"$STATE_DIR/wrangler.log" 2>&1 & PID=$!
+          ready=false
+          for _ in $(seq 1 45); do
+            kill -0 "$PID" 2>/dev/null || break
+            if test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 "http://127.0.0.1:$PORT/not-ready" 2>/dev/null || true)" = 404; then ready=true; break; fi
+            sleep 1
+          done
+          test "$ready" = true || { echo 'Ephemeral probe startup failed.' >&2; exit 1; }
+          http="$(curl --silent --show-error --output "$STATE_DIR/result.json" --write-out '%{http_code}' --max-time 90 -X POST "http://127.0.0.1:$PORT/accept" 2>"$STATE_DIR/probe.err")"
+          test "$http" = 200 || { echo 'Private acceptance transport failed.' >&2; exit 1; }
+          stop_local; PID=''
+          node - "$STATE_DIR/result.json" "$GITHUB_OUTPUT" <<'EOF'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const allowed=/^(?:PASS|FAIL|NOT RUN|NOT PROVABLE|INSUFFICIENT EXISTING ROWS|YES|NO|[0-9]+)$/;
+          const values={...r};
+          for(const [key,value] of Object.entries(values)){if(!allowed.test(String(value)))process.exit(1);fs.appendFileSync(process.argv[3],`${key}=${value}\n`);}
+          if(r.transport_fetch!=='PASS'||r.health!=='PASS'||r.query==='FAIL')process.exit(1);
+          EOF
+
+      - name: Verify persistent topology POST-state
+        if: always()
+        id: topology_post
+        env:
+          PRE_ESTABLISHED: ${{ steps.topology_pre.outputs.established }}
+          PRE_CALLER: ${{ steps.topology_pre.outputs.caller }}
+          PRE_TARGET: ${{ steps.topology_pre.outputs.target }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if test "$PRE_ESTABLISHED" != YES; then
+            echo 'topology_result=NOT RUN — PRE-STATE NOT ESTABLISHED' >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN"
+          printf '::add-mask::%s\n' "$CLOUDFLARE_ACCOUNT_ID"
+          STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
+          mkdir -p "$STATE_DIR"
+          read_version(){
             local service="$1" destination="$2" http
             http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
@@ -160,33 +234,13 @@ jobs:
           process.stdout.write(active[0]);
           EOF
           }
-          caller_before="$(read_versions teamsheet-data-platform-acceptance-caller caller-before)" || { echo 'Persistent topology read failed.' >&2; exit 1; }
-          target_before="$(read_versions teamsheet-data-platform target-before)" || { echo 'Persistent topology read failed.' >&2; exit 1; }
-          test "$caller_before" = 43d28a3a-5720-48b3-950e-b081e33bcc8b
-          test "$target_before" = 5edbe951-4be4-46bc-b2cf-17b550396105
-          "$WRANGLER" dev --config "$PROBE_DIR/wrangler.jsonc" --ip 127.0.0.1 --port "$PORT" >"$STATE_DIR/wrangler.log" 2>&1 & PID=$!
-          ready=false
-          for _ in $(seq 1 45); do
-            kill -0 "$PID" 2>/dev/null || break
-            if test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 "http://127.0.0.1:$PORT/not-ready" 2>/dev/null || true)" = 404; then ready=true; break; fi
-            sleep 1
-          done
-          test "$ready" = true || { echo 'Ephemeral probe startup failed.' >&2; exit 1; }
-          http="$(curl --silent --show-error --output "$STATE_DIR/result.json" --write-out '%{http_code}' --max-time 90 -X POST "http://127.0.0.1:$PORT/accept" 2>"$STATE_DIR/probe.err")"
-          test "$http" = 200 || { echo 'Private acceptance transport failed.' >&2; exit 1; }
-          stop_local; PID=''
-          caller_after="$(read_versions teamsheet-data-platform-acceptance-caller caller-after)" || { echo 'Persistent topology recheck failed.' >&2; exit 1; }
-          target_after="$(read_versions teamsheet-data-platform target-after)" || { echo 'Persistent topology recheck failed.' >&2; exit 1; }
-          topology=NO
-          test "$caller_before" = "$caller_after" && test "$target_before" = "$target_after" && topology=YES
-          node - "$STATE_DIR/result.json" "$GITHUB_OUTPUT" "$topology" <<'EOF'
-          import fs from 'node:fs';
-          const r=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-          const allowed=/^(?:PASS|FAIL|NOT RUN|NOT PROVABLE|INSUFFICIENT EXISTING ROWS|YES|NO|[0-9]+)$/;
-          const values={...r,persistent_topology:process.argv[4]};
-          for(const [key,value] of Object.entries(values)){if(!allowed.test(String(value)))process.exit(1);fs.appendFileSync(process.argv[3],`${key}=${value}\n`);}
-          if(r.transport_fetch!=='PASS'||r.health!=='PASS'||r.query==='FAIL'||process.argv[4]!=='YES')process.exit(1);
-          EOF
+          result=FAIL
+          caller="$(read_version teamsheet-data-platform-acceptance-caller caller-after)" || { echo 'Persistent topology POST-state read failed.' >&2; echo "topology_result=$result" >>"$GITHUB_OUTPUT"; exit 0; }
+          target="$(read_version teamsheet-data-platform target-after)" || { echo 'Persistent topology POST-state read failed.' >&2; echo "topology_result=$result" >>"$GITHUB_OUTPUT"; exit 0; }
+          if test "$caller" = "$PRE_CALLER" && test "$target" = "$PRE_TARGET" \
+            && test "$caller" = 43d28a3a-5720-48b3-950e-b081e33bcc8b \
+            && test "$target" = 5edbe951-4be4-46bc-b2cf-17b550396105; then result=PASS; fi
+          echo "topology_result=$result" >>"$GITHUB_OUTPUT"
 
       - name: Clean temporary acceptance files
         if: always()
@@ -215,10 +269,24 @@ jobs:
           CONTINUATION: ${{ steps.acceptance.outputs.cursor_continuation || 'NOT PROVABLE' }}
           MISMATCH: ${{ steps.acceptance.outputs.cursor_mismatch || 'NOT PROVABLE' }}
           REASON: ${{ steps.acceptance.outputs.not_provable || '' }}
-          TOPOLOGY: ${{ steps.acceptance.outputs.persistent_topology || 'NO' }}
+          TOPOLOGY: ${{ steps.topology_post.outputs.topology_result || 'NOT RUN — PRE-STATE NOT ESTABLISHED' }}
           CLEANUP: ${{ steps.cleanup.outputs.completed || 'NO' }}
         run: |
           {
             echo '## DATA-S1C private RPC acceptance'
             printf '%s\n' "- RUN_SHA: $RUN_SHA" '- Node version: v24.19.0' '- Wrangler version: 4.125.0' "- transport fetch: $TRANSPORT" "- health: $HEALTH" "- query: $QUERY" "- total rows observed: $ROWS" "- page count: $PAGES" "- accepted-only result: $ACCEPTED" "- ordering result: $ORDERING" "- as_of result: $AS_OF" "- pagination result: $PAGINATION" "- cursor continuation result: $CONTINUATION" "- cursor mismatch result: $MISMATCH" "- NOT PROVABLE reason: $REASON" "- persistent topology unchanged: $TOPOLOGY" "- cleanup completed: $CLEANUP"
           } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce functional and topology results
+        if: always()
+        env:
+          PRE_OUTCOME: ${{ steps.topology_pre.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.acceptance.outcome }}
+          TOPOLOGY_RESULT: ${{ steps.topology_post.outputs.topology_result }}
+          CLEANUP_RESULT: ${{ steps.cleanup.outputs.completed }}
+        run: |
+          set -euo pipefail
+          test "$PRE_OUTCOME" = success
+          test "$FUNCTIONAL_OUTCOME" = success
+          test "$TOPOLOGY_RESULT" = PASS
+          test "$CLEANUP_RESULT" = YES
