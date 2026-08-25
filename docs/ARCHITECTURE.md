@@ -3,7 +3,7 @@
 <!-- DATA-S1C-2026-08-25 -->
 ## DATA-S1 private service boundary
 
-The DATA-S1 repository target is `private caller -> named Service Binding RPC -> teamsheet-data-platform -> TEAMSHEET_DATA_DB`. Read and ingest are separate named entrypoints, both backed by the same operations as the retained bearer-protected HTTP adapter. Only `teamsheet-data-platform` owns D1; callers cannot receive the binding or issue arbitrary SQL. The acceptance caller is read-only and owns no storage or public route. This architecture is not deployed or live-accepted by DATA-S1C. See [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
+The DATA-S1 repository target is `private caller -> named Service Binding RPC -> teamsheet-data-platform -> TEAMSHEET_DATA_DB`. Read and ingest are separate named entrypoints, both backed by the same operations as the retained bearer-protected HTTP adapter. Only `teamsheet-data-platform` owns D1; callers cannot receive the binding or issue arbitrary SQL. The deployed acceptance caller is read-only and owns no storage or public route. After the awaited caller still hung during nested RPC, the pending diagnostic harness was narrowed to one-hop `remote: true` RPC directly to `DataPlatformReadEntrypoint`; it retains independent PRE/POST caller-topology evidence but does not prove caller forwarding. No successful live DATA-S1C functional acceptance is claimed. See [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
 
 ## Current repository architecture checkpoint — DATA-S1B mutation-free preflight PASS
 

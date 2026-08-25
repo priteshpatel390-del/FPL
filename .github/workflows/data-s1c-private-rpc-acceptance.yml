@@ -140,7 +140,7 @@ jobs:
           test "$target" = "$target_expected"
           printf 'caller=%s\ntarget=%s\nestablished=YES\n' "$caller" "$target" >>"$GITHUB_OUTPUT"
 
-      - name: Run bounded private acceptance
+      - name: Run bounded direct target acceptance
         id: acceptance
         continue-on-error: true
         env:
@@ -169,21 +169,17 @@ jobs:
           }
           trap stop_local EXIT INT TERM
           cat >"$PROBE_DIR/wrangler.jsonc" <<'PROBE_CONFIG_END'
-          {"name":"teamsheet-data-s1c-ephemeral-probe","main":"probe.mjs","compatibility_date":"2026-08-25","services":[{"binding":"CALLER","service":"teamsheet-data-platform-acceptance-caller","remote":true}]}
+          {"name":"teamsheet-data-s1c-ephemeral-probe","main":"probe.mjs","compatibility_date":"2026-08-25","services":[{"binding":"DATA_PLATFORM_READ","service":"teamsheet-data-platform","entrypoint":"DataPlatformReadEntrypoint","remote":true}]}
           PROBE_CONFIG_END
           cat >"$PROBE_DIR/probe.mjs" <<'PROBE_SOURCE_END'
-          const result={transport_fetch:'FAIL',health:'NOT RUN',query:'NOT RUN',total_rows:0,page_count:0,accepted_only:'NOT PROVABLE',ordering:'NOT PROVABLE',as_of:'NOT PROVABLE',pagination:'NOT PROVABLE',cursor_continuation:'NOT PROVABLE',cursor_mismatch:'NOT PROVABLE',not_provable:''};
+          const result={direct_target_rpc:'FAIL',health:'NOT RUN',query:'NOT RUN',total_rows:0,page_count:0,accepted_only:'NOT PROVABLE',ordering:'NOT PROVABLE',as_of:'NOT PROVABLE',pagination:'NOT PROVABLE',cursor_continuation:'NOT PROVABLE',cursor_mismatch:'NOT PROVABLE',not_provable:''};
           const reply=()=>Response.json(result,{headers:{'cache-control':'no-store'}});
           export default {async fetch(request,env){
             if(new URL(request.url).pathname!=='/accept'||request.method!=='POST')return new Response(null,{status:404});
-            const transport=await env.CALLER.fetch('https://caller.invalid/transport');
-            const transportBody=await transport.arrayBuffer();
-            if(transport.status!==404||transportBody.byteLength!==0)return reply();
-            result.transport_fetch='PASS';
             result.health='FAIL';
-            const health=await env.CALLER.health();
+            let health;try{health=await env.DATA_PLATFORM_READ.health();}catch{return reply();}
             if(health?.status!==200||health?.body?.ok!==true||health?.body?.platformVersion!=='1.0.1'||health?.body?.mode!=='shadow_only')return reply();
-            result.health='PASS'; result.query='FAIL';
+            result.direct_target_rpc='PASS'; result.health='PASS'; result.query='FAIL';
             const as_of=new Date().toISOString(); const limit=2; const maxPages=20;
             let cursor=null, previous=null, firstCursor=null;
             let cursorReturned=false, cursorExercised=false, continuationPageSucceeded=false;
@@ -191,7 +187,7 @@ jobs:
             for(let pageNumber=0;pageNumber<maxPages;pageNumber++){
               const usingCursor=cursor!==null;
               const query={as_of,limit}; if(cursor)query.cursor=cursor;
-              const page=await env.CALLER.queryObservations(query);
+              let page;try{page=await env.DATA_PLATFORM_READ.queryObservations(query);}catch{return reply();}
               if(page?.status!==200||!Array.isArray(page?.body?.observations))return reply();
               if(usingCursor){cursorExercised=true;continuationPageSucceeded=true;}
               const rows=page.body.observations; result.page_count++;
@@ -211,7 +207,7 @@ jobs:
             result.pagination=paginationProven?'PASS':'NOT PROVABLE';
             result.cursor_continuation=paginationProven?(continuation&&ordered?'PASS':'FAIL'):'NOT PROVABLE';
             if(paginationProven&&firstCursor){
-              const mismatch=await env.CALLER.queryObservations({as_of:new Date(Date.parse(as_of)-1000).toISOString(),limit,cursor:firstCursor});
+              let mismatch;try{mismatch=await env.DATA_PLATFORM_READ.queryObservations({as_of:new Date(Date.parse(as_of)-1000).toISOString(),limit,cursor:firstCursor});}catch{return reply();}
               result.cursor_mismatch=mismatch?.status===400&&mismatch?.body?.error==='cursor_invalid'?'PASS':'FAIL';
             }
             const evidence=['accepted_only','ordering','as_of','pagination','cursor_continuation','cursor_mismatch'];
@@ -229,7 +225,7 @@ jobs:
           done
           test "$ready" = true || { echo 'Ephemeral probe startup failed.' >&2; exit 1; }
           http="$(curl --silent --show-error --output "$STATE_DIR/result.json" --write-out '%{http_code}' --max-time 90 -X POST "http://127.0.0.1:$PORT/accept" 2>"$STATE_DIR/probe.err")"
-          test "$http" = 200 || { echo 'Private acceptance transport failed.' >&2; exit 1; }
+          test "$http" = 200 || { echo 'Direct target acceptance transport failed.' >&2; exit 1; }
           stop_local; PID=''
           node - "$STATE_DIR/result.json" "$GITHUB_OUTPUT" <<'EOF'
           import fs from 'node:fs';
@@ -237,7 +233,7 @@ jobs:
           const allowed=/^(?:PASS|FAIL|NOT RUN|NOT PROVABLE|INSUFFICIENT EXISTING ROWS|YES|NO|[0-9]+)$/;
           const values={...r};
           for(const [key,value] of Object.entries(values)){if(!allowed.test(String(value)))process.exit(1);fs.appendFileSync(process.argv[3],`${key}=${value}\n`);}
-          if(r.transport_fetch!=='PASS'||r.health!=='PASS'||r.query==='FAIL')process.exit(1);
+          if(r.direct_target_rpc!=='PASS'||r.health!=='PASS'||r.query==='FAIL')process.exit(1);
           EOF
 
       - name: Verify persistent topology POST-state
@@ -335,7 +331,7 @@ jobs:
         if: always()
         env:
           RUN_SHA: ${{ github.sha }}
-          TRANSPORT: ${{ steps.acceptance.outcome == 'skipped' && 'NOT RUN' || steps.acceptance.outputs.transport_fetch || 'FAIL' }}
+          DIRECT_TARGET_RPC: ${{ steps.acceptance.outcome == 'skipped' && 'NOT RUN' || steps.acceptance.outputs.direct_target_rpc || 'FAIL' }}
           HEALTH: ${{ steps.acceptance.outputs.health || 'NOT RUN' }}
           QUERY: ${{ steps.acceptance.outputs.query || 'NOT RUN' }}
           ROWS: ${{ steps.acceptance.outputs.total_rows || '0' }}
@@ -355,8 +351,8 @@ jobs:
           POST_TARGET_DIAGNOSTIC: ${{ steps.topology_post.outputs.post_target_diagnostic || 'NOT RUN' }}
         run: |
           {
-            echo '## DATA-S1C private RPC acceptance'
-            printf '%s\n' "- RUN_SHA: $RUN_SHA" '- Node version: v24.19.0' '- Wrangler version: 4.125.0' "- transport fetch: $TRANSPORT" "- health: $HEALTH" "- query: $QUERY" "- total rows observed: $ROWS" "- page count: $PAGES" "- accepted-only result: $ACCEPTED" "- ordering result: $ORDERING" "- as_of result: $AS_OF" "- pagination result: $PAGINATION" "- cursor continuation result: $CONTINUATION" "- cursor mismatch result: $MISMATCH" "- NOT PROVABLE reason: $REASON" "- persistent topology unchanged: $TOPOLOGY" "- cleanup completed: $CLEANUP" "- PRE caller diagnostic: $PRE_CALLER_DIAGNOSTIC" "- PRE target diagnostic: $PRE_TARGET_DIAGNOSTIC" "- POST caller diagnostic: $POST_CALLER_DIAGNOSTIC" "- POST target diagnostic: $POST_TARGET_DIAGNOSTIC"
+            echo '## DATA-S1C direct target RPC acceptance'
+            printf '%s\n' "- RUN_SHA: $RUN_SHA" '- Node version: v24.19.0' '- Wrangler version: 4.125.0' "- direct target RPC: $DIRECT_TARGET_RPC" "- health: $HEALTH" "- query: $QUERY" "- total rows observed: $ROWS" "- page count: $PAGES" "- accepted-only result: $ACCEPTED" "- ordering result: $ORDERING" "- as_of result: $AS_OF" "- pagination result: $PAGINATION" "- cursor continuation result: $CONTINUATION" "- cursor mismatch result: $MISMATCH" "- NOT PROVABLE reason: $REASON" '- caller forwarding result: NOT PROVEN' "- persistent topology unchanged: $TOPOLOGY" "- cleanup completed: $CLEANUP" "- PRE caller diagnostic: $PRE_CALLER_DIAGNOSTIC" "- PRE target diagnostic: $PRE_TARGET_DIAGNOSTIC" "- POST caller diagnostic: $POST_CALLER_DIAGNOSTIC" "- POST target diagnostic: $POST_TARGET_DIAGNOSTIC"
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Enforce functional and topology results

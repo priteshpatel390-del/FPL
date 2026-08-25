@@ -12,6 +12,8 @@ Third manual run `32902010718` passed caller and target PRE validation and reach
 
 PR #156 merged awaited forwarding, but subsequent live evidence remained on old caller version `43d28a3a-5720-48b3-950e-b081e33bcc8b` because repository merge does not deploy the caller. The corrected caller alone was deployed from exact main as `cf9c150d-84b0-46f9-a166-530b7243e863` at 100%, and the workflow pin now matches it. Post-deployment reads confirmed the same single read Service Binding, disabled `workers.dev` and Preview URLs, zero Custom Domains and no added storage or credential capability. The target remained on `5edbe951-4be4-46bc-b2cf-17b550396105`; no D1, ingest, Access, DNS/domain, route or secret change occurred. Deployment does not prove RPC acceptance, and dispatch remains separately owner-approved.
 
+Run `32906524221` used the corrected caller but its `health` JSRPC still hung after the caller fetch arrived; PRE/POST topology and cleanup passed. Root cause remains unproved. Option 2 now limits functional acceptance to one direct remote Service Binding from the temporary local probe to `teamsheet-data-platform`'s named `DataPlatformReadEntrypoint`. The probe receives neither D1 nor the ingest entrypoint and has no arbitrary service input, public route or production deployment command. The deployed caller remains unchanged and independently version-checked in PRE/POST; a direct-target result is never treated as caller-forwarding evidence, which remains `NOT PROVEN`.
+
 <!-- DATA-S1C-2026-08-25 -->
 ## DATA-S1 private machine capability
 

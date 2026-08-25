@@ -5,14 +5,15 @@ import fs from 'node:fs';
 const file='.github/workflows/data-s1c-private-rpc-acceptance.yml';
 const workflow=fs.readFileSync(file,'utf8');
 const probeSource=workflow.match(/cat >"\$PROBE_DIR\/probe\.mjs" <<'PROBE_SOURCE_END'\n([\s\S]*?)\n\s+PROBE_SOURCE_END/)?.[1]??'';
+const probeConfig=workflow.match(/cat >"\$PROBE_DIR\/wrangler\.jsonc" <<'PROBE_CONFIG_END'\n([\s\S]*?)\n\s+PROBE_CONFIG_END/)?.[1]??'';
 const acceptedRow=(id,fetched_at)=>({observation_id:id,fetched_at,admission_state:'accepted'});
-async function runProbe(queryObservations){
+async function runProbe(input){
+  const options=typeof input==='function'?{queryObservations:input}:input;
   const url=`data:text/javascript;base64,${Buffer.from(probeSource).toString('base64')}#${Math.random()}`;
   const probe=(await import(url)).default;
-  const response=await probe.fetch(new Request('http://127.0.0.1/accept',{method:'POST'}),{CALLER:{
-    fetch:async()=>new Response(null,{status:404}),
-    health:async()=>({status:200,body:{ok:true,platformVersion:'1.0.1',mode:'shadow_only'}}),
-    queryObservations
+  const response=await probe.fetch(new Request('http://127.0.0.1/accept',{method:'POST'}),{DATA_PLATFORM_READ:{
+    health:async()=>options.healthResult??({status:200,body:{ok:true,platformVersion:'1.0.1',mode:'shadow_only'}}),
+    queryObservations:options.queryObservations
   }});
   return response.json();
 }
@@ -47,11 +48,13 @@ test('DATA-S1C workflow uses only approved secrets and exact temporary toolchain
   assert.doesNotMatch(workflow,/\bcache\s*:|npm install -g|node_modules\/\.cache/);
 });
 
-test('DATA-S1C probe is fetch-first, fail-closed, read-only and bounded',()=>{
+test('DATA-S1C probe binds directly to the target read entrypoint and remains fail-closed, read-only and bounded',()=>{
   const probe=probeSource;
-  const fetch=probe.indexOf('env.CALLER.fetch('),health=probe.indexOf('env.CALLER.health('),query=probe.indexOf('env.CALLER.queryObservations(');
-  assert.ok(fetch>0&&fetch<health&&health<query);
-  assert.match(probe,/if\(transport\.status!==404\|\|transportBody\.byteLength!==0\)return reply\(\)/);
+  const health=probe.indexOf('env.DATA_PLATFORM_READ.health('),query=probe.indexOf('env.DATA_PLATFORM_READ.queryObservations(');
+  assert.ok(health>0&&health<query);
+  assert.deepEqual(JSON.parse(probeConfig).services,[{binding:'DATA_PLATFORM_READ',service:'teamsheet-data-platform',entrypoint:'DataPlatformReadEntrypoint',remote:true}]);
+  assert.doesNotMatch(probeConfig,/CALLER|teamsheet-data-platform-acceptance-caller/);
+  assert.doesNotMatch(probe,/env\.CALLER|CALLER\.(?:fetch|health|queryObservations)/);
   assert.match(probe,/if\(health\?\.status!==200[\s\S]*?\)return reply\(\)/);
   assert.match(probe,/const limit=2; const maxPages=20/);
   assert.match(probe,/for\(let pageNumber=0;pageNumber<maxPages;pageNumber\+\+\)/);
@@ -59,7 +62,7 @@ test('DATA-S1C probe is fetch-first, fail-closed, read-only and bounded',()=>{
   assert.match(probe,/row\.fetched_at<=as_of/);
   assert.match(probe,/error==='cursor_invalid'/);
   assert.match(probe,/mismatch\?\.status===400&&mismatch\?\.body\?\.error==='cursor_invalid'/);
-  assert.match(workflow,/"binding":"CALLER","service":"teamsheet-data-platform-acceptance-caller","remote":true/);
+  assert.match(workflow,/"binding":"DATA_PLATFORM_READ","service":"teamsheet-data-platform","entrypoint":"DataPlatformReadEntrypoint","remote":true/);
   for(const forbidden of [/d1_databases/i,/r2_buckets/i,/kv_namespaces/i,/ingest/i,/DataPlatformIngestEntrypoint/i,/wrangler\s+dev\s+--remote/i])assert.doesNotMatch(probe,forbidden);
 });
 
@@ -111,21 +114,21 @@ test('DATA-S1C workflow forbids mutation, debug leakage and retains unconditiona
 
 test('DATA-S1C persistent topology PRE-state precedes every functional attempt and POST-state is unconditional',()=>{
   const pre=workflow.indexOf('- name: Capture persistent topology PRE-state');
-  const functional=workflow.indexOf('- name: Run bounded private acceptance');
+  const functional=workflow.indexOf('- name: Run bounded direct target acceptance');
   const post=workflow.indexOf('- name: Verify persistent topology POST-state');
   const cleanup=workflow.indexOf('- name: Clean temporary acceptance files');
   const enforce=workflow.indexOf('- name: Enforce functional and topology results');
   assert.ok(pre>0&&pre<functional&&functional<post&&post<cleanup&&cleanup<enforce);
-  assert.match(workflow,/name: Run bounded private acceptance\n        id: acceptance\n        continue-on-error: true/);
+  assert.match(workflow,/name: Run bounded direct target acceptance\n        id: acceptance\n        continue-on-error: true/);
   assert.match(workflow,/name: Verify persistent topology POST-state\n        if: always\(\)/);
   assert.match(workflow,/PRE_ESTABLISHED: \$\{\{ steps\.topology_pre\.outputs\.established \}\}/);
   assert.match(workflow,/NOT RUN — PRE-STATE NOT ESTABLISHED/);
   const functionalStep=workflow.slice(functional,post);
-  for(const failure of ['Ephemeral probe startup failed.','Private acceptance transport failed.','transport_fetch','health','query'])assert.ok(functionalStep.includes(failure),failure);
+  for(const failure of ['Ephemeral probe startup failed.','Direct target acceptance transport failed.','direct_target_rpc','health','query'])assert.ok(functionalStep.includes(failure),failure);
 });
 
 test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-array contract',()=>{
-  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded private acceptance'));
+  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded direct target acceptance'));
   const post=workflow.slice(workflow.indexOf('- name: Verify persistent topology POST-state'),workflow.indexOf('- name: Clean temporary acceptance files'));
   const endpoint='workers/scripts/$service/deployments';
   assert.equal((workflow.match(/workers\/scripts\/\$service\/deployments/g)||[]).length,2);
@@ -223,7 +226,7 @@ test('DATA-S1C deployment parser fails closed when current history cannot be sel
 });
 
 test('DATA-S1C deployment reads map network failure without exposing raw responses or credentials',()=>{
-  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded private acceptance'));
+  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded direct target acceptance'));
   const post=workflow.slice(workflow.indexOf('- name: Verify persistent topology POST-state'),workflow.indexOf('- name: Clean temporary acceptance files'));
   for(const section of [pre,post]){
     const reader=section.slice(section.indexOf('          read_version(){'),section.indexOf('          caller_expected='));
@@ -237,13 +240,36 @@ test('DATA-S1C deployment reads map network failure without exposing raw respons
 });
 
 test('DATA-S1C PRE failure blocks acceptance and skipped acceptance is summarized as NOT RUN',()=>{
-  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded private acceptance'));
+  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded direct target acceptance'));
   assert.doesNotMatch(pre,/continue-on-error/);
   assert.match(pre,/exit 1/);
-  assert.match(workflow,/TRANSPORT: \$\{\{ steps\.acceptance\.outcome == 'skipped' && 'NOT RUN' \|\| steps\.acceptance\.outputs\.transport_fetch \|\| 'FAIL' \}\}/);
-  assert.match(workflow,/- transport fetch: \$TRANSPORT/);
+  assert.match(workflow,/DIRECT_TARGET_RPC: \$\{\{ steps\.acceptance\.outcome == 'skipped' && 'NOT RUN' \|\| steps\.acceptance\.outputs\.direct_target_rpc \|\| 'FAIL' \}\}/);
+  assert.match(workflow,/- direct target RPC: \$DIRECT_TARGET_RPC/);
+  assert.match(workflow,/- caller forwarding result: NOT PROVEN/);
+  assert.doesNotMatch(workflow,/caller forwarding result: PASS/);
   assert.match(workflow,/- PRE caller diagnostic: \$PRE_CALLER_DIAGNOSTIC/);
   assert.match(workflow,/- POST target diagnostic: \$POST_TARGET_DIAGNOSTIC/);
+});
+
+test('DATA-S1C direct target success never claims caller forwarding success',async()=>{
+  const result=await runProbe(async()=>({status:200,body:{observations:[],next_cursor:null}}));
+  assert.equal(result.direct_target_rpc,'PASS');
+  assert.equal(result.health,'PASS');
+  assert.notEqual(result.query,'FAIL');
+  assert.match(workflow,/- caller forwarding result: NOT PROVEN/);
+  assert.doesNotMatch(workflow,/caller forwarding result: PASS/);
+});
+
+test('DATA-S1C direct target health failure blocks query',async()=>{
+  let queryCalls=0;
+  const result=await runProbe({
+    healthResult:{status:200,body:{ok:true,platformVersion:'unexpected',mode:'shadow_only'}},
+    queryObservations:async()=>{queryCalls+=1;return {status:200,body:{observations:[],next_cursor:null}};}
+  });
+  assert.equal(result.direct_target_rpc,'FAIL');
+  assert.equal(result.health,'FAIL');
+  assert.equal(result.query,'NOT RUN');
+  assert.equal(queryCalls,0);
 });
 
 test('DATA-S1C final enforcement preserves functional failure and independently rejects topology drift',()=>{
