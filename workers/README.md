@@ -6,7 +6,7 @@ The permanent manual workflow at `.github/workflows/data-s1c-private-rpc-accepta
 
 ## DATA-S1C private RPC repository target
 
-`data-platform/data-platform-rpc.mjs` preserves the bearer-protected HTTP adapter and adds separate named read and ingest `WorkerEntrypoint` capabilities that delegate to the same DATA-S1 operations. `data-platform-acceptance-caller/` is a provisional private, read-only architecture caller bound only to `DataPlatformReadEntrypoint`; it owns no D1/R2, secret, public route or hostname. Its registered HTTP handler exists only to satisfy Cloudflare deployment validation and always returns an empty 404 without invoking DATA-S1; useful access remains RPC-only. Repository configuration is not live deployment evidence. See `docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md`.
+`data-platform/data-platform-rpc.mjs` preserves the bearer-protected HTTP adapter and adds separate named read and ingest `WorkerEntrypoint` capabilities that delegate to the same DATA-S1 operations. `data-platform-acceptance-caller/` is a provisional private, read-only architecture caller bound only to `DataPlatformReadEntrypoint`; it owns no D1/R2, secret, public route or hostname. Its registered HTTP handler exists only to satisfy Cloudflare deployment validation and always returns an empty 404 without invoking DATA-S1; useful access remains RPC-only. Its two read forwarders explicitly await the downstream RPC custom thenable before returning the resolved structured value and propagate rejection without adding a fallback or write path. Repository configuration is not live deployment evidence. See `docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md`.
 
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## GW1-P2C3B transport closeout
