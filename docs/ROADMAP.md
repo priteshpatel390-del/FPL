@@ -3,7 +3,7 @@
 <!-- DATA-S1C-2026-08-25 -->
 ## Current checkpoint — DATA-S1C repository candidate
 
-Private Service Binding/RPC preparation is implemented for review only: split named read/ingest entrypoints share DATA-S1 operations, and the neutral read-only acceptance caller has no D1 or public route. The next gate is separate approval for the ordered live acceptance in [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md). DATA-S2 and all production writes remain blocked.
+Private Service Binding/RPC preparation is implemented: split named read/ingest entrypoints share DATA-S1 operations, and the deployed neutral read-only acceptance caller has no D1 or public route. Because the awaited nested caller RPC still hung, the pending Option 2 diagnostic harness binds directly to the target read entrypoint while preserving separate PRE/POST caller topology evidence. A direct-target pass would not prove caller forwarding, which remains `NOT PROVEN`; any live run still requires separate approval. DATA-S2 and all production writes remain blocked. See [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
 
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current checkpoint — DATA-S1B mutation-free preflight PASS

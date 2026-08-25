@@ -12,6 +12,8 @@ Third manual run `32902010718` passed both PRE checks and reached the acceptance
 
 After PR #156 merged, the corrected acceptance caller was deployed alone from exact main as version `cf9c150d-84b0-46f9-a166-530b7243e863`; the previous live attempts had still executed `43d28a3a-5720-48b3-950e-b081e33bcc8b`. Workflow regressions require the new caller ID in both PRE and POST, forbid the old ID, and retain the exact unchanged target pin `5edbe951-4be4-46bc-b2cf-17b550396105`, current-deployment history selection, manual trigger, least privilege and mutation prohibitions. The deployment itself invoked no caller method and supplies no successful RPC acceptance evidence.
 
+Run `32906524221` used the awaited caller version but the caller `health` JSRPC still ended in the runtime hang exception; target query remained unrun while topology and cleanup passed. Option 2 regression coverage now requires the temporary probe's sole functional binding to be `DATA_PLATFORM_READ -> teamsheet-data-platform -> DataPlatformReadEntrypoint` with `remote: true`, forbids every `CALLER` invocation in the functional probe, and requires direct health before bounded direct query. Existing query evidence shapes, exact caller/target PRE/POST pins, deployment-history parsing, unconditional POST/cleanup and final fail-closed enforcement remain. The sanitized summary must say `caller forwarding result: NOT PROVEN`; a direct-target success cannot satisfy that separate property.
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current repository gate — DATA-S1B mutation-free preflight PASS
 
