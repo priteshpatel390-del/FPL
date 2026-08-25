@@ -6,6 +6,8 @@ The permanent DATA-S1C acceptance workflow is `workflow_dispatch`-only, exact-cu
 
 The first manual GitHub Actions attempt, run `32896875022`, failed safely at PRE-state with both required environment secrets present and non-empty. Functional acceptance was skipped, so no Wrangler process, edge-preview session, caller invocation or D1 operation occurred. Its generic failure log was insufficient to distinguish network, HTTP, JSON, Cloudflare or response-contract failure. PRE and POST reads now emit only an allowlisted category, HTTP status category and numeric Cloudflare error codes where available; they never emit response bodies, Cloudflare error messages, account identifiers, tokens or authorization headers. This diagnostic improvement does not weaken any fail-closed gate, and no successful GitHub Actions acceptance is claimed.
 
+Second manual run `32899866456` authenticated and passed caller PRE validation, then failed target PRE validation before functional execution. The failure was a repository extraction defect, not target drift: the endpoint returned deployment history and the reader counted historical 100% allocations together. Read-only reconciliation confirmed the unique latest deployment already uses the accepted target version. Both readers now require valid `created_on` timestamps, reject an empty or ambiguous latest history, and inspect only the unique greatest-timestamp deployment's allocation. Safe categorical logging, fail-closed PRE/POST enforcement and the no-mutation boundary remain unchanged; no Cloudflare correction is required or performed.
+
 <!-- DATA-S1C-2026-08-25 -->
 ## DATA-S1 private machine capability
 

@@ -133,9 +133,14 @@ test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-
   assert.doesNotMatch(workflow,/workers\/services\/\$service\/deployments/);
   for(const section of [pre,post]){
     assert.match(section,/Array\.isArray\(body\.result\?\.deployments\)/);
-    assert.match(section,/body\.result\.deployments\.flatMap/);
-    assert.match(section,/filter\(version=>version\.percentage===100\)\.map\(version=>version\.version_id\)/);
+    assert.match(section,/const deployments=body\.result\.deployments/);
+    assert.match(section,/Date\.parse\(deployment\.created_on\)/);
+    assert.match(section,/const latestTime=Math\.max/);
+    assert.match(section,/latest\.length!==1/);
+    assert.match(section,/const versions=latest\[0\]\.deployment\.versions/);
+    assert.match(section,/const active=versions\.filter\(version=>version\?\.percentage===100\)\.map\(version=>version\.version_id\)/);
     assert.match(section,/active\.length!==1\|\|typeof active\[0\]!=='string'/);
+    assert.doesNotMatch(section,/deployments\.flatMap/);
   }
   assert.match(pre,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
   assert.match(pre,/5edbe951-4be4-46bc-b2cf-17b550396105/);
@@ -149,9 +154,11 @@ test('DATA-S1C deployment diagnostics safely classify HTTP, JSON, Cloudflare and
   assert.equal(matches.length,2);
   const classifiers=matches.map(match=>(0,eval)(`(${match[1]})`));
   const version=(version_id='expected-version',percentage=100)=>({version_id,percentage});
-  const wrapped=versions=>JSON.stringify({success:true,result:{deployments:[{versions}]}});
+  const deployment=(created_on,versions)=>({created_on,versions});
+  const wrapped=deployments=>JSON.stringify({success:true,result:{deployments}});
+  const current=versions=>wrapped([deployment('2026-08-25T12:00:00.000Z',versions)]);
   for(const classify of classifiers){
-    assert.deepEqual(classify(wrapped([version()]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
+    assert.deepEqual(classify(current([version()]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
     assert.equal(classify('{}','401','expected-version').diagnostic,'HTTP_401');
     assert.equal(classify('{}','403','expected-version').diagnostic,'HTTP_403');
     assert.equal(classify('{}','404','expected-version').diagnostic,'HTTP_404');
@@ -167,11 +174,48 @@ test('DATA-S1C deployment diagnostics safely classify HTTP, JSON, Cloudflare and
       JSON.stringify({success:true,result:{deployments:{}}})
     ])assert.equal(classify(invalidContract,'200','expected-version').diagnostic,'RESPONSE_CONTRACT_INVALID');
     for(const invalidVersion of [
-      wrapped([]),wrapped([version('a'),version('b')]),wrapped([{percentage:100}]),
-      wrapped([version(42)]),wrapped([version('expected-version',99)]),wrapped([version('wrong-version')])
+      current([]),current([version('a'),version('b')]),current([{percentage:100}]),
+      current([version(42)]),current([version('expected-version',99)]),current([version('wrong-version')])
     ])assert.equal(classify(invalidVersion,'200','expected-version').diagnostic,'ACTIVE_VERSION_INVALID');
     assert.equal(classify(JSON.stringify({success:false,errors:[{code:10001}]}),'200','expected-version').diagnostic,'CLOUDFLARE_ERROR_CODE_10001');
     assert.equal(classify(JSON.stringify({success:false}),'200','expected-version').diagnostic,'CLOUDFLARE_SUCCESS_FALSE');
+  }
+});
+
+test('DATA-S1C deployment parser selects only the unique greatest created_on deployment',()=>{
+  const matches=[...workflow.matchAll(/const classifyDeploymentResponse=(\(text,http,expected\)=>\{[\s\S]*?\n\s+\});/g)];
+  assert.equal(matches.length,2);
+  assert.equal(matches[0][1],matches[1][1]);
+  const classifiers=matches.map(match=>(0,eval)(`(${match[1]})`));
+  const version=(version_id,percentage=100)=>({version_id,percentage});
+  const deployment=(created_on,versions)=>({created_on,versions});
+  const body=deployments=>JSON.stringify({success:true,result:{deployments}});
+  const old=index=>deployment(`2026-08-${String(index+1).padStart(2,'0')}T00:00:00.000Z`,[version(`historical-${index}`)]);
+  for(const classify of classifiers){
+    const history=Array.from({length:7},(_,index)=>old(index));
+    const latest=deployment('2026-08-25T12:00:00.000Z',[version('expected-version')]);
+    assert.deepEqual(classify(body([latest]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
+    assert.deepEqual(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('43d28a3a-5720-48b3-950e-b081e33bcc8b')])]),'200','43d28a3a-5720-48b3-950e-b081e33bcc8b'),{diagnostic:'PASS',version:'43d28a3a-5720-48b3-950e-b081e33bcc8b'});
+    assert.deepEqual(classify(body([...history,latest]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
+    assert.deepEqual(classify(body([old(0),latest,old(6),old(3)]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
+    assert.equal(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('different-version')]),...history]),'200','expected-version').diagnostic,'ACTIVE_VERSION_INVALID');
+    assert.equal(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('expected-version'),version('second-version')])]),'200','expected-version').diagnostic,'ACTIVE_VERSION_INVALID');
+    assert.equal(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('expected-version',50)])]),'200','expected-version').diagnostic,'ACTIVE_VERSION_INVALID');
+  }
+});
+
+test('DATA-S1C deployment parser fails closed when current history cannot be selected',()=>{
+  const matches=[...workflow.matchAll(/const classifyDeploymentResponse=(\(text,http,expected\)=>\{[\s\S]*?\n\s+\});/g)];
+  const classifiers=matches.map(match=>(0,eval)(`(${match[1]})`));
+  const version={version_id:'expected-version',percentage:100};
+  const body=deployments=>JSON.stringify({success:true,result:{deployments}});
+  for(const classify of classifiers){
+    assert.equal(classify(body([]),'200','expected-version').diagnostic,'DEPLOYMENT_HISTORY_EMPTY');
+    assert.equal(classify(body([{versions:[version]}]),'200','expected-version').diagnostic,'DEPLOYMENT_TIMESTAMP_INVALID');
+    assert.equal(classify(body([{created_on:'not-a-date',versions:[version]}]),'200','expected-version').diagnostic,'DEPLOYMENT_TIMESTAMP_INVALID');
+    assert.equal(classify(body([{created_on:'2026-08-25T12:00:00.000Z',versions:[version]},{created_on:'2026-08-25T12:00:00.000Z',versions:[version]}]),'200','expected-version').diagnostic,'CURRENT_DEPLOYMENT_AMBIGUOUS');
+    assert.equal(classify(body([{created_on:'2026-08-25T12:00:00.000Z'}]),'200','expected-version').diagnostic,'CURRENT_DEPLOYMENT_VERSIONS_INVALID');
+    assert.equal(classify(body([{created_on:'2026-08-25T12:00:00.000Z',versions:{}}]),'200','expected-version').diagnostic,'CURRENT_DEPLOYMENT_VERSIONS_INVALID');
   }
 });
 
