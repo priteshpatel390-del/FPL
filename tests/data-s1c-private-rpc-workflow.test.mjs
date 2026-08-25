@@ -124,6 +124,24 @@ test('DATA-S1C persistent topology PRE-state precedes every functional attempt a
   for(const failure of ['Ephemeral probe startup failed.','Private acceptance transport failed.','transport_fetch','health','query'])assert.ok(functionalStep.includes(failure),failure);
 });
 
+test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-array contract',()=>{
+  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded private acceptance'));
+  const post=workflow.slice(workflow.indexOf('- name: Verify persistent topology POST-state'),workflow.indexOf('- name: Clean temporary acceptance files'));
+  const endpoint='workers/scripts/$service/deployments';
+  assert.equal((workflow.match(/workers\/scripts\/\$service\/deployments/g)||[]).length,2);
+  assert.ok(pre.includes(endpoint)); assert.ok(post.includes(endpoint));
+  assert.doesNotMatch(workflow,/workers\/services\/\$service\/deployments/);
+  for(const section of [pre,post]){
+    assert.match(section,/filter\(v=>v\.percentage===100\)\.map\(v=>v\.version_id\)/);
+    assert.match(section,/active\.length!==1\|\|typeof active\[0\]!=='string'/);
+  }
+  assert.match(pre,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
+  assert.match(pre,/5edbe951-4be4-46bc-b2cf-17b550396105/);
+  assert.match(post,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
+  assert.match(post,/5edbe951-4be4-46bc-b2cf-17b550396105/);
+  assert.match(workflow,/name: Verify persistent topology POST-state\n        if: always\(\)/);
+});
+
 test('DATA-S1C final enforcement preserves functional failure and independently rejects topology drift',()=>{
   const post=workflow.slice(workflow.indexOf('- name: Verify persistent topology POST-state'),workflow.indexOf('- name: Clean temporary acceptance files'));
   const enforcement=workflow.slice(workflow.indexOf('- name: Enforce functional and topology results'));
