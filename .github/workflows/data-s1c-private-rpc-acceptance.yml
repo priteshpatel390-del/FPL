@@ -86,7 +86,7 @@ jobs:
             local service="$1" destination="$2" http
             http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
             test "$http" = 200 || return 1
             node - "$STATE_DIR/$destination.json" <<'EOF'
           import fs from 'node:fs';
@@ -226,7 +226,7 @@ jobs:
             local service="$1" destination="$2" http
             http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
             test "$http" = 200 || return 1
             node - "$STATE_DIR/$destination.json" <<'EOF'
           import fs from 'node:fs';
