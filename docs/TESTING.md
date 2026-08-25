@@ -10,6 +10,8 @@ Second manual run `32899866456` passed caller PRE validation but stopped at targ
 
 Third manual run `32902010718` passed both PRE checks and reached the acceptance caller's empty-404 fetch discriminator. Cloudflare observed the following JSRPC `health` call terminate with its runtime hang exception; health was not accepted and query remained `NOT RUN`, while POST topology and cleanup passed. Permanent caller tests now require `health()` and `queryObservations(query)` to be async, to await downstream custom thenables into ordinary resolved results, and to propagate downstream rejection. They retain executable empty-404 fetch coverage, the exact single read Service Binding and the absence of ingest/storage/generic-dispatch capability. This is repository evidence only; another live run remains separately owner-approved.
 
+After PR #156 merged, the corrected acceptance caller was deployed alone from exact main as version `cf9c150d-84b0-46f9-a166-530b7243e863`; the previous live attempts had still executed `43d28a3a-5720-48b3-950e-b081e33bcc8b`. Workflow regressions require the new caller ID in both PRE and POST, forbid the old ID, and retain the exact unchanged target pin `5edbe951-4be4-46bc-b2cf-17b550396105`, current-deployment history selection, manual trigger, least privilege and mutation prohibitions. The deployment itself invoked no caller method and supplies no successful RPC acceptance evidence.
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current repository gate — DATA-S1B mutation-free preflight PASS
 
