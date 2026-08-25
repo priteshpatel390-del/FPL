@@ -8,6 +8,8 @@ The first manual GitHub Actions attempt, run `32896875022`, failed safely at PRE
 
 Second manual run `32899866456` authenticated and passed caller PRE validation, then failed target PRE validation before functional execution. The failure was a repository extraction defect, not target drift: the endpoint returned deployment history and the reader counted historical 100% allocations together. Read-only reconciliation confirmed the unique latest deployment already uses the accepted target version. Both readers now require valid `created_on` timestamps, reject an empty or ambiguous latest history, and inspect only the unique greatest-timestamp deployment's allocation. Safe categorical logging, fail-closed PRE/POST enforcement and the no-mutation boundary remain unchanged; no Cloudflare correction is required or performed.
 
+Third manual run `32902010718` passed caller and target PRE validation and reached the caller's inert fetch discriminator. Cloudflare then recorded one JSRPC `health` call on the acceptance caller ending in a runtime hang exception; query did not run, POST topology was unchanged and cleanup succeeded. The caller's two read methods had returned downstream RPC custom thenables directly. Cloudflare documents that an RPC client must await such results, so both forwarders now await and return the resolved structured result. Rejections propagate unchanged. The caller still owns no storage or credential and exposes no ingest method; its only binding remains `DATA_PLATFORM_READ -> teamsheet-data-platform -> DataPlatformReadEntrypoint`. This repository correction does not prove live acceptance or authorize another run.
+
 <!-- DATA-S1C-2026-08-25 -->
 ## DATA-S1 private machine capability
 
