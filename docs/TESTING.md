@@ -1,5 +1,9 @@
 # TESTING.md
 
+## DATA-S1C permanent acceptance-workflow verification
+
+`tests/data-s1c-private-rpc-workflow.test.mjs` permanently checks the manual-only trigger, no-input and read-only GitHub permissions, immutable event-SHA/current-remote-main gate, approved secret-name allowlist, exact Node/Wrangler pins, temporary read-only probe, fetch-before-health-before-query sequencing, 20-page bound, forbidden mutation/debug/artifact patterns, unconditional post-functional topology verification after an established PRE-state, independent preservation of functional/topology failure, and unconditional cleanup. The workflow tests also exercise zero-row, one-row, two-row/no-cursor and real-cursor-continuation result shapes, including the HTTP 400 `cursor_invalid` mismatch contract. A successful read RPC is not treated as proof of unsupported row-dependent properties: insufficient existing rows remain `NOT PROVABLE`, and no synthetic production write is used to manufacture pagination evidence. These are repository security contracts, not live RPC evidence. The workflow has not been executed; its dedicated environment and the `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets remain owner setup and approval gates. GitHub Actions is selected only because Codex remote-preview transport failed with `ENETUNREACH` before the caller.
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current repository gate — DATA-S1B mutation-free preflight PASS
 

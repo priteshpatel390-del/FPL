@@ -1,5 +1,9 @@
 # Teamsheet Cloudflare Workers
 
+## DATA-S1C private acceptance procedure
+
+The permanent manual workflow at `.github/workflows/data-s1c-private-rpc-acceptance.yml` generates its probe only under runner temporary storage. It binds only `CALLER -> teamsheet-data-platform-acceptance-caller` with `remote: true`, starts ordinary localhost-only `wrangler dev`, and exercises the inert fetch discriminator before read-only `health()` and bounded `queryObservations()`. It never binds D1 or an ingest entrypoint and contains no production deployment or storage mutation command. Once its read-only persistent PRE-state is established, POST-state verification and local cleanup run unconditionally; final enforcement preserves functional failure or topology drift without automatic remediation. Wrangler may create its documented temporary edge-preview session. GitHub Actions replaces Codex because Codex's remote-preview WebSocket transport failed with `ENETUNREACH` before reaching the caller. The dedicated GitHub environment and its exact `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets are not configured by the repository; execution remains separately owner-approved and no successful workflow acceptance is claimed.
+
 ## DATA-S1C private RPC repository target
 
 `data-platform/data-platform-rpc.mjs` preserves the bearer-protected HTTP adapter and adds separate named read and ingest `WorkerEntrypoint` capabilities that delegate to the same DATA-S1 operations. `data-platform-acceptance-caller/` is a provisional private, read-only architecture caller bound only to `DataPlatformReadEntrypoint`; it owns no D1/R2, secret, public route or hostname. Its registered HTTP handler exists only to satisfy Cloudflare deployment validation and always returns an empty 404 without invoking DATA-S1; useful access remains RPC-only. Repository configuration is not live deployment evidence. See `docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md`.

@@ -1,0 +1,295 @@
+name: DATA-S1C private RPC acceptance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  accept-private-rpc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: data-s1c-private-acceptance
+    steps:
+      - name: Check out immutable event revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Gate exact canonical main before credentials
+        env:
+          RUN_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          test "$EVENT_REF" = refs/heads/main
+          test "$(git rev-parse HEAD)" = "$RUN_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$RUN_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Gate caller and probe capabilities before credentials
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+          const config=JSON.parse(fs.readFileSync('workers/data-platform-acceptance-caller/wrangler.jsonc','utf8'));
+          const source=fs.readFileSync('workers/data-platform-acceptance-caller/data-platform-acceptance-caller.mjs','utf8');
+          if(config.workers_dev!==false||config.preview_urls!==false)throw new Error('caller exposure gate failed');
+          const expected=[{binding:'DATA_PLATFORM_READ',service:'teamsheet-data-platform',entrypoint:'DataPlatformReadEntrypoint'}];
+          if(JSON.stringify(config.services)!==JSON.stringify(expected))throw new Error('caller binding gate failed');
+          for(const key of ['d1_databases','r2_buckets','kv_namespaces','queues','routes','route','triggers','vars'])if(key in config)throw new Error('caller capability gate failed');
+          for(const required of ['fetch()','health()','queryObservations('])if(!source.includes(required))throw new Error('caller source gate failed');
+          if(source.includes('ingestObservation('))throw new Error('caller write gate failed');
+          const workflow=fs.readFileSync('.github/workflows/data-s1c-private-rpc-acceptance.yml','utf8');
+          const probe=workflow.slice(workflow.lastIndexOf("cat >\"$PROBE_DIR/probe.mjs"),workflow.lastIndexOf('\n          PROBE_SOURCE_END'));
+          for(const forbidden of [/d1_databases/i,/r2_buckets/i,/kv_namespaces/i,/queues/i,/routes/i,/custom.domain/i,/schedule/i,/provider/i,/ingest/i,/generic.rpc/i,/wrangler\s+(?:deploy|publish|d1|secret)/i,/wrangler\s+versions\s+(?:deploy|upload)/i])if(forbidden.test(probe))throw new Error('probe capability gate failed');
+          EOF
+          test -z "$(git status --porcelain)"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      - name: Install temporary exact Wrangler
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          TOOL_DIR="$RUNNER_TEMP/teamsheet-data-s1c-tooling"
+          mkdir -p "$TOOL_DIR"
+          npm install --prefix "$TOOL_DIR" --no-save --no-package-lock wrangler@4.125.0 >"$RUNNER_TEMP/teamsheet-data-s1c-npm.log" 2>&1
+          test "$("$TOOL_DIR/node_modules/.bin/wrangler" --version 2>/dev/null)" = 4.125.0
+
+      - name: Capture persistent topology PRE-state
+        id: topology_pre
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN"
+          printf '::add-mask::%s\n' "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Required API token is unavailable.' >&2; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Required account identifier is unavailable.' >&2; exit 1; }
+          STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
+          mkdir -p "$STATE_DIR"
+          read_version(){
+            local service="$1" destination="$2" http
+            http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
+            test "$http" = 200 || return 1
+            node - "$STATE_DIR/$destination.json" <<'EOF'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(body.success!==true||!Array.isArray(body.result))process.exit(1);
+          const active=body.result.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
+          if(active.length!==1||typeof active[0]!=='string')process.exit(1);
+          process.stdout.write(active[0]);
+          EOF
+          }
+          caller="$(read_version teamsheet-data-platform-acceptance-caller caller-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
+          target="$(read_version teamsheet-data-platform target-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
+          test "$caller" = 43d28a3a-5720-48b3-950e-b081e33bcc8b
+          test "$target" = 5edbe951-4be4-46bc-b2cf-17b550396105
+          printf 'caller=%s\ntarget=%s\nestablished=YES\n' "$caller" "$target" >>"$GITHUB_OUTPUT"
+
+      - name: Run bounded private acceptance
+        id: acceptance
+        continue-on-error: true
+        env:
+          RUN_SHA: ${{ github.sha }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN"
+          printf '::add-mask::%s\n' "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Required API token is unavailable.' >&2; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Required account identifier is unavailable.' >&2; exit 1; }
+          test -z "$(git status --porcelain)"
+          PROBE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-probe"
+          STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
+          mkdir -p "$PROBE_DIR" "$STATE_DIR"
+          WRANGLER="$RUNNER_TEMP/teamsheet-data-s1c-tooling/node_modules/.bin/wrangler"
+          PORT=8791
+          PID=''
+          stop_local(){
+            if test -n "$PID" && kill -0 "$PID" 2>/dev/null; then
+              kill -TERM "$PID" 2>/dev/null || true
+              for _ in 1 2 3 4 5; do kill -0 "$PID" 2>/dev/null || return 0; sleep 1; done
+              kill -KILL "$PID" 2>/dev/null || true
+            fi
+          }
+          trap stop_local EXIT INT TERM
+          cat >"$PROBE_DIR/wrangler.jsonc" <<'PROBE_CONFIG_END'
+          {"name":"teamsheet-data-s1c-ephemeral-probe","main":"probe.mjs","compatibility_date":"2026-08-25","services":[{"binding":"CALLER","service":"teamsheet-data-platform-acceptance-caller","remote":true}]}
+          PROBE_CONFIG_END
+          cat >"$PROBE_DIR/probe.mjs" <<'PROBE_SOURCE_END'
+          const result={transport_fetch:'FAIL',health:'NOT RUN',query:'NOT RUN',total_rows:0,page_count:0,accepted_only:'NOT PROVABLE',ordering:'NOT PROVABLE',as_of:'NOT PROVABLE',pagination:'NOT PROVABLE',cursor_continuation:'NOT PROVABLE',cursor_mismatch:'NOT PROVABLE',not_provable:''};
+          const reply=()=>Response.json(result,{headers:{'cache-control':'no-store'}});
+          export default {async fetch(request,env){
+            if(new URL(request.url).pathname!=='/accept'||request.method!=='POST')return new Response(null,{status:404});
+            const transport=await env.CALLER.fetch('https://caller.invalid/transport');
+            const transportBody=await transport.arrayBuffer();
+            if(transport.status!==404||transportBody.byteLength!==0)return reply();
+            result.transport_fetch='PASS';
+            result.health='FAIL';
+            const health=await env.CALLER.health();
+            if(health?.status!==200||health?.body?.ok!==true||health?.body?.platformVersion!=='1.0.1'||health?.body?.mode!=='shadow_only')return reply();
+            result.health='PASS'; result.query='FAIL';
+            const as_of=new Date().toISOString(); const limit=2; const maxPages=20;
+            let cursor=null, previous=null, firstCursor=null;
+            let cursorReturned=false, cursorExercised=false, continuationPageSucceeded=false;
+            const ids=new Set(); let accepted=true, ordered=true, bounded=true, continuation=true;
+            for(let pageNumber=0;pageNumber<maxPages;pageNumber++){
+              const usingCursor=cursor!==null;
+              const query={as_of,limit}; if(cursor)query.cursor=cursor;
+              const page=await env.CALLER.queryObservations(query);
+              if(page?.status!==200||!Array.isArray(page?.body?.observations))return reply();
+              if(usingCursor){cursorExercised=true;continuationPageSucceeded=true;}
+              const rows=page.body.observations; result.page_count++;
+              for(const row of rows){
+                result.total_rows++; accepted&&=row.admission_state==='accepted'; bounded&&=typeof row.fetched_at==='string'&&row.fetched_at<=as_of;
+                const current=[row.fetched_at,row.observation_id];
+                if(previous&&(current[0]<previous[0]||(current[0]===previous[0]&&current[1]<=previous[1])))ordered=false;
+                if(ids.has(row.observation_id))continuation=false; ids.add(row.observation_id); previous=current;
+              }
+              const next=page.body.next_cursor??null;
+              if(next!==null&&typeof next!=='string')return reply();
+              if(next){cursorReturned=true;if(firstCursor===null)firstCursor=next;cursor=next;}else break;
+            }
+            if(result.total_rows>0){result.accepted_only=accepted?'PASS':'FAIL';result.as_of=bounded?'PASS':'FAIL';}
+            if(result.total_rows>=2)result.ordering=ordered?'PASS':'FAIL';
+            const paginationProven=cursorReturned&&cursorExercised&&continuationPageSucceeded;
+            result.pagination=paginationProven?'PASS':'NOT PROVABLE';
+            result.cursor_continuation=paginationProven?(continuation&&ordered?'PASS':'FAIL'):'NOT PROVABLE';
+            if(paginationProven&&firstCursor){
+              const mismatch=await env.CALLER.queryObservations({as_of:new Date(Date.parse(as_of)-1000).toISOString(),limit,cursor:firstCursor});
+              result.cursor_mismatch=mismatch?.status===400&&mismatch?.body?.error==='cursor_invalid'?'PASS':'FAIL';
+            }
+            const evidence=['accepted_only','ordering','as_of','pagination','cursor_continuation','cursor_mismatch'];
+            if(evidence.some(key=>result[key]==='NOT PROVABLE'))result.not_provable='INSUFFICIENT EXISTING ROWS';
+            const checks=['accepted_only','ordering','as_of','pagination','cursor_continuation','cursor_mismatch'];
+            result.query=checks.some(key=>result[key]==='FAIL')?'FAIL':'PASS'; return reply();
+          }};
+          PROBE_SOURCE_END
+          "$WRANGLER" dev --config "$PROBE_DIR/wrangler.jsonc" --ip 127.0.0.1 --port "$PORT" >"$STATE_DIR/wrangler.log" 2>&1 & PID=$!
+          ready=false
+          for _ in $(seq 1 45); do
+            kill -0 "$PID" 2>/dev/null || break
+            if test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 "http://127.0.0.1:$PORT/not-ready" 2>/dev/null || true)" = 404; then ready=true; break; fi
+            sleep 1
+          done
+          test "$ready" = true || { echo 'Ephemeral probe startup failed.' >&2; exit 1; }
+          http="$(curl --silent --show-error --output "$STATE_DIR/result.json" --write-out '%{http_code}' --max-time 90 -X POST "http://127.0.0.1:$PORT/accept" 2>"$STATE_DIR/probe.err")"
+          test "$http" = 200 || { echo 'Private acceptance transport failed.' >&2; exit 1; }
+          stop_local; PID=''
+          node - "$STATE_DIR/result.json" "$GITHUB_OUTPUT" <<'EOF'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const allowed=/^(?:PASS|FAIL|NOT RUN|NOT PROVABLE|INSUFFICIENT EXISTING ROWS|YES|NO|[0-9]+)$/;
+          const values={...r};
+          for(const [key,value] of Object.entries(values)){if(!allowed.test(String(value)))process.exit(1);fs.appendFileSync(process.argv[3],`${key}=${value}\n`);}
+          if(r.transport_fetch!=='PASS'||r.health!=='PASS'||r.query==='FAIL')process.exit(1);
+          EOF
+
+      - name: Verify persistent topology POST-state
+        if: always()
+        id: topology_post
+        env:
+          PRE_ESTABLISHED: ${{ steps.topology_pre.outputs.established }}
+          PRE_CALLER: ${{ steps.topology_pre.outputs.caller }}
+          PRE_TARGET: ${{ steps.topology_pre.outputs.target }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if test "$PRE_ESTABLISHED" != YES; then
+            echo 'topology_result=NOT RUN — PRE-STATE NOT ESTABLISHED' >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN"
+          printf '::add-mask::%s\n' "$CLOUDFLARE_ACCOUNT_ID"
+          STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
+          mkdir -p "$STATE_DIR"
+          read_version(){
+            local service="$1" destination="$2" http
+            http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
+            test "$http" = 200 || return 1
+            node - "$STATE_DIR/$destination.json" <<'EOF'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(body.success!==true||!Array.isArray(body.result))process.exit(1);
+          const active=body.result.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
+          if(active.length!==1||typeof active[0]!=='string')process.exit(1);
+          process.stdout.write(active[0]);
+          EOF
+          }
+          result=FAIL
+          caller="$(read_version teamsheet-data-platform-acceptance-caller caller-after)" || { echo 'Persistent topology POST-state read failed.' >&2; echo "topology_result=$result" >>"$GITHUB_OUTPUT"; exit 0; }
+          target="$(read_version teamsheet-data-platform target-after)" || { echo 'Persistent topology POST-state read failed.' >&2; echo "topology_result=$result" >>"$GITHUB_OUTPUT"; exit 0; }
+          if test "$caller" = "$PRE_CALLER" && test "$target" = "$PRE_TARGET" \
+            && test "$caller" = 43d28a3a-5720-48b3-950e-b081e33bcc8b \
+            && test "$target" = 5edbe951-4be4-46bc-b2cf-17b550396105; then result=PASS; fi
+          echo "topology_result=$result" >>"$GITHUB_OUTPUT"
+
+      - name: Clean temporary acceptance files
+        if: always()
+        id: cleanup
+        run: |
+          set -euo pipefail
+          pkill -TERM -f "$RUNNER_TEMP/teamsheet-data-s1c-tooling/node_modules/.bin/wrangler dev" 2>/dev/null || true
+          sleep 2
+          pkill -KILL -f "$RUNNER_TEMP/teamsheet-data-s1c-tooling/node_modules/.bin/wrangler dev" 2>/dev/null || true
+          rm -rf "$RUNNER_TEMP"/teamsheet-data-s1c-*
+          echo 'completed=YES' >>"$GITHUB_OUTPUT"
+
+      - name: Write sanitized acceptance summary
+        if: always()
+        env:
+          RUN_SHA: ${{ github.sha }}
+          TRANSPORT: ${{ steps.acceptance.outputs.transport_fetch || 'FAIL' }}
+          HEALTH: ${{ steps.acceptance.outputs.health || 'NOT RUN' }}
+          QUERY: ${{ steps.acceptance.outputs.query || 'NOT RUN' }}
+          ROWS: ${{ steps.acceptance.outputs.total_rows || '0' }}
+          PAGES: ${{ steps.acceptance.outputs.page_count || '0' }}
+          ACCEPTED: ${{ steps.acceptance.outputs.accepted_only || 'NOT PROVABLE' }}
+          ORDERING: ${{ steps.acceptance.outputs.ordering || 'NOT PROVABLE' }}
+          AS_OF: ${{ steps.acceptance.outputs.as_of || 'NOT PROVABLE' }}
+          PAGINATION: ${{ steps.acceptance.outputs.pagination || 'NOT PROVABLE' }}
+          CONTINUATION: ${{ steps.acceptance.outputs.cursor_continuation || 'NOT PROVABLE' }}
+          MISMATCH: ${{ steps.acceptance.outputs.cursor_mismatch || 'NOT PROVABLE' }}
+          REASON: ${{ steps.acceptance.outputs.not_provable || '' }}
+          TOPOLOGY: ${{ steps.topology_post.outputs.topology_result || 'NOT RUN — PRE-STATE NOT ESTABLISHED' }}
+          CLEANUP: ${{ steps.cleanup.outputs.completed || 'NO' }}
+        run: |
+          {
+            echo '## DATA-S1C private RPC acceptance'
+            printf '%s\n' "- RUN_SHA: $RUN_SHA" '- Node version: v24.19.0' '- Wrangler version: 4.125.0' "- transport fetch: $TRANSPORT" "- health: $HEALTH" "- query: $QUERY" "- total rows observed: $ROWS" "- page count: $PAGES" "- accepted-only result: $ACCEPTED" "- ordering result: $ORDERING" "- as_of result: $AS_OF" "- pagination result: $PAGINATION" "- cursor continuation result: $CONTINUATION" "- cursor mismatch result: $MISMATCH" "- NOT PROVABLE reason: $REASON" "- persistent topology unchanged: $TOPOLOGY" "- cleanup completed: $CLEANUP"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce functional and topology results
+        if: always()
+        env:
+          PRE_OUTCOME: ${{ steps.topology_pre.outcome }}
+          FUNCTIONAL_OUTCOME: ${{ steps.acceptance.outcome }}
+          TOPOLOGY_RESULT: ${{ steps.topology_post.outputs.topology_result }}
+          CLEANUP_RESULT: ${{ steps.cleanup.outputs.completed }}
+        run: |
+          set -euo pipefail
+          test "$PRE_OUTCOME" = success
+          test "$FUNCTIONAL_OUTCOME" = success
+          test "$TOPOLOGY_RESULT" = PASS
+          test "$CLEANUP_RESULT" = YES
