@@ -142,10 +142,13 @@ test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-
     assert.match(section,/active\.length!==1\|\|typeof active\[0\]!=='string'/);
     assert.doesNotMatch(section,/deployments\.flatMap/);
   }
-  assert.match(pre,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
+  assert.match(pre,/cf9c150d-84b0-46f9-a166-530b7243e863/);
   assert.match(pre,/5edbe951-4be4-46bc-b2cf-17b550396105/);
-  assert.match(post,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
+  assert.match(post,/cf9c150d-84b0-46f9-a166-530b7243e863/);
   assert.match(post,/5edbe951-4be4-46bc-b2cf-17b550396105/);
+  assert.equal((workflow.match(/cf9c150d-84b0-46f9-a166-530b7243e863/g)||[]).length,2);
+  assert.equal((workflow.match(/5edbe951-4be4-46bc-b2cf-17b550396105/g)||[]).length,2);
+  assert.doesNotMatch(workflow,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
   assert.match(workflow,/name: Verify persistent topology POST-state\n        if: always\(\)/);
 });
 
@@ -195,7 +198,7 @@ test('DATA-S1C deployment parser selects only the unique greatest created_on dep
     const history=Array.from({length:7},(_,index)=>old(index));
     const latest=deployment('2026-08-25T12:00:00.000Z',[version('expected-version')]);
     assert.deepEqual(classify(body([latest]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
-    assert.deepEqual(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('43d28a3a-5720-48b3-950e-b081e33bcc8b')])]),'200','43d28a3a-5720-48b3-950e-b081e33bcc8b'),{diagnostic:'PASS',version:'43d28a3a-5720-48b3-950e-b081e33bcc8b'});
+    assert.deepEqual(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('cf9c150d-84b0-46f9-a166-530b7243e863')])]),'200','cf9c150d-84b0-46f9-a166-530b7243e863'),{diagnostic:'PASS',version:'cf9c150d-84b0-46f9-a166-530b7243e863'});
     assert.deepEqual(classify(body([...history,latest]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
     assert.deepEqual(classify(body([old(0),latest,old(6),old(3)]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
     assert.equal(classify(body([deployment('2026-08-25T12:00:00.000Z',[version('different-version')]),...history]),'200','expected-version').diagnostic,'ACTIVE_VERSION_INVALID');

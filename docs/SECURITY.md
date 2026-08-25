@@ -10,6 +10,8 @@ Second manual run `32899866456` authenticated and passed caller PRE validation, 
 
 Third manual run `32902010718` passed caller and target PRE validation and reached the caller's inert fetch discriminator. Cloudflare then recorded one JSRPC `health` call on the acceptance caller ending in a runtime hang exception; query did not run, POST topology was unchanged and cleanup succeeded. The caller's two read methods had returned downstream RPC custom thenables directly. Cloudflare documents that an RPC client must await such results, so both forwarders now await and return the resolved structured result. Rejections propagate unchanged. The caller still owns no storage or credential and exposes no ingest method; its only binding remains `DATA_PLATFORM_READ -> teamsheet-data-platform -> DataPlatformReadEntrypoint`. This repository correction does not prove live acceptance or authorize another run.
 
+PR #156 merged awaited forwarding, but subsequent live evidence remained on old caller version `43d28a3a-5720-48b3-950e-b081e33bcc8b` because repository merge does not deploy the caller. The corrected caller alone was deployed from exact main as `cf9c150d-84b0-46f9-a166-530b7243e863` at 100%, and the workflow pin now matches it. Post-deployment reads confirmed the same single read Service Binding, disabled `workers.dev` and Preview URLs, zero Custom Domains and no added storage or credential capability. The target remained on `5edbe951-4be4-46bc-b2cf-17b550396105`; no D1, ingest, Access, DNS/domain, route or secret change occurred. Deployment does not prove RPC acceptance, and dispatch remains separately owner-approved.
+
 <!-- DATA-S1C-2026-08-25 -->
 ## DATA-S1 private machine capability
 

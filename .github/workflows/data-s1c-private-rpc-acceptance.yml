@@ -123,7 +123,7 @@ jobs:
             version="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).version" "$STATE_DIR/$destination.assessment.json")"
             printf '%s' "$version" >"$STATE_DIR/$destination.version"
           }
-          caller_expected=43d28a3a-5720-48b3-950e-b081e33bcc8b
+          caller_expected=cf9c150d-84b0-46f9-a166-530b7243e863
           target_expected=5edbe951-4be4-46bc-b2cf-17b550396105
           if ! read_version teamsheet-data-platform-acceptance-caller caller-before pre_caller_diagnostic "$caller_expected"; then
             echo 'pre_target_diagnostic=NOT RUN' >>"$GITHUB_OUTPUT"
@@ -300,7 +300,7 @@ jobs:
             version="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).version" "$STATE_DIR/$destination.assessment.json")"
             printf '%s' "$version" >"$STATE_DIR/$destination.version"
           }
-          caller_expected=43d28a3a-5720-48b3-950e-b081e33bcc8b
+          caller_expected=cf9c150d-84b0-46f9-a166-530b7243e863
           target_expected=5edbe951-4be4-46bc-b2cf-17b550396105
           result=FAIL
           if ! read_version teamsheet-data-platform-acceptance-caller caller-after post_caller_diagnostic "$caller_expected"; then
