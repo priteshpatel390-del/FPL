@@ -132,14 +132,38 @@ test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-
   assert.ok(pre.includes(endpoint)); assert.ok(post.includes(endpoint));
   assert.doesNotMatch(workflow,/workers\/services\/\$service\/deployments/);
   for(const section of [pre,post]){
+    assert.match(section,/Array\.isArray\(body\.result\?\.deployments\)/);
+    assert.match(section,/body\.result\.deployments\.flatMap/);
     assert.match(section,/filter\(v=>v\.percentage===100\)\.map\(v=>v\.version_id\)/);
-    assert.match(section,/active\.length!==1\|\|typeof active\[0\]!=='string'/);
+    assert.match(section,/active\.length===1&&typeof active\[0\]==='string'/);
   }
   assert.match(pre,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
   assert.match(pre,/5edbe951-4be4-46bc-b2cf-17b550396105/);
   assert.match(post,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
   assert.match(post,/5edbe951-4be4-46bc-b2cf-17b550396105/);
   assert.match(workflow,/name: Verify persistent topology POST-state\n        if: always\(\)/);
+});
+
+test('DATA-S1C deployment parser accepts only one 100% version in the wrapped live response',()=>{
+  const matches=[...workflow.matchAll(/const activeVersion=(body=>\{[\s\S]*?\n\s+\});/g)];
+  assert.equal(matches.length,2);
+  const parsers=matches.map(match=>(0,eval)(`(${match[1]})`));
+  const version=(version_id='expected-version',percentage=100)=>({version_id,percentage});
+  const wrapped=versions=>({success:true,result:{deployments:[{versions}]}});
+  for(const parse of parsers){
+    assert.equal(parse(wrapped([version()])),'expected-version');
+    for(const invalid of [
+      {success:true,result:[{versions:[version()]}]},
+      {success:true,result:{}},
+      {success:true,result:{deployments:{}}},
+      wrapped([]),
+      wrapped([version('a'),version('b')]),
+      wrapped([{percentage:100}]),
+      wrapped([version(42)]),
+      wrapped([version('expected-version',99)]),
+      {success:false,result:{deployments:[{versions:[version()]}]}}
+    ])assert.equal(parse(invalid),null);
+  }
 });
 
 test('DATA-S1C final enforcement preserves functional failure and independently rejects topology drift',()=>{

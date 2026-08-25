@@ -91,10 +91,14 @@ jobs:
             node - "$STATE_DIR/$destination.json" <<'EOF'
           import fs from 'node:fs';
           const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-          if(body.success!==true||!Array.isArray(body.result))process.exit(1);
-          const active=body.result.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
-          if(active.length!==1||typeof active[0]!=='string')process.exit(1);
-          process.stdout.write(active[0]);
+          const activeVersion=body=>{
+            if(body.success!==true||!Array.isArray(body.result?.deployments))return null;
+            const active=body.result.deployments.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
+            return active.length===1&&typeof active[0]==='string'?active[0]:null;
+          };
+          const version=activeVersion(body);
+          if(version===null)process.exit(1);
+          process.stdout.write(version);
           EOF
           }
           caller="$(read_version teamsheet-data-platform-acceptance-caller caller-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
@@ -231,10 +235,14 @@ jobs:
             node - "$STATE_DIR/$destination.json" <<'EOF'
           import fs from 'node:fs';
           const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-          if(body.success!==true||!Array.isArray(body.result))process.exit(1);
-          const active=body.result.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
-          if(active.length!==1||typeof active[0]!=='string')process.exit(1);
-          process.stdout.write(active[0]);
+          const activeVersion=body=>{
+            if(body.success!==true||!Array.isArray(body.result?.deployments))return null;
+            const active=body.result.deployments.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
+            return active.length===1&&typeof active[0]==='string'?active[0]:null;
+          };
+          const version=activeVersion(body);
+          if(version===null)process.exit(1);
+          process.stdout.write(version);
           EOF
           }
           result=FAIL
