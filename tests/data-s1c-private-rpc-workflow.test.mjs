@@ -4,6 +4,18 @@ import fs from 'node:fs';
 
 const file='.github/workflows/data-s1c-private-rpc-acceptance.yml';
 const workflow=fs.readFileSync(file,'utf8');
+const probeSource=workflow.match(/cat >"\$PROBE_DIR\/probe\.mjs" <<'PROBE_SOURCE_END'\n([\s\S]*?)\n\s+PROBE_SOURCE_END/)?.[1]??'';
+const acceptedRow=(id,fetched_at)=>({observation_id:id,fetched_at,admission_state:'accepted'});
+async function runProbe(queryObservations){
+  const url=`data:text/javascript;base64,${Buffer.from(probeSource).toString('base64')}#${Math.random()}`;
+  const probe=(await import(url)).default;
+  const response=await probe.fetch(new Request('http://127.0.0.1/accept',{method:'POST'}),{CALLER:{
+    fetch:async()=>new Response(null,{status:404}),
+    health:async()=>({status:200,body:{ok:true,platformVersion:'1.0.1',mode:'shadow_only'}}),
+    queryObservations
+  }});
+  return response.json();
+}
 
 test('DATA-S1C acceptance workflow is manual-only, input-free and least-privilege',()=>{
   assert.equal(fs.existsSync(file),true);
@@ -36,7 +48,7 @@ test('DATA-S1C workflow uses only approved secrets and exact temporary toolchain
 });
 
 test('DATA-S1C probe is fetch-first, fail-closed, read-only and bounded',()=>{
-  const probe=workflow.match(/cat >"\$PROBE_DIR\/probe\.mjs" <<'PROBE_SOURCE_END'\n([\s\S]*?)\n\s+PROBE_SOURCE_END/)?.[1]??'';
+  const probe=probeSource;
   const fetch=probe.indexOf('env.CALLER.fetch('),health=probe.indexOf('env.CALLER.health('),query=probe.indexOf('env.CALLER.queryObservations(');
   assert.ok(fetch>0&&fetch<health&&health<query);
   assert.match(probe,/if\(transport\.status!==404\|\|transportBody\.byteLength!==0\)return reply\(\)/);
@@ -46,8 +58,45 @@ test('DATA-S1C probe is fetch-first, fail-closed, read-only and bounded',()=>{
   assert.match(probe,/admission_state==='accepted'/);
   assert.match(probe,/row\.fetched_at<=as_of/);
   assert.match(probe,/error==='cursor_invalid'/);
+  assert.match(probe,/mismatch\?\.status===400&&mismatch\?\.body\?\.error==='cursor_invalid'/);
   assert.match(workflow,/"binding":"CALLER","service":"teamsheet-data-platform-acceptance-caller","remote":true/);
   for(const forbidden of [/d1_databases/i,/r2_buckets/i,/kv_namespaces/i,/ingest/i,/DataPlatformIngestEntrypoint/i,/wrangler\s+dev\s+--remote/i])assert.doesNotMatch(probe,forbidden);
+});
+
+test('DATA-S1C query evidence reports zero rows without vacuous property passes',async()=>{
+  const result=await runProbe(async()=>({status:200,body:{observations:[],next_cursor:null}}));
+  assert.equal(result.query,'PASS');
+  for(const key of ['accepted_only','ordering','as_of','pagination','cursor_continuation','cursor_mismatch'])assert.equal(result[key],'NOT PROVABLE',key);
+  assert.equal(result.not_provable,'INSUFFICIENT EXISTING ROWS');
+});
+
+test('DATA-S1C query evidence proves one-row facts but not ordering or cursor properties',async()=>{
+  const result=await runProbe(async()=>({status:200,body:{observations:[acceptedRow('a','2026-08-20T00:00:00.000Z')],next_cursor:null}}));
+  assert.equal(result.query,'PASS'); assert.equal(result.accepted_only,'PASS'); assert.equal(result.as_of,'PASS');
+  for(const key of ['ordering','pagination','cursor_continuation','cursor_mismatch'])assert.equal(result[key],'NOT PROVABLE',key);
+  assert.equal(result.not_provable,'INSUFFICIENT EXISTING ROWS');
+});
+
+test('DATA-S1C query evidence proves two-row ordering but never pagination without a cursor',async()=>{
+  const rows=[acceptedRow('a','2026-08-20T00:00:00.000Z'),acceptedRow('b','2026-08-20T00:00:01.000Z')];
+  const result=await runProbe(async()=>({status:200,body:{observations:rows,next_cursor:null}}));
+  assert.equal(result.query,'PASS'); assert.equal(result.accepted_only,'PASS'); assert.equal(result.ordering,'PASS'); assert.equal(result.as_of,'PASS');
+  for(const key of ['pagination','cursor_continuation','cursor_mismatch'])assert.equal(result[key],'NOT PROVABLE',key);
+  assert.equal(result.not_provable,'INSUFFICIENT EXISTING ROWS');
+});
+
+test('DATA-S1C query evidence proves pagination, continuation and HTTP 400 cursor mismatch only after cursor use',async()=>{
+  const calls=[];
+  const result=await runProbe(async query=>{
+    calls.push(query);
+    if(calls.length===1)return {status:200,body:{observations:[acceptedRow('a','2026-08-20T00:00:00.000Z')],next_cursor:'opaque'}};
+    if(calls.length===2)return {status:200,body:{observations:[acceptedRow('b','2026-08-20T00:00:01.000Z')],next_cursor:null}};
+    return {status:400,body:{error:'cursor_invalid'}};
+  });
+  assert.equal(calls.length,3); assert.equal(calls[1].cursor,'opaque'); assert.equal(calls[1].as_of,calls[0].as_of);
+  assert.equal(calls[2].cursor,'opaque'); assert.notEqual(calls[2].as_of,calls[0].as_of);
+  assert.equal(result.query,'PASS'); assert.equal(result.pagination,'PASS'); assert.equal(result.cursor_continuation,'PASS'); assert.equal(result.cursor_mismatch,'PASS');
+  assert.equal(result.not_provable,'');
 });
 
 test('DATA-S1C workflow forbids mutation, debug leakage and retains unconditional cleanup',()=>{

@@ -148,12 +148,15 @@ jobs:
             if(health?.status!==200||health?.body?.ok!==true||health?.body?.platformVersion!=='1.0.1'||health?.body?.mode!=='shadow_only')return reply();
             result.health='PASS'; result.query='FAIL';
             const as_of=new Date().toISOString(); const limit=2; const maxPages=20;
-            let cursor=null, previous=null, firstCursor=null, exhausted=false;
+            let cursor=null, previous=null, firstCursor=null;
+            let cursorReturned=false, cursorExercised=false, continuationPageSucceeded=false;
             const ids=new Set(); let accepted=true, ordered=true, bounded=true, continuation=true;
             for(let pageNumber=0;pageNumber<maxPages;pageNumber++){
+              const usingCursor=cursor!==null;
               const query={as_of,limit}; if(cursor)query.cursor=cursor;
               const page=await env.CALLER.queryObservations(query);
               if(page?.status!==200||!Array.isArray(page?.body?.observations))return reply();
+              if(usingCursor){cursorExercised=true;continuationPageSucceeded=true;}
               const rows=page.body.observations; result.page_count++;
               for(const row of rows){
                 result.total_rows++; accepted&&=row.admission_state==='accepted'; bounded&&=typeof row.fetched_at==='string'&&row.fetched_at<=as_of;
@@ -163,20 +166,20 @@ jobs:
               }
               const next=page.body.next_cursor??null;
               if(next!==null&&typeof next!=='string')return reply();
-              if(result.page_count===1)firstCursor=next;
-              if(!next){exhausted=true;break;} cursor=next;
+              if(next){cursorReturned=true;if(firstCursor===null)firstCursor=next;cursor=next;}else break;
             }
-            result.accepted_only=accepted?'PASS':'FAIL'; result.ordering=ordered?'PASS':'FAIL'; result.as_of=bounded?'PASS':'FAIL';
-            result.pagination=exhausted?'PASS':'NOT PROVABLE'; result.cursor_continuation=continuation?'PASS':'FAIL';
-            if(firstCursor){
+            if(result.total_rows>0){result.accepted_only=accepted?'PASS':'FAIL';result.as_of=bounded?'PASS':'FAIL';}
+            if(result.total_rows>=2)result.ordering=ordered?'PASS':'FAIL';
+            const paginationProven=cursorReturned&&cursorExercised&&continuationPageSucceeded;
+            result.pagination=paginationProven?'PASS':'NOT PROVABLE';
+            result.cursor_continuation=paginationProven?(continuation&&ordered?'PASS':'FAIL'):'NOT PROVABLE';
+            if(paginationProven&&firstCursor){
               const mismatch=await env.CALLER.queryObservations({as_of:new Date(Date.parse(as_of)-1000).toISOString(),limit,cursor:firstCursor});
-              result.cursor_mismatch=mismatch?.status===422&&mismatch?.body?.error==='cursor_invalid'?'PASS':'FAIL';
-            }else result.not_provable='INSUFFICIENT EXISTING ROWS';
-            if(result.total_rows<2){
-              result.not_provable='INSUFFICIENT EXISTING ROWS';
-              for(const key of ['ordering','pagination','cursor_continuation','cursor_mismatch'])if(result[key]==='PASS')result[key]='NOT PROVABLE';
+              result.cursor_mismatch=mismatch?.status===400&&mismatch?.body?.error==='cursor_invalid'?'PASS':'FAIL';
             }
-            const checks=['accepted_only','ordering','as_of','cursor_continuation','cursor_mismatch'];
+            const evidence=['accepted_only','ordering','as_of','pagination','cursor_continuation','cursor_mismatch'];
+            if(evidence.some(key=>result[key]==='NOT PROVABLE'))result.not_provable='INSUFFICIENT EXISTING ROWS';
+            const checks=['accepted_only','ordering','as_of','pagination','cursor_continuation','cursor_mismatch'];
             result.query=checks.some(key=>result[key]==='FAIL')?'FAIL':'PASS'; return reply();
           }};
           PROBE_SOURCE_END
