@@ -1,5 +1,10 @@
 # SECURITY.md
 
+<!-- DATA-S1C-2026-08-25 -->
+## DATA-S1 private machine capability
+
+DATA-S1C uses a named Cloudflare Service Binding as the future Worker-to-Worker capability; it adds no shared secret or HTTP authentication bypass. Split read/ingest RPC entrypoints expose only explicit methods and share the DATA-S1 operation layer. `teamsheet-data-platform` remains the sole D1 owner, while the retained external HTTP surface still authenticates bearer credentials before routing, parsing or storage access. Live Access, hostname and bearer cleanup remain separate approval gates. See [DATA-S1C private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
+
 <!-- GW1-P2C5-CURRENT-2026-08-22 -->
 ## GW1-P2C5 security closeout
 

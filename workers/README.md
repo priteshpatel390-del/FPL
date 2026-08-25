@@ -1,5 +1,9 @@
 # Teamsheet Cloudflare Workers
 
+## DATA-S1C private RPC repository target
+
+`data-platform/data-platform-rpc.mjs` preserves the bearer-protected HTTP adapter and adds separate named read and ingest `WorkerEntrypoint` capabilities that delegate to the same DATA-S1 operations. `data-platform-acceptance-caller/` is a provisional private, read-only architecture caller bound only to `DataPlatformReadEntrypoint`; it owns no D1/R2, secret, public route or hostname. Repository configuration is not live deployment evidence. See `docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md`.
+
 <!-- GW1-P2C3B-CURRENT-2026-08-22 -->
 ## GW1-P2C3B transport closeout
 
@@ -76,4 +80,4 @@ See `docs/GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md`, `docs/GW1-P2-BROWSER-EVIDEN
 
 ## DATA-S1 data platform (repository only)
 
-`data-platform/` is the separate provider-neutral `teamsheet-data-platform` service concept. It binds only the future `teamsheet-data` D1 database as `TEAMSHEET_DATA_DB`, permits only `shadow_only`, has no browser/CORS/R2/scheduled/provider integration, and is not deployed. It must never be folded into the evidence archive or imported by the production application/model.
+`data-platform/` is the separate provider-neutral `teamsheet-data-platform` service. Live handover evidence records its Worker, `teamsheet-data` D1, `TEAMSHEET_DATA_DB` binding and Custom Domain as existing; Access remains the proven outer protection. It permits only `shadow_only`, has no browser/CORS/R2/scheduled/provider integration, and must never be folded into the evidence archive or imported by the production application/model. DATA-S1C's RPC and caller configuration are repository candidates and have not been deployed.

@@ -48,6 +48,7 @@ Separately tracked live-season evidence gates, D1 implementation, Understat repa
 
 ## Current operational and acceptance records
 
+- [DATA-S1C Private Service Binding and RPC architecture](DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md) — repository-only split named read/ingest RPC entrypoints over the shared DATA-S1 operation layer plus a private read-only acceptance caller with no D1; records the future live acceptance and rollback order and authorises no Cloudflare mutation.
 - [DATA-S1B Live Deployment and Acceptance Plan](DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md) — current design-only, separately owner-gated contract for deterministic D1 provisioning, all-traffic Worker-level Access and unmistakably synthetic acceptance after DATA-S1A merges; it authorises no live action.
 - [DATA-S1B Final Preflight and Deployment Runbook](DATA-S1B-FINAL-PREFLIGHT-AND-DEPLOYMENT-RUNBOOK.md) — the reconciled 22 August 2026 mutation-free preflight PASS, Workers Free cost envelope and exact phase-gated execution/acceptance sequence prepared for independent review; it records no deployment and authorises no live action.
 - [DATA-S1B Worker-secret HTTP authentication](DATA-S1B-WORKER-SECRET-HTTP-AUTHENTICATION.md) — repository-only bearer-authentication boundary; the production Worker/D1/domain already exist behind Access, while bearer code and the production Worker secret remain undeployed and live bearer acceptance is separately gated.
