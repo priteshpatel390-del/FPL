@@ -83,28 +83,52 @@ jobs:
           STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
           mkdir -p "$STATE_DIR"
           read_version(){
-            local service="$1" destination="$2" http
-            http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
+            local service="$1" destination="$2" diagnostic_key="$3" expected="$4" http curl_status diagnostic version
+            set +e
+            http="$(curl --silent --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
-            test "$http" = 200 || return 1
-            node - "$STATE_DIR/$destination.json" <<'EOF'
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$service/deployments" 2>/dev/null)"
+            curl_status=$?
+            set -e
+            if test "$curl_status" -ne 0; then echo "$diagnostic_key=NETWORK_ERROR" >>"$GITHUB_OUTPUT"; return 1; fi
+            node - "$STATE_DIR/$destination.json" "$http" "$expected" "$STATE_DIR/$destination.assessment.json" <<'EOF'
           import fs from 'node:fs';
-          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-          const activeVersion=body=>{
-            if(body.success!==true||!Array.isArray(body.result?.deployments))return null;
-            const active=body.result.deployments.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
-            return active.length===1&&typeof active[0]==='string'?active[0]:null;
+          const classifyDeploymentResponse=(text,http,expected)=>{
+            const httpCategory=http==='401'?'HTTP_401':http==='403'?'HTTP_403':http==='404'?'HTTP_404':`HTTP_OTHER_${/^\d{3}$/.test(http)?http:'UNKNOWN'}`;
+            let body;try{body=JSON.parse(text);}catch{return {diagnostic:http==='200'?'JSON_PARSE_ERROR':httpCategory,version:null};}
+            const codes=Array.isArray(body.errors)?[...new Set(body.errors.map(error=>error?.code).filter(Number.isInteger))].sort((a,b)=>a-b):[];
+            const codeCategories=codes.map(code=>`CLOUDFLARE_ERROR_CODE_${code}`);
+            if(http!=='200')return {diagnostic:[httpCategory,...codeCategories].join(','),version:null};
+            if(body.success!==true)return {diagnostic:codeCategories.join(',')||'CLOUDFLARE_SUCCESS_FALSE',version:null};
+            if(!Array.isArray(body.result?.deployments))return {diagnostic:'RESPONSE_CONTRACT_INVALID',version:null};
+            const active=body.result.deployments.flatMap(deployment=>(deployment.versions||[]).filter(version=>version.percentage===100).map(version=>version.version_id));
+            if(active.length!==1||typeof active[0]!=='string'||active[0]!==expected)return {diagnostic:'ACTIVE_VERSION_INVALID',version:null};
+            return {diagnostic:'PASS',version:active[0]};
           };
-          const version=activeVersion(body);
-          if(version===null)process.exit(1);
-          process.stdout.write(version);
+          const result=classifyDeploymentResponse(fs.readFileSync(process.argv[2],'utf8'),process.argv[3],process.argv[4]);
+          fs.writeFileSync(process.argv[5],JSON.stringify(result));
           EOF
+            diagnostic="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).diagnostic" "$STATE_DIR/$destination.assessment.json")"
+            echo "$diagnostic_key=$diagnostic" >>"$GITHUB_OUTPUT"
+            test "$diagnostic" = PASS || return 1
+            version="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).version" "$STATE_DIR/$destination.assessment.json")"
+            printf '%s' "$version" >"$STATE_DIR/$destination.version"
           }
-          caller="$(read_version teamsheet-data-platform-acceptance-caller caller-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
-          target="$(read_version teamsheet-data-platform target-before)" || { echo 'Persistent topology PRE-state read failed.' >&2; exit 1; }
-          test "$caller" = 43d28a3a-5720-48b3-950e-b081e33bcc8b
-          test "$target" = 5edbe951-4be4-46bc-b2cf-17b550396105
+          caller_expected=43d28a3a-5720-48b3-950e-b081e33bcc8b
+          target_expected=5edbe951-4be4-46bc-b2cf-17b550396105
+          if ! read_version teamsheet-data-platform-acceptance-caller caller-before pre_caller_diagnostic "$caller_expected"; then
+            echo 'pre_target_diagnostic=NOT RUN' >>"$GITHUB_OUTPUT"
+            echo 'Persistent topology PRE-state caller read failed.' >&2
+            exit 1
+          fi
+          caller="$(cat "$STATE_DIR/caller-before.version")"
+          if ! read_version teamsheet-data-platform target-before pre_target_diagnostic "$target_expected"; then
+            echo 'Persistent topology PRE-state target read failed.' >&2
+            exit 1
+          fi
+          target="$(cat "$STATE_DIR/target-before.version")"
+          test "$caller" = "$caller_expected"
+          test "$target" = "$target_expected"
           printf 'caller=%s\ntarget=%s\nestablished=YES\n' "$caller" "$target" >>"$GITHUB_OUTPUT"
 
       - name: Run bounded private acceptance
@@ -219,7 +243,7 @@ jobs:
         run: |
           set -euo pipefail
           if test "$PRE_ESTABLISHED" != YES; then
-            echo 'topology_result=NOT RUN — PRE-STATE NOT ESTABLISHED' >>"$GITHUB_OUTPUT"
+            printf '%s\n' 'topology_result=NOT RUN — PRE-STATE NOT ESTABLISHED' 'post_caller_diagnostic=NOT RUN — PRE NOT ESTABLISHED' 'post_target_diagnostic=NOT RUN — PRE NOT ESTABLISHED' >>"$GITHUB_OUTPUT"
             exit 0
           fi
           printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN"
@@ -227,30 +251,55 @@ jobs:
           STATE_DIR="$RUNNER_TEMP/teamsheet-data-s1c-state"
           mkdir -p "$STATE_DIR"
           read_version(){
-            local service="$1" destination="$2" http
-            http="$(curl --silent --show-error --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
+            local service="$1" destination="$2" diagnostic_key="$3" expected="$4" http curl_status diagnostic version
+            set +e
+            http="$(curl --silent --output "$STATE_DIR/$destination.json" --write-out '%{http_code}' --max-time 20 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$service/deployments" 2>"$STATE_DIR/$destination.err")" || return 1
-            test "$http" = 200 || return 1
-            node - "$STATE_DIR/$destination.json" <<'EOF'
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$service/deployments" 2>/dev/null)"
+            curl_status=$?
+            set -e
+            if test "$curl_status" -ne 0; then echo "$diagnostic_key=NETWORK_ERROR" >>"$GITHUB_OUTPUT"; return 1; fi
+            node - "$STATE_DIR/$destination.json" "$http" "$expected" "$STATE_DIR/$destination.assessment.json" <<'EOF'
           import fs from 'node:fs';
-          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-          const activeVersion=body=>{
-            if(body.success!==true||!Array.isArray(body.result?.deployments))return null;
-            const active=body.result.deployments.flatMap(d=>(d.versions||[]).filter(v=>v.percentage===100).map(v=>v.version_id));
-            return active.length===1&&typeof active[0]==='string'?active[0]:null;
+          const classifyDeploymentResponse=(text,http,expected)=>{
+            const httpCategory=http==='401'?'HTTP_401':http==='403'?'HTTP_403':http==='404'?'HTTP_404':`HTTP_OTHER_${/^\d{3}$/.test(http)?http:'UNKNOWN'}`;
+            let body;try{body=JSON.parse(text);}catch{return {diagnostic:http==='200'?'JSON_PARSE_ERROR':httpCategory,version:null};}
+            const codes=Array.isArray(body.errors)?[...new Set(body.errors.map(error=>error?.code).filter(Number.isInteger))].sort((a,b)=>a-b):[];
+            const codeCategories=codes.map(code=>`CLOUDFLARE_ERROR_CODE_${code}`);
+            if(http!=='200')return {diagnostic:[httpCategory,...codeCategories].join(','),version:null};
+            if(body.success!==true)return {diagnostic:codeCategories.join(',')||'CLOUDFLARE_SUCCESS_FALSE',version:null};
+            if(!Array.isArray(body.result?.deployments))return {diagnostic:'RESPONSE_CONTRACT_INVALID',version:null};
+            const active=body.result.deployments.flatMap(deployment=>(deployment.versions||[]).filter(version=>version.percentage===100).map(version=>version.version_id));
+            if(active.length!==1||typeof active[0]!=='string'||active[0]!==expected)return {diagnostic:'ACTIVE_VERSION_INVALID',version:null};
+            return {diagnostic:'PASS',version:active[0]};
           };
-          const version=activeVersion(body);
-          if(version===null)process.exit(1);
-          process.stdout.write(version);
+          const result=classifyDeploymentResponse(fs.readFileSync(process.argv[2],'utf8'),process.argv[3],process.argv[4]);
+          fs.writeFileSync(process.argv[5],JSON.stringify(result));
           EOF
+            diagnostic="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).diagnostic" "$STATE_DIR/$destination.assessment.json")"
+            echo "$diagnostic_key=$diagnostic" >>"$GITHUB_OUTPUT"
+            test "$diagnostic" = PASS || return 1
+            version="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).version" "$STATE_DIR/$destination.assessment.json")"
+            printf '%s' "$version" >"$STATE_DIR/$destination.version"
           }
+          caller_expected=43d28a3a-5720-48b3-950e-b081e33bcc8b
+          target_expected=5edbe951-4be4-46bc-b2cf-17b550396105
           result=FAIL
-          caller="$(read_version teamsheet-data-platform-acceptance-caller caller-after)" || { echo 'Persistent topology POST-state read failed.' >&2; echo "topology_result=$result" >>"$GITHUB_OUTPUT"; exit 0; }
-          target="$(read_version teamsheet-data-platform target-after)" || { echo 'Persistent topology POST-state read failed.' >&2; echo "topology_result=$result" >>"$GITHUB_OUTPUT"; exit 0; }
+          if ! read_version teamsheet-data-platform-acceptance-caller caller-after post_caller_diagnostic "$caller_expected"; then
+            echo 'post_target_diagnostic=NOT RUN' >>"$GITHUB_OUTPUT"
+            echo 'Persistent topology POST-state caller read failed.' >&2
+            echo "topology_result=$result" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          caller="$(cat "$STATE_DIR/caller-after.version")"
+          if ! read_version teamsheet-data-platform target-after post_target_diagnostic "$target_expected"; then
+            echo 'Persistent topology POST-state target read failed.' >&2
+            echo "topology_result=$result" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          target="$(cat "$STATE_DIR/target-after.version")"
           if test "$caller" = "$PRE_CALLER" && test "$target" = "$PRE_TARGET" \
-            && test "$caller" = 43d28a3a-5720-48b3-950e-b081e33bcc8b \
-            && test "$target" = 5edbe951-4be4-46bc-b2cf-17b550396105; then result=PASS; fi
+            && test "$caller" = "$caller_expected" && test "$target" = "$target_expected"; then result=PASS; fi
           echo "topology_result=$result" >>"$GITHUB_OUTPUT"
 
       - name: Clean temporary acceptance files
@@ -268,7 +317,7 @@ jobs:
         if: always()
         env:
           RUN_SHA: ${{ github.sha }}
-          TRANSPORT: ${{ steps.acceptance.outputs.transport_fetch || 'FAIL' }}
+          TRANSPORT: ${{ steps.acceptance.outcome == 'skipped' && 'NOT RUN' || steps.acceptance.outputs.transport_fetch || 'FAIL' }}
           HEALTH: ${{ steps.acceptance.outputs.health || 'NOT RUN' }}
           QUERY: ${{ steps.acceptance.outputs.query || 'NOT RUN' }}
           ROWS: ${{ steps.acceptance.outputs.total_rows || '0' }}
@@ -282,10 +331,14 @@ jobs:
           REASON: ${{ steps.acceptance.outputs.not_provable || '' }}
           TOPOLOGY: ${{ steps.topology_post.outputs.topology_result || 'NOT RUN — PRE-STATE NOT ESTABLISHED' }}
           CLEANUP: ${{ steps.cleanup.outputs.completed || 'NO' }}
+          PRE_CALLER_DIAGNOSTIC: ${{ steps.topology_pre.outputs.pre_caller_diagnostic || 'NOT RUN' }}
+          PRE_TARGET_DIAGNOSTIC: ${{ steps.topology_pre.outputs.pre_target_diagnostic || 'NOT RUN' }}
+          POST_CALLER_DIAGNOSTIC: ${{ steps.topology_post.outputs.post_caller_diagnostic || 'NOT RUN' }}
+          POST_TARGET_DIAGNOSTIC: ${{ steps.topology_post.outputs.post_target_diagnostic || 'NOT RUN' }}
         run: |
           {
             echo '## DATA-S1C private RPC acceptance'
-            printf '%s\n' "- RUN_SHA: $RUN_SHA" '- Node version: v24.19.0' '- Wrangler version: 4.125.0' "- transport fetch: $TRANSPORT" "- health: $HEALTH" "- query: $QUERY" "- total rows observed: $ROWS" "- page count: $PAGES" "- accepted-only result: $ACCEPTED" "- ordering result: $ORDERING" "- as_of result: $AS_OF" "- pagination result: $PAGINATION" "- cursor continuation result: $CONTINUATION" "- cursor mismatch result: $MISMATCH" "- NOT PROVABLE reason: $REASON" "- persistent topology unchanged: $TOPOLOGY" "- cleanup completed: $CLEANUP"
+            printf '%s\n' "- RUN_SHA: $RUN_SHA" '- Node version: v24.19.0' '- Wrangler version: 4.125.0' "- transport fetch: $TRANSPORT" "- health: $HEALTH" "- query: $QUERY" "- total rows observed: $ROWS" "- page count: $PAGES" "- accepted-only result: $ACCEPTED" "- ordering result: $ORDERING" "- as_of result: $AS_OF" "- pagination result: $PAGINATION" "- cursor continuation result: $CONTINUATION" "- cursor mismatch result: $MISMATCH" "- NOT PROVABLE reason: $REASON" "- persistent topology unchanged: $TOPOLOGY" "- cleanup completed: $CLEANUP" "- PRE caller diagnostic: $PRE_CALLER_DIAGNOSTIC" "- PRE target diagnostic: $PRE_TARGET_DIAGNOSTIC" "- POST caller diagnostic: $POST_CALLER_DIAGNOSTIC" "- POST target diagnostic: $POST_TARGET_DIAGNOSTIC"
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Enforce functional and topology results

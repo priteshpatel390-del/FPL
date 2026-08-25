@@ -134,8 +134,8 @@ test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-
   for(const section of [pre,post]){
     assert.match(section,/Array\.isArray\(body\.result\?\.deployments\)/);
     assert.match(section,/body\.result\.deployments\.flatMap/);
-    assert.match(section,/filter\(v=>v\.percentage===100\)\.map\(v=>v\.version_id\)/);
-    assert.match(section,/active\.length===1&&typeof active\[0\]==='string'/);
+    assert.match(section,/filter\(version=>version\.percentage===100\)\.map\(version=>version\.version_id\)/);
+    assert.match(section,/active\.length!==1\|\|typeof active\[0\]!=='string'/);
   }
   assert.match(pre,/43d28a3a-5720-48b3-950e-b081e33bcc8b/);
   assert.match(pre,/5edbe951-4be4-46bc-b2cf-17b550396105/);
@@ -144,26 +144,59 @@ test('DATA-S1C PRE and POST topology readers use the Workers Scripts deployment-
   assert.match(workflow,/name: Verify persistent topology POST-state\n        if: always\(\)/);
 });
 
-test('DATA-S1C deployment parser accepts only one 100% version in the wrapped live response',()=>{
-  const matches=[...workflow.matchAll(/const activeVersion=(body=>\{[\s\S]*?\n\s+\});/g)];
+test('DATA-S1C deployment diagnostics safely classify HTTP, JSON, Cloudflare and version failures',()=>{
+  const matches=[...workflow.matchAll(/const classifyDeploymentResponse=(\(text,http,expected\)=>\{[\s\S]*?\n\s+\});/g)];
   assert.equal(matches.length,2);
-  const parsers=matches.map(match=>(0,eval)(`(${match[1]})`));
+  const classifiers=matches.map(match=>(0,eval)(`(${match[1]})`));
   const version=(version_id='expected-version',percentage=100)=>({version_id,percentage});
-  const wrapped=versions=>({success:true,result:{deployments:[{versions}]}});
-  for(const parse of parsers){
-    assert.equal(parse(wrapped([version()])),'expected-version');
-    for(const invalid of [
-      {success:true,result:[{versions:[version()]}]},
-      {success:true,result:{}},
-      {success:true,result:{deployments:{}}},
-      wrapped([]),
-      wrapped([version('a'),version('b')]),
-      wrapped([{percentage:100}]),
-      wrapped([version(42)]),
-      wrapped([version('expected-version',99)]),
-      {success:false,result:{deployments:[{versions:[version()]}]}}
-    ])assert.equal(parse(invalid),null);
+  const wrapped=versions=>JSON.stringify({success:true,result:{deployments:[{versions}]}});
+  for(const classify of classifiers){
+    assert.deepEqual(classify(wrapped([version()]),'200','expected-version'),{diagnostic:'PASS',version:'expected-version'});
+    assert.equal(classify('{}','401','expected-version').diagnostic,'HTTP_401');
+    assert.equal(classify('{}','403','expected-version').diagnostic,'HTTP_403');
+    assert.equal(classify('{}','404','expected-version').diagnostic,'HTTP_404');
+    assert.equal(classify('{}','429','expected-version').diagnostic,'HTTP_OTHER_429');
+    assert.equal(classify('{invalid','200','expected-version').diagnostic,'JSON_PARSE_ERROR');
+    const cloudflareError=JSON.stringify({success:false,errors:[{code:10000,message:'must never appear'},{code:9109,message:'also hidden'},{code:10000}]});
+    const diagnostic=classify(cloudflareError,'403','expected-version').diagnostic;
+    assert.equal(diagnostic,'HTTP_403,CLOUDFLARE_ERROR_CODE_9109,CLOUDFLARE_ERROR_CODE_10000');
+    assert.doesNotMatch(diagnostic,/must never appear|also hidden|\{|\}/);
+    for(const invalidContract of [
+      JSON.stringify({success:true,result:[{versions:[version()]}]}),
+      JSON.stringify({success:true,result:{}}),
+      JSON.stringify({success:true,result:{deployments:{}}})
+    ])assert.equal(classify(invalidContract,'200','expected-version').diagnostic,'RESPONSE_CONTRACT_INVALID');
+    for(const invalidVersion of [
+      wrapped([]),wrapped([version('a'),version('b')]),wrapped([{percentage:100}]),
+      wrapped([version(42)]),wrapped([version('expected-version',99)]),wrapped([version('wrong-version')])
+    ])assert.equal(classify(invalidVersion,'200','expected-version').diagnostic,'ACTIVE_VERSION_INVALID');
+    assert.equal(classify(JSON.stringify({success:false,errors:[{code:10001}]}),'200','expected-version').diagnostic,'CLOUDFLARE_ERROR_CODE_10001');
+    assert.equal(classify(JSON.stringify({success:false}),'200','expected-version').diagnostic,'CLOUDFLARE_SUCCESS_FALSE');
   }
+});
+
+test('DATA-S1C deployment reads map network failure without exposing raw responses or credentials',()=>{
+  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded private acceptance'));
+  const post=workflow.slice(workflow.indexOf('- name: Verify persistent topology POST-state'),workflow.indexOf('- name: Clean temporary acceptance files'));
+  for(const section of [pre,post]){
+    const reader=section.slice(section.indexOf('          read_version(){'),section.indexOf('          caller_expected='));
+    assert.match(section,/curl_status=\$\?/);
+    assert.match(section,/if test "\$curl_status" -ne 0; then echo "\$diagnostic_key=NETWORK_ERROR"/);
+    assert.match(section,/--write-out '%\{http_code\}'/);
+    assert.match(section,/2>\/dev\/null/);
+    assert.doesNotMatch(section,/--show-error|console\.|cat "\$STATE_DIR\/\$destination\.json"/);
+    assert.doesNotMatch(reader,/(?:echo|printf)[^\n]*(?:CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID)/);
+  }
+});
+
+test('DATA-S1C PRE failure blocks acceptance and skipped acceptance is summarized as NOT RUN',()=>{
+  const pre=workflow.slice(workflow.indexOf('- name: Capture persistent topology PRE-state'),workflow.indexOf('- name: Run bounded private acceptance'));
+  assert.doesNotMatch(pre,/continue-on-error/);
+  assert.match(pre,/exit 1/);
+  assert.match(workflow,/TRANSPORT: \$\{\{ steps\.acceptance\.outcome == 'skipped' && 'NOT RUN' \|\| steps\.acceptance\.outputs\.transport_fetch \|\| 'FAIL' \}\}/);
+  assert.match(workflow,/- transport fetch: \$TRANSPORT/);
+  assert.match(workflow,/- PRE caller diagnostic: \$PRE_CALLER_DIAGNOSTIC/);
+  assert.match(workflow,/- POST target diagnostic: \$POST_TARGET_DIAGNOSTIC/);
 });
 
 test('DATA-S1C final enforcement preserves functional failure and independently rejects topology drift',()=>{
