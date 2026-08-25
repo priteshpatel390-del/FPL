@@ -6,6 +6,8 @@
 
 The first manual workflow attempt, run `32896875022`, established that both environment secrets were present and non-empty but failed closed during PRE-state before functional acceptance. No Wrangler process or edge-preview session started, and no caller or D1 operation ran. Because the original output gave only a generic PRE-state failure, it did not establish whether the cause was network, HTTP authentication/authorization/resource access, JSON or contract validation. The categorical diagnostic remediation is repository evidence only; it has not been executed, no successful DATA-S1C acceptance is claimed, and any later run remains separately owner-approved. GitHub Actions remains the fallback because Codex remote-preview transport failed with `ENETUNREACH` before the caller.
 
+Second manual run `32899866456` passed caller PRE validation but stopped at target `ACTIVE_VERSION_INVALID`; functional fetch, health and query were `NOT RUN`. Follow-up reads proved the target pin was current and exposed a history-extraction defect: eight historical deployment records each retained a 100% allocation, while only the unique latest record represented the current allocation. Executable regression cases now cover one deployment, eight historical deployments, unsorted history, newest-version mismatch, zero/multiple current 100% allocations, empty history, invalid timestamps, equal-latest ambiguity and invalid current versions. Both embedded PRE/POST classifiers must select the unique greatest valid `created_on` and ignore historical allocations. This remediation remains repository-only and is not successful live acceptance evidence.
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current repository gate — DATA-S1B mutation-free preflight PASS
 
