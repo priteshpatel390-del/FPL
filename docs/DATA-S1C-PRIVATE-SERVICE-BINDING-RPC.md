@@ -1,6 +1,6 @@
 # DATA-S1C — private Service Binding and RPC architecture
 
-Status: repository implementation candidate only; not deployed
+Status: live caller/target registered; permanent manual acceptance workflow added but not executed
 Date: 25 August 2026
 Authoritative implementation base: `5c115225c7e2ae03408213daf32e1f484328658c`
 
@@ -28,6 +28,10 @@ The first live caller upload was rejected before a version was created with Clou
 - No production test bypass, provider integration, schedule, R2 path, browser path or recommendation dependency exists.
 
 ## Future live acceptance — separate approval required
+
+The permanent `.github/workflows/data-s1c-private-rpc-acceptance.yml` is the narrow fallback for final read-only acceptance. Codex Cloud was unsuitable because Wrangler's remote-preview/WebSocket transport failed with `ENETUNREACH` before the caller was reached. The manual workflow is exact-current-`main` only, references the dedicated `data-s1c-private-acceptance` GitHub environment, and accepts no input. It requires environment secrets named exactly `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; values are never repository content. It uses ordinary local `wrangler dev` with one `remote: true` Service Binding, so Wrangler may establish expected temporary Cloudflare edge-preview infrastructure without creating a persistent production deployment. The probe has no direct D1, write or ingest capability.
+
+Repository inclusion is not execution approval. The environment and secrets were not configured here, the workflow was not run, and no successful GitHub Actions private RPC acceptance is claimed. Owner approval remains required before every manual execution.
 
 There must never be an accidental-public period. A future approved execution must proceed in this order:
 
