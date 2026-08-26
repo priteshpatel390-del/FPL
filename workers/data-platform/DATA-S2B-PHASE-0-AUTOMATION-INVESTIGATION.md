@@ -3,6 +3,8 @@
 Status: **design complete; automation execution and all live mutation remain unapproved**  
 Investigated: **26 August 2026**
 
+> **Implementation update — 26 August 2026:** The owner subsequently approved repository implementation only. The resulting manual candidate is recorded in [DATA-S2B Phase 0 Read-Only GitHub Action Candidate](DATA-S2B-PHASE-0-READ-ONLY-IMPLEMENTATION.md). It has not been run with Cloudflare credentials and makes no live-state claim. This supersedes only the earlier “must not be added yet” implementation gate below; its least-privilege findings and live-execution gate remain authoritative.
+
 ## Outcome and stop condition
 
 A manual, fail-closed GitHub Action is technically feasible, but it must **not be added or run yet**. The repository proves only that the existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` environment secrets were available to the separately protected DATA-S1C acceptance environment and that the token successfully read Worker deployment history. Repository and GitHub API access available during this investigation cannot enumerate the secrets or the token's permission policy. D1 Read, Workers configuration read, account analytics read and zone read permissions are therefore not evidenced.
@@ -110,4 +112,3 @@ This investigation preserves the DATA-S2B promotion sequence: **do not use norma
 The permanent synthetic regression invariant remains **6,825**. It is not a real-live baseline. Live acceptance must derive the candidate count from validated populations:
 
 `events * 3 + teams * 10 + players * 11 + fixtures * 7`.
-

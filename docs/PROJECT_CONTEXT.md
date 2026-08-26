@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
+## Current repository checkpoint — DATA-S2B Phase 0 read-only candidate
+
+The repository contains a manual-only, fail-closed DATA-S2B Phase 0 read-only GitHub Action candidate. It gates a 40-character lowercase approved SHA against exact current remote `main`, a clean checkout and successful exact-head Verify Teamsheet before the protected Cloudflare environment can expose credentials. Fixed audited D1 `SELECT` queries and Workers/D1 REST reads then inspect pre-mutation state; permanent tests prohibit executable mutation commands, arbitrary SQL and unsafe output. The candidate has **not** been executed with Cloudflare credentials and proves no live account state. Environment/secret setup and the first live read each require separate explicit owner approval. See [DATA-S2B Phase 0 implementation](../workers/data-platform/DATA-S2B-PHASE-0-READ-ONLY-IMPLEMENTATION.md).
+
 <!-- DATA-S2A-CURRENT-2026-08-26 -->
 ## Current repository checkpoint — DATA-S2A merged; DATA-S2B live acceptance next
 

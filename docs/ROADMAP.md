@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
+## Current DATA-S2B gate
+
+The Phase 0 read-only Action is a repository candidate only. It remains unexecuted against Cloudflare. Next is exact-head repository verification, followed by separate owner decisions for protected-environment/secret setup and then a separately approved first live read. Migration, Worker Versions upload/deployment and Cron activation remain later mutation gates; DATA-S3 remains excluded.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current checkpoint — DATA-S2A repository candidate; DATA-S2B next
 

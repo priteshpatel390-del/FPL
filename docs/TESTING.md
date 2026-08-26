@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
+## DATA-S2B Phase 0 permanent safety coverage
+
+`tests/data-s2b-phase0-readonly.test.mjs` behaviorally verifies SQL validation, missing-credential failure, HTTP 401/403 classification, Cron drift, migration drift, rollback evidence and `NOT PROVABLE` metrics. It also structurally verifies the manual-only immutable-SHA workflow, pre-credential identity/CI ordering, executable mutation-command absence, fixed SQL inputs, redaction/debug policy, application/runtime isolation and the unchanged synthetic 6,825 invariant.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current DATA-S2A repository verification
 
