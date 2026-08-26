@@ -1,5 +1,12 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2A-2026-08-26 -->
+## Current checkpoint — DATA-S2A repository candidate; DATA-S2B next
+
+DATA-S1C-R is complete and supersedes the failed RPC/custom-HTTP direction for forward collection while preserving those assets as historical/rollback evidence. DATA-S2A is the current repository-only, `shadow_only` Official FPL history candidate: fixed `bootstrap-static` plus `fixtures`, strict allowlisted facts, delta-only append history in D1 and no Teamsheet runtime/model influence. The declared hourly Cron is not active; no DATA-S2A deployment or live D1 mutation has occurred.
+
+**Next, only after separate owner approval: DATA-S2B.** Its gate is live migration/deployment, Cron activation, one real baseline, an unchanged cycle with zero observation/head changes, a precise changed-fact append, actual D1 accounting, Workers Free CPU suitability, and rollback/stop on failure. DATA-S3 outcomes, production use and every later provider/model checkpoint remain outside DATA-S2B unless separately approved.
+
 <!-- DATA-S1C-2026-08-25 -->
 ## Current checkpoint — DATA-S1C repository candidate
 

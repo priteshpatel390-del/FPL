@@ -390,3 +390,11 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 **Decision:** PR #145 completed the DATA-S1 repository foundation, not its live deployment. DATA-S1A reconciles that merged/non-live state. DATA-S1B is the next separately owner-gated live Cloudflare preflight/deployment/acceptance checkpoint, and it must close before DATA-S2 can rely on the foundation. DATA-S2 through DATA-S5 retain separate approval gates. The detailed deterministic D1, Worker-level Access, synthetic acceptance and stop-condition contract is in [DATA-S1B Live Deployment and Acceptance Plan](DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md).
 
 **Rationale:** the architecture makes structured history dependent on the isolated D1 service, so accepting that service first avoids building DATA-S2 against an unproven live boundary. This decision changes documentation/control ordering only and authorises no infrastructure or runtime change.
+
+## DATA-S1C-R / DATA-S2A forward collection decision — 26 August 2026
+
+**Decision:** DATA-S1C-R retires private Service Binding/RPC and the unimplemented custom bearer-HTTP alternative as forward collection defaults after RPC functional acceptance was not achieved. Their source, workflow and deployed evidence remain historical/rollback assets. DATA-S2A uses the stable existing D1-owning Worker boundary directly and is the current repository-only, `shadow_only` Official FPL structured-history candidate.
+
+**DATA-S2A boundary:** only fixed `bootstrap-static` and `fixtures` payloads are fetched. Strictly allowlisted event/team/player/fixture facts are validated, compared with current heads and appended only when they change. Durable internal shadow retention is approved for the allowlist; redistribution, raw payload retention, manager/account/league/rival state and production/model use are not. Teamsheet's live gateway and all runtime/model behaviour remain unchanged. No deployment, live D1 mutation or Cron activation is authorised or claimed.
+
+**Next gate:** DATA-S2B requires separate owner approval for live migration/deployment, Cron activation, a real baseline, unchanged-cycle proof, changed-fact proof, D1 accounting, Workers Free CPU suitability and rollback/stop on failure. DATA-S2A merge alone authorises none of those actions.

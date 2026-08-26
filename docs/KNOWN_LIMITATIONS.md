@@ -1,5 +1,12 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2A-2026-08-26 -->
+## Current DATA-S2 limitation — repository candidate only
+
+DATA-S1C-R retired RPC and custom bearer-HTTP as forward collection defaults; retained assets prove no successful RPC acceptance and remain historical/rollback material. DATA-S2A is implemented only as a repository `shadow_only` candidate over fixed Official FPL `bootstrap-static` and `fixtures` facts. It preserves D1 change history without influencing Teamsheet or replacing the live Official FPL gateway, but it has not been deployed, has not mutated live D1 and has not activated Cron.
+
+Operational fit is therefore unproved. Separately approved DATA-S2B must prove live migration/deployment, Cron activation, a complete real baseline, a zero-change repeat, a precise changed-fact append, actual D1 accounting and Workers Free CPU suitability, with rollback/stop on failure. No live DATA-S2 acceptance or production use is claimed.
+
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current DATA-S1B limitation boundary
 

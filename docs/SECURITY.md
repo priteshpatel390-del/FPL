@@ -1,5 +1,12 @@
 # SECURITY.md
 
+<!-- DATA-S2A-2026-08-26 -->
+## Current DATA-S2A security boundary
+
+DATA-S1C-R retired Service Binding/RPC and custom bearer-HTTP as forward collection defaults; their code, workflow and deployed state remain historical/rollback evidence. DATA-S2A requires no new public or machine-authenticated read surface: the existing isolated data Worker fetches only fixed Official FPL `bootstrap-static` and `fixtures` URLs and writes through its own D1 binding.
+
+The candidate is `shadow_only`, retains no raw payload, provider secret, browser credential, manager/account/league/rival state or production recommendation data, and has no path into Teamsheet runtime/model behaviour. It does not replace or broaden the live Official FPL gateway. No DATA-S2A deployment, live migration/D1 mutation or Cron activation has occurred. DATA-S2B remains a separate owner gate and must stop/rollback if migration, collection validity, D1 accounting or Workers Free CPU evidence fails.
+
 ## DATA-S1C manual private-RPC acceptance boundary
 
 The permanent DATA-S1C acceptance workflow is `workflow_dispatch`-only, exact-current-canonical-`main` gated, read-only, and attached to the dedicated `data-s1c-private-acceptance` environment. Its only secret references are `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; it masks both before tooling, captures raw temporary logs below `$RUNNER_TEMP`, uploads no artifact, and removes all DATA-S1C temporary files unconditionally. The runtime probe binds only the existing private acceptance caller with `remote: true`; it has no D1/R2/KV/queue, route/domain, provider, write or ingest capability. Wrangler's temporary edge-preview session is permitted, but no production deployment command exists. After a valid PRE-state snapshot, read-only POST-state verification and local cleanup run unconditionally; final enforcement retains functional failure or topology drift as failure and performs no automatic remediation. Execution remains separately owner-approved. Codex remote preview was rejected after its WebSocket path failed with `ENETUNREACH` before reaching the caller.

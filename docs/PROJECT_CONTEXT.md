@@ -1,5 +1,14 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2A-CURRENT-2026-08-26 -->
+## Current repository checkpoint — DATA-S2A Official FPL structured-history candidate
+
+**Supersedes older present-tense DATA-S1C/DATA-S1B status below while preserving its dated evidence.** DATA-S1C-R retired Service Binding/RPC and custom bearer-HTTP as forward defaults after functional RPC acceptance failed. The forward data architecture is the stable isolated Worker/D1 boundary; retained RPC/HTTP assets are historical and rollback evidence, not the collection direction.
+
+DATA-S2A is a repository-only, `shadow_only` candidate that validates fixed Official FPL `bootstrap-static` and `fixtures` inputs and preserves allowlisted event, team, player and fixture changes as append-only D1 observations with atomic current heads. It neither replaces Teamsheet's existing live Official FPL gateway nor creates a runtime/model dependency. It has not been deployed, has not mutated live D1 and has not activated its declared hourly Cron.
+
+DATA-S2B is next and separately approval-gated: live migration/deployment and Cron activation; real baseline, unchanged-cycle and changed-fact proof; D1 read/write accounting; Workers Free CPU suitability; and rollback/stop on failure. No DATA-S2B or production-use approval follows from DATA-S2A.
+
 <!-- DATA-S1C-CURRENT-2026-08-25 -->
 ## Current repository checkpoint — DATA-S1C private Service Binding + RPC candidate
 
