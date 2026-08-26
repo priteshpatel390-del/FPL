@@ -49,8 +49,23 @@ export function extractWorkerSettingsResult(result){
   return result;
 }
 
-export function validateWorkerBindingSet(settings){
+export function validateWorkerBindingSet(settings,phase='post'){
   const bindings=extractWorkerSettingsResult(settings).bindings;
+  if(phase==='pre'){
+    const allowed=new Map([['TEAMSHEET_DATA_DB','d1'],['DATA_S1_HTTP_AUTH_TOKEN','secret_text']]);
+    const seen=new Set();
+    let d1Present=false;
+    for(const binding of bindings){
+      if(!binding||typeof binding.name!=='string'||seen.has(binding.name))throw new Error('worker_binding_set_drift');
+      seen.add(binding.name);
+      if(binding.name==='DATA_S2_SEASON')throw new Error('season_var_unexpectedly_live');
+      if(binding.type!==allowed.get(binding.name))throw new Error('worker_binding_set_drift');
+      if(binding.name==='TEAMSHEET_DATA_DB')d1Present=true;
+    }
+    if(!d1Present)throw new Error('worker_binding_set_drift');
+    return settings;
+  }
+  if(phase!=='post')throw new Error('worker_binding_phase_invalid');
   const expected=new Map([['TEAMSHEET_DATA_DB','d1'],['DATA_S2_SEASON','plain_text']]);
   if(bindings.length!==expected.size)throw new Error('worker_binding_set_drift');
   const seen=new Set();
@@ -167,10 +182,11 @@ async function main(){
   };
   const deploymentsResult=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/deployments`);
   const deployments=assessDeployments(extractDeploymentsResult(deploymentsResult));
-  const settings=validateWorkerBindingSet(extractWorkerSettingsResult(await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/settings`)));
+  const settings=validateWorkerBindingSet(extractWorkerSettingsResult(await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/settings`)),'pre');
   const d1=normaliseD1Binding(settings);
-  const season=normalisePlainTextBinding(settings,'DATA_S2_SEASON').text;
-  if(season!=='2026-27')throw new Error('season_var_drift');
+  const season=settings.bindings.some(row=>row?.name==='DATA_S2_SEASON')?normalisePlainTextBinding(settings,'DATA_S2_SEASON').text:null;
+  if(season!==null)throw new Error('season_var_unexpectedly_live');
+  const retainedDataS1Secret=settings.bindings.some(row=>row?.name==='DATA_S1_HTTP_AUTH_TOKEN');
   const schedulesResult=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/schedules`);
   const crons=assessCron(extractSchedulesResult(schedulesResult));
   const databases=extractD1DatabaseList(await request(`/accounts/${encodeURIComponent(account)}/d1/database?name=teamsheet-data`));
@@ -192,8 +208,8 @@ async function main(){
   if(governance.source_official_fpl!==0||governance.official_fpl_r1!==0||Object.values(official).some(Number))throw new Error('unexpected_official_fpl_history');
   let domains={status:'NOT PROVABLE'};
   try{const rows=extractWorkersDomains(await request(`/accounts/${encodeURIComponent(account)}/workers/domains`));domains={status:'PASS',hostnames:rows.filter(row=>row?.service==='teamsheet-data-platform').map(row=>row.hostname).filter(Boolean)};}catch(error){domains=optionalDomainsFailure(error);}
-  const report={repositorySha:process.env.APPROVED_SHA,verifyTeamsheet:'PASS',worker:'teamsheet-data-platform',deployments,bindings:[{name:'TEAMSHEET_DATA_DB',type:'d1',database:'teamsheet-data'},{name:'DATA_S2_SEASON',type:'plain_text',value:season}],crons,domains,migrations,counts,officialHistory:official,database:{name:'teamsheet-data',sizeBytes:databaseDetails.file_size},metrics:optionalMetrics(null),outcome:'PASS'};
-  const summary=['## DATA-S2B Phase 0 Read-Only Preflight','',`- Outcome: **${report.outcome}**`,`- Repository SHA: \`${report.repositorySha}\``,`- Verify Teamsheet: ${report.verifyTeamsheet}`,`- Worker: \`${report.worker}\``,`- Active deployment/version: \`${deployments.deploymentId}\` / \`${deployments.versionId}\``,`- Deployment timestamp: ${deployments.timestamp}`,`- Rollback evidence: ${deployments.rollback}`,'- D1 binding: `TEAMSHEET_DATA_DB` -> `teamsheet-data`',`- DATA_S2_SEASON: \`${season}\``,`- Cron expressions: ${crons.length?crons.map(value=>`\`${value}\``).join(', '):'none'}`,`- Custom domains: ${domains.status==='PASS'?(domains.hostnames.join(', ')||'none'):'NOT PROVABLE'}`,`- Migrations: ${migrations.map(row=>`${String(row.version).padStart(4,'0')} ${row.status}`).join(', ')}`,`- Table counts: ${Object.entries(counts).map(([key,value])=>`${key}=${value}`).join(', ')}`,`- official-fpl-r1 counts: ${Object.entries(official).map(([key,value])=>`${key}=${value}`).join(', ')}`,`- Database size: ${report.database.sizeBytes}`,`- Optional analytics metrics: ${report.metrics.status}`,'','Raw responses remain only in RUNNER_TEMP and are not uploaded.'];
+  const report={repositorySha:process.env.APPROVED_SHA,verifyTeamsheet:'PASS',worker:'teamsheet-data-platform',deployments,bindings:[{name:'TEAMSHEET_DATA_DB',type:'d1',database:'teamsheet-data'}],dataS2Season:'ABSENT',retainedDataS1Secret:retainedDataS1Secret?'PRESENT':'ABSENT',crons,domains,migrations,counts,officialHistory:official,database:{name:'teamsheet-data',sizeBytes:databaseDetails.file_size},metrics:optionalMetrics(null),outcome:'PASS'};
+  const summary=['## DATA-S2B Phase 0 Read-Only Preflight','',`- Outcome: **${report.outcome}**`,`- Repository SHA: \`${report.repositorySha}\``,`- Verify Teamsheet: ${report.verifyTeamsheet}`,`- Worker: \`${report.worker}\``,`- Active deployment/version: \`${deployments.deploymentId}\` / \`${deployments.versionId}\``,`- Deployment timestamp: ${deployments.timestamp}`,`- Rollback evidence: ${deployments.rollback}`,'- D1 binding: `TEAMSHEET_DATA_DB` -> `teamsheet-data`',`- DATA_S2_SEASON: ${report.dataS2Season} (expected pre-mutation)`,`- Retained DATA_S1_HTTP_AUTH_TOKEN binding: ${report.retainedDataS1Secret}`,`- Cron expressions: ${crons.length?crons.map(value=>`\`${value}\``).join(', '):'none'}`,`- Custom domains: ${domains.status==='PASS'?(domains.hostnames.join(', ')||'none'):'NOT PROVABLE'}`,`- Migrations: ${migrations.map(row=>`${String(row.version).padStart(4,'0')} ${row.status}`).join(', ')}`,`- Table counts: ${Object.entries(counts).map(([key,value])=>`${key}=${value}`).join(', ')}`,`- official-fpl-r1 counts: ${Object.entries(official).map(([key,value])=>`${key}=${value}`).join(', ')}`,`- Database size: ${report.database.sizeBytes}`,`- Optional analytics metrics: ${report.metrics.status}`,'','Raw responses remain only in RUNNER_TEMP and are not uploaded.'];
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`${summary.join('\n')}\n`);
 }
 
