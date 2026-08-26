@@ -1,69 +1,205 @@
-# DATA-S1C — private Service Binding and RPC architecture
+# DATA-S1C-R — Data Architecture Reset
 
-Status: live caller/target registered; direct-target diagnostic harness awaits separately approved execution
-Date: 25 August 2026
-Authoritative implementation base: `5c115225c7e2ae03408213daf32e1f484328658c`
+Status: **approved repository implementation; no live infrastructure or production-data change**  
+Decision date: **26 August 2026**  
+Implementation base: `e61f9ba080346326f4aa764206c62781582c17f0`  
+Owner gate: Pritesh approved repository implementation only; stop at draft PR review.
 
-## Outcome and boundary
+## Outcome
 
-DATA-S1C prepares a private Worker-to-Worker path without changing Cloudflare. `teamsheet-data-platform` remains the sole validation, provenance, rights, mapping, idempotency, `shadow_only`, rejection and D1 owner. Its existing Access-protected HTTP surface and bearer-first application authentication remain intact during migration.
+DATA-S1C-R replaces transport-first DATA-S1C planning with a stable data boundary:
 
-The target service exports two least-privilege named `WorkerEntrypoint` capabilities:
+`Official FPL canonical current core + explicitly promoted enrichment + owner overlay -> current decision dataset`
 
-- `DataPlatformReadEntrypoint`: `health()` and `queryObservations(query)`;
-- `DataPlatformIngestEntrypoint`: `ingestObservation(observation)`.
+and, separately:
 
-Both return `{ status, body }`, preserving the existing HTTP status and JSON contract without manufacturing HTTP requests. The HTTP adapter and RPC entrypoints delegate to the same `healthOperation`, `queryObservationsOperation` and `ingestObservationOperation` functions. There is no RPC `fetch`, generic dispatch, proxy, arbitrary SQL or binding-return method.
+`validated observations -> historical/shadow store -> point-in-time research and evaluation`.
 
-The provisional `teamsheet-data-platform-acceptance-caller` is an internal architecture caller, not DATA-S2, a collector, provider, API gateway, model or AI service. Its sole Service Binding targets `DataPlatformReadEntrypoint`; it has no D1, R2, secret, browser credential, provider configuration, Custom Domain, route, `workers.dev` hostname or Preview URL. Read and ingest are split because the additional configuration is small and prevents a read-only acceptance caller from acquiring write capability. A future separately reviewed ingestion caller would have to bind explicitly to the ingest entrypoint.
+The production application must consume stable domain contracts rather than know whether a future approved enrichment was collected through D1, a Worker, a static artefact or another transport. Transport is therefore a replaceable implementation detail. No new production transport is selected by this checkpoint.
 
-The first live caller upload was rejected before a version was created with Cloudflare HTTP 400 / error `10068`, `The uploaded script has no registered event handlers.` Current Cloudflare Service Bindings guidance requires a registered handler for this deployment shape even though the dedicated RPC documentation shows a handlerless `WorkerEntrypoint`. The repository remediation therefore adds one deliberately inert default `fetch()` handler which always returns an empty HTTP 404. This is not a caller HTTP API: the handler ignores the request, never forwards to DATA-S1 and never calls either read RPC method. The only useful caller capability remains the private `health()` and `queryObservations(query)` RPC surface. Privacy continues to depend on `workers_dev: false`, `preview_urls: false` and the absence of routes and Custom Domains. This repository change claims no successful caller deployment; any live retry and its topology verification remain separately gated.
+The previous private Service Binding/RPC design and the unimplemented custom bearer-HTTPS alternative are **retired from the forward architecture**. Their repository and live evidence are not deleted here. Existing RPC source, workflow, deployed caller/target state and Access-protected HTTP rollback assets remain historical evidence and possible rollback material until a separately approved cleanup checkpoint.
 
-## Security invariants
+This record is the current DATA-S1C forward architecture. Where older current-status wording in `CLAUDE.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `ROADMAP.md`, `KNOWN_LIMITATIONS.md`, `DATA_SOURCES.md`, `SECURITY.md`, `TESTING.md` or the historical DATA-S1C RPC record conflicts with this forward decision, this record supersedes that forward-looking wording only. Dated facts and live evidence remain historical evidence.
 
-- Only `teamsheet-data-platform` binds `TEAMSHEET_DATA_DB`; its binding name, database name and migration remain unchanged.
-- Callers receive named methods, never the D1 binding or arbitrary SQL capability.
-- The Service Binding is the machine capability. No shared secret, bearer token, Access token or API key is added for RPC.
-- Private RPC bypasses neither HTTP authentication nor routing: it is a separate runtime entrypoint. Existing unauthenticated HTTP requests still fail before routing, parsing or D1 access.
-- No production test bypass, provider integration, schedule, R2 path, browser path or recommendation dependency exists.
+## 1. Canonical current core
 
-## Future live acceptance — separate approval required
+Official FPL remains the canonical source for current FPL structure and current player/competition facts used by Teamsheet. The existing owner-controlled Official FPL gateway, existing client validation and existing verified-cache/restricted-mode behaviour remain unchanged.
 
-The permanent `.github/workflows/data-s1c-private-rpc-acceptance.yml` is the narrow fallback for final read-only acceptance. Codex Cloud was unsuitable because Wrangler's remote-preview/WebSocket transport failed with `ENETUNREACH` before the caller was reached. The manual workflow is exact-current-`main` only, references the dedicated `data-s1c-private-acceptance` GitHub environment, and accepts no input. It requires environment secrets named exactly `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; values are never repository content. It uses ordinary local `wrangler dev` with one `remote: true` Service Binding, so Wrangler may establish expected temporary Cloudflare edge-preview infrastructure without creating a persistent production deployment. The probe has no direct D1, write or ingest capability.
+The canonical current core includes, where already supplied and validated by Official FPL:
 
-Repository inclusion is not execution approval. PRE/POST version evidence uses the read-only Workers Scripts deployments endpoint and its wrapped `result.deployments` array response; Workers Route inventory remains outside the approved token's observable permissions and no broader permission is requested. Once a valid persistent PRE-state exists, the workflow runs its read-only POST-state comparison unconditionally after the functional attempt, including failure; local cleanup is also unconditional, and final enforcement preserves either functional failure or topology drift as job failure without attempting production remediation. A successful query RPC does not imply that every row-dependent property was proved: absent cursors or insufficient existing production rows are reported as `NOT PROVABLE — INSUFFICIENT EXISTING ROWS`, no synthetic production write is made to manufacture pagination evidence, and an exercised cursor with a changed `as_of` must return HTTP 400 `cursor_invalid`.
+- season and Gameweek/event identity and deadline state;
+- team identities;
+- player identities and current player-to-team assignment;
+- fixture identities, home/away teams, Gameweek/event assignment and kickoff;
+- current player status, price, ownership and other already-consumed Official FPL fields;
+- the existing Official FPL team-strength and fixture-difficulty inputs used by the current model.
 
-The first owner-approved manual run, GitHub Actions run `32896875022`, failed closed in the persistent topology PRE-state step. Both required environment secrets were present and non-empty, but the original generic diagnostic could not distinguish network, HTTP authentication/authorization/resource, JSON or response-contract failure. Functional acceptance was skipped: Wrangler did not start, no edge-preview session was created, no caller method ran and no D1 operation occurred. The workflow now reports only allowlisted categorical diagnostics (HTTP status class, numeric Cloudflare error codes, JSON/contract/version validation state), never response bodies, account identifiers, tokens, authorization headers or error messages. A skipped functional step is reported as `NOT RUN`, not `FAIL`. No successful GitHub Actions private RPC acceptance is claimed, and another execution requires separate owner approval.
+DATA-S1/D1 does not become authoritative for these current facts in this checkpoint, and the production application does not gain a DATA-S1 read dependency.
 
-The second owner-approved attempt, run `32899866456`, authenticated successfully and passed caller PRE validation, then reported target `ACTIVE_VERSION_INVALID`; fetch, health and query remained `NOT RUN`. Read-only reconciliation established that `result.deployments` contained eight deployment-history records, each retaining its former 100% allocation. The parser had flattened all eight histories instead of selecting the current deployment. The unique greatest valid `created_on` record already contained the pinned target version `5edbe951-4be4-46bc-b2cf-17b550396105` at 100%, so there was no target drift and no Cloudflare change is required. PRE and POST now reject empty, invalid-timestamp or ambiguous history, select the unique greatest `created_on`, and validate only that deployment's versions. This repository remediation has not been executed and still claims no successful private RPC acceptance.
+## 2. Approved enrichment is a separate layer
 
-The third owner-approved attempt, run `32902010718`, passed both persistent PRE checks. Cloudflare observed the inert `GET https://caller.invalid/transport`, followed by exactly one JSRPC `health` call on `teamsheet-data-platform-acceptance-caller`; that RPC ended with a runtime hang/exception, so health was not accepted and query was not run. POST topology matched and cleanup completed. Repository inspection found that `health()` and `queryObservations(query)` returned the downstream Service Binding RPC result directly. Cloudflare's first-party [Workers RPC contract](https://developers.cloudflare.com/workers/runtime-apis/rpc/) says RPC calls return custom thenables rather than native Promises and that callers must await their results. The caller now explicitly awaits each downstream read RPC before returning the resolved structured value across its own RPC boundary. Its empty-404 `fetch()`, sole read binding, target operations, query semantics and lack of D1/write/ingest capability are unchanged; downstream rejection still rejects the forwarding call. This evidence supports the thenable-forwarding defect as the cause, but live confirmation requires another separately owner-approved run after merge and post-merge verification. No successful DATA-S1C private RPC acceptance is claimed.
+Supplemental intelligence must never silently overwrite or become equivalent to canonical Official FPL state. Every supplemental category starts as research/shadow information and may influence production only after a separately approved promotion.
 
-PR #156 merged that awaited-forwarding correction, but the next live evidence still identified old caller version `43d28a3a-5720-48b3-950e-b081e33bcc8b`; merging repository source had not deployed the private caller. On 25 August 2026 the corrected caller was therefore deployed by itself from exact main `19a8ea620d20ef7f243f8ba153eef0e81217e5a1`. Its unique latest deployment allocates 100% to new version `cf9c150d-84b0-46f9-a166-530b7243e863`. The caller remains private (`workers.dev` and Preview URLs disabled, zero Custom Domains), credential- and storage-free, with exactly `DATA_PLATFORM_READ -> teamsheet-data-platform -> DataPlatformReadEntrypoint`. The target was not deployed and remains `5edbe951-4be4-46bc-b2cf-17b550396105`. PRE and POST workflow pins now require the new caller version. This deployment is not an RPC invocation or successful DATA-S1C acceptance; another workflow run requires separate owner approval.
+Examples of possible future enrichment categories include expected-minutes evidence, cited team news, predicted line-ups, market information, calendar/workload facts, set-piece/role evidence and other provider-neutral observations. Naming a category here is not approval to acquire, retain, redistribute, weight or use any provider.
 
-Run `32906524221` then used that exact awaited-forwarding caller version. Both caller and target PRE/POST validations passed and the caller fetch discriminator reached Cloudflare, but the caller's `health` JSRPC again ended in the runtime hang exception; query was not reached, topology was unchanged and cleanup passed. This disproves missing `await` as the complete cause but does not prove whether nested RPC, the target entrypoint or Wrangler's remote-binding proxy is responsible. The approved Option 2 harness therefore removes the caller from the functional path and binds its temporary probe directly to `teamsheet-data-platform -> DataPlatformReadEntrypoint` with `remote: true`. Direct health is the first functional operation and bounded query follows only after its exact contract passes. Caller version and target version remain independently checked before and after the attempt. A future direct-target pass can prove the target read entrypoint and one-hop remote Service Binding path; it cannot prove production caller forwarding, which remains explicitly `NOT PROVEN`. The caller remains deployed and unchanged. This redesign has not run and no successful DATA-S1C acceptance is claimed.
+A production promotion proposal must state and obtain approval for all of the following before any recommendation dependency is created:
 
-There must never be an accidental-public period. A future approved execution must proceed in this order:
+1. the decision purpose and exact fields/categories;
+2. source identity, rights, retention and redistribution position;
+3. acquisition reliability, freshness and timestamp/provenance contract;
+4. canonical player/team/fixture mapping rules and fail-closed behaviour;
+5. validation, contradiction and quality handling;
+6. ablation and available out-of-sample evidence where the data can change a model/calculation;
+7. fallback behaviour when the enrichment is absent, stale, incompatible or failing;
+8. security/privacy and credential boundaries;
+9. permanent tests and evidence required for acceptance;
+10. explicit owner approval.
 
-1. Keep Access ON for all public traffic.
-2. Deploy the reviewed target Worker with RPC support.
-3. Verify the existing public HTTP path remains Access protected.
-4. Deploy the narrow caller with its named read Service Binding and no D1.
-5. Prove private Worker-to-Worker health.
-6. Prove private query, `as_of`, ordering, pagination, cursor and accepted-only semantics.
-7. Obtain separate approval before any production write test or ingest-capable caller binding.
-8. Only after successful private acceptance may removal of `data.fpltsheet.co.uk` be considered.
-9. After any later hostname removal, verify no Custom Domain, no Workers Route, `workers.dev` disabled, Preview URLs disabled and the private binding still operational.
-10. Treat bearer code/secret, Access resources, Service Token and password-record cleanup as a later separately approved checkpoint.
+A D1 observation being `accepted` means it passed the shadow-store admission contract. It does **not** mean it is approved for production recommendations.
 
-Repository tests do not prove Cloudflare Free-plan RPC availability, live entrypoint resolution, binding propagation, deployment compatibility, live D1 behaviour, Access enforcement or hostname state. Those remain live acceptance evidence requirements.
+## 3. Historical/shadow store
 
-## Rollback design — do not execute in this checkpoint
+The existing DATA-S1 structured store remains useful for append-only research, provenance, source governance, canonical mappings, point-in-time replay and later evaluation. Its `shadow_only` boundary remains in force unless separately changed through the normal approval gate.
 
-Before public-hostname removal, stop or roll back the caller; the existing Access-protected DATA-S1 HTTP path remains available. The bearer path must not be described as a proven production fallback because valid-bearer live acceptance previously failed. Access is the proven outer rollback protection.
+Historical research must preserve the distinction between `observed_at`, `effective_at`, `fetched_at`, optional expiry, source revision and immutable input revision. Point-in-time reads must not leak facts fetched after the requested `as_of` time into earlier decisions.
 
-After a future hostname removal but before cleanup, restore the existing Custom Domain to the known-good DATA-S1 Worker and verify Access protects all traffic before declaring rollback complete.
+D1 availability must not become a prerequisite for opening Teamsheet or producing the already-approved baseline recommendation. The historical store is not the production application's runtime database in this checkpoint.
 
-## Explicit exclusions
+## 4. Owner overlay stays separate
 
-This checkpoint performs no Worker deployment, Service Binding activation, Access/policy/service-token change, DNS or domain change, route or hostname change, secret creation/rotation/deletion, production D1 migration or data mutation, synthetic production write, Phase 5B, DATA-S2, provider, collector, schedule, AI, model, fixture, expected-minutes, captaincy, squad, transfer, simulation, rank, Mini-League or application-behaviour change.
+Manager-specific state stays outside the global football dataset. This includes the manager's team, picks, bank/free-transfer assumptions or authoritative account facts where available, local settings, Mini-League selections and rival selections.
+
+The conceptual production composition is:
+
+`canonical current core + approved compatible enrichment + owner overlay -> decision engine`.
+
+This separation avoids duplicating global football facts per manager and prevents research/history storage from becoming an accidental owner-state authority.
+
+## 5. Compatibility revisions
+
+Future enrichment must be versioned against the smallest canonical context that can make it invalid. A single whole-dataset invalidation hash is too coarse because unrelated Official FPL changes should not discard valid evidence.
+
+The contract therefore distinguishes:
+
+### Current-state revision
+
+A deterministic identity for the complete validated current state used by a recorded decision. This is the reproducibility/audit identity; it does not by itself decide whether every enrichment row is incompatible after any change.
+
+### Player-team context revision
+
+For team-dependent player evidence, compatibility must include at least season, canonical player identity and current canonical team identity. A player transfer or canonical reassignment invalidates team-dependent enrichment. A price or ownership percentage change does not automatically invalidate unrelated team-news or expected-minutes evidence.
+
+### Fixture context revision
+
+For fixture-dependent evidence, compatibility must include at least season, canonical fixture identity, event/Gameweek assignment, home team, away team and kickoff context. A postponement, Gameweek reassignment, changed opponents or changed kickoff invalidates evidence whose meaning depends on that context and requires revalidation/refetch according to its approved freshness policy.
+
+### Source/transform revision
+
+Provider/source governance revision, parser/transform version and validation version remain separate from football-context compatibility. A schema or transform change must not masquerade as a football-context change.
+
+No context identity may be invented when a safe canonical identity is unavailable. Unresolved or ambiguous mapping remains fail-closed.
+
+## 6. Real-season change handling
+
+The intended behaviour is:
+
+| Change | Required handling |
+| --- | --- |
+| New Official FPL player | admitted by the existing validated current-core refresh; enrichment absent until separately collected/compatible |
+| Player changes club | canonical assignment updates; team-dependent player enrichment becomes incompatible |
+| Player leaves current FPL population | absent from current core; historical observations remain historical |
+| Price/ownership changes | current core updates; unrelated enrichment is not blanket-invalidated |
+| Injury/status changes | current core updates; normal calculations rerun under existing behaviour |
+| Fixture postponed / event becomes TBD | official fixture identity remains canonical when supplied; fixture-dependent enrichment revalidates |
+| Fixture moves Gameweek | fixture-context revision changes; old fixture-context enrichment is not used as current |
+| Kickoff changes | time-sensitive fixture enrichment revalidates under its approved freshness rule |
+| Double Gameweek | distinct Official FPL fixture IDs remain distinct opportunities |
+| Blank Gameweek | absence of a qualifying current fixture remains explicit; no fixture is manufactured |
+
+These are data-contract rules only. DATA-S1C-R changes no projection, fixture, expected-minutes, captaincy, squad, transfer, simulation, rank or Mini-League calculation.
+
+## 7. Freshness and fallback
+
+Every promoted enrichment category must define its own approved freshness rule using explicit timestamps/provenance. There is no universal enrichment TTL.
+
+At decision time an enrichment value is usable only when it is validated, promoted for that production purpose, context-compatible and within its approved freshness/expiry contract. If any condition fails, that enrichment is omitted and Teamsheet falls back to the already-approved production baseline for that layer.
+
+Supplemental failure must not make the canonical Official FPL application unavailable. A partial collector result must not publish a mixed generation as though it were one coherent enrichment revision.
+
+## 8. Production read model
+
+The production-facing contract is a **read model**, not direct access to raw shadow observations. It contains only the canonical core and explicitly promoted, compatible, freshness-valid enrichment required by approved consumers.
+
+The application must not receive arbitrary SQL or D1 access, raw provider payloads merely because they exist in storage, source credentials or keyed URLs, quarantined observations, research-only/local-only fields, generic write capability, or a browser credential for the research store.
+
+No production read-model endpoint or static asset is created by DATA-S1C-R.
+
+## 9. Research access contract
+
+Future ChatGPT/Codex/operator research access to historical DATA-S1 observations should be deliberately narrower than administrative database access. Before implementation, the proposed mechanism must satisfy this logical contract:
+
+- server-side/operator use only; no browser credential;
+- read-only capability;
+- accepted observations only by default;
+- required point-in-time `as_of` semantics;
+- bounded page size and bounded total pagination;
+- stable ordering and keyset/cursor semantics;
+- allowlisted query/filter fields only;
+- no arbitrary SQL, generic execute/dispatch or schema mutation;
+- no ingest/write credential in a read-only research client;
+- no provider secret, account secret or raw forbidden payload returned;
+- safe generic failures and secret-safe diagnostics.
+
+The exact transport is intentionally **undecided**. Service Binding RPC and a custom bearer-HTTPS API are not the forward default. If research access is needed for DATA-S2/S3 execution, choose the smallest mechanism that satisfies this contract and gate it separately.
+
+## 10. Transport reset and historical preservation
+
+The private RPC architecture produced useful evidence but did not achieve functional acceptance. It is now retired as the forward DATA-S1C architecture. Do not spend another checkpoint debugging nested/direct RPC merely to preserve that design.
+
+The custom bearer-HTTPS design discussed after RPC failure is also not approved as the default forward architecture. The existence of the Worker's fixed HTTP operations does not create a requirement to expose or cut over a machine API now.
+
+DATA-S1C-R performs **no cleanup** of the existing assets. Preserve the RPC workflow/source/configuration, existing deployed caller/target evidence, Access-protected data hostname and HTTP rollback state until a later cleanup proposal states exactly what is safe to remove and how rollback changes.
+
+The historical RPC design is retained under `docs/historical/data-s1c-r-baseline/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md`.
+
+## 11. Single-file application deployment remains unchanged
+
+Teamsheet currently has a deterministic single-file GitHub Pages deployment with build/provenance identity. DATA-S1C-R does not add `current-season.json`, `current-season.js`, a second runtime data asset, a new CSP origin or a DATA-S1 application endpoint.
+
+If a future promoted enrichment needs delivery to the browser, compare transport options at that time against the stable read-model contract. Any change to the single-file deployment boundary requires its own explicit approval and deterministic-build/provenance design.
+
+## 12. Evidence identity implication
+
+If future promoted enrichment can change independently of application code, `BUILD_COMMIT`/model/rules identity alone will not fully identify what informed a decision. Before any such enrichment affects production, Stage 10 or an equivalent immutable decision record must capture the exact current-state revision and exact enrichment/read-model revision used.
+
+DATA-S1C-R records this requirement only; it does not change the Stage 10 schema.
+
+## 13. Forward sequence
+
+The approved control sequence is now:
+
+1. **DATA-S1C-R — Data Architecture Reset**: repository architecture/docs/tests only; this checkpoint.
+2. **DATA-S2 — Official FPL Structured History**: collect useful Official FPL historical observations into the shadow/historical store; zero production influence unless separately approved.
+3. **DATA-S3 — Official Outcomes Automation**: automate factual Official outcome/revision collection needed for evaluation; separately scoped.
+4. **DATA-S4 — Supplemental Intelligence Trials**: evaluate candidate sources in shadow under rights/mapping/freshness/ablation controls; each source remains separately approval-gated.
+5. **First production enrichment promotion**: only after evidence and explicit approval; implement the smallest adapter/read-model transport required by the promoted category.
+6. **Later consolidation**: move more collection/server composition behind one service only if measured reliability, security or product needs justify it.
+
+DATA-S2 remains blocked until DATA-S1C-R is reviewed, merged with explicit owner approval, and exact-merge `main` verification passes. DATA-S1C-R itself does not approve DATA-S2 implementation.
+
+## 14. Explicit exclusions
+
+This checkpoint does not deploy or modify Cloudflare, Worker secrets, Service Bindings, Access, D1, DNS, routes or Custom Domains; delete live rollback assets; mutate D1 data/schema; add or activate a provider; add a browser/API research credential; add a static production data asset; change CSP or the Official FPL gateway; change application source or production behaviour; change model/fixture/expected-minutes/scoring/captaincy/squad/transfer/simulation/rank/Mini-League/rival/strategy logic; change Stage 10 evidence schema; or start DATA-S2.
+
+## 15. Limitations carried forward
+
+- The exact future research-access transport is intentionally undecided.
+- No production-enrichment transport exists because no supplemental category is currently promoted through this architecture.
+- Context-revision serialization/hash details must be specified and fixture-tested in the first checkpoint that implements them; this record defines required semantics, not wire bytes.
+- Rights and redistribution can independently prevent a stored research observation from appearing in any public/static production read model.
+- Existing DATA-S1C RPC/live assets remain operational debt until a separately approved cleanup checkpoint.
+- Existing canonical documents contain dated historical checkpoints that describe the former RPC path. They remain evidence; the current DATA-S1C-R supersession marker and this record govern forward work.
+
+## Acceptance for this repository checkpoint
+
+Repository acceptance requires all existing tests plus permanent DATA-S1C-R guards, production build success, deterministic exact-identity rebuilds, root/deployable equality and committed provenance verification. The diff must contain no production application or live-infrastructure behaviour change. Physical iPhone testing and live Cloudflare testing are neither required nor claimed because the approved scope has no executable product or infrastructure change.
