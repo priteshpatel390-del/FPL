@@ -17,6 +17,10 @@ Independent review of the first candidate found two blocking response-shape mism
 
 The same audit added explicit extractors and behavioral fixtures for the documented deployment `{ deployments: [...] }` wrapper, settings object, schedule wrapper, D1 database result array, single-result D1 query array and Workers domains result array. Missing, malformed, duplicate and mismatched shapes remain fail-closed. These are repository tests only; the workflow remains unexecuted against Cloudflare.
 
+Final pre-merge review found and corrected one further first-party contract mismatch: the D1 **list** record provides database identity but not `file_size`. The candidate now resolves exactly one `teamsheet-data` list record, verifies the binding against that UUID, then uses the documented read-only D1 **Get Database** endpoint with explicit `uuid,name,file_size` fields. Details must repeat the expected name/UUID and return a finite non-negative numeric size; missing or inconsistent metadata fails closed rather than becoming `NOT PROVABLE`. The optional custom-domain read now treats only HTTP 403 (unavailable optional permission) as `NOT PROVABLE`; HTTP 401/404, transport failure and malformed domain results fail closed.
+
+The same final review tightened existing gates without widening capability: the dispatch must originate from `refs/heads/main` in the canonical repository, the successful check run must be issued by the GitHub Actions app with the canonical Actions-run URL, the allowlisted plain-text season binding must exist exactly once in its documented shape, and rollback evidence must contain a genuinely different prior version ID rather than merely an older deployment record repeating the active version.
+
 ## Reuse Before Build
 
 | Primitive | Classification | Decision |
@@ -59,7 +63,7 @@ Permanent tests cover manual-only dispatch, SHA validation, pre-credential ident
 
 ## First-party documentation recheck
 
-Retrieved **26 August 2026**: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/), [D1 Wrangler commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [Workers deployment-list API](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/).
+Retrieved **26 August 2026**: [Cloudflare's first-party OpenAPI schemas](https://github.com/cloudflare/api-schemas), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/), [D1 Wrangler commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [Workers deployment-list API](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/).
 
 The recheck continues to show Free Cron CPU **10 ms**, D1 rows read **5,000,000/day**, rows written **100,000/day**, D1 database size **500 MB**, total storage **5 GB**, and **5 Cron Triggers/account**. These are dated evidence, not constants; recheck before execution. Nothing found contradicts the separately approval-gated Versions upload -> inspect -> Versions deploy -> health verification -> Triggers deploy sequence.
 

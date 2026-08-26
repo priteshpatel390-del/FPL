@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {
-  assessCron,assessDeployments,assessMigrations,classifyApiResponse,extractD1DatabaseList,extractD1QueryResult,
+  assessCron,assessDeployments,assessMigrations,classifyApiResponse,extractD1DatabaseDetails,extractD1DatabaseList,extractD1QueryResult,
   extractDeploymentsResult,extractSchedulesResult,extractWorkerSettingsResult,extractWorkersDomains,
-  normaliseD1Binding,optionalMetrics,requireD1BindingDatabase,stripSqlComments,validateReadOnlySql
+  normaliseD1Binding,normalisePlainTextBinding,optionalDomainsFailure,optionalMetrics,requireD1BindingDatabase,stripSqlComments,validateReadOnlySql
 } from '../workers/data-platform/phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../workers/data-platform/phase0/queries.mjs';
 
@@ -32,7 +32,7 @@ test('repository identity and exact-head CI gates complete before environment se
   assert.match(workflow,/cloudflare-readonly:\n    needs: repository-gate/);
   assert.doesNotMatch(workflow.slice(gate,cloud),/environment:|secrets\.|CLOUDFLARE_/);
   assert.match(workflow.slice(cloud),/name: data-s2b-phase0-readonly/);
-  for(const required of ['git rev-parse HEAD','git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main','git status --porcelain','Tests and deterministic build',"row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA"])assert.ok(workflow.includes(required),required);
+  for(const required of ['EVENT_NAME: ${{ github.event_name }}','EVENT_REF: ${{ github.ref }}','EVENT_REPOSITORY: ${{ github.repository }}','test "$EVENT_NAME" = workflow_dispatch','test "$EVENT_REF" = refs/heads/main','test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL','git rev-parse HEAD','git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main','git status --porcelain','Tests and deterministic build',"row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA","row.app?.slug==='github-actions'","row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')"])assert.ok(workflow.includes(required),required);
 });
 
 test('Phase 0 executable surfaces contain no mutating Cloudflare command',()=>{
@@ -92,6 +92,15 @@ test('documented Worker settings D1 binding uses type d1 and database_id',()=>{
   for(const malformedSettings of [undefined,{},[],{bindings:{}},{bindings:null}])assert.throws(()=>extractWorkerSettingsResult(malformedSettings),/settings_contract_invalid/);
 });
 
+test('documented plain-text season binding is unique and explicit',()=>{
+  const current={type:'plain_text',name:'DATA_S2_SEASON',text:'2026-27'};
+  assert.deepEqual(normalisePlainTextBinding({bindings:[current]},'DATA_S2_SEASON'),{name:'DATA_S2_SEASON',text:'2026-27'});
+  assert.throws(()=>normalisePlainTextBinding({bindings:[]},'DATA_S2_SEASON'),/plain_text_binding_drift/);
+  assert.throws(()=>normalisePlainTextBinding({bindings:[current,current]},'DATA_S2_SEASON'),/plain_text_binding_drift/);
+  for(const malformed of [{...current,type:'secret_text'},{type:'plain_text',name:'DATA_S2_SEASON'},{...current,text:42}])assert.throws(()=>normalisePlainTextBinding({bindings:[malformed]},'DATA_S2_SEASON'),/plain_text_binding_contract_invalid/);
+  assert.match(helper,/normalisePlainTextBinding\(settings,'DATA_S2_SEASON'\)\.text/);
+});
+
 test('D1 binding database identity mismatch remains fail-closed in the execution path',()=>{
   const binding=normaliseD1Binding({bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB',database_id:'wrong-db'}]});
   const databaseId=extractD1DatabaseList([{name:'teamsheet-data',uuid:'expected-db'}])[0].uuid;
@@ -114,14 +123,28 @@ test('documented D1 list, D1 query array and Workers domains results are normali
   for(const malformed of [undefined,{},[],[{success:true,results:[]} ,{success:true,results:[]}],[{success:false,results:[]}],[{success:true,results:{}}]])assert.throws(()=>extractD1QueryResult(malformed),/d1_query_contract_invalid/);
 });
 
+test('D1 database size comes from the documented details response, not the list record',()=>{
+  const listed={name:'teamsheet-data',uuid:'db'};
+  assert.deepEqual(extractD1DatabaseDetails({name:'teamsheet-data',uuid:'db',file_size:123},listed),{name:'teamsheet-data',uuid:'db',file_size:123});
+  assert.equal(extractD1DatabaseDetails({name:'teamsheet-data',uuid:'db',file_size:0},listed).file_size,0);
+  for(const malformed of [undefined,{},
+    {name:'wrong',uuid:'db',file_size:1},{name:'teamsheet-data',uuid:'wrong',file_size:1},
+    {name:'teamsheet-data',uuid:'db'},{name:'teamsheet-data',uuid:'db',file_size:'1'},
+    {name:'teamsheet-data',uuid:'db',file_size:-1},{name:'teamsheet-data',uuid:'db',file_size:Infinity}
+  ])assert.throws(()=>extractD1DatabaseDetails(malformed,listed),/database_(?:details|size)_contract_invalid/);
+  assert.match(helper,/d1\/database\/teamsheet-data\?fields=uuid,name,file_size/);
+  assert.match(helper,/sizeBytes:databaseDetails\.file_size/);
+});
+
 test('SQL validator permits SELECT with whitespace/comments and one terminator',()=>{
   assert.equal(validateReadOnlySql(' SELECT 1; '),'SELECT 1');
   assert.equal(validateReadOnlySql('-- explanation\n /* audited */ SELECT COUNT(*) FROM data_sources'),'SELECT COUNT(*) FROM data_sources');
+  assert.equal(validateReadOnlySql("SELECT 'DELETE UPDATE', \"DROP\";"),"SELECT 'DELETE UPDATE', \"DROP\"");
   assert.equal(stripSqlComments("SELECT '-- not comment' /* real */"),"SELECT '-- not comment'  ");
 });
 
 test('SQL validator rejects writes, DDL, unsafe commands and statement injection',()=>{
-  for(const sql of ['INSERT INTO x VALUES (1)','UPDATE x SET y=1','DELETE FROM x','CREATE TABLE x(y)','DROP TABLE x','SELECT 1; DELETE FROM x','SELECT 1;;','SELECT 1; -- misleading comment\n DROP TABLE x','/* SELECT 1; */ DELETE FROM x','-- INSERT is misleading\nUPDATE x SET y=1','PRAGMA table_info(x)','ATTACH DATABASE x AS y','VACUUM','REINDEX']){
+  for(const sql of ['INSERT INTO x VALUES (1)','UPDATE x SET y=1','DELETE FROM x','REPLACE INTO x VALUES (1)','CREATE TABLE x(y)','ALTER TABLE x ADD y','DROP TABLE x','TRUNCATE TABLE x','SELECT 1; DELETE FROM x','SELECT 1;;','SELECT 1; -- misleading comment\n DROP TABLE x','/* SELECT 1; */ DELETE FROM x','-- INSERT is misleading\nUPDATE x SET y=1','/* unterminated','PRAGMA table_info(x)','ATTACH DATABASE x AS y','DETACH DATABASE y','VACUUM','REINDEX',"SELECT 'unterminated",'VALUES (1)']){
     assert.throws(()=>validateReadOnlySql(sql),undefined,sql);
   }
 });
@@ -154,6 +177,18 @@ test('deployment history requires one current version and a real prior rollback 
     {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
   ]);
   assert.deepEqual(result,{deploymentId:'new',versionId:'v2',timestamp:'2026-08-26T01:00:00Z',rollback:'PASS'});
+  assert.throws(()=>assessDeployments([
+    {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'same',percentage:100}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'same',percentage:100}]}
+  ]),/rollback_version_missing/);
+  assert.throws(()=>assessDeployments([
+    {created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'v2',percentage:100}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]),/active_deployment_id_invalid/);
+  assert.throws(()=>assessDeployments([
+    {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'',percentage:100}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]),/active_version_ambiguous/);
 });
 
 test('unavailable optional analytics remain NOT PROVABLE and are never coerced to zero',()=>{
@@ -161,6 +196,12 @@ test('unavailable optional analytics remain NOT PROVABLE and are never coerced t
   assert.deepEqual(optionalMetrics(null),{status:'NOT PROVABLE'});
   assert.deepEqual(optionalMetrics(0),{status:'PASS',value:0});
   assert.match(helper,/metrics:optionalMetrics\(null\)/);
+});
+
+test('custom domains treat only missing optional permission as NOT PROVABLE',()=>{
+  assert.deepEqual(optionalDomainsFailure(new Error('HTTP_403')),{status:'NOT PROVABLE'});
+  for(const diagnostic of ['HTTP_401','HTTP_404','HTTP_429','workers_domains_contract_invalid','fetch failed'])assert.throws(()=>optionalDomainsFailure(new Error(diagnostic)),new RegExp(diagnostic.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(helper,/catch\(error\)\{domains=optionalDomainsFailure\(error\);\}/);
 });
 
 test('Phase 0 redaction and debug policy excludes unsafe output and artifacts',()=>{

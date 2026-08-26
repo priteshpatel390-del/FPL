@@ -7,6 +7,8 @@
 
 The suite also exercises the first-party Cloudflare response contracts at their extraction boundary: deployment and schedule wrappers, Worker Settings bindings using current `type: "d1"` plus `database_id`, D1 database/query result arrays and the Workers domains array. Missing/malformed wrappers, missing/duplicate/malformed bindings and database-identity mismatch fail closed; the deprecated `d1_namespace`/`id` binding shape is not accepted.
 
+Final-review fixtures separately prove that D1 list identity is followed by a documented Get Database details response containing matching `uuid`/`name` and finite non-negative `file_size`; the list record is not incorrectly treated as size metadata. Custom-domain HTTP 403 remains optional `NOT PROVABLE`, while 401/404, malformed responses and transport failures fail closed. SQL adversarial cases include quoted unsafe words, every prohibited verb, comment/semicolon evasion, unterminated comment/string and a non-`SELECT` first token.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current DATA-S2A repository verification
 

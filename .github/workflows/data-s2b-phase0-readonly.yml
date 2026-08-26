@@ -22,8 +22,14 @@ jobs:
       - name: Validate approved SHA before checkout
         env:
           APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
           printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
 
       - name: Check out exact approved revision
@@ -59,7 +65,7 @@ jobs:
           node --input-type=module - "$response" <<'EOF'
           import fs from 'node:fs';
           const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-          const matches=(body.check_runs??[]).filter(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA);
+          const matches=(body.check_runs??[]).filter(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/'));
           if(matches.length<1)throw new Error('exact-head Verify Teamsheet success is absent');
           EOF
           rm -f "$response"
