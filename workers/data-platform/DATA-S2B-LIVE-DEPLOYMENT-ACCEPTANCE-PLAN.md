@@ -80,6 +80,8 @@ Worker Versions do **not** version D1 contents. D1 migration/rollback evidence m
 
 This phase must complete before any approval request for live mutation. Every action is read-only.
 
+The proposed fail-closed GitHub Actions procedure, credential evidence and permission stop condition are recorded in [DATA-S2B Phase 0 Read-Only Automation Investigation](DATA-S2B-PHASE-0-AUTOMATION-INVESTIGATION.md). That investigation does not authorize adding or running the action.
+
 ### Worker state
 
 Record:

@@ -4,6 +4,8 @@ Status: **read-only investigation checklist; no mutation authorised**
 
 Use this checklist against the live Cloudflare account before requesting approval for DATA-S2B mutation.
 
+The repository automation feasibility and least-privilege design are recorded in [DATA-S2B Phase 0 Read-Only Automation Investigation](DATA-S2B-PHASE-0-AUTOMATION-INVESTIGATION.md). No action has been added because the existing token's required read scopes cannot yet be proven.
+
 ## Repository
 
 - [ ] Confirm latest `main` SHA.

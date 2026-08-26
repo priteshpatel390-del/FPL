@@ -1,13 +1,13 @@
 # CLAUDE.md — onboarding for every future development session
 
 <!-- DATA-S2A-CURRENT-2026-08-26 -->
-### Current repository checkpoint — DATA-S2A Official FPL structured-history candidate
+### Current repository checkpoint — DATA-S2A merged; DATA-S2B live acceptance next
 
 **This section supersedes the older present-tense DATA-S1C/DATA-S1B wording below; dated evidence remains historical.** DATA-S1C-R retired private Service Binding/RPC and the unimplemented custom bearer-HTTP alternative from the forward collection architecture after RPC functional acceptance was not achieved. Their repository and deployed assets remain historical/rollback evidence; do not continue transport-first debugging for DATA-S2 collection. The stable forward boundary is the existing isolated `teamsheet-data-platform` Worker and `teamsheet-data` D1, with transport chosen only when a later consumer actually requires it. See [DATA-S1C-R — Data Architecture Reset](docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md).
 
-DATA-S2A is the current **repository-only, shadow-only** Official FPL structured-history candidate on draft PR #160. It collects only fixed `bootstrap-static` and `fixtures` payloads, validates a strict event/team/player/fixture allowlist, compares with D1 heads, and appends only genuine changes so prior facts remain queryable. It does not replace the existing live Official FPL application gateway and changes no Teamsheet runtime, model or recommendation behaviour. No DATA-S2A Worker deployment, live migration/D1 mutation or Cron activation has occurred.
+DATA-S2A is merged through PR #160 and repository-verified on its exact merge commit. Its **repository-only, shadow-only** Official FPL structured-history implementation collects only fixed `bootstrap-static` and `fixtures` payloads, validates a strict event/team/player/fixture allowlist, compares with D1 heads, and appends only genuine changes so prior facts remain queryable. It does not replace the existing live Official FPL application gateway and changes no Teamsheet runtime, model or recommendation behaviour. DATA-S2A remains **live-unaccepted**: no DATA-S2A Worker deployment, live migration/D1 mutation or Cron activation has occurred.
 
-The next checkpoint is **DATA-S2B**, separately owner-approval-gated: live migration/deployment, Cron activation, a real baseline, proof that an unchanged cycle creates no observation/head changes, changed-fact proof, actual D1 accounting, Workers Free CPU suitability, and rollback/stop on any failure. DATA-S2A merge does not approve DATA-S2B, DATA-S3, production use or redistribution.
+The next checkpoint is **DATA-S2B**. It begins with a mutation-free Phase 0 live preflight; migration, Worker version upload/deployment and Cron activation remain later, separate explicit owner-approval gates. DATA-S2B must then prove a real baseline, an unchanged cycle with no observation/head changes, changed-fact behaviour, actual D1 accounting, Workers Free CPU suitability, and rollback/stop on any failure. DATA-S2A merge does not approve DATA-S2B mutation, DATA-S3, production use or redistribution.
 
 <!-- DATA-S1C-CURRENT-2026-08-25 -->
 ### Current repository checkpoint — DATA-S1C private Service Binding + RPC candidate
