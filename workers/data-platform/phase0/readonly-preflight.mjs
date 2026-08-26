@@ -189,12 +189,8 @@ async function main(){
   const retainedDataS1Secret=settings.bindings.some(row=>row?.name==='DATA_S1_HTTP_AUTH_TOKEN');
   const schedulesResult=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/schedules`);
   const crons=assessCron(extractSchedulesResult(schedulesResult));
-  const databases=extractD1DatabaseList(await request(`/accounts/${encodeURIComponent(account)}/d1/database?name=teamsheet-data`));
-  if(!Array.isArray(databases)||databases.length!==1||databases[0]?.name!=='teamsheet-data')throw new Error('database_identity_drift');
-  const database=databases[0],databaseId=database.uuid;
-  if(typeof databaseId!=='string'||!databaseId)throw new Error('database_identity_missing');
-  requireD1BindingDatabase(d1,databaseId);
-  const databaseDetails=extractD1DatabaseDetails(await request(`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}?fields=uuid,name,file_size`),database);
+  const databaseId=d1.databaseId;
+  const databaseDetails=extractD1DatabaseDetails(await request(`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}?fields=uuid,name,file_size`),{uuid:databaseId});
   const query=async sql=>{
     const result=await request(`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}/query`,{method:'POST',body:{sql:validateReadOnlySql(sql)}});
     return extractD1QueryResult(result);
