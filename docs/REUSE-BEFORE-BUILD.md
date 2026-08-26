@@ -1,5 +1,9 @@
 # Reuse Before Build — canonical engineering principle
 
+## Applied record — DATA-S2B Phase 0 read-only candidate (26 August 2026)
+
+The candidate **adopts** Verify Teamsheet immutable identity and Cloudflare Workers/D1 REST primitives; **adapts** DATA-S1C masking, protected-environment and response-classification patterns; **references** Wrangler migration listing, GraphQL Analytics and optional zone routes without making them core dependencies; and **rejects** remote RPC execution, arbitrary SQL and a custom Cloudflare control plane. The detailed decision record is [DATA-S2B Phase 0 implementation](../workers/data-platform/DATA-S2B-PHASE-0-READ-ONLY-IMPLEMENTATION.md).
+
 Status: **Accepted engineering principle — approved by Pritesh on 26 August 2026.**
 
 Purpose: prevent Teamsheet from spending engineering time rediscovering mature solutions that already exist, while preserving Teamsheet's licensing, provenance, security, evidence and approval standards.

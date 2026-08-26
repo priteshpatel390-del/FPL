@@ -1,5 +1,12 @@
 # SECURITY.md
 
+<!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
+## DATA-S2B Phase 0 credential boundary
+
+The manual Phase 0 workflow separates repository identity/CI proof from its protected `data-s2b-phase0-readonly` environment job, so Cloudflare secrets are unavailable until the immutable-current-main gates pass. It accepts no SQL input, executes only validated literal `SELECT` statements, emits sanitized aggregate state, retains raw responses only in `$RUNNER_TEMP`, and fails closed on missing credentials, 401/403, state drift or missing rollback evidence. Minimum future permissions are Workers Scripts Read and D1 Read; broader read scopes are optional and Edit permission is prohibited. The workflow has not been executed live.
+
+Final review also requires the dispatch event itself to originate from canonical `refs/heads/main` and requires the exact-head successful check to belong to the GitHub Actions app and canonical repository Actions URL. This repository is public, so current GitHub documentation makes required reviewers, deployment-branch restrictions and environment secrets available on GitHub Free; those controls still require separate manual owner setup after merge.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current DATA-S2A security boundary
 

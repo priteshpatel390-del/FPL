@@ -1,5 +1,14 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
+## DATA-S2B Phase 0 permanent safety coverage
+
+`tests/data-s2b-phase0-readonly.test.mjs` behaviorally verifies SQL validation, missing-credential failure, HTTP 401/403 classification, Cron drift, migration drift, rollback evidence and `NOT PROVABLE` metrics. It also structurally verifies the manual-only immutable-SHA workflow, pre-credential identity/CI ordering, executable mutation-command absence, fixed SQL inputs, redaction/debug policy, application/runtime isolation and the unchanged synthetic 6,825 invariant.
+
+The suite also exercises the first-party Cloudflare response contracts at their extraction boundary: deployment and schedule wrappers, Worker Settings bindings using current `type: "d1"` plus `database_id`, D1 database/query result arrays and the Workers domains array. The complete Worker binding set is allowlisted to exactly `TEAMSHEET_DATA_DB` (`d1`) and `DATA_S2_SEASON` (`plain_text`): missing, duplicate, wrong-type, extra KV/R2/service/secret/plain-text or arbitrary bindings fail closed before individual value/identity checks. Missing/malformed wrappers and database-identity mismatch also fail closed; the deprecated `d1_namespace`/`id` binding shape is not accepted.
+
+Final-review fixtures separately prove that D1 list identity is followed through the documented UUID-based Get Database path to a details response containing matching `uuid`/`name` and finite non-negative `file_size`; both database-name path substitution and treating the list record as size metadata are rejected. Deployment fixtures require Cloudflare's documented first-array-entry active ordering even when a historical entry has a later-looking timestamp, plus malformed-current, active-version ambiguity and genuinely distinct rollback failures. Custom-domain HTTP 403 remains optional `NOT PROVABLE`, while 401/404, malformed responses and transport failures fail closed. SQL adversarial cases include quoted unsafe words, every prohibited verb, comment/semicolon evasion, unterminated comment/string and a non-`SELECT` first token.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current DATA-S2A repository verification
 
