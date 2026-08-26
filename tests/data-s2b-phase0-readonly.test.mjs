@@ -55,9 +55,13 @@ test('all repository Phase 0 SQL is fixed, audited and read-only',()=>{
   assert.doesNotMatch(fs.readFileSync(queryPath,'utf8'),/\$\{|process\.env|process\.argv/);
 });
 
-test('D1 binding identity is compared to the uniquely resolved expected database without disclosure',()=>{
-  assert.match(helper,/databases\.length!==1\|\|databases\[0\]\?\.name!=='teamsheet-data'/);
-  assert.match(helper,/requireD1BindingDatabase\(d1,databaseId\)/);
+test('D1 binding UUID is the authoritative database identity without disclosure',()=>{
+  const main=helper.slice(helper.indexOf('async function main(){'));
+  assert.match(main,/const databaseId=d1\.databaseId;/);
+  assert.match(main,/d1\/database\/\$\{encodeURIComponent\(databaseId\)\}\?fields=uuid,name,file_size/);
+  assert.match(main,/\{uuid:databaseId\}\);/);
+  assert.doesNotMatch(main,/d1\/database\?name=teamsheet-data/);
+  assert.doesNotMatch(main,/databases\.length!==1|database_identity_drift/);
   assert.doesNotMatch(helper,/databaseId[^\n]*(?:console|stderr|summary|GITHUB_STEP_SUMMARY)/i);
 });
 
@@ -130,13 +134,12 @@ test('execution validates the complete binding set before individual bindings an
   assert.ok(complete>0&&complete<d1&&d1<season&&season<pass);
 });
 
-test('D1 binding database identity mismatch remains fail-closed in the execution path',()=>{
+test('D1 binding/database mismatch helper remains fail-closed',()=>{
   const binding=normaliseD1Binding({bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB',database_id:'wrong-db'}]});
   const databaseId=extractD1DatabaseList([{name:'teamsheet-data',uuid:'expected-db'}])[0].uuid;
   assert.throws(()=>requireD1BindingDatabase(binding,databaseId),/d1_binding_database_drift/);
   assert.deepEqual(requireD1BindingDatabase({...binding,databaseId},databaseId),{name:'TEAMSHEET_DATA_DB',databaseId});
   for(const malformed of [undefined,'',null,42])assert.throws(()=>requireD1BindingDatabase(binding,malformed),/d1_binding_database_drift/);
-  assert.match(helper,/requireD1BindingDatabase\(d1,databaseId\)/);
 });
 
 test('documented D1 list, D1 query array and Workers domains results are normalized',()=>{
@@ -152,16 +155,19 @@ test('documented D1 list, D1 query array and Workers domains results are normali
   for(const malformed of [undefined,{},[],[{success:true,results:[]} ,{success:true,results:[]}],[{success:false,results:[]}],[{success:true,results:{}}]])assert.throws(()=>extractD1QueryResult(malformed),/d1_query_contract_invalid/);
 });
 
-test('D1 database size comes from the documented details response, not the list record',()=>{
-  const listed={name:'teamsheet-data',uuid:'db'};
-  assert.deepEqual(extractD1DatabaseDetails({name:'teamsheet-data',uuid:'db',file_size:123},listed),{name:'teamsheet-data',uuid:'db',file_size:123});
-  assert.equal(extractD1DatabaseDetails({name:'teamsheet-data',uuid:'db',file_size:0},listed).file_size,0);
+test('D1 database details prove the binding UUID and exact database name',()=>{
+  const bound={uuid:'db'};
+  assert.deepEqual(extractD1DatabaseDetails({name:'teamsheet-data',uuid:'db',file_size:123},bound),{name:'teamsheet-data',uuid:'db',file_size:123});
+  assert.equal(extractD1DatabaseDetails({name:'teamsheet-data',uuid:'db',file_size:0},bound).file_size,0);
   for(const malformed of [undefined,{},
+    {name:'teamsheet-data-s1b-validation-20260822',uuid:'db',file_size:1},
     {name:'wrong',uuid:'db',file_size:1},{name:'teamsheet-data',uuid:'wrong',file_size:1},
     {name:'teamsheet-data',uuid:'db'},{name:'teamsheet-data',uuid:'db',file_size:'1'},
     {name:'teamsheet-data',uuid:'db',file_size:-1},{name:'teamsheet-data',uuid:'db',file_size:Infinity}
-  ])assert.throws(()=>extractD1DatabaseDetails(malformed,listed),/database_(?:details|size)_contract_invalid/);
+  ])assert.throws(()=>extractD1DatabaseDetails(malformed,bound),/database_(?:details|size)_contract_invalid/);
+  assert.match(helper,/const databaseId=d1\.databaseId;/);
   assert.match(helper,/d1\/database\/\$\{encodeURIComponent\(databaseId\)\}\?fields=uuid,name,file_size/);
+  assert.doesNotMatch(helper,/d1\/database\?name=teamsheet-data/);
   assert.doesNotMatch(helper,/d1\/database\/teamsheet-data\?fields=uuid,name,file_size/);
   assert.match(helper,/sizeBytes:databaseDetails\.file_size/);
 });
