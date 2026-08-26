@@ -56,8 +56,14 @@ test('repository identity and exact-head CI gates complete before Phase 1 creden
 
 test('Phase 1 executable mutation surface is one explicit D1 transaction batch only',()=>{
   const executable=`${runBlocks(workflow)}\n${helper}`;
+  assert.match(workflow,/rm -f node_modules\/\.bin\/wrangler/);
+  assert.match(workflow,/rm -rf node_modules\/wrangler node_modules\/\.wrangler-\*/);
+  const executableWithoutWranglerCleanup=executable
+    .replace(/^\s*rm -f node_modules\/\.bin\/wrangler\s*$/gm,'')
+    .replace(/^\s*rm -rf node_modules\/wrangler node_modules\/\.wrangler-\*\s*$/gm,'');
+  assert.doesNotMatch(executableWithoutWranglerCleanup,/\bwrangler\b/i);
   for(const forbidden of [
-    /\bwrangler\b/i,/\/workers\/scripts\/[^/]+\/(?:versions|schedules)[^\n]*(?:POST|PUT|PATCH|DELETE)/i,
+    /\/workers\/scripts\/[^/]+\/(?:versions|schedules)[^\n]*(?:POST|PUT|PATCH|DELETE)/i,
     /\/time_travel\/restore/i,/\bfetch\([^)]*\{[^}]*method:\s*['"](?:PUT|PATCH|DELETE)['"]/i,
     /\b(?:route|domain|access|secret)\b[^\n]*(?:create|update|delete|put)/i
   ])assert.doesNotMatch(executable,forbidden);
