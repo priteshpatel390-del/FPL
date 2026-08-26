@@ -5,7 +5,7 @@ import {spawnSync} from 'node:child_process';
 import {
   assessCron,assessDeployments,assessMigrations,classifyApiResponse,extractD1DatabaseDetails,extractD1DatabaseList,extractD1QueryResult,
   extractDeploymentsResult,extractSchedulesResult,extractWorkerSettingsResult,extractWorkersDomains,
-  normaliseD1Binding,normalisePlainTextBinding,optionalDomainsFailure,optionalMetrics,requireD1BindingDatabase,stripSqlComments,validateReadOnlySql
+  normaliseD1Binding,normalisePlainTextBinding,optionalDomainsFailure,optionalMetrics,requireD1BindingDatabase,stripSqlComments,validateReadOnlySql,validateWorkerBindingSet
 } from '../workers/data-platform/phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../workers/data-platform/phase0/queries.mjs';
 
@@ -99,6 +99,35 @@ test('documented plain-text season binding is unique and explicit',()=>{
   assert.throws(()=>normalisePlainTextBinding({bindings:[current,current]},'DATA_S2_SEASON'),/plain_text_binding_drift/);
   for(const malformed of [{...current,type:'secret_text'},{type:'plain_text',name:'DATA_S2_SEASON'},{...current,text:42}])assert.throws(()=>normalisePlainTextBinding({bindings:[malformed]},'DATA_S2_SEASON'),/plain_text_binding_contract_invalid/);
   assert.match(helper,/normalisePlainTextBinding\(settings,'DATA_S2_SEASON'\)\.text/);
+});
+
+test('complete Worker binding set accepts only the two documented application bindings',()=>{
+  const d1={type:'d1',name:'TEAMSHEET_DATA_DB',database_id:'db-current'};
+  const season={type:'plain_text',name:'DATA_S2_SEASON',text:'2026-27'};
+  assert.deepEqual(validateWorkerBindingSet({bindings:[d1,season]}),{bindings:[d1,season]});
+  assert.deepEqual(validateWorkerBindingSet({bindings:[season,d1]}),{bindings:[season,d1]});
+  for(const bindings of [
+    [season],
+    [d1],
+    [d1,d1],
+    [season,season],
+    [{...d1,type:'kv_namespace'},season],
+    [d1,{...season,type:'secret_text'}],
+    [d1,season,{type:'kv_namespace',name:'EXTRA_KV',namespace_id:'kv'}],
+    [d1,season,{type:'r2_bucket',name:'EXTRA_R2',bucket_name:'bucket'}],
+    [d1,season,{type:'service',name:'EXTRA_SERVICE',service:'worker'}],
+    [d1,season,{type:'secret_text',name:'EXTRA_SECRET'}],
+    [d1,season,{type:'plain_text',name:'EXTRA_TEXT',text:'value'}],
+    [d1,season,{type:'unexpected',name:'ARBITRARY'}]
+  ])assert.throws(()=>validateWorkerBindingSet({bindings}),/worker_binding_set_drift/);
+});
+
+test('execution validates the complete binding set before individual bindings and any PASS summary',()=>{
+  const complete=helper.indexOf('const settings=validateWorkerBindingSet(');
+  const d1=helper.indexOf('const d1=normaliseD1Binding(settings)');
+  const season=helper.indexOf("normalisePlainTextBinding(settings,'DATA_S2_SEASON')");
+  const pass=helper.indexOf("outcome:'PASS'");
+  assert.ok(complete>0&&complete<d1&&d1<season&&season<pass);
 });
 
 test('D1 binding database identity mismatch remains fail-closed in the execution path',()=>{

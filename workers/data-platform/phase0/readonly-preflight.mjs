@@ -49,6 +49,19 @@ export function extractWorkerSettingsResult(result){
   return result;
 }
 
+export function validateWorkerBindingSet(settings){
+  const bindings=extractWorkerSettingsResult(settings).bindings;
+  const expected=new Map([['TEAMSHEET_DATA_DB','d1'],['DATA_S2_SEASON','plain_text']]);
+  if(bindings.length!==expected.size)throw new Error('worker_binding_set_drift');
+  const seen=new Set();
+  for(const binding of bindings){
+    if(!binding||typeof binding.name!=='string'||seen.has(binding.name)||binding.type!==expected.get(binding.name))throw new Error('worker_binding_set_drift');
+    seen.add(binding.name);
+  }
+  if(seen.size!==expected.size)throw new Error('worker_binding_set_drift');
+  return settings;
+}
+
 export function extractSchedulesResult(result){
   if(!result||!Array.isArray(result.schedules))throw new Error('schedules_contract_invalid');
   return result.schedules;
@@ -154,7 +167,7 @@ async function main(){
   };
   const deploymentsResult=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/deployments`);
   const deployments=assessDeployments(extractDeploymentsResult(deploymentsResult));
-  const settings=extractWorkerSettingsResult(await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/settings`));
+  const settings=validateWorkerBindingSet(extractWorkerSettingsResult(await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/settings`)));
   const d1=normaliseD1Binding(settings);
   const season=normalisePlainTextBinding(settings,'DATA_S2_SEASON').text;
   if(season!=='2026-27')throw new Error('season_var_drift');
