@@ -3,7 +3,7 @@ import {observationIdentity,rightsAdmission,validateObservation} from './data-pl
 export const DATA_S2_SOURCE_REVISION_ID='official-fpl-r1';
 export const DATA_S2_SCHEMA_VERSION='data-s2a-v1';
 export const DATA_S2_TRANSFORM_VERSION='data-s2a-official-fpl-history-v1';
-export const DATA_S2_VALIDATION_VERSION='data-s2a-official-fpl-validation-v1';
+export const DATA_S2_VALIDATION_VERSION='data-s2a-official-fpl-validation-v2';
 export const DATA_S2_NULL='__teamsheet_explicit_null__';
 export const MAX_CHANGED_OBSERVATIONS_PER_RUN=15000;
 export const OBSERVATION_CHUNK_SIZE=600;
@@ -65,6 +65,16 @@ function assertNumber(value,code){const n=Number(value);if(!Number.isFinite(n))t
 function nullableNumber(value,code){if(value===null)return DATA_S2_NULL;return assertNumber(value,code);}
 function nullableTimestamp(value,code){if(value===null)return DATA_S2_NULL;try{return iso(assertString(value,code));}catch{throw new Error(code);}}
 
+export function deriveOfficialFplSeason(bootstrap){
+  if(!isObject(bootstrap)||!Array.isArray(bootstrap.events))throw new Error('season_evidence_unavailable');
+  const firstEvent=bootstrap.events.find(row=>isObject(row)&&Number(row.id)===1);
+  if(!firstEvent||typeof firstEvent.deadline_time!=='string')throw new Error('season_evidence_unavailable');
+  let deadline;
+  try{deadline=iso(firstEvent.deadline_time);}catch{throw new Error('season_evidence_invalid');}
+  const startYear=Number(deadline.slice(0,4));
+  return `${startYear}-${String((startYear+1)%100).padStart(2,'0')}`;
+}
+
 function entity(season,type,id,createdAt){return {canonical_entity_id:canonicalEntityId(season,type,id),entity_type:type,season,canonical_system:'fpl',canonical_external_id:String(Number(id)),created_at:createdAt};}
 
 export function normaliseOfficialFplHistory({bootstrap,fixtures,season,fetchedAt}){
@@ -77,6 +87,7 @@ export function normaliseOfficialFplHistory({bootstrap,fixtures,season,fetchedAt
   if(bootstrap.teams.length!==20)throw new Error('team_population_implausible');
   if(bootstrap.elements.length<400)throw new Error('player_population_implausible');
   if(fixtures.length<300)throw new Error('fixture_population_implausible');
+  if(deriveOfficialFplSeason(bootstrap)!==season)throw new Error('season_mismatch');
 
   const eventIds=uniqueRows(bootstrap.events,'event');
   const teamIds=uniqueRows(bootstrap.teams,'team');
