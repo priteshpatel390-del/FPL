@@ -23,7 +23,7 @@ PR #160's D1 observation/head model, source-revision governance, atomic commit b
 
 The audit did identify one proven edge case that Teamsheet should **Port** before merge: season rollover protection. `TopMarx/fpl` derives the active season from Official FPL's first Gameweek deadline and refuses to write when the configured season disagrees with the season actually served by the API. DATA-S2A had only validated the configured `DATA_S2_SEASON` format. DATA-S2A-R1 independently implements the same fail-closed principle in Teamsheet's JavaScript/Cloudflare design.
 
-No external project becomes a Teamsheet dependency or provider as a result.
+No external project becomes a Teamsheet dependency or provider as a result. No new runtime provider, dependency or external code import is added.
 
 ## 3. Reuse matrix
 
