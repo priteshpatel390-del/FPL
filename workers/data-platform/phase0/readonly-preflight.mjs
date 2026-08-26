@@ -102,15 +102,14 @@ export function assessDeployments(deployments){
   if(!Array.isArray(deployments)||deployments.length<2)throw new Error('rollback_version_missing');
   const dated=deployments.map(row=>({...row,time:Date.parse(row?.created_on)}));
   if(dated.some(row=>!Number.isFinite(row.time)))throw new Error('deployment_timestamp_invalid');
-  const latestTime=Math.max(...dated.map(row=>row.time));
-  const latest=dated.filter(row=>row.time===latestTime);
-  if(latest.length!==1)throw new Error('active_deployment_ambiguous');
-  if(typeof latest[0].id!=='string'||!latest[0].id)throw new Error('active_deployment_id_invalid');
-  const active=(latest[0].versions??[]).filter(row=>row?.percentage===100&&typeof row.version_id==='string'&&row.version_id);
+  const current=dated[0];
+  if(typeof current.id!=='string'||!current.id)throw new Error('active_deployment_id_invalid');
+  if(!Array.isArray(current.versions))throw new Error('active_deployment_versions_invalid');
+  const active=current.versions.filter(row=>row?.percentage===100&&typeof row.version_id==='string'&&row.version_id);
   if(active.length!==1)throw new Error('active_version_ambiguous');
-  const priorVersions=new Set(dated.filter(row=>row!==latest[0]).flatMap(row=>row.versions??[]).map(row=>row?.version_id).filter(id=>typeof id==='string'&&id&&id!==active[0].version_id));
+  const priorVersions=new Set(dated.slice(1).flatMap(row=>row.versions??[]).map(row=>row?.version_id).filter(id=>typeof id==='string'&&id&&id!==active[0].version_id));
   if(priorVersions.size<1)throw new Error('rollback_version_missing');
-  return {deploymentId:latest[0].id,versionId:active[0].version_id,timestamp:latest[0].created_on,rollback:'PASS'};
+  return {deploymentId:current.id,versionId:active[0].version_id,timestamp:current.created_on,rollback:'PASS'};
 }
 
 export function assessCron(schedules){
@@ -166,7 +165,7 @@ async function main(){
   const database=databases[0],databaseId=database.uuid;
   if(typeof databaseId!=='string'||!databaseId)throw new Error('database_identity_missing');
   requireD1BindingDatabase(d1,databaseId);
-  const databaseDetails=extractD1DatabaseDetails(await request(`/accounts/${encodeURIComponent(account)}/d1/database/teamsheet-data?fields=uuid,name,file_size`),database);
+  const databaseDetails=extractD1DatabaseDetails(await request(`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}?fields=uuid,name,file_size`),database);
   const query=async sql=>{
     const result=await request(`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}/query`,{method:'POST',body:{sql:validateReadOnlySql(sql)}});
     return extractD1QueryResult(result);

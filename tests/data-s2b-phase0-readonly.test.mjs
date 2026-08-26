@@ -132,7 +132,8 @@ test('D1 database size comes from the documented details response, not the list 
     {name:'teamsheet-data',uuid:'db'},{name:'teamsheet-data',uuid:'db',file_size:'1'},
     {name:'teamsheet-data',uuid:'db',file_size:-1},{name:'teamsheet-data',uuid:'db',file_size:Infinity}
   ])assert.throws(()=>extractD1DatabaseDetails(malformed,listed),/database_(?:details|size)_contract_invalid/);
-  assert.match(helper,/d1\/database\/teamsheet-data\?fields=uuid,name,file_size/);
+  assert.match(helper,/d1\/database\/\$\{encodeURIComponent\(databaseId\)\}\?fields=uuid,name,file_size/);
+  assert.doesNotMatch(helper,/d1\/database\/teamsheet-data\?fields=uuid,name,file_size/);
   assert.match(helper,/sizeBytes:databaseDetails\.file_size/);
 });
 
@@ -177,6 +178,10 @@ test('deployment history requires one current version and a real prior rollback 
     {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
   ]);
   assert.deepEqual(result,{deploymentId:'new',versionId:'v2',timestamp:'2026-08-26T01:00:00Z',rollback:'PASS'});
+  assert.deepEqual(assessDeployments([
+    {id:'first-is-active',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'active',percentage:100}]},
+    {id:'later-looking-history',created_on:'2026-08-27T00:00:00Z',versions:[{version_id:'rollback',percentage:100}]}
+  ]),{deploymentId:'first-is-active',versionId:'active',timestamp:'2026-08-26T00:00:00Z',rollback:'PASS'});
   assert.throws(()=>assessDeployments([
     {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'same',percentage:100}]},
     {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'same',percentage:100}]}
@@ -186,7 +191,23 @@ test('deployment history requires one current version and a real prior rollback 
     {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
   ]),/active_deployment_id_invalid/);
   assert.throws(()=>assessDeployments([
+    {id:'new',created_on:'not-a-time',versions:[{version_id:'v2',percentage:100}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]),/deployment_timestamp_invalid/);
+  assert.throws(()=>assessDeployments([
+    {id:'new',created_on:'2026-08-26T01:00:00Z'},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]),/active_deployment_versions_invalid/);
+  assert.throws(()=>assessDeployments([
     {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'',percentage:100}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]),/active_version_ambiguous/);
+  assert.throws(()=>assessDeployments([
+    {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'v2',percentage:50}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]),/active_version_ambiguous/);
+  assert.throws(()=>assessDeployments([
+    {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'v2',percentage:100},{version_id:'v3',percentage:100}]},
     {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
   ]),/active_version_ambiguous/);
 });
