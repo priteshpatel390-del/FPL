@@ -23,6 +23,10 @@ const BRANCHES = Object.freeze([
   'docs/research/11-GW1-EVIDENCE/GW1-RESEARCH-EVIDENCE-READINESS.md'
 ]);
 
+const SUPPORTING_RECORDS = Object.freeze([
+  'docs/research/09-EXTERNAL-REPOSITORIES/DATA-S2-BACKEND-REUSE-AUDIT.md'
+]);
+
 const REQUIRED_HEADINGS = Object.freeze([
   'Research question',
   'Current Teamsheet behaviour',
@@ -77,7 +81,7 @@ if (existsSync(resolve(RESEARCH_ROOT, 'EXTERNAL-INTELLIGENCE-FOUNDATION.md'))) {
   fail('duplicate Foundation exists under docs/research; canonical root must remain docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md');
 }
 
-const expectedFiles = new Set(['docs/research/README.md', 'docs/research/RESEARCH-TEMPLATE.md', ...BRANCHES]);
+const expectedFiles = new Set(['docs/research/README.md', 'docs/research/RESEARCH-TEMPLATE.md', ...BRANCHES, ...SUPPORTING_RECORDS]);
 const actualFiles = markdownFiles(RESEARCH_ROOT);
 for (const path of expectedFiles) if (!actualFiles.includes(path)) fail(`missing required record: ${path}`);
 if (actualFiles.length !== expectedFiles.size) {
@@ -115,6 +119,13 @@ for (const path of BRANCHES) {
   if (!/Production effect: \*\*None\*\*/.test(text)) fail(`${path} does not record zero production effect`);
 }
 
+for (const path of SUPPORTING_RECORDS) {
+  const text = read(path);
+  if (!/Status: \*\*Research complete; owner-approved DATA-S2A-R1 closeout only\.\*\*/.test(text)) fail(`${path} has no approved supporting-record status`);
+  if (!/Production effect of this record: \*\*None\*\*/.test(text)) fail(`${path} does not record zero production effect`);
+  if (!text.includes('[Reuse Before Build](../../REUSE-BEFORE-BUILD.md)')) fail(`${path} does not link to the canonical Reuse Before Build principle`);
+}
+
 const externalRepos = read('docs/research/09-EXTERNAL-REPOSITORIES/RESEARCH-EXTERNAL-REPOSITORIES.md');
 for (const repository of [
   'alan-turing-institute/AIrsenal',
@@ -130,4 +141,4 @@ for (const repository of [
 const claude = read('CLAUDE.md');
 if (!claude.includes('(docs/research/README.md)')) fail('CLAUDE.md does not direct future work to the research control centre');
 
-console.log(`Research documentation integrity verified: ${BRANCHES.length} branches, ${actualFiles.length} Markdown records, all local links resolved.`);
+console.log(`Research documentation integrity verified: ${BRANCHES.length} branches, ${SUPPORTING_RECORDS.length} supporting records, ${actualFiles.length} Markdown records, all local links resolved.`);

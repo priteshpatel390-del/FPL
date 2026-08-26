@@ -1,5 +1,19 @@
 # DATA_SOURCES.md
 
+<!-- DATA-S2A-2026-08-26 -->
+## Official FPL DATA-S2A internal structured-history approval
+
+DATA-S2A approves one repository-only `shadow_only` purpose: durable internal change history from the fixed Official FPL `bootstrap-static` and `fixtures` endpoints. It retains only normalised, allowlisted facts:
+
+- events: lifecycle presence, name and deadline;
+- teams: lifecycle presence, names and Official strength fields;
+- players: lifecycle presence, team/position identity, web name, cost, status, chance-of-playing fields, news/news timestamp and selected percentage;
+- fixtures: lifecycle presence, event assignment, kickoff, home/away team identities and Official difficulties.
+
+Durable **internal shadow retention** of those facts is approved; redistribution is disabled. Raw Official FPL payloads are not retained. Manager/account, picks, bank/free transfers, captain/chip, league and rival data are excluded. The source revision is not approved for production publication or model/runtime use, which remain separately gated. DATA-S2A does not replace the live Official FPL gateway, has not deployed a collector, mutated live D1 or activated Cron.
+
+DATA-S1C-R retired RPC/custom bearer-HTTP as forward collection defaults. DATA-S2A instead collects inside the existing D1-owning Worker. DATA-S2B is the next separately approved live gate: migration/deployment, Cron activation, real baseline, unchanged-cycle and changed-fact proof, D1 accounting, Workers Free CPU suitability and rollback/stop on failure.
+
 ## 12 August 2026 — candidate external sources are research, not approval
 
 This file remains the authoritative record of **approved** sources. Runtime provider identity is closed to `APPROVED_PROVIDER_NAMES` — exactly `fpl`, `understat`, `odds`, `archive` — and a permanent test pins that set.

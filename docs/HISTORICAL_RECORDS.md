@@ -27,6 +27,7 @@ Historical records legitimately state the commit SHAs, test counts and merge sta
 - [Projection Model](PROJECTION_MODEL.md) — current calculation contracts and evidence gates.
 - [Data Sources](DATA_SOURCES.md) — current external-source and endpoint boundaries.
 - [Security](SECURITY.md) — current security and trust boundaries.
+- [Reuse Before Build](REUSE-BEFORE-BUILD.md) — permanent governance for classifying prior art as Adopt, Adapt, Port, Reference or Reject before substantial engineering; it changes no runtime behaviour or provider boundary.
 - [Changelog](CHANGELOG.md) — chronological/high-level change record; detailed evidence remains in the records below.
 - [Root onboarding](../CLAUDE.md) and [Build & Test](../README-BUILD.md).
 - [Cloudflare Worker operations](../workers/README.md).
