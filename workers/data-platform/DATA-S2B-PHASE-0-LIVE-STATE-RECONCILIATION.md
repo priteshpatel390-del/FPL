@@ -5,6 +5,8 @@ Date: **26 August 2026**
 Execution base: `170f7a0beef4227fa71daf9d5a8b49f9181f6d31`  
 Live run: **DATA-S2B Phase 0 Read-Only Preflight #2 / `32987063427`**
 
+**Supersession note:** for current DATA-S2B Phase 0 status and the pre-mutation Worker-binding contract only, this record supersedes older candidate wording that says the workflow has never been executed live or that `DATA_S2_SEASON` must already be present during Phase 0. Dated implementation history remains valid, and no later mutation gate is advanced by this record.
+
 ## Outcome
 
 The first Phase 0 run to pass the immutable repository gate and receive owner approval reached Cloudflare successfully and then failed closed with:
