@@ -5,9 +5,9 @@
 
 DATA-S1C-R supersedes the transport-first architecture described historically below. Service Binding/RPC did not achieve functional acceptance, and neither it nor custom bearer-HTTP is the forward default. Existing source, workflow and deployed state remain historical/rollback evidence. Forward collection uses the existing isolated `teamsheet-data-platform` Worker's direct `TEAMSHEET_DATA_DB` ownership; a transport is selected later only for an approved consumer that needs one.
 
-DATA-S2A adds a repository-only, shadow-only scheduled collector candidate for fixed Official FPL `bootstrap-static` and `fixtures` payloads. Strictly allowlisted scalar event/team/player/fixture facts are compared with `observation_heads`; only genuine changes append immutable observations, and one transactional batch advances heads. No raw payload, manager/account/league/rival state or production recommendation data is retained. Teamsheet continues to read through its existing live Official FPL gateway and has no D1 dependency. No Worker deployment, live D1 mutation or Cron activation is claimed.
+DATA-S2A is merged and repository-verified as a repository-only, shadow-only scheduled collector for fixed Official FPL `bootstrap-static` and `fixtures` payloads. Strictly allowlisted scalar event/team/player/fixture facts are compared with `observation_heads`; only genuine changes append immutable observations, and one transactional batch advances heads. No raw payload, manager/account/league/rival state or production recommendation data is retained. Teamsheet continues to read through its existing live Official FPL gateway and has no D1 dependency. DATA-S2A remains live-unaccepted: no Worker deployment, live D1 mutation or Cron activation is claimed.
 
-DATA-S2B is the next separate approval gate for live migration/deployment, Cron activation, real baseline, unchanged-cycle and changed-fact proof, D1 accounting, Workers Free CPU evidence and rollback/stop on failure.
+DATA-S2B is next and begins with a mutation-free Phase 0 preflight. Live migration, Worker version upload/deployment and Cron activation remain separate explicit owner-approval gates; real-baseline, unchanged-cycle, changed-fact, D1-accounting, Workers Free CPU and rollback/stop evidence follow only after those approvals.
 
 <!-- DATA-S1C-2026-08-25 -->
 ## DATA-S1 private service boundary
