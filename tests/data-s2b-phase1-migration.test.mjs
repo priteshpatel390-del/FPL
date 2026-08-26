@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  MIGRATION_PATH,MIGRATION_SHA256,extractBookmark,extractMutationBatchResult,migrationDigest,
-  sameDeployment,validatePinnedMigration,validatePostState,validatePreState
+  MIGRATION_PATH,MIGRATION_SHA256,MIGRATION_STATEMENT_COUNT,extractBookmark,extractMutationBatchResult,migrationDigest,
+  sameDeployment,splitPinnedMigration,validatePinnedMigration,validatePostState,validatePreState
 } from '../workers/data-platform/phase1/migrate-0002.mjs';
 
 const workflowPath='.github/workflows/data-s2b-phase1-migration-0002.yml';
@@ -54,27 +54,33 @@ test('repository identity and exact-head CI gates complete before Phase 1 creden
   ])assert.ok(workflow.includes(required),required);
 });
 
-test('Phase 1 executable mutation surface is D1 migration only',()=>{
+test('Phase 1 executable mutation surface is one explicit D1 transaction batch only',()=>{
   const executable=`${runBlocks(workflow)}\n${helper}`;
   for(const forbidden of [
     /\bwrangler\b/i,/\/workers\/scripts\/[^/]+\/(?:versions|schedules)[^\n]*(?:POST|PUT|PATCH|DELETE)/i,
     /\/time_travel\/restore/i,/\bfetch\([^)]*\{[^}]*method:\s*['"](?:PUT|PATCH|DELETE)['"]/i,
     /\b(?:route|domain|access|secret)\b[^\n]*(?:create|update|delete|put)/i
   ])assert.doesNotMatch(executable,forbidden);
-  assert.match(helper,/request\(`\$\{d1Base\}\/query`,\{method:'POST',body:\{sql:migration\}\}\)/);
-  assert.equal((helper.match(/body:\{sql:migration\}/g)??[]).length,1);
+  assert.match(helper,/const batch=splitPinnedMigration\(migration\)\.map\(sql=>\(\{sql\}\)\);/);
+  assert.match(helper,/request\(`\$\{d1Base\}\/query`,\{method:'POST',body:\{batch\}\}\)/);
+  assert.equal((helper.match(/body:\{batch\}/g)??[]).length,1);
+  assert.doesNotMatch(helper,/body:\{sql:migration\}/);
   assert.doesNotMatch(workflow,/CLOUDFLARE_API_TOKEN/);
 });
 
-test('migration SQL is repository-pinned and contains only the approved governance mutation',()=>{
+test('migration SQL is repository-pinned and split into exactly four reviewed batch statements',()=>{
   assert.equal(MIGRATION_PATH,'workers/data-platform/migrations/0002_official_fpl_structured_history.sql');
+  assert.equal(MIGRATION_STATEMENT_COUNT,4);
   assert.equal(migrationDigest(migration),MIGRATION_SHA256);
   assert.doesNotThrow(()=>validatePinnedMigration(migration));
   assert.throws(()=>validatePinnedMigration(`${migration}\n-- drift`),/migration_content_drift/);
-  assert.equal((migration.match(/\bINSERT\s+INTO\b/gi)??[]).length,3);
-  assert.match(migration,/INSERT INTO schema_migrations/);
-  assert.match(migration,/INSERT INTO data_sources/);
-  assert.match(migration,/INSERT INTO data_source_revisions/);
+  const statements=splitPinnedMigration(migration);
+  assert.equal(statements.length,MIGRATION_STATEMENT_COUNT);
+  assert.equal(statements[0],'PRAGMA foreign_keys = ON');
+  assert.equal(statements.filter(statement=>/\bINSERT\s+INTO\b/i.test(statement)).length,3);
+  assert.ok(statements.some(statement=>/INSERT INTO schema_migrations/.test(statement)));
+  assert.ok(statements.some(statement=>/INSERT INTO data_sources/.test(statement)));
+  assert.ok(statements.some(statement=>/INSERT INTO data_source_revisions/.test(statement)));
   assert.doesNotMatch(migration,/\b(?:UPDATE|DELETE|REPLACE|CREATE|ALTER|DROP|TRUNCATE|ATTACH|DETACH|VACUUM|REINDEX)\b/i);
   assert.doesNotMatch(workflow,/inputs\.[a-z_]*sql|github\.event\.inputs\.[a-z_]*sql/i);
   assert.match(helper,/fs\.readFileSync\(MIGRATION_PATH,'utf8'\)/);
@@ -94,16 +100,19 @@ test('Time Travel bookmark is mandatory and captured before the live migration r
   for(const malformed of [undefined,{},null,{bookmark:''},{bookmark:42}])assert.throws(()=>extractBookmark(malformed),/time_travel_bookmark_invalid/);
   const bookmarkIndex=helper.indexOf('/time_travel/bookmark');
   const checkpointIndex=helper.indexOf('Pre-mutation checkpoint');
-  const mutationIndex=helper.indexOf("body:{sql:migration}");
+  const mutationIndex=helper.indexOf("body:{batch}");
   assert.ok(bookmarkIndex>0&&bookmarkIndex<checkpointIndex&&checkpointIndex<mutationIndex);
   assert.match(helper,/phase1-bookmark\.txt/);
   assert.match(workflow,/trap 'rm -f "\$RUNNER_TEMP"\/phase1-\*\.json "\$RUNNER_TEMP"\/phase1-bookmark\.txt' EXIT/);
   assert.doesNotMatch(helper,/bookmark[^;\n]*(?:GITHUB_STEP_SUMMARY|console|stderr)/i);
 });
 
-test('migration batch response fails closed',()=>{
-  assert.deepEqual(extractMutationBatchResult([{success:true},{success:true}]),[{success:true},{success:true}]);
-  for(const malformed of [undefined,{},[],[{success:false}],[{success:true},{success:false}]])assert.throws(()=>extractMutationBatchResult(malformed),/migration_batch_contract_invalid/);
+test('migration batch response requires one success result per reviewed statement',()=>{
+  const success=Array.from({length:MIGRATION_STATEMENT_COUNT},()=>({success:true}));
+  assert.deepEqual(extractMutationBatchResult(success),success);
+  for(const malformed of [undefined,{},[],success.slice(0,-1),[...success.slice(0,-1),{success:false}], [...success,{success:true}]]){
+    assert.throws(()=>extractMutationBatchResult(malformed),/migration_batch_contract_invalid/);
+  }
 });
 
 test('post-mutation state proves exact governance rows and no observation or head writes',()=>{
@@ -126,7 +135,7 @@ test('Worker deployment must remain unchanged during migration',()=>{
 });
 
 test('postchecks run after migration and re-prove Cron, season, binding and deployment invariants',()=>{
-  const mutation=helper.indexOf("body:{sql:migration}");
+  const mutation=helper.indexOf("body:{batch}");
   const post=helper.indexOf('validatePostState(post)');
   const settingsAfter=helper.indexOf('const settingsAfter=');
   const deploymentAfter=helper.indexOf('const deploymentsAfter=');

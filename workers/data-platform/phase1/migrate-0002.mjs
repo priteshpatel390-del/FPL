@@ -10,6 +10,7 @@ import {PHASE0_QUERIES} from '../phase0/queries.mjs';
 
 export const MIGRATION_PATH='workers/data-platform/migrations/0002_official_fpl_structured_history.sql';
 export const MIGRATION_SHA256='a217726d5f164c3d117afed83201194004451384493f089914a7c42c725fde83';
+export const MIGRATION_STATEMENT_COUNT=4;
 
 export const PHASE1_QUERIES=Object.freeze({
   source:`SELECT source_id, source_key, source_name, source_kind, created_at
@@ -35,13 +36,20 @@ export function validatePinnedMigration(sql){
   return sql;
 }
 
+export function splitPinnedMigration(sql){
+  const pinned=validatePinnedMigration(sql);
+  const statements=pinned.split(';').map(statement=>statement.trim()).filter(Boolean);
+  if(statements.length!==MIGRATION_STATEMENT_COUNT||statements[0]!=='PRAGMA foreign_keys = ON')throw new Error('migration_statement_contract_invalid');
+  return statements;
+}
+
 export function extractBookmark(result){
   if(!result||typeof result.bookmark!=='string'||!result.bookmark)throw new Error('time_travel_bookmark_invalid');
   return result.bookmark;
 }
 
 export function extractMutationBatchResult(result){
-  if(!Array.isArray(result)||result.length<1||result.some(row=>row?.success!==true))throw new Error('migration_batch_contract_invalid');
+  if(!Array.isArray(result)||result.length!==MIGRATION_STATEMENT_COUNT||result.some(row=>row?.success!==true))throw new Error('migration_batch_contract_invalid');
   return result;
 }
 
@@ -149,8 +157,9 @@ async function main(){
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     `## DATA-S2B Phase 1 — Pre-mutation checkpoint\n\n- Repository SHA: \`${process.env.APPROVED_SHA}\`\n- Time Travel rollback checkpoint: captured at ${rollbackTimestamp}\n- Live migration had not yet been submitted at this checkpoint.\n\n`);
 
-  const migration=validatePinnedMigration(fs.readFileSync(MIGRATION_PATH,'utf8'));
-  const migrationResult=await request(`${d1Base}/query`,{method:'POST',body:{sql:migration}});
+  const migration=fs.readFileSync(MIGRATION_PATH,'utf8');
+  const batch=splitPinnedMigration(migration).map(sql=>({sql}));
+  const migrationResult=await request(`${d1Base}/query`,{method:'POST',body:{batch}});
   extractMutationBatchResult(migrationResult);
 
   const post={
@@ -176,7 +185,7 @@ async function main(){
     '',
     '- Outcome: **PASS**',
     `- Repository SHA: \`${process.env.APPROVED_SHA}\``,
-    '- Migration: `0002_official_fpl_structured_history.sql` applied exactly once',
+    '- Migration: `0002_official_fpl_structured_history.sql` applied exactly once as one transactional D1 batch',
     '- Governance source: `source-official-fpl` PASS',
     '- Governance revision: `official-fpl-r1` PASS',
     '- Rights: durable retention allowed; redistribution disabled; shadow ingest allowed',

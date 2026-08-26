@@ -6,7 +6,9 @@ Baseline before this change: `2fe46d5dd9f1c880df3450b37260946e910bc1e2`
 
 ## Outcome and scope
 
-Phase 0 live read-only Run #4 (`32996481967`) passed on the exact baseline above. It proved the expected pre-mutation state: `TEAMSHEET_DATA_DB -> teamsheet-data`, no DATA-S2 Cron, `DATA_S2_SEASON` absent, migration 0001 applied, migration 0002 pending, zero current DATA-S1/history rows, rollback evidence present, and the intended custom domain present.
+Phase 0 live read-only Run #4 (`32996481967`) completed successfully on the exact baseline above. The current Phase 0 closeout is recorded in [DATA-S2B-PHASE-0-LIVE-CLOSEOUT.md](DATA-S2B-PHASE-0-LIVE-CLOSEOUT.md); it supersedes the earlier Phase 0 records where their status/next-gate sections still describe Run #3 or PR #164 as current.
+
+Run #4 proved the expected pre-mutation state needed for this checkpoint: `TEAMSHEET_DATA_DB -> teamsheet-data`, no DATA-S2 Cron, `DATA_S2_SEASON` absent, migration 0001 applied, migration 0002 pending, zero current DATA-S1/history rows under the Phase 0 fixed queries, rollback evidence present, and the intended custom domain present.
 
 The owner has separately approved **DATA-S2B Phase 1 migration 0002 only**. This repository change prepares the controlled execution path for that approved mutation. It does not itself run the migration.
 
@@ -22,7 +24,7 @@ Explicitly excluded:
 - `DATA_S2_SEASON` activation;
 - Cron/trigger activation;
 - route/domain/Access changes;
-- secret or environment-variable changes on Cloudflare;
+- Cloudflare Worker secret or environment-variable changes;
 - provider changes;
 - application/model/calculation changes;
 - automatic Time Travel restore.
@@ -33,7 +35,7 @@ Explicitly excluded:
 |---|---|---|
 | Phase 0 exact-main / exact-head CI repository gate | **Adopt** | Reuse unchanged before any write credential becomes available. |
 | Worker D1 binding `database_id` + exact Get Database-by-ID | **Adopt** | Resolve the live database from Cloudflare's own binding identity; never hard-code the UUID. |
-| Cloudflare D1 Query REST API | **Adopt** | Execute the exact repository-pinned migration without adding npm/Wrangler as a dependency. |
+| Cloudflare D1 Query REST API explicit `batch` request | **Adopt** | Execute the exact repository-pinned migration as one D1 batch without adding npm/Wrangler as a dependency. |
 | Cloudflare D1 Time Travel bookmark | **Adopt** | Prove a rollback checkpoint exists immediately before mutation. |
 | Phase 0 prestate SELECTs | **Adapt** | Re-run the critical prestate checks immediately before mutation. |
 | `npx wrangler` / npm registry install | **Reject** | Conflicts with the repository's zero-dependency/no-registry operating constraint. |
@@ -73,7 +75,7 @@ The Phase 0 environment/token must remain unchanged. Do **not** replace or widen
 The dedicated Phase 1 token should be restricted to the account and carry only the permissions needed by this workflow:
 
 - **Workers Scripts Read** — re-read Worker deployment/settings/schedules;
-- **D1 Write** — Cloudflare accepts D1 Write for Get Database, Query and Time Travel bookmark operations, and it is the permission required for the approved D1 mutation.
+- **D1 Write** — perform the approved D1 migration and the D1 reads/checkpoint used around it.
 
 No Worker Edit permission is required or approved.
 
@@ -94,7 +96,7 @@ Immediately before the migration, the helper re-proves:
 
 Any drift stops before the write.
 
-## Exact migration identity
+## Exact migration identity and transaction contract
 
 The helper reads the migration from the repository and requires its SHA-256 to be exactly:
 
@@ -102,11 +104,20 @@ The helper reads the migration from the repository and requires its SHA-256 to b
 
 No migration SQL is accepted from workflow inputs, environment variables, command-line arguments or network content.
 
-Cloudflare documents that a SQL string containing multiple semicolon-separated statements is executed as a batch; D1 batch execution is transactional and aborts/rolls back the sequence when a statement fails. The helper still performs full post-state verification rather than treating the HTTP success alone as acceptance.
+Only after that hash check succeeds does the helper split the pinned file at its known semicolon boundaries. The exact reviewed file must produce **four statements**:
+
+1. `PRAGMA foreign_keys = ON`;
+2. migration-2 `schema_migrations` insert;
+3. `source-official-fpl` insert;
+4. `official-fpl-r1` revision insert.
+
+The helper sends those four statements using the D1 REST Query API's explicit `batch` request form rather than sending a semicolon-separated migration string as a single query field. Cloudflare documents the REST `batch` form and separately documents D1 batched statements as SQL transactions: statements execute sequentially and a failure aborts/rolls back the sequence.
+
+The response must contain exactly four successful statement results. Full post-state verification still follows; HTTP/batch success alone is not acceptance.
 
 ## Rollback checkpoint
 
-Immediately before submitting the migration, the helper requests the current D1 Time Travel bookmark and fails closed if a valid bookmark is unavailable.
+Immediately before submitting the batch, the helper requests the current D1 Time Travel bookmark and fails closed if a valid bookmark is unavailable.
 
 The exact bookmark is masked and retained only in `$RUNNER_TEMP`. A pre-mutation UTC timestamp is written to the GitHub job summary **before** the migration request, so a rollback point remains identifiable even if a later postcheck fails.
 
@@ -120,14 +131,7 @@ A PASS requires all of the following:
 - 0002 is named `official_fpl_structured_history`;
 - `source-official-fpl` exists exactly once with the approved source fields;
 - `official-fpl-r1` exists exactly once;
-- revision rights equal the reviewed migration contract:
-  - `durable_allowed`;
-  - retention allowed;
-  - redistribution disabled;
-  - attribution not required;
-  - terms reference `docs/DATA_SOURCES.md`;
-  - acquisition status `approved_internal_shadow_history`;
-  - shadow ingest allowed;
+- revision rights equal the reviewed migration contract: durable retention allowed, redistribution disabled, attribution not required, terms reference `docs/DATA_SOURCES.md`, acquisition status `approved_internal_shadow_history`, and shadow ingest allowed;
 - total `data_sources=1` and `data_source_revisions=1`;
 - `ingestion_runs=0`;
 - `shadow_observations=0`;
