@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {
-  assessCron,assessDeployments,assessMigrations,classifyApiResponse,optionalMetrics,stripSqlComments,validateReadOnlySql
+  assessCron,assessDeployments,assessMigrations,classifyApiResponse,extractD1DatabaseList,extractD1QueryResult,
+  extractDeploymentsResult,extractSchedulesResult,extractWorkerSettingsResult,extractWorkersDomains,
+  normaliseD1Binding,optionalMetrics,requireD1BindingDatabase,stripSqlComments,validateReadOnlySql
 } from '../workers/data-platform/phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../workers/data-platform/phase0/queries.mjs';
 
@@ -55,8 +57,61 @@ test('all repository Phase 0 SQL is fixed, audited and read-only',()=>{
 
 test('D1 binding identity is compared to the uniquely resolved expected database without disclosure',()=>{
   assert.match(helper,/databases\.length!==1\|\|databases\[0\]\?\.name!=='teamsheet-data'/);
-  assert.match(helper,/if\(d1\[0\]\?\.id!==databaseId\)throw new Error\('d1_binding_database_drift'\)/);
+  assert.match(helper,/requireD1BindingDatabase\(d1,databaseId\)/);
   assert.doesNotMatch(helper,/databaseId[^\n]*(?:console|stderr|summary|GITHUB_STEP_SUMMARY)/i);
+});
+
+test('documented deployments wrapper is extracted before deployment assessment',()=>{
+  const result={deployments:[
+    {id:'new',created_on:'2026-08-26T01:00:00Z',versions:[{version_id:'v2',percentage:100}]},
+    {id:'old',created_on:'2026-08-26T00:00:00Z',versions:[{version_id:'v1',percentage:100}]}
+  ]};
+  assert.equal(assessDeployments(extractDeploymentsResult(result)).versionId,'v2');
+  for(const malformed of [undefined,{},[],{deployments:{}},{deployments:null}])assert.throws(()=>extractDeploymentsResult(malformed),/deployments_contract_invalid/);
+});
+
+test('documented schedules wrapper is extracted before fail-closed Cron assessment',()=>{
+  assert.deepEqual(assessCron(extractSchedulesResult({schedules:[]})),[]);
+  assert.throws(()=>assessCron(extractSchedulesResult({schedules:[{cron:'0 * * * *'}]})),/unexpected_data_s2_hourly_cron/);
+  for(const malformed of [undefined,{},[],{schedules:{}},{schedules:null}])assert.throws(()=>extractSchedulesResult(malformed),/schedules_contract_invalid/);
+});
+
+test('documented Worker settings D1 binding uses type d1 and database_id',()=>{
+  const settings={bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB',database_id:'db-current'}]};
+  assert.equal(extractWorkerSettingsResult(settings),settings);
+  assert.deepEqual(normaliseD1Binding(settings),{name:'TEAMSHEET_DATA_DB',databaseId:'db-current'});
+  for(const missing of [{bindings:[]},{bindings:[{type:'plain_text',name:'DATA_S2_SEASON',text:'2026-27'}]}])assert.throws(()=>normaliseD1Binding(missing),/d1_binding_drift/);
+  assert.throws(()=>normaliseD1Binding({bindings:[...settings.bindings,...settings.bindings]}),/d1_binding_drift/);
+  for(const malformed of [
+    {bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB'}]},
+    {bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB',database_id:''}]},
+    {bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB',database_id:42}]},
+    {bindings:[{type:'d1_namespace',name:'TEAMSHEET_DATA_DB',id:'db-legacy'}]}
+  ])assert.throws(()=>normaliseD1Binding(malformed),/d1_binding_contract_invalid/);
+  assert.doesNotMatch(helper,/type:'d1_namespace'|d1\[0\]\?\.id/);
+  for(const malformedSettings of [undefined,{},[],{bindings:{}},{bindings:null}])assert.throws(()=>extractWorkerSettingsResult(malformedSettings),/settings_contract_invalid/);
+});
+
+test('D1 binding database identity mismatch remains fail-closed in the execution path',()=>{
+  const binding=normaliseD1Binding({bindings:[{type:'d1',name:'TEAMSHEET_DATA_DB',database_id:'wrong-db'}]});
+  const databaseId=extractD1DatabaseList([{name:'teamsheet-data',uuid:'expected-db'}])[0].uuid;
+  assert.throws(()=>requireD1BindingDatabase(binding,databaseId),/d1_binding_database_drift/);
+  assert.deepEqual(requireD1BindingDatabase({...binding,databaseId},databaseId),{name:'TEAMSHEET_DATA_DB',databaseId});
+  for(const malformed of [undefined,'',null,42])assert.throws(()=>requireD1BindingDatabase(binding,malformed),/d1_binding_database_drift/);
+  assert.match(helper,/requireD1BindingDatabase\(d1,databaseId\)/);
+});
+
+test('documented D1 list, D1 query array and Workers domains results are normalized',()=>{
+  const databases=[{name:'teamsheet-data',uuid:'db'}];
+  assert.equal(extractD1DatabaseList(databases),databases);
+  assert.deepEqual(extractD1QueryResult([{success:true,results:[{count:3}],meta:{rows_read:1}}]),[{count:3}]);
+  const domains=[{service:'teamsheet-data-platform',hostname:'data.example.test'}];
+  assert.equal(extractWorkersDomains(domains),domains);
+  for(const malformed of [undefined,{},null]){
+    assert.throws(()=>extractD1DatabaseList(malformed),/database_list_contract_invalid/);
+    assert.throws(()=>extractWorkersDomains(malformed),/workers_domains_contract_invalid/);
+  }
+  for(const malformed of [undefined,{},[],[{success:true,results:[]} ,{success:true,results:[]}],[{success:false,results:[]}],[{success:true,results:{}}]])assert.throws(()=>extractD1QueryResult(malformed),/d1_query_contract_invalid/);
 });
 
 test('SQL validator permits SELECT with whitespace/comments and one terminator',()=>{

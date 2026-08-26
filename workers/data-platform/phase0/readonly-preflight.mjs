@@ -39,6 +39,51 @@ export function classifyApiResponse(status,body){
   return {ok:true,result:body.result};
 }
 
+export function extractDeploymentsResult(result){
+  if(!result||!Array.isArray(result.deployments))throw new Error('deployments_contract_invalid');
+  return result.deployments;
+}
+
+export function extractWorkerSettingsResult(result){
+  if(!result||!Array.isArray(result.bindings))throw new Error('settings_contract_invalid');
+  return result;
+}
+
+export function extractSchedulesResult(result){
+  if(!result||!Array.isArray(result.schedules))throw new Error('schedules_contract_invalid');
+  return result.schedules;
+}
+
+export function extractD1DatabaseList(result){
+  if(!Array.isArray(result))throw new Error('database_list_contract_invalid');
+  return result;
+}
+
+export function extractD1QueryResult(result){
+  if(!Array.isArray(result)||result.length!==1)throw new Error('d1_query_contract_invalid');
+  const first=result[0];
+  if(first?.success!==true||!Array.isArray(first.results))throw new Error('d1_query_contract_invalid');
+  return first.results;
+}
+
+export function extractWorkersDomains(result){
+  if(!Array.isArray(result))throw new Error('workers_domains_contract_invalid');
+  return result;
+}
+
+export function normaliseD1Binding(settings,name='TEAMSHEET_DATA_DB'){
+  const bindings=extractWorkerSettingsResult(settings).bindings.filter(row=>row?.name===name);
+  if(bindings.length!==1)throw new Error('d1_binding_drift');
+  const binding=bindings[0];
+  if(binding.type!=='d1'||typeof binding.database_id!=='string'||!binding.database_id)throw new Error('d1_binding_contract_invalid');
+  return {name:binding.name,databaseId:binding.database_id};
+}
+
+export function requireD1BindingDatabase(binding,databaseId){
+  if(!binding||typeof databaseId!=='string'||!databaseId||binding.databaseId!==databaseId)throw new Error('d1_binding_database_drift');
+  return binding;
+}
+
 export function assessDeployments(deployments){
   if(!Array.isArray(deployments)||deployments.length<2)throw new Error('rollback_version_missing');
   const dated=deployments.map(row=>({...row,time:Date.parse(row?.created_on)}));
@@ -89,25 +134,21 @@ async function main(){
     return outcome.result;
   };
   const deploymentsResult=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/deployments`);
-  const deployments=assessDeployments(deploymentsResult?.deployments);
-  const settings=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/settings`);
-  const bindings=Array.isArray(settings?.bindings)?settings.bindings:[];
-  const d1=bindings.filter(row=>row?.type==='d1_namespace'&&row?.name==='TEAMSHEET_DATA_DB');
-  if(d1.length!==1)throw new Error('d1_binding_drift');
-  const season=settings?.bindings?.find(row=>row?.type==='plain_text'&&row?.name==='DATA_S2_SEASON')?.text;
+  const deployments=assessDeployments(extractDeploymentsResult(deploymentsResult));
+  const settings=extractWorkerSettingsResult(await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/settings`));
+  const d1=normaliseD1Binding(settings);
+  const season=settings.bindings.find(row=>row?.type==='plain_text'&&row?.name==='DATA_S2_SEASON')?.text;
   if(season!=='2026-27')throw new Error('season_var_drift');
   const schedulesResult=await request(`/accounts/${encodeURIComponent(account)}/workers/scripts/teamsheet-data-platform/schedules`);
-  const crons=assessCron(schedulesResult);
-  const databases=await request(`/accounts/${encodeURIComponent(account)}/d1/database?name=teamsheet-data`);
+  const crons=assessCron(extractSchedulesResult(schedulesResult));
+  const databases=extractD1DatabaseList(await request(`/accounts/${encodeURIComponent(account)}/d1/database?name=teamsheet-data`));
   if(!Array.isArray(databases)||databases.length!==1||databases[0]?.name!=='teamsheet-data')throw new Error('database_identity_drift');
   const database=databases[0],databaseId=database.uuid;
   if(typeof databaseId!=='string'||!databaseId)throw new Error('database_identity_missing');
-  if(d1[0]?.id!==databaseId)throw new Error('d1_binding_database_drift');
+  requireD1BindingDatabase(d1,databaseId);
   const query=async sql=>{
     const result=await request(`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}/query`,{method:'POST',body:{sql:validateReadOnlySql(sql)}});
-    const first=Array.isArray(result)?result[0]:result;
-    if(first?.success!==true||!Array.isArray(first.results))throw new Error('d1_query_contract_invalid');
-    return first.results;
+    return extractD1QueryResult(result);
   };
   const schema=(await query(PHASE0_QUERIES.schema)).map(row=>row.name).sort();
   if(JSON.stringify(schema)!==JSON.stringify(REQUIRED_TABLES))throw new Error('data_s1_schema_drift');
@@ -117,8 +158,8 @@ async function main(){
   const official=(await query(PHASE0_QUERIES.officialHistory))[0];
   if(governance.source_official_fpl!==0||governance.official_fpl_r1!==0||Object.values(official).some(Number))throw new Error('unexpected_official_fpl_history');
   let domains={status:'NOT PROVABLE'};
-  try{const rows=await request(`/accounts/${encodeURIComponent(account)}/workers/domains`);domains={status:'PASS',hostnames:(rows??[]).filter(row=>row?.service==='teamsheet-data-platform').map(row=>row.hostname).filter(Boolean)};}catch(error){if(!['HTTP_401','HTTP_403','HTTP_404'].includes(error.message))throw error;}
-  const report={repositorySha:process.env.APPROVED_SHA,verifyTeamsheet:'PASS',worker:'teamsheet-data-platform',deployments,bindings:[{name:'TEAMSHEET_DATA_DB',type:'d1_namespace',database:'teamsheet-data'},{name:'DATA_S2_SEASON',type:'plain_text',value:season}],crons,domains,migrations,counts,officialHistory:official,database:{name:'teamsheet-data',sizeBytes:database.file_size??'NOT PROVABLE'},metrics:optionalMetrics(null),outcome:'PASS'};
+  try{const rows=extractWorkersDomains(await request(`/accounts/${encodeURIComponent(account)}/workers/domains`));domains={status:'PASS',hostnames:rows.filter(row=>row?.service==='teamsheet-data-platform').map(row=>row.hostname).filter(Boolean)};}catch(error){if(!['HTTP_401','HTTP_403','HTTP_404'].includes(error.message))throw error;}
+  const report={repositorySha:process.env.APPROVED_SHA,verifyTeamsheet:'PASS',worker:'teamsheet-data-platform',deployments,bindings:[{name:'TEAMSHEET_DATA_DB',type:'d1',database:'teamsheet-data'},{name:'DATA_S2_SEASON',type:'plain_text',value:season}],crons,domains,migrations,counts,officialHistory:official,database:{name:'teamsheet-data',sizeBytes:database.file_size??'NOT PROVABLE'},metrics:optionalMetrics(null),outcome:'PASS'};
   const summary=['## DATA-S2B Phase 0 Read-Only Preflight','',`- Outcome: **${report.outcome}**`,`- Repository SHA: \`${report.repositorySha}\``,`- Verify Teamsheet: ${report.verifyTeamsheet}`,`- Worker: \`${report.worker}\``,`- Active deployment/version: \`${deployments.deploymentId}\` / \`${deployments.versionId}\``,`- Deployment timestamp: ${deployments.timestamp}`,`- Rollback evidence: ${deployments.rollback}`,'- D1 binding: `TEAMSHEET_DATA_DB` -> `teamsheet-data`',`- DATA_S2_SEASON: \`${season}\``,`- Cron expressions: ${crons.length?crons.map(value=>`\`${value}\``).join(', '):'none'}`,`- Custom domains: ${domains.status==='PASS'?(domains.hostnames.join(', ')||'none'):'NOT PROVABLE'}`,`- Migrations: ${migrations.map(row=>`${String(row.version).padStart(4,'0')} ${row.status}`).join(', ')}`,`- Table counts: ${Object.entries(counts).map(([key,value])=>`${key}=${value}`).join(', ')}`,`- official-fpl-r1 counts: ${Object.entries(official).map(([key,value])=>`${key}=${value}`).join(', ')}`,`- Database size: ${report.database.sizeBytes}`,`- Optional analytics metrics: ${report.metrics.status}`,'','Raw responses remain only in RUNNER_TEMP and are not uploaded.'];
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`${summary.join('\n')}\n`);
 }

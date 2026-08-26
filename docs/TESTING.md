@@ -5,6 +5,8 @@
 
 `tests/data-s2b-phase0-readonly.test.mjs` behaviorally verifies SQL validation, missing-credential failure, HTTP 401/403 classification, Cron drift, migration drift, rollback evidence and `NOT PROVABLE` metrics. It also structurally verifies the manual-only immutable-SHA workflow, pre-credential identity/CI ordering, executable mutation-command absence, fixed SQL inputs, redaction/debug policy, application/runtime isolation and the unchanged synthetic 6,825 invariant.
 
+The suite also exercises the first-party Cloudflare response contracts at their extraction boundary: deployment and schedule wrappers, Worker Settings bindings using current `type: "d1"` plus `database_id`, D1 database/query result arrays and the Workers domains array. Missing/malformed wrappers, missing/duplicate/malformed bindings and database-identity mismatch fail closed; the deprecated `d1_namespace`/`id` binding shape is not accepted.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current DATA-S2A repository verification
 

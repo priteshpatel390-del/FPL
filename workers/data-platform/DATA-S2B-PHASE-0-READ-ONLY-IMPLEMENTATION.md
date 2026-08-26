@@ -11,6 +11,12 @@ The workflow has exactly one trigger (`workflow_dispatch`) and one required inpu
 
 The protected job pins Node **24.19.0** and uses existing Cloudflare Workers/D1 REST primitives. It checks Worker deployment history, active deployment/version/timestamp, prior rollback evidence, bindings, allowlisted season, Cron state, custom domains where safely permitted, D1 identity/size, DATA-S1 tables, migration state, governance identifiers, table counts and `official-fpl-r1`-attributable counts. Expected pre-DATA-S2 state is read and enforced rather than assumed: 0001 applied, 0002 pending, no Official FPL governance/history, no hourly DATA-S2 Cron and a prior Worker version.
 
+### Cloudflare response-contract correction
+
+Independent review of the first candidate found two blocking response-shape mismatches before any live execution. The Cron endpoint returns `result: { schedules: [...] }`; the helper now extracts and validates that required `schedules` array before applying the unchanged fail-closed Cron assessment. Worker Settings represents the current D1 binding as `{ type: "d1", name, database_id }`; the helper now accepts exactly that documented form, requires exactly one `TEAMSHEET_DATA_DB`, and compares `database_id` with the unique `teamsheet-data` UUID returned by D1 metadata. The deprecated `type: "d1_namespace"` / `id` form is deliberately rejected rather than silently normalized.
+
+The same audit added explicit extractors and behavioral fixtures for the documented deployment `{ deployments: [...] }` wrapper, settings object, schedule wrapper, D1 database result array, single-result D1 query array and Workers domains result array. Missing, malformed, duplicate and mismatched shapes remain fail-closed. These are repository tests only; the workflow remains unexecuted against Cloudflare.
+
 ## Reuse Before Build
 
 | Primitive | Classification | Decision |
@@ -49,7 +55,7 @@ Optional analytics are deliberately `NOT PROVABLE`: missing analytics are never 
 
 Stop on identity/check failure; missing credentials; network/HTTP/JSON/API-contract failure; 401/403; ambiguous deployment; missing rollback version; binding/season/database/schema/migration drift; unexpected Cron; conflicting Official FPL governance/history; or any need for Edit scope, arbitrary SQL, broader security, live implementation testing, provider/model/runtime change or automated environment/secret creation.
 
-Permanent tests cover manual-only dispatch, SHA validation, pre-credential identity/CI ordering, executable mutation absence, literal SQL and injection rejection, safe output, missing credentials, 401/403, Cron drift, migration drift, rollback evidence, optional metrics, application/runtime isolation and the unchanged synthetic **6,825** invariant.
+Permanent tests cover manual-only dispatch, SHA validation, pre-credential identity/CI ordering, executable mutation absence, literal SQL and injection rejection, safe output, missing credentials, 401/403, documented Cloudflare wrapper/binding contracts, Cron drift, migration drift, rollback evidence, optional metrics, application/runtime isolation and the unchanged synthetic **6,825** invariant.
 
 ## First-party documentation recheck
 
