@@ -17,8 +17,7 @@ function filesUnder(dir){
   return out;
 }
 
-const RESET_DOC = 'docs/DATA-S1C-R-DATA-ARCHITECTURE-RESET.md';
-const RPC_BRIDGE = 'docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md';
+const RESET_DOC = 'docs/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md';
 const RPC_ARCHIVE = 'docs/historical/data-s1c-r-baseline/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC.md';
 
 // DATA-S1C-R is a documentation/control checkpoint. These guards deliberately
@@ -40,23 +39,23 @@ test('DATA-S1C-R record pins canonical core, enrichment, history and owner-overl
   assert.match(doc, /D1 observation being `accepted`[\s\S]*does \*\*not\*\* mean it is approved for production recommendations/);
 });
 
-test('superseded RPC design is archived and the former current path routes to DATA-S1C-R', () => {
+test('stable DATA-S1C path carries the reset while the superseded RPC design remains archived', () => {
   assert.ok(existsSync(join(ROOT, RPC_ARCHIVE)), 'historical RPC record must remain present');
   const archive = read(RPC_ARCHIVE);
   assert.match(archive, /Run `32906524221`/);
   assert.match(archive, /direct-target diagnostic harness awaits separately approved execution/);
-  const bridge = read(RPC_BRIDGE);
-  assert.match(bridge, /superseded as forward architecture by DATA-S1C-R/);
-  assert.match(bridge, /historical\/data-s1c-r-baseline\/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC\.md/);
-  assert.match(bridge, /DATA-S1C-R-DATA-ARCHITECTURE-RESET\.md/);
+  const current = read(RESET_DOC);
+  assert.match(current, /^# DATA-S1C-R — Data Architecture Reset/m);
+  assert.match(current, /retired from the forward architecture/);
+  assert.match(current, /docs\/historical\/data-s1c-r-baseline\/DATA-S1C-PRIVATE-SERVICE-BINDING-RPC\.md/);
 });
 
-test('existing canonical current pointers still resolve through the supersession bridge', () => {
+test('existing canonical DATA-S1C pointers resolve directly to the reset authority', () => {
   for(const path of ['CLAUDE.md', 'docs/PROJECT_CONTEXT.md', 'docs/ARCHITECTURE.md', 'docs/ROADMAP.md']){
     const text = read(path);
-    assert.match(text, /DATA-S1C-PRIVATE-SERVICE-BINDING-RPC\.md/, `${path} must retain its current DATA-S1C design pointer`);
+    assert.match(text, /DATA-S1C-PRIVATE-SERVICE-BINDING-RPC\.md/, `${path} must retain its stable DATA-S1C design pointer`);
   }
-  assert.match(read(RPC_BRIDGE), /DATA-S1C-R-DATA-ARCHITECTURE-RESET\.md/);
+  assert.match(read(RESET_DOC), /This record is the current DATA-S1C forward architecture/);
 });
 
 test('production application source has no DATA-S1 runtime dependency', () => {
