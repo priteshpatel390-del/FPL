@@ -100,4 +100,6 @@ jobs:
           test "$(node --version)" = v24.19.0
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain)"
+          rm -f node_modules/.bin/wrangler
+          rm -rf node_modules/wrangler node_modules/.wrangler-*
           node workers/data-platform/phase1/migrate-0002.mjs

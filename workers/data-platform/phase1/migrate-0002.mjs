@@ -38,7 +38,7 @@ export function validatePinnedMigration(sql){
 
 export function splitPinnedMigration(sql){
   const pinned=validatePinnedMigration(sql);
-  const statements=pinned.split(';').map(statement=>statement.trim()).filter(Boolean);
+  const statements=pinned.replace(/^\s*--.*$/gm,'').split(';').map(statement=>statement.trim()).filter(Boolean);
   if(statements.length!==MIGRATION_STATEMENT_COUNT||statements[0]!=='PRAGMA foreign_keys = ON')throw new Error('migration_statement_contract_invalid');
   return statements;
 }

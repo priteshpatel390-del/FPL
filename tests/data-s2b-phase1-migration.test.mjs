@@ -83,6 +83,8 @@ test('migration SQL is repository-pinned and split into exactly four reviewed ba
   const statements=splitPinnedMigration(migration);
   assert.equal(statements.length,MIGRATION_STATEMENT_COUNT);
   assert.equal(statements[0],'PRAGMA foreign_keys = ON');
+  assert.ok(migration.includes('checkpoint;'));
+  assert.doesNotMatch(statements.join('\n'),/^\s*--/m);
   assert.equal(statements.filter(statement=>/\bINSERT\s+INTO\b/i.test(statement)).length,3);
   assert.ok(statements.some(statement=>/INSERT INTO schema_migrations/.test(statement)));
   assert.ok(statements.some(statement=>/INSERT INTO data_sources/.test(statement)));
