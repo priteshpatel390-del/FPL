@@ -21,7 +21,7 @@ function syntheticOfficialFpl(){
     strength_attack_home:1002+i,strength_attack_away:998+i,strength_defence_home:1003+i,strength_defence_away:997+i
   }));
   const element_types=[1,2,3,4].map(id=>({id}));
-  const elements=Array.from({length:400},(_,i)=>({
+  const elements=Array.from({length:401},(_,i)=>({
     id:i+1,team:i%20+1,element_type:i%4+1,web_name:`Player ${i+1}`,now_cost:45+i%100,status:'a',
     chance_of_playing_next_round:null,chance_of_playing_this_round:null,news:'',news_added:null,
     selected_by_percent:String((i%500)/10)
@@ -38,8 +38,8 @@ function asStored(rows){return rows.map(row=>({...row,value_boolean:row.value_ty
 
 test('DATA-S2A normalises only the allowlisted Official FPL core with canonical identities',()=>{
   const result=normalised();
-  assert.deepEqual(result.counts,{events:38,teams:20,players:400,fixtures:300});
-  assert.equal(result.candidates.length,6814);
+  assert.deepEqual(result.counts,{events:38,teams:20,players:401,fixtures:300});
+  assert.equal(result.candidates.length,6825);
   assert.equal(new Set(result.candidates.map(row=>row.logical_key)).size,result.candidates.length);
   assert.ok(result.entities.some(row=>row.canonical_entity_id==='2026-27:fpl:player:1'));
   assert.ok(result.entities.some(row=>row.canonical_entity_id==='2026-27:fpl:fixture:1'));
