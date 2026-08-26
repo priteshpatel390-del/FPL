@@ -1,8 +1,10 @@
 # DATA-S2B — Phase 1 Migration 0002 Execution
 
-Status: **repository execution path prepared; no Phase 1 live mutation performed by this record**  
+Status: **LIVE PASS — execution design retained; migration 0002 completed successfully in Run `33011334466`**  
 Prepared: **26 August 2026**  
 Baseline before this change: `2fe46d5dd9f1c880df3450b37260946e910bc1e2`
+
+> **Live-status supersession:** this file remains the authoritative execution-design and safety-contract record. The live outcome is now recorded in [DATA-S2B-PHASE-1-LIVE-CLOSEOUT.md](DATA-S2B-PHASE-1-LIVE-CLOSEOUT.md). Where this implementation record says the migration has not yet run, read that wording as historical preparation-state evidence rather than current status. Phase 2 remains separately approval-gated.
 
 ## Outcome and scope
 
@@ -10,7 +12,7 @@ Phase 0 live read-only Run #4 (`32996481967`) completed successfully on the exac
 
 Run #4 proved the expected pre-mutation state needed for this checkpoint: `TEAMSHEET_DATA_DB -> teamsheet-data`, no DATA-S2 Cron, `DATA_S2_SEASON` absent, migration 0001 applied, migration 0002 pending, zero current DATA-S1/history rows under the Phase 0 fixed queries, rollback evidence present, and the intended custom domain present.
 
-The owner has separately approved **DATA-S2B Phase 1 migration 0002 only**. This repository change prepares the controlled execution path for that approved mutation. It does not itself run the migration.
+The owner separately approved **DATA-S2B Phase 1 migration 0002 only**. This repository change prepared the controlled execution path for that approved mutation. The later approved live run completed successfully; see the Phase 1 live closeout linked above.
 
 Phase 1 is limited to the already-reviewed file:
 
@@ -143,7 +145,7 @@ A PASS requires all of the following:
 - `DATA_S2_SEASON` remains absent;
 - Cron set remains empty.
 
-Only after this evidence passes may Phase 1 be called successful. Phase 2 Worker Versions upload remains a separate approval gate.
+Only after this evidence passes may Phase 1 be called successful. The live closeout records that this post-state passed in Run `33011334466`. Phase 2 Worker Versions upload remains a separate approval gate.
 
 ## Safety and output
 
@@ -159,4 +161,4 @@ The public job summary contains only the exact repository SHA, migration identit
 - D1 Time Travel and backups: https://developers.cloudflare.com/d1/reference/time-travel/
 - D1 batch semantics: https://developers.cloudflare.com/d1/worker-api/d1-database/
 
-The separate write token and live protected environment must be established and reviewed before dispatch. Repository preparation and CI success alone do not mutate Cloudflare and do not prove Phase 1 acceptance.
+The separate write token and live protected environment were established and reviewed before dispatch. Repository preparation and CI success alone did not mutate Cloudflare; the separately approved Run `33011334466` supplied the live Phase 1 acceptance evidence recorded in the closeout.
