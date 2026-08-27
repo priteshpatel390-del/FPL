@@ -1,11 +1,11 @@
 # DATA-S2B — Phase 2 Inactive Worker Version Upload Execution
 
-Status: **ATTEMPT #3 CREATED THE APPROVED INACTIVE VERSION; WORKFLOW FALSE-FAILED DURING POSTFLIGHT — read-only closeout remediation is repository-only and Phase 3 remains unapproved**  
-Prepared: **26 August 2026**; attempts #1–#3 reconciled: **27 August 2026**
+Status: **PHASE 2 LIVE CLOSEOUT PASS — approved inactive version remains verified and inactive; production deployment unchanged; Phase 3 remains unapproved**  
+Prepared: **26 August 2026**; attempts #1–#3 reconciled: **27 August 2026**; live read-only closeout recorded: **27 August 2026**
 
 ## Current outcome
 
-DATA-S2B Phase 2 has performed exactly one successful Worker Version creation.
+DATA-S2B Phase 2 has performed exactly one successful Worker Version creation and has now completed its approved read-only live closeout.
 
 Authoritative attempt #3 evidence:
 
@@ -21,7 +21,22 @@ The Version Upload POST succeeded. Before the later failure, the helper fetched 
 
 Owner Cloudflare dashboard evidence immediately after the run showed the new Phase 2 version in Version History while the prior version remained the active deployment. The dashboard's runtime-variable view also showed `DATA_S2_SEASON=2026-27`, consistent with the latest saved version configuration rather than evidence that production traffic had moved.
 
-**Attempt #3 is therefore classified: VERSION UPLOAD SUCCEEDED / POSTFLIGHT FALSE-FAILED.** It must not be rerun. Phase 3 deployment and Phase 4 Cron activation remain separately owner-gated.
+**Attempt #3 is therefore classified: VERSION UPLOAD SUCCEEDED / POSTFLIGHT FALSE-FAILED.** It must not be rerun. The later dedicated read-only closeout independently reconciled the resulting state and passed. Phase 3 deployment and Phase 4 Cron activation remain separately owner-gated.
+
+Authoritative live closeout evidence:
+
+- exact repository/main SHA: `2176a3dd29562fecff10614b689ed99a06db6bfa`;
+- exact-main Verify Teamsheet run `33074154222`: completed success;
+- manual read-only closeout run `33088512116` (`DATA-S2B Phase 2 Read-Only Closeout` #1): completed success;
+- repository-gate job `98574659850`: completed success;
+- protected read-only job `98574703107`: completed success;
+- active deployment/version remained `10f7a065-3d82-4b34-9fb1-dc6c3a0be524` / `5edbe951-4be4-46bc-b2cf-17b550396105`;
+- inactive Phase 2 version remained `3a2b065a-6527-4887-9bf8-b08e82e81133` and remained the latest deployable version;
+- live Cron remained empty;
+- exact Phase 1 D1 governance/count state remained unchanged;
+- D1 database size remained `151552` bytes before and after the bounded closeout read.
+
+See [DATA-S2B Phase 2 Live Read-Only Closeout](DATA-S2B-PHASE-2-LIVE-CLOSEOUT.md) for the complete accepted evidence and limitations.
 
 ## Why the postflight failed
 
@@ -67,6 +82,12 @@ Run `33050859823` on exact main `403f4318eda368d8b981f63cd861ddcb2c963c47` passe
 
 No fourth upload is authorized or required.
 
+### Accidental run #4
+
+During owner execution of the read-only closeout, `DATA-S2B Phase 2 Inactive Version Upload` was accidentally dispatched as run `33088187544` on `2176a3dd29562fecff10614b689ed99a06db6bfa`.
+
+Its repository gate passed, but the mutation-capable `phase2-version-upload` job remained waiting behind its protected environment. The owner cancelled the workflow before releasing that environment. No additional Worker Version upload, deployment, Cron change or D1 mutation executed from run #4.
+
 ## Approved Phase 2 artifact contract
 
 The created version is intended to contain exactly:
@@ -111,9 +132,9 @@ After a successful upload it must prove:
 
 It does not use `/settings` for post-upload active-version proof.
 
-## Attempt #3 read-only closeout
+## Attempt #3 read-only closeout — completed PASS
 
-Because attempt #3 stopped before the final Cron/D1 postflight reads, a separate manual **read-only** workflow is prepared:
+Because attempt #3 stopped before the final Cron/D1 postflight reads, the dedicated manual **read-only** workflow was executed after PR #170 merged and exact-main Verify Teamsheet passed:
 
 `.github/workflows/data-s2b-phase2-readonly-closeout.yml`
 
@@ -121,51 +142,49 @@ Helper:
 
 `workers/data-platform/phase2/readonly-closeout.mjs`
 
-It performs no Worker Version upload and uses the existing protected Phase 0 read-only environment `data-s2b-phase0-readonly`, whose credential boundary is Workers Scripts Read + D1 Read.
+Run `33088512116` completed success on exact main `2176a3dd29562fecff10614b689ed99a06db6bfa` using the existing protected Phase 0 read-only environment `data-s2b-phase0-readonly`, whose credential boundary is Workers Scripts Read + D1 Read.
 
-The closeout is pinned to the observed attempt #3 state and fails closed unless:
+The closeout was pinned to the observed attempt #3 state and could only pass if:
 
-- active deployment remains `10f7a065-3d82-4b34-9fb1-dc6c3a0be524`;
-- active version remains `5edbe951-4be4-46bc-b2cf-17b550396105`;
-- latest deployable version remains the Phase 2 artifact `3a2b065a-6527-4887-9bf8-b08e82e81133`;
-- the old active version remains present in Version History;
-- explicit active-version detail has exactly D1 + retained HTTP secret and no season binding;
-- explicit Phase 2 version detail has exactly D1 + retained HTTP secret + `DATA_S2_SEASON=2026-27` and compatibility date `2026-08-22`;
-- both versions reference the same D1 UUID;
-- live Cron remains empty;
-- Phase 1 migration/governance/count state remains exact and contains no ingestion/observation/head data;
-- current D1 file size remains `151552` bytes, matching the recorded Phase 1 closeout baseline.
+- active deployment remained `10f7a065-3d82-4b34-9fb1-dc6c3a0be524`;
+- active version remained `5edbe951-4be4-46bc-b2cf-17b550396105`;
+- latest deployable version remained the Phase 2 artifact `3a2b065a-6527-4887-9bf8-b08e82e81133`;
+- the old active version remained present in Version History;
+- explicit active-version detail had exactly D1 + retained HTTP secret and no season binding;
+- explicit Phase 2 version detail had exactly D1 + retained HTTP secret + `DATA_S2_SEASON=2026-27` and compatibility date `2026-08-22`;
+- both versions referenced the same D1 UUID;
+- live Cron remained empty;
+- Phase 1 migration/governance/count state remained exact and contained no ingestion/observation/head data;
+- current D1 file size remained `151552` bytes, matching the recorded Phase 1 closeout baseline;
+- deployment identity, ordered deployable version list, Cron, Phase 1 D1 logical state and D1 size remained stable when re-read before PASS.
 
-The 151,552-byte comparison is historical accounting evidence, not a reconstructed immediate-before/after Phase 2 measurement. Attempt #3's in-memory pre-upload size was not emitted before the workflow stopped, so an exact immediate size pair cannot be recovered after the fact. The closeout must state this limitation rather than overclaim it.
+All of those fail-closed conditions passed.
 
-The D1 query endpoint uses HTTP POST because that is Cloudflare's read-query transport, but every SQL statement is a fixed repository `SELECT` passed through `validateReadOnlySql`. No D1 write token is used.
+The 151,552-byte comparison is historical accounting evidence against the recorded Phase 1 baseline and was also stable before/after the bounded closeout read. It is not a reconstructed immediate-before/after Phase 2 attempt #3 measurement. Attempt #3's in-memory pre-upload size was not emitted before the workflow stopped, so an exact historical immediate size pair cannot be recovered after the fact.
+
+The D1 query endpoint used HTTP POST because that is Cloudflare's read-query transport, but every SQL statement was a fixed repository `SELECT` passed through `validateReadOnlySql`. No D1 write token was used.
 
 ## Security and mutation boundary
 
 The read-only closeout:
 
-- uses `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from `data-s2b-phase0-readonly`;
-- does not reference `CLOUDFLARE_WORKER_UPLOAD_TOKEN` or a D1 write token;
-- masks token, account ID and D1 UUID;
-- persists no raw Cloudflare response and uploads no artifact;
-- has no Worker POST/PUT/PATCH/DELETE request;
-- has no deployment, trigger, route/domain, secret or Time Travel mutation;
-- runs no collector and makes no Official FPL acquisition;
-- changes no application, provider, model or calculation behavior.
+- used `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from `data-s2b-phase0-readonly`;
+- did not reference `CLOUDFLARE_WORKER_UPLOAD_TOKEN` or a D1 write token;
+- masked token, account ID and D1 UUID;
+- persisted no raw Cloudflare response and uploaded no artifact;
+- had no Worker POST/PUT/PATCH/DELETE request;
+- had no deployment, trigger, route/domain, secret or Time Travel mutation;
+- ran no collector and made no Official FPL acquisition;
+- changed no application, provider, model or calculation behavior.
 
 ## Approval and completion gate
 
-This repository change does **not** itself complete Phase 2 and does not authorize Phase 3.
+Phase 2 is complete for its approved purpose: **one exact candidate Worker Version exists, remains inactive, and its identity/configuration plus the unchanged production/D1/Cron state have been independently reconciled by successful live read-only run `33088512116`.**
 
-Required sequence:
+This does **not** establish production acceptance of the Phase 2 code path because the candidate has not served production traffic.
 
-1. review this remediation candidate;
-2. exact-head Verify Teamsheet PASS;
-3. explicit owner merge approval;
-4. merge and exact-main Verify Teamsheet PASS;
-5. obtain a **separate explicit owner approval** authorizing dispatch of the manual read-only closeout for that exact main SHA;
-6. only after that approval, release `data-s2b-phase0-readonly` and run the read-only closeout;
-7. record its live result;
-8. only after a clean Phase 2 closeout may Phase 3 deployment be proposed for separate owner approval.
+The Phase 2 live result is recorded in [DATA-S2B-PHASE-2-LIVE-CLOSEOUT.md](DATA-S2B-PHASE-2-LIVE-CLOSEOUT.md).
 
-No additional Worker Version upload is part of that sequence.
+Only after this documentation closeout is reviewed, exact-head verified, explicitly owner-approved, merged and exact-main verified may **Phase 3 deployment** be proposed. Phase 3 requires a separate investigation/design and separate explicit owner approval before any production mutation.
+
+No additional Worker Version upload is part of the Phase 2 completion sequence. Phase 4 Cron activation remains separately unapproved.
