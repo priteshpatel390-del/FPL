@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
+## DATA-S2B Phase 3 permanent deployment-gate coverage
+
+Permanent tests pin the candidate, rollback and active-deployment identities; exact 100%-only Deployment bodies; exact-main/CI-to-protected-environment ordering; no-Version-creation history checks; exact Version Detail binding/compatibility checks; immutable Cron/D1/domain/health postflight; one-shot rollback; read-only ambiguity reconciliation; explicit outcomes; credential masking; sanitized artifacts; and absence of Version-upload, Cron, D1-write, route/domain, Access, secret, collector and retry paths. No live workflow dispatch is part of repository testing. See [Phase 3 deployment gating](../workers/data-platform/DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md).
+
 <!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
 ## DATA-S2B Phase 0 permanent safety coverage
 

@@ -1,5 +1,10 @@
 # SECURITY.md
 
+<!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
+## DATA-S2B Phase 3 deployment security boundary
+
+Phase 3 repository support separates the exact-main/CI job from a protected deployment environment. Its token requires Deployments write plus bounded read permissions but no Version upload, Cron, D1-write, route/domain, Access or secret mutation capability. API token, account ID, D1 UUID, retained bearer token and Access service credentials are masked; raw Cloudflare responses are not persisted. Production health uses the existing Access service-token path plus retained Worker bearer boundary without exposing either value. Mutation ambiguity is reconciled read-only and never automatically retried. This path is not dispatched and changes no live security state. See [Phase 3 deployment gating](../workers/data-platform/DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md).
+
 <!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
 ## DATA-S2B Phase 0 credential boundary
 
