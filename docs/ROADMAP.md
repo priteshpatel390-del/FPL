@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
+## Current DATA-S2B gate — Phase 3 repository deployment support
+
+Phase 0 read-only preflight, Phase 1 migration and Phase 2 inactive-Version closeout are PASS. Phase 3 repository support now exists for an exact 100% Deployment of the already-created candidate, with fail-closed preflight/postflight and a one-shot 100% rollback. It has not been dispatched. Review, merge, exact-main Verify Teamsheet and a separate explicit owner dispatch/environment approval are required before any live mutation. Phase 4 Cron activation and collection remain separately blocked. See [Phase 3 deployment gating](../workers/data-platform/DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md).
+
 <!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
 ## Current DATA-S2B gate — Phase 2 live closeout PASS; Phase 3 design next
 

@@ -1,5 +1,7 @@
 # DATA-S2B — Live Deployment and Acceptance Plan
 
+> **Phase 3 repository update — 27 August 2026:** Phase 0, Phase 1 and Phase 2 are complete under their dedicated closeouts. Repository support for the approved Phase 3 existing-candidate 100% Deployment design is recorded in [DATA-S2B Phase 3 Deployment Gating](DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md). It has not been dispatched; it authorizes no live mutation or Phase 4 Cron/collection. Where this older plan suggests `wrangler versions deploy`, the narrower Phase 3 record supersedes execution mechanics with the Cloudflare Deployments API and one exact candidate at 100%.
+
 Status: **investigation/design only — no live Cloudflare mutation approved by this record**  
 Prepared: **26 August 2026**  
 Repository baseline: `94952ed01564a970e4d5139adae05aa6f17af25c` (PR #160 merge)

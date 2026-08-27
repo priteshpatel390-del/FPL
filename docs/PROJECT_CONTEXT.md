@@ -1,5 +1,12 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
+## Current repository checkpoint — DATA-S2B Phase 3 deployment gating candidate
+
+**Supersedes the Phase 2 checkpoint below only as the current repository-next-gate statement; Phase 2 live evidence remains valid.** A manual protected workflow and fail-closed helper now encode the approved Phase 3 design: deploy only existing candidate `3a2b065a-6527-4887-9bf8-b08e82e81133` at 100% through Workers Deployments, with at most one rollback to `5edbe951-4be4-46bc-b2cf-17b550396105` at 100%. Exact-main/CI gates run before credentials are released. Pre/postflight pin Deployment and exact Version Detail authority, bindings, compatibility, unchanged Version History, empty Cron, exact Phase 1 D1 state and 151552-byte baseline, Custom Domain stability and authenticated old-production health before mutation plus authenticated health for candidate and rollback acceptance. Runs are serialized. Cloudflare's coarse Workers Scripts Write permission cannot exclude other Worker mutation surfaces at token level, so protected review, exact-main/CI gating and executable endpoint restrictions are compensating controls. Ambiguous mutation responses receive read-only reconciliation, never automatic retry.
+
+Nothing has been dispatched and no live Cloudflare state changed. The next gate after review/merge/exact-main verification is separate explicit owner approval for one manual Phase 3 dispatch and protected-environment release. Phase 4 Cron activation/collection and every provider, application or model change remain unapproved. See [Phase 3 deployment gating](../workers/data-platform/DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md).
+
 <!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
 ## Current repository checkpoint — DATA-S2B Phase 2 live closeout PASS
 

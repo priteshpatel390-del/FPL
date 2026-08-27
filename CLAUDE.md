@@ -1,5 +1,13 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
+### Current repository checkpoint — DATA-S2B Phase 3 deployment gating candidate
+
+**This section supersedes the Phase 2 checkpoint below only for the next repository gate; the recorded Phase 2 live evidence remains authoritative.** The repository now contains a manual, protected Phase 3 path that can create only a 100% Deployment of existing candidate `3a2b065a-6527-4887-9bf8-b08e82e81133`, with one-shot rollback to `5edbe951-4be4-46bc-b2cf-17b550396105`. Preflight pins exact current main/CI, the old active deployment, Version Detail bindings/compatibility, unchanged Version History, empty Cron, exact Phase 1 D1 state/size and the production Custom Domain. Preflight requires old-production invariant → authenticated health → invariant before candidate deployment is reachable; candidate and rollback postflight retain the same health bracket. Manual runs are serialized. Create Deployment necessarily uses Cloudflare's coarse Workers Scripts Write permission, so protected-environment review, exact-main/CI gating and executable endpoint restrictions compensate for mutation surfaces the token permission cannot exclude. Ambiguous mutation responses are reconciled read-only and never retried blindly. See [Phase 3 deployment gating](workers/data-platform/DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md).
+
+This is repository support only: it has not been dispatched and proves no new live state. Merge does not approve dispatch. The next gate is an exact-main Verify Teamsheet success followed by explicit owner approval for one manual workflow dispatch and protected-environment release. Phase 4 Cron/collection remains separately unapproved. No Version upload, Cron/D1/route/domain/Access/secret mutation, collector, provider/application/model change or later-phase work is authorized.
+
+
 <!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
 ### Current repository checkpoint — DATA-S2B Phase 2 live closeout PASS
 
