@@ -92,12 +92,29 @@ export function buildVersionMetadata(activeVersionId,approvedSha){
       {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:activeVersionId},
       {name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}
     ],
-    observability:{enabled:true},
     annotations:{
       'workers/message':`DATA-S2B Phase 2 inactive upload from ${approvedSha}`,
       'workers/tag':`data-s2b-phase2-${approvedSha.slice(0,12)}`
     }
   };
+}
+
+export function buildVersionUploadMultipart(metadata,sources,boundary=`----teamsheet-phase2-${crypto.randomUUID()}`){
+  if(!metadata||typeof metadata!=='object'||Array.isArray(metadata)||!(sources instanceof Map)||
+     typeof boundary!=='string'||!/^[0-9A-Za-z'-]{1,70}$/.test(boundary))throw new Error('phase2_multipart_input_invalid');
+  const encoder=new TextEncoder(),chunks=[];
+  const append=text=>chunks.push(encoder.encode(text));
+  const values=[JSON.stringify(metadata),...MODULE_PATHS.map(path=>sources.get(path))];
+  if(values.some(value=>typeof value!=='string'||value.includes(boundary)))throw new Error('phase2_multipart_boundary_invalid');
+  append(`--${boundary}\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n${values[0]}\r\n`);
+  MODULE_PATHS.forEach((path,index)=>{
+    const name=path.split('/').at(-1);
+    append(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${name}"\r\nContent-Type: application/javascript+module\r\n\r\n${values[index+1]}\r\n`);
+  });
+  append(`--${boundary}--\r\n`);
+  const length=chunks.reduce((total,chunk)=>total+chunk.byteLength,0),body=new Uint8Array(length);
+  let offset=0;for(const chunk of chunks){body.set(chunk,offset);offset+=chunk.byteLength;}
+  return {body,contentType:`multipart/form-data; boundary=${boundary}`};
 }
 
 export function extractVersions(result){
@@ -155,10 +172,10 @@ async function main(){
   parseAndValidateConfig(fs.readFileSync(CONFIG_PATH,'utf8'));
   const sources=validateModuleGraph();
   const base='https://api.cloudflare.com/client/v4';
-  const request=async(path,{method='GET',body,multipart=false}={})=>{
+  const request=async(path,{method='GET',body,multipart}={})=>{
     const headers={Authorization:`Bearer ${token}`};
     let requestBody;
-    if(multipart)requestBody=body;
+    if(multipart){headers['Content-Type']=multipart.contentType;requestBody=multipart.body;}
     else if(body!==undefined){headers['Content-Type']='application/json';requestBody=JSON.stringify(body);}
     const response=await fetch(`${base}${path}`,{method,headers,body:requestBody,redirect:'error'});
     const text=await response.text();
@@ -192,16 +209,11 @@ async function main(){
   if(!versionsBefore.includes(deploymentsBefore.versionId))throw new Error('phase2_active_version_missing_from_version_list');
 
   const metadata=buildVersionMetadata(deploymentsBefore.versionId,approvedSha);
-  const form=new FormData();
-  form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}),'metadata');
-  for(const path of MODULE_PATHS){
-    const name=path.split('/').at(-1);
-    form.append(name,new Blob([sources.get(path)],{type:'application/javascript+module'}),name);
-  }
+  const multipart=buildVersionUploadMultipart(metadata,sources);
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     `## DATA-S2B Phase 2 — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Live DATA_S2_SEASON: ABSENT\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
 
-  const uploadResult=await request(`${workerBase}/versions?bindings_inherit=strict`,{method:'POST',body:form,multipart:true});
+  const uploadResult=await request(`${workerBase}/versions?bindings_inherit=strict`,{method:'POST',multipart});
   const uploadedId=extractUploadedVersion(uploadResult,deploymentsBefore.versionId);
   const detail=await request(`${workerBase}/versions/${encodeURIComponent(uploadedId)}`);
   validateUploadedVersion(detail,{uploadedId,databaseId});

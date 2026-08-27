@@ -1,7 +1,7 @@
 # DATA-S2B — Phase 2 Inactive Worker Version Upload Execution
 
-Status: **REPOSITORY PREPARATION ONLY — no live Phase 2 upload is authorized by this record**  
-Prepared: **26 August 2026**  
+Status: **LIVE ATTEMPT #1 SAFE-FAILED BEFORE VERSION CREATION — remediation is repository-only and no rerun is authorized**
+Prepared: **26 August 2026**; failed-attempt reconciliation: **27 August 2026**
 Approved preparation baseline: `cb31d51c953615efeb1071374ced961270032462`
 
 ## Outcome and scope
@@ -21,6 +21,12 @@ Phase 2 explicitly does **not**:
 - change a provider, the application, projections, fixtures, expected minutes, squad, captaincy, transfers, rank or Mini-League logic.
 
 Phase 3 deployment and Phase 4 Cron activation remain separately owner-gated.
+
+### Live attempt #1 reconciliation
+
+Manual workflow run `33040517494` ran against exact `main` SHA `173370cf11f5437d993f9d6f44a5904d49d20743`. Repository gate job `98412809419` passed. The protected Phase 2 job `98412837803` then recorded a PASS pre-upload checkpoint: exact repository identity, active deployment/version, empty Cron set, absent live `DATA_S2_SEASON` and exact Phase 1 D1 post-state were all established, and no upload had yet been submitted.
+
+The immediately following Version Upload POST returned HTTP 400. Owner Cloudflare dashboard evidence after the failure showed active version `5edbe951-4be4-46bc-b2cf-17b550396105`, Version History still totaling nine with no new version, and no new deployment or visible traffic change. Attempt #1 is therefore classified **SAFE FAIL BEFORE VERSION CREATION**: no deployment, traffic, Cron or D1 change occurred. The workflow must not be rerun without a separate owner review and approval.
 
 ## Reuse Before Build
 
@@ -103,17 +109,22 @@ Requiring the retained HTTP secret is deliberately stricter than the earlier Pha
 
 ## Exact version-upload contract
 
-The helper builds multipart metadata with:
+Cloudflare's current first-party OpenAPI contract declares `multipart/form-data`, with `metadata` encoded as `application/json`, and its direct REST example sends that JSON as a normal form field rather than a file upload. The failed helper instead appended a Node `Blob` with filename `metadata`; Node serialized it with `Content-Disposition: form-data; name="metadata"; filename="metadata"`. That file disposition does not match the documented metadata-field contract. The same current Version Upload schema does not permit `observability` in version metadata, and Cloudflare's first-party Wrangler version-upload implementation explicitly omits it because observability is a non-versioned script setting. The failed request included it. These were the two concrete request-contract defects present at the HTTP 400 boundary; the deliberately suppressed response prevents attributing the server's 400 to only one of them, so the remediation removes both rather than guessing which validation ran first.
+
+The remediated helper constructs the multipart body directly, allowing the metadata part to have exact headers `Content-Disposition: form-data; name="metadata"` (no `filename`) and `Content-Type: application/json`. It leaves multipart boundary selection and the overall `Content-Type` explicit, while each module remains a file part with its exact filename and `application/javascript+module` MIME type. A permanent behavioral test reparses the serialized body and requires metadata to emerge as a string field, not a file.
+
+The metadata JSON contains:
 
 - main module `data-platform-rpc.mjs`;
 - compatibility date `2026-08-22`;
-- observability enabled;
 - `TEAMSHEET_DATA_DB` inherited from the exact active version ID;
 - `DATA_S1_HTTP_AUTH_TOKEN` inherited from that same exact active version ID;
 - `DATA_S2_SEASON` added as plain text `2026-27`;
 - a non-secret message/tag containing the approved repository SHA.
 
 Both inherited bindings include the exact active version ID rather than the moving `latest` alias. The API request also uses `bindings_inherit=strict`, so an inheritance failure is fatal instead of silently dropping a binding.
+
+Repository observability remains required and the active setting remains part of the read-only settings contract, but Phase 2 does not send or mutate that non-versioned setting.
 
 The request contains no trigger, deployment, route, domain or secret-write configuration.
 
