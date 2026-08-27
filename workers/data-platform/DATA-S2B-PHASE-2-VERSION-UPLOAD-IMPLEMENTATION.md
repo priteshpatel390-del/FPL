@@ -163,8 +163,9 @@ Required sequence:
 2. exact-head Verify Teamsheet PASS;
 3. explicit owner merge approval;
 4. merge and exact-main Verify Teamsheet PASS;
-5. separately release the manual read-only closeout on that exact main SHA under the already approved read-only closeout scope;
-6. record its live result;
-7. only after a clean Phase 2 closeout may Phase 3 deployment be proposed for separate owner approval.
+5. obtain a **separate explicit owner approval** authorizing dispatch of the manual read-only closeout for that exact main SHA;
+6. only after that approval, release `data-s2b-phase0-readonly` and run the read-only closeout;
+7. record its live result;
+8. only after a clean Phase 2 closeout may Phase 3 deployment be proposed for separate owner approval.
 
 No additional Worker Version upload is part of that sequence.
