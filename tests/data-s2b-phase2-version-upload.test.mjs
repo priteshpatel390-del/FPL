@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   CONFIG_PATH,EXPECTED_COMPATIBILITY_DATE,EXPECTED_CRON,EXPECTED_SEASON,MODULE_PATHS,WORKER_NAME,
-  buildVersionMetadata,buildVersionUploadMultipart,extractUploadedVersion,extractVersions,parseAndValidateConfig,validateActiveBindings,
-  validateModuleGraph,validatePostPhase1State,validateUploadedVersion,validateVersionDelta
+  buildVersionMetadata,buildVersionUploadForm,extractCloudflareError,extractUploadedVersion,extractVersions,parseAndValidateConfig,requireLatestActiveVersion,validateActiveBindings,
+  submitVersionUpload,validateModuleGraph,validatePostPhase1State,validateUploadedVersion,validateVersionDelta
 } from '../workers/data-platform/phase2/upload-version.mjs';
 
 const workflowPath='.github/workflows/data-s2b-phase2-version-upload.yml';
@@ -109,17 +109,17 @@ test('Phase 2 requires the current D1 and retained HTTP secret before creating a
   ])assert.throws(()=>validateActiveBindings({bindings}),/phase2_active_binding_set_drift/);
 });
 
-test('upload metadata inherits exact active D1 and secret while adding only the approved season binding',()=>{
+test('upload metadata omits optional version_id for Wrangler parity while adding only the approved season binding',()=>{
   const metadata=buildVersionMetadata(activeVersion,approvedSha);
   assert.equal(metadata.main_module,'data-platform-rpc.mjs');
   assert.equal(metadata.compatibility_date,EXPECTED_COMPATIBILITY_DATE);
   assert.equal(Object.hasOwn(metadata,'observability'),false);
   assert.deepEqual(metadata.bindings,[
-    {name:'TEAMSHEET_DATA_DB',type:'inherit',version_id:activeVersion},
-    {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:activeVersion},
+    {name:'TEAMSHEET_DATA_DB',type:'inherit'},
+    {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit'},
     {name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}
   ]);
-  assert.equal(metadata.bindings.filter(row=>row.type==='inherit').every(row=>row.version_id===activeVersion),true);
+  assert.equal(metadata.bindings.filter(row=>row.type==='inherit').every(row=>!Object.hasOwn(row,'version_id')),true);
   assert.equal(Object.hasOwn(metadata,'triggers'),false);
   assert.equal(Object.hasOwn(metadata,'routes'),false);
   assert.equal(Object.hasOwn(metadata,'secrets'),false);
@@ -127,16 +127,15 @@ test('upload metadata inherits exact active D1 and secret while adding only the 
   assert.equal(metadata.annotations['workers/tag'],`data-s2b-phase2-${approvedSha.slice(0,12)}`);
 });
 
-test('version upload multipart encodes metadata as JSON field without a filename',async()=>{
+test('version upload uses runtime FormData with string metadata and exact module Files',async()=>{
   const metadata=buildVersionMetadata(activeVersion,approvedSha);
   const sources=new Map(MODULE_PATHS.map(path=>[path,`// ${path}\nexport {};`]));
-  const boundary='----teamsheet-phase2-regression';
-  const multipart=buildVersionUploadMultipart(metadata,sources,boundary);
-  const raw=new TextDecoder().decode(multipart.body);
-  assert.equal(multipart.contentType,`multipart/form-data; boundary=${boundary}`);
-  assert.match(raw,/Content-Disposition: form-data; name="metadata"\r\nContent-Type: application\/json\r\n\r\n/);
-  assert.doesNotMatch(raw,/name="metadata"; filename=/);
-  const parsed=await new Response(multipart.body,{headers:{'Content-Type':multipart.contentType}}).formData();
+  const multipart=buildVersionUploadForm(metadata,sources);
+  assert.equal(multipart instanceof FormData,true);
+  const request=new Request('https://example.invalid',{method:'POST',body:multipart});
+  assert.match(request.headers.get('content-type'),/^multipart\/form-data; boundary=/);
+  assert.equal(request.headers.has('content-length'),false);
+  const parsed=await request.formData();
   assert.equal(typeof parsed.get('metadata'),'string');
   assert.deepEqual(JSON.parse(parsed.get('metadata')),metadata);
   assert.deepEqual([...parsed.keys()],[
@@ -148,6 +147,33 @@ test('version upload multipart encodes metadata as JSON field without a filename
     assert.equal(part.type,'application/javascript+module');
     assert.equal(await part.text(),sources.get(path));
   }
+});
+
+test('Cloudflare API errors expose only status, numeric codes and sanitized messages',()=>{
+  const token='token-super-secret',account='account-sensitive',databaseId='33333333-3333-4333-8333-333333333333';
+  const response=JSON.stringify({success:false,errors:[
+    {code:10021,message:`Invalid binding for ${account}`},
+    {code:10022,message:`Authorization: Bearer ${token}; database ${databaseId}`}
+  ],result:null});
+  const diagnostic=extractCloudflareError(400,response,[token,account,databaseId]);
+  assert.equal(diagnostic,'HTTP_400 CF_10021: Invalid binding for [REDACTED] | CF_10022: Authorization [REDACTED]; database [REDACTED]');
+  for(const secret of [token,account,databaseId])assert.doesNotMatch(diagnostic,new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+});
+
+test('Cloudflare multi-error extraction omits messages without a numeric code',()=>{
+  assert.equal(extractCloudflareError(400,JSON.stringify({errors:[
+    {code:10001,message:'First safe message'},
+    {message:'message without code must not be logged'},
+    {code:10002,message:'Second safe message'}
+  ]})),'HTTP_400 CF_10001: First safe message | CF_10002: Second safe message');
+});
+
+test('Cloudflare error diagnostics fail closed for malformed and unsafe responses',()=>{
+  assert.equal(extractCloudflareError(400,'not json'),'HTTP_400');
+  assert.equal(extractCloudflareError(502,JSON.stringify({errors:'wrong shape'})),'HTTP_502');
+  assert.equal(extractCloudflareError(400,JSON.stringify({errors:[{code:'10021',message:'wrong code type'}]})),'HTTP_400');
+  assert.equal(extractCloudflareError(400,JSON.stringify({errors:[{code:10021,message:'line one\nline two'}]})),'HTTP_400 CF_10021');
+  assert.equal(extractCloudflareError(400,JSON.stringify({errors:[{code:10021,message:'z'.repeat(301)}]})),'HTTP_400 CF_10021');
 });
 
 test('upload module graph is the exact four reviewed repository ES modules with no package or network imports',()=>{
@@ -172,6 +198,27 @@ test('version list, upload result and post-upload delta contracts fail closed',(
   assert.throws(()=>validateVersionDelta([activeVersion],[uploadedVersion,'unexpected',activeVersion],uploadedVersion),/phase2_version_delta_invalid/);
 });
 
+test('omitted version_id inheritance is allowed only when latest deployable version is active',()=>{
+  assert.equal(requireLatestActiveVersion([activeVersion,'older-version'],activeVersion),true);
+});
+
+test('active version present behind a newer inactive version fails closed',()=>{
+  assert.throws(()=>requireLatestActiveVersion([uploadedVersion,activeVersion],activeVersion),/phase2_latest_version_not_active/);
+});
+
+test('active version absent from ordered version list retains the existing fail-closed error',()=>{
+  assert.throws(()=>requireLatestActiveVersion([uploadedVersion],activeVersion),/phase2_active_version_missing_from_version_list/);
+});
+
+test('latest-active mismatch performs no Version Upload request',async()=>{
+  let requests=0;
+  await assert.rejects(()=>submitVersionUpload({
+    request:async()=>{requests+=1;},workerBase:'/accounts/redacted/workers/scripts/test',multipart:new FormData(),
+    versionIds:[uploadedVersion,activeVersion],activeVersionId:activeVersion
+  }),/phase2_latest_version_not_active/);
+  assert.equal(requests,0);
+});
+
 test('uploaded version detail must contain exact D1, retained secret and season bindings with pinned runtime',()=>{
   const detail={id:uploadedVersion,resources:{
     script_runtime:{compatibility_date:EXPECTED_COMPATIBILITY_DATE},
@@ -194,12 +241,13 @@ test('Phase 1 governance/history post-state is re-used as the immutable D1 pre/p
 });
 
 test('post-upload checks re-prove inactive deployment, live binding, Cron and D1 invariants after the version is created',()=>{
-  const upload=helper.indexOf("/versions?bindings_inherit=strict");
+  const latestGuard=helper.indexOf('requireLatestActiveVersion(versionsBefore,deploymentsBefore.versionId)');
+  const upload=helper.lastIndexOf('submitVersionUpload({request,workerBase,multipart');
   const detail=helper.lastIndexOf('validateUploadedVersion(detail');
   const deploymentAfter=helper.indexOf('const deploymentsAfter=');
   const liveSettingsAfter=helper.indexOf('const settingsAfter=');
   const postStateAfter=helper.lastIndexOf('validatePostPhase1State(await readPhase1State())');
-  assert.ok(upload>0&&upload<detail&&detail<deploymentAfter&&deploymentAfter<liveSettingsAfter&&liveSettingsAfter<postStateAfter);
+  assert.ok(latestGuard>0&&latestGuard<upload&&upload<detail&&detail<deploymentAfter&&deploymentAfter<liveSettingsAfter&&liveSettingsAfter<postStateAfter);
   assert.match(helper,/sameDeployment\(deploymentsBefore,deploymentsAfter\)/);
   assert.match(helper,/validateActiveBindings\(extractWorkerSettingsResult\(await request\(`\$\{workerBase\}\/settings`\)\)\)/);
   assert.match(helper,/assessCron\(schedulesAfter\)/);
@@ -207,12 +255,11 @@ test('post-upload checks re-prove inactive deployment, live binding, Cron and D1
   assert.match(helper,/phase2_d1_size_changed/);
 });
 
-test('credentials and provider identifiers are masked and raw responses are temporary only',()=>{
+test('credentials and provider identifiers are masked and raw responses are never persisted or uploaded',()=>{
   assert.match(helper,/::add-mask::\$\{token\}/);
   assert.match(helper,/::add-mask::\$\{account\}/);
   assert.match(helper,/::add-mask::\$\{databaseId\}/);
-  assert.match(helper,/fs\.writeFileSync\(`\$\{temp\}\/phase2-\$\{crypto\.randomUUID\(\)\}\.json`,text,\{mode:0o600\}\)/);
-  assert.match(workflow,/trap 'rm -f "\$RUNNER_TEMP"\/phase2-\*\.json' EXIT/);
+  assert.doesNotMatch(helper,/writeFileSync|response body|multipart body/i);
   assert.doesNotMatch(helper,/console\.log|set -x/);
   assert.doesNotMatch(workflow,/upload-artifact|artifacts:/i);
   assert.doesNotMatch(helper,/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);

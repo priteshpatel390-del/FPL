@@ -88,8 +88,8 @@ export function buildVersionMetadata(activeVersionId,approvedSha){
     main_module:'data-platform-rpc.mjs',
     compatibility_date:EXPECTED_COMPATIBILITY_DATE,
     bindings:[
-      {name:'TEAMSHEET_DATA_DB',type:'inherit',version_id:activeVersionId},
-      {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:activeVersionId},
+      {name:'TEAMSHEET_DATA_DB',type:'inherit'},
+      {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit'},
       {name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}
     ],
     annotations:{
@@ -99,22 +99,43 @@ export function buildVersionMetadata(activeVersionId,approvedSha){
   };
 }
 
-export function buildVersionUploadMultipart(metadata,sources,boundary=`----teamsheet-phase2-${crypto.randomUUID()}`){
-  if(!metadata||typeof metadata!=='object'||Array.isArray(metadata)||!(sources instanceof Map)||
-     typeof boundary!=='string'||!/^[0-9A-Za-z'-]{1,70}$/.test(boundary))throw new Error('phase2_multipart_input_invalid');
-  const encoder=new TextEncoder(),chunks=[];
-  const append=text=>chunks.push(encoder.encode(text));
-  const values=[JSON.stringify(metadata),...MODULE_PATHS.map(path=>sources.get(path))];
-  if(values.some(value=>typeof value!=='string'||value.includes(boundary)))throw new Error('phase2_multipart_boundary_invalid');
-  append(`--${boundary}\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n${values[0]}\r\n`);
-  MODULE_PATHS.forEach((path,index)=>{
-    const name=path.split('/').at(-1);
-    append(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${name}"\r\nContent-Type: application/javascript+module\r\n\r\n${values[index+1]}\r\n`);
-  });
-  append(`--${boundary}--\r\n`);
-  const length=chunks.reduce((total,chunk)=>total+chunk.byteLength,0),body=new Uint8Array(length);
-  let offset=0;for(const chunk of chunks){body.set(chunk,offset);offset+=chunk.byteLength;}
-  return {body,contentType:`multipart/form-data; boundary=${boundary}`};
+export function buildVersionUploadForm(metadata,sources){
+  if(!metadata||typeof metadata!=='object'||Array.isArray(metadata)||!(sources instanceof Map))throw new Error('phase2_multipart_input_invalid');
+  const form=new FormData();
+  form.set('metadata',JSON.stringify(metadata));
+  for(const path of MODULE_PATHS){
+    const name=path.split('/').at(-1),source=sources.get(path);
+    if(typeof source!=='string')throw new Error('phase2_multipart_input_invalid');
+    form.set(name,new File([source],name,{type:'application/javascript+module'}));
+  }
+  return form;
+}
+
+function redactDiagnostic(value,sensitiveValues=[]){
+  let text=value;
+  for(const secret of sensitiveValues)if(typeof secret==='string'&&secret)text=text.split(secret).join('[REDACTED]');
+  text=text
+    .replace(/authorization\s*[:=]?\s*(?:bearer\s+)?[^\s,;]+/gi,'Authorization [REDACTED]')
+    .replace(/bearer\s+[^\s,;]+/gi,'Bearer [REDACTED]')
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,'[REDACTED_ID]')
+    .replace(/\b[0-9a-f]{32,}\b/gi,'[REDACTED_ID]');
+  if(/[\u0000-\u001f\u007f]/.test(text))return null;
+  text=text.trim().replace(/\s+/g,' ');
+  return text&&text.length<=300?text:null;
+}
+
+export function extractCloudflareError(status,responseText,sensitiveValues=[]){
+  const fallback=`HTTP_${Number.isInteger(status)?status:'UNKNOWN'}`;
+  let parsed;try{parsed=JSON.parse(responseText);}catch{return fallback;}
+  if(!parsed||typeof parsed!=='object'||!Array.isArray(parsed.errors))return fallback;
+  const diagnostics=[];
+  for(const error of parsed.errors){
+    if(!error||typeof error!=='object')continue;
+    const code=Number.isSafeInteger(error.code)&&error.code>=0?error.code:null;
+    const message=typeof error.message==='string'?redactDiagnostic(error.message,sensitiveValues):null;
+    if(code!==null)diagnostics.push(message?`CF_${code}: ${message}`:`CF_${code}`);
+  }
+  return diagnostics.length?`${fallback} ${diagnostics.join(' | ')}`:fallback;
 }
 
 export function extractVersions(result){
@@ -123,6 +144,18 @@ export function extractVersions(result){
   if(ids.some(id=>typeof id!=='string'||!id))throw new Error('phase2_versions_contract_invalid');
   if(new Set(ids).size!==ids.length)throw new Error('phase2_versions_contract_invalid');
   return ids;
+}
+
+export function requireLatestActiveVersion(versionIds,activeVersionId){
+  if(!Array.isArray(versionIds)||typeof activeVersionId!=='string'||!activeVersionId||!versionIds.includes(activeVersionId))throw new Error('phase2_active_version_missing_from_version_list');
+  if(versionIds[0]!==activeVersionId)throw new Error('phase2_latest_version_not_active');
+  return true;
+}
+
+export async function submitVersionUpload({request,workerBase,multipart,versionIds,activeVersionId}){
+  if(typeof request!=='function'||typeof workerBase!=='string'||!workerBase||!(multipart instanceof FormData))throw new Error('phase2_upload_submission_input_invalid');
+  requireLatestActiveVersion(versionIds,activeVersionId);
+  return request(`${workerBase}/versions?bindings_inherit=strict`,{method:'POST',multipart});
 }
 
 export function extractUploadedVersion(result,activeVersionId){
@@ -162,27 +195,27 @@ export function validatePostPhase1State({migrations,sourceRows,revisionRows,coun
 }
 
 async function main(){
-  const token=process.env.CLOUDFLARE_WORKER_UPLOAD_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID,temp=process.env.RUNNER_TEMP;
+  const token=process.env.CLOUDFLARE_WORKER_UPLOAD_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID;
   const approvedSha=process.env.APPROVED_SHA;
   if(!token||!account||!approvedSha)throw new Error('required_phase2_credentials_or_identity_missing');
-  if(!temp)throw new Error('runner_temp_missing');
   if(!/^[0-9a-f]{40}$/.test(approvedSha))throw new Error('approved_sha_invalid');
   process.stdout.write(`::add-mask::${token}\n::add-mask::${account}\n`);
 
   parseAndValidateConfig(fs.readFileSync(CONFIG_PATH,'utf8'));
   const sources=validateModuleGraph();
   const base='https://api.cloudflare.com/client/v4';
+  let databaseId;
   const request=async(path,{method='GET',body,multipart}={})=>{
     const headers={Authorization:`Bearer ${token}`};
     let requestBody;
-    if(multipart){headers['Content-Type']=multipart.contentType;requestBody=multipart.body;}
+    if(multipart){requestBody=multipart;}
     else if(body!==undefined){headers['Content-Type']='application/json';requestBody=JSON.stringify(body);}
     const response=await fetch(`${base}${path}`,{method,headers,body:requestBody,redirect:'error'});
     const text=await response.text();
-    fs.writeFileSync(`${temp}/phase2-${crypto.randomUUID()}.json`,text,{mode:0o600});
-    let parsed;try{parsed=JSON.parse(text);}catch{throw new Error(response.ok?'api_json_invalid':`HTTP_${response.status}`);}
+    const sensitive=[token,account,databaseId];
+    let parsed;try{parsed=JSON.parse(text);}catch{throw new Error(response.ok?'api_json_invalid':extractCloudflareError(response.status,text,sensitive));}
     const outcome=classifyApiResponse(response.status,parsed);
-    if(!outcome.ok)throw new Error(outcome.diagnostic);
+    if(!outcome.ok)throw new Error(extractCloudflareError(response.status,text,sensitive));
     return outcome.result;
   };
 
@@ -192,7 +225,7 @@ async function main(){
   const schedulesBefore=extractSchedulesResult(await request(`${workerBase}/schedules`));
   assessCron(schedulesBefore);
   const d1=normaliseD1Binding(settingsBefore);
-  const databaseId=d1.databaseId;
+  databaseId=d1.databaseId;
   process.stdout.write(`::add-mask::${databaseId}\n`);
   const d1Base=`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}`;
   const databaseBefore=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
@@ -206,14 +239,14 @@ async function main(){
   });
   validatePostPhase1State(await readPhase1State());
   const versionsBefore=extractVersions(await request(`${workerBase}/versions?deployable=true`));
-  if(!versionsBefore.includes(deploymentsBefore.versionId))throw new Error('phase2_active_version_missing_from_version_list');
+  requireLatestActiveVersion(versionsBefore,deploymentsBefore.versionId);
 
   const metadata=buildVersionMetadata(deploymentsBefore.versionId,approvedSha);
-  const multipart=buildVersionUploadMultipart(metadata,sources);
+  const multipart=buildVersionUploadForm(metadata,sources);
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     `## DATA-S2B Phase 2 — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Live DATA_S2_SEASON: ABSENT\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
 
-  const uploadResult=await request(`${workerBase}/versions?bindings_inherit=strict`,{method:'POST',multipart});
+  const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:versionsBefore,activeVersionId:deploymentsBefore.versionId});
   const uploadedId=extractUploadedVersion(uploadResult,deploymentsBefore.versionId);
   const detail=await request(`${workerBase}/versions/${encodeURIComponent(uploadedId)}`);
   validateUploadedVersion(detail,{uploadedId,databaseId});
@@ -252,7 +285,7 @@ async function main(){
     `- D1 database size before/after: ${databaseBefore.file_size} / ${databaseAfter.file_size}`,
     '',
     'No Worker deployment, trigger, route/domain, secret mutation or D1 write was performed.',
-    'Raw Cloudflare responses remain only in RUNNER_TEMP and are not uploaded.'
+    'Raw Cloudflare responses are not persisted, logged or uploaded.'
   ];
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`${summary.join('\n')}\n`);
 }
