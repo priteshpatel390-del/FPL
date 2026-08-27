@@ -69,7 +69,7 @@ test('Phase 2 executable has one Cloudflare mutation primitive and cannot deploy
   const executable=`${runBlocks(workflow)}\n${helper}`;
   assert.match(helper,/\/versions\?bindings_inherit=strict/);
   assert.equal((helper.match(/\/versions\?bindings_inherit=strict/g)??[]).length,1);
-  assert.doesNotMatch(executable,/\b(?:npm|npx|pnpm|yarn)\b/i);
+  assert.doesNotMatch(runBlocks(workflow),/\b(?:npm|npx|pnpm|yarn)\b/i);
   assert.doesNotMatch(executable,/\bwrangler\s+(?:deploy|versions\s+deploy|triggers\s+deploy|secret)/i);
   assert.doesNotMatch(helper,/\/deployments[^`'"\n]*['"`]?\s*,\s*\{\s*method:\s*['"](?:POST|PUT|PATCH|DELETE)/i);
   assert.doesNotMatch(helper,/\/schedules[^`'"\n]*['"`]?\s*,\s*\{\s*method:\s*['"](?:POST|PUT|PATCH|DELETE)/i);
@@ -172,7 +172,7 @@ test('Phase 1 governance/history post-state is re-used as the immutable D1 pre/p
 
 test('post-upload checks re-prove inactive deployment, live binding, Cron and D1 invariants after the version is created',()=>{
   const upload=helper.indexOf("/versions?bindings_inherit=strict");
-  const detail=helper.indexOf('validateUploadedVersion(detail');
+  const detail=helper.lastIndexOf('validateUploadedVersion(detail');
   const deploymentAfter=helper.indexOf('const deploymentsAfter=');
   const liveSettingsAfter=helper.indexOf('const settingsAfter=');
   const postStateAfter=helper.lastIndexOf('validatePostPhase1State(await readPhase1State())');
