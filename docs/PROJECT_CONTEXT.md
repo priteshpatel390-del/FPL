@@ -1,5 +1,16 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
+## Current repository checkpoint — DATA-S2B Phase 2 uploaded; read-only closeout remediation in review
+
+**Supersedes the older present-tense DATA-S2A / DATA-S2B Phase 0 and Phase 1 wording below while preserving those dated records as historical evidence.** DATA-S2B Phase 0 live read-only preflight is complete PASS (`32996481967`). Phase 1 migration 0002 is complete PASS (`33011334466`): the approved Official FPL governance/schema state exists in live `teamsheet-data`, accepted collection/history counts are zero, Cron remained empty, and the Phase 1 D1 size baseline is `151552` bytes.
+
+Phase 2 attempt #3 (`33050859823`) on exact main `403f4318eda368d8b981f63cd861ddcb2c963c47` successfully created inactive Worker Version `3a2b065a-6527-4887-9bf8-b08e82e81133`. The pre-existing active version remained `5edbe951-4be4-46bc-b2cf-17b550396105`. The workflow then false-failed during postflight because `GET /workers/scripts/{script}/settings` was incorrectly treated as proof of the active deployment's binding set after a newer inactive Version existed. The upload itself, exact uploaded-version validation, +1 version delta and unchanged deployment check had already succeeded before that failure.
+
+The current repository work is **repository-only Phase 2 postflight remediation plus a dedicated manual read-only closeout path for the already-created version**. Active state is derived from Deployments and explicit Version Detail for the exact active version; the candidate is checked through explicit Version Detail for its exact ID. The upload-time `latest deployable == active` inheritance guard remains unchanged for any future upload, but no additional Phase 2 upload is authorized or required. The closeout uses the existing `data-s2b-phase0-readonly` environment, is pinned to the observed identities, empty Cron and exact Phase 1 D1 state, and has no Worker/D1 mutation path.
+
+Repository preparation and merge do **not** authorize the live read-only closeout. After exact-head review, explicit owner merge approval, merge and exact-main Verify Teamsheet, dispatch of the read-only closeout still requires a **separate explicit owner approval for that exact main SHA**. Phase 3 deployment and Phase 4 Cron activation remain separately unapproved. No deploy/promote/split, collector run, D1 write, Access/secret change, provider/data-source change, application behaviour change or model/calculation change is part of this checkpoint.
+
 <!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
 ## Current repository checkpoint — DATA-S2B Phase 0 read-only candidate
 

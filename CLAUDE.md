@@ -1,5 +1,14 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
+### Current repository checkpoint — DATA-S2B Phase 2 uploaded; read-only closeout remediation in review
+
+**This section supersedes the older present-tense DATA-S2A / DATA-S2B Phase 0 and Phase 1 wording below while preserving dated evidence as history.** DATA-S2B Phase 0 live read-only preflight passed in run `32996481967`. Phase 1 migration 0002 passed in run `33011334466`: the approved governance/schema state exists in live `teamsheet-data`, collection/history counts remain zero at the accepted closeout, and Cron remained absent. Phase 2 attempt #3, run `33050859823` on exact main `403f4318eda368d8b981f63cd861ddcb2c963c47`, successfully created inactive Worker Version `3a2b065a-6527-4887-9bf8-b08e82e81133` while active version `5edbe951-4be4-46bc-b2cf-17b550396105` remained separate. The workflow then false-failed during postflight because `/settings` was incorrectly treated as the active deployment's binding authority after the newer inactive Version existed.
+
+The current repository checkpoint is **repository-only Phase 2 postflight remediation and read-only closeout preparation**. Active state must be established from Deployments and then Get Version Detail for that exact active version; the already-created Phase 2 candidate must be verified through Get Version Detail for its exact ID. The pre-upload `latest deployable == active` guard remains required for any future upload path, but **no additional Phase 2 Version Upload is authorized or required**. The manual closeout path is read-only, pinned to the observed identities and Phase 1 invariants, and uses the existing `data-s2b-phase0-readonly` environment rather than an upload/write credential.
+
+After the remediation PR is reviewed, exact-head verified, explicitly owner-approved for merge, merged, and exact-main verified, **dispatch of the read-only Phase 2 closeout still requires a separate explicit owner approval for that exact main SHA**. Phase 3 deployment and Phase 4 Cron activation remain unapproved. Do not deploy/promote/split the Phase 2 version, enable Cron, run the collector, write D1, change Access or secrets, add providers, or change application/model/calculation behaviour under this checkpoint.
+
 <!-- DATA-S2A-CURRENT-2026-08-26 -->
 ### Current repository checkpoint — DATA-S2A merged; DATA-S2B live acceptance next
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   CONFIG_PATH,EXPECTED_COMPATIBILITY_DATE,EXPECTED_CRON,EXPECTED_SEASON,MODULE_PATHS,WORKER_NAME,
-  buildVersionMetadata,buildVersionUploadForm,extractCloudflareError,extractUploadedVersion,extractVersions,parseAndValidateConfig,requireLatestActiveVersion,validateActiveBindings,
+  buildVersionMetadata,buildVersionUploadForm,extractCloudflareError,extractUploadedVersion,extractVersions,parseAndValidateConfig,requireLatestActiveVersion,validateActiveVersion,
   submitVersionUpload,validateModuleGraph,validatePostPhase1State,validateUploadedVersion,validateVersionDelta
 } from '../workers/data-platform/phase2/upload-version.mjs';
 
@@ -95,18 +95,21 @@ test('repository candidate configuration is pinned and drift fails closed',()=>{
   ])assert.throws(()=>parseAndValidateConfig(JSON.stringify(mutated)),/phase2_/);
 });
 
-test('Phase 2 requires the current D1 and retained HTTP secret before creating a deployable candidate',()=>{
-  const settings={bindings:[
+test('Phase 2 proves current D1 and retained HTTP secret from the explicit active version detail',()=>{
+  const detail={id:activeVersion,resources:{bindings:[
     {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:databaseId},
     {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'secret_text'}
-  ]};
-  assert.equal(validateActiveBindings(settings),settings);
+  ]}};
+  assert.deepEqual(validateActiveVersion(detail,{activeVersionId:activeVersion}),{databaseId});
+  assert.deepEqual(validateActiveVersion(detail,{activeVersionId:activeVersion,databaseId}),{databaseId});
   for(const bindings of [
-    [settings.bindings[0]],
-    [...settings.bindings,{name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}],
-    [{...settings.bindings[0],type:'plain_text'},settings.bindings[1]],
-    [...settings.bindings,{name:'EXTRA',type:'plain_text'}]
-  ])assert.throws(()=>validateActiveBindings({bindings}),/phase2_active_binding_set_drift/);
+    [detail.resources.bindings[0]],
+    [...detail.resources.bindings,{name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}],
+    [{...detail.resources.bindings[0],type:'plain_text'},detail.resources.bindings[1]],
+    [...detail.resources.bindings,{name:'EXTRA',type:'plain_text'}]
+  ])assert.throws(()=>validateActiveVersion({id:activeVersion,resources:{bindings}},{activeVersionId:activeVersion}),/phase2_active_binding_set_drift/);
+  assert.throws(()=>validateActiveVersion(detail,{activeVersionId:uploadedVersion}),/phase2_active_version_detail_invalid/);
+  assert.throws(()=>validateActiveVersion(detail,{activeVersionId:activeVersion,databaseId:'wrong'}),/phase2_live_d1_binding_changed/);
 });
 
 test('upload metadata omits optional version_id for Wrangler parity while adding only the approved season binding',()=>{
@@ -240,19 +243,19 @@ test('Phase 1 governance/history post-state is re-used as the immutable D1 pre/p
   assert.throws(()=>validatePostPhase1State({...postState,official:{...postState.official,shadow_observations:1}}),/post_official_history_drift/);
 });
 
-test('post-upload checks re-prove inactive deployment, live binding, Cron and D1 invariants after the version is created',()=>{
+test('post-upload checks use deployment plus explicit active-version detail, never script/version settings',()=>{
   const latestGuard=helper.indexOf('requireLatestActiveVersion(versionsBefore,deploymentsBefore.versionId)');
   const upload=helper.lastIndexOf('submitVersionUpload({request,workerBase,multipart');
   const detail=helper.lastIndexOf('validateUploadedVersion(detail');
   const deploymentAfter=helper.indexOf('const deploymentsAfter=');
-  const liveSettingsAfter=helper.indexOf('const settingsAfter=');
+  const activeDetailAfter=helper.indexOf('const activeDetailAfter=');
   const postStateAfter=helper.lastIndexOf('validatePostPhase1State(await readPhase1State())');
-  assert.ok(latestGuard>0&&latestGuard<upload&&upload<detail&&detail<deploymentAfter&&deploymentAfter<liveSettingsAfter&&liveSettingsAfter<postStateAfter);
+  assert.ok(latestGuard>0&&latestGuard<upload&&upload<detail&&detail<deploymentAfter&&deploymentAfter<activeDetailAfter&&activeDetailAfter<postStateAfter);
   assert.match(helper,/sameDeployment\(deploymentsBefore,deploymentsAfter\)/);
-  assert.match(helper,/validateActiveBindings\(extractWorkerSettingsResult\(await request\(`\$\{workerBase\}\/settings`\)\)\)/);
+  assert.match(helper,/validateActiveVersion\(activeDetailAfter,\{activeVersionId:deploymentsAfter\.versionId,databaseId\}\)/);
   assert.match(helper,/assessCron\(schedulesAfter\)/);
-  assert.match(helper,/if\(d1After\.databaseId!==databaseId\)throw new Error\('phase2_live_d1_binding_changed'\)/);
   assert.match(helper,/phase2_d1_size_changed/);
+  assert.doesNotMatch(helper,/\$\{workerBase\}\/settings/);
 });
 
 test('credentials and provider identifiers are masked and raw responses are never persisted or uploaded',()=>{

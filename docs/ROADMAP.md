@@ -1,5 +1,14 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
+## Current DATA-S2B gate — Phase 2 read-only closeout remediation
+
+**Supersedes the older present-tense DATA-S2A / DATA-S2B Phase 0 and Phase 1 status wording below while preserving those dated records as historical evidence.** DATA-S2B Phase 0 live read-only preflight is complete PASS (`32996481967`), and Phase 1 migration 0002 is complete PASS (`33011334466`). Phase 2 attempt #3 (`33050859823`) on exact main `403f4318eda368d8b981f63cd861ddcb2c963c47` successfully created inactive Worker Version `3a2b065a-6527-4887-9bf8-b08e82e81133` while active version `5edbe951-4be4-46bc-b2cf-17b550396105` remained separate. The workflow then false-failed during postflight because `/settings` was incorrectly treated as active-deployment binding authority after the newer inactive Version existed.
+
+The current repository checkpoint is **repository-only Phase 2 postflight remediation and read-only closeout preparation**. Active state is derived from Deployments plus explicit Version Detail for the exact active version; the already-created Phase 2 candidate is verified through its own exact Version Detail. The pre-upload `latest deployable == active` guard remains unchanged for any future upload path, but **no additional Phase 2 upload is authorized or required**. The manual read-only closeout is pinned to the observed active/candidate identities, empty Cron and exact Phase 1 D1 state and uses the existing read-only environment only.
+
+Next gate: review and exact-head CI for the remediation PR, then explicit owner merge approval. After merge, exact-main Verify Teamsheet must pass and **a separate explicit owner approval is still required before dispatching the read-only Phase 2 closeout**. Phase 3 deployment and Phase 4 Cron activation remain separately unapproved. No deploy/promote/split, collector run, D1 write, Access/secret change, provider/model/calculation change or application change is authorized here.
+
 <!-- DATA-S2B-PHASE0-CANDIDATE-2026-08-26 -->
 ## Current DATA-S2B gate
 
