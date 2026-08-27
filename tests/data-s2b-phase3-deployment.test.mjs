@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  CANDIDATE_VERSION_ID,EXPECTED_PRODUCTION_HOSTNAME,ROLLBACK_VERSION_ID,classifyMutationReconciliation,
+  CANDIDATE_VERSION_ID,EXPECTED_PRODUCTION_HOSTNAME,ROLLBACK_VERSION_ID,classifyCandidateFailure,classifyMutationReconciliation,
   deploymentBody,validateDomains,validatePreflightDeployment,validateSoleActive,validateVersionHistory
 } from '../workers/data-platform/phase3/deploy-candidate.mjs';
 import {EXPECTED_ACTIVE_DEPLOYMENT_ID} from '../workers/data-platform/phase2/readonly-closeout.mjs';
@@ -51,6 +51,7 @@ test('workflow is manual-only, exact-main/CI gated, then releases a protected mu
   assert.match(workflow,/remote_main.*git ls-remote/);
   assert.match(workflow,/row\.head_sha===process\.env\.APPROVED_SHA/);
   assert.ok(workflow.indexOf('repository-gate:')<workflow.indexOf('phase3-deployment:'));
+  assert.match(workflow,/concurrency:\n  group: data-s2b-phase3-deployment\n  cancel-in-progress: false/);
 });
 
 test('mutation surface is Deployments-only and contains no forbidden capability',()=>{
@@ -66,7 +67,11 @@ test('mutation surface is Deployments-only and contains no forbidden capability'
 test('rollback is one-shot, mutation responses are reconciled, and outcomes are explicit',()=>{
   assert.match(helper,/let databaseId,mutationCount=0/);
   assert.match(helper,/if\(mutationCount===0\)/);
-  assert.match(helper,/if\(active!==CANDIDATE_VERSION_ID\)/);
+  assert.equal(classifyCandidateFailure(ROLLBACK_VERSION_ID,{ambiguous:false}),'PHASE_3_FAIL');
+  assert.equal(classifyCandidateFailure(ROLLBACK_VERSION_ID,{ambiguous:true}),'UNRESOLVED');
+  assert.equal(classifyCandidateFailure(CANDIDATE_VERSION_ID,{ambiguous:false}),'ROLLBACK_REQUIRED');
+  assert.equal(classifyCandidateFailure('unexpected',{ambiguous:false}),'UNRESOLVED');
+  assert.match(helper,/candidateMutationAmbiguous=true/);
   assert.match(helper,/await deploy\(ROLLBACK_VERSION_ID\)/);
   assert.match(helper,/phase3_mutation_response_ambiguous/);
   for(const outcome of ['PHASE 3 PASS','PHASE 3 FAIL','ROLLBACK PASS','UNRESOLVED/STOP'])assert.match(helper,new RegExp(outcome.replace('/','\\/')));
@@ -78,6 +83,7 @@ test('postflight proves health and immutable D1, Cron, version, binding and doma
   assert.match(helper,/CF-Access-Client-Id/);
   assert.match(helper,/Authorization:`Bearer \$\{healthToken\}`/);
   assert.match(helper,/await invariantRead\(CANDIDATE_VERSION_ID\);await health\(\);await invariantRead\(CANDIDATE_VERSION_ID\)/);
+  assert.match(helper,/await invariantRead\(ROLLBACK_VERSION_ID\);await health\(\);await invariantRead\(ROLLBACK_VERSION_ID\)/);
   assert.match(helper,/validatePostPhase1State/);
   assert.match(helper,/PHASE1_D1_SIZE_BYTES/);
   assert.match(helper,/assessCron/);

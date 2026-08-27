@@ -47,6 +47,12 @@ export function classifyMutationReconciliation(activeVersionId,targetVersionId,p
   return 'UNRESOLVED';
 }
 
+export function classifyCandidateFailure(activeVersionId,{ambiguous=false}={}){
+  if(activeVersionId===CANDIDATE_VERSION_ID)return 'ROLLBACK_REQUIRED';
+  if(activeVersionId===ROLLBACK_VERSION_ID&&!ambiguous)return 'PHASE_3_FAIL';
+  return 'UNRESOLVED';
+}
+
 async function main(){
   const token=process.env.CLOUDFLARE_PHASE3_DEPLOY_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID;
   const healthToken=process.env.DATA_S1_HTTP_AUTH_TOKEN,accessId=process.env.CF_ACCESS_CLIENT_ID,accessSecret=process.env.CF_ACCESS_CLIENT_SECRET;
@@ -115,9 +121,11 @@ async function main(){
     await readCron();domainsBefore=await readDomains();await readD1State();
   }catch(error){detail=error.message;summary();throw error;}
 
+  let candidateMutationAmbiguous=false;
   try{
     try{await deploy(CANDIDATE_VERSION_ID);}catch(error){
       if(error.message!=='phase3_mutation_response_ambiguous')throw error;
+      candidateMutationAmbiguous=true;
       const reconciliation=await reconcileMutation(CANDIDATE_VERSION_ID,ROLLBACK_VERSION_ID);
       if(reconciliation!=='TARGET_ACTIVE')throw new Error(`phase3_ambiguous_deploy_${reconciliation.toLowerCase()}`);
     }
@@ -127,14 +135,16 @@ async function main(){
     if(mutationCount===0){detail=deployError.message;summary();throw deployError;}
     let active;
     try{active=(await readDeployment()).versionId;}catch{outcome='UNRESOLVED/STOP';detail='postflight failed and active deployment could not be reconciled';summary();throw deployError;}
-    if(active!==CANDIDATE_VERSION_ID){outcome='UNRESOLVED/STOP';detail=`postflight failed with unexpected active state: ${deployError.message}`;summary();throw deployError;}
+    const failureState=classifyCandidateFailure(active,{ambiguous:candidateMutationAmbiguous});
+    if(failureState==='PHASE_3_FAIL'){detail=`candidate Deployment was definitely rejected and approved old version remains active: ${deployError.message}`;summary();throw deployError;}
+    if(failureState!=='ROLLBACK_REQUIRED'){outcome='UNRESOLVED/STOP';detail=`postflight failed with ambiguous or unexpected active state: ${deployError.message}`;summary();throw deployError;}
     try{
       try{await deploy(ROLLBACK_VERSION_ID);}catch(error){
         if(error.message!=='phase3_mutation_response_ambiguous')throw error;
         const reconciliation=await reconcileMutation(ROLLBACK_VERSION_ID,CANDIDATE_VERSION_ID);
         if(reconciliation!=='TARGET_ACTIVE')throw new Error(`phase3_ambiguous_rollback_${reconciliation.toLowerCase()}`);
       }
-      await invariantRead(ROLLBACK_VERSION_ID);
+      await invariantRead(ROLLBACK_VERSION_ID);await health();await invariantRead(ROLLBACK_VERSION_ID);
       outcome='ROLLBACK PASS';detail=`candidate postflight failed (${deployError.message}); one-shot rollback restored the approved old version`;summary();
       throw new Error('phase3_candidate_failed_rollback_passed');
     }catch(rollbackError){

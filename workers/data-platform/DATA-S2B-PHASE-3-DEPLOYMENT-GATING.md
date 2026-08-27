@@ -26,7 +26,9 @@ Phase 3 creates a Cloudflare **Deployment**, not a Worker Version. Its only forw
 4. a clean checkout; and
 5. an exact-head successful `Tests and deterministic build` check from GitHub Actions.
 
-Only after that job passes can the `data-s2b-phase3-deployment` protected environment release the deployment token, account ID, retained Worker bearer token and Access service-token credentials. The environment must require owner review. Its Cloudflare API token must be limited to the read surfaces used by pre/postflight plus Workers Deployments write; it must not have Worker Script edit/version upload, D1 write, route/domain, Access, secret or trigger write permissions.
+Only after that job passes can the `data-s2b-phase3-deployment` protected environment release the deployment token, account ID, retained Worker bearer token and Access service-token credentials. The environment must require owner review. The workflow also has one dedicated non-cancelling concurrency group, so two manual runs cannot race through preflight or mutation.
+
+Cloudflare Create Deployment requires **Workers Scripts Write**. That is a coarse permission: the same permission can authorize Worker script/Version, Cron, Custom Domain and Worker-secret mutations, so the token itself cannot enforce the helper's Deployments-only boundary. The token also needs **D1 Read** for the bounded logical-state checks. Do not grant D1 Write, Workers Routes Write, Zero Trust Edit or unrelated permissions. Protected-environment owner review, exact-main/exact-head-CI gating, serialized execution and permanent executable endpoint restrictions are compensating controls for the known Workers Scripts Write limitation. Executable Phase 3 code remains allowlisted to one Deployments POST function and fixed read surfaces, with no Version upload, script, Cron, domain or secret mutation path.
 
 ## Fail-closed preflight
 
@@ -65,9 +67,9 @@ No collector or POST ingestion request runs. A successful sequence reports **PHA
 
 ## One-shot rollback and ambiguous responses
 
-Any required postflight invariant failure after candidate activation triggers one rollback Deployment referencing only `5edb…6105` at 100%. The helper then re-runs the immutable Version, binding, Cron, domain and D1 checks. It performs no D1 restore. A verified restore reports **ROLLBACK PASS** and deliberately leaves the workflow failed so candidate acceptance cannot be mistaken for success.
+Any required postflight invariant failure after candidate activation triggers one rollback Deployment referencing only `5edb…6105` at 100%. The helper requires the rollback Version to be sole active at 100%, runs the immutable Version, binding, Cron, domain and D1 checks, performs authenticated production `/v1/health` through the existing Access plus bearer path, and then repeats the immutable checks. It performs no D1 restore. Only that fully verified restore reports **ROLLBACK PASS**, and the workflow deliberately remains failed so candidate acceptance cannot be mistaken for success.
 
-A transport failure, invalid response or server error from a Deployment mutation is treated as ambiguous. The helper performs a read-only Deployments reconciliation and never blindly repeats that mutation. It continues only if the intended target is already active. Previous, mixed, inaccessible or unexpected state produces **UNRESOLVED/STOP**. At most one candidate Deployment and one rollback Deployment can be submitted.
+A transport failure, invalid response or server error from a Deployment mutation is treated as ambiguous. The helper performs a read-only Deployments reconciliation and never blindly repeats that mutation. It continues only if the intended target is already active. An ambiguous, mixed, inaccessible or unexpected state produces **UNRESOLVED/STOP**. In contrast, a definite candidate Deployment rejection followed by positive proof that the approved old Version remains sole active is **PHASE 3 FAIL**, not unresolved. At most one candidate Deployment and one rollback Deployment can be submitted.
 
 ## Outcome definitions
 
