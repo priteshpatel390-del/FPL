@@ -1,6 +1,6 @@
 # DATA-S2B — Phase 2 Inactive Worker Version Upload Execution
 
-Status: **LIVE ATTEMPT #1 SAFE-FAILED BEFORE VERSION CREATION — remediation is repository-only and no rerun is authorized**
+Status: **LIVE ATTEMPTS #1 AND #2 SAFE-FAILED BEFORE VERSION CREATION — diagnostic remediation round #2 is repository-only and attempt #3 is not authorized**
 Prepared: **26 August 2026**; failed-attempt reconciliation: **27 August 2026**
 Approved preparation baseline: `cb31d51c953615efeb1071374ced961270032462`
 
@@ -27,6 +27,12 @@ Phase 3 deployment and Phase 4 Cron activation remain separately owner-gated.
 Manual workflow run `33040517494` ran against exact `main` SHA `173370cf11f5437d993f9d6f44a5904d49d20743`. Repository gate job `98412809419` passed. The protected Phase 2 job `98412837803` then recorded a PASS pre-upload checkpoint: exact repository identity, active deployment/version, empty Cron set, absent live `DATA_S2_SEASON` and exact Phase 1 D1 post-state were all established, and no upload had yet been submitted.
 
 The immediately following Version Upload POST returned HTTP 400. Owner Cloudflare dashboard evidence after the failure showed active version `5edbe951-4be4-46bc-b2cf-17b550396105`, Version History still totaling nine with no new version, and no new deployment or visible traffic change. Attempt #1 is therefore classified **SAFE FAIL BEFORE VERSION CREATION**: no deployment, traffic, Cron or D1 change occurred. The workflow must not be rerun without a separate owner review and approval.
+
+### Live attempt #2 reconciliation
+
+Manual workflow run `33047287546` ran against exact `main` SHA `851614dcbcb154a8921e79a12f9589c8ceacb4e0`. Its repository gate passed. The protected job then recorded a PASS pre-upload checkpoint proving exact repository identity, active deployment `10f7a065-3d82-4b34-9fb1-dc6c3a0be524`, active version `5edbe951-4be4-46bc-b2cf-17b550396105`, empty Cron, absent live `DATA_S2_SEASON`, exact Phase 1 D1 post-state and that no upload had yet been submitted.
+
+The immediately following Version Upload POST again returned HTTP 400. Owner Cloudflare evidence after the failure showed the same active version and unchanged Version History, with no new Worker Version and no deployment or visible traffic change. Attempt #2 is therefore also **SAFE FAIL BEFORE VERSION CREATION**. No deployment, traffic, Cron or D1 change was observed. **Attempt #3 is not authorized.**
 
 ## Reuse Before Build
 
@@ -107,11 +113,16 @@ A future live dispatch must stop before mutation unless all of the following rem
 
 Requiring the retained HTTP secret is deliberately stricter than the earlier Phase 0 migration preflight, where that binding could be optional because Phase 1 did not deploy code. A Phase 2 version intended for later health-checked deployment must preserve the existing authenticated HTTP rollback surface. The helper checks only the binding name and type; it never reads the secret value.
 
-## Exact version-upload contract
+## Diagnostic remediation round #2 and exact version-upload contract
 
 Cloudflare's current first-party OpenAPI contract declares `multipart/form-data`, with `metadata` encoded as `application/json`, and its direct REST example sends that JSON as a normal form field rather than a file upload. The failed helper instead appended a Node `Blob` with filename `metadata`; Node serialized it with `Content-Disposition: form-data; name="metadata"; filename="metadata"`. That file disposition does not match the documented metadata-field contract. The same current Version Upload schema does not permit `observability` in version metadata, and Cloudflare's first-party Wrangler version-upload implementation explicitly omits it because observability is a non-versioned script setting. The failed request included it. These were the two concrete request-contract defects present at the HTTP 400 boundary; the deliberately suppressed response prevents attributing the server's 400 to only one of them, so the remediation removes both rather than guessing which validation ran first.
 
-The remediated helper constructs the multipart body directly, allowing the metadata part to have exact headers `Content-Disposition: form-data; name="metadata"` (no `filename`) and `Content-Type: application/json`. It leaves multipart boundary selection and the overall `Content-Type` explicit, while each module remains a file part with its exact filename and `application/javascript+module` MIME type. A permanent behavioral test reparses the serialized body and requires metadata to emerge as a string field, not a file.
+Attempt #2 proved that the first remediation was insufficient. Comparison with current first-party Workers SDK source at Cloudflare `workers-sdk` commit `fe265f87347ce253ed9ef00302f4cd2cdcb2bb19` found two remaining request-parity differences:
+
+1. Wrangler's `createWorkerUploadForm` encodes an inherited binding as only `{name,type:"inherit"}`. It does not send `version_id`; the current Worker upload metadata type likewise has no `version_id` member for an inherit binding. The failed helper added `version_id` to both inherited bindings. This is the strongest evidenced explanation for the API rejecting otherwise valid-looking metadata.
+2. Wrangler creates runtime `FormData`, sets metadata with `formData.set("metadata", JSON.stringify(metadata))`, creates every module as a `File`, and gives that `FormData` directly to fetch. The failed helper used a custom `Uint8Array` serializer, chose its own boundary, added an explicit metadata-part `Content-Type`, and set the request `Content-Type` itself. Although the custom bytes reparsed semantically, this unnecessary transport difference remained at the rejection boundary.
+
+Round #2 removes both differences rather than continuing to guess. The helper now uses only Node 24's runtime `FormData` and `File` APIs, leaves boundary and transfer/content-length handling to Node/Undici, and passes the form directly to fetch. Metadata is a string field with no filename; every module remains a file field whose field name, filename and MIME type are the exact module name and `application/javascript+module`. Tests inspect the semantic `Request.formData()` result and do not pin random boundary bytes.
 
 The metadata JSON contains:
 
@@ -122,7 +133,7 @@ The metadata JSON contains:
 - `DATA_S2_SEASON` added as plain text `2026-27`;
 - a non-secret message/tag containing the approved repository SHA.
 
-Both inherited bindings include the exact active version ID rather than the moving `latest` alias. The API request also uses `bindings_inherit=strict`, so an inheritance failure is fatal instead of silently dropping a binding.
+The inherited bindings deliberately omit `version_id`, matching current Wrangler and the current upload metadata binding schema. Inheritance is resolved by the Versions API from the prior version while the query parameter `bindings_inherit=strict` makes a missing or invalid inherited binding fatal instead of silently dropping it. The immediate pre-upload gate still pins and proves the unambiguous active deployment/version and exact binding set; no secret value or D1 identifier is copied into upload metadata.
 
 Repository observability remains required and the active setting remains part of the read-only settings contract, but Phase 2 does not send or mutate that non-versioned setting.
 
@@ -176,7 +187,11 @@ Do not grant D1 Write/Edit for Phase 2. Do not reuse or widen the Phase 1 D1-wri
 
 ## Output and secret handling
 
-The token, account ID and D1 UUID are masked. Raw Cloudflare API responses are written mode-restricted under `$RUNNER_TEMP`, deleted by an unconditional shell trap and never uploaded as artifacts.
+The token, account ID and D1 UUID are masked. Raw Cloudflare API responses are no longer written to disk, printed, summarized or uploaded as artifacts.
+
+On an API failure, the helper parses the response in memory and emits only the HTTP status plus numeric Cloudflare error codes and sanitized messages attached to numeric codes. Before a message can be emitted it redacts the exact token, account ID and known D1 database ID; Authorization/Bearer values; UUIDs; and long hexadecimal identifiers. Control characters, oversized messages, malformed JSON, an unexpected error envelope, or an error without a valid numeric code fail closed to status only (or status plus the numeric code when that alone is safe). Multiple valid Cloudflare errors are preserved without printing the raw envelope.
+
+This improves the next authorized diagnostic from an unhelpful `HTTP_400` while retaining the rule that uncertain content is not logged. It does not authorize another live request.
 
 The public job summary may contain only non-secret acceptance evidence: repository SHA, active deployment/version IDs, new inactive version ID, binding names/types, fixed season/compatibility values, aggregate D1 invariants and confirmation that deployment/Cron/D1 state did not change.
 

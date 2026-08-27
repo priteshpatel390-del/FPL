@@ -96,7 +96,6 @@ jobs:
       - name: Reconfirm identity and upload one inactive Worker version only
         run: |
           set -euo pipefail
-          trap 'rm -f "$RUNNER_TEMP"/phase2-*.json' EXIT
           test "$(node --version)" = v24.19.0
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain)"
