@@ -1,6 +1,6 @@
 # DATA-S2B — Phase 2 Live Read-Only Closeout
 
-Status: **PASS — inactive Worker Version created and independently reconciled; production deployment unchanged; Phase 3 remains unapproved**  
+Status: **PASS — inactive Worker Version created and independently reconciled; production deployment unchanged; Phase 3 remains unapproved**
 Recorded: **27 August 2026**
 
 ## Outcome
