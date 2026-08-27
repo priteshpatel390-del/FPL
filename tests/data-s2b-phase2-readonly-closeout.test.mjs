@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   EXPECTED_ACTIVE_DEPLOYMENT_ID,EXPECTED_ACTIVE_VERSION_ID,EXPECTED_PHASE2_VERSION_ID,PHASE1_D1_SIZE_BYTES,
-  validateCloseoutDatabaseSize,validateCloseoutDeployment,validateCloseoutVersions
+  validateCloseoutDatabaseSize,validateCloseoutDeployment,validateCloseoutVersionListStability,validateCloseoutVersions
 } from '../workers/data-platform/phase2/readonly-closeout.mjs';
 
 const workflowPath='.github/workflows/data-s2b-phase2-readonly-closeout.yml';
@@ -33,6 +33,14 @@ test('closeout requires the Phase 2 artifact to remain latest while the old acti
   assert.equal(validateCloseoutVersions([EXPECTED_PHASE2_VERSION_ID,EXPECTED_ACTIVE_VERSION_ID,'older']),true);
   assert.throws(()=>validateCloseoutVersions(['newer',EXPECTED_PHASE2_VERSION_ID,EXPECTED_ACTIVE_VERSION_ID]),/phase2_closeout_latest_version_drift/);
   assert.throws(()=>validateCloseoutVersions([EXPECTED_PHASE2_VERSION_ID,'older']),/phase2_closeout_active_version_missing/);
+});
+
+test('closeout version list must remain byte-for-byte ordered stable across the read window',()=>{
+  const before=[EXPECTED_PHASE2_VERSION_ID,EXPECTED_ACTIVE_VERSION_ID,'older'];
+  assert.equal(validateCloseoutVersionListStability(before,[...before]),true);
+  assert.throws(()=>validateCloseoutVersionListStability(before,[...before,'new-old-version']),/phase2_closeout_version_list_changed_during_read/);
+  assert.throws(()=>validateCloseoutVersionListStability(before,[EXPECTED_PHASE2_VERSION_ID,'older',EXPECTED_ACTIVE_VERSION_ID]),/phase2_closeout_version_list_changed_during_read/);
+  assert.throws(()=>validateCloseoutVersionListStability(before,['newer',...before]),/phase2_closeout_latest_version_drift/);
 });
 
 test('closeout D1 accounting is pinned to the recorded Phase 1 size baseline',()=>{
@@ -74,9 +82,24 @@ test('closeout explicitly validates active and uploaded version detail and never
   assert.doesNotMatch(uploadHelper,/\$\{workerBase\}\/settings/);
 });
 
+test('closeout re-reads deployment, versions, Cron, D1 logical state and D1 size before PASS',()=>{
+  assert.equal((helper.match(/\$\{workerBase\}\/deployments/g)??[]).length,2);
+  assert.equal((helper.match(/\$\{workerBase\}\/versions\?deployable=true/g)??[]).length,2);
+  assert.equal((helper.match(/\$\{workerBase\}\/schedules/g)??[]).length,2);
+  assert.equal((helper.match(/validatePostPhase1State\(await readPhase1State\(\)\)/g)??[]).length,2);
+  assert.equal((helper.match(/\?fields=uuid,name,file_size/g)??[]).length,2);
+  assert.match(helper,/sameDeployment\(deploymentBefore,deploymentAfter\)/);
+  assert.match(helper,/validateCloseoutVersionListStability\(versionsBefore,versionsAfter\)/);
+  assert.match(helper,/if\(Number\(databaseAfter\.file_size\)!==Number\(databaseBefore\.file_size\)\)throw new Error\('phase2_closeout_d1_size_changed_during_read'\)/);
+  const secondDeployment=helper.indexOf('const deploymentAfter=');
+  const summary=helper.indexOf("'## DATA-S2B Phase 2 — Read-only postflight closeout'");
+  assert.ok(secondDeployment>0&&summary>secondDeployment);
+});
+
 test('closeout proves Cron and Phase 1 D1 state without collecting or writing',()=>{
-  assert.match(helper,/assessCron\(schedules\)/);
-  assert.match(helper,/validatePostPhase1State\(\{/);
+  assert.match(helper,/assessCron\(schedulesBefore\)/);
+  assert.match(helper,/assessCron\(schedulesAfter\)/);
+  assert.match(helper,/validatePostPhase1State\(await readPhase1State\(\)\)/);
   assert.match(helper,/PHASE0_QUERIES\.migrations/);
   assert.match(helper,/PHASE1_QUERIES\.source/);
   assert.match(helper,/PHASE1_QUERIES\.revision/);
