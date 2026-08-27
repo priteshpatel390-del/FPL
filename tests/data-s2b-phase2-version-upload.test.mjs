@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   CONFIG_PATH,EXPECTED_COMPATIBILITY_DATE,EXPECTED_CRON,EXPECTED_SEASON,MODULE_PATHS,WORKER_NAME,
-  buildVersionMetadata,extractUploadedVersion,extractVersions,parseAndValidateConfig,validateActiveBindings,
+  buildVersionMetadata,buildVersionUploadMultipart,extractUploadedVersion,extractVersions,parseAndValidateConfig,validateActiveBindings,
   validateModuleGraph,validatePostPhase1State,validateUploadedVersion,validateVersionDelta
 } from '../workers/data-platform/phase2/upload-version.mjs';
 
@@ -113,7 +113,7 @@ test('upload metadata inherits exact active D1 and secret while adding only the 
   const metadata=buildVersionMetadata(activeVersion,approvedSha);
   assert.equal(metadata.main_module,'data-platform-rpc.mjs');
   assert.equal(metadata.compatibility_date,EXPECTED_COMPATIBILITY_DATE);
-  assert.deepEqual(metadata.observability,{enabled:true});
+  assert.equal(Object.hasOwn(metadata,'observability'),false);
   assert.deepEqual(metadata.bindings,[
     {name:'TEAMSHEET_DATA_DB',type:'inherit',version_id:activeVersion},
     {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:activeVersion},
@@ -125,6 +125,29 @@ test('upload metadata inherits exact active D1 and secret while adding only the 
   assert.equal(Object.hasOwn(metadata,'secrets'),false);
   assert.match(metadata.annotations['workers/message'],new RegExp(approvedSha));
   assert.equal(metadata.annotations['workers/tag'],`data-s2b-phase2-${approvedSha.slice(0,12)}`);
+});
+
+test('version upload multipart encodes metadata as JSON field without a filename',async()=>{
+  const metadata=buildVersionMetadata(activeVersion,approvedSha);
+  const sources=new Map(MODULE_PATHS.map(path=>[path,`// ${path}\nexport {};`]));
+  const boundary='----teamsheet-phase2-regression';
+  const multipart=buildVersionUploadMultipart(metadata,sources,boundary);
+  const raw=new TextDecoder().decode(multipart.body);
+  assert.equal(multipart.contentType,`multipart/form-data; boundary=${boundary}`);
+  assert.match(raw,/Content-Disposition: form-data; name="metadata"\r\nContent-Type: application\/json\r\n\r\n/);
+  assert.doesNotMatch(raw,/name="metadata"; filename=/);
+  const parsed=await new Response(multipart.body,{headers:{'Content-Type':multipart.contentType}}).formData();
+  assert.equal(typeof parsed.get('metadata'),'string');
+  assert.deepEqual(JSON.parse(parsed.get('metadata')),metadata);
+  assert.deepEqual([...parsed.keys()],[
+    'metadata','data-platform-rpc.mjs','data-platform.mjs','data-platform-core.mjs','official-fpl-history.mjs'
+  ]);
+  for(const path of MODULE_PATHS){
+    const name=path.split('/').at(-1),part=parsed.get(name);
+    assert.equal(part.name,name);
+    assert.equal(part.type,'application/javascript+module');
+    assert.equal(await part.text(),sources.get(path));
+  }
 });
 
 test('upload module graph is the exact four reviewed repository ES modules with no package or network imports',()=>{
