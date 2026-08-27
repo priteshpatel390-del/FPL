@@ -2,8 +2,7 @@ import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {
   assessCron,assessDeployments,classifyApiResponse,extractD1DatabaseDetails,extractD1QueryResult,
-  extractDeploymentsResult,extractSchedulesResult,extractWorkerSettingsResult,normaliseD1Binding,
-  validateReadOnlySql
+  extractDeploymentsResult,extractSchedulesResult,validateReadOnlySql
 } from '../phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../phase0/queries.mjs';
 import {PHASE1_QUERIES,sameDeployment,validatePostState} from '../phase1/migrate-0002.mjs';
@@ -58,16 +57,24 @@ export function parseAndValidateConfig(text){
   return config;
 }
 
-export function validateActiveBindings(settings){
-  const bindings=extractWorkerSettingsResult(settings).bindings;
-  if(bindings.length!==ACTIVE_BINDINGS.size)throw new Error('phase2_active_binding_set_drift');
+export function validateActiveVersion(detail,{activeVersionId,databaseId}={}){
+  if(!detail||typeof activeVersionId!=='string'||!activeVersionId||detail.id!==activeVersionId||!detail.resources)throw new Error('phase2_active_version_detail_invalid');
+  const bindings=detail.resources.bindings;
+  if(!Array.isArray(bindings)||bindings.length!==ACTIVE_BINDINGS.size)throw new Error('phase2_active_binding_set_drift');
   const seen=new Set();
+  let resolvedDatabaseId=null;
   for(const binding of bindings){
     if(!binding||typeof binding.name!=='string'||seen.has(binding.name)||binding.type!==ACTIVE_BINDINGS.get(binding.name))throw new Error('phase2_active_binding_set_drift');
     seen.add(binding.name);
+    if(binding.name==='TEAMSHEET_DATA_DB'){
+      if(typeof binding.database_id!=='string'||!binding.database_id)throw new Error('phase2_active_d1_binding_invalid');
+      resolvedDatabaseId=binding.database_id;
+      if(databaseId!==undefined&&binding.database_id!==databaseId)throw new Error('phase2_live_d1_binding_changed');
+    }
+    if(binding.name==='DATA_S1_HTTP_AUTH_TOKEN'&&Object.hasOwn(binding,'text'))throw new Error('phase2_secret_exposed');
   }
-  if(seen.size!==ACTIVE_BINDINGS.size)throw new Error('phase2_active_binding_set_drift');
-  return settings;
+  if(seen.size!==ACTIVE_BINDINGS.size||!resolvedDatabaseId)throw new Error('phase2_active_binding_set_drift');
+  return {databaseId:resolvedDatabaseId};
 }
 
 export function validateModuleGraph(readFile=path=>fs.readFileSync(path,'utf8')){
@@ -221,12 +228,11 @@ async function main(){
 
   const workerBase=`/accounts/${encodeURIComponent(account)}/workers/scripts/${WORKER_NAME}`;
   const deploymentsBefore=assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
-  const settingsBefore=validateActiveBindings(extractWorkerSettingsResult(await request(`${workerBase}/settings`)));
+  const activeDetailBefore=await request(`${workerBase}/versions/${encodeURIComponent(deploymentsBefore.versionId)}`);
+  databaseId=validateActiveVersion(activeDetailBefore,{activeVersionId:deploymentsBefore.versionId}).databaseId;
+  process.stdout.write(`::add-mask::${databaseId}\n`);
   const schedulesBefore=extractSchedulesResult(await request(`${workerBase}/schedules`));
   assessCron(schedulesBefore);
-  const d1=normaliseD1Binding(settingsBefore);
-  databaseId=d1.databaseId;
-  process.stdout.write(`::add-mask::${databaseId}\n`);
   const d1Base=`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}`;
   const databaseBefore=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
   const query=async sql=>extractD1QueryResult(await request(`${d1Base}/query`,{method:'POST',body:{sql:validateReadOnlySql(sql)}}));
@@ -244,7 +250,7 @@ async function main(){
   const metadata=buildVersionMetadata(deploymentsBefore.versionId,approvedSha);
   const multipart=buildVersionUploadForm(metadata,sources);
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-    `## DATA-S2B Phase 2 — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Live DATA_S2_SEASON: ABSENT\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
+    `## DATA-S2B Phase 2 — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Active-version DATA_S2_SEASON: ABSENT\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
 
   const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:versionsBefore,activeVersionId:deploymentsBefore.versionId});
   const uploadedId=extractUploadedVersion(uploadResult,deploymentsBefore.versionId);
@@ -255,11 +261,10 @@ async function main(){
 
   const deploymentsAfter=assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
   sameDeployment(deploymentsBefore,deploymentsAfter);
-  const settingsAfter=validateActiveBindings(extractWorkerSettingsResult(await request(`${workerBase}/settings`)));
+  const activeDetailAfter=await request(`${workerBase}/versions/${encodeURIComponent(deploymentsAfter.versionId)}`);
+  validateActiveVersion(activeDetailAfter,{activeVersionId:deploymentsAfter.versionId,databaseId});
   const schedulesAfter=extractSchedulesResult(await request(`${workerBase}/schedules`));
   assessCron(schedulesAfter);
-  const d1After=normaliseD1Binding(settingsAfter);
-  if(d1After.databaseId!==databaseId)throw new Error('phase2_live_d1_binding_changed');
   validatePostPhase1State(await readPhase1State());
   const databaseAfter=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
   if(numeric(databaseAfter.file_size)!==numeric(databaseBefore.file_size))throw new Error('phase2_d1_size_changed');
@@ -278,9 +283,9 @@ async function main(){
     '- New version compatibility date: `2026-08-22`',
     '- Active deployment/version: unchanged',
     '- Production traffic: unchanged by deployment evidence',
-    '- Live DATA_S2_SEASON: ABSENT',
+    '- Active-version DATA_S2_SEASON: ABSENT',
     '- Live Cron expressions: none',
-    '- Live D1 binding: unchanged',
+    '- Active-version D1 binding: unchanged',
     '- D1 Phase 1 schema/governance/count state: unchanged',
     `- D1 database size before/after: ${databaseBefore.file_size} / ${databaseAfter.file_size}`,
     '',
