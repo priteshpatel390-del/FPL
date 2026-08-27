@@ -53,6 +53,14 @@ export function classifyCandidateFailure(activeVersionId,{ambiguous=false}={}){
   return 'UNRESOLVED';
 }
 
+export async function deployAfterOldHealth({invariantRead,health,deploy}){
+  if(typeof invariantRead!=='function'||typeof health!=='function'||typeof deploy!=='function')throw new Error('phase3_preflight_health_gate_invalid');
+  await invariantRead(ROLLBACK_VERSION_ID);
+  await health();
+  await invariantRead(ROLLBACK_VERSION_ID);
+  return deploy(CANDIDATE_VERSION_ID);
+}
+
 async function main(){
   const token=process.env.CLOUDFLARE_PHASE3_DEPLOY_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID;
   const healthToken=process.env.DATA_S1_HTTP_AUTH_TOKEN,accessId=process.env.CF_ACCESS_CLIENT_ID,accessSecret=process.env.CF_ACCESS_CLIENT_SECRET;
@@ -123,7 +131,7 @@ async function main(){
 
   let candidateMutationAmbiguous=false;
   try{
-    try{await deploy(CANDIDATE_VERSION_ID);}catch(error){
+    try{await deployAfterOldHealth({invariantRead,health,deploy});}catch(error){
       if(error.message!=='phase3_mutation_response_ambiguous')throw error;
       candidateMutationAmbiguous=true;
       const reconciliation=await reconcileMutation(CANDIDATE_VERSION_ID,ROLLBACK_VERSION_ID);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   CANDIDATE_VERSION_ID,EXPECTED_PRODUCTION_HOSTNAME,ROLLBACK_VERSION_ID,classifyCandidateFailure,classifyMutationReconciliation,
-  deploymentBody,validateDomains,validatePreflightDeployment,validateSoleActive,validateVersionHistory
+  deployAfterOldHealth,deploymentBody,validateDomains,validatePreflightDeployment,validateSoleActive,validateVersionHistory
 } from '../workers/data-platform/phase3/deploy-candidate.mjs';
 import {EXPECTED_ACTIVE_DEPLOYMENT_ID} from '../workers/data-platform/phase2/readonly-closeout.mjs';
 
@@ -82,6 +82,7 @@ test('postflight proves health and immutable D1, Cron, version, binding and doma
   assert.match(helper,/https:\/\/\$\{EXPECTED_PRODUCTION_HOSTNAME\}\/v1\/health/);
   assert.match(helper,/CF-Access-Client-Id/);
   assert.match(helper,/Authorization:`Bearer \$\{healthToken\}`/);
+  assert.match(helper,/await deployAfterOldHealth\(\{invariantRead,health,deploy\}\)/);
   assert.match(helper,/await invariantRead\(CANDIDATE_VERSION_ID\);await health\(\);await invariantRead\(CANDIDATE_VERSION_ID\)/);
   assert.match(helper,/await invariantRead\(ROLLBACK_VERSION_ID\);await health\(\);await invariantRead\(ROLLBACK_VERSION_ID\)/);
   assert.match(helper,/validatePostPhase1State/);
@@ -89,6 +90,24 @@ test('postflight proves health and immutable D1, Cron, version, binding and doma
   assert.match(helper,/assessCron/);
   assert.match(helper,/validateUploadedVersion/);
   assert.match(helper,/validateActiveVersion/);
+});
+
+test('old-production authenticated health is bracketed by invariants and failure cannot submit a Deployment',async()=>{
+  const calls=[];
+  await assert.rejects(()=>deployAfterOldHealth({
+    invariantRead:async version=>calls.push(`invariant:${version}`),
+    health:async()=>{calls.push('health');throw new Error('health_failed');},
+    deploy:async version=>calls.push(`deploy:${version}`)
+  }),/health_failed/);
+  assert.deepEqual(calls,[`invariant:${ROLLBACK_VERSION_ID}`,'health']);
+
+  calls.length=0;
+  await deployAfterOldHealth({
+    invariantRead:async version=>calls.push(`invariant:${version}`),
+    health:async()=>calls.push('health'),
+    deploy:async version=>calls.push(`deploy:${version}`)
+  });
+  assert.deepEqual(calls,[`invariant:${ROLLBACK_VERSION_ID}`,'health',`invariant:${ROLLBACK_VERSION_ID}`,`deploy:${CANDIDATE_VERSION_ID}`]);
 });
 
 test('credentials and identifiers are masked and durable output is sanitized',()=>{

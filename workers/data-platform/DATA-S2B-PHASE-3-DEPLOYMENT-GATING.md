@@ -45,9 +45,10 @@ Before any mutation, the helper requires in one bounded live read:
 - Phase 1 migrations, Official FPL governance and revision state are exact;
 - `ingestion_runs=0`, `shadow_observations=0`, `observation_heads=0`, and `canonical_entities=0`;
 - D1 size is exactly the accepted `151552`-byte current-main baseline;
-- the only Custom Domain assigned to this Worker is `data.fpltsheet.co.uk`.
+- the only Custom Domain assigned to this Worker is `data.fpltsheet.co.uk`; and
+- while the approved old Version is still active, its immutable invariants pass, authenticated `GET /v1/health` succeeds through the existing Access plus retained bearer path, and the immutable invariants pass again.
 
-Any failure produces **PHASE 3 FAIL** before mutation. Zone route inspection is not claimed because the established credential contract has no zone identifier/scope. Access policy configuration is not read directly; successful authenticated production health after activation proves the existing Access/service-token path remains usable, while exact Custom Domain reads prove the account-level Worker-domain surface available to this token. These are explicit limitations, not silent passes.
+Any failure produces **PHASE 3 FAIL** with zero Deployment mutations. The candidate Deployment function is unreachable until the old-production invariant → authenticated health → invariant sequence passes. Zone route inspection is not claimed because the established credential contract has no zone identifier/scope. Access policy configuration is not read directly; successful authenticated production health before mutation and during candidate/rollback acceptance proves the existing Access/service-token path remains usable, while exact Custom Domain reads prove the account-level Worker-domain surface available to this token. These are explicit limitations, not silent passes.
 
 ## Mutation and postflight
 
