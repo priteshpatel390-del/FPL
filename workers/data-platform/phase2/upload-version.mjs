@@ -146,6 +146,18 @@ export function extractVersions(result){
   return ids;
 }
 
+export function requireLatestActiveVersion(versionIds,activeVersionId){
+  if(!Array.isArray(versionIds)||typeof activeVersionId!=='string'||!activeVersionId||!versionIds.includes(activeVersionId))throw new Error('phase2_active_version_missing_from_version_list');
+  if(versionIds[0]!==activeVersionId)throw new Error('phase2_latest_version_not_active');
+  return true;
+}
+
+export async function submitVersionUpload({request,workerBase,multipart,versionIds,activeVersionId}){
+  if(typeof request!=='function'||typeof workerBase!=='string'||!workerBase||!(multipart instanceof FormData))throw new Error('phase2_upload_submission_input_invalid');
+  requireLatestActiveVersion(versionIds,activeVersionId);
+  return request(`${workerBase}/versions?bindings_inherit=strict`,{method:'POST',multipart});
+}
+
 export function extractUploadedVersion(result,activeVersionId){
   const id=result?.id;
   if(typeof id!=='string'||!id||id===activeVersionId)throw new Error('phase2_upload_result_invalid');
@@ -227,14 +239,14 @@ async function main(){
   });
   validatePostPhase1State(await readPhase1State());
   const versionsBefore=extractVersions(await request(`${workerBase}/versions?deployable=true`));
-  if(!versionsBefore.includes(deploymentsBefore.versionId))throw new Error('phase2_active_version_missing_from_version_list');
+  requireLatestActiveVersion(versionsBefore,deploymentsBefore.versionId);
 
   const metadata=buildVersionMetadata(deploymentsBefore.versionId,approvedSha);
   const multipart=buildVersionUploadForm(metadata,sources);
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     `## DATA-S2B Phase 2 — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Live DATA_S2_SEASON: ABSENT\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
 
-  const uploadResult=await request(`${workerBase}/versions?bindings_inherit=strict`,{method:'POST',multipart});
+  const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:versionsBefore,activeVersionId:deploymentsBefore.versionId});
   const uploadedId=extractUploadedVersion(uploadResult,deploymentsBefore.versionId);
   const detail=await request(`${workerBase}/versions/${encodeURIComponent(uploadedId)}`);
   validateUploadedVersion(detail,{uploadedId,databaseId});

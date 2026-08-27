@@ -119,7 +119,7 @@ Cloudflare's current first-party OpenAPI contract declares `multipart/form-data`
 
 Attempt #2 proved that the first remediation was insufficient. Comparison with current first-party Workers SDK source at Cloudflare `workers-sdk` commit `fe265f87347ce253ed9ef00302f4cd2cdcb2bb19` found two remaining request-parity differences:
 
-1. Wrangler's `createWorkerUploadForm` encodes an inherited binding as only `{name,type:"inherit"}`. It does not send `version_id`; the current Worker upload metadata type likewise has no `version_id` member for an inherit binding. The failed helper added `version_id` to both inherited bindings. This is the strongest evidenced explanation for the API rejecting otherwise valid-looking metadata.
+1. Wrangler's `createWorkerUploadForm` encodes an inherited binding as only `{name,type:"inherit"}` and does not send `version_id`. Cloudflare's current Versions API schema explicitly permits the optional `version_id` field, so its presence in the failed requests is not proven invalid and is not evidence of the HTTP 400 cause. Removing it eliminates a request-parity difference with Wrangler; it does not establish server-side causation.
 2. Wrangler creates runtime `FormData`, sets metadata with `formData.set("metadata", JSON.stringify(metadata))`, creates every module as a `File`, and gives that `FormData` directly to fetch. The failed helper used a custom `Uint8Array` serializer, chose its own boundary, added an explicit metadata-part `Content-Type`, and set the request `Content-Type` itself. Although the custom bytes reparsed semantically, this unnecessary transport difference remained at the rejection boundary.
 
 Round #2 removes both differences rather than continuing to guess. The helper now uses only Node 24's runtime `FormData` and `File` APIs, leaves boundary and transfer/content-length handling to Node/Undici, and passes the form directly to fetch. Metadata is a string field with no filename; every module remains a file field whose field name, filename and MIME type are the exact module name and `application/javascript+module`. Tests inspect the semantic `Request.formData()` result and do not pin random boundary bytes.
@@ -128,12 +128,12 @@ The metadata JSON contains:
 
 - main module `data-platform-rpc.mjs`;
 - compatibility date `2026-08-22`;
-- `TEAMSHEET_DATA_DB` inherited from the exact active version ID;
-- `DATA_S1_HTTP_AUTH_TOKEN` inherited from that same exact active version ID;
+- `TEAMSHEET_DATA_DB` inherited from the latest version, after proving that version is the exact active version;
+- `DATA_S1_HTTP_AUTH_TOKEN` inherited from that same proven latest-and-active version;
 - `DATA_S2_SEASON` added as plain text `2026-27`;
 - a non-secret message/tag containing the approved repository SHA.
 
-The inherited bindings deliberately omit `version_id`, matching current Wrangler and the current upload metadata binding schema. Inheritance is resolved by the Versions API from the prior version while the query parameter `bindings_inherit=strict` makes a missing or invalid inherited binding fatal instead of silently dropping it. The immediate pre-upload gate still pins and proves the unambiguous active deployment/version and exact binding set; no secret value or D1 identifier is copied into upload metadata.
+The inherited bindings deliberately omit the API-permitted optional `version_id` to match current Wrangler. Cloudflare documents omitted inheritance as resolving against the latest version, and documents the first List Versions item as latest. The helper therefore fails closed before constructing or submitting the upload unless the ordered deployable-version list has the active deployment version at index zero. An active version that is merely present later in the list is rejected with `phase2_latest_version_not_active`; an absent active version retains `phase2_active_version_missing_from_version_list`. This prevents silent inheritance from a newer inactive version. The `bindings_inherit=strict` query remains mandatory so a missing or invalid inherited binding is fatal instead of silently dropped. No secret value or D1 identifier is copied into upload metadata.
 
 Repository observability remains required and the active setting remains part of the read-only settings contract, but Phase 2 does not send or mutate that non-versioned setting.
 

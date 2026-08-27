@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   CONFIG_PATH,EXPECTED_COMPATIBILITY_DATE,EXPECTED_CRON,EXPECTED_SEASON,MODULE_PATHS,WORKER_NAME,
-  buildVersionMetadata,buildVersionUploadForm,extractCloudflareError,extractUploadedVersion,extractVersions,parseAndValidateConfig,validateActiveBindings,
-  validateModuleGraph,validatePostPhase1State,validateUploadedVersion,validateVersionDelta
+  buildVersionMetadata,buildVersionUploadForm,extractCloudflareError,extractUploadedVersion,extractVersions,parseAndValidateConfig,requireLatestActiveVersion,validateActiveBindings,
+  submitVersionUpload,validateModuleGraph,validatePostPhase1State,validateUploadedVersion,validateVersionDelta
 } from '../workers/data-platform/phase2/upload-version.mjs';
 
 const workflowPath='.github/workflows/data-s2b-phase2-version-upload.yml';
@@ -109,7 +109,7 @@ test('Phase 2 requires the current D1 and retained HTTP secret before creating a
   ])assert.throws(()=>validateActiveBindings({bindings}),/phase2_active_binding_set_drift/);
 });
 
-test('upload metadata uses Wrangler-compatible strict inheritance while adding only the approved season binding',()=>{
+test('upload metadata omits optional version_id for Wrangler parity while adding only the approved season binding',()=>{
   const metadata=buildVersionMetadata(activeVersion,approvedSha);
   assert.equal(metadata.main_module,'data-platform-rpc.mjs');
   assert.equal(metadata.compatibility_date,EXPECTED_COMPATIBILITY_DATE);
@@ -198,6 +198,27 @@ test('version list, upload result and post-upload delta contracts fail closed',(
   assert.throws(()=>validateVersionDelta([activeVersion],[uploadedVersion,'unexpected',activeVersion],uploadedVersion),/phase2_version_delta_invalid/);
 });
 
+test('omitted version_id inheritance is allowed only when latest deployable version is active',()=>{
+  assert.equal(requireLatestActiveVersion([activeVersion,'older-version'],activeVersion),true);
+});
+
+test('active version present behind a newer inactive version fails closed',()=>{
+  assert.throws(()=>requireLatestActiveVersion([uploadedVersion,activeVersion],activeVersion),/phase2_latest_version_not_active/);
+});
+
+test('active version absent from ordered version list retains the existing fail-closed error',()=>{
+  assert.throws(()=>requireLatestActiveVersion([uploadedVersion],activeVersion),/phase2_active_version_missing_from_version_list/);
+});
+
+test('latest-active mismatch performs no Version Upload request',async()=>{
+  let requests=0;
+  await assert.rejects(()=>submitVersionUpload({
+    request:async()=>{requests+=1;},workerBase:'/accounts/redacted/workers/scripts/test',multipart:new FormData(),
+    versionIds:[uploadedVersion,activeVersion],activeVersionId:activeVersion
+  }),/phase2_latest_version_not_active/);
+  assert.equal(requests,0);
+});
+
 test('uploaded version detail must contain exact D1, retained secret and season bindings with pinned runtime',()=>{
   const detail={id:uploadedVersion,resources:{
     script_runtime:{compatibility_date:EXPECTED_COMPATIBILITY_DATE},
@@ -220,12 +241,13 @@ test('Phase 1 governance/history post-state is re-used as the immutable D1 pre/p
 });
 
 test('post-upload checks re-prove inactive deployment, live binding, Cron and D1 invariants after the version is created',()=>{
-  const upload=helper.indexOf("/versions?bindings_inherit=strict");
+  const latestGuard=helper.indexOf('requireLatestActiveVersion(versionsBefore,deploymentsBefore.versionId)');
+  const upload=helper.lastIndexOf('submitVersionUpload({request,workerBase,multipart');
   const detail=helper.lastIndexOf('validateUploadedVersion(detail');
   const deploymentAfter=helper.indexOf('const deploymentsAfter=');
   const liveSettingsAfter=helper.indexOf('const settingsAfter=');
   const postStateAfter=helper.lastIndexOf('validatePostPhase1State(await readPhase1State())');
-  assert.ok(upload>0&&upload<detail&&detail<deploymentAfter&&deploymentAfter<liveSettingsAfter&&liveSettingsAfter<postStateAfter);
+  assert.ok(latestGuard>0&&latestGuard<upload&&upload<detail&&detail<deploymentAfter&&deploymentAfter<liveSettingsAfter&&liveSettingsAfter<postStateAfter);
   assert.match(helper,/sameDeployment\(deploymentsBefore,deploymentsAfter\)/);
   assert.match(helper,/validateActiveBindings\(extractWorkerSettingsResult\(await request\(`\$\{workerBase\}\/settings`\)\)\)/);
   assert.match(helper,/assessCron\(schedulesAfter\)/);
