@@ -1,5 +1,15 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
+## Current repository checkpoint — Phase 4B binding-inheritance remediation
+
+Live inactive-Version-upload run `33186084206` reached its sole `POST .../versions?bindings_inherit=strict` request on exact `main` `035e5fa768e47bee8548df9a39e9e629c811eea5`, then failed without retry or a successful Version ID: Cloudflare returned HTTP 400 / `CF_10057` because explicit UUID `version_id` values for inherited `TEAMSHEET_DATA_DB` and `DATA_S1_HTTP_AUTH_TOKEN` are unsupported by this live upload endpoint, which requires literal `latest`. Fresh mutation-free reconciliation run `33186488030` passed on that same SHA: the expected production Version remained latest and solely active at 100%, rollback remained present, and hostname/Cron/D1/health state remained expected. No newer deployable Version from the rejected request was observed; the read-only check does not assert an exhaustive total of hidden or non-deployable history.
+
+The repository-only remediation uses `latest` strictly as required transport syntax. Immediately before the one POST, the helper rechecks that latest equals the exact expected active Version and retains the rollback anchor. After definite success it requires one and only one new, newest deployable Version matching the response ID, validates resolved D1/secret/season/compatibility state, and re-proves unchanged production, Cron, D1, hostname and health. An unexpected delta blocks Deployment. This narrows and detects observable concurrency drift but is not an atomic UUID pin: a residual race remains between the final read and Cloudflare resolving `latest`, so the guarded manual operation assumes no concurrent authorized Version creation. Ambiguous outcomes are never retried and require separate read-only reconciliation.
+
+This remediation has not been exercised live and authorizes no second upload. Next is owner review and merge approval; after merge and exact-main verification, one new explicit approval is required for one inactive upload attempt. Deployment, traffic change, Cron activation and collector execution remain separately unapproved.
+
+
 <!-- DATA-S2B-PHASE4B-UPLOAD-ENVIRONMENT-CANDIDATE-2026-08-28 -->
 ## Current repository checkpoint — Phase 4B inactive-Version-upload environment correction
 

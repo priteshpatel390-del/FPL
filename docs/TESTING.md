@@ -1,5 +1,11 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
+## Phase 4B `latest` inheritance remediation coverage
+
+`tests/data-s2b-phase4b-version-upload.test.mjs` permanently requires literal `latest` for exactly the inherited D1 and retained-secret bindings, forbids an inherited UUID or exposed secret text, and retains `bindings_inherit=strict` plus the one-endpoint mutation allowlist. It pins the final immediate latest==expected-active and rollback checks, the precise pre-upload snapshot, no retry/reconciliation requirement for ambiguous outcomes, and post-success provenance: exactly one new newest Version, returned-ID equality, both active/rollback anchors, resolved D1 identity, secret binding shape, season/compatibility, unchanged Deployment/Cron/D1/domain and passing authenticated health. Structural checks continue to forbid Deployment, Schedule, D1-write, Access, secret, route/domain, collector and Wrangler mutation paths.
+
+
 <!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
 ## Phase 4B mutation-free live-preflight permanent coverage
 

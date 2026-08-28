@@ -1,6 +1,6 @@
 # DATA-S2B — Phase 4B Worker Version / Deployment Preparation
 
-Status: **REPOSITORY-ONLY CANDIDATE — mutation-free live preflight PASS; no live mutation authorized or performed**
+Status: **REPOSITORY-ONLY `latest` INHERITANCE REMEDIATION — failed upload reconciled; no second upload authorized**
 
 Prepared: **28 August 2026**
 
@@ -16,11 +16,19 @@ Both workflows accept an exact 40-character approved SHA, require manual dispatc
 
 The upload job now uses `data-s2b-phase3-deployment` and maps its existing `CLOUDFLARE_PHASE3_DEPLOY_TOKEN` secret into the upload helper's unchanged `CLOUDFLARE_WORKER_UPLOAD_TOKEN` variable, alongside the retained account identity, Worker bearer and Access service credentials. The deployment job reuses `data-s2b-phase3-deployment`, `CLOUDFLARE_PHASE3_DEPLOY_TOKEN`, the retained Worker bearer, Access service credentials and account identity. No new secret, Worker, D1 database, provider, hostname, route or Access design is introduced. The evidence for that upload-job environment change, and its precise security meaning, are recorded under [Upload-job protected-environment correction](#upload-job-protected-environment-correction).
 
-## Upload contract
+## Upload contract and live remediation evidence
 
-Before its sole possible mutation, the upload helper validates the exact Worker/config/module graph, compatibility date `2026-08-22`, season `2026-27`, active Version `3a2b065a-6527-4887-9bf8-b08e82e81133`, retained rollback Version `5edbe951-4be4-46bc-b2cf-17b550396105`, exact D1 and retained secret binding shapes, empty Cron, Phase 1 governance and zero history state, and recorded D1 size `151552` bytes. Its upload metadata pins both inherited bindings—the D1 binding and retained bearer-secret binding—to that exact verified active Version ID while retaining `bindings_inherit=strict`. It computes SHA-256 identity for exact module bytes and deterministic metadata.
+Run `33186084206` reached the single allowed Version-create request on exact `main` `035e5fa768e47bee8548df9a39e9e629c811eea5` with all five protected credentials populated and masked. Cloudflare returned HTTP 400 / `CF_10057`: explicit UUID `version_id` was invalid for both inherited `DATA_S1_HTTP_AUTH_TOKEN` and `TEAMSHEET_DATA_DB`, and the endpoint required literal `latest`. The definite validation rejection returned no successful Version ID and triggered no retry. No Deployment, Cron, D1 write/migration, Access, secret, route/domain or collector path executed.
 
-Its executable mutation allowlist admits only `POST /accounts/{account}/workers/scripts/teamsheet-data-platform/versions?bindings_inherit=strict`. An ambiguous response is reconciled with a read-only Version-list delta; it is never blindly retried. Postflight requires exactly one new Version, exact Version Detail/bindings/compatibility, unchanged Deployment, empty Cron, unchanged D1 state and size. Cloudflare Version Detail and the script etag, when the upload response supplies one, are captured as evidence about the created artifact; the repository does not claim Cloudflare provides complete recoverable original source.
+Owner-approved mutation-free reconciliation run `33186488030` then passed on that same SHA. Production remained solely on active Version `3a2b065a-6527-4887-9bf8-b08e82e81133` at 100%; it remained the first/latest deployable Version observed; rollback Version `5edbe951-4be4-46bc-b2cf-17b550396105` remained present; hostname `data.fpltsheet.co.uk`, compatibility `2026-08-22`, season `2026-27`, absent Cron, Phase 1 D1 governance, zero history counts, `151552`-byte D1 size and authenticated `shadow_only` health remained expected. No newer deployable Version from the rejected request was observed. The preflight does not assert an exhaustive historical Version count, so no stronger hidden/non-deployable-object claim is made and no rollback was required.
+
+The remediated payload keeps exactly the D1 and retained bearer names/types but uses `version_id: "latest"`, as the live API requires; the bearer value is never read. After all slower configuration, module, D1 and health preparation, the helper re-reads Deployment and the ordered deployable Version list immediately before its sole possible mutation. It requires the sole 100% active Version and first/latest deployable Version to equal `3a2b…1133`, with rollback still present, and captures Deployment ID, ordered Version IDs, D1 identity/state/size, Cron, hostname and health.
+
+After a definite success, the helper immediately re-lists deployable Versions and requires exactly one new newest ID relative to that final snapshot, equal to the response candidate ID, while both active and rollback anchors remain. Exact candidate detail must resolve the same D1 database identity as the active Version, retain `DATA_S1_HTTP_AUTH_TOKEN` as `secret_text` without text, retain `DATA_S2_SEASON=2026-27`, and use compatibility date `2026-08-22`. Deployment must remain unchanged, Cron absent, D1 governance/count/size unchanged, hostname unchanged and authenticated health passing. Any failure quarantines the inactive candidate and blocks Deployment; there is no deletion or automatic cleanup path.
+
+The mutation allowlist remains only `POST /accounts/{account}/workers/scripts/teamsheet-data-platform/versions?bindings_inherit=strict`. Definite 4xx rejection fails without retry. Timeout, connection loss, malformed response and 5xx are ambiguous: the POST is never retried and a separate read-only reconciliation is required. A known candidate whose postflight fails remains inactive and cannot be deployed without owner review/reconciliation.
+
+**Residual concurrency limitation:** literal `latest` is transport syntax, not an atomic UUID source pin. The final pre-check and postflight narrow and detect observable drift, but cannot eliminate a microscopic race before Cloudflare resolves `latest`. The guarded manual operation assumes no concurrent authorized Version creation; any unexpected delta blocks Deployment. This remediation has not succeeded live, creates no claimed Version, and does not authorize a second upload attempt.
 
 ## Deployment contract
 

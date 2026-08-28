@@ -1,5 +1,13 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
+## Current DATA-S2B gate — review Phase 4B `latest` inheritance remediation
+
+Run `33186084206` on exact `main` `035e5fa768e47bee8548df9a39e9e629c811eea5` passed its repository/credential gates but Cloudflare rejected both explicit UUID inherit references with HTTP 400 / `CF_10057`; no retry or successful Version ID followed. Mutation-free run `33186488030` then passed on the same SHA: the expected Version remained latest and solely active at 100%, rollback remained present, and Cron/D1/hostname/health state remained expected. No newer deployable Version from the rejected request was observed.
+
+The repository candidate changes the required transport value to literal `latest`, performs its final latest==expected-active check immediately before the sole Version POST, and requires a post-success exact-one/newest Version delta matching the returned ID plus resolved-binding and unchanged-production checks. `latest` is not atomic with the pre-check; concurrent creation remains a residual risk and any unexpected delta blocks Deployment and requires reconciliation. Next gate is owner review and merge approval. Merge and exact-main verification still require a completely new explicit approval for one inactive upload attempt; no Deployment, traffic, Cron or collector approval follows.
+
+
 <!-- DATA-S2B-PHASE4B-UPLOAD-ENVIRONMENT-CANDIDATE-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 4B inactive-Version-upload environment correction
 
