@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
+## Current DATA-S2B gate — Phase 4B repository candidate; live actions unapproved
+
+The repository now prepares two future separately approved operations: one inactive immutable Phase 4 Version upload, then a later exact-Version 100% Deployment retaining the current production Version for bounded rollback. This checkpoint does not upload, deploy, activate Cron, execute collection or write D1. Next is owner review and merge approval; after merge, a fresh mutation-free live preflight and new explicit approval are required before any Version upload. Deployment and Cron/collection remain later independent approvals.
+
 <!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 3 live deployment PASS; Phase 4 unapproved
 

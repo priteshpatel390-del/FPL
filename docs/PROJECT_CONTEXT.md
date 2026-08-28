@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
+## Current repository checkpoint — DATA-S2B Phase 4B repository preparation
+
+Phase 4B adds separate manual, protected, fail-closed preparation paths for a future inactive Worker Version upload and a later exact-Version 100% Deployment. Explicit endpoint allowlists separate `/versions` from `/deployments`; neither path can intentionally write Schedules/Cron, D1, routes/domains, Access or secrets, and neither runs the collector. Historical Phase 2/3 tooling remains frozen. This is repository evidence only: no live Cloudflare action is authorized or claimed. See [Phase 4B preparation](../workers/data-platform/DATA-S2B-PHASE-4B-VERSION-DEPLOYMENT-PREPARATION.md).
+
 <!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
 ## Current repository checkpoint — DATA-S2B Phase 3 live deployment PASS
 
