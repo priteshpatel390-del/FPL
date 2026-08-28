@@ -1,11 +1,13 @@
 # DATA-S2B — Phase 3 Existing-Candidate Deployment Gating
 
-Status: **REPOSITORY SUPPORT IMPLEMENTED — NOT DISPATCHED; LIVE DEPLOYMENT REQUIRES SEPARATE OWNER APPROVAL**  
+Status: **HISTORICAL DESIGN/SECURITY CONTRACT — LATER DISPATCHED AND COMPLETED PASS**
 Prepared: **27 August 2026**
+
+> **Live outcome:** The separately approved dispatch subsequently completed successfully as workflow run `33142804502` on exact repository SHA `d48913332bf5df37b29d98b06579f369f338f6e4`. Candidate `3a2b065a-6527-4887-9bf8-b08e82e81133` became the sole active Version at 100%, rollback was not required, and postflight passed. This document retains the reviewed pre-execution design and security contract; [DATA-S2B Phase 3 Live Candidate Deployment Closeout](DATA-S2B-PHASE-3-LIVE-CLOSEOUT.md) is authoritative for the live result and mutation accounting. Phase 4 remains separately unapproved.
 
 ## Outcome and authority
 
-This checkpoint adds the repository-controlled path for the separately approved Phase 3 design. It performs no live Cloudflare action. Latest GitHub `main` remains authoritative; the implementation must be merged, exact-main verified, and then separately approved before anyone dispatches the manual workflow.
+This checkpoint added the repository-controlled path for the separately approved Phase 3 design and, when originally prepared, performed no live Cloudflare action. It was later merged, exact-main verified, separately approved and dispatched as recorded in the live closeout. Latest GitHub `main` remains authoritative.
 
 The Phase 2 identities were reverified from the current-main closeout records and are pinned in executable tests:
 
@@ -79,8 +81,10 @@ A transport failure, invalid response or server error from a Deployment mutation
 - **ROLLBACK PASS** — candidate postflight failed, the single rollback ran, and the old Version is again the sole active Version with rollback invariants intact.
 - **UNRESOLVED/STOP** — mutation/state is ambiguous, unexpected or cannot be proven; do not retry or continue automatically.
 
-## Explicit exclusions and next gate
+## Explicit exclusions and completed dispatch boundary
 
 This implementation has no path for Version upload/deletion, Cron mutation, D1 write/migration/restore, collector execution, POST ingestion, route/domain/Access/secret mutation, provider/data-source change, application change, or model/calculation change. Phase 4 Cron activation and collection remain separately unapproved.
 
-The exact next approval required is: after this draft PR is reviewed, exact-head green, explicitly approved and merged, and the merge commit has an exact-main Verify Teamsheet success, the owner must separately approve **one manual Phase 3 workflow dispatch for that exact main SHA and release of the protected `data-s2b-phase3-deployment` environment**. No dispatch is approved by repository implementation or merge alone.
+At preparation time, the next required approval was one manual Phase 3 workflow dispatch for the exact verified `main` SHA plus release of the protected `data-s2b-phase3-deployment` environment. That separate approval and release later occurred for run `33142804502`; the run passed under this contract. Repository implementation or merge alone did not approve that dispatch.
+
+The next gate is now Phase 4 investigation/design/approval only. Nothing in this historical contract or the successful Phase 3 dispatch approves Cron activation or collection.

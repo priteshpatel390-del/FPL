@@ -1,9 +1,11 @@
 # ROADMAP.md — current and proposed checkpoints
 
-<!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
-## Current DATA-S2B gate — Phase 3 repository deployment support
+<!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
+## Current DATA-S2B gate — Phase 3 live deployment PASS; Phase 4 unapproved
 
-Phase 0 read-only preflight, Phase 1 migration and Phase 2 inactive-Version closeout are PASS. Phase 3 repository support now exists for an exact 100% Deployment of the already-created candidate, with fail-closed preflight/postflight and a one-shot 100% rollback. It has not been dispatched. Review, merge, exact-main Verify Teamsheet and a separate explicit owner dispatch/environment approval are required before any live mutation. Phase 4 Cron activation and collection remain separately blocked. See [Phase 3 deployment gating](../workers/data-platform/DATA-S2B-PHASE-3-DEPLOYMENT-GATING.md).
+Phase 0 read-only preflight, Phase 1 migration, Phase 2 inactive-Version closeout and Phase 3 production deployment are PASS. Protected workflow run `33142804502` on exact SHA `d48913332bf5df37b29d98b06579f369f338f6e4` deployed existing candidate `3a2b065a-6527-4887-9bf8-b08e82e81133` as the sole active Version at 100%. Rollback Version `5edbe951-4be4-46bc-b2cf-17b550396105` was retained and rollback was not required. Exactly one Deployment mutation occurred; postflight passed; no new Version or Cron/D1/route/domain/Access/secret mutation was made by the workflow. See [Phase 3 live closeout](../workers/data-platform/DATA-S2B-PHASE-3-LIVE-CLOSEOUT.md).
+
+The next gate is **Phase 4 investigation/design/approval only**. Cron activation and collection remain blocked and unapproved, as do provider, model, calculation and application changes.
 
 <!-- DATA-S2B-PHASE2-POSTFLIGHT-2026-08-27 -->
 ## Current DATA-S2B gate — Phase 2 live closeout PASS; Phase 3 design next
