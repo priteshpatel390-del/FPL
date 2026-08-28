@@ -7,6 +7,6 @@
   "preview_urls": false,
   "observability": { "enabled": true },
   "vars": { "DATA_S2_SEASON": "2026-27" },
-  "triggers": { "crons": ["0 * * * *"] },
+  "triggers": { "crons": ["*/30 * * * *"] },
   "d1_databases": [{ "binding": "TEAMSHEET_DATA_DB", "database_name": "teamsheet-data", "migrations_dir": "migrations" }]
 }

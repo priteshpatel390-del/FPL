@@ -60,7 +60,7 @@ test('explicit Official FPL nulls are preserved and missing required fields fail
   assert.throws(()=>normalised(world),/player_team_missing/);
 });
 
-test('identical hourly state creates zero historical changes',()=>{
+test('identical scheduled state creates zero historical changes',()=>{
   const result=normalised();
   assert.deepEqual(diffOfficialFplHistory(result.candidates,asStored(result.candidates)),[]);
 });
@@ -128,9 +128,9 @@ test('bulk JSON commit plan stays below the Free Worker D1 query budget even for
   assert.ok(plan.at(-1).sql.includes("status='completed'"));
 });
 
-test('repository candidate declares hourly UTC Cron and no credential or application data dependency',()=>{
+test('repository candidate declares one half-hour schedule check and no credential or application data dependency',()=>{
   const config=fs.readFileSync('workers/data-platform/wrangler.jsonc','utf8');
-  assert.match(config,/"crons"\s*:\s*\["0 \* \* \* \*"\]/);
+  assert.match(config,/"crons"\s*:\s*\["\*\/30 \* \* \* \*"\]/);
   assert.match(config,/"DATA_S2_SEASON"\s*:\s*"2026-27"/);
   assert.doesNotMatch(config,/token|secret|password|api[_-]?key/i);
   const appFiles=['src/main.mjs','src/state.mjs','src/model/fixtures.mjs','src/model/scoring.mjs','src/model/transfers.mjs'];

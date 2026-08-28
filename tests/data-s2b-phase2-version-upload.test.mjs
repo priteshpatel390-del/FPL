@@ -12,6 +12,7 @@ const helperPath='workers/data-platform/phase2/upload-version.mjs';
 const workflow=fs.readFileSync(workflowPath,'utf8');
 const helper=fs.readFileSync(helperPath,'utf8');
 const configText=fs.readFileSync(CONFIG_PATH,'utf8');
+const historicalConfigText=JSON.stringify({...JSON.parse(configText),triggers:{crons:[EXPECTED_CRON]}});
 const approvedSha='0123456789abcdef0123456789abcdef01234567';
 const activeVersion='11111111-1111-4111-8111-111111111111';
 const uploadedVersion='22222222-2222-4222-8222-222222222222';
@@ -79,8 +80,9 @@ test('Phase 2 executable has one Cloudflare mutation primitive and cannot deploy
   assert.match(helper,/body:\{sql:validateReadOnlySql\(sql\)\}/);
 });
 
-test('repository candidate configuration is pinned and drift fails closed',()=>{
-  const config=parseAndValidateConfig(configText);
+test('Phase 2 historical configuration remains pinned and rejects the Phase 4 candidate schedule',()=>{
+  assert.throws(()=>parseAndValidateConfig(configText),/phase2_triggers_drift/);
+  const config=parseAndValidateConfig(historicalConfigText);
   assert.equal(config.name,WORKER_NAME);
   assert.equal(config.compatibility_date,EXPECTED_COMPATIBILITY_DATE);
   assert.equal(config.vars.DATA_S2_SEASON,EXPECTED_SEASON);
