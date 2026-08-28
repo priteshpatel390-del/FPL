@@ -9,6 +9,10 @@ export const MAX_CHANGED_OBSERVATIONS_PER_RUN=15000;
 export const OBSERVATION_CHUNK_SIZE=600;
 export const HEAD_CHUNK_SIZE=2000;
 export const MAX_FINAL_BATCH_STATEMENTS=40;
+export const DATA_S2_COLLECTION_CRON='*/30 * * * *';
+export const DATA_S2_DAILY_UTC_HOUR=1;
+export const DATA_S2_DAILY_UTC_MINUTE=0;
+export const DATA_S2_PRE_DEADLINE_WINDOW_MS=30*60*1000;
 
 const BOOTSTRAP_URL='https://fantasy.premierleague.com/api/bootstrap-static/';
 const FIXTURES_URL='https://fantasy.premierleague.com/api/fixtures/';
@@ -270,8 +274,55 @@ export async function collectOfficialFplHistory(env,{scheduledTime=null,fetchImp
   }
 }
 
-export async function scheduledOfficialFplHistory(controller,env){
-  const result=await collectOfficialFplHistory(env,{scheduledTime:controller?.scheduledTime});
-  if(!result.ok)throw new Error(`data_s2_${result.reason}`);
+export function classifyOfficialFplSchedule({cron,scheduledTime,deadlineTime=null,actualTime=Date.now()}={}){
+  if(cron!==DATA_S2_COLLECTION_CRON)return {collect:false,reason:'cron_unrecognised'};
+  const scheduledMs=Number(scheduledTime);
+  if(!Number.isFinite(scheduledMs))return {collect:false,reason:'scheduled_time_invalid'};
+  const scheduled=new Date(scheduledMs);
+  if(scheduled.getUTCHours()===DATA_S2_DAILY_UTC_HOUR&&scheduled.getUTCMinutes()===DATA_S2_DAILY_UTC_MINUTE)return {collect:true,reason:'daily'};
+  if(deadlineTime===null||deadlineTime===undefined)return {collect:false,reason:'deadline_unavailable'};
+  const deadlineMs=Date.parse(deadlineTime);
+  if(!Number.isFinite(deadlineMs))return {collect:false,reason:'deadline_invalid'};
+  const leadMs=deadlineMs-scheduledMs;
+  const deadlineIso=new Date(deadlineMs).toISOString();
+  if(!(leadMs>0&&leadMs<=DATA_S2_PRE_DEADLINE_WINDOW_MS))return {collect:false,reason:'outside_deadline_window',deadlineTime:deadlineIso};
+  const actualMs=Number(actualTime);
+  if(!Number.isFinite(actualMs)||actualMs>=deadlineMs)return {collect:false,reason:'deadline_elapsed',deadlineTime:deadlineIso};
+  return {collect:true,reason:'pre_deadline',deadlineTime:deadlineIso,leadMs};
+}
+
+export async function readNextOfficialFplDeadline(env,{afterTime}={}){
+  const db=env?.TEAMSHEET_DATA_DB;if(!db)throw new Error('schedule_storage_unavailable');
+  const season=String(env?.DATA_S2_SEASON||'');if(!/^\d{4}-\d{2}$/.test(season))throw new Error('schedule_season_unavailable');
+  const afterMs=Number(afterTime);if(!Number.isFinite(afterMs))throw new Error('schedule_time_invalid');
+  const prefix=`${SOURCE_KEY}|${season}|event|`;
+  const row=await db.prepare("SELECT o.value_text AS deadline_time FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE h.logical_key>=? AND h.logical_key<? AND o.source_revision_id=? AND o.category='official_fpl_event' AND o.metric='deadline_time' AND o.value_type='text' AND o.value_text<>? AND o.value_text>? AND r.status='completed' ORDER BY o.value_text ASC LIMIT 1")
+    .bind(prefix,`${prefix}\uffff`,DATA_S2_SOURCE_REVISION_ID,DATA_S2_NULL,new Date(afterMs).toISOString()).first();
+  if(!row)return null;
+  return iso(row.deadline_time);
+}
+
+function scheduleSkip(reason,scheduledTime){
+  const value=Number(scheduledTime);
+  return {ok:true,result:'schedule_skip',reason,scheduledTime:Number.isFinite(value)?value:null,changed:0};
+}
+
+async function runScheduledCollection(collectImpl,env,scheduledTime){
+  const result=await collectImpl(env,{scheduledTime});
+  if(!result?.ok)throw new Error(`data_s2_${result?.reason||'collection_failed'}`);
   return result;
+}
+
+export async function scheduledOfficialFplHistory(controller,env,{collectImpl=collectOfficialFplHistory,readDeadlineImpl=readNextOfficialFplDeadline,now=()=>Date.now()}={}){
+  const cron=String(controller?.cron||'');
+  const scheduledTime=controller?.scheduledTime;
+  const initial=classifyOfficialFplSchedule({cron,scheduledTime,actualTime:now()});
+  if(initial.reason==='cron_unrecognised'||initial.reason==='scheduled_time_invalid')return scheduleSkip(initial.reason,scheduledTime);
+  if(initial.collect)return runScheduledCollection(collectImpl,env,scheduledTime);
+  let deadlineTime;
+  try{deadlineTime=await readDeadlineImpl(env,{afterTime:scheduledTime});}
+  catch{throw new Error('data_s2_schedule_read_failed');}
+  const decision=classifyOfficialFplSchedule({cron,scheduledTime,deadlineTime,actualTime:now()});
+  if(!decision.collect)return scheduleSkip(decision.reason,scheduledTime);
+  return runScheduledCollection(collectImpl,env,scheduledTime);
 }
