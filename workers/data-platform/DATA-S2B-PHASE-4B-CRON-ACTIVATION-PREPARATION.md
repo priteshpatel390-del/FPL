@@ -25,6 +25,8 @@ Immediately before mutation, two stable read-only snapshots require:
 
 The bearer is inspected only as binding metadata. Its value must not appear in Version Detail and is never read, printed, serialized, or persisted. Raw responses remain runner-temporary; the summary is sanitized.
 
+Every Cloudflare API request and authenticated health request is bounded by an explicit 15-second Node-native `AbortSignal.timeout(...)`. Ordinary read timeouts fail closed as transport failures. This request timeout, rather than the GitHub job timeout, is the mutation-outcome control mechanism and leaves time for reconciliation and postflight inside the unchanged 10-minute job budget.
+
 ## Sole mutation
 
 The executable allowlist admits only:
@@ -37,7 +39,7 @@ with exact body `[{"cron":"*/30 * * * *"}]`. It admits no Version upload, Deploy
 
 ## Outcome ambiguity and stop behaviour
 
-A definite non-success response stops without retry. Timeout, connection termination, HTTP 5xx, or malformed mutation response is potentially delivered: the helper submits no second PUT and performs read-only Schedules GET reconciliation.
+A definite non-success response stops without retry. An explicit 15-second mutation timeout, connection termination, HTTP 5xx, or malformed mutation response is potentially delivered: the helper submits no second PUT and performs exactly one read-only Schedules GET reconciliation. That GET is independently bounded by the same request timeout; if it times out, fails, or cannot be parsed, reconciliation is `UNPROVABLE` and stops.
 
 - `TARGET_PRESENT`: continue to postflight;
 - `ABSENT`: stop without retry;
@@ -54,7 +56,7 @@ Two complete postflight snapshots re-prove exactly one target schedule; candidat
 
 Activation itself performs no collection. The first later scheduled opportunity enters the existing Phase 4A gate: full collection only at 01:00 UTC or the final half-hour opportunity before the next stored future Official FPL deadline; ordinary opportunities make the bounded deadline evaluation and skip. Before a first routine baseline, non-daily opportunities safely skip because no stored future deadline exists.
 
-This preparation changes no Worker runtime, scheduler decision logic, collector transform, D1 schema, provider scope, application, UI, model, fixture, expected-minutes, captaincy, squad, transfer, simulation, rank, or Mini-League behaviour. It performs no Cloudflare read or mutation during development/testing.
+This preparation changes no Worker runtime, scheduler decision logic, collector transform, D1 schema, provider scope, application, UI, model, fixture, expected-minutes, captaincy, squad, transfer, simulation, rank, or Mini-League behaviour. **No DATA-S2B production Cloudflare read or mutation was performed by this repository-only preparation task.** An automatic PR integration may create an unrelated `teamsheet-fpl-gateway` preview build/check; that is not a DATA-S2B production mutation.
 
 After review, merge, and exact-main verification, the next gate remains separate explicit owner approval for:
 

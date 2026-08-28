@@ -32,14 +32,37 @@ test('executable schedule fixtures classify reconciliation without guessing',()=
   assert.equal(cron.classifyScheduleReconciliation({broken:true}),'UNPROVABLE');
   assert.throws(()=>cron.validateSchedules(scheduleResult(['0 * * * *']),['*/30 * * * *']),/state_drift/);
 });
-test('definite 4xx stops while timeout, 5xx and malformed mutation responses reconcile read-only',()=>{
+test('schedule PUT timeout is bounded and classified as an ambiguous mutation',async()=>{
+  const durations=[];let calls=0;
+  await assert.rejects(cron.fetchTextBounded({url:'https://api.cloudflare.test/schedules',options:{method:'PUT'},mutation:true,fetchFn:async(_url,options)=>{calls++;assert.equal(options.method,'PUT');assert.deepEqual(options.signal,{bounded:true});throw new DOMException('timed out','TimeoutError');},timeoutSignal:milliseconds=>{durations.push(milliseconds);return {bounded:true};}}),/phase4b_cron_mutation_ambiguous/);
+  assert.equal(calls,1);assert.deepEqual(durations,[cron.REQUEST_TIMEOUT_MS]);assert.equal(cron.REQUEST_TIMEOUT_MS,15000);
+});
+test('ordinary read timeout fails closed as a transport failure',async()=>{
+  let calls=0;
+  await assert.rejects(cron.fetchTextBounded({url:'https://api.cloudflare.test/deployments',fetchFn:async()=>{calls++;throw new DOMException('timed out','TimeoutError');},timeoutSignal:()=>({bounded:true})}),/phase4b_cron_api_transport_failed/);
+  assert.equal(calls,1);
+});
+test('ambiguous timeout performs one GET and TARGET_PRESENT alone reaches postflight',async()=>{
+  let puts=0,gets=0,postflights=0;
+  await cron.executeScheduleActivation({mutate:async()=>{puts++;throw new Error('phase4b_cron_mutation_ambiguous');},readSchedules:async()=>{gets++;return scheduleResult([cron.EXPECTED_CRON]);},postflight:async()=>{postflights++;}});
+  assert.deepEqual({puts,gets,postflights},{puts:1,gets:1,postflights:1});
+});
+for(const [name,result,diagnostic] of [
+  ['ABSENT',scheduleResult([]),'absent'],
+  ['UNEXPECTED',scheduleResult(['0 * * * *']),'unexpected'],
+  ['UNPROVABLE',null,'unprovable']
+])test(`ambiguous timeout reconciliation ${name} stops with no second PUT`,async()=>{
+  let puts=0,gets=0,postflights=0;
+  await assert.rejects(cron.executeScheduleActivation({mutate:async()=>{puts++;throw new Error('phase4b_cron_mutation_ambiguous');},readSchedules:async()=>{gets++;if(result===null)throw new Error('read timeout');return result;},postflight:async()=>{postflights++;}}),new RegExp(`ambiguous_${diagnostic}_stop_no_retry`));
+  assert.deepEqual({puts,gets,postflights},{puts:1,gets:1,postflights:0});
+});
+test('definite 4xx, 5xx and malformed response contracts remain fail closed',()=>{
   assert.match(helper,/response\.status>=500/);assert.match(helper,/phase4b_cron_mutation_ambiguous/);
-  assert.match(helper,/classifyScheduleReconciliation\(await readSchedulesResult\(\)\.catch\(\(\)=>null\)\)/);
-  assert.match(helper,/ambiguous_.*_stop_no_retry/);assert.doesNotMatch(helper,/setTimeout|while\s*\(/);
+  assert.match(helper,/ambiguous_.*_stop_no_retry/);assert.doesNotMatch(helper,/while\s*\(/);
   assert.ok(helper.indexOf("if(!classified.ok)")<helper.indexOf("response.status>=500"));
 });
 test('postflight proves schedule exactness and immutable Version, Deployment, D1 and domain state',()=>{
-  assert.match(helper,/await snapshot\(\[EXPECTED_CRON\],before\);await snapshot\(\[EXPECTED_CRON\],before\)/);
+  assert.match(helper,/postflight:async\(\)=>\{await snapshot\(\[EXPECTED_CRON\],before\);await snapshot\(\[EXPECTED_CRON\],before\);\}/);
   assert.match(helper,/phase4b_cron_worker_version_created/);assert.match(helper,/phase4b_cron_deployment_changed/);
   assert.match(helper,/phase4b_cron_d1_changed/);assert.match(helper,/phase4b_cron_domain_changed/);
   assert.match(helper,/body\?\.ok!==true\|\|body\?\.mode!=='shadow_only'/);

@@ -18,6 +18,7 @@ export const EXPECTED_PRODUCTION_HOSTNAME='data.fpltsheet.co.uk';
 export const EXPECTED_COMPATIBILITY_DATE='2026-08-22';
 export const EXPECTED_SEASON='2026-27';
 export const EXPECTED_D1_SIZE_BYTES=151552;
+export const REQUEST_TIMEOUT_MS=15000;
 export const EXPECTED_BINDINGS=Object.freeze(new Map([
   ['TEAMSHEET_DATA_DB','d1'],['DATA_S1_HTTP_AUTH_TOKEN','secret_text'],['DATA_S2_SEASON','plain_text']
 ]));
@@ -41,6 +42,26 @@ export function classifyScheduleReconciliation(result){
     if(rows.length===1&&rows[0]?.cron===EXPECTED_CRON)return 'TARGET_PRESENT';
     return 'UNEXPECTED';
   }catch{return 'UNPROVABLE';}
+}
+export async function fetchTextBounded({fetchFn=fetch,url,options={},mutation=false,timeoutMs=REQUEST_TIMEOUT_MS,timeoutSignal=AbortSignal.timeout}){
+  if(typeof fetchFn!=='function'||typeof url!=='string'||!url||!Number.isSafeInteger(timeoutMs)||timeoutMs<1||typeof timeoutSignal!=='function')throw new Error('phase4b_cron_bounded_fetch_input_invalid');
+  try{
+    const response=await fetchFn(url,{...options,signal:timeoutSignal(timeoutMs)});
+    return {response,text:await response.text()};
+  }catch{
+    if(mutation)throw new Error('phase4b_cron_mutation_ambiguous');
+    throw new Error('phase4b_cron_api_transport_failed');
+  }
+}
+export async function executeScheduleActivation({mutate,readSchedules,postflight}){
+  if(typeof mutate!=='function'||typeof readSchedules!=='function'||typeof postflight!=='function')throw new Error('phase4b_cron_activation_input_invalid');
+  try{await mutate();}
+  catch(error){
+    if(error.message!=='phase4b_cron_mutation_ambiguous')throw error;
+    const state=classifyScheduleReconciliation(await readSchedules().catch(()=>null));
+    if(state!=='TARGET_PRESENT')throw new Error(`phase4b_cron_ambiguous_${state.toLowerCase()}_stop_no_retry`);
+  }
+  await postflight();
 }
 export function validateVersionHistory(before,after){
   if(before?.[0]!==CANDIDATE_VERSION_ID||!before.includes(ROLLBACK_VERSION_ID))throw new Error('phase4b_cron_version_history_drift');
@@ -74,9 +95,7 @@ async function main(){
   ].join('\n')+'\n');
   const request=async(path,{method='GET',body,mutation=false}={})=>{
     const headers={Authorization:`Bearer ${token}`};if(body!==undefined)headers['Content-Type']='application/json';
-    let response,text;
-    try{response=await fetch(`${base}${path}`,{method,headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error'});text=await response.text();}
-    catch{if(mutation)throw new Error('phase4b_cron_mutation_ambiguous');throw new Error('phase4b_cron_api_transport_failed');}
+    const {response,text}=await fetchTextBounded({url:`${base}${path}`,options:{method,headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error'},mutation});
     let parsed;try{parsed=JSON.parse(text);}catch{if(mutation)throw new Error('phase4b_cron_mutation_ambiguous');throw new Error('phase4b_cron_api_json_invalid');}
     const classified=classifyApiResponse(response.status,parsed);
     if(!classified.ok){if(mutation&&response.status>=500)throw new Error('phase4b_cron_mutation_ambiguous');throw new Error(extractCloudflareError(response.status,text,[...sensitive,databaseId]));}
@@ -95,7 +114,11 @@ async function main(){
     validatePostPhase1State(state);return {database,state};
   };
   const health=async()=>{
-    let response,body;try{response=await fetch(`https://${EXPECTED_PRODUCTION_HOSTNAME}/v1/health`,{headers:{Authorization:`Bearer ${healthToken}`,'CF-Access-Client-Id':accessId,'CF-Access-Client-Secret':accessSecret},redirect:'error'});body=await response.json();}catch{throw new Error('phase4b_cron_health_transport_failed');}
+    let response,text,body;
+    try{
+      ({response,text}=await fetchTextBounded({url:`https://${EXPECTED_PRODUCTION_HOSTNAME}/v1/health`,options:{headers:{Authorization:`Bearer ${healthToken}`,'CF-Access-Client-Id':accessId,'CF-Access-Client-Secret':accessSecret},redirect:'error'}}));
+      body=JSON.parse(text);
+    }catch{throw new Error('phase4b_cron_health_transport_failed');}
     if(response.status!==200||body?.ok!==true||body?.mode!=='shadow_only')throw new Error('phase4b_cron_health_failed');return {ok:true,mode:'shadow_only'};
   };
   const snapshot=async(expectedSchedules,before)=>{
@@ -115,13 +138,11 @@ async function main(){
   catch(error){detail=error.message;summary();throw error;}
   try{
     const endpoint=`${workerBase}/schedules`;assertCronMutation('PUT',endpoint,workerBase);mutationCount++;
-    try{await request(endpoint,{method:'PUT',body:activationBody(),mutation:true});}
-    catch(error){
-      if(error.message!=='phase4b_cron_mutation_ambiguous')throw error;
-      const state=classifyScheduleReconciliation(await readSchedulesResult().catch(()=>null));
-      if(state!=='TARGET_PRESENT')throw new Error(`phase4b_cron_ambiguous_${state.toLowerCase()}_stop_no_retry`);
-    }
-    await snapshot([EXPECTED_CRON],before);await snapshot([EXPECTED_CRON],before);
+    await executeScheduleActivation({
+      mutate:()=>request(endpoint,{method:'PUT',body:activationBody(),mutation:true}),
+      readSchedules:readSchedulesResult,
+      postflight:async()=>{await snapshot([EXPECTED_CRON],before);await snapshot([EXPECTED_CRON],before);}
+    });
     outcome='PASS';detail='exact target schedule confirmed and immutable postflight passed';summary();
   }catch(error){detail=error.message;summary();throw error;}
 }
