@@ -3,7 +3,7 @@
 <!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 4B preflight environment correction
 
-The first standalone mutation-free preflight run (`33170157089`) passed its repository gate but failed before any request because the Phase 0 protected environment lacked three later health/Access credentials. The narrow correction reuses the existing Phase 2 upload environment while retaining the helper's structural read-only boundary. It must merge and pass exact-main Verify Teamsheet before the owner may separately approve a rerun. PASS remains required before any inactive Version-upload approval and authorizes no upload, Deployment, Cron activation or collection.
+Two standalone mutation-free preflight runs have passed their repository gate and then failed closed before any request, because the selected protected environment lacked three health/Access credentials: run `33170157089` under the Phase 0 environment, and run `33171701995` under the Phase 2 upload environment that had been chosen from repository inference. Neither performed any Cloudflare read, D1 query, production health request or mutation. The narrow correction moves the job to the Phase 3 deployment environment, selected on the direct credential-presence evidence of successful run `33142804502`, while retaining the helper's unchanged structural read-only boundary. It must merge and pass exact-main Verify Teamsheet before the owner may separately approve a dispatch. PASS remains required before any inactive Version-upload approval and authorizes no upload, Deployment, Cron activation or collection.
 
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 4B repository candidate; live actions unapproved
