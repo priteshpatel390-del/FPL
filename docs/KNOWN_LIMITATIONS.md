@@ -1,11 +1,11 @@
 # KNOWN_LIMITATIONS.md
 
-<!-- DATA-S2A-2026-08-26 -->
-## Current DATA-S2 limitation — repository candidate only
+<!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
+## Current DATA-S2 limitation — deployed shadow candidate; collection unapproved
 
-DATA-S1C-R retired RPC and custom bearer-HTTP as forward collection defaults; retained assets prove no successful RPC acceptance and remain historical/rollback material. DATA-S2A is implemented only as a repository `shadow_only` candidate over fixed Official FPL `bootstrap-static` and `fixtures` facts. It preserves D1 change history without influencing Teamsheet or replacing the live Official FPL gateway, but it has not been deployed, has not mutated live D1 and has not activated Cron.
+DATA-S1C-R retired RPC and custom bearer-HTTP as forward collection defaults; retained assets prove no successful RPC acceptance and remain historical/rollback material. DATA-S2A implements `shadow_only` handling of fixed Official FPL `bootstrap-static` and `fixtures` facts. DATA-S2B Phase 3 deployed the existing candidate at 100% without influencing Teamsheet or replacing the live Official FPL gateway. It did not run collection, mutate live D1 or activate Cron. See [the Phase 3 live closeout](../workers/data-platform/DATA-S2B-PHASE-3-LIVE-CLOSEOUT.md).
 
-Operational fit is therefore unproved. Separately approved DATA-S2B must prove live migration/deployment, Cron activation, a complete real baseline, a zero-change repeat, a precise changed-fact append, actual D1 accounting and Workers Free CPU suitability, with rollback/stop on failure. No live DATA-S2 acceptance or production use is claimed.
+Phase 3 proves production deployment and bounded health/invariant acceptance only. Operational collection fit remains unproved: Phase 4 must be separately investigated, designed and approved before Cron activation or collection can establish a complete real baseline, a zero-change repeat, a precise changed-fact append, actual D1 accounting and Workers Free CPU suitability with stop/rollback controls. No collection acceptance or production model/runtime use is claimed. Cleanup of older authentication credentials or obsolete resources is also not claimed.
 
 <!-- DATA-S1B-PREFLIGHT-CURRENT-2026-08-23 -->
 ## Current DATA-S1B limitation boundary
