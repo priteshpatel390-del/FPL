@@ -107,8 +107,8 @@ export function buildVersionMetadata(activeVersionId,approvedSha){
     main_module:'data-platform-rpc.mjs',
     compatibility_date:EXPECTED_COMPATIBILITY_DATE,
     bindings:[
-      {name:'TEAMSHEET_DATA_DB',type:'inherit'},
-      {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit'},
+      {name:'TEAMSHEET_DATA_DB',type:'inherit',version_id:activeVersionId},
+      {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:activeVersionId},
       {name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}
     ],
     annotations:{
