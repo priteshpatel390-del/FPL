@@ -118,12 +118,14 @@ test('helper is structurally standalone read-only with no collector or Official 
 });
 
 test('workflow is manual exact-main exact-CI gated before protected credentials',()=>{
-  for(const expected of [/workflow_dispatch:/,/approved_sha:/,/refs\/heads\/main/,/priteshpatel390-del\/FPL/,/\^\[0-9a-f\]\{40\}\$/,/git ls-remote/,/git status --porcelain/,/Tests and deterministic build/,/environment:\s*\n\s+name: data-s2b-phase0-readonly/,/node-version: 24\.19\.0/])assert.match(workflow,expected);
+  for(const expected of [/workflow_dispatch:/,/approved_sha:/,/refs\/heads\/main/,/priteshpatel390-del\/FPL/,/\^\[0-9a-f\]\{40\}\$/,/git ls-remote/,/git status --porcelain/,/Tests and deterministic build/,/environment:\s*\n\s+name: data-s2b-phase2-version-upload/,/node-version: 24\.19\.0/])assert.match(workflow,expected);
   assert.ok(workflow.indexOf('repository-gate:')<workflow.indexOf('CLOUDFLARE_API_TOKEN'));
 });
 
 test('workflow invokes only the standalone preflight and no mutation or collector helper',()=>{
   assert.match(workflow,/node workers\/data-platform\/phase4b\/preflight\.mjs/);
-  assert.doesNotMatch(workflow,/upload-version\.mjs|deploy-version\.mjs|readonly-closeout\.mjs|wrangler\s+(?:deploy|triggers)|official-fpl-history|bootstrap-static|fixtures/);
-  assert.doesNotMatch(workflow,/CLOUDFLARE_WORKER_UPLOAD_TOKEN|CLOUDFLARE_PHASE3_DEPLOY_TOKEN|CLOUDFLARE_D1_WRITE_TOKEN/);
+  assert.doesNotMatch(workflow,/node\s+workers\/data-platform\/(?:phase4b\/(?:upload-version|deploy-version)|collector)\.mjs|readonly-closeout\.mjs|wrangler\s+(?:deploy|triggers(?:\s+deploy)?)|official-fpl-history|bootstrap-static|fixtures/);
+  assert.match(workflow,/CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_WORKER_UPLOAD_TOKEN \}\}/);
+  assert.deepEqual([...new Set([...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort(),['CF_ACCESS_CLIENT_ID','CF_ACCESS_CLIENT_SECRET','CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_WORKER_UPLOAD_TOKEN','DATA_S1_HTTP_AUTH_TOKEN']);
+  assert.doesNotMatch(workflow,/secrets\.CLOUDFLARE_API_TOKEN|CLOUDFLARE_PHASE3_DEPLOY_TOKEN|CLOUDFLARE_D1_WRITE_TOKEN/);
 });

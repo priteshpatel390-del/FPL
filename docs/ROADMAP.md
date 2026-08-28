@@ -1,9 +1,9 @@
 # ROADMAP.md — current and proposed checkpoints
 
 <!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
-## Current DATA-S2B gate — mutation-free Phase 4B live-preflight repository candidate
+## Current DATA-S2B gate — Phase 4B preflight environment correction
 
-The next repository gate is review/merge of the standalone read-only preflight preparation. Merge does not authorize dispatch. A later explicit approval is required to run it; even a PASS would not authorize Version upload, Deployment, Cron activation or collector execution.
+The first standalone mutation-free preflight run (`33170157089`) passed its repository gate but failed before any request because the Phase 0 protected environment lacked three later health/Access credentials. The narrow correction reuses the existing Phase 2 upload environment while retaining the helper's structural read-only boundary. It must merge and pass exact-main Verify Teamsheet before the owner may separately approve a rerun. PASS remains required before any inactive Version-upload approval and authorizes no upload, Deployment, Cron activation or collection.
 
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 4B repository candidate; live actions unapproved

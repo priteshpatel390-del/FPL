@@ -3,7 +3,7 @@
 <!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
 ## Current repository checkpoint — Phase 4B mutation-free live-preflight preparation
 
-A dedicated manual, protected, standalone read-only workflow now prepares the fresh production-state evidence required before any future Phase 4B Version-upload approval. Its executable admits only exact Worker/D1 reads and validated D1 `SELECT` transport, emits sanitized all-zero mutation accounting, and has no upload, Deployment, Cron, collector or D1-write path. It has not been dispatched and proves no live state; dispatch and every later mutation remain separately owner-approved.
+A dedicated manual, protected, standalone read-only workflow prepares the fresh production-state evidence required before any future Phase 4B Version-upload approval. Its first run (`33170157089`) failed before any request because the selected Phase 0 environment lacked the later health/Access credentials. The workflow now reuses the existing Phase 2 upload environment and maps its established token into the helper's read-token variable; the executable itself remains limited to exact Worker/D1 reads and validated D1 `SELECT` transport and has no upload, Deployment, Cron, collector or D1-write path. No successful preflight is established; rerun and every later mutation remain separately owner-approved.
 
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## Current repository checkpoint — DATA-S2B Phase 4B repository preparation
