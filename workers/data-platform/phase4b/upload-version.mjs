@@ -179,8 +179,13 @@ export async function submitVersionUpload({request,workerBase,multipart,versionI
 
 export function extractUploadedVersion(result,activeVersionId){
   const id=result?.id;
-  if(typeof id!=='string'||!id||id===activeVersionId)throw new Error('phase4b_upload_result_invalid');
+  if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)||id===activeVersionId)throw new Error('phase4b_upload_result_invalid');
   return id;
+}
+
+export function requireUploadedVersionIdentity(result,activeVersionId){
+  try{return extractUploadedVersion(result,activeVersionId);}
+  catch{throw new Error('phase4b_upload_outcome_ambiguous_reconciliation_required_no_retry');}
 }
 
 export function validateVersionDelta(beforeIds,afterIds,uploadedId){
@@ -294,7 +299,7 @@ async function main(){
 
   let uploadedId;
   const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:preUpload.versionIds,activeVersionId:preUpload.activeVersionId});
-  uploadedId=extractUploadedVersion(uploadResult,preUpload.activeVersionId);
+  uploadedId=requireUploadedVersionIdentity(uploadResult,preUpload.activeVersionId);
   let databaseAfter;
   try{
     const versionsAfter=extractVersions(await request(`${workerBase}/versions?deployable=true`));
@@ -331,8 +336,8 @@ async function main(){
     ...Object.entries(identity.modules).map(([path,hash])=>`- Module SHA-256 \`${path}\`: \`${hash}\``),
     '- Upload primitive: official Workers Version Upload API with `bindings_inherit=strict`',
     '- Uploaded modules: 4 exact repository ES modules',
-    '- New version binding: `TEAMSHEET_DATA_DB` inherited from exact active version',
-    '- New version binding: `DATA_S1_HTTP_AUTH_TOKEN` inherited from exact active version; secret value never read',
+    '- New version binding: `TEAMSHEET_DATA_DB` inherited via `latest` after expected-active pre-check; resolved D1 identity verified',
+    '- New version binding: `DATA_S1_HTTP_AUTH_TOKEN` inherited via `latest` after expected-active pre-check; secret binding shape verified; value never read',
     '- New version binding: `DATA_S2_SEASON=2026-27`',
     '- New version compatibility date: `2026-08-22`',
     '- Active deployment/version: unchanged',
