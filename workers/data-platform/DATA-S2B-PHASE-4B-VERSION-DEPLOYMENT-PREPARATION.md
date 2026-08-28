@@ -1,6 +1,7 @@
 # DATA-S2B — Phase 4B Worker Version / Deployment Preparation
 
-Status: **REPOSITORY-ONLY CANDIDATE — no live action authorized or performed**  
+Status: **REPOSITORY-ONLY CANDIDATE — mutation-free live preflight PASS; no live mutation authorized or performed**
+
 Prepared: **28 August 2026**
 
 ## Outcome and boundary
@@ -13,7 +14,7 @@ Historical Phase 2 and Phase 3 executables remain frozen. In particular, Phase 2
 
 Both workflows accept an exact 40-character approved SHA, require manual dispatch from canonical `main`, check out that SHA, prove it still equals remote current `main`, require a clean tree, and require a successful canonical GitHub Actions `Tests and deterministic build` check on that exact head. Cloudflare credentials exist only in the downstream protected job. Node is pinned to `24.19.0`.
 
-The upload job reuses `data-s2b-phase2-version-upload` and `CLOUDFLARE_WORKER_UPLOAD_TOKEN`. The deployment job reuses `data-s2b-phase3-deployment`, `CLOUDFLARE_PHASE3_DEPLOY_TOKEN`, the retained Worker bearer, Access service credentials and account identity. No new secret, Worker, D1 database, provider, hostname, route or Access design is introduced.
+The upload job now uses `data-s2b-phase3-deployment` and maps its existing `CLOUDFLARE_PHASE3_DEPLOY_TOKEN` secret into the upload helper's unchanged `CLOUDFLARE_WORKER_UPLOAD_TOKEN` variable, alongside the retained account identity, Worker bearer and Access service credentials. The deployment job reuses `data-s2b-phase3-deployment`, `CLOUDFLARE_PHASE3_DEPLOY_TOKEN`, the retained Worker bearer, Access service credentials and account identity. No new secret, Worker, D1 database, provider, hostname, route or Access design is introduced. The evidence for that upload-job environment change, and its precise security meaning, are recorded under [Upload-job protected-environment correction](#upload-job-protected-environment-correction).
 
 ## Upload contract
 
@@ -31,7 +32,7 @@ At most one rollback Deployment may target the exact supplied pre-approved prior
 
 ## Approval gates and limitations
 
-This repository candidate performs no live Cloudflare verification or mutation. Repository-recorded state can drift before execution, so every future live action requires fresh mutation-free preflight and explicit owner approval. Merge does not authorize upload. Upload success does not authorize deployment. Deployment does not authorize Cron activation. Cron activation, collector execution, real baseline collection, unchanged-cycle/changed-fact proof and D1/CPU acceptance remain later independent gates.
+This repository candidate performs no live Cloudflare mutation. Its only live verification to date is the mutation-free read-only preflight recorded below, which passed on exact `main` in run `33173358713`. Repository-recorded state can drift before execution, so every future live action requires fresh mutation-free preflight and explicit owner approval. Merge does not authorize upload. Upload success does not authorize deployment. Deployment does not authorize Cron activation. Cron activation, collector execution, real baseline collection, unchanged-cycle/changed-fact proof and D1/CPU acceptance remain later independent gates.
 
 
 ## Mutation-free live-preflight preparation
@@ -51,4 +52,24 @@ Both failed runs stopped at the helper's credential-presence gate before its fir
 
 The preflight workflow now uses `data-s2b-phase3-deployment` and maps its existing `CLOUDFLARE_PHASE3_DEPLOY_TOKEN` secret into the standalone helper's unchanged `CLOUDFLARE_API_TOKEN` variable; the four retained health, Access and account mappings are unchanged. That Phase 3 credential is broader than the reads this preflight needs. It is acceptable only because `phase4b/preflight.mjs` is itself structurally incapable of issuing a mutation request: it imports no upload or deployment helper, its guard admits only the exact read GETs plus the single D1 query POST after `validateReadOnlySql`, and every Worker, Cron, route/domain, Access, secret and D1-write endpoint is rejected regardless of token scope. The executable is unchanged by this correction. Its repository gate still completes before any credential is available. A PASS summary is sanitized and reports every mutation/execution category as zero; raw API responses are neither persisted nor uploaded.
 
-No successful Phase 4B live preflight is claimed, and no current Cloudflare, Cron, D1, Version or Deployment state is claimed as healthy or reconciled by this correction. Any dispatch requires separate explicit owner approval, and PASS would authorize no Version upload, Deployment, Cron activation or collector execution.
+Any dispatch requires separate explicit owner approval, and PASS authorizes no Version upload, Deployment, Cron activation or collector execution.
+
+### Mutation-free live preflight PASS — run 33173358713
+
+The corrected preflight was dispatched and **passed**. Run `33173358713`, workflow `DATA-S2B Phase 4B Mutation-Free Live Preflight Preparation`, ran on exact `main` SHA `e45828ad34273eb71d7d6ae928e0931c30b4e95f` under `data-s2b-phase3-deployment`. Both jobs succeeded: repository gate `98855692909` and protected read-only job `98855729314`. The protected job log showed all five variables — `CLOUDFLARE_API_TOKEN` (mapped from `CLOUDFLARE_PHASE3_DEPLOY_TOKEN`), `CLOUDFLARE_ACCOUNT_ID`, `DATA_S1_HTTP_AUTH_TOKEN`, `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` — populated and masked as `***`, and the helper completed its bounded read without failing closed.
+
+That PASS reconciled the fresh live state its guarded checks cover: active Version `3a2b065a-6527-4887-9bf8-b08e82e81133`, retained rollback Version `5edbe951-4be4-46bc-b2cf-17b550396105` present, sole active Version at 100% traffic, production hostname `data.fpltsheet.co.uk`, compatibility date `2026-08-22`, season `2026-27`, Cron absent, valid Phase 1 D1 schema/governance, zero DATA-S2 history counts, D1 size exactly `151552` bytes, and authenticated production health in `shadow_only` mode. The preflight performed no mutation: no Version upload, no Deployment, no traffic change, no Cron change, no D1 write, no route/domain, Access or secret change.
+
+## Upload-job protected-environment correction
+
+The standalone inactive-Version-upload workflow, `.github/workflows/data-s2b-phase4b-version-upload.yml`, still referenced `data-s2b-phase2-version-upload` and `secrets.CLOUDFLARE_WORKER_UPLOAD_TOKEN` after the preflight had been corrected. `workers/data-platform/phase4b/upload-version.mjs` requires five credentials — the Worker mutation token, account identity, Worker HTTP bearer, Access client ID and Access client secret — before its first Cloudflare request, and fails closed with `required_phase4b_credentials_or_identity_missing` if any is absent.
+
+Live run `33171701995`, on `fb30645440fe2a2414bf42bf1b53a9e48bc9f4c7`, had already disproved the availability of three of those five under that environment. That run was the *preflight* workflow, not the upload workflow, but its protected job used exactly the same pairing the upload job still carried: environment `data-s2b-phase2-version-upload` with `secrets.CLOUDFLARE_WORKER_UPLOAD_TOKEN`. Its job log showed the Cloudflare token and account identity populated and masked, and `DATA_S1_HTTP_AUTH_TOKEN`, `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` empty. The upload workflow was therefore operationally incapable of reaching its upload step, and dispatching it in that state could only have failed closed.
+
+The correction moves the upload job to `data-s2b-phase3-deployment` and maps `secrets.CLOUDFLARE_PHASE3_DEPLOY_TOKEN` into the helper's unchanged `CLOUDFLARE_WORKER_UPLOAD_TOKEN` variable. The four account, bearer and Access mappings are unchanged. Credential presence in that environment is live-proven twice: Phase 3 deployment run `33142804502` (job `98757181376`) and Phase 4B preflight run `33173358713` (job `98855729314`) each showed all five required variables populated and masked.
+
+`workers/data-platform/phase4b/upload-version.mjs` is **unchanged** by this correction. Its mutation contract is unchanged: `assertUploadMutation` admits exactly one mutating request, `POST .../versions?bindings_inherit=strict`, and rejects every other endpoint, so the helper contains no Deployment, Cron, Access, secret, route/domain or D1-write path. Its binding design is unchanged: `TEAMSHEET_DATA_DB` and `DATA_S1_HTTP_AUTH_TOKEN` inherited from the exact currently active Version with the secret value never read, `DATA_S2_SEASON` as plain text `2026-27`, compatibility date `2026-08-22`, and no Wrangler deployment. Every pre-upload and postflight control is retained.
+
+The credential now exposed to the upload job is a **Phase 3 mutation-capable token**, and this is deliberately not least privilege at the credential level. It is least-capability at the executable and request level: the token's broader scope is constrained by the helper's permanent structural allowlist and by the permanent tests that pin it. Using this token here broadens no endpoint, binding, Cron, D1 or Access capability in the executable.
+
+This repository change performs no live upload. The owner has approved exactly one inactive Phase 4B Worker Version upload, but execution remains blocked until this correction is merged, exact-main CI passes, and the merged workflow is then dispatched against that exact `main` SHA. No inactive Version has been uploaded, no new Version ID exists, and no Deployment, Cron activation or collector execution is authorized.
