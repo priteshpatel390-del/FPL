@@ -1,0 +1,106 @@
+name: DATA-S2B Phase 4B Inactive Version Upload Preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main commit approved for DATA-S2B Phase 4B inactive Worker version upload only
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  repository-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - name: Validate approved SHA before checkout
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact approved revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+
+      - name: Gate exact current main and clean tree
+        id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          http="$(curl --silent --output "$response" --write-out '%{http_code}' --max-time 20 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs")"
+          test "$http" = 200
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const matches=(body.check_runs??[]).filter(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/'));
+          if(matches.length<1)throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+          rm -f "$response"
+          test -z "$(git status --porcelain)"
+
+  phase4b-version-upload:
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: data-s2b-phase2-version-upload
+    env:
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+      CLOUDFLARE_WORKER_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_UPLOAD_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DATA_S1_HTTP_AUTH_TOKEN: ${{ secrets.DATA_S1_HTTP_AUTH_TOKEN }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+    steps:
+      - name: Check out gated approved revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      - name: Reconfirm identity and upload one inactive Worker version only
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          node workers/data-platform/phase4b/upload-version.mjs
+          test -z "$(git status --porcelain)"

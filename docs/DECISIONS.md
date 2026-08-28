@@ -1,5 +1,11 @@
 # DECISIONS.md — Architectural decision record
 
+## DATA-S2B Phase 4B mutation-path separation — 28 August 2026
+
+**Decision:** future Phase 4 scheduler Version upload and later promotion use new manual-only helpers rather than weakening or repurposing historical Phase 2/3 executables. Upload admits only the exact Versions POST; Deployment admits only the exact Deployments POST. Each needs separate protected approval, exact-current-main CI proof and immutable live-state preflight. Neither can activate Cron or run collection.
+
+**Boundary:** repository preparation authorizes no live read or mutation. Merge, upload, deployment, Cron activation and collector execution remain separate owner gates. See [Phase 4B preparation](../workers/data-platform/DATA-S2B-PHASE-4B-VERSION-DEPLOYMENT-PREPARATION.md).
+
 ## D-GW1P2C3B — Accept sibling-domain browser transport only
 
 **Decision:** Record the real physical iPhone Safari result for `app.fpltsheet.co.uk` → `archive.fpltsheet.co.uk` as a browser transport PASS only. Prevent Cross-Site Tracking remained ON; `Sec-Fetch-Site: same-site` was directly observed; OPTIONS returned 204; the matching deliberately invalid `{}` POST returned 422; and Safari read `{"error":"envelope_schema"}`.

@@ -1,5 +1,10 @@
 # SECURITY.md
 
+<!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
+## DATA-S2B Phase 4B endpoint and credential boundary
+
+Phase 4B reuses the existing protected Phase 2 upload and Phase 3 deployment environments/credentials, exposing them only after an exact-current-main, clean-tree and exact-head Verify Teamsheet repository job. Application-level mutation allowlists permit the upload helper only the exact Versions POST and the deployment helper only the exact Deployments POST; Schedules, generic script updates, routes/domains, Access, secrets and D1 writes are rejected regardless of token scope. Secrets are masked, their values are never serialized, and raw Cloudflare responses are transient. No live action is authorized by this repository candidate.
+
 <!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
 ## DATA-S2B Phase 3 live deployment security boundary
 

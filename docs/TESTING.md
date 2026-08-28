@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
+## DATA-S2B Phase 4B permanent safety coverage
+
+`tests/data-s2b-phase4b-version-upload.test.mjs` pins Phase 4 config while proving frozen Phase 2 rejection, exact modules/config/bindings, deterministic hashes/metadata, D1 and retained-secret inheritance pinned to the exact verified active Version ID, one-shot ambiguity reconciliation, immutable Cron/D1 state and the exact `/versions` mutation allowlist. `tests/data-s2b-phase4b-deployment.test.mjs` pins explicit candidate/active identities, sole-Version 100% bodies, the exact `/deployments` mutation allowlist, pre/post health and immutable-state brackets, read-only ambiguity reconciliation, exact one-shot rollback and incident classification for Cron/D1 drift. Both statically prove manual exact-main CI gates, protected credential ordering, Node `24.19.0`, workflow separation and absence of Wrangler deploy/trigger commands. The Phase 4B repository candidate baseline is **1,149 passed, 0 failed, 0 skipped, 0 cancelled**.
+
 <!-- DATA-S2B-PHASE3-REPOSITORY-GATE-2026-08-27 -->
 ## DATA-S2B Phase 3 permanent deployment-gate coverage
 
