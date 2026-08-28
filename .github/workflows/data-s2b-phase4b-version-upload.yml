@@ -76,10 +76,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
-      name: data-s2b-phase2-version-upload
+      name: data-s2b-phase3-deployment
     env:
       APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
-      CLOUDFLARE_WORKER_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_UPLOAD_TOKEN }}
+      CLOUDFLARE_WORKER_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_PHASE3_DEPLOY_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       DATA_S1_HTTP_AUTH_TOKEN: ${{ secrets.DATA_S1_HTTP_AUTH_TOKEN }}
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}

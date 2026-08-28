@@ -1,9 +1,13 @@
 # ROADMAP.md — current and proposed checkpoints
 
-<!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
-## Current DATA-S2B gate — Phase 4B preflight environment correction
+<!-- DATA-S2B-PHASE4B-UPLOAD-ENVIRONMENT-CANDIDATE-2026-08-28 -->
+## Current DATA-S2B gate — Phase 4B inactive-Version-upload environment correction
 
-Two standalone mutation-free preflight runs have passed their repository gate and then failed closed before any request, because the selected protected environment lacked three health/Access credentials: run `33170157089` under the Phase 0 environment, and run `33171701995` under the Phase 2 upload environment that had been chosen from repository inference. Neither performed any Cloudflare read, D1 query, production health request or mutation. The narrow correction moves the job to the Phase 3 deployment environment, selected on the direct credential-presence evidence of successful run `33142804502`, while retaining the helper's unchanged structural read-only boundary. It must merge and pass exact-main Verify Teamsheet before the owner may separately approve a dispatch. PASS remains required before any inactive Version-upload approval and authorizes no upload, Deployment, Cron activation or collection.
+The corrected mutation-free preflight passed as run `33173358713` on exact `main` `e45828ad34273eb71d7d6ae928e0931c30b4e95f`, reconciling fresh live Version, traffic, hostname, compatibility, season, Cron, D1 governance, count, size and authenticated-health state without any mutation. The remaining defect is in the standalone inactive-Version-upload workflow, which still selected the Phase 2 upload environment and its upload-token secret — the same pairing live run `33171701995` proved does not supply the Worker bearer or Access service credentials the upload helper requires before its first Cloudflare request.
+
+This narrow correction moves that job to `data-s2b-phase3-deployment`, whose credential presence is live-proven by successful runs `33142804502` and `33173358713`, and maps its existing deploy-token secret into the upload helper's unchanged token variable. The upload executable, its single `/versions` mutation endpoint, its binding-inheritance design and every postflight control are unchanged.
+
+It must merge and pass exact-main Verify Teamsheet before the owner may dispatch the already-approved single inactive Worker Version upload. That upload would authorize no Deployment, no production traffic change, no Cron activation and no collector execution.
 
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 4B repository candidate; live actions unapproved
