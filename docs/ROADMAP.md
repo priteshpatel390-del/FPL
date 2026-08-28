@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
+## Current DATA-S2B gate — mutation-free Phase 4B live-preflight repository candidate
+
+The next repository gate is review/merge of the standalone read-only preflight preparation. Merge does not authorize dispatch. A later explicit approval is required to run it; even a PASS would not authorize Version upload, Deployment, Cron activation or collector execution.
+
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## Current DATA-S2B gate — Phase 4B repository candidate; live actions unapproved
 

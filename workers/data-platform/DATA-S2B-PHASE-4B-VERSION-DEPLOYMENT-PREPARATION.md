@@ -32,3 +32,10 @@ At most one rollback Deployment may target the exact supplied pre-approved prior
 ## Approval gates and limitations
 
 This repository candidate performs no live Cloudflare verification or mutation. Repository-recorded state can drift before execution, so every future live action requires fresh mutation-free preflight and explicit owner approval. Merge does not authorize upload. Upload success does not authorize deployment. Deployment does not authorize Cron activation. Cron activation, collector execution, real baseline collection, unchanged-cycle/changed-fact proof and D1/CPU acceptance remain later independent gates.
+
+
+## Mutation-free live-preflight preparation
+
+A separate manual-only repository path now prepares the fresh live-state read required before any future Version-upload approval. `phase4b/preflight.mjs` is a standalone read-only executable: it imports no upload/deployment helper and its API guard admits only the exact Deployments, deployable Versions, Version Detail, Schedules, Workers Domains and D1 metadata GETs plus the D1 query POST after `validateReadOnlySql`. It checks the recorded active/rollback identities, sole-Version 100% traffic, exact Version Detail/bindings/compatibility/season, empty Cron, exact hostname, Phase 1 governance and zero DATA-S2 history, the 151552-byte D1 snapshot and authenticated `shadow_only` health twice across a bounded read.
+
+The dedicated workflow reuses the protected `data-s2b-phase0-readonly` environment, its existing read token/account identity and the existing health/Access credential names. Its repository gate completes before credentials are available. A PASS summary is sanitized and reports every mutation/execution category as zero; raw API responses are neither persisted nor uploaded. This repository preparation has not been dispatched and proves no current live state. Dispatch requires a separate explicit owner approval, and PASS would authorize no Version upload, Deployment, Cron activation or collector execution.
