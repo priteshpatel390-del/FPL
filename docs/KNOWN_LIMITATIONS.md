@@ -1,5 +1,11 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
+## Current Phase 4B limitation — non-atomic `latest` inheritance
+
+The live Cloudflare Version Upload API rejects explicit UUID `version_id` values for inherited bindings and requires literal `latest`. A final immediate check can prove that the observed latest deployable Version is the exact expected production-active Version, and postflight can require one response-matching new candidate with the expected resolved bindings. Those guards detect most observable drift and fail closed, but they cannot prove that another actor created no Version in the microscopic interval before Cloudflare resolved `latest` unless Cloudflare supplies an atomic conditional primitive. Teamsheet therefore assumes no concurrent authorized Version creation during the guarded manual upload; every unexpected Version delta blocks Deployment and requires separate reconciliation. The remediation is not live-proven and no second upload is currently authorized.
+
+
 <!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
 ## Current DATA-S2 limitation — deployed shadow candidate; collection unapproved
 

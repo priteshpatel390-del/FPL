@@ -107,8 +107,8 @@ export function buildVersionMetadata(activeVersionId,approvedSha){
     main_module:'data-platform-rpc.mjs',
     compatibility_date:EXPECTED_COMPATIBILITY_DATE,
     bindings:[
-      {name:'TEAMSHEET_DATA_DB',type:'inherit',version_id:activeVersionId},
-      {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:activeVersionId},
+      {name:'TEAMSHEET_DATA_DB',type:'inherit',version_id:'latest'},
+      {name:'DATA_S1_HTTP_AUTH_TOKEN',type:'inherit',version_id:'latest'},
       {name:'DATA_S2_SEASON',type:'plain_text',text:EXPECTED_SEASON}
     ],
     annotations:{
@@ -187,8 +187,21 @@ export function validateVersionDelta(beforeIds,afterIds,uploadedId){
   if(!Array.isArray(beforeIds)||!Array.isArray(afterIds)||typeof uploadedId!=='string'||!uploadedId)throw new Error('phase4b_version_delta_invalid');
   if(beforeIds.includes(uploadedId)||!afterIds.includes(uploadedId))throw new Error('phase4b_version_delta_invalid');
   const before=new Set(beforeIds),added=afterIds.filter(id=>!before.has(id));
-  if(added.length!==1||added[0]!==uploadedId)throw new Error('phase4b_version_delta_invalid');
+  if(added.length!==1||added[0]!==uploadedId||afterIds[0]!==uploadedId)throw new Error('phase4b_version_delta_invalid');
+  if(!afterIds.includes(EXPECTED_ACTIVE_VERSION_ID)||!afterIds.includes(EXPECTED_ROLLBACK_VERSION_ID))throw new Error('phase4b_version_provenance_anchors_missing');
   return true;
+}
+
+export function capturePreUploadSnapshot({deployment,versionIds,databaseId,domains,schedules,database,state,health}){
+  if(!deployment||typeof deployment.deploymentId!=='string'||deployment.versionId!==EXPECTED_ACTIVE_VERSION_ID)throw new Error('phase4b_preupload_snapshot_invalid');
+  requireLatestActiveVersion(versionIds,deployment.versionId);
+  if(!versionIds.includes(EXPECTED_ROLLBACK_VERSION_ID)||typeof databaseId!=='string'||!databaseId)throw new Error('phase4b_preupload_snapshot_invalid');
+  return Object.freeze({
+    deploymentId:deployment.deploymentId,activeVersionId:deployment.versionId,versionIds:Object.freeze([...versionIds]),
+    expectedLatestVersionId:EXPECTED_ACTIVE_VERSION_ID,rollbackPresent:true,databaseId,
+    cronCount:schedules.length,database:Object.freeze({...database}),d1State:state,
+    hostname:domains[0],health:Object.freeze({...health})
+  });
 }
 
 export function validateUploadedVersion(detail,{uploadedId,databaseId}){
@@ -230,19 +243,19 @@ async function main(){
     let requestBody;
     if(multipart){requestBody=multipart;}
     else if(body!==undefined){headers['Content-Type']='application/json';requestBody=JSON.stringify(body);}
-    let response,text;try{response=await fetch(`${base}${path}`,{method,headers,body:requestBody,redirect:'error'});text=await response.text();}catch{if(ambiguous)throw new Error('phase4b_upload_response_ambiguous');throw new Error('phase4b_api_transport_failed');}
+    let response,text;try{response=await fetch(`${base}${path}`,{method,headers,body:requestBody,redirect:'error'});text=await response.text();}catch{if(ambiguous)throw new Error('phase4b_upload_outcome_ambiguous_reconciliation_required_no_retry');throw new Error('phase4b_api_transport_failed');}
     const sensitive=[token,account,databaseId];
-    let parsed;try{parsed=JSON.parse(text);}catch{if(ambiguous)throw new Error('phase4b_upload_response_ambiguous');throw new Error(response.ok?'api_json_invalid':extractCloudflareError(response.status,text,sensitive));}
+    let parsed;try{parsed=JSON.parse(text);}catch{if(ambiguous)throw new Error('phase4b_upload_outcome_ambiguous_reconciliation_required_no_retry');throw new Error(response.ok?'api_json_invalid':extractCloudflareError(response.status,text,sensitive));}
     if(method==='POST'&&path===`${workerBase}/versions?bindings_inherit=strict`)scriptEtag=response.headers.get('etag');
     const outcome=classifyApiResponse(response.status,parsed);
-    if(!outcome.ok){if(ambiguous&&response.status>=500)throw new Error('phase4b_upload_response_ambiguous');throw new Error(extractCloudflareError(response.status,text,sensitive));}
+    if(!outcome.ok){if(ambiguous&&response.status>=500)throw new Error('phase4b_upload_outcome_ambiguous_reconciliation_required_no_retry');throw new Error(extractCloudflareError(response.status,text,sensitive));}
     return outcome.result;
   };
 
   const workerBase=`/accounts/${encodeURIComponent(account)}/workers/scripts/${WORKER_NAME}`;
-  const health=async()=>{const response=await fetch(`https://${EXPECTED_PRODUCTION_HOSTNAME}/v1/health`,{headers:{Authorization:`Bearer ${healthToken}`,'CF-Access-Client-Id':accessId,'CF-Access-Client-Secret':accessSecret},redirect:'error'});let body;try{body=await response.json();}catch{throw new Error('phase4b_health_response_invalid');}if(response.status!==200||body?.ok!==true||body?.mode!=='shadow_only')throw new Error('phase4b_health_failed');};
+  const health=async()=>{const response=await fetch(`https://${EXPECTED_PRODUCTION_HOSTNAME}/v1/health`,{headers:{Authorization:`Bearer ${healthToken}`,'CF-Access-Client-Id':accessId,'CF-Access-Client-Secret':accessSecret},redirect:'error'});let body;try{body=await response.json();}catch{throw new Error('phase4b_health_response_invalid');}if(response.status!==200||body?.ok!==true||body?.mode!=='shadow_only')throw new Error('phase4b_health_failed');return {ok:true,mode:'shadow_only'};};
   const domainsBefore=validateDomains(await request(`/accounts/${encodeURIComponent(account)}/workers/domains`));
-  await health();
+  const healthBefore=await health();
   const deploymentsBefore=assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
   if(deploymentsBefore.versionId!==EXPECTED_ACTIVE_VERSION_ID)throw new Error('phase4b_active_version_drift');
   const activeDetailBefore=await request(`${workerBase}/versions/${encodeURIComponent(deploymentsBefore.versionId)}`);
@@ -260,44 +273,52 @@ async function main(){
     counts:(await query(PHASE0_QUERIES.counts))[0],
     official:(await query(PHASE0_QUERIES.officialHistory))[0]
   });
-  validatePostPhase1State(await readPhase1State());
-  const versionsBefore=extractVersions(await request(`${workerBase}/versions?deployable=true`));
-  requireLatestActiveVersion(versionsBefore,deploymentsBefore.versionId);
-  if(!versionsBefore.includes(EXPECTED_ROLLBACK_VERSION_ID))throw new Error('phase4b_rollback_version_missing');
+  const d1StateBefore=await readPhase1State();
+  validatePostPhase1State(d1StateBefore);
 
   const metadata=buildVersionMetadata(deploymentsBefore.versionId,approvedSha);
   const identity=deterministicIdentity(metadata,sources);
   const multipart=buildVersionUploadForm(metadata,sources);
+
+  // This is deliberately the final read before the single mutation. Cloudflare only
+  // accepts `latest` for inherited bindings, so latest must still equal the exact
+  // production-active Version after all slower preparation has completed.
+  const finalDeploymentBefore=assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
+  sameDeployment(deploymentsBefore,finalDeploymentBefore);
+  const versionsBefore=extractVersions(await request(`${workerBase}/versions?deployable=true`));
+  requireLatestActiveVersion(versionsBefore,finalDeploymentBefore.versionId);
+  if(!versionsBefore.includes(EXPECTED_ROLLBACK_VERSION_ID))throw new Error('phase4b_rollback_version_missing');
+  const preUpload=capturePreUploadSnapshot({deployment:finalDeploymentBefore,versionIds:versionsBefore,databaseId,domains:domainsBefore,schedules:schedulesBefore,database:databaseBefore,state:d1StateBefore,health:healthBefore});
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     `## DATA-S2B Phase 4B — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Active-version DATA_S2_SEASON: 2026-27\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
 
   let uploadedId;
-  try{const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:versionsBefore,activeVersionId:deploymentsBefore.versionId});uploadedId=extractUploadedVersion(uploadResult,deploymentsBefore.versionId);}
-  catch(error){
-    if(error.message!=='phase4b_upload_response_ambiguous')throw error;
-    const reconciled=extractVersions(await request(`${workerBase}/versions?deployable=true`));
-    const added=reconciled.filter(id=>!versionsBefore.includes(id));
-    if(added.length!==1)throw new Error('phase4b_ambiguous_upload_unresolved_stop_no_retry');
-    uploadedId=added[0];
-  }
-  const detail=await request(`${workerBase}/versions/${encodeURIComponent(uploadedId)}`);
-  validateUploadedVersion(detail,{uploadedId,databaseId});
-  const versionsAfter=extractVersions(await request(`${workerBase}/versions?deployable=true`));
-  validateVersionDelta(versionsBefore,versionsAfter,uploadedId);
+  const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:preUpload.versionIds,activeVersionId:preUpload.activeVersionId});
+  uploadedId=extractUploadedVersion(uploadResult,preUpload.activeVersionId);
+  let databaseAfter;
+  try{
+    const versionsAfter=extractVersions(await request(`${workerBase}/versions?deployable=true`));
+    validateVersionDelta(preUpload.versionIds,versionsAfter,uploadedId);
+    const detail=await request(`${workerBase}/versions/${encodeURIComponent(uploadedId)}`);
+    validateUploadedVersion(detail,{uploadedId,databaseId:preUpload.databaseId});
 
-  await health();
-  if(JSON.stringify(validateDomains(await request(`/accounts/${encodeURIComponent(account)}/workers/domains`)))!==JSON.stringify(domainsBefore))throw new Error('phase4b_domain_changed');
-  const deploymentsAfter=assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
-  sameDeployment(deploymentsBefore,deploymentsAfter);
-  const activeDetailAfter=await request(`${workerBase}/versions/${encodeURIComponent(deploymentsAfter.versionId)}`);
-  validateActiveVersion(activeDetailAfter,{activeVersionId:deploymentsAfter.versionId,databaseId});
-  const schedulesAfter=extractSchedulesResult(await request(`${workerBase}/schedules`));
-  assessCron(schedulesAfter);
-  validatePostPhase1State(await readPhase1State());
-  const databaseAfter=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
-  if(numeric(databaseBefore.file_size)!==PHASE1_D1_SIZE_BYTES)throw new Error('phase4b_d1_size_baseline_drift');
-  if(numeric(databaseAfter.file_size)!==numeric(databaseBefore.file_size))throw new Error('phase4b_d1_size_changed');
-  await health();
+    await health();
+    if(JSON.stringify(validateDomains(await request(`/accounts/${encodeURIComponent(account)}/workers/domains`)))!==JSON.stringify(domainsBefore))throw new Error('phase4b_domain_changed');
+    const deploymentsAfter=assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
+    sameDeployment(deploymentsBefore,deploymentsAfter);
+    const activeDetailAfter=await request(`${workerBase}/versions/${encodeURIComponent(deploymentsAfter.versionId)}`);
+    validateActiveVersion(activeDetailAfter,{activeVersionId:deploymentsAfter.versionId,databaseId});
+    const schedulesAfter=extractSchedulesResult(await request(`${workerBase}/schedules`));
+    assessCron(schedulesAfter);
+    validatePostPhase1State(await readPhase1State());
+    databaseAfter=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
+    if(numeric(databaseBefore.file_size)!==PHASE1_D1_SIZE_BYTES)throw new Error('phase4b_d1_size_baseline_drift');
+    if(numeric(databaseAfter.file_size)!==numeric(databaseBefore.file_size))throw new Error('phase4b_d1_size_changed');
+    await health();
+  }catch{
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`## DATA-S2B Phase 4B — Postflight blocked\n\n- Inactive candidate: \`${uploadedId}\`\n- Deployment authorization: **BLOCKED**\n- Required action: separate read-only reconciliation and owner review.\n- No retry, Deployment or automatic cleanup was attempted.\n`);
+    throw new Error('phase4b_postflight_failed_candidate_quarantined_deployment_blocked');
+  }
 
   const summary=[
     '## DATA-S2B Phase 4B — Inactive Worker Version Upload',

@@ -1,5 +1,13 @@
 # SECURITY.md
 
+<!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
+## Phase 4B inherited-binding provenance boundary
+
+Cloudflare's live Version Upload API requires inherited bindings to reference literal `latest`; run `33186084206` established that explicit UUID references are rejected with HTTP 400 / `CF_10057`. Teamsheet therefore verifies immediately before upload that latest is the exact expected production-active Version, then validates the single candidate's resolved bindings after upload. The D1 identity must equal the active Version's D1 identity; the retained bearer remains a `secret_text` binding whose value is never requested or emitted; season and compatibility remain exact. The one allowed mutation remains `POST .../versions?bindings_inherit=strict`.
+
+This narrows and detects observable drift but does not make `latest` resolution atomic with the pre-check. Teamsheet assumes no concurrent authorized Version creation during this guarded manual operation. Exactly one new/newest deployable Version must match the response ID; any other delta blocks Deployment and requires reconciliation. Definite 4xx rejection, transport loss, timeout, malformed response and 5xx are never retried; ambiguous outcomes require a separate read-only reconciliation. No raw Cloudflare response, account ID, D1 UUID or secret value is written to diagnostics.
+
+
 <!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
 ## Phase 4B standalone read-only preflight boundary
 
