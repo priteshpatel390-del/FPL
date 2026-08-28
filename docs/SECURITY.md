@@ -1,5 +1,10 @@
 # SECURITY.md
 
+<!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
+## Phase 4B standalone read-only preflight boundary
+
+The preflight executable is structurally separate from upload/deployment code. Its request guard allows only exact required GET endpoints and the exact D1 query POST after `validateReadOnlySql`; every Worker/control-plane write and mutating SQL is rejected. The workflow reuses `data-s2b-phase0-readonly`, with repository identity/CI proven before its existing read token and existing health/Access credential names become available. Values are masked, raw responses are not persisted or uploaded, and sanitized evidence contains no account ID, D1 UUID or credential content. No dispatch or live read is authorized by this repository candidate.
+
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## DATA-S2B Phase 4B endpoint and credential boundary
 

@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE4B-READONLY-PREFLIGHT-CANDIDATE-2026-08-28 -->
+## Phase 4B mutation-free live-preflight permanent coverage
+
+`tests/data-s2b-phase4b-readonly-preflight.test.mjs` proves exact Worker/hostname/active/rollback/configuration identities, sole-Version 100% traffic, exact bindings without secret exposure, empty-Cron/D1 governance and size contracts, authenticated-health semantics, the exact read endpoint allowlist, validated `SELECT`-only D1 POST transport, rejection of every mutation class, sanitized all-zero mutation accounting, absence of Official acquisition/collector paths, and manual exact-main/CI/protected-credential workflow separation. The candidate baseline is **1,165 passed, 0 failed, 0 skipped, 0 cancelled**.
+
 <!-- DATA-S2B-PHASE4B-REPOSITORY-CANDIDATE-2026-08-28 -->
 ## DATA-S2B Phase 4B permanent safety coverage
 
