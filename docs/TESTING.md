@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-S2B-PHASE4B-CRON-ACTIVATION-PREPARATION-2026-08-28 -->
+## Phase 4B Cron-activation preparation coverage
+
+`tests/data-s2b-phase4b-cron-activation.test.mjs` permanently pins the intended candidate and rollback Version IDs, `*/30 * * * *` schedule, Worker/hostname/compatibility/season/binding/D1 anchors, exact Schedules PUT allowlist, executable schedule-response fixtures, ambiguous-outcome read-only reconciliation, immutable postflight, manual-only exact-main workflow gate, protected-credential ordering, cleanup, and the absence of Version/Deployment/D1/domain/Access/secret/collector or Wrangler mutation paths. This repository-only candidate adds nine tests, taking the baseline from **1,174 to 1,183 tests**, subject to final full-suite confirmation. No live Cron activation or Cloudflare read/mutation is performed by this coverage.
+
 <!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
 ## Phase 4B `latest` inheritance remediation coverage
 
