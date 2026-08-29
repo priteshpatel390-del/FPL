@@ -1,5 +1,10 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DECISION-INTELLIGENCE-DI3-2026-08-29 -->
+### Current Decision Intelligence checkpoint — DI-3 Stage A owner gate
+
+DI-3 Stage A adds an offline, behaviour-neutral canonical decision layer under `src/decision-intelligence/`: immutable actions, legal proofs, separated consequences, explicit policy and exact production-signal approvals, multidimensional uncertainty, reconsideration conditions, deterministic artifacts, read-only current-output adaptation, exact diffs and synthetic/reference coverage. It is absent from production/UI/build/DATA-S2B paths and changes no recommendation. Stage B production integration is unapproved; see [DI-3 Validated Production Decision Layer](docs/DECISION-INTELLIGENCE-DI3-DECISION-LAYER.md).
+
 <!-- DECISION-INTELLIGENCE-DI2-2026-08-29 -->
 ### Current Decision Intelligence checkpoint — DI-2 review candidate
 

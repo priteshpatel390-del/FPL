@@ -1,5 +1,9 @@
 # ARCHITECTURE.md
 
+## DI-3 offline decision-layer boundary — 29 August 2026
+
+`src/decision-intelligence/decision-layer.mjs` is a one-way, read-only consumer contract for existing production outputs. Production model, provider, state, UI and build roots do not import it. It can canonicalise approved outputs into deterministic artifacts and diff artifacts, but cannot write recommendation state, read shadow repositories through a provider-local shortcut, mutate DATA-S2B or render UI. See [DI-3 Stage A](DECISION-INTELLIGENCE-DI3-DECISION-LAYER.md).
+
 ## Decision Intelligence shadow boundary (DI-1)
 
 `src/decision-intelligence/` is a deliberately unreachable research/control island. Its flow is `candidate fact -> validation -> normalisation -> rights classification -> shadow representation -> stop`. `canonical.mjs` owns deterministic JSON/hash and secret scanning; `rights.mjs` owns fail-closed retention classification; `observation.mjs` owns canonical Official FPL identity, clocks, provenance and observation admission; `registry.mjs` owns immutable signal/version declarations; and `capabilities.mjs` owns exact approval lookup plus a shadow repository that always rejects production reads.

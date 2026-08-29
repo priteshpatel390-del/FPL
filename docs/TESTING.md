@@ -1,5 +1,9 @@
 # TESTING.md
 
+## DI-3 Stage A decision-layer coverage
+
+`tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, legal proofs, separated and conserved consequences, explicit policy and exact approvals, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.
+
 ## DI-2 automated evaluation checks
 
 `tests/decision-intelligence-evaluation.test.mjs` permanently covers manifest validation/freezing/hashing and experiment modes; cutoff, correction, expiry, required-timing, conflict and outcome-leakage rejection; deterministic cohorts and equal arm outcomes; explicit baseline/A/B/A+B ablations; Brier, MAE, RMSE and fixed calibration bins; sample/missing/warning lineage; byte-identical JSON/Markdown reruns; and static isolation from production, provider and DATA-S2B mutation paths. `node scripts/run-di2-reference.mjs` regenerates the committed synthetic artifacts. See [DI-2 Automated Evaluation & Ablation](DECISION-INTELLIGENCE-DI2-EVALUATION.md).
