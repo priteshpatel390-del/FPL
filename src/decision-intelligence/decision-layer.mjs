@@ -92,6 +92,7 @@ async function validateArtifactEntry(raw,{cryptoImpl}={}){
   const action=await createAction(actionInput,{cryptoImpl});
   fail(suppliedActionId!==action.actionId,'action_identity_mismatch');
   const consequence=createConsequence(entry.consequence),legality=createLegality(entry.legality);
+  fail(legality.legal!==true,'artifact_action_illegal');
   validateActionConsequence(action,consequence);
   return deepFreeze({...entry,action,consequence,legality});
 }

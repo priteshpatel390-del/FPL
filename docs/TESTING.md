@@ -2,7 +2,7 @@
 
 ## DI-3 Stage A decision-layer coverage
 
-`tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, legal proofs, separated and conserved consequences, authentic DI-1 ledger identity plus exact approvals, action/consequence transfer cross-integrity for recommendations and alternatives, complete policy-required selected-domain coverage, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.
+`tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, standalone legal/illegal proofs and legal-only canonical artifact admission, separated and conserved consequences, authentic DI-1 ledger identity plus exact approvals, action/consequence transfer cross-integrity for recommendations and alternatives, complete policy-required selected-domain coverage, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.
 
 ## DI-2 automated evaluation checks
 

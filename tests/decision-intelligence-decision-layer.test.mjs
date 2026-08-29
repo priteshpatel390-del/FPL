@@ -27,7 +27,16 @@ test('DI-3 actions have canonical immutable identities and deterministic order i
 
 test('DI-3 legality separates legal state and proof from preference',()=>{
   assert.equal(createLegality({legal:true,proofVersion:'existing-v1',constraints:[{code:'formation',satisfied:true}]}).legal,true);
+  assert.equal(createLegality({legal:false,proofVersion:'diagnostic-v1',constraints:[{code:'bank',satisfied:false}]}).legal,false);
   assert.throws(()=>createLegality({legal:true,proofVersion:'v1',constraints:[{code:'bank',satisfied:false}]}),/legal_proof/);
+});
+
+test('DI-3 artifacts admit only legal recommendations and alternatives',async()=>{
+  const action=await createAction({type:'roll',transfers:[]}),valid=entry(action),illegal={...valid,legality:createLegality({legal:false,proofVersion:'diagnostic-v1',constraints:[{code:'not_available',satisfied:false}]})};
+  await assert.rejects(baseArtifact([illegal]),/artifact_action_illegal/);
+  await assert.rejects(baseArtifact([valid],[illegal]),/artifact_action_illegal/);
+  assert.match((await baseArtifact([valid])).identity.decisionId,/^decision-/);
+  assert.equal((await baseArtifact([valid],[valid])).alternatives[0].legality.legal,true);
 });
 
 test('DI-3 consequences conserve hits, bank, free transfers and exclude unexplained utility',()=>{
