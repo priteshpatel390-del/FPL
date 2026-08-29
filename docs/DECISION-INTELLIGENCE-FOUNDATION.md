@@ -1,5 +1,7 @@
 # Decision Intelligence — DI-0 Foundation & Architecture
 
+> **DI-2 implementation note (29 August 2026):** the automated offline evaluation/ablation checkpoint described in section 18 is now implemented as a review candidate. Its exact manifest, anti-leakage, metric, report, synthetic-evidence and exclusion boundaries are recorded in [DI-2 Automated Evaluation & Ablation](DECISION-INTELLIGENCE-DI2-EVALUATION.md). This creates no DI-3 or production approval.
+
 **Status:** COMPLETE FOR OWNER REVIEW — RESEARCH/ARCHITECTURE ONLY  
 **Baseline:** GitHub `main` `9243c113cb9d16d994b280041ce94ddc2e3170cd`  
 **Investigated:** 29 August 2026  
