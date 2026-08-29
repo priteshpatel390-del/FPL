@@ -1,9 +1,9 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "d95cf9463b3c9eea58f547db3aeb77d7f6294093ea2d92a4be1ba29b7048a6aa",
-  "buildInputHash": "72d93f510d12ea8da3b3590b77db7eaa28da64a29026522cf6aedcda7b0a4b0c",
-  "commit": "c166811f3593f40e031d3a0ad8b589e40a4b085a",
+  "sourceHash": "c0f2d571bdb5dd6151bf0696b7956b762d4a179da8c69ce02c806ce5370c826d",
+  "buildInputHash": "16092375d275d6b8b9707274f1133fe33b44cc5fc21bab9ebda0ea3a43a8c52b",
+  "commit": "de1008609bd9ae5031afc332f48331d0bb8ed5e6",
   "moduleOrder": [
     "src/decision-intelligence/canonical.mjs",
     "src/decision-intelligence/decision-layer.mjs",
