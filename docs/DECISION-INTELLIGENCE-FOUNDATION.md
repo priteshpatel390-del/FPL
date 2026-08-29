@@ -385,14 +385,22 @@ Pages were reachable during DI-0. Licence, terms, maintenance, pricing and acces
 9. Travel may add nothing beyond rest/away/participation and should then be rejected.
 10. DI-1 should implement minimal contracts/capabilities, not infrastructure by default.
 
-## 20. Explicit exclusions and unresolved evidence
+## 20. DI-1 implementation checkpoint — 29 August 2026
 
-No application/model/minutes/fixture/captain/XI/bench/transfer/simulation/rank/league/provider/Understat/Odds/collector/DATA-S2B/D1/Cloudflare/security/UI behaviour changed. No provider or accuracy claim is approved. DI-1 is not implemented.
+DI-1 now implements the minimum generic platform described above in `src/decision-intelligence/`. The canonical observation preserves provider-neutral identity, value, all distinct timing clocks, source, quality/conflict, provenance, rights and the hard `shadow_only` capability. Official FPL IDs are canonical where equivalents exist; provider record IDs remain provenance. Display-name-only, ambiguous/unmatched (absence of a canonical ID), wrong-type, cross-season and fixture-type identities fail closed.
+
+The signal registry requires a stable signal/version, domain/source/subject, timing requirements, rights/persistence declaration, evidence type, dependencies, overlap risks, evaluation domain and exact `shadow_only` status. It contains no built-in candidates. The approval ledger requires an explicit approval ID, signal, version, scope, `production_read` capability, approval state/time/owner and exact lookup; DI-1 creates no approval. The shadow repository accepts only hash-identified `shadow_only` observations and exposes no production read.
+
+Permanent tests prove deterministic admission/identity, timing/as-of checks, rights and secrets failure closure, registry/ledger exactness, Provider Health isolation, production-path import absence and unavailable production reads. This is the strongest zero-dependency boundary feasible without inventing the later production adapter: production invariance follows from the DI directory being absent from the executable build dependency graph, and deterministic build equality verifies the deployable bytes remain unchanged apart from build provenance.
+
+## 21. Explicit exclusions and unresolved evidence
+
+No application/model/minutes/fixture/captain/XI/bench/transfer/simulation/rank/league/provider/Understat/Odds/collector/DATA-S2B/D1/Cloudflare/security/UI behaviour changed. No provider or accuracy claim is approved. DI-1 implements contracts and tests only.
 
 Open evidence questions: the accepted DATA-S2B read interface; availability of true publication timestamps; samples per domain; product language for near ties; any utility for rollover/chips/strategy; Understat/Odds evaluation rights; and whether availability sources show timestamp quality, independence and coverage. These are not DI-0 stop conditions.
 
-## 21. Owner decision required
+## 22. Owner decision required
 
-**RECOMMENDATION:** approve **DI-1 — Shadow Intelligence Platform** exactly within section 18.
+**RECOMMENDATION:** review and, if satisfied, approve merge of **DI-1 — Shadow Intelligence Platform** exactly within section 18.
 
-Approval would authorise one documentation/contracts/tests implementation branch, deterministic tests/build, affected docs, CI fixes, draft PR and completion package. It would not authorise any provider, live capture/storage, D1/Cloudflare/DATA-S2B modification, production read/model/calculation/weight, rights/security policy change, product behaviour or merge.
+Merge would not authorise DI-2, any provider, live capture/storage, D1/Cloudflare/DATA-S2B modification, production read/model/calculation/weight, rights/security policy change or product behaviour.

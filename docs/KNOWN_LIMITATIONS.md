@@ -1,5 +1,9 @@
 # KNOWN_LIMITATIONS.md
 
+## DI-1 limitations
+
+DI-1 is a contract and isolation foundation, not a live feature store. It has no provider adapter, durable storage, DATA-S2B reader, experiment runner, production adapter, production approval, UI or accuracy evidence. Its in-memory repository exists for contract testing and future offline composition only. Point-in-time eligibility can reject observations using preserved clocks, but the truth and availability of future provider publication timestamps remain provider-specific evidence questions. Static import tests and production-output/build equality strongly guard the current boundary, but any later production adapter necessarily requires a new architecture and owner approval.
+
 <!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
 ## Current Phase 4B limitation — non-atomic `latest` inheritance
 
