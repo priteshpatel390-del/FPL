@@ -62,6 +62,6 @@ test('DI-3 Stage B artifact actions and consequences exactly match existing prod
 test('DI-3 Stage B production graph is one-way and adds no UI, provider, DI-2 or DATA-S2B consumer',()=>{
   const productionRoots=['src/main.mjs','src/squad.mjs',...fs.readdirSync('src/model').map(name=>`src/model/${name}`),...fs.readdirSync('src/providers').map(name=>`src/providers/${name}`)];
   for(const file of productionRoots)assert.doesNotMatch(fs.readFileSync(file,'utf8'),/DI3_PARITY_RUNTIME|parity-integration|decision-artifact/,file);
-  const ui=fs.readFileSync('src/ui/team-decision-home.mjs','utf8')+fs.readFileSync('src/ui/transfer-performance.mjs','utf8');assert.match(ui,/DI3_PARITY_RUNTIME\.recordTeam/);assert.match(ui,/DI3_PARITY_RUNTIME\.recordTransfer/);assert.doesNotMatch(ui,/\.latest\(|artifact\.recommendations|createDecisionArtifact/);
+  const ui=fs.readFileSync('src/ui/team-decision-home.mjs','utf8')+fs.readFileSync('src/ui/transfer-performance.mjs','utf8');assert.match(ui,/DI3_PARITY_RUNTIME\.recordTeam/);assert.match(ui,/DI3_PARITY_RUNTIME\.recordTransfer/);assert.match(ui,/renderWeeklyDecision\(globalThis\.DI3_PARITY_RUNTIME\.latest\(\)\)/);assert.doesNotMatch(ui,/artifact\.recommendations|createDecisionArtifact/);
   const integration=fs.readFileSync('src/decision-intelligence/parity-integration.mjs','utf8');assert.doesNotMatch(integration,/evaluation-runner|workers\/data-platform|observation_heads|cloudflare|understat|odds|fetch\s*\(/i);
 });

@@ -1,3 +1,9 @@
+
+<!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
+### Current Decision Intelligence checkpoint — DI-4 review candidate
+
+DI-4 renders the frozen, ephemeral DI-3 parity artifact through a narrow deterministic read model in a mobile-first Team weekly-decision surface. Complete, partial and unavailable states fail closed; artifact actions, consequences and order are copied without recomputation or feedback. No recommendation/model/provider/persistence/security/account behaviour changes. Physical iPhone Safari acceptance remains pending. See [DI-4 Weekly Decision Synthesis](docs/DECISION-INTELLIGENCE-DI4-PRODUCT-INTEGRATION.md).
+
 # CLAUDE.md — onboarding for every future development session
 
 <!-- DECISION-INTELLIGENCE-DI3-2026-08-29 -->

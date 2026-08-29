@@ -628,6 +628,15 @@ h2[tabindex="-1"]:focus{outline:none}
 @media(max-width:350px){.league-gap-grid,.league-actions,.league-comparison-facts{grid-template-columns:1fr}.league-standing-row{grid-template-columns:34px minmax(0,1fr) 42px 30px}.league-standing-action{font-size:0}.league-standing-action .chev{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.league-view *{scroll-behavior:auto;transition:none}}
 
+
+/* DI-4 weekly decision synthesis: artifact-only, mobile-first presentation */
+.weekly-decision{display:grid;gap:11px;margin:0 0 14px;padding:14px;border:1px solid #C9D8CD;border-radius:16px;background:#F8FBF8;box-shadow:var(--shadow);min-width:0}
+.weekly-decision-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.weekly-decision-heading h3{font-size:20px;line-height:1.1}.weekly-decision-status{display:inline-flex;align-items:center;min-height:30px;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:10px;font-weight:700;text-align:center}.weekly-decision-status.complete{color:var(--pitch);border-color:#A9C8B2}.weekly-decision-status.partial{color:#745614;border-color:#DBC88F}.weekly-decision-status.unavailable{color:var(--ink-soft)}
+.weekly-decision-deadline,.weekly-decision-state{margin:0;color:var(--ink-soft);font-size:11px}.weekly-decision-state{padding:9px 10px;border-left:3px solid var(--amber);border-radius:0 8px 8px 0;background:#FCF8EF;color:var(--ink)}
+.weekly-decision-grid{display:grid;gap:8px}.weekly-decision-card{min-width:0;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fff}.weekly-decision-card.primary{border-width:2px;border-color:var(--pitch)}.weekly-decision-card h4{font-size:15px;line-height:1.25;overflow-wrap:anywhere}.weekly-decision-card p{margin:5px 0 0;color:var(--ink-soft);font-size:11px}.weekly-decision-details{border-top:1px solid var(--line)}.weekly-decision-details>summary{display:flex;align-items:center;min-height:44px;font-weight:700}.weekly-decision-details>.weekly-decision-grid,.weekly-decision-details>p{margin:0 0 8px}.weekly-decision-details>p{font-size:11px;color:var(--ink-soft)}.weekly-decision-section{padding-top:2px}.weekly-decision-section h4{font-size:14px}.weekly-decision-section p,.weekly-decision-section ul{margin:5px 0 0;font-size:11px;color:var(--ink-soft)}.weekly-decision-section ul{padding-left:18px}
+.weekly-decision a.btn{min-height:44px;width:100%}
+@media(min-width:600px){.weekly-decision-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-decision-grid>.weekly-decision-card:first-child:last-child{grid-column:1/-1}.weekly-decision a.btn{width:auto;justify-self:start}}
+@media(max-width:390px){.weekly-decision{padding:12px}.weekly-decision-heading{align-items:stretch;flex-direction:column}.weekly-decision-status{align-self:flex-start}.weekly-decision-card{padding:10px}}
 </style>
 </head>
 <body class="startup-pending" aria-busy="true">
@@ -755,6 +764,7 @@ h2[tabindex="-1"]:focus{outline:none}
         <p class="hint">Your model-selected XI, captaincy and bench on one decision-first pitch.</p>
       </div>
     </div>
+    <section id="weeklyDecision" class="weekly-decision" aria-labelledby="weeklyDecisionTitle"><div class="empty"><strong>Weekly decision unavailable</strong>The decision artifact is not available in this session. Your existing Team and Transfers views still work.</div></section>
     <div id="squadOut"><div class="empty"><strong>No squad yet</strong>Enter your Team ID in Team setup below. Manual squad editing will become available after the verified player list loads.</div></div>
     <details id="manualWrap" class="mt-16">
       <summary>Build or edit a squad by hand</summary>

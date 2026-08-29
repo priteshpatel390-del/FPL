@@ -527,3 +527,7 @@ The global shell uses one compact Ask Teamsheet composer at the top of every des
 ## 2.0.3 implementation note
 
 The approved Transfers checkpoint is implemented as a presentation/state migration only. It preserves the exact optimiser and introduces a mobile decision hierarchy: assumptions, verified context, highest-ranked decision, no-transfer baseline, best transfer alternative, progressive details and limited alternatives. Mini-League, rank, Team Home, player-detail, provider and model work remain outside this checkpoint.
+
+## DI-4 integration note (29 August 2026)
+
+The Team decision-home hierarchy now begins with a compact weekly synthesis copied from the DI-3 artifact. It complements rather than replaces the accepted pitch and support disclosures; Transfers remains a primary destination and no navigation item was added. Complete, partial and unavailable states follow the same calm mobile design language. Physical iPhone acceptance remains pending.
