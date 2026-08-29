@@ -1,4 +1,4 @@
-import {canonicalise,sha256Hex,stableStringify,secretFinding} from './canonical.mjs';
+import {canonicalise,deepFreeze,sha256Hex,stableStringify,secretFinding} from './canonical.mjs';
 import {classifyRights,persistenceDecision} from './rights.mjs';
 
 export const OBSERVATION_SCHEMA_VERSION='di-observation-v1';
@@ -67,5 +67,5 @@ export async function admitObservation(input,{signal,cryptoImpl=globalThis.crypt
   if(!QUALITY_STATES.includes(quality.state)||!CONFLICT_STATES.includes(quality.conflictState||'none'))return {ok:false,reason:'quality_invalid'};
   const base=canonicalise({schemaVersion:OBSERVATION_SCHEMA_VERSION,signal:{signalId:signal.signalId,version:signal.version},identity:input.identity,value:input.value,timing:timing.timing,source:input.source,quality:{state:quality.state,rejectionReasons:quality.rejectionReasons||[],confidence:quality.confidence??null,sourceQuality:quality.sourceQuality??null,conflictState:quality.conflictState||'none'},provenance:input.provenance,rights,boundary:{capability:'shadow_only'}});
   const hash=await sha256Hex(stableStringify(base),cryptoImpl);
-  return {ok:true,observation:Object.freeze(canonicalise({...base,identity:{...base.identity,observationId:`obs-${hash}`}}))};
+  return {ok:true,observation:deepFreeze(canonicalise({...base,identity:{...base.identity,observationId:`obs-${hash}`}}))};
 }

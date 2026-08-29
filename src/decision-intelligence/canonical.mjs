@@ -20,6 +20,11 @@ export function canonicalise(value){
   throw new Error('unsupported_value');
 }
 export function stableStringify(value){return JSON.stringify(canonicalise(value));}
+export function deepFreeze(value){
+  if(!value||typeof value!=='object'||Object.isFrozen(value))return value;
+  for(const child of Object.values(value))deepFreeze(child);
+  return Object.freeze(value);
+}
 export async function sha256Hex(value,cryptoImpl=globalThis.crypto){
   if(!cryptoImpl?.subtle)throw new Error('sha256_unavailable');
   const digest=await cryptoImpl.subtle.digest('SHA-256',new TextEncoder().encode(String(value)));

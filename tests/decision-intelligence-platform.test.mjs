@@ -24,6 +24,22 @@ test('DI-1 admits a valid provider-neutral observation with deterministic canoni
   assert.equal(one.observation.boundary.capability,'shadow_only');
 });
 
+test('DI-1 observations are deeply immutable without changing deterministic identity',async()=>{
+  const {observation}=await admitObservation(base,{signal:candidate});
+  const id=observation.identity.observationId,bytes=stableStringify(observation);
+  for(const mutate of [
+    ()=>{observation.identity.canonicalSubjectId='2026-27:fpl:player:99';},
+    ()=>{observation.timing.fetchedAt='2026-08-20T11:00:00.000Z';},
+    ()=>{observation.rights.retentionAllowed=false;},
+    ()=>{observation.boundary.capability='production_eligible';},
+    ()=>{observation.provenance.evidenceReferences.push('synthetic:8');},
+    ()=>{observation.quality.rejectionReasons.push('mutated');}
+  ])assert.throws(mutate,TypeError);
+  assert.equal(observation.identity.observationId,id);
+  assert.equal(stableStringify(observation),bytes);
+  assert.equal((await admitObservation(base,{signal:candidate})).observation.identity.observationId,id);
+});
+
 test('DI-1 canonical Official FPL identities reject display-name, type, season and fixture mismatches',()=>{
   assert.equal(canonicalFplIdentity('2026-27','player',42),'2026-27:fpl:player:42');
   assert.equal(validateIdentity({season:'2026-27',subjectType:'player',displayName:'Example'}).reason,'display_name_only_identity');
@@ -55,6 +71,8 @@ test('DI-1 registry enforces unique signal/version identity and shadow-only cand
   assert.throws(()=>createSignalRegistry([candidate,candidate]),/signal_duplicate/);
   assert.throws(()=>createSignalRegistry([{...candidate,productionStatus:'approved'}]),/signal_invalid/);
   assert.equal(registry.list()[0].productionStatus,'shadow_only');
+  assert.throws(()=>registry.get('availability.fact','1.0.0').overlapRisks.push('mutated'),TypeError);
+  assert.throws(()=>registry.list().push(candidate),TypeError);
 });
 
 test('DI-1 approval ledger is exact by signal, version and scope; DI-1 contains no approvals',()=>{
@@ -66,6 +84,7 @@ test('DI-1 approval ledger is exact by signal, version and scope; DI-1 contains 
   assert.equal(ledger.requireProductionRead('availability.fact','1.0.0','minutes').approvalId,'approval-1');
   assert.throws(()=>ledger.requireProductionRead('availability.fact','1.0.1','minutes'),/production_read_unapproved/);
   assert.throws(()=>ledger.requireProductionRead('availability.fact','1.0.0','scoring'),/production_read_unapproved/);
+  assert.throws(()=>{ledger.requireProductionRead('availability.fact','1.0.0','minutes').scope='scoring';},TypeError);
 });
 
 test('DI-1 rejects malformed records and all secret material before shadow admission',async()=>{
@@ -80,6 +99,16 @@ test('DI-1 shadow repository rejects malformed writes and exposes no production 
   repository.add(observation);assert.equal(repository.list().length,1);
   assert.throws(()=>repository.add({...observation,boundary:{capability:'production_eligible'}}),/shadow_observation_invalid/);
   assert.throws(()=>repository.productionRead(),/no_production_capability/);
+});
+
+test('DI-1 repository lists deeply immutable records without exposing mutable internal state',async()=>{
+  const repository=createShadowRepository(),{observation}=await admitObservation(base,{signal:candidate});
+  const id=repository.add(observation),listed=repository.list(),bytes=stableStringify(listed);
+  assert.throws(()=>{listed[0].value.value='injured';},TypeError);
+  assert.throws(()=>{listed[0].timing.fetchedAt='2026-08-20T11:00:00.000Z';},TypeError);
+  assert.throws(()=>listed.push(observation),TypeError);
+  assert.equal(repository.list()[0].identity.observationId,id);
+  assert.equal(stableStringify(repository.list()),bytes);
 });
 
 test('DI-1 valid shadow observations leave a production recommendation input byte-identical',async()=>{
