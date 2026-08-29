@@ -133,5 +133,5 @@ test('DI-1 malformed, stale and conflicting shadow records cannot contaminate Pr
 test('DI-1 is structurally absent from production model/provider/state/build dependency paths',()=>{
   const roots=['src/main.mjs','src/state.mjs','src/squad.mjs',...fs.readdirSync('src/model').map(name=>path.join('src/model',name)),...fs.readdirSync('src/providers').map(name=>path.join('src/providers',name))];
   for(const file of roots)assert.doesNotMatch(fs.readFileSync(file,'utf8'),/decision-intelligence/,file);
-  assert.doesNotMatch(fs.readFileSync('build.mjs','utf8'),/decision-intelligence/);
+  assert.doesNotMatch(fs.readFileSync('build.mjs','utf8'),/decision-intelligence\/(?:observation|registry|rights|capabilities)\.mjs/);
 });

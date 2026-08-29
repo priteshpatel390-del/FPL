@@ -290,6 +290,8 @@ function transferPerformanceRenderResult(result,context,{cached=false}={}){
   const optimiserSignature=decisionPreviewOptimiserSignature({
     squadSignature,horizon,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,plans
   });
+  const event=S.boot?.events?.find(row=>Number(row.id)===Number(S.nextGW));
+  if(event?.deadline_time&&globalThis.DI3_PARITY_RUNTIME){const deadline=new Date(event.deadline_time).toISOString();void globalThis.DI3_PARITY_RUNTIME.recordTransfer({basis:{season:FPL_RULES.season,gameweek:S.nextGW,eventId:S.nextGW,deadline,evaluationCutoff:deadline,sourceCommit:BUILD_INFO.commit,modelVersion:BUILD_INFO.modelVersion,rulesVersion:BUILD_INFO.rulesVersion,squadHash:`squad:${squad.map(slot=>Number(slot.p.id)).sort((a,b)=>a-b).join(',')}`,bank:assumptions.bankTenths,freeTransfers:assumptions.freeTransfers,priceBasis:result.pricingMode},result,horizon,startGameweek:S.nextGW});}
   const previewCleared=decisionPreviewSyncOptimiser(optimiserSignature);
   if(previewCleared) transferPlannerDispatchPreviewChange();
   const previewState=decisionPreviewSnapshot();

@@ -1,5 +1,10 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DECISION-INTELLIGENCE-DI3-2026-08-29 -->
+### Current Decision Intelligence checkpoint — DI-3 Stage B Option A review candidate
+
+DI-3 Stage A established the canonical contracts. Pritesh subsequently approved Stage B Option A: a one-way, ephemeral parity-artifact runtime consumes already-formed Team and Transfers outputs after selection, copies their semantics without reranking or recomputation, and catches every DI failure without affecting the existing recommendation. It renders no UI, persists nothing, activates no signal and creates no DI-to-production dependency. See [DI-3 Validated Production Decision Layer](docs/DECISION-INTELLIGENCE-DI3-DECISION-LAYER.md).
+
 <!-- DECISION-INTELLIGENCE-DI2-2026-08-29 -->
 ### Current Decision Intelligence checkpoint — DI-2 review candidate
 

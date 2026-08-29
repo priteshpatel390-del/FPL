@@ -1,5 +1,11 @@
 # TESTING.md
 
+## DI-3 Stage A decision-layer coverage
+
+`tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, standalone legal/illegal proofs and legal-only canonical artifact admission, separated and conserved consequences, authentic DI-1 ledger identity plus exact approvals, action/consequence transfer cross-integrity for recommendations and alternatives, complete policy-required selected-domain coverage, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.
+
+`tests/decision-intelligence-parity-integration.test.mjs` covers Stage B Option A: direct production-fixture-versus-artifact XI/bench/captain/vice and transfer/roll/hit/bank/FT parity; exact cross-domain basis coherence and stale-snapshot rejection; immutable inputs; deterministic partial/complete artifacts; caught failure/no-artifact behavior; empty signal approval; and one-way production graph isolation. The 14 reference descriptors remain explicitly synthetic Stage-A contract coverage.
+
 ## DI-2 automated evaluation checks
 
 `tests/decision-intelligence-evaluation.test.mjs` permanently covers manifest validation/freezing/hashing and experiment modes; cutoff, correction, expiry, required-timing, conflict and outcome-leakage rejection; deterministic cohorts and equal arm outcomes; explicit baseline/A/B/A+B ablations; Brier, MAE, RMSE and fixed calibration bins; sample/missing/warning lineage; byte-identical JSON/Markdown reruns; and static isolation from production, provider and DATA-S2B mutation paths. `node scripts/run-di2-reference.mjs` regenerates the committed synthetic artifacts. See [DI-2 Automated Evaluation & Ablation](DECISION-INTELLIGENCE-DI2-EVALUATION.md).

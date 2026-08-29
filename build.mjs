@@ -27,6 +27,7 @@ const ORDER = [
   'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/views.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
   'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/evidence-delivery.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
+const DI3_ORDER = ['src/decision-intelligence/canonical.mjs','src/decision-intelligence/decision-layer.mjs','src/decision-intelligence/parity-integration.mjs'];
 // model/xp.mjs remains a re-export-only shim and is excluded from the bundle.
 
 const EVIDENCE_ARCHIVE_ENDPOINT = 'https://archive.fpltsheet.co.uk/v1/evidence/predeadline';
@@ -35,6 +36,9 @@ const LEGACY_EVIDENCE_ARCHIVE_ENDPOINT = 'https://teamsheet-evidence-archive.fpl
 const transferWorkerModelSource = stripModuleSyntax(readFileSync('src/model/transfers.mjs', 'utf8'));
 const moduleInputs = [];
 let bundle = '';
+let di3Bundle='';
+for(const path of DI3_ORDER){const raw=readFileSync(path,'utf8');moduleInputs.push({path,content:raw});di3Bundle+=`\n/* ===== ${path} ===== */\n${stripModuleSyntax(raw)}\n`;}
+bundle+=`\n/* ===== DI-3 one-way parity representation ===== */\n(()=>{${di3Bundle}\nglobalThis.DI3_PARITY_RUNTIME=createParityRuntime();\n})();\n`;
 for (const path of ORDER) {
   const raw = readFileSync(path, 'utf8');
   if(/\bstyle\s*:/.test(raw) || /\.style(?:\.|\[|\s*=)/.test(raw) || /setAttribute\(\s*['\"]style/.test(raw) || /\bcssText\b/.test(raw))
@@ -44,14 +48,15 @@ for (const path of ORDER) {
 }
 assertNoModuleSyntax(bundle);
 const sourceHash = hashNamedInputs(moduleInputs);
-const buildInputs = buildInputFiles(ORDER);
-const buildInputHash = hashBuildInputs(ORDER);
+const ALL_ORDER=[...DI3_ORDER,...ORDER];
+const buildInputs = buildInputFiles(ALL_ORDER);
+const buildInputHash = hashBuildInputs(ALL_ORDER);
 const commit = process.env.BUILD_COMMIT || 'unversioned';
 const cfg = readFileSync('src/config.mjs', 'utf8');
 const modelVersion = /MODEL_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 const rulesVersion = /RULES_VERSION\s*=\s*'([^']+)'/.exec(cfg)[1];
 
-const manifest = { modelVersion, rulesVersion, sourceHash, buildInputHash, commit, moduleOrder: ORDER, buildInputFiles:buildInputs };
+const manifest = { modelVersion, rulesVersion, sourceHash, buildInputHash, commit, moduleOrder: ALL_ORDER, buildInputFiles:buildInputs };
 bundle = (`/* BUILD ${JSON.stringify({ modelVersion, rulesVersion, sourceHash: sourceHash.slice(0,16), buildInputHash:buildInputHash.slice(0,16), commit })} */\n`
   + `const BUILD_INFO = ${JSON.stringify(manifest)};\n`
   + `const TRANSFER_WORKER_MODEL_SOURCE = ${JSON.stringify(transferWorkerModelSource)};\n`
