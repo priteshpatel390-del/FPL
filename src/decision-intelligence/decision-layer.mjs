@@ -14,7 +14,7 @@ function ids(values,name,{length}={}){
 }
 
 export async function createAction(raw,{cryptoImpl=globalThis.crypto}={}){
-  const action=canonicalise(raw); fail(!ACTION_TYPES.has(action.type),'action_type');
+  const action=canonicalise(raw); delete action.displayText; fail(!ACTION_TYPES.has(action.type),'action_type');
   const domain=action.type==='starting_xi'?'xi':action.type==='bench_order'?'bench':action.type==='vice_captain'?'vice':['roll','transfer'].includes(action.type)?'transfers':'captain';
   fail(action.domain!==undefined&&action.domain!==domain,'action_domain'); action.domain=domain;
   if(action.type==='starting_xi'){action.playerIds=ids(action.playerIds,'xi',{length:11});fail(!/^(3|4|5)-(2|3|4|5)-(1|2|3)$/.test(action.formation||''),'formation');}
@@ -62,7 +62,19 @@ export function createPolicy(raw){
 }
 
 export function requirePolicyApprovals(policy,ledger){
+  fail(policy.allowedProductionSignals.length>0&&!ledger?.requireProductionRead,'approval_ledger_required');
   return deepFreeze(policy.allowedProductionSignals.map(row=>ledger.requireProductionRead(row.signalId,row.version,row.scope)));
+}
+
+async function validateArtifactEntry(raw,{cryptoImpl}={}){
+  const entry=canonicalise(raw);
+  fail(!entry.action||!entry.consequence||!entry.legality,'artifact_entry');
+  const suppliedActionId=entry.action.actionId;
+  const actionInput={...entry.action}; delete actionInput.actionId;
+  const action=await createAction(actionInput,{cryptoImpl});
+  fail(suppliedActionId!==action.actionId,'action_identity_mismatch');
+  const consequence=createConsequence(entry.consequence),legality=createLegality(entry.legality);
+  return deepFreeze({...entry,action,consequence,legality});
 }
 
 export async function createDecisionArtifact(raw,{ledger,cryptoImpl=globalThis.crypto}={}){
@@ -72,11 +84,15 @@ export async function createDecisionArtifact(raw,{ledger,cryptoImpl=globalThis.c
   fail(!value.squadBasis?.squadHash||!integer(value.squadBasis?.bank)||!integer(value.squadBasis?.freeTransfers),'squad_basis');
   fail(!COMPLETENESS.has(value.completeness?.state)||!Array.isArray(value.completeness?.missingDomains)||!Array.isArray(value.completeness?.staleDomains)||!Array.isArray(value.completeness?.conflicts),'completeness');
   fail(!Array.isArray(value.recommendations)||!Array.isArray(value.alternatives)||!Array.isArray(value.reconsiderationConditions)||!Array.isArray(value.evidenceReferences)||!Array.isArray(value.assumptionReferences)||!Array.isArray(value.rationaleCodes),'artifact_collections');
-  if(value.policy){const policy=createPolicy(value.policy);if(ledger)requirePolicyApprovals(policy,ledger);}
+  if(value.policy){const policy=createPolicy(value.policy);requirePolicyApprovals(policy,ledger);}
   if(value.completeness.state==='complete')fail(value.completeness.missingDomains.length||value.completeness.staleDomains.length||value.completeness.conflicts.length,'complete_with_gaps');
   if(value.completeness.state==='no_decision')fail(value.recommendations.length!==0,'no_decision_recommendation');
   for(const condition of value.reconsiderationConditions)fail(!condition.conditionId||!condition.observablePredicate||!Array.isArray(condition.affectedActionIds)||!condition.materiality||!Number.isFinite(Date.parse(condition.expiresAt||''))||!condition.evidenceReference,'reconsideration');
-  const actionIds=[...value.recommendations,...value.alternatives].map(row=>row.action?.actionId); fail(actionIds.some(id=>!/^act-[0-9a-f]{64}$/.test(id||'')),'action_identity');
+  value.recommendations=await Promise.all(value.recommendations.map(entry=>validateArtifactEntry(entry,{cryptoImpl})));
+  value.alternatives=await Promise.all(value.alternatives.map(entry=>validateArtifactEntry(entry,{cryptoImpl})));
+  const recommendationDomains=value.recommendations.map(row=>row.action.domain);
+  fail(new Set(recommendationDomains).size!==recommendationDomains.length,'duplicate_recommendation_domain');
+  const actionIds=[...value.recommendations,...value.alternatives].map(row=>row.action.actionId);
   const candidateActionSetHash=await sha256Hex(stableStringify(actionIds.slice().sort()),cryptoImpl);
   const identityBasis=canonicalise({...value,identity:undefined,hashes:{...value.hashes,candidateActionSetHash}});
   fail(!identityBasis.hashes?.featureInputViewHash,'input_hash');

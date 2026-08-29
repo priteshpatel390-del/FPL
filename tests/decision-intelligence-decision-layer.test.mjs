@@ -17,6 +17,8 @@ test('DI-3 actions have canonical immutable identities and deterministic order i
   await assert.rejects(createAction({type:'starting_xi',formation:'4-4-2',playerIds:[1,2]}),/xi_invalid/);
   await assert.rejects(createAction({type:'captain',playerId:0}),/captain_invalid/);
   await assert.rejects(createAction({type:'roll',transfers:[{outPlayerId:1}]}),/roll_transfer/);
+  const labelled=await createAction({...raw,displayText:'Buy these players'}),renamed=await createAction({...raw,displayText:'Different presentation'});
+  assert.equal(labelled.actionId,one.actionId);assert.equal(renamed.actionId,one.actionId);assert.equal(Object.hasOwn(labelled,'displayText'),false);
 });
 
 test('DI-3 legality separates legal state and proof from preference',()=>{
@@ -41,6 +43,17 @@ test('DI-3 policy is explicit and production signals fail closed by exact signal
   assert.equal(requirePolicyApprovals(policy,ledger)[0].approvalId,'owner-1');assert.throws(()=>requirePolicyApprovals({...policy,allowedProductionSignals:[{signalId:'availability.fact',version:'1.0.1',scope:'minutes'}]},ledger),/unapproved/);
 });
 
+test('DI-3 artifact approval enforcement cannot be bypassed by omitting the ledger',async()=>{
+  const action=await createAction({type:'roll',transfers:[]}),entry={action,consequence:createConsequence({expectedFootballPoints:40,transferHit:0,bankBefore:10,bankAfter:10,freeTransfersBefore:1,freeTransfersAfter:2,transferCount:0,squadChanges:[],horizon:{startGameweek:1,gameweeks:6}}),legality:createLegality({legal:true,proofVersion:'existing-v1',constraints:[{code:'baseline',satisfied:true}]})};
+  const signalPolicy={...policyRaw,allowedProductionSignals:[{signalId:'availability.fact',version:'1.0.0',scope:'minutes'}]};
+  const input={schemaVersion:'di3-decision-artifact-v1',deadline:{season:'2026-27',gameweek:1,eventId:1,deadline:'2026-08-21T17:30:00Z',evaluationCutoff:'2026-08-21T17:00:00Z'},build:{sourceCommit:'source',modelVersion:'current',rulesVersion:'current',policyVersion:'1.0.0'},squadBasis:{squadHash:'sha256:test',bank:10,freeTransfers:1},policy:signalPolicy,recommendations:[entry],alternatives:[],uncertainty:uncertainty(),risks:[],reconsiderationConditions:[],completeness:{state:'complete',missingDomains:[],staleDomains:[],conflicts:[]},evidenceReferences:[],assumptionReferences:[],rationaleCodes:[],hashes:{featureInputViewHash:'sha256:input'}};
+  await assert.rejects(createDecisionArtifact(input),/approval_ledger_required/);
+  const ledger=createApprovalLedger([{approvalId:'owner-1',signalId:'availability.fact',version:'1.0.0',scope:'minutes',capability:'production_read',status:'approved',approvedAt:'2026-08-29T00:00:00Z',approvedBy:'owner'}]);
+  assert.match((await createDecisionArtifact(input,{ledger})).identity.decisionId,/^decision-/);
+  await assert.rejects(createDecisionArtifact({...input,policy:{...signalPolicy,allowedProductionSignals:[{signalId:'availability.fact',version:'1.0.1',scope:'minutes'}]}},{ledger}),/production_read_unapproved/);
+  assert.match((await createDecisionArtifact({...input,policy:policyRaw})).identity.decisionId,/^decision-/);
+});
+
 test('DI-3 transfer adapter preserves mandatory roll, current order, separate consequences and input bytes',async()=>{
   const baseline={transferCount:0,transfers:[],bankBefore:10,bankAfter:10,freeTransfersBefore:1,freeTransfersNextGW:2,hitCost:0,grossBestXIPoints:100,grossGain:0,rollDifference:0};
   const plan={transferCount:2,transfers:[{outPlayerId:2,inPlayerId:12,position:2,sellPrice:45,buyPrice:44},{outPlayerId:8,inPlayerId:18,position:3,sellPrice:70,buyPrice:72}],bankBefore:10,bankAfter:9,freeTransfersBefore:1,freeTransfersNextGW:1,hitCost:4,grossBestXIPoints:106,grossGain:6,rollDifference:-1};
@@ -53,6 +66,17 @@ test('DI-3 artifacts are deterministic, deeply immutable and preserve lineage, a
   const one=await baseArtifact([rec]),two=await baseArtifact([rec]);assert.equal(stableStringify(one),stableStringify(two));assert.equal(one.identity.contentHash,two.identity.contentHash);assert.equal(one.build.policyVersion,'1.0.0');assert.throws(()=>{one.completeness.state='partial';},TypeError);
   const partial=await baseArtifact([rec],[],{state:'partial',missingDomains:['captain'],staleDomains:[],conflicts:[]});assert.equal(partial.completeness.state,'partial');
   const none=await baseArtifact([],[],{state:'no_decision',missingDomains:['xi'],staleDomains:[],conflicts:[]});assert.equal(none.recommendations.length,0);
+});
+
+test('DI-3 artifact boundary reconstructs every embedded canonical component and rejects forgery',async()=>{
+  const action=await createAction({type:'roll',transfers:[]}),consequence=createConsequence({expectedFootballPoints:40,transferHit:0,bankBefore:10,bankAfter:10,freeTransfersBefore:1,freeTransfersAfter:2,transferCount:0,squadChanges:[],horizon:{startGameweek:1,gameweeks:6}}),legality=createLegality({legal:true,proofVersion:'existing-v1',constraints:[{code:'baseline',satisfied:true}]}),entry={action,consequence,legality};
+  const valid=await baseArtifact([entry]),again=await baseArtifact([entry]);assert.equal(stableStringify(valid),stableStringify(again));
+  await assert.rejects(baseArtifact([{...entry,action:{...action,actionId:`act-${'0'.repeat(64)}`}}]),/action_identity_mismatch/);
+  await assert.rejects(baseArtifact([{...entry,action:{...action,semanticMarker:'changed'}}]),/action_identity_mismatch/);
+  await assert.rejects(baseArtifact([{...entry,consequence:{...consequence,transferHit:3}}]),/hit_conservation/);
+  await assert.rejects(baseArtifact([{...entry,legality:{legal:true,constraints:[]}}]),/legality/);
+  await assert.rejects(baseArtifact([{action,consequence}]),/artifact_entry/);
+  await assert.rejects(baseArtifact([entry,{...entry}]),/duplicate_recommendation_domain/);
 });
 
 test('DI-3 reconsideration and exact behaviour diff identify domain, points, hit, bank and causes',async()=>{
