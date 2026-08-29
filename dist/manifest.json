@@ -1,10 +1,13 @@
 {
   "modelVersion": "2.4.0",
   "rulesVersion": "2026-27.3",
-  "sourceHash": "3fcfd800e1bdfe53d799194f28e2f7b6a0b313485dc9151014b0af9d7a4fa2a4",
-  "buildInputHash": "212fa1369b9291e467ea517d7d605e534a661dfe4c0dfb34a76586d5b4edb27a",
-  "commit": "27740ba11c324f82cdc6b13d517deb1598191bcf",
+  "sourceHash": "d95cf9463b3c9eea58f547db3aeb77d7f6294093ea2d92a4be1ba29b7048a6aa",
+  "buildInputHash": "72d93f510d12ea8da3b3590b77db7eaa28da64a29026522cf6aedcda7b0a4b0c",
+  "commit": "c166811f3593f40e031d3a0ad8b589e40a4b085a",
   "moduleOrder": [
+    "src/decision-intelligence/canonical.mjs",
+    "src/decision-intelligence/decision-layer.mjs",
+    "src/decision-intelligence/parity-integration.mjs",
     "src/config.mjs",
     "src/util.mjs",
     "src/providers/retry.mjs",
@@ -60,6 +63,9 @@
     "src/ui/review.mjs"
   ],
   "buildInputFiles": [
+    "src/decision-intelligence/canonical.mjs",
+    "src/decision-intelligence/decision-layer.mjs",
+    "src/decision-intelligence/parity-integration.mjs",
     "src/config.mjs",
     "src/util.mjs",
     "src/providers/retry.mjs",
