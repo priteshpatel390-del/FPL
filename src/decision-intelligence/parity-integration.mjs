@@ -5,6 +5,11 @@ export const DI3_PARITY_POLICY=deepFreeze({schemaVersion:'di3-policy-v1',policyI
 const proof=()=>createLegality({legal:true,proofVersion:'current-production-output-v1',constraints:[{code:'emitted_by_current_production',satisfied:true}]});
 const uncertainty=margin=>createUncertainty({modelDispersion:null,availability:{state:'not_adapted'},sourceQuality:{state:'current_production_output'},sourceDisagreement:{state:'not_adapted'},decisionMargin:margin??null,sensitivity:[],schedule:{state:'current_fixture_output'}});
 const consequence=(points,basis)=>createConsequence({expectedFootballPoints:Number(points),transferHit:0,bankBefore:basis.bank,bankAfter:basis.bank,freeTransfersBefore:basis.freeTransfers,freeTransfersAfter:basis.freeTransfers,transferCount:0,squadChanges:[],horizon:{startGameweek:basis.gameweek,gameweeks:1}});
+const PARITY_BASIS_FIELDS=Object.freeze(['season','gameweek','eventId','deadline','evaluationCutoff','sourceCommit','modelVersion','rulesVersion','squadHash','bank','freeTransfers','priceBasis']);
+function requireCompatibleBasis(team,transfer){
+  if(!team||!transfer)return;
+  for(const field of PARITY_BASIS_FIELDS)if(stableStringify(team.basis?.[field])!==stableStringify(transfer.basis?.[field]))throw new Error(`di3_parity_basis_mismatch:${field}`);
+}
 
 export async function adaptTeamRecommendation(raw,{cryptoImpl=globalThis.crypto}={}){
   const input=canonicalise(raw),before=stableStringify(input),basis=input.basis;
@@ -30,6 +35,7 @@ export async function adaptTransferRecommendation(raw,{cryptoImpl=globalThis.cry
 }
 
 async function artifactBasis(team,transfer,cryptoImpl){
+  requireCompatibleBasis(team,transfer);
   const basis=team?.basis||transfer?.basis;if(!basis)return null;
   const recommendations=[],alternatives=[];
   if(team)recommendations.push(...await adaptTeamRecommendation(team,{cryptoImpl}));

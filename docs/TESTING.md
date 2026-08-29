@@ -4,7 +4,7 @@
 
 `tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, standalone legal/illegal proofs and legal-only canonical artifact admission, separated and conserved consequences, authentic DI-1 ledger identity plus exact approvals, action/consequence transfer cross-integrity for recommendations and alternatives, complete policy-required selected-domain coverage, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.
 
-`tests/decision-intelligence-parity-integration.test.mjs` covers Stage B Option A: exact XI/bench/captain/vice representation; selected transfer order, roll, hit, bank and FT parity; immutable inputs; deterministic partial/complete artifacts; caught failure/no-artifact behavior; zero reference-case diffs; empty signal approval; and one-way production graph isolation.
+`tests/decision-intelligence-parity-integration.test.mjs` covers Stage B Option A: direct production-fixture-versus-artifact XI/bench/captain/vice and transfer/roll/hit/bank/FT parity; exact cross-domain basis coherence and stale-snapshot rejection; immutable inputs; deterministic partial/complete artifacts; caught failure/no-artifact behavior; empty signal approval; and one-way production graph isolation. The 14 reference descriptors remain explicitly synthetic Stage-A contract coverage.
 
 ## DI-2 automated evaluation checks
 

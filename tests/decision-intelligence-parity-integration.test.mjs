@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {stableStringify} from '../src/decision-intelligence/canonical.mjs';
 import {adaptTeamRecommendation,adaptTransferRecommendation,createParityRuntime,DI3_PARITY_POLICY} from '../src/decision-intelligence/parity-integration.mjs';
-import {diffDecisionArtifacts} from '../src/decision-intelligence/decision-layer.mjs';
-import {DI3_REFERENCE_SCENARIOS} from '../src/decision-intelligence/reference-scenarios.mjs';
 
 const basis={season:'2026-27',gameweek:2,eventId:2,deadline:'2026-08-28T17:30:00Z',evaluationCutoff:'2026-08-28T17:30:00Z',sourceCommit:'source-commit',modelVersion:'2.4.0',rulesVersion:'2026-27.3',squadHash:'squad:1-15',bank:10,freeTransfers:1,priceBasis:'exact'};
 const team={basis,formation:'4-4-2',xiPlayerIds:[1,2,3,4,5,6,7,8,9,10,11],benchPlayerIds:[12,13,14,15],xiExpectedPoints:55.5,benchExpectedPoints:13.5,captainId:10,captainExpectedPoints:8.2,viceId:11,viceExpectedPoints:7.9};
@@ -32,7 +30,18 @@ test('DI-3 Stage B runtime generates deterministic partial then complete parity 
   const partial=await runtime.recordTeam(team);assert.equal(partial.ok,true);assert.equal(partial.artifact.completeness.state,'partial');assert.deepEqual(partial.artifact.completeness.missingDomains,['transfers']);
   const complete=await runtime.recordTransfer(transfer);assert.equal(complete.ok,true);assert.equal(complete.artifact.completeness.state,'complete');
   const second=createParityRuntime();await second.recordTeam(team);const repeated=await second.recordTransfer(transfer);assert.equal(stableStringify(complete.artifact),stableStringify(repeated.artifact));assert.equal(stableStringify(production),before);
-  assert.deepEqual(diffDecisionArtifacts(complete.artifact,complete.artifact),{changed:false,changes:[]});
+});
+
+test('DI-3 Stage B complete artifacts require a coherent Team and Transfers basis',async()=>{
+  for(const [field,value] of Object.entries({gameweek:3,eventId:3,squadHash:'stale-squad',bank:11,freeTransfers:2,sourceCommit:'other-source',modelVersion:'other-model',rulesVersion:'other-rules',deadline:'2026-09-01T17:30:00Z',evaluationCutoff:'2026-09-01T17:00:00Z',season:'2027-28',priceBasis:'estimated'})){
+    const runtime=createParityRuntime();await runtime.recordTeam(team);const result=await runtime.recordTransfer({...transfer,basis:{...basis,[field]:value}});assert.equal(result.ok,false,field);assert.equal(result.artifact,null,field);assert.match(result.error,new RegExp(`parity_basis_mismatch:${field}`),field);
+  }
+});
+
+test('DI-3 Stage B stale snapshots cannot combine in either update direction',async()=>{
+  const production={team,transfer},before=stableStringify(production),newBasis={...basis,gameweek:3,eventId:3,deadline:'2026-09-04T17:30:00Z',evaluationCutoff:'2026-09-04T17:30:00Z'};
+  const oldTransfer=createParityRuntime();await oldTransfer.recordTransfer(transfer);const teamResult=await oldTransfer.recordTeam({...team,basis:newBasis});assert.equal(teamResult.ok,false);assert.equal(teamResult.artifact,null);
+  const oldTeam=createParityRuntime();await oldTeam.recordTeam(team);const transferResult=await oldTeam.recordTransfer({...transfer,basis:newBasis,startGameweek:3});assert.equal(transferResult.ok,false);assert.equal(transferResult.artifact,null);assert.equal(stableStringify(production),before);
 });
 
 test('DI-3 Stage B failures, partial and no artifact states cannot mutate or suppress production output',async()=>{
@@ -41,10 +50,13 @@ test('DI-3 Stage B failures, partial and no artifact states cannot mutate or sup
   runtime.reset();assert.equal(runtime.latest(),null);const partial=await runtime.recordTransfer(transfer);assert.equal(partial.artifact.completeness.state,'partial');assert.equal(stableStringify(production),before);
 });
 
-test('DI-3 Stage B reference behavior diff is zero for every permanent scenario and every integrated domain',async()=>{
+test('DI-3 Stage B artifact actions and consequences exactly match existing production fixture output',async()=>{
   const runtime=createParityRuntime();await runtime.recordTeam(team);const {artifact}=await runtime.recordTransfer(transfer);
-  for(const scenario of DI3_REFERENCE_SCENARIOS)assert.equal(diffDecisionArtifacts(artifact,artifact).changed,false,scenario.id);
-  assert.deepEqual(artifact.recommendations.map(row=>row.action.domain).sort(),['bench','captain','transfers','vice','xi']);assert.equal(DI3_PARITY_POLICY.allowedProductionSignals.length,0);
+  const represented=Object.fromEntries(artifact.recommendations.map(row=>[row.action.domain,row]));
+  assert.deepEqual(represented.xi.action.playerIds,team.xiPlayerIds);assert.equal(represented.xi.action.formation,team.formation);
+  assert.deepEqual(represented.bench.action.playerIds,team.benchPlayerIds);assert.equal(represented.captain.action.playerId,team.captainId);assert.equal(represented.vice.action.playerId,team.viceId);
+  assert.deepEqual(represented.transfers.action.transfers,plan.transfers);assert.equal(represented.transfers.consequence.transferHit,plan.hitCost);assert.equal(represented.transfers.consequence.bankAfter,plan.bankAfter);assert.equal(represented.transfers.consequence.freeTransfersAfter,plan.freeTransfersNextGW);
+  assert.equal(artifact.alternatives.some(row=>row.action.type==='roll'),true);assert.equal(DI3_PARITY_POLICY.allowedProductionSignals.length,0);
 });
 
 test('DI-3 Stage B production graph is one-way and adds no UI, provider, DI-2 or DATA-S2B consumer',()=>{
