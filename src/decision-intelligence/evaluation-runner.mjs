@@ -1,0 +1,22 @@
+import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
+import {freezePointInTimeView} from './evaluation-view.mjs';
+import {evaluateMetric} from './evaluation-metrics.mjs';
+import {signalVersionKey} from './registry.mjs';
+
+function armRows(manifest,view,arm){
+  const baselineKey=signalVersionKey(manifest.baseline.id,manifest.baseline.version),byKey=new Map(view.observations.map(row=>[`${row.subjectId}|${signalVersionKey(row.signalId,row.version)}`,row]));
+  return view.outcomes.map(outcome=>{const baseline=byKey.get(`${outcome.subjectId}|${baselineKey}`);if(!baseline)return {subjectId:outcome.subjectId,outcome,missing:'baseline'};let prediction={...baseline.prediction},coverage=0;for(const signal of arm.signals){const candidate=byKey.get(`${outcome.subjectId}|${signalVersionKey(signal.signalId,signal.version)}`);if(candidate){prediction={...prediction,...candidate.prediction};coverage++;}}return {subjectId:outcome.subjectId,outcome,prediction,coverage,missing:coverage<arm.signals.length?'candidate':null};});
+}
+export async function runEvaluation(frozenManifest,inputs,cryptoImpl=globalThis.crypto){
+  const {manifest,manifestHash}=frozenManifest,view=await freezePointInTimeView({manifest,...inputs},cryptoImpl),arms=[];
+  for(const arm of manifest.arms){const rows=armRows(manifest,view,arm),evaluated=rows.filter(row=>row.prediction);arms.push({armId:arm.armId,signals:arm.signals,samples:{outcome:view.outcomes.length,evaluated:evaluated.length,missingBaseline:rows.filter(row=>row.missing==='baseline').length,incompleteCandidateCoverage:rows.filter(row=>row.missing==='candidate').length},metrics:manifest.metrics.map(metric=>evaluateMetric(evaluated,metric))});}
+  const warnings=[];if(view.outcomes.length<manifest.reporting.minimumSample)warnings.push('insufficient_sample');if(view.rejections.length)warnings.push('excluded_observations');if(arms.some(arm=>arm.samples.incompleteCandidateCoverage))warnings.push('incomplete_candidate_coverage');if(!view.outcomes.length)warnings.push('missing_outcome');
+  const core=canonicalise({schemaVersion:'di-evaluation-result-v1',experiment:{id:manifest.experimentId,version:manifest.experimentVersion,mode:manifest.mode},lineage:{manifestHash,sourceCommit:manifest.lineage.sourceCommit,evaluationCodeVersion:manifest.lineage.evaluationCodeVersion,inputHashes:manifest.lineage.inputHashes,viewHash:view.viewHash,outcomeRevision:manifest.outcomes.revision},cohort:manifest.cohort,tested:{arms:manifest.arms.length,primaryMetrics:manifest.metrics.filter(m=>m.role==='primary').length,secondaryMetrics:manifest.metrics.filter(m=>m.role==='secondary').length},samples:{totalObservations:inputs.observations.length,outcomes:view.outcomes.length,eligibleObservations:view.observations.length,excludedObservations:view.rejections.length},rejections:view.rejections,arms,warnings});
+  const runIdentity=await sha256Hex(stableStringify(core),cryptoImpl),result=deepFreeze(canonicalise({...core,runIdentity}));
+  return {result,json:`${stableStringify(result)}\n`,markdown:renderEvaluationMarkdown(result)};
+}
+export function renderEvaluationMarkdown(result){
+  const lines=[`# ${result.experiment.id} ${result.experiment.version} — shadow evaluation`,'',`- Mode: **${result.experiment.mode}**`,`- Run identity: \`${result.runIdentity}\``,`- Manifest hash: \`${result.lineage.manifestHash}\``,`- Frozen view hash: \`${result.lineage.viewHash}\``,`- Outcome revision: \`${result.lineage.outcomeRevision}\``,'','## Sample accounting','',`- Input observations: ${result.samples.totalObservations}`,`- Outcomes: ${result.samples.outcomes}`,`- Eligible observations: ${result.samples.eligibleObservations}`,`- Excluded observations: ${result.samples.excludedObservations}`,`- Warnings: ${result.warnings.length?result.warnings.join(', '):'none'}`,'','## Arms',''];
+  for(const arm of result.arms){lines.push(`### ${arm.armId}`,'',`Samples: ${arm.samples.evaluated}/${arm.samples.outcome}; incomplete candidate coverage: ${arm.samples.incompleteCandidateCoverage}.`,'','| Metric | Version | N | Value |','|---|---:|---:|---:|',...arm.metrics.map(metric=>`| ${metric.metricId} | ${metric.version} | ${metric.sampleCount} | ${metric.value??'missing'} |`),'');}
+  lines.push('## Interpretation boundary','','This artifact is shadow-only infrastructure evidence. It creates no production approval, model change, weight, recommendation, or football-accuracy claim.');return `${lines.join('\n')}\n`;
+}

@@ -1,5 +1,9 @@
 # TESTING.md
 
+## DI-2 automated evaluation checks
+
+`tests/decision-intelligence-evaluation.test.mjs` permanently covers manifest validation/freezing/hashing and experiment modes; cutoff, correction, expiry, required-timing, conflict and outcome-leakage rejection; deterministic cohorts and equal arm outcomes; explicit baseline/A/B/A+B ablations; Brier, MAE, RMSE and fixed calibration bins; sample/missing/warning lineage; byte-identical JSON/Markdown reruns; and static isolation from production, provider and DATA-S2B mutation paths. `node scripts/run-di2-reference.mjs` regenerates the committed synthetic artifacts. See [DI-2 Automated Evaluation & Ablation](DECISION-INTELLIGENCE-DI2-EVALUATION.md).
+
 ## DI-1 permanent contract suite
 
 `tests/decision-intelligence-platform.test.mjs` covers valid/invalid admission, deterministic identities, display-name rejection, subject/season/fixture mismatch, distinct and impossible timing, deadline eligibility, rights failure closure, registry uniqueness, signal/version and approval scope exactness, secret rejection, malformed/stale/conflicting isolation, Provider Health invariance, unavailable production reads and forbidden production import paths. These are architecture/safety tests; they make no model-accuracy claim and exercise no provider or live store.

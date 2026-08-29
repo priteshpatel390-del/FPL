@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "di-experiment-manifest-v1",
+  "experimentId": "di2.synthetic.availability",
+  "experimentVersion": "1.0.0",
+  "domain": "availability",
+  "title": "Synthetic end-to-end evaluation mechanics",
+  "mode": "exploratory",
+  "baseline": {"id": "synthetic.baseline", "version": "1.0.0", "sourceRevision": "fixture-v1", "requiredInputVersions": ["fixture-v1"]},
+  "candidates": [
+    {"signalId": "synthetic.a", "version": "1.0.0", "dependencies": ["synthetic.baseline@1.0.0"], "overlapRisks": ["historical-minutes"]},
+    {"signalId": "synthetic.b", "version": "1.0.0", "dependencies": [], "overlapRisks": ["public-availability"]}
+  ],
+  "cohort": {"season": "2026-27", "gameweekRange": {"start": 1, "end": 2}, "subjectTypes": ["player"], "includeSubjectIds": ["p1", "p2", "p3", "p4"], "excludeSubjectIds": [], "timeSplit": {"type": "later_holdout", "historical": {"start": 1, "end": 1}, "holdout": {"start": 2, "end": 2}}},
+  "pointInTime": {"decisionCutoff": "2026-08-20T17:00:00.000Z", "deadlineSemantics": "strict_at_or_before", "asOfRuleVersion": "di-asof-v1", "requiredTimingFields": ["sourcePublishedAt", "observedAt", "fetchedAt"]},
+  "outcomes": {"source": "synthetic-fixture", "version": "1.0.0", "revision": "fixture-outcomes-r1", "availabilityPolicy": "final_only", "finalPolicy": "final"},
+  "metrics": [
+    {"metricId": "start-brier", "adapter": "brier", "version": "1.0.0", "direction": "lower", "role": "primary", "predictionField": "pStart", "outcomeField": "started"},
+    {"metricId": "minutes-mae", "adapter": "mae", "version": "1.0.0", "direction": "lower", "role": "primary", "predictionField": "minutes", "outcomeField": "minutes"},
+    {"metricId": "minutes-rmse", "adapter": "rmse", "version": "1.0.0", "direction": "lower", "role": "secondary", "predictionField": "minutes", "outcomeField": "minutes"},
+    {"metricId": "start-calibration", "adapter": "calibration", "version": "1.0.0", "direction": "lower", "role": "secondary", "predictionField": "pStart", "outcomeField": "started", "binEdges": [0, 0.5, 1]}
+  ],
+  "arms": [
+    {"armId": "baseline", "signals": []},
+    {"armId": "baseline-a", "signals": [{"signalId": "synthetic.a", "version": "1.0.0"}]},
+    {"armId": "baseline-b", "signals": [{"signalId": "synthetic.b", "version": "1.0.0"}]},
+    {"armId": "baseline-a-b", "signals": [{"signalId": "synthetic.a", "version": "1.0.0"}, {"signalId": "synthetic.b", "version": "1.0.0"}]}
+  ],
+  "reporting": {"formatVersion": "di-report-v1", "minimumSample": 5, "cohortSummaries": true, "missingDataSummaries": true},
+  "lineage": {"sourceCommit": "e61632cc9a3bf2a32b22b59361330c79984a4166", "evaluationCodeVersion": "di-evaluation-v1", "inputHashes": ["synthetic-fixture-v1"]}
+}

@@ -1,5 +1,10 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DECISION-INTELLIGENCE-DI2-2026-08-29 -->
+### Current Decision Intelligence checkpoint — DI-2 review candidate
+
+DI-2 adds a zero-dependency, offline shadow evaluation runner under `src/decision-intelligence/`: immutable/hash-addressed manifests, deadline-frozen feature views, explicit factorial arms, versioned Brier/MAE/RMSE/calibration adapters, deterministic JSON/Markdown evidence and a permanent synthetic reference experiment. It creates no production approval or feedback path and is absent from the deployable build graph. No provider, DATA-S2B/D1/Cloudflare, Stage 10, application, model, recommendation or UI behaviour changes. The generated experiment is synthetic infrastructure evidence only. See [DI-2 Automated Evaluation & Ablation](docs/DECISION-INTELLIGENCE-DI2-EVALUATION.md).
+
 <!-- DECISION-INTELLIGENCE-DI1-2026-08-29 -->
 ### Current Decision Intelligence checkpoint — DI-1 review candidate
 
