@@ -41,7 +41,13 @@ The read-only transfer adapter preserves input bytes, mandatory roll, emitted pl
 
 The 14 permanent reference descriptors cover clear and near-tied XI/captain choices, roll versus a marginal transfer, beneficial transfer, hit, missing evidence, stale/conflicting future signal, unapproved signal, partial/no-decision, reconsideration and deterministic tie. They validate infrastructure only and are not football-accuracy evidence.
 
-## Stage-B owner approval proposal
+## Stage B Option A — approved parity integration
+
+Pritesh approved Option A after independent review of the Stage-A integrity boundary. The production bundle now contains a scoped, ephemeral parity runtime. Team rendering passes the already-selected XI, ordered bench, captain and vice outputs to a read-only adapter; successful transfer rendering passes the already-ranked optimiser result. Artifact generation begins only after those outputs exist, has an empty production-signal allowlist, performs no model or selection work, exposes no normal UI, persists nothing and catches all adapter/artifact errors.
+
+The direction is strictly production output → adapter → artifact. Model, squad, optimiser and provider modules do not consume the runtime or artifact. Partial, no-artifact and validation-failure results cannot suppress or mutate the prior recommendation. Permanent tests prove exact domain identity, mandatory roll, optimiser ordering, hit/bank/FT copying, deterministic identity, zero behavior diff across every reference descriptor and one-way dependency structure. This is representation evidence only, not improved accuracy.
+
+## Historical Stage-B owner approval proposal
 
 ### Existing behaviour
 

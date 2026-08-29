@@ -133,8 +133,9 @@ test('DI-3 reconsideration and exact behaviour diff identify domain, points, hit
   assert.deepEqual(diffDecisionArtifacts(current,current),{changed:false,changes:[]});const diff=diffDecisionArtifacts(current,proposed);assert.equal(diff.changes[0].domain,'transfers');assert.equal(diff.changes[0].expectedFootballPointsDelta,5);assert.deepEqual(diff.changes[0].causes,['policy@2.0.0']);
 });
 
-test('DI-3 Stage A remains offline: no production/UI/build/DATA-S2B/provider import or candidate graduation',()=>{
-  for(const file of ['src/main.mjs','src/state.mjs','build.mjs',...fs.readdirSync('src/model').map(name=>`src/model/${name}`),...fs.readdirSync('src/ui').map(name=>`src/ui/${name}`),...fs.readdirSync('src/providers').map(name=>`src/providers/${name}`)])assert.doesNotMatch(fs.readFileSync(file,'utf8'),/decision-intelligence\/decision-layer/,file);
+test('DI-3 contracts remain out of model/provider/state inputs while Stage B bundles only the one-way parity boundary',()=>{
+  for(const file of ['src/main.mjs','src/state.mjs',...fs.readdirSync('src/model').map(name=>`src/model/${name}`),...fs.readdirSync('src/providers').map(name=>`src/providers/${name}`)])assert.doesNotMatch(fs.readFileSync(file,'utf8'),/decision-intelligence\/decision-layer|DI3_PARITY_RUNTIME/,file);
+  assert.match(fs.readFileSync('build.mjs','utf8'),/DI-3 one-way parity representation/);
   const source=fs.readFileSync('src/decision-intelligence/decision-layer.mjs','utf8');assert.doesNotMatch(source,/workers\/data-platform|observation_heads|cloudflare|understat|odds/i);
 });
 

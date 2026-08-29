@@ -38,5 +38,5 @@ test('DI-2 canonical JSON, Markdown, lineage, warnings and bytes reproduce exact
 
 test('DI-2 remains offline and isolated from production, providers and DATA-S2B mutation paths',()=>{
   const files=['evaluation-manifest.mjs','evaluation-view.mjs','evaluation-metrics.mjs','evaluation-runner.mjs'].map(name=>fs.readFileSync(new URL(`../src/decision-intelligence/${name}`,import.meta.url),'utf8')).join('\n');
-  assert.doesNotMatch(files,/src\/(?:model|providers|state)|workers\/data-platform|production_read|observation_heads|fetch\s*\(/);assert.doesNotMatch(fs.readFileSync(new URL('../build.mjs',import.meta.url),'utf8'),/decision-intelligence/);assert.equal(fs.existsSync(new URL('../src/decision-intelligence/production-approval.mjs',import.meta.url)),false);
+  assert.doesNotMatch(files,/src\/(?:model|providers|state)|workers\/data-platform|production_read|observation_heads|fetch\s*\(/);assert.doesNotMatch(fs.readFileSync(new URL('../build.mjs',import.meta.url),'utf8'),/evaluation-(?:runner|manifest|view|metrics)/);assert.equal(fs.existsSync(new URL('../src/decision-intelligence/production-approval.mjs',import.meta.url)),false);
 });

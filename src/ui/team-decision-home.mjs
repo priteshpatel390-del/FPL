@@ -507,6 +507,11 @@ function renderTeamDecisionHome({openPlayerDetail=()=>{},flagNodes=()=>[],rerend
   const action=teamDecisionAction({hasSquad:true,deadlinePassed:deadline.passed,previewActive,riskKind:risk.kind});
   const bench=teamDecisionBenchDisplayOrder(xi.bench).map((slot,index)=>`${teamDecisionBenchLabel(index)} ${slot.p.web_name}`).join(' · ');
   const recommendation=`Start ${xi.shape}. ${captain?.web_name||'—'} captain, ${vice?.web_name||'—'} vice. Bench: ${bench}.`;
+  const orderedBench=teamDecisionBenchDisplayOrder(xi.bench),event=S.boot?.events?.find(row=>Number(row.id)===Number(gw));
+  if(event?.deadline_time&&globalThis.DI3_PARITY_RUNTIME){
+    const deadline=new Date(event.deadline_time).toISOString(),bankTenths=Math.round(Number(bank)*10);
+    void globalThis.DI3_PARITY_RUNTIME.recordTeam({basis:{season:FPL_RULES.season,gameweek:gw,eventId:gw,deadline,evaluationCutoff:deadline,sourceCommit:BUILD_INFO.commit,modelVersion:BUILD_INFO.modelVersion,rulesVersion:BUILD_INFO.rulesVersion,squadHash:`squad:${squad.map(slot=>Number(slot.p.id)).sort((a,b)=>a-b).join(',')}`,bank:bankTenths,freeTransfers:ft,priceBasis:squad.every(slot=>slot.bought!=null)?'exact':'estimated'},formation:xi.shape,xiPlayerIds:xi.xi.map(slot=>Number(slot.p.id)),benchPlayerIds:orderedBench.map(slot=>Number(slot.p.id)),xiExpectedPoints:Number(xi.tot),benchExpectedPoints:orderedBench.reduce((sum,slot)=>sum+Number(xpOf(slot.p,gw,1).total),0),captainId:Number(captain.id),captainExpectedPoints:Number(scoreById[captain.id]),viceId:Number(vice.id),viceExpectedPoints:Number(scoreById[vice.id])});
+  }
   const forecastCopy=`${forecast.base.toFixed(1)} xP before captain · +${forecast.uplift.toFixed(1)} captain uplift · ${forecast.total.toFixed(1)} xP including captain.`;
   const header=teamDecisionHeader({title,eyebrow:previewActive?'User preview':'Model recommendation',source,deadline:deadline.label,rank});
   const summary=teamDecisionSummary({recommendation,forecast:forecastCopy,risk,action});
