@@ -1,6 +1,8 @@
 import {canonicalise,deepFreeze,stableStringify} from './canonical.mjs';
 import {signalVersionKey} from './registry.mjs';
 
+const AUTHENTIC_APPROVAL_LEDGERS=new WeakSet();
+
 export function approvalKey(signalId,version,scope){return `${signalVersionKey(signalId,version)}#${scope}`;}
 export function createApprovalLedger(records=[]){
   const approvals=new Map();
@@ -9,8 +11,11 @@ export function createApprovalLedger(records=[]){
     if(!row.approvalId||!row.signalId||!row.version||!row.scope||row.capability!=='production_read'||row.status!=='approved'||!row.approvedAt||!row.approvedBy)throw new Error('approval_invalid');
     if(approvals.has(key))throw new Error('approval_duplicate');approvals.set(key,deepFreeze(row));
   }
-  return Object.freeze({requireProductionRead(signalId,version,scope){const record=approvals.get(approvalKey(signalId,version,scope));if(!record)throw new Error('production_read_unapproved');return record;},canonical:()=>stableStringify(Array.from(approvals.values()).sort((a,b)=>a.approvalId.localeCompare(b.approvalId)))});
+  const ledger=Object.freeze({requireProductionRead(signalId,version,scope){const record=approvals.get(approvalKey(signalId,version,scope));if(!record)throw new Error('production_read_unapproved');return record;},canonical:()=>stableStringify(Array.from(approvals.values()).sort((a,b)=>a.approvalId.localeCompare(b.approvalId)))});
+  AUTHENTIC_APPROVAL_LEDGERS.add(ledger);
+  return ledger;
 }
+export function isAuthenticApprovalLedger(value){return Boolean(value&&typeof value==='object'&&AUTHENTIC_APPROVAL_LEDGERS.has(value));}
 
 export function createShadowRepository(){
   const observations=new Map();

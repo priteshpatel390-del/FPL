@@ -6,9 +6,13 @@ import {createApprovalLedger} from '../src/decision-intelligence/capabilities.mj
 import {adaptTransferOptimiser,createAction,createConsequence,createDecisionArtifact,createLegality,createPolicy,createUncertainty,diffDecisionArtifacts,requirePolicyApprovals} from '../src/decision-intelligence/decision-layer.mjs';
 import {DI3_REFERENCE_SCENARIOS} from '../src/decision-intelligence/reference-scenarios.mjs';
 
-const policyRaw={schemaVersion:'di3-policy-v1',policyId:'current-parity',version:'1.0.0',objective:'represent_current_output',comparisonBasis:'current_production_order',materialityThreshold:null,uncertaintyHandling:'disclose_only',tieBreaks:['existing_production_order'],fallback:'partial_or_no_decision',alternativeSelection:'all_adapter_outputs',requiredDomains:['xi','bench','captain','vice','transfers'],allowedProductionSignals:[]};
+const policyRaw={schemaVersion:'di3-policy-v1',policyId:'current-parity',version:'1.0.0',objective:'represent_current_output',comparisonBasis:'current_production_order',materialityThreshold:null,uncertaintyHandling:'disclose_only',tieBreaks:['existing_production_order'],fallback:'partial_or_no_decision',alternativeSelection:'all_adapter_outputs',requiredDomains:['transfers'],allowedProductionSignals:[]};
+const fullPolicyRaw={...policyRaw,policyId:'full-current-parity',requiredDomains:['xi','bench','captain','vice','transfers']};
 const uncertainty=()=>createUncertainty({modelDispersion:null,availability:{state:'missing'},sourceQuality:{state:'missing'},sourceDisagreement:{state:'missing'},decisionMargin:null,sensitivity:[],schedule:{state:'known'}});
-const baseArtifact=async(recommendations,alternatives=[],completeness={state:'complete',missingDomains:[],staleDomains:[],conflicts:[]})=>createDecisionArtifact({schemaVersion:'di3-decision-artifact-v1',deadline:{season:'2026-27',gameweek:1,eventId:1,deadline:'2026-08-21T17:30:00Z',evaluationCutoff:'2026-08-21T17:00:00Z',eligibilityPolicy:'deadline_as_of'},build:{sourceCommit:'75b7be599b1f70af82c954081bc982fbe0a67c86',modelVersion:'current',rulesVersion:'current',policyVersion:'1.0.0'},squadBasis:{squadHash:'sha256:test',bank:10,freeTransfers:1,priceBasis:'current'},policy:policyRaw,recommendations,alternatives,uncertainty:uncertainty(),risks:[],reconsiderationConditions:[],completeness,evidenceReferences:['synthetic:test'],assumptionReferences:['synthetic-only'],rationaleCodes:['current-output-parity'],explanationGraphReferences:[],hashes:{featureInputViewHash:'sha256:input'}},{ledger:createApprovalLedger()});
+const baseArtifact=async(recommendations,alternatives=[],completeness={state:'complete',missingDomains:[],staleDomains:[],conflicts:[]},policy=policyRaw)=>createDecisionArtifact({schemaVersion:'di3-decision-artifact-v1',deadline:{season:'2026-27',gameweek:1,eventId:1,deadline:'2026-08-21T17:30:00Z',evaluationCutoff:'2026-08-21T17:00:00Z',eligibilityPolicy:'deadline_as_of'},build:{sourceCommit:'75b7be599b1f70af82c954081bc982fbe0a67c86',modelVersion:'current',rulesVersion:'current',policyVersion:'1.0.0'},squadBasis:{squadHash:'sha256:test',bank:10,freeTransfers:1,priceBasis:'current'},policy,recommendations,alternatives,uncertainty:uncertainty(),risks:[],reconsiderationConditions:[],completeness,evidenceReferences:['synthetic:test'],assumptionReferences:['synthetic-only'],rationaleCodes:['current-output-parity'],explanationGraphReferences:[],hashes:{featureInputViewHash:'sha256:input'}},{ledger:createApprovalLedger()});
+const consequence=(transferCount=0,squadChanges=[],transferHit=0)=>createConsequence({expectedFootballPoints:40,transferHit,bankBefore:10,bankAfter:10,freeTransfersBefore:1,freeTransfersAfter:2,transferCount,squadChanges,horizon:{startGameweek:1,gameweeks:6}});
+const legality=()=>createLegality({legal:true,proofVersion:'existing-v1',constraints:[{code:'synthetic',satisfied:true}]});
+const entry=(action,decisionConsequence=consequence())=>({action,consequence:decisionConsequence,legality:legality()});
 
 test('DI-3 actions have canonical immutable identities and deterministic order independent of display text',async()=>{
   const raw={type:'transfer',transfers:[{outPlayerId:8,inPlayerId:18,position:3,sellPrice:70,buyPrice:72},{outPlayerId:2,inPlayerId:12,position:2,sellPrice:45,buyPrice:44}]};
@@ -48,10 +52,42 @@ test('DI-3 artifact approval enforcement cannot be bypassed by omitting the ledg
   const signalPolicy={...policyRaw,allowedProductionSignals:[{signalId:'availability.fact',version:'1.0.0',scope:'minutes'}]};
   const input={schemaVersion:'di3-decision-artifact-v1',deadline:{season:'2026-27',gameweek:1,eventId:1,deadline:'2026-08-21T17:30:00Z',evaluationCutoff:'2026-08-21T17:00:00Z'},build:{sourceCommit:'source',modelVersion:'current',rulesVersion:'current',policyVersion:'1.0.0'},squadBasis:{squadHash:'sha256:test',bank:10,freeTransfers:1},policy:signalPolicy,recommendations:[entry],alternatives:[],uncertainty:uncertainty(),risks:[],reconsiderationConditions:[],completeness:{state:'complete',missingDomains:[],staleDomains:[],conflicts:[]},evidenceReferences:[],assumptionReferences:[],rationaleCodes:[],hashes:{featureInputViewHash:'sha256:input'}};
   await assert.rejects(createDecisionArtifact(input),/approval_ledger_required/);
+  const forged={requireProductionRead(){return {approvalId:'fake',capability:'production_read',status:'approved'};}};
+  await assert.rejects(createDecisionArtifact(input,{ledger:forged}),/approval_ledger_inauthentic/);
   const ledger=createApprovalLedger([{approvalId:'owner-1',signalId:'availability.fact',version:'1.0.0',scope:'minutes',capability:'production_read',status:'approved',approvedAt:'2026-08-29T00:00:00Z',approvedBy:'owner'}]);
+  await assert.rejects(createDecisionArtifact(input,{ledger:{...ledger}}),/approval_ledger_inauthentic/);
   assert.match((await createDecisionArtifact(input,{ledger})).identity.decisionId,/^decision-/);
   await assert.rejects(createDecisionArtifact({...input,policy:{...signalPolicy,allowedProductionSignals:[{signalId:'availability.fact',version:'1.0.1',scope:'minutes'}]}},{ledger}),/production_read_unapproved/);
   assert.match((await createDecisionArtifact({...input,policy:policyRaw})).identity.decisionId,/^decision-/);
+});
+
+test('DI-3 action and consequence transfer semantics are cross-validated for recommendations and alternatives',async()=>{
+  const roll=await createAction({type:'roll',transfers:[]});
+  await assert.rejects(baseArtifact([entry(roll,consequence(1,[{outPlayerId:1,inPlayerId:2}]))]),/roll_transfer_count/);
+  await assert.rejects(baseArtifact([entry(roll,{...consequence(),transferCount:0,squadChanges:[{outPlayerId:1,inPlayerId:2}]})]),/transfer_conservation/);
+  await assert.rejects(baseArtifact([entry(roll,consequence(0,[],4))]),/roll_transfer_hit/);
+  assert.match((await baseArtifact([entry(roll)])).identity.decisionId,/^decision-/);
+  const pairs=[{outPlayerId:2,inPlayerId:12,position:2,sellPrice:45,buyPrice:44},{outPlayerId:8,inPlayerId:18,position:3,sellPrice:70,buyPrice:72}],transfer=await createAction({type:'transfer',transfers:pairs});
+  await assert.rejects(baseArtifact([entry(transfer,consequence())]),/transfer_count_mismatch/);
+  await assert.rejects(baseArtifact([entry(transfer,consequence(1,[{outPlayerId:2,inPlayerId:12}]))]),/transfer_count_mismatch/);
+  await assert.rejects(baseArtifact([entry(transfer,consequence(2,[{outPlayerId:3,inPlayerId:12},{outPlayerId:8,inPlayerId:18}]))]),/transfer_pairs_mismatch/);
+  await assert.rejects(baseArtifact([entry(transfer,consequence(2,[{outPlayerId:2,inPlayerId:13},{outPlayerId:8,inPlayerId:18}]))]),/transfer_pairs_mismatch/);
+  await assert.rejects(baseArtifact([entry(transfer,consequence(3,[{outPlayerId:2,inPlayerId:12},{outPlayerId:8,inPlayerId:18},{outPlayerId:9,inPlayerId:19}]))]),/transfer_count_mismatch/);
+  const valid=entry(transfer,consequence(2,[{outPlayerId:8,inPlayerId:18},{outPlayerId:2,inPlayerId:12}],4));assert.match((await baseArtifact([valid])).identity.decisionId,/^decision-/);
+  await assert.rejects(baseArtifact([entry(roll)],[entry(transfer,consequence(2,[{outPlayerId:2,inPlayerId:99},{outPlayerId:8,inPlayerId:18}],4))]),/transfer_pairs_mismatch/);
+});
+
+test('DI-3 complete artifacts cover every unique policy-required selected domain',async()=>{
+  const roll=await createAction({type:'roll',transfers:[]}),rollEntry=entry(roll);
+  await assert.rejects(baseArtifact([rollEntry],[],undefined,fullPolicyRaw),/complete_required_domain_missing/);
+  const xi=entry(await createAction({type:'starting_xi',formation:'4-4-2',playerIds:[1,2,3,4,5,6,7,8,9,10,11]}));
+  const bench=entry(await createAction({type:'bench_order',playerIds:[12,13,14,15]}));
+  const captain=entry(await createAction({type:'captain',playerId:10})),vice=entry(await createAction({type:'vice_captain',playerId:11}));
+  await assert.rejects(baseArtifact([rollEntry],[xi,bench,captain,vice],undefined,fullPolicyRaw),/complete_required_domain_missing/);
+  assert.match((await baseArtifact([xi,bench,captain,vice,rollEntry],[],undefined,fullPolicyRaw)).identity.decisionId,/^decision-/);
+  assert.throws(()=>createPolicy({...fullPolicyRaw,requiredDomains:['xi','xi']}),/policy_required_domain_duplicate/);
+  const partial={state:'partial',missingDomains:['xi','bench','captain','vice'],staleDomains:[],conflicts:[]};assert.equal((await baseArtifact([rollEntry],[],partial,fullPolicyRaw)).completeness.state,'partial');
+  const none={state:'no_decision',missingDomains:['xi','bench','captain','vice','transfers'],staleDomains:[],conflicts:[]};assert.equal((await baseArtifact([],[],none,fullPolicyRaw)).recommendations.length,0);
 });
 
 test('DI-3 transfer adapter preserves mandatory roll, current order, separate consequences and input bytes',async()=>{

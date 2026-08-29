@@ -1,4 +1,5 @@
 import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
+import {isAuthenticApprovalLedger} from './capabilities.mjs';
 
 const ACTION_TYPES=new Set(['starting_xi','bench_order','captain','vice_captain','roll','transfer']);
 const COMPLETENESS=new Set(['complete','partial','no_decision']);
@@ -57,13 +58,30 @@ export function createUncertainty(raw){
 export function createPolicy(raw){
   const value=canonicalise(raw);
   fail(value.schemaVersion!=='di3-policy-v1'||!ID.test(value.policyId||'')||!VERSION.test(value.version||'')||!value.objective||!value.comparisonBasis||!Array.isArray(value.tieBreaks)||!value.fallback||!value.alternativeSelection||!Array.isArray(value.requiredDomains)||value.requiredDomains.some(domain=>!DOMAINS.has(domain))||!Array.isArray(value.allowedProductionSignals),'policy');
+  fail(new Set(value.requiredDomains).size!==value.requiredDomains.length,'policy_required_domain_duplicate');
   fail(value.allowedProductionSignals.some(row=>!row.signalId||!row.version||!row.scope),'policy_signal');
   return deepFreeze(value);
 }
 
 export function requirePolicyApprovals(policy,ledger){
-  fail(policy.allowedProductionSignals.length>0&&!ledger?.requireProductionRead,'approval_ledger_required');
+  fail(policy.allowedProductionSignals.length>0&&!ledger,'approval_ledger_required');
+  fail(policy.allowedProductionSignals.length>0&&!isAuthenticApprovalLedger(ledger),'approval_ledger_inauthentic');
   return deepFreeze(policy.allowedProductionSignals.map(row=>ledger.requireProductionRead(row.signalId,row.version,row.scope)));
+}
+
+function validateActionConsequence(action,consequence){
+  if(action.type==='roll'){
+    fail(consequence.transferCount!==0,'roll_transfer_count');
+    fail(consequence.squadChanges.length!==0,'roll_squad_changes');
+    fail(consequence.transferHit!==0,'roll_transfer_hit');
+  }
+  if(action.type==='transfer'){
+    fail(consequence.transferCount!==action.transfers.length,'transfer_count_mismatch');
+    fail(consequence.squadChanges.length!==action.transfers.length,'transfer_change_count_mismatch');
+    const actionPairs=action.transfers.map(row=>({outPlayerId:row.outPlayerId,inPlayerId:row.inPlayerId}));
+    const consequencePairs=consequence.squadChanges.map(row=>({outPlayerId:row.outPlayerId,inPlayerId:row.inPlayerId})).sort((a,b)=>a.outPlayerId-b.outPlayerId||a.inPlayerId-b.inPlayerId);
+    fail(stableStringify(actionPairs)!==stableStringify(consequencePairs),'transfer_pairs_mismatch');
+  }
 }
 
 async function validateArtifactEntry(raw,{cryptoImpl}={}){
@@ -74,6 +92,7 @@ async function validateArtifactEntry(raw,{cryptoImpl}={}){
   const action=await createAction(actionInput,{cryptoImpl});
   fail(suppliedActionId!==action.actionId,'action_identity_mismatch');
   const consequence=createConsequence(entry.consequence),legality=createLegality(entry.legality);
+  validateActionConsequence(action,consequence);
   return deepFreeze({...entry,action,consequence,legality});
 }
 
@@ -84,7 +103,8 @@ export async function createDecisionArtifact(raw,{ledger,cryptoImpl=globalThis.c
   fail(!value.squadBasis?.squadHash||!integer(value.squadBasis?.bank)||!integer(value.squadBasis?.freeTransfers),'squad_basis');
   fail(!COMPLETENESS.has(value.completeness?.state)||!Array.isArray(value.completeness?.missingDomains)||!Array.isArray(value.completeness?.staleDomains)||!Array.isArray(value.completeness?.conflicts),'completeness');
   fail(!Array.isArray(value.recommendations)||!Array.isArray(value.alternatives)||!Array.isArray(value.reconsiderationConditions)||!Array.isArray(value.evidenceReferences)||!Array.isArray(value.assumptionReferences)||!Array.isArray(value.rationaleCodes),'artifact_collections');
-  if(value.policy){const policy=createPolicy(value.policy);requirePolicyApprovals(policy,ledger);}
+  const policy=value.policy?createPolicy(value.policy):null;
+  if(policy)requirePolicyApprovals(policy,ledger);
   if(value.completeness.state==='complete')fail(value.completeness.missingDomains.length||value.completeness.staleDomains.length||value.completeness.conflicts.length,'complete_with_gaps');
   if(value.completeness.state==='no_decision')fail(value.recommendations.length!==0,'no_decision_recommendation');
   for(const condition of value.reconsiderationConditions)fail(!condition.conditionId||!condition.observablePredicate||!Array.isArray(condition.affectedActionIds)||!condition.materiality||!Number.isFinite(Date.parse(condition.expiresAt||''))||!condition.evidenceReference,'reconsideration');
@@ -92,6 +112,7 @@ export async function createDecisionArtifact(raw,{ledger,cryptoImpl=globalThis.c
   value.alternatives=await Promise.all(value.alternatives.map(entry=>validateArtifactEntry(entry,{cryptoImpl})));
   const recommendationDomains=value.recommendations.map(row=>row.action.domain);
   fail(new Set(recommendationDomains).size!==recommendationDomains.length,'duplicate_recommendation_domain');
+  if(value.completeness.state==='complete'&&policy)fail(policy.requiredDomains.some(domain=>!recommendationDomains.includes(domain)),'complete_required_domain_missing');
   const actionIds=[...value.recommendations,...value.alternatives].map(row=>row.action.actionId);
   const candidateActionSetHash=await sha256Hex(stableStringify(actionIds.slice().sort()),cryptoImpl);
   const identityBasis=canonicalise({...value,identity:undefined,hashes:{...value.hashes,candidateActionSetHash}});

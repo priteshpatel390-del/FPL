@@ -23,15 +23,15 @@ Consequences preserve expected football points, transfer hits, bank, free transf
 
 The artifact records deadline/cutoff, build/model/rules/policy lineage, squad basis, recommendations, alternatives, uncertainty, risks, reconsideration predicates, completeness, evidence/assumptions, rationale/graph references, feature-input hash, candidate-action-set hash and content hash. SHA-256 identity excludes no declared semantic input and uses no wall-clock value.
 
-The artifact boundary independently reconstructs every embedded action, recomputes and matches its identity, and revalidates its consequence and legality proof. A formatted action ID is never accepted as semantic proof. Selected recommendations are unique by decision domain so diff tooling cannot silently collapse ambiguity. Action `displayText` is presentation-only: the canonical action boundary removes it before identity and storage.
+The artifact boundary independently reconstructs every embedded action, recomputes and matches its identity, and revalidates its consequence and legality proof. It also cross-checks roll actions against zero transfers/changes/hits and transfer actions against the exact canonical out/in pairs declared by their consequences. These checks apply equally to recommendations and alternatives without recreating optimiser rules. A formatted action ID is never accepted as semantic proof. Selected recommendations are unique by decision domain so diff tooling cannot silently collapse ambiguity. Action `displayText` is presentation-only: the canonical action boundary removes it before identity and storage.
 
 ## Policy, approval and fallback
 
 `di3-policy-v1` exposes objective, comparison basis, materiality (including explicit `null`), uncertainty handling, tie breaks, fallback, alternative selection, required domains and allowed production signals. The parity policy introduces no new preference. Every non-empty allowed-signal entry must pass DI-1's exact signal + version + scope `production_read` ledger lookup; absence fails closed. No DI-2 outcome is an input and no candidate is graduated.
 
-Omitting the approval ledger is valid only when `allowedProductionSignals` is empty. A non-empty list without a ledger fails closed, so callers cannot bypass exact approval by omitting an optional argument.
+Omitting the approval ledger is valid only when `allowedProductionSignals` is empty. A non-empty list requires the exact ledger object registered by DI-1's `createApprovalLedger()` through module-private identity; duck-typed, forged and copied objects fail closed before exact signal/version/scope lookup. Callers therefore cannot bypass approval by omitting or imitating the capability.
 
-Completeness is `complete`, `partial` or `no_decision`. A complete artifact cannot carry missing, stale or conflicting domains; a no-decision artifact cannot carry a recommendation. Missingness and disagreement stay in separate uncertainty dimensions. There is deliberately no universal confidence field.
+Completeness is `complete`, `partial` or `no_decision`. A policy cannot repeat a required domain. A complete artifact cannot carry missing, stale or conflicting domains and must contain one selected recommendation for every policy-required domain; alternatives never satisfy that requirement. Partial and no-decision artifacts may omit required recommendations while preserving their explicit gap state, and a no-decision artifact cannot carry a recommendation. Missingness and disagreement stay in separate uncertainty dimensions. There is deliberately no universal confidence field.
 
 ## Parity and diff evidence
 

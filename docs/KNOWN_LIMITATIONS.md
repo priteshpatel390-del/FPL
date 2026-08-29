@@ -4,6 +4,8 @@
 
 DI-3 is offline and synthetic/reference-validated only. It has no committed corpus-wide all-domain parity evidence, production integration, live monitoring, new materiality rule, validated flexibility utility, competitive strategy, chip strategy or accuracy claim. The transfer adapter can represent emitted optimiser outputs; equivalent adapters for every live XI/captain/vice/bench pathway remain a Stage-B integration decision. No DI-1/DI-2 candidate has been graduated.
 
+Artifact cross-integrity is deliberately semantic rather than a second optimiser: it proves roll/transfer counts, hits where definitionally zero, and exact out/in pair correspondence, but does not derive bank, free-transfer or hit outcomes from new assumptions. Stage B remains unapproved and these checks change no production recommendation behaviour.
+
 ## DI-1 limitations
 
 DI-1 is a contract and isolation foundation, not a live feature store. It has no provider adapter, durable storage, DATA-S2B reader, experiment runner, production adapter, production approval, UI or accuracy evidence. Its in-memory repository exists for contract testing and future offline composition only. Point-in-time eligibility can reject observations using preserved clocks, but the truth and availability of future provider publication timestamps remain provider-specific evidence questions. Static import tests and production-output/build equality strongly guard the current boundary, but any later production adapter necessarily requires a new architecture and owner approval.
