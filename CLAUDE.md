@@ -1,5 +1,10 @@
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DECISION-INTELLIGENCE-DI1-2026-08-29 -->
+### Current Decision Intelligence checkpoint — DI-1 review candidate
+
+DI-1 implements a repository-only, provider-neutral shadow intelligence contract under `src/decision-intelligence/`. It supplies deterministic canonical observations, Official-FPL identity and bitemporal validation, fail-closed rights classification, a versioned signal registry, an exact production-approval ledger contract and an in-memory shadow repository with no production-read capability. No signal or approval is registered, no provider or collector is activated, and production modules/build inputs do not import DI code. DATA-S2B, D1, Cloudflare, Stage 10, Provider Health, application UI and every recommendation calculation remain unchanged. See [Decision Intelligence Foundation](docs/DECISION-INTELLIGENCE-FOUNDATION.md). DI-2 evaluation work and every production promotion remain separate owner-approved checkpoints.
+
 <!-- DATA-S2B-PHASE3-LIVE-CLOSEOUT-2026-08-28 -->
 ### Current repository checkpoint — DATA-S2B Phase 3 live deployment PASS
 

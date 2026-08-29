@@ -1,5 +1,11 @@
 # ARCHITECTURE.md
 
+## Decision Intelligence shadow boundary (DI-1)
+
+`src/decision-intelligence/` is a deliberately unreachable research/control island. Its flow is `candidate fact -> validation -> normalisation -> rights classification -> shadow representation -> stop`. `canonical.mjs` owns deterministic JSON/hash and secret scanning; `rights.mjs` owns fail-closed retention classification; `observation.mjs` owns canonical Official FPL identity, clocks, provenance and observation admission; `registry.mjs` owns immutable signal/version declarations; and `capabilities.mjs` owns exact approval lookup plus a shadow repository that always rejects production reads.
+
+No file in the production entrypoint, state, squad, model, provider or build graph imports this directory. No default registry contains a candidate and no default ledger contains an approval. A later production adapter would require a separately implemented and owner-approved path; setting provider-local metadata cannot cross this boundary. DATA-S2B remains the owner of Official structured history and exposes only a future immutable read/export boundary to DI evaluation.
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Current data architecture — stable Worker/D1 boundary and DATA-S2A
 

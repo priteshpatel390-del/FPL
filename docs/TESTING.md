@@ -1,5 +1,9 @@
 # TESTING.md
 
+## DI-1 permanent contract suite
+
+`tests/decision-intelligence-platform.test.mjs` covers valid/invalid admission, deterministic identities, display-name rejection, subject/season/fixture mismatch, distinct and impossible timing, deadline eligibility, rights failure closure, registry uniqueness, signal/version and approval scope exactness, secret rejection, malformed/stale/conflicting isolation, Provider Health invariance, unavailable production reads and forbidden production import paths. These are architecture/safety tests; they make no model-accuracy claim and exercise no provider or live store.
+
 <!-- DATA-S2B-PHASE4B-CRON-ACTIVATION-PREPARATION-2026-08-28 -->
 ## Phase 4B Cron-activation preparation coverage
 

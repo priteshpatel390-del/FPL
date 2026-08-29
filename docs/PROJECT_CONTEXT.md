@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- DECISION-INTELLIGENCE-DI1-2026-08-29 -->
+## Current Decision Intelligence checkpoint — DI-1 review candidate
+
+DI-1 adds isolated, zero-dependency contracts for future shadow observations and candidates. The implementation validates canonical Official FPL identity, distinct publication/effective/observation/fetch/expiry clocks, provenance, quality/conflict state, fail-closed rights, signal/version metadata and exact scope-specific production approvals. The repository contains neither a registered real candidate nor a production approval. Its shadow repository deliberately has no production-read operation, and permanent structural tests prohibit Decision Intelligence imports from production model/provider/state/build paths. This checkpoint changes no provider, collector, DATA-S2B/D1/Cloudflare asset, Stage 10 semantic, Provider Health row, product surface or recommendation.
+
 <!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
 ## Current repository checkpoint — Phase 4B binding-inheritance remediation
 
