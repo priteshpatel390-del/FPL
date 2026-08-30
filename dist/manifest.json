@@ -3,7 +3,7 @@
   "rulesVersion": "2026-27.3",
   "sourceHash": "d20f91848b49e2279d0e80325ba7fab42d9712a98d70483e04852b0202fb4e95",
   "buildInputHash": "729d73206f1acad55ed27a8bb3e406912486f156576b7689eb88de95ace52a2e",
-  "commit": "6ee7bc652a5b5c715a922d59ec9752bead867cab",
+  "commit": "a181323821d51da34ec54032a0fe87b0f876ad1e",
   "moduleOrder": [
     "src/decision-intelligence/canonical.mjs",
     "src/decision-intelligence/decision-layer.mjs",
