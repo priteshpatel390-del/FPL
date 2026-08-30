@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  DATA_S2_NULL,DATA_S2_SOURCE_REVISION_ID,MAX_CHANGED_OBSERVATIONS_PER_RUN,MAX_FINAL_BATCH_STATEMENTS,
-  buildOfficialFplCommitPlan,diffOfficialFplHistory,materialiseOfficialFplChanges,normaliseOfficialFplHistory
+  DATA_S2_NULL,DATA_S2_OFFICIAL_FPL_REDIRECT_MODE,DATA_S2_SOURCE_REVISION_ID,MAX_CHANGED_OBSERVATIONS_PER_RUN,MAX_FINAL_BATCH_STATEMENTS,
+  buildOfficialFplCommitPlan,collectOfficialFplHistory,diffOfficialFplHistory,materialiseOfficialFplChanges,normaliseOfficialFplHistory
 } from '../workers/data-platform/official-fpl-history.mjs';
 
 const FETCHED='2026-08-26T08:00:00.000Z';
@@ -35,6 +35,41 @@ function syntheticOfficialFpl(){
 
 function normalised(world=syntheticOfficialFpl(),fetchedAt=FETCHED){return normaliseOfficialFplHistory({...world,season:SEASON,fetchedAt});}
 function asStored(rows){return rows.map(row=>({...row,value_boolean:row.value_type==='boolean'?Number(row.value_boolean):row.value_boolean}));}
+
+function collectorDb(){
+  const state={runs:[],observations:0,heads:0,batches:0};
+  const statement=sql=>({
+    bind(...args){return {sql,args,
+      first:async()=>sql.startsWith('SELECT r.*')?revision:null,
+      all:async()=>({results:[]}),
+      run:async()=>{
+        if(sql.startsWith('INSERT OR IGNORE INTO ingestion_runs')){state.runs.push({status:'started',records_accepted:0,error_class:null});return {meta:{changes:1}};}
+        if(sql.includes("status='failed'")){Object.assign(state.runs[0],{status:'failed',records_accepted:0,error_class:args[1]});return {meta:{changes:1}};}
+        return {meta:{changes:1}};
+      }
+    };}
+  });
+  return {state,db:{prepare:statement,async batch(statements){
+    state.batches+=1;
+    for(const item of statements){
+      if(item.sql?.startsWith('INSERT INTO shadow_observations'))state.observations+=JSON.parse(item.args[0]).length;
+      if(item.sql?.startsWith('INSERT INTO observation_heads'))state.heads+=JSON.parse(item.args[0]).length;
+    }
+    Object.assign(state.runs[0],{status:'completed',records_accepted:state.observations,error_class:null});
+  }}};
+}
+
+function workersContractFetch(world,{redirectStatus=null}={}){
+  const calls=[];
+  const fetchImpl=async(url,options={})=>{
+    calls.push({url,options});
+    if(!['follow','manual'].includes(options.redirect))throw new TypeError('Invalid redirect value: must be one of "follow" or "manual"');
+    if(redirectStatus)return {ok:false,status:redirectStatus,json:async()=>{throw new Error('redirect body must not be read');}};
+    const body=url.includes('bootstrap-static')?world.bootstrap:world.fixtures;
+    return {ok:true,status:200,json:async()=>body};
+  };
+  return {calls,fetchImpl};
+}
 
 test('DATA-S2A normalises only the allowlisted Official FPL core with canonical identities',()=>{
   const result=normalised();
@@ -151,4 +186,23 @@ test('scheduled wiring uses the existing D1-bound Worker directly and does not r
   assert.match(collector,/TEAMSHEET_DATA_DB/);assert.match(collector,/db\.batch\(statements\)/);
   assert.doesNotMatch(collector,/DATA_S1_HTTP_AUTH_TOKEN|Service Binding|DataPlatformReadEntrypoint|DataPlatformIngestEntrypoint/);
   assert.doesNotMatch(collector,/console\./);
+});
+
+test('Official FPL production fetch uses the Workers-supported manual redirect contract and a normal 200 baseline still collects',async()=>{
+  const store=collectorDb();const runtime=workersContractFetch(syntheticOfficialFpl());
+  const result=await collectOfficialFplHistory({TEAMSHEET_DATA_DB:store.db,DATA_S2_SEASON:SEASON},{fetchImpl:runtime.fetchImpl,scheduledTime:Date.parse(FETCHED),now:()=>Date.parse(FETCHED)});
+  assert.equal(DATA_S2_OFFICIAL_FPL_REDIRECT_MODE,'manual');
+  assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.result,'baseline');assert.equal(runtime.calls.length,2);
+  assert.deepEqual(runtime.calls.map(call=>call.options.redirect),['manual','manual']);
+  assert.ok(runtime.calls.every(call=>new URL(call.url).origin==='https://fantasy.premierleague.com'));
+  assert.equal(store.state.runs[0].status,'completed');assert.ok(store.state.observations>0);assert.equal(store.state.heads,store.state.observations);
+});
+
+test('manual redirect anomalies cannot escape the Official FPL host and fail closed before observation or head mutation',async()=>{
+  const store=collectorDb();const runtime=workersContractFetch(syntheticOfficialFpl(),{redirectStatus:302});
+  const result=await collectOfficialFplHistory({TEAMSHEET_DATA_DB:store.db,DATA_S2_SEASON:SEASON},{fetchImpl:runtime.fetchImpl,scheduledTime:Date.parse(FETCHED),now:()=>Date.parse(FETCHED)});
+  assert.deepEqual(result.ok,false);assert.equal(result.reason,'official_fpl_redirect_rejected');
+  assert.equal(runtime.calls.length,2);assert.ok(runtime.calls.every(call=>call.options.redirect==='manual'));
+  assert.equal(store.state.runs.length,1);assert.equal(store.state.runs[0].status,'failed');assert.equal(store.state.runs[0].records_accepted,0);
+  assert.equal(store.state.runs[0].error_class,'official_fpl_redirect_rejected');assert.equal(store.state.observations,0);assert.equal(store.state.heads,0);assert.equal(store.state.batches,0);
 });

@@ -6,6 +6,13 @@ DI-4 renders the frozen, ephemeral DI-3 parity artifact through a narrow determi
 
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DATA-S2B-PHASE4B-REDIRECT-REMEDIATION-2026-08-30 -->
+### Current DATA-S2B checkpoint — daily collector redirect remediation review candidate
+
+The first unconditional daily production collection on 30 August 2026 selected the intended daily path and created one fail-closed ingestion run, but Cloudflare Workers rejected the collector's explicit `redirect: "error"` request option before either Official FPL response could be consumed. The narrow repository candidate uses Workers-supported `manual` mode and explicitly rejects every 3xx response, retaining the no-redirect host boundary. End-to-end regression coverage also exposed and fixes the baseline-only null comparison that would otherwise have failed after successful 200 responses. Cadence, Cron, daily hour, deadline gate, endpoints, schema, normalisation, D1 commit design, providers and application/model behaviour are unchanged. See [Phase 4B redirect remediation](workers/data-platform/DATA-S2B-PHASE-4B-OFFICIAL-FPL-REDIRECT-REMEDIATION.md).
+
+This is repository evidence only. DATA-S2B remains live-unaccepted until an owner-approved merge/deployment is followed by another genuine scheduled daily event proving a completed populated baseline and consistent D1 state; do not manually invoke collection as a substitute.
+
 <!-- DECISION-INTELLIGENCE-DI3-2026-08-29 -->
 ### Current Decision Intelligence checkpoint — DI-3 Stage B Option A review candidate
 
