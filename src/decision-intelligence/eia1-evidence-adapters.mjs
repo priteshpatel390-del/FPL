@@ -1,4 +1,5 @@
 import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
+import {validateOutcomeIntegrity,validateSnapshotIntegrity} from '../evidence/integrity.mjs';
 
 export const EIA1_ADAPTER_VERSION='1.0.0';
 const SOURCE_REVISION='official-fpl-r1';
@@ -15,6 +16,7 @@ function freeze(value){return deepFreeze(canonicalise(value));}
 function requiredText(value,code){fail(typeof value!=='string'||!value,code);return value;}
 
 export async function adaptPreDeadlineSnapshot(snapshot,{cutoff,cryptoImpl=globalThis.crypto}={}){
+  const integrity=await validateSnapshotIntegrity(snapshot,cryptoImpl);fail(!integrity.ok,`snapshot_integrity_${integrity.reason||'invalid'}`);snapshot=integrity.record;
   const at=iso(cutoff,'cutoff_required'),deadline=iso(snapshot?.deadlineTime,'snapshot_deadline');
   fail(snapshot?.recordType!=='preDeadlineSnapshot'||snapshot?.schemaVersion!=='1.0.0','snapshot_schema');
   fail(snapshot.season==null||!Number.isInteger(snapshot.gameweek),'snapshot_identity');
@@ -31,6 +33,7 @@ export async function adaptPreDeadlineSnapshot(snapshot,{cutoff,cryptoImpl=globa
 }
 
 export async function adaptOfficialOutcome(outcome,{snapshotInput,cryptoImpl=globalThis.crypto}={}){
+  const integrity=await validateOutcomeIntegrity(outcome,cryptoImpl);fail(!integrity.ok,`outcome_integrity_${integrity.reason||'invalid'}`);outcome=integrity.record;
   fail(outcome?.recordType!=='gameweekOutcome'||outcome?.schemaVersion!=='1.0.0','outcome_schema');
   fail(!['provisional','complete','corrected'].includes(outcome.status),'outcome_status');
   fail(outcome.season!==snapshotInput?.season||outcome.gameweek!==snapshotInput?.gameweek,'snapshot_outcome_scope_mismatch');
