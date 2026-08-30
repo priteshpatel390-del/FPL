@@ -13,6 +13,7 @@ export const DATA_S2_COLLECTION_CRON='*/30 * * * *';
 export const DATA_S2_DAILY_UTC_HOUR=1;
 export const DATA_S2_DAILY_UTC_MINUTE=0;
 export const DATA_S2_PRE_DEADLINE_WINDOW_MS=30*60*1000;
+export const DATA_S2_OFFICIAL_FPL_REDIRECT_MODE='manual';
 
 const BOOTSTRAP_URL='https://fantasy.premierleague.com/api/bootstrap-static/';
 const FIXTURES_URL='https://fantasy.premierleague.com/api/fixtures/';
@@ -169,7 +170,7 @@ export function normaliseOfficialFplHistory({bootstrap,fixtures,season,fetchedAt
 }
 
 function sameScalar(a,b){
-  if(!a||a.value_type!==b.value_type)return false;
+  if(!a||!b||a.value_type!==b.value_type)return false;
   if(a.value_type==='number')return Number(a.value_number)===Number(b.value_number);
   if(a.value_type==='boolean')return Boolean(Number(a.value_boolean))===Boolean(b.value_boolean);
   return String(a.value_text??'')===String(b.value_text??'');
@@ -226,7 +227,8 @@ export function buildOfficialFplCommitPlan({entities,previousRows,observations,c
 }
 
 async function fetchJson(fetchImpl,url){
-  const response=await fetchImpl(url,{headers:{accept:'application/json'},redirect:'error'});
+  const response=await fetchImpl(url,{headers:{accept:'application/json'},redirect:DATA_S2_OFFICIAL_FPL_REDIRECT_MODE});
+  if(Number(response?.status)>=300&&Number(response?.status)<400)throw new Error('official_fpl_redirect_rejected');
   if(!response?.ok)throw new Error('official_fpl_http_failed');
   try{return await response.json();}catch{throw new Error('official_fpl_json_invalid');}
 }
