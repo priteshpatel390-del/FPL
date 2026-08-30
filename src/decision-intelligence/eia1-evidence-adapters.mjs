@@ -40,9 +40,10 @@ export async function adaptOfficialOutcome(outcome,{snapshotInput,cryptoImpl=glo
   fail(!/^outcome-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(requiredText(identity.outcomeId,'outcome_identity')),'outcome_identity');
   fail(!/^[0-9a-f]{64}$/.test(requiredText(identity.outcomeDataHash,'outcome_identity'))||!/^[0-9a-f]{64}$/.test(requiredText(identity.contentHash,'outcome_identity')),'outcome_identity');
   fail(!Number.isInteger(revision)||revision<1,'outcome_revision');
+  fail(identity.outcomeId!==`outcome-${outcome.season}-gw${outcome.gameweek}-r${revision}-${identity.contentHash.slice(0,16)}`,'outcome_identity');
   fail(outcome.status==='provisional'&&outcome.completeness?.complete!==false,'outcome_state');
   fail(['complete','corrected'].includes(outcome.status)&&outcome.completeness?.complete!==true,'outcome_state');
-  fail(outcome.status==='corrected'&&(revision<2||typeof identity.supersedesOutcomeId!=='string'||!identity.supersedesOutcomeId),'outcome_correction');
+  fail(outcome.status==='corrected'&&(revision<2||!/^outcome-\d{4}-\d{2}-gw\d+-r\d+-[0-9a-f]{16}$/.test(identity.supersedesOutcomeId||'')||identity.supersedesOutcomeId===identity.outcomeId),'outcome_correction');
   fail(outcome.status!=='corrected'&&identity.supersedesOutcomeId!=null&&revision===1,'outcome_supersession');
   const players=(outcome.allPlayerOutcomes?.records||[]).map(row=>({subjectId:String(row.playerId),targets:{minutes:row.minutes??null,started:row.starts==null?null:Number(row.starts)>0,appeared:row.appeared??(row.minutes==null?null:Number(row.minutes)>0),reachedSixty:row.reachedSixty??(row.minutes==null?null:Number(row.minutes)>=60)}})).sort((a,b)=>Number(a.subjectId)-Number(b.subjectId));
   const core=canonicalise({schemaVersion:'eia1-outcome-input-v1',adapterVersion:EIA1_ADAPTER_VERSION,season:outcome.season,gameweek:outcome.gameweek,deadlineTime:snapshotInput.deadlineTime,state:{status:outcome.status,complete:Boolean(outcome.completeness?.complete),revision:outcome.identity?.revision,supersedesOutcomeId:outcome.identity?.supersedesOutcomeId??null},identity:{outcomeId:outcome.identity?.outcomeId,outcomeDataHash:outcome.identity?.outcomeDataHash,contentHash:outcome.identity?.contentHash},relatedSnapshot:snapshotInput.snapshot,provenance:outcome.sourceProvenance,players});
@@ -53,7 +54,7 @@ export async function adaptDataS2bOfficialFpl(exportEnvelope,{asOf,deadlineTime,
   const cutoff=iso(asOf,'as_of_required'),deadline=iso(deadlineTime,'deadline_required');
   fail(exportEnvelope?.schemaVersion!=='eia1-data-s2b-export-v1'||!Array.isArray(exportEnvelope.pages)||!exportEnvelope.pages.length,'export_envelope');
   fail(cutoff!==iso(exportEnvelope.as_of,'export_as_of_mismatch'),'export_as_of_mismatch');fail(Date.parse(cutoff)>Date.parse(deadline),'cutoff_after_deadline');
-  const observations=[],ids=new Set();let expectedCursor=null,previousKey=null;
+  const observations=[],pagination=[],ids=new Set();let expectedCursor=null,previousKey=null;
   for(let index=0;index<exportEnvelope.pages.length;index++){
     const page=exportEnvelope.pages[index];
     fail(cutoff!==iso(page?.as_of,'export_as_of_mismatch'),'export_as_of_mismatch');
@@ -66,6 +67,7 @@ export async function adaptDataS2bOfficialFpl(exportEnvelope,{asOf,deadlineTime,
       previousKey=key;ids.add(row.observation_id);observations.push({...row,fetched_at:fetchedAt});
     }
     expectedCursor=page.next_cursor??null;
+    pagination.push({page:index+1,requestCursor:page.request_cursor??null,nextCursor:expectedCursor,observationCount:page.observations.length});
     if(index<exportEnvelope.pages.length-1)fail(typeof expectedCursor!=='string'||!expectedCursor,'cursor_chain');
   }
   fail(expectedCursor!==null,'export_unterminated');
@@ -75,6 +77,6 @@ export async function adaptDataS2bOfficialFpl(exportEnvelope,{asOf,deadlineTime,
     fail(Object.keys(row).some(key=>ACCOUNT_KEY.test(key)),'account_data');
     return row;
   });
-  const core=canonicalise({schemaVersion:'eia1-data-s2b-input-v1',adapterVersion:EIA1_ADAPTER_VERSION,sourceRevision:SOURCE_REVISION,asOf:cutoff,deadlineTime:deadline,pageCount:exportEnvelope.pages.length,observations:accepted});
+  const core=canonicalise({schemaVersion:'eia1-data-s2b-input-v1',adapterVersion:EIA1_ADAPTER_VERSION,sourceRevision:SOURCE_REVISION,asOf:cutoff,deadlineTime:deadline,pageCount:exportEnvelope.pages.length,pagination,observations:accepted});
   return freeze({...core,adapterHash:await sha256Hex(stableStringify(core),cryptoImpl)});
 }
