@@ -628,3 +628,6 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DI-4 permanent product-integration suite
 
 `tests/decision-intelligence-product-integration.test.mjs` pins exact artifact/read-model parity for XI, bench, captain, vice, transfer/roll, hits, bank/FT and artifact-ordered alternatives; complete/partial/unavailable/unsupported/stale/conflicting/deadline states; immutable deterministic output; calculation/provider/storage/network/account isolation; and semantic mobile presentation. Physical iPhone Safari remains a separate manual acceptance gate recorded in the DI-4 document.
+## EIA-1 permanent boundary coverage (30 August 2026)
+
+`tests/eia1-evidence-activation.test.mjs` covers exact cutoffs and leakage rejection; deterministic snapshot/outcome/DATA-S2B adaptation; identity, provenance, allowlist, account-data, provisional/corrected/supersession and missingness semantics; aggregate-only TheSportsDB reporting; production dependency isolation; and the unchanged empty DI-3 signal allowlist. See [EIA-1](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).

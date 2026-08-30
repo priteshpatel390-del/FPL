@@ -361,3 +361,6 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DI4-1 — Ephemeral weekly synthesis and pending physical acceptance
 
 The DI-4 surface can only render the in-memory DI-3 artifact produced during the current session. Reload or a missing/stale/mismatched production basis can legitimately show partial or unavailable until Team and Transfers outputs are represented again. No persistence or monitoring was added. Repository/mobile-layout coverage is automated, but physical iPhone Safari acceptance is pending.
+# EIA-1 limitations (30 August 2026)
+
+EIA-1 proves deterministic adapter contracts against frozen fixtures, not real DATA-S2B acceptance or predictive accuracy. No committed legitimate real snapshot/outcome pair supports a published baseline, and no prospective workload observation or approved workload-to-xMins transform exists. TheSportsDB's xMins-critical field coverage and exact third-party-content retention rights are unproven, so durable retention is blocked and the qualification is FAIL. See [EIA-1](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).

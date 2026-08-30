@@ -461,3 +461,6 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DI-4 repository implementation (29 August 2026)
 
 DI-4 Weekly Decision Synthesis is repository-side review-ready: a deterministic artifact-only read model and Team surface cover complete, partial and unavailable states with permanent parity/isolation/mobile tests. Physical iPhone Safari acceptance remains pending, so DI-4 is not fully complete. No work beyond DI-4 is approved.
+# EIA-1 checkpoint (30 August 2026)
+
+EIA-1 adds offline real-evidence adapters and a provider-neutral workload contract without production use. TheSportsDB qualification fails for expected-minutes workload evidence; workload evaluation remains not yet evaluable. See [EIA-1](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
