@@ -46,7 +46,14 @@ async function artifactBasis(team,transfer,cryptoImpl){
 }
 
 export function createParityRuntime({cryptoImpl=globalThis.crypto}={}){
-  let team=null,transfer=null,latest=null;
-  const generate=async()=>{try{const raw=await artifactBasis(team,transfer,cryptoImpl);latest=raw?{ok:true,artifact:await createDecisionArtifact(raw,{cryptoImpl})}:{ok:true,artifact:null};}catch(error){latest={ok:false,artifact:null,error:String(error?.message||error)};}return latest;};
-  return Object.freeze({recordTeam(raw){team=deepFreeze(canonicalise(raw));return generate();},recordTransfer(raw){transfer=deepFreeze(canonicalise(raw));return generate();},latest:()=>latest,reset(){team=null;transfer=null;latest=null;}});
+  let team=null,transfer=null,latest=null,generation=0;
+  const generate=async()=>{
+    const current=++generation,teamSnapshot=team,transferSnapshot=transfer;
+    let result;
+    try{const raw=await artifactBasis(teamSnapshot,transferSnapshot,cryptoImpl);result=raw?{ok:true,artifact:await createDecisionArtifact(raw,{cryptoImpl})}:{ok:true,artifact:null};}
+    catch(error){result={ok:false,artifact:null,error:String(error?.message||error)};}
+    if(current===generation)latest=result;
+    return current===generation?result:latest;
+  };
+  return Object.freeze({recordTeam(raw){team=deepFreeze(canonicalise(raw));return generate();},recordTransfer(raw){transfer=deepFreeze(canonicalise(raw));return generate();},latest:()=>latest,reset(){team=null;transfer=null;latest=null;generation++;}});
 }

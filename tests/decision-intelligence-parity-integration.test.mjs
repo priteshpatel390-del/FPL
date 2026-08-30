@@ -65,3 +65,21 @@ test('DI-3 Stage B production graph is one-way and adds no UI, provider, DI-2 or
   const ui=fs.readFileSync('src/ui/team-decision-home.mjs','utf8')+fs.readFileSync('src/ui/transfer-performance.mjs','utf8');assert.match(ui,/DI3_PARITY_RUNTIME\.recordTeam/);assert.match(ui,/DI3_PARITY_RUNTIME\.recordTransfer/);assert.match(ui,/renderWeeklyDecision\(globalThis\.DI3_PARITY_RUNTIME\.latest\(\)\)/);assert.doesNotMatch(ui,/artifact\.recommendations|createDecisionArtifact/);
   const integration=fs.readFileSync('src/decision-intelligence/parity-integration.mjs','utf8');assert.doesNotMatch(integration,/evaluation-runner|workers\/data-platform|observation_heads|cloudflare|understat|odds|fetch\s*\(/i);
 });
+
+test('DI-3 Stage B newest coherent generation cannot be overwritten by an older async completion',async()=>{
+  let releaseFirst;const firstGate=new Promise(resolve=>{releaseFirst=resolve;}),native=globalThis.crypto;
+  let calls=0;const delayedCrypto={subtle:{async digest(...args){calls++;if(calls===1)await firstGate;return native.subtle.digest(...args);}}};
+  const runtime=createParityRuntime({cryptoImpl:delayedCrypto});
+  const older=runtime.recordTeam(team);
+  await new Promise(resolve=>setTimeout(resolve,0));
+  const newer=runtime.recordTransfer(transfer);
+  const coherent=await newer;
+  assert.equal(coherent.ok,true);assert.equal(coherent.artifact.completeness.state,'complete');
+  releaseFirst();await older;
+  assert.equal(runtime.latest().ok,true);assert.equal(runtime.latest().artifact.completeness.state,'complete');
+});
+
+test('DI-3 Stage B exact/estimated pricing states agree only when semantically identical',async()=>{
+  for(const priceBasis of ['exact','estimated']){const runtime=createParityRuntime();await runtime.recordTeam({...team,basis:{...basis,priceBasis}});const matched=await runtime.recordTransfer({...transfer,basis:{...basis,priceBasis}});assert.equal(matched.ok,true);assert.equal(matched.artifact.completeness.state,'complete');}
+  const runtime=createParityRuntime();await runtime.recordTeam({...team,basis:{...basis,priceBasis:'estimated'}});const mismatch=await runtime.recordTransfer({...transfer,basis:{...basis,priceBasis:'exact'}});assert.equal(mismatch.ok,false);assert.equal(mismatch.artifact,null);assert.equal(mismatch.error,'di3_parity_basis_mismatch:priceBasis');
+});

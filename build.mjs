@@ -38,7 +38,10 @@ const moduleInputs = [];
 let bundle = '';
 let di3Bundle='';
 for(const path of DI3_ORDER){const raw=readFileSync(path,'utf8');moduleInputs.push({path,content:raw});di3Bundle+=`\n/* ===== ${path} ===== */\n${stripModuleSyntax(raw)}\n`;}
-bundle+=`\n/* ===== DI-3 one-way parity representation ===== */\n(()=>{${di3Bundle}\nglobalThis.DI3_PARITY_RUNTIME=createParityRuntime();\n})();\n`;
+/* DI-3 remains isolated in its private scope. DI-4's one deliberately returned
+   lexical binding is the same function its source module imports under real ESM
+   semantics; it is not exposed on globalThis. */
+bundle+=`\n/* ===== DI-3 one-way parity representation + DI-4 read boundary ===== */\nconst createWeeklyDecisionReadModel=(()=>{${di3Bundle}\nglobalThis.DI3_PARITY_RUNTIME=createParityRuntime();\nreturn createWeeklyDecisionReadModel;\n})();\n`;
 for (const path of ORDER) {
   const raw = readFileSync(path, 'utf8');
   if(/\bstyle\s*:/.test(raw) || /\.style(?:\.|\[|\s*=)/.test(raw) || /setAttribute\(\s*['\"]style/.test(raw) || /\bcssText\b/.test(raw))
