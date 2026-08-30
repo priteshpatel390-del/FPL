@@ -1,3 +1,15 @@
+
+<!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
+
+### DI-4 physical acceptance remediation — review candidate
+
+
+Physical iPhone Safari acceptance also failed on `6b568985b637e7e3b31ea57bdf883b2a918c786b` after the lexical fix: unavailable and Team-only partial states passed, but returning from visibly completed Transfers retained the old partial DOM. Diagnosis proved app-shell route activation unhides Team without rerunning its renderer. The narrow remediation publishes parity-runtime changes to the weekly card while Team is visible and refreshes from `latest()` on the existing Team route event; it adds metadata-only developer diagnostics and public-squad/fresh/cache route regressions. No navigation, artifact, recommendation, model, provider or persistence semantics change; physical retest remains pending.
+
+### Current Decision Intelligence checkpoint — DI-4 review candidate
+
+DI-4 renders the frozen, ephemeral DI-3 parity artifact through a narrow deterministic read model in a mobile-first Team weekly-decision surface. Complete, partial and unavailable states fail closed; artifact actions, consequences and order are copied without recomputation or feedback. No recommendation/model/provider/persistence/security/account behaviour changes. Physical iPhone Safari acceptance remains pending. See [DI-4 Weekly Decision Synthesis](docs/DECISION-INTELLIGENCE-DI4-PRODUCT-INTEGRATION.md).
+
 # CLAUDE.md — onboarding for every future development session
 
 <!-- DATA-S2B-PHASE4B-REDIRECT-REMEDIATION-2026-08-30 -->

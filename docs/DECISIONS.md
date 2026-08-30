@@ -404,3 +404,7 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 **DATA-S2A boundary:** only fixed `bootstrap-static` and `fixtures` payloads are fetched. Strictly allowlisted event/team/player/fixture facts are validated, compared with current heads and appended only when they change. Durable internal shadow retention is approved for the allowlist; redistribution, raw payload retention, manager/account/league/rival state and production/model use are not. Teamsheet's live gateway and all runtime/model behaviour remain unchanged. No deployment, live D1 mutation or Cron activation is authorised or claimed.
 
 **Next gate:** DATA-S2B requires separate owner approval for live migration/deployment, Cron activation, a real baseline, unchanged-cycle proof, changed-fact proof, D1 accounting, Workers Free CPU suitability and rollback/stop on failure. DATA-S2A merge alone authorises none of those actions.
+
+## 29 August 2026 — DI-4 lives in Team behind an artifact-only read model
+
+**Decision:** Place the smallest weekly synthesis at the top of Team, keep Transfers as the deeper workflow, and support only `di3-decision-artifact-v1` through `di4-product-read-model-v1`. Missing, invalid, unsupported, stale or mismatched content fails closed without replacing existing views. No new navigation, persistence, recomputation, confidence formula or recommendation semantics are permitted.

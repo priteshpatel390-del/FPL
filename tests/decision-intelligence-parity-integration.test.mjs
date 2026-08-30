@@ -62,6 +62,30 @@ test('DI-3 Stage B artifact actions and consequences exactly match existing prod
 test('DI-3 Stage B production graph is one-way and adds no UI, provider, DI-2 or DATA-S2B consumer',()=>{
   const productionRoots=['src/main.mjs','src/squad.mjs',...fs.readdirSync('src/model').map(name=>`src/model/${name}`),...fs.readdirSync('src/providers').map(name=>`src/providers/${name}`)];
   for(const file of productionRoots)assert.doesNotMatch(fs.readFileSync(file,'utf8'),/DI3_PARITY_RUNTIME|parity-integration|decision-artifact/,file);
-  const ui=fs.readFileSync('src/ui/team-decision-home.mjs','utf8')+fs.readFileSync('src/ui/transfer-performance.mjs','utf8');assert.match(ui,/DI3_PARITY_RUNTIME\.recordTeam/);assert.match(ui,/DI3_PARITY_RUNTIME\.recordTransfer/);assert.doesNotMatch(ui,/\.latest\(|artifact\.recommendations|createDecisionArtifact/);
+  const ui=fs.readFileSync('src/ui/team-decision-home.mjs','utf8')+fs.readFileSync('src/ui/transfer-performance.mjs','utf8');assert.match(ui,/DI3_PARITY_RUNTIME\.recordTeam/);assert.match(ui,/DI3_PARITY_RUNTIME\.recordTransfer/);assert.match(ui,/renderWeeklyDecision\(globalThis\.DI3_PARITY_RUNTIME\.latest\(\)\)/);assert.doesNotMatch(ui,/artifact\.recommendations|createDecisionArtifact/);
   const integration=fs.readFileSync('src/decision-intelligence/parity-integration.mjs','utf8');assert.doesNotMatch(integration,/evaluation-runner|workers\/data-platform|observation_heads|cloudflare|understat|odds|fetch\s*\(/i);
+});
+
+test('DI-3 Stage B newest coherent generation cannot be overwritten by an older async completion',async()=>{
+  let releaseFirst;const firstGate=new Promise(resolve=>{releaseFirst=resolve;}),native=globalThis.crypto;
+  let calls=0;const delayedCrypto={subtle:{async digest(...args){calls++;if(calls===1)await firstGate;return native.subtle.digest(...args);}}};
+  const runtime=createParityRuntime({cryptoImpl:delayedCrypto});
+  const older=runtime.recordTeam(team);
+  await new Promise(resolve=>setTimeout(resolve,0));
+  const newer=runtime.recordTransfer(transfer);
+  const coherent=await newer;
+  assert.equal(coherent.ok,true);assert.equal(coherent.artifact.completeness.state,'complete');
+  releaseFirst();await older;
+  assert.equal(runtime.latest().ok,true);assert.equal(runtime.latest().artifact.completeness.state,'complete');
+});
+
+test('DI-3 Stage B exact/estimated pricing states agree only when semantically identical',async()=>{
+  for(const priceBasis of ['exact','estimated']){const runtime=createParityRuntime();await runtime.recordTeam({...team,basis:{...basis,priceBasis}});const matched=await runtime.recordTransfer({...transfer,basis:{...basis,priceBasis}});assert.equal(matched.ok,true);assert.equal(matched.artifact.completeness.state,'complete');}
+  const runtime=createParityRuntime();await runtime.recordTeam({...team,basis:{...basis,priceBasis:'estimated'}});const mismatch=await runtime.recordTransfer({...transfer,basis:{...basis,priceBasis:'exact'}});assert.equal(mismatch.ok,false);assert.equal(mismatch.artifact,null);assert.equal(mismatch.error,'di3_parity_basis_mismatch:priceBasis');
+});
+
+test('DI-3 Stage B diagnostic reports snapshot presence, generations, domains and exact mismatch without raw inputs',async()=>{
+  const runtime=createParityRuntime();assert.deepEqual(runtime.diagnostic(),{teamSnapshot:false,transferSnapshot:false,generation:0,latestGeneration:0,latestSuccessfulDomains:[],latestError:null,mismatchField:null});
+  await runtime.recordTeam(team);let diagnostic=runtime.diagnostic();assert.equal(diagnostic.teamSnapshot,true);assert.equal(diagnostic.transferSnapshot,false);assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','vice','xi']);
+  await runtime.recordTransfer({...transfer,basis:{...basis,bank:basis.bank+1}});diagnostic=runtime.diagnostic();assert.equal(diagnostic.transferSnapshot,true);assert.equal(diagnostic.latestError,'di3_parity_basis_mismatch:bank');assert.equal(diagnostic.mismatchField,'bank');assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','vice','xi']);assert.deepEqual(Object.keys(diagnostic).sort(),['generation','latestError','latestGeneration','latestSuccessfulDomains','mismatchField','teamSnapshot','transferSnapshot']);
 });

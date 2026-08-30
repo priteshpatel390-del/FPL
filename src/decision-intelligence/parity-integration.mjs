@@ -46,7 +46,27 @@ async function artifactBasis(team,transfer,cryptoImpl){
 }
 
 export function createParityRuntime({cryptoImpl=globalThis.crypto}={}){
-  let team=null,transfer=null,latest=null;
-  const generate=async()=>{try{const raw=await artifactBasis(team,transfer,cryptoImpl);latest=raw?{ok:true,artifact:await createDecisionArtifact(raw,{cryptoImpl})}:{ok:true,artifact:null};}catch(error){latest={ok:false,artifact:null,error:String(error?.message||error)};}return latest;};
-  return Object.freeze({recordTeam(raw){team=deepFreeze(canonicalise(raw));return generate();},recordTransfer(raw){transfer=deepFreeze(canonicalise(raw));return generate();},latest:()=>latest,reset(){team=null;transfer=null;latest=null;}});
+  let team=null,transfer=null,latest=null,generation=0,latestGeneration=0,latestSuccessfulDomains=[];
+  const listeners=new Set();
+  const publish=result=>{for(const listener of listeners){try{listener(result);}catch{}}};
+  const generate=async()=>{
+    const current=++generation,teamSnapshot=team,transferSnapshot=transfer;
+    let result;
+    try{const raw=await artifactBasis(teamSnapshot,transferSnapshot,cryptoImpl);result=raw?{ok:true,artifact:await createDecisionArtifact(raw,{cryptoImpl})}:{ok:true,artifact:null};}
+    catch(error){result={ok:false,artifact:null,error:String(error?.message||error)};}
+    if(current===generation){
+      latest=result;latestGeneration=current;
+      if(result.ok&&result.artifact)latestSuccessfulDomains=result.artifact.recommendations.map(row=>row.action.domain).sort();
+      publish(result);
+    }
+    return current===generation?result:latest;
+  };
+  return Object.freeze({
+    recordTeam(raw){team=deepFreeze(canonicalise(raw));return generate();},
+    recordTransfer(raw){transfer=deepFreeze(canonicalise(raw));return generate();},
+    latest:()=>latest,
+    subscribe(listener){if(typeof listener!=='function')throw new TypeError('di3_parity_listener');listeners.add(listener);return ()=>listeners.delete(listener);},
+    diagnostic(){const error=latest?.ok===false?String(latest.error||''):null;return deepFreeze({teamSnapshot:Boolean(team),transferSnapshot:Boolean(transfer),generation,latestGeneration,latestSuccessfulDomains:latestSuccessfulDomains.slice(),latestError:error,mismatchField:error?.startsWith('di3_parity_basis_mismatch:')?error.slice('di3_parity_basis_mismatch:'.length):null});},
+    reset(){team=null;transfer=null;latest=null;latestSuccessfulDomains=[];generation++;latestGeneration=generation;publish(null);}
+  });
 }

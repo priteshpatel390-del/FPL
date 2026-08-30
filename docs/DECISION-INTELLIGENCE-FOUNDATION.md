@@ -406,3 +406,7 @@ Open evidence questions: the accepted DATA-S2B read interface; availability of t
 **RECOMMENDATION:** review and, if satisfied, approve merge of **DI-1 — Shadow Intelligence Platform** exactly within section 18.
 
 Merge would not authorise DI-2, any provider, live capture/storage, D1/Cloudflare/DATA-S2B modification, production read/model/calculation/weight, rights/security policy change or product behaviour.
+
+## DI-4 product-integration checkpoint (29 August 2026)
+
+DI-4 consumes only the frozen DI-3 parity artifact through a versioned deterministic read model and renders it on Team. It adds no signal, approval, evaluation feedback, decision formula or persistence path. Artifact/render parity, fail-closed states and isolation are permanent tests; physical iPhone Safari acceptance is pending. See [DI-4 Product Integration](DECISION-INTELLIGENCE-DI4-PRODUCT-INTEGRATION.md).

@@ -81,3 +81,7 @@ Focused contract, approval, determinism, immutability, isolation, synthetic-matr
 * **D.** Reject or request revision.
 
 No option is assumed. Production integration, provider graduation and behavioural change must wait for Pritesh's separate explicit approval.
+
+## DI-4 downstream product reader (29 August 2026)
+
+DI-4 is the first approved downstream reader of the frozen artifact. Its dependency direction is one-way and presentation-only; the DI-3 artifact, parity runtime and production recommendation paths do not consume DI-4. Unsupported, missing, incomplete, stale or mismatched artifact state cannot be presented as complete. See [DI-4 Product Integration](DECISION-INTELLIGENCE-DI4-PRODUCT-INTEGRATION.md).

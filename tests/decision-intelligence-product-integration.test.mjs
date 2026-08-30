@@ -1,0 +1,58 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {stableStringify} from '../src/decision-intelligence/canonical.mjs';
+import {createParityRuntime} from '../src/decision-intelligence/parity-integration.mjs';
+import {S} from '../src/state.mjs';
+import {createWeeklyDecisionReadModel,weeklyDecisionReadModelBytes,DI4_READ_MODEL_VERSION} from '../src/decision-intelligence/product-read-model.mjs';
+const basis={season:'2026-27',gameweek:2,eventId:2,deadline:'2026-09-01T17:30:00Z',evaluationCutoff:'2026-09-01T17:30:00Z',sourceCommit:'source',modelVersion:'2.4.0',rulesVersion:'2026-27.3',squadHash:'squad:1-15',bank:10,freeTransfers:2,priceBasis:'exact'};
+const team={basis,formation:'4-4-2',xiPlayerIds:[1,2,3,4,5,6,7,8,9,10,11],benchPlayerIds:[12,13,14,15],xiExpectedPoints:55,benchExpectedPoints:12,captainId:10,captainExpectedPoints:8,viceId:11,viceExpectedPoints:7};
+const baseline={transferCount:0,transfers:[],finalSquadIds:Array.from({length:15},(_,i)=>i+1),bankBefore:10,bankAfter:10,freeTransfersBefore:2,paidTransfers:0,hitCost:0,freeTransfersNextGW:3,grossBestXIPoints:300,grossGain:0,rollDifference:0,netGain:0,perGameweekBestXI:[],doubtfulIncoming:0,signature:'',warnings:[],pricingMode:'exact'};
+const one={...baseline,transferCount:1,transfers:[{outPlayerId:2,inPlayerId:22,position:2,sellPrice:45,buyPrice:44}],finalSquadIds:[1,3,4,5,6,7,8,9,10,11,12,13,14,15,22],bankAfter:11,freeTransfersNextGW:2,grossBestXIPoints:306,grossGain:6,netGain:5.5,signature:'2>22'};
+const two={...baseline,transferCount:2,transfers:[{outPlayerId:2,inPlayerId:22,position:2,sellPrice:45,buyPrice:44},{outPlayerId:3,inPlayerId:23,position:2,sellPrice:45,buyPrice:45}],finalSquadIds:[1,4,5,6,7,8,9,10,11,12,13,14,15,22,23],freeTransfersNextGW:1,grossBestXIPoints:307,grossGain:7,netGain:5,signature:'2>22|3>23'};
+async function result(plans=[one,two,baseline]){const runtime=createParityRuntime();await runtime.recordTeam(team);return runtime.recordTransfer({basis,result:{status:'ok',issues:[],plans,baseline,pricingMode:'exact'},horizon:6,startGameweek:2});}
+const options={now:'2026-08-29T12:00:00Z'};
+test('DI-4 exactly maps XI, bench, captain, vice, selected transfer and ordered alternatives',async()=>{const runtimeResult=await result(),model=createWeeklyDecisionReadModel(runtimeResult,options),by=Object.fromEntries(model.decisions.map(r=>[r.domain,r]));assert.equal(model.status,'complete');assert.deepEqual(by.xi.action.playerIds,team.xiPlayerIds);assert.deepEqual(by.bench.action.playerIds,team.benchPlayerIds);assert.equal(by.captain.action.playerId,team.captainId);assert.equal(by.vice.action.playerId,team.viceId);assert.deepEqual(by.transfers.action.transfers,one.transfers);assert.deepEqual(model.alternatives.map(r=>r.action.actionId),runtimeResult.artifact.alternatives.map(r=>r.action.actionId));});
+test('DI-4 copies hit, bank and FT consequences including multi-transfer actions',async()=>{const hit={...two,paidTransfers:1,hitCost:4,netGain:1,signature:'2>22|3>23'};const model=createWeeklyDecisionReadModel(await result([hit,one,baseline]),options),row=model.decisions.find(r=>r.domain==='transfers');assert.equal(row.action.transfers.length,2);assert.equal(row.consequence.transferHit,4);assert.equal(row.consequence.bankAfter,hit.bankAfter);assert.equal(row.consequence.freeTransfersAfter,hit.freeTransfersNextGW);});
+test('DI-4 represents roll as the selected intentional action',async()=>{const model=createWeeklyDecisionReadModel(await result([baseline,one]),options);assert.equal(model.decisions.find(r=>r.domain==='transfers').action.type,'roll');assert.equal(model.alternatives[0].action.type,'transfer');});
+test('DI-4 partial artifact visibly preserves available domains and names missing transfers',async()=>{const runtime=createParityRuntime(),partial=await runtime.recordTeam(team),model=createWeeklyDecisionReadModel(partial,options);assert.equal(model.status,'partial');assert.deepEqual(model.missingDomains,['transfers']);assert.equal(model.decisions.length,4);});
+test('DI-4 missing, failed and unsupported artifacts fail closed without decisions',()=>{for(const input of [null,{ok:false,error:'basis_mismatch',artifact:null},{ok:true,artifact:{schemaVersion:'di3-future'}}]){const model=createWeeklyDecisionReadModel(input,options);assert.equal(model.status,'unavailable');assert.deepEqual(model.decisions,[]);}assert.equal(createWeeklyDecisionReadModel({ok:true,artifact:{schemaVersion:'di3-future'}},options).reason,'unsupported_schema');});
+test('DI-4 stale or conflicting completeness cannot render complete',async()=>{const good=await result(),raw=JSON.parse(JSON.stringify(good.artifact));raw.completeness={state:'complete',missingDomains:[],staleDomains:['captain'],conflicts:['transfer_basis']};const model=createWeeklyDecisionReadModel({ok:true,artifact:raw},options);assert.equal(model.status,'partial');assert.deepEqual(model.staleDomains,['captain']);});
+test('DI-4 deadline status is explicit before and after deadline',async()=>{const value=await result();assert.equal(createWeeklyDecisionReadModel(value,options).deadline.passed,false);assert.equal(createWeeklyDecisionReadModel(value,{now:'2026-09-02T00:00:00Z'}).deadline.passed,true);});
+test('DI-4 never mutates artifact and same artifact/options produce deterministic frozen bytes',async()=>{const value=await result(),before=stableStringify(value.artifact),a=createWeeklyDecisionReadModel(value,options),b=createWeeklyDecisionReadModel(value,options);assert.equal(weeklyDecisionReadModelBytes(value,options),weeklyDecisionReadModelBytes(value,options));assert.deepEqual(a,b);assert.equal(Object.isFrozen(a),true);assert.equal(stableStringify(value.artifact),before);assert.equal(a.schemaVersion,DI4_READ_MODEL_VERSION);});
+test('DI-4 renderer is artifact-only with no model, optimiser, provider, storage, network or account-write dependency',()=>{const read=fs.readFileSync('src/decision-intelligence/product-read-model.mjs','utf8'),ui=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');for(const source of [read,ui])assert.doesNotMatch(source,/model\/|squad\.mjs|transfers\.mjs|providers\/|storage|DATA-S2B|fetch\s*\(|XMLHttpRequest|account.*write|submit.*team/i);assert.doesNotMatch(read,/xpOf|bestXI|optimiseTransfers|expectedMinutes/);});
+test('DI-4 Team surface exposes semantic status, headings, labelled disclosure and 44px controls',()=>{const html=fs.readFileSync('app.html','utf8'),ui=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');assert.match(html,/id="weeklyDecision"[^>]*aria-labelledby="weeklyDecisionTitle"/);assert.match(ui,/role:'status'/);assert.match(ui,/aria-labelledby':'weeklyRiskTitle'/);assert.match(ui,/What would change this\?/);assert.match(html,/\.weekly-decision-details>summary\{[^}]*min-height:44px/);assert.match(html,/\.weekly-decision a\.btn\{min-height:44px/);});
+test('DI-4 progressive disclosure avoids technical provenance in the primary flow',()=>{const ui=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');assert.match(ui,/Decision basis/);assert.doesNotMatch(ui,/artifactHash|sourceCommit|schemaVersion|manifest/i);});
+
+class TestNode{
+  constructor(tag='',text=''){this.tagName=tag.toUpperCase();this.nodeType=text?3:1;this.childNodes=[];this.attributes={};this.className='';this._text=text;}
+  appendChild(child){this.childNodes.push(child);return child;}
+  removeChild(child){this.childNodes.splice(this.childNodes.indexOf(child),1);return child;}
+  get firstChild(){return this.childNodes[0]||null;}
+  setAttribute(key,value){this.attributes[key]=String(value);}
+  addEventListener(){}
+  get textContent(){return this.nodeType===3?this._text:this.childNodes.map(child=>child.textContent).join('');}
+  set textContent(value){this.childNodes=[new TestNode('',String(value))];}
+}
+
+test('DI-4 renderer executes as an ES module with explicit canonical state and deterministic name fallback',async()=>{
+  const source=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');
+  assert.match(source,/import\s*\{\s*S\s*\}\s*from\s*['"]\.\.\/state\.mjs['"]/);
+  assert.doesNotMatch(source,/globalThis\.S/);
+  const host=new TestNode('section'),previousDocument=globalThis.document,hadGlobalS=Object.hasOwn(globalThis,'S'),previousGlobalS=globalThis.S,previousById=S.byId;
+  try{
+    delete globalThis.S;
+    globalThis.document={getElementById:id=>id==='weeklyDecision'?host:null,createElement:tag=>new TestNode(tag),createTextNode:text=>new TestNode('',String(text))};
+    S.byId={10:{web_name:'Canonical Captain'}};
+    const {renderWeeklyDecision}=await import('../src/ui/weekly-decision.mjs');
+    const model=renderWeeklyDecision(await result(),options);
+    assert.equal(model.status,'complete');
+    assert.match(host.textContent,/Captain Canonical Captain/);
+    assert.match(host.textContent,/Player 11/);
+    assert.equal(Object.hasOwn(globalThis,'S'),false);
+  }finally{
+    S.byId=previousById;
+    if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+    if(hadGlobalS)globalThis.S=previousGlobalS;else delete globalThis.S;
+  }
+});
