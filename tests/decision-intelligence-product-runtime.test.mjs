@@ -30,7 +30,7 @@ test('DI-4 production Team → Transfers → Team call sites transition unavaila
   T.renderWeeklyDecision(T.DI3_PARITY_RUNTIME.latest());assert.match(text(doc.weeklyDecision),/Weekly decision unavailable/);
   globalThis.location.hash='#/team';T.renderSquad();await settle();assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'partial');assert.match(text(doc.weeklyDecision),/Partial weekly decision/);
   const teamBefore=JSON.stringify(T.mySquad());await runTransfers(app);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
-  globalThis.location.hash='#/team';T.renderSquad();await settle();const latest=T.DI3_PARITY_RUNTIME.latest();assert.equal(latest.ok,true);assert.equal(latest.artifact.completeness.state,'complete');assert.match(text(doc.weeklyDecision),/Complete weekly decision/);assert.equal(JSON.stringify(T.mySquad()),teamBefore);
+  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settle();const latest=T.DI3_PARITY_RUNTIME.latest();assert.equal(latest.ok,true);assert.equal(latest.artifact.completeness.state,'complete');assert.match(text(doc.weeklyDecision),/Complete weekly decision/);assert.equal(JSON.stringify(T.mySquad()),teamBefore);
 });
 
 test('DI-4 production Transfers → Team call sites also form a complete artifact',async()=>{
@@ -48,4 +48,35 @@ test('DI-4 production result and order remain byte-identical after representatio
 
 test('DI-4 flattened production bundle exposes the lexical read boundary without a DI-4 global',()=>{
   const app=productionApp();assert.equal(typeof app.T.renderWeeklyDecision,'function');assert.equal(Object.hasOwn(globalThis,'createWeeklyDecisionReadModel'),false);assert.equal(Object.hasOwn(globalThis,'S'),false);
+});
+
+
+test('DI-4 public-squad fresh and cached Transfers lifecycle remains complete on route return',async()=>{
+  const app=productionApp({manual:false,bank:'1.5',ft:'2'}),{T,doc}=app;
+  globalThis.location.hash='#/team';T.renderSquad();await settle();assert.equal(T.DI3_PARITY_RUNTIME.diagnostic().transferSnapshot,false);
+  await runTransfers(app);const fresh=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(fresh.transferSnapshot,true);assert.deepEqual(fresh.latestSuccessfulDomains,['bench','captain','transfers','vice','xi']);
+  globalThis.location.hash='#/transfers';T.renderTransfers();await settle();assert.match(doc.transferStatus.textContent,/reused instantly/);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
+  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settle();assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
+  app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settle();assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
+});
+
+test('DI-4 rejected transfer results never enter the runtime snapshot',()=>{
+  for(const result of [
+    {status:'invalid-input',issues:['squad'],plans:[]},
+    {status:'projection-unavailable',issues:['projection'],plans:[]},
+    {status:'search-incomplete',issues:['limit'],plans:[]},
+    {status:'ok',issues:[],plans:[],baseline:null,pricingMode:'estimated'}
+  ]){
+    const app=productionApp({manual:false}),snapshot=app.T.transferPerformanceSnapshot();
+    app.T.transferPerformanceRenderResult(result,{snapshot});
+    assert.equal(app.T.DI3_PARITY_RUNTIME.diagnostic().transferSnapshot,false);
+  }
+});
+
+test('DI-4 stale cached transfer basis fails closed until a fresh matching calculation supersedes it',async()=>{
+  const app=productionApp({manual:false,bank:'1.5',ft:'2'}),{T,doc}=app;
+  globalThis.location.hash='#/team';T.renderSquad();await settle();await runTransfers(app);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
+  doc.bankIn.value='2.0';globalThis.location.hash='#/team';T.renderSquad();await settle();let diagnostic=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(diagnostic.mismatchField,'bank');assert.equal(diagnostic.latestError,'di3_parity_basis_mismatch:bank');
+  doc.trBankIn.value='2.0';globalThis.location.hash='#/transfers';T.renderTransfers();await settle();finishTransfer({...app,bankTenths:20});await settle();diagnostic=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(diagnostic.latestError,null);assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','transfers','vice','xi']);
+  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
 });

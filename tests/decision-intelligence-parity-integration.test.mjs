@@ -83,3 +83,9 @@ test('DI-3 Stage B exact/estimated pricing states agree only when semantically i
   for(const priceBasis of ['exact','estimated']){const runtime=createParityRuntime();await runtime.recordTeam({...team,basis:{...basis,priceBasis}});const matched=await runtime.recordTransfer({...transfer,basis:{...basis,priceBasis}});assert.equal(matched.ok,true);assert.equal(matched.artifact.completeness.state,'complete');}
   const runtime=createParityRuntime();await runtime.recordTeam({...team,basis:{...basis,priceBasis:'estimated'}});const mismatch=await runtime.recordTransfer({...transfer,basis:{...basis,priceBasis:'exact'}});assert.equal(mismatch.ok,false);assert.equal(mismatch.artifact,null);assert.equal(mismatch.error,'di3_parity_basis_mismatch:priceBasis');
 });
+
+test('DI-3 Stage B diagnostic reports snapshot presence, generations, domains and exact mismatch without raw inputs',async()=>{
+  const runtime=createParityRuntime();assert.deepEqual(runtime.diagnostic(),{teamSnapshot:false,transferSnapshot:false,generation:0,latestGeneration:0,latestSuccessfulDomains:[],latestError:null,mismatchField:null});
+  await runtime.recordTeam(team);let diagnostic=runtime.diagnostic();assert.equal(diagnostic.teamSnapshot,true);assert.equal(diagnostic.transferSnapshot,false);assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','vice','xi']);
+  await runtime.recordTransfer({...transfer,basis:{...basis,bank:basis.bank+1}});diagnostic=runtime.diagnostic();assert.equal(diagnostic.transferSnapshot,true);assert.equal(diagnostic.latestError,'di3_parity_basis_mismatch:bank');assert.equal(diagnostic.mismatchField,'bank');assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','vice','xi']);assert.deepEqual(Object.keys(diagnostic).sort(),['generation','latestError','latestGeneration','latestSuccessfulDomains','mismatchField','teamSnapshot','transferSnapshot']);
+});
