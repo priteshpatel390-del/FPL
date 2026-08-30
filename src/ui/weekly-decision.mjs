@@ -1,4 +1,5 @@
 import {$,el,setChildren} from '../util.mjs';
+import {S} from '../state.mjs';
 import {createWeeklyDecisionReadModel} from '../decision-intelligence/product-read-model.mjs';
 const DOMAIN_LABELS=Object.freeze({xi:'Starting XI',bench:'Bench order',captain:'Captain',vice:'Vice-captain',transfers:'Transfer decision'});
 const playerName=id=>S.byId?.[id]?.web_name||`Player ${id}`;

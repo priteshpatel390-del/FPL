@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {stableStringify} from '../src/decision-intelligence/canonical.mjs';
 import {createParityRuntime} from '../src/decision-intelligence/parity-integration.mjs';
+import {S} from '../src/state.mjs';
 import {createWeeklyDecisionReadModel,weeklyDecisionReadModelBytes,DI4_READ_MODEL_VERSION} from '../src/decision-intelligence/product-read-model.mjs';
 const basis={season:'2026-27',gameweek:2,eventId:2,deadline:'2026-09-01T17:30:00Z',evaluationCutoff:'2026-09-01T17:30:00Z',sourceCommit:'source',modelVersion:'2.4.0',rulesVersion:'2026-27.3',squadHash:'squad:1-15',bank:10,freeTransfers:2,priceBasis:'exact'};
 const team={basis,formation:'4-4-2',xiPlayerIds:[1,2,3,4,5,6,7,8,9,10,11],benchPlayerIds:[12,13,14,15],xiExpectedPoints:55,benchExpectedPoints:12,captainId:10,captainExpectedPoints:8,viceId:11,viceExpectedPoints:7};
@@ -22,3 +23,36 @@ test('DI-4 never mutates artifact and same artifact/options produce deterministi
 test('DI-4 renderer is artifact-only with no model, optimiser, provider, storage, network or account-write dependency',()=>{const read=fs.readFileSync('src/decision-intelligence/product-read-model.mjs','utf8'),ui=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');for(const source of [read,ui])assert.doesNotMatch(source,/model\/|squad\.mjs|transfers\.mjs|providers\/|storage|DATA-S2B|fetch\s*\(|XMLHttpRequest|account.*write|submit.*team/i);assert.doesNotMatch(read,/xpOf|bestXI|optimiseTransfers|expectedMinutes/);});
 test('DI-4 Team surface exposes semantic status, headings, labelled disclosure and 44px controls',()=>{const html=fs.readFileSync('app.html','utf8'),ui=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');assert.match(html,/id="weeklyDecision"[^>]*aria-labelledby="weeklyDecisionTitle"/);assert.match(ui,/role:'status'/);assert.match(ui,/aria-labelledby':'weeklyRiskTitle'/);assert.match(ui,/What would change this\?/);assert.match(html,/\.weekly-decision-details>summary\{[^}]*min-height:44px/);assert.match(html,/\.weekly-decision a\.btn\{min-height:44px/);});
 test('DI-4 progressive disclosure avoids technical provenance in the primary flow',()=>{const ui=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');assert.match(ui,/Decision basis/);assert.doesNotMatch(ui,/artifactHash|sourceCommit|schemaVersion|manifest/i);});
+
+class TestNode{
+  constructor(tag='',text=''){this.tagName=tag.toUpperCase();this.nodeType=text?3:1;this.childNodes=[];this.attributes={};this.className='';this._text=text;}
+  appendChild(child){this.childNodes.push(child);return child;}
+  removeChild(child){this.childNodes.splice(this.childNodes.indexOf(child),1);return child;}
+  get firstChild(){return this.childNodes[0]||null;}
+  setAttribute(key,value){this.attributes[key]=String(value);}
+  addEventListener(){}
+  get textContent(){return this.nodeType===3?this._text:this.childNodes.map(child=>child.textContent).join('');}
+  set textContent(value){this.childNodes=[new TestNode('',String(value))];}
+}
+
+test('DI-4 renderer executes as an ES module with explicit canonical state and deterministic name fallback',async()=>{
+  const source=fs.readFileSync('src/ui/weekly-decision.mjs','utf8');
+  assert.match(source,/import\s*\{\s*S\s*\}\s*from\s*['"]\.\.\/state\.mjs['"]/);
+  assert.doesNotMatch(source,/globalThis\.S/);
+  const host=new TestNode('section'),previousDocument=globalThis.document,hadGlobalS=Object.hasOwn(globalThis,'S'),previousGlobalS=globalThis.S,previousById=S.byId;
+  try{
+    delete globalThis.S;
+    globalThis.document={getElementById:id=>id==='weeklyDecision'?host:null,createElement:tag=>new TestNode(tag),createTextNode:text=>new TestNode('',String(text))};
+    S.byId={10:{web_name:'Canonical Captain'}};
+    const {renderWeeklyDecision}=await import('../src/ui/weekly-decision.mjs');
+    const model=renderWeeklyDecision(await result(),options);
+    assert.equal(model.status,'complete');
+    assert.match(host.textContent,/Captain Canonical Captain/);
+    assert.match(host.textContent,/Player 11/);
+    assert.equal(Object.hasOwn(globalThis,'S'),false);
+  }finally{
+    S.byId=previousById;
+    if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+    if(hadGlobalS)globalThis.S=previousGlobalS;else delete globalThis.S;
+  }
+});
