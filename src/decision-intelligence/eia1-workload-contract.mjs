@@ -1,4 +1,4 @@
-import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
+import {canonicalise,deepFreeze,secretFinding,sha256Hex,stableStringify} from './canonical.mjs';
 
 export const EIA1_WORKLOAD_VERSION='1.0.0';
 const RIGHTS=new Set(['durable_allowed','attribution_required','local_research_only','durable_blocked','unknown_fail_closed']);
@@ -6,6 +6,7 @@ const STATUS=new Set(['starter','substitute','not_used','unknown']);
 function fail(condition,code){if(condition)throw new Error(`eia1_workload_${code}`);}
 const nullableNumber=value=>value==null?null:(Number.isFinite(Number(value))?Number(value):(()=>{throw new Error('eia1_workload_number')})());
 export async function normaliseWorkloadObservation(raw,{cryptoImpl=globalThis.crypto}={}){
+  fail(Boolean(secretFinding(raw)),'secret_material');
   fail(raw?.schemaVersion!=='eia1-workload-observation-v1','schema');fail(!RIGHTS.has(raw.rights?.classification),'rights');
   fail(raw.rights.classification!=='local_research_only','retention_not_fail_closed');fail(!STATUS.has(raw.participation?.status),'status');
   const status=raw.participation.status,minutes=nullableNumber(raw.participation.minutes);
