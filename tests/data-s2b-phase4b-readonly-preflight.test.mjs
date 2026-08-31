@@ -89,10 +89,19 @@ test('D1 failed-run-only post-activation state is accepted and partial/success s
 });
 
 test('failed-run error contract accepts only the evidenced sanitized redirect class',()=>{
-  assert.equal(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,'Invalid_redirect_value__must_be_one_of__follow__or__manual_');
+  assert.equal(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,'Invalid_redirect_value__must_be_one_of__follow__or__manual____er');
   assert.equal(isKnownPreRemediationFailure(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS),true);
-  for(const errorClass of ['collection_failed','TypeError','TypeError_unrelated','Invalid_redirect_value','official_fpl_http_failed','anything_else',null])assert.equal(isKnownPreRemediationFailure(errorClass),false);
-  assert.equal(validateD1State(postState),true); // reproduces both 30 and 31 August live rows
+  for(const errorClass of ['Invalid_redirect_value__must_be_one_of__follow__or__manual_','collection_failed','TypeError','TypeError_unrelated','Invalid_redirect_value','Invalid_redirect_value__must_be_one_of__follow__or__manual____e','Invalid_redirect_value__must_be_one_of__follow__or__manual____er_extra','official_fpl_http_failed','anything_else',null])assert.equal(isKnownPreRemediationFailure(errorClass),false);
+  assert.equal(validateD1State(postState),true); // exact evidenced row shape; later live rows remain unproven
+});
+
+test('a later failed row with a different error class remains diagnostic and fail-closed',()=>{
+  const later={...postState.runs[1],error_class:'different_sanitized_error'};
+  assert.throws(()=>validateD1State({...postState,runs:[postState.runs[0],later]}),error=>{
+    assert.match(error.message,/^phase4b_unknown_failed_run_contract diagnostic=/);
+    const diagnostic=JSON.parse(error.message.split(' diagnostic=')[1]);
+    return diagnostic.index===1&&diagnostic.mismatches.length===1&&diagnostic.mismatches[0]==='error_class'&&diagnostic.actual.error_class==='different_sanitized_error';
+  });
 });
 
 test('failed-run structural invariants reject every non-zero counter and identity drift',()=>{
