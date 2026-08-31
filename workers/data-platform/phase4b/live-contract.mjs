@@ -6,7 +6,7 @@ export const EXPECTED_ROLLBACK_VERSION_ID=EXPECTED_ACTIVE_VERSION_ID;
 export const RETAINED_OLDER_VERSION_ID='3a2b065a-6527-4887-9bf8-b08e82e81133';
 export const EXPECTED_D1_DATABASE_ID='01e2b4f9-313a-4a14-8ce6-86c5aecc50d7';
 export const EXPECTED_CRON='*/30 * * * *';
-export const KNOWN_REDIRECT_RUNTIME_ERROR_CLASS='Invalid_redirect_value__must_be_one_of__follow__or__manual_';
+export const KNOWN_REDIRECT_RUNTIME_ERROR_CLASS='Invalid_redirect_value__must_be_one_of__follow__or__manual____er';
 
 export const POST_ACTIVATION_RUNS_QUERY=`SELECT run_id, source_revision_id, run_type, mode, status,
   records_seen, records_accepted, records_quarantined, records_rejected, error_class
