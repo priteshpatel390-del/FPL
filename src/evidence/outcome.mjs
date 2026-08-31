@@ -7,6 +7,7 @@ import {
 import {
   validateOutcomeFixtures, validateOutcomeLive, validateOutcomePicks, validateOutcomeHistory
 } from '../providers/outcome-validate.mjs';
+import {validateOutcomeIntegrity} from './integrity.mjs';
 
 const OUTCOME_SCHEMA_VERSION='1.0.0';
 const OUTCOME_RULES=Object.freeze({
@@ -230,23 +231,7 @@ function outcomeShapeError(record){
   if(!Array.isArray(record.fixtureOutcomes?.records)||!Array.isArray(record.allPlayerOutcomes?.records)) return 'outcome_sections';
   return null;
 }
-async function validateOutcomeRecord(record,cryptoImpl=globalThis.crypto){
-  try{
-    if(!record||record.recordType!=='gameweekOutcome') return {ok:false,reason:'record_type'};
-    if(record.schemaVersion!==OUTCOME_SCHEMA_VERSION) return {ok:false,reason:'schema_version'};
-    const shape=outcomeShapeError(record); if(shape) return {ok:false,reason:shape};
-    assertEvidenceSafe(record);
-    const sections=await computeOutcomeSectionHashes(record,cryptoImpl);
-    if(stableStringify(sections)!==stableStringify(record.identity.sectionHashes)) return {ok:false,reason:'section_hash'};
-    const dataHash=await sha256Hex(stableStringify(outcomeDataMaterial(record)),cryptoImpl);
-    if(dataHash!==record.identity.outcomeDataHash) return {ok:false,reason:'outcome_data_hash'};
-    const contentHash=await sha256Hex(stableStringify(outcomeHashMaterial(record)),cryptoImpl);
-    if(contentHash!==record.identity.contentHash) return {ok:false,reason:'content_hash'};
-    const expectedId=`outcome-${record.season}-gw${record.gameweek}-r${record.identity.revision}-${contentHash.slice(0,16)}`;
-    if(record.identity.outcomeId!==expectedId) return {ok:false,reason:'outcome_id'};
-    return {ok:true,record:deepFreeze(canonicalise(record))};
-  }catch(error){ return {ok:false,reason:'invalid_record',message:error.message}; }
-}
+const validateOutcomeRecord=validateOutcomeIntegrity;
 async function captureGameweekOutcome({
   managerRef,gameweek,previousRecord=null,snapshotRecords=[],snapshotMetadata=[],historyPayload=undefined,
   trigger='automatic',mode='prospective_recheck',apiFn=api,nowFn=Date.now,cryptoImpl=globalThis.crypto

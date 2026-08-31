@@ -12,6 +12,7 @@ import { simulatePlayerGameweek } from '../model/simulation.mjs';
 import { mySquad, bestXI } from '../squad.mjs';
 import { optimiseTransfers } from '../model/transfers.mjs';
 import { decisionPreviewSnapshot, decisionPreviewSquadSignature } from '../ui/decision-preview.mjs';
+import {validateSnapshotIntegrity} from './integrity.mjs';
 
 const SNAPSHOT_SCHEMA_VERSION = '1.0.0';
 const SNAPSHOT_METRIC_VERSION = '1.0.0';
@@ -556,34 +557,7 @@ function recordShapeError(record){
   return null;
 }
 
-async function validateSnapshotRecord(record,cryptoImpl=globalThis.crypto){
-  try{
-    if(!record || record.recordType!=='preDeadlineSnapshot') return {ok:false,reason:'record_type'};
-    if(record.schemaVersion!==SNAPSHOT_SCHEMA_VERSION) return {ok:false,reason:'schema_version'};
-    const shapeError=recordShapeError(record);
-    if(shapeError) return {ok:false,reason:shapeError};
-    assertEvidenceSafe(record);
-    const sectionHashes=await computeSectionHashes(record,cryptoImpl);
-    if(stableStringify(sectionHashes)!==stableStringify(record.identity.sectionHashes)) return {ok:false,reason:'section_hash'};
-    if(record.identity.ruleHashes.configuration!==sectionHashes.ruleConfiguration) return {ok:false,reason:'rule_hash'};
-    const expectedDuplicateKey=[record.season,`gw${record.gameweek}`,record.deadlineTime,record.build?.sourceHash||'unknown',record.versions?.model||MODEL_VERSION,record.versions?.rules||RULES_VERSION].join('|');
-    if(record.identity.duplicateKey!==expectedDuplicateKey) return {ok:false,reason:'duplicate_key'};
-    const expectedTiming=assessDeadlineTiming({
-      deadlineTime:record.deadlineTime,
-      captureStartedAt:Date.parse(record.timing.captureStartedAt),
-      captureCompletedAt:Date.parse(record.timing.captureCompletedAt),
-      networkBefore:record.timing.networkBefore,
-      networkAfter:record.timing.networkAfter,
-      providers:record.providers,
-      complete:record.completeness.complete
-    });
-    if(stableStringify(expectedTiming)!==stableStringify(record.timing)) return {ok:false,reason:'timing_evidence'};
-    const expected = await sha256Hex(stableStringify(recordHashMaterial(record)),cryptoImpl);
-    if(expected!==record.identity?.contentHash) return {ok:false,reason:'content_hash'};
-    if(record.identity?.snapshotId!==`predeadline-gw${record.gameweek}-${expected.slice(0,16)}`) return {ok:false,reason:'snapshot_id'};
-    return {ok:true,record:deepFreeze(canonicalise(record))};
-  }catch(error){ return {ok:false,reason:'invalid_record',message:error.message}; }
-}
+const validateSnapshotRecord=validateSnapshotIntegrity;
 async function capturePreDeadlineSnapshot({managerRef,horizon,fetchFn=globalThis.fetch,locationHref=globalThis.location?.href,nowFn=Date.now,cryptoImpl=globalThis.crypto}={}){
   const captureStartedAt = nowFn();
   const networkBefore = await sampleNetworkClock({fetchFn,locationHref,nowFn});

@@ -23,7 +23,7 @@ const ORDER = [
   'src/model/squad-simulation.mjs', 'src/model/transfers.mjs', 'src/model/walk-forward.mjs',
   'src/model/archive-replay.mjs', 'src/model/backtest.mjs', 'src/main.mjs',
   'src/ui/app-shell.mjs', 'src/ui/team-pitch.mjs', 'src/ui/player-detail.mjs', 'src/ui/decision-preview.mjs',
-  'src/evidence/snapshot.mjs', 'src/evidence/outbox.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
+  'src/evidence/integrity.mjs', 'src/evidence/snapshot.mjs', 'src/evidence/outbox.mjs', 'src/evidence/outcome.mjs', 'src/evidence/metrics.mjs', 'src/evidence/review.mjs',
   'src/ui/transfer-optimiser-view.mjs', 'src/ui/transfer-performance.mjs', 'src/ui/mini-leagues-view.mjs', 'src/ui/weekly-decision.mjs', 'src/ui/team-decision-home.mjs', 'src/ui/views.mjs', 'src/ui/manual-squad-runtime.mjs', 'src/ui/backtest-copy.mjs',
   'src/ui/markdown.mjs', 'src/ui/security-wiring.mjs', 'src/ui/evidence-recovery.mjs', 'src/ui/download.mjs', 'src/ui/evidence.mjs', 'src/ui/evidence-delivery.mjs', 'src/ui/outcomes.mjs', 'src/ui/metrics.mjs', 'src/ui/review.mjs',
 ];
@@ -47,7 +47,9 @@ for (const path of ORDER) {
   if(/\bstyle\s*:/.test(raw) || /\.style(?:\.|\[|\s*=)/.test(raw) || /setAttribute\(\s*['\"]style/.test(raw) || /\bcssText\b/.test(raw))
     throw new Error(`Inline style API is forbidden in ${path}; use the hash-locked stylesheet`);
   moduleInputs.push({ path, content:raw });
-  bundle += `\n/* ===== ${path} ===== */\n` + stripModuleSyntax(raw) + '\n';
+  if(path==='src/evidence/integrity.mjs'){
+    bundle += `\n/* ===== ${path} — shared pure validator scope ===== */\nconst {validateSnapshotIntegrity,validateOutcomeIntegrity}=(()=>{\n${stripModuleSyntax(raw)}\nreturn {validateSnapshotIntegrity,validateOutcomeIntegrity};\n})();\n`;
+  }else bundle += `\n/* ===== ${path} ===== */\n` + stripModuleSyntax(raw) + '\n';
 }
 assertNoModuleSyntax(bundle);
 const sourceHash = hashNamedInputs(moduleInputs);
