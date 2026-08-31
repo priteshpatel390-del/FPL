@@ -7,6 +7,7 @@ import {
   assertReadOnlyApiRequest,buildSanitizedSummary,extractVersions,validateActiveVersion,
   validateCron,validateD1State,validateDatabase,validateDeployment,validateDomains,validateHealth,validateVersions
 } from '../workers/data-platform/phase4b/preflight.mjs';
+import {KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,isKnownPreRemediationFailure} from '../workers/data-platform/phase4b/live-contract.mjs';
 
 const helper=fs.readFileSync('workers/data-platform/phase4b/preflight.mjs','utf8');
 const workflow=fs.readFileSync('.github/workflows/data-s2b-phase4b-readonly-preflight.yml','utf8');
@@ -29,7 +30,7 @@ const postState={
   revisionRows:[{source_revision_id:'official-fpl-r1',source_id:'source-official-fpl',revision:1,schema_version:'data-s2a-v1',rights_classification:'durable_allowed',retention_allowed:1,redistribution_allowed:0,attribution_required:0,attribution_text:null,terms_reference:'docs/DATA_SOURCES.md',terms_reviewed_at:'2026-08-26T00:00:00.000Z',acquisition_status:'approved_internal_shadow_history',shadow_ingest_allowed:1,supersedes_revision_id:null,created_at:'2026-08-26T00:00:00.000Z'}],
   counts:{data_sources:1,data_source_revisions:1,ingestion_runs:2,shadow_observations:0,observation_heads:0,canonical_entities:0},
   official:{ingestion_runs:2,shadow_observations:0,observation_heads:0},
-  runs:[1,2].map(run=>({run_id:`run-${run}`,source_revision_id:'official-fpl-r1',run_type:'official_fpl_structured_history',mode:'shadow_only',status:'failed',records_seen:0,records_accepted:0,records_quarantined:0,records_rejected:0,error_class:'TypeError'}))
+  runs:[1,2].map(run=>({run_id:`run-${run}`,source_revision_id:'official-fpl-r1',run_type:'official_fpl_structured_history',mode:'shadow_only',status:'failed',records_seen:0,records_accepted:0,records_quarantined:0,records_rejected:0,error_class:KNOWN_REDIRECT_RUNTIME_ERROR_CLASS}))
 };
 
 test('Phase 4B preflight constants pin the accepted production contract',()=>{
@@ -85,6 +86,18 @@ test('D1 failed-run-only post-activation state is accepted and partial/success s
   assert.equal(validateD1State({...postState,counts:{...postState.counts,ingestion_runs:3},official:{...postState.official,ingestion_runs:3},runs:[...postState.runs,{...postState.runs[0],run_id:'run-3'}]}),true);
   assert.throws(()=>validateD1State({...postState,counts:{...postState.counts,shadow_observations:1}}),/partial_accepted_history|post_table_count_drift/);
   assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,status:'completed',error_class:null})}),/unknown_failed_run_contract/);
+});
+
+test('failed-run error contract accepts only the evidenced sanitized redirect class',()=>{
+  assert.equal(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,'Invalid_redirect_value__must_be_one_of__follow__or__manual_');
+  assert.equal(isKnownPreRemediationFailure(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS),true);
+  for(const errorClass of ['collection_failed','TypeError','TypeError_unrelated','Invalid_redirect_value','official_fpl_http_failed','anything_else',null])assert.equal(isKnownPreRemediationFailure(errorClass),false);
+  assert.equal(validateD1State(postState),true); // reproduces both 30 and 31 August live rows
+});
+
+test('failed-run structural invariants reject every non-zero counter and identity drift',()=>{
+  for(const field of ['records_seen','records_accepted','records_quarantined','records_rejected'])assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,[field]:1})}),/unknown_failed_run_contract/);
+  for(const drift of [{source_revision_id:'other'},{run_type:'other'},{mode:'other'}])assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,...drift})}),/unknown_failed_run_contract/);
 });
 
 test('authenticated health requires exact HTTP 200 ok true shadow_only contract',()=>{
