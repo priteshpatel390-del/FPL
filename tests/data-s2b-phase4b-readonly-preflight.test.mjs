@@ -7,7 +7,7 @@ import {
   assertReadOnlyApiRequest,buildSanitizedSummary,extractVersions,validateActiveVersion,
   validateCron,validateD1State,validateDatabase,validateDeployment,validateDomains,validateHealth,validateVersions
 } from '../workers/data-platform/phase4b/preflight.mjs';
-import {KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,isKnownPreRemediationFailure} from '../workers/data-platform/phase4b/live-contract.mjs';
+import {KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,failedRunDiagnostic,isKnownPreRemediationFailure} from '../workers/data-platform/phase4b/live-contract.mjs';
 
 const helper=fs.readFileSync('workers/data-platform/phase4b/preflight.mjs','utf8');
 const workflow=fs.readFileSync('.github/workflows/data-s2b-phase4b-readonly-preflight.yml','utf8');
@@ -98,6 +98,25 @@ test('failed-run error contract accepts only the evidenced sanitized redirect cl
 test('failed-run structural invariants reject every non-zero counter and identity drift',()=>{
   for(const field of ['records_seen','records_accepted','records_quarantined','records_rejected'])assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,[field]:1})}),/unknown_failed_run_contract/);
   for(const drift of [{source_revision_id:'other'},{run_type:'other'},{mode:'other'}])assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,...drift})}),/unknown_failed_run_contract/);
+});
+
+test('failed-run diagnostic is bounded to deterministic safe structural fields',()=>{
+  const run={...postState.runs[0],source_revision_id:'wrong',error_class:'other_error',api_token:'Bearer secret-value',secret_binding_value:'do-not-log',raw_exception:'Invalid redirect value: raw text'};
+  let error;try{validateD1State({...postState,runs:[run,postState.runs[1]]});}catch(caught){error=caught;}
+  assert.match(error?.message??'',/^phase4b_unknown_failed_run_contract diagnostic=/);
+  const diagnostic=JSON.parse(error.message.split(' diagnostic=')[1]);
+  assert.deepEqual(Object.keys(diagnostic),['index','mismatches','actual']);
+  assert.deepEqual(Object.keys(diagnostic.actual),['source_revision_id','run_type','mode','status','error_class','records_seen','records_accepted','records_quarantined','records_rejected']);
+  assert.deepEqual(diagnostic.mismatches,['source_revision_id','error_class']);
+  assert.equal(diagnostic.index,0);assert.equal(diagnostic.actual.source_revision_id,'wrong');assert.equal(diagnostic.actual.error_class,'other_error');
+  for(const forbidden of ['Bearer','secret-value','do-not-log','Invalid redirect value','api_token','secret_binding_value','raw_exception'])assert.equal(error.message.includes(forbidden),false);
+  assert.ok(error.message.length<700);
+});
+
+test('unsafe structural strings are replaced rather than logged verbatim',()=>{
+  const diagnostic=failedRunDiagnostic({...postState.runs[0],error_class:'raw exception: bearer secret value'},1);
+  assert.equal(diagnostic.actual.error_class,'[invalid]');
+  assert.equal(JSON.stringify(diagnostic).includes('bearer secret value'),false);
 });
 
 test('authenticated health requires exact HTTP 200 ok true shadow_only contract',()=>{

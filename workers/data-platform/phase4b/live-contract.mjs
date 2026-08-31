@@ -13,9 +13,26 @@ export const POST_ACTIVATION_RUNS_QUERY=`SELECT run_id, source_revision_id, run_
   FROM ingestion_runs ORDER BY started_at, run_id`;
 
 const numeric=value=>{const number=Number(value);if(!Number.isFinite(number))throw new Error('phase4b_d1_numeric_contract_invalid');return number;};
+const RUN_STRING_FIELDS=Object.freeze(['source_revision_id','run_type','mode','status','error_class']);
+const RUN_COUNTER_FIELDS=Object.freeze(['records_seen','records_accepted','records_quarantined','records_rejected']);
+const safeString=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(value)?value:'[invalid]';
+const safeCounter=value=>Number.isFinite(Number(value))?Number(value):'[invalid]';
 
 export function isKnownPreRemediationFailure(errorClass){
   return errorClass===KNOWN_REDIRECT_RUNTIME_ERROR_CLASS;
+}
+
+export function failedRunDiagnostic(run,index){
+  const expected={source_revision_id:'official-fpl-r1',run_type:'official_fpl_structured_history',mode:'shadow_only',status:'failed',records_seen:0,records_accepted:0,records_quarantined:0,records_rejected:0,error_class:KNOWN_REDIRECT_RUNTIME_ERROR_CLASS};
+  const actual={};
+  for(const field of RUN_STRING_FIELDS)actual[field]=safeString(run?.[field]);
+  for(const field of RUN_COUNTER_FIELDS)actual[field]=safeCounter(run?.[field]);
+  const mismatches=Object.keys(expected).filter(field=>actual[field]!==expected[field]);
+  return {index:Number.isSafeInteger(index)&&index>=0?index:'[invalid]',mismatches,actual};
+}
+
+function failedRunMatches(run){
+  return run?.source_revision_id==='official-fpl-r1'&&run?.run_type==='official_fpl_structured_history'&&run?.mode==='shadow_only'&&run?.status==='failed'&&RUN_COUNTER_FIELDS.every(field=>Number.isFinite(Number(run?.[field]))&&Number(run[field])===0)&&isKnownPreRemediationFailure(run?.error_class);
 }
 
 export function validateExactCron(rows){
@@ -29,8 +46,8 @@ export function validatePostActivationState({migrations,sourceRows,revisionRows,
   const runCount=numeric(counts?.ingestion_runs),officialRunCount=numeric(official?.ingestion_runs);
   if(!Array.isArray(runs)||runs.length!==runCount||officialRunCount!==runCount)throw new Error('phase4b_ingestion_run_count_contradiction');
   if(runCount<2)throw new Error('phase4b_known_failed_history_missing');
-  for(const run of runs){
-    if(run?.source_revision_id!=='official-fpl-r1'||run?.run_type!=='official_fpl_structured_history'||run?.mode!=='shadow_only'||run?.status!=='failed'||numeric(run.records_seen)!==0||numeric(run.records_accepted)!==0||numeric(run.records_quarantined)!==0||numeric(run.records_rejected)!==0||!isKnownPreRemediationFailure(run.error_class))throw new Error('phase4b_unknown_failed_run_contract');
+  for(const [index,run] of runs.entries()){
+    if(!failedRunMatches(run))throw new Error(`phase4b_unknown_failed_run_contract diagnostic=${JSON.stringify(failedRunDiagnostic(run,index))}`);
   }
   return true;
 }
