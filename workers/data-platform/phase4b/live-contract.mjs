@@ -15,7 +15,7 @@ export const POST_ACTIVATION_RUNS_QUERY=`SELECT run_id, source_revision_id, run_
 const numeric=value=>{const number=Number(value);if(!Number.isFinite(number))throw new Error('phase4b_d1_numeric_contract_invalid');return number;};
 
 export function isKnownPreRemediationFailure(errorClass){
-  return errorClass===KNOWN_REDIRECT_RUNTIME_ERROR_CLASS||errorClass==='collection_failed';
+  return errorClass===KNOWN_REDIRECT_RUNTIME_ERROR_CLASS;
 }
 
 export function validateExactCron(rows){

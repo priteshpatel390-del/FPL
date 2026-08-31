@@ -88,11 +88,10 @@ test('D1 failed-run-only post-activation state is accepted and partial/success s
   assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,status:'completed',error_class:null})}),/unknown_failed_run_contract/);
 });
 
-test('failed-run error contract accepts only the evidenced sanitized redirect class and intentional fallback',()=>{
+test('failed-run error contract accepts only the evidenced sanitized redirect class',()=>{
   assert.equal(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS,'Invalid_redirect_value__must_be_one_of__follow__or__manual_');
   assert.equal(isKnownPreRemediationFailure(KNOWN_REDIRECT_RUNTIME_ERROR_CLASS),true);
-  assert.equal(isKnownPreRemediationFailure('collection_failed'),true);
-  for(const errorClass of ['TypeError','TypeError_unrelated','Invalid_redirect_value','official_fpl_http_failed','anything_else',null])assert.equal(isKnownPreRemediationFailure(errorClass),false);
+  for(const errorClass of ['collection_failed','TypeError','TypeError_unrelated','Invalid_redirect_value','official_fpl_http_failed','anything_else',null])assert.equal(isKnownPreRemediationFailure(errorClass),false);
   assert.equal(validateD1State(postState),true); // reproduces both 30 and 31 August live rows
 });
 
