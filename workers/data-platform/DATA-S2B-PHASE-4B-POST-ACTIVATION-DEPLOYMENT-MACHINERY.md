@@ -35,3 +35,9 @@ The protected workflows require the Worker bearer plus the Cloudflare Access ser
 ## Explicit exclusions and remaining acceptance
 
 This checkpoint does not upload or deploy a Worker, roll back, mutate Cron/D1/bindings/secrets/domain/Access, invoke collection, change collector/provider/application/model behaviour, or change cadence. Live state can evolve while review is open: additional rows pass only if they satisfy the narrow known failed-run contract; every other evolution stops the machinery for reconciliation. After a future approved deployment, DATA-S2B still requires a genuine scheduled completed populated baseline and consistent observations/heads before live acceptance can close.
+
+## Failed-run contract correction
+
+Protected mutation-free preflight run `33415356489` ran on exact main `cd14dea2782e321ee4394055594ec0f8b9257edc`. Its repository gate passed and its Cloudflare read-only step failed closed with `phase4b_unknown_failed_run_contract`. It performed no Version upload, Deployment, Cron/D1/binding/domain/Access mutation or collector invocation.
+
+The collector sanitizes an error message with `.replace(/[^a-z0-9_-]/gi,'_').slice(0,64)`. The two 30 and 31 August rows therefore store the evidenced redirect-runtime class `Invalid_redirect_value__must_be_one_of__follow__or__manual_`, not the broad `TypeError` prefix anticipated by the first post-activation validator. The corrected predicate accepts exactly that stored class and the collector's intentional no-message fallback `collection_failed`; it no longer accepts arbitrary `TypeError` values. All source, revision, run-type, mode, status, zero-record, zero-observation/head, migration, governance, D1, binding and Cron invariants remain unchanged. After merge, the exact same protected mutation-free preflight must be rerun on exact current main before any upload/deployment decision.

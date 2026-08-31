@@ -15,7 +15,7 @@ DI-4 renders the frozen, ephemeral DI-3 parity artifact through a narrow determi
 <!-- DATA-S2B-PHASE4B-POST-ACTIVATION-MACHINERY-2026-08-31 -->
 ### Current DATA-S2B checkpoint — post-activation deployment machinery remediation candidate
 
-The repository-only Phase 4B candidate reconciles preflight/upload/deployment/one-shot rollback machinery with the live Cron, active Version `733093ef-e01f-43a8-828a-0c8c67e7626f`, exact D1 identity and failed-run-only history. It authorises no upload, Deployment, Cron/D1 mutation or collector invocation. After merge, exact-main CI and a fresh protected preflight, upload and deployment require one separate bundled owner decision; scheduled baseline acceptance remains outstanding. See [post-activation machinery remediation](workers/data-platform/DATA-S2B-PHASE-4B-POST-ACTIVATION-DEPLOYMENT-MACHINERY.md).
+The repository-only Phase 4B machinery is merged, but protected mutation-free preflight run `33415356489` failed closed because its failed-run predicate did not match the actual sanitized redirect error stored in D1. The narrow correction candidate accepts that exact evidenced class, removes arbitrary `TypeError` acceptance and preserves every other live invariant. It authorises no upload, Deployment, Cron/D1 mutation or collector invocation. After merge, rerun the same exact-main protected preflight; upload/deployment remains a later bundled owner decision and scheduled baseline acceptance remains outstanding. See [post-activation machinery remediation](workers/data-platform/DATA-S2B-PHASE-4B-POST-ACTIVATION-DEPLOYMENT-MACHINERY.md).
 
 
 <!-- DATA-S2B-PHASE4B-REDIRECT-REMEDIATION-2026-08-30 -->
