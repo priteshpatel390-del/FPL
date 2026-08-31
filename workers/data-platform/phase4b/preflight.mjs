@@ -5,15 +5,14 @@ import {
   extractDeploymentsResult,extractSchedulesResult,extractWorkersDomains,validateReadOnlySql
 } from '../phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../phase0/queries.mjs';
-import {PHASE1_QUERIES,validatePostState} from '../phase1/migrate-0002.mjs';
+import {PHASE1_QUERIES} from '../phase1/migrate-0002.mjs';
+import {EXPECTED_ACTIVE_DEPLOYMENT_ID,EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,EXPECTED_ROLLBACK_VERSION_ID,POST_ACTIVATION_RUNS_QUERY,RETAINED_OLDER_VERSION_ID,validateExactCron,validatePostActivationState} from './live-contract.mjs';
 
 export const WORKER_NAME='teamsheet-data-platform';
 export const EXPECTED_PRODUCTION_HOSTNAME='data.fpltsheet.co.uk';
-export const EXPECTED_ACTIVE_VERSION_ID='3a2b065a-6527-4887-9bf8-b08e82e81133';
-export const EXPECTED_ROLLBACK_VERSION_ID='5edbe951-4be4-46bc-b2cf-17b550396105';
+export {EXPECTED_ACTIVE_DEPLOYMENT_ID,EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,EXPECTED_ROLLBACK_VERSION_ID,RETAINED_OLDER_VERSION_ID};
 export const EXPECTED_COMPATIBILITY_DATE='2026-08-22';
 export const EXPECTED_SEASON='2026-27';
-export const EXPECTED_D1_SIZE_BYTES=151552;
 const EXPECTED_BINDINGS=Object.freeze(new Map([
   ['TEAMSHEET_DATA_DB','d1'],
   ['DATA_S1_HTTP_AUTH_TOKEN','secret_text'],
@@ -43,6 +42,7 @@ export function validateDeployment(result){
   if(!current||typeof current.id!=='string'||!current.id||!Array.isArray(current.versions)||current.versions.length!==1)throw new Error('phase4b_preflight_active_deployment_invalid');
   const only=current.versions[0];
   if(only?.version_id!==EXPECTED_ACTIVE_VERSION_ID||only?.percentage!==100)throw new Error('phase4b_preflight_active_version_drift');
+  if(current.id!==EXPECTED_ACTIVE_DEPLOYMENT_ID)throw new Error('phase4b_preflight_active_deployment_drift');
   return {deploymentId:current.id,versionId:only.version_id};
 }
 
@@ -55,7 +55,7 @@ export function extractVersions(result){
 
 export function validateVersions(ids){
   if(!Array.isArray(ids)||ids[0]!==EXPECTED_ACTIVE_VERSION_ID)throw new Error('phase4b_preflight_latest_active_drift');
-  if(!ids.includes(EXPECTED_ROLLBACK_VERSION_ID))throw new Error('phase4b_preflight_rollback_version_missing');
+  if(!ids.includes(EXPECTED_ROLLBACK_VERSION_ID)||!ids.includes(RETAINED_OLDER_VERSION_ID))throw new Error('phase4b_preflight_rollback_version_missing');
   return ids;
 }
 
@@ -70,7 +70,7 @@ export function validateActiveVersion(detail){
     seen.add(binding.name);
     if(binding.name==='TEAMSHEET_DATA_DB'){
       if(typeof binding.database_id!=='string'||!binding.database_id)throw new Error('phase4b_preflight_d1_binding_invalid');
-      databaseId=binding.database_id;
+      databaseId=binding.database_id;if(databaseId!==EXPECTED_D1_DATABASE_ID)throw new Error('phase4b_preflight_d1_binding_invalid');
     }
     if(binding.name==='DATA_S1_HTTP_AUTH_TOKEN'&&Object.hasOwn(binding,'text'))throw new Error('phase4b_preflight_secret_exposed');
     if(binding.name==='DATA_S2_SEASON'&&binding.text!==EXPECTED_SEASON)throw new Error('phase4b_preflight_season_drift');
@@ -85,15 +85,15 @@ export function validateDomains(result){
   return hostnames;
 }
 
-export function validateCron(result){return assessCron(extractSchedulesResult(result));}
+export function validateCron(result){return validateExactCron(extractSchedulesResult(result));}
 
 export function validateDatabase(database,databaseId){
   const exact=extractD1DatabaseDetails(database,{uuid:databaseId});
-  if(Number(exact.file_size)!==EXPECTED_D1_SIZE_BYTES)throw new Error('phase4b_preflight_d1_size_drift');
+  if(exact.uuid!==EXPECTED_D1_DATABASE_ID||exact.name!=='teamsheet-data')throw new Error('phase4b_preflight_d1_identity_drift');
   return exact;
 }
 
-export function validateD1State(state){return validatePostState(state);}
+export function validateD1State(state){return validatePostActivationState(state);}
 
 export function validateHealth(status,body){
   if(status!==200||body?.ok!==true||body?.mode!=='shadow_only')throw new Error('phase4b_preflight_health_failed');
@@ -107,7 +107,7 @@ export function buildSanitizedSummary({approvedSha,deploymentId,counts,d1Size}){
     `- Repository SHA: \`${approvedSha}\``,`- Production Deployment ID: \`${deploymentId}\``,
     `- Active Version ID: \`${EXPECTED_ACTIVE_VERSION_ID}\``,`- Rollback Version present: \`${EXPECTED_ROLLBACK_VERSION_ID}\``,
     `- Production hostname: \`${EXPECTED_PRODUCTION_HOSTNAME}\``,'- Bindings: `TEAMSHEET_DATA_DB` (d1), `DATA_S1_HTTP_AUTH_TOKEN` (secret_text; value not read), `DATA_S2_SEASON` (plain_text)',
-    `- Compatibility date: \`${EXPECTED_COMPATIBILITY_DATE}\``,`- Season: \`${EXPECTED_SEASON}\``,'- Cron expressions: none','- D1 migration/governance: PASS',
+    `- Compatibility date: \`${EXPECTED_COMPATIBILITY_DATE}\``,`- Season: \`${EXPECTED_SEASON}\``,`- Cron expression: \`${EXPECTED_CRON}\``,'- D1 post-activation acceptance contract: PASS',
     `- DATA-S2 history counts: ingestion_runs=${counts.ingestion_runs}, shadow_observations=${counts.shadow_observations}, observation_heads=${counts.observation_heads}, canonical_entities=${counts.canonical_entities}`,
     `- D1 size: ${d1Size} bytes`,'- Authenticated production health: PASS','',
     '- Worker Version uploads: 0','- Deployments: 0','- Cron mutations: 0','- D1 writes/migrations: 0','- Route/domain mutations: 0','- Access mutations: 0','- Secret mutations: 0','- Collector executions: 0','',
@@ -154,7 +154,7 @@ async function main(){
   validateCron(await request(`${workerBase}/schedules`));
   const databaseBefore=validateDatabase(await request(`${d1Base}?fields=uuid,name,file_size`),databaseId);
   const query=async sql=>extractD1QueryResult(await request(`${d1Base}/query`,{method:'POST',sql}));
-  const readD1=async()=>({migrations:await query(PHASE0_QUERIES.migrations),sourceRows:await query(PHASE1_QUERIES.source),revisionRows:await query(PHASE1_QUERIES.revision),counts:(await query(PHASE0_QUERIES.counts))[0],official:(await query(PHASE0_QUERIES.officialHistory))[0]});
+  const readD1=async()=>({migrations:await query(PHASE0_QUERIES.migrations),sourceRows:await query(PHASE1_QUERIES.source),revisionRows:await query(PHASE1_QUERIES.revision),counts:(await query(PHASE0_QUERIES.counts))[0],official:(await query(PHASE0_QUERIES.officialHistory))[0],runs:await query(POST_ACTIVATION_RUNS_QUERY)});
   const d1Before=await readD1();validateD1State(d1Before);await health();
 
   const deploymentAfter=validateDeployment(await request(`${workerBase}/deployments`));

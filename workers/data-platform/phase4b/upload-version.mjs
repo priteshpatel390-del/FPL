@@ -6,16 +6,14 @@ import {
   extractDeploymentsResult,extractSchedulesResult,extractWorkersDomains,validateReadOnlySql
 } from '../phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../phase0/queries.mjs';
-import {PHASE1_QUERIES,sameDeployment,validatePostState} from '../phase1/migrate-0002.mjs';
+import {PHASE1_QUERIES,sameDeployment} from '../phase1/migrate-0002.mjs';
+import {EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,EXPECTED_ROLLBACK_VERSION_ID,POST_ACTIVATION_RUNS_QUERY,RETAINED_OLDER_VERSION_ID,validateExactCron,validatePostActivationState} from './live-contract.mjs';
 
 export const WORKER_NAME='teamsheet-data-platform';
 export const CONFIG_PATH='workers/data-platform/wrangler.jsonc';
 export const EXPECTED_COMPATIBILITY_DATE='2026-08-22';
 export const EXPECTED_SEASON='2026-27';
-export const EXPECTED_CRON='*/30 * * * *';
-export const EXPECTED_ACTIVE_VERSION_ID='3a2b065a-6527-4887-9bf8-b08e82e81133';
-export const EXPECTED_ROLLBACK_VERSION_ID='5edbe951-4be4-46bc-b2cf-17b550396105';
-export const PHASE1_D1_SIZE_BYTES=151552;
+export {EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,EXPECTED_ROLLBACK_VERSION_ID,RETAINED_OLDER_VERSION_ID};
 export const EXPECTED_PRODUCTION_HOSTNAME='data.fpltsheet.co.uk';
 export const MODULE_PATHS=Object.freeze([
   'workers/data-platform/data-platform-rpc.mjs',
@@ -75,7 +73,7 @@ export function validateActiveVersion(detail,{activeVersionId,databaseId}={}){
     if(binding.name==='TEAMSHEET_DATA_DB'){
       if(typeof binding.database_id!=='string'||!binding.database_id)throw new Error('phase4b_active_d1_binding_invalid');
       resolvedDatabaseId=binding.database_id;
-      if(databaseId!==undefined&&binding.database_id!==databaseId)throw new Error('phase4b_live_d1_binding_changed');
+      if(binding.database_id!==EXPECTED_D1_DATABASE_ID||(databaseId!==undefined&&binding.database_id!==databaseId))throw new Error('phase4b_live_d1_binding_changed');
     }
     if(binding.name==='DATA_S2_SEASON'&&binding.text!==EXPECTED_SEASON)throw new Error('phase4b_active_season_drift');
     if(binding.name==='DATA_S1_HTTP_AUTH_TOKEN'&&Object.hasOwn(binding,'text'))throw new Error('phase4b_secret_exposed');
@@ -193,14 +191,14 @@ export function validateVersionDelta(beforeIds,afterIds,uploadedId){
   if(beforeIds.includes(uploadedId)||!afterIds.includes(uploadedId))throw new Error('phase4b_version_delta_invalid');
   const before=new Set(beforeIds),added=afterIds.filter(id=>!before.has(id));
   if(added.length!==1||added[0]!==uploadedId||afterIds[0]!==uploadedId)throw new Error('phase4b_version_delta_invalid');
-  if(!afterIds.includes(EXPECTED_ACTIVE_VERSION_ID)||!afterIds.includes(EXPECTED_ROLLBACK_VERSION_ID))throw new Error('phase4b_version_provenance_anchors_missing');
+  if(!afterIds.includes(EXPECTED_ACTIVE_VERSION_ID)||!afterIds.includes(RETAINED_OLDER_VERSION_ID))throw new Error('phase4b_version_provenance_anchors_missing');
   return true;
 }
 
 export function capturePreUploadSnapshot({deployment,versionIds,databaseId,domains,schedules,database,state,health}){
   if(!deployment||typeof deployment.deploymentId!=='string'||deployment.versionId!==EXPECTED_ACTIVE_VERSION_ID)throw new Error('phase4b_preupload_snapshot_invalid');
   requireLatestActiveVersion(versionIds,deployment.versionId);
-  if(!versionIds.includes(EXPECTED_ROLLBACK_VERSION_ID)||typeof databaseId!=='string'||!databaseId)throw new Error('phase4b_preupload_snapshot_invalid');
+  if(!versionIds.includes(EXPECTED_ROLLBACK_VERSION_ID)||!versionIds.includes(RETAINED_OLDER_VERSION_ID)||databaseId!==EXPECTED_D1_DATABASE_ID)throw new Error('phase4b_preupload_snapshot_invalid');
   return Object.freeze({
     deploymentId:deployment.deploymentId,activeVersionId:deployment.versionId,versionIds:Object.freeze([...versionIds]),
     expectedLatestVersionId:EXPECTED_ACTIVE_VERSION_ID,rollbackPresent:true,databaseId,
@@ -227,9 +225,7 @@ export function validateUploadedVersion(detail,{uploadedId,databaseId}){
   return true;
 }
 
-export function validatePostPhase1State({migrations,sourceRows,revisionRows,counts,official}){
-  return validatePostState({migrations,sourceRows,revisionRows,counts,official});
-}
+export function validatePostPhase1State(state){return validatePostActivationState(state);}
 
 async function main(){
   const token=process.env.CLOUDFLARE_WORKER_UPLOAD_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -267,7 +263,7 @@ async function main(){
   databaseId=validateActiveVersion(activeDetailBefore,{activeVersionId:deploymentsBefore.versionId}).databaseId;
   process.stdout.write(`::add-mask::${databaseId}\n`);
   const schedulesBefore=extractSchedulesResult(await request(`${workerBase}/schedules`));
-  assessCron(schedulesBefore);
+  validateExactCron(schedulesBefore);
   const d1Base=`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}`;
   const databaseBefore=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
   const query=async sql=>extractD1QueryResult(await request(`${d1Base}/query`,{method:'POST',body:{sql:validateReadOnlySql(sql)}}));
@@ -276,7 +272,7 @@ async function main(){
     sourceRows:await query(PHASE1_QUERIES.source),
     revisionRows:await query(PHASE1_QUERIES.revision),
     counts:(await query(PHASE0_QUERIES.counts))[0],
-    official:(await query(PHASE0_QUERIES.officialHistory))[0]
+    official:(await query(PHASE0_QUERIES.officialHistory))[0],runs:await query(POST_ACTIVATION_RUNS_QUERY)
   });
   const d1StateBefore=await readPhase1State();
   validatePostPhase1State(d1StateBefore);
@@ -292,10 +288,10 @@ async function main(){
   sameDeployment(deploymentsBefore,finalDeploymentBefore);
   const versionsBefore=extractVersions(await request(`${workerBase}/versions?deployable=true`));
   requireLatestActiveVersion(versionsBefore,finalDeploymentBefore.versionId);
-  if(!versionsBefore.includes(EXPECTED_ROLLBACK_VERSION_ID))throw new Error('phase4b_rollback_version_missing');
+  if(!versionsBefore.includes(EXPECTED_ROLLBACK_VERSION_ID)||!versionsBefore.includes(RETAINED_OLDER_VERSION_ID))throw new Error('phase4b_rollback_version_missing');
   const preUpload=capturePreUploadSnapshot({deployment:finalDeploymentBefore,versionIds:versionsBefore,databaseId,domains:domainsBefore,schedules:schedulesBefore,database:databaseBefore,state:d1StateBefore,health:healthBefore});
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-    `## DATA-S2B Phase 4B — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expressions: none\n- Active-version DATA_S2_SEASON: 2026-27\n- D1 Phase 1 post-state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
+    `## DATA-S2B Phase 4B — Pre-upload checkpoint\n\n- Repository SHA: \`${approvedSha}\`\n- Active deployment/version: \`${deploymentsBefore.deploymentId}\` / \`${deploymentsBefore.versionId}\`\n- Cron expression: */30 * * * *\n- Active-version DATA_S2_SEASON: 2026-27\n- D1 post-activation state: PASS\n- No version upload had been submitted at this checkpoint.\n\n`);
 
   let uploadedId;
   const uploadResult=await submitVersionUpload({request,workerBase,multipart,versionIds:preUpload.versionIds,activeVersionId:preUpload.activeVersionId});
@@ -314,10 +310,9 @@ async function main(){
     const activeDetailAfter=await request(`${workerBase}/versions/${encodeURIComponent(deploymentsAfter.versionId)}`);
     validateActiveVersion(activeDetailAfter,{activeVersionId:deploymentsAfter.versionId,databaseId});
     const schedulesAfter=extractSchedulesResult(await request(`${workerBase}/schedules`));
-    assessCron(schedulesAfter);
+    validateExactCron(schedulesAfter);
     validatePostPhase1State(await readPhase1State());
     databaseAfter=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
-    if(numeric(databaseBefore.file_size)!==PHASE1_D1_SIZE_BYTES)throw new Error('phase4b_d1_size_baseline_drift');
     if(numeric(databaseAfter.file_size)!==numeric(databaseBefore.file_size))throw new Error('phase4b_d1_size_changed');
     await health();
   }catch{
@@ -343,9 +338,9 @@ async function main(){
     '- Active deployment/version: unchanged',
     '- Production traffic: unchanged by deployment evidence',
     '- Active-version DATA_S2_SEASON: 2026-27',
-    '- Live Cron expressions: none',
+    '- Live Cron expression: `*/30 * * * *`',
     '- Active-version D1 binding: unchanged',
-    '- D1 Phase 1 schema/governance/count state: unchanged',
+    '- D1 post-activation schema/governance/failed-run state: unchanged',
     `- D1 database size before/after: ${databaseBefore.file_size} / ${databaseAfter.file_size}`,
     '',
     'No Worker deployment, trigger, route/domain, secret mutation or D1 write was performed.',
