@@ -7,7 +7,7 @@ import {
 import {PHASE0_QUERIES} from '../phase0/queries.mjs';
 import {PHASE1_QUERIES} from '../phase1/migrate-0002.mjs';
 import {WORKER_NAME,extractCloudflareError,extractVersions,validateActiveVersion,validatePostPhase1State,validateUploadedVersion} from './upload-version.mjs';
-import {PHASE1_D1_SIZE_BYTES} from './upload-version.mjs';
+import {EXPECTED_ACTIVE_VERSION_ID,EXPECTED_D1_DATABASE_ID,POST_ACTIVATION_RUNS_QUERY,validateExactCron} from './live-contract.mjs';
 
 export const CANDIDATE_VERSION_ID=process.env.CANDIDATE_VERSION_ID??'';
 export const ROLLBACK_VERSION_ID=process.env.EXPECTED_ACTIVE_VERSION_ID??'';
@@ -95,7 +95,7 @@ async function main(){
   const readDeployment=async()=>assessDeployments(extractDeploymentsResult(await request(`${workerBase}/deployments`)));
   const readVersions=async()=>extractVersions(await request(`${workerBase}/versions?deployable=true`));
   const readDomains=async()=>validateDomains(await request(`/accounts/${encodeURIComponent(account)}/workers/domains`));
-  const readCron=async()=>assessCron(extractSchedulesResult(await request(`${workerBase}/schedules`)));
+  const readCron=async()=>validateExactCron(extractSchedulesResult(await request(`${workerBase}/schedules`)));
   const deploy=async(versionId)=>{const endpoint=`${workerBase}/deployments`;assertDeploymentMutation('POST',endpoint,workerBase);mutationCount++;return request(endpoint,{method:'POST',body:deploymentBody(versionId),ambiguous:true});};
   const reconcileMutation=async(target,previous)=>classifyMutationReconciliation((await readDeployment()).versionId,target,previous);
 
@@ -103,9 +103,9 @@ async function main(){
   const readD1State=async()=>{
     const d1Base=`/accounts/${encodeURIComponent(account)}/d1/database/${encodeURIComponent(databaseId)}`;
     const database=extractD1DatabaseDetails(await request(`${d1Base}?fields=uuid,name,file_size`),{uuid:databaseId});
-    if(Number(database.file_size)!==PHASE1_D1_SIZE_BYTES)throw new Error('phase4b_d1_size_drift');
+    if(database.uuid!==EXPECTED_D1_DATABASE_ID||database.name!=='teamsheet-data')throw new Error('phase4b_d1_identity_drift');
     const query=async sql=>extractD1QueryResult(await request(`${d1Base}/query`,{method:'POST',body:{sql:validateReadOnlySql(sql)}}));
-    validatePostPhase1State({migrations:await query(PHASE0_QUERIES.migrations),sourceRows:await query(PHASE1_QUERIES.source),revisionRows:await query(PHASE1_QUERIES.revision),counts:(await query(PHASE0_QUERIES.counts))[0],official:(await query(PHASE0_QUERIES.officialHistory))[0]});
+    validatePostPhase1State({migrations:await query(PHASE0_QUERIES.migrations),sourceRows:await query(PHASE1_QUERIES.source),revisionRows:await query(PHASE1_QUERIES.revision),counts:(await query(PHASE0_QUERIES.counts))[0],official:(await query(PHASE0_QUERIES.officialHistory))[0],runs:await query(POST_ACTIVATION_RUNS_QUERY)});
   };
   const invariantRead=async expectedVersion=>{
     validateSoleActive(await readDeployment(),expectedVersion);
@@ -127,6 +127,7 @@ async function main(){
     validatePreflightDeployment(await readDeployment());
     versionsBefore=await readVersions();validateVersionHistory(versionsBefore,versionsBefore);
     const active=await request(`${workerBase}/versions/${encodeURIComponent(ROLLBACK_VERSION_ID)}`);
+    if(ROLLBACK_VERSION_ID!==EXPECTED_ACTIVE_VERSION_ID)throw new Error('phase4b_exact_rollback_version_required');
     databaseId=validateActiveVersion(active,{activeVersionId:ROLLBACK_VERSION_ID}).databaseId;process.stdout.write(`::add-mask::${databaseId}\n`);
     validateUploadedVersion(await request(`${workerBase}/versions/${encodeURIComponent(CANDIDATE_VERSION_ID)}`),{uploadedId:CANDIDATE_VERSION_ID,databaseId});
     await readCron();domainsBefore=await readDomains();await readD1State();
