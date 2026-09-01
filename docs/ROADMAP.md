@@ -464,3 +464,7 @@ DI-4 Weekly Decision Synthesis is repository-side review-ready: a deterministic 
 # EIA-1 checkpoint (30 August 2026)
 
 EIA-1 adds offline real-evidence adapters and a provider-neutral workload contract without production use. TheSportsDB qualification fails for expected-minutes workload evidence; workload evaluation remains not yet evaluable. See [EIA-1](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
+
+## DATA-S2B-E2A repository validation candidate
+
+E2A is the repository-only machinery checkpoint after E1: deterministic synthetic REST plans, production/network firewalls, no-retry outcome classification and sanitized evidence. No live D1 experiment or Cloudflare action is included. The next possible checkpoint is E2B investigation/design only after E2A review/merge and separate explicit owner approval; E2C/E2D remain unapproved.
