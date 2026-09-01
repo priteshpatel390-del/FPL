@@ -21,4 +21,3 @@ export function validateInitialLiveObjects(objects){
   if(new Set(objects.map(row=>row.name)).size!==objects.length)throw new Error('e2_initial_schema_unexpected_object');return true;
 }
 export function validateSetupLiveSchema(metadata){const names=metadata?.map(row=>row.name);if(!Array.isArray(names)||names.length!==E2_APPROVED_TABLES.length||new Set(names).size!==names.length||E2_APPROVED_TABLES.some(name=>!names.includes(name)))throw new Error('e2_setup_schema_tables_mismatch');return deriveLiveSchemaFingerprint(metadata);}
-

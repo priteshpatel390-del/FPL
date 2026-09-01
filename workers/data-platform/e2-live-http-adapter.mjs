@@ -9,4 +9,3 @@ export function createE2LiveHttpAdapter({accountId,databaseId,token,fetchImpl}){
   return Object.freeze({readExactMetadata:()=>request('GET',''),query:body=>{if(typeof body!=='string'||!body)throw new Error('e2_http_query_body_invalid');return request('POST','/query',body);}});
 }
 export const E2_LIVE_HTTP_CAPABILITY=Object.freeze({host:'api.cloudflare.com',metadataMethod:'GET',queryMethod:'POST',querySuffix:'/query'});
-
