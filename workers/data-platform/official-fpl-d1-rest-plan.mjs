@@ -1,3 +1,5 @@
+import {MAX_CHANGED_OBSERVATIONS_PER_RUN} from './official-fpl-canonical.mjs';
+
 export const D1_MAX_SQL_BYTES=100000;
 export const D1_MAX_BOUND_PARAMETERS=100;
 export const D1_MAX_VALUE_BYTES=2000000;
@@ -38,6 +40,7 @@ export const buildFailRunMutation=({completedAt,errorClass,runId,sourceRevisionI
 export const buildCompleteUnchangedMutation=({completedAt,recordsSeen,runId,sourceRevisionId})=>create('mutation',true,[{sql:COMPLETE_SQL,params:[required(completedAt,'timestamp'),number(recordsSeen),'0',required(runId,'run'),required(sourceRevisionId,'source_revision')]}]);
 export function buildCommitBatch({entities,previousRows,observations,completedAt,recordsSeen,runId,sourceRevisionId}){
   if(!Array.isArray(entities)||!Array.isArray(previousRows)||!Array.isArray(observations))throw new Error('official_fpl_plan_rows_invalid');
+  if(observations.length>MAX_CHANGED_OBSERVATIONS_PER_RUN)throw new Error('write_budget_exceeded');
   const previous=new Set(previousRows.map(row=>row.subject_entity_id));const statements=[];
   const fresh=entities.filter(row=>!previous.has(row.canonical_entity_id));if(fresh.length)statements.push({sql:ENTITY_SQL,params:[json(fresh)]});
   for(const rows of chunk(observations,600))statements.push({sql:OBSERVATION_SQL,params:[json(rows)]});
