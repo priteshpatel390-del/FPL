@@ -19,7 +19,8 @@ export const MODULE_PATHS=Object.freeze([
   'workers/data-platform/data-platform-rpc.mjs',
   'workers/data-platform/data-platform.mjs',
   'workers/data-platform/data-platform-core.mjs',
-  'workers/data-platform/official-fpl-history.mjs'
+  'workers/data-platform/official-fpl-history.mjs',
+  'workers/data-platform/official-fpl-canonical.mjs'
 ]);
 const ACTIVE_BINDINGS=Object.freeze(new Map([
   ['TEAMSHEET_DATA_DB','d1'],
@@ -90,7 +91,9 @@ export function validateModuleGraph(readFile=path=>fs.readFileSync(path,'utf8'))
   const platform=sources.get(MODULE_PATHS[1]);
   if(!platform.includes("'./data-platform-core.mjs'"))throw new Error('phase4b_entry_module_graph_drift');
   const history=sources.get(MODULE_PATHS[3]);
-  if(!history.includes("'./data-platform-core.mjs'"))throw new Error('phase4b_entry_module_graph_drift');
+  if(!history.includes("'./data-platform-core.mjs'")||!history.includes("'./official-fpl-canonical.mjs'"))throw new Error('phase4b_entry_module_graph_drift');
+  const canonical=sources.get(MODULE_PATHS[4]);
+  if(!canonical.includes("'./data-platform-core.mjs'"))throw new Error('phase4b_entry_module_graph_drift');
   return sources;
 }
 
