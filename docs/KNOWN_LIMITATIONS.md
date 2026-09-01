@@ -368,3 +368,5 @@ EIA-1 proves deterministic adapter contracts against frozen fixtures, not real D
 ## DATA-S2B-E2A offline validation limitations
 
 E2A proves only that deterministic synthetic requests, guards, classifications and sanitized evidence can be built offline. It does not prove REST batch atomicity, D1 parameter affinity, practical request limits, production architectural suitability or token blast-radius containment. Worker `db.batch()` documentation is not REST `/query` proof. E2B/E2C/E2D remain separately owner-gated.
+
+The E2A remediation makes fake transport admission unforgeable within the module, validates every synthetic provider statement result, isolates atomicity run identities, derives schema identity from canonical synthetic DDL, and preserves native nested JSON types. Those repository guarantees do not reduce the live-behaviour limitations above.
