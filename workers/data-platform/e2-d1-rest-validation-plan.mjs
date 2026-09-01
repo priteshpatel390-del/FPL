@@ -3,8 +3,10 @@ import {createHash} from 'node:crypto';
 import {D1_MAX_BATCH_STATEMENTS,D1_MAX_VALUE_BYTES} from './official-fpl-d1-rest-plan.mjs';
 
 export const E2_REPRESENTATIVE_FACTS=9860;
+/** Read-only limit-profile 100% target; this is not W01's serialized mutation size. */
 export const E2_REPRESENTATIVE_REQUEST_BYTES=3688875;
 export const E2_REPRESENTATIVE_STATEMENTS=24;
+export const E2_W01_SERIALIZED_REQUEST_BYTES=2378752;
 export const E2_SCHEMA_PHASES=Object.freeze(['initial','setup']);
 export const E2_INITIAL_SCHEMA_REPRESENTATION=Object.freeze([]);
 export const E2_SCHEMA_DDL=Object.freeze([

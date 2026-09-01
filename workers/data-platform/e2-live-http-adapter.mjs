@@ -1,11 +1,22 @@
+import {createHash} from 'node:crypto';
+import {inspectE2ValidationPlan} from './e2-d1-rest-validation-plan.mjs';
+import {validateDisposableIdentity} from './e2-d1-rest-validation-harness.mjs';
+
 const API='https://api.cloudflare.com/client/v4';
 const ID=/^[A-Fa-f0-9-]{16,64}$/;const ACCOUNT=/^[A-Za-z0-9_-]{1,128}$/;
-const invalid=()=>{throw new Error('e2_http_adapter_config_invalid');};
-/** Inert until explicitly constructed with an injected fetch implementation. */
-export function createE2LiveHttpAdapter({accountId,databaseId,token,fetchImpl}){
-  if(!ACCOUNT.test(accountId||'')||!ID.test(databaseId||'')||typeof token!=='string'||!token||typeof fetchImpl!=='function')invalid();
+const invalid=code=>{throw new Error(code);};
+export const e2IdentityFingerprint=value=>`sha256:${createHash('sha256').update(String(value)).digest('hex')}`;
+
+/** Inert until explicitly constructed with exact raw IDs matching a validated disposable identity. */
+export function createE2LiveHttpAdapter({accountId,databaseId,token,fetchImpl,identity}){
+  if(!ACCOUNT.test(accountId||'')||!ID.test(databaseId||'')||typeof token!=='string'||!token||typeof fetchImpl!=='function')invalid('e2_http_adapter_config_invalid');
+  validateDisposableIdentity(identity);
+  if(identity.accountFingerprint!==e2IdentityFingerprint(accountId)||identity.databaseFingerprint!==e2IdentityFingerprint(databaseId))invalid('e2_http_adapter_identity_mismatch');
   const base=`${API}/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}`;
-  const request=async(method,path,body)=>fetchImpl(`${base}${path}`,{method,redirect:'error',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},...(body===undefined?{}:{body})});
-  return Object.freeze({readExactMetadata:()=>request('GET',''),query:body=>{if(typeof body!=='string'||!body)throw new Error('e2_http_query_body_invalid');return request('POST','/query',body);}});
+  const headers=Object.freeze({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
+  return Object.freeze({
+    readExactMetadata:()=>fetchImpl(base,{method:'GET',redirect:'error',headers}),
+    execute:plan=>{const trusted=inspectE2ValidationPlan(plan);if(!trusted)invalid('e2_http_plan_untrusted');const body=JSON.stringify(trusted.statements.length===1?trusted.statements[0]:{batch:trusted.statements});return fetchImpl(`${base}/query`,{method:'POST',redirect:'error',headers,body});}
+  });
 }
 export const E2_LIVE_HTTP_CAPABILITY=Object.freeze({host:'api.cloudflare.com',metadataMethod:'GET',queryMethod:'POST',querySuffix:'/query'});
