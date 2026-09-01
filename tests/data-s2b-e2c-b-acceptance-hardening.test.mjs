@@ -26,8 +26,19 @@ test('E2C-B gate pins approved current main, exact-head Verify and rejects rerun
 
 test('E2C-B wrapper has no cleanup, arbitrary provider error, raw evidence or retry surface',()=>{
   for(const forbidden of ['retry','database/delete','DELETE FROM','console.log','error.message','error.stack','Authorization','request.body','response.body'])assert.doesNotMatch(runner,new RegExp(forbidden,'i'));
-  for(const required of ["failureClassification", "cleanupState:'NOT_PERFORMED_BY_E2C_B'",'PRODUCTION_ACCOUNT_FINGERPRINT','E2C_EVIDENCE_PATH'])assert.match(runner,new RegExp(required));
+  for(const required of ["failureClassification", "cleanupState:'NOT_PERFORMED_BY_E2C_B'",'PRODUCTION_ACCOUNT_FINGERPRINT','CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT','E2C_EVIDENCE_PATH'])assert.match(runner,new RegExp(required));
+  assert.match(workflow,/CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT: \$\{\{ vars\.CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT \}\}/);
+  assert.match(runner,/approvedAccountFingerprint=fingerprint\('CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT'\)/);
+  assert.doesNotMatch(runner,/approvedAccountFingerprint:e2IdentityFingerprint\(accountId\)/);
   assert.doesNotMatch(workflow,/database\/delete|wrangler d1 delete|retry-action|nick-fields\/retry/i);
+});
+
+test('E2C-B runner records end only after awaited experiment settles',()=>{
+  const awaitIndex=runner.indexOf('await runE2LiveHttpContract');
+  const endIndex=runner.indexOf('const endedAt=canonicalNow()');
+  assert.ok(awaitIndex>0&&endIndex>awaitIndex);
+  assert.match(runner,/finalizeE2Evidence\(rawEvidence,endedAt\)/);
+  assert.doesNotMatch(runner,/runE2LiveHttpContract\([^;]*endedAt/s);
 });
 
 test('E2C-B workflow retains only a bounded sanitized artifact and never automates cleanup',()=>{

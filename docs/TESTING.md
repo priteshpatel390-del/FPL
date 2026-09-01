@@ -645,3 +645,5 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+Permanent E2C-B coverage rejects missing, malformed, mismatched and production-equal independent account fingerprints before transport. It also pins that callers cannot supply an end timestamp: evidence receives a single canonical end only after the awaited success/failure settles, and rejects invalid, pre-start or repeated finalization.

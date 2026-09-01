@@ -396,3 +396,5 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 ### DATA-S2B E2C-B disposable live experiment preparation
 
 E2C-B makes production-account fingerprinting mandatory, adds exact returned-value affinity/storage acceptance, preserves missing versus zero provider metadata with bounded attempts, and adds a dormant manual-only exact-main/exact-Verify protected workflow with rerun rejection and no cleanup. It is repository-only: no resource, credential, environment, workflow dispatch or Cloudflare request occurred. See [E2C-B record](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+The corrected boundary takes the approved disposable-account fingerprint independently from the protected environment, proves the runtime raw disposable account hashes to it and proves it differs from production before transport. Evidence end time is captured only after the awaited contract settles, on success or failure; it cannot be caller-precomputed.
