@@ -11,6 +11,7 @@ export const e2IdentityFingerprint=value=>`sha256:${createHash('sha256').update(
 /** Inert until explicitly constructed with exact raw IDs matching a validated disposable identity. */
 export function createE2LiveHttpAdapter({accountId,databaseId,token,fetchImpl,identity}){
   if(!ACCOUNT.test(accountId||'')||!ID.test(databaseId||'')||typeof token!=='string'||!token||typeof fetchImpl!=='function')invalid('e2_http_adapter_config_invalid');
+  if(!/^sha256:[0-9a-f]{64}$/.test(identity?.productionAccountFingerprint||''))invalid('e2_production_account_fingerprint_required');
   validateDisposableIdentity(identity);
   if(identity.accountFingerprint!==e2IdentityFingerprint(accountId)||identity.databaseFingerprint!==e2IdentityFingerprint(databaseId))invalid('e2_http_adapter_identity_mismatch');
   const base=`${API}/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}`;

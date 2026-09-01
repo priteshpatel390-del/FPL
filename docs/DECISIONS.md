@@ -408,3 +408,8 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## 29 August 2026 — DI-4 lives in Team behind an artifact-only read model
 
 **Decision:** Place the smallest weekly synthesis at the top of Team, keep Transfers as the deeper workflow, and support only `di3-decision-artifact-v1` through `di4-product-read-model-v1`. Missing, invalid, unsupported, stale or mismatched content fails closed without replacing existing views. No new navigation, persistence, recomputation, confidence formula or recommendation semantics are permitted.
+
+<!-- DATA-S2B-E2C-B-2026-09-01 -->
+## DATA-S2B E2C-B repository-only preparation
+
+E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).

@@ -391,3 +391,10 @@ E2A adds deterministic synthetic atomicity, affinity, statement/body and 9,860-w
 ### DATA-S2B E2C-A repository-only live-validation contract
 
 E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound authentic-plan-only HTTP adapter, a strict Cloudflare-shaped response decoder, pre-mutation exact metadata and clean-INITIAL-schema gates, closed post-setup object-set plus semantic-schema enforcement, closed adapter-to-orchestrator composition, quote-aware CHECK canonicalisation, response/state-paired atomicity acceptance, reconcile-then-stop mutation ambiguity handling, W00/W01 reconciliation and strictly bounded sanitized evidence including canonical UTC timestamps. It performs no Cloudflare request and proves no live atomicity, parameter affinity or request-size behaviour. Any live experiment, credential, resource, workflow/environment, cleanup or production decision remains separately owner-approved. See [E2C-A record](workers/data-platform/DATA-S2B-E2C-A-LIVE-VALIDATION-CONTRACT.md).
+
+<!-- DATA-S2B-E2C-B-2026-09-01 -->
+### DATA-S2B E2C-B disposable live experiment preparation
+
+E2C-B makes production-account fingerprinting mandatory, adds exact returned-value affinity/storage acceptance, preserves missing versus zero provider metadata with bounded attempts, and adds a dormant manual-only exact-main/exact-Verify protected workflow with rerun rejection and no cleanup. It is repository-only: no resource, credential, environment, workflow dispatch or Cloudflare request occurred. See [E2C-B record](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+The corrected boundary takes the approved disposable-account fingerprint independently from the protected environment, proves the runtime raw disposable account hashes to it and proves it differs from production before transport. Evidence end time is captured only after the awaited contract settles, on success or failure; it cannot be caller-precomputed.
