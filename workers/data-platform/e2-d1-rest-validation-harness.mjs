@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {inspectE2ValidationPlan,E2_APPROVED_TABLES,E2_SCHEMA_FINGERPRINT,serializedBodyBytes} from './e2-d1-rest-validation-plan.mjs';
+import {inspectE2ValidationPlan,E2_APPROVED_TABLES,E2_INITIAL_SCHEMA_FINGERPRINT,E2_SCHEMA_PHASES,E2_SETUP_SCHEMA_FINGERPRINT,serializedBodyBytes} from './e2-d1-rest-validation-plan.mjs';
 
 const DB_NAME=/^teamsheet-data-e2-rest-validation-\d{8}-[a-z0-9]{6}$/;
 const PROD_TABLES=new Set(['shadow_observations','observation_heads','canonical_entities','ingestion_runs','data_sources','data_source_revisions']);
@@ -29,9 +29,17 @@ export function validateDisposableIdentity(value){
   if(productionAccountFingerprint&&accountFingerprint===productionAccountFingerprint)fail('e2_production_account_rejected');
   if(databaseName==='teamsheet-data'||!DB_NAME.test(databaseName||''))fail('e2_database_name_rejected');
   if(!databaseFingerprint||!expectedDatabaseFingerprint||databaseFingerprint!==expectedDatabaseFingerprint)fail('e2_database_fingerprint_mismatch');
-  if(!schemaFingerprint||schemaFingerprint!==E2_SCHEMA_FINGERPRINT)fail('e2_schema_fingerprint_mismatch');
-  if(!Array.isArray(tables))fail('e2_schema_tables_invalid');if(tables.some(table=>PROD_TABLES.has(table)))fail('e2_production_schema_rejected');
-  if(phase==='initial'&&tables.length)fail('e2_initial_schema_not_empty');if(phase==='setup'&&tables.some(table=>!E2_APPROVED_TABLES.includes(table)))fail('e2_unapproved_schema_table');
+  if(!E2_SCHEMA_PHASES.includes(phase))fail('e2_schema_phase_invalid');
+  if(!Array.isArray(tables)||tables.some(table=>typeof table!=='string'||!table))fail('e2_schema_tables_invalid');
+  if(tables.some(table=>PROD_TABLES.has(table)))fail('e2_production_schema_rejected');
+  if(phase==='initial'){
+    if(tables.length)fail('e2_initial_schema_not_empty');
+    if(schemaFingerprint!==E2_INITIAL_SCHEMA_FINGERPRINT)fail('e2_initial_schema_fingerprint_mismatch');
+  }else{
+    if(schemaFingerprint!==E2_SETUP_SCHEMA_FINGERPRINT)fail('e2_setup_schema_fingerprint_mismatch');
+    const observed=new Set(tables);
+    if(observed.size!==tables.length||observed.size!==E2_APPROVED_TABLES.length||E2_APPROVED_TABLES.some(table=>!observed.has(table)))fail('e2_setup_schema_tables_mismatch');
+  }
   return Object.freeze({databaseName,accountMask:mask(accountFingerprint),databaseMask:mask(databaseFingerprint),schemaFingerprint});
 }
 

@@ -5,6 +5,8 @@ import {D1_MAX_BATCH_STATEMENTS,D1_MAX_VALUE_BYTES} from './official-fpl-d1-rest
 export const E2_REPRESENTATIVE_FACTS=9860;
 export const E2_REPRESENTATIVE_REQUEST_BYTES=3688875;
 export const E2_REPRESENTATIVE_STATEMENTS=24;
+export const E2_SCHEMA_PHASES=Object.freeze(['initial','setup']);
+export const E2_INITIAL_SCHEMA_REPRESENTATION=Object.freeze([]);
 export const E2_SCHEMA_DDL=Object.freeze([
   'CREATE TABLE e2_atomicity (run_id TEXT NOT NULL, sequence_no INTEGER NOT NULL, marker TEXT NOT NULL, valid_value INTEGER NOT NULL CHECK (valid_value IN (0, 1)), PRIMARY KEY (run_id, sequence_no), UNIQUE (run_id, marker))',
   "CREATE TABLE e2_entities (entity_id TEXT PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('event', 'team', 'player', 'fixture')), created_at TEXT NOT NULL)",
@@ -14,7 +16,9 @@ export const E2_SCHEMA_DDL=Object.freeze([
 ]);
 export const canonicalE2SchemaRepresentation=schema=>JSON.stringify(schema);
 export const deriveE2SchemaFingerprint=schema=>`sha256:${createHash('sha256').update(canonicalE2SchemaRepresentation(schema)).digest('hex')}`;
-export const E2_SCHEMA_FINGERPRINT=deriveE2SchemaFingerprint(E2_SCHEMA_DDL);
+export const E2_INITIAL_SCHEMA_FINGERPRINT=deriveE2SchemaFingerprint(E2_INITIAL_SCHEMA_REPRESENTATION);
+export const E2_SETUP_SCHEMA_FINGERPRINT=deriveE2SchemaFingerprint(E2_SCHEMA_DDL);
+export const E2_SCHEMA_FINGERPRINT=E2_SETUP_SCHEMA_FINGERPRINT;
 export const E2_APPROVED_TABLES=Object.freeze(['e2_atomicity','e2_entities','e2_observations','e2_heads','e2_runs']);
 export const E2_ATOMICITY_RUN_IDS=Object.freeze({A01:'e2-run-a01',A02:'e2-run-a02',A03:'e2-run-a03'});
 
@@ -30,7 +34,7 @@ const freezePlan=(caseId,mutation,statements,metadata={})=>{
   const plan=Object.freeze({caseId,mutation,...metadata,statements:Object.freeze(safe)});plans.add(plan);return plan;
 };
 export const inspectE2ValidationPlan=plan=>plans.has(plan)?plan:null;
-export const buildSyntheticSchemaSetupPlan=()=>freezePlan('F-SCHEMA-SETUP',true,E2_SCHEMA_DDL.map(sql=>({sql,params:[]})),{schemaFingerprint:E2_SCHEMA_FINGERPRINT});
+export const buildSyntheticSchemaSetupPlan=()=>freezePlan('F-SCHEMA-SETUP',true,E2_SCHEMA_DDL.map(sql=>({sql,params:[]})),{phase:'setup',schemaFingerprint:E2_SETUP_SCHEMA_FINGERPRINT});
 const insert=(runId,sequence,marker,valid=1)=>({sql:'INSERT INTO e2_atomicity (run_id, sequence_no, marker, valid_value) VALUES (?, ?, ?, ?)',params:[runId,String(sequence),marker,String(valid)]});
 export function buildAtomicityCase(caseId){
   const runId=E2_ATOMICITY_RUN_IDS[caseId];if(!runId)throw new Error('e2_atomicity_case_invalid');

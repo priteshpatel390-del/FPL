@@ -7,7 +7,7 @@ Base: `3cb59436309bb9485d6617828db4b420cadebdd5`
 
 E2A supplies a deterministic, synthetic-only planning module and fake-transport harness. It is deliberately separate from E1's module-private Official FPL plans. It adds no production transport, URL, authorization construction, environment access, workflow, migration, Wrangler change, deployment or Cloudflare operation.
 
-The production firewall requires exact approved account and database fingerprints, rejects an optionally configured production-account fingerprint, accepts only database names matching `^teamsheet-data-e2-rest-validation-\d{8}-[a-z0-9]{6}$`, explicitly rejects `teamsheet-data`, requires the exact SHA-256 fingerprint derived from E2A's canonical five-table synthetic DDL, requires an empty initial schema, and after setup accepts only the five declared `e2_*` tables. Six production table names are always rejected.
+The production firewall requires exact approved account and database fingerprints, rejects an optionally configured production-account fingerprint, accepts only database names matching `^teamsheet-data-e2-rest-validation-\d{8}-[a-z0-9]{6}$`, explicitly rejects `teamsheet-data`, uses a closed `initial`/`setup` phase enumeration, requires an empty initial user schema with the repository-derived empty-schema fingerprint, and after setup requires the DDL-derived fingerprint plus exact equality with the five declared `e2_*` tables (no missing, extra or duplicate names). Six production table names are always rejected.
 
 ## Synthetic plans
 
@@ -23,7 +23,7 @@ The full-write analogue contains 1,064 synthetic entities and 9,860 synthetic ob
 
 ## Canonical synthetic schema
 
-E2A owns exact deterministic DDL for `e2_atomicity`, `e2_entities`, `e2_observations`, `e2_heads` and `e2_runs`. It pins primary/unique keys, foreign-key linkage, status/value constraints, and the atomicity runtime CHECK. The expected schema fingerprint is SHA-256 over the canonical JSON representation of that DDL; callers inject only observed metadata for exact comparison and cannot choose the expected identity. A trusted repository-only setup plan exposes the DDL for a separately approved future experiment, but no migration or execution path exists.
+E2A owns exact deterministic DDL for `e2_atomicity`, `e2_entities`, `e2_observations`, `e2_heads` and `e2_runs`. It pins primary/unique keys, foreign-key linkage, status/value constraints, and the atomicity runtime CHECK. The initial identity is SHA-256 over the canonical empty user-table representation. The setup identity is SHA-256 over the canonical JSON representation of the five-table DDL. Callers inject only observed metadata for phase-specific exact comparison and cannot choose either expected identity. Arbitrary phase values fail closed, and setup table order is irrelevant while membership must be exact. A trusted repository-only setup plan exposes the DDL for a separately approved future experiment, but no migration or execution path exists.
 
 ## Outcome safety and evidence
 

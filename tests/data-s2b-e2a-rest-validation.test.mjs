@@ -4,17 +4,41 @@ import fs from 'node:fs';
 import * as plan from '../workers/data-platform/e2-d1-rest-validation-plan.mjs';
 import * as harnessModule from '../workers/data-platform/e2-d1-rest-validation-harness.mjs';
 const {createE2FakeTransport,createE2ValidationHarness,validateDisposableIdentity,E2_OUTCOME_CLASSIFICATIONS}=harnessModule;
-const identity={accountFingerprint:'acct-e2',approvedAccountFingerprint:'acct-e2',productionAccountFingerprint:'acct-production',databaseName:'teamsheet-data-e2-rest-validation-20260901-a1b2c3',databaseFingerprint:'db-e2',expectedDatabaseFingerprint:'db-e2',schemaFingerprint:plan.E2_SCHEMA_FINGERPRINT,tables:[]};
+const identity={accountFingerprint:'acct-e2',approvedAccountFingerprint:'acct-e2',productionAccountFingerprint:'acct-production',databaseName:'teamsheet-data-e2-rest-validation-20260901-a1b2c3',databaseFingerprint:'db-e2',expectedDatabaseFingerprint:'db-e2',schemaFingerprint:plan.E2_INITIAL_SCHEMA_FINGERPRINT,tables:[]};
 const code=value=>error=>error?.code===value;
 const results=count=>Array.from({length:count},()=>({success:true}));
 const fakeResponse=(status,payload)=>createE2FakeTransport({kind:'response',status,payload});
 
-test('F01-F05 production firewall accepts only exact derived disposable identity',()=>{
+test('phase enumeration defaults omitted phase to initial and rejects every other value',()=>{
   assert.ok(validateDisposableIdentity(identity));
-  for(const patch of [{databaseName:'teamsheet-data'},{accountFingerprint:''},{databaseFingerprint:'wrong'},{tables:['shadow_observations']},{schemaFingerprint:'caller-selected'}])assert.throws(()=>validateDisposableIdentity({...identity,...patch}));
-  assert.throws(()=>validateDisposableIdentity({...identity,accountFingerprint:'acct-production',approvedAccountFingerprint:'acct-production'}),/e2_production_account_rejected/);
-  assert.ok(validateDisposableIdentity({...identity,phase:'setup',tables:[...plan.E2_APPROVED_TABLES]}));
-  assert.throws(()=>validateDisposableIdentity({...identity,phase:'setup',tables:['e2_other']}),/e2_unapproved_schema_table/);
+  assert.ok(validateDisposableIdentity({...identity,phase:'initial'}));
+  const setup={...identity,phase:'setup',schemaFingerprint:plan.E2_SETUP_SCHEMA_FINGERPRINT,tables:[...plan.E2_APPROVED_TABLES]};
+  assert.ok(validateDisposableIdentity(setup));
+  for(const phase of ['anything-else','live','production','',null,1,{},[]])assert.throws(()=>validateDisposableIdentity({...identity,phase}),/e2_schema_phase_invalid/);
+  assert.throws(()=>validateDisposableIdentity({...identity,phase:'anything-else',tables:['e2_unexpected']}),/e2_schema_phase_invalid/);
+});
+
+test('initial schema requires the derived empty identity and no user tables',()=>{
+  assert.deepEqual(plan.E2_INITIAL_SCHEMA_REPRESENTATION,[]);
+  assert.equal(plan.deriveE2SchemaFingerprint(plan.E2_INITIAL_SCHEMA_REPRESENTATION),plan.E2_INITIAL_SCHEMA_FINGERPRINT);
+  assert.notEqual(plan.E2_INITIAL_SCHEMA_FINGERPRINT,plan.E2_SETUP_SCHEMA_FINGERPRINT);
+  assert.ok(validateDisposableIdentity(identity));
+  assert.throws(()=>validateDisposableIdentity({...identity,schemaFingerprint:plan.E2_SETUP_SCHEMA_FINGERPRINT}),/e2_initial_schema_fingerprint_mismatch/);
+  assert.throws(()=>validateDisposableIdentity({...identity,schemaFingerprint:'caller-selected'}),/e2_initial_schema_fingerprint_mismatch/);
+  assert.throws(()=>validateDisposableIdentity({...identity,tables:['e2_atomicity']}),/e2_initial_schema_not_empty/);
+  assert.throws(()=>validateDisposableIdentity({...identity,expectedSchemaFingerprint:plan.E2_INITIAL_SCHEMA_FINGERPRINT}),/e2_identity_invalid/);
+});
+
+test('setup schema requires its derived fingerprint and exact canonical table set',()=>{
+  const setup={...identity,phase:'setup',schemaFingerprint:plan.E2_SETUP_SCHEMA_FINGERPRINT,tables:[...plan.E2_APPROVED_TABLES]};
+  assert.equal(plan.deriveE2SchemaFingerprint(plan.E2_SCHEMA_DDL),plan.E2_SETUP_SCHEMA_FINGERPRINT);
+  assert.ok(validateDisposableIdentity(setup));
+  assert.ok(validateDisposableIdentity({...setup,tables:[...setup.tables].reverse()}));
+  assert.throws(()=>validateDisposableIdentity({...setup,tables:setup.tables.slice(0,-1)}),/e2_setup_schema_tables_mismatch/);
+  assert.throws(()=>validateDisposableIdentity({...setup,tables:[...setup.tables,'e2_unexpected']}),/e2_setup_schema_tables_mismatch/);
+  assert.throws(()=>validateDisposableIdentity({...setup,tables:[...setup.tables,setup.tables[0]]}),/e2_setup_schema_tables_mismatch/);
+  assert.throws(()=>validateDisposableIdentity({...setup,tables:[...setup.tables,'shadow_observations']}),/e2_production_schema_rejected/);
+  assert.throws(()=>validateDisposableIdentity({...setup,schemaFingerprint:plan.E2_INITIAL_SCHEMA_FINGERPRINT}),/e2_setup_schema_fingerprint_mismatch/);
 });
 
 test('canonical synthetic schema owns exact constraints and a derived deterministic fingerprint',()=>{
@@ -23,10 +47,11 @@ test('canonical synthetic schema owns exact constraints and a derived determinis
   assert.match(atomicity,/PRIMARY KEY \(run_id, sequence_no\)/);
   assert.match(atomicity,/UNIQUE \(run_id, marker\)/);
   assert.match(atomicity,/CHECK \(valid_value IN \(0, 1\)\)/);
-  assert.equal(plan.deriveE2SchemaFingerprint(plan.E2_SCHEMA_DDL),plan.E2_SCHEMA_FINGERPRINT);
+  assert.equal(plan.deriveE2SchemaFingerprint(plan.E2_SCHEMA_DDL),plan.E2_SETUP_SCHEMA_FINGERPRINT);
   const modified=[...plan.E2_SCHEMA_DDL];modified[0]=modified[0].replace('IN (0, 1)','IN (0, 1, 2)');
-  assert.notEqual(plan.deriveE2SchemaFingerprint(modified),plan.E2_SCHEMA_FINGERPRINT);
-  assert.equal(plan.buildSyntheticSchemaSetupPlan().schemaFingerprint,plan.E2_SCHEMA_FINGERPRINT);
+  assert.notEqual(plan.deriveE2SchemaFingerprint(modified),plan.E2_SETUP_SCHEMA_FINGERPRINT);
+  assert.equal(plan.buildSyntheticSchemaSetupPlan().schemaFingerprint,plan.E2_SETUP_SCHEMA_FINGERPRINT);
+  assert.equal(plan.buildSyntheticSchemaSetupPlan().phase,'setup');
   assert.ok(plan.E2_APPROVED_TABLES.every(table=>table.startsWith('e2_')));
 });
 
