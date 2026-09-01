@@ -3,8 +3,10 @@ import {createHash} from 'node:crypto';
 import {D1_MAX_BATCH_STATEMENTS,D1_MAX_VALUE_BYTES} from './official-fpl-d1-rest-plan.mjs';
 
 export const E2_REPRESENTATIVE_FACTS=9860;
+/** Read-only limit-profile 100% target; this is not W01's serialized mutation size. */
 export const E2_REPRESENTATIVE_REQUEST_BYTES=3688875;
 export const E2_REPRESENTATIVE_STATEMENTS=24;
+export const E2_W01_SERIALIZED_REQUEST_BYTES=2378752;
 export const E2_SCHEMA_PHASES=Object.freeze(['initial','setup']);
 export const E2_INITIAL_SCHEMA_REPRESENTATION=Object.freeze([]);
 export const E2_SCHEMA_DDL=Object.freeze([
@@ -54,9 +56,22 @@ export function buildAffinityPlan(){
   const direct=['42','3.125','0042','0','1','2026-09-01T12:34:56.000Z','{"safe":true}','true','false'];
   const mixed=JSON.stringify([{kind:'integer',value:42},{kind:'real',value:3.125},{kind:'string',value:'0042'},{kind:'boolean',value:true},{kind:'null',value:null}]);
   return freezePlan('P01-P07',false,[
-    ...direct.map(value=>({sql:'SELECT typeof(?) AS bound_type, ? AS exact_value, CAST(? AS NUMERIC) AS numeric_value',params:[value,value,value]})),
-    {sql:"SELECT json_extract(value,'$.kind') AS kind, typeof(json_extract(value,'$.value')) AS value_type, json_extract(value,'$.value') AS exact_value FROM json_each(?) ORDER BY key",params:[mixed]}
+    ...direct.map(value=>({sql:'SELECT typeof(?) AS bound_type, ? AS exact_value, CAST(? AS NUMERIC) AS numeric_value, typeof(CAST(? AS NUMERIC)) AS numeric_type, (? COLLATE BINARY = ?) AS text_equal, (CAST(? AS NUMERIC) = CAST(? AS NUMERIC)) AS numeric_equal',params:[value,value,value,value,value,value,value,value]})),
+    {sql:'SELECT ? AS left_value, ? AS right_value, (? COLLATE BINARY < ?) AS text_order, (CAST(? AS NUMERIC) < CAST(? AS NUMERIC)) AS numeric_order',params:['0042','42','0042','42','0042','42']},
+    {sql:"SELECT json_extract(value,'$.kind') AS kind, json_type(value,'$.value') AS json_value_type, typeof(json_extract(value,'$.value')) AS sqlite_value_type, json_extract(value,'$.value') AS exact_value FROM json_each(?) ORDER BY key",params:[mixed]}
   ]);
+}
+export function buildStorageAffinityMutation(){return freezePlan('P-STORAGE-WRITE',true,[{sql:"INSERT INTO e2_observations (observation_id,logical_key,value_number,value_text,value_boolean) VALUES ('e2-affinity-42','e2|affinity|42',?,?,NULL),('e2-affinity-0042','e2|affinity|0042',?,?,NULL)",params:['42','42','0042','0042']}]);}
+export function buildStorageAffinityReconciliation(){return freezePlan('P-STORAGE-READ',false,[{sql:"SELECT observation_id,typeof(value_number) AS number_type,value_number,typeof(value_text) AS text_type,value_text FROM e2_observations WHERE logical_key LIKE 'e2|affinity|%' ORDER BY logical_key COLLATE BINARY",params:[]}]);}
+export function buildSchemaInspectionPlan(){
+  const statements=[{sql:'SELECT type,name,tbl_name,sql FROM sqlite_schema ORDER BY type,name',params:[]}];
+  for(const table of E2_APPROVED_TABLES){
+    statements.push({sql:'SELECT cid,name,type,notnull,dflt_value,pk,hidden FROM pragma_table_xinfo(?) ORDER BY cid',params:[table]});
+    statements.push({sql:'SELECT seq,name,"unique",origin,partial FROM pragma_index_list(?) ORDER BY seq',params:[table]});
+    statements.push({sql:'SELECT il.name AS index_name,xi.seqno,xi.cid,xi.name,xi.desc,xi.coll,xi.key FROM pragma_index_list(?) il JOIN pragma_index_xinfo(il.name) xi WHERE xi.key=1 ORDER BY il.name,xi.seqno',params:[table]});
+    statements.push({sql:'SELECT id,seq,"table","from","to",on_update,on_delete,match FROM pragma_foreign_key_list(?) ORDER BY id,seq',params:[table]});
+  }
+  return freezePlan('SCHEMA-RECONCILE',false,statements,{tables:E2_APPROVED_TABLES});
 }
 export function buildLargeJsonAffinityPlan(length=1990000){const value=JSON.stringify({payload:'x'.repeat(length-14)});return freezePlan('P08',false,[{sql:'SELECT length(?) AS parameter_length',params:[value]}]);}
 export function buildStatementProfile(count){return freezePlan(`L-${count}`,false,Array.from({length:count},(_,i)=>({sql:'SELECT ? AS sequence_no',params:[String(i+1)]})));}
@@ -73,6 +88,11 @@ export function buildBodySizeProfile(targetBytes){
   throw new Error('e2_body_target_unreachable');
 }
 export const E2_BODY_PROFILE_TARGETS=Object.freeze([.25,.5,.75,1,1.25].map(ratio=>Math.round(E2_REPRESENTATIVE_REQUEST_BYTES*ratio)));
+export function buildFullWriteRunStart(){return freezePlan('W00',true,[{sql:"INSERT INTO e2_runs (run_id,status,records_accepted) VALUES (?,'started',?)",params:['e2-run-full-write','0']}]);}
+export function buildFullWriteRunStartReconciliation(){return freezePlan('W00-R',false,[{sql:'SELECT run_id,status,records_accepted FROM e2_runs WHERE run_id=?',params:['e2-run-full-write']}]);}
+export function reconcileFullWriteRunStart(rows){return Array.isArray(rows)&&rows.length===1&&rows[0]?.run_id==='e2-run-full-write'&&rows[0]?.status==='started'&&Number(rows[0]?.records_accepted)===0;}
+export function buildFullWriteReconciliation(){return freezePlan('W01-R',false,[{sql:"SELECT (SELECT count(*) FROM e2_entities) AS entities,(SELECT count(*) FROM e2_observations) AS observations,(SELECT count(*) FROM e2_heads) AS heads,(SELECT count(*) FROM e2_heads h LEFT JOIN e2_observations o ON o.observation_id=h.observation_id WHERE o.observation_id IS NULL) AS orphan_heads,(SELECT count(*) FROM e2_runs WHERE run_id='e2-run-full-write') AS run_rows,(SELECT status FROM e2_runs WHERE run_id='e2-run-full-write') AS run_status,(SELECT records_accepted FROM e2_runs WHERE run_id='e2-run-full-write') AS records_accepted",params:[]}]);}
+export function reconcileFullWrite(rows,completionChanges){const row=Array.isArray(rows)&&rows.length===1?rows[0]:null;return Number(completionChanges)===1&&Number(row?.entities)===1064&&Number(row?.observations)===E2_REPRESENTATIVE_FACTS&&Number(row?.heads)===E2_REPRESENTATIVE_FACTS&&Number(row?.orphan_heads)===0&&Number(row?.run_rows)===1&&row?.run_status==='completed'&&Number(row?.records_accepted)===E2_REPRESENTATIVE_FACTS;}
 export function buildSyntheticFullWriteAnalogue(){
   const entities=Array.from({length:1064},(_,i)=>({entity_id:`e2-entity-${String(i).padStart(4,'0')}`,kind:['event','team','player','fixture'][i%4],created_at:'2026-09-01T00:00:00.000Z'}));
   const observations=Array.from({length:E2_REPRESENTATIVE_FACTS},(_,i)=>({observation_id:`e2-observation-${String(i).padStart(5,'0')}`,logical_key:`e2|fact|${String(i).padStart(5,'0')}`,value_number:i%3===0?i/10:null,value_text:i%3===1?`synthetic-${i}`:null,value_boolean:i%3===2?i%2===0:null}));
