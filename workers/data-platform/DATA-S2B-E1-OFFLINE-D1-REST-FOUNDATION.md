@@ -1,6 +1,6 @@
 # DATA-S2B-E1 — Offline D1 REST foundation
 
-Status: **repository-only implementation candidate; future architecture unapproved**  
+Status: **repository-only implementation candidate; future architecture unapproved**
 Base: `5aba5add9fda3a73b14c016bf05d54a6836b95cb` (authoritative `main` on 1 September 2026)
 
 ## Outcome and exact boundary
