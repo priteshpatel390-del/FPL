@@ -635,3 +635,8 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DATA-S2B-E2A permanent repository-only coverage
 
 The E2A suite pins closed phase enumeration, derived empty/setup schema identities, exact setup table-set equality, disposable-identity rejection, atomicity and reconciliation plans, direct-string and JSON-null affinity cases, exact 1/10/24/35/40 statement profiles, exact five body-byte profiles, the synthetic 9,860-write analogue, unforgeable E2A-owned fake-transport admission, strict per-statement provider success, one-dispatch/no-retry classifications and sanitized evidence. This coverage validates deterministic machinery only, not live Cloudflare behaviour. See [E2A record](../workers/data-platform/DATA-S2B-E2A-REPOSITORY-D1-REST-VALIDATION.md).
+
+<!-- DATA-S2B-E2C-A-2026-09-01 -->
+### DATA-S2B E2C-A repository-only live-validation contract
+
+E2C-A adds inert, fail-closed disposable-D1 experiment plans, a fixed-capability future HTTP adapter, semantic live-schema identity, single-dispatch orchestration, W00/W01 reconciliation and sanitized evidence tests. It performs no Cloudflare request and proves no live atomicity, parameter affinity or request-size behaviour. Any live experiment, credential, resource, workflow/environment, cleanup or production decision remains separately owner-approved. See [E2C-A record](../workers/data-platform/DATA-S2B-E2C-A-LIVE-VALIDATION-CONTRACT.md).

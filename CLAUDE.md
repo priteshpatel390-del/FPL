@@ -386,3 +386,8 @@ EIA-1 adds pure offline adapters for existing snapshot/outcome/DATA-S2B exports 
 ### Current DATA-S2B checkpoint — E2A repository-only D1 REST validation candidate
 
 E2A adds deterministic synthetic atomicity, affinity, statement/body and 9,860-write analogue plans plus an unforgeable E2A-factory fake-transport harness, phase-specific derived empty/setup schema fingerprints, exact-table-set disposable-identity firewall, no-retry ambiguity classifications and sanitized evidence. It performs and approves no Cloudflare request, account/token/resource inspection, D1 creation/query/mutation, workflow, Cron or deployment. It proves no live REST atomicity, affinity or size behaviour. E2B/E2C/E2D require separate explicit owner approval. See [E2A record](workers/data-platform/DATA-S2B-E2A-REPOSITORY-D1-REST-VALIDATION.md).
+
+<!-- DATA-S2B-E2C-A-2026-09-01 -->
+### DATA-S2B E2C-A repository-only live-validation contract
+
+E2C-A adds inert, fail-closed disposable-D1 experiment plans, a fixed-capability future HTTP adapter, semantic live-schema identity, single-dispatch orchestration, W00/W01 reconciliation and sanitized evidence tests. It performs no Cloudflare request and proves no live atomicity, parameter affinity or request-size behaviour. Any live experiment, credential, resource, workflow/environment, cleanup or production decision remains separately owner-approved. See [E2C-A record](workers/data-platform/DATA-S2B-E2C-A-LIVE-VALIDATION-CONTRACT.md).

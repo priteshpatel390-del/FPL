@@ -468,3 +468,8 @@ EIA-1 adds offline real-evidence adapters and a provider-neutral workload contra
 ## DATA-S2B-E2A repository validation candidate
 
 E2A is the repository-only machinery checkpoint after E1: deterministic synthetic REST plans, production/network firewalls, no-retry outcome classification and sanitized evidence. No live D1 experiment or Cloudflare action is included. The next possible checkpoint is E2B investigation/design only after E2A review/merge and separate explicit owner approval; E2C/E2D remain unapproved.
+
+<!-- DATA-S2B-E2C-A-2026-09-01 -->
+### DATA-S2B E2C-A repository-only live-validation contract
+
+E2C-A adds inert, fail-closed disposable-D1 experiment plans, a fixed-capability future HTTP adapter, semantic live-schema identity, single-dispatch orchestration, W00/W01 reconciliation and sanitized evidence tests. It performs no Cloudflare request and proves no live atomicity, parameter affinity or request-size behaviour. Any live experiment, credential, resource, workflow/environment, cleanup or production decision remains separately owner-approved. See [E2C-A record](../workers/data-platform/DATA-S2B-E2C-A-LIVE-VALIDATION-CONTRACT.md).

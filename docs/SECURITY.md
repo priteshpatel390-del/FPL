@@ -282,3 +282,8 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DATA-S2B-E2A repository-only validation boundary — 1 September 2026
 
 E2A adds an offline production firewall and a synthetic harness that accepts only E2A-factory fake transports authenticated by a module-private trust set. Exact account/database fingerprints, a strict disposable database-name pattern, a closed phase enum, phase-specific derived empty/setup schema fingerprints, exact setup table-set equality, and explicit production-name/table denials fail closed before dispatch. Evidence exposes only masked fingerprint prefixes and bounded aggregates; it excludes authorization, raw identifiers, SQL, bodies and provider responses. No live network implementation or secret exists. See [E2A record](../workers/data-platform/DATA-S2B-E2A-REPOSITORY-D1-REST-VALIDATION.md).
+
+<!-- DATA-S2B-E2C-A-2026-09-01 -->
+### DATA-S2B E2C-A repository-only live-validation contract
+
+E2C-A adds inert, fail-closed disposable-D1 experiment plans, a fixed-capability future HTTP adapter, semantic live-schema identity, single-dispatch orchestration, W00/W01 reconciliation and sanitized evidence tests. It performs no Cloudflare request and proves no live atomicity, parameter affinity or request-size behaviour. Any live experiment, credential, resource, workflow/environment, cleanup or production decision remains separately owner-approved. See [E2C-A record](../workers/data-platform/DATA-S2B-E2C-A-LIVE-VALIDATION-CONTRACT.md).
