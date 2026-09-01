@@ -1,6 +1,6 @@
 # DATA-S2B-E2A — Repository-only disposable D1 REST validation harness
 
-Status: **repository-only review candidate; no live validation or Cloudflare approval**  
+Status: **repository-only review candidate; no live validation or Cloudflare approval**
 Base: `3cb59436309bb9485d6617828db4b420cadebdd5`
 
 ## Outcome
