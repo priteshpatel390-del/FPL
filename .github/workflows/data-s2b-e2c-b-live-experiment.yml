@@ -88,7 +88,6 @@ jobs:
       E2C_DATABASE_NAME: ${{ vars.CLOUDFLARE_E2C_DATABASE_NAME }}
       CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT }}
       PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
-      E2C_EVIDENCE_PATH: ${{ runner.temp }}/e2c-b-sanitized-evidence.json
     steps:
       - name: Check out gated approved revision
         uses: actions/checkout@v5
@@ -100,6 +99,8 @@ jobs:
         with:
           node-version: 24.19.0
       - name: Reconfirm identity and run once without retry or cleanup
+        env:
+          E2C_EVIDENCE_PATH: ${{ runner.temp }}/e2c-b-sanitized-evidence.json
         run: |
           set -euo pipefail
           test "${GITHUB_RUN_ATTEMPT}" = 1
