@@ -21,19 +21,29 @@ export const E2_EXPECTED_SEMANTIC_SCHEMA=Object.freeze([
     [index(1,'pk',[[0,'run_id']])],[],["status in ('started','completed')",'records_accepted >= 0'])
 ]);
 
-const normalizeCheck=value=>String(value).toLowerCase().replace(/["`\[\]]/g,'').replace(/\s+/g,' ').replace(/\s*([(),])\s*/g,'$1').trim();
+export function normalizeE2CheckExpression(value){
+  const source=String(value),literals=[];let outside='',i=0;
+  while(i<source.length){if(source[i]!=="'"){outside+=source[i++];continue;}const start=i++;let literal="'",closed=false;while(i<source.length){literal+=source[i];if(source[i]!=="'"){i++;continue;}if(source[i+1]==="'"){literal+="'";i+=2;continue;}i++;closed=true;break;}if(!closed)throw new Error('e2_live_schema_check_quote_invalid');literals.push(literal);outside+=`\u0000${literals.length-1}\u0000`;if(i<=start)throw new Error('e2_live_schema_check_quote_invalid');}
+  const normalized=outside.toLowerCase().replace(/["`\[\]]/g,'').replace(/\s+/g,' ').replace(/\s*([(),])\s*/g,'$1').trim();
+  return normalized.replace(/\u0000(\d+)\u0000/g,(_,index)=>literals[Number(index)]);
+}
 function checksFromSql(sql){
-  const source=String(sql||''),out=[];for(let at=0;(at=source.toLowerCase().indexOf('check',at))!==-1;){let open=source.indexOf('(',at+5);if(open<0)break;let depth=1,i=open+1;for(;i<source.length&&depth;i++){if(source[i]==='(')depth++;else if(source[i]===')')depth--;}if(depth)throw new Error('e2_live_schema_check_invalid');out.push(normalizeCheck(source.slice(open+1,i-1)));at=i;}return out.sort();
+  const source=String(sql||''),out=[];for(let at=0;(at=source.toLowerCase().indexOf('check',at))!==-1;){let open=source.indexOf('(',at+5);if(open<0)break;let depth=1,i=open+1,quoted=false;for(;i<source.length&&depth;i++){if(source[i]==="'"){if(quoted&&source[i+1]==="'"){i++;continue;}quoted=!quoted;continue;}if(!quoted&&source[i]==='(')depth++;else if(!quoted&&source[i]===')')depth--;}if(depth||quoted)throw new Error('e2_live_schema_check_invalid');out.push(normalizeE2CheckExpression(source.slice(open+1,i-1)));at=i;}return out.sort();
 }
 function canonicalTable(table){
   return {name:clean(table.name),
     columns:[...(table.columns||[])].map(value=>({cid:Number(value.cid),name:clean(value.name),type:clean(value.type)?.toUpperCase(),notnull:Number(value.notnull),dflt_value:clean(value.dflt_value),pk:Number(value.pk),hidden:Number(value.hidden||0)})).sort((a,b)=>a.cid-b.cid),
     indexes:[...(table.indexes||[])].map(value=>({unique:Number(value.unique),origin:clean(value.origin),partial:Number(value.partial||0),columns:[...(value.columns||[])].filter(column=>Number(column.key??1)===1).map(column=>({seqno:Number(column.seqno),cid:Number(column.cid),name:clean(column.name),desc:Number(column.desc||0),coll:clean(column.coll),key:1})).sort((a,b)=>a.seqno-b.seqno)})).sort((a,b)=>a.origin.localeCompare(b.origin)||JSON.stringify(a.columns).localeCompare(JSON.stringify(b.columns))),
     foreignKeys:[...(table.foreignKeys||[])].map(value=>({id:Number(value.id),seq:Number(value.seq),table:clean(value.table),from:clean(value.from),to:clean(value.to),on_update:clean(value.on_update),on_delete:clean(value.on_delete),match:clean(value.match)})).sort((a,b)=>a.id-b.id||a.seq-b.seq),
-    checks:(Array.isArray(table.checks)?table.checks.map(normalizeCheck):checksFromSql(table.sql)).sort()};
+    checks:(Array.isArray(table.checks)?table.checks.map(normalizeE2CheckExpression):checksFromSql(table.sql)).sort()};
 }
 export function canonicalizeLiveSchema(metadata){if(!Array.isArray(metadata))throw new Error('e2_live_schema_metadata_invalid');return JSON.stringify(metadata.map(canonicalTable).sort((a,b)=>a.name.localeCompare(b.name)));}
 export const deriveLiveSchemaFingerprint=metadata=>`sha256:${createHash('sha256').update(canonicalizeLiveSchema(metadata)).digest('hex')}`;
 export const E2_EXPECTED_SEMANTIC_SCHEMA_FINGERPRINT=deriveLiveSchemaFingerprint(E2_EXPECTED_SEMANTIC_SCHEMA);
 export function validateInitialLiveObjects(objects){if(!Array.isArray(objects))throw new Error('e2_initial_objects_invalid');for(const object of objects){const {name,type}=object||{};if(PRODUCTION_TABLES.has(name))throw new Error('e2_production_schema_rejected');if(type!=='table'||!E2_PERMITTED_INITIAL_SYSTEM_OBJECTS.includes(name))throw new Error('e2_initial_schema_unexpected_object');}if(new Set(objects.map(row=>row.name)).size!==objects.length)throw new Error('e2_initial_schema_unexpected_object');return true;}
 export function validateSetupLiveSchema(metadata){const observed=deriveLiveSchemaFingerprint(metadata);if(observed!==E2_EXPECTED_SEMANTIC_SCHEMA_FINGERPRINT)throw new Error('e2_setup_schema_semantic_mismatch');return observed;}
+export function assembleE2SchemaMetadata(rowsByStatement,tables){
+  if(!Array.isArray(rowsByStatement)||!Array.isArray(tables)||rowsByStatement.length!==1+tables.length*4)throw new Error('e2_schema_results_invalid');
+  const schemaRows=rowsByStatement[0];if(!Array.isArray(schemaRows))throw new Error('e2_schema_results_invalid');const sqlByName=new Map(schemaRows.filter(row=>row?.type==='table').map(row=>[row.name,row.sql]));
+  return tables.map((name,index)=>{const offset=1+index*4,columns=rowsByStatement[offset],indexRows=rowsByStatement[offset+1],indexColumns=rowsByStatement[offset+2],foreignKeys=rowsByStatement[offset+3];if(![columns,indexRows,indexColumns,foreignKeys].every(Array.isArray))throw new Error('e2_schema_results_invalid');return {name,sql:sqlByName.get(name),columns,indexes:indexRows.map(item=>({...item,columns:indexColumns.filter(column=>column.index_name===item.name)})),foreignKeys};});
+}
