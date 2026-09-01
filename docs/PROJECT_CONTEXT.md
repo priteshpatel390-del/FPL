@@ -448,3 +448,8 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## Decision Intelligence DI-4 (29 August 2026)
 
 The Team experience now includes an artifact-only weekly decision synthesis above the unchanged pitch. It renders DI-3's existing production decisions, alternatives, uncertainty and reconsideration fields through a deterministic fail-closed read model. It is coherence and disclosure, not a smarter engine; recommendation diff is zero and physical iPhone Safari acceptance remains pending.
+
+<!-- DATA-S2B-E2C-B-2026-09-01 -->
+## DATA-S2B E2C-B repository-only preparation
+
+E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).

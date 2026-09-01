@@ -22,3 +22,7 @@ E2C-A implements permanent, inert machinery for a later separately approved disp
 ## Next gate
 
 Owner review and merge approval are required. Any live disposable resource, credential, workflow/environment, Cloudflare request or experiment requires a new explicit approval after exact-main verification. Cleanup remains separately manual and approved.
+
+## E2C-B successor note
+
+E2C-B supersedes E2C-A only at the live acceptance boundary: production-account fingerprint presence is mandatory, affinity/storage returned values require exact semantic acceptance, absent provider metadata remains distinct from zero, and bounded `total_attempts` may be retained. E2C-A ordering and SQL plans remain unchanged. See [E2C-B preparation](DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).

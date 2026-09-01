@@ -26,7 +26,8 @@ export function validateDisposableIdentity(value){
   if(!value||Object.keys(value).some(key=>!['accountFingerprint','approvedAccountFingerprint','productionAccountFingerprint','databaseName','databaseFingerprint','expectedDatabaseFingerprint','schemaFingerprint','tables','phase'].includes(key)))fail('e2_identity_invalid');
   const {accountFingerprint,approvedAccountFingerprint,productionAccountFingerprint,databaseName,databaseFingerprint,expectedDatabaseFingerprint,schemaFingerprint,tables,phase='initial'}=value;
   if(!accountFingerprint||!approvedAccountFingerprint||accountFingerprint!==approvedAccountFingerprint)fail('e2_account_fingerprint_mismatch');
-  if(productionAccountFingerprint&&accountFingerprint===productionAccountFingerprint)fail('e2_production_account_rejected');
+  if(typeof productionAccountFingerprint!=='string'||!productionAccountFingerprint)fail('e2_production_account_fingerprint_required');
+  if(accountFingerprint===productionAccountFingerprint)fail('e2_production_account_rejected');
   if(databaseName==='teamsheet-data'||!DB_NAME.test(databaseName||''))fail('e2_database_name_rejected');
   if(!databaseFingerprint||!expectedDatabaseFingerprint||databaseFingerprint!==expectedDatabaseFingerprint)fail('e2_database_fingerprint_mismatch');
   if(!E2_SCHEMA_PHASES.includes(phase))fail('e2_schema_phase_invalid');
