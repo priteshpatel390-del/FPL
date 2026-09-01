@@ -4,6 +4,12 @@ Status: **repository implementation candidate only; no live deployment or D1 mut
 Design/implementation date: **26 August 2026**  
 Implementation base: `b58aa829b201043abf6eba8e2b22d82e4fc27744`
 
+## Shared canonical collector contract (DATA-S2B-E0)
+
+The environment-neutral Official FPL contract lives in `official-fpl-canonical.mjs`. It is the single implementation of season evidence, strict payload and relationship validation, canonical entities and logical facts, explicit-null and scalar representation, disappearance diffing, deterministic ordering, observation material, and SHA-256 observation identity. The Worker adapter in `official-fpl-history.mjs` imports and re-exports that contract while retaining fixed upstream fetching, environment bindings, D1 reads/batches, run persistence, request wiring, and scheduled-event policy.
+
+This boundary is a code-location refactor only. It does not approve or implement another execution surface, D1 REST access, a workflow, a schema change, a collector invocation, or any production/Cron mutation. The existing canonical fields, identity bytes, null marker, ordering, write guard, and D1 commit semantics remain unchanged.
+
 ## Outcome
 
 DATA-S2A prepares a shadow-only collector for a bounded allowlist of Official FPL facts. It does not replace the existing live Official FPL gateway used by Teamsheet and it does not create a production application dependency on D1.
