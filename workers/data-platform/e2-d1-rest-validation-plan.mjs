@@ -64,7 +64,7 @@ export function buildAffinityPlan(){
 export function buildStorageAffinityMutation(){return freezePlan('P-STORAGE-WRITE',true,[{sql:"INSERT INTO e2_observations (observation_id,logical_key,value_number,value_text,value_boolean) VALUES ('e2-affinity-42','e2|affinity|42',?,?,NULL),('e2-affinity-0042','e2|affinity|0042',?,?,NULL)",params:['42','42','0042','0042']}]);}
 export function buildStorageAffinityReconciliation(){return freezePlan('P-STORAGE-READ',false,[{sql:"SELECT observation_id,typeof(value_number) AS number_type,value_number,typeof(value_text) AS text_type,value_text FROM e2_observations WHERE logical_key LIKE 'e2|affinity|%' ORDER BY logical_key COLLATE BINARY",params:[]}]);}
 export function buildSchemaInspectionPlan(){
-  const statements=[{sql:"SELECT type,name,sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name",params:[]}];
+  const statements=[{sql:'SELECT type,name,tbl_name,sql FROM sqlite_schema ORDER BY type,name',params:[]}];
   for(const table of E2_APPROVED_TABLES){
     statements.push({sql:'SELECT cid,name,type,notnull,dflt_value,pk,hidden FROM pragma_table_xinfo(?) ORDER BY cid',params:[table]});
     statements.push({sql:'SELECT seq,name,"unique",origin,partial FROM pragma_index_list(?) ORDER BY seq',params:[table]});

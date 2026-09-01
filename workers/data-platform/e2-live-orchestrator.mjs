@@ -50,12 +50,15 @@ export async function runE2LiveContract(options){
 }
 
 /** Closed future composition: callers provide authority/fetch inputs, never SQL, bodies or classifications. */
-export function runE2LiveHttpContract(options){
+export async function runE2LiveHttpContract(options){
   const {accountId,databaseId,token,fetchImpl,identity,...runOptions}=options||{};const adapter=createE2LiveHttpAdapter({accountId,databaseId,token,fetchImpl,identity});
   const reconcile=async plan=>{const decoded=await adapter.execute(plan);if(decoded.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)return {};
     if(plan.caseId==='SCHEMA-RECONCILE')return {metadata:assembleE2SchemaMetadata(decoded.rowsByStatement,plan.tables)};
     if(plan.caseId?.startsWith('A04-')||plan.caseId==='W00-R'||plan.caseId==='W01-R')return {rows:decoded.rowsByStatement[0]||[]};
     if(plan.caseId==='P-STORAGE-READ')return {classification:'COMPLETE_SUCCESS',rows:decoded.rowsByStatement[0]||[]};return {};
   };
-  return runE2LiveContract({...runOptions,identity,query:plan=>adapter.execute(plan),reconcile});
+  const metadata=await adapter.readExactMetadata();if(metadata.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw Object.assign(new Error('e2_database_metadata_rejected'),{code:'e2_database_metadata_rejected'});
+  const initialPlan=buildSchemaInspectionPlan(),initial=await adapter.execute(initialPlan);if(initial.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw Object.assign(new Error('e2_initial_schema_inspection_failed'),{code:'e2_initial_schema_inspection_failed'});
+  try{validateInitialLiveObjects(initial.rowsByStatement[0]);}catch{throw Object.assign(new Error('e2_initial_schema_rejected'),{code:'e2_initial_schema_rejected'});}
+  return runE2LiveContract({...runOptions,identity,initialObjects:[],query:plan=>adapter.execute(plan),reconcile});
 }

@@ -22,3 +22,12 @@ export async function decodeE2QueryResponse(response,plan){
 }
 
 export const classifyE2TransportFailure=mutation=>Object.freeze({...malformed(),classification:mutation?E2_LIVE_RESPONSE_CLASS.UNKNOWN:E2_LIVE_RESPONSE_CLASS.TRANSPORT});
+
+export async function decodeE2DatabaseMetadataResponse(response,{databaseId,databaseName}){
+  const status=Number(response?.status);if(status===401||status===403)return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.AUTH});if(status===429)return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.RATE});if(!Number.isInteger(status)||status<200||status>=300)return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.TRANSPORT});
+  let payload;try{payload=await response.json();}catch{return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.MALFORMED});}
+  const result=payload?.result;if(payload?.success!==true||!result||typeof result!=='object'||Array.isArray(result))return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.MALFORMED});
+  const returnedId=result.uuid??result.id;if(typeof returnedId!=='string'||typeof result.name!=='string')return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.MALFORMED});
+  if(returnedId!==databaseId||result.name!==databaseName||result.name==='teamsheet-data')return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.MALFORMED});
+  return Object.freeze({classification:E2_LIVE_RESPONSE_CLASS.SUCCESS});
+}
