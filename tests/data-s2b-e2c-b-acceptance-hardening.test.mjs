@@ -19,6 +19,16 @@ test('E2C-B repository gate precedes the sole protected credential-bearing job',
   assert.match(workflow,/environment:\n      name: data-s2b-e2c-b-live-experiment/);
 });
 
+test('E2C-B uses runner context only at step scope and shares one bounded evidence path',()=>{
+  const liveJob=workflow.slice(workflow.indexOf('  disposable-live-experiment:'));
+  const jobEnv=liveJob.slice(liveJob.indexOf('    env:'),liveJob.indexOf('    steps:'));
+  assert.doesNotMatch(jobEnv,/\$\{\{\s*runner\./);
+  const evidencePath='${{ runner.temp }}/e2c-b-sanitized-evidence.json';
+  assert.equal(liveJob.split(evidencePath).length-1,2);
+  assert.match(liveJob,/Reconfirm identity and run once without retry or cleanup\n        env:\n          E2C_EVIDENCE_PATH: \$\{\{ runner\.temp \}\}\/e2c-b-sanitized-evidence\.json\n        run:/);
+  assert.match(liveJob,/name: data-s2b-e2c-b-sanitized-evidence\n          path: \$\{\{ runner\.temp \}\}\/e2c-b-sanitized-evidence\.json/);
+});
+
 test('E2C-B gate pins approved current main, exact-head Verify and rejects reruns in both jobs',()=>{
   for(const required of ['test "$RUN_ATTEMPT" = 1','test "${GITHUB_RUN_ATTEMPT}" = 1','test "$remote_main" = "$APPROVED_SHA"','row.head_sha===process.env.APPROVED_SHA',"row.name==='Tests and deterministic build'","row.conclusion==='success'"])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   assert.equal((workflow.match(/workflow_dispatch/g)||[]).length,2);
