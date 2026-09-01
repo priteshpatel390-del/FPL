@@ -381,3 +381,8 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ### Current external-intelligence checkpoint — EIA-1 review candidate
 
 EIA-1 adds pure offline adapters for existing snapshot/outcome/DATA-S2B exports and a provider-neutral workload contract. DATA-S2B remains live-unaccepted and is fixture-proven only. TheSportsDB is `local_research_only`, durable retention is blocked, and qualification is FAIL for expected-minutes workload evidence. No signal, provider, model, recommendation, UI or infrastructure behaviour changes. See [EIA-1](docs/EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
+
+<!-- DATA-S2B-E2A-2026-09-01 -->
+### Current DATA-S2B checkpoint — E2A repository-only D1 REST validation candidate
+
+E2A adds deterministic synthetic atomicity, affinity, statement/body and 9,860-write analogue plans plus an unforgeable E2A-factory fake-transport harness, phase-specific derived empty/setup schema fingerprints, exact-table-set disposable-identity firewall, no-retry ambiguity classifications and sanitized evidence. It performs and approves no Cloudflare request, account/token/resource inspection, D1 creation/query/mutation, workflow, Cron or deployment. It proves no live REST atomicity, affinity or size behaviour. E2B/E2C/E2D require separate explicit owner approval. See [E2A record](workers/data-platform/DATA-S2B-E2A-REPOSITORY-D1-REST-VALIDATION.md).

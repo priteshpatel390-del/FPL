@@ -364,3 +364,9 @@ The DI-4 surface can only render the in-memory DI-3 artifact produced during the
 # EIA-1 limitations (30 August 2026)
 
 EIA-1 proves deterministic adapter contracts against frozen fixtures, not real DATA-S2B acceptance or predictive accuracy. No committed legitimate real snapshot/outcome pair supports a published baseline, and no prospective workload observation or approved workload-to-xMins transform exists. TheSportsDB's xMins-critical field coverage and exact third-party-content retention rights are unproven, so durable retention is blocked and the qualification is FAIL. See [EIA-1](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
+
+## DATA-S2B-E2A offline validation limitations
+
+E2A proves only that deterministic synthetic requests, guards, classifications and sanitized evidence can be built offline. It does not prove REST batch atomicity, D1 parameter affinity, practical request limits, production architectural suitability or token blast-radius containment. Worker `db.batch()` documentation is not REST `/query` proof. E2B/E2C/E2D remain separately owner-gated.
+
+The E2A remediation makes fake transport admission unforgeable within the module, validates every synthetic provider statement result, isolates atomicity run identities, derives distinct initial-empty and canonical-setup schema identities, enforces a closed phase enum and exact setup table set, and preserves native nested JSON types. Those repository guarantees do not reduce the live-behaviour limitations above.
