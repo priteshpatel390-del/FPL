@@ -1,6 +1,13 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-READONLY-PRODUCTION-DIAGNOSTICS-2026-09-02 -->
+### Current DATA-S2B checkpoint — bounded read-only production diagnostics candidate
+
+The one-failure-per-merge protected-read pattern is replaced. Runs `33620632272` and `33622647158` each spent a whole merge/Verify/dispatch cycle to reveal a single stale repository constant and never reached D1. This candidate adds a separate bounded read-only production diagnostic (`phase4b/diagnostics-contract.mjs`, `phase4b/readonly-diagnostics.mjs` and a manual exact-main/exact-Verify protected workflow) that gathers the whole remaining read-only acceptance evidence in one pass and reports a seventeen-row PASS/FAIL/PARTIAL/PENDING/SUPERSEDED matrix instead of throwing at the first safe mismatch. Identity is taken from the genuinely active Worker Version, never from a repository pin, so a stale pin is recorded as `SUPERSEDED` rather than aborting.
+
+It stays fail-closed on repository/account/Worker/database identity, unauthorized endpoints, non-allowlisted SQL, malformed or unbounded responses, secret exposure risk and any condition needing mutation. It has no reachable upload, deployment, Cron, D1 write, collector, cleanup or retry surface, and the strict `phase4b/preflight.mjs` gate is retained unchanged. Worker CPU time and D1 rows read/written are reported NOT AVAILABLE through the approved read surface rather than widening permissions; current Workers/D1 Free limits were re-verified on 2 September 2026, including Cloudflare's new enforcement of D1 free-tier daily row limits from 1 September 2026. This is repository evidence only: no Cloudflare request, workflow dispatch, deployment or credential change was performed. A completed bundle proves the read finished, not DATA-S2B acceptance. See [read-only production diagnostics](workers/data-platform/DATA-S2B-PHASE-4B-READ-ONLY-DIAGNOSTICS.md).
+
 <!-- DATA-S2B-PRODUCTION-CRON-DIAGNOSTIC-2026-09-02 -->
 ### Current DATA-S2B checkpoint — post-merge Cron drift diagnostic
 
