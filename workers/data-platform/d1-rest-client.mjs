@@ -23,6 +23,8 @@ export function createD1RestClient(options){
     if(!payload||payload.success!==true)fail('d1_api_failed');
     const results=Array.isArray(payload.result)?payload.result:null;if(!results||results.length!==trusted.statements.length)fail('d1_result_contract_invalid');
     for(const result of results)if(!result||result.success!==true)fail('d1_statement_failed');
-    return Object.freeze({results});
+    const usage={rowsRead:0,rowsWritten:0,changes:0};
+    for(const result of results){const meta=result.meta??{};for(const [provider,key] of [['rows_read','rowsRead'],['rows_written','rowsWritten'],['changes','changes']]){const value=meta[provider]??0;if(!Number.isSafeInteger(value)||value<0||value>1000000)fail('d1_result_contract_invalid');usage[key]+=value;}}
+    return Object.freeze({results,usage:Object.freeze(usage),requestBytes:encoder.encode(body).byteLength});
   }});
 }
