@@ -10,12 +10,19 @@ const workflowPath='.github/workflows/data-s2b-e2c-b-live-experiment.yml';
 const workflow=fs.readFileSync(workflowPath,'utf8');
 const runner=fs.readFileSync('workers/data-platform/e2c-b/run-live-experiment.mjs','utf8');
 const isolationRunner=fs.readFileSync('workers/data-platform/e2c-b/run-initial-isolation.mjs','utf8');
+const w01Runner=fs.readFileSync('workers/data-platform/e2c-b/run-w01-reconciliation.mjs','utf8');
 
 test('E2C-B workflow is manual-only with fixed non-cancelling concurrency',()=>{
   assert.match(workflow,/on:\n  workflow_dispatch:/);
   for(const forbidden of [/\n  push:/,/\n  schedule:/,/\n  workflow_call:/,/pull_request:/])assert.doesNotMatch(workflow,forbidden);
   assert.match(workflow,/group: data-s2b-e2c-b-disposable-live-experiment\n  cancel-in-progress: false/);
-  assert.match(workflow,/options:\n          - contract\n          - initial-isolation/);
+  assert.match(workflow,/options:\n          - contract\n          - initial-isolation\n          - w01-reconciliation/);
+});
+
+test('W01 reconciliation mode is fixed, read-only, schema-gated and bounded',()=>{
+  for(const required of ['buildFullWriteReconciliation()','buildSchemaInspectionPlan()','validateSetupLiveSchema','mutationOccurred:false','cleanupOccurred:false','E2_INITIAL_SCHEMA_FINGERPRINT'])assert.match(w01Runner,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  for(const forbidden of ['INSERT INTO','UPDATE ','DELETE FROM','CREATE TABLE','database/delete','console.log','error.message','error.stack'])assert.doesNotMatch(w01Runner,new RegExp(forbidden,'i'));
+  assert.match(workflow,/node workers\/data-platform\/e2c-b\/run-w01-reconciliation\.mjs/);
 });
 
 test('INITIAL isolation is a fixed read-only matrix with bounded evidence and production identity rejection',()=>{
