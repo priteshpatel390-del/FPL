@@ -3,7 +3,7 @@ import {E2_BODY_PROFILE_TARGETS,buildAffinityPlan,buildAtomicityCase,buildAtomic
 import {validateDisposableIdentity} from './e2-d1-rest-validation-harness.mjs';
 import {assembleE2SchemaMetadata,validateInitialLiveObjects,validateSetupLiveSchema} from './e2-live-schema-contract.mjs';
 import {createE2LiveHttpAdapter} from './e2-live-http-adapter.mjs';
-import {E2_LIVE_RESPONSE_CLASS} from './e2-live-response-decoder.mjs';
+import {E2_LIVE_RESPONSE_CLASS,validateE2PreMutationDiagnostic} from './e2-live-response-decoder.mjs';
 
 export {E2_LIVE_RESPONSE_CLASS};
 export const E2_RECONCILIATION_CLASS=Object.freeze(['INITIAL','COMPLETE_SETUP','PARTIAL_OR_DRIFTED','FULL_ROLLBACK','PARTIAL_WRITE','COMPLETE_SUCCESS','STARTED','COMPLETED','ABSENT','AMBIGUOUS']);
@@ -74,8 +74,9 @@ export async function runE2LiveHttpContract(options){
     if(plan.caseId?.startsWith('A04-')||plan.caseId==='W00-R'||plan.caseId==='W01-R')return {rows:decoded.rowsByStatement[0]||[]};
     if(plan.caseId==='P-STORAGE-READ')return {classification:validateE2StorageAffinityRows(decoded.rowsByStatement[0])?'COMPLETE_SUCCESS':'PARTIAL_OR_DRIFTED',rows:decoded.rowsByStatement[0]||[]};return {};
   };
-  const metadata=await adapter.readExactMetadata();if(metadata.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw Object.assign(new Error('e2_database_metadata_rejected'),{code:'e2_database_metadata_rejected'});
-  const initialPlan=buildSchemaInspectionPlan(),initial=await adapter.execute(initialPlan);if(initial.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw Object.assign(new Error('e2_initial_schema_inspection_failed'),{code:'e2_initial_schema_inspection_failed'});
+  const failed=(code,result)=>Object.assign(new Error(code),{code,preMutationDiagnostics:Object.freeze([validateE2PreMutationDiagnostic(result.preMutationDiagnostic)])});
+  const metadata=await adapter.readExactMetadata();if(metadata.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw failed('e2_database_metadata_rejected',metadata);
+  const initialPlan=buildSchemaInspectionPlan(),initial=await adapter.execute(initialPlan);if(initial.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw failed('e2_initial_schema_inspection_failed',initial);
   try{validateInitialLiveObjects(initial.rowsByStatement[0]);}catch{throw Object.assign(new Error('e2_initial_schema_rejected'),{code:'e2_initial_schema_rejected'});}
   return runE2LiveContract({...runOptions,identity,initialObjects:[],query:plan=>adapter.execute(plan),reconcile});
 }

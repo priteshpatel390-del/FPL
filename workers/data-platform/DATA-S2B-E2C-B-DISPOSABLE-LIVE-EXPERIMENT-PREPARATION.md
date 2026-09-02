@@ -12,6 +12,14 @@ E2C-B is repository-only preparation. It hardens E2C-A and adds a dormant manual
 * Evidence records the canonical start before execution. Only after the awaited contract succeeds or fails does the runner capture one canonical completion timestamp and finalize every sanitized evidence row with that genuine end; callers cannot pre-supply an end time.
 * The existing E2C-A plan order, SQL and single-dispatch mutation/reconciliation rules are unchanged.
 
+### Pre-mutation diagnostic hardening
+
+The first live attempt (`33590874792`) passed identity and metadata validation but stopped at `e2_initial_schema_inspection_failed` before semantic schema validation or mutation. Its deliberately narrow report retained no underlying decoder classification. A future separately approved attempt therefore retains exactly one closed pre-mutation diagnostic when metadata or initial-schema decoding fails. The diagnostic has only these fields: `stage` (`metadata` or `initial_schema`); `reason` (one of `success`, `transport_exception`, `http_status`, `json_parse`, `malformed_envelope`, `top_level_failure`, `result_count`, `result_success`, `unsuccessful_result`, `invalid_results`, `malformed_meta`, `identity_mismatch`); the existing closed response `classification`; nullable HTTP status from 100 through 599; three boolean/nullable top-level parsing fields; expected and nullable observed result counts bounded to 0 through 40; four failure counts bounded to 0 through 40; and a nullable first failing result index bounded to 0 through 20. Unknown keys, values, types and ranges are rejected before serialization.
+
+The diagnostic never retains headers, URLs, tokens, account/database identifiers, SQL, parameters, request or response bodies, provider messages, arbitrary JSON, stack traces, unrestricted strings, unrestricted numbers or arbitrary nested objects. It changes no endpoint, request, SQL, response acceptance or schema semantics. Ordering remains metadata, initial inspection, semantic initial-schema validation, then setup. An unexpected schema object remains `e2_initial_schema_rejected`, not a decoder diagnostic failure.
+
+Run `33590874792` is frozen evidence and must not be rerun. Its database remains quarantined and its token remains retained but unused pending separately approved closeout. Any future experiment requires a fresh disposable database, a new independently approved fingerprint, explicit owner approval and a new attempt-1 dispatch.
+
 ## Manual preparation — not performed by this checkpoint
 
 An owner must separately approve and manually perform all preparation:
