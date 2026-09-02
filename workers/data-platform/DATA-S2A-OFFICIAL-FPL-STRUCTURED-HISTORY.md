@@ -128,7 +128,7 @@ Current Cloudflare documentation reviewed on 26 August 2026 states that Workers 
 
 A baseline can contain roughly ten-to-twelve thousand scalar observations. One statement per row would exceed the invocation query ceiling. DATA-S2A therefore uses bounded JSON arrays with SQLite `json_each(?)` to bulk-insert observations and head changes. The permanent test models a 12,000-observation baseline and requires the final transactional batch to stay below 40 statements, leaving room for the source/run/head preflight operations within the 50-query Free ceiling.
 
-A hard `MAX_CHANGED_OBSERVATIONS_PER_RUN = 15000` guard rejects an implausibly large delta before final storage. Normal hourly runs are expected to be much smaller because unchanged facts create no observation/head writes. Actual D1 rows-written accounting, including index effects, remains a live DATA-S2B acceptance item rather than a repository-only claim.
+The historical hard `MAX_CHANGED_OBSERVATIONS_PER_RUN = 15000` guard (superseded by DATA-S2B's routine limit of `4000`) rejects an implausibly large delta before final storage. Normal hourly runs are expected to be much smaller because unchanged facts create no observation/head writes. Actual D1 rows-written accounting, including index effects, remains a live DATA-S2B acceptance item rather than a repository-only claim.
 
 ## Important Free-plan CPU limitation
 

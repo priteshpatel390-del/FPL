@@ -47,7 +47,7 @@ adds `17 1 * * *`. That activation PR must contain no unrelated architecture or 
 ## Reuse and flow
 
 The runner reuses the canonical E1/E2 `official-fpl-d1-rest-plan.mjs`,
-`d1-rest-client.mjs`, canonical identities/normalisation/diff/materialisation, 15,000-change
+`d1-rest-client.mjs`, canonical identities/normalisation/diff/materialisation, 4,000-change
 guard, 40-statement/16 MiB request bounds, immutable observations, atomic head updates, and
 reconcile-before-stop behaviour. There is no generic SQL or generic provider URL input.
 
@@ -77,15 +77,16 @@ layer. A non-completed pre-existing run stops rather than guessing ownership.
 
 Cloudflare's current first-party D1 Free limits rechecked 2 September 2026 are 5,000,000 rows
 read/day, 100,000 rows written/day and 5 GB storage; the account API limit is 1,200 requests per
-five minutes. The runner's stricter per-cycle stops are 25,000 rows read, 40,000 rows written,
-8 D1 calls, 40 statements, 16 MiB per D1 request, and 8 MiB per Official response.
+five minutes. The approved routine contract has a 100,000-row expected read target, a 125,000-row
+hard read ceiling, a 40,000-row hard write ceiling, 8 D1 calls, 40 statements, 16 MiB per D1 request, and 8 MiB per Official response.
 
-For the current 9,860-head population, a normal cycle reads approximately 9,862 rows
-(governance + run + heads), makes 5 D1 calls, 2 Official calls, and writes 2 bookkeeping rows
-(start plus completion). A current-shape all-facts baseline is approximately 9,860 observations
-+ 9,860 heads + at most 1,064 entities + 2 ledger writes = **20,786 rows written**. The
-contractual worst case is 15,000 observations + 15,000 heads + at most 1,064 entities + 2 =
-**31,066 writes**, below both the 40,000 cycle cap and 100,000 daily Free allowance. A transport-
+The old estimate of approximately 9,862 reads counted logical rows rather than D1 index/table
+rows scanned and is superseded. Schema-0003's conservative synchronous full-integrity model is
+`7N + 64`, or 69,084 structural visits at 9,860 facts. This is local plan/estimate evidence, not
+an exact Cloudflare bill. Routine writes use index-aware amplification: entity insert 3,
+observation insert 5, new head 3, existing-head update 2, run start 3 and completion update 1.
+The routine delta limit is 4,000; the worst fresh-entity/new-head estimate is 35,196 including
+start, below the unchanged 40,000 cap. A true baseline is not executable under this contract. A transport-
 ambiguous mutation adds one reconciliation call/read, remaining within 8 calls. Normal changed
 cycles grow storage only by new immutable observations (plus ledger rows); unchanged cycles add
 one bounded ledger row. Absolute storage bytes depend on SQLite encoding, while the 16 MiB body
@@ -186,7 +187,7 @@ The static safety gate is the exact migration-3 governance read before the curre
 and permanent tests reject the prior repeated head scan or SQLite automatic-index dependence.
 This prevents this known query-plan regression but is not a hard pre-execution row-count
 guarantee. Provider `meta.rows_read` accounting remains a separate post-execution ceiling; the
-existing 25,000 reads, 40,000 writes, eight API calls, 40 statements, 16 MiB D1 request and 8 MiB
+approved 125,000 hard reads, 40,000 writes, eight API calls, 40 statements, 16 MiB D1 request and 8 MiB
 Official FPL response limits are not raised.
 
 Migration 0003 is additive: it creates three indexes and one migration-ledger row, without data
@@ -199,40 +200,36 @@ automatic production action: retain the indexes, investigate from read-only evid
 separately reviewed forward migration if correction is required. No live migration or collection
 was performed while preparing this repository change.
 
-### Whole-cycle static read-cost blocker
+### Approved resource-contract rebaseline
 
-Follow-up review found that removing the repeated `SCAN h` was necessary but not sufficient. D1
-counts rows scanned in both tables and indexes. At the accepted scale of approximately 9,860
-logical facts, the current-head query has three population-sized access legs: the governed
-observation index range, observation-ID head lookups, and owning-run lookups. Its conservative
-static shape is therefore approximately `3N`, already about 29,580 index/table row visits before
-postflight. SQLite `EXPLAIN QUERY PLAN` is structural evidence only; it is not claimed as an exact
-prediction of Cloudflare `meta.rows_read`.
+Owner approval retains the normalized append-only architecture and synchronous global postflight.
+The read contract is now a 100,000-row expected acceptance target and a 125,000-row hard cycle
+ceiling. At current scale, the conservative `7N + 64` plan model is 69,084 structural visits.
+SQLite `EXPLAIN QUERY PLAN` proves access shape only; repository estimates are conservative; only
+Cloudflare response `meta.rows_read` and `meta.rows_written` are provider accounting evidence.
+The hard provider ceilings remain post-execution checks.
 
-The corrected postflight replaces five independent `shadow_observations` scalar aggregates with
-one materialized conditional aggregate. It likewise computes head coverage, orphan and invalid
-head state in one head traversal, and performs one bounded rejection-index range. This changes the
-postflight structure from repeated independent governed-observation scans to one observation
-range plus one head traversal with indexed observation/run lookups. It preserves run-owned,
-historical, logical-key, admission, quarantine, rejection, orphan and completed-owner checks.
+The routine write contract remains 40,000 rows, but the changed-observation maximum is 4,000. A
+pre-commit estimator accounts for table/index amplification: three rows per fresh entity, five per
+new observation, three per new head, two per existing-head update, three for a new run, and one
+for completion. The maximum worst-case routine shape is 35,196 including 1,064 fresh entities and
+4,000 new heads. A 4,001st change fails before any mutation. Returned `meta.rows_written` remains
+independently enforced.
 
-Even after consolidation, the complete structural model is conservatively `7N + 64`: three
-population access legs for current heads, one for the observation summary, and three for the head
-integrity summary, with 64 reserved for governance, exact-run and empty/bounded rejection point
-or range work. At `N = 9,860`, that is 69,084 structural row visits, which cannot plausibly satisfy
-the unchanged 25,000 complete-cycle ceiling. This is a static upper-safety model, not live D1
-accounting and not an assertion that D1 would report exactly 69,084 rows read.
+Postflight remains synchronous and consolidated: one materialized governed-observation aggregate,
+one head traversal with indexed observation/run lookups, and one indexed rejection range. It
+retains exact completed run/counters, run-owned delta, append-only history, logical-key/head
+coverage, orphan/invalid-head, acceptance/quarantine/rejection, completed-owner, and null-error
+checks. No audit workflow or stale audit marker is introduced.
 
-The runner now evaluates that model immediately after validating the fresh Official FPL bodies
-and **before** creating a normal run, dispatching the current-head query, or committing anything.
-At the accepted production scale it fails closed as `production_static_read_budget_impossible`.
-For the unresolved resume it preserves the existing start row but similarly stops before the
-current-head query or any new mutation. Consequently a successful commit cannot be followed by a
-known-over-budget postflight false failure at the present scale.
+Future live query-plan acceptance is repository-controlled: a fixed trusted `EXPLAIN QUERY PLAN`
+wraps the exact current-head SELECT and accepts only a result containing migration-3's
+`observation_heads_observation_id`, with neither `SCAN h` nor an automatic index. It has no SQL
+input surface. It must run only after separate owner approval and migration-3 reconciliation; it
+was not executed here.
 
-This establishes an architectural/resource-contract blocker rather than disguising it by raising
-the limit or deleting integrity checks. The 25,000-row ceiling remains unchanged. Production
-migration, normal collection and resume remain unauthorized. A future separately reviewed design
-must reduce the number of population traversals—for example through transactionally maintained,
-independently auditable current-state summaries—before PR #211 can be considered ready for owner
-merge approval or any production continuation.
+A future true baseline/recovery requires a separate owner-approved resource contract, isolation
+from other substantial writes that UTC day, and exact provider accounting. No 90,000-row baseline
+allowance is executable in this checkpoint. The existing production baseline means the exact
+started first run can eventually resume under the 4,000-delta routine gate; a larger delta stops
+before commit and returns to the owner gate.

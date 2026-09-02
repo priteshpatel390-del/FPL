@@ -4,14 +4,15 @@
 <!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
 ### Current DATA-S2B checkpoint — continuation blocked pending query-safety approval
 
-Follow-up whole-cycle analysis proves the 25,000 `rows_read` contract is structurally
-impossible at the accepted ~9,860-fact scale with the present acceptance design. The indexed
-current-head query alone has approximately three population-sized index/table access legs; a
-consolidated one-pass observation postflight still leaves a conservative complete-cycle model of
-`7N + 64` structural visits. This is SQLite plan reasoning, not exact Cloudflare accounting. The
-runner now rejects the known-unsafe scale before a current-head read or any new mutation. PR #211
-therefore remains an architectural/resource-contract blocker and is not ready for merge or
-production continuation; the 25,000 ceiling was not raised and no integrity check was removed.
+Owner approval rebases the normalized synchronous full-integrity design: 100,000 `rows_read`
+is the expected routine target, 125,000 is the hard read ceiling, 40,000 remains the hard write
+ceiling, and the index-aware routine delta maximum is 4,000. The conservative schema-0003 read
+model remains `7N + 64` (69,084 structural visits at ~9,860 facts), explicitly not an exact D1
+bill. A pre-commit write estimator rejects over-budget work before mutation while returned D1
+metadata remains independently enforced. The consolidated global append-only postflight remains
+synchronous. A fixed repository-owned current-head `EXPLAIN QUERY PLAN` acceptance plan is
+prepared but must not run before separately approved migration-3/live acceptance. No baseline
+allowance, audit split, production operation, migration, or dispatch is authorized here.
 
 PR #210 merged as `287c89be40a5908cbb29422747500f5106f40fb1`; exact-main Verify
 `33665119244` passed. Owner evidence confirms the Cloudflare account exceeded the Workers Free
@@ -22,8 +23,8 @@ join repeatedly scanned `observation_heads`; additive migration 0003 and an exac
 replace it with an indexed observation-ID lookup. The resume also preserves the original run ID
 and `started_at` while recording a genuine later fetch/completion time, and its postflight now
 validates append-only history rather than requiring observations to equal heads. The allowance
-reset alone does not authorize migration or dispatch. Production remains blocked pending a separately reviewed architecture that meets the 25,000-row
-contract, followed by migration, exact-head Verify, and explicit owner approval. No live D1 action
+reset alone does not authorize migration or dispatch. Production remains blocked pending migration-3 approval/application, fixed live-plan acceptance,
+exact-head Verify, and explicit owner approval. No live D1 action
 or collection is part of this correction. See [Option 3 collection](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-D1-REST-COLLECTION.md).
 
 <!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
