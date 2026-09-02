@@ -4,7 +4,7 @@
 <!-- DATA-S2B-E2-D1-QUERY-ARRAY-2026-09-02 -->
 ### Current DATA-S2B checkpoint — E2 disposable D1 query-array compatibility candidate
 
-The live HTTP 400 persisted after literalizing the schema PRAGMA table names. Repository/request-schema isolation identified the D1 REST `/query` multi-statement `{batch:[...]}` wrapper as the next concrete incompatibility candidate; live confirmation is still required. The compatibility candidate serializes every multi-statement request as the documented top-level array while retaining the existing single-statement object, fixed repository plans, statement order, result-count contract and no-retry behavior. The serialized size identities are updated only for the ten wrapper bytes removed. Live disposable acceptance remains required before this candidate can claim PASS. See [E2C-B preparation](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+Live run `33602909144` proved that neither literal PRAGMA table names nor the D1 REST top-level query array removed the INITIAL HTTP 400; both are retained as narrower compatible forms but are live-disfavoured as complete explanations. The candidate now includes a fixed, read-only isolation mode that verifies exact disposable metadata and probes statement 0, each of the 20 PRAGMA-family statements, and fixed progressive groups while retaining only probe ID, bounded HTTP/JSON/result counts and explicit no-mutation/no-cleanup state. It adds no arbitrary SQL or identifier authority. See [E2C-B preparation](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
 
 ### DI-4 physical acceptance remediation — review candidate
 

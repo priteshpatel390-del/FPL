@@ -11,6 +11,14 @@ on:
         description: Exact main or candidate branch containing the approved commit
         required: true
         type: string
+      mode:
+        description: Run the contract or the fixed read-only INITIAL isolation matrix
+        required: true
+        default: contract
+        type: choice
+        options:
+          - contract
+          - initial-isolation
 
 permissions:
   contents: read
@@ -96,6 +104,7 @@ jobs:
       CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT }}
       CLOUDFLARE_E2C_APPROVED_DATABASE_FINGERPRINT: ${{ vars.CLOUDFLARE_E2C_APPROVED_DATABASE_FINGERPRINT }}
       PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+      E2C_MODE: ${{ inputs.mode }}
     steps:
       - name: Check out gated approved revision
         uses: actions/checkout@v5
@@ -115,7 +124,12 @@ jobs:
           test "$(node --version)" = v24.19.0
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain)"
-          node workers/data-platform/e2c-b/run-live-experiment.mjs
+          if test "$E2C_MODE" = initial-isolation; then
+            node workers/data-platform/e2c-b/run-initial-isolation.mjs
+          else
+            test "$E2C_MODE" = contract
+            node workers/data-platform/e2c-b/run-live-experiment.mjs
+          fi
       - name: Upload sanitized evidence
         if: always()
         uses: actions/upload-artifact@v4

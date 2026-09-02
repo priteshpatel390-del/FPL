@@ -9,11 +9,31 @@ import {e2IdentityFingerprint} from '../workers/data-platform/e2-live-http-adapt
 const workflowPath='.github/workflows/data-s2b-e2c-b-live-experiment.yml';
 const workflow=fs.readFileSync(workflowPath,'utf8');
 const runner=fs.readFileSync('workers/data-platform/e2c-b/run-live-experiment.mjs','utf8');
+const isolationRunner=fs.readFileSync('workers/data-platform/e2c-b/run-initial-isolation.mjs','utf8');
 
 test('E2C-B workflow is manual-only with fixed non-cancelling concurrency',()=>{
   assert.match(workflow,/on:\n  workflow_dispatch:/);
   for(const forbidden of [/\n  push:/,/\n  schedule:/,/\n  workflow_call:/,/pull_request:/])assert.doesNotMatch(workflow,forbidden);
   assert.match(workflow,/group: data-s2b-e2c-b-disposable-live-experiment\n  cancel-in-progress: false/);
+  assert.match(workflow,/options:\n          - contract\n          - initial-isolation/);
+});
+
+test('INITIAL isolation is a fixed read-only matrix with bounded evidence and production identity rejection',()=>{
+  assert.match(isolationRunner,/const statements=buildSchemaInspectionPlan\(\)\.statements/);
+  assert.match(isolationRunner,/\['G02',\[0,1\]\].*\['G21',Array\.from\(\{length:21\}/s);
+  assert.match(isolationRunner,/mutationOccurred:false,cleanupOccurred:false/);
+  for(const forbidden of ['console.log','DELETE FROM','CREATE TABLE','INSERT INTO','UPDATE ','retry','error.message','error.stack','provider'])assert.doesNotMatch(isolationRunner,new RegExp(forbidden,'i'));
+  assert.match(isolationRunner,/e2IdentityFingerprint\(accountId\)===fingerprint\('PRODUCTION_ACCOUNT_FINGERPRINT'\)/);
+});
+
+test('INITIAL isolation reports the exact failing statement index without retaining SQL or provider payloads',()=>{
+  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'teamsheet-e2c-isolation-')),preload=path.join(directory,'fetch.mjs'),evidence=path.join(directory,'evidence.json'),calls=path.join(directory,'calls.jsonl');
+  fs.writeFileSync(preload,`import fs from 'node:fs';globalThis.fetch=async(url,request)=>{if(request.method==='GET')return new Response(JSON.stringify({success:true,result:{uuid:process.env.E2C_DATABASE_ID,name:process.env.E2C_DATABASE_NAME}}),{status:200,headers:{'content-type':'application/json'}});const value=JSON.parse(request.body),statements=Array.isArray(value)?value:[value];fs.appendFileSync(process.env.CALLS,JSON.stringify({array:Array.isArray(value),count:statements.length})+'\\n');if(statements.length===1&&statements[0].sql.includes('notnull'))return new Response('{}',{status:400});return new Response(JSON.stringify({success:true,result:statements.map(()=>({success:true,results:[],meta:{changes:0}}))}),{status:200,headers:{'content-type':'application/json'}});};\n`);
+  const account='disposable',database='11111111-2222-4333-8444-555555555555',env={...process.env,APPROVED_SHA:'a'.repeat(40),CLOUDFLARE_ACCOUNT_ID:account,E2C_DATABASE_ID:database,E2C_DATABASE_NAME:'teamsheet-data-e2-rest-validation-20260901-a1b2c3',CLOUDFLARE_API_TOKEN:'fake',CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT:e2IdentityFingerprint(account),CLOUDFLARE_E2C_APPROVED_DATABASE_FINGERPRINT:e2IdentityFingerprint(database),PRODUCTION_ACCOUNT_FINGERPRINT:e2IdentityFingerprint('production'),E2C_EVIDENCE_PATH:evidence,CALLS:calls};
+  const result=spawnSync(process.execPath,['--import',preload,'workers/data-platform/e2c-b/run-initial-isolation.mjs'],{cwd:process.cwd(),env,encoding:'utf8'});assert.equal(result.status,0,result.stderr);
+  const report=JSON.parse(fs.readFileSync(evidence,'utf8')),byId=Object.fromEntries(report.outcomes.map(value=>[value.probeId,value]));assert.equal(report.outcomes.length,28);assert.equal(byId.M00.httpStatus,200);assert.equal(byId.S01.httpStatus,400);assert.equal(byId.S00.httpStatus,200);assert.equal(byId.S02.httpStatus,200);assert.equal(report.mutationOccurred,false);assert.equal(report.cleanupOccurred,false);assert.doesNotMatch(JSON.stringify(report),/SELECT|pragma_|fake|disposable|11111111/);
+  const sent=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);assert.equal(sent.length,27);assert.ok(sent.slice(0,21).every(value=>value.array===false&&value.count===1));assert.ok(sent.slice(21).every(value=>value.array===true&&value.count>1));
+  fs.rmSync(directory,{recursive:true,force:true});
 });
 
 test('E2C-B repository gate precedes the sole protected credential-bearing job',()=>{
