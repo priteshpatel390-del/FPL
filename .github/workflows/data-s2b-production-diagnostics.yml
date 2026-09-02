@@ -1,0 +1,70 @@
+name: DATA-S2B Bounded Production Diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main commit approved for bounded read-only diagnostics
+        required: true
+        type: string
+permissions:
+  contents: read
+  checks: read
+jobs:
+  repository-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with: {ref: "${{ inputs.approved_sha }}", fetch-depth: 0}
+      - id: identity
+        env: {APPROVED_SHA: "${{ inputs.approved_sha }}", GH_TOKEN: "${{ github.token }}"}
+        run: |
+          set -euo pipefail
+          test "${{ github.event_name }}" = workflow_dispatch
+          test "${{ github.ref }}" = refs/heads/main
+          test "${{ github.repository }}" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          response="$RUNNER_TEMP/check-runs.json"
+          curl --fail --silent --max-time 20 -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs" > "$response"
+          node --input-type=module - "$response" <<'JS'
+          import fs from 'node:fs';const body=JSON.parse(fs.readFileSync(process.argv[2]));if(!(body.check_runs??[]).some(row=>row.name==='Tests and deterministic build'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA))throw new Error('exact_head_verify_missing');
+          JS
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+  diagnostics:
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: {name: data-s2b-phase3-deployment}
+    env:
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE3_DEPLOY_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DATA_S1_HTTP_AUTH_TOKEN: ${{ secrets.DATA_S1_HTTP_AUTH_TOKEN }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+      PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+      DIAGNOSTIC_REPORT_PATH: ${{ runner.temp }}/data-s2b-production-diagnostics.json
+    steps:
+      - uses: actions/checkout@v5
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", fetch-depth: 0}
+      - uses: actions/setup-node@v5
+        with: {node-version: 24.19.0}
+      - name: Run bounded read-only diagnostics
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          node workers/data-platform/phase4b/production-diagnostics.mjs
+          test -z "$(git status --porcelain)"
+      - name: Retain sanitized diagnostic report
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-s2b-production-diagnostics-${{ needs.repository-gate.outputs.approved_sha }}
+          path: ${{ runner.temp }}/data-s2b-production-diagnostics.json
+          if-no-files-found: error
+          retention-days: 14

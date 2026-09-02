@@ -1,6 +1,11 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-BOUNDED-PRODUCTION-DIAGNOSTICS-2026-09-02 -->
+### Current DATA-S2B checkpoint — bounded one-pass production diagnostics candidate
+
+PR #204 merged as `0c0ddc7a782a842ce592bc4cb805225242b57a71`; Verify `33623858539` passed. Instead of another first-mismatch protected read, this candidate adds a manual exact-main/Verify-gated diagnostic that stops on identity, database, endpoint, response-bound or secret risk but records safe Worker/Cron/D1 expectation drift and continues through the remaining repository-owned reads. It retains one sanitized 14-day artifact and has no mutation, collector, cleanup or retry capability. Merge and dispatch require owner approval. See [bounded production diagnostics](workers/data-platform/DATA-S2B-BOUNDED-PRODUCTION-DIAGNOSTICS.md).
+
 <!-- DATA-S2B-PRODUCTION-CRON-DIAGNOSTIC-2026-09-02 -->
 ### Current DATA-S2B checkpoint — post-merge Cron drift diagnostic
 
