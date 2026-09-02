@@ -20,7 +20,7 @@ if(metadataResult.payload?.result?.uuid!==databaseId||metadataResult.payload?.re
 const statements=buildSchemaInspectionPlan().statements;
 const probes=[...statements.map((_,index)=>[`S${String(index).padStart(2,'0')}`,[index]]),['G02',[0,1]],['G04',[0,1,2,3]],['T04',[1,2,3,4]],['G08',[0,1,2,3,4,5,6,7]],['G16',Array.from({length:16},(_,i)=>i)],['G21',Array.from({length:21},(_,i)=>i)]];
 const outcomes=[metadata];
-for(const [probeId,indexes] of probes){const selected=indexes.map(index=>statements[index]);outcomes.push((await inspect(probeId,`${base}/query`,{method:'POST',body:JSON.stringify(selected.length===1?selected[0]:selected)},selected.length)).outcome);}
+for(const [probeId,indexes] of probes){const selected=indexes.map(index=>statements[index]);outcomes.push((await inspect(probeId,`${base}/query`,{method:'POST',body:JSON.stringify(selected.length===1?selected[0]:{batch:selected})},selected.length)).outcome);}
 const report={evidenceSchemaVersion:'e2c-b-initial-isolation-v1',sourceSha:required('APPROVED_SHA'),mutationOccurred:false,cleanupOccurred:false,outcomes};
 fs.writeFileSync(required('E2C_EVIDENCE_PATH'),JSON.stringify(report,null,2)+'\n',{encoding:'utf8',mode:0o600});
 if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`## DATA-S2B E2C-B INITIAL isolation\n\n- Metadata: **PASS**\n- Read-only probes: **${probes.length}**\n- Mutation: **NONE**\n- Cleanup: **NONE**\n`);

@@ -4,9 +4,9 @@ import {D1_MAX_BATCH_STATEMENTS,D1_MAX_VALUE_BYTES} from './official-fpl-d1-rest
 
 export const E2_REPRESENTATIVE_FACTS=9860;
 /** Read-only limit-profile 100% target; this is not W01's serialized mutation size. */
-export const E2_REPRESENTATIVE_REQUEST_BYTES=3688865;
+export const E2_REPRESENTATIVE_REQUEST_BYTES=3688875;
 export const E2_REPRESENTATIVE_STATEMENTS=24;
-export const E2_W01_SERIALIZED_REQUEST_BYTES=2378742;
+export const E2_W01_SERIALIZED_REQUEST_BYTES=2378752;
 export const E2_SCHEMA_PHASES=Object.freeze(['initial','setup']);
 export const E2_INITIAL_SCHEMA_REPRESENTATION=Object.freeze([]);
 export const E2_SCHEMA_DDL=Object.freeze([
@@ -81,7 +81,7 @@ export function buildSchemaInspectionPlan(){
 }
 export function buildLargeJsonAffinityPlan(length=1990000){const value=JSON.stringify({payload:'x'.repeat(length-14)});return freezePlan('P08',false,[{sql:'SELECT length(?) AS parameter_length',params:[value]}]);}
 export function buildStatementProfile(count){return freezePlan(`L-${count}`,false,Array.from({length:count},(_,i)=>({sql:'SELECT ? AS sequence_no',params:[String(i+1)]})));}
-const body=plan=>JSON.stringify(plan.statements.length===1?plan.statements[0]:plan.statements);
+const body=plan=>JSON.stringify(plan.statements.length===1?plan.statements[0]:{batch:plan.statements});
 export const serializedBodyBytes=plan=>encoder.encode(body(inspectE2ValidationPlan(plan)||(()=>{throw new Error('e2_plan_untrusted');})())).byteLength;
 export function buildBodySizeProfile(targetBytes){
   if(!Number.isSafeInteger(targetBytes)||targetBytes<100||targetBytes>5*1024*1024)throw new Error('e2_body_target_invalid');

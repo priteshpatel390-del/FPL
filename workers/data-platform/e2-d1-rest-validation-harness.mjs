@@ -54,7 +54,7 @@ export function createE2ValidationHarness(options={}){
   const identity=validateDisposableIdentity(options.identity);const transport=options.transport;
   return Object.freeze({execute:async(plan,{sourceSha='offline-source-sha',startedAt='2026-09-01T00:00:00.000Z'}={})=>{
     const trusted=inspectE2ValidationPlan(plan);if(!trusted)fail('e2_plan_untrusted');let calls=0,payload,classification,rowCount=null;
-    let response;try{calls++;response=await transport(Object.freeze({operation:'synthetic-d1-query',body:JSON.stringify(trusted.statements.length===1?trusted.statements[0]:trusted.statements)}));}
+    let response;try{calls++;response=await transport(Object.freeze({operation:'synthetic-d1-query',body:JSON.stringify(trusted.statements.length===1?trusted.statements[0]:{batch:trusted.statements})}));}
     catch{classification=trusted.mutation?CLASS.UNKNOWN:CLASS.TRANSPORT;return evidence();}
     const status=Number(response?.status);
     if(status===401||status===403)classification=CLASS.AUTH;
