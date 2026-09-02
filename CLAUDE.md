@@ -12,6 +12,11 @@ DI-4 renders the frozen, ephemeral DI-3 parity artifact through a narrow determi
 
 # CLAUDE.md — onboarding for every future development session
 
+<!-- DATA-S2B-E2C-B-INITIAL-SCHEMA-COMPATIBILITY-2026-09-02 -->
+### Current DATA-S2B checkpoint — E2C-B initial schema compatibility candidate
+
+E2C-B live attempt 2 stopped before mutation when its 21-statement INITIAL schema inspection received HTTP 400. The narrow repository candidate replaces bound table-name arguments in the 15 table/index/foreign-key PRAGMA table-valued calls with deterministically quoted literals generated only from the fixed five-table repository allowlist. The REST batch shape, 21-result contract, semantic schema acceptance, ordering, mutations, retries and cleanup remain unchanged. No Cloudflare request, workflow dispatch, D1 operation, deployment or credential/environment change was performed while preparing this correction. See [E2C-B preparation](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
 <!-- DATA-S2B-PHASE4B-POST-ACTIVATION-MACHINERY-2026-08-31 -->
 ### Current DATA-S2B checkpoint — post-activation deployment machinery remediation candidate
 
