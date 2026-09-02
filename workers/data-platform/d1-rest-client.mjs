@@ -14,7 +14,7 @@ export function createD1RestClient(options){
   return Object.freeze({run:async plan=>{
     const trusted=inspectOfficialFplD1RestPlan(plan);if(!trusted)fail('d1_plan_untrusted');
     if(trusted.statements.length>D1_MAX_BATCH_STATEMENTS)fail('d1_plan_untrusted');
-    const bodyObject=trusted.statements.length===1?trusted.statements[0]:{batch:trusted.statements};
+    const bodyObject=trusted.statements.length===1?trusted.statements[0]:trusted.statements;
     const body=JSON.stringify(bodyObject);if(encoder.encode(body).byteLength>D1_REST_REQUEST_LIMIT_BYTES)fail('d1_request_too_large');
     let response;try{response=await transport(Object.freeze({method:'POST',url,headers:Object.freeze({Authorization:`Bearer ${token}`,'Content-Type':'application/json'}),body,redirect:'error'}));}
     catch{fail(trusted.mutation?'d1_mutation_outcome_unknown':'d1_transport_failed');}

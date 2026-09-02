@@ -33,8 +33,8 @@ test('E2C-B uses runner context only at step scope and shares one bounded eviden
   assert.match(liveJob,/name: data-s2b-e2c-b-sanitized-evidence\n          path: \$\{\{ runner\.temp \}\}\/e2c-b-sanitized-evidence\.json/);
 });
 
-test('E2C-B gate pins approved current main, exact-head Verify and rejects reruns in both jobs',()=>{
-  for(const required of ['test "$RUN_ATTEMPT" = 1','test "${GITHUB_RUN_ATTEMPT}" = 1','test "$remote_main" = "$APPROVED_SHA"','row.head_sha===process.env.APPROVED_SHA',"row.name==='Tests and deterministic build'","row.conclusion==='success'"])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+test('E2C-B gate pins an allowlisted exact branch head, exact-head Verify and rejects reruns in both jobs',()=>{
+  for(const required of ['test "$RUN_ATTEMPT" = 1','test "${GITHUB_RUN_ATTEMPT}" = 1','test "$remote_ref" = "$APPROVED_SHA"',"grep -Eq '^(main|fix/data-s2b-e2-disposable-d1-live)$'",'row.head_sha===process.env.APPROVED_SHA',"row.name==='Tests and deterministic build'","row.conclusion==='success'"])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   assert.equal((workflow.match(/workflow_dispatch/g)||[]).length,2);
 });
 

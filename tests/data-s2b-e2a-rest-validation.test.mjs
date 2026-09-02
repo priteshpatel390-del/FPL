@@ -111,7 +111,7 @@ test('L01-L06 statement profiles preserve representative count and reject >40',(
 });
 
 test('L07-L11 body profiles preserve exact deterministic serialized bytes',()=>{
-  assert.deepEqual(plan.E2_BODY_PROFILE_TARGETS,[922219,1844438,2766656,3688875,4611094]);
+  assert.deepEqual(plan.E2_BODY_PROFILE_TARGETS,[922216,1844433,2766649,3688865,4611081]);
   for(const target of plan.E2_BODY_PROFILE_TARGETS){const built=plan.buildBodySizeProfile(target);assert.equal(plan.serializedBodyBytes(built),target);assert.equal(built.mutation,false);}
 });
 
