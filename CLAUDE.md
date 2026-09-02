@@ -4,7 +4,7 @@
 <!-- DATA-S2B-E2-D1-QUERY-ARRAY-2026-09-02 -->
 ### Current DATA-S2B checkpoint — E2 disposable D1 query-array compatibility candidate
 
-Live run `33602909144` proved that neither literal PRAGMA table names nor the D1 REST top-level query array removed the INITIAL HTTP 400; both are retained as narrower compatible forms but are live-disfavoured as complete explanations. The candidate now includes a fixed, read-only isolation mode that verifies exact disposable metadata and probes statement 0, each of the 20 PRAGMA-family statements, and fixed progressive groups while retaining only probe ID, bounded HTTP/JSON/result counts and explicit no-mutation/no-cleanup state. It adds no arbitrary SQL or identifier authority. See [E2C-B preparation](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+Live isolation run `33604986736` proved that each of the five `pragma_table_xinfo(...)` statements alone receives HTTP 400 while `sqlite_schema`, every `pragma_index_list`, correlated `pragma_index_xinfo` and `pragma_foreign_key_list` statement succeeds. The narrow compatibility candidate replaces only those five statements with documented literal-name `PRAGMA table_info(...)`. Because `table_info` omits generated/hidden columns, assembly requires the exact six returned fields, injects `hidden: 0` only after comparing visible-row count with a quote/parenthesis-aware count of ordinary column declarations in `sqlite_schema`, and rejects any mismatch. The 21-result contract and every ordering, mutation, identity, retry and cleanup boundary remain unchanged. See [E2C-B preparation](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
 
 ### DI-4 physical acceptance remediation — review candidate
 

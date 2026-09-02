@@ -67,8 +67,8 @@ test('schema inspection uses only fixed quote-safe D1 introspection forms',()=>{
     assert.equal(statements.length,4,table);
   }
   for(const statement of built.statements.slice(1)){
-    assert.match(statement.sql,/pragma_(?:table_xinfo|index_list|index_xinfo|foreign_key_list)\(/);
-    assert.doesNotMatch(statement.sql,/pragma_(?:table_xinfo|index_list|foreign_key_list)\(\?\)/);
+    assert.match(statement.sql,/(?:PRAGMA table_info|pragma_(?:index_list|index_xinfo|foreign_key_list))\(/);
+    assert.doesNotMatch(statement.sql,/pragma_table_xinfo|(?:table_info|pragma_(?:index_list|foreign_key_list))\(\?\)/i);
   }
   for(const value of ["e2_atomicity' UNION SELECT secret",'shadow_observations','e2_unexpected','']){
     assert.throws(()=>plan.quoteE2SchemaTableLiteral(value),/e2_schema_table_not_approved/);

@@ -72,7 +72,7 @@ export function buildSchemaInspectionPlan(){
   const statements=[{sql:'SELECT type,name,tbl_name,sql FROM sqlite_schema ORDER BY type,name',params:[]}];
   for(const table of E2_APPROVED_TABLES){
     const literal=quoteE2SchemaTableLiteral(table);
-    statements.push({sql:`SELECT cid,name,type,notnull,dflt_value,pk,hidden FROM pragma_table_xinfo(${literal}) ORDER BY cid`,params:[]});
+    statements.push({sql:`PRAGMA table_info(${literal})`,params:[]});
     statements.push({sql:`SELECT seq,name,"unique",origin,partial FROM pragma_index_list(${literal}) ORDER BY seq`,params:[]});
     statements.push({sql:`SELECT il.name AS index_name,xi.seqno,xi.cid,xi.name,xi.desc,xi.coll,xi.key FROM pragma_index_list(${literal}) il JOIN pragma_index_xinfo(il.name) xi WHERE xi.key=1 ORDER BY il.name,xi.seqno`,params:[]});
     statements.push({sql:`SELECT id,seq,"table","from","to",on_update,on_delete,match FROM pragma_foreign_key_list(${literal}) ORDER BY id,seq`,params:[]});
