@@ -119,3 +119,22 @@ schedule activation is the later Stage D repository change.
 Sources rechecked for this design: [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/),
 [Cloudflare D1 Query API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/query/),
 and [GitHub scheduled workflow semantics](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#schedule).
+
+## First production attempt — reconciliation required
+
+Manual run `33662554360` was dispatched once from exact verified `main`
+`0fa955ec69449015c57fd4dc22115d3b779ea0a2` and required protected-environment approval. Its
+original attempt 1 passed checkout, identity, governance, deterministic-run and start-ledger
+gates, then fetched the fixed Official FPL inputs. It stopped while decoding provider accounting
+for the current-head read with the sanitized classification `d1_result_contract_invalid`.
+No current-head result was admitted and no observation/head/final-completion mutation was
+attempted. The definite successful start mutation means the run has a visible unresolved
+`started` ledger row; it must not be called complete or blindly retried.
+
+The failure is classified as a repository observability defect until the invalid metadata field
+and class are known. This candidate narrows future sanitized errors to the fixed provider field
+(`rows_read`, `rows_written`, or `changes`) and either `type` or `range`, without including the
+provider value, response, SQL, identifiers, payload, or credentials. It does not relax any
+metadata or resource ceiling. A second production dispatch is not authorized by the first-run
+approval: merge, exact-main Verify, explicit owner approval, and reconcile-before-stop review of
+the unresolved first ledger row are required before any further production collection.
