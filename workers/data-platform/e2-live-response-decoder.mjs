@@ -31,6 +31,7 @@ export async function decodeE2QueryResponse(response,plan){
   const finish=(result,values)=>stage?withDiagnostic(result,diagnostic(stage,expected,{...base,...values})):Object.freeze(result);
   if(status===401||status===403)return finish({...malformed(),classification:E2_LIVE_RESPONSE_CLASS.AUTH},{reason:'http_status',classification:E2_LIVE_RESPONSE_CLASS.AUTH});
   if(status===429)return finish({...malformed(),classification:E2_LIVE_RESPONSE_CLASS.RATE},{reason:'http_status',classification:E2_LIVE_RESPONSE_CLASS.RATE});
+  if(status===400&&['A02','A03'].includes(trusted.caseId)){let rejected;try{rejected=await response.json();}catch{}if(rejected&&typeof rejected==='object'&&!Array.isArray(rejected)&&rejected.success===false&&Array.isArray(rejected.errors)&&rejected.errors.length>0)return finish({...malformed(),classification:E2_LIVE_RESPONSE_CLASS.SQL_FAILURE},{reason:'http_status',classification:E2_LIVE_RESPONSE_CLASS.SQL_FAILURE});}
   if(status===null||status<200||status>=300){const classification=trusted.mutation?E2_LIVE_RESPONSE_CLASS.UNKNOWN:E2_LIVE_RESPONSE_CLASS.TRANSPORT;return finish({...malformed(),classification},{reason:'http_status',classification});}
   let payload;try{payload=await response.json();}catch{return finish(malformed(),{reason:'json_parse'});}
   const present=!!payload&&typeof payload==='object'&&!Array.isArray(payload)&&Object.hasOwn(payload,'success'),success=present&&typeof payload.success==='boolean'?payload.success:null,json={jsonParsed:true,topLevelSuccessPresent:present,topLevelSuccessValue:success};
