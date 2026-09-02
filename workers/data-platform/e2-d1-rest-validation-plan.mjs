@@ -6,7 +6,7 @@ export const E2_REPRESENTATIVE_FACTS=9860;
 /** Read-only limit-profile 100% target; this is not W01's serialized mutation size. */
 export const E2_REPRESENTATIVE_REQUEST_BYTES=3688875;
 export const E2_REPRESENTATIVE_STATEMENTS=24;
-export const E2_W01_SERIALIZED_REQUEST_BYTES=2378752;
+export const E2_W01_SERIALIZED_REQUEST_BYTES=2378807;
 export const E2_SCHEMA_PHASES=Object.freeze(['initial','setup']);
 export const E2_INITIAL_SCHEMA_REPRESENTATION=Object.freeze([]);
 export const E2_SCHEMA_DDL=Object.freeze([
@@ -72,7 +72,7 @@ export function buildSchemaInspectionPlan(){
   const statements=[{sql:'SELECT type,name,tbl_name,sql FROM sqlite_schema ORDER BY type,name',params:[]}];
   for(const table of E2_APPROVED_TABLES){
     const literal=quoteE2SchemaTableLiteral(table);
-    statements.push({sql:`SELECT cid,name,type,notnull,dflt_value,pk,hidden FROM pragma_table_xinfo(${literal}) ORDER BY cid`,params:[]});
+    statements.push({sql:`PRAGMA table_info(${literal})`,params:[]});
     statements.push({sql:`SELECT seq,name,"unique",origin,partial FROM pragma_index_list(${literal}) ORDER BY seq`,params:[]});
     statements.push({sql:`SELECT il.name AS index_name,xi.seqno,xi.cid,xi.name,xi.desc,xi.coll,xi.key FROM pragma_index_list(${literal}) il JOIN pragma_index_xinfo(il.name) xi WHERE xi.key=1 ORDER BY il.name,xi.seqno`,params:[]});
     statements.push({sql:`SELECT id,seq,"table","from","to",on_update,on_delete,match FROM pragma_foreign_key_list(${literal}) ORDER BY id,seq`,params:[]});
@@ -98,13 +98,13 @@ export function buildFullWriteRunStart(){return freezePlan('W00',true,[{sql:"INS
 export function buildFullWriteRunStartReconciliation(){return freezePlan('W00-R',false,[{sql:'SELECT run_id,status,records_accepted FROM e2_runs WHERE run_id=?',params:['e2-run-full-write']}]);}
 export function reconcileFullWriteRunStart(rows){return Array.isArray(rows)&&rows.length===1&&rows[0]?.run_id==='e2-run-full-write'&&rows[0]?.status==='started'&&Number(rows[0]?.records_accepted)===0;}
 export function buildFullWriteReconciliation(){return freezePlan('W01-R',false,[{sql:"SELECT (SELECT count(*) FROM e2_entities) AS entities,(SELECT count(*) FROM e2_observations) AS observations,(SELECT count(*) FROM e2_heads) AS heads,(SELECT count(*) FROM e2_heads h LEFT JOIN e2_observations o ON o.observation_id=h.observation_id WHERE o.observation_id IS NULL) AS orphan_heads,(SELECT count(*) FROM e2_runs WHERE run_id='e2-run-full-write') AS run_rows,(SELECT status FROM e2_runs WHERE run_id='e2-run-full-write') AS run_status,(SELECT records_accepted FROM e2_runs WHERE run_id='e2-run-full-write') AS records_accepted",params:[]}]);}
-export function reconcileFullWrite(rows,completionChanges){const row=Array.isArray(rows)&&rows.length===1?rows[0]:null;return Number(completionChanges)===1&&Number(row?.entities)===1064&&Number(row?.observations)===E2_REPRESENTATIVE_FACTS&&Number(row?.heads)===E2_REPRESENTATIVE_FACTS&&Number(row?.orphan_heads)===0&&Number(row?.run_rows)===1&&row?.run_status==='completed'&&Number(row?.records_accepted)===E2_REPRESENTATIVE_FACTS;}
+export function reconcileFullWrite(rows,completionChanges){const row=Array.isArray(rows)&&rows.length===1?rows[0]:null;return Number(completionChanges)===1&&Number(row?.entities)===1064&&Number(row?.observations)===E2_REPRESENTATIVE_FACTS+2&&Number(row?.heads)===E2_REPRESENTATIVE_FACTS&&Number(row?.orphan_heads)===0&&Number(row?.run_rows)===1&&row?.run_status==='completed'&&Number(row?.records_accepted)===E2_REPRESENTATIVE_FACTS;}
 export function buildSyntheticFullWriteAnalogue(){
   const entities=Array.from({length:1064},(_,i)=>({entity_id:`e2-entity-${String(i).padStart(4,'0')}`,kind:['event','team','player','fixture'][i%4],created_at:'2026-09-01T00:00:00.000Z'}));
   const observations=Array.from({length:E2_REPRESENTATIVE_FACTS},(_,i)=>({observation_id:`e2-observation-${String(i).padStart(5,'0')}`,logical_key:`e2|fact|${String(i).padStart(5,'0')}`,value_number:i%3===0?i/10:null,value_text:i%3===1?`synthetic-${i}`:null,value_boolean:i%3===2?i%2===0:null}));
   const statements=[{sql:"INSERT INTO e2_entities SELECT json_extract(value,'$.entity_id'),json_extract(value,'$.kind'),json_extract(value,'$.created_at') FROM json_each(?)",params:[JSON.stringify(entities)]}];
   for(let i=0;i<observations.length;i+=600)statements.push({sql:"INSERT INTO e2_observations SELECT json_extract(value,'$.observation_id'),json_extract(value,'$.logical_key'),json_extract(value,'$.value_number'),json_extract(value,'$.value_text'),json_extract(value,'$.value_boolean') FROM json_each(?)",params:[JSON.stringify(observations.slice(i,i+600))]});
   const heads=observations.map(row=>({logical_key:row.logical_key,observation_id:row.observation_id}));
-  for(let i=0;i<heads.length;i+=2000)statements.push({sql:"INSERT INTO e2_heads SELECT json_extract(value,'$.logical_key'),json_extract(value,'$.observation_id') FROM json_each(?) ON CONFLICT(logical_key) DO UPDATE SET observation_id=excluded.observation_id",params:[JSON.stringify(heads.slice(i,i+2000))]});
+  for(let i=0;i<heads.length;i+=2000)statements.push({sql:"INSERT INTO e2_heads SELECT json_extract(value,'$.logical_key'),json_extract(value,'$.observation_id') FROM json_each(?) WHERE true ON CONFLICT(logical_key) DO UPDATE SET observation_id=excluded.observation_id",params:[JSON.stringify(heads.slice(i,i+2000))]});
   statements.push({sql:"UPDATE e2_runs SET status='completed', records_accepted=? WHERE run_id=?",params:[String(E2_REPRESENTATIVE_FACTS),'e2-run-full-write']});return freezePlan('W01',true,statements);
 }

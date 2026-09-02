@@ -11,7 +11,7 @@ const RESPONSE_SET=new Set(Object.values(E2_LIVE_RESPONSE_CLASS)),RECONCILIATION
 const MUTATIONS=new Set(['F-SCHEMA-SETUP','A01','A02','A03','P-STORAGE-WRITE','W00','W01']);
 const COUNT_KEYS=Object.freeze(['e2_atomicity','e2_entities','e2_observations','e2_heads','e2_runs']);
 const sha=value=>createHash('sha256').update(value).digest('hex');
-const bodyOf=plan=>JSON.stringify(plan.statements.length===1?plan.statements[0]:{batch:plan.statements});
+const bodyOf=plan=>JSON.stringify(plan.statements.length===1?plan.statements[0]:plan.statements);
 const boundedInteger=(value,max=1000000)=>Number.isSafeInteger(value)&&value>=0&&value<=max?value:null;
 const boundedCounts=value=>{if(value===null||value===undefined)return null;if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!COUNT_KEYS.includes(key))||Object.values(value).some(count=>!Number.isSafeInteger(count)||count<0||count>1000000))return null;return Object.freeze(Object.fromEntries(Object.entries(value)));};
 const runner=value=>{if(typeof value!=='string'||!/^[A-Za-z0-9._:-]{1,64}$/.test(value))throw Object.assign(new Error('e2_runner_identity_invalid'),{code:'e2_runner_identity_invalid'});return value;};

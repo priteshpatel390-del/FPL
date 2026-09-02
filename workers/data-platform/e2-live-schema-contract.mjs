@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 
 const PRODUCTION_TABLES=new Set(['shadow_observations','observation_heads','canonical_entities','ingestion_runs','data_sources','data_source_revisions']);
-export const E2_PERMITTED_INITIAL_SYSTEM_OBJECTS=Object.freeze(['sqlite_sequence']);
+export const E2_PERMITTED_INITIAL_SYSTEM_OBJECTS=Object.freeze(['_cf_KV','sqlite_sequence']);
 const clean=value=>value===null?null:String(value);
 const column=(cid,name,type,notnull=0,dflt_value=null,pk=0)=>({cid,name,type,notnull,dflt_value,pk,hidden:0});
 const index=(unique,origin,columns)=>({unique,origin,partial:0,columns:columns.map(([cid,name],seqno)=>({seqno,cid,name,desc:0,coll:'BINARY',key:1}))});
@@ -42,10 +42,17 @@ export const deriveLiveSchemaFingerprint=metadata=>`sha256:${createHash('sha256'
 export const E2_EXPECTED_SEMANTIC_SCHEMA_FINGERPRINT=deriveLiveSchemaFingerprint(E2_EXPECTED_SEMANTIC_SCHEMA);
 export function validateInitialLiveObjects(objects){if(!Array.isArray(objects))throw new Error('e2_initial_objects_invalid');for(const object of objects){const {name,type}=object||{};if(PRODUCTION_TABLES.has(name))throw new Error('e2_production_schema_rejected');if(type!=='table'||!E2_PERMITTED_INITIAL_SYSTEM_OBJECTS.includes(name))throw new Error('e2_initial_schema_unexpected_object');}if(new Set(objects.map(row=>row.name)).size!==objects.length)throw new Error('e2_initial_schema_unexpected_object');return true;}
 export function validateSetupLiveSchema(metadata){const observed=deriveLiveSchemaFingerprint(metadata);if(observed!==E2_EXPECTED_SEMANTIC_SCHEMA_FINGERPRINT)throw new Error('e2_setup_schema_semantic_mismatch');return observed;}
+function declaredColumnCount(sql){
+  const source=String(sql||''),open=source.indexOf('(');if(!/^\s*CREATE\s+TABLE\b/i.test(source)||open<0)throw new Error('e2_schema_table_sql_invalid');
+  const parts=[];let value='',depth=0,quote=null,close=-1;
+  for(let i=open+1;i<source.length;i++){const char=source[i];if(quote){value+=char;if(char===quote){if(source[i+1]===quote){value+=source[++i];}else quote=null;}continue;}if(char==="'"||char==='"'||char==='`'){quote=char;value+=char;continue;}if(char==='['){quote=']';value+=char;continue;}if(char==='('){depth++;value+=char;continue;}if(char===')'){if(depth){depth--;value+=char;continue;}parts.push(value.trim());close=i;break;}if(char===','&&!depth){parts.push(value.trim());value='';continue;}value+=char;}
+  if(close<0||source.slice(close+1).trim()||parts.some(part=>!part))throw new Error('e2_schema_table_sql_invalid');
+  return parts.filter(part=>!/^\s*(?:CONSTRAINT\b\s+\S+\s+)?(?:PRIMARY\s+KEY|UNIQUE|CHECK|FOREIGN\s+KEY)\b/i.test(part)).length;
+}
 export function assembleE2SchemaMetadata(rowsByStatement,tables){
   if(!Array.isArray(rowsByStatement)||!Array.isArray(tables)||rowsByStatement.length!==1+tables.length*4)throw new Error('e2_schema_results_invalid');
   const schemaRows=rowsByStatement[0];if(!Array.isArray(schemaRows))throw new Error('e2_schema_results_invalid');const sqlByName=new Map(schemaRows.filter(row=>row?.type==='table').map(row=>[row.name,row.sql]));
-  const metadata=tables.map((name,index)=>{const offset=1+index*4,columns=rowsByStatement[offset],indexRows=rowsByStatement[offset+1],indexColumns=rowsByStatement[offset+2],foreignKeys=rowsByStatement[offset+3];if(![columns,indexRows,indexColumns,foreignKeys].every(Array.isArray))throw new Error('e2_schema_results_invalid');return {name,sql:sqlByName.get(name),columns,indexes:indexRows.map(item=>({...item,columns:indexColumns.filter(column=>column.index_name===item.name)})),foreignKeys};});
+  const metadata=tables.map((name,index)=>{const offset=1+index*4,columns=rowsByStatement[offset],indexRows=rowsByStatement[offset+1],indexColumns=rowsByStatement[offset+2],foreignKeys=rowsByStatement[offset+3],sql=sqlByName.get(name);if(![columns,indexRows,indexColumns,foreignKeys].every(Array.isArray))throw new Error('e2_schema_results_invalid');for(const item of columns)if(!item||!['cid','name','type','notnull','dflt_value','pk'].every(key=>Object.hasOwn(item,key))||Object.hasOwn(item,'hidden'))throw new Error('e2_schema_results_invalid');if(declaredColumnCount(sql)!==columns.length)throw new Error('e2_schema_hidden_column_rejected');return {name,sql,columns:columns.map(item=>({...item,hidden:0})),indexes:indexRows.map(item=>({...item,columns:indexColumns.filter(column=>column.index_name===item.name)})),foreignKeys};});
   const allowedTables=new Set([...tables,...E2_PERMITTED_INITIAL_SYSTEM_OBJECTS]),allowedIndexes=new Map();for(const item of metadata)for(const index of item.indexes){if(typeof index.name!=='string'||!index.name)throw new Error('e2_schema_results_invalid');allowedIndexes.set(index.name,item.name);}
   const seen=new Set();for(const object of schemaRows){if(!object||typeof object.name!=='string'||seen.has(`${object.type}:${object.name}`))throw new Error('e2_setup_schema_unexpected_object');seen.add(`${object.type}:${object.name}`);if(object.type==='table'){if(!allowedTables.has(object.name))throw new Error('e2_setup_schema_unexpected_object');}else if(object.type==='index'){if(allowedIndexes.get(object.name)!==object.tbl_name)throw new Error('e2_setup_schema_unexpected_object');}else throw new Error('e2_setup_schema_unexpected_object');}
   if(tables.some(name=>!schemaRows.some(row=>row?.type==='table'&&row.name===name))||[...allowedIndexes].some(([name,table])=>!schemaRows.some(row=>row?.type==='index'&&row.name===name&&row.tbl_name===table)))throw new Error('e2_setup_schema_unexpected_object');

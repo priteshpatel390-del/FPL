@@ -36,7 +36,7 @@ The representative accepted shape (38 events, 20 teams, 626 players and 380 fixt
 
 ## Explicit limitations and approval gate
 
-* **REST batch atomicity is UNKNOWN.** Worker `db.batch()` semantics are not projected onto REST `{batch:[...]}`. E1 does not depend on an atomicity claim; disposable-D1 proof is a later checkpoint.
+* **REST multi-query atomicity is UNKNOWN.** Worker `db.batch()` semantics are not projected onto the REST `/query` top-level query array. E1 does not depend on an atomicity claim; disposable-D1 proof is a later checkpoint.
 * REST parameter affinity remains unproved until disposable-D1 validation.
 * Practical REST batch/body behavior still needs measurement without production data.
 * A pinned account/database request path does not prove that a future D1 Write token can be restricted to exactly one database. Token blast radius remains unresolved; no token was created or inspected.
