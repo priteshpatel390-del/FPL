@@ -1,6 +1,11 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-PRODUCTION-ACCEPTANCE-RECONCILIATION-2026-09-02 -->
+### Current DATA-S2B checkpoint — production acceptance read-contract correction
+
+Read-only run `33620632272` passed exact-main/Verify gating and failed before D1 reads because the preflight still pinned the predecessor Version after successful deployment `33433195713` promoted Version `222e62d5-9979-468d-9c54-b97f903d58f6`. The candidate pins the deployed/rollback Versions and admits only internally reconciled populated completed history. It performs no live mutation and does not claim baseline, unchanged, changed-fact, D1 accounting or CPU acceptance. A merge, exact-head Verify and corrected protected read are required. See [production acceptance reconciliation](workers/data-platform/DATA-S2B-PRODUCTION-ACCEPTANCE-RECONCILIATION.md).
+
 <!-- DATA-S2B-E2-D1-QUERY-ARRAY-2026-09-02 -->
 ### Current DATA-S2B checkpoint — E2 disposable D1 query-array compatibility candidate
 

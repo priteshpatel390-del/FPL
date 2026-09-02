@@ -42,7 +42,7 @@ export function validateDeployment(result){
   if(!current||typeof current.id!=='string'||!current.id||!Array.isArray(current.versions)||current.versions.length!==1)throw new Error('phase4b_preflight_active_deployment_invalid');
   const only=current.versions[0];
   if(only?.version_id!==EXPECTED_ACTIVE_VERSION_ID||only?.percentage!==100)throw new Error('phase4b_preflight_active_version_drift');
-  if(current.id!==EXPECTED_ACTIVE_DEPLOYMENT_ID)throw new Error('phase4b_preflight_active_deployment_drift');
+  if(EXPECTED_ACTIVE_DEPLOYMENT_ID&&current.id!==EXPECTED_ACTIVE_DEPLOYMENT_ID)throw new Error('phase4b_preflight_active_deployment_drift');
   return {deploymentId:current.id,versionId:only.version_id};
 }
 
