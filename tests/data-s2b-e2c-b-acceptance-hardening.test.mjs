@@ -93,3 +93,5 @@ test('E2C-B workflow retains only a bounded sanitized artifact and never automat
   assert.match(workflow,/run once without retry or cleanup/);
   assert.doesNotMatch(workflow,/actions\/cache|curl[^\n]*(\/query|d1\/database)|wrangler/);
 });
+
+test('E2C-B report admits only validated closed pre-mutation diagnostics',()=>{assert.match(runner,/preMutationDiagnostics=Array\.isArray\(error\?\.preMutationDiagnostics\)\?error\.preMutationDiagnostics\.map\(validateE2PreMutationDiagnostic\):\[\]/);assert.match(runner,/preMutationDiagnostics:Object\.freeze\(preMutationDiagnostics\)/);for(const forbidden of ['error.message','error.stack','error.response','JSON.stringify(error)'])assert.doesNotMatch(runner,new RegExp(forbidden.replace('.','\\.')));});
