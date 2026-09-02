@@ -138,3 +138,101 @@ provider value, response, SQL, identifiers, payload, or credentials. It does not
 metadata or resource ceiling. A second production dispatch is not authorized by the first-run
 approval: merge, exact-main Verify, explicit owner approval, and reconcile-before-stop review of
 the unresolved first ledger row are required before any further production collection.
+
+## First-run resume candidate (production continuation blocked)
+
+PR #210 merged as `287c89be40a5908cbb29422747500f5106f40fb1`; exact-main Verify
+`33665119244` passed. The unresolved row retains the immutable deterministic identity and
+`started_at` `2026-09-02T17:41:00.000Z`. Resume admits only that exact untouched row and never
+inserts a second start. Because the original response bodies were not retained, a continuation
+performs a new fetch: its `fetched_at`, entity/head update time, observation creation time, and
+completion time come from the runner's genuine current UTC clock and must be later than the
+immutable start. The workflow accepts no identity or timestamp input.
+
+Postflight is append-only and run-aware. It requires the exact completed run and counters, the
+run-owned observation count equal to `records_accepted`, governed head count equal to distinct
+accepted logical-key coverage, every governed head to resolve to an accepted observation with
+the same logical key and a completed owning run, and zero orphan heads, retained non-accepted
+observations, quarantined observations, rejection rows, quarantined/rejected counters, or error
+class. Historical observation count is deliberately not compared with head count.
+
+### D1 read-limit evidence and query-plan correction
+
+The owner supplied a Cloudflare notification that this account exceeded the Workers Free D1
+daily allowance of **5,000,000 rows_read**. Cloudflare stated that requests incurring reads are
+blocked until `2026-09-03T00:00:00Z`. This proves account-level exhaustion, not that failed run
+`33662554360` alone consumed five million reads, so no exact rows-read range is attributed to
+that run. The reset does not authorize a dispatch. Production remains blocked until this
+query-cost correction is merged, migration 0003 is separately approved/applied, and exact-head
+verification and owner approval complete.
+
+Local SQLite `EXPLAIN QUERY PLAN` against migrations 0001-0002 reproduced the defect in the exact
+current-head SQL: the optimizer used `shadow_observation_idempotency` for each governed
+observation and then `SCAN h` on `observation_heads`. At approximately 9,860 observations and
+9,860 heads, that join shape can perform roughly 97 million head-row comparisons. Migration
+`0003_production_query_plan_indexes.sql` adds the narrow reverse lookup
+`observation_heads(observation_id)`; the same plan then reports `SEARCH h USING COVERING INDEX
+observation_heads_observation_id (observation_id=?)`. Supporting indexes bound postflight's
+run-owned observation and rejection lookups.
+
+| Repository-owned production SELECT | Local schema-0003 classification |
+| --- | --- |
+| governance migration/revision/source | indexed bounded lookup |
+| exact ingestion run | indexed bounded lookup |
+| current governed heads | bounded output scan with indexed joins |
+| postflight integrity aggregates | bounded governed/history scans with indexed joins |
+
+The static safety gate is the exact migration-3 governance read before the current-head query,
+and permanent tests reject the prior repeated head scan or SQLite automatic-index dependence.
+This prevents this known query-plan regression but is not a hard pre-execution row-count
+guarantee. Provider `meta.rows_read` accounting remains a separate post-execution ceiling; the
+existing 25,000 reads, 40,000 writes, eight API calls, 40 statements, 16 MiB D1 request and 8 MiB
+Official FPL response limits are not raised.
+
+Migration 0003 is additive: it creates three indexes and one migration-ledger row, without data
+rewrite, deletion, or reset. Index creation reads existing tables and writes index entries, so it
+has a bounded one-time operational cost proportional to current rows and requires separate owner
+approval. If any statement fails, continuation stays fail-closed because governance cannot find
+the exact version-3 ledger contract; do not retry blindly. Reapplication fails on the existing
+index/ledger uniqueness contract and leaves the recorded migration singular. Rollback is not an
+automatic production action: retain the indexes, investigate from read-only evidence, and use a
+separately reviewed forward migration if correction is required. No live migration or collection
+was performed while preparing this repository change.
+
+### Whole-cycle static read-cost blocker
+
+Follow-up review found that removing the repeated `SCAN h` was necessary but not sufficient. D1
+counts rows scanned in both tables and indexes. At the accepted scale of approximately 9,860
+logical facts, the current-head query has three population-sized access legs: the governed
+observation index range, observation-ID head lookups, and owning-run lookups. Its conservative
+static shape is therefore approximately `3N`, already about 29,580 index/table row visits before
+postflight. SQLite `EXPLAIN QUERY PLAN` is structural evidence only; it is not claimed as an exact
+prediction of Cloudflare `meta.rows_read`.
+
+The corrected postflight replaces five independent `shadow_observations` scalar aggregates with
+one materialized conditional aggregate. It likewise computes head coverage, orphan and invalid
+head state in one head traversal, and performs one bounded rejection-index range. This changes the
+postflight structure from repeated independent governed-observation scans to one observation
+range plus one head traversal with indexed observation/run lookups. It preserves run-owned,
+historical, logical-key, admission, quarantine, rejection, orphan and completed-owner checks.
+
+Even after consolidation, the complete structural model is conservatively `7N + 64`: three
+population access legs for current heads, one for the observation summary, and three for the head
+integrity summary, with 64 reserved for governance, exact-run and empty/bounded rejection point
+or range work. At `N = 9,860`, that is 69,084 structural row visits, which cannot plausibly satisfy
+the unchanged 25,000 complete-cycle ceiling. This is a static upper-safety model, not live D1
+accounting and not an assertion that D1 would report exactly 69,084 rows read.
+
+The runner now evaluates that model immediately after validating the fresh Official FPL bodies
+and **before** creating a normal run, dispatching the current-head query, or committing anything.
+At the accepted production scale it fails closed as `production_static_read_budget_impossible`.
+For the unresolved resume it preserves the existing start row but similarly stops before the
+current-head query or any new mutation. Consequently a successful commit cannot be followed by a
+known-over-budget postflight false failure at the present scale.
+
+This establishes an architectural/resource-contract blocker rather than disguising it by raising
+the limit or deleting integrity checks. The 25,000-row ceiling remains unchanged. Production
+migration, normal collection and resume remain unauthorized. A future separately reviewed design
+must reduce the number of population traversals—for example through transactionally maintained,
+independently auditable current-state summaries—before PR #211 can be considered ready for owner
+merge approval or any production continuation.

@@ -2,6 +2,31 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
+### Current DATA-S2B checkpoint — continuation blocked pending query-safety approval
+
+Follow-up whole-cycle analysis proves the 25,000 `rows_read` contract is structurally
+impossible at the accepted ~9,860-fact scale with the present acceptance design. The indexed
+current-head query alone has approximately three population-sized index/table access legs; a
+consolidated one-pass observation postflight still leaves a conservative complete-cycle model of
+`7N + 64` structural visits. This is SQLite plan reasoning, not exact Cloudflare accounting. The
+runner now rejects the known-unsafe scale before a current-head read or any new mutation. PR #211
+therefore remains an architectural/resource-contract blocker and is not ready for merge or
+production continuation; the 25,000 ceiling was not raised and no integrity check was removed.
+
+PR #210 merged as `287c89be40a5908cbb29422747500f5106f40fb1`; exact-main Verify
+`33665119244` passed. Owner evidence confirms the Cloudflare account exceeded the Workers Free
+D1 daily limit of 5,000,000 `rows_read`, blocking read-bearing requests until
+`2026-09-03T00:00:00Z`. This account-level notice does not prove failed run `33662554360` alone
+consumed all five million reads. Local query-plan investigation found the production current-head
+join repeatedly scanned `observation_heads`; additive migration 0003 and an exact migration gate
+replace it with an indexed observation-ID lookup. The resume also preserves the original run ID
+and `started_at` while recording a genuine later fetch/completion time, and its postflight now
+validates append-only history rather than requiring observations to equal heads. The allowance
+reset alone does not authorize migration or dispatch. Production remains blocked pending a separately reviewed architecture that meets the 25,000-row
+contract, followed by migration, exact-head Verify, and explicit owner approval. No live D1 action
+or collection is part of this correction. See [Option 3 collection](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-D1-REST-COLLECTION.md).
+
+<!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
 ### Current DATA-S2B checkpoint — first production attempt requires reconciliation
 
 Exact-main manual production run `33662554360` (attempt 1) required environment approval and
