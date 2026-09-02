@@ -7,13 +7,18 @@ import {
 } from '../phase0/readonly-preflight.mjs';
 import {PHASE0_QUERIES} from '../phase0/queries.mjs';
 import {PHASE1_QUERIES,sameDeployment} from '../phase1/migrate-0002.mjs';
-import {EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,EXPECTED_ROLLBACK_VERSION_ID,POST_ACTIVATION_RUNS_QUERY,RETAINED_OLDER_VERSION_ID,validateExactCron,validatePostActivationState} from './live-contract.mjs';
+import {EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,POST_ACTIVATION_RUNS_QUERY,RETAINED_OLDER_VERSION_ID,validateExactCron,validatePostActivationState} from './live-contract.mjs';
+
+// Frozen historical upload anchors. This helper must not silently become a
+// second upload path when the production acceptance reader advances.
+export const EXPECTED_ACTIVE_VERSION_ID='733093ef-e01f-43a8-828a-0c8c67e7626f';
+export const EXPECTED_ROLLBACK_VERSION_ID=EXPECTED_ACTIVE_VERSION_ID;
 
 export const WORKER_NAME='teamsheet-data-platform';
 export const CONFIG_PATH='workers/data-platform/wrangler.jsonc';
 export const EXPECTED_COMPATIBILITY_DATE='2026-08-22';
 export const EXPECTED_SEASON='2026-27';
-export {EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,EXPECTED_ROLLBACK_VERSION_ID,RETAINED_OLDER_VERSION_ID};
+export {EXPECTED_CRON,EXPECTED_D1_DATABASE_ID,RETAINED_OLDER_VERSION_ID};
 export const EXPECTED_PRODUCTION_HOSTNAME='data.fpltsheet.co.uk';
 export const MODULE_PATHS=Object.freeze([
   'workers/data-platform/data-platform-rpc.mjs',
