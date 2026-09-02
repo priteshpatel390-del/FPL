@@ -1,6 +1,11 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-BOUNDED-PRODUCTION-DIAGNOSTICS-2026-09-02 -->
+### Current DATA-S2B checkpoint — consolidated bounded production diagnostics candidate
+
+PR #204 merged as `0c0ddc7a782a842ce592bc4cb805225242b57a71`; Verify `33623858539` passed. Instead of another one-mismatch protected run, this candidate adds a manual exact-main/exact-Verify diagnostic that continues through safe Worker/Cron/D1/history/consistency/health reads and emits one capped sanitized artifact/status matrix. Identity ambiguity, forbidden endpoints/SQL, malformed responses and unsafe output remain fatal. It performs no upload, deployment, Cron/D1 mutation, collector invocation, cleanup or retry. See [bounded production diagnostics](workers/data-platform/DATA-S2B-BOUNDED-PRODUCTION-DIAGNOSTICS.md).
+
 <!-- DATA-S2B-PRODUCTION-CRON-DIAGNOSTIC-2026-09-02 -->
 ### Current DATA-S2B checkpoint — post-merge Cron drift diagnostic
 
