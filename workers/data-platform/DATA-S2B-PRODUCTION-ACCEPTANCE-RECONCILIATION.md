@@ -4,6 +4,10 @@
 
 Production acceptance is **blocked at the exact-main protected read boundary**, not complete. Latest authoritative `main` is `80d37a9894d1e834434c83ac94f2c57045338bdb`; Verify Teamsheet run `33619346522` passed. Read-only preflight run `33620632272` passed its exact-main/Verify gate and, after protected-environment approval, stopped before D1 reads with `phase4b_preflight_active_version_drift`. It made no mutation. This is repository contract drift: successful deployment run `33433195713` promoted redirect-compatible Version `222e62d5-9979-468d-9c54-b97f903d58f6`, while the preflight still required predecessor `733093ef-e01f-43a8-828a-0c8c67e7626f`.
 
+## Post-merge protected read
+
+After PR #203 merged as `17d41df8e90ab9b4bd99ddf055cb90d1f37cc086` and Verify run `33621816997` passed, corrected protected run `33622647158` passed its repository gate and was approved. It proved the promoted Worker Version at 100% and then stopped at `phase4b_cron_drift`, before D1 reads or mutation. The existing validator did not reveal whether the safe discrepancy is empty, daily, or another expression. This follow-up adds a bounded sanitized diagnostic only; it does not accept schedule drift. Exact-current-main workflow gating means owner merge approval is required before the diagnostic can run.
+
 ## Reconciled state and narrow correction
 
 Upload run `33432353930` created Version `222e62d5-9979-468d-9c54-b97f903d58f6`; deployment run `33433195713` promoted it from predecessor `733093ef-e01f-43a8-828a-0c8c67e7626f`. The correction pins those active/rollback identities, records rather than guesses the response-created current Deployment ID, and replaces the obsolete failed-history-only D1 gate with a fail-closed populated-history contract. The contract requires the two known redirect failures, at least one completed populated Official FPL run, positive records seen, accepted counts bounded by seen counts, zero quarantine/rejection, observation totals equal the sum of completed accepted counts, and positive bounded heads. Provider, source, rights, season, bindings, hostname, Cron and health gates remain exact.
@@ -15,7 +19,7 @@ This correction does not establish baseline, unchanged, changed-fact, head-orpha
 | Area | Status | Evidence |
 |---|---|---|
 | production Worker version/deployment | PARTIAL | Upload `33432353930`; deployment `33433195713`; stale-contract failure `33620632272` proves predecessor pin is no longer active, but current Deployment response ID awaits corrected read |
-| Cron/triggers and collector cadence | PASS | activation and prior preflight evidence; repository/live contract remains sole `*/30 * * * *` trigger with collection selected daily at `01:00 UTC` or bounded pre-deadline opportunity |
+| Cron/triggers and collector cadence | FAIL | protected run `33622647158` stopped at exact `phase4b_cron_drift`; bounded diagnostic pending |
 | collector fetch transport | PASS | deployed candidate is the `manual` redirect/reject-3xx remediation; deployment `33433195713` |
 | Official bootstrap/fixtures, season, baseline, unchanged, changed fact | PENDING | protected D1 read was blocked before these facts in `33620632272` |
 | D1 consistency, run bookkeeping and accounting | PENDING | corrected exact-main read required |
