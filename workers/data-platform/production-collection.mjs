@@ -3,7 +3,7 @@ import {createD1RestClient,D1_REST_REQUEST_LIMIT_BYTES} from './d1-rest-client.m
 import {buildCommitBatch,buildCompleteUnchangedMutation,buildCurrentHeadsRead,buildProductionGovernanceRead,buildRunRead,buildStartRunMutation} from './official-fpl-d1-rest-plan.mjs';
 import {DATA_S2_SCHEMA_VERSION,DATA_S2_SOURCE_REVISION_ID,DATA_S2_TRANSFORM_VERSION,DATA_S2_VALIDATION_VERSION,diffOfficialFplHistory,materialiseOfficialFplChanges,normaliseOfficialFplHistory} from './official-fpl-canonical.mjs';
 
-export const PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
+export const FUTURE_PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
 export const PRODUCTION_SEASON='2026-27';
 export const PRODUCTION_D1_ID='01e2b4f9-313a-4a14-8ce6-86c5aecc50d7';
 export const OFFICIAL_FPL_ENDPOINTS=Object.freeze(['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);

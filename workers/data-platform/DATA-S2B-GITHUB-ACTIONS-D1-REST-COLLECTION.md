@@ -10,15 +10,39 @@ Worker: collection Worker CPU is **not applicable**. The production Cron is abse
 after the owner-observed approximately 630 ms collection and must not be restored. Historical
 Cron modules and records remain evidence, not the forward execution contract.
 
-The protected workflow has only `schedule` and manual dispatch events, read-only repository
-permission, environment `data-s2-production-collection`, one non-cancelling concurrency group,
-an exact Node version, no retry, and checkout of `main`. Its schedule is exactly
-`17 1 * * *`: one best-effort opportunity daily at 01:17 UTC. The minute avoids GitHub's
-documented beginning-of-hour congestion while retaining the intended 01:00 UTC daily window.
-Scheduled Actions can be delayed or dropped, so this is a daily opportunity rather than an
-exact-time guarantee; the next daily opportunity is recovery. Half-hour schedule checks are
-not a product requirement and would multiply reads and API activity by 48. A future special
-pre-deadline schedule is not added without evidence that daily collection is insufficient.
+The first-release protected workflow has **only `workflow_dispatch`**: PR, push and schedule
+events cannot start it. It retains read-only repository permission, environment
+`data-s2-production-collection`, one non-cancelling concurrency group, an exact Node version,
+no retry, and checkout of `main`. In particular, PR #209 contains no automatic schedule.
+
+The approved later schedule target remains exactly `17 1 * * *`: one best-effort opportunity
+daily at 01:17 UTC. The minute avoids GitHub's documented beginning-of-hour congestion while
+retaining the intended 01:00 UTC daily window. It is **not activated here**. Half-hour schedule
+checks are not a product requirement and would multiply reads and API activity by 48.
+
+## Activation sequence
+
+### Stage A — repository implementation
+
+Merge PR #209 with the manual-only workflow. Merging it alone cannot schedule or automatically
+run production collection.
+
+### Stage B — owner configuration
+
+Create/configure the protected `data-s2-production-collection` environment and add the minimum-
+scope Cloudflare D1 token, account ID, account fingerprint and exact production D1 ID described
+below. These are owner actions and are not performed by PR #209.
+
+### Stage C — first live acceptance
+
+The owner explicitly approves one manual `workflow_dispatch`. Inspect its exact D1 rows read and
+written, changed count, ingestion-run bookkeeping, observation/head consistency and resource
+budget. No automatic schedule exists at this stage.
+
+### Stage D — schedule activation
+
+Only after successful manual production acceptance, prepare a separate narrowly scoped PR that
+adds `17 1 * * *`. That activation PR must contain no unrelated architecture or data-path change.
 
 ## Reuse and flow
 
@@ -89,9 +113,9 @@ Create protected GitHub environment `data-s2-production-collection`, restrict de
 `CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` (lowercase SHA-256 of the exact account ID) and
 `CLOUDFLARE_PRODUCTION_D1_ID` as environment variables. Do not place any of them at repository
 scope. Approve the first manual execution only after merged exact-head Verify; that first
-production mutation remains a separate owner gate.
+production mutation remains a separate owner gate. Do not add the schedule during configuration;
+schedule activation is the later Stage D repository change.
 
 Sources rechecked for this design: [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/),
 [Cloudflare D1 Query API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/query/),
 and [GitHub scheduled workflow semantics](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#schedule).
-
