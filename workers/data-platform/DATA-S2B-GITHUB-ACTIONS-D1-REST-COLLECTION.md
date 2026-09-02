@@ -233,3 +233,17 @@ from other substantial writes that UTC day, and exact provider accounting. No 90
 allowance is executable in this checkpoint. The existing production baseline means the exact
 started first run can eventually resume under the 4,000-delta routine gate; a larger delta stops
 before commit and returns to the owner gate.
+
+### Branch reconciliation with main
+
+After this candidate was prepared, `main` advanced from `287c89be40a5908cbb29422747500f5106f40fb1`
+to `3981d7c1c3074edb54464127b091cdce7520af67` through PR #212, which added a development-agent
+skill pack under `.agents/skills/`, `.claude/skills/` and `skills-lock.json`. That pack is agent
+tooling only: it is absent from `dist/manifest.json`'s 62 build inputs, changes no product,
+runtime or DATA-S2B behaviour, and is unrelated to this checkpoint.
+
+The candidate branch was reconciled by a normal merge of `main` into it, with no history rewrite,
+force push, or replacement pull request, and no conflict occurred. The skill-pack files are
+carried through unchanged and appear nowhere in this checkpoint's diff against current `main`.
+Because the merge changed no build input, the committed deployable retains its exact recorded
+source provenance and was deliberately not regenerated.
