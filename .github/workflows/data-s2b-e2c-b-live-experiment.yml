@@ -20,6 +20,7 @@ on:
           - contract
           - initial-isolation
           - w01-reconciliation
+          - w01-syntax-isolation
 
 permissions:
   contents: read
@@ -129,6 +130,8 @@ jobs:
             node workers/data-platform/e2c-b/run-initial-isolation.mjs
           elif test "$E2C_MODE" = w01-reconciliation; then
             node workers/data-platform/e2c-b/run-w01-reconciliation.mjs
+          elif test "$E2C_MODE" = w01-syntax-isolation; then
+            node workers/data-platform/e2c-b/run-w01-syntax-isolation.mjs
           else
             test "$E2C_MODE" = contract
             node workers/data-platform/e2c-b/run-live-experiment.mjs

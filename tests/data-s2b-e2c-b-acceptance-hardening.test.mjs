@@ -11,12 +11,20 @@ const workflow=fs.readFileSync(workflowPath,'utf8');
 const runner=fs.readFileSync('workers/data-platform/e2c-b/run-live-experiment.mjs','utf8');
 const isolationRunner=fs.readFileSync('workers/data-platform/e2c-b/run-initial-isolation.mjs','utf8');
 const w01Runner=fs.readFileSync('workers/data-platform/e2c-b/run-w01-reconciliation.mjs','utf8');
+const w01SyntaxRunner=fs.readFileSync('workers/data-platform/e2c-b/run-w01-syntax-isolation.mjs','utf8');
 
 test('E2C-B workflow is manual-only with fixed non-cancelling concurrency',()=>{
   assert.match(workflow,/on:\n  workflow_dispatch:/);
   for(const forbidden of [/\n  push:/,/\n  schedule:/,/\n  workflow_call:/,/pull_request:/])assert.doesNotMatch(workflow,forbidden);
   assert.match(workflow,/group: data-s2b-e2c-b-disposable-live-experiment\n  cancel-in-progress: false/);
-  assert.match(workflow,/options:\n          - contract\n          - initial-isolation\n          - w01-reconciliation/);
+  assert.match(workflow,/options:\n          - contract\n          - initial-isolation\n          - w01-reconciliation\n          - w01-syntax-isolation/);
+});
+
+test('W01 syntax isolation is fixed to EXPLAIN-only authentic W01 statements',()=>{
+  for(const required of ['buildSyntheticFullWriteAnalogue().statements','`EXPLAIN ${statements[index].sql}`','mutationOccurred:false','cleanupOccurred:false','validateSetupLiveSchema'])assert.match(w01SyntaxRunner,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.doesNotMatch(w01SyntaxRunner,/body:JSON\.stringify\(statements\[index\]\)/);
+  for(const forbidden of ['console.log','database/delete','error.message','error.stack'])assert.doesNotMatch(w01SyntaxRunner,new RegExp(forbidden,'i'));
+  assert.match(workflow,/node workers\/data-platform\/e2c-b\/run-w01-syntax-isolation\.mjs/);
 });
 
 test('W01 reconciliation mode is fixed, read-only, schema-gated and bounded',()=>{
