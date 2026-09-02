@@ -318,6 +318,10 @@ test('a changed fact is proven only by an appended revision with a matching head
   assert.equal(classifyChangedFact({revisions:{...revisions,advanced_heads:0},runLedger:ledger}).status,'PARTIAL');
   assert.equal(classifyChangedFact({revisions:{revised_logical_keys:0,advanced_heads:0,distinct_input_revisions:1,contributing_runs:1},runLedger:ledger}).status,'PENDING');
   assert.equal(classifyChangedFact({revisions:null,runLedger:ledger}).status,'PENDING');
+  // No retained revision at all means the change has not happened yet: PENDING, not PARTIAL,
+  // even when several runs have appended brand-new keys.
+  assert.equal(classifyChangedFact({revisions:{revised_logical_keys:0,advanced_heads:0,distinct_input_revisions:2,contributing_runs:3},runLedger:ledger}).status,'PENDING');
+  assert.equal(classifyChangedFact({revisions,runLedger:[ledger[1]]}).status,'PARTIAL');
 });
 
 test('baseline, bootstrap, fixtures and season evidence reflect real population thresholds',()=>{

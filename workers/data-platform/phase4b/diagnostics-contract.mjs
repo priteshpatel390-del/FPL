@@ -396,7 +396,7 @@ export function classifyChangedFact({revisions,runLedger}){
   const contributing=numeric(revisions?.contributing_runs);
   const appending=runLedger.filter(run=>run.status==='completed'&&Number(run.recordsAccepted)>0&&Number(run.observations)===Number(run.recordsAccepted));
   const proven=revised!==null&&revised>0&&advanced!==null&&advanced>0&&appending.length>1;
-  const status=proven?'PASS':revised===null?'PENDING':revised>0?'PARTIAL':contributing!==null&&contributing<2?'PENDING':'PARTIAL';
+  const status=proven?'PASS':revised!==null&&revised>0?'PARTIAL':'PENDING';
   return diagnosticRow('changed_fact_proof',status,[
     `logical_keys_with_multiple_observations=${safeCount(revised)}`,
     `heads_pointing_at_latest_revised_observation=${safeCount(advanced)}`,
