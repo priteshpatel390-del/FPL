@@ -20,38 +20,38 @@ const activeBindingRows=[
 ];
 const activeDetail={id:EXPECTED_ACTIVE_VERSION_ID,resources:{script_runtime:{compatibility_date:'2026-08-22'},bindings:activeBindingRows}};
 const deploymentResult={deployments:[
-  {id:EXPECTED_ACTIVE_DEPLOYMENT_ID,versions:[{version_id:EXPECTED_ACTIVE_VERSION_ID,percentage:100}]},
+  {id:'current-deployment',versions:[{version_id:EXPECTED_ACTIVE_VERSION_ID,percentage:100}]},
   {id:'prior-deployment',versions:[{version_id:'3a2b065a-6527-4887-9bf8-b08e82e81133',percentage:100}]}
 ]};
-const versionsResult={items:[{id:EXPECTED_ACTIVE_VERSION_ID},{id:'3a2b065a-6527-4887-9bf8-b08e82e81133'}]};
+const versionsResult={items:[{id:EXPECTED_ACTIVE_VERSION_ID},{id:EXPECTED_ROLLBACK_VERSION_ID},{id:'3a2b065a-6527-4887-9bf8-b08e82e81133'}]};
 const postState={
   migrations:[{version:1,name:'shadow_data_foundation'},{version:2,name:'official_fpl_structured_history'}],
   sourceRows:[{source_id:'source-official-fpl',source_key:'official-fpl',source_name:'Official FPL API',source_kind:'official_fpl',created_at:'2026-08-26T00:00:00.000Z'}],
   revisionRows:[{source_revision_id:'official-fpl-r1',source_id:'source-official-fpl',revision:1,schema_version:'data-s2a-v1',rights_classification:'durable_allowed',retention_allowed:1,redistribution_allowed:0,attribution_required:0,attribution_text:null,terms_reference:'docs/DATA_SOURCES.md',terms_reviewed_at:'2026-08-26T00:00:00.000Z',acquisition_status:'approved_internal_shadow_history',shadow_ingest_allowed:1,supersedes_revision_id:null,created_at:'2026-08-26T00:00:00.000Z'}],
-  counts:{data_sources:1,data_source_revisions:1,ingestion_runs:2,shadow_observations:0,observation_heads:0,canonical_entities:0},
-  official:{ingestion_runs:2,shadow_observations:0,observation_heads:0},
-  runs:[1,2].map(run=>({run_id:`run-${run}`,source_revision_id:'official-fpl-r1',run_type:'official_fpl_structured_history',mode:'shadow_only',status:'failed',records_seen:0,records_accepted:0,records_quarantined:0,records_rejected:0,error_class:KNOWN_REDIRECT_RUNTIME_ERROR_CLASS}))
+  counts:{data_sources:1,data_source_revisions:1,ingestion_runs:3,shadow_observations:10,observation_heads:10,canonical_entities:3},
+  official:{ingestion_runs:3,shadow_observations:10,observation_heads:10},
+  runs:[...([1,2].map(run=>({run_id:`run-${run}`,source_revision_id:'official-fpl-r1',run_type:'official_fpl_structured_history',mode:'shadow_only',status:'failed',records_seen:0,records_accepted:0,records_quarantined:0,records_rejected:0,error_class:KNOWN_REDIRECT_RUNTIME_ERROR_CLASS}))),{run_id:'run-3',source_revision_id:'official-fpl-r1',run_type:'official_fpl_structured_history',mode:'shadow_only',status:'completed',records_seen:10,records_accepted:10,records_quarantined:0,records_rejected:0,error_class:null}]
 };
 
 test('Phase 4B preflight constants pin the accepted production contract',()=>{
   assert.equal(WORKER_NAME,'teamsheet-data-platform');
   assert.equal(EXPECTED_PRODUCTION_HOSTNAME,'data.fpltsheet.co.uk');
-  assert.equal(EXPECTED_ACTIVE_VERSION_ID,'733093ef-e01f-43a8-828a-0c8c67e7626f');
+  assert.equal(EXPECTED_ACTIVE_VERSION_ID,'222e62d5-9979-468d-9c54-b97f903d58f6');
   assert.equal(EXPECTED_ROLLBACK_VERSION_ID,'733093ef-e01f-43a8-828a-0c8c67e7626f');
   assert.equal(EXPECTED_COMPATIBILITY_DATE,'2026-08-22');
   assert.equal(EXPECTED_SEASON,'2026-27');
-  assert.equal(EXPECTED_ACTIVE_DEPLOYMENT_ID,'06135b20-2508-4046-a21d-143077149825');
+  assert.equal(EXPECTED_ACTIVE_DEPLOYMENT_ID,null);
   assert.equal(EXPECTED_D1_DATABASE_ID,'01e2b4f9-313a-4a14-8ce6-86c5aecc50d7');
 });
 
 test('active Deployment is exactly the expected sole Version at 100 percent',()=>{
-  assert.deepEqual(validateDeployment(deploymentResult),{deploymentId:EXPECTED_ACTIVE_DEPLOYMENT_ID,versionId:EXPECTED_ACTIVE_VERSION_ID});
+  assert.deepEqual(validateDeployment(deploymentResult),{deploymentId:'current-deployment',versionId:EXPECTED_ACTIVE_VERSION_ID});
   assert.throws(()=>validateDeployment({deployments:[{id:'current',versions:[{version_id:EXPECTED_ACTIVE_VERSION_ID,percentage:50},{version_id:'other',percentage:50}]},{id:'prior',versions:[{version_id:EXPECTED_ROLLBACK_VERSION_ID,percentage:100}]}]}),/active_deployment_invalid/);
   assert.throws(()=>validateDeployment({deployments:[{id:'current',versions:[{version_id:'other',percentage:100}]},{id:'prior',versions:[{version_id:EXPECTED_ROLLBACK_VERSION_ID,percentage:100}]}]}),/active_version_drift/);
 });
 
 test('deployable Version list requires active latest and retained rollback present',()=>{
-  assert.deepEqual(validateVersions(extractVersions(versionsResult)),[EXPECTED_ACTIVE_VERSION_ID,'3a2b065a-6527-4887-9bf8-b08e82e81133']);
+  assert.deepEqual(validateVersions(extractVersions(versionsResult)),[EXPECTED_ACTIVE_VERSION_ID,EXPECTED_ROLLBACK_VERSION_ID,'3a2b065a-6527-4887-9bf8-b08e82e81133']);
   assert.throws(()=>validateVersions([EXPECTED_ACTIVE_VERSION_ID]),/rollback_version_missing/);
   assert.throws(()=>validateVersions(['3a2b065a-6527-4887-9bf8-b08e82e81133',EXPECTED_ACTIVE_VERSION_ID]),/latest_active_drift/);
 });
@@ -81,11 +81,10 @@ test('live Cron must be the sole exact cadence',()=>{
   for(const schedules of [[],[{cron:'0 * * * *'}],[{cron:EXPECTED_CRON},{cron:'0 * * * *'}]])assert.throws(()=>validateCron({schedules}),/cron_drift/);
 });
 
-test('D1 failed-run-only post-activation state is accepted and partial/success state fails closed',()=>{
+test('D1 completed baseline with retained failed history is accepted and inconsistencies fail closed',()=>{
   assert.equal(validateD1State(postState),true);
-  assert.equal(validateD1State({...postState,counts:{...postState.counts,ingestion_runs:3},official:{...postState.official,ingestion_runs:3},runs:[...postState.runs,{...postState.runs[0],run_id:'run-3'}]}),true);
-  assert.throws(()=>validateD1State({...postState,counts:{...postState.counts,shadow_observations:1}}),/partial_accepted_history|post_table_count_drift/);
-  assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,status:'completed',error_class:null})}),/unknown_failed_run_contract/);
+  assert.throws(()=>validateD1State({...postState,counts:{...postState.counts,shadow_observations:9}}),/observation_count_contradiction/);
+  assert.throws(()=>validateD1State({...postState,runs:postState.runs.map((run,index)=>index?run:{...run,status:'completed',error_class:null})}),/known_failed_history_missing|completed_run_contract_invalid/);
 });
 
 test('failed-run error contract accepts only the evidenced sanitized redirect class',()=>{
@@ -97,7 +96,7 @@ test('failed-run error contract accepts only the evidenced sanitized redirect cl
 
 test('a later failed row with a different error class remains diagnostic and fail-closed',()=>{
   const later={...postState.runs[1],error_class:'different_sanitized_error'};
-  assert.throws(()=>validateD1State({...postState,runs:[postState.runs[0],later]}),error=>{
+  assert.throws(()=>validateD1State({...postState,runs:[postState.runs[0],later,postState.runs[2]]}),error=>{
     assert.match(error.message,/^phase4b_unknown_failed_run_contract diagnostic=/);
     const diagnostic=JSON.parse(error.message.split(' diagnostic=')[1]);
     return diagnostic.index===1&&diagnostic.mismatches.length===1&&diagnostic.mismatches[0]==='error_class'&&diagnostic.actual.error_class==='different_sanitized_error';
@@ -111,7 +110,7 @@ test('failed-run structural invariants reject every non-zero counter and identit
 
 test('failed-run diagnostic is bounded to deterministic safe structural fields',()=>{
   const run={...postState.runs[0],source_revision_id:'wrong',error_class:'other_error',api_token:'Bearer secret-value',secret_binding_value:'do-not-log',raw_exception:'Invalid redirect value: raw text'};
-  let error;try{validateD1State({...postState,runs:[run,postState.runs[1]]});}catch(caught){error=caught;}
+  let error;try{validateD1State({...postState,runs:[run,postState.runs[1],postState.runs[2]]});}catch(caught){error=caught;}
   assert.match(error?.message??'',/^phase4b_unknown_failed_run_contract diagnostic=/);
   const diagnostic=JSON.parse(error.message.split(' diagnostic=')[1]);
   assert.deepEqual(Object.keys(diagnostic),['index','mismatches','actual']);
