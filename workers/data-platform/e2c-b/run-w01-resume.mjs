@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import {E2_INITIAL_SCHEMA_FINGERPRINT,buildAtomicityReconciliation,buildFullWriteReconciliation,buildSchemaInspectionPlan,buildStorageAffinityReconciliation,buildSyntheticFullWriteAnalogue,reconcileFullWrite} from '../e2-d1-rest-validation-plan.mjs';
+import {createE2LiveHttpAdapter,e2IdentityFingerprint} from '../e2-live-http-adapter.mjs';
+import {E2_LIVE_RESPONSE_CLASS} from '../e2-live-response-decoder.mjs';
+import {validateE2StorageAffinityRows} from '../e2-live-orchestrator.mjs';
+import {assembleE2SchemaMetadata,validateSetupLiveSchema} from '../e2-live-schema-contract.mjs';
+
+const required=name=>{const value=process.env[name];if(typeof value!=='string'||!value)throw new Error('e2c_b_w01_resume_environment_invalid');return value;};
+const fingerprint=name=>{const value=required(name);if(!/^sha256:[0-9a-f]{64}$/.test(value))throw new Error('e2c_b_w01_resume_identity_invalid');return value;};
+const accountId=required('CLOUDFLARE_ACCOUNT_ID'),databaseId=required('E2C_DATABASE_ID'),identity={accountFingerprint:e2IdentityFingerprint(accountId),approvedAccountFingerprint:fingerprint('CLOUDFLARE_E2C_APPROVED_ACCOUNT_FINGERPRINT'),productionAccountFingerprint:fingerprint('PRODUCTION_ACCOUNT_FINGERPRINT'),databaseName:required('E2C_DATABASE_NAME'),databaseFingerprint:e2IdentityFingerprint(databaseId),expectedDatabaseFingerprint:fingerprint('CLOUDFLARE_E2C_APPROVED_DATABASE_FINGERPRINT'),schemaFingerprint:E2_INITIAL_SCHEMA_FINGERPRINT,tables:[]};
+const adapter=createE2LiveHttpAdapter({accountId,databaseId,token:required('CLOUDFLARE_API_TOKEN'),fetchImpl:globalThis.fetch,identity});
+const execute=async plan=>{const result=await adapter.execute(plan);if(result.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw new Error('e2c_b_w01_resume_preflight_failed');return result;};
+const metadata=await adapter.readExactMetadata();if(metadata.classification!==E2_LIVE_RESPONSE_CLASS.SUCCESS)throw new Error('e2c_b_w01_resume_preflight_failed');
+const schemaPlan=buildSchemaInspectionPlan(),schema=await execute(schemaPlan);validateSetupLiveSchema(assembleE2SchemaMetadata(schema.rowsByStatement,schemaPlan.tables));
+const a01=(await execute(buildAtomicityReconciliation('A01'))).rowsByStatement[0],storage=(await execute(buildStorageAffinityReconciliation())).rowsByStatement[0],before=(await execute(buildFullWriteReconciliation())).rowsByStatement[0]?.[0];
+if(!Array.isArray(a01)||a01.length!==3||a01.map(row=>Number(row.sequence_no)).join(',')!=='1,2,3'||!validateE2StorageAffinityRows(storage)||!before||Number(before.entities)!==0||Number(before.observations)!==2||Number(before.heads)!==0||Number(before.orphan_heads)!==0||Number(before.run_rows)!==1||before.run_status!=='started'||Number(before.records_accepted)!==0)throw new Error('e2c_b_w01_resume_state_rejected');
+const mutation=await adapter.execute(buildSyntheticFullWriteAnalogue()),reconciliation=await execute(buildFullWriteReconciliation()),accepted=mutation.classification===E2_LIVE_RESPONSE_CLASS.SUCCESS&&reconcileFullWrite(reconciliation.rowsByStatement[0],mutation.completionChanges);
+const report={evidenceSchemaVersion:'e2c-b-w01-resume-v1',sourceSha:required('APPROVED_SHA'),dispatchCount:1,responseClassification:mutation.classification,reconciliationClassification:accepted?'COMPLETED':'AMBIGUOUS',cleanupOccurred:false};fs.writeFileSync(required('E2C_EVIDENCE_PATH'),JSON.stringify(report,null,2)+'\n',{encoding:'utf8',mode:0o600});
+if(!accepted)throw new Error('e2c_b_w01_resume_failed');
+if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## DATA-S2B E2C-B W01 resume\n\n- Exact pre-state: **PASS**\n- W01 dispatches: **1**\n- Reconciliation: **COMPLETED**\n- Cleanup: **NONE**\n');

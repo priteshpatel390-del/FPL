@@ -29,10 +29,10 @@ async function runAtomicVariant(caseId,responseClassification,rows){
   return runE2LiveContract(options({query:async item=>item.caseId===caseId?{classification:responseClassification}:responseFor(item.caseId),reconcile:async item=>item.caseId===`A04-${caseId}`?{rows}:reconciliationFor(item)}));
 }
 
-test('W00 is exact and W01 retains its independent 24-statement 2,378,752-byte mutation identity',()=>{
+test('W00 is exact and W01 retains its independent 24-statement corrected mutation identity',()=>{
   assert.deepEqual(plan.buildFullWriteRunStart().statements[0].params,['e2-run-full-write','0']);
   assert.equal(plan.reconcileFullWriteRunStart([{run_id:'e2-run-full-write',status:'started',records_accepted:0}]),true);
-  const w01=plan.buildSyntheticFullWriteAnalogue();assert.equal(w01.statements.length,24);assert.equal(plan.serializedBodyBytes(w01),plan.E2_W01_SERIALIZED_REQUEST_BYTES);assert.equal(plan.E2_W01_SERIALIZED_REQUEST_BYTES,2378752);
+  const w01=plan.buildSyntheticFullWriteAnalogue();assert.equal(w01.statements.length,24);assert.equal(plan.serializedBodyBytes(w01),plan.E2_W01_SERIALIZED_REQUEST_BYTES);assert.equal(plan.E2_W01_SERIALIZED_REQUEST_BYTES,2378807);const headWrites=w01.statements.filter(statement=>statement.sql.startsWith('INSERT INTO e2_heads'));assert.equal(headWrites.length,5);assert.ok(headWrites.every(statement=>statement.sql.includes('FROM json_each(?) WHERE true ON CONFLICT')));assert.ok(headWrites.every(statement=>!statement.sql.includes('FROM json_each(?) ON CONFLICT')));
   assert.equal(plan.E2_REPRESENTATIVE_REQUEST_BYTES,3688875);assert.equal(plan.E2_BODY_PROFILE_TARGETS[3],3688875);assert.equal(plan.E2_BODY_PROFILE_TARGETS[4],4611094);
 });
 

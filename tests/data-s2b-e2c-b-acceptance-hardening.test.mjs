@@ -12,12 +12,20 @@ const runner=fs.readFileSync('workers/data-platform/e2c-b/run-live-experiment.mj
 const isolationRunner=fs.readFileSync('workers/data-platform/e2c-b/run-initial-isolation.mjs','utf8');
 const w01Runner=fs.readFileSync('workers/data-platform/e2c-b/run-w01-reconciliation.mjs','utf8');
 const w01SyntaxRunner=fs.readFileSync('workers/data-platform/e2c-b/run-w01-syntax-isolation.mjs','utf8');
+const w01ResumeRunner=fs.readFileSync('workers/data-platform/e2c-b/run-w01-resume.mjs','utf8');
 
 test('E2C-B workflow is manual-only with fixed non-cancelling concurrency',()=>{
   assert.match(workflow,/on:\n  workflow_dispatch:/);
   for(const forbidden of [/\n  push:/,/\n  schedule:/,/\n  workflow_call:/,/pull_request:/])assert.doesNotMatch(workflow,forbidden);
   assert.match(workflow,/group: data-s2b-e2c-b-disposable-live-experiment\n  cancel-in-progress: false/);
-  assert.match(workflow,/options:\n          - contract\n          - initial-isolation\n          - w01-reconciliation\n          - w01-syntax-isolation/);
+  assert.match(workflow,/options:\n          - contract\n          - initial-isolation\n          - w01-reconciliation\n          - w01-syntax-isolation\n          - w01-resume/);
+});
+
+test('W01 resume requires the exact reconciled pre-state and dispatches authentic W01 once',()=>{
+  for(const required of ['buildSyntheticFullWriteAnalogue()','dispatchCount:1','validateSetupLiveSchema','validateE2StorageAffinityRows','before.run_status!==\'started\'','reconcileFullWrite'])assert.match(w01ResumeRunner,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.equal((w01ResumeRunner.match(/adapter\.execute\(buildSyntheticFullWriteAnalogue\(\)\)/g)||[]).length,1);
+  assert.match(workflow,/node workers\/data-platform\/e2c-b\/run-w01-resume\.mjs/);
+  assert.doesNotMatch(w01ResumeRunner,/database\/delete|DROP TABLE|console\.log|error\.message|error\.stack/i);
 });
 
 test('W01 syntax isolation is fixed to EXPLAIN-only authentic W01 statements',()=>{

@@ -6,7 +6,7 @@ export const E2_REPRESENTATIVE_FACTS=9860;
 /** Read-only limit-profile 100% target; this is not W01's serialized mutation size. */
 export const E2_REPRESENTATIVE_REQUEST_BYTES=3688875;
 export const E2_REPRESENTATIVE_STATEMENTS=24;
-export const E2_W01_SERIALIZED_REQUEST_BYTES=2378752;
+export const E2_W01_SERIALIZED_REQUEST_BYTES=2378807;
 export const E2_SCHEMA_PHASES=Object.freeze(['initial','setup']);
 export const E2_INITIAL_SCHEMA_REPRESENTATION=Object.freeze([]);
 export const E2_SCHEMA_DDL=Object.freeze([
@@ -105,6 +105,6 @@ export function buildSyntheticFullWriteAnalogue(){
   const statements=[{sql:"INSERT INTO e2_entities SELECT json_extract(value,'$.entity_id'),json_extract(value,'$.kind'),json_extract(value,'$.created_at') FROM json_each(?)",params:[JSON.stringify(entities)]}];
   for(let i=0;i<observations.length;i+=600)statements.push({sql:"INSERT INTO e2_observations SELECT json_extract(value,'$.observation_id'),json_extract(value,'$.logical_key'),json_extract(value,'$.value_number'),json_extract(value,'$.value_text'),json_extract(value,'$.value_boolean') FROM json_each(?)",params:[JSON.stringify(observations.slice(i,i+600))]});
   const heads=observations.map(row=>({logical_key:row.logical_key,observation_id:row.observation_id}));
-  for(let i=0;i<heads.length;i+=2000)statements.push({sql:"INSERT INTO e2_heads SELECT json_extract(value,'$.logical_key'),json_extract(value,'$.observation_id') FROM json_each(?) ON CONFLICT(logical_key) DO UPDATE SET observation_id=excluded.observation_id",params:[JSON.stringify(heads.slice(i,i+2000))]});
+  for(let i=0;i<heads.length;i+=2000)statements.push({sql:"INSERT INTO e2_heads SELECT json_extract(value,'$.logical_key'),json_extract(value,'$.observation_id') FROM json_each(?) WHERE true ON CONFLICT(logical_key) DO UPDATE SET observation_id=excluded.observation_id",params:[JSON.stringify(heads.slice(i,i+2000))]});
   statements.push({sql:"UPDATE e2_runs SET status='completed', records_accepted=? WHERE run_id=?",params:[String(E2_REPRESENTATIVE_FACTS),'e2-run-full-write']});return freezePlan('W01',true,statements);
 }
