@@ -192,35 +192,55 @@ state — not a malfunction of the read.
 | `observability` | PARTIAL | observability enabled, head sampling 1, logpush false, 2/2 failed runs retained an error class |
 | `provider_data_security_boundaries` | PASS | `official-fpl`, `durable_allowed`, retention 1, redistribution 0, shadow ingest 1, `shadow_only`, `official_fpl_public_core`, no breaches |
 
-### The single genuine production defect: Cron triggers are absent
+### Cron triggers are absent because collection was intentionally stopped
 
-The live Worker carries **no Cron triggers at all**. This is materially worse than the drift
-the earlier preflight suspected: the collector requires the exact string `*/30 * * * *`
-(`official-fpl-history.mjs`, `DATA_S2_COLLECTION_CRON`) and skips every other schedule as
-`cron_unrecognised`, but an absent schedule means the `scheduled()` handler is never invoked
-at all. **Scheduled collection has stopped.** The repository expectation is not stale: it is
-exactly what the deployed collector requires, and the `FAIL` is correct.
+The live Worker carries no Cron triggers (`schedule_count=0`, `classification=absent`).
+**This is an intentional owner safety stop, not drift and not an unexplained defect.** An
+earlier reading of this bundle characterised it as an unexplained production defect and
+proposed restoring the schedule; that reading was wrong and is corrected here.
 
-The retained ledger dates the stop. Three runs sit exactly 1,440 minutes apart, and the sole
-completed run is the first one after the redirect remediation was promoted, so the schedule
-fired on 30 August (failed, redirect), 31 August (failed, redirect) and 1 September
-(completed, 9,860 records). No run exists for 2 September, and the read at 14:59 UTC that day
-found no schedule. **The triggers were therefore removed between 01:00 UTC on 1 September and
-01:00 UTC on 2 September.**
+**Owner-provided historical fact, not recorded in this repository at the time of the stop.**
+The production scheduled collector was observed using approximately **630 ms of Worker CPU**.
+The Cron trigger was then deliberately removed so it would not fire again at approximately
+01:00 UTC and risk breaching the Free-tier resource constraints. The disposable E2 programme
+and the GitHub Actions machinery were undertaken specifically to obtain a safer way to
+validate and progress the collection path without repeatedly executing the
+resource-problematic production Cron collector. The 630 ms measurement and the executed stop
+are **owner-provided facts**; neither is documented in the repository, and neither is
+inferable from the retained evidence. That documentary gap is recorded here rather than
+back-filled with invented evidence.
 
-No repository automation accounts for that removal. `data-s2b-phase4b-cron-activation.yml` is
-the only Cron-mutating workflow and it has run exactly once, successfully, on 29 August
-(`33238530138`), setting the expected schedule. The Phase 4B version upload (`33432353930`)
-and deployment (`33433195713`) both precede the 1 September collection that the schedule
-still drove, so neither removed it. Every E2C-B run in the window targeted the disposable
-database, not the production Worker. Cloudflare documents that a Wrangler deploy replaces
-triggers and that `crons: []` removes them, but this repository mutates schedules only
-through the pinned REST call, never Wrangler. **The cause is therefore outside this
-repository's automation and is not established by available evidence** — most plausibly a
-manual dashboard action. It must not be guessed at in either direction.
+**Repository evidence corroborating the decision as the pre-registered procedure.** The stop
+was not improvised — the repository had already defined it, three times over:
 
-Restoring the schedule is a production Cron mutation and remains an explicit owner gate. It
-is not performed, proposed as automatic, or worked around here.
+- [`DATA-S2A-OFFICIAL-FPL-STRUCTURED-HISTORY.md`](DATA-S2A-OFFICIAL-FPL-STRUCTURED-HISTORY.md)
+  §"Important Free-plan CPU limitation" pre-registered the rule: DATA-S2A "cannot prove" a
+  real baseline stays inside the 10 ms Cron CPU ceiling, and "if the exact Free-plan Cron
+  exceeds the CPU ceiling, activation stops. The project must then redesign/split the
+  collector or separately approve a paid Workers decision".
+- [`DATA-S2B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md`](DATA-S2B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md)
+  §"After Cron activation" specifies that when collection is "over CPU/resource limits" the
+  first action is to "remove/disable the DATA-S2 Cron", and the fourth is to "preserve D1
+  evidence for diagnosis rather than deleting history".
+- [`DATA-S2B-PHASE-4A-CADENCE-PREPARATION.md`](DATA-S2B-PHASE-4A-CADENCE-PREPARATION.md)
+  step 11 requires stopping Cron immediately on CPU/resource failure, and states plainly that
+  "Cron removal is the first stop action".
+
+The observed production state matches that procedure exactly: schedule empty, Worker left
+deployed and healthy, D1 history preserved rather than deleted. The same plan already defines
+**NO-GO — FREE LIMITS** as a legitimate acceptance outcome, so an over-limit collector was
+always an anticipated result rather than a surprise.
+
+The retained ledger is consistent with the stop and dates it. Three runs sit exactly 1,440
+minutes apart, and the sole completed run is the first after the redirect remediation was
+promoted: 30 August (failed, redirect), 31 August (failed, redirect), 1 September (completed,
+9,860 records). No run exists for 2 September, and the read at 14:59 UTC that day found no
+schedule, so the trigger was removed between 01:00 UTC on 1 and 2 September — immediately
+after the one collection that produced the CPU observation.
+
+**The schedule must not be restored** until a resource-safe execution architecture is
+resolved and explicitly approved. Restoring it is a production Cron mutation and is neither
+performed nor recommended here.
 
 ### What the baseline does and does not prove
 
@@ -235,11 +255,16 @@ It does **not** prove the unchanged cycle or the changed-fact path. Both need a 
 successful collection, and neither can occur while the schedule is absent. Those two rows are
 correctly `PENDING`, and no amount of repository work can advance them.
 
-One inference is available on CPU and should be stated at its true strength. The baseline run
-committed 9,860 observations and completed rather than being terminated; had it exceeded the
-10 ms Workers Free CPU ceiling, Cloudflare would have killed it as `exceededCpu`. That is
-*behavioural* evidence the collector fits the free-plan CPU limit for a full baseline. It is
-not a measurement, and `cpu_resource_suitability` stays `PENDING` for exact figures. On the
+An earlier draft of this record inferred from the baseline completing that the collector fits
+the 10 ms Workers Free CPU ceiling. **That inference was wrong and is withdrawn.** Cloudflare
+documents that each isolate carries "some built-in flexibility to allow for cases where your
+Worker infrequently runs over the configured limit", and terminates execution only once a
+Worker "starts hitting the limit consistently". A single run can therefore complete while
+substantially over the ceiling, which is exactly what happened: the owner observed
+approximately 630 ms of CPU, roughly sixty-three times the 10 ms Cron Trigger allowance on
+Workers Free. Completion is evidence of isolate tolerance, not of fitness. `cpu_resource_suitability`
+stays `PENDING` for exact figures, and the collector is to be treated as over-limit for
+sustained scheduled operation. On the
 newly enforced D1 free-tier write limit, a baseline of roughly 9,860 observations plus 9,860
 head upserts plus 1,064 canonical entities is on the order of 21,000 rows written against
 100,000 per day, and an unchanged cycle writes only its run row — comfortable, but inferred
@@ -282,3 +307,168 @@ It is the same string the artifact and step summary receive, emitted after the s
 tests pin the echo to the sanitized binding, forbid it from re-deriving the report or
 serialising the JSON, and re-assert that credentials and identifiers still trip the sanitizer
 through the wrapped form.
+
+## Execution architecture — decision proposal (approval required, nothing implemented)
+
+### Problem
+
+The deployed Worker collector is over the Free-plan CPU ceiling for sustained scheduled
+operation: approximately 630 ms observed against a 10 ms Cron Trigger allowance. Correctness
+is not in question — the data path produced a clean 9,860-record baseline. Only the
+**execution mechanism** is unresolved.
+
+### Which limits apply, and to whom
+
+Re-verified from first-party Cloudflare documentation on 2 September 2026:
+
+| Limit | Value (Workers Free) | Applies to a Worker invocation | Applies to D1 REST from GitHub Actions |
+|---|---|---|---|
+| CPU time per Cron Trigger | 10 ms | **Yes** | **No** — no Worker is invoked |
+| CPU time per HTTP request | 10 ms | Yes | No |
+| D1 queries per Worker invocation | 50 | Yes | No |
+| Worker requests per day | 100,000 | Yes | No |
+| D1 rows read per day | 5,000,000 | Yes | **Yes** |
+| D1 rows written per day | 100,000 | Yes | **Yes** |
+| D1 storage | 5 GB total | Yes | **Yes** |
+| Cloudflare API rate limit | 1,200 requests / 5 min, cumulative per user | No | **Yes** |
+
+The decisive distinction: **a D1 REST call reaches `api.cloudflare.com` and then D1 directly;
+it never invokes this account's Worker, so it consumes no Workers CPU.** The parsing,
+validation, diffing and SHA-256 identity work moves to the GitHub runner, which is where the
+630 ms currently lands. D1's own internal query-CPU guard is a separate and far larger budget
+aimed at multi-gigabyte scans; E2's 9,860-row workload did not approach it.
+
+What does **not** change with caller: the D1 row read/write/storage limits, which since
+1 September 2026 fail the query outright rather than merely being billed. Those apply to the
+Workers Binding API and the REST API alike.
+
+### Options
+
+**Option 1 — restore Cloudflare Cron unchanged.** Rejected. It re-creates the exact condition
+the stop was executed to prevent, at roughly sixty-three times the ceiling. Cloudflare
+terminates a Worker that hits the limit consistently, so this converts a clean baseline into
+recurring `exceededCpu` failures. The repository's own pre-registered rule forbids it without
+either a redesign or a separately approved paid decision.
+
+**Option 2 — optimise the Worker, then restore Cron.** Technically open but a poor fit. The
+gap is not marginal: 630 ms to under 10 ms is a ~63× reduction, across work that is
+irreducibly proportional to ~9,860 observations (JSON parse of two Official FPL payloads,
+allowlist validation, diff against current heads, deterministic SHA-256 per observation).
+Splitting collection into many small sub-invocations would need chunked state, partial-run
+bookkeeping and a many-invocation schedule — substantially more new production machinery than
+Option 3, and each chunk would still carry the 50-queries-per-invocation binding limit. It
+also cannot be proven without repeatedly running the very collector the stop was meant to
+prevent.
+
+**Option 3 — GitHub Actions scheduled collection through the validated D1 REST path.**
+Recommended. This is what the E2 programme was for, and most of it already exists:
+
+| Capability | Status |
+|---|---|
+| Official FPL collection expressed as bounded D1 REST plans | **Exists** — `official-fpl-d1-rest-plan.mjs`: source-revision read, run read, current-heads read, start-run, fail-run, complete-unchanged, commit batch |
+| Bounded REST transport | **Exists** — `d1-rest-client.mjs`, 16 MB request cap, `{batch:[…]}` shape, 401/403/429 classification, result-contract check |
+| Statement/parameter/size bounds | **Exists** — 40 statements, 100 bound parameters, 100 KB SQL, 2 MB per value |
+| Live proof at production scale | **Exists** — E2 wrote 9,860 records; W01 serialised request 2,378,807 bytes, ~15% of the 16 MB cap |
+| SQLite `ON CONFLICT` compatibility | **Exists** — the `WHERE true` disambiguator fix |
+| Protected manual workflow pattern | **Exists** — exact-SHA, exact-Verify, protected environment |
+| Ambiguity/no-retry policy | **Exists** — reconcile-then-stop, never silent retry |
+| **Scheduling** | **Missing** — every workflow is `workflow_dispatch` only |
+| **Production runner** | **Missing** — the REST plan is imported only by tests and E2; no Worker or workflow calls it in production |
+| **Official FPL fetch on the runner** | **Missing** — fetch currently lives in the Worker collector |
+
+The repository is public, so GitHub Actions minutes are unlimited and free; a daily job of a
+minute or two costs nothing and introduces no paid infrastructure.
+
+### Recommendation
+
+**Option 3.** It is the only option that removes the binding constraint rather than fighting
+it, it reuses machinery already proven live at exactly the required scale, and it keeps the
+Worker deployed and healthy as the read/health surface without granting it a schedule.
+
+### Free-tier analysis under Option 3
+
+A baseline writes roughly 9,860 observations + 9,860 head upserts + 1,064 canonical entities
+≈ 21,000 rows, against 100,000/day. An unchanged cycle writes only its run row. Reads are
+roughly one heads scan (~9,860 rows) per cycle against 5,000,000/day. A cycle needs on the
+order of ten REST calls against 1,200 per five minutes. Storage is 10.3 MB against 5 GB.
+Every dimension has wide headroom; the previously binding constraint — Worker CPU — is
+removed entirely rather than merely reduced.
+
+### Risks and fallbacks
+
+- **Ambiguous write.** The existing reconcile-then-stop policy is retained unchanged: never a
+  silent retry after an ambiguous mutation; read back and stop.
+- **Scheduled-workflow reliability.** GitHub delays `schedule:` runs under load and disables
+  them after 60 days of repository inactivity. Collection cadence therefore becomes
+  best-effort rather than guaranteed — acceptable for a shadow-only history, and the retained
+  run ledger makes a missed cycle visible rather than silent.
+- **GitHub outage.** A missed cycle. The next cycle re-derives from current Official FPL
+  state; nothing is lost because the history is append-only.
+- **Official FPL outage.** Existing fail-closed behaviour: the run is recorded failed with an
+  error class and writes nothing, exactly as the two retained redirect failures did.
+- **D1 daily limit reached.** Since 1 September 2026 the query fails outright. Treated as a
+  fail-closed run, not a retry.
+- **Credential exposure.** A D1 write token in Actions is a materially wider capability than
+  today's read token and is the principal new risk, mitigated below.
+
+### Security
+
+Collection would need a D1 write-scoped Cloudflare API token, held as a secret in a protected
+environment with owner approval, never printed, and masked as the existing workflows already
+do. It must be scoped to the single production database and must not carry Worker upload,
+deployment, Cron or Access permissions. This is a genuine widening of what Actions can do to
+production data and is the main reason this proposal is an approval gate rather than an
+implementation.
+
+### Acceptance plan under Option 3
+
+The requirement for a second **Cron** cycle is superseded; the substance of each proof is not.
+
+1. **Second successful collection** — one scheduled Actions cycle completing through the REST
+   path, appending a run and reconciling counts.
+2. **Unchanged-cycle proof** — that cycle sees records, accepts none, writes no observation
+   and moves no head; the existing `classifyUnchangedCycle` contract is unchanged.
+3. **Changed-fact proof** — a later cycle where an Official fact genuinely moves, producing a
+   second observation on a logical key and an advanced head; still never manufactured.
+4. **Resource proof** — replaces CPU suitability with the accounting that actually governs:
+   D1 rows written and read per cycle, from the REST `meta` object each response already
+   carries, plus storage. This closes `cpu_resource_suitability` honestly by making it
+   inapplicable rather than unmeasurable, and needs no GraphQL analytics surface.
+5. **Closeout** — a fresh consolidated read-only diagnostic bundle covering all seventeen rows.
+
+### Proposed implementation scope, if approved
+
+Add a scheduled-plus-manual Actions workflow and a bounded production collection runner that
+fetches the two fixed Official FPL endpoints on the runner, normalises through the existing
+canonical modules, and commits through the existing `official-fpl-d1-rest-plan.mjs` and
+`d1-rest-client.mjs`. Reuse the existing identity gating, sanitization and reconcile-then-stop
+policy. Add permanent tests. Record the resource evidence from REST `meta`.
+
+### Explicit exclusions
+
+No provider added. No paid infrastructure or plan upgrade. No Cloudflare Cron restored or
+mutated. No Worker uploaded, deployed or given a schedule. No GraphQL analytics surface. No
+change to the Official FPL endpoint allowlist, the shadow-only boundary, retention or
+redistribution rights, or any model, fixture, captaincy, squad, transfer, simulation, rank or
+Mini-League behaviour. No acceptance criterion weakened: each proof above retains its existing
+contractual definition.
+
+### One acceptance constant would need owner approval to change
+
+`EXPECTED_CRON` (`live-contract.mjs`) and the Wrangler `triggers.crons` entry both still
+assert `*/30 * * * *` as the intended production schedule. Under the intentional stop that
+assertion is no longer true, which is why `cron_triggers` reports `FAIL` and
+`collector_cadence` reports `cron_unrecognised_no_collection`. Those rows are factually
+correct about the live state and are **not** changed here.
+
+- **Existing requirement:** production must carry exactly `*/30 * * * *`.
+- **Proposed replacement:** while the resource-safety stop stands, the expected production
+  Worker schedule is *empty*, and the two rows report the stop as an approved state rather
+  than a failure.
+- **Evidence:** the stop is the pre-registered DATA-S2A/Phase-4A/Phase-plan procedure for an
+  over-CPU collector, and the plan already defines NO-GO — FREE LIMITS.
+- **Trade-off:** it stops the bundle reporting a permanent false failure, but it also removes
+  a loud signal that production is not collecting. Mitigated by making the rows report the
+  stop explicitly rather than silently passing.
+
+This is a change to an acceptance constant, so it is proposed and not applied.
