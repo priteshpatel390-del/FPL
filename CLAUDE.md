@@ -1,6 +1,17 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
+### Current DATA-S2B checkpoint — Option 3 repository implementation
+
+The forward collection contract is protected GitHub Actions, fixed Official FPL
+fetch/validation/diff/hash on the runner, and bounded direct Cloudflare D1 REST writes. PR #209
+is deliberately **manual-only**: no schedule trigger exists until a separate post-acceptance
+activation PR. It invokes no production Worker, so collection Worker CPU is not applicable.
+Production Cron remains intentionally absent and must not be restored. Repository implementation
+is awaiting owner review, merge, protected-environment configuration and a separately approved
+first manual production execution. See [Option 3 collection](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-D1-REST-COLLECTION.md).
+
 <!-- DATA-S2B-INTENTIONAL-CRON-STOP-2026-09-02 -->
 ### Current DATA-S2B checkpoint — collection intentionally stopped on Worker CPU; execution architecture unresolved
 

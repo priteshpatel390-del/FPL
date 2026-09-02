@@ -10,6 +10,7 @@ const encoder=new TextEncoder();
 const SOURCE_REVISION_SQL=`SELECT r.*,s.source_key,s.source_kind FROM data_source_revisions r JOIN data_sources s ON s.source_id=r.source_id WHERE r.source_revision_id=?`;
 const RUN_SQL=`SELECT run_id,source_revision_id,status,records_seen,records_accepted,records_quarantined,records_rejected,error_class FROM ingestion_runs WHERE run_id=? AND source_revision_id=?`;
 const HEADS_SQL=`SELECT o.* FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE o.source_revision_id=? AND r.status='completed'`;
+const GOVERNANCE_SQL=`SELECT m.version AS migration_version,m.name AS migration_name,r.*,s.source_key,s.source_kind FROM schema_migrations m JOIN data_source_revisions r ON r.source_revision_id=? JOIN data_sources s ON s.source_id=r.source_id WHERE m.version=2 AND m.name='official_fpl_structured_history'`;
 const START_SQL=`INSERT OR IGNORE INTO ingestion_runs (run_id,source_revision_id,run_type,mode,started_at,completed_at,status,safe_endpoint_class,parser_version,transform_version,schema_version,records_seen,records_accepted,records_quarantined,records_rejected,error_class,created_at) VALUES (?,?,'official_fpl_structured_history','shadow_only',?,NULL,'started',?,?,?,?,0,0,0,0,NULL,?)`;
 const FAIL_SQL=`UPDATE ingestion_runs SET completed_at=?,status='failed',error_class=? WHERE run_id=? AND source_revision_id=?`;
 const COMPLETE_SQL=`UPDATE ingestion_runs SET completed_at=?,status='completed',records_seen=?,records_accepted=?,records_quarantined=0,records_rejected=0,error_class=NULL WHERE run_id=? AND source_revision_id=?`;
@@ -33,6 +34,7 @@ function create(kind,mutation,statements){
 
 export function inspectOfficialFplD1RestPlan(plan){return trustedPlans.has(plan)?plan:null;}
 export const buildSourceRevisionRead=({sourceRevisionId})=>create('read',false,[{sql:SOURCE_REVISION_SQL,params:[required(sourceRevisionId,'source_revision')]}]);
+export const buildProductionGovernanceRead=({sourceRevisionId})=>create('read',false,[{sql:GOVERNANCE_SQL,params:[required(sourceRevisionId,'source_revision')]}]);
 export const buildRunRead=({runId,sourceRevisionId})=>create('read',false,[{sql:RUN_SQL,params:[required(runId,'run'),required(sourceRevisionId,'source_revision')]}]);
 export const buildCurrentHeadsRead=({sourceRevisionId})=>create('read',false,[{sql:HEADS_SQL,params:[required(sourceRevisionId,'source_revision')]}]);
 export const buildStartRunMutation=({runId,sourceRevisionId,startedAt,safeEndpointClass,parserVersion,transformVersion,schemaVersion})=>create('mutation',true,[{sql:START_SQL,params:[required(runId,'run'),required(sourceRevisionId,'source_revision'),required(startedAt,'timestamp'),required(safeEndpointClass,'endpoint'),required(parserVersion,'parser'),required(transformVersion,'transform'),required(schemaVersion,'schema'),startedAt]}]);
