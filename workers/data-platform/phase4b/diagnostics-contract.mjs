@@ -648,7 +648,9 @@ export function buildDiagnosticReport({approvedSha,identity,matrix,readOutcomes,
     '- Cleanup operations: 0','- Retries after ambiguous mutation: 0 (no mutation is reachable)','',
     '### Status matrix','','| Check | Status | Evidence |','|---|---|---|'
   ];
-  for(const row of matrix)lines.push(`| \`${row.id}\` | **${row.status}** | ${row.evidence.join('<br>')||'none'} |`);
+  // Evidence joins several values with a pipe, which would otherwise split the table cell.
+  const cell=entry=>entry.replaceAll('|','\\|');
+  for(const row of matrix)lines.push(`| \`${row.id}\` | **${row.status}** | ${row.evidence.map(cell).join('<br>')||'none'} |`);
   lines.push('','### Read outcomes','');
   for(const read of readOutcomes)lines.push(`- \`${read.name}\`: ${read.outcome}`);
   lines.push('','Raw Cloudflare responses, tokens, account and database identifiers are never retained.');

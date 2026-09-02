@@ -427,6 +427,13 @@ test('the report states zero mutation accounting and refuses to imply acceptance
     'Route/domain mutations: 0','Access mutations: 0','Secret mutations: 0','Collector executions: 0',
     'Cleanup operations: 0','Retries after ambiguous mutation: 0'])assert.ok(report.includes(line),line);
   assert.ok(report.includes('is **not** DATA-S2B production acceptance'));
+  // Evidence joins values with a pipe; unescaped it would split the markdown table cell.
+  const breached=buildDiagnosticReport({...args,matrix:buildDiagnosticMatrix([
+    classifyConsistency({consistency:{...consistency,orphan_heads:1,foreign_heads:2},counts,official})])});
+  const cells=breached.split('\n').filter(line=>line.startsWith('| `d1_observations_heads_orphans`'));
+  assert.equal(cells.length,1);
+  assert.ok(cells[0].includes('breaches=orphan_heads\\|foreign_source_heads'));
+  assert.equal(cells[0].split(/(?<!\\)\|/).length-1,4);
   for(const id of DIAGNOSTIC_ROWS)assert.ok(report.includes(`\`${id}\``),id);
   assert.equal(buildDiagnosticJson(args).mutations.collectorExecutions,0);
   assert.equal(overallOutcome(fullMatrix()),'PARTIAL');
