@@ -1,6 +1,11 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-PRODUCTION-CRON-DIAGNOSTIC-2026-09-02 -->
+### Current DATA-S2B checkpoint — post-merge Cron drift diagnostic
+
+PR #203 merged as `17d41df8e90ab9b4bd99ddf055cb90d1f37cc086`; Verify `33621816997` passed. Corrected protected read `33622647158` proved the promoted Worker identity and failed closed at `phase4b_cron_drift` before D1 reads. The candidate adds only a bounded sanitized schedule diagnostic and continues to reject drift. Merge and another exact-main protected read require owner approval.
+
 <!-- DATA-S2B-PRODUCTION-ACCEPTANCE-RECONCILIATION-2026-09-02 -->
 ### Current DATA-S2B checkpoint — production acceptance read-contract correction
 

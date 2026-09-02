@@ -39,7 +39,10 @@ function failedRunMatches(run){
 }
 
 export function validateExactCron(rows){
-  if(!Array.isArray(rows)||rows.length!==1||rows[0]?.cron!==EXPECTED_CRON)throw new Error('phase4b_cron_drift');
+  if(!Array.isArray(rows)||rows.length!==1||rows[0]?.cron!==EXPECTED_CRON){
+    const actual=Array.isArray(rows)?rows.slice(0,3).map(row=>typeof row?.cron==='string'&&/^[0-9*/?, -]{1,64}$/.test(row.cron)?row.cron:'[invalid]'):'[invalid]';
+    throw new Error(`phase4b_cron_drift diagnostic=${JSON.stringify({count:Array.isArray(rows)?rows.length:'[invalid]',actual})}`);
+  }
   return [EXPECTED_CRON];
 }
 

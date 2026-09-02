@@ -81,6 +81,11 @@ test('live Cron must be the sole exact cadence',()=>{
   for(const schedules of [[],[{cron:'0 * * * *'}],[{cron:EXPECTED_CRON},{cron:'0 * * * *'}]])assert.throws(()=>validateCron({schedules}),/cron_drift/);
 });
 
+test('Cron drift diagnostic is bounded and contains only sanitized expressions',()=>{
+  assert.throws(()=>validateCron({schedules:[{cron:'0 1 * * *'}]}),error=>error.message==='phase4b_cron_drift diagnostic={"count":1,"actual":["0 1 * * *"]}');
+  assert.throws(()=>validateCron({schedules:[{cron:'secret\nvalue',token:'do-not-log'}]}),error=>error.message==='phase4b_cron_drift diagnostic={"count":1,"actual":["[invalid]"]}');
+});
+
 test('D1 completed baseline with retained failed history is accepted and inconsistencies fail closed',()=>{
   assert.equal(validateD1State(postState),true);
   assert.throws(()=>validateD1State({...postState,counts:{...postState.counts,shadow_observations:9}}),/observation_count_contradiction/);
