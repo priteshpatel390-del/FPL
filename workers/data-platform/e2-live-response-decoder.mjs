@@ -16,6 +16,10 @@ export function validateE2PreMutationDiagnostic(value){
   for(const key of ['expectedResultCount','missingOrNonBooleanSuccessCount','unsuccessfulResultCount','invalidResultsCount','malformedMetaCount'])if(bounded(value[key],40)===null)throw new Error('e2_pre_mutation_diagnostic_invalid');
   if(value.observedResultCount!==null&&bounded(value.observedResultCount,40)===null)throw new Error('e2_pre_mutation_diagnostic_invalid');
   if(value.firstFailingResultIndex!==null&&bounded(value.firstFailingResultIndex,20)===null)throw new Error('e2_pre_mutation_diagnostic_invalid');
+  const counts=['missingOrNonBooleanSuccessCount','unsuccessfulResultCount','invalidResultsCount','malformedMetaCount'];
+  if((value.stage==='metadata'&&(value.expectedResultCount!==1||![null,1].includes(value.observedResultCount)||counts.some(key=>value[key]!==0)||value.firstFailingResultIndex!==null))||(value.stage==='initial_schema'&&value.expectedResultCount!==21))throw new Error('e2_pre_mutation_diagnostic_invalid');
+  if((!value.topLevelSuccessPresent&&value.topLevelSuccessValue!==null)||(!value.jsonParsed&&(value.topLevelSuccessPresent||value.topLevelSuccessValue!==null||value.observedResultCount!==null||counts.some(key=>value[key]!==0)||value.firstFailingResultIndex!==null)))throw new Error('e2_pre_mutation_diagnostic_invalid');
+  if(value.firstFailingResultIndex!==null&&value.observedResultCount!==null&&value.firstFailingResultIndex>=value.observedResultCount)throw new Error('e2_pre_mutation_diagnostic_invalid');
   return Object.freeze({...value});
 }
 const withDiagnostic=(result,value)=>Object.freeze({...result,preMutationDiagnostic:validateE2PreMutationDiagnostic(value)});
