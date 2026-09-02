@@ -12,7 +12,8 @@ const inspect=async(probeId,url,options,expectedResults)=>{
   let response;try{response=await fetch(url,{...options,headers,redirect:'error'});}catch{return {outcome:{probeId,httpStatus:null,jsonParsed:false,topLevelSuccess:null,resultCount:null,successfulResultCount:null,expectedResults},payload:null};}
   let payload,jsonParsed=false;try{payload=await response.json();jsonParsed=true;}catch{}
   const results=Array.isArray(payload?.result)?payload.result:null;
-  return {outcome:{probeId,httpStatus:boundedStatus(response.status),jsonParsed,topLevelSuccess:typeof payload?.success==='boolean'?payload.success:null,resultCount:results?.length??null,successfulResultCount:results?results.filter(value=>value?.success===true).length:null,expectedResults},payload};
+  const schemaObjects=probeId==='S00'&&Array.isArray(results?.[0]?.results)&&results[0].results.length<=10&&results[0].results.every(value=>value&&['table','index','view','trigger'].includes(value.type)&&typeof value.name==='string'&&/^[A-Za-z0-9_]{1,64}$/.test(value.name))?results[0].results.map(({type,name})=>({type,name})):null;
+  return {outcome:{probeId,httpStatus:boundedStatus(response.status),jsonParsed,topLevelSuccess:typeof payload?.success==='boolean'?payload.success:null,resultCount:results?.length??null,successfulResultCount:results?results.filter(value=>value?.success===true).length:null,expectedResults,schemaObjects},payload};
 };
 const metadataResult=await inspect('M00',base,{method:'GET'},1),metadata=metadataResult.outcome;
 if(metadata.httpStatus!==200||metadata.topLevelSuccess!==true)throw new Error('e2c_b_isolation_metadata_failed');
