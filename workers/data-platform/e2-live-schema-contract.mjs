@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 
 const PRODUCTION_TABLES=new Set(['shadow_observations','observation_heads','canonical_entities','ingestion_runs','data_sources','data_source_revisions']);
-export const E2_PERMITTED_INITIAL_SYSTEM_OBJECTS=Object.freeze(['sqlite_sequence']);
+export const E2_PERMITTED_INITIAL_SYSTEM_OBJECTS=Object.freeze(['_cf_KV','sqlite_sequence']);
 const clean=value=>value===null?null:String(value);
 const column=(cid,name,type,notnull=0,dflt_value=null,pk=0)=>({cid,name,type,notnull,dflt_value,pk,hidden:0});
 const index=(unique,origin,columns)=>({unique,origin,partial:0,columns:columns.map(([cid,name],seqno)=>({seqno,cid,name,desc:0,coll:'BINARY',key:1}))});
