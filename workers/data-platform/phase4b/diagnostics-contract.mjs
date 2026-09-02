@@ -597,6 +597,15 @@ export const VERIFIED_FREE_PLAN_LIMITS=Object.freeze({
   d1StorageBytes:5368709120
 });
 
+// The sanitized report is echoed to stdout between these markers as well as written to the
+// step summary and the artifact. Artifact downloads are served from a storage host that an
+// agent session's egress policy may refuse, and the step summary has no read API, so run
+// 33644480107 produced a complete bundle that could not be retrieved without a manual copy.
+// The job log is reachable through the ordinary API, so it becomes the third, always-legible
+// copy of exactly the text the sanitizer has already cleared.
+export const DIAGNOSTIC_REPORT_BEGIN='----- BEGIN DATA-S2B PHASE 4B DIAGNOSTIC REPORT -----';
+export const DIAGNOSTIC_REPORT_END='----- END DATA-S2B PHASE 4B DIAGNOSTIC REPORT -----';
+
 export const METRICS_UNAVAILABLE=Object.freeze({
   cpuTime:'NOT AVAILABLE via approved read surface',
   rowsRead:'NOT AVAILABLE via approved read surface',

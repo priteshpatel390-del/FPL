@@ -1,6 +1,17 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-INTENTIONAL-CRON-STOP-2026-09-02 -->
+### Current DATA-S2B checkpoint — collection intentionally stopped on Worker CPU; execution architecture unresolved
+
+The consolidated read ran. Protected diagnostics run `33644480107`, dispatched from exact `main` `c5db7629d0f7bb7e5d88b8e4b5a4d5fba495370e` after exact-head Verify `33643906698`, completed with no fatal stop; all twenty-two reads passed, including Worker health. One dispatch produced the whole remaining read-only bundle, so the one-failure-per-merge loop is closed.
+
+**Production Cron is absent because collection was intentionally stopped, not because of drift.** Owner-provided historical fact, absent from this repository: the production scheduled collector was observed using approximately **630 ms of Worker CPU** — roughly sixty-three times the 10 ms Workers Free Cron Trigger ceiling — and the trigger was deliberately removed so it would not fire again at 01:00 UTC and risk breaching Free-tier constraints. The disposable E2 programme and the GitHub Actions machinery exist specifically to progress the data path without re-running that collector. The repository had pre-registered exactly this procedure: DATA-S2A §"Important Free-plan CPU limitation" ("if the exact Free-plan Cron exceeds the CPU ceiling, activation stops … redesign/split the collector or separately approve a paid Workers decision"), the DATA-S2B plan's "After Cron activation" stop sequence (remove Cron first, preserve D1 evidence), and Phase 4A step 11 ("Cron removal is the first stop action"). The plan already defines **NO-GO — FREE LIMITS** as a legitimate outcome. **Do not restore the Cron.** An earlier reading of this bundle called the absence an unexplained defect and proposed restoring it; that reading is withdrawn.
+
+The proven state is otherwise strong. One genuine populated Official FPL baseline: 9,860 observations reconciling exactly against 9,860 heads and 9,860 distinct logical keys, zero orphans, zero quarantine, zero rejections; redirect remediation proven live; both failed runs wrote nothing; provider/rights/security boundaries all pass; active Version, deployment, database identity, season binding and rollback targets all correct, with no stale repository constant found. `unchanged_cycle_proof` and `changed_fact_proof` stay PENDING and **the old requirement for another natural production Cron cycle is itself superseded** pending the execution decision. The earlier claim that the baseline completing proved Free-plan CPU fitness is **withdrawn**: Cloudflare isolates tolerate infrequent overruns and terminate only on consistent ones, so completion at ~630 ms proves tolerance, not fitness.
+
+The unresolved question is how collection should execute safely. `workers/data-platform/official-fpl-d1-rest-plan.mjs` and `d1-rest-client.mjs` already express the whole Official FPL collection path as bounded D1 REST plans, E2-validated live at 9,860 writes, and are imported by no Worker. A D1 REST call invokes no Worker, so it consumes no Workers CPU; D1 row/storage limits and the 1,200-per-5-minute Cloudflare API limit still apply regardless of caller. A GitHub Actions execution proposal is recorded in [read-only production diagnostics](workers/data-platform/DATA-S2B-PHASE-4B-READ-ONLY-DIAGNOSTICS.md) and awaits explicit owner approval; nothing is implemented.
+
 <!-- DATA-S2B-READONLY-PRODUCTION-DIAGNOSTICS-2026-09-02 -->
 ### Current DATA-S2B checkpoint — bounded read-only production diagnostics candidate
 

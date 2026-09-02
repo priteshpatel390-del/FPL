@@ -9,7 +9,8 @@ import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {extractD1QueryResult} from '../phase0/readonly-preflight.mjs';
 import {
-  DIAGNOSTIC_QUERIES,EXPECTED_D1_DATABASE_ID,EXPECTED_PRODUCTION_HOSTNAME,METRICS_UNAVAILABLE,WORKER_NAME,
+  DIAGNOSTIC_QUERIES,DIAGNOSTIC_REPORT_BEGIN,DIAGNOSTIC_REPORT_END,
+  EXPECTED_D1_DATABASE_ID,EXPECTED_PRODUCTION_HOSTNAME,METRICS_UNAVAILABLE,WORKER_NAME,
   assertProductionIdentity,assertReadOnlyDiagnosticRequest,assertSanitizedOutput,buildDiagnosticJson,
   buildDiagnosticMatrix,buildDiagnosticReport,classifyBaselineIngestion,classifyBookkeeping,classifyBoundaries,
   classifyBootstrapEvidence,classifyChangedFact,classifyCollectorCadence,classifyConsistency,classifyCronTriggers,
@@ -164,6 +165,10 @@ async function main(){
   const serialised=assertSanitizedOutput(`${JSON.stringify(json,null,2)}\n`,forbidden);
   if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,report);
   if(process.env.DIAGNOSTICS_REPORT_PATH)fs.writeFileSync(process.env.DIAGNOSTICS_REPORT_PATH,serialised,{mode:0o600});
+  // Third copy of the already-sanitized report, in the one place an agent session can always
+  // read: the job log. It is the same string the artifact and step summary receive, after the
+  // same assertSanitizedOutput clearance, so it widens legibility and not exposure.
+  process.stdout.write(`${DIAGNOSTIC_REPORT_BEGIN}\n${report}${DIAGNOSTIC_REPORT_END}\n`);
   process.stdout.write(`diagnostic bundle outcome: ${json.outcome}\n`);
 }
 

@@ -5,6 +5,7 @@ import {
   DIAGNOSTIC_QUERIES,DIAGNOSTIC_ROWS,DIAGNOSTIC_STATUSES,EXPECTED_ACTIVE_VERSION_ID,EXPECTED_CRON,
   EXPECTED_D1_MIGRATIONS,REQUIRED_D1_TABLES,VERIFIED_FREE_PLAN_LIMITS,
   EXPECTED_D1_DATABASE_ID,EXPECTED_PRODUCTION_HOSTNAME,EXPECTED_ROLLBACK_VERSION_ID,FATAL_DIAGNOSTIC_CODES,
+  DIAGNOSTIC_REPORT_BEGIN,DIAGNOSTIC_REPORT_END,
   MAX_ROWS,METRICS_UNAVAILABLE,RETAINED_OLDER_VERSION_ID,WORKER_NAME,
   assertAllowedDiagnosticSql,assertProductionIdentity,assertReadOnlyDiagnosticRequest,assertSanitizedOutput,
   buildDiagnosticJson,buildDiagnosticMatrix,buildDiagnosticReport,classifyBaselineIngestion,classifyBookkeeping,
@@ -489,4 +490,38 @@ test('the collector cadence row is derived from the deployed collector guard, no
   assert.equal(daily.status,'FAIL');
   assert.ok(daily.evidence.some(entry=>entry==='collector_guard=cron_unrecognised_no_collection'));
   assert.equal(classifyCollectorCadence({expressions:[EXPECTED_CRON],runLedger:[]}).status,'PENDING');
+});
+
+// ------------------------------------------------------------------ bundle retrieval
+// Run 33644480107 gathered a complete bundle that could not be read back: artifact
+// downloads are served from a storage host an agent session's egress policy may refuse,
+// and a step summary has no read API. The job log is the one always-reachable copy.
+test('the sanitized report is echoed to stdout so the bundle survives an unreachable artifact host',()=>{
+  assert.match(runner,/process\.stdout\.write\(`\$\{DIAGNOSTIC_REPORT_BEGIN\}\\n\$\{report\}\$\{DIAGNOSTIC_REPORT_END\}\\n`\)/);
+  // The echo must consume `report`, the binding assertSanitizedOutput already cleared, and
+  // never the raw builder output or the JSON that carries the same facts unwrapped.
+  assert.match(runner,/const report=assertSanitizedOutput\(buildDiagnosticReport\(/);
+  const echo=runner.slice(runner.indexOf('DIAGNOSTIC_REPORT_BEGIN}'));
+  assert.doesNotMatch(echo,/buildDiagnosticReport\(|JSON\.stringify\(/);
+  for(const marker of [DIAGNOSTIC_REPORT_BEGIN,DIAGNOSTIC_REPORT_END]){
+    assert.match(marker,/^-{5} (?:BEGIN|END) DATA-S2B PHASE 4B DIAGNOSTIC REPORT -{5}$/);
+    assert.doesNotMatch(marker,/[`$\\]/);
+  }
+  assert.notEqual(DIAGNOSTIC_REPORT_BEGIN,DIAGNOSTIC_REPORT_END);
+});
+
+test('the echoed report carries the whole matrix and still refuses a credential',()=>{
+  const identity={worker:WORKER_NAME,hostname:EXPECTED_PRODUCTION_HOSTNAME,database:'teamsheet-data',fingerprintCheck:'NOT PROVIDED'};
+  const report=buildDiagnosticReport({approvedSha:'c'.repeat(40),identity,matrix:fullMatrix(),
+    readOutcomes:[{name:'worker_deployments',outcome:'PASS'}],generatedAt:'2026-09-02T14:59:58.000Z'});
+  const echoed=`${DIAGNOSTIC_REPORT_BEGIN}\n${report}${DIAGNOSTIC_REPORT_END}\n`;
+  for(const id of DIAGNOSTIC_ROWS)assert.ok(echoed.includes(`\`${id}\``),id);
+  assert.ok(echoed.includes('### Read outcomes')&&echoed.includes('### Status matrix'));
+  assert.ok(echoed.startsWith(`${DIAGNOSTIC_REPORT_BEGIN}\n`)&&echoed.trimEnd().endsWith(DIAGNOSTIC_REPORT_END));
+  // Wrapping in markers must not become a way to smuggle anything past the sanitizer.
+  const forbidden=[ACCOUNT,EXPECTED_D1_DATABASE_ID,'cloudflare-api-token-value'];
+  assert.equal(assertSanitizedOutput(echoed,forbidden),echoed);
+  assert.throws(()=>assertSanitizedOutput(`${echoed}account=${ACCOUNT}`,forbidden),
+    error=>isFatalDiagnostic(error)&&error.code==='diagnostics_secret_exposure_risk');
+  assert.throws(()=>assertSanitizedOutput(`${echoed}Authorization: Bearer leaked`,forbidden),/secret_exposure_risk/);
 });
