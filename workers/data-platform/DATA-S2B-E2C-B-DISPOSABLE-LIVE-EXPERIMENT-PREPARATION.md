@@ -39,3 +39,9 @@ Cleanup is a later owner-approved manual activity after evidence review. Do not 
 ## Remaining gate
 
 Merge and exact-main verification do not authorize execution. Resource/token/environment preparation, one workflow dispatch, evidence acceptance and cleanup each remain separate manual owner gates. No live experiment may be claimed until sanitized evidence has been reviewed against this contract.
+
+## Attempt 2 initial-inspection compatibility correction
+
+The separately approved attempt 2 stopped on the untouched disposable database with HTTP 400 for the 21-statement INITIAL request. Offline reconstruction showed that its REST envelope and 21-statement size conform to Cloudflare's current D1 API schema, but 15 introspection statements passed table names as bound arguments to `pragma_table_xinfo(?)`, `pragma_index_list(?)`, and `pragma_foreign_key_list(?)`. Cloudflare's current D1 SQL documentation instead documents literal-name PRAGMA forms, while Cloudflare's own D1 observability query demonstrates that table-valued PRAGMA functions and correlated literal/column arguments are supported. The compatibility correction therefore retains the same table-valued read queries and cardinality but embeds quote-safe SQL string literals generated exclusively from the five fixed `E2_APPROVED_TABLES`; it removes only those 15 pragma parameters.
+
+This does not broaden SQL authority or schema acceptance. The literal helper rejects every value outside the repository allowlist, all 21 statements remain read-only, the object/column/index/collation/foreign-key/CHECK validator is unchanged, and metadata → INITIAL → semantic validation → setup ordering is unchanged. The HTTP 400 remains a fail-closed transport classification and is not tolerated. This correction was derived without a Cloudflare request; it requires owner review, merge, exact-main verification, and a separate decision before any further live activity.

@@ -63,13 +63,19 @@ export function buildAffinityPlan(){
 }
 export function buildStorageAffinityMutation(){return freezePlan('P-STORAGE-WRITE',true,[{sql:"INSERT INTO e2_observations (observation_id,logical_key,value_number,value_text,value_boolean) VALUES ('e2-affinity-42','e2|affinity|42',?,?,NULL),('e2-affinity-0042','e2|affinity|0042',?,?,NULL)",params:['42','42','0042','0042']}]);}
 export function buildStorageAffinityReconciliation(){return freezePlan('P-STORAGE-READ',false,[{sql:"SELECT observation_id,typeof(value_number) AS number_type,value_number,typeof(value_text) AS text_type,value_text FROM e2_observations WHERE logical_key LIKE 'e2|affinity|%' ORDER BY logical_key COLLATE BINARY",params:[]}]);}
+/** SQL literals are emitted only for the closed repository table allowlist. */
+export function quoteE2SchemaTableLiteral(table){
+  if(!E2_APPROVED_TABLES.includes(table))throw new Error('e2_schema_table_not_approved');
+  return `'${table.replaceAll("'","''")}'`;
+}
 export function buildSchemaInspectionPlan(){
   const statements=[{sql:'SELECT type,name,tbl_name,sql FROM sqlite_schema ORDER BY type,name',params:[]}];
   for(const table of E2_APPROVED_TABLES){
-    statements.push({sql:'SELECT cid,name,type,notnull,dflt_value,pk,hidden FROM pragma_table_xinfo(?) ORDER BY cid',params:[table]});
-    statements.push({sql:'SELECT seq,name,"unique",origin,partial FROM pragma_index_list(?) ORDER BY seq',params:[table]});
-    statements.push({sql:'SELECT il.name AS index_name,xi.seqno,xi.cid,xi.name,xi.desc,xi.coll,xi.key FROM pragma_index_list(?) il JOIN pragma_index_xinfo(il.name) xi WHERE xi.key=1 ORDER BY il.name,xi.seqno',params:[table]});
-    statements.push({sql:'SELECT id,seq,"table","from","to",on_update,on_delete,match FROM pragma_foreign_key_list(?) ORDER BY id,seq',params:[table]});
+    const literal=quoteE2SchemaTableLiteral(table);
+    statements.push({sql:`SELECT cid,name,type,notnull,dflt_value,pk,hidden FROM pragma_table_xinfo(${literal}) ORDER BY cid`,params:[]});
+    statements.push({sql:`SELECT seq,name,"unique",origin,partial FROM pragma_index_list(${literal}) ORDER BY seq`,params:[]});
+    statements.push({sql:`SELECT il.name AS index_name,xi.seqno,xi.cid,xi.name,xi.desc,xi.coll,xi.key FROM pragma_index_list(${literal}) il JOIN pragma_index_xinfo(il.name) xi WHERE xi.key=1 ORDER BY il.name,xi.seqno`,params:[]});
+    statements.push({sql:`SELECT id,seq,"table","from","to",on_update,on_delete,match FROM pragma_foreign_key_list(${literal}) ORDER BY id,seq`,params:[]});
   }
   return freezePlan('SCHEMA-RECONCILE',false,statements,{tables:E2_APPROVED_TABLES});
 }

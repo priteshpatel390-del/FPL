@@ -55,6 +55,26 @@ test('canonical synthetic schema owns exact constraints and a derived determinis
   assert.ok(plan.E2_APPROVED_TABLES.every(table=>table.startsWith('e2_')));
 });
 
+test('schema inspection uses only fixed quote-safe D1 introspection forms',()=>{
+  assert.deepEqual(plan.E2_APPROVED_TABLES,['e2_atomicity','e2_entities','e2_observations','e2_heads','e2_runs']);
+  const built=plan.buildSchemaInspectionPlan();
+  assert.equal(built.statements.length,21);
+  assert.equal(built.mutation,false);
+  assert.ok(built.statements.every(statement=>statement.params.length===0));
+  assert.equal(plan.quoteE2SchemaTableLiteral('e2_atomicity'),"'e2_atomicity'");
+  for(const table of plan.E2_APPROVED_TABLES){
+    const statements=built.statements.filter(statement=>statement.sql.includes(`('${table}')`));
+    assert.equal(statements.length,4,table);
+  }
+  for(const statement of built.statements.slice(1)){
+    assert.match(statement.sql,/pragma_(?:table_xinfo|index_list|index_xinfo|foreign_key_list)\(/);
+    assert.doesNotMatch(statement.sql,/pragma_(?:table_xinfo|index_list|foreign_key_list)\(\?\)/);
+  }
+  for(const value of ["e2_atomicity' UNION SELECT secret",'shadow_observations','e2_unexpected','']){
+    assert.throws(()=>plan.quoteE2SchemaTableLiteral(value),/e2_schema_table_not_approved/);
+  }
+});
+
 test('A01-A03 have isolated run identities and pin the runtime and syntax failures',()=>{
   const cases=['A01','A02','A03'].map(plan.buildAtomicityCase);
   assert.equal(new Set(cases.map(value=>value.runId)).size,3);
