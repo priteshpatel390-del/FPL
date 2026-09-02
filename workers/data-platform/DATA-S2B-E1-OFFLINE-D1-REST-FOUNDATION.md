@@ -26,7 +26,7 @@ First-party Cloudflare documentation was rechecked on 1 September 2026:
 
 Sources: [D1 Database Query API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/query/) and [D1 limits](https://developers.cloudflare.com/d1/platform/limits/).
 
-E1 enforces the first three measurable construction limits per statement. The trusted commit builder also imports and enforces the historical canonical `MAX_CHANGED_OBSERVATIONS_PER_RUN = 15000` guard (superseded by DATA-S2B's routine limit of `4000`) before constructing a plan, preserves Teamsheet's accepted maximum of 40 final statements, and applies a separate **internal** whole-request ceiling of 16 MiB. The 16 MiB value is a Teamsheet safety guard, not a claimed Cloudflare limit. E1 never splits a logical commit across requests.
+E1 enforces the first three measurable construction limits per statement. The trusted commit builder now enforces DATA-S2B's own routine limit of `MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN = 4000` before constructing a plan, superseding the looser historical canonical `MAX_CHANGED_OBSERVATIONS_PER_RUN = 15000` guard, which `official-fpl-canonical.mjs` still applies to materialisation, preserves Teamsheet's accepted maximum of 40 final statements, and applies a separate **internal** whole-request ceiling of 16 MiB. The 16 MiB value is a Teamsheet safety guard, not a claimed Cloudflare limit. E1 never splits a logical commit across requests.
 
 ## Determinism and Worker parity
 
