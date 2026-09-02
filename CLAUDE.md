@@ -2,6 +2,18 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
+### Current DATA-S2B checkpoint — first production attempt requires reconciliation
+
+Exact-main manual production run `33662554360` (attempt 1) required environment approval and
+stopped after a definite start-ledger mutation, fixed Official FPL fetch, and before any
+observation/head/completion mutation. The sanitized failure was
+`d1_result_contract_invalid` while decoding current-head-read provider accounting. The candidate
+adds only fixed field/type-or-range diagnostics and records the unresolved `started` row; it
+does not relax a ceiling or authorize a retry. A merge, exact-main Verify, explicit approval for
+another production dispatch, and reconcile-before-stop review are required. See
+[Option 3 collection](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-D1-REST-COLLECTION.md).
+
+<!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
 ### Current DATA-S2B checkpoint — Option 3 repository implementation
 
 The forward collection contract is protected GitHub Actions, fixed Official FPL
