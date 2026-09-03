@@ -234,6 +234,90 @@ allowance is executable in this checkpoint. The existing production baseline mea
 started first run can eventually resume under the 4,000-delta routine gate; a larger delta stops
 before commit and returns to the owner gate.
 
+### Whole-cycle read model over append-only history
+
+The earlier gate estimated only `7N + 64` from the incoming fact count `N`. That is valid only near
+the initial state where the append-only observation population `H` is approximately equal to the
+current head population `N`, and it is not a complete-cycle model once history grows. The corrected
+model is derived from the exact fixed repository SQL and its local schema-0003
+`EXPLAIN QUERY PLAN` shape, counting one structural visit per row touched per table reference:
+
+| Traversal | Plan evidence at schema 0003 | Structural visits |
+| --- | --- | --- |
+| current-head read, driving table | `SEARCH o USING INDEX shadow_observation_idempotency (source_revision_id=?)` | `H` |
+| current-head read, run probe | `SEARCH r USING INDEX sqlite_autoindex_ingestion_runs_2` | `H` |
+| current-head read, head probe | `SEARCH h USING COVERING INDEX observation_heads_observation_id (observation_id=?)` | `H` |
+| postflight `observation_state` | `SEARCH shadow_observations USING INDEX shadow_observation_idempotency (source_revision_id=?)` | `H + D` |
+| postflight `head_state` | `SCAN h`, then one `o` probe and one `ir` probe per head | `3(N + D)` |
+| postflight `rejection_state`, governance, run read, outer probe, one-row CTE scans | bounded | fixed reserve `64` |
+| population probe, observations | `SEARCH shadow_observations USING COVERING INDEX shadow_observation_idempotency (source_revision_id=?)` | `H` |
+| population probe, heads | `SCAN observation_heads USING COVERING INDEX observation_heads_observation_id` | `N` |
+
+`H` is the pre-commit governed observation population, `N` the pre-commit head population and `D`
+the observations this cycle will append. Postflight runs after the commit, so it is charged the
+post-commit populations `H + D` and, worst case, `N + D` when every change creates a new logical key.
+
+- cycle term, excluding the probe: `3H + (H + D) + 3(N + D) + 64` = `4H + 3N + 4D + 64`
+- at `H = N`, `D = 0` this collapses to **`7N + 64`**, reconciling exactly with the established
+  69,084-visit baseline at 9,860 facts
+- probe term: `H + N`
+- **complete planned total: `5H + 4N + 4D + 64`**
+
+At today's `H = N = 9,860` with `D = 0` the complete planned total is **88,804**, inside the 100,000
+expected target. Holding `N = 9,860` and the maximum routine `D = 4,000`, the last admitted history
+is **`H = 13,899`** (124,999) and `H = 13,900` (125,004) fails closed. Growth alone can therefore
+reject a cycle while the incoming fact count is unchanged, which is the intended behaviour.
+
+These remain repository plan estimates. Cloudflare `meta.rows_read` stays independently enforced
+after every request, and neither ceiling was raised.
+
+#### Obtaining `H` without undercount
+
+Two mechanisms were evaluated.
+
+**Ingestion-run ledger totals were rejected.** Summing `records_accepted` over completed runs cannot
+be proved to bound `H` from below in every admitted repository state. Observations can exist that no
+completed run's counter covers: the disposable-D1 evidence records two intentional pre-existing
+affinity observations that the E2C-B reconciliation contract admits alongside the 9,860 analogue
+rows, and a transport-ambiguous commit can leave observations under a run whose ledger row is not
+`completed`. A mechanism that can undercount `H` would understate the cycle and defeat the gate, so
+ledger inference is not used and a permanent test asserts the population statements reference
+neither `ingestion_runs` nor `records_accepted`.
+
+**A fixed repository-owned count is used.** `SELECT COUNT(*) AS observations FROM shadow_observations
+WHERE source_revision_id=?` and `SELECT COUNT(*) AS heads FROM observation_heads` carry no arbitrary
+SQL surface and are proved covering-index only with no automatic index at schema 0003. Their own
+cost is charged in the model as the probe term above, and they are carried as statements two and
+three of the **same** trusted plan as the current-head read, so the API-call ceiling of eight is
+unchanged on both the normal and the reconciliation path. A malformed or negative count is rejected
+as `production_population_contract_invalid` rather than being treated as zero.
+
+The gate runs after the diff and before the start and commit mutations. It rejects when the complete
+structural total exceeds 125,000, and also when the reads Cloudflare has already billed plus the
+still-outstanding synchronous postflight would exceed it.
+
+### Post-commit resource and acceptance semantics
+
+The run is completed by the commit batch and postflight is read afterwards, so a cumulative
+`rows_read` overage or a postflight mismatch can occur when the mutation has definitely happened.
+Reporting that as an ordinary failure would imply nothing was written. Every failure now carries an
+explicit classification:
+
+| Classification | Meaning | Recovery |
+| --- | --- | --- |
+| `none` | failed before any mutation was dispatched | none needed |
+| `unknown` | a start or commit dispatch could not be reconciled to a definite outcome | owner reconciliation, never blind retry |
+| `definite_completed` | the commit call returned successfully, so the run is completed; the resource or acceptance check then failed | owner review of the completed run, never blind retry |
+
+`definite_completed` is raised for a post-commit budget overage (`commit_resource`), a failed
+postflight read (`postflight_read`), a postflight integrity mismatch (`postflight_acceptance`) and a
+failure while reporting the accepted state (`postflight_report`). `ok:true` is returned only after
+the synchronous postflight has validated, and the resume runner writes the sanitized classification
+to the workflow summary before rethrowing, so a stopped run is never presented as a no-write. Every
+classification is non-retryable; the workflow additionally refuses any attempt after the first.
+Prevention remains the conservative pre-mutation whole-cycle gate; these semantics exist because a
+repository estimate is not exact provider billing.
+
 ### Branch reconciliation with main
 
 After this candidate was prepared, `main` advanced from `287c89be40a5908cbb29422747500f5106f40fb1`

@@ -7,9 +7,17 @@
 Owner approval rebases the normalized synchronous full-integrity design: 100,000 `rows_read`
 is the expected routine target, 125,000 is the hard read ceiling, 40,000 remains the hard write
 ceiling, and the index-aware routine delta maximum is 4,000. The conservative schema-0003 read
-model remains `7N + 64` (69,084 structural visits at ~9,860 facts), explicitly not an exact D1
-bill. A pre-commit write estimator rejects over-budget work before mutation while returned D1
-metadata remains independently enforced. The consolidated global append-only postflight remains
+model is superseded by a whole-cycle model over append-only history: `5H + 4N + 4D + 64`, whose
+cycle term `4H + 3N + 4D + 64` collapses to the established `7N + 64` (69,084 structural visits) at
+`H = N` and `D = 0`. `H` comes from a fixed repository-owned governed observation count, never from
+ingestion-ledger totals, which cannot be proved free of undercount; the probe shares the current-head
+request, so the eight-call ceiling is unchanged, and its own cost is inside the model. All of this is
+explicitly local plan evidence, not an exact D1 bill. A pre-commit write estimator rejects
+over-budget work before mutation, the whole-cycle read gate rejects structurally infeasible cycles
+before start and commit, and returned D1 metadata remains independently enforced. Because a
+repository estimate is not provider billing, every failure now carries an explicit `none` /
+`unknown` / `definite_completed` mutation classification, so a completed run whose postflight or
+resource check then failed is never reported as a no-write and is never blindly retried. The consolidated global append-only postflight remains
 synchronous. A fixed repository-owned current-head `EXPLAIN QUERY PLAN` acceptance plan is
 prepared but must not run before separately approved migration-3/live acceptance. No baseline
 allowance, audit split, production operation, migration, or dispatch is authorized here.
