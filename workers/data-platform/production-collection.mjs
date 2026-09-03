@@ -27,7 +27,8 @@ const rows=result=>result.results[0].results??[];
 const statementRows=(result,index)=>result.results[index].results??[];
 const population=(result,index,key)=>{const value=Number(statementRows(result,index)[0]?.[key]);if(!Number.isSafeInteger(value)||value<0)throw new Error('production_population_contract_invalid');return value;};
 const exactGovernance=row=>Number(row?.migration_version)===3&&row.migration_name==='production_query_plan_indexes'&&row.source_revision_id===DATA_S2_SOURCE_REVISION_ID&&row.schema_version===DATA_S2_SCHEMA_VERSION&&row.rights_classification==='durable_allowed'&&Number(row.retention_allowed)===1&&Number(row.redistribution_allowed)===0&&Number(row.shadow_ingest_allowed)===1&&row.acquisition_status==='approved_internal_shadow_history'&&row.source_key==='official-fpl'&&row.source_kind==='official_fpl';
-const runIdFor=value=>`gha-${fp(`${DATA_S2_SOURCE_REVISION_ID}:${value}`).slice(0,40)}`;
+export const productionRunIdFor=value=>`gha-${fp(`${DATA_S2_SOURCE_REVISION_ID}:${value}`).slice(0,40)}`;
+const runIdFor=productionRunIdFor;
 
 export async function runProductionCollection(options){
   try{return await collectProduction(options);}

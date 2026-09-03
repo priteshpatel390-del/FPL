@@ -1,6 +1,45 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-LIVE-EXPLAIN-ACCEPTANCE-2026-09-03 -->
+### Current DATA-S2B checkpoint — live production EXPLAIN acceptance mechanism
+
+**Migration 0003 is applied.** Manual run `33756058903`, dispatched from exact `main`
+`f5aedff686f3b032fee6f7e43c6fcf3104126a97` after exact-main Verify `33729943154`, succeeded in both
+jobs. That runner exits zero only through `DEFINITELY_APPLIED_SUCCESSFULLY` or
+`DEFINITELY_ALREADY_APPLIED`, and both require its reconciliation to prove the exact version-3
+ledger row and all three reviewed indexes with byte-exact definitions, so migration presence is
+structurally proven. The exact success shape and the migration request's own `rows_read` /
+`rows_written` are not recoverable from the GitHub API and are stated nowhere.
+
+A repository-owned, fail-closed, strictly read-only mechanism now exists to prove the production
+query plans live. One trusted plan wraps the **exact existing** production SQL constants in
+`EXPLAIN QUERY PLAN`: current heads, observation population, head population and consolidated
+postflight. Each index requirement is bound to the operation and the table or alias it must apply
+to, so the same index name against an unrelated operation cannot satisfy it; only semantic `detail`
+content is validated, never SQLite node ids, ordering or formatting.
+`shadow_observations_ingestion_run` is deliberately **not** required, because every production
+predicate leads on `source_revision_id`. `GOVERNANCE_SQL` and `RUN_SQL` stay informative and
+non-binding. At most one D1 API call, `rows_written` must be exactly zero, and the 1,000-row read
+guard is an operational bound rather than a billing prediction; the routine collection ceilings and
+the migration-0003 envelope are unchanged and not reinterpreted. Outcomes are only
+`PLAN_ACCEPTED`, `PLAN_REJECTED` or `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, no retry exists inside an
+execution, and a failed plan is never repaired by creating or rebuilding an index.
+
+**LIVE EXPLAIN HAS NOT BEEN RUN.** No Cloudflare request, workflow dispatch, D1 read or mutation,
+collection, resume, migration, deployment, schedule, Cron or credential change was performed. Run
+`33756058903` remains the newest workflow run; production collection has one run, `33662554360`
+(failed); the resume workflow has never run. GitHub scheduling stays disabled and live Cloudflare
+Cron stays intentionally absent — `workers/data-platform/wrangler.jsonc` still declares
+`"crons": ["*/30 * * * *"]`, which is historical repository configuration and must not be used to
+restore live Cron. Local SQLite plan proofs are repository evidence only and are not a D1
+acceptance claim. Live acceptance is a separate owner approval gate, and a successful EXPLAIN
+still does **not** approve the first-run resume:
+`.github/workflows/data-s2-production-resume.yml` remains unapproved, untouched and un-hardened
+(no approved SHA, floating `main`, no exact-head Verify gate) and requires separate hardening plus
+its own approval. See
+[live EXPLAIN acceptance](workers/data-platform/DATA-S2B-LIVE-EXPLAIN-ACCEPTANCE.md).
+
 <!-- DATA-S2B-MIGRATION-0003-RUNNER-2026-09-03 -->
 ### Current DATA-S2B checkpoint — migration 0003 protected production runner
 

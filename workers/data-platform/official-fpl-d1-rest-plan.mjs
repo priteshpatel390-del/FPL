@@ -1,4 +1,5 @@
 import {assertPinnedMigration0003Statements,MIGRATION_0003_INDEXES} from './migration3/migration-0003-contract.mjs';
+import {PRODUCTION_EXPLAIN_STATEMENT_COUNT} from './explain/production-explain-contract.mjs';
 export const D1_MAX_SQL_BYTES=100000;
 export const D1_MAX_BOUND_PARAMETERS=100;
 export const D1_MAX_VALUE_BYTES=2000000;
@@ -77,6 +78,26 @@ export function validateProductionCurrentHeadsExplain(rows){
   if(!details.some(detail=>detail.includes('observation_heads_observation_id'))||details.some(detail=>/\bSCAN h\b|AUTOMATIC INDEX/.test(detail)))throw new Error('production_query_plan_mismatch');
   return true;
 }
+
+// DATA-S2B — the fixed live production `EXPLAIN QUERY PLAN` acceptance read.
+//
+// One trusted read-only plan wrapping the exact four production SELECT constants above, in the
+// fixed order of `PRODUCTION_EXPLAIN_QUERIES`. Q1 reuses the existing `HEADS_EXPLAIN_SQL`, so the
+// current-head statement stays byte-identical to the single-statement builder. There is no SQL,
+// table, index, path, statement or ordering input: the only accepted arguments are the two
+// identifiers the production SQL already binds, and they only ever become bound parameters.
+// `EXPLAIN QUERY PLAN` prepares each statement and returns its plan; it executes none of them.
+export const buildProductionExplainAcceptanceRead=({sourceRevisionId,runId})=>{
+  const revision=required(sourceRevisionId,'source_revision'),run=required(runId,'run');
+  const statements=[
+    {sql:HEADS_EXPLAIN_SQL,params:[revision]},
+    {sql:`EXPLAIN QUERY PLAN ${OBSERVATION_POPULATION_SQL}`,params:[revision]},
+    {sql:`EXPLAIN QUERY PLAN ${HEAD_POPULATION_SQL}`,params:[]},
+    {sql:`EXPLAIN QUERY PLAN ${POSTFLIGHT_SQL}`,params:[run,revision,revision,revision,revision,run,revision]}
+  ];
+  if(statements.length!==PRODUCTION_EXPLAIN_STATEMENT_COUNT)throw new Error('production_explain_statement_contract_invalid');
+  return create('read',false,statements);
+};
 
 // DATA-S2B migration 0003 — fixed repository-owned plans.
 //
