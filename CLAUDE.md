@@ -1,6 +1,58 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-FIRST-RUN-RECONCILIATION-2026-09-03 -->
+### Current DATA-S2B checkpoint — first-run reconciliation, resume hardening, identifier logging
+
+**Migration 0003 is applied** (run `33756058903`) and **live EXPLAIN acceptance passed**: run
+`33783839210`, dispatched against approved SHA `faffe2d1e72dd991743b65d35c6c2b77574a4924`,
+succeeded, so all four production query plans reached `PLAN_ACCEPTED` under live D1 validation.
+That runner requires `rows_written === 0`, so the acceptance performed no D1 mutation. Its exact
+provider `rows_read` is not recoverable through the GitHub connector available here and is stated
+nowhere. **The first production collection run remains unresolved and unresumed**; no later
+collection has run, GitHub scheduling stays disabled and live Cloudflare Cron stays intentionally
+absent.
+
+This repository-only checkpoint prepares exactly one safe future resume attempt and nothing else.
+A fixed, fail-closed, strictly read-only reconciliation proves whether the failed run left only
+its untouched `started` ledger row: one D1 API call, three fixed statements (governance, the
+pinned run row, one run-scoped integrity row), no SQL/table/identity/timestamp input,
+index-supported observation/head/rejection paths with the few small `ingestion_runs` counters
+bounded by the ceiling instead, `rows_written` exactly zero, a 1,000-row read guard, no retry and no
+mutation or repair surface reachable. Outcomes are only `RESUME_RECONCILIATION_SAFE`,
+`RESUME_RECONCILIATION_BLOCKED` or `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`; SAFE is a precondition,
+never an authorisation. The same reconciliation is embedded in the resume runtime before any
+fetch or mutation, so a resume cannot proceed from an unproven state. `data-s2-production-resume.yml`
+is now hardened to the migration-0003 / EXPLAIN standard — one immutable `approved_sha`, a
+credential-free exact-SHA/clean-tree/remote-main/exact-head-Verify gate, a second independent
+remote-main check under credentials before any Cloudflare request, shared production concurrency,
+Wrangler removed, re-runs refused — and a matching read-only reconciliation workflow exists. The
+resume continues the original logical run, caps itself at five D1 calls and exactly one mutation
+request, and keeps every existing unknown-outcome, append-only postflight and no-repair rule.
+
+**Production identifier logging is remediated.** The successful EXPLAIN job log printed the
+production account fingerprint and D1 database id before runtime masking, because GitHub echoes
+each step's resolved environment and only `secrets.*` values are auto-masked; the token stayed
+masked. Severity is low and these are identifiers, not credentials — the D1 id is already a public
+repository constant and the fingerprint is a hash — but repository policy keeps them out of
+diagnostics, so the D1 variable is removed from every credentialled workflow in favour of the
+reviewed repository constant, and the fingerprint is declared only on the final production step
+after a first mask-registration step. No credential is rotated, no secret renamed, no variable
+reclassified as a secret.
+
+Resume envelope from repository truth at `H = N = 9,860`, `D = 0`: 88,804 structural reads plus
+the 1,000-row reconciliation guard, so **≤ 89,804 expected**, inside the unchanged 100,000 expected
+target and 125,000 hard ceiling; writes stay capped at 40,000. Minimum daily headroom a future
+approval should assume is **126,000 `rows_read`**. **No mechanism exists to read remaining daily D1
+quota and none was added; real-time remaining allowance cannot be proven from this repository.**
+
+**Nothing was executed.** No Cloudflare request, workflow dispatch, D1 read or mutation, production
+reconciliation, resume, collection, migration, deployment, schedule, Cron or credential change was
+performed. Next gates: merge and exact-main Verify, then separate owner approval for one read-only
+production reconciliation, then — only if SAFE — a further separate approval for one resume.
+Normal collection and scheduling remain excluded. See
+[first-run reconciliation and resume](workers/data-platform/DATA-S2B-FIRST-RUN-RECONCILIATION-AND-RESUME.md).
+
 <!-- DATA-S2B-LIVE-EXPLAIN-ACCEPTANCE-2026-09-03 -->
 ### Current DATA-S2B checkpoint — live production EXPLAIN acceptance mechanism
 
@@ -26,18 +78,19 @@ the migration-0003 envelope are unchanged and not reinterpreted. Outcomes are on
 `PLAN_ACCEPTED`, `PLAN_REJECTED` or `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, no retry exists inside an
 execution, and a failed plan is never repaired by creating or rebuilding an index.
 
-**LIVE EXPLAIN HAS NOT BEEN RUN.** No Cloudflare request, workflow dispatch, D1 read or mutation,
-collection, resume, migration, deployment, schedule, Cron or credential change was performed. Run
-`33756058903` remains the newest workflow run; production collection has one run, `33662554360`
-(failed); the resume workflow has never run. GitHub scheduling stays disabled and live Cloudflare
+**Live EXPLAIN has since passed** as run `33783839210` on
+`faffe2d1e72dd991743b65d35c6c2b77574a4924`; the "not been run" wording below is superseded by the
+checkpoint above. Preparing that mechanism itself performed no Cloudflare request, workflow
+dispatch, D1 read or mutation, collection, resume, migration, deployment, schedule, Cron or
+credential change. Production collection still has one run, `33662554360` (failed); the resume
+workflow has never run. GitHub scheduling stays disabled and live Cloudflare
 Cron stays intentionally absent — `workers/data-platform/wrangler.jsonc` still declares
 `"crons": ["*/30 * * * *"]`, which is historical repository configuration and must not be used to
 restore live Cron. Local SQLite plan proofs are repository evidence only and are not a D1
 acceptance claim. Live acceptance is a separate owner approval gate, and a successful EXPLAIN
 still does **not** approve the first-run resume:
-`.github/workflows/data-s2-production-resume.yml` remains unapproved, untouched and un-hardened
-(no approved SHA, floating `main`, no exact-head Verify gate) and requires separate hardening plus
-its own approval. See
+`.github/workflows/data-s2-production-resume.yml` was unapproved and un-hardened at that
+checkpoint; it is hardened by the checkpoint above and still requires its own separate approval. See
 [live EXPLAIN acceptance](workers/data-platform/DATA-S2B-LIVE-EXPLAIN-ACCEPTANCE.md).
 
 <!-- DATA-S2B-MIGRATION-0003-RUNNER-2026-09-03 -->

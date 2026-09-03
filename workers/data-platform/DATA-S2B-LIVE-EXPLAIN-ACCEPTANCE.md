@@ -1,10 +1,16 @@
 # DATA-S2B — live production EXPLAIN QUERY PLAN acceptance
 
-**Status: repository mechanism ready for owner review. LIVE EXPLAIN HAS NOT BEEN RUN.**
+**Status: LIVE EXPLAIN ACCEPTANCE PASSED.** Run
+[`33783839210`](https://github.com/priteshpatel390-del/FPL/actions/runs/33783839210), dispatched
+against approved SHA `faffe2d1e72dd991743b65d35c6c2b77574a4924`, succeeded. The runner throws on
+every classification other than `PLAN_ACCEPTED`, so a successful run means all four production
+query plans passed live D1 validation. The runner also requires `rows_written === 0`, so the
+acceptance performed **no D1 mutation**. The exact provider `rows_read` for that request is not
+recoverable through the GitHub connector available here and is deliberately stated nowhere; only
+the 1,000-row operational guard and the fact that the run passed it are claimed.
 
-Preparing this checkpoint performed no Cloudflare request, no workflow dispatch, no D1 read or
-mutation, no live `EXPLAIN QUERY PLAN`, no production collection, no first-run resume, no
-migration, no deployment, no schedule or Cron change and no credential or environment change.
+Acceptance covers plan shape only. It does **not** approve the unresolved first production run
+resume, any collection, any scheduling or any Cron change; those remain separate owner gates.
 
 ## What is already true
 
@@ -127,20 +133,25 @@ migration activity.
   live. The contract decodes defensively and fails closed rather than assuming either.
 - A successful live EXPLAIN acceptance proves plan shape only. It does **not** approve the
   unresolved first production run resume, any collection, any scheduling, or any Cron change.
-- `.github/workflows/data-s2-production-resume.yml` remains unapproved and un-hardened: it takes no
-  approved SHA, checks out floating `main`, and has no exact-SHA, exact-remote-main or exact-head
-  Verify gate. It is untouched by this checkpoint and must not be dispatched as it stands.
+- `.github/workflows/data-s2-production-resume.yml` was unapproved and un-hardened when this
+  record was first written. It is hardened to this workflow's gating shape by the separate
+  [first-run reconciliation and resume checkpoint](DATA-S2B-FIRST-RUN-RECONCILIATION-AND-RESUME.md),
+  and still requires its own explicit owner approval before any dispatch.
 - `workers/data-platform/wrangler.jsonc` still declares `"crons": ["*/30 * * * *"]`. That is
   historical repository configuration. Live Cloudflare Cron is intentionally absent and must not be
   restored from it; nothing in this checkpoint deploys that Worker.
 
 ## Next gates
 
-1. Owner merge of this repository implementation, then exact-main Verify Teamsheet on the merge
-   commit.
-2. Separate explicit owner approval for exactly one live read-only EXPLAIN acceptance dispatch
-   against that exact `main` SHA.
-3. Only after a `PLAN_ACCEPTED` result: read-only reconciliation of the unresolved first production
-   `started` run, hardening of the resume workflow to the migration-0003 gating shape, evidence of
-   D1 daily-allowance headroom, and a further separate owner approval for one resume dispatch.
-   Routine collection, scheduling and Cron remain separate later gates after that.
+Gates 1 and 2 — merge plus exact-main Verify Teamsheet, then one approved live EXPLAIN dispatch —
+are closed by run `33783839210` on `faffe2d1e72dd991743b65d35c6c2b77574a4924`. What remains:
+
+1. Owner merge of the first-run reconciliation, resume-hardening and identifier-logging
+   remediation, then exact-main Verify Teamsheet on that merge commit.
+2. Separate explicit owner approval for exactly one **read-only** production reconciliation of the
+   unresolved first `started` run.
+3. Only if that reconciliation classifies `RESUME_RECONCILIATION_SAFE`: a further separate owner
+   approval for exactly one production resume dispatch, with daily D1 allowance headroom judged at
+   that time. Routine collection, scheduling and Cron remain separate later gates after that.
+
+See [first-run reconciliation and resume](DATA-S2B-FIRST-RUN-RECONCILIATION-AND-RESUME.md).

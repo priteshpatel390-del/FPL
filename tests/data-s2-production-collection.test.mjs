@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {createHash} from 'node:crypto';
-import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,FUTURE_PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
+import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,classifyProductionFailure,FUTURE_PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
 import {buildCurrentHeadsRead,buildProductionPopulationAndHeadsRead,estimateRoutineCommitRowsWritten,inspectOfficialFplD1RestPlan,MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,ROUTINE_WRITE_AMPLIFICATION} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 import {normaliseOfficialFplHistory} from '../workers/data-platform/official-fpl-canonical.mjs';
 const account='production_account';const fingerprint=createHash('sha256').update(account).digest('hex');
@@ -13,7 +13,7 @@ const options=transport=>({accountId:account,accountFingerprint:fingerprint,data
 
 test('initial activation is manual-only: PR, push and schedule cannot trigger collection',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\s+workflow_dispatch:\s*$/m);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.match(yml,/if: github\.event_name == 'workflow_dispatch'/);assert.doesNotMatch(yml,/github\.event_name == '(?:schedule|push|pull_request)'/);assert.equal(FUTURE_PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');});
 test('manual workflow retains protected environment, main checkout, least privilege and serialization',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');assert.match(yml,/permissions:\s+contents: read/);assert.match(yml,/environment:\s+name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\s+cancel-in-progress: false/);assert.match(yml,/ref: main/);assert.doesNotMatch(yml,/workers\/scripts|schedules|wrangler/);});
-test('first-run resume is manual-only, exact-environment serialized and has no arbitrary identity input',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-resume.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\s+workflow_dispatch:\s*$/m);assert.doesNotMatch(trigger,/inputs:|pull_request:|push:|schedule:|cron:/);assert.match(yml,/environment:\s+name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\s+cancel-in-progress: false/);assert.match(yml,/ref: main/);assert.doesNotMatch(yml,/workers\/scripts|schedules|wrangler|COLLECTION_SCHEDULED_AT/);const runner=fs.readFileSync('workers/data-platform/run-production-resume.mjs','utf8');assert.match(runner,/FIRST_PRODUCTION_RUN_SCHEDULED_AT/);assert.match(runner,/resumeStarted:true/);assert.doesNotMatch(runner,/process\.env\.(?:COLLECTION|RUN)/);});
+test('first-run resume is manual-only, exact-SHA gated, serialized and has no identity input',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-resume.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\n  workflow_dispatch:\n    inputs:\n      approved_sha:/m);assert.deepEqual([...new Set([...yml.matchAll(/inputs\.([a-z_]+)/g)].map(row=>row[1]))],['approved_sha']);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.match(yml,/environment:\n      name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\n  cancel-in-progress: false/);assert.doesNotMatch(yml,/ref: main\b/);assert.doesNotMatch(yml,/workers\/scripts|schedules|COLLECTION_SCHEDULED_AT/);const runner=fs.readFileSync('workers/data-platform/run-production-resume.mjs','utf8');assert.match(runner,/FIRST_PRODUCTION_RUN_SCHEDULED_AT/);assert.match(runner,/resumeStarted:true/);assert.doesNotMatch(runner,/process\.env\.(?:COLLECTION|RUN)/);});
 test('fixed endpoints, identities, season and budgets are closed constants',()=>{assert.deepEqual([...OFFICIAL_FPL_ENDPOINTS],['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);assert.equal(PRODUCTION_D1_ID,'01e2b4f9-313a-4a14-8ce6-86c5aecc50d7');assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);});
 test('static read model admits accepted scale and classifies expected versus hard headroom',()=>{assert.equal(STATIC_D1_ROWS_PER_LOGICAL_FACT,7);assert.equal(assertStaticReadBudget(9860),true);assert.equal(classifyRowsRead(100000),'expected');assert.equal(classifyRowsRead(100001),'hard_ceiling_headroom');assert.throws(()=>classifyRowsRead(125001),/production_d1_read_budget_exceeded/);});
 test('full baseline-shaped delta is rejected before any mutation under the routine contract',async()=>{const h=harness();await assert.rejects(runProductionCollection(options(h.transport)),/write_budget_exceeded/);assert.equal(h.requests.filter(r=>r.body.includes('INSERT OR IGNORE INTO ingestion_runs')).length,0);assert.equal(h.requests.filter(r=>r.body.includes('UPDATE ingestion_runs')).length,0);});
@@ -149,3 +149,68 @@ test('redispatch cannot create a second run, retry blindly, or claim success wit
 });
 
 test('wrong fingerprint, D1 and season fail before dispatch without credential output',async()=>{const h=harness();for(const changed of [{accountFingerprint:'0'.repeat(64)},{databaseId:'wrong'},{season:'2025-26'}])await assert.rejects(runProductionCollection({...options(h.transport),...changed}),error=>{assert.doesNotMatch(String(error),/secret|production_account$/);return true;});assert.equal(h.requests.length,0);});
+
+/* --------- unknown commit outcome: the read-back may never downgrade to "no mutation" --------- */
+
+// A transport whose commit response is lost and whose single post-commit read-back then fails in
+// the named way. Once the commit has been issued, no later failure may report the run as a
+// no-write, and there is never a second mutation or a retry of the read-back.
+function lostCommit(readBackFailure){
+  const requests=[],heads=mutate(facts(),1);let run=null,committed=false;
+  const transport=async request=>{
+    requests.push(request);
+    const body=JSON.parse(request.body),statements=body.batch??[body],sql=statements[0].sql;
+    if(sql.includes('schema_migrations'))return ok([[revision]],1,0);
+    if(sql.startsWith('SELECT run_id')){
+      if(!committed)return ok([[...(run?[run]:[])]],1,0);
+      return readBackFailure();
+    }
+    if(sql.startsWith('SELECT o.*'))return ok([heads,[{observations:heads.length}],[{heads:heads.length}]],heads.length,0);
+    if(sql.startsWith('INSERT OR IGNORE INTO ingestion_runs')){run=started(statements[0].params[2]);return ok([[]],0,1);}
+    if(sql.startsWith('UPDATE ingestion_runs')||statements.at(-1).sql.startsWith('UPDATE ingestion_runs')){
+      committed=true;throw new Error('lost response');
+    }
+    throw new Error('unexpected');
+  };
+  return {requests,transport,
+    commits:()=>requests.filter(r=>r.body.includes('UPDATE ingestion_runs')).length,
+    readBacks:()=>requests.filter(r=>JSON.parse(r.body).sql?.startsWith('SELECT run_id')).length};
+}
+
+const lostCommitCases=[
+  ['read-back transport failure',()=>{throw new Error('network down');}],
+  ['malformed read-back response',()=>({status:200,json:async()=>({success:true,result:[]})})],
+  ['read-back provider accounting failure',()=>({status:200,json:async()=>({success:true,
+    result:[{success:true,results:[],meta:{rows_read:'many',rows_written:0,changes:0}}]})})],
+  ['read-back resource ceiling failure',()=>ok([[]],MAX_D1_ROWS_READ_PER_CYCLE+1,0)],
+  ['read-back HTTP failure',()=>({status:500,json:async()=>({success:false})})]
+];
+
+for(const [name,failure] of lostCommitCases)
+  test(`a lost commit response followed by ${name} stays unknown, never a no-write`,async()=>{
+    const h=lostCommit(failure);
+    await assert.rejects(runProductionCollection(options(h.transport)),error=>{
+      const classification=productionFailureClassification(error);
+      assert.equal(classification.mutation,PRODUCTION_MUTATION_UNKNOWN);
+      assert.notEqual(classification.mutation,PRODUCTION_MUTATION_NONE);
+      assert.equal(classification.phase,'commit_reconciliation');
+      assert.equal(classification.retryable,false);
+      return true;});
+    // Exactly one commit mutation, exactly one post-commit read-back, and no second mutation.
+    assert.equal(h.commits(),1);
+    assert.equal(h.readBacks(),2);
+  });
+
+test('the outer wrapper never downgrades a carried unknown mutation classification',()=>{
+  // classifyProductionFailure keeps the first classification an error carries, which is exactly
+  // what runProductionCollection's outer catch relies on.
+  const carried=classifyProductionFailure(new Error('d1_transport_failed'),PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation');
+  const rewrapped=classifyProductionFailure(carried,PRODUCTION_MUTATION_NONE);
+  assert.equal(rewrapped,carried);
+  assert.equal(rewrapped.productionMutation,PRODUCTION_MUTATION_UNKNOWN);
+  assert.equal(rewrapped.productionPhase,'commit_reconciliation');
+  assert.equal(productionFailureClassification(rewrapped).mutation,PRODUCTION_MUTATION_UNKNOWN);
+  // The read-back is classified inside the unknown-commit branch, before it can escape.
+  const source=fs.readFileSync('workers/data-platform/production-collection.mjs','utf8');
+  assert.match(source,/try\{reconciled=rows\(await readRun\(\)\);\}\n\s*catch\(error\)\{throw classifyProductionFailure\(error,PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation'\);\}/);
+});

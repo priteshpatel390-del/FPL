@@ -1,20 +1,22 @@
-# DATA-S2B — dedicated, manual-only live production EXPLAIN QUERY PLAN acceptance.
+# DATA-S2B — dedicated, manual-only, strictly read-only reconciliation of the unresolved first
+# production collection run.
 #
-# This workflow can do exactly one thing: issue one read-only D1 REST request containing the four
-# fixed repository-owned `EXPLAIN QUERY PLAN` statements over the exact production SELECTs, and
-# accept or reject the returned plans. It accepts no SQL, no table, no index, no migration and no
-# statement input. It never applies a migration, never invokes production collection or the
-# first-run resume, never writes to D1, and never changes a schedule, Cron trigger, Worker
-# version, deployment, route, domain, Access policy or secret. Every repository and CI gate
-# completes in a job that has no protected environment and no Cloudflare credentials, before the
-# credentialled job can start.
-name: DATA-S2B Live EXPLAIN Acceptance
+# This workflow can do exactly one thing: issue one read-only D1 REST request containing the
+# three fixed repository-owned reconciliation statements and classify the state of the single
+# unresolved first run. It accepts no SQL, table, column, identity or timestamp input. It writes
+# nothing, repairs nothing and resumes nothing: a SAFE classification is a precondition for a
+# separately approved single resume attempt, never an authorisation to perform one. It never
+# applies a migration, never invokes collection or the resume, and never changes a schedule, Cron
+# trigger, Worker version, deployment, route, domain, Access policy or secret. Every repository
+# and CI gate completes in a job that has no protected environment and no Cloudflare credentials,
+# before the credentialled job can start.
+name: DATA-S2B First Production Run Reconciliation
 
 on:
   workflow_dispatch:
     inputs:
       approved_sha:
-        description: Exact current main commit approved for one DATA-S2B live EXPLAIN acceptance only
+        description: Exact current main commit approved for one DATA-S2B first-run reconciliation read only
         required: true
         type: string
 
@@ -22,8 +24,8 @@ permissions:
   contents: read
   checks: read
 
-# Shares the production collection group so an acceptance read can never run beside a collection,
-# a first-run resume or a migration.
+# Shares the production collection group so a reconciliation read can never run beside a
+# collection, a resume, a migration or a live acceptance read.
 concurrency:
   group: data-s2-production-collection
   cancel-in-progress: false
@@ -89,7 +91,7 @@ jobs:
           rm -f "$response"
           test -z "$(git status --porcelain)"
 
-  explain-acceptance:
+  first-run-reconciliation:
     needs: repository-gate
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -130,7 +132,7 @@ jobs:
       # resolves remote main again, from the remote and not from any value carried out of the gate
       # job, in the same shell and immediately before the production entry point. No Cloudflare
       # request is made before it.
-      - name: Reconfirm identity and remote main, then accept production plans only
+      - name: Reconfirm identity and remote main, then reconcile read-only
         env:
           CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
         run: |
@@ -143,4 +145,4 @@ jobs:
           remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
           test -n "$remote_main"
           test "$remote_main" = "$APPROVED_SHA"
-          node workers/data-platform/run-production-explain.mjs
+          node workers/data-platform/run-first-run-reconciliation.mjs

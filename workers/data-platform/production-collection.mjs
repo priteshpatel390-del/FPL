@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {createD1RestClient,D1_REST_REQUEST_LIMIT_BYTES} from './d1-rest-client.mjs';
-import {buildCommitBatch,buildCompleteUnchangedMutation,buildProductionGovernanceRead,buildProductionPopulationAndHeadsRead,buildProductionPostflightRead,buildRunRead,buildStartRunMutation,estimateRoutineCommitRowsWritten,ROUTINE_WRITE_AMPLIFICATION} from './official-fpl-d1-rest-plan.mjs';
+import {buildCommitBatch,buildCompleteUnchangedMutation,buildFirstRunReconciliationRead,buildProductionGovernanceRead,buildProductionPopulationAndHeadsRead,buildProductionPostflightRead,buildRunRead,buildStartRunMutation,estimateRoutineCommitRowsWritten,ROUTINE_WRITE_AMPLIFICATION} from './official-fpl-d1-rest-plan.mjs';
+import {exactGovernance,exactUntouchedStartedRun,FIRST_RUN_RECONCILIATION_MAX_ROWS_READ,FIRST_RUN_RECONCILIATION_STATEMENT_COUNT,firstRunReconciliationClassification,RESUME_RECONCILIATION_SAFE,validateFirstRunReconciliation} from './resume/first-run-reconciliation-contract.mjs';
 import {DATA_S2_SCHEMA_VERSION,DATA_S2_SOURCE_REVISION_ID,DATA_S2_TRANSFORM_VERSION,DATA_S2_VALIDATION_VERSION,diffOfficialFplHistory,materialiseOfficialFplChanges,normaliseOfficialFplHistory} from './official-fpl-canonical.mjs';
 
 export const FUTURE_PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
@@ -22,11 +23,20 @@ export const PRODUCTION_MUTATION_NONE='none';
 export const PRODUCTION_MUTATION_UNKNOWN='unknown';
 export const PRODUCTION_MUTATION_DEFINITE_COMPLETED='definite_completed';
 export const FIRST_PRODUCTION_RUN_SCHEDULED_AT='2026-09-02T17:41:00.000Z';
+
+// The single-resume envelope. A resume is deliberately narrower than a routine cycle: it never
+// inserts a start row, so it issues one reconciliation read, one population read, exactly one
+// mutation request and one postflight read. The routine ceilings above are unchanged and are not
+// reinterpreted by these.
+export const RESUME_MAX_D1_API_CALLS=5;
+export const RESUME_MAX_MUTATION_REQUESTS=1;
+// The population the whole-cycle read model is evaluated at for the outstanding resume, taken
+// from the last proven governed population. Repository plan evidence, never a Cloudflare bill.
+export const RESUME_REFERENCE_POPULATION=9860;
 const fp=value=>createHash('sha256').update(value).digest('hex');
 const rows=result=>result.results[0].results??[];
 const statementRows=(result,index)=>result.results[index].results??[];
 const population=(result,index,key)=>{const value=Number(statementRows(result,index)[0]?.[key]);if(!Number.isSafeInteger(value)||value<0)throw new Error('production_population_contract_invalid');return value;};
-const exactGovernance=row=>Number(row?.migration_version)===3&&row.migration_name==='production_query_plan_indexes'&&row.source_revision_id===DATA_S2_SOURCE_REVISION_ID&&row.schema_version===DATA_S2_SCHEMA_VERSION&&row.rights_classification==='durable_allowed'&&Number(row.retention_allowed)===1&&Number(row.redistribution_allowed)===0&&Number(row.shadow_ingest_allowed)===1&&row.acquisition_status==='approved_internal_shadow_history'&&row.source_key==='official-fpl'&&row.source_kind==='official_fpl';
 export const productionRunIdFor=value=>`gha-${fp(`${DATA_S2_SOURCE_REVISION_ID}:${value}`).slice(0,40)}`;
 const runIdFor=productionRunIdFor;
 
@@ -43,16 +53,36 @@ async function collectProduction(options){
   if(databaseId!==PRODUCTION_D1_ID)throw new Error('production_d1_identity_mismatch');
   if(season!==PRODUCTION_SEASON)throw new Error('production_season_mismatch');
   const scheduledAt=new Date(options.scheduledAt).toISOString();
-  const client=createD1RestClient({accountId,databaseId,token,transport});let calls=0,read=0,written=0,bytes=0;
-  const dispatch=async plan=>{if(++calls>MAX_D1_API_CALLS_PER_CYCLE)throw new Error('production_api_budget_exceeded');const out=await client.run(plan);read+=out.usage.rowsRead;written+=out.usage.rowsWritten;bytes+=out.requestBytes;return out;};
+  const client=createD1RestClient({accountId,databaseId,token,transport});let calls=0,read=0,written=0,bytes=0,mutations=0;
+  const callCeiling=resumeStarted?RESUME_MAX_D1_API_CALLS:MAX_D1_API_CALLS_PER_CYCLE;
+  const dispatch=async plan=>{if(++calls>callCeiling)throw new Error('production_api_budget_exceeded');const out=await client.run(plan);read+=out.usage.rowsRead;written+=out.usage.rowsWritten;bytes+=out.requestBytes;return out;};
   const enforce=out=>{if(read>MAX_D1_ROWS_READ_PER_CYCLE||written>MAX_D1_ROWS_WRITTEN_PER_CYCLE||out.requestBytes>D1_REST_REQUEST_LIMIT_BYTES)throw new Error('production_d1_budget_exceeded');return out;};
   const execute=async plan=>enforce(await dispatch(plan));
-  const governance=rows(await execute(buildProductionGovernanceRead({sourceRevisionId:DATA_S2_SOURCE_REVISION_ID})));
-  if(governance.length!==1||!exactGovernance(governance[0]))throw new Error('production_governance_mismatch');
-  const runId=runIdFor(scheduledAt),readRun=()=>execute(buildRunRead({runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID}));let existing=rows(await readRun());
-  if(existing.length===1&&existing[0].status==='completed')throw new Error('production_run_already_completed');
-  if(resumeStarted){if(scheduledAt!==FIRST_PRODUCTION_RUN_SCHEDULED_AT||existing.length!==1||!exactStarted(existing[0]))throw new Error('production_resume_state_mismatch');}
-  else if(existing.length)throw new Error('production_run_state_ambiguous');
+  const mutate=async plan=>{if(resumeStarted&&++mutations>RESUME_MAX_MUTATION_REQUESTS)throw new Error('production_resume_mutation_budget_exceeded');return dispatch(plan);};
+  const runId=runIdFor(scheduledAt),readRun=()=>execute(buildRunRead({runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID}));
+  let governanceRow,reconciliation=null,existing=[];
+  if(resumeStarted){
+    // A resume mutates nothing until the unresolved first run has been proved, in the same
+    // execution and by a fixed read-only plan, to be exactly the untouched start-ledger row it
+    // was left as. Anything else is BLOCKED or AMBIGUOUS and stops here; nothing is repaired.
+    if(scheduledAt!==FIRST_PRODUCTION_RUN_SCHEDULED_AT)throw new Error('production_resume_state_mismatch');
+    const reconciled=await execute(buildFirstRunReconciliationRead({runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID}));
+    if(written!==0)throw new Error('production_resume_reconciliation_read_only_violation');
+    if(read>FIRST_RUN_RECONCILIATION_MAX_ROWS_READ)throw new Error('production_resume_reconciliation_resource_ceiling_exceeded');
+    if(reconciled.results.length!==FIRST_RUN_RECONCILIATION_STATEMENT_COUNT)throw new Error('production_resume_reconciliation_cardinality_invalid');
+    let state;
+    try{state=validateFirstRunReconciliation(reconciled.results.map(result=>result.results??[]),{runId,startedAt:scheduledAt});}
+    catch(error){const classified=new Error('production_resume_reconciliation_not_safe');classified.reconciliation=firstRunReconciliationClassification(error);throw classified;}
+    if(state.classification!==RESUME_RECONCILIATION_SAFE)throw new Error('production_resume_reconciliation_not_safe');
+    governanceRow=state.governance;reconciliation=state;
+  }else{
+    const governance=rows(await execute(buildProductionGovernanceRead({sourceRevisionId:DATA_S2_SOURCE_REVISION_ID})));
+    if(governance.length!==1||!exactGovernance(governance[0]))throw new Error('production_governance_mismatch');
+    governanceRow=governance[0];
+    existing=rows(await readRun());
+    if(existing.length===1&&existing[0].status==='completed')throw new Error('production_run_already_completed');
+    if(existing.length)throw new Error('production_run_state_ambiguous');
+  }
   const executionAt=resumeStarted?canonicalExecutionTime(clock(),scheduledAt):scheduledAt;const fetched=[];
   for(const endpoint of OFFICIAL_FPL_ENDPOINTS){const response=await fetchImpl(endpoint,{method:'GET',redirect:'error',headers:{Accept:'application/json'}});if(response?.status!==200)throw new Error('official_fpl_http_failed');const body=await response.arrayBuffer();if(body.byteLength>MAX_OFFICIAL_RESPONSE_BYTES)throw new Error('official_fpl_payload_too_large');let json;try{json=JSON.parse(new TextDecoder().decode(body));}catch{throw new Error('official_fpl_json_invalid');}fetched.push(json);}
   const normal=normaliseOfficialFplHistory({bootstrap:fetched[0],fixtures:fetched[1],season,fetchedAt:executionAt});
@@ -60,7 +90,7 @@ async function collectProduction(options){
   const populationAndHeads=await execute(buildProductionPopulationAndHeadsRead({sourceRevisionId:DATA_S2_SOURCE_REVISION_ID}));
   const previous=rows(populationAndHeads);const historicalObservations=population(populationAndHeads,1,'observations'),currentHeads=population(populationAndHeads,2,'heads');
   const changes=diffOfficialFplHistory(normal.candidates,previous);
-  const observations=await materialiseOfficialFplChanges(changes,{runId,sourceRevision:governance[0],fetchedAt:executionAt,cryptoImpl});
+  const observations=await materialiseOfficialFplChanges(changes,{runId,sourceRevision:governanceRow,fetchedAt:executionAt,cryptoImpl});
   const writeEstimate=changes.length?estimateRoutineCommitRowsWritten({entities:normal.entities,previousRows:previous,observations}):Object.freeze({freshEntities:0,newHeads:0,updatedHeads:0,rowsWritten:ROUTINE_WRITE_AMPLIFICATION.completionUpdate});
   const readEstimate=estimateStructuralCycleRowsRead({observations:historicalObservations,heads:currentHeads,changed:observations.length});
   const readBudget=assertCycleReadBudget({rowsReadSoFar:read,estimate:readEstimate});
@@ -68,16 +98,22 @@ async function collectProduction(options){
   if(!resumeStarted){const start=buildStartRunMutation({runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID,startedAt:scheduledAt,safeEndpointClass:'official_fpl_public_core',parserVersion:DATA_S2_VALIDATION_VERSION,transformVersion:DATA_S2_TRANSFORM_VERSION,schemaVersion:DATA_S2_SCHEMA_VERSION});try{await execute(start);}catch(error){if(error?.code!=='d1_mutation_outcome_unknown')throw classifyProductionFailure(error,PRODUCTION_MUTATION_UNKNOWN,'start_dispatch');existing=rows(await readRun());if(existing.length!==1||!exactStarted(existing[0]))throw classifyProductionFailure(new Error('production_start_ambiguous'),PRODUCTION_MUTATION_UNKNOWN,'start_reconciliation');}}
   const commit=changes.length?buildCommitBatch({entities:normal.entities,previousRows:previous,observations,completedAt:executionAt,recordsSeen:normal.candidates.length,runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID}):buildCompleteUnchangedMutation({completedAt:executionAt,recordsSeen:normal.candidates.length,runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID});
   let committed=null;
-  try{committed=await dispatch(commit);}
+  try{committed=await mutate(commit);}
   catch(error){
     if(error?.code!=='d1_mutation_outcome_unknown')throw classifyProductionFailure(error,PRODUCTION_MUTATION_UNKNOWN,'commit_dispatch');
-    const reconciled=rows(await readRun());
+    // Once the single commit mutation has been issued and its outcome is unknown, no later
+    // failure may downgrade the operation to "no mutation". The one bounded read-back is
+    // therefore classified before it can escape, and there is still no second mutation and no
+    // retry of any kind.
+    let reconciled;
+    try{reconciled=rows(await readRun());}
+    catch(error){throw classifyProductionFailure(error,PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation');}
     if(reconciled.length!==1||reconciled[0].status!=='completed'||Number(reconciled[0].records_accepted)!==observations.length)throw classifyProductionFailure(new Error('production_commit_ambiguous'),PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation');
     return finish(changes.length?'changed_reconciled':'unchanged_reconciled',observations.length,normal.candidates.length);
   }
   try{enforce(committed);}catch(error){throw classifyProductionFailure(error,PRODUCTION_MUTATION_DEFINITE_COMPLETED,'commit_resource');}
   return finish(changes.length?(previous.length?'changed':'baseline'):'unchanged',observations.length,normal.candidates.length);
-  function exactStarted(row){return row?.run_id===runId&&row.source_revision_id===DATA_S2_SOURCE_REVISION_ID&&row.run_type==='official_fpl_structured_history'&&row.mode==='shadow_only'&&row.started_at===scheduledAt&&row.completed_at===null&&row.status==='started'&&row.safe_endpoint_class==='official_fpl_public_core'&&row.parser_version===DATA_S2_VALIDATION_VERSION&&row.transform_version===DATA_S2_TRANSFORM_VERSION&&row.schema_version===DATA_S2_SCHEMA_VERSION&&Number(row.records_seen)===0&&Number(row.records_accepted)===0&&Number(row.records_quarantined)===0&&Number(row.records_rejected)===0&&row.error_class===null;}
+  function exactStarted(row){return exactUntouchedStartedRun(row,{runId,startedAt:scheduledAt});}
   async function finish(result,changed,recordsSeen){
     let stateRows;
     try{stateRows=rows(await execute(buildProductionPostflightRead({runId,sourceRevisionId:DATA_S2_SOURCE_REVISION_ID})));}
@@ -88,7 +124,7 @@ async function collectProduction(options){
     catch(error){throw classifyProductionFailure(error,PRODUCTION_MUTATION_DEFINITE_COMPLETED,'postflight_report');}
   }
   function completed(state,result,changed,recordsSeen){
-    return Object.freeze({ok:true,result,runId,changed:Number(changed),recordsSeen:Number(recordsSeen),executionAt,mutation:PRODUCTION_MUTATION_DEFINITE_COMPLETED,state:Object.freeze({status:state.status,runObservations:Number(state.run_observations),observations:Number(state.observations),heads:Number(state.heads),logicalKeys:Number(state.logical_keys),orphanHeads:Number(state.orphan_heads),quarantined:Number(state.records_quarantined),rejected:Number(state.records_rejected)}),population:Object.freeze({historicalObservations,currentHeads,structuralRowsRead:readEstimate.totalRows,readClassification:readBudget.classification}),d1:Object.freeze({apiCalls:calls,rowsRead:read,rowsWritten:written,readClassification:classifyRowsRead(read),requestBytes:bytes})});
+    return Object.freeze({ok:true,result,runId,changed:Number(changed),recordsSeen:Number(recordsSeen),executionAt,mutation:PRODUCTION_MUTATION_DEFINITE_COMPLETED,state:Object.freeze({status:state.status,runObservations:Number(state.run_observations),observations:Number(state.observations),heads:Number(state.heads),logicalKeys:Number(state.logical_keys),orphanHeads:Number(state.orphan_heads),quarantined:Number(state.records_quarantined),rejected:Number(state.records_rejected)}),reconciliation:reconciliation?Object.freeze({classification:reconciliation.classification,run:reconciliation.run,integrity:reconciliation.integrity}):null,population:Object.freeze({historicalObservations,currentHeads,structuralRowsRead:readEstimate.totalRows,readClassification:readBudget.classification}),d1:Object.freeze({apiCalls:calls,rowsRead:read,rowsWritten:written,readClassification:classifyRowsRead(read),requestBytes:bytes})});
   }
 }
 

@@ -128,8 +128,12 @@ test('the credentialled job requires the protected production environment and re
   assert.match(mutation,/environment:\n      name: data-s2-production-collection/);
   assert.match(mutation,/CLOUDFLARE_D1_TOKEN: \$\{\{ secrets\.CLOUDFLARE_D1_TOKEN \}\}/);
   assert.match(mutation,/CLOUDFLARE_ACCOUNT_ID: \$\{\{ secrets\.CLOUDFLARE_ACCOUNT_ID \}\}/);
+  // The account fingerprint is still supplied by the protected environment, but only on the
+  // final production step and only after the job's first step registered its mask. The
+  // production database id is a reviewed repository constant and is no longer materialised into
+  // any log-visible environment block.
   assert.match(mutation,/CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: \$\{\{ vars\.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT \}\}/);
-  assert.match(mutation,/CLOUDFLARE_PRODUCTION_D1_ID: \$\{\{ vars\.CLOUDFLARE_PRODUCTION_D1_ID \}\}/);
+  assert.doesNotMatch(mutation,/CLOUDFLARE_PRODUCTION_D1_ID/);
   assert.ok(mutation.includes('test "$(git rev-parse HEAD)" = "$APPROVED_SHA"'));
   assert.ok(mutation.includes('test -z "$(git status --porcelain)"'));
   // No credential is created, rotated or widened, and no new secret name is introduced.
@@ -455,9 +459,10 @@ test('no live secret or raw Cloudflare payload reaches the reported result or di
   const result=await run([reconciliation(preState()),mutationOk(),reconciliation(postState())]).promise;
   const rendered=JSON.stringify(result);
   for(const secret of [TOKEN,ACCOUNT,PRODUCTION_D1_ID,FINGERPRINT])assert.ok(!rendered.includes(secret),secret);
-  assert.match(entrySource,/::add-mask::\$\{token\}/);
-  assert.match(entrySource,/::add-mask::\$\{accountId\}/);
-  assert.match(entrySource,/::add-mask::\$\{databaseId\}/);
+  assert.match(entrySource,/maskProductionIdentity\(resolveProductionIdentity\(process\.env\)\)/);
+  const identity=fs.readFileSync('workers/data-platform/production-identity.mjs','utf8');
+  for(const name of ['token','accountId','databaseId'])
+    assert.ok(identity.includes('::add-mask::${identity.'+name+'}'),name);
   // Raw responses stay in memory for the request only; nothing is written or uploaded.
   for(const source of [applySource,entrySource]){
     assert.doesNotMatch(source,/writeFileSync|createWriteStream|RUNNER_TEMP/);
@@ -469,9 +474,14 @@ test('no live secret or raw Cloudflare payload reaches the reported result or di
 
 test('the entry point is single-attempt and takes its identity only from protected configuration',()=>{
   assert.match(entrySource,/GITHUB_RUN_ATTEMPT!=='1'\)throw new Error\('workflow_retry_forbidden'\)/);
-  const required=[...entrySource.matchAll(/required\('([A-Z0-9_]+)'\)/g)].map(row=>row[1]).sort();
+  const identity=fs.readFileSync('workers/data-platform/production-identity.mjs','utf8');
+  const required=[...identity.matchAll(/required\('([A-Z0-9_]+)'\)/g)].map(row=>row[1]).sort();
   assert.deepEqual(required,['CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_D1_TOKEN',
-    'CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT','CLOUDFLARE_PRODUCTION_D1_ID']);
+    'CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT']);
+  // The database identity comes from the reviewed repository constant, and a supplied value is
+  // only ever accepted when it is byte-identical to it.
+  assert.match(identity,/databaseId:PRODUCTION_D1_ID/);
+  assert.match(identity,/supplied!==PRODUCTION_D1_ID\)throw new Error\('production_d1_identity_mismatch'\)/);
   // The runner reuses the collection module only for the pinned production database identity.
   assert.match(applySource,/import \{PRODUCTION_D1_ID\} from '\.\.\/production-collection\.mjs';/);
   assert.doesNotMatch(executableCode,/runProductionCollection|runProductionResume|buildCommitBatch|buildStartRunMutation|buildCompleteUnchangedMutation|buildFailRunMutation/);
@@ -702,7 +712,7 @@ test('the remediation adds no collection, resume, schedule, Cron, Worker, secret
   const secrets=[...new Set([...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort();
   assert.deepEqual(secrets,['CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_D1_TOKEN']);
   const variables=[...new Set([...workflow.matchAll(/vars\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort();
-  assert.deepEqual(variables,['CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT','CLOUDFLARE_PRODUCTION_D1_ID']);
+  assert.deepEqual(variables,['CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT']);
   assert.doesNotMatch(executableCode,/EXPLAIN/i);
   assert.deepEqual([...workflowBody.matchAll(/node (workers\/[^\s]+)/g)].map(row=>row[1]),
     ['workers/data-platform/run-migration-0003.mjs']);
