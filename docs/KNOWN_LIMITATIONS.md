@@ -1,5 +1,25 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
+## DATA-S2 manual production collection limitations
+
+Exact provider `meta.rows_read` and `meta.rows_written` for reconciliation run `33792104384` and
+resume run `33815400284` are **unavailable**: they reach only each run's GitHub Step Summary,
+which is not retrievable through the GitHub API available here. Cloudflare dashboard aggregates
+observed after the resume are account-level, time-window figures covering all queries in a period;
+they are not per-workflow accounting and are not attributed to either run. Only provider-returned
+`meta` values are workflow accounting.
+
+The hardened manual collection gate is repository evidence, not live-proven: **no normal
+production collection has run under it**, and the resource envelope for a routine cycle remains a
+repository plan estimate rather than a Cloudflare bill. The repository still has no mechanism to
+read remaining daily D1 quota and none was added, so real-time remaining allowance cannot be
+proven here and stays an owner-side judgement at approval time. The second remote-`main` check
+closes the protected-environment admission window but is not atomic with the runner's first
+request; a push landing in the interval between that check and the entry point would not be
+detected.
+
+
 ## DI-3 Stage A limitations
 
 DI-3 is offline and synthetic/reference-validated only. It has no committed corpus-wide all-domain parity evidence, production integration, live monitoring, new materiality rule, validated flexibility utility, competitive strategy, chip strategy or accuracy claim. The transfer adapter can represent emitted optimiser outputs; equivalent adapters for every live XI/captain/vice/bench pathway remain a Stage-B integration decision. No DI-1/DI-2 candidate has been graduated.

@@ -1,6 +1,59 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
+### Current DATA-S2B checkpoint — manual collection hardening; first production run completed
+
+**The originally unresolved first production collection run is completed.** The owner dispatched
+two runs from exact `main` `d79dd37451e16b642ce96709b8635c3ac618c366`, both verified
+independently from the GitHub Actions API. Read-only reconciliation `DATA-S2B First Production
+Run Reconciliation` run `33792104384` (attempt 1) succeeded; its entry point exits zero only on
+`RESUME_RECONCILIATION_SAFE`, so success proves that classification, and the runner required
+`rows_written === 0` under a 1,000-row read guard, so it mutated nothing. `DATA-S2 First
+Production Run Resume` run `33815400284` (attempt 1) then succeeded in both jobs;
+`runProductionCollection` returns only after synchronous postflight has proved the exact
+completed run, its counters, run-owned observation ownership, heads equal to distinct logical
+keys and zero orphan, invalid, non-accepted, quarantined and rejection state. The unresolved
+`started` ledger row therefore needs no further reconciliation or resume. **Exact provider
+`meta.rows_read` and `meta.rows_written` for those runs reach only the GitHub Step Summary, are
+not retrievable through the GitHub API available here, and are stated nowhere; Cloudflare
+dashboard aggregates are account-level time-window figures, are not per-workflow accounting, and
+must never be recorded as exact resume usage.**
+
+The **manual normal production collection workflow is now hardened to the same trust boundary**
+as the migration-0003, live EXPLAIN, reconciliation and resume paths. It stays manual-only and
+takes one immutable `approved_sha`. A credential-free `repository-gate` job — no protected
+environment, no Cloudflare secret, no account fingerprint, no D1 — proves the event, the exact
+repository `priteshpatel390-del/FPL`, ref `refs/heads/main`, a lowercase 40-character SHA, an
+exact checkout, `HEAD` equal to the approved SHA, a clean tree, a freshly resolved remote `main`
+equal to it, and a completed, successful, exact-head `Tests and deterministic build` check run
+produced by `github-actions`. Only then does the `collect` job request the existing
+`data-s2-production-collection` environment and its existing credentials; none were created,
+renamed, rotated or widened. Because environment admission can wait while `main` advances, the
+final step re-establishes exact Node 24.19.0, exact `HEAD`, a clean tree and Wrangler removal,
+then resolves remote `main` again from the remote — never from a value carried between jobs —
+in the same shell immediately before the runner, with no Cloudflare request before it. The one
+attempt's `COLLECTION_SCHEDULED_AT` is fixed once inside that same protected step rather than
+travelling through `GITHUB_ENV`, so no earlier mutable stage establishes production identity; its
+minute-precision UTC semantic is unchanged. `GITHUB_RUN_ATTEMPT !== '1'` still refuses a GitHub
+re-run, and the entry point now writes the sanitized mutation classification to the workflow
+summary before rethrowing, so a stopped collection is never presented as a no-write.
+
+No ceiling moved: 100,000 expected reads, 125,000 hard reads, 40,000 hard writes, 8 D1 calls and
+8 MiB per Official response all stand, with no blind retry, bounded unknown-mutation
+reconciliation and synchronous postflight intact. The PR #215 identifier-logging remediation is
+preserved: no D1 id in any workflow environment, the fingerprint mask registered by the
+credentialled job's first step before the variable is materialised, and the variable present only
+in the final production step.
+
+**Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read
+or mutation, collection, resume, reconciliation, migration, deployment, schedule, Cron or
+credential change was performed. GitHub scheduling stays disabled, live Cloudflare Cron stays
+intentionally absent, and `FUTURE_PRODUCTION_COLLECTION_SCHEDULE = '17 1 * * *'` stays unwired.
+Next gates: merge and exact-`main` Verify, then separate owner approval for exactly **one**
+manual normal production collection. Recurring scheduling remains a later separate approval. See
+[manual collection hardening](workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
+
 <!-- DATA-S2B-FIRST-RUN-RECONCILIATION-2026-09-03 -->
 ### Current DATA-S2B checkpoint — first-run reconciliation, resume hardening, identifier logging
 

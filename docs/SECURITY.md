@@ -1,5 +1,35 @@
 # SECURITY.md
 
+<!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
+## DATA-S2 manual production collection trust boundary
+
+The manual normal collection workflow now matches the hardened migration-0003, EXPLAIN,
+reconciliation and resume boundary. Its only input is one immutable lowercase 40-character
+`approved_sha`, never used as an execution input. A separate `repository-gate` job with no
+protected environment, no Cloudflare secret, no account fingerprint variable and no D1 access must
+first prove the `workflow_dispatch` event, repository `priteshpatel390-del/FPL`, ref
+`refs/heads/main`, an exact checkout, `HEAD` equal to the approved SHA, a clean tree, a freshly
+resolved remote `main` equal to it, and a completed, successful, exact-head `Tests and
+deterministic build` check run produced by `github-actions` and linked to this repository's
+Actions runs. Only then may the protected job request the existing `data-s2-production-collection`
+environment; no credential was created, renamed, rotated or widened.
+
+Because protected-environment admission can wait while `main` advances, the final step
+re-establishes exact Node 24.19.0, exact `HEAD`, a clean tree and Wrangler removal, then resolves
+remote `main` again from the remote — never from a value carried between jobs — in the same shell
+immediately before the production entry point, with no Cloudflare request before it. Permanent
+tests execute that shell and prove a moved main, an empty remote-main resolution, a wrong head and
+a dirty tree each leave the runner uninvoked. `GITHUB_RUN_ATTEMPT !== '1'` refuses a GitHub re-run
+before any identity resolution, so a failed or unknown production operation can never be retried
+from the Actions UI.
+
+Identifier handling follows the PR #215 remediation: account id and D1 token stay secrets, the
+production D1 id comes from the reviewed repository constant and appears in no workflow
+environment, and the account fingerprint is materialised only by the final production step after
+the credentialled job's first step has registered its mask, derived from the already-masked account
+credential. Runtime masking remains defence in depth. No raw credential, account id, D1 UUID or
+provider body reaches diagnostics.
+
 <!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
 ## Phase 4B inherited-binding provenance boundary
 

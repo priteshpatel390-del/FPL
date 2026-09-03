@@ -4,6 +4,21 @@
 
 DI-1 implements the generic shadow contract approved by DI-0: deterministic observations, canonical identity/timing/provenance, fail-closed rights, signal registry, approval ledger and hard shadow repository boundary. It registers and activates no real source, contains no production approval/read path, and changes no recommendation, provider, DATA-S2B/D1/Cloudflare, Stage 10 or UI behaviour. After owner review, merge remains an explicit gate. The next proposed checkpoint is DI-2 automated evaluation and ablation, separately approved and still shadow-only.
 
+<!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
+## Current DATA-S2B gate — manual collection hardening; one manual collection is the next live gate
+
+The first production collection run is completed: reconciliation run `33792104384` and resume run
+`33815400284` both succeeded on exact `main` `d79dd37451e16b642ce96709b8635c3ac618c366`, and the
+success contracts of those entry points prove `RESUME_RECONCILIATION_SAFE` and a validated
+synchronous postflight respectively. Exact provider row accounting for them is unavailable.
+
+The manual normal collection workflow is now hardened to the same trust boundary as the
+migration-0003, EXPLAIN, reconciliation and resume paths, and remains manual-only. Next gate is
+owner review and merge; after merge, exact-`main` Verify Teamsheet must pass, and only then may
+the owner separately approve exactly **one** manual production collection. Recurring GitHub
+scheduling and Cloudflare Cron remain disabled and separately unapproved; activation is a later
+checkpoint after one observed manual collection.
+
 <!-- DATA-S2B-PHASE4B-LATEST-INHERITANCE-REMEDIATION-2026-08-28 -->
 ## Current DATA-S2B gate — review Phase 4B `latest` inheritance remediation
 

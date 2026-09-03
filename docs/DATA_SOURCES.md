@@ -1,5 +1,21 @@
 # DATA_SOURCES.md
 
+<!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
+## DATA-S2B collection state — first run completed, manual collection gate hardened
+
+The first Official FPL production collection run is completed: owner-dispatched reconciliation run
+`33792104384` proved `RESUME_RECONCILIATION_SAFE` read-only, and resume run `33815400284` returned
+only after synchronous postflight proved the exact completed run, its counters and consistent
+observation/head state. Endpoints, allowlisted fields, canonical normalisation, rights
+classification, retention and redistribution posture are unchanged; no provider was added or
+altered and no raw payload is retained. Exact provider `rows_read`/`rows_written` for those runs
+are unavailable, and Cloudflare dashboard aggregates are not per-workflow accounting.
+
+Routine normal collection has still never run. Its manual workflow is now gated by one immutable
+approved SHA, a credential-free repository gate and a second remote-`main` check in the same shell
+as the runner; scheduling stays disabled and Cloudflare Cron stays intentionally absent. See
+[manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
+
 <!-- DATA-S2A-2026-08-26 -->
 ## Official FPL DATA-S2A internal structured-history approval
 

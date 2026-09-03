@@ -3,7 +3,41 @@
 Repository-only checkpoint. **No Cloudflare request, workflow dispatch, D1 read or mutation,
 production reconciliation, resume, collection, migration, deployment, schedule, Cron or
 credential change was performed while preparing it.** Everything below describes repository
-machinery that exists after merge; none of it has been executed against production.
+machinery that existed after merge.
+
+## Live outcome — this machinery has since been executed, and the first run is completed
+
+**This section supersedes the "first production collection run remains unresolved and unresumed"
+baseline bullet below and every later statement in this record that describes the reconciliation
+or the resume as never executed. The rest of the record remains the authoritative design and
+contract evidence.**
+
+Both runs were dispatched by the owner from exact `main`
+`d79dd37451e16b642ce96709b8635c3ac618c366` and were verified independently from the GitHub
+Actions API:
+
+- **Read-only reconciliation** — `DATA-S2B First Production Run Reconciliation`, run
+  `33792104384`, attempt 1, event `workflow_dispatch`, conclusion `success`. The entry point
+  exits zero only on `RESUME_RECONCILIATION_SAFE`, so success proves that classification. The
+  runner requires `rows_written === 0` and enforces the 1,000-row read guard, so it performed no
+  D1 mutation.
+- **First-run resume** — `DATA-S2 First Production Run Resume`, run `33815400284`, attempt 1,
+  event `workflow_dispatch`, conclusion `success`, with both the `repository-gate` and
+  `first-run-resume` jobs successful. `runProductionCollection` returns only after its
+  synchronous postflight has proved the exact completed run, its counters, run-owned observation
+  ownership, head/logical-key equality and zero orphan, non-accepted, quarantined and rejection
+  state. **The originally unresolved first production collection run is therefore definitively
+  completed**, and needs no further reconciliation or resume.
+
+The exact provider `meta.rows_read` and `meta.rows_written` for either run reach only the GitHub
+Step Summary, which is not retrievable through the GitHub API available here. They are
+**unavailable** and are stated nowhere. Cloudflare dashboard aggregates observed after the resume
+are account-level, time-window figures, are not attributable to one workflow, and must never be
+recorded as exact resume accounting.
+
+GitHub scheduling remains disabled and live Cloudflare Cron remains intentionally absent. The
+manual normal collection path has since been hardened to this same trust boundary; see
+[manual collection hardening](DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
 
 ## Baseline this checkpoint starts from
 

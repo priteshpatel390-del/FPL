@@ -1,5 +1,28 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
+## Current DATA-S2B checkpoint — manual collection hardening; first production run completed
+
+The originally unresolved first production collection run is **completed**. Owner-dispatched
+read-only reconciliation run `33792104384` and first-run resume run `33815400284`, both attempt 1
+on exact `main` `d79dd37451e16b642ce96709b8635c3ac618c366`, each succeeded and were verified
+independently from the GitHub Actions API; the reconciliation entry point exits zero only on
+`RESUME_RECONCILIATION_SAFE` and the resume returns only after synchronous postflight proves the
+exact completed run. Exact provider `rows_read`/`rows_written` for those runs are **unavailable**
+— they reach only the GitHub Step Summary — and Cloudflare dashboard aggregates are account-level
+figures, never per-workflow accounting.
+
+This checkpoint brings the manual normal production collection workflow to the hardened
+migration-0003 / EXPLAIN / reconciliation / resume trust boundary: one immutable `approved_sha`, a
+credential-free repository gate proving event, repository, ref, exact checkout, clean tree, fresh
+remote `main` and exact-head Verify success, then a protected job that re-resolves remote `main`
+in the same shell as the runner and fixes the one attempt's collection identity there. No
+collector semantic, provider, schema, migration, model or recommendation behaviour changes, no
+ceiling moves, and no production action was performed. Scheduling stays disabled and Cloudflare
+Cron stays intentionally absent. The next live gate is exactly one separately approved manual
+production collection after merge and exact-`main` Verify. See
+[manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
+
 <!-- DECISION-INTELLIGENCE-DI1-2026-08-29 -->
 ## Current Decision Intelligence checkpoint — DI-1 review candidate
 
