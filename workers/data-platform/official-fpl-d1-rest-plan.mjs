@@ -1,5 +1,6 @@
 import {assertPinnedMigration0003Statements,MIGRATION_0003_INDEXES} from './migration3/migration-0003-contract.mjs';
 import {PRODUCTION_EXPLAIN_STATEMENT_COUNT} from './explain/production-explain-contract.mjs';
+import {FIRST_RUN_RECONCILIATION_STATEMENT_COUNT} from './resume/first-run-reconciliation-contract.mjs';
 export const D1_MAX_SQL_BYTES=100000;
 export const D1_MAX_BOUND_PARAMETERS=100;
 export const D1_MAX_VALUE_BYTES=2000000;
@@ -96,6 +97,26 @@ export const buildProductionExplainAcceptanceRead=({sourceRevisionId,runId})=>{
     {sql:`EXPLAIN QUERY PLAN ${POSTFLIGHT_SQL}`,params:[run,revision,revision,revision,revision,run,revision]}
   ];
   if(statements.length!==PRODUCTION_EXPLAIN_STATEMENT_COUNT)throw new Error('production_explain_statement_contract_invalid');
+  return create('read',false,statements);
+};
+
+// DATA-S2B — the fixed first-production-run reconciliation read.
+//
+// One trusted read-only plan of exactly three statements: the existing governance constant, the
+// existing single-run constant, and one run-scoped integrity row. It accepts no SQL, no table,
+// no column and no statement input; the only arguments are the two identifiers the production
+// SQL already binds, and they only ever become bound parameters. Every predicate leads on an
+// indexed column, so the proof visits the pinned run's own rows rather than a population.
+const FIRST_RUN_INTEGRITY_SQL=`SELECT (SELECT COUNT(*) FROM shadow_observations WHERE ingestion_run_id=? AND source_revision_id=?) AS run_observations,(SELECT COUNT(*) FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id WHERE o.ingestion_run_id=? AND o.source_revision_id=?) AS run_heads,(SELECT COUNT(*) FROM observation_rejections WHERE run_id=? AND source_revision_id=?) AS run_rejections,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=?) AS revision_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=? AND status='started') AS started_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=? AND status='completed') AS completed_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=? AND status NOT IN ('started','completed')) AS other_runs`;
+
+export const buildFirstRunReconciliationRead=({runId,sourceRevisionId})=>{
+  const run=required(runId,'run'),revision=required(sourceRevisionId,'source_revision');
+  const statements=[
+    {sql:GOVERNANCE_SQL,params:[revision]},
+    {sql:RUN_SQL,params:[run,revision]},
+    {sql:FIRST_RUN_INTEGRITY_SQL,params:[run,revision,run,revision,run,revision,revision,revision,revision,revision]}
+  ];
+  if(statements.length!==FIRST_RUN_RECONCILIATION_STATEMENT_COUNT)throw new Error('first_run_reconciliation_statement_contract_invalid');
   return create('read',false,statements);
 };
 

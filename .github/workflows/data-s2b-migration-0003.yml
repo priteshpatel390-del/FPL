@@ -98,9 +98,20 @@ jobs:
       APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
-      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
-      CLOUDFLARE_PRODUCTION_D1_ID: ${{ vars.CLOUDFLARE_PRODUCTION_D1_ID }}
     steps:
+      # GitHub echoes each step's resolved environment in that step's log header, and only
+      # `secrets.*` values are masked automatically. The account fingerprint is a `vars.*` value,
+      # so its mask is registered here — derived from the already-masked account credential —
+      # before any step materialises the variable itself. The production database id is a
+      # reviewed repository constant and is not carried in the environment at all.
+      - name: Register production identifier masks before any other step
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
       - name: Check out gated approved revision
         uses: actions/checkout@v5
         with:
@@ -119,6 +130,8 @@ jobs:
       # job, in the same shell and immediately before the production entry point. No Cloudflare
       # request is made before it.
       - name: Reconfirm identity and remote main, then apply migration 0003 only
+        env:
+          CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
         run: |
           set -euo pipefail
           test "$(node --version)" = v24.19.0

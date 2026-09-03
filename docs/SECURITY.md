@@ -294,3 +294,27 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
 
 The protected environment must provide an independently owner-approved disposable-account fingerprint as well as the production-account fingerprint. Both use canonical lowercase SHA-256 form; the runtime raw disposable account must match the former and differ from the latter before any request. No raw production account ID is supplied or retained.
+
+### DATA-S2B production identifier logging remediation
+
+The successful live EXPLAIN acceptance job log displayed the production account fingerprint and
+the production D1 database id before the Node entry point's `::add-mask::` executed. The API
+token came from `secrets.*` and stayed masked throughout. Root cause: GitHub Actions echoes each
+step's resolved environment in that step's log header, and only `secrets.*` values are registered
+as masks, so both identifiers — declared in the credentialled job's job-level `env:` from
+`vars.*` — were written to the log by the first step, before any Node process existed.
+
+These values are identifiers, not credentials: neither authenticates a D1 REST request, the
+database id is already a reviewed public repository constant, and the fingerprint is a SHA-256
+hash rather than the account id. Severity is therefore low. It is still a defect against this
+repository's standing rule that no account ID or D1 UUID reaches diagnostics, so it is fixed at
+the workflow boundary: the D1 identifier is removed from every credentialled workflow in favour
+of the reviewed repository constant, which also pins the target database to SHA-gated repository
+content instead of a mutable environment variable; the account fingerprint remains
+environment-supplied — deriving it from the credential it validates would make the check
+tautological — but is declared only on the final production step, after the credentialled job's
+first step registers its mask from the already-masked account credential. Runtime masking is
+retained as defence in depth. No credential was rotated, no secret renamed, no GitHub Variable
+reclassified as a secret, and no identifier value is recorded in this repository. Permanent tests
+prove no production identifier variable is materialised into a log-visible workflow or job `env:`
+block across the collection, migration-0003, EXPLAIN, resume and reconciliation workflows.

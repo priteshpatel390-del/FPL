@@ -4,10 +4,10 @@
 // runs the dedicated migration-0003 runner exactly once, and writes only a bounded sanitized
 // summary. Raw Cloudflare payloads are never written to disk and never uploaded as artifacts.
 import fs from 'node:fs';
+import {maskProductionIdentity,resolveProductionIdentity} from './production-identity.mjs';
 import {applyMigration0003,migration0003FailureClassification} from './migration3/apply-migration-0003.mjs';
 import {MIGRATION_0003_NAME,MIGRATION_0003_PATH,MIGRATION_0003_VERSION} from './migration3/migration-0003-contract.mjs';
 
-const required=name=>{const value=process.env[name];if(!value)throw new Error(`missing_${name.toLowerCase()}`);return value;};
 const summary=(heading,payload)=>{
   const line=`## ${heading}\n\n- Migration: \`${MIGRATION_0003_PATH}\` (version ${MIGRATION_0003_VERSION}, \`${MIGRATION_0003_NAME}\`)\n- Repository SHA: \`${process.env.APPROVED_SHA??'unknown'}\`\n\n\`${JSON.stringify(payload)}\`\n`;
   if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,line);else process.stdout.write(line);
@@ -17,11 +17,7 @@ const summary=(heading,payload)=>{
 // could not classify. A retry is only ever a separate owner-approved dispatch.
 if(process.env.GITHUB_RUN_ATTEMPT!=='1')throw new Error('workflow_retry_forbidden');
 
-const accountId=required('CLOUDFLARE_ACCOUNT_ID');
-const token=required('CLOUDFLARE_D1_TOKEN');
-const databaseId=required('CLOUDFLARE_PRODUCTION_D1_ID');
-const accountFingerprint=required('CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT');
-process.stdout.write(`::add-mask::${token}\n::add-mask::${accountId}\n::add-mask::${databaseId}\n`);
+const {accountId,accountFingerprint,databaseId,token}=maskProductionIdentity(resolveProductionIdentity(process.env));
 
 let result;
 try{result=await applyMigration0003({accountId,accountFingerprint,databaseId,token,transport:request=>fetch(request.url,request)});}

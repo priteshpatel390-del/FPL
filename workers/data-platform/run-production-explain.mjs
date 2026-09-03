@@ -5,10 +5,10 @@
 // Raw Cloudflare payloads are never written to disk and never uploaded as an artifact. Any
 // classification other than PLAN_ACCEPTED rethrows, so the workflow fails.
 import fs from 'node:fs';
+import {maskProductionIdentity,resolveProductionIdentity} from './production-identity.mjs';
 import {acceptProductionExplainPlans,productionExplainFailureClassification} from './explain/accept-production-plans.mjs';
 import {PRODUCTION_EXPLAIN_ACCEPTED} from './explain/production-explain-contract.mjs';
 
-const required=name=>{const value=process.env[name];if(!value)throw new Error(`missing_${name.toLowerCase()}`);return value;};
 const summary=(heading,payload)=>{
   const line=`## ${heading}\n\n- Repository SHA: \`${process.env.APPROVED_SHA??'unknown'}\`\n\n\`${JSON.stringify(payload)}\`\n`;
   if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,line);else process.stdout.write(line);
@@ -18,11 +18,7 @@ const summary=(heading,payload)=>{
 // not classify. Another attempt is only ever a separate owner-approved dispatch.
 if(process.env.GITHUB_RUN_ATTEMPT!=='1')throw new Error('workflow_retry_forbidden');
 
-const accountId=required('CLOUDFLARE_ACCOUNT_ID');
-const token=required('CLOUDFLARE_D1_TOKEN');
-const databaseId=required('CLOUDFLARE_PRODUCTION_D1_ID');
-const accountFingerprint=required('CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT');
-process.stdout.write(`::add-mask::${token}\n::add-mask::${accountId}\n::add-mask::${databaseId}\n`);
+const {accountId,accountFingerprint,databaseId,token}=maskProductionIdentity(resolveProductionIdentity(process.env));
 
 let result;
 try{result=await acceptProductionExplainPlans({accountId,accountFingerprint,databaseId,token,transport:request=>fetch(request.url,request)});}

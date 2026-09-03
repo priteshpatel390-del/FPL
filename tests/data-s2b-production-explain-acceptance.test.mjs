@@ -151,7 +151,11 @@ test('the real schema-0003 plans for all four production statements are accepted
 test('the local plan evidence is repository evidence only and is not a D1 acceptance claim',()=>{
   // A permanent reminder in the record itself; the live gate is the workflow, not this test.
   const record=fs.readFileSync('workers/data-platform/DATA-S2B-LIVE-EXPLAIN-ACCEPTANCE.md','utf8');
-  assert.match(record,/LIVE EXPLAIN HAS NOT BEEN RUN/);
+  assert.match(record,/LIVE EXPLAIN ACCEPTANCE PASSED/);
+  assert.match(record,/33783839210/);
+  assert.match(record,/faffe2d1e72dd991743b65d35c6c2b77574a4924/);
+  assert.match(record,/no D1 mutation/i);
+  assert.match(record,/not\s+recoverable through the GitHub connector/);
   assert.match(record,/local SQLite/i);
 });
 
@@ -401,8 +405,10 @@ test('the EXPLAIN resource contract is separate from and far below the routine a
 
 test('the entry point is single-attempt, masks identifiers and persists no raw payload',()=>{
   assert.match(entrySource,/GITHUB_RUN_ATTEMPT!=='1'\)throw new Error\('workflow_retry_forbidden'\)/);
-  assert.match(entrySource,/::add-mask::\$\{token\}/);
-  for(const name of ['accountId','databaseId'])assert.ok(entrySource.includes(`::add-mask::\${${name}}`));
+  assert.match(entrySource,/maskProductionIdentity\(resolveProductionIdentity\(process\.env\)\)/);
+  const identity=fs.readFileSync('workers/data-platform/production-identity.mjs','utf8');
+  for(const name of ['token','accountId','databaseId'])
+    assert.ok(identity.includes('::add-mask::${identity.'+name+'}'),name);
   assert.match(entrySource,/classification!==PRODUCTION_EXPLAIN_ACCEPTED/);
   assert.match(entrySource,/throw error/);
   // Only the bounded sanitized summary is written; no artifact, no raw payload on disk.
@@ -447,7 +453,9 @@ test('exact-main and exact-head Verify gates complete before production credenti
   assert.deepEqual([...new Set([...execution2.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort(),
     ['CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_D1_TOKEN']);
   assert.deepEqual([...new Set([...execution2.matchAll(/vars\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort(),
-    ['CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT','CLOUDFLARE_PRODUCTION_D1_ID']);
+    ['CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT']);
+  // The production database id is a reviewed repository constant, never a workflow variable.
+  assert.doesNotMatch(workflow,/CLOUDFLARE_PRODUCTION_D1_ID/);
 });
 
 // The exact shell the credentialled job runs immediately before the production entry point.
