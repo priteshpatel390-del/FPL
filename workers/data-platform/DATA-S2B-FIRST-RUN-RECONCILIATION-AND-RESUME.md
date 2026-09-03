@@ -40,11 +40,19 @@ builder, so no `INSERT`, `UPDATE`, `DELETE` or DDL statement is reachable from i
 permanent test asserts that.
 
 The integrity row returns seven counters — `run_observations`, `run_heads`, `run_rejections`,
-`revision_runs`, `started_runs`, `completed_runs`, `other_runs`. Every predicate leads on an
-existing index (`shadow_observations_ingestion_run`, `observation_heads_observation_id`,
-`observation_rejections_source_revision` and the ingestion-run unique index), proved locally
-against migrations 0001–0003, so the reconciliation visits the pinned run's own rows instead of
-scanning a population.
+`revision_runs`, `started_runs`, `completed_runs`, `other_runs`.
+
+The high-volume paths are index-supported: the observation, head and rejection predicates use
+`shadow_observations_ingestion_run`, `observation_heads_observation_id` and
+`observation_rejections_source_revision`, proved locally against migrations 0001–0003, so the
+reconciliation visits the pinned run's own rows instead of scanning `shadow_observations`,
+`observation_heads` or `observation_rejections`. The small `ingestion_runs` counters filtered by
+source revision and status are **not** covered by a source-revision-leading index under the
+current schema; that table holds a handful of rows, and those counters are bounded instead by the
+reconciliation's strict 1,000 provider-rows-read ceiling, so any unexpected read amplification
+fails the run closed. No index is added and migration 0003 is unchanged. These are local plan
+observations, not Cloudflare billing; only Cloudflare's returned `meta.rows_read` and
+`meta.rows_written` are ever reported as accounting.
 
 Classifications are explicit and total:
 
@@ -109,6 +117,14 @@ Sequence, at most five D1 API calls:
    `RESUME_MAX_MUTATION_REQUESTS = 1`;
 4. a bounded read-only reconciliation of the run row if that mutation's outcome is unknown;
 5. the consolidated synchronous postflight.
+
+Once the single commit mutation has been issued and its outcome is unknown, no later failure may
+downgrade the operation to "no mutation": the one bounded read-back is classified inside that
+branch, so a read-back transport failure, HTTP failure, malformed result, provider-accounting
+failure or resource-ceiling failure all report mutation `unknown`, phase `commit_reconciliation`
+and `retryable: false`, and the outer wrapper preserves that classification rather than applying
+its default `none`. Permanent regressions cover each of those read-back failure modes and prove
+exactly one commit mutation and exactly one post-commit read-back.
 
 Unchanged and still enforced: a definite non-transport failure is never retried; an unknown
 mutation outcome triggers exactly one bounded read-only reconciliation, never a second mutation;

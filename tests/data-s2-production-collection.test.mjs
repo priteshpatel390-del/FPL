@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {createHash} from 'node:crypto';
-import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,FUTURE_PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
+import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,classifyProductionFailure,FUTURE_PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
 import {buildCurrentHeadsRead,buildProductionPopulationAndHeadsRead,estimateRoutineCommitRowsWritten,inspectOfficialFplD1RestPlan,MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,ROUTINE_WRITE_AMPLIFICATION} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 import {normaliseOfficialFplHistory} from '../workers/data-platform/official-fpl-canonical.mjs';
 const account='production_account';const fingerprint=createHash('sha256').update(account).digest('hex');
@@ -149,3 +149,68 @@ test('redispatch cannot create a second run, retry blindly, or claim success wit
 });
 
 test('wrong fingerprint, D1 and season fail before dispatch without credential output',async()=>{const h=harness();for(const changed of [{accountFingerprint:'0'.repeat(64)},{databaseId:'wrong'},{season:'2025-26'}])await assert.rejects(runProductionCollection({...options(h.transport),...changed}),error=>{assert.doesNotMatch(String(error),/secret|production_account$/);return true;});assert.equal(h.requests.length,0);});
+
+/* --------- unknown commit outcome: the read-back may never downgrade to "no mutation" --------- */
+
+// A transport whose commit response is lost and whose single post-commit read-back then fails in
+// the named way. Once the commit has been issued, no later failure may report the run as a
+// no-write, and there is never a second mutation or a retry of the read-back.
+function lostCommit(readBackFailure){
+  const requests=[],heads=mutate(facts(),1);let run=null,committed=false;
+  const transport=async request=>{
+    requests.push(request);
+    const body=JSON.parse(request.body),statements=body.batch??[body],sql=statements[0].sql;
+    if(sql.includes('schema_migrations'))return ok([[revision]],1,0);
+    if(sql.startsWith('SELECT run_id')){
+      if(!committed)return ok([[...(run?[run]:[])]],1,0);
+      return readBackFailure();
+    }
+    if(sql.startsWith('SELECT o.*'))return ok([heads,[{observations:heads.length}],[{heads:heads.length}]],heads.length,0);
+    if(sql.startsWith('INSERT OR IGNORE INTO ingestion_runs')){run=started(statements[0].params[2]);return ok([[]],0,1);}
+    if(sql.startsWith('UPDATE ingestion_runs')||statements.at(-1).sql.startsWith('UPDATE ingestion_runs')){
+      committed=true;throw new Error('lost response');
+    }
+    throw new Error('unexpected');
+  };
+  return {requests,transport,
+    commits:()=>requests.filter(r=>r.body.includes('UPDATE ingestion_runs')).length,
+    readBacks:()=>requests.filter(r=>JSON.parse(r.body).sql?.startsWith('SELECT run_id')).length};
+}
+
+const lostCommitCases=[
+  ['read-back transport failure',()=>{throw new Error('network down');}],
+  ['malformed read-back response',()=>({status:200,json:async()=>({success:true,result:[]})})],
+  ['read-back provider accounting failure',()=>({status:200,json:async()=>({success:true,
+    result:[{success:true,results:[],meta:{rows_read:'many',rows_written:0,changes:0}}]})})],
+  ['read-back resource ceiling failure',()=>ok([[]],MAX_D1_ROWS_READ_PER_CYCLE+1,0)],
+  ['read-back HTTP failure',()=>({status:500,json:async()=>({success:false})})]
+];
+
+for(const [name,failure] of lostCommitCases)
+  test(`a lost commit response followed by ${name} stays unknown, never a no-write`,async()=>{
+    const h=lostCommit(failure);
+    await assert.rejects(runProductionCollection(options(h.transport)),error=>{
+      const classification=productionFailureClassification(error);
+      assert.equal(classification.mutation,PRODUCTION_MUTATION_UNKNOWN);
+      assert.notEqual(classification.mutation,PRODUCTION_MUTATION_NONE);
+      assert.equal(classification.phase,'commit_reconciliation');
+      assert.equal(classification.retryable,false);
+      return true;});
+    // Exactly one commit mutation, exactly one post-commit read-back, and no second mutation.
+    assert.equal(h.commits(),1);
+    assert.equal(h.readBacks(),2);
+  });
+
+test('the outer wrapper never downgrades a carried unknown mutation classification',()=>{
+  // classifyProductionFailure keeps the first classification an error carries, which is exactly
+  // what runProductionCollection's outer catch relies on.
+  const carried=classifyProductionFailure(new Error('d1_transport_failed'),PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation');
+  const rewrapped=classifyProductionFailure(carried,PRODUCTION_MUTATION_NONE);
+  assert.equal(rewrapped,carried);
+  assert.equal(rewrapped.productionMutation,PRODUCTION_MUTATION_UNKNOWN);
+  assert.equal(rewrapped.productionPhase,'commit_reconciliation');
+  assert.equal(productionFailureClassification(rewrapped).mutation,PRODUCTION_MUTATION_UNKNOWN);
+  // The read-back is classified inside the unknown-commit branch, before it can escape.
+  const source=fs.readFileSync('workers/data-platform/production-collection.mjs','utf8');
+  assert.match(source,/try\{reconciled=rows\(await readRun\(\)\);\}\n\s*catch\(error\)\{throw classifyProductionFailure\(error,PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation'\);\}/);
+});

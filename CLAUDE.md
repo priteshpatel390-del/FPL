@@ -16,8 +16,9 @@ absent.
 This repository-only checkpoint prepares exactly one safe future resume attempt and nothing else.
 A fixed, fail-closed, strictly read-only reconciliation proves whether the failed run left only
 its untouched `started` ledger row: one D1 API call, three fixed statements (governance, the
-pinned run row, one run-scoped integrity row), no SQL/table/identity/timestamp input, every
-predicate index-bound, `rows_written` exactly zero, a 1,000-row read guard, no retry and no
+pinned run row, one run-scoped integrity row), no SQL/table/identity/timestamp input,
+index-supported observation/head/rejection paths with the few small `ingestion_runs` counters
+bounded by the ceiling instead, `rows_written` exactly zero, a 1,000-row read guard, no retry and no
 mutation or repair surface reachable. Outcomes are only `RESUME_RECONCILIATION_SAFE`,
 `RESUME_RECONCILIATION_BLOCKED` or `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`; SAFE is a precondition,
 never an authorisation. The same reconciliation is embedded in the resume runtime before any

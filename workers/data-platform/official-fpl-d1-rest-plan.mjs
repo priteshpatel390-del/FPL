@@ -105,8 +105,11 @@ export const buildProductionExplainAcceptanceRead=({sourceRevisionId,runId})=>{
 // One trusted read-only plan of exactly three statements: the existing governance constant, the
 // existing single-run constant, and one run-scoped integrity row. It accepts no SQL, no table,
 // no column and no statement input; the only arguments are the two identifiers the production
-// SQL already binds, and they only ever become bound parameters. Every predicate leads on an
-// indexed column, so the proof visits the pinned run's own rows rather than a population.
+// SQL already binds, and they only ever become bound parameters. The observation, head and
+// rejection predicates lead on indexed columns, so the proof visits the pinned run's own rows
+// rather than a population; the small `ingestion_runs` counters have no source-revision-leading
+// index under the current schema and are bounded by the reconciliation's strict provider
+// rows-read ceiling instead.
 const FIRST_RUN_INTEGRITY_SQL=`SELECT (SELECT COUNT(*) FROM shadow_observations WHERE ingestion_run_id=? AND source_revision_id=?) AS run_observations,(SELECT COUNT(*) FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id WHERE o.ingestion_run_id=? AND o.source_revision_id=?) AS run_heads,(SELECT COUNT(*) FROM observation_rejections WHERE run_id=? AND source_revision_id=?) AS run_rejections,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=?) AS revision_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=? AND status='started') AS started_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=? AND status='completed') AS completed_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE source_revision_id=? AND status NOT IN ('started','completed')) AS other_runs`;
 
 export const buildFirstRunReconciliationRead=({runId,sourceRevisionId})=>{

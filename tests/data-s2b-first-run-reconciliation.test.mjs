@@ -136,7 +136,9 @@ test('the fixed integrity statement runs against the real schema and answers zer
     const values=sqlite(db,`.mode list\n.headers on\n${sql};`).trim().split('\n');
     assert.deepEqual(values[0].split('|'),[...FIRST_RUN_RECONCILIATION_COUNTERS]);
     assert.deepEqual(values[1].split('|'),['0','0','0','1','1','0','0']);
-    // Every predicate leads on an index, so the proof never scans a population.
+    // The high-volume paths are index-supported, so the proof never scans a population table.
+    // The small ingestion_runs counters have no source-revision-leading index and are bounded by
+    // the reconciliation's provider rows-read ceiling instead, so they are not asserted here.
     const explained=sqlite(db,`EXPLAIN QUERY PLAN ${sql};`);
     assert.doesNotMatch(explained,/SCAN shadow_observations\b/);
     assert.doesNotMatch(explained,/SCAN observation_heads\b/);

@@ -101,7 +101,13 @@ async function collectProduction(options){
   try{committed=await mutate(commit);}
   catch(error){
     if(error?.code!=='d1_mutation_outcome_unknown')throw classifyProductionFailure(error,PRODUCTION_MUTATION_UNKNOWN,'commit_dispatch');
-    const reconciled=rows(await readRun());
+    // Once the single commit mutation has been issued and its outcome is unknown, no later
+    // failure may downgrade the operation to "no mutation". The one bounded read-back is
+    // therefore classified before it can escape, and there is still no second mutation and no
+    // retry of any kind.
+    let reconciled;
+    try{reconciled=rows(await readRun());}
+    catch(error){throw classifyProductionFailure(error,PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation');}
     if(reconciled.length!==1||reconciled[0].status!=='completed'||Number(reconciled[0].records_accepted)!==observations.length)throw classifyProductionFailure(new Error('production_commit_ambiguous'),PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation');
     return finish(changes.length?'changed_reconciled':'unchanged_reconciled',observations.length,normal.candidates.length);
   }

@@ -20,10 +20,13 @@ export const RESUME_RECONCILIATION_CLASSIFICATIONS=Object.freeze([
 ]);
 
 // The reconciliation is one bounded read-only request: governance, the exact pinned run row, and
-// one run-scoped integrity row. Every predicate is bound to an existing index, so the proof is a
-// handful of row visits rather than a population scan. `FIRST_RUN_RECONCILIATION_MAX_ROWS_READ`
-// is an operational guard and not a billing prediction; only Cloudflare's returned
-// `meta.rows_read` and `meta.rows_written` are ever reported as accounting. The routine
+// one run-scoped integrity row. The high-volume observation, head and rejection predicates are
+// index-supported, so those never scan a population. The small `ingestion_runs` counters filtered
+// by source revision and status are NOT covered by a source-revision-leading index under the
+// current schema; they are bounded instead by `FIRST_RUN_RECONCILIATION_MAX_ROWS_READ`, which is
+// an operational ceiling on Cloudflare's returned `meta.rows_read` and not a billing prediction.
+// Any unexpected read amplification therefore fails closed rather than proceeding. Only
+// Cloudflare's returned `meta.rows_read` and `meta.rows_written` are ever reported as accounting. The routine
 // collection ceilings and the migration-0003 envelope stand unchanged and are not reinterpreted.
 export const FIRST_RUN_RECONCILIATION_STATEMENT_COUNT=3;
 export const FIRST_RUN_RECONCILIATION_MAX_D1_API_CALLS=1;
