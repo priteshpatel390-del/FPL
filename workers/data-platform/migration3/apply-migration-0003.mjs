@@ -19,6 +19,8 @@ import {buildMigration0003Mutation,buildMigration0003ReconciliationRead,MIGRATIO
 import {PRODUCTION_D1_ID} from '../production-collection.mjs';
 import {
   assertMigration0003Budget,classifyMigration0003State,estimateMigration0003Rows,
+  MIGRATION_0003_ACCOUNTING_NOT_ISSUED,MIGRATION_0003_ACCOUNTING_OBSERVED,
+  MIGRATION_0003_ACCOUNTING_UNAVAILABLE,
   MIGRATION_0003_ALREADY_APPLIED,MIGRATION_0003_AMBIGUOUS,MIGRATION_0003_APPLIED,
   MIGRATION_0003_BYTES,MIGRATION_0003_CLASSIFICATIONS,MIGRATION_0003_INDEXES,
   MIGRATION_0003_MAX_D1_API_CALLS,MIGRATION_0003_MAX_ROWS_READ,MIGRATION_0003_MAX_ROWS_WRITTEN,
@@ -77,7 +79,13 @@ export async function applyMigration0003(options){
   const statements=readPinnedMigration0003(readFile);
   const client=createD1RestClient({accountId,databaseId,token,transport});
   let calls=0,rowsRead=0,rowsWritten=0,requestBytes=0;
-  const accounting=()=>Object.freeze({apiCalls:calls,rowsRead,rowsWritten,requestBytes});
+  // Provider accounting is only ever what Cloudflare actually returned. When the migration
+  // response never arrives or cannot be decoded, its `meta.rows_read` / `meta.rows_written` are
+  // simply absent: reconciliation proves database state, it does not reconstruct missing provider
+  // metadata. `mutationAccounting` therefore says whether the reported totals include the
+  // migration request, so a reader can never mistake an observed total for complete accounting.
+  let mutationAccounting=MIGRATION_0003_ACCOUNTING_NOT_ISSUED;
+  const accounting=()=>Object.freeze({apiCalls:calls,rowsRead,rowsWritten,requestBytes,mutationAccounting});
   const stop=(code,classification,phase)=>{throw classifyMigration0003Failure(new Error(code),classification,phase,accounting());};
 
   const dispatch=async plan=>{
@@ -117,8 +125,11 @@ export async function applyMigration0003(options){
   // 3. Exactly one migration request, containing exactly the four reviewed statements. No second
   //    mutation is ever issued inside this execution, whatever the outcome.
   let mutation=null,mutationError=null;
-  try{mutation=await dispatch(buildMigration0003Mutation(statements));}
-  catch(error){mutationError=error;}
+  try{
+    mutation=await dispatch(buildMigration0003Mutation(statements));
+    mutationAccounting=MIGRATION_0003_ACCOUNTING_OBSERVED;
+  }
+  catch(error){mutationError=error;mutationAccounting=MIGRATION_0003_ACCOUNTING_UNAVAILABLE;}
 
   // 4. One migration request has now been issued and no second one ever will be, so the resulting
   //    production state must always be established. Whether the response was definite, malformed
@@ -140,8 +151,22 @@ export async function applyMigration0003(options){
   }
   const resourceOk=withinCeilings();
 
-  // 5. Classification. Success requires all three of: a definite exactly-shaped response, an
-  //    exact proved post-state, and provider accounting inside this runner's own ceilings.
+  // 5. Classification. There are two distinct successful shapes, and they prove different things.
+  //
+  //    DIRECT SUCCESS — the migration response was definite and exactly shaped, the post-state is
+  //    exact, and the accounting Cloudflare returned for every request, the migration included,
+  //    is inside this runner's own ceilings.
+  //
+  //    RECONCILED SUCCESS AFTER UNKNOWN TRANSPORT — the migration response never proved
+  //    completion, so exactly one read-only reconciliation established the exact applied
+  //    post-state instead. This is a deliberate, approved outcome. Its accounting is necessarily
+  //    incomplete: the migration request's own provider metadata was never received and is not
+  //    reconstructed, so the reported totals cover only the requests that did return and are
+  //    marked `mutation_accounting_unavailable`. The ceiling check below is applied to the
+  //    accounting actually observed, and never claims the missing mutation accounting was
+  //    verified or within ceiling.
+  //
+  //    Either way a resource overrun in the observed accounting stays owner attention.
   if(postState===true){
     if(!resourceOk)stop('migration_0003_resource_ceiling_exceeded',MIGRATION_0003_AMBIGUOUS,'postflight_resource');
     return report(MIGRATION_0003_APPLIED,pre,after,definite?null:'reconciled_after_unknown_transport',true);

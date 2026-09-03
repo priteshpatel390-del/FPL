@@ -110,8 +110,29 @@ attached. A definite migration whose postflight is inconsistent likewise remains
 The reconciliation is read-only and never makes the mutation retryable; the maximum mutation count
 stays exactly one and no fourth D1 request is reachable on any path.
 
-Success therefore requires all three of a definite exactly-shaped response, an exact proved
-post-state, and provider accounting inside this runner's own ceilings. The post-state requires: exactly one version-3 ledger row, version exactly `3`, name exactly
+There are two distinct successful shapes, and they prove different things. Both are approved.
+
+**Direct success.** The migration response returned and carried exactly the four reviewed results,
+the post-state is exact, and the accounting Cloudflare returned for every request — the migration
+request included — is inside this runner's own ceilings. Reported as
+`DEFINITELY_APPLIED_SUCCESSFULLY` with no note and
+`mutationAccounting: mutation_accounting_observed`.
+
+**Reconciled success after unknown transport.** The migration response never proved completion —
+lost, timed out, malformed, or of unexpected cardinality — and the single read-only reconciliation
+then proved the exact applied post-state. Reported as `DEFINITELY_APPLIED_SUCCESSFULLY` with the
+note `reconciled_after_unknown_transport`. Its provider accounting is necessarily incomplete: the
+migration request's own `meta.rows_read` and `meta.rows_written` were never received, and
+reconciliation proves database state without reconstructing missing Cloudflare metadata. The
+reported totals therefore cover only the requests that actually returned and are marked
+`mutationAccounting: mutation_accounting_unavailable`. The ceiling check is applied to the
+accounting actually observed and never claims the missing mutation accounting was verified or
+within ceiling.
+
+A third marker, `mutation_not_issued`, covers every outcome reached before the migration request
+existed. In all three cases a resource overrun in the observed accounting stays owner attention.
+
+The post-state itself requires: exactly one version-3 ledger row, version exactly `3`, name exactly
 `production_query_plan_indexes`, applied at exactly `2026-09-02T00:00:00.000Z`, all three indexes
 present with their exact definitions, and migrations 0001/0002 intact. Every protected
 application-data fact must be identical across the mutation — `ingestion_runs`,

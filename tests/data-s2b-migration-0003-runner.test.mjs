@@ -17,6 +17,8 @@ import {
   MIGRATION_0003_MAX_ROWS_READ,MIGRATION_0003_MAX_ROWS_WRITTEN,MIGRATION_0003_NAME,
   MIGRATION_0003_NOT_APPLIED,MIGRATION_0003_PATH,MIGRATION_0003_PRIOR_LEDGER,
   MIGRATION_0003_PROTECTED_COUNT_KEYS,MIGRATION_0003_SHA256,MIGRATION_0003_STATE_ALREADY_APPLIED,
+  MIGRATION_0003_ACCOUNTING_NOT_ISSUED,MIGRATION_0003_ACCOUNTING_OBSERVED,
+  MIGRATION_0003_ACCOUNTING_UNAVAILABLE,
   MIGRATION_0003_STATE_EXACT_PRE,MIGRATION_0003_STATE_INCONSISTENT,MIGRATION_0003_STATEMENT_COUNT,
   MIGRATION_0003_STATEMENTS,MIGRATION_0003_VERSION,splitPinnedMigration0003,
   validateMigration0003Counts,validateMigration0003PostState
@@ -707,4 +709,62 @@ test('the remediation adds no collection, resume, schedule, Cron, Worker, secret
   // The only network host the workflow itself contacts is GitHub.
   assert.deepEqual([...new Set([...workflowBody.matchAll(/https:\/\/([a-z.]+)\//g)].map(row=>row[1]))].sort(),
     ['api.github.com','github.com']);
+});
+
+/* ------------------- remediation: the two distinct successful shapes are distinguishable */
+
+test('direct success and reconciled success are reported as distinct, honestly accounted shapes',async()=>{
+  // Direct success: the migration response returned and carried its own provider accounting.
+  const direct=await run([reconciliation(preState()),mutationOk(),reconciliation(postState())]).promise;
+  assert.equal(direct.classification,MIGRATION_0003_APPLIED);
+  assert.equal(direct.note,null);
+  assert.equal(direct.d1.mutationAccounting,MIGRATION_0003_ACCOUNTING_OBSERVED);
+  assert.equal(direct.d1.rowsWritten,19723);
+
+  // Reconciled success after unknown transport: an approved outcome, but the migration request's
+  // own provider metadata was never received and must never be presented as complete accounting.
+  for(const lost of [()=>{throw new Error('socket hang up');},ok([[],[],[]])]){
+    const reconciled=await run([reconciliation(preState()),lost,reconciliation(postState())]).promise;
+    assert.equal(reconciled.classification,MIGRATION_0003_APPLIED);
+    assert.equal(reconciled.note,'reconciled_after_unknown_transport');
+    assert.equal(reconciled.d1.mutationAccounting,MIGRATION_0003_ACCOUNTING_UNAVAILABLE);
+    // The reported totals cover only the requests that actually returned; no mutation write
+    // accounting is invented to fill the gap.
+    assert.equal(reconciled.d1.rowsWritten,0);
+    assert.equal(reconciled.d1.apiCalls,3);
+  }
+});
+
+test('accounting completeness is carried on every failure path and never claims a missing total',async()=>{
+  // Before the migration request exists, no mutation accounting can be claimed at all.
+  const early=await run([reconciliation({ledger:PRIOR_LEDGER,indexes:[INDEX_ROWS[0]]})])
+    .promise.then(()=>null,failure=>failure);
+  assert.equal(migration0003FailureClassification(early).d1.mutationAccounting,MIGRATION_0003_ACCOUNTING_NOT_ISSUED);
+
+  // Definite response, so its accounting was observed and the ceiling verdict applies to it.
+  const overrun=await run([reconciliation(preState()),ok([[],[],[],[]],{rows_read:900000}),reconciliation(postState())])
+    .promise.then(()=>null,failure=>failure);
+  const classified=migration0003FailureClassification(overrun);
+  assert.equal(classified.d1.mutationAccounting,MIGRATION_0003_ACCOUNTING_OBSERVED);
+  assert.equal(classified.code,'migration_0003_resource_ceiling_exceeded');
+
+  // Lost response with an unchanged database: no mutation accounting exists to check.
+  const lost=await run([reconciliation(preState()),()=>{throw new Error('lost');},reconciliation(preState())])
+    .promise.then(()=>null,failure=>failure);
+  assert.equal(migration0003FailureClassification(lost).classification,MIGRATION_0003_NOT_APPLIED);
+  assert.equal(migration0003FailureClassification(lost).d1.mutationAccounting,MIGRATION_0003_ACCOUNTING_UNAVAILABLE);
+
+  assert.equal(new Set([MIGRATION_0003_ACCOUNTING_NOT_ISSUED,MIGRATION_0003_ACCOUNTING_OBSERVED,
+    MIGRATION_0003_ACCOUNTING_UNAVAILABLE]).size,3);
+});
+
+test('no source or canonical document claims a definite response is required for every success',()=>{
+  const record=fs.readFileSync('workers/data-platform/DATA-S2B-MIGRATION-0003-PRODUCTION-RUNNER.md','utf8');
+  for(const source of [executable,record]){
+    assert.doesNotMatch(source,/[Ss]uccess (therefore )?requires all three/);
+    assert.ok(/reconciled[_ ]after[_ ]unknown[_ ]transport/.test(source));
+  }
+  // Both records name the accounting-completeness distinction explicitly.
+  for(const source of [executable,record])
+    assert.ok(source.includes('mutation_accounting_unavailable'),'accounting completeness must be stated');
 });

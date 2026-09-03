@@ -57,6 +57,12 @@ export const MIGRATION_0003_APPLIED='DEFINITELY_APPLIED_SUCCESSFULLY';
 export const MIGRATION_0003_ALREADY_APPLIED='DEFINITELY_ALREADY_APPLIED';
 export const MIGRATION_0003_NOT_APPLIED='DEFINITELY_NOT_APPLIED';
 export const MIGRATION_0003_AMBIGUOUS='AMBIGUOUS_REQUIRES_OWNER_ATTENTION';
+// Whether the reported provider totals include the migration request itself. Reconciliation
+// proves database state; it never reconstructs Cloudflare metadata that was not received.
+export const MIGRATION_0003_ACCOUNTING_NOT_ISSUED='mutation_not_issued';
+export const MIGRATION_0003_ACCOUNTING_OBSERVED='mutation_accounting_observed';
+export const MIGRATION_0003_ACCOUNTING_UNAVAILABLE='mutation_accounting_unavailable';
+
 export const MIGRATION_0003_CLASSIFICATIONS=Object.freeze([
   MIGRATION_0003_APPLIED,MIGRATION_0003_ALREADY_APPLIED,MIGRATION_0003_NOT_APPLIED,MIGRATION_0003_AMBIGUOUS
 ]);
