@@ -1,3 +1,4 @@
+import {assertPinnedMigration0003Statements,MIGRATION_0003_INDEXES} from './migration3/migration-0003-contract.mjs';
 export const D1_MAX_SQL_BYTES=100000;
 export const D1_MAX_BOUND_PARAMETERS=100;
 export const D1_MAX_VALUE_BYTES=2000000;
@@ -76,3 +77,24 @@ export function validateProductionCurrentHeadsExplain(rows){
   if(!details.some(detail=>detail.includes('observation_heads_observation_id'))||details.some(detail=>/\bSCAN h\b|AUTOMATIC INDEX/.test(detail)))throw new Error('production_query_plan_mismatch');
   return true;
 }
+
+// DATA-S2B migration 0003 — fixed repository-owned plans.
+//
+// The reconciliation read is a bounded read-only triple: the complete migration ledger, only the
+// three reviewed index objects, and one aggregate application-data/integrity row. The mutation
+// plan accepts nothing but the four byte-exact reviewed migration statements, so neither a
+// workflow input nor a caller can introduce arbitrary SQL, a different migration, a different
+// version, or a table/index name of its own.
+const MIGRATION_0003_LEDGER_SQL=`SELECT version,name,applied_at FROM schema_migrations ORDER BY version`;
+const MIGRATION_0003_INDEX_SQL=`SELECT name,tbl_name,sql FROM sqlite_master WHERE type='index' AND name IN (${
+  MIGRATION_0003_INDEXES.map(index=>`'${index.name}'`).join(',')}) ORDER BY name`;
+const MIGRATION_0003_PROTECTED_STATE_SQL=`SELECT (SELECT COUNT(*) FROM ingestion_runs) AS ingestion_runs,(SELECT COUNT(*) FROM shadow_observations) AS shadow_observations,(SELECT COUNT(*) FROM observation_heads) AS observation_heads,(SELECT COUNT(*) FROM observation_rejections) AS observation_rejections,(SELECT COUNT(*) FROM canonical_entities) AS canonical_entities,(SELECT COUNT(*) FROM data_sources) AS data_sources,(SELECT COUNT(*) FROM data_source_revisions) AS data_source_revisions,(SELECT COUNT(DISTINCT logical_key) FROM shadow_observations WHERE admission_state='accepted') AS accepted_logical_keys,(SELECT COUNT(*) FROM observation_heads h LEFT JOIN shadow_observations o ON o.observation_id=h.observation_id WHERE o.observation_id IS NULL) AS orphan_heads,(SELECT COUNT(*) FROM ingestion_runs WHERE status='started') AS started_runs,(SELECT COUNT(*) FROM ingestion_runs WHERE status='completed') AS completed_runs,(SELECT COUNT(*) FROM schema_migrations) AS schema_migrations`;
+
+export const MIGRATION_0003_RECONCILIATION_STATEMENT_COUNT=3;
+export const buildMigration0003ReconciliationRead=()=>create('read',false,[
+  {sql:MIGRATION_0003_LEDGER_SQL,params:[]},
+  {sql:MIGRATION_0003_INDEX_SQL,params:[]},
+  {sql:MIGRATION_0003_PROTECTED_STATE_SQL,params:[]}
+]);
+export const buildMigration0003Mutation=statements=>
+  create('mutation',true,assertPinnedMigration0003Statements(statements).map(sql=>({sql,params:[]})));

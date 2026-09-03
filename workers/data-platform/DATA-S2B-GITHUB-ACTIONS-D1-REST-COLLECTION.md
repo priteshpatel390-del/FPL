@@ -200,6 +200,12 @@ automatic production action: retain the indexes, investigate from read-only evid
 separately reviewed forward migration if correction is required. No live migration or collection
 was performed while preparing this repository change.
 
+A dedicated, fail-closed repository runner for migration 0003 — and for no other migration — is
+recorded in [migration 0003 production runner](DATA-S2B-MIGRATION-0003-PRODUCTION-RUNNER.md). It
+does not generalise the historical migration-0002 executable, accepts no SQL or migration
+selection input, reconciles read-only before and after, never retries an unknown outcome, and has
+not been dispatched. Migration 0003 remains unapplied.
+
 ### Approved resource-contract rebaseline
 
 Owner approval retains the normalized append-only architecture and synchronous global postflight.
