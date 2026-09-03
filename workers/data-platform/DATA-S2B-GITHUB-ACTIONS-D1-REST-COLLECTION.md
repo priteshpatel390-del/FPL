@@ -228,11 +228,17 @@ retains exact completed run/counters, run-owned delta, append-only history, logi
 coverage, orphan/invalid-head, acceptance/quarantine/rejection, completed-owner, and null-error
 checks. No audit workflow or stale audit marker is introduced.
 
-Future live query-plan acceptance is repository-controlled: a fixed trusted `EXPLAIN QUERY PLAN`
-wraps the exact current-head SELECT and accepts only a result containing migration-3's
-`observation_heads_observation_id`, with neither `SCAN h` nor an automatic index. It has no SQL
-input surface. It must run only after separate owner approval and migration-3 reconciliation; it
-was not executed here.
+Live query-plan acceptance is repository-controlled. Migration 0003 is now applied in production
+(run `33756058903`), and a dedicated fail-closed read-only mechanism exists to prove the plans
+live: one trusted request wraps the exact current-head, observation-population, head-population and
+postflight SELECT constants in `EXPLAIN QUERY PLAN`, binds each required index to the operation and
+table it must apply to, rejects unexpected scans, automatic indexes and postflight CTE
+re-evaluation, and requires provider `rows_written` to be exactly zero. It has no SQL input
+surface, no mutation surface and no retry. `shadow_observations_ingestion_run` is deliberately not
+required, because the production predicates lead on `source_revision_id`; `GOVERNANCE_SQL` and
+`RUN_SQL` stay informative and non-binding. **It has not been executed.** One live acceptance run
+remains a separate owner approval gate, and passing it still does not approve the first-run resume.
+See [live EXPLAIN acceptance](DATA-S2B-LIVE-EXPLAIN-ACCEPTANCE.md).
 
 A future true baseline/recovery requires a separate owner-approved resource contract, isolation
 from other substantial writes that UTC day, and exact provider accounting. No 90,000-row baseline

@@ -1,8 +1,16 @@
 # DATA-S2B — migration 0003 protected production runner
 
-**Status: repository runner ready for owner review. Migration 0003 remains UNAPPLIED in
-production.** Preparing this record performed no Cloudflare request, no workflow dispatch, no D1
-read or mutation, no deployment, no schedule change and no credential or environment change.
+**Status: applied. Migration 0003 was applied in production by manual run `33756058903`,
+dispatched from exact `main` `f5aedff686f3b032fee6f7e43c6fcf3104126a97` after exact-main Verify
+`33729943154`; both jobs succeeded.** The runner exits zero only through
+`DEFINITELY_APPLIED_SUCCESSFULLY` or `DEFINITELY_ALREADY_APPLIED`, and both require its bounded
+read-only reconciliation to prove the exact version-3 ledger row and all three reviewed indexes
+with byte-exact definitions, so migration presence is structurally proven. Which of the two
+success shapes occurred, and the migration request's own `rows_read` / `rows_written`, are not
+recoverable from the GitHub API — the runner writes only to the job's Step Summary — and are
+deliberately stated nowhere. The original preparation record below is unchanged; it performed no
+Cloudflare request, no workflow dispatch, no D1 read or mutation, no deployment, no schedule change
+and no credential or environment change.
 
 ## Why a dedicated runner
 
