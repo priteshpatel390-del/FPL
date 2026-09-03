@@ -12,8 +12,14 @@ Cron modules and records remain evidence, not the forward execution contract.
 
 The first-release protected workflow has **only `workflow_dispatch`**: PR, push and schedule
 events cannot start it. It retains read-only repository permission, environment
-`data-s2-production-collection`, one non-cancelling concurrency group, an exact Node version,
-no retry, and checkout of `main`. In particular, PR #209 contains no automatic schedule.
+`data-s2-production-collection`, one non-cancelling concurrency group, an exact Node version and
+no retry. In particular, PR #209 contains no automatic schedule.
+
+> **Superseded detail.** That first release checked out the floating ref `main`. The manual
+> collection workflow has since been hardened to the migration-0003 / EXPLAIN / reconciliation /
+> resume trust boundary: one immutable `approved_sha`, a credential-free repository gate, an
+> exact-head Verify requirement and a second remote-`main` check in the same shell as the
+> production entry point. See [manual collection hardening](DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
 
 The approved later schedule target remains exactly `17 1 * * *`: one best-effort opportunity
 daily at 01:17 UTC. The minute avoids GitHub's documented beginning-of-hour congestion while
@@ -111,9 +117,13 @@ additional repository restriction.
 Create protected GitHub environment `data-s2-production-collection`, restrict deployment to
 `main`, require the owner reviewer, prevent self-review, and store `CLOUDFLARE_D1_TOKEN` and
 `CLOUDFLARE_ACCOUNT_ID` as environment secrets. Store
-`CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` (lowercase SHA-256 of the exact account ID) and
-`CLOUDFLARE_PRODUCTION_D1_ID` as environment variables. Do not place any of them at repository
-scope. Approve the first manual execution only after merged exact-head Verify; that first
+`CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` (lowercase SHA-256 of the exact account ID) as an
+environment variable. Do not place any of them at repository scope. **`CLOUDFLARE_PRODUCTION_D1_ID`
+is no longer supplied to any credentialled workflow**: GitHub echoes each step's resolved
+environment and masks only `secrets.*` values, so the reviewed repository constant
+`PRODUCTION_D1_ID` is used instead and the variable is not declared. An environment variable of
+that name, if it still exists, is unused; the runtime accepts a supplied value only when it is
+byte-identical to the constant. Approve the first manual execution only after merged exact-head Verify; that first
 production mutation remains a separate owner gate. Do not add the schedule during configuration;
 schedule activation is the later Stage D repository change.
 
@@ -343,3 +353,39 @@ force push, or replacement pull request, and no conflict occurred. The skill-pac
 carried through unchanged and appear nowhere in this checkpoint's diff against current `main`.
 Because the merge changed no build input, the committed deployable retains its exact recorded
 source provenance and was deliberately not regenerated.
+
+## Live state — the first production run is completed, and the manual gate is hardened
+
+**This section supersedes every earlier statement in this record that describes the first
+production run as unresolved, or a resume as blocked or never executed.**
+
+The owner dispatched two runs from exact `main` `d79dd37451e16b642ce96709b8635c3ac618c366`, both
+verified independently from the GitHub Actions API:
+
+- `DATA-S2B First Production Run Reconciliation`, run `33792104384`, attempt 1, `success`. The
+  entry point exits zero only on `RESUME_RECONCILIATION_SAFE`, so success proves that
+  classification. It is read-only: `rows_written` had to be exactly zero and the 1,000-row read
+  guard applied.
+- `DATA-S2 First Production Run Resume`, run `33815400284`, attempt 1, `success`, both jobs
+  successful. Success requires the synchronous postflight to have proved the exact completed run,
+  expected `records_seen` and `records_accepted`, run-owned observation ownership, heads equal to
+  distinct logical keys, and zero orphan heads, invalid heads, non-accepted observations,
+  quarantined observations, rejection rows, quarantined/rejected counters and error class.
+
+**The unresolved first production `started` ledger row is therefore definitively completed.** It
+no longer blocks a future collection and must not be reconciled or resumed again.
+
+Exact provider `meta.rows_read` and `meta.rows_written` for those runs reach only the GitHub Step
+Summary, which is not retrievable through the GitHub API available here; they are **unavailable**
+and are stated nowhere. Cloudflare dashboard aggregates are account-level, time-window figures,
+are not per-workflow accounting, and are not recorded as exact resume usage.
+
+Stage C — one owner-approved manual `workflow_dispatch` of the normal collection — has **not**
+happened and remains the next live gate. It now runs behind the hardened gate described in
+[manual collection hardening](DATA-S2B-MANUAL-COLLECTION-HARDENING.md): one immutable
+`approved_sha`, a credential-free repository gate proving event, repository, ref, exact checkout,
+clean tree, fresh remote `main` and exact-head Verify Teamsheet success, then a protected job
+that re-resolves remote `main` in the same shell as the runner and fixes the one attempt's
+collection identity there. GitHub scheduling stays disabled, Cloudflare Cron stays intentionally
+absent, and Stage D activation remains a separate later approval after one observed manual
+collection.

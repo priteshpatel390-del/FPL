@@ -1,5 +1,5 @@
-import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {createHash} from 'node:crypto';
-import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,classifyProductionFailure,FUTURE_PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {spawnSync} from 'node:child_process';import {createHash} from 'node:crypto';
+import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,classifyProductionFailure,FUTURE_PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,MAX_OFFICIAL_RESPONSE_BYTES,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
 import {buildCurrentHeadsRead,buildProductionPopulationAndHeadsRead,estimateRoutineCommitRowsWritten,inspectOfficialFplD1RestPlan,MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,ROUTINE_WRITE_AMPLIFICATION} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 import {normaliseOfficialFplHistory} from '../workers/data-platform/official-fpl-canonical.mjs';
 const account='production_account';const fingerprint=createHash('sha256').update(account).digest('hex');
@@ -11,8 +11,8 @@ const started=startedAt=>({run_id:`gha-${createHash('sha256').update(`official-f
 function ok(results,read,written){return {status:200,json:async()=>({success:true,result:results.map((rows,i)=>({success:true,results:rows,meta:{rows_read:i?0:read,rows_written:i?0:written,changes:0}}))})};}
 const options=transport=>({accountId:account,accountFingerprint:fingerprint,databaseId:PRODUCTION_D1_ID,season:'2026-27',token:'secret',scheduledAt:'2026-09-02T01:17:00.000Z',transport,fetchImpl:async url=>response(world()[OFFICIAL_FPL_ENDPOINTS.indexOf(url)])});
 
-test('initial activation is manual-only: PR, push and schedule cannot trigger collection',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\s+workflow_dispatch:\s*$/m);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.match(yml,/if: github\.event_name == 'workflow_dispatch'/);assert.doesNotMatch(yml,/github\.event_name == '(?:schedule|push|pull_request)'/);assert.equal(FUTURE_PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');});
-test('manual workflow retains protected environment, main checkout, least privilege and serialization',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');assert.match(yml,/permissions:\s+contents: read/);assert.match(yml,/environment:\s+name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\s+cancel-in-progress: false/);assert.match(yml,/ref: main/);assert.doesNotMatch(yml,/workers\/scripts|schedules|wrangler/);});
+test('initial activation is manual-only: PR, push and schedule cannot trigger collection',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\n  workflow_dispatch:\n    inputs:\n      approved_sha:/m);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.doesNotMatch(yml,/^\s{2}(?:push|pull_request|pull_request_target|schedule|repository_dispatch):/m);assert.match(yml,/if: github\.event_name == 'workflow_dispatch'/);assert.doesNotMatch(yml,/github\.event_name == '(?:schedule|push|pull_request)'/);assert.equal(FUTURE_PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');});
+test('manual workflow retains protected environment, least privilege and serialization',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');assert.match(yml,/permissions:\n  contents: read\n  checks: read/);assert.match(yml,/environment:\n      name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\n  cancel-in-progress: false/);assert.match(yml,/node-version: 24\.19\.0/);assert.doesNotMatch(yml,/ref: main\b/);assert.doesNotMatch(yml,/workers\/scripts|schedules/);for(const line of yml.split('\n').filter(line=>/wrangler/i.test(line)))assert.match(line.trim(),/^rm -(f|rf) /,line);});
 test('first-run resume is manual-only, exact-SHA gated, serialized and has no identity input',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-resume.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\n  workflow_dispatch:\n    inputs:\n      approved_sha:/m);assert.deepEqual([...new Set([...yml.matchAll(/inputs\.([a-z_]+)/g)].map(row=>row[1]))],['approved_sha']);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.match(yml,/environment:\n      name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\n  cancel-in-progress: false/);assert.doesNotMatch(yml,/ref: main\b/);assert.doesNotMatch(yml,/workers\/scripts|schedules|COLLECTION_SCHEDULED_AT/);const runner=fs.readFileSync('workers/data-platform/run-production-resume.mjs','utf8');assert.match(runner,/FIRST_PRODUCTION_RUN_SCHEDULED_AT/);assert.match(runner,/resumeStarted:true/);assert.doesNotMatch(runner,/process\.env\.(?:COLLECTION|RUN)/);});
 test('fixed endpoints, identities, season and budgets are closed constants',()=>{assert.deepEqual([...OFFICIAL_FPL_ENDPOINTS],['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);assert.equal(PRODUCTION_D1_ID,'01e2b4f9-313a-4a14-8ce6-86c5aecc50d7');assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);});
 test('static read model admits accepted scale and classifies expected versus hard headroom',()=>{assert.equal(STATIC_D1_ROWS_PER_LOGICAL_FACT,7);assert.equal(assertStaticReadBudget(9860),true);assert.equal(classifyRowsRead(100000),'expected');assert.equal(classifyRowsRead(100001),'hard_ceiling_headroom');assert.throws(()=>classifyRowsRead(125001),/production_d1_read_budget_exceeded/);});
@@ -213,4 +213,185 @@ test('the outer wrapper never downgrades a carried unknown mutation classificati
   // The read-back is classified inside the unknown-commit branch, before it can escape.
   const source=fs.readFileSync('workers/data-platform/production-collection.mjs','utf8');
   assert.match(source,/try\{reconciled=rows\(await readRun\(\)\);\}\n\s*catch\(error\)\{throw classifyProductionFailure\(error,PRODUCTION_MUTATION_UNKNOWN,'commit_reconciliation'\);\}/);
+});
+
+/* ---------------- manual normal production collection trust boundary ---------------- */
+
+// The manual normal collection path is held to the same standard as the hardened migration-0003,
+// live EXPLAIN, first-run reconciliation and first-run resume paths: one immutable approved SHA,
+// a credential-free repository gate, and an independent remote-main recheck in the same shell as
+// the production entry point.
+
+const COLLECTION_WORKFLOW_PATH='.github/workflows/data-s2-production-collection.yml';
+const collectionWorkflow=fs.readFileSync(COLLECTION_WORKFLOW_PATH,'utf8');
+const collectionEntrySource=fs.readFileSync('workers/data-platform/run-production-collection.mjs','utf8');
+const uncommented=source=>source.split('\n').filter(line=>!/^\s*(#|\/\/)/.test(line)).join('\n');
+const COLLECTION_ENTRY='node workers/data-platform/run-production-collection.mjs';
+const COLLECTION_RUN_MARKER='      - name: Reconfirm identity and remote main, then collect Official FPL to D1 REST';
+
+// The exact shell the credentialled job runs immediately before the production entry point.
+function collectionRunBlock(){
+  const start=collectionWorkflow.indexOf(COLLECTION_RUN_MARKER);
+  assert.ok(start>0,COLLECTION_RUN_MARKER);
+  const block=collectionWorkflow.slice(collectionWorkflow.indexOf('run: |',start)+'run: |\n'.length);
+  return block.split('\n').filter(line=>line.startsWith('          ')||line.trim()==='')
+    .map(line=>line.slice(10)).join('\n').trimEnd();
+}
+
+test('manual collection takes exactly one immutable approved-SHA input and no production semantics',()=>{
+  assert.match(collectionWorkflow,/approved_sha:[\s\S]{0,240}required: true/);
+  assert.deepEqual([...new Set([...collectionWorkflow.matchAll(/inputs\.([a-z_]+)/g)].map(row=>row[1]))],['approved_sha']);
+  assert.match(collectionWorkflow,/grep -Eq '\^\[0-9a-f\]\{40\}\$'/);
+  assert.equal([...collectionWorkflow.matchAll(/^    inputs:$/gm)].length,1);
+  // No database identity, SQL, season, endpoint, timestamp or run identity may enter as an input.
+  const trigger=collectionWorkflow.slice(collectionWorkflow.indexOf('on:'),collectionWorkflow.indexOf('\npermissions:'));
+  assert.doesNotMatch(trigger,/database|sql|season|endpoint|scheduled|timestamp|run_id/i);
+});
+
+test('exact-main and exact-head Verify gates complete before production credentials exist',()=>{
+  const gate=collectionWorkflow.indexOf('  repository-gate:'),execution=collectionWorkflow.indexOf('\n  collect:');
+  assert.ok(gate>0&&gate<execution);
+  assert.match(collectionWorkflow,/\n  collect:\n    needs: repository-gate/);
+  const gateBlock=collectionWorkflow.slice(gate,execution);
+  assert.doesNotMatch(gateBlock,/environment:|secrets\.CLOUDFLARE|CLOUDFLARE_|vars\./);
+  for(const required of [
+    'test "$EVENT_NAME" = workflow_dispatch','test "$EVENT_REF" = refs/heads/main',
+    'test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL',
+    'ref: ${{ inputs.approved_sha }}',
+    'test "$(git rev-parse HEAD)" = "$APPROVED_SHA"','test "$remote_main" = "$APPROVED_SHA"',
+    'test -z "$(git status --porcelain)"',"row.name==='Tests and deterministic build'",
+    "row.status==='completed'","row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA",
+    "row.app?.slug==='github-actions'",
+    "row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')"])
+    assert.ok(gateBlock.includes(required),required);
+  // The protected job exists only after the gate and runs exactly the gated SHA.
+  const job=collectionWorkflow.slice(execution);
+  assert.match(job,/environment:\n      name: data-s2-production-collection/);
+  assert.match(job,/ref: \$\{\{ needs\.repository-gate\.outputs\.approved_sha \}\}/);
+  assert.match(job,/APPROVED_SHA: \$\{\{ needs\.repository-gate\.outputs\.approved_sha \}\}/);
+});
+
+test('remote main is proved by the repository gate and independently again under credentials',()=>{
+  const resolve=/remote_main="\$\(git ls-remote https:\/\/github\.com\/priteshpatel390-del\/FPL\.git refs\/heads\/main \| cut -f1\)"/;
+  const gate=collectionWorkflow.slice(collectionWorkflow.indexOf('  repository-gate:'),collectionWorkflow.indexOf(COLLECTION_RUN_MARKER));
+  assert.match(gate,resolve);
+  assert.equal([...collectionWorkflow.matchAll(new RegExp(resolve.source,'g'))].length,2);
+  assert.doesNotMatch(collectionWorkflow,/outputs:[\s\S]{0,400}remote_main/);
+  const block=collectionRunBlock().split('\n').map(line=>line.trim()).filter(Boolean);
+  assert.equal(block.at(-1),COLLECTION_ENTRY);
+  assert.equal(block.at(-2),'test "$remote_main" = "$APPROVED_SHA"');
+  assert.equal(block.at(-3),'test -n "$remote_main"');
+  assert.match(block.at(-4),/^remote_main="\$\(git ls-remote /);
+  assert.equal(block[0],'set -euo pipefail');
+  assert.ok(block.some(line=>line.startsWith('rm -f node_modules/.bin/wrangler')));
+  assert.ok(block.some(line=>line.startsWith('rm -rf node_modules/wrangler')));
+  assert.ok(block.includes('test "$(node --version)" = v24.19.0'));
+  assert.ok(block.includes('test "$(git rev-parse HEAD)" = "$APPROVED_SHA"'));
+  assert.ok(block.includes('test -z "$(git status --porcelain)"'));
+  // Nothing before the recheck reaches Cloudflare.
+  assert.ok(!block.slice(0,block.length-1).some(line=>/cloudflare|curl|api\.cloudflare/i.test(line)));
+});
+
+test('a moved main, a wrong head or a dirty tree stops before the production collection runner',()=>{
+  const approved='0123456789abcdef0123456789abcdef01234567';
+  const script=collectionRunBlock();
+  const attempt=({liveMain=approved,head=approved,dirty=false}={})=>{
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'collection-gate-'));
+    const bin=path.join(dir,'bin');
+    fs.mkdirSync(bin);
+    fs.writeFileSync(path.join(bin,'node'),`#!/bin/sh\nif [ "$1" = "--version" ]; then echo v24.19.0; exit 0; fi\necho "$@" > "${dir}/invoked"\nprintenv COLLECTION_SCHEDULED_AT > "${dir}/scheduled"\nexit 0\n`,{mode:0o755});
+    fs.writeFileSync(path.join(bin,'git'),`#!/bin/sh\ncase "$1" in\n  rev-parse) echo ${head};;\n  status) ${dirty?"echo ' M src/app.mjs'":':'} ;;\n  ls-remote) printf '%s\\trefs/heads/main\\n' ${liveMain};;\n  *) exit 1;;\nesac\nexit 0\n`,{mode:0o755});
+    const out=spawnSync('bash',['-c',script],{cwd:dir,encoding:'utf8',
+      env:{PATH:`${bin}:${process.env.PATH}`,APPROVED_SHA:approved}});
+    const invoked=fs.existsSync(path.join(dir,'invoked'));
+    const scheduledPath=path.join(dir,'scheduled');
+    const scheduled=fs.existsSync(scheduledPath)?fs.readFileSync(scheduledPath,'utf8').trim():null;
+    fs.rmSync(dir,{recursive:true,force:true});
+    return {status:out.status,invoked,scheduled};
+  };
+  const pass=attempt();
+  assert.equal(pass.status,0);
+  assert.equal(pass.invoked,true);
+  // The collection identity is a minute-precision UTC instant fixed inside this one shell.
+  assert.match(pass.scheduled,/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\.000Z$/);
+  for(const blocked of [{liveMain:'fedcba9876543210fedcba9876543210fedcba98'},{liveMain:"''"},
+    {head:'fedcba9876543210fedcba9876543210fedcba98'},{dirty:true}]){
+    const out=attempt(blocked),label=JSON.stringify(blocked);
+    assert.notEqual(out.status,0,label);
+    assert.equal(out.invoked,false,label);
+  }
+});
+
+test('the one attempt collection identity is fixed once, inside the final protected step',()=>{
+  assert.equal([...collectionWorkflow.matchAll(/COLLECTION_SCHEDULED_AT=/g)].length,1);
+  // No earlier, mutable stage may establish production identity through the job environment.
+  assert.doesNotMatch(collectionWorkflow,/GITHUB_ENV/);
+  const block=collectionRunBlock(),lines=block.split('\n').map(line=>line.trim()).filter(Boolean);
+  assert.ok(block.includes('COLLECTION_SCHEDULED_AT="$(date -u +%Y-%m-%dT%H:%M:00.000Z)"'));
+  assert.ok(lines.includes('export COLLECTION_SCHEDULED_AT'));
+  assert.ok(lines.includes('test -n "$COLLECTION_SCHEDULED_AT"'));
+  // It is derived locally, so the remote-main recheck stays the last act before the runner.
+  assert.ok(lines.indexOf('export COLLECTION_SCHEDULED_AT')<lines.findIndex(line=>line.startsWith('remote_main=')));
+  assert.ok(collectionEntrySource.includes("required('COLLECTION_SCHEDULED_AT')"));
+  // The entry point never invents an identity of its own.
+  assert.doesNotMatch(uncommented(collectionEntrySource),/new Date\(|Date\.now/);
+});
+
+test('production identifier masking is registered before any variable is materialised',()=>{
+  const job=collectionWorkflow.slice(collectionWorkflow.indexOf('\n  collect:'));
+  const steps=job.split('\n      - name: ').slice(1);
+  assert.match(steps[0],/^Register production identifier masks before any other step/);
+  assert.ok(steps[0].includes("printf '::add-mask::%s\\n'"));
+  // The fingerprint variable is materialised only by the final production step, after the mask.
+  const fingerprintSteps=steps.filter(step=>step.includes('CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT'));
+  assert.equal(fingerprintSteps.length,1);
+  assert.equal(fingerprintSteps[0],steps.at(-1));
+  assert.equal([...uncommented(collectionWorkflow).matchAll(/vars\./g)].length,1);
+  // Neither the workflow nor the job env carries the fingerprint or any D1 identifier.
+  const jobEnv=job.slice(job.indexOf('    env:'),job.indexOf('    steps:'));
+  assert.doesNotMatch(jobEnv,/FINGERPRINT|D1_ID|vars\./);
+  assert.doesNotMatch(collectionWorkflow,/CLOUDFLARE_PRODUCTION_D1_ID/);
+  assert.ok(!collectionWorkflow.includes(PRODUCTION_D1_ID));
+  // Runtime masking remains in place as defence in depth.
+  assert.match(collectionEntrySource,/maskProductionIdentity\(resolveProductionIdentity\(process\.env\)\)/);
+});
+
+test('the collection entry point refuses a workflow re-run and reports a stopped mutation class',()=>{
+  assert.match(collectionEntrySource,/GITHUB_RUN_ATTEMPT!=='1'\)throw new Error\('workflow_retry_forbidden'\)/);
+  assert.match(collectionEntrySource,/productionFailureClassification\(error\)/);
+  assert.match(collectionEntrySource,/DATA-S2 production collection STOPPED/);
+  assert.match(collectionEntrySource,/if\(process\.env\.GITHUB_STEP_SUMMARY\)fs\.appendFileSync/);
+  const body=uncommented(collectionEntrySource);
+  // The refusal precedes every identity resolution and every request.
+  assert.ok(body.indexOf('GITHUB_RUN_ATTEMPT')<body.indexOf('resolveProductionIdentity(process.env)'));
+  assert.ok(body.indexOf('resolveProductionIdentity(process.env)')<body.indexOf('runProductionCollection({'));
+  // Nothing in the entry point retries, repairs or completes an unclassified run.
+  assert.doesNotMatch(body,/for\s*\(|while\s*\(|setTimeout/);
+  assert.equal([...body.matchAll(/runProductionCollection\(/g)].length,1);
+});
+
+test('the collection workflow adds no schedule, Cron, Wrangler, deployment or migration surface',()=>{
+  const body=uncommented(collectionWorkflow);
+  for(const forbidden of [/run-migration-0003/,/run-production-resume/,/run-first-run-reconciliation/,
+    /run-production-explain/,/wrangler deploy/,/^\s*schedule:/m,/cron/i,/versions/,/deployments/,
+    /secrets:\s*inherit/])
+    assert.doesNotMatch(body,forbidden,String(forbidden));
+  assert.deepEqual([...body.matchAll(/node workers\/data-platform\/[a-z0-9-]+\.mjs/g)].map(row=>row[0]),[COLLECTION_ENTRY]);
+  for(const line of body.split('\n').filter(line=>/wrangler/i.test(line)))
+    assert.match(line.trim(),/^rm -(f|rf) /,line);
+  // The only network host the workflow itself contacts is GitHub.
+  assert.deepEqual([...new Set([...body.matchAll(/https:\/\/([a-z.]+)\//g)].map(row=>row[1]))].sort(),
+    ['api.github.com','github.com']);
+  // The dormant future cadence constant stays unwired, and the historical Cron declaration is untouched.
+  assert.ok(!body.includes(FUTURE_PRODUCTION_COLLECTION_SCHEDULE));
+  assert.match(fs.readFileSync('workers/data-platform/wrangler.jsonc','utf8'),/"crons": \["\*\/30 \* \* \* \*"\]/);
+});
+
+test('every production resource ceiling the manual collection runs under is unchanged',()=>{
+  assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
+  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+  assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
+  assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);
+  assert.equal(MAX_OFFICIAL_RESPONSE_BYTES,8*1024*1024);
 });
