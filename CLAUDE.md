@@ -10,10 +10,13 @@ not a generic migration executor: the historical migration-0002 executable is le
 the new mechanism accepts no SQL, no migration path, no version and no object name. Its only
 workflow input is one immutable lowercase 40-character approved SHA; the repository/CI gate —
 exact approved SHA, exact remote `main`, clean tree and a completed, successful, exact-head
-GitHub Actions Verify Teamsheet — completes in a job with no protected environment and no
-Cloudflare credentials before the credentialled job can start. It reuses the existing protected
-`data-s2-production-collection` environment and its existing credentials; none were created,
-rotated or widened.
+GitHub Actions Verify Teamsheet — completes in a job with no environment and no Cloudflare
+credentials before the credentialled job can start. Because environment admission can wait while
+`main` advances, the credentialled job resolves remote `main` again, from the remote and not from
+any value carried between jobs, immediately before the production entry point and before any
+Cloudflare request. It requests the existing `data-s2-production-collection` GitHub Environment
+and its existing credentials; none were created, rotated or widened, and whether that environment
+enforces required reviewers is owner-side configuration this repository cannot prove.
 
 The executable mutation surface is exactly one request carrying the four byte-exact reviewed
 statements, read from the pinned migration file and proved by size, SHA-256 and statement
@@ -23,9 +26,12 @@ SQL and completes on bounded readback; or inconsistent, which fails closed. Any 
 cannot prove completion is UNKNOWN and triggers one read-only reconciliation, never a retry and
 never a second mutation, classifying only `DEFINITELY_APPLIED_SUCCESSFULLY`,
 `DEFINITELY_ALREADY_APPLIED`, `DEFINITELY_NOT_APPLIED` or
-`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Postflight proves the exact ledger row and index
-definitions and that every protected application-data fact is unchanged; the unresolved first
-production `started` run is only counted, never updated or deleted. The runner carries its own
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Once the single request has been issued the resulting state
+is always established by exactly one fixed read-only reconciliation, so a resource overrun can
+never skip postflight and postflight can never convert an overrun into acceptance. Postflight
+proves the exact ledger row and index definitions and that every protected application-data fact
+is unchanged; the unresolved first production `started` run is only counted, never updated or
+deleted. The runner carries its own
 narrow bound — at most three D1 API calls, 150,000 rows read and 40,000 rows written, gated
 before mutation from the live population — and does not reinterpret the routine collection
 ceilings, which stand unchanged.

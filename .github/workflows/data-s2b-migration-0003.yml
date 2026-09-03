@@ -113,7 +113,12 @@ jobs:
         with:
           node-version: 24.19.0
 
-      - name: Reconfirm identity and apply migration 0003 only
+      # The repository gate proved remote main before this job existed, but protected-environment
+      # admission can wait indefinitely and main may advance in that window. This step therefore
+      # resolves remote main again, from the remote and not from any value carried out of the gate
+      # job, in the same shell and immediately before the production entry point. No Cloudflare
+      # request is made before it.
+      - name: Reconfirm identity and remote main, then apply migration 0003 only
         run: |
           set -euo pipefail
           test "$(node --version)" = v24.19.0
@@ -121,4 +126,7 @@ jobs:
           test -z "$(git status --porcelain)"
           rm -f node_modules/.bin/wrangler
           rm -rf node_modules/wrangler node_modules/.wrangler-*
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
           node workers/data-platform/run-migration-0003.mjs

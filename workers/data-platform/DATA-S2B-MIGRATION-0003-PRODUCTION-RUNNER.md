@@ -65,6 +65,20 @@ exactly one of three states.
 | `already_applied` | Ledger carries exactly one version-3 row with the exact name and timestamp, and all three indexes exist with their exact `CREATE INDEX` text and table | No migration SQL is issued; the run completes on this bounded readback and reports `DEFINITELY_ALREADY_APPLIED`. No live `EXPLAIN` is run |
 | `inconsistent` | Anything else — indexes without the ledger row, the ledger row without its indexes, a partial index set, a same-named index over the wrong table, columns or column order, a wrong version-3 name or timestamp, or unexpected ledger ordering | Fail closed, no mutation, sanitized report, owner attention required |
 
+## Remote-main double gate
+
+The repository gate proves the approved SHA equals remote `main` before the credentialled job is
+admitted, but protected-environment admission can wait indefinitely and `main` may advance in that
+window. The credentialled job therefore resolves remote `main` **again**, from the remote and never
+from a value carried out of the gate job, in the same shell and immediately before the production
+entry point — after the Node, HEAD and clean-tree reconfirmations and with nothing between the
+check and the entry point. It requires the resolved value to be non-empty and exactly equal to the
+approved SHA, so a `main` that moved during the approval wait stops the run before the runner is
+invoked and before any Cloudflare request is made. The check reaches GitHub only. A permanent test
+executes the exact shell of that step against stubbed `git` and `node` binaries and proves the
+runner is reached when remote `main` still matches and is never reached when it has moved or
+cannot be resolved.
+
 ## Ambiguous mutation outcome
 
 A lost connection, a timeout, a malformed body, an unexpected result cardinality or any other
@@ -85,8 +99,19 @@ failed is reported as `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, never as a no-write.
 
 ## Post-mutation validation
 
-After a definite successful response the runner repeats the same fixed read-only reconciliation and
-requires: exactly one version-3 ledger row, version exactly `3`, name exactly
+Once the single migration request has been issued — whether its response was definite, malformed or
+lost, and whether or not a resource ceiling has already been crossed — the resulting production
+state is always established. The runner performs exactly one fixed bounded read-only
+reconciliation before classifying anything. A resource overrun never skips that read, and that read
+never converts a resource overrun into successful acceptance: a definite migration whose postflight
+is exact but whose provider accounting crossed this runner's ceiling remains
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with an explicit `postflight_resource` phase and the accounting
+attached. A definite migration whose postflight is inconsistent likewise remains owner attention.
+The reconciliation is read-only and never makes the mutation retryable; the maximum mutation count
+stays exactly one and no fourth D1 request is reachable on any path.
+
+Success therefore requires all three of a definite exactly-shaped response, an exact proved
+post-state, and provider accounting inside this runner's own ceilings. The post-state requires: exactly one version-3 ledger row, version exactly `3`, name exactly
 `production_query_plan_indexes`, applied at exactly `2026-09-02T00:00:00.000Z`, all three indexes
 present with their exact definitions, and migrations 0001/0002 intact. Every protected
 application-data fact must be identical across the mutation — `ingestion_runs`,
@@ -120,9 +145,12 @@ conservative repository plan estimates, never an exact Cloudflare bill.
 
 Identity uses the existing approved production mechanism unchanged: the runtime account is hashed
 and must equal the repository-approved production account fingerprint, and the database must equal
-the pinned production D1 identity. The workflow reuses the existing protected
-`data-s2-production-collection` environment and its existing `CLOUDFLARE_ACCOUNT_ID` and
-`CLOUDFLARE_D1_TOKEN` secrets and `CLOUDFLARE_PRODUCTION_*` variables. No credential is created,
+the pinned production D1 identity. The workflow requests the existing
+`data-s2-production-collection` GitHub Environment and its existing `CLOUDFLARE_ACCOUNT_ID` and
+`CLOUDFLARE_D1_TOKEN` secrets and `CLOUDFLARE_PRODUCTION_*` variables. Requesting that environment
+is what this repository can establish; whether it enforces required reviewers or any other
+protection rule is owner-side GitHub configuration that repository evidence cannot prove, and the
+remote-main double gate above does not depend on it. No credential is created,
 rotated or widened, and no new secret name is introduced. Token, account and database identifiers
 are masked before any request; the sanitized result and summary contain none of them. Raw
 Cloudflare payloads stay in memory for the request only — they are never written to disk and never

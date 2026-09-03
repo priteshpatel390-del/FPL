@@ -116,37 +116,46 @@ export async function applyMigration0003(options){
 
   // 3. Exactly one migration request, containing exactly the four reviewed statements. No second
   //    mutation is ever issued inside this execution, whatever the outcome.
-  let mutation=null;
+  let mutation=null,mutationError=null;
   try{mutation=await dispatch(buildMigration0003Mutation(statements));}
-  catch(error){
-    // The transport outcome cannot prove completion, so the mutation state is UNKNOWN. Reconcile
-    // read-only; never infer a no-write from a thrown request error, and never retry.
-    let after;
-    try{after=await reconcile();}
-    catch(readError){throw classifyMigration0003Failure(readError,MIGRATION_0003_AMBIGUOUS,'ambiguous_reconciliation',accounting());}
-    if(after.state===MIGRATION_0003_STATE_ALREADY_APPLIED){
-      try{validateMigration0003PostState({pre,post:after});}
-      catch(postError){throw classifyMigration0003Failure(postError,MIGRATION_0003_AMBIGUOUS,'ambiguous_post_state',accounting());}
-      return report(MIGRATION_0003_APPLIED,pre,after,'reconciled_after_unknown_transport',true);
-    }
-    if(after.state===MIGRATION_0003_STATE_EXACT_PRE)
-      throw classifyMigration0003Failure(error,MIGRATION_0003_NOT_APPLIED,'ambiguous_reconciliation',accounting());
-    throw classifyMigration0003Failure(error,MIGRATION_0003_AMBIGUOUS,'ambiguous_reconciliation',accounting());
+  catch(error){mutationError=error;}
+
+  // 4. One migration request has now been issued and no second one ever will be, so the resulting
+  //    production state must always be established. Whether the response was definite, malformed
+  //    or lost, and whether or not a resource ceiling has already been crossed, the runner
+  //    performs exactly one fixed bounded read-only reconciliation before classifying anything.
+  //    A resource overrun is never allowed to skip this read, and the read is never allowed to
+  //    convert a resource overrun into successful acceptance.
+  let after;
+  try{after=await reconcile();}
+  catch(error){throw classifyMigration0003Failure(error,MIGRATION_0003_AMBIGUOUS,
+    mutationError?'ambiguous_reconciliation':'postflight_read',accounting());}
+
+  // A definite response is one that both returned and carried exactly the four reviewed results.
+  const definite=!mutationError&&mutation.results.length===MIGRATION_0003_STATEMENT_COUNT;
+  let postState=null;
+  if(after.state===MIGRATION_0003_STATE_ALREADY_APPLIED){
+    try{validateMigration0003PostState({pre,post:after});postState=true;}
+    catch(error){postState=error;}
   }
+  const resourceOk=withinCeilings();
 
-  // 4. The migration response is definite. Require the exact reviewed result cardinality.
-  if(mutation.results.length!==MIGRATION_0003_STATEMENT_COUNT)
-    stop('migration_0003_result_cardinality_invalid',MIGRATION_0003_AMBIGUOUS,'mutation_result');
-  if(!withinCeilings())stop('migration_0003_resource_ceiling_exceeded',MIGRATION_0003_AMBIGUOUS,'mutation_resource');
-
-  // 5. Bounded read-only postflight over the same fixed reconciliation contract.
-  let post;
-  try{post=await reconcile();}
-  catch(error){throw classifyMigration0003Failure(error,MIGRATION_0003_AMBIGUOUS,'postflight_read',accounting());}
-  try{validateMigration0003PostState({pre,post});}
-  catch(error){throw classifyMigration0003Failure(error,MIGRATION_0003_AMBIGUOUS,'postflight_acceptance',accounting());}
-  if(!withinCeilings())stop('migration_0003_resource_ceiling_exceeded',MIGRATION_0003_AMBIGUOUS,'postflight_resource');
-  return report(MIGRATION_0003_APPLIED,pre,post,null,true);
+  // 5. Classification. Success requires all three of: a definite exactly-shaped response, an
+  //    exact proved post-state, and provider accounting inside this runner's own ceilings.
+  if(postState===true){
+    if(!resourceOk)stop('migration_0003_resource_ceiling_exceeded',MIGRATION_0003_AMBIGUOUS,'postflight_resource');
+    return report(MIGRATION_0003_APPLIED,pre,after,definite?null:'reconciled_after_unknown_transport',true);
+  }
+  if(postState instanceof Error)
+    throw classifyMigration0003Failure(postState,MIGRATION_0003_AMBIGUOUS,'postflight_acceptance',accounting());
+  // The migration state did not move. Only an outcome that never proved completion may be
+  // reported as definitely not applied; a definite exactly-shaped success over an unchanged
+  // database is contradictory and stays with the owner.
+  if(after.state===MIGRATION_0003_STATE_EXACT_PRE&&!definite)
+    throw classifyMigration0003Failure(mutationError??new Error('migration_0003_result_cardinality_invalid'),
+      MIGRATION_0003_NOT_APPLIED,mutationError?'ambiguous_reconciliation':'postflight_acceptance',accounting());
+  throw classifyMigration0003Failure(mutationError??new Error('migration_0003_post_state_mismatch'),
+    MIGRATION_0003_AMBIGUOUS,mutationError?'ambiguous_reconciliation':'postflight_acceptance',accounting());
 
   function report(classification,before,after,note,mutationIssued){
     return Object.freeze({

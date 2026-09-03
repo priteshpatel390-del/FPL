@@ -408,7 +408,7 @@ test('an HTTP 200 alone never proves success: cardinality and post-state must bo
 });
 
 test('a completed migration whose resource check then fails is never reported as a no-write',async()=>{
-  const {promise}=run([reconciliation(preState()),
+  const {requests,promise}=run([reconciliation(preState()),
     ok([[],[],[],[]],{rows_read:900000}),reconciliation(postState())]);
   const error=await promise.then(()=>null,failure=>failure);
   const classified=migration0003FailureClassification(error);
@@ -416,6 +416,10 @@ test('a completed migration whose resource check then fails is never reported as
   assert.equal(classified.classification,MIGRATION_0003_AMBIGUOUS);
   assert.equal(classified.retryable,false);
   assert.ok(classified.d1.rowsRead>MIGRATION_0003_MAX_ROWS_READ);
+  // The resource overrun must not skip the one fixed bounded postflight read.
+  assert.equal(classified.phase,'postflight_resource');
+  assert.equal(requests.length,3);
+  assert.ok(statementsOf(requests[2]).every(sql=>/^SELECT /.test(sql)));
 });
 
 test('production account and database identity are proved before any request',async()=>{
@@ -538,4 +542,169 @@ test('the fixed reconciliation SQL classifies real pre, applied and partial sche
     sqlite(db,'DROP INDEX observation_rejections_source_revision;');
     assert.equal(classifyMigration0003State(observe(db)),MIGRATION_0003_STATE_INCONSISTENT);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+/* ------------------------------------------- remediation: remote-main double gate */
+
+// The exact shell the credentialled job runs immediately before the production entry point.
+function credentialledRunBlock(){
+  const marker='      - name: Reconfirm identity and remote main, then apply migration 0003 only';
+  const start=workflow.indexOf(marker);
+  assert.ok(start>0,'the credentialled migration step must exist');
+  const block=workflow.slice(workflow.indexOf('run: |',start)+'run: |\n'.length);
+  return block.split('\n').filter(line=>line.startsWith('          ')||line.trim()==='')
+    .map(line=>line.slice(10)).join('\n').trimEnd();
+}
+
+test('remote main is proved by the repository gate and independently again under credentials',()=>{
+  const gate=workflow.slice(workflow.indexOf('repository-gate:'),workflow.indexOf('migration-0003:'));
+  const credentialled=workflow.slice(workflow.indexOf('migration-0003:'));
+  const resolve=/remote_main="\$\(git ls-remote https:\/\/github\.com\/priteshpatel390-del\/FPL\.git refs\/heads\/main \| cut -f1\)"/;
+  for(const scope of [gate,credentialled]){
+    assert.match(scope,resolve);
+    assert.ok(scope.includes('test -n "$remote_main"'));
+    assert.ok(scope.includes('test "$remote_main" = "$APPROVED_SHA"'));
+  }
+  // Two independent resolutions, neither reusing a value carried between jobs.
+  assert.equal([...workflow.matchAll(new RegExp(resolve.source,'g'))].length,2);
+  assert.doesNotMatch(workflow,/outputs:[\s\S]{0,400}remote_main/);
+  assert.deepEqual([...workflow.matchAll(/^\s+([a-z_]+): \$\{\{ steps\.identity\.outputs\.[a-z_]+ \}\}/gm)]
+    .map(row=>row[1]),['approved_sha']);
+  // The existing exact-SHA, clean-tree and exact-head Verify gates are untouched.
+  assert.ok(gate.includes("row.name==='Tests and deterministic build'"));
+  for(const scope of [gate,credentialled])
+    assert.ok(scope.includes('test "$(git rev-parse HEAD)" = "$APPROVED_SHA"')&&
+      scope.includes('test -z "$(git status --porcelain)"'));
+});
+
+test('the second remote-main check runs after environment admission and immediately before the runner',()=>{
+  const credentialled=workflow.slice(workflow.indexOf('migration-0003:'));
+  const environment=credentialled.indexOf('environment:\n      name: data-s2-production-collection');
+  const recheck=credentialled.indexOf('test "$remote_main" = "$APPROVED_SHA"');
+  const invoke=credentialled.indexOf('node workers/data-platform/run-migration-0003.mjs');
+  assert.ok(environment>=0&&environment<recheck&&recheck<invoke);
+  // Nothing at all runs between the recheck and the production entry point.
+  const block=credentialledRunBlock().split('\n').map(line=>line.trim()).filter(Boolean);
+  assert.equal(block.at(-1),'node workers/data-platform/run-migration-0003.mjs');
+  assert.equal(block.at(-2),'test "$remote_main" = "$APPROVED_SHA"');
+  assert.equal(block.at(-3),'test -n "$remote_main"');
+  assert.match(block.at(-4),/^remote_main="\$\(git ls-remote /);
+  assert.equal(block[0],'set -euo pipefail');
+  // The recheck itself reaches only GitHub; no Cloudflare request precedes it.
+  assert.ok(!block.slice(0,block.length-1).some(line=>/cloudflare|curl|api\.cloudflare/i.test(line)));
+});
+
+test('a main that moved after the repository gate stops before the migration runner is invoked',()=>{
+  const script=credentialledRunBlock();
+  const approved='0123456789abcdef0123456789abcdef01234567';
+  const attempt=liveMain=>{
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'migration-0003-gate-'));
+    const bin=path.join(dir,'bin');
+    fs.mkdirSync(bin);
+    // `node --version` satisfies the runtime pin; any other node invocation records that the
+    // production entry point was reached.
+    fs.writeFileSync(path.join(bin,'node'),`#!/bin/sh\nif [ "$1" = "--version" ]; then echo v24.19.0; exit 0; fi\necho "$@" > "${dir}/invoked"\nexit 0\n`,{mode:0o755});
+    fs.writeFileSync(path.join(bin,'git'),`#!/bin/sh\ncase "$1" in\n  rev-parse) echo ${approved};;\n  status) : ;;\n  ls-remote) printf '%s\\trefs/heads/main\\n' ${liveMain};;\n  *) exit 1;;\nesac\nexit 0\n`,{mode:0o755});
+    // GitHub Actions runs `run:` blocks under bash; `set -o pipefail` requires it.
+    const out=spawnSync('bash',['-c',script],{cwd:dir,encoding:'utf8',
+      env:{PATH:`${bin}:${process.env.PATH}`,APPROVED_SHA:approved}});
+    const invoked=fs.existsSync(path.join(dir,'invoked'));
+    fs.rmSync(dir,{recursive:true,force:true});
+    return {status:out.status,invoked};
+  };
+  // Remote main still exactly the approved SHA: the runner is reached.
+  assert.deepEqual(attempt(approved),{status:0,invoked:true});
+  // Remote main advanced during the protected-environment wait: stop before the runner.
+  const moved=attempt('fedcba9876543210fedcba9876543210fedcba98');
+  assert.notEqual(moved.status,0);
+  assert.equal(moved.invoked,false);
+  // An unresolvable or empty remote main also stops before the runner.
+  const empty=attempt("''");
+  assert.notEqual(empty.status,0);
+  assert.equal(empty.invoked,false);
+});
+
+/* ----------------------------------- remediation: post-mutation ordering */
+
+test('a definite migration response always reaches exactly one fixed read-only postflight',async()=>{
+  const scenarios=[
+    // Clean success.
+    {postflight:postState(),meta:{},classification:MIGRATION_0003_APPLIED,ok:true,phase:null},
+    // Provider accounting crossed this runner's own read ceiling.
+    {postflight:postState(),meta:{rows_read:900000},classification:MIGRATION_0003_AMBIGUOUS,ok:false,phase:'postflight_resource'},
+    // Provider accounting crossed this runner's own write ceiling.
+    {postflight:postState(),meta:{rows_written:900000},classification:MIGRATION_0003_AMBIGUOUS,ok:false,phase:'postflight_resource'},
+    // Postflight state inconsistent after a definite response.
+    {postflight:{ledger:[...PRIOR_LEDGER,THIRD],indexes:INDEX_ROWS.slice(0,2)},
+      classification:MIGRATION_0003_AMBIGUOUS,ok:false,phase:'postflight_acceptance'},
+    // Protected application data moved across the migration.
+    {postflight:postState({observation_heads:9861}),classification:MIGRATION_0003_AMBIGUOUS,ok:false,phase:'postflight_acceptance'}
+  ];
+  for(const scenario of scenarios){
+    const {requests,promise}=run([reconciliation(preState()),
+      ok([[],[],[],[]],{rows_written:19723,...scenario.meta}),reconciliation(scenario.postflight)]);
+    const outcome=await promise.then(result=>result,failure=>failure);
+    const classification=scenario.ok?outcome.classification:migration0003FailureClassification(outcome).classification;
+    assert.equal(classification,scenario.classification,JSON.stringify(scenario.meta));
+    if(!scenario.ok){
+      assert.equal(migration0003FailureClassification(outcome).phase,scenario.phase);
+      assert.equal(migration0003FailureClassification(outcome).retryable,false);
+    }
+    // Exactly three requests: one pre-reconciliation, one migration, one postflight read.
+    assert.equal(requests.length,3);
+    assert.equal(requests.filter(body=>statementsOf(body).some(sql=>/^CREATE INDEX|^INSERT INTO/.test(sql))).length,1);
+    assert.ok(statementsOf(requests[2]).every(sql=>/^SELECT /.test(sql)));
+    // The postflight read is the same fixed reconciliation SQL, never anything constructed.
+    assert.deepEqual(statementsOf(requests[2]),statementsOf(requests[0]));
+    assert.deepEqual(statementsOf(requests[2]),
+      inspectOfficialFplD1RestPlan(buildMigration0003ReconciliationRead()).statements.map(entry=>entry.sql));
+  }
+});
+
+test('a resource overrun is never converted into acceptance and never made retryable',async()=>{
+  const {requests,promise}=run([reconciliation(preState()),
+    ok([[],[],[],[]],{rows_read:900000,rows_written:19723}),reconciliation(postState())]);
+  const error=await promise.then(()=>null,failure=>failure);
+  assert.ok(error,'an overrun must never return a successful result');
+  const classified=migration0003FailureClassification(error);
+  assert.equal(classified.classification,MIGRATION_0003_AMBIGUOUS);
+  assert.equal(classified.code,'migration_0003_resource_ceiling_exceeded');
+  assert.equal(classified.phase,'postflight_resource');
+  assert.equal(classified.retryable,false);
+  assert.ok(classified.d1.rowsRead>MIGRATION_0003_MAX_ROWS_READ);
+  assert.equal(classified.d1.apiCalls,3);
+  // The postflight proving the exact state does not rescue the overrun.
+  assert.equal(requests.length,3);
+});
+
+test('no fourth D1 request is reachable on any post-mutation path',async()=>{
+  const paths=[
+    [reconciliation(preState()),mutationOk(),reconciliation(postState())],
+    [reconciliation(preState()),mutationOk(),reconciliation(preState())],
+    [reconciliation(preState()),()=>{throw new Error('lost');},reconciliation(postState())],
+    [reconciliation(preState()),()=>{throw new Error('lost');},reconciliation(preState())],
+    [reconciliation(preState()),ok([[],[],[]]),reconciliation(preState())],
+    [reconciliation(preState()),ok([[],[],[],[]],{rows_read:900000}),reconciliation(postState())],
+    [reconciliation(preState()),()=>{throw new Error('lost');},()=>{throw new Error('lost too');}]
+  ];
+  for(const steps of paths){
+    const spare=reconciliation(postState());
+    const {requests,promise}=run([...steps,spare]);
+    await promise.then(()=>null,failure=>failure);
+    assert.ok(requests.length<=MIGRATION_0003_MAX_D1_API_CALLS,`${requests.length} requests`);
+    assert.equal(requests.filter(body=>statementsOf(body).some(sql=>/^CREATE INDEX|^INSERT INTO/.test(sql))).length,1);
+  }
+});
+
+test('the remediation adds no collection, resume, schedule, Cron, Worker, secret or provider surface',()=>{
+  const secrets=[...new Set([...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort();
+  assert.deepEqual(secrets,['CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_D1_TOKEN']);
+  const variables=[...new Set([...workflow.matchAll(/vars\.([A-Z0-9_]+)/g)].map(row=>row[1]))].sort();
+  assert.deepEqual(variables,['CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT','CLOUDFLARE_PRODUCTION_D1_ID']);
+  assert.doesNotMatch(executableCode,/EXPLAIN/i);
+  assert.deepEqual([...workflowBody.matchAll(/node (workers\/[^\s]+)/g)].map(row=>row[1]),
+    ['workers/data-platform/run-migration-0003.mjs']);
+  // The only network host the workflow itself contacts is GitHub.
+  assert.deepEqual([...new Set([...workflowBody.matchAll(/https:\/\/([a-z.]+)\//g)].map(row=>row[1]))].sort(),
+    ['api.github.com','github.com']);
 });
