@@ -1,16 +1,19 @@
-import {MAX_CHANGED_OBSERVATIONS_PER_RUN} from './official-fpl-canonical.mjs';
-
 export const D1_MAX_SQL_BYTES=100000;
 export const D1_MAX_BOUND_PARAMETERS=100;
 export const D1_MAX_VALUE_BYTES=2000000;
 export const D1_MAX_BATCH_STATEMENTS=40;
+export const MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN=4000;
 
 const trustedPlans=new WeakSet();
 const encoder=new TextEncoder();
 const SOURCE_REVISION_SQL=`SELECT r.*,s.source_key,s.source_kind FROM data_source_revisions r JOIN data_sources s ON s.source_id=r.source_id WHERE r.source_revision_id=?`;
-const RUN_SQL=`SELECT run_id,source_revision_id,status,records_seen,records_accepted,records_quarantined,records_rejected,error_class FROM ingestion_runs WHERE run_id=? AND source_revision_id=?`;
+const RUN_SQL=`SELECT run_id,source_revision_id,run_type,mode,started_at,completed_at,status,safe_endpoint_class,parser_version,transform_version,schema_version,records_seen,records_accepted,records_quarantined,records_rejected,error_class FROM ingestion_runs WHERE run_id=? AND source_revision_id=?`;
 const HEADS_SQL=`SELECT o.* FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE o.source_revision_id=? AND r.status='completed'`;
-const GOVERNANCE_SQL=`SELECT m.version AS migration_version,m.name AS migration_name,r.*,s.source_key,s.source_kind FROM schema_migrations m JOIN data_source_revisions r ON r.source_revision_id=? JOIN data_sources s ON s.source_id=r.source_id WHERE m.version=2 AND m.name='official_fpl_structured_history'`;
+const HEADS_EXPLAIN_SQL=`EXPLAIN QUERY PLAN ${HEADS_SQL}`;
+const OBSERVATION_POPULATION_SQL=`SELECT COUNT(*) AS observations FROM shadow_observations WHERE source_revision_id=?`;
+const HEAD_POPULATION_SQL=`SELECT COUNT(*) AS heads FROM observation_heads`;
+const POSTFLIGHT_SQL=`WITH observation_state AS MATERIALIZED (SELECT COUNT(*) AS observations,SUM(CASE WHEN ingestion_run_id=? THEN 1 ELSE 0 END) AS run_observations,COUNT(DISTINCT CASE WHEN admission_state='accepted' THEN logical_key END) AS logical_keys,SUM(CASE WHEN admission_state<>'accepted' THEN 1 ELSE 0 END) AS non_accepted,SUM(CASE WHEN admission_state='quarantined' THEN 1 ELSE 0 END) AS quarantined_observations FROM shadow_observations WHERE source_revision_id=?),head_state AS MATERIALIZED (SELECT SUM(CASE WHEN o.source_revision_id=? THEN 1 ELSE 0 END) AS heads,SUM(CASE WHEN o.observation_id IS NULL THEN 1 ELSE 0 END) AS orphan_heads,SUM(CASE WHEN o.source_revision_id=? AND (h.logical_key<>o.logical_key OR o.admission_state<>'accepted' OR ir.status<>'completed') THEN 1 ELSE 0 END) AS invalid_heads FROM observation_heads h LEFT JOIN shadow_observations o ON o.observation_id=h.observation_id LEFT JOIN ingestion_runs ir ON ir.run_id=o.ingestion_run_id AND ir.source_revision_id=o.source_revision_id),rejection_state AS MATERIALIZED (SELECT COUNT(*) AS rejections FROM observation_rejections WHERE source_revision_id=?) SELECT r.run_id,r.status,r.records_seen,r.records_accepted,r.records_quarantined,r.records_rejected,r.error_class,os.*,hs.*,rs.rejections FROM ingestion_runs r CROSS JOIN observation_state os CROSS JOIN head_state hs CROSS JOIN rejection_state rs WHERE r.run_id=? AND r.source_revision_id=?`;
+const GOVERNANCE_SQL=`SELECT m.version AS migration_version,m.name AS migration_name,r.*,s.source_key,s.source_kind FROM schema_migrations m JOIN data_source_revisions r ON r.source_revision_id=? JOIN data_sources s ON s.source_id=r.source_id WHERE m.version=3 AND m.name='production_query_plan_indexes'`;
 const START_SQL=`INSERT OR IGNORE INTO ingestion_runs (run_id,source_revision_id,run_type,mode,started_at,completed_at,status,safe_endpoint_class,parser_version,transform_version,schema_version,records_seen,records_accepted,records_quarantined,records_rejected,error_class,created_at) VALUES (?,?,'official_fpl_structured_history','shadow_only',?,NULL,'started',?,?,?,?,0,0,0,0,NULL,?)`;
 const FAIL_SQL=`UPDATE ingestion_runs SET completed_at=?,status='failed',error_class=? WHERE run_id=? AND source_revision_id=?`;
 const COMPLETE_SQL=`UPDATE ingestion_runs SET completed_at=?,status='completed',records_seen=?,records_accepted=?,records_quarantined=0,records_rejected=0,error_class=NULL WHERE run_id=? AND source_revision_id=?`;
@@ -37,12 +40,15 @@ export const buildSourceRevisionRead=({sourceRevisionId})=>create('read',false,[
 export const buildProductionGovernanceRead=({sourceRevisionId})=>create('read',false,[{sql:GOVERNANCE_SQL,params:[required(sourceRevisionId,'source_revision')]}]);
 export const buildRunRead=({runId,sourceRevisionId})=>create('read',false,[{sql:RUN_SQL,params:[required(runId,'run'),required(sourceRevisionId,'source_revision')]}]);
 export const buildCurrentHeadsRead=({sourceRevisionId})=>create('read',false,[{sql:HEADS_SQL,params:[required(sourceRevisionId,'source_revision')]}]);
+export const buildProductionPopulationAndHeadsRead=({sourceRevisionId})=>create('read',false,[{sql:HEADS_SQL,params:[required(sourceRevisionId,'source_revision')]},{sql:OBSERVATION_POPULATION_SQL,params:[sourceRevisionId]},{sql:HEAD_POPULATION_SQL,params:[]}]);
+export const buildProductionCurrentHeadsExplainRead=({sourceRevisionId})=>create('read',false,[{sql:HEADS_EXPLAIN_SQL,params:[required(sourceRevisionId,'source_revision')]}]);
+export const buildProductionPostflightRead=({runId,sourceRevisionId})=>create('read',false,[{sql:POSTFLIGHT_SQL,params:[required(runId,'run'),required(sourceRevisionId,'source_revision'),sourceRevisionId,sourceRevisionId,sourceRevisionId,runId,sourceRevisionId]}]);
 export const buildStartRunMutation=({runId,sourceRevisionId,startedAt,safeEndpointClass,parserVersion,transformVersion,schemaVersion})=>create('mutation',true,[{sql:START_SQL,params:[required(runId,'run'),required(sourceRevisionId,'source_revision'),required(startedAt,'timestamp'),required(safeEndpointClass,'endpoint'),required(parserVersion,'parser'),required(transformVersion,'transform'),required(schemaVersion,'schema'),startedAt]}]);
 export const buildFailRunMutation=({completedAt,errorClass,runId,sourceRevisionId})=>create('mutation',true,[{sql:FAIL_SQL,params:[required(completedAt,'timestamp'),required(errorClass,'error').slice(0,64),required(runId,'run'),required(sourceRevisionId,'source_revision')]}]);
 export const buildCompleteUnchangedMutation=({completedAt,recordsSeen,runId,sourceRevisionId})=>create('mutation',true,[{sql:COMPLETE_SQL,params:[required(completedAt,'timestamp'),number(recordsSeen),'0',required(runId,'run'),required(sourceRevisionId,'source_revision')]}]);
 export function buildCommitBatch({entities,previousRows,observations,completedAt,recordsSeen,runId,sourceRevisionId}){
   if(!Array.isArray(entities)||!Array.isArray(previousRows)||!Array.isArray(observations))throw new Error('official_fpl_plan_rows_invalid');
-  if(observations.length>MAX_CHANGED_OBSERVATIONS_PER_RUN)throw new Error('write_budget_exceeded');
+  if(observations.length>MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN)throw new Error('write_budget_exceeded');
   const previous=new Set(previousRows.map(row=>row.subject_entity_id));const statements=[];
   const fresh=entities.filter(row=>!previous.has(row.canonical_entity_id));if(fresh.length)statements.push({sql:ENTITY_SQL,params:[json(fresh)]});
   for(const rows of chunk(observations,600))statements.push({sql:OBSERVATION_SQL,params:[json(rows)]});
@@ -50,4 +56,23 @@ export function buildCommitBatch({entities,previousRows,observations,completedAt
   for(const rows of chunk(heads,2000))statements.push({sql:HEAD_SQL,params:[json(rows)]});
   statements.push({sql:COMPLETE_SQL,params:[required(completedAt,'timestamp'),number(recordsSeen),number(observations.length),required(runId,'run'),required(sourceRevisionId,'source_revision')]});
   return create('mutation',true,statements);
+}
+
+export const ROUTINE_WRITE_AMPLIFICATION=Object.freeze({entityInsert:3,observationInsert:5,headInsert:3,headUpdate:2,completionUpdate:1,startInsert:3});
+export function estimateRoutineCommitRowsWritten({entities,previousRows,observations}){
+  if(!Array.isArray(entities)||!Array.isArray(previousRows)||!Array.isArray(observations))throw new Error('official_fpl_plan_rows_invalid');
+  if(observations.length>MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN)throw new Error('write_budget_exceeded');
+  const subjects=new Set(previousRows.map(row=>row.subject_entity_id));
+  const logicalKeys=new Set(previousRows.map(row=>row.logical_key));
+  const freshEntities=entities.filter(row=>!subjects.has(row.canonical_entity_id)).length;
+  const newHeads=observations.filter(row=>!logicalKeys.has(row.logical_key)).length;
+  const updatedHeads=observations.length-newHeads;
+  return Object.freeze({freshEntities,newHeads,updatedHeads,rowsWritten:freshEntities*ROUTINE_WRITE_AMPLIFICATION.entityInsert+observations.length*ROUTINE_WRITE_AMPLIFICATION.observationInsert+newHeads*ROUTINE_WRITE_AMPLIFICATION.headInsert+updatedHeads*ROUTINE_WRITE_AMPLIFICATION.headUpdate+ROUTINE_WRITE_AMPLIFICATION.completionUpdate});
+}
+
+export function validateProductionCurrentHeadsExplain(rows){
+  if(!Array.isArray(rows)||rows.length<1)throw new Error('production_query_plan_mismatch');
+  const details=rows.map(row=>String(row?.detail??''));
+  if(!details.some(detail=>detail.includes('observation_heads_observation_id'))||details.some(detail=>/\bSCAN h\b|AUTOMATIC INDEX/.test(detail)))throw new Error('production_query_plan_mismatch');
+  return true;
 }

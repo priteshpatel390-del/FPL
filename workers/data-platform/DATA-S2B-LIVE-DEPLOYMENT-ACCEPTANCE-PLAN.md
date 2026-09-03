@@ -212,7 +212,7 @@ For a real payload, calculate the expected candidate count from the validated li
 
 `events * 3 + teams * 10 + players * 11 + fixtures * 7`
 
-and require the first baseline's logical observation/head count to equal that derived value. Also require it to remain below the hard `MAX_CHANGED_OBSERVATIONS_PER_RUN = 15000` guard.
+and require the first baseline's logical observation/head count to equal that derived value. Also require it to remain below the historical `MAX_CHANGED_OBSERVATIONS_PER_RUN = 15000` guard; DATA-S2B supersedes it with a routine limit of `4000`.
 
 A mismatch between derived live candidate count and stored logical observations/heads is a STOP condition.
 
