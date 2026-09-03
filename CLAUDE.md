@@ -1,6 +1,43 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-MIGRATION-0003-RUNNER-2026-09-03 -->
+### Current DATA-S2B checkpoint — migration 0003 protected production runner
+
+A dedicated, fail-closed, repository-owned runner now exists for
+`workers/data-platform/migrations/0003_production_query_plan_indexes.sql` and nothing else. It is
+not a generic migration executor: the historical migration-0002 executable is left unchanged, and
+the new mechanism accepts no SQL, no migration path, no version and no object name. Its only
+workflow input is one immutable lowercase 40-character approved SHA; the repository/CI gate —
+exact approved SHA, exact remote `main`, clean tree and a completed, successful, exact-head
+GitHub Actions Verify Teamsheet — completes in a job with no protected environment and no
+Cloudflare credentials before the credentialled job can start. It reuses the existing protected
+`data-s2-production-collection` environment and its existing credentials; none were created,
+rotated or widened.
+
+The executable mutation surface is exactly one request carrying the four byte-exact reviewed
+statements, read from the pinned migration file and proved by size, SHA-256 and statement
+equality. A bounded read-only reconciliation resolves exactly one of three states: the exact
+expected pre-state, which alone permits mutation; the exact already-applied state, which issues no
+SQL and completes on bounded readback; or inconsistent, which fails closed. Any outcome that
+cannot prove completion is UNKNOWN and triggers one read-only reconciliation, never a retry and
+never a second mutation, classifying only `DEFINITELY_APPLIED_SUCCESSFULLY`,
+`DEFINITELY_ALREADY_APPLIED`, `DEFINITELY_NOT_APPLIED` or
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Postflight proves the exact ledger row and index
+definitions and that every protected application-data fact is unchanged; the unresolved first
+production `started` run is only counted, never updated or deleted. The runner carries its own
+narrow bound — at most three D1 API calls, 150,000 rows read and 40,000 rows written, gated
+before mutation from the live population — and does not reinterpret the routine collection
+ceilings, which stand unchanged.
+
+**Migration 0003 is NOT applied.** No Cloudflare request, workflow dispatch, D1 read or mutation,
+live `EXPLAIN QUERY PLAN`, production resume, collection, deployment, schedule or credential
+change was performed. GitHub scheduling remains disabled and Cloudflare Cron remains
+intentionally absent. After merge and exact-main Verify Teamsheet, the next gate is explicit
+owner approval for one migration-0003 production application; live `EXPLAIN` acceptance, the
+first-run resume and normal collection each remain separate later gates. See
+[migration 0003 production runner](workers/data-platform/DATA-S2B-MIGRATION-0003-PRODUCTION-RUNNER.md).
+
 <!-- DATA-S2B-OPTION3-GITHUB-D1-REST-2026-09-02 -->
 ### Current DATA-S2B checkpoint — continuation blocked pending query-safety approval
 
