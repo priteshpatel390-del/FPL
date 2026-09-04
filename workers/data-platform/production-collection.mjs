@@ -5,10 +5,15 @@ import {exactGovernance,exactUntouchedStartedRun,FIRST_RUN_RECONCILIATION_MAX_RO
 import {DATA_S2_SCHEMA_VERSION,DATA_S2_SOURCE_REVISION_ID,DATA_S2_TRANSFORM_VERSION,DATA_S2_VALIDATION_VERSION,diffOfficialFplHistory,materialiseOfficialFplChanges,normaliseOfficialFplHistory} from './official-fpl-canonical.mjs';
 
 // The one approved production collection cadence: a single best-effort full collection
-// opportunity each UTC day at 01:17 UTC, offered by GitHub Actions in
+// opportunity each UTC day, offered by GitHub Actions in
 // `.github/workflows/data-s2-production-scheduled.yml`. It is a cron opportunity, not a
 // guaranteed execution instant, and it is deliberately not a Cloudflare Cron trigger.
-export const PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
+//
+// TEMPORARY owner-approved acceptance window for 4 September 2026: the cadence is 10:17 UTC
+// (11:17 BST) instead of the permanent intended 01:17 UTC, so the first natural scheduled
+// production run can be observed. A separate reviewed restoration change returns this constant and
+// the workflow together to '17 1 * * *'. Exactly one daily opportunity exists either way.
+export const PRODUCTION_COLLECTION_SCHEDULE='17 10 * * *';
 export const PRODUCTION_SEASON='2026-27';
 export const PRODUCTION_D1_ID='01e2b4f9-313a-4a14-8ce6-86c5aecc50d7';
 export const OFFICIAL_FPL_ENDPOINTS=Object.freeze(['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);

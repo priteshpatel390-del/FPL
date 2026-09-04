@@ -12,7 +12,9 @@ still carries its historical `crons` declaration as repository configuration onl
 Two workflows reach that path and nothing else does. `data-s2-production-collection.yml` is
 `workflow_dispatch`-only, takes an owner-approved SHA and uses the attended
 `data-s2-production-collection` environment; it is the manual and recovery boundary.
-`data-s2-production-scheduled.yml` carries exactly one trigger, `17 1 * * *`, takes no input, is
+`data-s2-production-scheduled.yml` carries exactly one trigger — temporarily `17 10 * * *` for the
+owner-approved 4 September 2026 acceptance window, permanently intended `17 1 * * *` and restored
+by a separate reviewed change — takes no input, is
 gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
 `Tests and deterministic build` proof, and uses the dedicated unattended
 `data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`
