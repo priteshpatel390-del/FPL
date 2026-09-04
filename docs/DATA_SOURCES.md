@@ -11,10 +11,19 @@ classification, retention and redistribution posture are unchanged; no provider 
 altered and no raw payload is retained. Exact provider `rows_read`/`rows_written` for those runs
 are unavailable, and Cloudflare dashboard aggregates are not per-workflow accounting.
 
-Routine normal collection has still never run. Its manual workflow is now gated by one immutable
+Routine normal collection **has now run, both manually and on a natural schedule.** The hardened
+manual workflow succeeded once as run `33818972728`, and the dedicated scheduled workflow then
+succeeded on a genuine `schedule` event as run `33901634593` on `main`
+`dac27b3860428bc55c6d505e8a817a207d30f904`, with `repository-gate` and `collect` both successful.
+The manual workflow stays the owner-approved manual and recovery boundary, gated by one immutable
 approved SHA, a credential-free repository gate and a second remote-`main` check in the same shell
-as the runner; scheduling stays disabled and Cloudflare Cron stays intentionally absent. See
-[manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
+as the runner. **GitHub Actions is the approved scheduler**: one production schedule trigger,
+`17 1 * * *` (01:17 UTC), and Cloudflare Cron stays intentionally absent and superseded. That cron
+minute is a best-effort daily opportunity, not a guaranteed execution instant — GitHub delivered
+the accepted natural run approximately 3h21m after its nominal minute, and two earlier windows
+produced no run at all. See
+[manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md) and
+the [daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
 <!-- DATA-S2A-2026-08-26 -->
 ## Official FPL DATA-S2A internal structured-history approval
@@ -29,6 +38,16 @@ DATA-S2A approves one repository-only `shadow_only` purpose: durable internal ch
 Durable **internal shadow retention** of those facts is approved; redistribution is disabled. Raw Official FPL payloads are not retained. Manager/account, picks, bank/free transfers, captain/chip, league and rival data are excluded. The source revision is not approved for production publication or model/runtime use, which remain separately gated. DATA-S2A does not replace the live Official FPL gateway. DATA-S2B Phase 3 deployed the existing `shadow_only` candidate at 100%, but did not run the collector, mutate D1 or activate Cron; [the live closeout](../workers/data-platform/DATA-S2B-PHASE-3-LIVE-CLOSEOUT.md) records the exact boundary.
 
 DATA-S1C-R retired RPC/custom bearer-HTTP as forward collection defaults. DATA-S2A instead collects inside the existing D1-owning Worker. DATA-S2B Phases 0–3 have completed their separately approved read-only preflight, migration, inactive-Version upload/reconciliation and production deployment gates. Phase 4 remains a separate investigation/design/approval gate for Cron activation, real baseline, unchanged-cycle and changed-fact proof, D1 accounting, Workers Free CPU suitability and stop/rollback controls. Collection remains unapproved.
+
+> **Superseded on 4 September 2026 — current state.** The two sentences above are the dated
+> 26 August 2026 position and are retained as history. The Worker collection path and Cloudflare
+> Cron were both superseded: the collector was stopped on Worker CPU grounds, and the forward
+> architecture is GitHub Actions to the fixed Official FPL endpoints to bounded direct Cloudflare
+> D1 REST, which invokes no Worker. Phase 4 Cron activation is **no longer the next gate** and must
+> not be restored. Collection is **approved and has executed in production**, manually as run
+> `33818972728` and on a genuine natural `schedule` event as run `33901634593`. The approved
+> permanent cadence is one daily GitHub Actions trigger at `17 1 * * *`.
+
 
 ## 12 August 2026 — candidate external sources are research, not approval
 

@@ -152,8 +152,8 @@ No collector, entry point, gate, cron, environment, credential, ceiling, schema,
 provider, model, recommendation or application behaviour changes.
 `workers/data-platform/run-production-collection.mjs` and
 `workers/data-platform/production-collection.mjs` are untouched, and permanent tests pin the
-scheduled cron — temporarily `17 14 * * *` for the third 4 September 2026 acceptance window — and
-the manual workflow's shape against this checkpoint.
+scheduled cron — the permanent `17 1 * * *`, restored once the first natural scheduled run
+succeeded — and the manual workflow's shape against this checkpoint.
 
 ## G. Next gate
 

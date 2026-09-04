@@ -9,15 +9,16 @@ import {DATA_S2_SCHEMA_VERSION,DATA_S2_SOURCE_REVISION_ID,DATA_S2_TRANSFORM_VERS
 // `.github/workflows/data-s2-production-scheduled.yml`. It is a cron opportunity, not a
 // guaranteed execution instant, and it is deliberately not a Cloudflare Cron trigger.
 //
-// THIRD TEMPORARY owner-approved acceptance window for 4 September 2026: the cadence is 14:17 UTC
-// (15:17 BST) instead of the permanent intended 01:17 UTC, so the first natural scheduled
-// production run can be observed. The workflow declares no `timezone:` field, so GitHub interprets
-// the cron in UTC and 14:17 UTC is 15:17 BST while the UK is on BST. The first window
-// '17 10 * * *' (10:17 UTC / 11:17 BST) and the second window '30 11 * * *' (11:30 UTC /
-// 12:30 BST) each produced zero scheduled runs, with no proven root cause. A separate reviewed
-// restoration change returns this constant and the workflow together to '17 1 * * *'. Exactly one
-// daily opportunity exists either way.
-export const PRODUCTION_COLLECTION_SCHEDULE='17 14 * * *';
+// The permanent approved cadence, restored after the temporary 4 September 2026 acceptance
+// windows. The third of those windows, '17 14 * * *' (14:17 UTC / 15:17 BST), produced the first
+// successful natural scheduled production run: GitHub Actions run 33901634593, event `schedule`,
+// attempt 1, head `main` dac27b3860428bc55c6d505e8a817a207d30f904, both jobs successful. GitHub
+// created that run at 17:38:15Z, approximately 3h21m after its nominal minute, so a cron minute is
+// an opportunity and not a guaranteed execution instant. The workflow declares no `timezone:`
+// field, so GitHub interprets this cron in UTC and 01:17 UTC is 02:17 BST while the UK is on
+// British Summer Time. Exactly one daily opportunity exists, and this constant and the workflow's
+// single cron are bound together by a permanent test.
+export const PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
 export const PRODUCTION_SEASON='2026-27';
 export const PRODUCTION_D1_ID='01e2b4f9-313a-4a14-8ce6-86c5aecc50d7';
 export const OFFICIAL_FPL_ENDPOINTS=Object.freeze(['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);

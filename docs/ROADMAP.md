@@ -5,7 +5,22 @@
 DI-1 implements the generic shadow contract approved by DI-0: deterministic observations, canonical identity/timing/provenance, fail-closed rights, signal registry, approval ledger and hard shadow repository boundary. It registers and activates no real source, contains no production approval/read path, and changes no recommendation, provider, DATA-S2B/D1/Cloudflare, Stage 10 or UI behaviour. After owner review, merge remains an explicit gate. The next proposed checkpoint is DI-2 automated evaluation and ablation, separately approved and still shadow-only.
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
-## Current DATA-S2B gate — Stage D once-daily GitHub Actions schedule; merging activates it
+## Current DATA-S2B gate — natural schedule accepted; permanent cadence restored
+
+**The first natural scheduled production run has succeeded.** Run `33901634593`, event `schedule`,
+attempt 1, head branch `main`, head SHA `dac27b3860428bc55c6d505e8a817a207d30f904`, with
+`repository-gate` and `collect` both successful, and no `workflow_dispatch` used. It closed the
+temporary acceptance windows, so this checkpoint restores the permanent cadence `17 1 * * *`
+(01:17 UTC). GitHub created that run at 17:38:15Z against a 14:17 UTC nominal minute — an observed
+schedule-event **delivery** delay of approximately 3h21m, upstream of the workflow and with no
+proven cause; the run itself then completed in about 43 seconds. GitHub Actions is the approved
+scheduler and Cloudflare Cron stays superseded and absent.
+
+**Merging this restoration changes the live production schedule** from 14:17 UTC back to 01:17 UTC.
+It is not operationally complete at merge: the next live gate is the **first genuine natural run
+produced by `17 1 * * *`**, judged on event `schedule`, exact then-current `main`, and
+`repository-gate` and `collect` success. Do not substitute a `workflow_dispatch` and do not create
+another temporary acceptance cron.
 
 The hardened manual normal production collection has run live and succeeded: run `33818972728`,
 attempt 1, event `workflow_dispatch`, head SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, both
@@ -14,19 +29,18 @@ telemetry in a cleaner 30-minute window around it showed approximately 32k rows 
 written and 10 queries — dashboard time-window aggregates, not per-workflow accounting — which is
 far below every ceiling, so no resource-headroom remediation is justified and no ceiling moved.
 
-Stage D adds a separate scheduled workflow with exactly one trigger — permanently intended
-`17 1 * * *`, temporarily `17 14 * * *` for the third owner-approved 4 September 2026 acceptance window — a
+Stage D adds a separate scheduled workflow with exactly one trigger — the permanent approved
+cadence `17 1 * * *` (01:17 UTC), restored after the temporary 4 September 2026 acceptance windows
+closed — a
 credential-free scheduled-SHA gate with a bounded read-only exact-head Verify wait, and the
 dedicated unattended `data-s2-production-scheduled` environment. The manual workflow stays
 `workflow_dispatch`-only and attended, both share one non-cancelling concurrency group, and the
 collector, ceilings and postflight are unchanged. Cloudflare Cron stays superseded and absent.
 
-**Merging activates the schedule.** The gate before merge is the owner confirming
-`data-s2-production-scheduled` exists with a `main`-only deployment branch rule, no required
-reviewers, the two environment secrets and the fingerprint variable, and no D1 identifier — GitHub
-otherwise creates a referenced environment implicitly and unprotected. Live proof is then the
-**first natural scheduled run**, never a simulated one. A pre-deadline opportunity, any second
-daily collection and any shorter cadence remain separate later decisions. See
+The environment gate is satisfied in practice: the accepted natural run was admitted to
+`data-s2-production-scheduled` and its credentials resolved. The environment's protection rules
+still cannot be proved from this repository and remain owner-side. A pre-deadline opportunity, any
+second daily collection and any shorter cadence remain separate later decisions. See
 [daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->

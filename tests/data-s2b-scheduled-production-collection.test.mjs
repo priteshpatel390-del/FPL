@@ -43,22 +43,22 @@ function stepScript(marker){
 
 /* --------------------------- trigger and workflow separation --------------------------- */
 
-test('the scheduled workflow exists and carries exactly one schedule trigger at 17 14 * * *',()=>{
+test('the scheduled workflow exists and carries exactly one schedule trigger at 17 1 * * *',()=>{
   assert.ok(fs.existsSync(SCHEDULED_WORKFLOW_PATH));
   assert.match(scheduled,/^name: DATA-S2 Scheduled Production Collection via D1 REST$/m);
   const trigger=scheduled.slice(scheduled.indexOf('\non:'),scheduled.indexOf('\npermissions:'));
-  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '17 14 * * *'");
+  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '17 1 * * *'");
   assert.equal([...scheduled.matchAll(/^\s*- cron:/gm)].length,1);
   assert.equal([...scheduled.matchAll(/^  schedule:$/gm)].length,1);
   // One daily opportunity only, from the single wired repository constant.
-  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 14 * * *');
+  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
   assert.ok(scheduled.includes(`- cron: '${PRODUCTION_COLLECTION_SCHEDULE}'`));
 });
 
 test('the scheduled workflow declares no timezone field, so its cron stays UTC',()=>{
-  // The third temporary window is 14:17 UTC / 15:17 BST on 4 September 2026. Timezone-aware
-  // scheduling is deliberately not introduced as a second variable during this diagnostic, so no
-  // `timezone:` key may appear anywhere in the workflow — comments included.
+  // The permanent cadence is 01:17 UTC, interpreted in UTC year-round. Timezone-aware scheduling
+  // is deliberately not introduced, so no `timezone:` key may appear anywhere in the workflow —
+  // comments included.
   assert.doesNotMatch(uncommented(scheduled),/timezone/i);
   const trigger=scheduled.slice(scheduled.indexOf('\non:'),scheduled.indexOf('\npermissions:'));
   assert.equal([...trigger.matchAll(/^\s*\w+:/gm)].length,2);
@@ -104,7 +104,7 @@ test('the scheduled event itself is the only source of the immutable candidate S
     'SCHEDULED_SHA: ${{ github.sha }}',
     'EVENT_SCHEDULE: ${{ github.event.schedule }}',
     'test "$EVENT_NAME" = schedule',
-    "test \"$EVENT_SCHEDULE\" = '17 14 * * *'",
+    "test \"$EVENT_SCHEDULE\" = '17 1 * * *'",
     'test "$EVENT_REF" = refs/heads/main',
     'test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL',
     "printf '%s' \"$SCHEDULED_SHA\" | grep -Eq '^[0-9a-f]{40}$'",
@@ -381,6 +381,8 @@ test('the Stage D record states the schedule, the live acceptance and the owner 
   const record=read('workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md');
   for(const required of ['17 14 * * *','30 11 * * *','17 10 * * *','17 1 * * *','33818972728',
     '319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf',
+    // The first successful natural scheduled production run, and the restored permanent cadence.
+    '33901634593','dac27b3860428bc55c6d505e8a817a207d30f904','2026-09-04T17:38:15Z',
     'data-s2-production-scheduled','data-s2-production-collection',
     'CLOUDFLARE_D1_TOKEN','CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT',
     'first natural scheduled','Merging this checkpoint activates the schedule'])
@@ -414,4 +416,35 @@ test('the scheduled workflow adds no Cron, Wrangler, deployment, migration or pr
   assert.ok(!body.includes('wrangler.jsonc'));
   assert.doesNotMatch(body,/\*\/30 \* \* \* \*/);
   assert.doesNotMatch(body,/'0 1 \* \* \*'/);
+});
+
+test('the restored permanent cadence and the first natural scheduled acceptance are pinned',()=>{
+  // The one production schedule trigger is the permanent 01:17 UTC cadence, and nothing beside it.
+  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
+  assert.ok(scheduled.includes(`- cron: '${PRODUCTION_COLLECTION_SCHEDULE}'`));
+  assert.ok(scheduled.includes(`test "$EVENT_SCHEDULE" = '${PRODUCTION_COLLECTION_SCHEDULE}'`));
+  assert.equal([...scheduled.matchAll(/^\s*- cron:/gm)].length,1);
+  // No temporary acceptance window, diagnostic cron, probe or heartbeat survives the restoration:
+  // the finished windows may appear only as historical narrative in comments.
+  const body=uncommented(scheduled);
+  for(const retired of ['17 14 * * *','30 11 * * *','17 10 * * *'])
+    assert.ok(!body.includes(retired),retired);
+  assert.doesNotMatch(body,/workflow_dispatch|schedule_probe|heartbeat|diagnostic cron/i);
+  // Cloudflare Cron stays superseded: the scheduler declares no Cron trigger of its own, and the
+  // only Wrangler mentions remain the removal commands the existing surface test pins.
+  assert.doesNotMatch(body,/wrangler triggers|"crons"|crons:/i);
+  // No other repository workflow may carry a second production schedule trigger.
+  const scheduledWorkflows=fs.readdirSync('.github/workflows')
+    .filter(name=>/\.ya?ml$/.test(name))
+    .filter(name=>/^\s*- cron:/m.test(read(`.github/workflows/${name}`)));
+  assert.deepEqual(scheduledWorkflows,['data-s2-production-scheduled.yml']);
+  // The acceptance evidence is recorded factually and is not overclaimed into a guarantee.
+  const record=read('workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md');
+  for(const required of ['33901634593','event `schedule`','attempt 1',
+    'dac27b3860428bc55c6d505e8a817a207d30f904','2026-09-04T17:38:15Z','repository-gate','collect',
+    'no proven root cause','not a guarantee'])
+    assert.ok(record.includes(required),required);
+  assert.doesNotMatch(record,/guarantees? (?:that )?(?:the )?schedule|reliably fires|will fire at/i);
+  // The delay is scheduler delivery, never a collection delay.
+  assert.match(record,/schedule-event (?:creation|delivery)|delivery delay/i);
 });

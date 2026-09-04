@@ -4,13 +4,32 @@
 ## DATA-S2 scheduled production collection limitations
 
 GitHub's documented behaviour is that scheduled workflows can be delayed under load and that
-events can be dropped entirely, so the wired cron — temporarily `17 14 * * *` for the third approved
-4 September 2026 acceptance window, permanently intended `17 1 * * *` — is a best-effort daily
+events can be dropped entirely, so the wired cron `17 1 * * *` (01:17 UTC) is a best-effort daily
 **opportunity**, not a guarantee, and the nominal cron minute is never the execution instant — the collection identity is always the
 actual execution minute the runner observed. A missed day is a missed opportunity; the append-only
 history tolerates it and no catch-up mechanism exists or is approved. GitHub also disables
 schedules on repositories with no activity for an extended period; that is owner-visible and this
 repository cannot detect or prevent it.
+
+**The repository has directly observed two zero-run windows and one materially delayed natural
+schedule delivery.** Two temporary acceptance windows on 4 September 2026 produced zero schedule
+run objects. The third fired, but GitHub created the run object at 17:38:15Z against a 14:17 UTC
+nominal minute — an observed **schedule-event delivery delay of approximately 3 hours 21 minutes**.
+That delay is delivery latency upstream of the workflow, not a collection delay: once the run
+existed it completed in about 43 seconds.
+
+Those observations are consistent with GitHub's documented delay/drop behaviour, but **the cause of
+the zero-run windows is not proven.** Whether either zero-run window was a dropped queued job, or
+resulted from registration lag, scheduler propagation, load or another GitHub-internal cause, is
+unknown: GitHub exposes no scheduler-registration, armed or next-run state through REST or GraphQL,
+so nothing can be attributed from outside, and neither window is attributed to a dropped job here.
+The delayed delivery's cause is likewise unproven.
+
+Two consequences are permanent. No arbitrary short lateness threshold — 30 minutes, 60 minutes or
+any other — may be used to declare a scheduled run missed; any such judgement must account for this
+observed behaviour. And one successful natural run is a **single sample**: it proves natural
+delivery and the whole downstream path, and proves nothing about delivery reliability, delay
+distribution or a guaranteed execution time.
 
 The `data-s2-production-scheduled` environment's protection rules **cannot be proved from this
 repository**. GitHub creates a referenced environment implicitly and unprotected if it has not
@@ -36,9 +55,13 @@ observed after the resume are account-level, time-window figures covering all qu
 they are not per-workflow accounting and are not attributed to either run. Only provider-returned
 `meta` values are workflow accounting.
 
-The hardened manual collection gate is repository evidence, not live-proven: **no normal
-production collection has run under it**, and the resource envelope for a routine cycle remains a
-repository plan estimate rather than a Cloudflare bill. The repository still has no mechanism to
+The hardened manual collection gate is **live-proven**: one normal production collection has run
+under it and succeeded — run `33818972728`, attempt 1, event `workflow_dispatch`, head SHA
+`319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, with both jobs succeeding through the runner's
+synchronous postflight. (This section's 3 September 2026 checkpoint recorded that no collection had
+yet run under the gate; that statement was true then and is superseded here.) The resource envelope for a routine cycle
+nonetheless remains a repository plan estimate rather than a Cloudflare bill, because exact
+provider `meta` for that run reaches only its Step Summary. The repository still has no mechanism to
 read remaining daily D1 quota and none was added, so real-time remaining allowance cannot be
 proven here and stays an owner-side judgement at approval time. The second remote-`main` check
 closes the protected-environment admission window but is not atomic with the runner's first

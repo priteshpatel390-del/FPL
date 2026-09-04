@@ -307,8 +307,8 @@ test('no secret, account, fingerprint or database value can be produced by the m
 test('the scheduled production cron and its workflow are untouched by this diagnostic',()=>{
   const scheduled=read(SCHEDULED_WORKFLOW_PATH);
   const trigger=scheduled.slice(scheduled.indexOf('\non:'),scheduled.indexOf('\npermissions:'));
-  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '17 14 * * *'");
-  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 14 * * *');
+  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '17 1 * * *'");
+  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
   assert.doesNotMatch(uncommented(scheduled),/timezone/i);
   assert.ok(scheduled.includes(`- cron: '${PRODUCTION_COLLECTION_SCHEDULE}'`));
   assert.equal([...scheduled.matchAll(/^\s*- cron:/gm)].length,1);
