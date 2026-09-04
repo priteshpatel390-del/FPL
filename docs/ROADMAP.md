@@ -4,8 +4,35 @@
 
 DI-1 implements the generic shadow contract approved by DI-0: deterministic observations, canonical identity/timing/provenance, fail-closed rights, signal registry, approval ledger and hard shadow repository boundary. It registers and activates no real source, contains no production approval/read path, and changes no recommendation, provider, DATA-S2B/D1/Cloudflare, Stage 10 or UI behaviour. After owner review, merge remains an explicit gate. The next proposed checkpoint is DI-2 automated evaluation and ablation, separately approved and still shadow-only.
 
+<!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+## Current DATA-S2B gate — Stage D once-daily GitHub Actions schedule; merging activates it
+
+The hardened manual normal production collection has run live and succeeded: run `33818972728`,
+attempt 1, event `workflow_dispatch`, head SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, both
+jobs successful, the runner completing through synchronous postflight. Owner-side Cloudflare
+telemetry in a cleaner 30-minute window around it showed approximately 32k rows read, 375 rows
+written and 10 queries — dashboard time-window aggregates, not per-workflow accounting — which is
+far below every ceiling, so no resource-headroom remediation is justified and no ceiling moved.
+
+Stage D adds a separate scheduled workflow with exactly one trigger, `17 1 * * *`, a
+credential-free scheduled-SHA gate with a bounded read-only exact-head Verify wait, and the
+dedicated unattended `data-s2-production-scheduled` environment. The manual workflow stays
+`workflow_dispatch`-only and attended, both share one non-cancelling concurrency group, and the
+collector, ceilings and postflight are unchanged. Cloudflare Cron stays superseded and absent.
+
+**Merging activates the schedule.** The gate before merge is the owner confirming
+`data-s2-production-scheduled` exists with a `main`-only deployment branch rule, no required
+reviewers, the two environment secrets and the fingerprint variable, and no D1 identifier — GitHub
+otherwise creates a referenced environment implicitly and unprotected. Live proof is then the
+**first natural scheduled run**, never a simulated one. A pre-deadline opportunity, any second
+daily collection and any shorter cadence remain separate later decisions. See
+[daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
-## Current DATA-S2B gate — manual collection hardening; one manual collection is the next live gate
+## Earlier DATA-S2B gate — manual collection hardening; one manual collection was the next live gate
+
+**Closed by the Stage D gate above:** that one manual collection ran and succeeded as run
+`33818972728`, and recurring GitHub scheduling has since been separately approved and implemented.
 
 The first production collection run is completed: reconciliation run `33792104384` and resume run
 `33815400284` both succeeded on exact `main` `d79dd37451e16b642ce96709b8635c3ac618c366`, and the

@@ -4,7 +4,11 @@ import {buildCommitBatch,buildCompleteUnchangedMutation,buildFirstRunReconciliat
 import {exactGovernance,exactUntouchedStartedRun,FIRST_RUN_RECONCILIATION_MAX_ROWS_READ,FIRST_RUN_RECONCILIATION_STATEMENT_COUNT,firstRunReconciliationClassification,RESUME_RECONCILIATION_SAFE,validateFirstRunReconciliation} from './resume/first-run-reconciliation-contract.mjs';
 import {DATA_S2_SCHEMA_VERSION,DATA_S2_SOURCE_REVISION_ID,DATA_S2_TRANSFORM_VERSION,DATA_S2_VALIDATION_VERSION,diffOfficialFplHistory,materialiseOfficialFplChanges,normaliseOfficialFplHistory} from './official-fpl-canonical.mjs';
 
-export const FUTURE_PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
+// The one approved production collection cadence: a single best-effort full collection
+// opportunity each UTC day at 01:17 UTC, offered by GitHub Actions in
+// `.github/workflows/data-s2-production-scheduled.yml`. It is a cron opportunity, not a
+// guaranteed execution instant, and it is deliberately not a Cloudflare Cron trigger.
+export const PRODUCTION_COLLECTION_SCHEDULE='17 1 * * *';
 export const PRODUCTION_SEASON='2026-27';
 export const PRODUCTION_D1_ID='01e2b4f9-313a-4a14-8ce6-86c5aecc50d7';
 export const OFFICIAL_FPL_ENDPOINTS=Object.freeze(['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);

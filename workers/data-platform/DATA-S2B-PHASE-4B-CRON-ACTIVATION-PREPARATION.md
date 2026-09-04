@@ -1,5 +1,13 @@
 # DATA-S2B Phase 4B — Cron Activation Preparation
 
+> **Historical design only — superseded 4 September 2026.** This record describes Cloudflare
+> Worker Cron activation, which is **not** the forward production collection architecture and must
+> not be restored or invoked. Current Option 3 production collection scheduling is GitHub Actions
+> -> fixed Official FPL endpoints -> direct Cloudflare D1 REST, at `17 1 * * *`, in
+> `.github/workflows/data-s2-production-scheduled.yml`. See
+> [daily GitHub Actions schedule](DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md). Everything below is
+> retained unchanged as evidence.
+
 **Status:** REPOSITORY PREPARATION ONLY — NO LIVE CRON ACTIVATION PERFORMED
 
 **Prepared:** 28 August 2026

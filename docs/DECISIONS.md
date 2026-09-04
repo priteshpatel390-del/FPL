@@ -1,5 +1,41 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+## DATA-S2B Stage D — GitHub Actions is the production collection scheduler — 4 September 2026
+
+**Decision:** recurring Official FPL production collection is scheduled by GitHub Actions, in a
+**new and separate** workflow `.github/workflows/data-s2-production-scheduled.yml` carrying exactly
+one trigger, `cron: '17 1 * * *'` — one best-effort full collection opportunity each UTC day at
+01:17 UTC. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
+`"crons": ["*/30 * * * *"]` declaration in `workers/data-platform/wrangler.jsonc` is repository
+history only, and the Worker collection path stays superseded on its measured ~630 ms CPU against
+the 10 ms Workers Free Cron ceiling. A D1 REST call invokes no Worker, so that ceiling does not
+apply to the forward path.
+
+**Why a separate workflow:** the existing manual workflow stays `workflow_dispatch`-only against
+the attended `data-s2-production-collection` environment, so the owner-controlled recovery boundary
+keeps its human approval. Adding a `schedule:` there would make that approval optional in practice.
+The two paths differ only in how the candidate revision and its CI proof are established; the small
+security gate is duplicated deliberately rather than extracted, because refactoring the live manual
+gate is the larger risk.
+
+**Trust model:** a schedule event carries no owner judgement, so the immutable candidate source is
+the SHA the event itself carries. A credential-free `repository-gate` proves event name,
+`github.event.schedule`, repository, ref, a 40-character SHA, exact checkout, `HEAD`, a clean tree
+and a freshly resolved remote `main`, then waits read-only inside a fixed ten-read bound for that
+exact head's `Tests and deterministic build` success, stopping on failure, cancellation, absence, a
+wrong SHA or an exhausted bound and never dispatching or re-running anything. A moved `main` stops
+the run; the next scheduled event collects the newer revision.
+
+**Boundary:** unattended scheduled production uses the dedicated `data-s2-production-scheduled`
+environment, which the owner configures — this repository cannot prove an environment's protection
+rules, and GitHub creates a referenced environment implicitly and unprotected. Both workflows share
+one non-cancelling `data-s2-production-collection` concurrency group and both refuse a GitHub
+re-run. There is no scheduled fast path: identical entry point, collector, ceilings, mutation
+classification and synchronous postflight. `01:17` is a cron opportunity, never the execution
+instant. Merging activates the schedule; live proof is the first natural scheduled run. See
+[daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 ## DATA-S2B Phase 4B mutation-path separation — 28 August 2026
 
 **Decision:** future Phase 4 scheduler Version upload and later promotion use new manual-only helpers rather than weakening or repurposing historical Phase 2/3 executables. Upload admits only the exact Versions POST; Deployment admits only the exact Deployments POST. Each needs separate protected approval, exact-current-main CI proof and immutable live-state preflight. Neither can activate Cron or run collection.

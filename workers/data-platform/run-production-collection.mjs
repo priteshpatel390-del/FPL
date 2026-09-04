@@ -1,6 +1,9 @@
 // DATA-S2 normal production collection — protected entry point.
 //
-// Manual, single-attempt and fail-closed. It masks every live identity before any request and
+// Shared, single-attempt and fail-closed. Exactly two hardened workflows invoke it: the
+// owner-dispatched manual/recovery collection and the once-daily scheduled collection. Both reach
+// it through the same trust boundary and it behaves identically for both — there is no scheduled
+// fast path. It masks every live identity before any request and
 // performs exactly one normal collection cycle for the collection identity the dispatching
 // workflow fixed once, immediately before invoking this entry point. It accepts no SQL, table,
 // column, endpoint or database input: the endpoints, season, database id, schema and every
@@ -13,7 +16,11 @@ import {productionFailureClassification,runProductionCollection} from './product
 const required=name=>{const value=process.env[name];if(!value)throw new Error(`missing_${name.toLowerCase()}`);return value;};
 
 const summary=(heading,payload)=>{
-  const line=`## ${heading}\n\n- Repository SHA: \`${process.env.APPROVED_SHA??'unknown'}\`\n\n\`${JSON.stringify(payload)}\`\n`;
+  // The manual workflow gates on an owner-approved SHA; the scheduled workflow gates on the SHA
+  // the scheduled event itself carried. Either way this is a sanitized report label only — the
+  // collection identity is the timestamp the calling step fixed, never this value.
+  const sha=process.env.APPROVED_SHA??process.env.SCHEDULED_SHA??'unknown';
+  const line=`## ${heading}\n\n- Repository SHA: \`${sha}\`\n\n\`${JSON.stringify(payload)}\`\n`;
   if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,line);else process.stdout.write(line);
 };
 

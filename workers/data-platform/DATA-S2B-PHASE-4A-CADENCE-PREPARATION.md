@@ -1,5 +1,15 @@
 # DATA-S2B Phase 4A — Daily + Deadline-Anchored Cadence Preparation
 
+> **Historical design only — superseded 4 September 2026.** This record describes the Cloudflare
+> Worker Cron cadence, which is **not** the forward production collection architecture and must
+> not be restored. Current Option 3 production collection scheduling is GitHub Actions -> fixed
+> Official FPL endpoints -> direct Cloudflare D1 REST, at `17 1 * * *`, in
+> `.github/workflows/data-s2-production-scheduled.yml`. The `"crons"` declaration in
+> `workers/data-platform/wrangler.jsonc` is repository history, never an instruction to re-enable
+> live Cron. See [daily GitHub Actions schedule](DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md). The
+> Worker collector's measured ~630 ms CPU against the 10 ms Workers Free Cron ceiling is why this
+> path was stopped. Everything below is retained unchanged as evidence.
+
 **Status:** REPOSITORY CANDIDATE ONLY — NO LIVE CRON OR COLLECTION APPROVAL
 
 **Baseline main:** `01cb844ae6793e4acf11de40d31d6ef48295a934`

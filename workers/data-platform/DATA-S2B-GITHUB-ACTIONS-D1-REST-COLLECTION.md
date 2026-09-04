@@ -50,6 +50,12 @@ budget. No automatic schedule exists at this stage.
 Only after successful manual production acceptance, prepare a separate narrowly scoped PR that
 adds `17 1 * * *`. That activation PR must contain no unrelated architecture or data-path change.
 
+**Implemented on 4 September 2026** as a new, separate workflow rather than a `schedule:` added to
+the manual one, so the manual/recovery path keeps its human-approved environment. Unattended
+scheduled production uses the dedicated `data-s2-production-scheduled` environment, and the
+scheduled candidate SHA comes from the schedule event itself under a bounded read-only exact-head
+Verify proof. See [daily GitHub Actions schedule](DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 ## Reuse and flow
 
 The runner reuses the canonical E1/E2 `official-fpl-d1-rest-plan.mjs`,
@@ -379,6 +385,14 @@ Exact provider `meta.rows_read` and `meta.rows_written` for those runs reach onl
 Summary, which is not retrievable through the GitHub API available here; they are **unavailable**
 and are stated nowhere. Cloudflare dashboard aggregates are account-level, time-window figures,
 are not per-workflow accounting, and are not recorded as exact resume usage.
+
+**Superseded on 4 September 2026.** Stage C has since happened and succeeded: run `33818972728`,
+attempt 1, event `workflow_dispatch`, head SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, both
+jobs successful, the runner completing through synchronous postflight. Stage D was then separately
+approved and implemented as a **new, separate** scheduled workflow carrying exactly one
+`17 1 * * *` trigger; Cloudflare Cron remains superseded and absent. See
+[daily GitHub Actions schedule](DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md). The paragraph below is
+retained as the state before that.
 
 Stage C — one owner-approved manual `workflow_dispatch` of the normal collection — has **not**
 happened and remains the next live gate. It now runs behind the hardened gate described in
