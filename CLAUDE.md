@@ -2,6 +2,44 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+### Current DATA-S2B checkpoint — third temporary natural-schedule acceptance window
+
+The single trigger of `.github/workflows/data-s2-production-scheduled.yml` moves from
+`30 11 * * *` to **`17 14 * * *`** for a **third** temporary owner-approved natural acceptance
+window on **4 September 2026 at 14:17 UTC / 15:17 BST**. The workflow declares **no `timezone:`
+field**, so GitHub interprets the cron in UTC; that UTC model is deliberately left unchanged so
+timezone-aware scheduling is not introduced as another variable during this diagnostic, and the UK
+is on BST (UTC+1) on that date. The minute is deliberately `17`, not the top of the hour. Exactly
+one trigger exists: no second cron, no diagnostic cron, no heartbeat workflow, no second scheduled
+workflow, no `workflow_dispatch`. The permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
+must be restored by a separate explicitly reviewed pull request. Scope is the workflow cron and
+`EVENT_SCHEDULE` gate, the wired `PRODUCTION_COLLECTION_SCHEDULE`, the permanent tests that pin
+them, and documentation.
+
+Window history: the first window `17 10 * * *` (10:17 UTC / 11:17 BST) and the second window
+`30 11 * * *` (11:30 UTC / 12:30 BST) **each produced zero schedule runs**; the third is pending
+natural observation. Between the second and third windows: PR #220 merged as `main`
+`98a5f994a3cdd4fc045c1f20ad86160d48170104`, exact-`main` Verify run `33871227472` succeeded, and
+the read-only scheduled-environment credential preflight ran once as run `33871716975`, attempt 1,
+on exact `main`, and **succeeded** — proving point in time that `CLOUDFLARE_ACCOUNT_ID` matches
+`CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT`, that `CLOUDFLARE_D1_TOKEN` is `active`, and that those
+credentials can read the exact reviewed production D1 database, with no SQL and no mutation. The
+owner then manually **disabled and immediately re-enabled** the scheduled production workflow.
+**The failure boundary observed so far is GitHub schedule-event creation**, strictly upstream of
+every credential the preflight checks: neither miss is a credential, environment or Cloudflare
+failure. GitHub exposes no proven scheduler-registration, armed or next-run state through REST or
+GraphQL, and documents that schedule events may be delayed or dropped, so **no root cause is proven
+and none is invented**.
+
+**Nothing was executed for this checkpoint.** No Cloudflare request, D1 request, workflow dispatch,
+collection, migration, deployment, Worker action, Cron change, environment, secret or variable
+change was performed. The manual production collection workflow and the read-only
+scheduled-environment preflight workflow are untouched, and no model, provider, schema or
+calculation behaviour changes. **Merging changes the live production schedule** and may cause one
+real production D1 collection at 14:17 UTC / 15:17 BST on 4 September 2026; the Stage D section H
+environment confirmation still applies. See
+[daily GitHub Actions schedule](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 ### Current DATA-S2B checkpoint — manual read-only scheduled-environment credential preflight
 
 A separate, manual, strictly read-only diagnostic now exists to prove that the GitHub environment
@@ -37,8 +75,9 @@ request URL into the log.
 
 **Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read,
 D1 SQL, D1 mutation, collection, migration, deployment, schedule change, cron change, environment
-or credential change was performed. The scheduled cron stays `30 11 * * *` and the manual
-collection workflow is unchanged. Next gates: merge and exact-`main` Verify, then **separate**
+or credential change was performed. The scheduled cron was `30 11 * * *` at that checkpoint — since
+moved to `17 14 * * *` by the third acceptance window above — and the manual collection workflow is
+unchanged. Next gates: merge and exact-`main` Verify, then **separate**
 owner approval to dispatch the preflight once, conditional on the Stage D section H environment
 confirmation. See
 [scheduled-environment preflight](workers/data-platform/DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT.md).
@@ -63,13 +102,14 @@ resource-headroom remediation is justified**: no SQL optimisation, no index chan
 
 Stage D adds the forward scheduler: a **new, separate** workflow
 `.github/workflows/data-s2-production-scheduled.yml`, name `DATA-S2 Scheduled Production
-Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '30 11 * * *'` — and no
+Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '17 14 * * *'` — and no
 input of any kind. **That cron is a TEMPORARY owner-approved acceptance window for 4 September
-2026 (11:30 UTC / 12:30 BST); the permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
+2026 (14:17 UTC / 15:17 BST); the permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
 must be restored by a separate explicitly reviewed pull request once the first natural scheduled
-run has been evaluated.** This is the **second** approved temporary window. The first, `17 10 * * *`
-(10:17 UTC / 11:17 BST), was merged as `3c017786bce8cba8daf0091cf2e297f8e57789f8` 42m49s before its
-minute and **produced zero schedule runs** — workflow `350014371` runs `total_count: 0` and
+run has been evaluated.** This is the **third** approved temporary window; the first two, `17 10 * * *`
+(10:17 UTC / 11:17 BST) and `30 11 * * *` (11:30 UTC / 12:30 BST), each **produced zero schedule
+runs**. The first was merged as `3c017786bce8cba8daf0091cf2e297f8e57789f8` 42m49s before its
+minute — workflow `350014371` runs `total_count: 0` and
 repository-wide `event=schedule` `total_count: 0`, so no run object was created and nothing reached
 the gate, environment, credentials, Official FPL, D1 or postflight. Across that window the workflow
 stayed `active` and every configuration check passed (default branch, single trigger, single cron,
