@@ -1,5 +1,41 @@
 # SECURITY.md
 
+<!-- DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT-2026-09-04 -->
+## DATA-S2 scheduled-environment credential preflight boundary
+
+A manual, strictly read-only diagnostic proves that the GitHub environment
+`data-s2-production-scheduled` holds credentials that are internally consistent and can reach the
+reviewed production D1 database. It is not a scheduler and not a collector: it performs no
+collection, executes no SQL, never reaches the D1 `/query` endpoint and makes no Cloudflare
+mutation. Its workflow is `workflow_dispatch`-only with zero inputs, carries no other trigger,
+grants only `contents: read`, uses no GitHub token, holds its own concurrency group and requests
+exactly the environment under test. It also does not investigate or alter GitHub's schedule-event
+creation, which is strictly upstream of every credential it checks.
+
+Its executable can build exactly two requests, both `GET`, with no body: Cloudflare's official
+read-only `user/tokens/verify` and the read-only D1 database detail read, which needs only
+`D1:Read` and executes no SQL. The target database is the reviewed repository constant, never a
+caller or environment value, so no environment change can redirect the check;
+`CLOUDFLARE_PRODUCTION_D1_ID` is not introduced. The local `SHA-256(CLOUDFLARE_ACCOUNT_ID)` versus
+`CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` comparison runs first, so a mismatched environment
+stops before any credential leaves the runner, and it reuses the existing canonical
+`derivedAccountFingerprint` rather than restating the formula.
+
+Identifier handling follows the PR #215 remediation unchanged: account id and D1 token stay
+secrets, the D1 id stays a repository constant present in no workflow or environment value, and
+the account fingerprint is materialised only on the final step after the credentialled job's first
+step registers its mask from the already-masked account credential. Runtime
+`maskProductionIdentity` remains defence in depth. The preflight module reads no `process.env` and
+has no `console`, stdout, file, artifact, cache, `GITHUB_ENV` or `GITHUB_OUTPUT` surface; the entry
+point emits one sanitized payload — a PASS/FAIL label plus closed-set check names. Transport,
+HTTP, authorization and decoding failures become stable sanitized classes inside the module, and
+on failure the entry point discards the original error object and rethrows only that class,
+because an arbitrary runtime message can contain the request URL and therefore the account and
+database identifiers. No response body, request URL, header, token, account id, fingerprint or
+database id is emitted, and no shell step uses `curl`, verbose transport or `set -x`. Nothing has
+been executed; one dispatch remains a separate owner approval. See
+[scheduled-environment preflight](../workers/data-platform/DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT.md).
+
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
 ## DATA-S2 manual production collection trust boundary
 

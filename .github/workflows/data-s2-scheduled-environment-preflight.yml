@@ -1,0 +1,94 @@
+# DATA-S2 — manual, strictly read-only credential/environment preflight for the unattended
+# scheduled production boundary.
+#
+# It answers exactly one question: does the GitHub environment `data-s2-production-scheduled`
+# hold credentials that are internally consistent and can reach the reviewed production D1
+# database? It is a diagnostic. It is NOT a production scheduler, it performs no collection, it
+# executes no SQL, it never reaches the D1 `/query` endpoint and it makes no Cloudflare mutation
+# of any kind.
+#
+# It also does not investigate, explain or alter GitHub's schedule-event creation. Environment
+# credentials are downstream of event creation, so a pass here would say nothing about whether a
+# cron fires, and a cron that fires says nothing about these credentials.
+#
+# `.github/workflows/data-s2-production-scheduled.yml` and
+# `.github/workflows/data-s2-production-collection.yml` are untouched by this workflow: the
+# scheduled collection keeps its single cron and this file adds no schedule of its own.
+name: DATA-S2 Scheduled Environment Credential Preflight
+
+# Manual only, and deliberately zero-input: there is no SHA, database, endpoint, statement or
+# identity a caller could supply, because everything this checks is either an environment value
+# or a reviewed repository constant.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Its own group. This preflight mutates nothing, so it must never queue behind — or be seen to
+# serialize with — a real production collection, resume, reconciliation or migration.
+concurrency:
+  group: data-s2-scheduled-environment-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The exact environment under test. Requesting it is the point of the diagnostic: the
+    # credentials proved here are the ones the daily scheduled collection would use.
+    environment:
+      name: data-s2-production-scheduled
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+    steps:
+      # GitHub echoes each step's resolved environment in that step's log header, and only
+      # `secrets.*` values are registered as masks automatically. The account fingerprint is a
+      # `vars.*` value, so its mask is registered here — derived from the already-masked account
+      # credential — before any step materialises the variable itself. The production database id
+      # is a reviewed repository constant and is carried in no workflow or environment value.
+      #
+      # This step also fails closed when the environment supplies no account credential, which is
+      # what an unconfigured or wrongly configured environment looks like from inside the run.
+      - name: Register production identifier masks before any other step
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out the dispatched revision
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      - name: Verify repository, ref, Node and clean tree
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          test "$(node --version)" = v24.19.0
+          test -z "$(git status --porcelain)"
+
+      # The fingerprint variable is materialised for the first and only time here, after the mask
+      # step. The entry point emits a sanitized PASS/FAIL label and nothing else.
+      - name: Prove the scheduled environment credentials read-only
+        env:
+          CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node workers/data-platform/scheduled/run-scheduled-environment-preflight.mjs
