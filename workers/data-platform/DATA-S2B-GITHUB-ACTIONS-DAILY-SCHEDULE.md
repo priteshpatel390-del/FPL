@@ -6,13 +6,22 @@ environment change or credential change was performed while preparing it.** The 
 recorded below were read back independently from the GitHub Actions API; they were produced by an
 owner-dispatched run that had already completed before this work began.
 
-**Merging this checkpoint activates the schedule.** Once the scheduled workflow reaches the
-default branch, GitHub can begin producing natural scheduled events for it. It is an activation
-change, not inert preparation. The pre-merge owner gate in section H is mandatory.
+**Status — read this before the rest of the record.** The schedule is **already active**. Stage D
+merged, the workflow began producing natural scheduled events, and the **first natural scheduled
+production run has succeeded** (section B0.4). The temporary acceptance windows are finished and
+none is retained, and the permanent cadence `17 1 * * *` is restored (section B0.5); exactly one
+production schedule trigger exists.
 
-**Status: the first natural scheduled production run has now succeeded, and the permanent cadence
-`17 1 * * *` is restored.** Section B0.4 records that acceptance in full. The temporary acceptance
-windows are finished and none is retained; exactly one production schedule trigger exists.
+The activation gate below is therefore **historical**, not a current instruction:
+
+> **Merging this checkpoint activates the schedule.** Once the scheduled workflow reaches the
+> default branch, GitHub can begin producing natural scheduled events for it. It is an activation
+> change, not inert preparation. The pre-merge owner gate in section H is mandatory.
+
+That gate was satisfied before Stage D merged, and section H's environment confirmation is
+additionally borne out in practice: the accepted run was admitted to
+`data-s2-production-scheduled` and its credentials resolved. The environment's protection rules
+still cannot be proved from this repository and remain owner-side.
 
 ## A. Why GitHub Actions is the forward scheduler
 
@@ -392,6 +401,12 @@ else in it.
 
 ## H. Owner pre-merge gate — mandatory
 
+**Historical for Stage D itself: this gate was satisfied before Stage D merged**, and the accepted
+natural run was subsequently admitted to `data-s2-production-scheduled` with its credentials
+resolving. The checklist is retained because it stays the standing owner-side control whenever that
+environment is reviewed; the protection rules themselves still cannot be proved from this
+repository.
+
 Before merge, confirm, owner-side:
 
 - [ ] environment `data-s2-production-scheduled` exists;
@@ -437,6 +452,11 @@ index changed, no migration 0004 proposed and no read, write or change ceiling m
 
 ## J. First natural scheduled run — acceptance plan
 
+**Already satisfied once, for the temporary window**: run `33901634593` met every requirement below
+under `17 14 * * *` (section B0.4). The plan is retained because it is the standing method, and it
+applies again unchanged to the **first natural run produced by the restored `17 1 * * *`**, which
+remains an open observation.
+
 Merging does not make the schedule live-proven. After merge, **wait for the first natural
 scheduled event** at the wired cron `17 1 * * *`; do not simulate it, do not dispatch anything and
 do not create a temporary trigger. Acceptance requires, from the GitHub Actions API:
@@ -469,12 +489,17 @@ required or performed here.
   events can be dropped entirely, so the wired cron `17 1 * * *` is a best-effort daily
   opportunity, not a guarantee. A missed day is a missed collection opportunity; the append-only
   history tolerates it and no catch-up mechanism exists or is approved.
-- **This repository has now directly observed both failure modes.** Two windows produced zero
-  scheduled runs, and the window that did fire was delivered approximately 3h21m after its nominal
-  minute (section B0.4). The nominal cron minute is therefore an opportunity, never an execution
-  time, and the collection identity is always the actual execution minute. No arbitrary short
-  lateness threshold — 30 minutes, 60 minutes or any other — may be used to declare a future run
-  missed; a judgement that a day was missed must account for this observed delivery behaviour.
+- **The repository has directly observed two zero-run windows and one materially delayed natural
+  schedule delivery.** Two windows produced zero schedule run objects, and the window that did fire
+  was delivered approximately 3h21m after its nominal minute (section B0.4). Those observations are
+  consistent with GitHub's documented delay/drop behaviour, but **the cause of the zero-run windows
+  is not proven**: whether either was a dropped queued job, registration lag, scheduler
+  propagation, load or another GitHub-internal cause cannot be determined from outside, and neither
+  window is attributed to a dropped job here. The nominal cron minute is therefore an opportunity,
+  never an execution time, and the collection identity is always the actual execution minute. No
+  arbitrary short lateness threshold — 30 minutes, 60 minutes or any other — may be used to declare
+  a future run missed; a judgement that a day was missed must account for this observed delivery
+  behaviour.
 - One successful natural run is a **single sample**. It proves natural delivery and the whole
   downstream path, and it proves nothing about delivery reliability, delay distribution or a
   guaranteed execution instant.

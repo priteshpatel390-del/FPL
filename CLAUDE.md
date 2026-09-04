@@ -39,9 +39,16 @@ workflow, no alternate scheduler and no Cloudflare Cron. Window history: `17 10 
 and `30 11 * * *` (11:30 UTC) each produced **zero** schedule runs; `17 14 * * *` produced the
 accepted run above.
 
-**Nothing was executed for this checkpoint.** No Cloudflare request, D1 request, workflow dispatch,
-collection, migration, deployment, Worker action, Cron change, environment, secret or variable
-change was performed. The manual production collection workflow and the read-only
+**What ran, and what this checkpoint itself did.** Run `33901634593` was a **real natural scheduled
+production collection**: it fetched Official FPL and exercised the live Cloudflare D1 REST write
+path. It happened on `main` **before** this restoration work began, was produced by GitHub's own
+scheduler rather than by any action taken here, and is recorded above as evidence, not as something
+this checkpoint performed.
+
+**This restoration itself executed nothing.** Preparing it performed no additional production
+collection, no D1 request or mutation, no workflow dispatch, no deliberate Cloudflare operation, no
+migration, deployment, Worker action, Cron change, and no environment, secret, variable or
+credential change. The manual production collection workflow and the read-only
 scheduled-environment preflight workflow are untouched, and no model, provider, schema or
 calculation behaviour changes. **Merging changes the live production schedule** from 14:17 UTC back
 to 01:17 UTC. Merging is not operational completion: the next live gate is the **first genuine
@@ -50,7 +57,16 @@ natural run produced by `17 1 * * *`**, requiring event `schedule`, exact then-c
 temporary acceptance cron. See
 [daily GitHub Actions schedule](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
-### Current DATA-S2B checkpoint — manual read-only scheduled-environment credential preflight
+### Earlier DATA-S2B checkpoint (gates closed) — manual read-only scheduled-environment credential preflight
+
+> **Superseded — the preflight has since run.** Its next step is no longer a future owner-approved
+> dispatch. It was dispatched once and **succeeded**: run `33871716975`, attempt 1, on exact `main`.
+> That proved, point in time, that `CLOUDFLARE_ACCOUNT_ID` matches
+> `CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT`, that `CLOUDFLARE_D1_TOKEN` verifies as `active`, and
+> that those credentials can read the exact reviewed production D1 database. It executed no SQL and
+> performed no mutation, and it says nothing about GitHub schedule-event creation, which is strictly
+> upstream of every credential it checks. The design text below is retained as history and its
+> forward-looking gates are closed.
 
 A separate, manual, strictly read-only diagnostic now exists to prove that the GitHub environment
 `data-s2-production-scheduled` holds credentials that are internally consistent and can reach the
@@ -87,12 +103,19 @@ request URL into the log.
 D1 SQL, D1 mutation, collection, migration, deployment, schedule change, cron change, environment
 or credential change was performed. The scheduled cron was `30 11 * * *` at that checkpoint — since
 moved to `17 14 * * *` for the third acceptance window, and now restored to the permanent
-`17 1 * * *` by the checkpoint above — and the manual collection workflow is unchanged. Next gates: merge and exact-`main` Verify, then **separate**
-owner approval to dispatch the preflight once, conditional on the Stage D section H environment
-confirmation. See
+`17 1 * * *` by the checkpoint above — and the manual collection workflow is unchanged. The next
+gates recorded at that checkpoint — merge and exact-`main` Verify, then separate owner approval to
+dispatch the preflight once — are **both closed**: that merge and Verify happened, and the single
+approved dispatch ran as run `33871716975` and succeeded. See
 [scheduled-environment preflight](workers/data-platform/DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT.md).
 
-### Current DATA-S2B checkpoint — Stage D once-daily GitHub Actions collection schedule
+### Earlier DATA-S2B checkpoint (gates closed) — Stage D once-daily GitHub Actions collection schedule
+
+> **Superseded — the schedule is already activated.** The "Merging activates the schedule" gate
+> below was the position before Stage D merged; it is history, not a current statement. Stage D did
+> merge, the schedule became live, and it produced the accepted natural run `33901634593`. The
+> temporary acceptance windows it describes are finished and the permanent cadence `17 1 * * *` is
+> restored — see the current checkpoint at the top of this file.
 
 **The hardened manual normal production collection has executed live and succeeded.** Verified
 independently from the GitHub Actions API: workflow `DATA-S2 Production Collection via D1 REST`,
@@ -149,8 +172,8 @@ always the actual execution minute.
 
 **Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read or
 mutation, collection, migration, deployment, Worker action, Cron change, GitHub environment or
-credential change was performed. **Merging activates the schedule**, so it must not merge until
-the owner confirms `data-s2-production-scheduled` exists with `main`-only deployment branch, no
+credential change was performed *while preparing Stage D*. **Merging activates the schedule** — the
+pre-merge position, now historical: it was not to merge until the owner confirmed `data-s2-production-scheduled` exists with `main`-only deployment branch, no
 required reviewers, `CLOUDFLARE_D1_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets and the
 `CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` variable, and no D1 identifier — GitHub otherwise
 creates a referenced environment implicitly and unprotected. Live proof is the **first natural
