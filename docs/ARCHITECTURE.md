@@ -1,5 +1,28 @@
 # ARCHITECTURE.md
 
+<!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+## DATA-S2B production collection scheduling — 4 September 2026
+
+The forward Official FPL production collection path is GitHub Actions -> fixed Official FPL public
+endpoints -> validation, normalisation, diff and hashing on the runner -> bounded direct Cloudflare
+D1 REST. **Cloudflare Worker collection and Cloudflare Cron are superseded and must not be
+restored**; the Phase 4A/4B Worker-Cron records are history, and `workers/data-platform/wrangler.jsonc`
+still carries its historical `crons` declaration as repository configuration only.
+
+Two workflows reach that path and nothing else does. `data-s2-production-collection.yml` is
+`workflow_dispatch`-only, takes an owner-approved SHA and uses the attended
+`data-s2-production-collection` environment; it is the manual and recovery boundary.
+`data-s2-production-scheduled.yml` carries exactly one trigger, `17 1 * * *`, takes no input, is
+gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
+`Tests and deterministic build` proof, and uses the dedicated unattended
+`data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`
+job, re-resolve remote `main` in the same shell immediately before the runner, fix the
+minute-precision collection identity once inside that shell from the runner clock, refuse a GitHub
+re-run, and share one non-cancelling `data-s2-production-collection` concurrency group. Both invoke
+the identical entry point and collector: there is no scheduled fast path, and the resource ceilings
+and synchronous postflight are unchanged. See
+[daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 ## DI-3 offline decision-layer boundary — 29 August 2026
 
 `src/decision-intelligence/decision-layer.mjs` is a one-way, read-only consumer contract for existing production outputs. Production model, provider, state, UI and build roots do not import it. It can canonicalise approved outputs into deterministic artifacts and diff artifacts, but cannot write recommendation state, read shadow repositories through a provider-local shortcut, mutate DATA-S2B or render UI. See [DI-3 Stage A](DECISION-INTELLIGENCE-DI3-DECISION-LAYER.md).

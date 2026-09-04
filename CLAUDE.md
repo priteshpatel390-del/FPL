@@ -1,6 +1,58 @@
 
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
+<!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+### Current DATA-S2B checkpoint — Stage D once-daily GitHub Actions collection schedule
+
+**The hardened manual normal production collection has executed live and succeeded.** Verified
+independently from the GitHub Actions API: workflow `DATA-S2 Production Collection via D1 REST`,
+run `33818972728`, run number 2, attempt 1, event `workflow_dispatch`, head branch `main`, head
+SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, conclusion `success`, with both `repository-gate`
+and `collect` succeeding. Because `runProductionCollection` returns only after its synchronous
+postflight has validated the exact completed run, that success proves the whole hardened manual
+trust boundary end to end. Do not re-run it. Owner-side Cloudflare telemetry in a cleaner
+30-minute window surrounding that run showed approximately 32k rows read, 375 rows written and 10
+queries with 12.55 MB storage — **database time-window dashboard aggregates, never exact
+per-workflow provider accounting**, and never to be recorded as the collection's exact usage.
+Exact provider `meta` for the run reaches only its Step Summary and is not retrievable through the
+GitHub API available here. That telemetry is nonetheless far below every ceiling, so **no
+resource-headroom remediation is justified**: no SQL optimisation, no index change, no migration
+0004, and no movement in the 100,000 expected reads, 125,000 hard reads, 40,000 hard writes or
+4,000 routine changed-observation ceilings.
+
+Stage D adds the forward scheduler: a **new, separate** workflow
+`.github/workflows/data-s2-production-scheduled.yml`, name `DATA-S2 Scheduled Production
+Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '17 1 * * *'` — and no
+input of any kind. One best-effort full collection opportunity each UTC day at 01:17 UTC; no
+pre-deadline collection, no polling, no second daily run and **no Cloudflare Cron**. The dormant
+constant is now the wired `PRODUCTION_COLLECTION_SCHEDULE`. A schedule event carries no owner
+judgement, so its immutable candidate source is the SHA the event itself carries: a
+credential-free `repository-gate` proves event name, `github.event.schedule`, repository, ref,
+40-character SHA, exact checkout, `HEAD`, clean tree and a freshly resolved remote `main`, then
+waits read-only and inside a fixed ten-read bound for that exact head's `Tests and deterministic
+build` success — stopping on failure, cancellation, absence, a wrong SHA or an exhausted bound,
+and never dispatching, re-running or re-requesting anything. Only then does the `collect` job
+request the **dedicated** `data-s2-production-scheduled` environment, re-establish Node, `HEAD`,
+clean tree and Wrangler removal, fix `COLLECTION_SCHEDULED_AT` once from the runner clock, resolve
+remote `main` again from the remote and invoke the unchanged shared entry point.
+`.github/workflows/data-s2-production-collection.yml` is unchanged in shape and stays
+`workflow_dispatch`-only against the attended `data-s2-production-collection` environment. Both
+share the one non-cancelling `data-s2-production-collection` concurrency group, both refuse
+`GITHUB_RUN_ATTEMPT !== '1'`, and there is no scheduled fast path: identical collector, ceilings,
+mutation classification and synchronous postflight. `01:17` is a cron opportunity, never the
+execution instant — GitHub may delay or drop a scheduled event, and the collection identity is
+always the actual execution minute.
+
+**Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read or
+mutation, collection, migration, deployment, Worker action, Cron change, GitHub environment or
+credential change was performed. **Merging activates the schedule**, so it must not merge until
+the owner confirms `data-s2-production-scheduled` exists with `main`-only deployment branch, no
+required reviewers, `CLOUDFLARE_D1_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets and the
+`CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` variable, and no D1 identifier — GitHub otherwise
+creates a referenced environment implicitly and unprotected. Live proof is the **first natural
+scheduled run**, never a simulation. See
+[daily GitHub Actions schedule](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
 ### Current DATA-S2B checkpoint — manual collection hardening; first production run completed
 
@@ -53,6 +105,11 @@ intentionally absent, and `FUTURE_PRODUCTION_COLLECTION_SCHEDULE = '17 1 * * *'`
 Next gates: merge and exact-`main` Verify, then separate owner approval for exactly **one**
 manual normal production collection. Recurring scheduling remains a later separate approval. See
 [manual collection hardening](workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
+
+**Superseded by the Stage D checkpoint above**: that one manual collection has since run and
+succeeded (`33818972728`), the constant is now the wired `PRODUCTION_COLLECTION_SCHEDULE`, and
+recurring GitHub scheduling has been separately approved and implemented. Cloudflare Cron remains
+intentionally absent and is still not the forward path.
 
 <!-- DATA-S2B-FIRST-RUN-RECONCILIATION-2026-09-03 -->
 ### Current DATA-S2B checkpoint — first-run reconciliation, resume hardening, identifier logging

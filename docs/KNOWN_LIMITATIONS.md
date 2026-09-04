@@ -1,5 +1,30 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+## DATA-S2 scheduled production collection limitations
+
+GitHub's documented behaviour is that scheduled workflows can be delayed under load and that
+events can be dropped entirely, so `17 1 * * *` is a best-effort daily **opportunity**, not a
+guarantee, and `01:17` is never the execution instant — the collection identity is always the
+actual execution minute the runner observed. A missed day is a missed opportunity; the append-only
+history tolerates it and no catch-up mechanism exists or is approved. GitHub also disables
+schedules on repositories with no activity for an extended period; that is owner-visible and this
+repository cannot detect or prevent it.
+
+The `data-s2-production-scheduled` environment's protection rules **cannot be proved from this
+repository**. GitHub creates a referenced environment implicitly and unprotected if it has not
+been configured, so an owner pre-merge confirmation is the only control; the runtime fallback —
+no account credential means the job stops at its first step, before any Cloudflare request — is a
+backstop, not the control. The second remote-`main` check closes the admission window but is not
+atomic with the runner's first request.
+
+Owner-side Cloudflare telemetry around the accepted manual run (approximately 32k rows read, 375
+rows written, 10 queries in a 30-minute window) is a **database time-window dashboard aggregate,
+not per-workflow provider accounting**, and must never be stated as a run's exact usage. Exact
+provider `meta` values reach only each run's GitHub Step Summary, which is not retrievable through
+the GitHub API available here, so a routine cycle's envelope stays a repository plan estimate. The
+repository still has no mechanism to read remaining daily D1 quota and none was added.
+
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
 ## DATA-S2 manual production collection limitations
 

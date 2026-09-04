@@ -182,6 +182,13 @@ historical `"crons": ["*/30 * * * *"]` declaration remains repository configurat
 be used to restore live Cron. No Worker was deployed and no route, domain or Access policy
 changed.
 
+**Superseded on 4 September 2026 for GitHub scheduling only.** Recurring collection is now
+scheduled by a separate GitHub Actions workflow at `17 1 * * *`, and the constant referenced in
+section C is now the wired `PRODUCTION_COLLECTION_SCHEDULE`. This workflow itself is unchanged and
+stays manual-only. **Cloudflare Cron remains superseded and absent**, and the `wrangler.jsonc`
+declaration must still never be used to restore it. See
+[daily GitHub Actions schedule](DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
 ## F. Evidence
 
 - Complete suite: **1,540 tests, 1,540 passed, 0 failed, 0 skipped, 0 cancelled**, against a
@@ -198,3 +205,8 @@ This checkpoint prepares a safe **manual** normal collection and nothing more. A
 approval, merge and an exact-`main` Verify Teamsheet success, the next live gate is exactly
 **one** separately approved manual production collection dispatch. Recurring scheduling remains a
 later, separate owner approval and is not authorised here.
+
+**Closed on 4 September 2026.** That single manual collection ran and succeeded as run
+`33818972728` on head SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, attempt 1, with both jobs
+successful. Recurring scheduling was then separately approved and implemented; see
+[daily GitHub Actions schedule](DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
