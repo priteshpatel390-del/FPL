@@ -14,7 +14,8 @@ telemetry in a cleaner 30-minute window around it showed approximately 32k rows 
 written and 10 queries — dashboard time-window aggregates, not per-workflow accounting — which is
 far below every ceiling, so no resource-headroom remediation is justified and no ceiling moved.
 
-Stage D adds a separate scheduled workflow with exactly one trigger, `17 1 * * *`, a
+Stage D adds a separate scheduled workflow with exactly one trigger — permanently intended
+`17 1 * * *`, temporarily `17 10 * * *` for the owner-approved 4 September 2026 acceptance window — a
 credential-free scheduled-SHA gate with a bounded read-only exact-head Verify wait, and the
 dedicated unattended `data-s2-production-scheduled` environment. The manual workflow stays
 `workflow_dispatch`-only and attended, both share one non-cancelling concurrency group, and the

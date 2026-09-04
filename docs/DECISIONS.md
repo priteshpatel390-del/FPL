@@ -5,8 +5,10 @@
 
 **Decision:** recurring Official FPL production collection is scheduled by GitHub Actions, in a
 **new and separate** workflow `.github/workflows/data-s2-production-scheduled.yml` carrying exactly
-one trigger, `cron: '17 1 * * *'` — one best-effort full collection opportunity each UTC day at
-01:17 UTC. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
+one trigger — one best-effort full collection opportunity each UTC day. The permanent intended
+cron is `17 1 * * *` (01:17 UTC); for the owner-approved 4 September 2026 acceptance window the
+single trigger is temporarily `cron: '17 10 * * *'` (10:17 UTC / 11:17 BST), with no second cron
+retained and a separate reviewed restoration change returning it to `17 1 * * *`. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
 `"crons": ["*/30 * * * *"]` declaration in `workers/data-platform/wrangler.jsonc` is repository
 history only, and the Worker collection path stays superseded on its measured ~630 ms CPU against
 the 10 ms Workers Free Cron ceiling. A D1 REST call invokes no Worker, so that ceiling does not
@@ -32,7 +34,7 @@ environment, which the owner configures — this repository cannot prove an envi
 rules, and GitHub creates a referenced environment implicitly and unprotected. Both workflows share
 one non-cancelling `data-s2-production-collection` concurrency group and both refuse a GitHub
 re-run. There is no scheduled fast path: identical entry point, collector, ceilings, mutation
-classification and synchronous postflight. `01:17` is a cron opportunity, never the execution
+classification and synchronous postflight. The nominal cron minute is an opportunity, never the execution
 instant. Merging activates the schedule; live proof is the first natural scheduled run. See
 [daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 

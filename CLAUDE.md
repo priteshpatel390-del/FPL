@@ -22,8 +22,12 @@ resource-headroom remediation is justified**: no SQL optimisation, no index chan
 
 Stage D adds the forward scheduler: a **new, separate** workflow
 `.github/workflows/data-s2-production-scheduled.yml`, name `DATA-S2 Scheduled Production
-Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '17 1 * * *'` — and no
-input of any kind. One best-effort full collection opportunity each UTC day at 01:17 UTC; no
+Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '17 10 * * *'` — and no
+input of any kind. **That cron is a TEMPORARY owner-approved acceptance window for 4 September
+2026 (10:17 UTC / 11:17 BST); the permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
+must be restored by a separate explicitly reviewed pull request once the first natural scheduled
+run has been evaluated.** Exactly one trigger exists either way: 01:17 UTC is not retained beside
+it and no manual trigger is added. One best-effort full collection opportunity each UTC day; no
 pre-deadline collection, no polling, no second daily run and **no Cloudflare Cron**. The dormant
 constant is now the wired `PRODUCTION_COLLECTION_SCHEDULE`. A schedule event carries no owner
 judgement, so its immutable candidate source is the SHA the event itself carries: a
@@ -39,8 +43,8 @@ remote `main` again from the remote and invoke the unchanged shared entry point.
 `workflow_dispatch`-only against the attended `data-s2-production-collection` environment. Both
 share the one non-cancelling `data-s2-production-collection` concurrency group, both refuse
 `GITHUB_RUN_ATTEMPT !== '1'`, and there is no scheduled fast path: identical collector, ceilings,
-mutation classification and synchronous postflight. `01:17` is a cron opportunity, never the
-execution instant — GitHub may delay or drop a scheduled event, and the collection identity is
+mutation classification and synchronous postflight. The nominal cron minute is an opportunity,
+never the execution instant — GitHub may delay or drop a scheduled event, and the collection identity is
 always the actual execution minute.
 
 **Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read or
