@@ -5,14 +5,20 @@
 # Cloudflare D1 REST. Cloudflare Worker collection and Cloudflare Cron are superseded and must not
 # be restored; `workers/data-platform/wrangler.jsonc` is historical repository configuration only.
 #
-# TEMPORARY OWNER-APPROVED ACCEPTANCE WINDOW (4 September 2026). The permanent intended cadence is
-# `17 1 * * *` (01:17 UTC). For this one acceptance opportunity the owner approved moving the single
-# trigger to `30 11 * * *` (11:30 UTC / 12:30 BST) so the first natural scheduled production run can
-# be observed within the working day. A separate, explicitly reviewed restoration pull request must
-# return the trigger to `17 1 * * *` after that run has been evaluated. There is still exactly one
-# trigger: 01:17 UTC is not retained beside it, and no manual trigger is added.
+# THIRD TEMPORARY OWNER-APPROVED ACCEPTANCE WINDOW (4 September 2026). The permanent intended
+# cadence is `17 1 * * *` (01:17 UTC). For this third acceptance opportunity the owner approved
+# moving the single trigger to `17 14 * * *` (14:17 UTC / 15:17 BST) so the first natural scheduled
+# production run can be observed within the working day. The first window `17 10 * * *` (10:17 UTC /
+# 11:17 BST) and the second window `30 11 * * *` (11:30 UTC / 12:30 BST) each produced zero
+# scheduled runs, with no proven root cause. A separate, explicitly reviewed restoration pull
+# request must return the trigger to `17 1 * * *` after a run has been evaluated. There is still
+# exactly one trigger: 01:17 UTC is not retained beside it, and no manual trigger is added.
 #
-# It offers exactly one best-effort full collection opportunity each UTC day at 11:30 UTC and can
+# This workflow declares no `timezone:` field, so GitHub interprets its cron in UTC. That UTC
+# scheduling model is deliberately unchanged for this diagnostic; the UK is on BST (UTC+1) on
+# 4 September 2026, so 14:17 UTC is 15:17 BST.
+#
+# It offers exactly one best-effort full collection opportunity each UTC day at 14:17 UTC and can
 # do exactly one thing when it fires: perform one normal collection cycle for the single
 # deterministic collection identity that firing fixes. It accepts no input at all — no SHA,
 # timestamp, season, database, endpoint, SQL or statement — because a schedule event carries none;
@@ -27,7 +33,7 @@ name: DATA-S2 Scheduled Production Collection via D1 REST
 
 on:
   schedule:
-    - cron: '30 11 * * *'
+    - cron: '17 14 * * *'
 
 permissions:
   contents: read
@@ -63,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$EVENT_NAME" = schedule
-          test "$EVENT_SCHEDULE" = '30 11 * * *'
+          test "$EVENT_SCHEDULE" = '17 14 * * *'
           test "$EVENT_REF" = refs/heads/main
           test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
           printf '%s' "$SCHEDULED_SHA" | grep -Eq '^[0-9a-f]{40}$'

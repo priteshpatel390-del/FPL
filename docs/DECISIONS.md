@@ -6,9 +6,12 @@
 **Decision:** recurring Official FPL production collection is scheduled by GitHub Actions, in a
 **new and separate** workflow `.github/workflows/data-s2-production-scheduled.yml` carrying exactly
 one trigger — one best-effort full collection opportunity each UTC day. The permanent intended
-cron is `17 1 * * *` (01:17 UTC); for the owner-approved 4 September 2026 acceptance window the
-single trigger is temporarily `cron: '30 11 * * *'` (11:30 UTC / 12:30 BST), with no second cron
-retained and a separate reviewed restoration change returning it to `17 1 * * *`. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
+cron is `17 1 * * *` (01:17 UTC); for the third owner-approved 4 September 2026 acceptance window
+the single trigger is temporarily `cron: '17 14 * * *'` (14:17 UTC / 15:17 BST), with no second
+cron retained, no `timezone:` field added — the cron stays UTC-interpreted — and a separate
+reviewed restoration change returning it to `17 1 * * *`. The earlier temporary windows
+`17 10 * * *` (10:17 UTC / 11:17 BST) and `30 11 * * *` (11:30 UTC / 12:30 BST) each produced zero
+schedule runs, with no proven root cause. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
 `"crons": ["*/30 * * * *"]` declaration in `workers/data-platform/wrangler.jsonc` is repository
 history only, and the Worker collection path stays superseded on its measured ~630 ms CPU against
 the 10 ms Workers Free Cron ceiling. A D1 REST call invokes no Worker, so that ceiling does not
