@@ -22,11 +22,19 @@ resource-headroom remediation is justified**: no SQL optimisation, no index chan
 
 Stage D adds the forward scheduler: a **new, separate** workflow
 `.github/workflows/data-s2-production-scheduled.yml`, name `DATA-S2 Scheduled Production
-Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '17 10 * * *'` — and no
+Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '30 11 * * *'` — and no
 input of any kind. **That cron is a TEMPORARY owner-approved acceptance window for 4 September
-2026 (10:17 UTC / 11:17 BST); the permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
+2026 (11:30 UTC / 12:30 BST); the permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
 must be restored by a separate explicitly reviewed pull request once the first natural scheduled
-run has been evaluated.** Exactly one trigger exists either way: 01:17 UTC is not retained beside
+run has been evaluated.** This is the **second** approved temporary window. The first, `17 10 * * *`
+(10:17 UTC / 11:17 BST), was merged as `3c017786bce8cba8daf0091cf2e297f8e57789f8` 42m49s before its
+minute and **produced zero schedule runs** — workflow `350014371` runs `total_count: 0` and
+repository-wide `event=schedule` `total_count: 0`, so no run object was created and nothing reached
+the gate, environment, credentials, Official FPL, D1 or postflight. Across that window the workflow
+stayed `active` and every configuration check passed (default branch, single trigger, single cron,
+parses, recognised by name; repository public, non-fork, unarchived, User-owned so no org policy
+layer). GitHub exposes no scheduler-registration or next-run state in REST or GraphQL, and documents
+that schedule events may be delayed or dropped, so the non-fire has **no proven root cause**. Exactly one trigger exists either way: 01:17 UTC is not retained beside
 it and no manual trigger is added. One best-effort full collection opportunity each UTC day; no
 pre-deadline collection, no polling, no second daily run and **no Cloudflare Cron**. The dormant
 constant is now the wired `PRODUCTION_COLLECTION_SCHEDULE`. A schedule event carries no owner

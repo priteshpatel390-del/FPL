@@ -30,26 +30,62 @@ apply to this one.
 
 ## B0. TEMPORARY owner-approved acceptance window — 4 September 2026
 
+### B0.1 First attempt (10:17 UTC) produced no scheduled run
+
+The first temporary window was `17 10 * * *` (10:17 UTC / 11:17 BST on 4 September 2026), merged to
+`main` as `3c017786bce8cba8daf0091cf2e297f8e57789f8` at 09:34:11Z — a lead time of 42m49s before the
+nominal minute. **That opportunity produced zero schedule runs.** Verified from the GitHub Actions
+API after the minute passed: workflow `350014371` runs `total_count: 0`, and repository-wide
+`event=schedule` runs `total_count: 0`. No run object was ever created, so nothing reached the
+`repository-gate` job, the exact-head Verify gate, the `data-s2-production-scheduled` environment,
+Cloudflare credentials, Official FPL, D1 REST or postflight. This was a pre-workflow event-creation
+outcome, not a collection failure.
+
+Configuration checks all passed across that window and remain true: the workflow file is on the
+default branch `main` under `.github/workflows/`, it parses, it carries exactly one schedule trigger
+and exactly one cron, GitHub recognises it by its `name:`, and its API `state` is `active`. The
+repository is public, not a fork, not archived, not disabled, and its owner is a User account, so no
+organization Actions policy layer exists. GitHub exposes **no** scheduler-registration or next-run
+metadata for Actions cron beyond the workflow definition and `state` — neither REST nor GraphQL —
+so whether a given cron is armed cannot be proved from outside. GitHub's own documentation records
+that the `schedule` event can be delayed under load and that sufficiently loaded events **may be
+dropped entirely**, and documents no required registration delay after a cron is added or edited.
+The non-fire therefore has no proven root cause and none is claimed here.
+
+Note also that this repository's `main` had never carried any cron before 08:28:58Z on 4 September
+2026, so the absence of earlier natural scheduled runs is expected history rather than evidence of
+a defect.
+
+### B0.2 Second owner-approved opportunity — 11:30 UTC / 12:30 BST
+
+Following that zero-run first attempt the owner approved **a second real natural acceptance
+opportunity at 11:30 UTC / 12:30 BST on 4 September 2026**, implemented by moving the same single
+trigger to `30 11 * * *`. This is still a **temporary** window on the same real production
+scheduled workflow; it adds no second cron, no `workflow_dispatch`, no heartbeat workflow and no
+other trigger, and it changes no collector, gate, environment, credential or Cloudflare behaviour.
+The permanent intended cadence remains **`17 1 * * *` (01:17 UTC)**, and restoration to it remains
+a later, separate, explicitly owner-approved pull request.
+
 The permanent intended cadence is **`17 1 * * *` (01:17 UTC)** and is unchanged as an intent. For
 one acceptance opportunity the owner explicitly approved temporarily moving the single schedule
-trigger to **`17 10 * * *` (10:17 UTC / 11:17 BST) on 4 September 2026**, so the first natural
+trigger to **`30 11 * * *` (11:30 UTC / 12:30 BST) on 4 September 2026**, so the first natural
 scheduled production run can fire inside the working day and be observed end to end: GitHub
 scheduler, scheduled-event trust gate, exact-head Verify requirement, the dedicated
 `data-s2-production-scheduled` environment, production Cloudflare credentials, Official FPL
 collection, D1 REST and synchronous postflight.
 
 What this window does **not** change: the workflow stays schedule-only with exactly one trigger,
-no `workflow_dispatch`, no push or pull-request trigger; 01:17 UTC is not retained beside 10:17;
+no `workflow_dispatch`, no push or pull-request trigger; 01:17 UTC is not retained beside 11:30;
 the environment, credentials, collector entry point, concurrency group, exact-SHA trust gate,
 exact-head Verify requirement, no-rerun rule, resource ceilings and synchronous postflight are all
 unchanged; Cloudflare Cron stays superseded and absent; no Worker, schema, SQL, migration, provider
 or model behaviour changes.
 
-**Merging the change that carries `17 10 * * *` temporarily changes the live production collection
-schedule and may cause one real production D1 collection at 10:17 UTC / 11:17 BST on 4 September
+**Merging the change that carries `30 11 * * *` temporarily changes the live production collection
+schedule and may cause one real production D1 collection at 11:30 UTC / 12:30 BST on 4 September
 2026.** After that natural run has been evaluated, a **separate, explicitly reviewed restoration
 pull request must return the trigger and `PRODUCTION_COLLECTION_SCHEDULE` together to
-`17 1 * * *`**. If the approved 11:17 BST opportunity is missed before merge, no other time is
+`17 1 * * *`**. If the approved 12:30 BST opportunity is missed before merge, no other time is
 substituted: that requires new owner approval.
 
 This record does not claim the acceptance passed. Nothing was executed to prepare the window: no
@@ -63,11 +99,11 @@ Exactly one trigger, in a new workflow, `.github/workflows/data-s2-production-sc
 ```yaml
 on:
   schedule:
-    - cron: '17 10 * * *'
+    - cron: '30 11 * * *'
 ```
 
 That is **one best-effort full production collection opportunity each UTC day**, temporarily at
-10:17 UTC for the 4 September 2026 acceptance window in section B0 and permanently intended at
+11:30 UTC for the 4 September 2026 acceptance window in section B0 and permanently intended at
 01:17 UTC once the separate restoration change lands.
 There is no pre-deadline collection, no 30-minute polling, no hourly schedule, no second daily
 collection and no Cloudflare Cron. The repository constant, previously the dormant
@@ -98,7 +134,7 @@ judgement at all, so the immutable candidate source is the SHA the scheduled eve
 job fails closed unless every one of these holds:
 
 1. the event name is exactly `schedule`;
-2. `github.event.schedule` is exactly `17 10 * * *` (the temporary window; `17 1 * * *` after restoration);
+2. `github.event.schedule` is exactly `30 11 * * *` (the temporary window; `17 1 * * *` after restoration);
 3. the repository is exactly `priteshpatel390-del/FPL`;
 4. the ref is exactly `refs/heads/main`;
 5. the scheduled SHA matches `^[0-9a-f]{40}$`;
@@ -194,7 +230,7 @@ runner uninvoked.
 every repository identity check and from the runner clock. Its minute-precision UTC semantic is
 unchanged, no workflow input can supply it, and it never travels through `GITHUB_ENV`.
 
-**The nominal cron minute — `10:17` in the temporary window, `01:17` permanently — is an opportunity, not the execution instant.** GitHub's documented behaviour is
+**The nominal cron minute — `11:30` in the temporary window, `01:17` permanently — is an opportunity, not the execution instant.** GitHub's documented behaviour is
 that scheduled workflows may be delayed under load, so the collection identity is the actual
 execution minute the runner observed and is deliberately not derived from the nominal cron minute.
 A permanent test proves no nominal trigger time and no `github.event.schedule` value reaches the
@@ -285,10 +321,10 @@ index changed, no migration 0004 proposed and no read, write or change ceiling m
 ## J. First natural scheduled run — acceptance plan
 
 Merging does not make the schedule live-proven. After merge, **wait for the first natural
-scheduled event** at the wired cron (`17 10 * * *` in the temporary window, `17 1 * * *` permanently); do not simulate it, do not dispatch anything and do not create
+scheduled event** at the wired cron (`30 11 * * *` in the temporary window, `17 1 * * *` permanently); do not simulate it, do not dispatch anything and do not create
 a temporary trigger. Acceptance requires, from the GitHub Actions API:
 
-- event `schedule`, with `github.event.schedule` exactly the wired cron — `17 10 * * *` in the temporary window, `17 1 * * *` permanently;
+- event `schedule`, with `github.event.schedule` exactly the wired cron — `30 11 * * *` in the temporary window, `17 1 * * *` permanently;
 - attempt 1, head branch `main`, an exact 40-character head SHA;
 - `repository-gate` success, including the exact-head Verify proof;
 - `collect` success under `data-s2-production-scheduled`;
@@ -313,7 +349,7 @@ required or performed here.
 ## L. Known limitations
 
 - GitHub's documented behaviour is that scheduled workflows can be delayed under load and that
-  events can be dropped entirely, so the wired cron (`17 10 * * *` temporarily, `17 1 * * *`
+  events can be dropped entirely, so the wired cron (`30 11 * * *` temporarily, `17 1 * * *`
   permanently) is a best-effort daily opportunity, not a
   guarantee. A missed day is a missed collection opportunity; the append-only history tolerates it
   and no catch-up mechanism exists or is approved.

@@ -7,12 +7,12 @@
 #
 # TEMPORARY OWNER-APPROVED ACCEPTANCE WINDOW (4 September 2026). The permanent intended cadence is
 # `17 1 * * *` (01:17 UTC). For this one acceptance opportunity the owner approved moving the single
-# trigger to `17 10 * * *` (10:17 UTC / 11:17 BST) so the first natural scheduled production run can
+# trigger to `30 11 * * *` (11:30 UTC / 12:30 BST) so the first natural scheduled production run can
 # be observed within the working day. A separate, explicitly reviewed restoration pull request must
 # return the trigger to `17 1 * * *` after that run has been evaluated. There is still exactly one
 # trigger: 01:17 UTC is not retained beside it, and no manual trigger is added.
 #
-# It offers exactly one best-effort full collection opportunity each UTC day at 10:17 UTC and can
+# It offers exactly one best-effort full collection opportunity each UTC day at 11:30 UTC and can
 # do exactly one thing when it fires: perform one normal collection cycle for the single
 # deterministic collection identity that firing fixes. It accepts no input at all — no SHA,
 # timestamp, season, database, endpoint, SQL or statement — because a schedule event carries none;
@@ -27,7 +27,7 @@ name: DATA-S2 Scheduled Production Collection via D1 REST
 
 on:
   schedule:
-    - cron: '17 10 * * *'
+    - cron: '30 11 * * *'
 
 permissions:
   contents: read
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$EVENT_NAME" = schedule
-          test "$EVENT_SCHEDULE" = '17 10 * * *'
+          test "$EVENT_SCHEDULE" = '30 11 * * *'
           test "$EVENT_REF" = refs/heads/main
           test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
           printf '%s' "$SCHEDULED_SHA" | grep -Eq '^[0-9a-f]{40}$'

@@ -43,15 +43,15 @@ function stepScript(marker){
 
 /* --------------------------- trigger and workflow separation --------------------------- */
 
-test('the scheduled workflow exists and carries exactly one schedule trigger at 17 10 * * *',()=>{
+test('the scheduled workflow exists and carries exactly one schedule trigger at 30 11 * * *',()=>{
   assert.ok(fs.existsSync(SCHEDULED_WORKFLOW_PATH));
   assert.match(scheduled,/^name: DATA-S2 Scheduled Production Collection via D1 REST$/m);
   const trigger=scheduled.slice(scheduled.indexOf('\non:'),scheduled.indexOf('\npermissions:'));
-  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '17 10 * * *'");
+  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '30 11 * * *'");
   assert.equal([...scheduled.matchAll(/^\s*- cron:/gm)].length,1);
   assert.equal([...scheduled.matchAll(/^  schedule:$/gm)].length,1);
   // One daily opportunity only, from the single wired repository constant.
-  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 10 * * *');
+  assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'30 11 * * *');
   assert.ok(scheduled.includes(`- cron: '${PRODUCTION_COLLECTION_SCHEDULE}'`));
 });
 
@@ -94,7 +94,7 @@ test('the scheduled event itself is the only source of the immutable candidate S
     'SCHEDULED_SHA: ${{ github.sha }}',
     'EVENT_SCHEDULE: ${{ github.event.schedule }}',
     'test "$EVENT_NAME" = schedule',
-    "test \"$EVENT_SCHEDULE\" = '17 10 * * *'",
+    "test \"$EVENT_SCHEDULE\" = '30 11 * * *'",
     'test "$EVENT_REF" = refs/heads/main',
     'test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL',
     "printf '%s' \"$SCHEDULED_SHA\" | grep -Eq '^[0-9a-f]{40}$'",
@@ -186,7 +186,7 @@ test('the one attempt collection identity is fixed once, after every repository 
   assert.ok(stamp>lines.indexOf('test "$(git rev-parse HEAD)" = "$SCHEDULED_SHA"'));
   assert.ok(stamp<lines.findIndex(line=>line.startsWith('remote_main=')));
   // The nominal cron minute is never used as the collection instant.
-  assert.ok(!lines.some(line=>line.includes('01:17')||line.includes('10:17')||line.includes('github.event.schedule')));
+  assert.ok(!lines.some(line=>line.includes('01:17')||line.includes('11:30')||line.includes('github.event.schedule')));
   assert.ok(read(COLLECTION_ENTRY_PATH).includes("required('COLLECTION_SCHEDULED_AT')"));
 });
 
@@ -369,7 +369,7 @@ test('the scheduled path uses the same collector and the same unchanged resource
 
 test('the Stage D record states the schedule, the live acceptance and the owner environment gate',()=>{
   const record=read('workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md');
-  for(const required of ['17 10 * * *','17 1 * * *','33818972728','319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf',
+  for(const required of ['30 11 * * *','17 1 * * *','33818972728','319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf',
     'data-s2-production-scheduled','data-s2-production-collection',
     'CLOUDFLARE_D1_TOKEN','CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT',
     'first natural scheduled','Merging this checkpoint activates the schedule'])
