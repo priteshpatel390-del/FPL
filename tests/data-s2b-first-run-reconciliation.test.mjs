@@ -426,7 +426,8 @@ const CREDENTIALLED=[
   ['.github/workflows/data-s2-production-resume.yml','first-run-resume'],
   ['.github/workflows/data-s2b-explain-acceptance.yml','explain-acceptance'],
   ['.github/workflows/data-s2b-migration-0003.yml','migration-0003'],
-  ['.github/workflows/data-s2-production-collection.yml','collect']
+  ['.github/workflows/data-s2-production-collection.yml','collect'],
+  ['.github/workflows/data-s2-scheduled-environment-preflight.yml','preflight']
 ];
 
 test('no production identifier variable is materialised into a log-visible pre-step env block',()=>{

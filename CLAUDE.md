@@ -2,6 +2,47 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+### Current DATA-S2B checkpoint — manual read-only scheduled-environment credential preflight
+
+A separate, manual, strictly read-only diagnostic now exists to prove that the GitHub environment
+`data-s2-production-scheduled` holds credentials that are internally consistent and can reach the
+reviewed production D1 database. It is **not** a production scheduler: it performs no collection,
+executes **no SQL**, never reaches the D1 `/query` endpoint and makes no Cloudflare mutation.
+`.github/workflows/data-s2-scheduled-environment-preflight.yml` is `workflow_dispatch`-only with
+**zero inputs**, carries no `schedule`, `push`, `pull_request`, `repository_dispatch`,
+`workflow_call` or `workflow_run` trigger, grants only `contents: read`, uses no GitHub token,
+requests exactly the `data-s2-production-scheduled` environment and holds its own concurrency
+group so a read-only diagnostic never serializes with real production work.
+
+It performs exactly three checks, in this order: `SHA-256(CLOUDFLARE_ACCOUNT_ID)` compared
+byte-for-byte with `CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` using the existing canonical
+`derivedAccountFingerprint` rather than a competing definition, entirely locally so a mismatched
+environment stops before any credential leaves the runner; Cloudflare's official read-only
+`GET /client/v4/user/tokens/verify`, requiring `result.status === 'active'`; and Cloudflare's
+read-only D1 database detail read `GET .../accounts/{account_id}/d1/database/{database_id}`,
+requiring every database identity the response carries to equal the reviewed repository constant
+`PRODUCTION_D1_ID`. `CLOUDFLARE_PRODUCTION_D1_ID` is deliberately not introduced as a required
+environment variable. There is no retry, no fallback and no repair; every failure is one of a
+closed set of stable sanitized classes.
+
+**This diagnostic deliberately says nothing about GitHub's schedule-event creation**, which is
+strictly upstream of every credential it checks. A pass would prove the credential/account/D1
+access contract only — never that a cron fires, that a collection would succeed, that the token's
+scope suffices for a `/query` request, or the environment's protection rules. The PR #215
+identifier-logging remediation is preserved exactly: the account id and D1 token stay secrets, the
+fingerprint mask is registered by the credentialled job's first step before the variable is
+materialised on the final step, the D1 id stays a repository constant in no workflow value, and
+the entry point discards the original error object on failure so no runtime message can carry a
+request URL into the log.
+
+**Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read,
+D1 SQL, D1 mutation, collection, migration, deployment, schedule change, cron change, environment
+or credential change was performed. The scheduled cron stays `30 11 * * *` and the manual
+collection workflow is unchanged. Next gates: merge and exact-`main` Verify, then **separate**
+owner approval to dispatch the preflight once, conditional on the Stage D section H environment
+confirmation. See
+[scheduled-environment preflight](workers/data-platform/DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT.md).
+
 ### Current DATA-S2B checkpoint — Stage D once-daily GitHub Actions collection schedule
 
 **The hardened manual normal production collection has executed live and succeeded.** Verified
