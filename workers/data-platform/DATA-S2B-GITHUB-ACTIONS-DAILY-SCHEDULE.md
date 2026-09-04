@@ -10,6 +10,10 @@ owner-dispatched run that had already completed before this work began.
 default branch, GitHub can begin producing natural scheduled events for it. It is an activation
 change, not inert preparation. The pre-merge owner gate in section H is mandatory.
 
+**Status: the first natural scheduled production run has now succeeded, and the permanent cadence
+`17 1 * * *` is restored.** Section B0.4 records that acceptance in full. The temporary acceptance
+windows are finished and none is retained; exactly one production schedule trigger exists.
+
 ## A. Why GitHub Actions is the forward scheduler
 
 The forward production collection architecture is unchanged and is not revisited here:
@@ -71,11 +75,12 @@ cause**; none is claimed here.
 
 After the two zero-run windows the owner approved **a third real natural acceptance opportunity at
 14:17 UTC / 15:17 BST on 4 September 2026**, implemented by moving the same single trigger to
-`17 14 * * *`. This is still a **temporary** window on the same real production scheduled workflow;
-it adds no second cron, no `workflow_dispatch`, no heartbeat workflow, no diagnostic cron and no
-other trigger, and it changes no collector, gate, environment, credential or Cloudflare behaviour.
-The permanent intended cadence remains **`17 1 * * *` (01:17 UTC)**, and restoration to it remains
-a later, separate, explicitly owner-approved pull request.
+`17 14 * * *`. It was a **temporary** window on the same real production scheduled workflow; it
+added no second cron, no `workflow_dispatch`, no heartbeat workflow, no diagnostic cron and no
+other trigger, and it changed no collector, gate, environment, credential or Cloudflare behaviour.
+The permanent intended cadence was, throughout, **`17 1 * * *` (01:17 UTC)**, and restoration to it
+was reserved for a later, separate, explicitly owner-approved pull request. **This window fired**:
+see section B0.4, and section B0.5 for the restoration.
 
 The workflow declares **no `timezone:` field**, so GitHub interprets its cron in UTC. That UTC
 scheduling model is deliberately left unchanged so timezone-aware scheduling is not introduced as
@@ -88,7 +93,7 @@ The window record so far:
 |---|---|---|---|---|
 | First | `17 10 * * *` | 10:17 | 11:17 | zero schedule runs created |
 | Second | `30 11 * * *` | 11:30 | 12:30 | zero schedule runs created |
-| Third | `17 14 * * *` | 14:17 | 15:17 | pending natural observation |
+| Third | `17 14 * * *` | 14:17 | 15:17 | **one successful natural scheduled run, created 17:38:15Z** |
 
 Live evidence gathered between the second and third windows, none of which changes the failure
 boundary:
@@ -118,16 +123,90 @@ synchronous postflight are all unchanged; Cloudflare Cron stays superseded and a
 production collection workflow and the read-only scheduled-environment preflight workflow are
 untouched; no Worker, schema, SQL, migration, provider or model behaviour changes.
 
-**Merging the change that carries `17 14 * * *` temporarily changes the live production collection
-schedule and may cause one real production D1 collection at 14:17 UTC / 15:17 BST on 4 September
-2026.** After a natural run has been evaluated, a **separate, explicitly reviewed restoration
-pull request must return the trigger and `PRODUCTION_COLLECTION_SCHEDULE` together to
-`17 1 * * *`**. If the approved 15:17 BST opportunity is missed before merge, no other time is
-substituted: that requires new owner approval.
+That third window did produce a real production D1 collection. Its evidence is section B0.4, and
+the restoration it required is section B0.5.
 
-This record does not claim the acceptance passed. Nothing was executed to prepare the window: no
-Cloudflare request, workflow dispatch, D1 read or mutation, collection, migration, deployment,
-Cron, environment or credential change.
+### B0.4 First successful natural scheduled production run — ACCEPTED
+
+The third window produced the **first successful natural scheduled production run**. Every fact
+below was read back independently from the GitHub Actions API after the run completed; nothing was
+dispatched, simulated, re-run or re-requested to obtain it.
+
+| Fact | Observed value |
+|---|---|
+| Workflow | `DATA-S2 Scheduled Production Collection via D1 REST` |
+| Run ID | `33901634593` |
+| Run number | 1 |
+| Run attempt | 1 |
+| Event | `schedule` |
+| Head branch | `main` |
+| Head SHA | `dac27b3860428bc55c6d505e8a817a207d30f904` |
+| Workflow path | `.github/workflows/data-s2-production-scheduled.yml` |
+| `repository-gate` | success |
+| `collect` | success |
+| Run conclusion | success |
+| Nominal cron minute | 14:17 UTC (15:17 BST), from `17 14 * * *` |
+| GitHub run created | `2026-09-04T17:38:15Z` |
+| Run completed | `2026-09-04T17:38:58Z` |
+
+**This acceptance used no `workflow_dispatch`.** It was a genuine `schedule` event, on attempt 1,
+against the then-current `main`, and it therefore satisfies the temporary natural-schedule
+acceptance gate that sections B0.1 to B0.3 were opened to close.
+
+What the run proves, and only this:
+
+- GitHub **can** create a natural `schedule` event for this workflow, on this repository, on the
+  default branch — the boundary that both earlier windows failed at;
+- the credential-free `repository-gate` passes end to end on a scheduled event: event name,
+  `github.event.schedule`, repository, ref, 40-character SHA, exact checkout, `HEAD`, clean tree,
+  a freshly resolved remote `main`, and the exact-head `Tests and deterministic build` proof, which
+  the gate resolved as `verify_success after 1 read(s)`;
+- the `collect` job is admitted to the dedicated `data-s2-production-scheduled` environment and its
+  credentials resolve;
+- the real production collection path executes to success through the unchanged shared entry point
+  `workers/data-platform/run-production-collection.mjs`, including its synchronous postflight —
+  `runProductionCollection` returns only after that postflight has validated the exact completed
+  run, so the job's success is a whole-path proof, not merely a process exit;
+- the production D1 REST write path therefore works unattended.
+
+Exact provider `meta.rows_read` and `meta.rows_written` for this run reach only the GitHub Step
+Summary and are **not** retrievable through the GitHub API available here. They are stated nowhere,
+and no Cloudflare dashboard aggregate is substituted for them.
+
+#### The observed GitHub scheduler delivery delay
+
+The nominal opportunity was 14:17 UTC. GitHub created the run at 17:38:15Z. The observed delay
+between the nominal cron minute and **GitHub's creation of the run object** was therefore
+approximately **3 hours 21 minutes**.
+
+That is a **schedule-event delivery delay, not a collection delay**, and it must never be recorded
+as one. Once GitHub created the run, execution was prompt: the run completed in approximately 43
+seconds end to end, with the gate finishing at 17:38:36Z and the collection step itself running
+from 17:38:49Z to 17:38:54Z.
+
+**The cause of the delay is not proven, and none is invented here.** GitHub exposes no
+scheduler-registration, armed or next-run state through REST or GraphQL, so the delay cannot be
+attributed from outside. GitHub documents that the `schedule` event can be delayed under load and
+that sufficiently loaded events may be dropped entirely, which is consistent with both this delay
+and the two earlier zero-run windows, but consistency is not proof of cause.
+
+One successful natural run does **not** establish scheduler reliability, a delivery-time
+distribution, or any guaranteed execution instant. It establishes that natural delivery happens and
+that the whole downstream path works when it does. See section L.
+
+### B0.5 Restoration to the permanent cadence
+
+With the acceptance in B0.4 recorded, the separately reviewed restoration returns the single
+trigger and `PRODUCTION_COLLECTION_SCHEDULE` together to the permanent **`17 1 * * *`
+(01:17 UTC)**. The temporary windows are finished and none is retained beside it: no second cron,
+no diagnostic cron, no schedule probe, no heartbeat workflow, no `workflow_dispatch` on this
+workflow, no Cloudflare Cron and no `timezone:` field. Exactly one production schedule trigger
+exists, and a permanent test binds the constant, the workflow cron and the gate's `EVENT_SCHEDULE`
+comparison to the same value.
+
+**Merging the restoration changes the live production collection schedule** from 14:17 UTC back to
+01:17 UTC. Nothing else about the collector, gate, environment, credentials, ceilings, schema or
+provider behaviour changes with it.
 
 ## B. The approved schedule
 
@@ -136,12 +215,13 @@ Exactly one trigger, in a new workflow, `.github/workflows/data-s2-production-sc
 ```yaml
 on:
   schedule:
-    - cron: '17 14 * * *'
+    - cron: '17 1 * * *'
 ```
 
-That is **one best-effort full production collection opportunity each UTC day**, temporarily at
-14:17 UTC for the 4 September 2026 acceptance window in section B0 and permanently intended at
-01:17 UTC once the separate restoration change lands.
+That is **one best-effort full production collection opportunity each UTC day**, at 01:17 UTC. The
+temporary 4 September 2026 acceptance windows in section B0 are finished and the permanent cadence
+is restored; the workflow declares no `timezone:` field, so 01:17 UTC is 02:17 BST while the UK is
+on British Summer Time and 01:17 GMT otherwise.
 There is no pre-deadline collection, no 30-minute polling, no hourly schedule, no second daily
 collection and no Cloudflare Cron. The repository constant, previously the dormant
 `FUTURE_PRODUCTION_COLLECTION_SCHEDULE`, is now the wired `PRODUCTION_COLLECTION_SCHEDULE` in
@@ -171,7 +251,7 @@ judgement at all, so the immutable candidate source is the SHA the scheduled eve
 job fails closed unless every one of these holds:
 
 1. the event name is exactly `schedule`;
-2. `github.event.schedule` is exactly `17 14 * * *` (the temporary window; `17 1 * * *` after restoration);
+2. `github.event.schedule` is exactly `17 1 * * *`;
 3. the repository is exactly `priteshpatel390-del/FPL`;
 4. the ref is exactly `refs/heads/main`;
 5. the scheduled SHA matches `^[0-9a-f]{40}$`;
@@ -358,10 +438,10 @@ index changed, no migration 0004 proposed and no read, write or change ceiling m
 ## J. First natural scheduled run — acceptance plan
 
 Merging does not make the schedule live-proven. After merge, **wait for the first natural
-scheduled event** at the wired cron (`17 14 * * *` in the temporary window, `17 1 * * *` permanently); do not simulate it, do not dispatch anything and do not create
-a temporary trigger. Acceptance requires, from the GitHub Actions API:
+scheduled event** at the wired cron `17 1 * * *`; do not simulate it, do not dispatch anything and
+do not create a temporary trigger. Acceptance requires, from the GitHub Actions API:
 
-- event `schedule`, with `github.event.schedule` exactly the wired cron — `17 14 * * *` in the temporary window, `17 1 * * *` permanently;
+- event `schedule`, with `github.event.schedule` exactly `17 1 * * *`;
 - attempt 1, head branch `main`, an exact 40-character head SHA;
 - `repository-gate` success, including the exact-head Verify proof;
 - `collect` success under `data-s2-production-scheduled`;
@@ -386,10 +466,18 @@ required or performed here.
 ## L. Known limitations
 
 - GitHub's documented behaviour is that scheduled workflows can be delayed under load and that
-  events can be dropped entirely, so the wired cron (`17 14 * * *` temporarily, `17 1 * * *`
-  permanently) is a best-effort daily opportunity, not a
-  guarantee. A missed day is a missed collection opportunity; the append-only history tolerates it
-  and no catch-up mechanism exists or is approved.
+  events can be dropped entirely, so the wired cron `17 1 * * *` is a best-effort daily
+  opportunity, not a guarantee. A missed day is a missed collection opportunity; the append-only
+  history tolerates it and no catch-up mechanism exists or is approved.
+- **This repository has now directly observed both failure modes.** Two windows produced zero
+  scheduled runs, and the window that did fire was delivered approximately 3h21m after its nominal
+  minute (section B0.4). The nominal cron minute is therefore an opportunity, never an execution
+  time, and the collection identity is always the actual execution minute. No arbitrary short
+  lateness threshold — 30 minutes, 60 minutes or any other — may be used to declare a future run
+  missed; a judgement that a day was missed must account for this observed delivery behaviour.
+- One successful natural run is a **single sample**. It proves natural delivery and the whole
+  downstream path, and it proves nothing about delivery reliability, delay distribution or a
+  guaranteed execution instant.
 - GitHub also disables schedules on repositories with no activity for an extended period. That is
   owner-visible, and this repository cannot detect or prevent it.
 - The second remote-`main` check closes the admission window but is not atomic with the runner's
@@ -402,7 +490,16 @@ required or performed here.
 
 ## M. Next gate
 
-Owner review, the section H environment confirmation, then merge and exact-`main` Verify
-Teamsheet. Live proof is the **first natural scheduled run**, judged against section J. A
-pre-deadline collection opportunity, any second daily collection, any shorter cadence and any
+The Stage D live proof is **complete**: the first natural scheduled run succeeded (section B0.4),
+which closed the temporary acceptance windows and permitted the restoration to `17 1 * * *`
+(section B0.5).
+
+The remaining gate belongs to the restoration itself. Owner review, then merge and exact-`main`
+Verify Teamsheet; after that, the **first genuine natural run produced by `17 1 * * *`** is the
+next live observation. Judge it against section J. Do not substitute a `workflow_dispatch`, do not
+create another temporary acceptance cron, and do not declare a missed run against an arbitrary
+short lateness threshold — section L records the delivery behaviour this repository has actually
+observed.
+
+A pre-deadline collection opportunity, any second daily collection, any shorter cadence and any
 Cloudflare Cron each remain separate, later, explicitly unapproved decisions.

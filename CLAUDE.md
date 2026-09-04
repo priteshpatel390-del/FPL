@@ -2,42 +2,52 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
-### Current DATA-S2B checkpoint — third temporary natural-schedule acceptance window
+### Current DATA-S2B checkpoint — natural schedule accepted; permanent cadence restored
 
-The single trigger of `.github/workflows/data-s2-production-scheduled.yml` moves from
-`30 11 * * *` to **`17 14 * * *`** for a **third** temporary owner-approved natural acceptance
-window on **4 September 2026 at 14:17 UTC / 15:17 BST**. The workflow declares **no `timezone:`
-field**, so GitHub interprets the cron in UTC; that UTC model is deliberately left unchanged so
-timezone-aware scheduling is not introduced as another variable during this diagnostic, and the UK
-is on BST (UTC+1) on that date. The minute is deliberately `17`, not the top of the hour. Exactly
-one trigger exists: no second cron, no diagnostic cron, no heartbeat workflow, no second scheduled
-workflow, no `workflow_dispatch`. The permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
-must be restored by a separate explicitly reviewed pull request. Scope is the workflow cron and
-`EVENT_SCHEDULE` gate, the wired `PRODUCTION_COLLECTION_SCHEDULE`, the permanent tests that pin
-them, and documentation.
+**The first genuine natural GitHub Actions scheduled production run has succeeded.** Verified
+independently from the GitHub Actions API: workflow `DATA-S2 Scheduled Production Collection via D1
+REST`, run `33901634593`, run number 1, attempt 1, event `schedule`, head branch `main`, head SHA
+`dac27b3860428bc55c6d505e8a817a207d30f904`, conclusion `success`, with both `repository-gate` and
+`collect` succeeding. **No `workflow_dispatch` was used for this acceptance.** The gate resolved the
+exact-head `Tests and deterministic build` proof as `verify_success after 1 read(s)`, and because
+`runProductionCollection` returns only after its synchronous postflight has validated the exact
+completed run, the `collect` success proves the whole scheduled trust boundary end to end:
+schedule-event creation, credential-free gate, dedicated `data-s2-production-scheduled` environment
+admission, Official FPL fetch and the bounded direct Cloudflare D1 REST write path. Exact provider
+`meta.rows_read` / `meta.rows_written` reach only the Step Summary, are not retrievable through the
+GitHub API available here, and are stated nowhere.
 
-Window history: the first window `17 10 * * *` (10:17 UTC / 11:17 BST) and the second window
-`30 11 * * *` (11:30 UTC / 12:30 BST) **each produced zero schedule runs**; the third is pending
-natural observation. Between the second and third windows: PR #220 merged as `main`
-`98a5f994a3cdd4fc045c1f20ad86160d48170104`, exact-`main` Verify run `33871227472` succeeded, and
-the read-only scheduled-environment credential preflight ran once as run `33871716975`, attempt 1,
-on exact `main`, and **succeeded** — proving point in time that `CLOUDFLARE_ACCOUNT_ID` matches
-`CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT`, that `CLOUDFLARE_D1_TOKEN` is `active`, and that those
-credentials can read the exact reviewed production D1 database, with no SQL and no mutation. The
-owner then manually **disabled and immediately re-enabled** the scheduled production workflow.
-**The failure boundary observed so far is GitHub schedule-event creation**, strictly upstream of
-every credential the preflight checks: neither miss is a credential, environment or Cloudflare
-failure. GitHub exposes no proven scheduler-registration, armed or next-run state through REST or
-GraphQL, and documents that schedule events may be delayed or dropped, so **no root cause is proven
-and none is invented**.
+**GitHub's schedule delivery was materially late.** The nominal minute was 14:17 UTC (the third
+temporary window's `17 14 * * *`); GitHub created the run object at `2026-09-04T17:38:15Z` and it
+completed at `2026-09-04T17:38:58Z`. The observed delay of approximately **3 hours 21 minutes** is a
+**schedule-event delivery delay, never a collection delay** — once the run existed it finished in
+about 43 seconds. **The cause is not proven and none is invented**: GitHub exposes no
+scheduler-registration, armed or next-run state through REST or GraphQL, and documents that
+schedule events may be delayed under load or dropped entirely. Treat it as a permanent operational
+limitation: the cron minute is an opportunity, never a guaranteed execution instant, no arbitrary
+30–60 minute lateness threshold may declare a future run missed, and one success is a single sample
+that proves natural delivery and the downstream path but nothing about reliability or timing.
+
+With that acceptance recorded, the single trigger of
+`.github/workflows/data-s2-production-scheduled.yml` is **restored from the temporary `17 14 * * *`
+to the permanent approved cadence `17 1 * * *` (01:17 UTC)**, together with the wired
+`PRODUCTION_COLLECTION_SCHEDULE`, the `EVENT_SCHEDULE` gate comparison and the permanent tests that
+bind them. The workflow still declares **no `timezone:` field**, so GitHub interprets the cron in
+UTC. Exactly one production schedule trigger exists: no second cron, no temporary window retained,
+no diagnostic cron, no schedule probe, no heartbeat workflow, no `workflow_dispatch` on this
+workflow, no alternate scheduler and no Cloudflare Cron. Window history: `17 10 * * *` (10:17 UTC)
+and `30 11 * * *` (11:30 UTC) each produced **zero** schedule runs; `17 14 * * *` produced the
+accepted run above.
 
 **Nothing was executed for this checkpoint.** No Cloudflare request, D1 request, workflow dispatch,
 collection, migration, deployment, Worker action, Cron change, environment, secret or variable
 change was performed. The manual production collection workflow and the read-only
 scheduled-environment preflight workflow are untouched, and no model, provider, schema or
-calculation behaviour changes. **Merging changes the live production schedule** and may cause one
-real production D1 collection at 14:17 UTC / 15:17 BST on 4 September 2026; the Stage D section H
-environment confirmation still applies. See
+calculation behaviour changes. **Merging changes the live production schedule** from 14:17 UTC back
+to 01:17 UTC. Merging is not operational completion: the next live gate is the **first genuine
+natural run produced by `17 1 * * *`**, requiring event `schedule`, exact then-current `main`, and
+`repository-gate` and `collect` success — never a `workflow_dispatch` substitute and never another
+temporary acceptance cron. See
 [daily GitHub Actions schedule](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
 ### Current DATA-S2B checkpoint — manual read-only scheduled-environment credential preflight
@@ -76,8 +86,8 @@ request URL into the log.
 **Nothing was executed for this checkpoint.** No Cloudflare request, workflow dispatch, D1 read,
 D1 SQL, D1 mutation, collection, migration, deployment, schedule change, cron change, environment
 or credential change was performed. The scheduled cron was `30 11 * * *` at that checkpoint — since
-moved to `17 14 * * *` by the third acceptance window above — and the manual collection workflow is
-unchanged. Next gates: merge and exact-`main` Verify, then **separate**
+moved to `17 14 * * *` for the third acceptance window, and now restored to the permanent
+`17 1 * * *` by the checkpoint above — and the manual collection workflow is unchanged. Next gates: merge and exact-`main` Verify, then **separate**
 owner approval to dispatch the preflight once, conditional on the Stage D section H environment
 confirmation. See
 [scheduled-environment preflight](workers/data-platform/DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT.md).
@@ -102,11 +112,12 @@ resource-headroom remediation is justified**: no SQL optimisation, no index chan
 
 Stage D adds the forward scheduler: a **new, separate** workflow
 `.github/workflows/data-s2-production-scheduled.yml`, name `DATA-S2 Scheduled Production
-Collection via D1 REST`, carrying exactly one trigger — `schedule: - cron: '17 14 * * *'` — and no
-input of any kind. **That cron is a TEMPORARY owner-approved acceptance window for 4 September
-2026 (14:17 UTC / 15:17 BST); the permanent intended cadence stays `17 1 * * *` (01:17 UTC) and
-must be restored by a separate explicitly reviewed pull request once the first natural scheduled
-run has been evaluated.** This is the **third** approved temporary window; the first two, `17 10 * * *`
+Collection via D1 REST`, carrying exactly one trigger — at that checkpoint the third temporary
+acceptance window `schedule: - cron: '17 14 * * *'` — and no input of any kind. **That cron was a
+TEMPORARY owner-approved acceptance window for 4 September 2026 (14:17 UTC / 15:17 BST); the
+permanent cadence `17 1 * * *` (01:17 UTC) has since been restored by the separately reviewed
+change recorded in the checkpoint above, after that window produced the accepted natural run
+`33901634593`.** It was the **third** approved temporary window; the first two, `17 10 * * *`
 (10:17 UTC / 11:17 BST) and `30 11 * * *` (11:30 UTC / 12:30 BST), each **produced zero schedule
 runs**. The first was merged as `3c017786bce8cba8daf0091cf2e297f8e57789f8` 42m49s before its
 minute — workflow `350014371` runs `total_count: 0` and
@@ -143,7 +154,10 @@ the owner confirms `data-s2-production-scheduled` exists with `main`-only deploy
 required reviewers, `CLOUDFLARE_D1_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets and the
 `CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT` variable, and no D1 identifier — GitHub otherwise
 creates a referenced environment implicitly and unprotected. Live proof is the **first natural
-scheduled run**, never a simulation. See
+scheduled run**, never a simulation. **That environment gate and that live proof are both
+satisfied**: the accepted run `33901634593` was admitted to `data-s2-production-scheduled` and its
+credentials resolved — see the checkpoint above. The environment's protection rules still cannot be
+proved from this repository and remain owner-side. See
 [daily GitHub Actions schedule](workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->

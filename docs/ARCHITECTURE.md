@@ -13,9 +13,9 @@ Two workflows reach that path and nothing else does. `data-s2-production-collect
 `workflow_dispatch`-only, takes an owner-approved SHA and uses the attended
 `data-s2-production-collection` environment; it is the manual and recovery boundary.
 `data-s2-production-scheduled.yml` carries exactly one trigger and no `timezone:` field, so its cron
-is interpreted in UTC — temporarily `17 14 * * *` (14:17 UTC / 15:17 BST) for the third
-owner-approved 4 September 2026 acceptance window, permanently intended `17 1 * * *` and restored
-by a separate reviewed change — takes no input, is
+is interpreted in UTC — the permanent approved cadence `17 1 * * *` (01:17 UTC), restored after the
+temporary 4 September 2026 acceptance windows closed on the first successful natural scheduled run
+— takes no input, is
 gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
 `Tests and deterministic build` proof, and uses the dedicated unattended
 `data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`

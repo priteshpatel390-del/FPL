@@ -5,20 +5,22 @@
 # Cloudflare D1 REST. Cloudflare Worker collection and Cloudflare Cron are superseded and must not
 # be restored; `workers/data-platform/wrangler.jsonc` is historical repository configuration only.
 #
-# THIRD TEMPORARY OWNER-APPROVED ACCEPTANCE WINDOW (4 September 2026). The permanent intended
-# cadence is `17 1 * * *` (01:17 UTC). For this third acceptance opportunity the owner approved
-# moving the single trigger to `17 14 * * *` (14:17 UTC / 15:17 BST) so the first natural scheduled
-# production run can be observed within the working day. The first window `17 10 * * *` (10:17 UTC /
-# 11:17 BST) and the second window `30 11 * * *` (11:30 UTC / 12:30 BST) each produced zero
-# scheduled runs, with no proven root cause. A separate, explicitly reviewed restoration pull
-# request must return the trigger to `17 1 * * *` after a run has been evaluated. There is still
-# exactly one trigger: 01:17 UTC is not retained beside it, and no manual trigger is added.
+# PERMANENT CADENCE, RESTORED. The single trigger is `17 1 * * *` (01:17 UTC), the approved
+# permanent production cadence. The three temporary owner-approved acceptance windows of
+# 4 September 2026 are finished: `17 10 * * *` (10:17 UTC) and `30 11 * * *` (11:30 UTC) each
+# produced zero scheduled runs, and the third, `17 14 * * *` (14:17 UTC / 15:17 BST), produced the
+# first successful natural scheduled production run — GitHub Actions run `33901634593`, event
+# `schedule`, attempt 1, head `main` `dac27b3860428bc55c6d505e8a817a207d30f904`, both jobs
+# successful. GitHub created that run at 17:38:15Z, approximately 3h21m after its 14:17 UTC nominal
+# minute; the collection itself then completed in about 43 seconds. There is still exactly one
+# trigger: no temporary window is retained beside it, no diagnostic cron exists and no manual
+# trigger is added.
 #
 # This workflow declares no `timezone:` field, so GitHub interprets its cron in UTC. That UTC
-# scheduling model is deliberately unchanged for this diagnostic; the UK is on BST (UTC+1) on
-# 4 September 2026, so 14:17 UTC is 15:17 BST.
+# scheduling model is deliberately unchanged, so the nominal opportunity is 01:17 UTC year-round —
+# 02:17 BST while the UK is on British Summer Time and 01:17 GMT otherwise.
 #
-# It offers exactly one best-effort full collection opportunity each UTC day at 14:17 UTC and can
+# It offers exactly one best-effort full collection opportunity each UTC day at 01:17 UTC and can
 # do exactly one thing when it fires: perform one normal collection cycle for the single
 # deterministic collection identity that firing fixes. It accepts no input at all — no SHA,
 # timestamp, season, database, endpoint, SQL or statement — because a schedule event carries none;
@@ -33,7 +35,7 @@ name: DATA-S2 Scheduled Production Collection via D1 REST
 
 on:
   schedule:
-    - cron: '17 14 * * *'
+    - cron: '17 1 * * *'
 
 permissions:
   contents: read
@@ -69,7 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$EVENT_NAME" = schedule
-          test "$EVENT_SCHEDULE" = '17 14 * * *'
+          test "$EVENT_SCHEDULE" = '17 1 * * *'
           test "$EVENT_REF" = refs/heads/main
           test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
           printf '%s' "$SCHEDULED_SHA" | grep -Eq '^[0-9a-f]{40}$'

@@ -6,12 +6,18 @@
 **Decision:** recurring Official FPL production collection is scheduled by GitHub Actions, in a
 **new and separate** workflow `.github/workflows/data-s2-production-scheduled.yml` carrying exactly
 one trigger — one best-effort full collection opportunity each UTC day. The permanent intended
-cron is `17 1 * * *` (01:17 UTC); for the third owner-approved 4 September 2026 acceptance window
-the single trigger is temporarily `cron: '17 14 * * *'` (14:17 UTC / 15:17 BST), with no second
-cron retained, no `timezone:` field added — the cron stays UTC-interpreted — and a separate
-reviewed restoration change returning it to `17 1 * * *`. The earlier temporary windows
+cron is `17 1 * * *` (01:17 UTC), and it is **wired and restored**: no second cron is retained, no
+`timezone:` field is added — the cron stays UTC-interpreted — and no `workflow_dispatch`,
+diagnostic cron, schedule probe or heartbeat workflow exists beside it. Three temporary
+owner-approved acceptance windows ran on 4 September 2026 to observe a first natural scheduled run.
 `17 10 * * *` (10:17 UTC / 11:17 BST) and `30 11 * * *` (11:30 UTC / 12:30 BST) each produced zero
-schedule runs, with no proven root cause. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
+schedule runs, with no proven root cause. The third, `17 14 * * *` (14:17 UTC / 15:17 BST),
+**succeeded**: run `33901634593`, event `schedule`, attempt 1, head `main`
+`dac27b3860428bc55c6d505e8a817a207d30f904`, `repository-gate` and `collect` both successful. GitHub
+created that run at 17:38:15Z — approximately 3h21m after its nominal minute — so the cron minute is
+a best-effort opportunity and never a guaranteed execution instant; the delay is GitHub
+schedule-event delivery, is upstream of the workflow, and its cause is not proven. The permanent
+cadence was then restored by this separately reviewed change. Cloudflare Cron is not the forward scheduler and must not be restored; the historical
 `"crons": ["*/30 * * * *"]` declaration in `workers/data-platform/wrangler.jsonc` is repository
 history only, and the Worker collection path stays superseded on its measured ~630 ms CPU against
 the 10 ms Workers Free Cron ceiling. A D1 REST call invokes no Worker, so that ceiling does not
