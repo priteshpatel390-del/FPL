@@ -4,7 +4,7 @@
 ## DATA-S2 scheduled production collection limitations
 
 GitHub's documented behaviour is that scheduled workflows can be delayed under load and that
-events can be dropped entirely, so the wired cron — temporarily `17 10 * * *` for the approved
+events can be dropped entirely, so the wired cron — temporarily `30 11 * * *` for the approved
 4 September 2026 acceptance window, permanently intended `17 1 * * *` — is a best-effort daily
 **opportunity**, not a guarantee, and the nominal cron minute is never the execution instant — the collection identity is always the
 actual execution minute the runner observed. A missed day is a missed opportunity; the append-only
