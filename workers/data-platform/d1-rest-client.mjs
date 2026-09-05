@@ -23,8 +23,26 @@ export function createD1RestClient(options){
     if(!payload||payload.success!==true)fail('d1_api_failed');
     const results=Array.isArray(payload.result)?payload.result:null;if(!results||results.length!==trusted.statements.length)fail('d1_result_contract_invalid');
     for(const result of results)if(!result||result.success!==true)fail('d1_statement_failed');
+    // Provider accounting. The aggregate `usage` scalar is unchanged and stays the single value
+    // every existing caller and ceiling reads. Alongside it the per-statement integer breakdown is
+    // now preserved rather than discarded, so a resource failure can name which statement in a
+    // batch consumed the rows instead of only reporting one total. It carries integers only: no
+    // SQL text, no bound parameter, no request URL, no identifier and no response body.
     const usage={rowsRead:0,rowsWritten:0,changes:0};
-    for(const result of results){const meta=result.meta??{};for(const [provider,key] of [['rows_read','rowsRead'],['rows_written','rowsWritten'],['changes','changes']]){const value=meta[provider]??0;if(!Number.isSafeInteger(value))fail(`d1_result_contract_invalid_${provider}_type`);if(value<0||value>1000000)fail(`d1_result_contract_invalid_${provider}_range`);usage[key]+=value;}}
-    return Object.freeze({results,usage:Object.freeze(usage),requestBytes:encoder.encode(body).byteLength});
+    const statements=[];
+    for(const result of results){
+      const meta=result.meta??{};
+      const entry={rowsRead:0,rowsWritten:0,changes:0};
+      for(const [provider,key] of [['rows_read','rowsRead'],['rows_written','rowsWritten'],['changes','changes']]){
+        const value=meta[provider]??0;
+        if(!Number.isSafeInteger(value))fail(`d1_result_contract_invalid_${provider}_type`);
+        if(value<0||value>1000000)fail(`d1_result_contract_invalid_${provider}_range`);
+        usage[key]+=value;entry[key]=value;
+      }
+      statements.push(Object.freeze(entry));
+    }
+    const requestBytes=encoder.encode(body).byteLength;
+    return Object.freeze({results,usage:Object.freeze(usage),requestBytes,
+      statements:Object.freeze(statements)});
   }});
 }

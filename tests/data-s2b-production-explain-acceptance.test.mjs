@@ -140,10 +140,12 @@ test('the real schema-0003 plans for all four production statements are accepted
     assert.ok(entry.rows>=1&&entry.rows<=PRODUCTION_EXPLAIN_MAX_ROWS_PER_STATEMENT);
     for(const node of entry.plan)assert.ok(['SCAN','SEARCH'].includes(node.op));
   }
-  // The accepted live evidence names migration 0003's head index against observation_heads, and
-  // never depends on shadow_observations_ingestion_run.
+  // The accepted live evidence names migration 0003's head index as exactly one bounded covering
+  // pass of observation_heads, and never depends on shadow_observations_ingestion_run.
   const q1=evidence.queries[0].plan;
-  assert.ok(q1.some(node=>node.op==='SEARCH'&&node.target==='h'&&node.index==='observation_heads_observation_id'));
+  assert.equal(q1.filter(node=>node.target==='h').length,1);
+  assert.ok(q1.some(node=>node.op==='SCAN'&&node.target==='h'&&node.index==='observation_heads_observation_id'&&node.covering));
+  assert.ok(!q1.some(node=>node.index==='shadow_observation_idempotency'));
   const named=evidence.queries.flatMap(entry=>entry.plan).map(node=>node.index);
   assert.ok(!named.includes('shadow_observations_ingestion_run'));
 });
@@ -161,44 +163,76 @@ test('the local plan evidence is repository evidence only and is not a D1 accept
 
 /* ------------------------------------------------------------------- Q1 contract */
 
+// The accepted O(N) shape: one bounded covering pass of the current heads, then indexed probes.
 const Q1=[
+  'SCAN h USING COVERING INDEX observation_heads_observation_id',
+  'SEARCH o USING INDEX sqlite_autoindex_shadow_observations_1 (observation_id=?)',
+  'SEARCH r USING INDEX sqlite_autoindex_ingestion_runs_2 (run_id=? AND source_revision_id=?)'
+];
+// The superseded O(H) shape, which drove `shadow_observations` through the source-revision index
+// and visited the whole append-only history. It must stay rejected forever.
+const Q1_SUPERSEDED_OH=[
   'SEARCH o USING INDEX shadow_observation_idempotency (source_revision_id=?)',
   'SEARCH r USING INDEX sqlite_autoindex_ingestion_runs_2 (run_id=? AND source_revision_id=?)',
   'SEARCH h USING COVERING INDEX observation_heads_observation_id (observation_id=?)'
 ];
+// The pre-migration-0003 catastrophic shape: revision-led traversal plus an unindexed head scan.
+const Q1_PRE_0003=[
+  'SEARCH o USING INDEX shadow_observation_idempotency (source_revision_id=?)',
+  'SEARCH r USING INDEX sqlite_autoindex_ingestion_runs_2 (run_id=? AND source_revision_id=?)',
+  'SCAN h'
+];
 const nodes=details=>details.map(parseExplainDetail);
 
-test('Q1 requires the migration-0003 head lookup bound to observation_heads and rejects scans',()=>{
+test('Q1 accepts exactly one bounded covering head pass with indexed probes',()=>{
   assert.equal(validateCurrentHeadsPlan(nodes(Q1)),true);
-  // Older SQLite spells the same access with an explicit table and alias.
+  // Older SQLite spells the same access with an explicit table and alias, and may report the
+  // observation probe as a primary-key lookup rather than by autoindex name.
   assert.equal(validateCurrentHeadsPlan(nodes([
-    'SEARCH TABLE shadow_observations AS o USING INDEX shadow_observation_idempotency (source_revision_id=?)',
-    'SEARCH TABLE ingestion_runs AS r USING INDEX sqlite_autoindex_ingestion_runs_2 (run_id=?)',
-    'SEARCH TABLE observation_heads AS h USING COVERING INDEX observation_heads_observation_id (observation_id=?)'
+    'SCAN TABLE observation_heads AS h USING COVERING INDEX observation_heads_observation_id',
+    'SEARCH TABLE shadow_observations AS o USING PRIMARY KEY (observation_id=?)',
+    'SEARCH TABLE ingestion_runs AS r USING INDEX sqlite_autoindex_ingestion_runs_2 (run_id=?)'
   ])),true);
+});
+
+test('Q1 rejects the superseded O(H) and pre-migration-0003 current-head plans',()=>{
+  // The whole point of the tightened contract: the old shapes remain rejected, and each is
+  // rejected for a named structural reason rather than by a blanket rule.
+  assert.throws(()=>validateCurrentHeadsPlan(nodes(Q1_SUPERSEDED_OH)),
+    /current_heads_head_covering_scan_missing|current_heads_historical_revision_traversal/);
+  assert.throws(()=>validateCurrentHeadsPlan(nodes(Q1_PRE_0003)),
+    /current_heads_head_covering_scan_missing|current_heads_historical_revision_traversal/);
   const cases=[
-    [[Q1[0],Q1[1],'SCAN h'],/current_heads_head_scan|current_heads_head_index_lookup_missing/],
-    [[Q1[0],Q1[1],'SCAN h USING COVERING INDEX observation_heads_observation_id'],
-      /current_heads_head_scan|current_heads_head_index_lookup_missing/],
-    [['SCAN o',Q1[1],Q1[2]],/current_heads_observation_scan|current_heads_observation_lookup_missing/],
-    [['SCAN shadow_observations',Q1[1],Q1[2]],/current_heads_observation/],
-    [[Q1[0],Q1[1],'SEARCH h USING AUTOMATIC COVERING INDEX (observation_id=?)'],/current_heads_automatic_index/],
-    [[Q1[0],Q1[2]],/current_heads_run_lookup_missing/],
-    [[Q1[1],Q1[2]],/current_heads_observation_lookup_missing/],
-    [[Q1[0],Q1[1]],/current_heads_head_index_lookup_missing/]
+    // A plain, un-indexed table pass of the heads is still rejected.
+    [['SCAN h',Q1[1],Q1[2]],/current_heads_head_covering_scan_missing/],
+    [['SCAN observation_heads',Q1[1],Q1[2]],/current_heads_head_covering_scan_missing/],
+    // A nested or repeated head pass is rejected on cardinality.
+    [[Q1[0],Q1[0],Q1[1],Q1[2]],/current_heads_head_node_cardinality/],
+    // Unindexed historical traversal in any position.
+    [[Q1[0],'SEARCH o USING INDEX shadow_observation_idempotency (source_revision_id=?)',Q1[2]],
+      /current_heads_historical_revision_traversal|current_heads_observation_probe_missing/],
+    [[Q1[0],'SCAN o',Q1[2]],/current_heads_observation/],
+    [[Q1[0],'SCAN shadow_observations',Q1[2]],/current_heads_observation/],
+    [[Q1[0],Q1[1],'SCAN r'],/current_heads_run/],
+    // An automatic index anywhere.
+    [[Q1[0],'SEARCH o USING AUTOMATIC COVERING INDEX (observation_id=?)',Q1[2]],/current_heads_automatic_index/],
+    // Missing probes.
+    [[Q1[0],Q1[1]],/current_heads_run_lookup_missing/],
+    [[Q1[0],Q1[2]],/current_heads_observation_probe_missing/],
+    [[Q1[1],Q1[2]],/current_heads_head_node_cardinality/]
   ];
   for(const [details,code] of cases)assert.throws(()=>validateCurrentHeadsPlan(nodes(details)),code,details.join(' | '));
 });
 
 test('the migration-0003 index against an unrelated operation cannot satisfy Q1',()=>{
-  // The index name is present, but never as the observation_heads lookup.
+  // The index name is present, but never as the bounded observation_heads pass.
   assert.throws(()=>validateCurrentHeadsPlan(nodes([
-    Q1[0],Q1[1],
-    'SEARCH r USING INDEX observation_heads_observation_id (run_id=?)',
+    'SCAN r USING COVERING INDEX observation_heads_observation_id',
+    Q1[1],
     'SEARCH h USING INDEX sqlite_autoindex_observation_heads_1 (logical_key=?)'
-  ])),/current_heads_head_index_lookup_missing/);
+  ])),/current_heads_head_covering_scan_missing|current_heads_run/);
   // The old loose substring rule would have accepted exactly this.
-  assert.ok(['SEARCH r USING INDEX observation_heads_observation_id (run_id=?)']
+  assert.ok(['SCAN r USING COVERING INDEX observation_heads_observation_id']
     .some(detail=>detail.includes('observation_heads_observation_id')));
 });
 

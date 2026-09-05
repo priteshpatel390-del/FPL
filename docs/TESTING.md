@@ -14,6 +14,60 @@
 
 `tests/decision-intelligence-platform.test.mjs` covers valid/invalid admission, deterministic identities, display-name rejection, subject/season/fixture mismatch, distinct and impossible timing, deadline eligibility, rights failure closure, registry uniqueness, signal/version and approval scope exactness, secret rejection, malformed/stale/conflicting isolation, Provider Health invariance, unavailable production reads and forbidden production import paths. These are architecture/safety tests; they make no model-accuracy claim and exercise no provider or live store.
 
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## DATA-S2B read-budget remediation coverage
+
+`tests/data-s2b-read-budget-remediation.test.mjs` permanently pins the measured 4 September provider
+sample (`H = 10,628`, `N = 10,146`, `D = 264`, structural 94,844, provider 124,430, written 1,852)
+as a regression fixture; proves the superseded `5H + 4N + 4D + 64` model reproduced that structural
+figure exactly and the O(N) model gives `2H + 7N + 4D + 64`; requires the corrected projection to
+over-predict the measured 124,430 by at least 5,000 rows under both models; pins
+`PROVIDER_READ_AMPLIFICATION = 1.35` and `PROVIDER_READ_SAFETY_RESERVE = 2000` above both the raw
+and residual observed ratios and asserts the source states which constants are measured and which
+inferred; covers the mutation-read estimator's constants, its resume case, its completion-only case
+and its invalid inputs; proves already-billed rows are never amplified twice; proves the soft gate
+and hard circuit breaker are separate mechanisms over one unchanged 125,000 ceiling; and proves
+that at the population run `33948145320` left behind the soft gate refuses.
+
+It proves the predictive refusal end to end through the real entry point, on a population the
+**superseded** structural gate would have admitted (105,064 structural, 117,000 projected the old
+way) and the corrected gate refuses (135,457): the failure classifies as
+`production_projected_read_budget_exceeded` with `mutation = none`, exactly three read requests are
+issued, and no `INSERT`, `UPDATE`, `DELETE`, `DROP` or `CREATE` reaches the transport.
+
+Telemetry coverage asserts per-call and per-statement integers, cumulative and last-call counters,
+the ceiling each dimension stands against, coercion of an unrecognised plan kind into the closed
+enum, and sanitisation — hostile SQL text, parameters and request URLs are fed in and none survives
+into the snapshot, every scalar is a non-negative safe integer, and the snapshot is frozen. The D1
+client keeps its aggregate scalar and its existing provider-metadata type and range contracts.
+
+Stage 0 coverage pins that `productionRunIdFor(COMMITTED_RUN_SCHEDULED_AT)` is exactly
+`gha-e385726067648e08d44f8870df35ada41aa9b0f4`; that the workflow is `workflow_dispatch`-only with no
+schedule, push, pull_request, repository_dispatch, workflow_call, workflow_run or cron; that it
+reuses an existing protected environment and registers the fingerprint mask in the credentialled
+job's first step; that the runner imports no mutation plan builder, reuses the production postflight
+read and validator, and does **not** reuse the first-run reconciliation contract; that the
+classification set is exactly the three fixed values with unknown outcomes falling to ambiguous;
+that every degraded committed state is rejected as invalid while undecidable input is ambiguous;
+that exactly one non-batch read-only request is issued and any written row or over-bound read fails
+closed; and that a transport error carrying a request URL never reaches the sanitized classification.
+
+A final test pins that this package changes no schedule, cron, ceiling, migration or index:
+`PRODUCTION_COLLECTION_SCHEDULE` and the workflow's single trigger both stay `17 1 * * *`, the four
+ceilings are unchanged, the migration set is exactly 0001–0003 with five indexes, and no
+`workflow_dispatch` is added to the scheduled workflow.
+
+The O(N) plan itself is covered in `tests/data-s2-production-query-plan.test.mjs`, which proves
+against the real schema that exactly one bounded covering pass of `observation_heads` drives the
+statement with indexed probes and no revision-led traversal, and proves row-set equivalence with the
+superseded statement across normal, changed, multi-revision, incomplete-run, wrong-revision,
+orphan-like, no-change, empty and large-history/small-head states — with the exclusion scenarios
+excluding 30 of 60 heads, so the equivalence is not vacuous. `tests/data-s2b-production-explain-acceptance.test.mjs`
+proves the tightened Q1 contract accepts the O(N) shape and rejects the superseded O(H) plan, the
+pre-migration-0003 plan, a repeated head pass, a plain head table scan, an unindexed probe and any
+automatic index. **No Cloudflare request was performed by this repository-only package, and the
+Stage 0 workflow was not dispatched.**
+
 <!-- DATA-S2B-PHASE4B-CRON-ACTIVATION-PREPARATION-2026-08-28 -->
 ## Phase 4B Cron-activation preparation coverage
 

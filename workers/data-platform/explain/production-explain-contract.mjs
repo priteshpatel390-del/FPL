@@ -94,20 +94,34 @@ const forbid=(nodes,predicate,code)=>{if(nodes.some(predicate))reject(code);};
 const noAutomaticIndex=(nodes,query)=>forbid(nodes,node=>node.automatic,`${query}_automatic_index`);
 const indexedRun=node=>(typeof node.index==='string'&&RUN_INDEX.test(node.index))||node.primaryKey;
 
-// Q1 — current governed heads. `shadow_observations` must drive through the source-revision
-// index, `observation_heads` must be probed through migration 0003's reverse lookup, and the
-// ingestion run must be reached through its existing unique index. The head requirement is bound
-// to a SEARCH on `observation_heads`, so the index name appearing anywhere else cannot satisfy it.
+// Q1 — current governed heads, O(N). The statement now drives from `observation_heads` and probes
+// outward, so the accepted plan is exactly: one bounded covering-index pass of migration 0003's
+// `observation_heads_observation_id`, one primary-key probe of `shadow_observations`, and one
+// unique-index probe of `ingestion_runs`.
+//
+// The previous contract required the reverse — a revision-led SEARCH of `shadow_observations`
+// through `shadow_observation_idempotency` — and rejected every `SCAN` of `observation_heads`.
+// That blanket head-scan rejection existed because before migration 0003 the only way
+// `observation_heads` could be scanned was the catastrophic repeated inner scan. It is not
+// weakened away: it is replaced by a stricter contract that pins the exact good shape. The head
+// pass must be the covering index (a plain table scan of `observation_heads` is still rejected),
+// there must be exactly one head node (a nested or repeated head scan is rejected), and the
+// superseded revision-led traversal is rejected wherever it appears, so the whole pre-0003 and
+// O(H) family stays rejected while the one bounded O(N) shape is accepted.
 export function validateCurrentHeadsPlan(nodes){
   noAutomaticIndex(nodes,'current_heads');
-  need(nodes,node=>node.op==='SEARCH'&&on(node,'shadow_observations')&&node.index===OBSERVATION_REVISION_INDEX,
-    'current_heads_observation_lookup_missing');
-  need(nodes,node=>node.op==='SEARCH'&&on(node,'observation_heads')&&node.index===HEAD_OBSERVATION_INDEX,
-    'current_heads_head_index_lookup_missing');
-  need(nodes,node=>node.op==='SEARCH'&&on(node,'ingestion_runs')&&indexedRun(node),
+  const access=nodes.filter(node=>node.op);
+  const heads=access.filter(node=>on(node,'observation_heads'));
+  if(heads.length!==1)reject('current_heads_head_node_cardinality');
+  need(heads,node=>node.op==='SCAN'&&node.index===HEAD_OBSERVATION_INDEX&&node.covering,
+    'current_heads_head_covering_scan_missing');
+  need(access,node=>node.op==='SEARCH'&&on(node,'shadow_observations')&&(node.index===OBSERVATION_ID_INDEX||node.primaryKey),
+    'current_heads_observation_probe_missing');
+  need(access,node=>node.op==='SEARCH'&&on(node,'ingestion_runs')&&indexedRun(node),
     'current_heads_run_lookup_missing');
-  forbid(nodes,node=>node.op==='SCAN'&&on(node,'observation_heads'),'current_heads_head_scan');
-  forbid(nodes,node=>node.op==='SCAN'&&on(node,'shadow_observations'),'current_heads_observation_scan');
+  forbid(access,node=>node.index===OBSERVATION_REVISION_INDEX,'current_heads_historical_revision_traversal');
+  forbid(access,node=>node.op==='SCAN'&&on(node,'shadow_observations'),'current_heads_observation_scan');
+  forbid(access,node=>node.op==='SCAN'&&on(node,'ingestion_runs'),'current_heads_run_scan');
   return true;
 }
 

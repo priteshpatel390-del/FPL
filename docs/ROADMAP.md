@@ -4,6 +4,44 @@
 
 DI-1 implements the generic shadow contract approved by DI-0: deterministic observations, canonical identity/timing/provenance, fail-closed rights, signal registry, approval ledger and hard shadow repository boundary. It registers and activates no real source, contains no production approval/read path, and changes no recommendation, provider, DATA-S2B/D1/Cloudflare, Stage 10 or UI behaviour. After owner review, merge remains an explicit gate. The next proposed checkpoint is DI-2 automated evaluation and ablation, separately approved and still shadow-only.
 
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## Current DATA-S2B gate — read-budget remediation P2+ (repository only)
+
+**The permanent cadence produced a natural run, and it failed on resource enforcement.** Run
+`33948145320`, event `schedule`, attempt 1, head `main` `9a1c6a87e17de08ed2c5b650b05cdc3eab96291c`.
+GitHub created it at `2026-09-05T05:48:05Z` against a 01:17 UTC nominal minute — approximately
+**4h31m** of schedule-event delivery delay, upstream of the workflow, with no proven cause, and
+never a collection delay. `repository-gate` succeeded; `collect` failed with
+`production_d1_budget_exceeded` in phase `postflight_read`, carrying
+`productionMutation: 'definite_completed'` and `productionRetryable: false`. The commit therefore
+**completed** and the synchronous postflight never ran, so **the state that run left in production
+D1 is unproven**. The owner then disabled the scheduled workflow; it **remains disabled** and this
+checkpoint does not re-enable it.
+
+**The read model is proven defective.** The preceding successful run `33901634593` measured
+**124,430** actual `rowsRead` against a **94,844** structural estimate — a 29,586-row delta, about
+31.19%, finishing 570 rows below the 125,000 ceiling. The exact attribution of that delta is only
+partly known and is deliberately not invented.
+
+This checkpoint is **repository implementation only**: nothing was executed against Cloudflare. It
+corrects the pre-mutation read projection, adds an explicit mutation-read estimator and a
+conservative INFERRED provider amplification and reserve, separates the predictive soft gate from
+the hard circuit breaker, adds bounded sanitized per-call resource telemetry, re-plans current-head
+retrieval from O(H) to O(N) with an identical row set and a strictly stronger EXPLAIN contract, and
+adds a strictly read-only committed-run integrity workflow that **has not been dispatched**.
+
+**Reported honestly: Stage 3 alone does not restore collection capability.** The re-plan saves only
+`3(H − N) = 1,446` structural rows at the current population; its value is removing the term that
+grows without bound. Applying the corrected projection to the population run `33948145320` left
+behind exceeds 125,000, so the soft gate will refuse the next cycle with `mutation = none` rather
+than commit and then fail. That is a safety improvement, not a recovery. Per the stop condition, no
+ceiling was raised, **no migration 0004 was created** and no covering index was added.
+
+Next gates, each separate and owner-approved: merge and exact-`main` Verify; then one dispatch of
+the committed-run integrity workflow; then, only on that evidence plus a decision about whether a
+schema change is warranted, any question of collection or scheduler re-enable. See
+[read-budget remediation](../workers/data-platform/DATA-S2B-READ-BUDGET-REMEDIATION.md).
+
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## Current DATA-S2B gate — natural schedule accepted; permanent cadence restored
 
@@ -17,17 +55,22 @@ proven cause; the run itself then completed in about 43 seconds. GitHub Actions 
 scheduler and Cloudflare Cron stays superseded and absent.
 
 **Merging this restoration changes the live production schedule** from 14:17 UTC back to 01:17 UTC.
-It is not operationally complete at merge: the next live gate is the **first genuine natural run
+It is not operationally complete at merge: the next live gate was the **first genuine natural run
 produced by `17 1 * * *`**, judged on event `schedule`, exact then-current `main`, and
-`repository-gate` and `collect` success. Do not substitute a `workflow_dispatch` and do not create
-another temporary acceptance cron.
+`repository-gate` and `collect` success. **That gate is closed and it did not pass.** Run
+`33948145320` was that natural run: the gate and the commit succeeded, resource enforcement then
+failed at `postflight_read`, and the scheduler is now owner-disabled. See the checkpoint above.
 
 The hardened manual normal production collection has run live and succeeded: run `33818972728`,
 attempt 1, event `workflow_dispatch`, head SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, both
 jobs successful, the runner completing through synchronous postflight. Owner-side Cloudflare
 telemetry in a cleaner 30-minute window around it showed approximately 32k rows read, 375 rows
 written and 10 queries — dashboard time-window aggregates, not per-workflow accounting — which is
-far below every ceiling, so no resource-headroom remediation is justified and no ceiling moved.
+far below every ceiling. **That reading is superseded.** It was an account-level dashboard
+aggregate over a window, not per-workflow accounting, and the later Step Summary for run
+`33901634593` measured 124,430 actual `rowsRead` against a 94,844 structural estimate. Resource
+headroom remediation **is** justified and is implemented by the checkpoint above. No ceiling moved
+then and none moves now.
 
 Stage D adds a separate scheduled workflow with exactly one trigger — the permanent approved
 cadence `17 1 * * *` (01:17 UTC), restored after the temporary 4 September 2026 acceptance windows

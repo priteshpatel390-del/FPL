@@ -1,5 +1,63 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## DATA-S2B — the pre-mutation read model must project provider accounting, not structural visits — 5 September 2026
+
+**Decision:** a production collection cycle may not mutate production until it has projected the
+whole remaining cycle against Cloudflare's own accounting, conservatively, and found it fits. The
+predictive soft gate and the hard post-execution circuit breaker are separate mechanisms sharing
+one unchanged ceiling.
+
+**Why:** scheduled run `33948145320` on 5 September 2026 passed the existing predictive check,
+committed to D1, and only then failed `production_d1_budget_exceeded` at `postflight_read` with
+`productionMutation: 'definite_completed'`. The preceding successful run `33901634593` had measured
+124,430 actual `rowsRead` against a 94,844 structural estimate — a 31.19% underestimate finishing
+570 rows below the ceiling. The old gate compared already-billed rows plus the raw structural
+postflight term only: no mutation reads, no provider amplification, no reserve.
+
+**What follows from it:**
+
+* `MAX_D1_ROWS_READ_PER_CYCLE` stays **125,000**. The defect was the model, not the ceiling.
+* The structural model and the provider projection stay **separately reported**, so a future
+  recalibration can distinguish a query-plan change from an amplification change.
+* Already-billed provider rows are taken as measured and never amplified twice; only outstanding
+  work is amplified.
+* `PROVIDER_READ_AMPLIFICATION = 1.35` and `PROVIDER_READ_SAFETY_RESERVE = 2000` are **INFERRED,
+  not measured**, chosen conservatively above both the raw observed ratio (1.311944) and the
+  residual ratio once mutation reads are modelled (about 1.28). One sample is not a distribution.
+* Mutation-read costs are modelled explicitly, mirroring the write estimator's inputs, with
+  constants labelled INFERRED and pinned in tests so recalibration is one visible change.
+* A predictive refusal produces `mutation = none` and writes nothing.
+
+**Rejected:** raising the ceiling; treating the dashboard-aggregate reading that "no
+resource-headroom remediation is justified" as still valid; inventing a precise attribution for the
+29,586-row delta.
+
+## DATA-S2B — current-head retrieval is O(N), by join order and not by schema — 5 September 2026
+
+**Decision:** the current-head statement drives from `observation_heads` using SQLite's `CROSS JOIN`
+to suppress planner reordering, and reaches `shadow_observations` and `ingestion_runs` as indexed
+probes. Cost becomes proportional to the current head population N rather than the append-only
+history H. The whole-cycle structural model is `2H + 7N + 4D + 64`, where it was `5H + 4N + 4D + 64`;
+the established `H = N` baseline of `7N + 64` is unchanged.
+
+**Why not a schema change:** `CROSS JOIN` alters no relational meaning, so the returned row set is
+identical and no integrity invariant moves. A migration would have been a larger, riskier change for
+the same plan. **No migration 0004 and no covering index were created**, and whether one is later
+warranted is a separate owner decision informed by the new telemetry.
+
+**What follows from it:** the EXPLAIN contract's blanket `SCAN h` rejection — correct while the only
+possible head scan was the pre-0003 repeated inner scan — is **replaced by a stronger structural
+contract**, never removed: exactly one head node, and it must be a covering-index scan of
+`observation_heads_observation_id`; indexed probes only; `shadow_observation_idempotency` rejected
+wherever it appears. The superseded O(H) and pre-0003 plans stay rejected, and permanent tests prove
+both that and row-set equivalence across the representative governed states.
+
+**Reported honestly:** at the current population, where H and N are close, this saves only
+`3(H − N) = 1,446` structural rows. It does **not** by itself bring the projected cycle under the
+ceiling, and nothing was relaxed to pretend otherwise. See
+[read-budget remediation](../workers/data-platform/DATA-S2B-READ-BUDGET-REMEDIATION.md).
+
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2B Stage D — GitHub Actions is the production collection scheduler — 4 September 2026
 

@@ -1,0 +1,162 @@
+# DATA-S2B — dedicated, manual-only, strictly read-only verification of the committed production
+# collection run of 5 September 2026.
+#
+# Scheduled run 33948145320 committed to D1 and then failed at `production_d1_budget_exceeded` in
+# phase `postflight_read`, before its synchronous postflight could run. Its committed state has
+# therefore never been validated against the production postflight contract. This workflow can do
+# exactly one thing: issue one read-only D1 REST request containing the one fixed repository-owned
+# production postflight statement for that run's derived identity, and classify what comes back.
+#
+# It accepts no input of any kind — no SQL, table, column, statement, identity, timestamp or
+# database identifier. The scheduled minute is a reviewed repository constant and the run id is
+# derived from it; the database id is a reviewed repository constant and is not carried in the
+# environment at all. It writes nothing, repairs nothing, resumes nothing and collects nothing. It
+# never applies a migration, never invokes collection or the resume, and never changes a schedule,
+# Cron trigger, Worker version, deployment, route, domain, Access policy or secret.
+#
+# It carries no `schedule`, `push`, `pull_request`, `repository_dispatch`, `workflow_call` or
+# `workflow_run` trigger. Every repository and CI gate completes in a job that has no protected
+# environment and no Cloudflare credentials, before the credentialled job can start.
+#
+# A COMMITTED_STATE_VALID outcome is a fact about state that already exists. It is never an
+# authorisation to collect, to resume, or to re-enable the scheduler, which remains owner-disabled.
+name: DATA-S2B Committed Run Integrity
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main commit approved for one DATA-S2B committed-run integrity read only
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+# Shares the production collection group so a read-only integrity check can never run beside a
+# collection, a resume, a reconciliation read, a migration or a live acceptance read.
+concurrency:
+  group: data-s2-production-collection
+  cancel-in-progress: false
+
+jobs:
+  # Credential-free. No protected environment, no Cloudflare secret, no account id, no account
+  # fingerprint variable and no D1 identifier exist anywhere in this job.
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - name: Validate approved SHA before checkout
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact approved revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Gate exact current main and clean tree
+        id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          http="$(curl --silent --output "$response" --write-out '%{http_code}' --max-time 20 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs")"
+          test "$http" = 200
+          node --input-type=module - "$response" <<'EOF'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const matches=(body.check_runs??[]).filter(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/'));
+          if(matches.length<1)throw new Error('exact-head Verify Teamsheet success is absent');
+          EOF
+          rm -f "$response"
+          test -z "$(git status --porcelain)"
+
+  committed-run-integrity:
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The existing attended production boundary. No environment is created and no credential is
+    # created, renamed, rotated or widened by this workflow.
+    environment:
+      name: data-s2-production-collection
+    env:
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+    steps:
+      # GitHub echoes each step's resolved environment in that step's log header, and only
+      # `secrets.*` values are masked automatically. The account fingerprint is a `vars.*` value,
+      # so its mask is registered here — derived from the already-masked account credential —
+      # before any step materialises the variable itself. The production database id is a
+      # reviewed repository constant and is not carried in the environment at all.
+      - name: Register production identifier masks before any other step
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out gated approved revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      # The repository gate proved remote main before this job existed, but protected-environment
+      # admission can wait indefinitely and main may advance in that window. This step therefore
+      # resolves remote main again, from the remote and not from any value carried out of the gate
+      # job, in the same shell and immediately before the entry point. No Cloudflare request is
+      # made before it.
+      - name: Reconfirm identity and remote main, then verify read-only
+        env:
+          CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          rm -f node_modules/.bin/wrangler
+          rm -rf node_modules/wrangler node_modules/.wrangler-*
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          node workers/data-platform/run-committed-run-integrity.mjs
