@@ -3,21 +3,30 @@
 <!-- DATA-S2B-CAPACITY-ENVELOPE-RESTORATION-2026-09-05 -->
 ## DATA-S2B capacity envelope — restored, and what it does not prove
 
-**This restores an operating envelope. It is not proof that production collection works.** The
-per-cycle read envelope is now 150,000 expected / 200,000 soft pre-mutation refusal / 250,000 hard
-circuit breaker, resized after PR #223 corrected the pre-mutation model. **No production collection
-has run under it**, and none is authorised: one attended manual collection, while the scheduler
-stays owner-disabled, is a separate owner gate.
+**One production cycle has now run under this envelope, and it passed.** The per-cycle read
+envelope is 150,000 expected / 200,000 soft pre-mutation refusal / 250,000 hard circuit breaker.
+Attended run `33990959542` completed successfully on exact `main`
+`2ef79bf961eb22d9d86d75e99abe9ca769aebcf8`, with clean postflight state and 113,352 provider rows
+read against a 121,902 projection — ≈ 45.34% of the hard ceiling. The envelope did not bind.
+
+**That is one cycle, not a capacity guarantee.** It does not prove exact future provider billing:
+any future cycle's accounting depends on its own governed population, changed-observation count and
+the Official FPL state of the day.
 
 **No season-long capacity guarantee is claimed.** The structural model carries a `2H` term over an
 append-only history, so per-cycle cost grows with cumulative observations. How long this envelope
-lasts depends on the average changed-observation count per collection, which has exactly one
-measurement — 264, on 4 September 2026 — and future Official FPL change rates are not facts.
+lasts depends on the average changed-observation count per collection, which now has **two**
+measurements — 264 on 4 September 2026 and 141 on 5 September 2026 — which is still not a
+distribution, and future Official FPL change rates are not facts.
 Whether a query, index or validation-architecture change is later warranted is an open owner
 decision that should rest on per-statement telemetry from a first instrumented production run.
 
-**`PROVIDER_READ_AMPLIFICATION = 1.35` and `PROVIDER_READ_SAFETY_RESERVE = 2000` remain INFERRED**
-from a single measured sample. They are unchanged by the capacity package and pinned in tests.
+**`PROVIDER_READ_AMPLIFICATION = 1.35` and `PROVIDER_READ_SAFETY_RESERVE = 2000` remain INFERRED
+and unchanged.** The first instrumented live sample supports them — the projection over-predicted
+actual provider rows by 8,550, the conservative direction — but one sample is not a distribution.
+The whole-cycle actual-over-structural ratio measured ≈ 1.2068 and the mutation-read model
+over-predicted by roughly a factor of 1.8; **neither is a reason to recalibrate on one observation**,
+and nothing was recalibrated. The constants stay pinned in tests.
 
 **GitHub schedule-delivery lateness remains separate and unresolved.** The two natural scheduled
 runs were created approximately 3h21m and 4h31m after their nominal minutes. That is upstream of

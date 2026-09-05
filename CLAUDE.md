@@ -2,7 +2,73 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+### Current DATA-S2B checkpoint — capacity restoration live acceptance PASS
+
+**FACT: the first attended production collection under the restored envelope succeeded.** Workflow
+`DATA-S2 Production Collection via D1 REST` (workflow `348625053`), run `33990959542`, run number 3,
+attempt 1, event `workflow_dispatch`, head `main` `2ef79bf961eb22d9d86d75e99abe9ca769aebcf8`,
+conclusion **success**, both `repository-gate` and `collect` succeeding, after exact-`main` Verify
+Teamsheet **#611** (run `33989822673`) passed on that SHA. Because `runProductionCollection` returns
+only after its synchronous postflight has validated the exact completed run, that success is itself
+proof that postflight validation ran and passed — the step run `33948145320` never reached.
+
+**Measured result.** `result: changed`, `mutation: definite_completed`, 141 changed observations,
+10,157 records seen. Committed state: `completed`, 141 run observations, 11,278 observations, 10,157
+heads equal to 10,157 logical keys, and **zero** orphan heads, quarantined and rejected. Population
+and planning: H 11,137, N 10,146, D 141, structural 93,924, projected provider rows 121,902, both
+classified `expected`. Provider accounting: **6 API calls, 113,352 rows read, 1,005 rows written,
+209,511 request bytes**, `readClassification: expected`.
+
+**FACT: the projection was conservative.** Projected 121,902 against actual 113,352 — over-predicting
+by **8,550**, which is ≈ 7.54% above actual, or ≈ 7.01% of the projected value. Headroom below the
+250,000 hard ceiling was **136,648**, an actual utilisation of ≈ 45.34%; 36,648 below the 150,000
+expected band; 78,098 of projected headroom below the 200,000 soft threshold; 38,995 of write
+headroom; two spare API calls. **The 150,000 / 200,000 / 250,000 envelope did not bind this cycle.**
+
+**First per-call evidence, recorded but not acted on.** The two population counts billed exactly H
+and N, confirming live that both run index-only as their `EXPLAIN` contract requires. `HEADS_SQL`
+billed 40,019 against a structural 3N of 30,438 (≈ 1.315); the postflight billed 51,351 against
+42,139 (≈ 1.219); the commit's mutation reads were 696 against a modelled 1,266. Whole-cycle actual
+over structural was ≈ 1.2068, below the 1.35 planning assumption and **not** comparable with the
+4 September 1.311944, which was measured under the superseded O(H) plan. The write estimate matched
+measured writes exactly for a second time, now including the head split. **Correct reading: the
+first instrumented live sample supports the current conservative projection assumptions.** It does
+not prove the amplification correct and the model is not calibrated; one sample is not a
+distribution, and 1.35, 2,000 and the mutation-read constants are all unchanged.
+
+**Incident closed.** The chain is: run `33948145320` committed and then failed resource enforcement
+before postflight validation; Stage 0 run `33966125991` proved that committed state valid; PR #223
+corrected the read model, telemetry and current-head plan; PR #224 set the 150,000 / 200,000 /
+250,000 envelope; Verify #611 passed; run `33990959542` completed cleanly at 113,352 rows read.
+**The capacity-restoration live acceptance is PASS**, and it closes the immediate D1
+capacity-restoration incident.
+
+**It proves nothing beyond that.** Not season-long capacity — the model carries a `2H` term over an
+append-only history and changed-observation counts now have two samples (264 and 141), not a
+distribution. Not exact future provider billing. Not GitHub schedule reliability. Not that 1.35 and
+2,000 are optimal. Not that no later optimisation will be needed.
+
+**Scheduler unchanged and still gated.** The permanent cron stays `17 1 * * *` and the scheduled
+workflow `350014371` was verified through the GitHub Actions API as still **`disabled_manually`**.
+This checkpoint does not enable it. **GitHub schedule delivery is best-effort**: the cron minute is
+an opportunity, never a guaranteed collection instant, and the two natural scheduled runs were
+created approximately 3h21m and 4h31m after their nominal minutes. That remains separate and
+unresolved.
+
+**Nothing was executed for this closeout.** No Cloudflare request, D1 read, D1 mutation, collection,
+workflow dispatch, re-run, migration, index, schema, threshold, cron, scheduler, deployment,
+environment or credential change. See
+[capacity live acceptance closeout](workers/data-platform/DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-CLOSEOUT.md).
+
 ### Current DATA-S2B checkpoint — production capacity envelope restored (repository only)
+
+> **Superseded in its forward-looking part by the live-acceptance checkpoint above.** Its decision,
+> rationale and thresholds are unchanged and remain in force. What is no longer current is its
+> status: the envelope it describes as untested has since been exercised by attended production run
+> `33990959542`, which completed successfully at 113,352 provider rows read against a 121,902
+> projection, with clean postflight state. Its statement that collection capability was not yet
+> proven was accurate when written and has now been answered for one cycle.
+
 
 **FACT: the 5 September integrity question is closed.** Workflow `DATA-S2B Committed Run Integrity`
 (workflow `350897195`), run `33966125991`, run number 1, attempt 1, event `workflow_dispatch`, head

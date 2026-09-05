@@ -155,9 +155,13 @@ those limits on 1 September 2026 — a 250,000-row per-cycle hard ceiling is **5
 read allowance for the one approved cycle a day. The internal breaker stays far tighter than the
 provider quota, which is the relationship it is supposed to have.
 
-**LIMITATION — this is an operating envelope, not proof that collection works.** No production
-collection has been run under it. One attended manual production collection, while the scheduler
-stays disabled, is still required before any claim about restored collection capability.
+**LIMITATION as written, since answered for one cycle.** When this record was written no production
+collection had run under the envelope. Attended run `33990959542` has since completed successfully
+on exact `main` `2ef79bf961eb22d9d86d75e99abe9ca769aebcf8` — 113,352 provider rows read against a
+121,902 projection, ≈ 45.34% of the hard ceiling, clean postflight state — so the envelope is proven
+for one cycle and the capacity-restoration live acceptance is PASS. See
+[capacity live acceptance closeout](DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-CLOSEOUT.md). It remains one
+cycle, not a season-long guarantee.
 
 **LIMITATION — 1.35 and 2,000 remain INFERRED** from a single measured sample. They are pinned in
 tests so a later recalibration is one visible change.
