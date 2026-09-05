@@ -5,8 +5,11 @@
 
 **The state committed by scheduled run `33948145320` on 5 September 2026 is unproven.** That run's
 commit completed — `productionMutation: 'definite_completed'` — and it then failed
-`production_d1_budget_exceeded` at `postflight_read`, so its synchronous postflight never ran and
-nothing has validated the committed state against the production postflight contract. A strictly
+`production_d1_budget_exceeded` at `postflight_read`. The postflight D1 read **was issued and
+returned**; resource enforcement failed on its returned accounting before
+`validateProductionPostflight()` could validate the returned state. The postflight read ran;
+postflight validation did not, so nothing has validated the committed state against the production
+postflight contract. That is an absence of proof, not evidence of invalid or corrupt state. A strictly
 read-only integrity workflow now exists to answer that one question, but **it has not been
 dispatched**, so the state remains unproven until a separate owner-approved dispatch happens.
 
@@ -27,7 +30,11 @@ the per-call telemetry now added plus a further instrumented production run.
 **The O(N) re-plan does not restore collection capability at the current population.** It saves
 `3(H − N) = 1,446` structural rows today; its value is removing the term that grows without bound.
 Applying the corrected projection to the population run `33948145320` left behind exceeds 125,000,
-so the soft gate will refuse the next cycle with `mutation = none`. The ceiling was not raised, no
+so under those assumptions the soft gate would refuse before mutation with `mutation = none`. What
+any future cycle actually does depends on its own population, changed-observation count, rows
+already billed before the gate and the Official FPL state of the day, and is not claimed here; if
+the next cycle presents a comparable or higher projected workload, the soft gate will refuse before
+mutation. The ceiling was not raised, no
 migration 0004 was created and no covering index was added; whether a schema change is warranted is
 an open owner decision.
 

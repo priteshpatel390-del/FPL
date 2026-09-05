@@ -3,11 +3,15 @@
 <!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
 ## DATA-S2B resource telemetry and the committed-run integrity diagnostic
 
-The bounded production resource telemetry added by the read-budget remediation holds **integers and
-fixed enums only**. It is fed exclusively from the D1 client's already-validated integer accounting
-and from the repository's own models, every field is coerced to a non-negative safe integer or a
-closed enum, and the per-call and per-statement arrays are bounded by the cycle's own eight-call and
-forty-statement ceilings. No SQL text, bound parameter, request URL, account id, database id,
+The bounded production resource telemetry added by the read-budget remediation holds **non-negative
+safe-integer accounting plus bounded numeric planning constants and fixed enums only**. The
+planning record deliberately carries the repository's own amplification factor, which is a fraction
+rather than an integer, so "integers only" would be inaccurate; every other field is coerced to a
+non-negative safe integer or a closed enum. It is fed exclusively from the D1 client's
+already-validated integer accounting and from the repository's own models. The stored-call array is
+bound to `MAX_D1_API_CALLS_PER_CYCLE`, the production cycle's own D1 call ceiling, rather than to a
+separate number of its own, and the per-statement array to the batch statement ceiling; `apiCalls`
+counts dispatched calls independently of that cap, so a capped snapshot can never under-report. No SQL text, bound parameter, request URL, account id, database id,
 account fingerprint, token, response body or returned row can reach it, and a permanent test feeds
 it hostile values and asserts none survives into the snapshot. It travels with the sanitized failure
 classification, which keeps its existing PR #215 behaviour.

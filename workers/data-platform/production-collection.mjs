@@ -338,18 +338,30 @@ export function assertCycleReadBudget({rowsReadSoFar,estimate}){
 // into one scalar and discarded the breakdown, so which call and which resource dimension
 // exhausted the envelope was unrecoverable. This recorder keeps that breakdown.
 //
-// SECURITY. Everything it holds is an integer or a fixed enum from a closed set. It never touches
+// SECURITY. Everything it holds is non-negative safe-integer accounting, a bounded numeric planning
+// constant, or a fixed enum from a closed set. The planning record deliberately carries the
+// repository's own amplification factor, which is a fraction and not an integer, so the accurate
+// statement is "bounded numeric values and fixed enums", never "integers only". It never touches
 // SQL text, bound parameters, a request URL, an account id, a database id, an account
 // fingerprint, a token, a response body or a returned row. It is fed only from
 // `d1-rest-client.mjs`'s already-validated integer accounting and from the repository's own
-// models, so there is no path by which provider text could reach it. The per-call and
-// per-statement arrays are bounded by the cycle's own eight-call and forty-statement ceilings.
-const TELEMETRY_MAX_CALLS=64;
+// models, so there is no path by which provider text could reach it.
+//
+// The stored-call array is bound to the production cycle's own D1 call ceiling rather than to a
+// separate number of its own, so the documented bound and the enforced bound can never drift
+// apart. The resume path's stricter `RESUME_MAX_D1_API_CALLS` runtime gate is unaffected:
+// `dispatch` refuses a call beyond whichever ceiling applies before this recorder is ever reached,
+// so the storage bound being the normal production maximum never widens what a resume may do.
+const TELEMETRY_MAX_CALLS=MAX_D1_API_CALLS_PER_CYCLE;
 const TELEMETRY_MAX_STATEMENTS_PER_CALL=D1_MAX_BATCH_STATEMENTS;
 const TELEMETRY_PLAN_KINDS=Object.freeze(['read','mutation']);
 
 export function createProductionResourceTelemetry(){
   const calls=[];
+  // Recorded separately from the stored array so `apiCalls` stays the true number of dispatched
+  // calls even in the impossible case where the array cap is reached: the cap must never make a
+  // failure summary under-report.
+  let recorded=0;
   let cumulativeRowsRead=0,cumulativeRowsWritten=0,cumulativeRequestBytes=0;
   let plan=null;
   const integer=value=>Number.isSafeInteger(value)&&value>=0?value:0;
@@ -358,6 +370,7 @@ export function createProductionResourceTelemetry(){
       const rowsRead=integer(out?.usage?.rowsRead),rowsWritten=integer(out?.usage?.rowsWritten);
       const requestBytes=integer(out?.requestBytes);
       cumulativeRowsRead+=rowsRead;cumulativeRowsWritten+=rowsWritten;cumulativeRequestBytes+=requestBytes;
+      recorded+=1;
       if(calls.length>=TELEMETRY_MAX_CALLS)return;
       const statements=Array.isArray(out?.statements)?out.statements.slice(0,TELEMETRY_MAX_STATEMENTS_PER_CALL)
         .map(entry=>Object.freeze({rowsRead:integer(entry?.rowsRead),rowsWritten:integer(entry?.rowsWritten),
@@ -389,14 +402,15 @@ export function createProductionResourceTelemetry(){
     snapshot(){
       const last=calls[calls.length-1]??null;
       return Object.freeze({
-        apiCalls:calls.length,cumulativeRowsRead,cumulativeRowsWritten,cumulativeRequestBytes,
+        apiCalls:recorded,storedCalls:calls.length,cumulativeRowsRead,cumulativeRowsWritten,cumulativeRequestBytes,
         lastCallRowsRead:last?last.rowsRead:0,
         lastCallRowsWritten:last?last.rowsWritten:0,
         lastCallRequestBytes:last?last.requestBytes:0,
         // Which unchanged ceiling each dimension stands against, so a failure summary names the
         // dimension that failed instead of leaving it to be inferred.
         ceilings:Object.freeze({rowsRead:MAX_D1_ROWS_READ_PER_CYCLE,rowsWritten:MAX_D1_ROWS_WRITTEN_PER_CYCLE,
-          apiCalls:MAX_D1_API_CALLS_PER_CYCLE,requestBytes:D1_REST_REQUEST_LIMIT_BYTES}),
+          apiCalls:MAX_D1_API_CALLS_PER_CYCLE,requestBytes:D1_REST_REQUEST_LIMIT_BYTES,
+          storedCalls:TELEMETRY_MAX_CALLS,statementsPerCall:TELEMETRY_MAX_STATEMENTS_PER_CALL}),
         plan,
         calls:Object.freeze(calls.map(entry=>entry))
       });
@@ -426,8 +440,8 @@ export function productionFailureClassification(error){
     mutation:[PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,PRODUCTION_MUTATION_DEFINITE_COMPLETED].includes(mutation)?mutation:PRODUCTION_MUTATION_UNKNOWN,
     phase:typeof error?.productionPhase==='string'?error.productionPhase:null,
     code:/^[a-z0-9_]{1,64}$/.test(String(error?.code??error?.message??''))?String(error.code??error.message):'unclassified',
-    // Bounded integers and fixed enums only. Absent when the cycle stopped before any telemetry
-    // existed, never fabricated.
+    // Bounded numeric values and fixed enums only. Absent when the cycle stopped before any
+    // telemetry existed, never fabricated.
     resources:error?.productionResources??null,
     retryable:false
   });

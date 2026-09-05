@@ -38,7 +38,12 @@ issued, and no `INSERT`, `UPDATE`, `DELETE`, `DROP` or `CREATE` reaches the tran
 Telemetry coverage asserts per-call and per-statement integers, cumulative and last-call counters,
 the ceiling each dimension stands against, coercion of an unrecognised plan kind into the closed
 enum, and sanitisation — hostile SQL text, parameters and request URLs are fed in and none survives
-into the snapshot, every scalar is a non-negative safe integer, and the snapshot is frozen. The D1
+into the snapshot, every accounting scalar is a non-negative safe integer, the one deliberate
+non-integer is the repository's own bounded amplification factor, and the snapshot is frozen. A
+separate permanent test drives the recorder far past the production D1 call ceiling and proves the
+stored-call array is bound to `MAX_D1_API_CALLS_PER_CYCLE` exactly, the per-statement array to the
+batch statement ceiling, that cumulative accounting and the true dispatched `apiCalls` count stay
+complete despite the cap, and that the resume runtime gate remains stricter than the storage bound. The D1
 client keeps its aggregate scalar and its existing provider-metadata type and range contracts.
 
 Stage 0 coverage pins that `productionRunIdFor(COMMITTED_RUN_SCHEDULED_AT)` is exactly

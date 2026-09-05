@@ -19,8 +19,11 @@ Its Step Summary measured 124,430 provider `rowsRead` against a 94,844 structura
 570 rows below the 125,000 ceiling. **The next natural scheduled run then failed.** Run
 `33948145320` on `main` `9a1c6a87e17de08ed2c5b650b05cdc3eab96291c` passed its `repository-gate`,
 committed to D1 and failed `production_d1_budget_exceeded` at `postflight_read`
-with `productionMutation: 'definite_completed'`, so **the Official FPL facts that run committed are
-present in D1 but have never been validated by the postflight contract**. The scheduled workflow is
+with `productionMutation: 'definite_completed'`. The postflight D1 read was issued and returned;
+resource enforcement failed on its returned accounting before `validateProductionPostflight()` could
+validate the returned state. The postflight read ran; postflight validation did not, so **the
+Official FPL facts that run committed are present in D1 but have never been validated by the
+postflight contract** — an absence of proof, not evidence that they are invalid. The scheduled workflow is
 now owner-disabled. No provider, endpoint, rights classification, retention posture, normalisation
 or canonical identity changed as a result; the correction is to the resource model only.
 The manual workflow stays the owner-approved manual and recovery boundary, gated by one immutable

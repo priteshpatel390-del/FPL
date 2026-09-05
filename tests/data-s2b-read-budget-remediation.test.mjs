@@ -16,11 +16,11 @@ import {
   MEASURED_PROVIDER_READ_CALIBRATION,PRODUCTION_COLLECTION_SCHEDULE,PRODUCTION_D1_ID,
   PRODUCTION_MUTATION_NONE,productionFailureClassification,productionRunIdFor,
   projectProviderCycleRowsRead,PROVIDER_READ_AMPLIFICATION,PROVIDER_READ_SAFETY_RESERVE,
-  ROUTINE_MUTATION_READ_AMPLIFICATION,runProductionCollection,
+  RESUME_MAX_D1_API_CALLS,ROUTINE_MUTATION_READ_AMPLIFICATION,runProductionCollection,
   STRUCTURAL_HEAD_READ_VISITS_PER_HEAD,validateProductionPostflight
 } from '../workers/data-platform/production-collection.mjs';
 import {createD1RestClient} from '../workers/data-platform/d1-rest-client.mjs';
-import {buildProductionPostflightRead,buildRunRead} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
+import {buildProductionPostflightRead,buildRunRead,D1_MAX_BATCH_STATEMENTS} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 import {
   COMMITTED_RUN_INTEGRITY_CLASSIFICATIONS,COMMITTED_RUN_INTEGRITY_MAX_D1_API_CALLS,
   COMMITTED_RUN_INTEGRITY_MAX_ROWS_READ,COMMITTED_RUN_INTEGRITY_MAX_ROWS_WRITTEN,
@@ -188,7 +188,7 @@ test('the soft predictive gate and the hard circuit breaker are separate and sha
   assert.match(source,/production_projected_read_budget_exceeded/);
 });
 
-test('the 5 September population is refused by the soft gate before any mutation',()=>{
+test('the pinned 5 September reference population is refused by the soft gate before any mutation',()=>{
   // The state run 33948145320 left behind: the 4 September population plus that run's own commit.
   const H=MEASURED_PROVIDER_READ_CALIBRATION.historicalObservations+MEASURED_PROVIDER_READ_CALIBRATION.changed;
   const N=MEASURED_PROVIDER_READ_CALIBRATION.currentHeads;
@@ -199,9 +199,11 @@ test('the 5 September population is refused by the soft gate before any mutation
     remainingStructuralRows:structural.totalRows,mutationRowsRead:mutation.rowsRead});
   assert.ok(projection.projectedProviderRows>MAX_D1_ROWS_READ_PER_CYCLE);
   assert.throws(()=>assertProjectedProviderReadBudget(projection),/production_projected_read_budget_exceeded/);
-  // This is the honest, reported consequence of the remediation: the corrected model refuses the
-  // next cycle at the current population rather than committing and then failing. Stage 3 alone
-  // does not restore collection capability, and nothing here raises the ceiling to hide that.
+  // This is the honest, reported consequence of the remediation: at THIS analysed population and
+  // change assumption the corrected model refuses before mutation rather than committing and then
+  // failing. It pins the reference scenario, not a prediction about any future execution, whose
+  // population, changed-observation count and already-billed rows are unknown until it runs.
+  // Stage 3 alone does not restore collection capability, and nothing here raises the ceiling.
   assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
 });
 
@@ -215,6 +217,7 @@ test('bounded telemetry preserves per-call and per-statement integer accounting'
     statements:[{rowsRead:20,rowsWritten:7,changes:7}]});
   const snapshot=telemetry.snapshot();
   assert.equal(snapshot.apiCalls,2);
+  assert.equal(snapshot.storedCalls,2);
   assert.equal(snapshot.cumulativeRowsRead,120);
   assert.equal(snapshot.cumulativeRowsWritten,7);
   assert.equal(snapshot.cumulativeRequestBytes,1400);
@@ -233,7 +236,38 @@ test('bounded telemetry preserves per-call and per-statement integer accounting'
   assert.equal(telemetry.snapshot().calls[2].kind,'read');
 });
 
-test('telemetry carries integers and fixed enums only, and never provider text',()=>{
+test('telemetry cannot retain more calls than the production D1 call ceiling',()=>{
+  const telemetry=createProductionResourceTelemetry();
+  // Far more calls than any cycle can issue: `dispatch` refuses beyond the ceiling long before the
+  // recorder is reached, so this can only happen in a test. The storage bound must still hold.
+  const attempts=MAX_D1_API_CALLS_PER_CYCLE*8;
+  for(let i=0;i<attempts;i++)
+    telemetry.record(i%2?'mutation':'read',{usage:{rowsRead:10,rowsWritten:1},requestBytes:5,
+      statements:[{rowsRead:10,rowsWritten:1,changes:1}]});
+  const snapshot=telemetry.snapshot();
+  // The stored array is bound to the production cycle ceiling, and to that exactly — not to a
+  // separate number of its own, which is what let the documented and enforced bounds drift apart.
+  assert.equal(snapshot.calls.length,MAX_D1_API_CALLS_PER_CYCLE);
+  assert.equal(snapshot.storedCalls,MAX_D1_API_CALLS_PER_CYCLE);
+  assert.equal(snapshot.ceilings.storedCalls,MAX_D1_API_CALLS_PER_CYCLE);
+  assert.ok(snapshot.calls.length<=snapshot.ceilings.apiCalls);
+  // The cap truncates storage, never the accounting: cumulative totals and the true dispatched
+  // count stay complete, so a capped snapshot can never make a failure summary under-report.
+  assert.equal(snapshot.apiCalls,attempts);
+  assert.equal(snapshot.cumulativeRowsRead,attempts*10);
+  assert.equal(snapshot.cumulativeRowsWritten,attempts*1);
+  assert.equal(snapshot.cumulativeRequestBytes,attempts*5);
+  // Per-statement storage is bound by the batch statement ceiling for the same reason.
+  const wide=createProductionResourceTelemetry();
+  wide.record('mutation',{usage:{rowsRead:1,rowsWritten:1},requestBytes:1,
+    statements:Array.from({length:500},()=>({rowsRead:1,rowsWritten:1,changes:1}))});
+  assert.equal(wide.snapshot().calls[0].statements.length,wide.snapshot().ceilings.statementsPerCall);
+  assert.ok(wide.snapshot().ceilings.statementsPerCall<=D1_MAX_BATCH_STATEMENTS);
+  // A resume is stricter at runtime than this storage bound, and the storage bound never widens it.
+  assert.ok(RESUME_MAX_D1_API_CALLS<MAX_D1_API_CALLS_PER_CYCLE);
+});
+
+test('telemetry carries bounded numeric values and fixed enums only, and never provider text',()=>{
   const telemetry=createProductionResourceTelemetry();
   // Everything a hostile response could try to smuggle in is either dropped or coerced.
   telemetry.record('read',{usage:{rowsRead:'not a number',rowsWritten:null},requestBytes:{},
@@ -249,7 +283,12 @@ test('telemetry carries integers and fixed enums only, and never provider text',
     snapshot.calls[0].statements[0].changes,snapshot.plan.structuralRowsRead,snapshot.plan.projectedProviderRows,
     snapshot.plan.historicalObservations,snapshot.plan.currentHeads,snapshot.plan.changed];
   for(const value of scalars)assert.ok(Number.isSafeInteger(value)&&value>=0,String(value));
+  // The one deliberate non-integer: the repository's own amplification factor. It is a bounded
+  // finite number from this repository, never provider-derived, which is exactly why the contract
+  // is "bounded numeric values and fixed enums" rather than "integers only".
   assert.equal(snapshot.plan.amplification,PROVIDER_READ_AMPLIFICATION);
+  assert.ok(!Number.isInteger(PROVIDER_READ_AMPLIFICATION));
+  assert.ok(Number.isFinite(snapshot.plan.amplification)&&snapshot.plan.amplification>=1&&snapshot.plan.amplification<10);
   // The whole snapshot is frozen, so a later stage cannot mutate the evidence.
   assert.ok(Object.isFrozen(snapshot)&&Object.isFrozen(snapshot.calls)&&Object.isFrozen(snapshot.plan));
 });

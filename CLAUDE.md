@@ -12,8 +12,12 @@ head SHA `9a1c6a87e17de08ed2c5b650b05cdc3eab96291c`, conclusion `failure`. GitHu
 schedule-event **delivery** delay, upstream of the workflow, with no proven cause, and never a
 collection delay. `repository-gate` succeeded. `collect` failed `production_d1_budget_exceeded` in
 phase `postflight_read`, carrying `productionMutation: 'definite_completed'` and
-`productionRetryable: false`. **The commit completed and the synchronous postflight never ran, so
-the state that run left in production D1 is unproven.** The owner then disabled the scheduled
+`productionRetryable: false`. The precise sequence matters: the commit mutation returned
+successfully, its accounting passed the hard enforcement check, the postflight D1 read **was issued
+and returned**, its `meta.rows_read` was added to cumulative provider accounting, and `enforce()`
+then threw — so `validateProductionPostflight()` was never reached. **The postflight read ran;
+postflight validation did not.** The commit is `definite_completed` and **the state that run left in
+production D1 is therefore unproven — which is not evidence that it is invalid or corrupt.** The owner then disabled the scheduled
 workflow; GitHub reports it `disabled_manually` and it **must remain disabled**.
 
 **The read model is proven defective.** The preceding successful run `33901634593` measured
@@ -36,7 +40,8 @@ write estimator's inputs; adds a conservative **INFERRED** provider amplificatio
 both pinned in tests for later recalibration; separates the predictive soft gate
 (`production_projected_read_budget_exceeded`, `mutation = none`, writes nothing) from the unchanged
 hard circuit breaker (`production_d1_budget_exceeded`) over the one unchanged ceiling; adds bounded
-per-call and per-statement resource telemetry carrying integers and closed enums only; and re-plans
+per-call and per-statement resource telemetry carrying bounded numeric values and closed enums
+only, with its stored-call array bound to the production D1 call ceiling; and re-plans
 current-head retrieval from O(H) to O(N) using `CROSS JOIN`, with a byte-identical predicate, an
 identical row set proven across seeded governed states, and an EXPLAIN contract **tightened rather
 than relaxed** so the superseded O(H) and pre-migration-0003 plans stay rejected. The whole-cycle
@@ -55,9 +60,13 @@ at most one D1 call, requires `rows_written === 0` under a 75,000-row bound, and
 **Reported honestly: Stage 3 alone does not restore collection capability.** The re-plan saves only
 `3(H − N) = 1,446` structural rows at the current population, where H and N are close; its value is
 removing the term that grows without bound. Applying the corrected projection to the population run
-`33948145320` left behind exceeds 125,000, so the soft gate will refuse the next cycle rather than
-commit and then fail. Per the approval's stop condition this is recorded, not worked around: **the
-125,000 ceiling is unchanged, migration 0004 was not created and no covering index was added.**
+`33948145320` left behind exceeds 125,000, so under those population and change assumptions the
+soft gate would refuse before mutation rather than commit and then fail. The exact outcome of any
+future execution is not claimed: it depends on that cycle's own population, changed-observation
+count, rows already billed before the gate and the Official FPL state of the day. If the next cycle
+presents a comparable or higher projected workload, the soft gate will refuse before mutation.
+Per the approval's stop condition this is recorded, not worked around: **the 125,000 ceiling is
+unchanged, migration 0004 was not created and no covering index was added.**
 Whether a schema change is warranted is a separate owner decision informed by the new telemetry and
 a first instrumented production validation. Next gates, each separate: merge and exact-`main`
 Verify; then one owner-approved dispatch of the committed-run integrity workflow. Collection,

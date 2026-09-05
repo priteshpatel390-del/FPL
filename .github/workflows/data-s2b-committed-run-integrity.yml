@@ -2,8 +2,11 @@
 # collection run of 5 September 2026.
 #
 # Scheduled run 33948145320 committed to D1 and then failed at `production_d1_budget_exceeded` in
-# phase `postflight_read`, before its synchronous postflight could run. Its committed state has
-# therefore never been validated against the production postflight contract. This workflow can do
+# phase `postflight_read`. Its postflight D1 read was issued and returned; resource enforcement
+# failed on that returned accounting before `validateProductionPostflight()` could validate the
+# returned state. The postflight read ran; postflight validation did not, so its committed state has
+# never been validated against the production postflight contract — an absence of proof, not
+# evidence that the state is invalid or corrupt. This workflow can do
 # exactly one thing: issue one read-only D1 REST request containing the one fixed repository-owned
 # production postflight statement for that run's derived identity, and classify what comes back.
 #

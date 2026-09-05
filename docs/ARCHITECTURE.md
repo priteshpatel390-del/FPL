@@ -50,7 +50,11 @@ The D1 client keeps its aggregate `usage` scalar unchanged — that remains what
 and now also preserves the per-statement integer breakdown it previously discarded.
 `createProductionResourceTelemetry` records per-call and per-statement accounting plus the one
 pre-mutation planning record, and the snapshot travels with both success and sanitized failure so a
-resource refusal names the dimension that failed. It holds integers and closed enums only: no SQL,
+resource refusal names the dimension that failed. Its stored-call array is bound to
+`MAX_D1_API_CALLS_PER_CYCLE` rather than to a separate number of its own, and `apiCalls` reports the
+true dispatched count independently of that cap. It holds non-negative safe-integer accounting plus
+bounded numeric planning constants and closed enums only — the planning record carries the
+repository's own fractional amplification factor — so no SQL,
 parameter, request URL, identifier, token, response body or returned row can reach it.
 
 The current-head statement drives from `observation_heads` via `CROSS JOIN`, which fixes join order

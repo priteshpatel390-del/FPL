@@ -37,8 +37,14 @@ never a collection delay. `repository-gate` succeeded. `collect` failed with
 `production_d1_budget_exceeded` in phase `postflight_read`, carrying
 `productionMutation: 'definite_completed'` and `productionRetryable: false`.
 
-The commit therefore **completed** and the synchronous postflight never ran. The state that run
-left in production D1 has never been validated against the production postflight contract. That
+The precise sequence matters. The commit mutation returned successfully and its accounting passed
+the hard enforcement check. The postflight D1 SELECT **was then issued, and D1 returned it**. Its
+`meta.rows_read` was added to cumulative provider accounting, `enforce()` threw
+`production_d1_budget_exceeded`, and `validateProductionPostflight()` was therefore never reached.
+
+**The postflight read ran; postflight validation did not.** The commit is `definite_completed`, and
+the state that run left in production D1 has never been validated against the production postflight
+contract. That is an absence of proof, **not** evidence that the state is invalid or corrupt. That
 unproven state is what Stage 0 exists to resolve, and it is not resolved by this package.
 
 The owner disabled the scheduled workflow after that failure. It remains disabled.
@@ -172,14 +178,22 @@ envelope. The aggregate `usage` scalar is unchanged and remains what every exist
 ceiling reads; alongside it the per-statement integer breakdown is now preserved.
 
 `createProductionResourceTelemetry` records per call: `kind` (a closed enum), `rowsRead`,
-`rowsWritten`, `requestBytes` and the per-statement integers. Its snapshot carries `apiCalls`,
+`rowsWritten`, `requestBytes` and the per-statement integers. The stored-call array is bound to
+`MAX_D1_API_CALLS_PER_CYCLE` — the production cycle's own D1 call ceiling — rather than to a
+separate number of its own, so the documented bound and the enforced bound cannot drift apart; the
+resume path's stricter `RESUME_MAX_D1_API_CALLS` runtime gate is unaffected, because `dispatch`
+refuses a call beyond whichever ceiling applies before the recorder is reached. `apiCalls` counts
+dispatched calls independently of that cap, so the cap can never make a failure summary
+under-report. Its snapshot carries `apiCalls`, `storedCalls`,
 `cumulativeRowsRead`, `cumulativeRowsWritten`, `cumulativeRequestBytes`, `lastCallRowsRead`,
 `lastCallRowsWritten`, `lastCallRequestBytes`, the ceiling each dimension stands against, and one
 pre-mutation planning record — `structuralRowsRead`, `projectedProviderRows`,
 `amplifiedRemainingRows`, `mutationRowsRead`, `remainingStructuralRows`, `amplification`, `reserve`,
 `historicalObservations`, `currentHeads`, `changed`.
 
-**Security.** Numbers and fixed enums only. No SQL text, no bound parameter, no request URL, no
+**Security.** Non-negative safe-integer accounting plus bounded numeric planning constants and
+fixed enums only — the planning record deliberately carries the repository's own amplification
+factor, which is a fraction, so "integers only" would be inaccurate. No SQL text, no bound parameter, no request URL, no
 account id, no database id, no fingerprint, no token, no response body and no returned row can reach
 it: it is fed only from the client's already-validated integer accounting and from the repository's
 own models, every field is coerced to a non-negative safe integer or a closed enum, and a permanent
@@ -241,8 +255,15 @@ asked: the population probe counts the history, and the postflight's observation
 it.
 
 Applying the corrected provider projection to the population run `33948145320` left behind gives a
-figure **above** 125,000. **The soft gate will therefore refuse the next cycle** — with
-`mutation = none`, writing nothing — rather than committing and then failing at postflight.
+figure **above** 125,000. **Under the analysed population and change assumptions the soft gate
+would therefore refuse before mutation** — with `mutation = none`, writing nothing — rather than
+committing and then failing at postflight.
+
+The exact outcome of any future production execution is deliberately **not** claimed here. It
+depends on that cycle's own governed population, its changed-observation count, the provider rows
+Cloudflare has already billed by the time the gate runs, and the Official FPL state of the day, none
+of which can be known before the cycle runs. What can be said is conditional: **if the next cycle
+presents a comparable or higher projected workload, the soft gate will refuse before mutation.**
 
 That is a strict improvement in safety and it is reported as such: it is **not** a restoration of
 collection capability. Per the approval's stop condition, this is recorded rather than worked

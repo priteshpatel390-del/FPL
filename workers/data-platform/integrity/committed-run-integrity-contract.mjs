@@ -7,10 +7,14 @@
 // THE QUESTION. Scheduled production run 33948145320 fired on 5 September 2026, passed its
 // repository gate, fetched Official FPL and committed to D1. Its commit mutation completed —
 // `productionMutation: 'definite_completed'` — and the collection then failed at
-// `production_d1_budget_exceeded` in phase `postflight_read`, before its synchronous postflight
-// could run. The committed state has therefore never been validated against the production
-// postflight contract. This diagnostic asks exactly that one question and nothing else: does the
-// state that run left behind satisfy the existing `validateProductionPostflight` contract?
+// `production_d1_budget_exceeded` in phase `postflight_read`. The postflight D1 read was issued
+// and returned; its `meta.rows_read` took cumulative accounting over the ceiling and `enforce()`
+// threw before `validateProductionPostflight()` could validate the returned state. The postflight
+// read ran; postflight validation did not, so the committed state has never been validated against
+// the production postflight contract — an absence of proof, not evidence that it is invalid.
+//
+// This diagnostic asks exactly that one question and nothing else: does the state that run left
+// behind satisfy the existing `validateProductionPostflight` contract?
 //
 // WHAT IT IS NOT. It is not a resume, not a repair, not a reconciliation of the FIRST production
 // run, and not a collection. It reuses the production postflight read and the production

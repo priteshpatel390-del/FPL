@@ -14,8 +14,10 @@ GitHub created it at `2026-09-05T05:48:05Z` against a 01:17 UTC nominal minute �
 never a collection delay. `repository-gate` succeeded; `collect` failed with
 `production_d1_budget_exceeded` in phase `postflight_read`, carrying
 `productionMutation: 'definite_completed'` and `productionRetryable: false`. The commit therefore
-**completed** and the synchronous postflight never ran, so **the state that run left in production
-D1 is unproven**. The owner then disabled the scheduled workflow; it **remains disabled** and this
+**completed**, the postflight D1 read **was issued and returned**, and resource enforcement then
+failed on its returned accounting before `validateProductionPostflight()` could validate the
+returned state. The postflight read ran; postflight validation did not. **The state that run left in
+production D1 is therefore unproven — which is not evidence that it is invalid or corrupt**. The owner then disabled the scheduled workflow; it **remains disabled** and this
 checkpoint does not re-enable it.
 
 **The read model is proven defective.** The preceding successful run `33901634593` measured
@@ -33,8 +35,12 @@ adds a strictly read-only committed-run integrity workflow that **has not been d
 **Reported honestly: Stage 3 alone does not restore collection capability.** The re-plan saves only
 `3(H − N) = 1,446` structural rows at the current population; its value is removing the term that
 grows without bound. Applying the corrected projection to the population run `33948145320` left
-behind exceeds 125,000, so the soft gate will refuse the next cycle with `mutation = none` rather
-than commit and then fail. That is a safety improvement, not a recovery. Per the stop condition, no
+behind exceeds 125,000, so under those population and change assumptions the soft gate would refuse
+before mutation with `mutation = none` rather than commit and then fail. The exact outcome of any
+future execution is not claimed — it depends on that cycle's own population, changed-observation
+count and rows already billed before the gate — but if the next cycle presents a comparable or
+higher projected workload, the soft gate will refuse before mutation. That is a safety improvement,
+not a recovery. Per the stop condition, no
 ceiling was raised, **no migration 0004 was created** and no covering index was added.
 
 Next gates, each separate and owner-approved: merge and exact-`main` Verify; then one dispatch of
