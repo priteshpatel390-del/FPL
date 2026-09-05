@@ -1,5 +1,39 @@
 # SECURITY.md
 
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## DATA-S2B resource telemetry and the committed-run integrity diagnostic
+
+The bounded production resource telemetry added by the read-budget remediation holds **non-negative
+safe-integer accounting plus bounded numeric planning constants and fixed enums only**. The
+planning record deliberately carries the repository's own amplification factor, which is a fraction
+rather than an integer, so "integers only" would be inaccurate; every other field is coerced to a
+non-negative safe integer or a closed enum. It is fed exclusively from the D1 client's
+already-validated integer accounting and from the repository's own models. The stored-call array is
+bound to `MAX_D1_API_CALLS_PER_CYCLE`, the production cycle's own D1 call ceiling, rather than to a
+separate number of its own, and the per-statement array to the batch statement ceiling; `apiCalls`
+counts dispatched calls independently of that cap, so a capped snapshot can never under-report. No SQL text, bound parameter, request URL, account id, database id,
+account fingerprint, token, response body or returned row can reach it, and a permanent test feeds
+it hostile values and asserts none survives into the snapshot. It travels with the sanitized failure
+classification, which keeps its existing PR #215 behaviour.
+
+The committed-run integrity diagnostic is `workflow_dispatch`-only with zero inputs beyond an
+approved SHA, carries no `schedule`, `push`, `pull_request`, `repository_dispatch`, `workflow_call`
+or `workflow_run` trigger, grants only `contents: read` and `checks: read`, and reuses the existing
+`data-s2-production-collection` protected environment and its existing credentials — none created,
+renamed, rotated or widened. It issues at most one D1 API call carrying exactly the one existing
+production postflight statement, requires `rows_written === 0`, and imports no mutation plan
+builder, so no `INSERT`, `UPDATE`, `DELETE` or DDL statement is reachable from it.
+
+Identifier handling follows the PR #215 remediation unchanged: the account id and D1 token stay
+secrets, the fingerprint mask is registered by the credentialled job's first step before the
+variable is materialised, and the D1 id stays a repository constant present in no workflow or
+environment value. Both the helper and the entry point **discard the original runtime error object**
+rather than rethrowing it, so no transport message can carry a request URL into a job log or a
+workflow summary; only a fixed code from a closed set survives. Every failure resolves to one of
+three fixed classifications, with anything unrecognised falling to
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` rather than to a valid outcome.
+
+
 <!-- DATA-S2B-SCHEDULED-ENVIRONMENT-PREFLIGHT-2026-09-04 -->
 ## DATA-S2 scheduled-environment credential preflight boundary
 

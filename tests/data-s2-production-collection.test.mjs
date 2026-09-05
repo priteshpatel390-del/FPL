@@ -51,7 +51,22 @@ test('append-only history above current heads raises the structural estimate ind
   const grown=estimateStructuralCycleRowsRead({observations:n*3,heads:n,changed:0});
   assert.ok(grown.totalRows>flat.totalRows);
   assert.equal(grown.heads,flat.heads);
-  assert.equal(grown.totalRows-flat.totalRows,5*(n*3-n));
+  // GOLDEN CHANGE, justified: the coefficient on the append-only history is 2, where it was 5.
+  // Nothing was relaxed to reach it. The current-head statement was re-planned from an O(H)
+  // revision-led traversal to an O(N) pass of `observation_heads`, removing three of the five
+  // structural visits each historical observation used to cost. The two that remain are inherent:
+  // the population probe counts the history, and the postflight's observation CTE aggregates over
+  // it. The whole-cycle total is now 2H + 7N + 4D + 64 where it was 5H + 4N + 4D + 64.
+  assert.equal(grown.totalRows-flat.totalRows,2*(n*3-n));
+  // The established H = N baseline is deliberately unchanged by the re-plan.
+  assert.equal(flat.cycleRows,n*STATIC_D1_ROWS_PER_LOGICAL_FACT+RESERVE);
+  // The re-plan reduces the growth term but does NOT make deep history free. At H = 3N the
+  // structural total is still above the unchanged 125,000 ceiling — 128,244, where the superseded
+  // O(H) model gave 187,404 for the same population. The cycle read gate must therefore still
+  // refuse it, and this assertion pins that it does rather than implying the problem is solved.
+  assert.ok(grown.totalRows>MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(grown.totalRows,128244);
+  assert.equal(5*(n*3)+4*n+RESERVE,187404);
   assert.throws(()=>assertCycleReadBudget({rowsReadSoFar:0,estimate:estimateStructuralCycleRowsRead({observations:200000,heads:n,changed:0})}),/production_cycle_read_budget_exceeded/);
   assert.throws(()=>assertCycleReadBudget({rowsReadSoFar:MAX_D1_ROWS_READ_PER_CYCLE,estimate:flat}),/production_cycle_read_budget_exceeded/);
   for(const bad of [{observations:-1,heads:0,changed:0},{observations:0,heads:1.5,changed:0},{observations:0,heads:0,changed:-1}])assert.throws(()=>estimateStructuralCycleRowsRead(bad),/production_structural_read_model_invalid/);

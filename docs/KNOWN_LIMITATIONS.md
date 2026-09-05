@@ -1,5 +1,49 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## DATA-S2B unproven committed state, and an unresolved read envelope
+
+**The state committed by scheduled run `33948145320` on 5 September 2026 is unproven.** That run's
+commit completed — `productionMutation: 'definite_completed'` — and it then failed
+`production_d1_budget_exceeded` at `postflight_read`. The postflight D1 read **was issued and
+returned**; resource enforcement failed on its returned accounting before
+`validateProductionPostflight()` could validate the returned state. The postflight read ran;
+postflight validation did not, so nothing has validated the committed state against the production
+postflight contract. That is an absence of proof, not evidence of invalid or corrupt state. A strictly
+read-only integrity workflow now exists to answer that one question, but **it has not been
+dispatched**, so the state remains unproven until a separate owner-approved dispatch happens.
+
+**The provider read model is calibrated from a single sample.** Run `33901634593` measured 124,430
+`rowsRead` against a 94,844 structural estimate. The corrected projection multiplies outstanding
+modelled work by an **INFERRED** 1.35 and adds a 2,000-row reserve. That is one observation, not a
+distribution, and the constants are deliberately pessimistic planning assumptions rather than proven
+provider behaviour. The mutation-read constants are likewise inferred from the schema's declared
+keys, indexes and foreign keys; no observation attributes a specific number of read rows to a
+specific mutation statement.
+
+**The 29,586-row delta is not fully attributed.** It is known that the old estimator modelled no
+mutation reads, that provider `rows_read` is counted from every call including the commit, and that
+the current-head statement carried O(H) work. The split between those causes and any further
+provider-side amplification is unknown, and no precise split is asserted. Better attribution needs
+the per-call telemetry now added plus a further instrumented production run.
+
+**The O(N) re-plan does not restore collection capability at the current population.** It saves
+`3(H − N) = 1,446` structural rows today; its value is removing the term that grows without bound.
+Applying the corrected projection to the population run `33948145320` left behind exceeds 125,000,
+so under those assumptions the soft gate would refuse before mutation with `mutation = none`. What
+any future cycle actually does depends on its own population, changed-observation count, rows
+already billed before the gate and the Official FPL state of the day, and is not claimed here; if
+the next cycle presents a comparable or higher projected workload, the soft gate will refuse before
+mutation. The ceiling was not raised, no
+migration 0004 was created and no covering index was added; whether a schema change is warranted is
+an open owner decision.
+
+**No mechanism exists to read the remaining daily Cloudflare D1 allowance**, and none was added.
+Real-time remaining allowance cannot be proven from this repository.
+
+**The scheduled production workflow is owner-disabled.** Its disabled state is GitHub-side
+configuration that this repository cannot assert, change or detect from its own contents.
+
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2 scheduled production collection limitations
 

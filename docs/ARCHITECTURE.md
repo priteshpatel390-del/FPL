@@ -14,8 +14,10 @@ Two workflows reach that path and nothing else does. `data-s2-production-collect
 `data-s2-production-collection` environment; it is the manual and recovery boundary.
 `data-s2-production-scheduled.yml` carries exactly one trigger and no `timezone:` field, so its cron
 is interpreted in UTC — the permanent approved cadence `17 1 * * *` (01:17 UTC), restored after the
-temporary 4 September 2026 acceptance windows closed on the first successful natural scheduled run
-— takes no input, is
+temporary 4 September 2026 acceptance windows closed on the first successful natural scheduled run.
+**That workflow is currently owner-disabled**, after its first permanent-cadence natural run
+`33948145320` committed to D1 and then failed resource enforcement at `postflight_read`; re-enabling
+it is a separate owner decision. It takes no input, is
 gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
 `Tests and deterministic build` proof, and uses the dedicated unattended
 `data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`
@@ -25,6 +27,41 @@ re-run, and share one non-cancelling `data-s2-production-collection` concurrency
 the identical entry point and collector: there is no scheduled fast path, and the resource ceilings
 and synchronous postflight are unchanged. See
 [daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
+
+### DATA-S2B resource model, telemetry and the current-head plan
+
+The collection cycle gates on resources **twice**, through two separate mechanisms sharing one
+unchanged 125,000-row ceiling. The **predictive soft gate** runs once, before the start mutation,
+over a conservative projection of the work not yet done, and refuses with
+`production_projected_read_budget_exceeded` and `mutation = none`, writing nothing. The **hard
+circuit breaker** runs after every D1 call over Cloudflare's own returned accounting and refuses
+with `production_d1_budget_exceeded`. Neither replaces the other: the soft gate exists because run
+`33948145320` passed a predictive check, committed, and only then found the envelope impossible.
+
+Three models are kept deliberately distinct so a future recalibration can tell them apart.
+`estimateStructuralCycleRowsRead` is pure query-plan arithmetic over the repository SQL —
+`2H + 7N + 4D + 64`. `estimateRoutineMutationRowsRead` models the index and row visits a mutation
+charges while locating what it writes, mirroring the write estimator's inputs exactly.
+`projectProviderCycleRowsRead` combines them into an expected provider bill: already-billed rows are
+taken as measured and never amplified twice, only outstanding work is amplified by an **INFERRED**
+1.35, and a flat 2,000-row reserve is added last.
+
+The D1 client keeps its aggregate `usage` scalar unchanged — that remains what every ceiling reads —
+and now also preserves the per-statement integer breakdown it previously discarded.
+`createProductionResourceTelemetry` records per-call and per-statement accounting plus the one
+pre-mutation planning record, and the snapshot travels with both success and sanitized failure so a
+resource refusal names the dimension that failed. Its stored-call array is bound to
+`MAX_D1_API_CALLS_PER_CYCLE` rather than to a separate number of its own, and `apiCalls` reports the
+true dispatched count independently of that cap. It holds non-negative safe-integer accounting plus
+bounded numeric planning constants and closed enums only — the planning record carries the
+repository's own fractional amplification factor — so no SQL,
+parameter, request URL, identifier, token, response body or returned row can reach it.
+
+The current-head statement drives from `observation_heads` via `CROSS JOIN`, which fixes join order
+without altering relational meaning, so its cost is proportional to the current head population N
+rather than the append-only history H while the returned row set stays identical. No schema change
+supports this: the migration set remains 0001–0003. See
+[read-budget remediation](../workers/data-platform/DATA-S2B-READ-BUDGET-REMEDIATION.md).
 
 ## DI-3 offline decision-layer boundary — 29 August 2026
 

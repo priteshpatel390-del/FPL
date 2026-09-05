@@ -1,5 +1,45 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## Current DATA-S2B checkpoint — read-budget remediation P2+ (repository only)
+
+**The first natural run on the permanent cadence failed on resource enforcement.** Run
+`33948145320`, event `schedule`, attempt 1, head `main`
+`9a1c6a87e17de08ed2c5b650b05cdc3eab96291c`, verified independently from the GitHub Actions API.
+GitHub created it at `2026-09-05T05:48:05Z` against a 01:17 UTC nominal minute — approximately
+**4h31m** of schedule-event **delivery** delay, upstream of the workflow, with no proven cause and
+never a collection delay. `repository-gate` succeeded. The commit mutation **completed**
+(`productionMutation: 'definite_completed'`) and its accounting passed the hard enforcement check.
+The postflight D1 read **was issued and returned**; its returned provider accounting took the
+cumulative total past the internal hard read envelope, `enforce()` threw
+`production_d1_budget_exceeded` in phase `postflight_read`, and `validateProductionPostflight()` was
+never reached. **The postflight read ran; postflight validation did not.** The state that run
+committed therefore **remains unproven** — an absence of proof, not evidence that it is invalid or
+corrupt. The owner then disabled the scheduled workflow; GitHub reports it `disabled_manually` and
+it must remain disabled.
+
+**PR #223 is repository-only remediation.** No Cloudflare request, workflow dispatch, D1 read or
+mutation, collection, migration, deployment, schedule, cron, environment or credential change was
+performed. It corrects the pre-mutation read projection (explicit mutation-read estimator; a
+conservative INFERRED provider amplification and reserve; a predictive soft gate separated from the
+unchanged hard circuit breaker), adds bounded sanitized per-call resource telemetry, and re-plans
+current-head retrieval from O(H) to O(N) with an identical row set and a strictly tightened EXPLAIN
+contract.
+
+**Stage 3 / O(N) alone does not restore collection capability.** At the analysed population it
+saves only `3(H − N) = 1,446` structural rows; its value is removing the term that grows without
+bound. Under the analysed population and change assumptions the corrected projection exceeds
+125,000, so the soft gate would refuse before mutation rather than commit and then fail. **The
+125,000 ceiling is unchanged**, no migration 0004 was created and no covering index was added.
+
+A strictly read-only committed-run integrity workflow now exists to answer whether the committed
+state satisfies the existing production postflight contract. **It has NOT been dispatched.**
+
+Next gates, each separate: **(1)** owner review and merge of PR #223; **(2)** exact-`main` Verify;
+**(3)** separate owner approval for one committed-run integrity dispatch. Collection, scheduler
+re-enable and any schema change remain later, separate gates. See
+[read-budget remediation](../workers/data-platform/DATA-S2B-READ-BUDGET-REMEDIATION.md).
+
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
 ## Current DATA-S2B checkpoint — manual collection hardening; first production run completed
 
@@ -19,8 +59,10 @@ remote `main` and exact-head Verify success, then a protected job that re-resolv
 in the same shell as the runner and fixes the one attempt's collection identity there. No
 collector semantic, provider, schema, migration, model or recommendation behaviour changes, no
 ceiling moves, and no production action was performed. Scheduling stays disabled and Cloudflare
-Cron stays intentionally absent. The next live gate is exactly one separately approved manual
-production collection after merge and exact-`main` Verify. See
+Cron stays intentionally absent. Its next live gate — exactly one separately approved manual
+production collection after merge and exact-`main` Verify — is **closed and was passed**: that
+collection ran as run `33818972728`. Recurring scheduling was separately approved and implemented
+afterwards, and the current position is the checkpoint above. See
 [manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md).
 
 <!-- DECISION-INTELLIGENCE-DI1-2026-08-29 -->

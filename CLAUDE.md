@@ -2,7 +2,84 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
-### Current DATA-S2B checkpoint — natural schedule accepted; permanent cadence restored
+### Current DATA-S2B checkpoint — read-budget remediation P2+ (repository only)
+
+**The permanent cadence produced a natural scheduled run and it failed on resource enforcement.**
+Verified independently from the GitHub Actions API: run `33948145320`, workflow `DATA-S2 Scheduled
+Production Collection via D1 REST`, run number 2, attempt 1, event `schedule`, head branch `main`,
+head SHA `9a1c6a87e17de08ed2c5b650b05cdc3eab96291c`, conclusion `failure`. GitHub created it at
+`2026-09-05T05:48:05Z` against a 01:17 UTC nominal minute — approximately **4h31m** of
+schedule-event **delivery** delay, upstream of the workflow, with no proven cause, and never a
+collection delay. `repository-gate` succeeded. `collect` failed `production_d1_budget_exceeded` in
+phase `postflight_read`, carrying `productionMutation: 'definite_completed'` and
+`productionRetryable: false`. The precise sequence matters: the commit mutation returned
+successfully, its accounting passed the hard enforcement check, the postflight D1 read **was issued
+and returned**, its `meta.rows_read` was added to cumulative provider accounting, and `enforce()`
+then threw — so `validateProductionPostflight()` was never reached. **The postflight read ran;
+postflight validation did not.** The commit is `definite_completed` and **the state that run left in
+production D1 is therefore unproven — which is not evidence that it is invalid or corrupt.** The owner then disabled the scheduled
+workflow; GitHub reports it `disabled_manually` and it **must remain disabled**.
+
+**The read model is proven defective.** The preceding successful run `33901634593` measured
+**124,430** actual `rowsRead` against a **94,844** structural estimate — a delta of 29,586, about
+31.19%, finishing 570 rows below the 125,000 hard ceiling. FACT: the write estimate matched that
+run's measured `rowsWritten` of 1,852 exactly; that is a fact about the write model and is **not**
+evidence that any particular Cloudflare index or table visit is billed in one particular way. The
+read defect is proven because actual `rowsRead` materially exceeded the structural estimate, the
+dispatch counts provider `rows_read` from every D1 call, the structural estimator modelled no
+mutation-read usage at all, and the current-head statement carried O(H) work. **The exact
+attribution of the 29,586 rows remains partly unknown and no precise split is invented.**
+
+**This package is repository implementation only.** No Cloudflare request, workflow dispatch, D1
+read or mutation, collection, resume, reconciliation, migration, deployment, Worker action, Cron
+change, schedule change, environment change or credential change was performed. It: corrects the
+pre-mutation projection so a cycle cannot pass a predictive check, mutate production and only then
+discover the envelope was impossible; adds an explicit routine mutation-read estimator mirroring the
+write estimator's inputs; adds a conservative **INFERRED** provider amplification of 1.35 and a
+2,000-row reserve, both calibrated above the observed 1.311944 raw and ~1.28 residual ratios and
+both pinned in tests for later recalibration; separates the predictive soft gate
+(`production_projected_read_budget_exceeded`, `mutation = none`, writes nothing) from the unchanged
+hard circuit breaker (`production_d1_budget_exceeded`) over the one unchanged ceiling; adds bounded
+per-call and per-statement resource telemetry carrying bounded numeric values and closed enums
+only, with its stored-call array bound to the production D1 call ceiling; and re-plans
+current-head retrieval from O(H) to O(N) using `CROSS JOIN`, with a byte-identical predicate, an
+identical row set proven across seeded governed states, and an EXPLAIN contract **tightened rather
+than relaxed** so the superseded O(H) and pre-migration-0003 plans stay rejected. The whole-cycle
+structural model is now `2H + 7N + 4D + 64` where it was `5H + 4N + 4D + 64`; the established
+`7N + 64` baseline at `H = N`, `D = 0` is unchanged.
+
+A strictly read-only committed-run integrity workflow now exists to prove whether the state run
+`33948145320` committed satisfies the existing production postflight contract. It reuses the
+production postflight read and validator unchanged, derives its run identity from a reviewed
+constant (`2026-09-05T05:48:00.000Z`, pinned by test to
+`gha-e385726067648e08d44f8870df35ada41aa9b0f4`), takes no SQL/table/statement/identity input, issues
+at most one D1 call, requires `rows_written === 0` under a 75,000-row bound, and classifies only
+`COMMITTED_STATE_VALID`, `COMMITTED_STATE_INVALID_REQUIRES_OWNER_ATTENTION` or
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. **IT HAS NOT BEEN DISPATCHED.**
+
+**Reported honestly: Stage 3 alone does not restore collection capability.** The re-plan saves only
+`3(H − N) = 1,446` structural rows at the current population, where H and N are close; its value is
+removing the term that grows without bound. Applying the corrected projection to the population run
+`33948145320` left behind exceeds 125,000, so under those population and change assumptions the
+soft gate would refuse before mutation rather than commit and then fail. The exact outcome of any
+future execution is not claimed: it depends on that cycle's own population, changed-observation
+count, rows already billed before the gate and the Official FPL state of the day. If the next cycle
+presents a comparable or higher projected workload, the soft gate will refuse before mutation.
+Per the approval's stop condition this is recorded, not worked around: **the 125,000 ceiling is
+unchanged, migration 0004 was not created and no covering index was added.**
+Whether a schema change is warranted is a separate owner decision informed by the new telemetry and
+a first instrumented production validation. Next gates, each separate: merge and exact-`main`
+Verify; then one owner-approved dispatch of the committed-run integrity workflow. Collection,
+scheduler re-enable and any schema change remain later separate gates. See
+[read-budget remediation](workers/data-platform/DATA-S2B-READ-BUDGET-REMEDIATION.md).
+
+### Earlier DATA-S2B checkpoint (gate closed, and it did not pass) — natural schedule accepted; permanent cadence restored
+
+> **Superseded in its forward-looking part.** Its recorded evidence for run `33901634593` stands and
+> the permanent cadence `17 1 * * *` is unchanged. Its next live gate — "the first genuine natural
+> run produced by `17 1 * * *`" — is **closed and was not passed**: that run was `33948145320`,
+> whose gate and commit succeeded and whose resource enforcement then failed. The scheduler has since
+> been owner-disabled. See the current checkpoint above.
 
 **The first genuine natural GitHub Actions scheduled production run has succeeded.** Verified
 independently from the GitHub Actions API: workflow `DATA-S2 Scheduled Production Collection via D1

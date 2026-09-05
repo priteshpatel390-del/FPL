@@ -11,7 +11,31 @@ const trustedPlans=new WeakSet();
 const encoder=new TextEncoder();
 const SOURCE_REVISION_SQL=`SELECT r.*,s.source_key,s.source_kind FROM data_source_revisions r JOIN data_sources s ON s.source_id=r.source_id WHERE r.source_revision_id=?`;
 const RUN_SQL=`SELECT run_id,source_revision_id,run_type,mode,started_at,completed_at,status,safe_endpoint_class,parser_version,transform_version,schema_version,records_seen,records_accepted,records_quarantined,records_rejected,error_class FROM ingestion_runs WHERE run_id=? AND source_revision_id=?`;
-const HEADS_SQL=`SELECT o.* FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE o.source_revision_id=? AND r.status='completed'`;
+// DATA-S2B — current governed heads, re-planned from O(H) to O(N).
+//
+// The returned row set is unchanged. Only the join order is constrained: SQLite's `CROSS JOIN`
+// keyword suppresses the planner's table reordering without altering the relational meaning of an
+// inner join, so `observation_heads` is always the outer loop and `shadow_observations` and
+// `ingestion_runs` are always reached as indexed probes from it.
+//
+// Before: the planner drove `shadow_observations` through `shadow_observation_idempotency`
+// (`source_revision_id=?`), so the statement visited every historical observation of the revision
+// and probed a head and a run for each — three visits per row of the append-only history, 3H, and
+// therefore a cost that grows every day forever even though the answer never exceeds N rows.
+//
+// After: one bounded pass of `observation_heads`, then one primary-key probe of
+// `shadow_observations` and one unique-index probe of `ingestion_runs` per head — 3N, bounded by
+// the current governed head population, which does not grow with history.
+//
+// This changes no integrity invariant: `WHERE o.source_revision_id=? AND r.status='completed'`
+// and both join predicates are byte-identical, and a row qualifies under exactly the same
+// conditions as before. Permanent tests prove the two statements return the identical row set
+// across seeded normal, changed, multi-revision, incomplete-run, wrong-revision, orphan-like,
+// no-change and large-history/small-head states.
+const HEADS_SQL=`SELECT o.* FROM observation_heads h CROSS JOIN shadow_observations o ON o.observation_id=h.observation_id CROSS JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE o.source_revision_id=? AND r.status='completed'`;
+// The superseded O(H) shape, retained only so permanent tests can prove row-set equivalence
+// against it and prove its plan is still rejected. It is never dispatched: no builder wraps it.
+export const SUPERSEDED_OH_HEADS_SQL=`SELECT o.* FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE o.source_revision_id=? AND r.status='completed'`;
 const HEADS_EXPLAIN_SQL=`EXPLAIN QUERY PLAN ${HEADS_SQL}`;
 const OBSERVATION_POPULATION_SQL=`SELECT COUNT(*) AS observations FROM shadow_observations WHERE source_revision_id=?`;
 const HEAD_POPULATION_SQL=`SELECT COUNT(*) AS heads FROM observation_heads`;
@@ -73,10 +97,71 @@ export function estimateRoutineCommitRowsWritten({entities,previousRows,observat
   return Object.freeze({freshEntities,newHeads,updatedHeads,rowsWritten:freshEntities*ROUTINE_WRITE_AMPLIFICATION.entityInsert+observations.length*ROUTINE_WRITE_AMPLIFICATION.observationInsert+newHeads*ROUTINE_WRITE_AMPLIFICATION.headInsert+updatedHeads*ROUTINE_WRITE_AMPLIFICATION.headUpdate+ROUTINE_WRITE_AMPLIFICATION.completionUpdate});
 }
 
+// DATA-S2B — the tightened current-head plan contract for the O(N) statement.
+//
+// The migration-0003 protection this replaces rejected any `SCAN h`, because before 0003 the only
+// way `observation_heads` could be scanned was the catastrophic repeated inner scan of the
+// pre-0003 shape. Under the O(N) statement the accepted plan deliberately begins with exactly one
+// bounded pass of `observation_heads`, so a blanket `SCAN h` rejection would now reject the good
+// plan and accept nothing. It is not removed: it is replaced by a strictly stronger structural
+// contract that names what the good plan must be rather than only what one bad plan was.
+//
+// ACCEPTED, and only this:
+//   * exactly one access node on `observation_heads`, and it is a covering-index SCAN of
+//     migration 0003's `observation_heads_observation_id` — one bounded pass of N head rows;
+//   * `shadow_observations` reached only as a SEARCH through its own primary key / rowid unique
+//     index on `observation_id` — an indexed probe per head, never a revision-led traversal;
+//   * `ingestion_runs` reached only as a SEARCH through its unique index or primary key;
+//   * exactly three access nodes in total, one per table reference.
+//
+// REJECTED, each with its own code:
+//   * more than one `observation_heads` node — a nested or repeated head scan;
+//   * a plain table SCAN of `observation_heads` — the un-indexed pass 0003 exists to prevent;
+//   * any SCAN of `shadow_observations` or `ingestion_runs`;
+//   * `shadow_observations` reached through `shadow_observation_idempotency` — that is the
+//     superseded O(H) revision-led traversal, and it is rejected wherever it appears;
+//   * any AUTOMATIC INDEX anywhere;
+//   * an unindexed `ingestion_runs` probe.
+// The pre-migration-0003 plan is therefore rejected twice over: it carries a plain `SCAN h` and an
+// idempotency-led `shadow_observations` traversal. Permanent tests prove that.
+const HEAD_INDEX='observation_heads_observation_id';
+const OBSERVATION_REVISION_INDEX='shadow_observation_idempotency';
+const OBSERVATION_ID_INDEX='sqlite_autoindex_shadow_observations_1';
+const RUN_UNIQUE_INDEX=/^sqlite_autoindex_ingestion_runs_\d+$/;
+const PLAN_NODE=/^(SCAN|SEARCH)\s+(?:TABLE\s+)?([A-Za-z_][A-Za-z0-9_]*)(?:\s+AS\s+([A-Za-z_][A-Za-z0-9_]*))?/;
+const PLAN_INDEX=/\bINDEX\s+([A-Za-z_][A-Za-z0-9_]*)/;
+const HEAD_ALIASES=['observation_heads','h'],OBSERVATION_ALIASES=['shadow_observations','o'],RUN_ALIASES=['ingestion_runs','r'];
+
+export function parseCurrentHeadsPlanRows(rows){
+  if(!Array.isArray(rows)||rows.length<1||rows.length>32)throw new Error('production_query_plan_mismatch');
+  return rows.map(row=>{
+    const detail=String(row?.detail??'');
+    if(!detail||detail.length>512)throw new Error('production_query_plan_mismatch');
+    const node=PLAN_NODE.exec(detail),index=PLAN_INDEX.exec(detail);
+    return Object.freeze({
+      op:node?node[1]:null,name:node?node[2]:null,alias:node?.[3]??null,
+      index:index?index[1]:null,covering:/\bCOVERING INDEX\b/.test(detail),
+      automatic:/\bAUTOMATIC\b/.test(detail),primaryKey:/\bUSING\s+(?:INTEGER\s+)?PRIMARY KEY\b/.test(detail)
+    });
+  });
+}
+
 export function validateProductionCurrentHeadsExplain(rows){
-  if(!Array.isArray(rows)||rows.length<1)throw new Error('production_query_plan_mismatch');
-  const details=rows.map(row=>String(row?.detail??''));
-  if(!details.some(detail=>detail.includes('observation_heads_observation_id'))||details.some(detail=>/\bSCAN h\b|AUTOMATIC INDEX/.test(detail)))throw new Error('production_query_plan_mismatch');
+  const nodes=parseCurrentHeadsPlanRows(rows).filter(node=>node.op);
+  const on=(node,names)=>names.includes(node.name)||(node.alias!==null&&names.includes(node.alias));
+  const reject=code=>{throw new Error(`production_query_plan_mismatch_${code}`);};
+  if(nodes.some(node=>node.automatic))reject('automatic_index');
+  const heads=nodes.filter(node=>on(node,HEAD_ALIASES));
+  const observations=nodes.filter(node=>on(node,OBSERVATION_ALIASES));
+  const runs=nodes.filter(node=>on(node,RUN_ALIASES));
+  if(nodes.length!==3||heads.length!==1||observations.length!==1||runs.length!==1)reject('node_cardinality');
+  // One bounded covering pass of the current heads is the whole point of the O(N) shape. A plain
+  // table scan of `observation_heads` is still the pre-0003 defect and is still rejected.
+  if(!(heads[0].op==='SCAN'&&heads[0].covering&&heads[0].index===HEAD_INDEX))reject('head_scan_not_covering');
+  // The revision-led traversal is the superseded O(H) drive. It may not appear at all.
+  if(nodes.some(node=>node.index===OBSERVATION_REVISION_INDEX))reject('historical_revision_traversal');
+  if(!(observations[0].op==='SEARCH'&&(observations[0].index===OBSERVATION_ID_INDEX||observations[0].primaryKey)))reject('observation_probe_not_indexed');
+  if(!(runs[0].op==='SEARCH'&&((typeof runs[0].index==='string'&&RUN_UNIQUE_INDEX.test(runs[0].index))||runs[0].primaryKey)))reject('run_probe_not_indexed');
   return true;
 }
 
