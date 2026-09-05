@@ -294,7 +294,7 @@ test('the reconciliation resource contract is separate from and far below the ro
   assert.equal(FIRST_RUN_RECONCILIATION_MAX_ROWS_WRITTEN,0);
   assert.ok(FIRST_RUN_RECONCILIATION_MAX_ROWS_READ<MAX_D1_ROWS_READ_PER_CYCLE/100);
   // The routine collection ceilings are untouched by this checkpoint.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
   assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
   assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
 });
@@ -396,7 +396,7 @@ test('the resume read envelope is stated from repository truth and stays inside 
   assert.ok(envelope<MAX_D1_ROWS_READ_PER_CYCLE);
   // The hard ceiling plus the reconciliation guard is the minimum daily headroom a future
   // approval must assume; the repository proves no live remaining quota.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE+FIRST_RUN_RECONCILIATION_MAX_ROWS_READ,126000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE+FIRST_RUN_RECONCILIATION_MAX_ROWS_READ,251000);
   assert.doesNotMatch(executableCode,/quota|allowance|remaining/i);
 });
 

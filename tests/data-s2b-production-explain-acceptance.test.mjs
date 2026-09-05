@@ -427,7 +427,7 @@ test('the EXPLAIN resource contract is separate from and far below the routine a
   assert.equal(PRODUCTION_EXPLAIN_MAX_ROWS_WRITTEN,0);
   assert.ok(PRODUCTION_EXPLAIN_MAX_ROWS_READ<MAX_D1_ROWS_READ_PER_CYCLE/100);
   // The routine collection and migration ceilings are untouched by this checkpoint.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
   assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
   assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
   assert.equal(MIGRATION_0003_MAX_ROWS_READ,150000);

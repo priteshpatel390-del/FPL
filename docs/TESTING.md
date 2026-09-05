@@ -26,12 +26,23 @@ over-predict the measured 124,430 by at least 5,000 rows under both models; pins
 and residual observed ratios and asserts the source states which constants are measured and which
 inferred; covers the mutation-read estimator's constants, its resume case, its completion-only case
 and its invalid inputs; proves already-billed rows are never amplified twice; proves the soft gate
-and hard circuit breaker are separate mechanisms over one unchanged 125,000 ceiling; and proves
-that at the population run `33948145320` left behind the soft gate refuses.
+and hard circuit breaker are separate mechanisms reading **different** constants — the predictive
+gate `SOFT_D1_ROWS_READ_PER_CYCLE = 200,000`, the breaker `MAX_D1_ROWS_READ_PER_CYCLE = 250,000` —
+by reading the module source, so they cannot silently collapse back onto one number; and pins the
+analysed reference workload run `33948145320` left behind, which projected 132,015 and was
+therefore refused by the **superseded** 125,000 envelope, as the evidence the resize rests on.
+
+It pins the three thresholds and their strict ordering, the closed two-member classification enum
+`['expected','above_expected']`, and every band boundary: a projection at 150,000 classifies
+`expected`; 150,001 and 200,000 are admitted and classify `above_expected`; 200,001 is refused with
+`production_projected_read_budget_exceeded`. Independently it drives the hard breaker through the
+real cycle at its exact boundary — actual provider accounting of exactly 250,000 completes, and
+250,001 raises `production_d1_budget_exceeded` — rather than substituting projection arithmetic for
+it.
 
 It proves the predictive refusal end to end through the real entry point, on a population the
-**superseded** structural gate would have admitted (105,064 structural, 117,000 projected the old
-way) and the corrected gate refuses (135,457): the failure classifies as
+structural gate admits (137,064 structural, 183,000 against the hard ceiling) and the soft gate
+refuses (207,057 projected, above SOFT and still below HARD): the failure classifies as
 `production_projected_read_budget_exceeded` with `mutation = none`, exactly three read requests are
 issued, and no `INSERT`, `UPDATE`, `DELETE`, `DROP` or `CREATE` reaches the transport.
 

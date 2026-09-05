@@ -7,7 +7,7 @@
 // the manual boundary, the collector semantics, the resource ceilings or the Cron supersession.
 import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {spawnSync} from 'node:child_process';
-import {EXPECTED_D1_ROWS_READ_PER_CYCLE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,MAX_OFFICIAL_RESPONSE_BYTES,OFFICIAL_FPL_ENDPOINTS,PRODUCTION_COLLECTION_SCHEDULE,PRODUCTION_D1_ID,PRODUCTION_SEASON} from '../workers/data-platform/production-collection.mjs';
+import {EXPECTED_D1_ROWS_READ_PER_CYCLE,SOFT_D1_ROWS_READ_PER_CYCLE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,MAX_OFFICIAL_RESPONSE_BYTES,OFFICIAL_FPL_ENDPOINTS,PRODUCTION_COLLECTION_SCHEDULE,PRODUCTION_D1_ID,PRODUCTION_SEASON} from '../workers/data-platform/production-collection.mjs';
 import {MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 import {EXACT_HEAD_VERIFY_CHECK_NAME,EXACT_HEAD_VERIFY_INTERVAL_MS,EXACT_HEAD_VERIFY_MAX_ATTEMPTS,VERIFY_ABSENT,VERIFY_FAILED,VERIFY_PENDING,VERIFY_SUCCESS,awaitExactHeadVerify,classifyExactHeadVerify,exactHeadVerifyRequest} from '../workers/data-platform/scheduled/exact-head-verify.mjs';
 
@@ -359,8 +359,11 @@ test('a scheduled production collection refuses a GitHub re-run before any ident
 
 test('the scheduled path uses the same collector and the same unchanged resource ceilings',()=>{
   assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
-  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+  // The scheduled path shares the collector, so it shares the restored read envelope exactly.
+  // There is no scheduled fast path and no scheduled-only ceiling.
+  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,150000);
+  assert.equal(SOFT_D1_ROWS_READ_PER_CYCLE,200000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
   assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
   assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);
   assert.equal(MAX_OFFICIAL_RESPONSE_BYTES,8*1024*1024);

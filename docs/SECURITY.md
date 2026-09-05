@@ -16,6 +16,16 @@ account fingerprint, token, response body or returned row can reach it, and a pe
 it hostile values and asserts none survives into the snapshot. It travels with the sanitized failure
 classification, which keeps its existing PR #215 behaviour.
 
+The capacity envelope restoration adds three values to that snapshot's `ceilings` record —
+`rowsReadExpected`, `rowsReadSoft` and `rowsReadHard` — replacing the single `rowsRead` ceiling,
+because with three distinct read thresholds one unqualified number could not say which envelope a
+refusal was measured against. All three are reviewed repository constants and bounded safe
+integers, so they introduce no new class of content into the snapshot, and every protection above
+is unchanged: the same closed enums, the same coercion, the same exclusion of SQL text, bound
+parameters, request URLs, account and database identifiers, fingerprints, tokens, response bodies
+and returned rows, and the same discard-the-original-error behaviour at every protected boundary.
+No Cloudflare credential, scope or permission changes.
+
 The committed-run integrity diagnostic is `workflow_dispatch`-only with zero inputs beyond an
 approved SHA, carries no `schedule`, `push`, `pull_request`, `repository_dispatch`, `workflow_call`
 or `workflow_run` trigger, grants only `contents: read` and `checks: read`, and reuses the existing

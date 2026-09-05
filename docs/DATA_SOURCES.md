@@ -16,7 +16,9 @@ manual workflow succeeded once as run `33818972728`, and the dedicated scheduled
 succeeded on a genuine `schedule` event as run `33901634593` on `main`
 `dac27b3860428bc55c6d505e8a817a207d30f904`, with `repository-gate` and `collect` both successful.
 Its Step Summary measured 124,430 provider `rowsRead` against a 94,844 structural estimate, finishing
-570 rows below the 125,000 ceiling. **The next natural scheduled run then failed.** Run
+570 rows below the 125,000 ceiling **that applied at the time**. That envelope has since been
+restored to 150,000 expected / 200,000 soft pre-mutation / 250,000 hard, so the same measured run
+would today finish with real headroom; the measured figures themselves are unchanged facts. **The next natural scheduled run then failed.** Run
 `33948145320` on `main` `9a1c6a87e17de08ed2c5b650b05cdc3eab96291c` passed its `repository-gate`,
 committed to D1 and failed `production_d1_budget_exceeded` at `postflight_read`
 with `productionMutation: 'definite_completed'`. The postflight D1 read was issued and returned;
