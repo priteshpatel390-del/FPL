@@ -1,9 +1,39 @@
 # KNOWN_LIMITATIONS.md
 
-<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
-## DATA-S2B unproven committed state, and an unresolved read envelope
+<!-- DATA-S2B-CAPACITY-ENVELOPE-RESTORATION-2026-09-05 -->
+## DATA-S2B capacity envelope — restored, and what it does not prove
 
-**The state committed by scheduled run `33948145320` on 5 September 2026 is unproven.** That run's
+**This restores an operating envelope. It is not proof that production collection works.** The
+per-cycle read envelope is now 150,000 expected / 200,000 soft pre-mutation refusal / 250,000 hard
+circuit breaker, resized after PR #223 corrected the pre-mutation model. **No production collection
+has run under it**, and none is authorised: one attended manual collection, while the scheduler
+stays owner-disabled, is a separate owner gate.
+
+**No season-long capacity guarantee is claimed.** The structural model carries a `2H` term over an
+append-only history, so per-cycle cost grows with cumulative observations. How long this envelope
+lasts depends on the average changed-observation count per collection, which has exactly one
+measurement — 264, on 4 September 2026 — and future Official FPL change rates are not facts.
+Whether a query, index or validation-architecture change is later warranted is an open owner
+decision that should rest on per-statement telemetry from a first instrumented production run.
+
+**`PROVIDER_READ_AMPLIFICATION = 1.35` and `PROVIDER_READ_SAFETY_RESERVE = 2000` remain INFERRED**
+from a single measured sample. They are unchanged by the capacity package and pinned in tests.
+
+**GitHub schedule-delivery lateness remains separate and unresolved.** The two natural scheduled
+runs were created approximately 3h21m and 4h31m after their nominal minutes. That is upstream of
+every resource threshold here and is not addressed by this package.
+
+<!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## DATA-S2B read model, and the committed state that was unproven
+
+> **Superseded in part.** The committed state described below **has since been proved valid**:
+> Stage 0 workflow run `33966125991` succeeded on exact `main`
+> `bfcac663f4bfb02274843caa8d4332d8622f68d7`, and that runner rethrows for any classification other
+> than `COMMITTED_STATE_VALID`. The 125,000 ceiling it describes as unchanged has since been
+> resized. The read-model facts below stand.
+
+**The state committed by scheduled run `33948145320` on 5 September 2026 was unproven at the time.**
+That run's
 commit completed — `productionMutation: 'definite_completed'` — and it then failed
 `production_d1_budget_exceeded` at `postflight_read`. The postflight D1 read **was issued and
 returned**; resource enforcement failed on its returned accounting before
@@ -27,16 +57,16 @@ the current-head statement carried O(H) work. The split between those causes and
 provider-side amplification is unknown, and no precise split is asserted. Better attribution needs
 the per-call telemetry now added plus a further instrumented production run.
 
-**The O(N) re-plan does not restore collection capability at the current population.** It saves
-`3(H − N) = 1,446` structural rows today; its value is removing the term that grows without bound.
-Applying the corrected projection to the population run `33948145320` left behind exceeds 125,000,
-so under those assumptions the soft gate would refuse before mutation with `mutation = none`. What
-any future cycle actually does depends on its own population, changed-observation count, rows
-already billed before the gate and the Official FPL state of the day, and is not claimed here; if
-the next cycle presents a comparable or higher projected workload, the soft gate will refuse before
-mutation. The ceiling was not raised, no
-migration 0004 was created and no covering index was added; whether a schema change is warranted is
-an open owner decision.
+**The O(N) re-plan alone did not restore collection capability.** It saves `3(H − N) = 1,446`
+structural rows at that population; its value is removing the term that grows without bound.
+Applying the corrected projection to the population run `33948145320` left behind gave 132,015,
+above the 125,000 envelope in force at the time, so the soft gate would have refused before
+mutation with `mutation = none`. **That refusal is what the separately approved capacity package
+addressed**, by resizing the envelope rather than by changing the model: no migration 0004 was
+created and no covering index was added, and whether a schema change is warranted remains an open
+owner decision. What any future cycle actually does still depends on its own population,
+changed-observation count, rows already billed before the gate and the Official FPL state of the
+day, and is not claimed here.
 
 **No mechanism exists to read the remaining daily Cloudflare D1 allowance**, and none was added.
 Real-time remaining allowance cannot be proven from this repository.

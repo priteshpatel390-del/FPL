@@ -11,7 +11,8 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {
   assertProjectedProviderReadBudget,createProductionResourceTelemetry,
-  EXPECTED_D1_ROWS_READ_PER_CYCLE,estimateRoutineMutationRowsRead,estimateStructuralCycleRowsRead,
+  EXPECTED_D1_ROWS_READ_PER_CYCLE,SOFT_D1_ROWS_READ_PER_CYCLE,PRODUCTION_READ_CLASSIFICATIONS,
+  estimateRoutineMutationRowsRead,estimateStructuralCycleRowsRead,
   MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,
   MEASURED_PROVIDER_READ_CALIBRATION,PRODUCTION_COLLECTION_SCHEDULE,PRODUCTION_D1_ID,
   PRODUCTION_MUTATION_NONE,productionFailureClassification,productionRunIdFor,
@@ -47,6 +48,12 @@ const entrySource=fs.readFileSync(entryPath,'utf8');
 const workflow=fs.readFileSync(workflowPath,'utf8');
 const integrityExecutable=uncommented(`${contractSource}\n${helperSource}\n${entrySource}`);
 
+// The read ceiling that applied to the 4 and 5 September runs, before the capacity envelope was
+// restored. It is pinned here as a historical fact so assertions about those runs keep meaning
+// what they meant, rather than silently re-reading a constant that has since moved.
+const SUPERSEDED_HARD_CEILING=125000;
+const SUPERSEDED_EXPECTED_CEILING=100000;
+
 /* ------------------------------------------------------------- measured calibration */
 
 test('the 4 September measured provider sample is a permanent regression fixture',()=>{
@@ -65,8 +72,13 @@ test('the 4 September measured provider sample is a permanent regression fixture
   // attribution of the 29,586-row delta is NOT known and is deliberately not asserted here.
   assert.equal(sample.providerRowsRead-sample.structuralRowsRead,29586);
   assert.ok(sample.providerRowsRead/sample.structuralRowsRead>1.31);
-  // And it finished 570 rows below the ceiling, which is not a safety margin.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE-sample.providerRowsRead,570);
+  // And it finished 570 rows below the ceiling that applied at the time, which is not a safety
+  // margin. That ceiling was the superseded 125,000; the measured facts above are untouched by
+  // the later resize, and this assertion is pinned to the superseded number so it keeps stating
+  // the historical fact rather than silently re-reading a moved constant.
+  assert.equal(SUPERSEDED_HARD_CEILING-sample.providerRowsRead,570);
+  // Under the restored envelope the same measured run would have finished with real headroom.
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE-sample.providerRowsRead,125570);
 });
 
 test('the superseded structural model reproduced the measured sample exactly, and the new one is lower',()=>{
@@ -166,45 +178,83 @@ test('already-billed rows are never amplified twice and only outstanding work is
   ])assert.throws(()=>projectProviderCycleRowsRead(bad),/production_provider_read_projection_invalid/);
 });
 
-test('the soft predictive gate and the hard circuit breaker are separate and share one ceiling',()=>{
-  // Same unchanged ceiling, different inputs, different codes.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+test('the soft predictive gate and the hard circuit breaker are separate and use different ceilings',()=>{
+  // Different inputs, different thresholds, different codes. While both compared against one
+  // number a projection that only just cleared the check left no room for the projection to be
+  // wrong; the separation is what removes the failure mode run 33948145320 hit.
+  assert.equal(SOFT_D1_ROWS_READ_PER_CYCLE,200000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
+  assert.notEqual(SOFT_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE);
+
+  // Band A: at or below EXPECTED is admitted and classified `expected`.
   const inside=projectProviderCycleRowsRead({rowsReadSoFar:0,remainingStructuralRows:1000,mutationRowsRead:0});
   assert.equal(assertProjectedProviderReadBudget(inside).classification,'expected');
-  const headroom=projectProviderCycleRowsRead({rowsReadSoFar:EXPECTED_D1_ROWS_READ_PER_CYCLE,
-    remainingStructuralRows:1000,mutationRowsRead:0});
-  assert.equal(assertProjectedProviderReadBudget(headroom).classification,'hard_ceiling_headroom');
-  const over=projectProviderCycleRowsRead({rowsReadSoFar:MAX_D1_ROWS_READ_PER_CYCLE,
-    remainingStructuralRows:1,mutationRowsRead:0});
-  assert.throws(()=>assertProjectedProviderReadBudget(over),/production_projected_read_budget_exceeded/);
-  // Exactly at the ceiling is admissible; one row above is not.
-  const exact=projectProviderCycleRowsRead({rowsReadSoFar:MAX_D1_ROWS_READ_PER_CYCLE-PROVIDER_READ_SAFETY_RESERVE,
+  const atExpected=projectProviderCycleRowsRead({rowsReadSoFar:EXPECTED_D1_ROWS_READ_PER_CYCLE-PROVIDER_READ_SAFETY_RESERVE,
     remainingStructuralRows:0,mutationRowsRead:0});
-  assert.equal(exact.projectedProviderRows,MAX_D1_ROWS_READ_PER_CYCLE);
-  assert.equal(assertProjectedProviderReadBudget(exact).projectedProviderRows,MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(atExpected.projectedProviderRows,EXPECTED_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(assertProjectedProviderReadBudget(atExpected).classification,'expected');
+
+  // Band B: above EXPECTED and up to SOFT is admitted, and classified truthfully as above the
+  // comfortable band. EXPECTED alone never refuses anything.
+  for(const projected of [EXPECTED_D1_ROWS_READ_PER_CYCLE+1,SOFT_D1_ROWS_READ_PER_CYCLE]){
+    const band=projectProviderCycleRowsRead({rowsReadSoFar:projected-PROVIDER_READ_SAFETY_RESERVE,
+      remainingStructuralRows:0,mutationRowsRead:0});
+    assert.equal(band.projectedProviderRows,projected);
+    const admitted=assertProjectedProviderReadBudget(band);
+    assert.equal(admitted.projectedProviderRows,projected);
+    assert.equal(admitted.classification,'above_expected');
+    assert.ok(PRODUCTION_READ_CLASSIFICATIONS.includes(admitted.classification));
+  }
+
+  // Band C: one row above SOFT is refused, and it is refused well below HARD, which is the
+  // separation this package exists to create.
+  const over=projectProviderCycleRowsRead({rowsReadSoFar:SOFT_D1_ROWS_READ_PER_CYCLE+1-PROVIDER_READ_SAFETY_RESERVE,
+    remainingStructuralRows:0,mutationRowsRead:0});
+  assert.equal(over.projectedProviderRows,SOFT_D1_ROWS_READ_PER_CYCLE+1);
+  assert.ok(over.projectedProviderRows<MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.throws(()=>assertProjectedProviderReadBudget(over),/production_projected_read_budget_exceeded/);
+
   const source=fs.readFileSync('workers/data-platform/production-collection.mjs','utf8');
-  // The hard circuit breaker is preserved, not replaced.
+  // The hard circuit breaker is preserved, not replaced, and the two comparisons name different
+  // constants so neither can drift back onto the other.
   assert.match(source,/production_d1_budget_exceeded/);
   assert.match(source,/production_projected_read_budget_exceeded/);
+  assert.match(source,/projection\.projectedProviderRows>SOFT_D1_ROWS_READ_PER_CYCLE/);
+  assert.match(source,/if\(read>MAX_D1_ROWS_READ_PER_CYCLE/);
+  assert.doesNotMatch(source,/projectedProviderRows>MAX_D1_ROWS_READ_PER_CYCLE/);
 });
 
-test('the pinned 5 September reference population is refused by the soft gate before any mutation',()=>{
+test('the pinned 5 September reference population is why the superseded 125,000 envelope was too tight',()=>{
   // The state run 33948145320 left behind: the 4 September population plus that run's own commit.
   const H=MEASURED_PROVIDER_READ_CALIBRATION.historicalObservations+MEASURED_PROVIDER_READ_CALIBRATION.changed;
   const N=MEASURED_PROVIDER_READ_CALIBRATION.currentHeads;
   const structural=estimateStructuralCycleRowsRead({observations:H,heads:N,changed:264});
   const mutation=estimateRoutineMutationRowsRead({freshEntities:0,observations:264,newHeads:0,updatedHeads:264});
-  // From the top of a cycle, with nothing yet billed, the projection is already over the ceiling.
+  // From the top of a cycle, with nothing yet billed.
   const projection=projectProviderCycleRowsRead({rowsReadSoFar:0,
     remainingStructuralRows:structural.totalRows,mutationRowsRead:mutation.rowsRead});
-  assert.ok(projection.projectedProviderRows>MAX_D1_ROWS_READ_PER_CYCLE);
-  assert.throws(()=>assertProjectedProviderReadBudget(projection),/production_projected_read_budget_exceeded/);
-  // This is the honest, reported consequence of the remediation: at THIS analysed population and
-  // change assumption the corrected model refuses before mutation rather than committing and then
-  // failing. It pins the reference scenario, not a prediction about any future execution, whose
-  // population, changed-observation count and already-billed rows are unknown until it runs.
-  // Stage 3 alone does not restore collection capability, and nothing here raises the ceiling.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+
+  // FACT about the superseded envelope: this analysed reference workload projected above 125,000,
+  // so the predictive gate would have refused it before mutation. That is what "operationally too
+  // tight" means, and it is the evidence the resize rests on.
+  assert.ok(projection.projectedProviderRows>SUPERSEDED_HARD_CEILING);
+
+  // Under the restored envelope the same reference workload clears the soft gate outright and
+  // lands inside the comfortable expected band: 132,015 projected, against EXPECTED 150,000 and
+  // SOFT 200,000. The gap between that figure and the superseded 125,000 ceiling is the entire
+  // reason a cycle at this population could not run.
+  assert.equal(projection.projectedProviderRows,132015);
+  const admitted=assertProjectedProviderReadBudget(projection);
+  assert.ok(projection.projectedProviderRows<=EXPECTED_D1_ROWS_READ_PER_CYCLE);
+  assert.ok(projection.projectedProviderRows<=SOFT_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(admitted.classification,'expected');
+
+  // This pins the analysed reference scenario. It is NOT a prediction about any future execution,
+  // whose governed population, changed-observation count, already-billed provider rows and
+  // Official FPL state of the day are all unknown until it runs. Restoring the envelope is not a
+  // claim that collection now succeeds; one attended production run is still required.
+  assert.equal(SUPERSEDED_HARD_CEILING,125000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
 });
 
 /* ------------------------------------------------------------------------ telemetry */
@@ -228,7 +278,16 @@ test('bounded telemetry preserves per-call and per-statement integer accounting'
   assert.deepEqual(snapshot.calls[0].statements.map(entry=>entry.rowsRead),[60,40]);
   // The ceilings each dimension stands against travel with the snapshot, so a failure summary
   // names the dimension that failed rather than leaving it to be inferred.
-  assert.equal(snapshot.ceilings.rowsRead,MAX_D1_ROWS_READ_PER_CYCLE);
+  // All three read thresholds travel with the snapshot under explicit names: with EXPECTED, SOFT
+  // and HARD distinct, one bare `rowsRead` could not say which envelope a refusal was measured
+  // against, and the whole envelope must be auditable from the sanitized summary alone.
+  assert.equal(snapshot.ceilings.rowsReadExpected,EXPECTED_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(snapshot.ceilings.rowsReadSoft,SOFT_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(snapshot.ceilings.rowsReadHard,MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(snapshot.ceilings.rowsReadExpected,150000);
+  assert.equal(snapshot.ceilings.rowsReadSoft,200000);
+  assert.equal(snapshot.ceilings.rowsReadHard,250000);
+  assert.equal(snapshot.ceilings.rowsRead,undefined);
   assert.equal(snapshot.ceilings.rowsWritten,MAX_D1_ROWS_WRITTEN_PER_CYCLE);
   assert.equal(snapshot.ceilings.apiCalls,MAX_D1_API_CALLS_PER_CYCLE);
   // An unrecognised plan kind is coerced into the closed enum, never carried through.
@@ -314,19 +373,21 @@ test('the D1 client keeps the aggregate scalar and adds the per-statement breakd
 /* ------------------------------------------- pre-mutation refusal writes nothing at all */
 
 test('a predictive refusal writes nothing and classifies as mutation none',async()=>{
-  // The incident scenario, wired through the real entry point. The population and the rows
-  // Cloudflare has already billed are chosen so that the SUPERSEDED structural gate would let this
-  // cycle through — 70,000 billed plus a 47,000-row postflight is 117,000, inside the ceiling —
-  // while the corrected provider projection refuses it. That is precisely the gap run 33948145320
-  // fell through: it passed the predictive check, mutated production, and only then discovered the
-  // envelope was already impossible.
+  // The incident scenario, wired through the real entry point and rescaled to the restored
+  // envelope. The population and the rows Cloudflare has already billed are chosen so that the
+  // structural gate — which measures raw model rows against the HARD ceiling — lets this cycle
+  // through, while the amplified provider projection is refused by the SOFT gate. That is
+  // precisely the gap run 33948145320 fell through: it passed the predictive check, mutated
+  // production, and only then discovered the envelope was already impossible.
   //
-  //   H = 14,000, N = 11,000, D = 0
-  //   structural total    2H + 7N + 64                     = 105,064   (inside 125,000)
-  //   postflight          (H + D) + 3(N + D)               =  47,000
-  //   already billed                                       =  70,000
-  //   superseded gate     70,000 + 47,000                  = 117,000   -> ACCEPTED
-  //   corrected gate      70,000 + ceil(47,005 x 1.35) + 2,000 = 135,457 -> REFUSED
+  //   H = 30,000, N = 11,000, D = 0
+  //   structural total    2H + 7N + 64                          = 137,064  (inside HARD 250,000)
+  //   postflight          (H + D) + 3(N + D)                    =  63,000
+  //   already billed                                            = 120,000
+  //   structural gate     120,000 + 63,000 = 183,000            -> ACCEPTED (below HARD)
+  //   soft gate           120,000 + ceil(63,005 x 1.35) + 2,000 = 207,057 -> REFUSED (above SOFT)
+  //   and 207,057 is still below HARD 250,000, so the refusal is the soft gate's, before any
+  //   mutation, rather than the circuit breaker's after one.
   const revision={migration_version:3,migration_name:'production_query_plan_indexes',
     source_revision_id:'official-fpl-r1',source_id:'source-official-fpl',revision:1,
     schema_version:'data-s2a-v1',rights_classification:'durable_allowed',retention_allowed:1,
@@ -362,7 +423,7 @@ test('a predictive refusal writes nothing and classifies as mutation none',async
     const body=JSON.parse(request.body),statements=body.batch??[body],sql=statements[0].sql;
     if(sql.includes('schema_migrations'))return ok([[revision]],1);
     if(sql.startsWith('SELECT run_id'))return ok([[]],1);
-    if(sql.startsWith('SELECT o.*'))return ok([heads,[{observations:14000}],[{heads:11000}]],70000);
+    if(sql.startsWith('SELECT o.*'))return ok([heads,[{observations:30000}],[{heads:11000}]],120000);
     throw new Error('the cycle reached a request it should never have issued');
   };
   await assert.rejects(()=>runProductionCollection({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
@@ -379,7 +440,7 @@ test('a predictive refusal writes nothing and classifies as mutation none',async
       assert.equal(classification.retryable,false);
       // The bounded resource snapshot survives the failure, which is the whole point of Stage 2.
       assert.equal(classification.resources.cumulativeRowsWritten,0);
-      assert.equal(classification.resources.cumulativeRowsRead,70002);
+      assert.equal(classification.resources.cumulativeRowsRead,120002);
       assert.equal(classification.resources.apiCalls,3);
       assert.ok(!JSON.stringify(classification.resources).includes('SELECT'));
       return true;
@@ -388,12 +449,20 @@ test('a predictive refusal writes nothing and classifies as mutation none',async
   assert.equal(sent.length,3);
   const sql=sent.flatMap(body=>(body.batch??[body]).map(statement=>statement.sql)).join('\n');
   assert.ok(!/\b(INSERT|UPDATE|DELETE|DROP|CREATE)\b/i.test(sql),sql);
-  // And the superseded structural gate really would have admitted this cycle, which is what makes
-  // the new gate a correction rather than a duplicate of an existing check.
-  const structural=estimateStructuralCycleRowsRead({observations:14000,heads:11000,changed:0});
-  assert.equal(structural.totalRows,105064);
+  // And the structural gate really would have admitted this cycle, which is what makes the soft
+  // gate a correction rather than a duplicate of an existing check.
+  const structural=estimateStructuralCycleRowsRead({observations:30000,heads:11000,changed:0});
+  assert.equal(structural.totalRows,137064);
+  assert.equal(structural.postflight,63000);
   assert.ok(structural.totalRows<=MAX_D1_ROWS_READ_PER_CYCLE);
-  assert.ok(70000+structural.postflight<=MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.ok(120000+structural.postflight<=MAX_D1_ROWS_READ_PER_CYCLE);
+  // The refusal is the soft gate's: the projection sits above SOFT and below HARD, so the hard
+  // circuit breaker was never the thing that stopped this cycle.
+  const projection=projectProviderCycleRowsRead({rowsReadSoFar:120000,
+    remainingStructuralRows:structural.postflight,mutationRowsRead:5});
+  assert.equal(projection.projectedProviderRows,207057);
+  assert.ok(projection.projectedProviderRows>SOFT_D1_ROWS_READ_PER_CYCLE);
+  assert.ok(projection.projectedProviderRows<MAX_D1_ROWS_READ_PER_CYCLE);
 });
 
 /* -------------------------------------------------- Stage 0 committed-run integrity */
@@ -572,9 +641,14 @@ test('this remediation changes no schedule, cron, ceiling or scheduler state',()
   assert.equal((uncommented(scheduled).match(/- cron:/g)||[]).length,1);
   assert.ok(!uncommented(scheduled).includes('workflow_dispatch'));
   assert.match(scheduled,/test "\$EVENT_SCHEDULE" = '17 1 \* \* \*'/);
-  // The unchanged ceilings.
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
-  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);
+  // The read envelope is the one thing the capacity package moved, and it moved by constant
+  // values only. The superseded pair is recorded beside it so the change stays legible.
+  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,150000);
+  assert.equal(SOFT_D1_ROWS_READ_PER_CYCLE,200000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
+  assert.equal(SUPERSEDED_EXPECTED_CEILING,100000);
+  assert.equal(SUPERSEDED_HARD_CEILING,125000);
+  // The write and API envelopes are untouched.
   assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
   assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
   // No migration 0004 exists, and no new index was introduced.

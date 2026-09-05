@@ -1,5 +1,18 @@
 # DATA-S2B — read-budget remediation (P2+)
 
+> **Superseded in its forward-looking part** by
+> [capacity envelope restoration](DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md). Everything recorded
+> here about the measured runs and the corrected model stands and is unchanged. Two of its
+> statements are no longer current. **The committed state it describes as unproven has since been
+> proved valid**: Stage 0 workflow `DATA-S2B Committed Run Integrity` run `33966125991` was
+> dispatched on exact `main` `bfcac663f4bfb02274843caa8d4332d8622f68d7` and succeeded, and that
+> runner rethrows for every classification other than `COMMITTED_STATE_VALID`. **The 125,000 hard
+> ceiling it holds unchanged has since been resized** to three distinct thresholds — 150,000
+> expected, 200,000 soft pre-mutation refusal, 250,000 hard circuit breaker — with the predictive
+> gate pointed at the soft threshold instead of the hard one. Where this record says the corrected
+> projection exceeds 125,000 and the soft gate would refuse, that remains an accurate statement
+> about the superseded envelope, and it is the evidence the resize rests on.
+
 Repository implementation only. Nothing in this package was executed against Cloudflare. No D1
 request, no workflow dispatch, no production collection, no migration, no deployment, no Cron or
 schedule change, no environment change and no credential change was performed while preparing it.
@@ -116,9 +129,11 @@ authorisation to collect, to resume, or to re-enable the scheduler.
 
 ## Stage 1 — honest pre-mutation read model
 
-The unchanged ceilings: `MAX_D1_ROWS_READ_PER_CYCLE = 125000`,
+The ceilings as they stood in this package: `MAX_D1_ROWS_READ_PER_CYCLE = 125000`,
 `EXPECTED_D1_ROWS_READ_PER_CYCLE = 100000`, `MAX_D1_ROWS_WRITTEN_PER_CYCLE = 40000`,
-`MAX_D1_API_CALLS_PER_CYCLE = 8`. None moved.
+`MAX_D1_API_CALLS_PER_CYCLE = 8`. None moved **in this package**; the two read values have since
+been superseded by the capacity restoration recorded above, and the write and API ceilings are
+still unchanged.
 
 **Measured calibration.** `MEASURED_PROVIDER_READ_CALIBRATION` records run `33901634593`'s reported
 accounting verbatim as a permanent regression fixture, labelled MEASURED.
@@ -277,5 +292,7 @@ validation.
 No live D1 integrity dispatch. No production collection. No manual collection dispatch. No
 scheduled collection. No scheduler re-enable. No cron or cadence change — `PRODUCTION_COLLECTION_SCHEDULE`
 and the workflow's single trigger both remain `17 1 * * *`, and permanent tests pin that. No change
-to the 125,000 read cap. No migration 0004. No covering-index migration. No provider or data
+to the 125,000 read cap **in this package** — that cap was resized by the separately approved
+capacity restoration recorded at the top of this file. No migration 0004. No covering-index
+migration. No provider or data
 semantic change. No Package 3 redesign. No merge.

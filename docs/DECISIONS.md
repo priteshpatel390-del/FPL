@@ -1,6 +1,57 @@
 # DECISIONS.md — Architectural decision record
 
 <!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
+## DATA-S2B production capacity envelope — three distinct read thresholds
+
+**Decision:** restore the internal per-cycle read envelope as three separate numbers —
+`EXPECTED_D1_ROWS_READ_PER_CYCLE = 150,000`, `SOFT_D1_ROWS_READ_PER_CYCLE = 200,000` and
+`MAX_D1_ROWS_READ_PER_CYCLE = 250,000` — and point the predictive pre-mutation gate at SOFT rather
+than at the hard ceiling.
+
+**Why:** two facts, in order.
+
+* **FACT.** The 5 September committed-state integrity question is closed. Workflow
+  `DATA-S2B Committed Run Integrity` run `33966125991`, on exact `main`
+  `bfcac663f4bfb02274843caa8d4332d8622f68d7`, succeeded; that runner rethrows for every
+  classification other than `COMMITTED_STATE_VALID`, so the state run `33948145320` committed
+  satisfies the existing production postflight contract. This is a capacity problem, not an
+  integrity problem.
+* **FACT.** The previous 125,000 envelope was operationally too tight under the corrected
+  conservative model merged in PR #223. At the governed population run `33948145320` left behind,
+  the corrected projection returns 132,015 for a 264-change cycle and stays above 125,000 even with
+  **no changed observations at all**. The predictive gate would have refused every realistic cycle
+  before mutation.
+
+**What follows from it:**
+
+* The order matters and is the whole justification: PR #223 corrected the dishonest estimator
+  **first**; only then was the envelope resized. Raising the ceiling while the estimator still
+  under-predicted would have been permission to overrun further.
+* EXPECTED never refuses anything. It classifies, so drift becomes visible in a Step Summary one
+  full step before anything blocks.
+* SOFT is the only predictive refusal. Its failure mode is a false refusal — one skipped
+  collection, `mutation = none`, nothing written — so it sits comfortably above the realistic band.
+* HARD stays the circuit breaker over Cloudflare's own returned accounting, and sits 25% above
+  SOFT. Its failure mode is firing after a definite mutation, which is unretryable and costly; the
+  gap absorbs a projection error five times larger than the one observed on the only sample.
+* A permanent test reads the module source to prove the two comparisons name different constants,
+  so they cannot silently collapse back onto one number.
+* The closed planning enum keeps two members; `hard_ceiling_headroom` is renamed `above_expected`,
+  because a name promising headroom against one named ceiling is false at the two call sites that
+  measure against a different one.
+* **250,000 is 5.0% of the Cloudflare Workers Free daily allowance of 5,000,000 rows read** for the
+  one approved cycle a day. The internal breaker stays far tighter than the provider quota.
+* Nothing else moved: no SQL, no query plan, no `EXPLAIN` contract, no migration, no index, no
+  schema, `PROVIDER_READ_AMPLIFICATION = 1.35`, `PROVIDER_READ_SAFETY_RESERVE = 2000`, the write
+  estimator, the 40,000 write ceiling, the 8-call API ceiling, the postflight contract and the
+  `17 1 * * *` cron all unchanged, and the scheduled workflow stays owner-disabled.
+* **LIMITATION.** This restores an operating envelope. It is not proof that production collection
+  works, no cycle has run under it, and no season-long capacity guarantee is claimed. One attended
+  manual production collection remains a separate owner gate.
+
+See [capacity envelope restoration](../workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).
+
+
 ## DATA-S2B — the pre-mutation read model must project provider accounting, not structural visits — 5 September 2026
 
 **Decision:** a production collection cycle may not mutate production until it has projected the
@@ -17,7 +68,9 @@ postflight term only: no mutation reads, no provider amplification, no reserve.
 
 **What follows from it:**
 
-* `MAX_D1_ROWS_READ_PER_CYCLE` stays **125,000**. The defect was the model, not the ceiling.
+* `MAX_D1_ROWS_READ_PER_CYCLE` stayed **125,000** at that decision. The defect was the model, not
+  the ceiling. **Superseded by the capacity decision below**, which resized the envelope only after
+  the model had been corrected.
 * The structural model and the provider projection stay **separately reported**, so a future
   recalibration can distinguish a query-plan change from an amplification change.
 * Already-billed provider rows are taken as measured and never amplified twice; only outstanding

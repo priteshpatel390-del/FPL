@@ -30,13 +30,23 @@ and synchronous postflight are unchanged. See
 
 ### DATA-S2B resource model, telemetry and the current-head plan
 
-The collection cycle gates on resources **twice**, through two separate mechanisms sharing one
-unchanged 125,000-row ceiling. The **predictive soft gate** runs once, before the start mutation,
-over a conservative projection of the work not yet done, and refuses with
+The collection cycle gates on resources **twice**, through two separate mechanisms over **three
+distinct thresholds**. The **predictive soft gate** runs once, before the start mutation, over a
+conservative projection of the work not yet done, compares against
+`SOFT_D1_ROWS_READ_PER_CYCLE = 200,000`, and refuses with
 `production_projected_read_budget_exceeded` and `mutation = none`, writing nothing. The **hard
-circuit breaker** runs after every D1 call over Cloudflare's own returned accounting and refuses
-with `production_d1_budget_exceeded`. Neither replaces the other: the soft gate exists because run
-`33948145320` passed a predictive check, committed, and only then found the envelope impossible.
+circuit breaker** runs after every D1 call over Cloudflare's own returned accounting, compares
+against `MAX_D1_ROWS_READ_PER_CYCLE = 250,000`, and refuses with `production_d1_budget_exceeded`.
+`EXPECTED_D1_ROWS_READ_PER_CYCLE = 150,000` blocks nothing and only classifies: at or below it a
+cycle is `expected`, above it `above_expected`. Neither gate replaces the other, and since the
+capacity envelope was restored they no longer share a number — the separation is what gives a cycle
+that clears the soft gate room for the projection to be wrong before the breaker can fire after a
+commit, which is exactly how run `33948145320` failed.
+
+The superseded pair was 100,000 expected and 125,000 hard, with the predictive gate comparing
+directly against the hard ceiling. Under the corrected projection that envelope refused realistic
+cycles before mutation, so it was resized; the model that measures the envelope was not changed.
+See [capacity envelope restoration](../workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).
 
 Three models are kept deliberately distinct so a future recalibration can tell them apart.
 `estimateStructuralCycleRowsRead` is pure query-plan arithmetic over the repository SQL —

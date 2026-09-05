@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {spawnSync} from 'node:child_process';import {createHash} from 'node:crypto';
-import {EXPECTED_D1_ROWS_READ_PER_CYCLE,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,classifyProductionFailure,PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,MAX_OFFICIAL_RESPONSE_BYTES,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
+import {EXPECTED_D1_ROWS_READ_PER_CYCLE,SOFT_D1_ROWS_READ_PER_CYCLE,PRODUCTION_READ_CLASSIFICATIONS,FIRST_PRODUCTION_RUN_SCHEDULED_AT,PRODUCTION_MUTATION_DEFINITE_COMPLETED,PRODUCTION_MUTATION_NONE,PRODUCTION_MUTATION_UNKNOWN,STATIC_D1_FIXED_READ_RESERVE as RESERVE,assertCycleReadBudget,estimateStructuralCycleRowsRead,productionFailureClassification,classifyProductionFailure,PRODUCTION_COLLECTION_SCHEDULE,MAX_D1_API_CALLS_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_WRITTEN_PER_CYCLE,MAX_OFFICIAL_RESPONSE_BYTES,OFFICIAL_FPL_ENDPOINTS,STATIC_D1_FIXED_READ_RESERVE,STATIC_D1_ROWS_PER_LOGICAL_FACT,assertStaticReadBudget,assertStaticWriteBudget,canonicalResumeExecutionTime,classifyRowsRead,validateProductionPostflight,PRODUCTION_D1_ID,runProductionCollection} from '../workers/data-platform/production-collection.mjs';
 import {buildCurrentHeadsRead,buildProductionPopulationAndHeadsRead,estimateRoutineCommitRowsWritten,inspectOfficialFplD1RestPlan,MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,ROUTINE_WRITE_AMPLIFICATION} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 import {normaliseOfficialFplHistory} from '../workers/data-platform/official-fpl-canonical.mjs';
 const account='production_account';const fingerprint=createHash('sha256').update(account).digest('hex');
@@ -14,8 +14,32 @@ const options=transport=>({accountId:account,accountFingerprint:fingerprint,data
 test('the manual collection workflow stays manual-only: PR, push and schedule cannot trigger it',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\n  workflow_dispatch:\n    inputs:\n      approved_sha:/m);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.doesNotMatch(yml,/^\s{2}(?:push|pull_request|pull_request_target|schedule|repository_dispatch):/m);assert.match(yml,/if: github\.event_name == 'workflow_dispatch'/);assert.doesNotMatch(yml,/github\.event_name == '(?:schedule|push|pull_request)'/);assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');});
 test('manual workflow retains protected environment, least privilege and serialization',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-collection.yml','utf8');assert.match(yml,/permissions:\n  contents: read\n  checks: read/);assert.match(yml,/environment:\n      name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\n  cancel-in-progress: false/);assert.match(yml,/node-version: 24\.19\.0/);assert.doesNotMatch(yml,/ref: main\b/);assert.doesNotMatch(yml,/workers\/scripts|schedules/);for(const line of yml.split('\n').filter(line=>/wrangler/i.test(line)))assert.match(line.trim(),/^rm -(f|rf) /,line);});
 test('first-run resume is manual-only, exact-SHA gated, serialized and has no identity input',()=>{const yml=fs.readFileSync('.github/workflows/data-s2-production-resume.yml','utf8');const trigger=yml.slice(yml.indexOf('on:'),yml.indexOf('\npermissions:'));assert.match(trigger,/^on:\n  workflow_dispatch:\n    inputs:\n      approved_sha:/m);assert.deepEqual([...new Set([...yml.matchAll(/inputs\.([a-z_]+)/g)].map(row=>row[1]))],['approved_sha']);assert.doesNotMatch(trigger,/pull_request:|push:|schedule:|cron:/);assert.match(yml,/environment:\n      name: data-s2-production-collection/);assert.match(yml,/group: data-s2-production-collection\n  cancel-in-progress: false/);assert.doesNotMatch(yml,/ref: main\b/);assert.doesNotMatch(yml,/workers\/scripts|schedules|COLLECTION_SCHEDULED_AT/);const runner=fs.readFileSync('workers/data-platform/run-production-resume.mjs','utf8');assert.match(runner,/FIRST_PRODUCTION_RUN_SCHEDULED_AT/);assert.match(runner,/resumeStarted:true/);assert.doesNotMatch(runner,/process\.env\.(?:COLLECTION|RUN)/);});
-test('fixed endpoints, identities, season and budgets are closed constants',()=>{assert.deepEqual([...OFFICIAL_FPL_ENDPOINTS],['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);assert.equal(PRODUCTION_D1_ID,'01e2b4f9-313a-4a14-8ce6-86c5aecc50d7');assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);});
-test('static read model admits accepted scale and classifies expected versus hard headroom',()=>{assert.equal(STATIC_D1_ROWS_PER_LOGICAL_FACT,7);assert.equal(assertStaticReadBudget(9860),true);assert.equal(classifyRowsRead(100000),'expected');assert.equal(classifyRowsRead(100001),'hard_ceiling_headroom');assert.throws(()=>classifyRowsRead(125001),/production_d1_read_budget_exceeded/);});
+test('fixed endpoints, identities, season and budgets are closed constants',()=>{assert.deepEqual([...OFFICIAL_FPL_ENDPOINTS],['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);assert.equal(PRODUCTION_D1_ID,'01e2b4f9-313a-4a14-8ce6-86c5aecc50d7');assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,150000);assert.equal(SOFT_D1_ROWS_READ_PER_CYCLE,200000);assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);});
+
+// The three read thresholds are distinct concepts and must stay strictly ordered. EXPECTED never
+// refuses anything; SOFT refuses a projection before mutation; HARD refuses actual provider
+// accounting after a call. Collapsing any two of them back into one number is the defect that
+// made run 33948145320 commit and only then discover its envelope was impossible.
+test('the capacity envelope is three strictly ordered thresholds',()=>{
+  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,150000);
+  assert.equal(SOFT_D1_ROWS_READ_PER_CYCLE,200000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
+  assert.ok(EXPECTED_D1_ROWS_READ_PER_CYCLE<SOFT_D1_ROWS_READ_PER_CYCLE);
+  assert.ok(SOFT_D1_ROWS_READ_PER_CYCLE<MAX_D1_ROWS_READ_PER_CYCLE);
+  // The superseded pair, recorded so the change is legible rather than silent.
+  assert.notEqual(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);
+  assert.notEqual(MAX_D1_ROWS_READ_PER_CYCLE,125000);
+  // The classification enum stays closed and stays at two members.
+  assert.deepEqual([...PRODUCTION_READ_CLASSIFICATIONS],['expected','above_expected']);
+});
+
+test('static read model admits accepted scale and classifies actual rows against expected then hard',()=>{assert.equal(STATIC_D1_ROWS_PER_LOGICAL_FACT,7);assert.equal(assertStaticReadBudget(9860),true);
+  // Actual provider accounting is classified against EXPECTED and refused against HARD. It is
+  // never measured against SOFT, which governs a projection of work not yet done.
+  assert.equal(classifyRowsRead(150000),'expected');assert.equal(classifyRowsRead(150001),'above_expected');
+  assert.equal(classifyRowsRead(200001),'above_expected');assert.equal(classifyRowsRead(250000),'above_expected');
+  assert.throws(()=>classifyRowsRead(250001),/production_d1_read_budget_exceeded/);
+  for(const value of [150000,150001,250000])assert.ok(PRODUCTION_READ_CLASSIFICATIONS.includes(classifyRowsRead(value)));});
 test('full baseline-shaped delta is rejected before any mutation under the routine contract',async()=>{const h=harness();await assert.rejects(runProductionCollection(options(h.transport)),/write_budget_exceeded/);assert.equal(h.requests.filter(r=>r.body.includes('INSERT OR IGNORE INTO ingestion_runs')).length,0);assert.equal(h.requests.filter(r=>r.body.includes('UPDATE ingestion_runs')).length,0);});
 
 test('index-aware write estimator admits 4,000 and rejects 4,001 before mutation',()=>{const observations=Array.from({length:4000},(_,i)=>({logical_key:`k${i}`})),entities=Array.from({length:1064},(_,i)=>({canonical_entity_id:`e${i}`}));const estimate=estimateRoutineCommitRowsWritten({entities,previousRows:[],observations});assert.deepEqual(estimate,{freshEntities:1064,newHeads:4000,updatedHeads:0,rowsWritten:35193});assert.ok(ROUTINE_WRITE_AMPLIFICATION.startInsert+estimate.rowsWritten<MAX_D1_ROWS_WRITTEN_PER_CYCLE);assert.throws(()=>estimateRoutineCommitRowsWritten({entities:[],previousRows:[],observations:[...observations,{logical_key:'overflow'}]}),/write_budget_exceeded/);});
@@ -24,7 +48,7 @@ test('4,001 genuine deltas fail before start or commit mutation',async()=>{const
 
 test('static write budget rejects amplification above 40k before commit',()=>{assert.equal(assertStaticWriteBudget({providerRowsWritten:0,resumeStarted:false,writeEstimate:{rowsWritten:35193}}),true);assert.throws(()=>assertStaticWriteBudget({providerRowsWritten:0,resumeStarted:false,writeEstimate:{rowsWritten:40000}}),/production_static_write_budget_exceeded/);});
 
-test('returned provider row metadata enforces exact hard read and write ceilings',async()=>{const costlyRead=harness({governanceRead:125001});await assert.rejects(runProductionCollection(options(costlyRead.transport)),/production_d1_budget_exceeded/);assert.equal(costlyRead.requests.length,1);const data=world(),normal=normaliseOfficialFplHistory({bootstrap:data[0],fixtures:data[1],season:'2026-27',fetchedAt:'2026-09-02T01:17:00.000Z'}),heads=normal.candidates.map(row=>({...row,value_boolean:row.value_type==='boolean'?Number(row.value_boolean):row.value_boolean}));const changed=heads.findIndex(row=>row.value_type==='number');heads[changed]={...heads[changed],value_number:Number(heads[changed].value_number)+1};const costlyWrite=harness({heads,commitWritten:40001});await assert.rejects(runProductionCollection(options(costlyWrite.transport)),/production_d1_budget_exceeded/);});
+test('returned provider row metadata enforces exact hard read and write ceilings',async()=>{const costlyRead=harness({governanceRead:250001});await assert.rejects(runProductionCollection(options(costlyRead.transport)),/production_d1_budget_exceeded/);assert.equal(costlyRead.requests.length,1);const data=world(),normal=normaliseOfficialFplHistory({bootstrap:data[0],fixtures:data[1],season:'2026-27',fetchedAt:'2026-09-02T01:17:00.000Z'}),heads=normal.candidates.map(row=>({...row,value_boolean:row.value_type==='boolean'?Number(row.value_boolean):row.value_boolean}));const changed=heads.findIndex(row=>row.value_type==='number');heads[changed]={...heads[changed],value_number:Number(heads[changed].value_number)+1};const costlyWrite=harness({heads,commitWritten:40001});await assert.rejects(runProductionCollection(options(costlyWrite.transport)),/production_d1_budget_exceeded/);});
 
 test('append-only postflight accepts historical observations above current logical-key heads',()=>{const state={run_id:'run',status:'completed',records_seen:9860,records_accepted:1,run_observations:1,records_quarantined:0,records_rejected:0,error_class:null,observations:9861,heads:9860,logical_keys:9860,orphan_heads:0,invalid_heads:0,non_accepted:0,quarantined_observations:0,rejections:0};assert.equal(validateProductionPostflight([state],{runId:'run',changed:1,recordsSeen:9860}),true);assert.equal(validateProductionPostflight([{...state,records_accepted:0,run_observations:0}],{runId:'run',changed:0,recordsSeen:9860}),true);});
 
@@ -61,12 +85,18 @@ test('append-only history above current heads raises the structural estimate ind
   // The established H = N baseline is deliberately unchanged by the re-plan.
   assert.equal(flat.cycleRows,n*STATIC_D1_ROWS_PER_LOGICAL_FACT+RESERVE);
   // The re-plan reduces the growth term but does NOT make deep history free. At H = 3N the
-  // structural total is still above the unchanged 125,000 ceiling — 128,244, where the superseded
-  // O(H) model gave 187,404 for the same population. The cycle read gate must therefore still
-  // refuse it, and this assertion pins that it does rather than implying the problem is solved.
-  assert.ok(grown.totalRows>MAX_D1_ROWS_READ_PER_CYCLE);
+  // structural total is 128,244, where the superseded O(H) model gave 187,404 for the same
+  // population; both figures are unchanged facts about the two models. Under the superseded
+  // 125,000 envelope that total was already refused. Under the restored envelope it is admitted,
+  // which is the whole point of the resize — and depth still costs, so a deeper history is still
+  // refused: at H = 10N the same model gives 266,284, above the restored hard ceiling.
   assert.equal(grown.totalRows,128244);
   assert.equal(5*(n*3)+4*n+RESERVE,187404);
+  assert.ok(grown.totalRows<=MAX_D1_ROWS_READ_PER_CYCLE);
+  const deep=estimateStructuralCycleRowsRead({observations:n*10,heads:n,changed:0});
+  assert.equal(deep.totalRows,266284);
+  assert.ok(deep.totalRows>MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.throws(()=>assertCycleReadBudget({rowsReadSoFar:0,estimate:deep}),/production_cycle_read_budget_exceeded/);
   assert.throws(()=>assertCycleReadBudget({rowsReadSoFar:0,estimate:estimateStructuralCycleRowsRead({observations:200000,heads:n,changed:0})}),/production_cycle_read_budget_exceeded/);
   assert.throws(()=>assertCycleReadBudget({rowsReadSoFar:MAX_D1_ROWS_READ_PER_CYCLE,estimate:flat}),/production_cycle_read_budget_exceeded/);
   for(const bad of [{observations:-1,heads:0,changed:0},{observations:0,heads:1.5,changed:0},{observations:0,heads:0,changed:-1}])assert.throws(()=>estimateStructuralCycleRowsRead(bad),/production_structural_read_model_invalid/);
@@ -118,6 +148,47 @@ test('the population probe shares the current-head request and stays inside the 
   const reconciled=await runProductionCollection(options(ambiguous.transport));
   assert.equal(reconciled.result,'changed_reconciled');
   assert.ok(reconciled.d1.apiCalls<=MAX_D1_API_CALLS_PER_CYCLE);
+});
+
+// The hard circuit breaker at its exact boundary, driven through the real cycle rather than
+// through projection arithmetic. Provider accounting is made to land exactly on the ceiling and
+// then exactly one row above it: the reads are placed in the postflight call so the pre-mutation
+// soft gate, which sees only three rows billed at that point, is not the thing under test.
+//
+//   governance 1 + run read 1 + population/heads 1            =       3 billed before the gate
+//   postflight 249,997                                         = 250,000 total  -> ACCEPTED
+//   postflight 249,998                                         = 250,001 total  -> REFUSED
+test('actual provider accounting is admitted at exactly the hard ceiling and refused one row above',async()=>{
+  const heads=facts();
+  const atCeiling=harness({heads:mutate(heads,1),governanceRead:1,headsRead:1,
+    postflightRead:MAX_D1_ROWS_READ_PER_CYCLE-3});
+  const accepted=await runProductionCollection(options(atCeiling.transport));
+  assert.equal(accepted.d1.rowsRead,MAX_D1_ROWS_READ_PER_CYCLE);
+  assert.equal(accepted.d1.readClassification,'above_expected');
+  assert.equal(accepted.changed,1);
+  assert.equal(accepted.mutation,PRODUCTION_MUTATION_DEFINITE_COMPLETED);
+
+  const overCeiling=harness({heads:mutate(heads,1),governanceRead:1,headsRead:1,
+    postflightRead:MAX_D1_ROWS_READ_PER_CYCLE-2});
+  await assert.rejects(runProductionCollection(options(overCeiling.transport)),error=>{
+    const classification=productionFailureClassification(error);
+    // The hard breaker specifically, over Cloudflare's returned accounting, not the soft gate.
+    assert.equal(classification.code,'production_d1_budget_exceeded');
+    assert.notEqual(classification.code,'production_projected_read_budget_exceeded');
+    assert.equal(classification.resources.cumulativeRowsRead,MAX_D1_ROWS_READ_PER_CYCLE+1);
+    return true;});
+});
+
+// The two gates must never silently collapse back onto one constant. This reads the module source
+// and pins that the predictive comparison names SOFT while the post-call breaker names HARD, so a
+// future edit that points either at the other one fails here rather than in production.
+test('the predictive gate and the hard breaker read different constants',()=>{
+  const source=fs.readFileSync('workers/data-platform/production-collection.mjs','utf8');
+  assert.match(source,/projection\.projectedProviderRows>SOFT_D1_ROWS_READ_PER_CYCLE\)throw new Error\('production_projected_read_budget_exceeded'\)/);
+  assert.match(source,/const enforce=out=>\{if\(read>MAX_D1_ROWS_READ_PER_CYCLE/);
+  assert.doesNotMatch(source,/projectedProviderRows>MAX_D1_ROWS_READ_PER_CYCLE/);
+  assert.doesNotMatch(source,/read>SOFT_D1_ROWS_READ_PER_CYCLE/);
+  assert.notEqual(SOFT_D1_ROWS_READ_PER_CYCLE,MAX_D1_ROWS_READ_PER_CYCLE);
 });
 
 test('postflight resource overage after a definite successful commit is never reported as no-write or retryable',async()=>{
@@ -402,11 +473,14 @@ test('the collection workflow adds no schedule, Cron, Wrangler, deployment or mi
   assert.match(fs.readFileSync('workers/data-platform/wrangler.jsonc','utf8'),/"crons": \["\*\/30 \* \* \* \*"\]/);
 });
 
-test('every production resource ceiling the manual collection runs under is unchanged',()=>{
+test('the manual collection runs under the restored read envelope and otherwise unchanged ceilings',()=>{
+  // Only the read envelope moved. Every other ceiling the manual collection runs under is the
+  // same number it was, and the manual path shares the collector with the scheduled one.
   assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
-  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,100000);
-  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,125000);
   assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
   assert.equal(MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN,4000);
   assert.equal(MAX_OFFICIAL_RESPONSE_BYTES,8*1024*1024);
+  assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,150000);
+  assert.equal(SOFT_D1_ROWS_READ_PER_CYCLE,200000);
+  assert.equal(MAX_D1_ROWS_READ_PER_CYCLE,250000);
 });

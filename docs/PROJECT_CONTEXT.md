@@ -1,7 +1,81 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2B-CAPACITY-ENVELOPE-RESTORATION-2026-09-05 -->
+## Current DATA-S2B checkpoint — production capacity envelope restored (repository only)
+
+**FACT: the 5 September integrity question is closed.** Workflow `DATA-S2B Committed Run Integrity`
+(workflow `350897195`), run `33966125991`, run number 1, attempt 1, event `workflow_dispatch`, head
+`main` `bfcac663f4bfb02274843caa8d4332d8622f68d7`, conclusion **success**, both `repository-gate`
+and `committed-run-integrity` succeeding. That runner rethrows for every classification other than
+`COMMITTED_STATE_VALID`, so its success proves the state scheduled run `33948145320` committed
+satisfies the existing production postflight contract. It was read-only: one D1 call,
+`rows_written` required to be exactly zero, `mutationIssued: false`. **This checkpoint is capacity
+only; corruption and repair are not reopened.**
+
+**FACT: the previous 125,000 envelope was operationally too tight.** Under the corrected
+conservative model merged in PR #223, the pre-mutation projection at the governed population run
+`33948145320` left behind returns **132,015** for a 264-change cycle, and stays above 125,000 even
+with **no changed observations at all**. The predictive gate would therefore have refused every
+realistic cycle before mutation. A threshold that refuses everything protects nothing.
+
+**DECISION — Package A, capacity envelope only.** Three distinct thresholds replace the superseded
+pair of 100,000 expected / 125,000 hard, and the predictive gate no longer compares against the
+hard ceiling:
+
+| | Constant | Value | Input | Blocking |
+|---|---|---|---|---|
+| EXPECTED | `EXPECTED_D1_ROWS_READ_PER_CYCLE` | 150,000 | projection, structural total, final actual rows | **No** — classifies only |
+| SOFT | `SOFT_D1_ROWS_READ_PER_CYCLE` | 200,000 | amplified provider projection, once, before the start mutation | **Yes** — `production_projected_read_budget_exceeded`, `mutation = none` |
+| HARD | `MAX_D1_ROWS_READ_PER_CYCLE` | 250,000 | Cloudflare's returned `meta.rows_read`, after every call | **Yes** — `production_d1_budget_exceeded` |
+
+**RATIONALE.** The order is the justification: PR #223 corrected the dishonest estimator **first**,
+and only then was the envelope resized — raising a ceiling behind an estimator that under-predicted
+by 31% would have been permission to overrun further. The soft refusal now happens before any
+mutation and writes nothing; the hard breaker remains independent and based on actual provider
+accounting; the 25% gap between them absorbs a projection error five times larger than the one
+observed on the only measured sample, which is what removes the failure mode run `33948145320` hit.
+At 250,000 the internal breaker is **5.0%** of the Cloudflare Workers Free daily allowance of
+5,000,000 rows read for the one approved cycle a day, so it stays far tighter than the provider
+quota. No SQL, schema or index change is justified before live per-statement telemetry exists.
+
+The closed planning enum keeps two members: `hard_ceiling_headroom` is renamed `above_expected`,
+because a name promising headroom against one named ceiling is false at the two call sites that
+measure against a different one. Bounded telemetry now carries `rowsReadExpected`, `rowsReadSoft`
+and `rowsReadHard` explicitly.
+
+**Nothing else moved.** No SQL, no query plan, no `EXPLAIN` contract, no migration (still exactly
+0001–0003, five indexes, **no migration 0004**), no index, no schema, no data semantics, no
+postflight weakening. `PROVIDER_READ_AMPLIFICATION = 1.35`, `PROVIDER_READ_SAFETY_RESERVE = 2000`,
+the mutation-read and write estimators, the 40,000 write ceiling, the 8-call API ceiling and the
+`17 1 * * *` cron are all unchanged, and the scheduled workflow remains **owner-disabled**.
+
+**Nothing was executed.** No Cloudflare request, D1 read, D1 mutation, workflow dispatch, Stage 0
+re-run, collection, migration, deployment, cron, schedule, environment or credential change was
+performed.
+
+**LIMITATIONS.** This restores an operating envelope; it is **not** proof that production
+collection works, and no cycle has run under it. 1.35 and 2,000 remain INFERRED from one sample. No
+season-long capacity guarantee is claimed — the structural model carries a `2H` term over an
+append-only history, and the average changed-observation count per collection has exactly one
+measurement. GitHub schedule-delivery lateness remains a separate matter.
+
+Next gates, each separate: **(1)** owner review and merge; **(2)** exact-`main` Verify; **(3)** a
+separate owner approval for exactly **one** attended manual production collection while the
+scheduler stays disabled, whose per-call telemetry replaces the inferred factors with measured
+ones. Scheduler re-enable and any schema change remain later, separate gates. See
+[capacity envelope restoration](../workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).
+
 <!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
 ## Current DATA-S2B checkpoint — read-budget remediation P2+ (repository only)
+
+> **Superseded in its forward-looking part by the capacity checkpoint above.** Its recorded
+> evidence stands and its model corrections are unchanged. Two of its statements are no longer
+> current: the committed state it describes as unproven **has since been proved valid** by Stage 0
+> run `33966125991`, and the 125,000 hard ceiling it holds unchanged **has since been resized** to
+> the three-threshold envelope of 150,000 expected / 200,000 soft / 250,000 hard. Where it says the
+> corrected projection exceeds 125,000 and the soft gate would refuse, that remains an accurate
+> statement about the superseded envelope and is the evidence the resize rests on.
+
 
 **The first natural run on the permanent cadence failed on resource enforcement.** Run
 `33948145320`, event `schedule`, attempt 1, head `main`

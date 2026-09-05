@@ -23,8 +23,31 @@ export const PRODUCTION_SEASON='2026-27';
 export const PRODUCTION_D1_ID='01e2b4f9-313a-4a14-8ce6-86c5aecc50d7';
 export const OFFICIAL_FPL_ENDPOINTS=Object.freeze(['https://fantasy.premierleague.com/api/bootstrap-static/','https://fantasy.premierleague.com/api/fixtures/']);
 export const MAX_OFFICIAL_RESPONSE_BYTES=8*1024*1024;
-export const EXPECTED_D1_ROWS_READ_PER_CYCLE=100000;
-export const MAX_D1_ROWS_READ_PER_CYCLE=125000;
+// DATA-S2B capacity envelope — three distinct read thresholds.
+//
+// Superseded: a single pair of 100,000 expected / 125,000 hard, with the pre-mutation projection
+// gate comparing directly against the hard ceiling. Under the corrected conservative provider
+// projection merged in PR #223 that envelope became operationally too tight: at the governed
+// population the incident run 33948145320 left behind, the projection exceeds 125,000 even with
+// no changed observations at all, so the predictive gate would refuse every cycle before
+// mutation. The defect corrected here is the size of the envelope, not the model that measures it.
+//
+// EXPECTED is informational only. It never refuses a cycle; it names the comfortable operating
+// band so drift becomes visible in a Step Summary one full step before anything blocks.
+export const EXPECTED_D1_ROWS_READ_PER_CYCLE=150000;
+// SOFT is the predictive pre-mutation refusal, and it is compared only against the amplified
+// provider projection in `assertProjectedProviderReadBudget`. Its failure mode is a false refusal:
+// one skipped collection, `mutation = none`, nothing written. It is deliberately NOT the hard
+// ceiling, so a cycle can no longer pass a predictive check, mutate production, and only then
+// discover the envelope was impossible — which is exactly what run 33948145320 did.
+export const SOFT_D1_ROWS_READ_PER_CYCLE=200000;
+// HARD is the emergency circuit breaker over Cloudflare's own returned accounting, and it is also
+// the absolute per-cycle maximum the structural impossibility guards measure against. Its failure
+// mode is firing after a definite mutation, which is unretryable and costly, so it sits 25% above
+// SOFT: the projection would have to under-predict by five times the error observed on the only
+// sample before a cycle that cleared the soft gate could reach it. Against the Cloudflare Workers
+// Free daily allowance of 5,000,000 rows read it remains a conservative 5.0% for one cycle a day.
+export const MAX_D1_ROWS_READ_PER_CYCLE=250000;
 export const MAX_D1_ROWS_WRITTEN_PER_CYCLE=40000;
 export const MAX_D1_API_CALLS_PER_CYCLE=8;
 export const STATIC_D1_ROWS_PER_LOGICAL_FACT=7;
@@ -158,21 +181,33 @@ export function projectProviderCycleRowsRead({rowsReadSoFar,remainingStructuralR
     amplifiedRemainingRows:amplified,projectedProviderRows});
 }
 
-// The predictive soft gate. It is deliberately NOT the hard circuit breaker:
+// The predictive soft gate. It is deliberately NOT the hard circuit breaker, and since the
+// capacity envelope was resized the two no longer share a threshold:
 //   * the soft gate runs once, before the start mutation, over a projection of work not yet done,
-//     and refuses with `production_projected_read_budget_exceeded` and `mutation = none`;
+//     compares against `SOFT_D1_ROWS_READ_PER_CYCLE`, and refuses with
+//     `production_projected_read_budget_exceeded` and `mutation = none`;
 //   * the hard circuit breaker runs after every D1 call, over Cloudflare's own returned
-//     accounting, and refuses with `production_d1_budget_exceeded`.
-// Both compare against the same unchanged `MAX_D1_ROWS_READ_PER_CYCLE = 125000`. Neither replaces
-// the other: the soft gate exists so a cycle cannot pass a predictive check, mutate production,
-// and only then discover the envelope was already impossible — which is exactly what run
-// 33948145320 did on 5 September 2026.
+//     accounting, compares against `MAX_D1_ROWS_READ_PER_CYCLE`, and refuses with
+//     `production_d1_budget_exceeded`.
+// The separation is the point. While both compared against one number, a projection that only
+// just cleared the check left no room at all for the projection to be wrong, and being wrong
+// after the commit is exactly what run 33948145320 did on 5 September 2026. A permanent test
+// pins that these two comparisons read different constants.
 export function assertProjectedProviderReadBudget(projection){
   if(!Number.isSafeInteger(projection?.projectedProviderRows))throw new Error('production_provider_read_projection_invalid');
-  if(projection.projectedProviderRows>MAX_D1_ROWS_READ_PER_CYCLE)throw new Error('production_projected_read_budget_exceeded');
-  return Object.freeze({...projection,
-    classification:projection.projectedProviderRows<=EXPECTED_D1_ROWS_READ_PER_CYCLE?'expected':'hard_ceiling_headroom'});
+  if(projection.projectedProviderRows>SOFT_D1_ROWS_READ_PER_CYCLE)throw new Error('production_projected_read_budget_exceeded');
+  return Object.freeze({...projection,classification:classifyAgainstExpected(projection.projectedProviderRows)});
 }
+
+// The closed planning classification. It has exactly two members and always has had; only the
+// name of the second one changed, because `hard_ceiling_headroom` stopped being true the moment
+// SOFT and HARD became different numbers. The three call sites report against three different
+// envelopes — the projection gate against SOFT, the structural gate and the final actual-rows
+// classification against HARD — so a name that promised headroom against one specific ceiling
+// would have been false at two of them. `above_expected` states only what every site can prove:
+// the value cleared its own binding envelope and sits above the comfortable band.
+export const PRODUCTION_READ_CLASSIFICATIONS=Object.freeze(['expected','above_expected']);
+const classifyAgainstExpected=value=>value<=EXPECTED_D1_ROWS_READ_PER_CYCLE?'expected':'above_expected';
 
 const fp=value=>createHash('sha256').update(value).digest('hex');
 const rows=result=>result.results[0].results??[];
@@ -200,6 +235,9 @@ async function collectProduction(options,telemetry=createProductionResourceTelem
   const client=createD1RestClient({accountId,databaseId,token,transport});let calls=0,read=0,written=0,bytes=0,mutations=0;
   const callCeiling=resumeStarted?RESUME_MAX_D1_API_CALLS:MAX_D1_API_CALLS_PER_CYCLE;
   const dispatch=async plan=>{if(++calls>callCeiling)throw new Error('production_api_budget_exceeded');const out=await client.run(plan);read+=out.usage.rowsRead;written+=out.usage.rowsWritten;bytes+=out.requestBytes;telemetry.record(plan.kind,out);return out;};
+  // The hard post-call circuit breaker, over Cloudflare's own returned accounting only. It
+  // compares against `MAX_D1_ROWS_READ_PER_CYCLE` and never against the soft projection
+  // threshold, so a predictive refusal and an actual overrun stay separate outcomes.
   const enforce=out=>{if(read>MAX_D1_ROWS_READ_PER_CYCLE||written>MAX_D1_ROWS_WRITTEN_PER_CYCLE||out.requestBytes>D1_REST_REQUEST_LIMIT_BYTES)throw new Error('production_d1_budget_exceeded');return out;};
   const execute=async plan=>enforce(await dispatch(plan));
   const mutate=async plan=>{if(resumeStarted&&++mutations>RESUME_MAX_MUTATION_REQUESTS)throw new Error('production_resume_mutation_budget_exceeded');return dispatch(plan);};
@@ -288,7 +326,9 @@ async function collectProduction(options,telemetry=createProductionResourceTelem
 function canonicalExecutionTime(value,startedAt){const date=value instanceof Date?value:new Date(value);if(!Number.isFinite(date.getTime()))throw new Error('production_resume_execution_time_invalid');const iso=date.toISOString();if(iso<=startedAt)throw new Error('production_resume_execution_time_invalid');return iso;}
 
 export function assertStaticReadBudget(candidateCount){if(!Number.isSafeInteger(candidateCount)||candidateCount<0||candidateCount*STATIC_D1_ROWS_PER_LOGICAL_FACT+STATIC_D1_FIXED_READ_RESERVE>MAX_D1_ROWS_READ_PER_CYCLE)throw new Error('production_static_read_budget_impossible');return true;}
-export function classifyRowsRead(value){if(!Number.isSafeInteger(value)||value<0||value>MAX_D1_ROWS_READ_PER_CYCLE)throw new Error('production_d1_read_budget_exceeded');return value<=EXPECTED_D1_ROWS_READ_PER_CYCLE?'expected':'hard_ceiling_headroom';}
+// Classifies the cycle's final actual provider accounting. Actual rows are measured against the
+// hard ceiling, never the soft one: the soft threshold governs a projection of work not yet done.
+export function classifyRowsRead(value){if(!Number.isSafeInteger(value)||value<0||value>MAX_D1_ROWS_READ_PER_CYCLE)throw new Error('production_d1_read_budget_exceeded');return classifyAgainstExpected(value);}
 export function assertStaticWriteBudget({providerRowsWritten,resumeStarted,writeEstimate}){const startEstimate=resumeStarted?0:ROUTINE_WRITE_AMPLIFICATION.startInsert;if(!Number.isSafeInteger(providerRowsWritten)||providerRowsWritten<0||!Number.isSafeInteger(writeEstimate?.rowsWritten)||writeEstimate.rowsWritten<0||providerRowsWritten+startEstimate+writeEstimate.rowsWritten>MAX_D1_ROWS_WRITTEN_PER_CYCLE)throw new Error('production_static_write_budget_exceeded');return true;}
 export function validateProductionPostflight(stateRows,{runId,changed,recordsSeen}){const state=stateRows?.[0];if(stateRows?.length!==1||state.run_id!==runId||state.status!=='completed'||Number(state.records_seen)!==Number(recordsSeen)||Number(state.records_accepted)!==Number(changed)||Number(state.run_observations)!==Number(changed)||Number(state.records_quarantined)!==0||Number(state.records_rejected)!==0||state.error_class!==null||Number(state.heads)!==Number(state.logical_keys)||Number(state.orphan_heads)!==0||Number(state.invalid_heads)!==0||Number(state.non_accepted)!==0||Number(state.quarantined_observations)!==0||Number(state.rejections)!==0)throw new Error('production_postflight_mismatch');return true;}
 export const canonicalResumeExecutionTime=canonicalExecutionTime;
@@ -325,7 +365,7 @@ export function assertCycleReadBudget({rowsReadSoFar,estimate}){
   if(!Number.isSafeInteger(rowsReadSoFar)||rowsReadSoFar<0||!Number.isSafeInteger(estimate?.totalRows)||!Number.isSafeInteger(estimate?.postflight))throw new Error('production_cycle_read_budget_invalid');
   const projectedTotal=rowsReadSoFar+estimate.postflight;
   if(estimate.totalRows>MAX_D1_ROWS_READ_PER_CYCLE||projectedTotal>MAX_D1_ROWS_READ_PER_CYCLE)throw new Error('production_cycle_read_budget_exceeded');
-  return Object.freeze({structuralTotal:estimate.totalRows,projectedTotal,classification:estimate.totalRows<=EXPECTED_D1_ROWS_READ_PER_CYCLE?'expected':'hard_ceiling_headroom'});
+  return Object.freeze({structuralTotal:estimate.totalRows,projectedTotal,classification:classifyAgainstExpected(estimate.totalRows)});
 }
 
 // Every failure carries an explicit mutation classification so a caller can never read a definite
@@ -406,9 +446,15 @@ export function createProductionResourceTelemetry(){
         lastCallRowsRead:last?last.rowsRead:0,
         lastCallRowsWritten:last?last.rowsWritten:0,
         lastCallRequestBytes:last?last.requestBytes:0,
-        // Which unchanged ceiling each dimension stands against, so a failure summary names the
-        // dimension that failed instead of leaving it to be inferred.
-        ceilings:Object.freeze({rowsRead:MAX_D1_ROWS_READ_PER_CYCLE,rowsWritten:MAX_D1_ROWS_WRITTEN_PER_CYCLE,
+        // Which ceiling each dimension stands against, so a failure summary names the dimension
+        // that failed instead of leaving it to be inferred. The read dimension now carries all
+        // three thresholds under explicit names rather than one bare `rowsRead`: with EXPECTED,
+        // SOFT and HARD distinct, a single unqualified number could not say which envelope a
+        // refusal was measured against, and the whole envelope must be auditable from the
+        // sanitized summary alone.
+        ceilings:Object.freeze({rowsReadExpected:EXPECTED_D1_ROWS_READ_PER_CYCLE,
+          rowsReadSoft:SOFT_D1_ROWS_READ_PER_CYCLE,rowsReadHard:MAX_D1_ROWS_READ_PER_CYCLE,
+          rowsWritten:MAX_D1_ROWS_WRITTEN_PER_CYCLE,
           apiCalls:MAX_D1_API_CALLS_PER_CYCLE,requestBytes:D1_REST_REQUEST_LIMIT_BYTES,
           storedCalls:TELEMETRY_MAX_CALLS,statementsPerCall:TELEMETRY_MAX_STATEMENTS_PER_CALL}),
         plan,
