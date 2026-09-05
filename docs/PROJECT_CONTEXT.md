@@ -25,7 +25,8 @@ expected band; 78,098 of projected headroom below the 200,000 soft threshold; 38
 headroom; two spare API calls. **The 150,000 / 200,000 / 250,000 envelope did not bind this cycle.**
 
 **First per-call evidence, recorded but not acted on.** The two population counts billed exactly H
-and N, confirming live that both run index-only as their `EXPLAIN` contract requires. `HEADS_SQL`
+and N, consistent with the index-only plans the repository's `EXPLAIN` contracts already enforce —
+provider `rowsRead` alone does not independently establish a physical query plan. `HEADS_SQL`
 billed 40,019 against a structural 3N of 30,438 (≈ 1.315); the postflight billed 51,351 against
 42,139 (≈ 1.219); the commit's mutation reads were 696 against a modelled 1,266. Whole-cycle actual
 over structural was ≈ 1.2068, below the 1.35 planning assumption and **not** comparable with the

@@ -199,8 +199,12 @@ optimisation decision would rest on. They are not a recalibration and nothing is
 basis.
 
 * **The population counts billed exactly their structural cost** — 11,137 rows for the observation
-  count and 10,146 for the head count, precisely H and N. That is direct live confirmation that both
-  statements run index-only, exactly as their `EXPLAIN` contract requires them to.
+  count and 10,146 for the head count, precisely H and N. That accounting is **consistent with** the
+  index-only plans the repository's `EXPLAIN` contracts already enforce for both statements. It is
+  not independent proof of the physical plan: provider `rowsRead` reports how many rows were billed,
+  not which access path SQLite chose, and a different plan that happened to touch the same number of
+  rows would bill the same. The plan itself is established by the `EXPLAIN` contract, and this
+  measurement agrees with it.
 * **`HEADS_SQL` billed 40,019 against a structural 3N = 30,438**, a ratio of about 1.315.
 * **The postflight billed 51,351 against a structural 42,139**, a ratio of about 1.219.
 * **The commit's mutation reads were 696 against a modelled 1,266** — the mutation-read model
@@ -211,9 +215,11 @@ basis.
 * An earlier design hypothesis — that every non-covering index probe costs one extra row visit —
   would have predicted roughly 5N ≈ 50,730 for `HEADS_SQL` and about 73,991 for the postflight.
   Both measured figures are materially lower, so that hypothesis is **over-pessimistic** as stated.
-  The practical consequence is that a covering index would save **less** than that hypothesis
-  suggested, which makes the case for migration 0004 weaker, not stronger. No schema change is
-  proposed here.
+  **These measurements weaken the earlier pessimistic upper-bound case for migration 0004, but they
+  do not measure the counterfactual savings of a covering index.** This cycle executed the current
+  plan, not an indexed one; no covering-index plan has ever been run, so no saving figure — larger
+  or smaller — is established by it. Sizing that saving would need its own evidence. No schema
+  change is proposed here.
 
 **Correct summary: the first instrumented live sample supports the current conservative projection
 assumptions.** It does **not** prove the provider amplification correct, and the model is **not**
