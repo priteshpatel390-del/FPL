@@ -11,7 +11,11 @@
 > expected, 200,000 soft pre-mutation refusal, 250,000 hard circuit breaker — with the predictive
 > gate pointed at the soft threshold instead of the hard one. Where this record says the corrected
 > projection exceeds 125,000 and the soft gate would refuse, that remains an accurate statement
-> about the superseded envelope, and it is the evidence the resize rests on.
+> about the superseded envelope, and it is the evidence the resize rests on. **The corrected model
+> recorded here has since been measured live**: attended production run `33990959542` completed
+> successfully under the restored envelope, and its projection over-predicted actual provider rows
+> read by 8,550 — the conservative direction this remediation was designed to err in. See
+> [capacity live acceptance closeout](DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-CLOSEOUT.md).
 
 Repository implementation only. Nothing in this package was executed against Cloudflare. No D1
 request, no workflow dispatch, no production collection, no migration, no deployment, no Cron or

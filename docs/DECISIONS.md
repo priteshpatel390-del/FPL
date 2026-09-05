@@ -45,9 +45,12 @@ than at the hard ceiling.
   schema, `PROVIDER_READ_AMPLIFICATION = 1.35`, `PROVIDER_READ_SAFETY_RESERVE = 2000`, the write
   estimator, the 40,000 write ceiling, the 8-call API ceiling, the postflight contract and the
   `17 1 * * *` cron all unchanged, and the scheduled workflow stays owner-disabled.
-* **LIMITATION.** This restores an operating envelope. It is not proof that production collection
-  works, no cycle has run under it, and no season-long capacity guarantee is claimed. One attended
-  manual production collection remains a separate owner gate.
+* **LIMITATION, since partly answered.** This restored an operating envelope; when the decision was
+  taken no cycle had run under it. Attended run `33990959542` has since completed successfully at
+  113,352 provider rows read against a 121,902 projection, with clean postflight state, so the
+  envelope is now proven for one cycle. No season-long capacity guarantee is claimed, and
+  re-enabling the scheduler remains a separate owner gate. See
+  [capacity live acceptance closeout](../workers/data-platform/DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-CLOSEOUT.md).
 
 See [capacity envelope restoration](../workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).
 

@@ -25,16 +25,33 @@ with `productionMutation: 'definite_completed'`. The postflight D1 read was issu
 resource enforcement failed on its returned accounting before `validateProductionPostflight()` could
 validate the returned state. The postflight read ran; postflight validation did not, so **the
 Official FPL facts that run committed are present in D1 but have never been validated by the
-postflight contract** — an absence of proof, not evidence that they are invalid. The scheduled workflow is
-now owner-disabled. No provider, endpoint, rights classification, retention posture, normalisation
-or canonical identity changed as a result; the correction is to the resource model only.
+postflight contract at the time** — an absence of proof, not evidence that they were invalid. That
+absence has since been closed: Stage 0 run `33966125991` proved the state that run committed
+satisfies the production postflight contract. The scheduled workflow is now owner-disabled. No
+provider, endpoint, rights classification, retention posture, normalisation or canonical identity
+changed as a result; the correction was to the resource model and then to the resource envelope
+only.
+
+**Collection has since been proven under the restored envelope.** Attended manual run
+`33990959542`, event `workflow_dispatch`, on exact `main`
+`2ef79bf961eb22d9d86d75e99abe9ca769aebcf8`, completed successfully with both jobs green. It
+appended 141 changed observations against 10,157 records seen, leaving `completed` state with
+11,278 observations, 10,157 heads equal to 10,157 logical keys, and zero orphan heads, quarantined
+and rejected. Its Step Summary measured **113,352** provider `rowsRead`, 1,005 `rowsWritten`, 6 API
+calls and 209,511 request bytes, against a projection of 121,902 — the projection over-predicted by
+8,550, the conservative direction, and actual usage was ≈ 45.34% of the 250,000 hard ceiling.
+Endpoints, allowlist, validation, normalisation, canonical identity, rights classification and
+retention posture are all unchanged by that run. See
+[capacity live acceptance closeout](../workers/data-platform/DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-CLOSEOUT.md).
 The manual workflow stays the owner-approved manual and recovery boundary, gated by one immutable
 approved SHA, a credential-free repository gate and a second remote-`main` check in the same shell
 as the runner. **GitHub Actions is the approved scheduler**: one production schedule trigger,
 `17 1 * * *` (01:17 UTC), and Cloudflare Cron stays intentionally absent and superseded. That cron
 minute is a best-effort daily opportunity, not a guaranteed execution instant — GitHub delivered
-the accepted natural run approximately 3h21m after its nominal minute, and two earlier windows
-produced no run at all. See
+the accepted natural run approximately 3h21m after its nominal minute and the following one
+approximately 4h31m after its own, and two earlier windows produced no run at all. That timing
+limitation is unresolved and is separate from the resource work; re-enabling the scheduler means
+accepting it. See
 [manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md) and
 the [daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
