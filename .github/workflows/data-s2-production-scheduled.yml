@@ -55,6 +55,13 @@ jobs:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # The daily opportunity guard reads this repository's own Actions run and job metadata, so the
+    # gate needs `actions: read`. It is granted here, on the credential-free job alone, so the
+    # credentialled production job keeps exactly the top-level read scope it already had.
+    permissions:
+      contents: read
+      checks: read
+      actions: read
     outputs:
       scheduled_sha: ${{ steps.identity.outputs.scheduled_sha }}
     steps:
@@ -114,6 +121,21 @@ jobs:
           set -euo pipefail
           test "$(node --version)" = v24.19.0
           node workers/data-platform/scheduled/run-exact-head-verify.mjs
+          test -z "$(git status --porcelain)"
+
+      # DATA-S2 offers exactly one full collection opportunity per UTC day, and DATA-S2C adds a
+      # second unattended execution path, so that limit is now proved rather than implied by the
+      # trigger count. This read-only guard refuses when the day's opportunity has already been
+      # taken by an automatic collection or by an attended owner collection, and it refuses just
+      # as firmly when it cannot classify what it read. It runs last in the gate so the window it
+      # observes is the latest one available before the protected job can exist.
+      - name: Require an unconsumed daily collection opportunity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node workers/data-platform/scheduled/run-opportunity-guard.mjs
           test -z "$(git status --porcelain)"
 
   collect:

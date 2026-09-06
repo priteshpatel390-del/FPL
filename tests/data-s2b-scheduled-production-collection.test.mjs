@@ -327,9 +327,37 @@ test('the Verify wait is strictly read-only: it never dispatches, re-runs or re-
   assert.doesNotMatch(uncommented(source),/cloudflare|CLOUDFLARE/);
   // The gate step invokes exactly this entry point and nothing else.
   assert.ok(gateBlock().includes('node workers/data-platform/scheduled/run-exact-head-verify.mjs'));
+  // DATA-S2C added exactly one further credential-free gate entry point, the daily opportunity
+  // guard, and nothing else. The collection entry point is still the last thing this workflow
+  // runs, and it is still unchanged.
   assert.deepEqual([...uncommented(scheduled).matchAll(/node workers\/data-platform\/[a-z0-9/-]+\.mjs/g)].map(row=>row[0]),
     ['node workers/data-platform/scheduled/run-exact-head-verify.mjs',
+     'node workers/data-platform/scheduled/run-opportunity-guard.mjs',
      'node workers/data-platform/run-production-collection.mjs']);
+  // The guard is read-only in exactly the same way the Verify wait is.
+  const guard=`${read('workers/data-platform/scheduled/opportunity-guard.mjs')}\n${read('workers/data-platform/scheduled/run-opportunity-guard.mjs')}`;
+  for(const forbidden of [/'POST'/,/"POST"/,/rerun/i,/re-request/i,/rerequest/i,/dispatches/,
+    /workflow_dispatch/,/method:'(?!GET)/,/cancel/i])
+    assert.doesNotMatch(uncommented(guard),forbidden,String(forbidden));
+});
+
+test('the scheduled gate proves the day\'s collection opportunity is still unconsumed',()=>{
+  const gate=gateBlock();
+  assert.ok(gate.includes('node workers/data-platform/scheduled/run-opportunity-guard.mjs'));
+  // The guard runs last in the gate, so the window it observes is the latest one available
+  // before the protected production job can exist.
+  assert.ok(gate.indexOf('run-exact-head-verify.mjs')<gate.indexOf('run-opportunity-guard.mjs'));
+  assert.ok(!collectBlock().includes('run-opportunity-guard.mjs'));
+  // The Actions read scope it needs is granted on the credential-free job alone; the credentialled
+  // production job keeps exactly the top-level read scope it already had.
+  assert.match(gate,/permissions:\n      contents: read\n      checks: read\n      actions: read/);
+  assert.doesNotMatch(collectBlock(),/^\s*permissions:/m);
+  assert.equal([...scheduled.matchAll(/^permissions:$/gm)].length,1);
+  assert.doesNotMatch(uncommented(scheduled),/actions: write|contents: write/);
+  // The guard step adds no credential, environment, fingerprint or database identity to the gate.
+  const step=gate.slice(gate.indexOf('      - name: Require an unconsumed daily collection opportunity'));
+  assert.ok(step.includes('GH_TOKEN: ${{ github.token }}'));
+  assert.doesNotMatch(step,/secrets\.|CLOUDFLARE|vars\./);
 });
 
 /* --------------------- serialization, re-runs and unchanged contracts --------------------- */
