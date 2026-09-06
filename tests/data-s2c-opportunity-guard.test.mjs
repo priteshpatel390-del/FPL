@@ -12,7 +12,8 @@ import {AMBIGUOUS_REQUIRES_OWNER_ATTENTION,AUTOMATIC_COLLECTION,OPPORTUNITY_AVAI
   COLLECT_JOB_STATUSES,OPPORTUNITY_GUARD_REPOSITORY,OPPORTUNITY_REASONS,
   OPPORTUNITY_TRAILING_WINDOW_MS,
   OWNER_COLLECTION,ROUTINE_COLLECTION_WORKFLOWS,CANDIDATE_DISCOVERY_LOOKBACK_MS,
-  RERUN_ELIGIBILITY_DAYS,WORKFLOW_RUN_TIME_LIMIT_DAYS,candidateDiscoveryDate,
+  CONSUMING_RUN_ATTEMPT,MAX_RERUNS_PER_RUN,MAX_WORKFLOW_RUN_PAGES,WORKFLOW_RUNS_PAGE_SIZE,
+  WORKFLOW_RUN_TIME_LIMIT_DAYS,candidateDiscoveryDate,
   candidateDiscoveryStart,classifyOpportunity,opportunityWindowStart,resolveOpportunity,
   runJobsRequest,workflowRunsRequest}
   from '../workers/data-platform/scheduled/opportunity-guard.mjs';
@@ -21,6 +22,10 @@ const read=file=>fs.readFileSync(file,'utf8');
 const uncommented=source=>source.split('\n').filter(line=>!/^\s*(#|\/\/)/.test(line)).join('\n');
 const GUARD_MODULE_PATH='workers/data-platform/scheduled/opportunity-guard.mjs';
 const GUARD_ENTRY_PATH='workers/data-platform/scheduled/run-opportunity-guard.mjs';
+// The shared production entry point. It is NEVER modified by DATA-S2C; it is read here because the
+// invariant it carries is what makes attempts after the first harmless, and therefore what justifies
+// the 35-day candidate-discovery horizon.
+const PRODUCTION_ENTRY_PATH='workers/data-platform/run-production-collection.mjs';
 const SCHEDULED_WORKFLOW='.github/workflows/data-s2-production-scheduled.yml';
 const EXTERNAL_WORKFLOW='.github/workflows/data-s2-production-external.yml';
 const MANUAL_WORKFLOW='.github/workflows/data-s2-production-collection.yml';
@@ -216,6 +221,82 @@ test('the asking run cannot consume itself on any attempt',()=>{
   assert.equal(classify(self,{selfRunId:4305}).classification,OPPORTUNITY_CONSUMED);
 });
 
+// Only attempt 1 can consume. `filter=all` still matters — a later attempt must never hide attempt
+// 1's evidence — but a later attempt is never evidence of a collection in its own right, because
+// the production entry point refuses it before any production work happens.
+test('attempt 1 consumes the day from its own collect start',()=>{
+  const first=world({scheduled:listing(run(4310,at(2026,8,6,1,17),[
+    gate('success',at(2026,8,6,1,17),{attempt:1}),
+    collect('success',at(2026,8,6,1,18),{attempt:1})]))});
+  const outcome=classify(first,{selfRunId:4399});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+  assert.equal(CONSUMING_RUN_ATTEMPT,1);
+});
+
+test('a later attempt never consumes the day on its own',()=>{
+  // Attempt 1's gate refused, so attempt 1 collected nothing. Attempt 2 is a re-run, and a re-run
+  // reaching the collector is exactly what `workflow_retry_forbidden` prevents — so its metadata is
+  // never read as a collection. The failing shapes a real re-run can produce are ignored outright.
+  for(const conclusion of ['failure','cancelled','timed_out']){
+    const rerun=world({scheduled:listing(run(4311,at(2026,8,6,1,17),[
+      gate('failure',at(2026,8,6,1,17),{attempt:1}),
+      collect('skipped',null,{attempt:1}),
+      gate('success',at(2026,8,6,4,0),{attempt:2}),
+      collect(conclusion,at(2026,8,6,4,1),{attempt:2})]))});
+    const outcome=classify(rerun,{selfRunId:4399});
+    assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE,conclusion);
+    assert.equal(outcome.reason,'opportunity_available',conclusion);
+  }
+  // A queued or running later attempt is equally not a collection.
+  const running=world({scheduled:listing(run(4312,at(2026,8,6,1,17),[
+    collect('skipped',null,{attempt:1}),
+    collect(null,at(2026,8,6,4,1),{attempt:2})]))});
+  assert.equal(classify(running,{selfRunId:4399}).classification,OPPORTUNITY_AVAILABLE);
+});
+
+test('a later attempt reporting a successful collect is impossible state and fails closed',()=>{
+  // The entry point throws before it resolves any production identity, so a re-run's collect can
+  // only ever fail. Metadata claiming otherwise contradicts the repository contract, and the guard
+  // refuses rather than trusting it in either direction — and it is never OPPORTUNITY_CONSUMED
+  // solely because a later attempt appears to have collected.
+  const impossible=world({scheduled:listing(run(4313,at(2026,8,6,1,17),[
+    gate('failure',at(2026,8,6,1,17),{attempt:1}),
+    collect('skipped',null,{attempt:1}),
+    gate('success',at(2026,8,6,4,0),{attempt:2}),
+    collect('success',at(2026,8,6,4,1),{attempt:2})]))});
+  const outcome=classify(impossible,{selfRunId:4399});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_rerun_contract_violated');
+  assert.ok(OPPORTUNITY_REASONS.includes(outcome.reason));
+});
+
+test('a later attempt can never make a day that attempt 1 already collected available again',()=>{
+  // Attempt 1 collected; every later-attempt shape leaves the day consumed, and the successful one
+  // fails closed. No ordering of the executions changes either answer.
+  for(const [conclusion,expected] of [['skipped',OPPORTUNITY_CONSUMED],['failure',OPPORTUNITY_CONSUMED],
+    ['cancelled',OPPORTUNITY_CONSUMED],['success',AMBIGUOUS_REQUIRES_OWNER_ATTENTION]]){
+    const jobs=[collect('success',at(2026,8,6,1,18),{attempt:1}),
+      collect(conclusion,conclusion==='skipped'?null:at(2026,8,6,4,1),{attempt:2})];
+    assert.equal(classify(world({scheduled:listing(run(4314,at(2026,8,6,1,17),jobs))}),
+      {selfRunId:4399}).classification,expected,conclusion);
+    assert.equal(classify(world({scheduled:listing(run(4314,at(2026,8,6,1,17),[...jobs].reverse()))}),
+      {selfRunId:4399}).classification,expected,`${conclusion} reversed`);
+  }
+});
+
+test('a later attempt never needs timing and never makes the day ambiguous on timing',()=>{
+  // Attempt 1 is the only attempt whose start instant has to be usable. A later attempt with no
+  // start, an unparseable start or a start that contradicts its own run is ignored, not an
+  // ambiguity — the day is decided entirely by attempt 1.
+  for(const started of [null,'never',at(2026,8,5,1,0)]){
+    const noisy=world({scheduled:listing(run(4315,at(2026,8,6,1,17),[
+      collect('skipped',null,{attempt:1}),
+      collect('failure',started,{attempt:2})]))});
+    assert.equal(classify(noisy,{selfRunId:4399}).classification,OPPORTUNITY_AVAILABLE,String(started));
+  }
+});
+
 test('the jobs listing asks for every attempt and never only the latest',()=>{
   const url=runJobsRequest(4301,'t').url;
   assert.ok(url.includes('filter=all'),url);
@@ -225,8 +306,15 @@ test('the jobs listing asks for every attempt and never only the latest',()=>{
   const source=uncommented(read(GUARD_MODULE_PATH));
   assert.match(source,/filter=all/);
   assert.doesNotMatch(source,/filter=latest/);
-  // One bounded page, with no pagination loop and no page cursor of any kind.
-  assert.doesNotMatch(source,/[?&]page=|\bpage\+\+|while\s*\(|for\s*\(;;\)|link/i);
+  // The jobs listing itself stays one bounded page: no `page` parameter, on any run id. Matched as
+  // a parameter rather than a substring, because `per_page` legitimately contains it.
+  for(const runId of [1,4301,999999])assert.doesNotMatch(runJobsRequest(runId,'t').url,/[?&]page=/,
+    runJobsRequest(runId,'t').url);
+  // Pagination exists only for the candidate listing, and only as an explicitly numbered sequence:
+  // no cursor, no `Link` header following, no recursion and no unbounded loop anywhere.
+  assert.doesNotMatch(source,/while\s*\(|for\s*\(;;\)|link|cursor|\bnext_page\b/i);
+  assert.doesNotMatch(source,/readWorkflowRunsPages\s*\([^)]*\)[\s\S]*?readWorkflowRunsPages\(/);
+  assert.equal([...source.matchAll(/readWorkflowRunsPages/g)].length,2,'defined once, called once');
 });
 
 test('a jobs listing the provider counts higher than it returned is truncated and fails closed',
@@ -510,13 +598,51 @@ test('exhausting the read bound is an ambiguity, never a licence to keep reading
 // can only filter a run listing on the run's own `created_at`. Asking it for runs created inside the
 // consumption window omits the run created at 23:50 whose collect started at 00:10 — the classifier
 // would refuse correctly, and never sees it.
-test('the candidate lookback is derived from documented GitHub limits, not chosen',()=>{
-  // "You can re-run a workflow run ... up to 30 days after its initial run", and a workflow run is
-  // limited to "35 days / workflow run ... includes execution duration, and time spent on waiting
-  // and approval". The worst case chains them.
-  assert.equal(RERUN_ELIGIBILITY_DAYS,30);
+test('the candidate lookback is the documented workflow-run limit alone, and not 65 days',()=>{
+  // A workflow run is limited to "35 days / workflow run ... includes execution duration, and time
+  // spent on waiting and approval", which is the whole horizon an ORIGINAL attempt's collect can sit
+  // inside. GitHub's 30-day re-run eligibility is deliberately excluded: no re-run can consume the
+  // day, because the production entry point refuses every attempt after the first.
   assert.equal(WORKFLOW_RUN_TIME_LIMIT_DAYS,35);
-  assert.equal(CANDIDATE_DISCOVERY_LOOKBACK_MS,65*24*60*60*1000);
+  assert.equal(CANDIDATE_DISCOVERY_LOOKBACK_MS,35*24*60*60*1000);
+  assert.notEqual(CANDIDATE_DISCOVERY_LOOKBACK_MS,65*24*60*60*1000);
+  // The superseded chained derivation is gone from the module, constant and all.
+  const source=uncommented(read(GUARD_MODULE_PATH));
+  assert.doesNotMatch(source,/RERUN_ELIGIBILITY_DAYS/);
+  assert.doesNotMatch(source,/65/);
+  // The 50-re-run cap survives as what bounds the single unpaginated jobs page, and nothing else.
+  assert.equal(MAX_RERUNS_PER_RUN,50);
+  assert.equal(MAX_RERUNS_PER_RUN*2,WORKFLOW_RUNS_PAGE_SIZE);
+});
+
+// The load-bearing justification for excluding re-run eligibility from the 35-day horizon. If this
+// invariant ever moves, disappears, or comes to sit after production identity resolution or the
+// collector, the discovery horizon is no longer sound and this must fail.
+test('the production entry point refuses a re-run before any production work',()=>{
+  const entry=read(PRODUCTION_ENTRY_PATH);
+  const refusal="if(process.env.GITHUB_RUN_ATTEMPT!=='1')throw new Error('workflow_retry_forbidden');";
+  // The exact literal, at the top level of the module rather than inside any function or branch.
+  assert.match(entry,/^if\(process\.env\.GITHUB_RUN_ATTEMPT!=='1'\)throw new Error\('workflow_retry_forbidden'\);$/m);
+  const refusalAt=entry.indexOf(refusal);
+  assert.ok(refusalAt>=0,'the re-run refusal literal must be present verbatim');
+  assert.equal(entry.indexOf(refusal,refusalAt+1),-1,'exactly one refusal');
+  // Import statements name these symbols before the refusal by necessity; what must come after it
+  // is every CALL and every network use. Blank the import lines and pin the source order of the
+  // remainder.
+  const executable=entry.split('\n').map(line=>/^import\s/.test(line)?'':line).join('\n');
+  const refusalIndex=executable.indexOf(refusal);
+  assert.ok(refusalIndex>=0);
+  for(const marker of ['resolveProductionIdentity(','maskProductionIdentity(','runProductionCollection(',
+    'fetch']){
+    const at=executable.indexOf(marker);
+    assert.ok(at>=0,marker);
+    assert.ok(at>refusalIndex,`${marker} must occur after the re-run refusal`);
+  }
+  // Nothing reaches the network, Official FPL or D1 before the refusal.
+  const before=executable.slice(0,refusalIndex);
+  for(const forbidden of [/fetch/,/https?:/,/api\.cloudflare/i,/fantasy\.premierleague/i,/d1/i,
+    /await\s/,/runProductionCollection/,/ProductionIdentity/])
+    assert.doesNotMatch(before,forbidden,String(forbidden));
 });
 
 test('candidate discovery reaches strictly further back than the consumption window',()=>{
@@ -550,7 +676,7 @@ test('a run created before midnight whose collect started after it is discovered
     // The generated request really does reach back past the run's creation date, and the old
     // consumption-window filter really would have excluded it.
     const listing=t.calls.find(call=>call.url.includes('/runs?'));
-    const filtered=decodeURIComponent(listing.url.split('created=')[1]).replace('>=','');
+    const filtered=decodeURIComponent(listing.url.split('created=')[1].split('&')[0]).replace('>=','');
     assert.ok(Date.parse(`${filtered}T00:00:00Z`)<=Date.parse(at(2026,8,6,23,50)),filtered);
     assert.equal(opportunityWindowStart(now),Date.UTC(2026,8,7,0,0,0));
     assert.ok(Date.parse(at(2026,8,6,23,50))<opportunityWindowStart(now));
@@ -573,7 +699,7 @@ test('the same discovery holds on the tightest date boundary',async()=>{
 test('a conservatively discovered run whose collect is outside both rules does not consume',
   async()=>{
     const now=Date.UTC(2026,8,7,8,0,0);
-    // Discovered because it was created inside the 65-day lookback; it collected weeks ago.
+    // Discovered because it was created inside the 35-day lookback; it collected days ago.
     const t=transport([
       ['/actions/runs/73/jobs',ok(jobsBody(
         jobRow('repository-gate','success',at(2026,8,1,1,17),1),
@@ -585,10 +711,27 @@ test('a conservatively discovered run whose collect is outside both rules does n
     assert.equal(outcome.reason,'opportunity_available');
   });
 
-test('an old run re-run into the current window is discovered and consumes',async()=>{
-  // The exact case the lookback exists for: the run object was created 40 days ago, was re-run, and
-  // the later attempt's collect started this morning. Its `created_at` is far outside the
-  // consumption window and inside the discovery window.
+test('an old run whose original attempt collected this morning is discovered and consumes',async()=>{
+  // The exact case the 35-day lookback exists for: the run object was created 20 days ago and
+  // waited — on environment admission and behind the shared production concurrency group — and its
+  // ORIGINAL attempt's collect started this morning. Its `created_at` is far outside the consumption
+  // window and inside the discovery window.
+  const now=Date.UTC(2026,8,7,8,0,0);
+  const t=transport([
+    ['/actions/runs/74/jobs',ok(jobsBody(
+      jobRow('repository-gate','success',at(2026,7,18,1,17),1),
+      jobRow('collect','success',at(2026,8,7,2,5),1)))],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,18,1,17)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+});
+
+test('an old run re-run into the current window does not consume through the re-run',async()=>{
+  // The same run, but attempt 1's gate refused and only the re-run reached `collect`. Under the
+  // pinned entry-point invariant that re-run cannot have collected, so a reported success is
+  // impossible state and the guard refuses rather than reading it as a collection.
   const now=Date.UTC(2026,8,7,8,0,0);
   const t=transport([
     ['/actions/runs/74/jobs',ok(jobsBody(
@@ -599,8 +742,22 @@ test('an old run re-run into the current window is discovered and consumes',asyn
     ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
-  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
-  assert.equal(outcome.reason,'automatic_collection_consumed');
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_rerun_contract_violated');
+  // The one thing it must never be.
+  assert.notEqual(outcome.classification,OPPORTUNITY_CONSUMED);
+  // And the realistic shape — the re-run failing fast, as the entry point makes it — simply leaves
+  // the day available, because attempt 1 never collected.
+  const realistic=transport([
+    ['/actions/runs/74/jobs',ok(jobsBody(
+      jobRow('repository-gate','failure',at(2026,7,29,1,17),1),
+      jobRow('collect','skipped',null,1),
+      jobRow('repository-gate','success',at(2026,8,7,2,0),2),
+      jobRow('collect','failure',at(2026,8,7,2,5),2)))],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
+    ['/runs',ok(runsBody())]]);
+  assert.equal((await resolveOpportunity({token:'t',fetchImpl:realistic.fetchImpl,now,selfRunId:99}))
+    .classification,OPPORTUNITY_AVAILABLE);
 });
 
 test('the asking run is still excluded when the wider lookback discovers it',async()=>{
@@ -624,25 +781,220 @@ test('a truncated candidate listing fails closed rather than discovering a subse
   assert.equal(outcome.reason,'guard_read_failed');
 });
 
-// The wider lookback returns more candidates, and each one costs a jobs read. The bound is not
-// raised to absorb that here: exceeding it stops the run rather than leaving a candidate unexamined.
-test('more candidates than the read bound allows is an ambiguity, never an assumption',async()=>{
-  // Three listings plus one jobs read per candidate: at most nine candidates fit inside the bound,
-  // and the tenth stops the run.
-  const nine=Array.from({length:9},(_,index)=>({id:index+1,created_at:at(2026,8,6,1,index)}));
-  const jobs=['/jobs',ok(jobsBody(jobRow('repository-gate','failure',at(2026,8,6,1,0))))];
-  const fits=transport([jobs,
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody(...nine))],['/runs',ok(runsBody())]]);
-  assert.equal((await resolveOpportunity({token:'t',fetchImpl:fits.fetchImpl,now:NOW}))
-    .classification,OPPORTUNITY_AVAILABLE);
-  assert.equal(fits.calls.length,OPPORTUNITY_GUARD_MAX_READS);
-  const ten=Array.from({length:10},(_,index)=>({id:index+1,created_at:at(2026,8,6,1,index)}));
-  const t=transport([jobs,
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody(...ten))],['/runs',ok(runsBody())]]);
+/* ---------------- bounded candidate-listing pagination, and the hard read cap ---------------- */
+
+// A provider-shaped candidate listing paged exactly as GitHub pages one: `total_count` is the size
+// of the whole filtered set on every page, and each page carries only the rows that remain.
+const runRows=(count,offset=0)=>Array.from({length:count},
+  (_,index)=>({id:offset+index+1,created_at:at(2026,8,6,1,0)}));
+const runsPage=(rows,pageNumber)=>({total_count:rows.length,
+  workflow_runs:rows.slice((pageNumber-1)*WORKFLOW_RUNS_PAGE_SIZE,pageNumber*WORKFLOW_RUNS_PAGE_SIZE)});
+const pageOf=url=>{const match=/[?&]page=([0-9]+)/.exec(url);return match?Number(match[1]):null;};
+const runIdOf=url=>{const match=/\/actions\/runs\/([0-9]+)\/jobs/.exec(url);return match?Number(match[1]):null;};
+const gateOnlyJobs=ok(jobsBody(jobRow('repository-gate','failure',at(2026,8,6,1,0))));
+
+// Routes a whole paginated world: each governed workflow file answers from its own run set, job
+// listings answer per run id, and `override` can corrupt one specific response.
+function paged({scheduled=[],external=[],manual=[],jobs=()=>gateOnlyJobs,override=null}={}){
+  const calls=[];
+  const sets=[['data-s2-production-scheduled.yml',scheduled],
+    ['data-s2-production-external.yml',external],['data-s2-production-collection.yml',manual]];
+  return {calls,fetchImpl:async(url,init)=>{
+    calls.push({url,method:init.method});
+    const forced=override?override(url):null;
+    if(forced)return forced;
+    for(const [file,rows] of sets)if(url.includes(`${file}/runs`))return ok(runsPage(rows,pageOf(url)));
+    const runId=runIdOf(url);
+    if(runId!==null)return jobs(runId);
+    return {status:404,json:async()=>({})};
+  }};
+}
+const listingCalls=(calls,file)=>calls.filter(call=>call.url.includes(`${file}/runs`));
+
+test('every candidate-listing request is an explicitly numbered page of the fixed page size',()=>{
+  const request=workflowRunsRequest('data-s2-production-external.yml','t',NOW,3);
+  assert.ok(request.url.includes(`per_page=${WORKFLOW_RUNS_PAGE_SIZE}`),request.url);
+  assert.ok(request.url.includes('&page=3'),request.url);
+  assert.equal(request.init.method,'GET');
+  // Page 1 is the default, so an unnumbered call is still an explicit first page.
+  assert.ok(workflowRunsRequest('data-s2-production-external.yml','t',NOW).url.includes('&page=1'));
+  // The page number is validated, and the page cap is a real ceiling on the request itself.
+  for(const bad of [0,-1,1.5,'2',null,MAX_WORKFLOW_RUN_PAGES+1])
+    assert.throws(()=>workflowRunsRequest('data-s2-production-external.yml','t',NOW,bad),
+      /opportunity_page_invalid/,String(bad));
+  assert.doesNotThrow(()=>workflowRunsRequest('data-s2-production-external.yml','t',NOW,
+    MAX_WORKFLOW_RUN_PAGES));
+});
+
+// The defect this pins: workflow B gains three dispatch opportunities a day under Package C, so a
+// 35-day horizon holds more than one page of candidates and a single page would silently omit the
+// run that collected.
+test('a consuming run on the second candidate page is discovered and refuses the day',async()=>{
+  const rows=runRows(101,7000);
+  const consuming=rows[100].id;
+  const t=paged({external:rows,jobs:runId=>runId===consuming
+    ?ok(jobsBody(jobRow('repository-gate','success',at(2026,8,6,1,17),1),
+      jobRow('collect','success',at(2026,8,6,1,18),1)))
+    :gateOnlyJobs});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+  // The run really was only reachable on page 2, and its jobs really were read.
+  assert.ok(t.calls.some(call=>call.url.includes(`/actions/runs/${consuming}/jobs`)));
+  assert.equal(listingCalls(t.calls,'data-s2-production-external.yml').length,2);
+});
+
+test('pagination stops exactly when the provider count is satisfied',async()=>{
+  for(const [count,pages] of [[0,1],[1,1],[100,1],[101,2]]){
+    const t=paged({external:runRows(count,9000)});
+    assert.equal((await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW}))
+      .classification,OPPORTUNITY_AVAILABLE,String(count));
+    assert.equal(listingCalls(t.calls,'data-s2-production-external.yml').length,pages,String(count));
+    // The other two workflows are empty and cost exactly one page each — never zero, never two.
+    assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,1);
+    assert.equal(listingCalls(t.calls,'data-s2-production-collection.yml').length,1);
+    // Page numbers are the exact ascending sequence, with no repeat and no gap.
+    assert.deepEqual(listingCalls(t.calls,'data-s2-production-external.yml').map(call=>pageOf(call.url)),
+      Array.from({length:pages},(_,index)=>index+1));
+  }
+  // Above 200 candidates every page is still read on the same arithmetic — three pages for 201 —
+  // and it is the job listings, not the paging, that then exhaust the read bound.
+  const large=paged({external:runRows(201,9900)});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:large.fetchImpl,now:NOW});
+  assert.deepEqual(listingCalls(large.calls,'data-s2-production-external.yml').map(call=>pageOf(call.url)),
+    [1,2,3]);
+  assert.equal(outcome.reason,'guard_read_bound_exhausted');
+  assert.equal(large.calls.length,OPPORTUNITY_GUARD_MAX_READS);
+});
+
+test('a malformed later candidate page fails closed rather than discovering a subset',async()=>{
+  for(const broken of [ok(null),ok({workflow_runs:[]}),ok({total_count:101}),
+    {status:500,json:async()=>({})},{status:200,json:async()=>{throw new Error('bad json');}},
+    ok({total_count:101,workflow_runs:[{id:'x',created_at:at(2026,8,6,1,0)}]}),
+    ok({total_count:101,workflow_runs:[{id:1,created_at:'never'}]}),
+    // Short and over-full pages are both rejected: page 2 of a 101-run set must carry exactly one.
+    ok({total_count:101,workflow_runs:[]}),
+    ok({total_count:101,workflow_runs:runRows(2,9500)})]){
+    const t=paged({external:runRows(101,9000),
+      override:url=>url.includes('data-s2-production-external.yml/runs')&&pageOf(url)===2?broken:null});
+    const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+    assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION,JSON.stringify(broken.status));
+    assert.equal(outcome.reason,'guard_read_failed');
+  }
+});
+
+test('a total_count that changes between pages is an ambiguity, never a reconciliation',async()=>{
+  // Page 2 is internally consistent with its own smaller total — zero rows remain after 100 — so
+  // only the explicit cross-page reconciliation catches it.
+  const shrunk=paged({external:runRows(101,9000),
+    override:url=>url.includes('data-s2-production-external.yml/runs')&&pageOf(url)===2
+      ?ok({total_count:100,workflow_runs:[]}):null});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:shrunk.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_failed');
+  // A set that grew is equally unusable.
+  const grown=paged({external:runRows(101,9000),
+    override:url=>url.includes('data-s2-production-external.yml/runs')&&pageOf(url)===2
+      ?ok({total_count:300,workflow_runs:runRows(100,9600)}):null});
+  assert.equal((await resolveOpportunity({token:'t',fetchImpl:grown.fetchImpl,now:NOW})).reason,
+    'guard_read_failed');
+});
+
+test('a run repeated across pages is an ambiguity, never silently de-duplicated',async()=>{
+  // A filtered set that shifted underneath the sequence can drop a run as easily as repeat one, so
+  // the repeat is treated as evidence the read is unusable rather than as a tidy-up.
+  const rows=runRows(101,9000);
+  const t=paged({external:rows,
+    override:url=>url.includes('data-s2-production-external.yml/runs')&&pageOf(url)===2
+      ?ok({total_count:101,workflow_runs:[rows[0]]}):null});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_failed');
+});
+
+test('more candidate pages than the page cap allows stops before the second request',async()=>{
+  // Placed in the workflow the guard reads first, so "stops immediately" is provable by call count.
+  const t=paged({scheduled:runRows(MAX_WORKFLOW_RUN_PAGES*WORKFLOW_RUNS_PAGE_SIZE+1,20000)});
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
   assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
   assert.equal(outcome.reason,'guard_read_bound_exhausted');
-  assert.ok(t.calls.length<=OPPORTUNITY_GUARD_MAX_READS);
+  // The page count is fixed from page 1, so the run stops after exactly one listing read.
+  assert.equal(t.calls.length,1);
+});
+
+/* -------- the hard read cap: 200 requests, counted across listings and job listings -------- */
+
+test('the hard read bound is 200 and counts every GitHub request the guard makes',async()=>{
+  assert.equal(OPPORTUNITY_GUARD_MAX_READS,200);
+  // Two listing pages plus 196 job listings for workflow A, plus one empty page each for B and C,
+  // is exactly 200 requests — and exactly 200 is allowed.
+  const t=paged({scheduled:runRows(196,30000)});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  assert.equal(outcome.reason,'opportunity_available');
+  assert.equal(t.calls.length,OPPORTUNITY_GUARD_MAX_READS);
+  assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,2);
+  assert.equal(t.calls.filter(call=>call.url.includes('/jobs')).length,196);
+});
+
+test('a cycle needing a 201st request fails closed and never issues it',async()=>{
+  // One more candidate run: two listing pages plus 197 job listings plus B's page is 200, and C's
+  // page would be the 201st.
+  const t=paged({scheduled:runRows(197,31000)});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_bound_exhausted');
+  // The bound is a hard cap: the guard stops at it, it does not overshoot and then notice.
+  assert.equal(t.calls.length,OPPORTUNITY_GUARD_MAX_READS);
+  assert.ok(!t.calls.some(call=>call.url.includes('data-s2-production-collection.yml/runs')));
+});
+
+test('the approved overlap footprint of 35 A runs and 105 B runs fits inside the bound',async()=>{
+  // The steady state the 200 cap is budgeted for: workflow A asking once a day and workflow B three
+  // times a day across the 35-day discovery horizon, with workflow C small.
+  const t=paged({scheduled:runRows(35,40000),external:runRows(105,41000),manual:runRows(2,42000)});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  // 1 + 2 + 1 listing pages, plus one job listing per candidate run.
+  assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,1);
+  assert.equal(listingCalls(t.calls,'data-s2-production-external.yml').length,2);
+  assert.equal(listingCalls(t.calls,'data-s2-production-collection.yml').length,1);
+  assert.equal(t.calls.filter(call=>call.url.includes('/jobs')).length,142);
+  assert.equal(t.calls.length,146);
+  assert.ok(t.calls.length<OPPORTUNITY_GUARD_MAX_READS);
+  // Headroom is stated, not implied: the budget is a budget and not a proof.
+  assert.equal(OPPORTUNITY_GUARD_MAX_READS-t.calls.length,54);
+  // The same population still refuses correctly when one of those B runs collected today.
+  const consuming=41105;
+  const spent=paged({scheduled:runRows(35,40000),external:runRows(105,41000),manual:runRows(2,42000),
+    jobs:runId=>runId===consuming
+      ?ok(jobsBody(jobRow('repository-gate','success',at(2026,8,6,1,17),1),
+        jobRow('collect','success',at(2026,8,6,1,18),1)))
+      :gateOnlyJobs});
+  assert.equal((await resolveOpportunity({token:'t',fetchImpl:spent.fetchImpl,now:NOW,selfRunId:99}))
+    .reason,'automatic_collection_consumed');
+});
+
+test('the asking run still costs no job listing when the population is large',async()=>{
+  const rows=runRows(150,50000);
+  const t=paged({external:rows});
+  const selfRunId=rows[120].id;
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  assert.ok(!t.calls.some(call=>call.url.includes(`/actions/runs/${selfRunId}/jobs`)));
+  // 149 job listings for 150 candidates, plus 2 + 1 + 1 listing pages.
+  assert.equal(t.calls.filter(call=>call.url.includes('/jobs')).length,149);
+  assert.equal(t.calls.length,153);
+});
+
+test('a jobs listing truncated by the provider still fails closed at scale',async()=>{
+  const rows=runRows(101,60000);
+  const t=paged({external:rows,jobs:runId=>runId===rows[100].id
+    ?ok({total_count:4,jobs:[jobRow('repository-gate','failure',at(2026,8,6,1,0),1)]})
+    :gateOnlyJobs});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_failed');
 });
 
 test('discovery never changes how consumption is decided',async()=>{

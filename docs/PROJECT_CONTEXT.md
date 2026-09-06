@@ -79,13 +79,21 @@ exactly; a new **isolated Cloudflare dispatcher Worker** under the dedicated ide
 workflows, each of which carries a credentialled job named `collect`. Resume, migration,
 reconciliation, EXPLAIN and integrity workflows are deliberately excluded and keep their own
 owner-input and approval gates. A run consumes the day when its `collect` job exists with any
-conclusion other than `skipped`, on any attempt, and that `collect` execution **started** in the
-current UTC day **or** within the trailing six hours. Candidate discovery is a separate, wider
-65-day lookback over run creation, because the Actions API cannot filter a run listing by job start; the trailing rule closes the UTC-midnight duplicate hole that GitHub's observed
-lateness makes reachable. A `skipped` collect job — what a refused gate looks like — does not
-consume. The attended manual workflow is not guarded, but does consume the day for both automatic
-paths. Every malformed, partial, truncated or unreadable response is
-`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`; the guard never fails open.
+conclusion other than `skipped` and that `collect` execution **started** in the current UTC day
+**or** within the trailing six hours. **Only attempt 1 can consume**: the shared production entry
+point throws `workflow_retry_forbidden` on every later attempt before it resolves the production
+identity and before it reaches the collector, so a re-run cannot collect at all. `filter=all` is
+still read across every attempt so a later one can never hide attempt 1's evidence, and a later
+attempt reporting a successful `collect` is impossible state that fails closed. Candidate discovery
+is a separate, wider **35-day** lookback over run creation — GitHub's documented workflow-run time
+limit — because the Actions API cannot filter a run listing by job start; the 30-day re-run
+eligibility is excluded because no re-run can consume the day. The trailing rule closes the
+UTC-midnight duplicate hole that GitHub's observed lateness makes reachable. A `skipped` collect job
+— what a refused gate looks like — does not consume. Candidate listings are read as a bounded,
+explicitly numbered page sequence at `per_page=100` reconciled against the provider's `total_count`,
+and the whole invocation is capped at **200** GitHub requests. The attended manual workflow is not
+guarded, but does consume the day for both automatic paths. Every malformed, partial, truncated or
+unreadable response is `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`; the guard never fails open.
 
 **The dispatcher is a timer, not a collector.** It imports nothing outside its own directory, holds
 no D1 binding or Cloudflare data credential, exposes no fetch handler, no `workers.dev` hostname, no

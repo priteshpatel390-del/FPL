@@ -56,15 +56,57 @@ running or about to, and treating that as free is the one direction this guard m
 run listing by the run's `created_at`, but consumption is decided from `collect.started_at`. Asking
 it for runs created inside the consumption window omits exactly the run that matters — one created
 at 23:50 whose collect started at 00:10 — so the classifier would never see a collection it would
-have correctly refused. Discovery therefore uses its own lookback of 65 days, derived rather than
-chosen: GitHub documents re-run eligibility of "up to 30 days after its initial run" and a workflow
-run time limit of "35 days / workflow run", which "includes execution duration, and time spent on
-waiting and approval". Chaining them bounds the gap between a run's creation and any of its collect
-executions starting. Environment approval waiting is already inside the 35 days, and the 50-re-run
-cap cannot compound because every re-run stays inside the same 30-day eligibility window. No
+have correctly refused. Discovery therefore uses its own lookback of **35 days**, derived rather
+than chosen: GitHub documents a workflow run time limit of "35 days / workflow run", which "includes
+execution duration, and time spent on waiting and approval", and that is the whole horizon an
+original attempt's `collect` can sit inside. Environment approval waiting is already within it. No
 run-level field prunes the candidate set: `updated_at`, `run_started_at`, `status` and `conclusion`
 would each be cheaper, but none carries documented semantics strong enough to prove a run cannot
 contain an in-window collect, and an inference that is usually true is not a guard.
+
+**Why the 30-day re-run eligibility is excluded, superseding the chained 65-day derivation.** The
+earlier lookback chained re-run eligibility onto the run time limit, on the reasoning that a re-run
+could start a `collect` up to 65 days after the original creation. That is only load-bearing if a
+re-run can consume the day, and none can: `workers/data-platform/run-production-collection.mjs`
+throws `workflow_retry_forbidden` on any attempt after the first, **before**
+`resolveProductionIdentity`, before `maskProductionIdentity`, before `runProductionCollection` and
+before any network use, so a re-run cannot call Official FPL, cannot reach D1 and cannot mutate
+production. A repository invariant that refuses the work outright is stronger and more specific than
+a provider window that merely permits the attempt. That invariant is now pinned by a permanent
+structural regression over the entry point's own source order — the exact literal, at module top
+level, ahead of every identity call, the collector and any `fetch` — and the entry point is not
+modified. If the invariant ever moves, disappears or comes to sit after production work, the test
+fails and the 35-day horizon must be revisited. The cost of the wider horizon was real: 65 days of
+candidates could not be inspected inside any reasonable read bound.
+
+**Why only attempt 1 consumes, and why a successful later attempt fails closed.** `filter=all` is
+retained, and its purpose is now precise: a later attempt must never be able to *hide* attempt 1's
+evidence, but a later attempt is never evidence of a collection in its own right. A re-run's
+`collect` job does start — the runner boots and the entry point throws — so a failed, cancelled or
+timed-out later attempt is exactly what the invariant predicts and is ignored. A later attempt
+reporting a **successful** `collect` is not producible under that invariant at all, so it is treated
+as impossible state and returns `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with the reason
+`guard_rerun_contract_violated`, rather than being trusted in either direction. There is deliberately
+no path by which a re-run can make a day available that attempt 1 already collected.
+
+**Why the candidate listing is paginated and the read bound is 200.** Under Package C workflow B
+gains three dispatch opportunities a day beside workflow A's one, so a 35-day horizon holds roughly
+35 A runs and 105 B runs — about 140 candidates. One 100-row page cannot carry that, and a single
+page would silently omit the run that collected; the previous twelve-read bound could inspect at
+most nine candidates, so it would have refused every realistic cycle. Candidate listings are now a
+fixed, non-recursive sequence of explicitly numbered `page=N` reads at `per_page=100`: page 1's
+`total_count` fixes the page count before the second request is issued, ten pages is a hard ceiling,
+every later page must report the same total, the accumulated rows must reconcile exactly with it and
+no run id may repeat. Ordering is never relied on for correctness. A short or over-full page, a
+changed `total_count`, a duplicated run or a missing page is `guard_read_failed`; exceeding the page
+cap or the read bound is `guard_read_bound_exhausted`. The jobs listing is deliberately *not*
+paginated: GitHub caps a run at 50 re-runs and the governed workflows carry two jobs per attempt, so
+one 100-row `filter=all` page covers every execution a run can ever have, and a truncated one still
+fails closed. `OPPORTUNITY_GUARD_MAX_READS` is **200**, a hard cap counting every GitHub request of
+either kind. The 35 A + 105 B footprint costs about 146 requests, leaving roughly 54 for attended
+workflow C runs, additional historical routine runs and page-shape variance. That is a budget and
+not a proof: a pathological history still exceeds it and still refuses rather than admitting an
+unexamined candidate. The rejected 160-read proposal was underpriced against the same population.
 
 **Why every attempt is read, and why job timing decides the window.** The jobs listing uses
 `filter=all`, never `filter=latest`. `latest` shows only the most recent execution of each job, so a

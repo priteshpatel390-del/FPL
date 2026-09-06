@@ -59,6 +59,25 @@
 // have correctly refused. Discovery therefore uses its own, deliberately wider, provider-justified
 // lookback, and the classifier still decides on `collect.started_at` alone. Discovery may return
 // runs that cannot consume; it must never omit a run that could.
+//
+// ONLY THE FIRST ATTEMPT OF A RUN CAN CONSUME THE DAY. The shared production entry point refuses
+// every attempt after the first — `workflow_retry_forbidden` — before it resolves any production
+// identity and before it reaches the collector, so a re-run cannot fetch Official FPL, cannot reach
+// D1 and cannot mutate production. That repository invariant, pinned by a permanent structural
+// regression over the entry point's own source order, is what makes later attempts harmless, and it
+// is also what bounds candidate discovery: discovery only has to cover how long an ORIGINAL attempt
+// can wait before its `collect` begins. `filter=all` stays load-bearing, because a later attempt
+// must never be allowed to hide attempt 1's evidence — but a later attempt is never evidence of a
+// collection itself. A later attempt reporting a SUCCESSFUL `collect` contradicts that invariant
+// outright, and impossible state fails closed rather than being read in either direction.
+//
+// THE CANDIDATE LISTING IS PAGINATED, and bounded twice over. Workflow B gains three dispatch
+// opportunities a day under Package C, so a 35-day discovery horizon holds well over one page of
+// candidate runs and a single page would silently omit the run that collected. Pagination is a
+// fixed, non-recursive sequence of explicitly numbered page reads reconciled against the provider's
+// own `total_count`, spending the same shared read budget as every other request. Ordering is never
+// relied on; an inconsistent count, a short or over-full page or a duplicated run is an ambiguity;
+// and exceeding either the page cap or the read bound stops the run.
 
 export const OPPORTUNITY_GUARD_REPOSITORY='priteshpatel390-del/FPL';
 export const OPPORTUNITY_COLLECT_JOB_NAME='collect';
@@ -66,38 +85,58 @@ export const OPPORTUNITY_COLLECT_JOB_NAME='collect';
 // legitimate opportunity: the nominal cadence is 01:17 UTC, so a trailing window this size can
 // only ever see the current day's own late arrivals.
 export const OPPORTUNITY_TRAILING_WINDOW_MS=6*60*60*1000;
-// Three workflow listings plus the job listings of the runs those return. Exceeding it is not a
-// licence to keep reading, it is an ambiguity.
+// Every GitHub request the guard issues — each candidate-listing page and each run's job listing —
+// spends one of these. Exceeding it is not a licence to keep reading, it is an ambiguity.
 //
-// KNOWN OPERATIONAL LIMITATION, recorded rather than worked around: the candidate-discovery
-// lookback below is far wider than a day, so a repository accumulating roughly one governed run a
-// day will exceed this bound and the guard will refuse — fail closed — rather than admit an
-// unexamined candidate. Raising this constant is a separate owner decision and is deliberately not
-// taken here.
-export const OPPORTUNITY_GUARD_MAX_READS=12;
+// This is a HARD CAP, not a target, and the normal path exits far below it. The budget it has to
+// cover is the steady state of the overlap period, when workflow A asks once a day and workflow B
+// asks three times a day: across the 35-day discovery horizon that is about 35 A runs and about 105
+// B runs, so about 140 job listings plus about four listing pages — roughly 144 requests — leaving
+// about 56 for attended workflow C runs, additional historical routine runs and page-shape
+// variance. That is a budget, never a proof: a pathological history still exceeds it, and exceeding
+// it still refuses the collection rather than admitting an unexamined candidate.
+export const OPPORTUNITY_GUARD_MAX_READS=200;
 
-// The candidate-discovery lookback, derived from first-party GitHub Actions limits rather than
-// chosen. Two documented limits bound how long after a workflow run is created one of its `collect`
-// executions can still begin:
+// One candidate-listing page carries at most this many runs, and one workflow's listing is read for
+// at most this many pages. The page cap is a second, independent bound on the same read: ten pages
+// is 1,000 candidate runs inside a 35-day window, which no governed cadence reaches, and hitting it
+// stops the run rather than paging on.
+export const WORKFLOW_RUNS_PAGE_SIZE=100;
+export const MAX_WORKFLOW_RUN_PAGES=10;
+
+// The candidate-discovery lookback, derived from a first-party GitHub Actions limit rather than
+// chosen. One documented limit bounds how long after a workflow run is created its ORIGINAL
+// attempt's `collect` can still begin:
 //
-//   * re-run eligibility — "You can re-run a workflow run, all failed jobs in a workflow run, or
-//     specific jobs in a workflow run up to 30 days after its initial run"; and
 //   * workflow run time — "35 days / workflow run ... If a workflow run reaches this limit, the
 //     workflow run is cancelled. This period includes execution duration, and time spent on waiting
 //     and approval."
 //
-// The worst case chains them: a run created at T is re-run at the last eligible moment, T + 30
-// days, and that attempt may then wait and execute for up to a further 35 days, so no `collect`
-// execution of that run can begin later than T + 65 days. Environment approval waiting is already
-// inside the 35 days ("A workflow may wait for up to 30 days on environment approvals"), so it adds
-// nothing, and the 50-re-run cap cannot extend the chain because every re-run must still fall inside
-// the same 30-day eligibility window. The bound holds whichever way GitHub treats `created_at` on a
-// re-run: if it stays the original creation the 65 days covers it, and if it were to advance the run
-// would look newer and be discovered anyway.
-export const RERUN_ELIGIBILITY_DAYS=30;
+// Environment approval waiting is already inside that limit ("A workflow may wait for up to 30 days
+// on environment approvals"), so it adds nothing to the horizon.
+//
+// GitHub's 30-day re-run eligibility is DELIBERATELY NOT part of this bound, and chaining the two
+// into 65 days would be conservatism bought with reads the guard needs elsewhere. Re-run
+// eligibility would only matter if a re-run could consume the day, and none can: the shared
+// production entry point throws `workflow_retry_forbidden` on every attempt after the first, before
+// it resolves the production identity and before it reaches the collector. A repository invariant
+// that refuses the work outright is stronger and more specific than a provider window that merely
+// permits the attempt, so discovery only has to reach back far enough to find the original attempt
+// of every run whose `collect` could have begun inside the consumption window — 35 days. The bound
+// holds whichever way GitHub treats `created_at` on a re-run: attempt 1 is dated by the original
+// creation either way, and a run that looked newer would only be discovered more easily.
 export const WORKFLOW_RUN_TIME_LIMIT_DAYS=35;
-export const CANDIDATE_DISCOVERY_LOOKBACK_MS=
-  (RERUN_ELIGIBILITY_DAYS+WORKFLOW_RUN_TIME_LIMIT_DAYS)*24*60*60*1000;
+export const CANDIDATE_DISCOVERY_LOOKBACK_MS=WORKFLOW_RUN_TIME_LIMIT_DAYS*24*60*60*1000;
+
+// GitHub caps a workflow run at 50 re-runs. The governed workflows carry exactly two jobs per
+// attempt, so 50 attempts is 100 job executions and one 100-row `filter=all` page covers every
+// attempt a run can ever have. This constant records that reasoning; it bounds no request.
+export const MAX_RERUNS_PER_RUN=50;
+
+// Only this attempt of a run can consume the day. See the header: every later attempt is refused by
+// the production entry point before any production work, so it is never evidence of a collection,
+// while `filter=all` still ensures it can never hide the first attempt's evidence.
+export const CONSUMING_RUN_ATTEMPT=1;
 
 // The complete set of job states the Actions API reports. A `collect` job in any other state is
 // one this guard does not understand, and an unrecognised state is never assumed harmless.
@@ -126,7 +165,7 @@ export const AMBIGUOUS_REQUIRES_OWNER_ATTENTION='AMBIGUOUS_REQUIRES_OWNER_ATTENT
 // account identifier can reach a log through this module.
 export const OPPORTUNITY_REASONS=Object.freeze(['opportunity_available','automatic_collection_consumed',
   'owner_collection_today','guard_input_invalid','guard_collect_timing_unusable','guard_read_failed',
-  'guard_read_bound_exhausted']);
+  'guard_read_bound_exhausted','guard_rerun_contract_violated']);
 
 const frozen=(classification,reason)=>{
   if(!OPPORTUNITY_REASONS.includes(reason))throw new Error('opportunity_reason_invalid');
@@ -169,19 +208,23 @@ export function candidateDiscoveryDate(now){
   return new Date(candidateDiscoveryStart(now)).toISOString().slice(0,10);
 }
 
-// One page of at most 100 candidate runs per governed workflow, bounded by the provider's own
-// `created>=` filter over the discovery lookback. There is deliberately no pagination: a page whose
-// `total_count` exceeds the rows returned is truncated and fails closed in the decoder, because a
-// truncated candidate listing could be missing exactly the run that collected. Paging further would
-// also spend reads this guard's bound does not have.
-export function workflowRunsRequest(workflowFile,token,now){
+// One explicitly numbered page of at most `WORKFLOW_RUNS_PAGE_SIZE` candidate runs for one governed
+// workflow, bounded by the provider's own `created>=` filter over the discovery lookback. The page
+// number is always explicit and always supplied by the caller — never an implicit "next" cursor,
+// never a `Link` header — so the whole sequence of reads is fixed before the second one is issued
+// and cannot run away. A page carrying the wrong number of rows fails closed in the decoder, because
+// a short or over-full candidate page could be missing exactly the run that collected.
+export function workflowRunsRequest(workflowFile,token,now,pageNumber=1){
   if(!ROUTINE_COLLECTION_WORKFLOWS.some(entry=>entry.file===workflowFile))
     throw new Error('opportunity_workflow_unknown');
   if(typeof token!=='string'||!token)throw new Error('opportunity_token_missing');
+  if(!Number.isSafeInteger(pageNumber)||pageNumber<1||pageNumber>MAX_WORKFLOW_RUN_PAGES)
+    throw new Error('opportunity_page_invalid');
   const since=encodeURIComponent(`>=${candidateDiscoveryDate(now)}`);
   return Object.freeze({
     url:`https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/workflows/${workflowFile}/runs`
-      +`?per_page=100&exclude_pull_requests=true&created=${since}`,
+      +`?per_page=${WORKFLOW_RUNS_PAGE_SIZE}&exclude_pull_requests=true&created=${since}`
+      +`&page=${pageNumber}`,
     init:Object.freeze({method:'GET',headers:Object.freeze({
       authorization:`Bearer ${token}`,accept:'application/vnd.github+json',
       'x-github-api-version':'2022-11-28','user-agent':'teamsheet-data-s2-opportunity-guard'})})
@@ -189,11 +232,14 @@ export function workflowRunsRequest(workflowFile,token,now){
 }
 
 // `filter=all` is load-bearing, not a preference: `latest` returns only the most recent execution
-// of each job, so a re-run whose newest attempt skipped `collect` would hide an earlier attempt
-// that actually collected. One page of 100 is the whole bounded read — the governed workflows carry
-// exactly two jobs per attempt, so 100 rows covers fifty attempts of a single run — and a listing
-// whose `total_count` exceeds the rows returned is truncated and fails closed in the decoder rather
-// than being paged through without limit.
+// of each job, so a re-run whose newest attempt skipped `collect` would hide the earlier attempt
+// that actually collected — and attempt 1 is the only attempt that can consume the day.
+//
+// This listing is DELIBERATELY NOT PAGINATED, unlike the candidate listing, and that is a bound
+// rather than an omission: GitHub caps a run at `MAX_RERUNS_PER_RUN` re-runs, the governed workflows
+// carry exactly two jobs per attempt, so one 100-row page covers every job execution a run can ever
+// have. A listing whose `total_count` exceeds the rows returned is truncated and fails closed in the
+// decoder rather than being paged through.
 export function runJobsRequest(runId,token){
   if(!runIdValid(runId))throw new Error('opportunity_run_id_invalid');
   if(typeof token!=='string'||!token)throw new Error('opportunity_token_missing');
@@ -249,12 +295,23 @@ export function classifyOpportunity({workflows,now,selfRunId=null}){
       }
       // This run is the one asking. It can never consume its own opportunity, on any attempt.
       if(selfRunId!==null&&run.id===selfRunId)continue;
-      // Every attempt's collect job is separate evidence, and the newest attempt has no power to
-      // erase an older one. A skipped collect is the shape of a refused gate and proves nothing,
-      // so it needs no timing at all; every other collect must prove when it began.
+      // Only the first attempt can consume. A skipped collect is the shape of a refused gate and
+      // proves nothing, so it needs no timing at all; every other first-attempt collect must prove
+      // when it began. `filter=all` keeps every attempt visible precisely so a later attempt can
+      // never hide attempt 1's evidence — but a later attempt is not itself evidence, because the
+      // production entry point refuses it before any production work.
       for(const job of run.jobs){
         if(job.name!==OPPORTUNITY_COLLECT_JOB_NAME)continue;
         if(job.conclusion==='skipped')continue;
+        if(job.runAttempt!==CONSUMING_RUN_ATTEMPT){
+          // A re-run's collect job does start — the runner boots and the entry point throws — so a
+          // later attempt that failed is exactly what the invariant predicts, and it is ignored
+          // rather than counted. A later attempt reporting SUCCESS is not producible under that
+          // invariant at all, and metadata contradicting the repository contract is never
+          // interpreted in either direction.
+          if(job.conclusion==='success')return ambiguous('guard_rerun_contract_violated');
+          continue;
+        }
         if(!COLLECT_JOB_STATUSES.includes(job.status))return ambiguous('guard_collect_timing_unusable');
         const startedAt=instant(job.startedAt);
         // A collect job that has not started, or whose start will not parse, cannot be placed in or
@@ -277,10 +334,18 @@ export function classifyOpportunity({workflows,now,selfRunId=null}){
 
 // Strict decoders. Anything the provider returns that is not exactly the shape this guard reads
 // is an ambiguity, never a best-effort interpretation.
-const decodeRuns=body=>{
+// One explicitly numbered candidate-listing page. The provider's `total_count` is the size of the
+// whole filtered set, not of this page, so the exact number of rows this page must carry is
+// arithmetic: whatever remains after the preceding full pages, capped at the page size. A page
+// carrying any other number of rows is truncated or over-full, either of which could be missing
+// exactly the run that collected, so it is rejected rather than interpreted. Ordering is never
+// relied on for correctness.
+const decodeRunsPage=(body,pageNumber)=>{
   if(body===null||typeof body!=='object'||Array.isArray(body))return null;
   if(!safeCount(body.total_count)||!Array.isArray(body.workflow_runs))return null;
-  if(body.total_count!==body.workflow_runs.length)return null;
+  const preceding=(pageNumber-1)*WORKFLOW_RUNS_PAGE_SIZE;
+  const expected=Math.max(0,Math.min(WORKFLOW_RUNS_PAGE_SIZE,body.total_count-preceding));
+  if(body.workflow_runs.length!==expected)return null;
   const runs=[];
   for(const row of body.workflow_runs){
     if(row===null||typeof row!=='object'||Array.isArray(row))return null;
@@ -312,6 +377,36 @@ const decodeJobs=body=>{
   return jobs;
 };
 
+// Reads every candidate-listing page of one governed workflow as a fixed, non-recursive sequence.
+// Page 1 establishes the provider's `total_count`; that count fixes how many pages exist before any
+// further request is issued, and every later page must report the same total. The accumulated rows
+// must then reconcile exactly with that total and carry no duplicate run id — a filtered set that
+// shifted underneath the sequence is an ambiguity, never a best guess, because a shift can drop a
+// run as easily as repeat one. Each page spends one unit of the shared read budget, and both that
+// budget and the page cap stop the sequence rather than extending it.
+const readWorkflowRunsPages=async(entry,token,now,read)=>{
+  const first=await read(workflowRunsRequest(entry.file,token,now,1));
+  if(first==='bound')return 'bound';
+  const page=first===null?null:decodeRunsPage(first,1);
+  if(page===null)return null;
+  const {totalCount}=page;
+  const pages=Math.ceil(totalCount/WORKFLOW_RUNS_PAGE_SIZE);
+  if(pages>MAX_WORKFLOW_RUN_PAGES)return 'bound';
+  const runs=[...page.runs];
+  for(let pageNumber=2;pageNumber<=pages;pageNumber+=1){
+    const body=await read(workflowRunsRequest(entry.file,token,now,pageNumber));
+    if(body==='bound')return 'bound';
+    const next=body===null?null:decodeRunsPage(body,pageNumber);
+    if(next===null)return null;
+    // The filtered set must not have changed size underneath the sequence.
+    if(next.totalCount!==totalCount)return null;
+    runs.push(...next.runs);
+  }
+  if(runs.length!==totalCount)return null;
+  if(new Set(runs.map(row=>row.id)).size!==runs.length)return null;
+  return {totalCount,runs};
+};
+
 // Issues the bounded read set and feeds the pure classifier. Every failure — a non-200, a body
 // that will not decode, an exhausted read bound, a transport error — is AMBIGUOUS, and no part of
 // the underlying error is carried out.
@@ -336,9 +431,8 @@ export async function resolveOpportunity({token,fetchImpl,now,selfRunId=null,
 
   const workflows={};
   for(const entry of ROUTINE_COLLECTION_WORKFLOWS){
-    const body=await read(workflowRunsRequest(entry.file,token,now));
-    if(body==='bound')return ambiguous('guard_read_bound_exhausted');
-    const listing=body===null?null:decodeRuns(body);
+    const listing=await readWorkflowRunsPages(entry,token,now,read);
+    if(listing==='bound')return ambiguous('guard_read_bound_exhausted');
     if(listing===null)return ambiguous('guard_read_failed');
     workflows[entry.path]={totalCount:listing.totalCount,runs:[]};
     for(const run of listing.runs){

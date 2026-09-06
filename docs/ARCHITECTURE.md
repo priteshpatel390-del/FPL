@@ -36,15 +36,40 @@ attempt that collected) and dates each collection by the `collect` job's own `st
 than the run's `created_at`, because a run can wait on GitHub, on environment admission or behind
 the shared concurrency group long before collection begins.
 
+**Only the first attempt of a run can consume the day.** That is a repository invariant, not a
+provider one: `workers/data-platform/run-production-collection.mjs` throws
+`workflow_retry_forbidden` on any attempt after the first, before it resolves the production
+identity and before it reaches the collector, so a re-run can neither call Official FPL nor touch
+D1. A permanent structural regression pins that literal and its position ahead of every identity
+call, the collector and any network use; the entry point itself is unchanged. `filter=all` therefore
+protects attempt 1's evidence from a later attempt rather than making later attempts count, and a
+later attempt reporting a *successful* `collect` is state the invariant forbids, so it fails closed
+rather than being read either way.
+
 Two windows therefore exist and are deliberately not the same. **Candidate discovery** asks the
-Actions API for runs created in the last 65 days — the only filter that endpoint offers is the run's
-`created_at`, and 65 days is GitHub's documented 30-day re-run eligibility plus its 35-day
-workflow-run limit, which explicitly includes waiting and approval. **The consumption decision** then
+Actions API for runs created in the last 35 days — the only filter that endpoint offers is the run's
+`created_at`, and 35 days is GitHub's documented workflow-run time limit, which explicitly includes
+execution duration, waiting and approval, and so is the whole horizon an original attempt's
+`collect` can sit inside. GitHub's 30-day re-run eligibility is deliberately excluded: it would only
+extend the horizon if a re-run could consume the day, and the pinned refusal means none can.
+**The consumption decision** then
 uses `collect.started_at` against the current UTC day or the trailing six hours. Discovery is a
 conservative superset: it may return runs that cannot consume, and it must never omit one that
 could. No run-level timestamp prunes the candidate set, because none is documented strongly enough
-to prove exclusion, so the guard reads jobs for every candidate or fails closed — which, under the
-unchanged twelve-read bound, means at most nine candidates per invocation. It needs `actions: read`, granted
+to prove exclusion, so the guard reads jobs for every candidate or fails closed.
+
+**The candidate listing is paginated; the jobs listing deliberately is not.** Under Package C
+workflow B asks three times a day beside workflow A's once, so a 35-day horizon holds roughly 140
+candidate runs — more than one 100-row page. Candidate listings are a fixed, non-recursive sequence
+of explicitly numbered `page=N` reads, the page count fixed from page 1's `total_count` before the
+second request is issued and capped at ten pages; every later page must report the same total, the
+accumulated rows must reconcile exactly with it, and no run id may repeat. Ordering is never relied
+on, and a short or over-full page, a changed total, a duplicate or a missing page is
+`guard_read_failed`. The jobs listing stays a single 100-row `filter=all` page because GitHub caps a
+run at 50 re-runs and each attempt carries two jobs, so one page covers every execution a run can
+ever have. `OPPORTUNITY_GUARD_MAX_READS` is a hard cap of **200** counting every request of either
+kind: the 35 A + 105 B overlap footprint costs about 146, and a cycle needing the 201st request
+refuses with `guard_read_bound_exhausted` without issuing it. It needs `actions: read`, granted
 on the credential-free job alone. Because a job with no `permissions:` block inherits the
 workflow-level one, both workflows keep the Actions scope out of their workflow-level default:
 workflow B's credentialled `collect` job declares `contents: read` and `checks: read` explicitly and

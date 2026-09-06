@@ -38,16 +38,44 @@ external workflow can dispatch and re-run repository workflows generally, not on
 does not exist yet, its creation and scoping is a separate approval in a later package, and nothing
 in Package A reduces that future scope.
 
-**Candidate discovery is a conservative 65-day lookback, and it is not free.** The Actions API can
-only filter a run listing by the run's `created_at`, so discovery reaches back GitHub's documented
-30-day re-run eligibility plus its 35-day workflow-run limit to guarantee it never omits a run whose
-`collect` could have started inside the consumption window. No run-level timestamp prunes that set,
-because none has documented semantics strong enough to prove exclusion. The read bound stays at 12,
-so three listings plus one jobs read per candidate allows **at most nine candidate runs**; the tenth
-stops the run as `guard_read_bound_exhausted`. That is fail-closed, but a repository accumulating
-roughly one governed run a day will reach nine candidates within about nine days, after which the
-guard refuses every automatic collection until the owner acts. Raising the bound is a separate owner
-decision, recorded as `S2C-8` and deliberately not taken.
+**Candidate discovery is a 35-day lookback, and it is not free.** The Actions API can only filter a
+run listing by the run's `created_at`, so discovery reaches back GitHub's documented 35-day
+workflow-run time limit — which includes execution duration, waiting and approval — to guarantee it
+never omits a run whose original attempt's `collect` could have started inside the consumption
+window. GitHub's 30-day re-run eligibility is excluded because no re-run can consume the day; the
+superseded 65-day chained derivation is withdrawn. No run-level timestamp prunes that set, because
+none has documented semantics strong enough to prove exclusion, so every candidate costs one job
+listing.
+
+**The 200-request bound is a budget, not a proof (`S2C-8`, revised).** `OPPORTUNITY_GUARD_MAX_READS`
+is a hard cap of 200 counting every GitHub request — each candidate-listing page and each job
+listing. It is sized for the overlap steady state of roughly 35 workflow A runs and 105 workflow B
+runs across the 35-day horizon, about 146 requests, leaving roughly 54 for attended workflow C runs
+and variance. It is **not** a proof that 200 covers every possible history: a repository with a
+pathological accumulation of governed runs still exceeds it, and exceeding it refuses the collection
+as `guard_read_bound_exhausted` rather than admitting an unexamined candidate. Nothing here has run
+live, so the footprint is arithmetic over the approved cadence rather than a measurement.
+
+**A candidate listing read across pages is a read of live, changing state.** Pagination reconciles
+`total_count` across pages, requires the accumulated rows to match it exactly and rejects a repeated
+run id, but a filtered set that shifts between page reads — a run created or ageing out mid-sequence
+— can produce exactly those inconsistencies. The guard then refuses that invocation as
+`guard_read_failed`. That is fail-closed and correct, and it means a busy repository can lose an
+automatic collection opportunity to a benign race rather than to a real conflict.
+
+**Up to four automatic guard invocations occur in a UTC day during overlap** — workflow A once and
+workflow B three times under Package C — each separately bounded at 200 requests. The earlier "two
+automatic invocations per day" statement is superseded. No claim is made that 200 × 4 requests will
+occur: the fires are separated by schedule time and normal paths short-circuit far below the cap.
+Equally, no unused GitHub rate-limit headroom is claimed — token and API limits remain an external
+dependency to observe in live Stage C/D.
+
+**The attempt-1-only rule rests on a repository invariant that tests pin but cannot enforce.** A
+re-run is harmless only because `workers/data-platform/run-production-collection.mjs` refuses every
+attempt after the first before any production work. A permanent structural regression pins that
+literal and its source position; if the entry point were ever changed so the refusal moved after
+identity resolution or the collector, that test fails, but until it is run the guard's 35-day
+horizon and its attempt-1 semantics both depend on the invariant holding.
 
 **The guard reads every attempt and dates collections by job execution.** The jobs listing uses
 `filter=all`, so a re-run whose newest attempt skips `collect` cannot hide an earlier attempt that
@@ -370,7 +398,7 @@ Several open rows below — including `ODDS-2`, `UST-1`, `BT-2`, `SCOR-3`, `SIM-
 | S2C-3 | The exact HTTP 200 `workflow_dispatch` response body shape is unproven | The `return_run_details` request is the approved design and has never been exercised live. A 204 is classified `ACCEPTED_NO_IDENTITY` and a 200 of any unexpected shape is classified `AMBIGUOUS`, so both directions fail safe; on `ACCEPTED_NO_IDENTITY` the run-creation latency measurement is structurally unavailable and stays unavailable rather than zero | DATA-S2C live acceptance | Open (evidence gate) |
 | S2C-4 | A future GitHub credential able to dispatch the external workflow must hold `actions: write` on the whole repository | Such a token can dispatch and re-run repository workflows generally, not only the external collection workflow. It does not exist; Package A creates no credential, and its creation and scoping is a separate later approval. The standing mitigations are that the external workflow accepts zero inputs, that its repository-side gates prove current `main` independently of the caller, that the shared concurrency group serializes it, and that the fail-closed opportunity guard refuses a second collection in the same UTC day | DATA-S2C credential package | Open (accepted) |
 | S2C-5 | The daily opportunity guard sees only what the GitHub Actions API shows it | It classifies run and job metadata for the three governed routine collection workflows, reading every attempt of each run and dating each collection by the `collect` job's own `started_at`. It cannot observe a collection performed by a path outside those workflows, and no such path is approved. Every malformed, partial, truncated or unreadable response fails closed as `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, as does a non-skipped `collect` whose start instant cannot be established or contradicts its own run | DATA-S2C | Open (accepted) |
-| S2C-8 | The candidate-discovery lookback exceeds what the twelve-read bound can inspect | Discovery must reach back 65 days (GitHub's documented 30-day re-run eligibility plus its 35-day workflow-run limit) to guarantee it never omits a run whose `collect` started inside the consumption window, and no documented run-level field can safely prune that set. Three listings plus one jobs read per candidate allows at most nine candidates; the tenth is `guard_read_bound_exhausted`, which refuses rather than admits. Worst case is `3 + 300 = 303` reads with both listings full; a realistic daily steady state is roughly 143. Raising `OPPORTUNITY_GUARD_MAX_READS` is a separate owner decision and was deliberately not taken | DATA-S2C, owner decision before the guard can operate for more than about nine days | **Open (blocking for sustained operation)** |
+| S2C-8 | The 200-request guard bound is a budget for the approved cadence, not a proof against every history | Discovery reaches back 35 days (GitHub's documented workflow-run time limit); the 30-day re-run eligibility is excluded because the production entry point refuses every attempt after the first before any production work, so no re-run can consume the day. No documented run-level field can safely prune the candidate set, so every candidate costs one job listing. Candidate listings are read as a bounded, explicitly numbered page sequence at `per_page=100`, capped at ten pages and reconciled against the provider's `total_count`. `OPPORTUNITY_GUARD_MAX_READS` is a hard cap of 200 counting every request of either kind, sized for the overlap steady state of about 35 workflow A runs plus 105 workflow B runs — roughly 146 requests, leaving about 54 spare. A pathological history still exceeds it and still refuses as `guard_read_bound_exhausted` without issuing the 201st request. Nothing has run live, so the footprint is arithmetic over the approved cadence, not a measurement | DATA-S2C, re-measure against real Actions metadata in live Stage C/D | **Open (bounded, fail-closed)** |
 | S2C-7 | The guard reads one bounded page of 100 job executions per run and never paginates | With `filter=all` a run's executions accumulate across attempts. The governed workflows carry two jobs per attempt, so 100 rows covers fifty attempts, and a listing whose provider `total_count` exceeds the rows returned is treated as truncated and fails closed rather than being paged through. A run re-run more than fifty times would therefore stop the day as ambiguous rather than being read further | DATA-S2C | Open (accepted) |
 | S2C-6 | GitHub Actions Step Summary and log retention is finite | Exact provider `meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not retrievable through the GitHub API available here, and are lost when retention expires. Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow accounting | DATA-S2C, later telemetry decision | Open (accepted) |
 | GW1R-1 | The pre-first-deadline Transfers guard resolves the deadline against the device clock | A device clock set far enough in the past could in principle hold the guard open past the real deadline. The guard additionally requires `nextGW` 1, no current Gameweek and no finished Gameweek, so this would also need a simultaneously stale Official FPL payload; every missing or unparseable deadline falls back to normal weekly behaviour rather than claiming unlimited changes. The existing deadline countdown and Stage 10 timing surfaces share the same clock dependency | GW1 readiness safety guard | Open (accepted) |

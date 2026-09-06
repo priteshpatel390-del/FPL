@@ -83,11 +83,15 @@ collect. It does, however, **consume** the day for both automatic paths.
 
 ### 3.3 The rules
 
-A run **consumes** the day's opportunity when, on **any of its attempts**, both hold:
+A run **consumes** the day's opportunity when, on its **first attempt**, both hold:
 
 * a `collect` job execution exists with any conclusion **other than `skipped`**; and
 * that `collect` execution **started** in the current UTC day, **or** within the **trailing six
   hours**.
+
+Every attempt is still read — see §3.3.1 — so that a later attempt can never hide the first
+attempt's evidence. A later attempt is never evidence of a collection itself, because the production
+entry point refuses it before any production work.
 
 Workflow A refuses if either condition is true. Workflow B refuses if either condition is true.
 
@@ -107,15 +111,47 @@ The jobs listing is requested with **`filter=all`**, never `filter=latest`. `lat
 the most recent execution of each job, and that would let a re-run erase a real collection: attempt 1
 reaches `collect` and may mutate production, somebody later re-runs all jobs, attempt 2's gate
 refuses, attempt 2's `collect` is reported `skipped`, and a `latest` view would report the day as
-free. **Every attempt's `collect` execution is separate evidence and any one of them consumes**; a
-newer skipped attempt never overwrites an older started one, and the order the provider returns
-executions in is irrelevant.
+free. **Every attempt is read so that a later one can never hide attempt 1's evidence**, and the
+order the provider returns executions in is irrelevant.
 
-The read stays bounded by one page of 100 executions rather than by pagination. The governed
-workflows carry exactly two jobs per attempt, so a page of 100 covers fifty attempts of one run, and
-a listing whose `total_count` exceeds the rows returned is **truncated and fails closed** — a
-truncated page could be missing exactly the attempt that collected. There is no page cursor, no
-pagination loop and no change to the twelve-read bound.
+**Only attempt 1 can consume the day.** That is a repository fact rather than a provider one. The
+shared production entry point, `workers/data-platform/run-production-collection.mjs`, contains
+
+```js
+if(process.env.GITHUB_RUN_ATTEMPT!=='1')throw new Error('workflow_retry_forbidden');
+```
+
+and it executes **before** `maskProductionIdentity(resolveProductionIdentity(...))`, before
+`runProductionCollection(...)` and before any network use. A GitHub re-run attempt therefore cannot
+resolve the production identity, cannot reach the collector, cannot call Official FPL, cannot call D1
+and cannot mutate production. A permanent structural regression pins that literal, proves it appears
+exactly once at module top level, and proves — after blanking the import lines — that every call to
+`resolveProductionIdentity`, `maskProductionIdentity` and `runProductionCollection` and every use of
+`fetch` occurs after it, with nothing touching the network, Official FPL or D1 before it. **The entry
+point is not modified by this package.** If that invariant ever moves, disappears or comes to sit
+after production work, the test fails and both the attempt-1 rule and the 35-day discovery horizon
+below must be revisited.
+
+So the two roles are separate and both are needed:
+
+* `filter=all` remains **load-bearing**, because a later attempt must never be allowed to hide
+  attempt 1's evidence;
+* a later attempt is **never evidence of a collection in its own right**.
+
+A re-run's `collect` job does start — the runner boots and the entry point throws — so a later
+attempt reported `failure`, `cancelled`, `timed_out`, queued or in progress is exactly what the
+invariant predicts and is ignored, needing no timing at all. A later attempt reporting a
+**successful** `collect` is not producible under that invariant, so it is treated as impossible state
+and returns `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with the reason `guard_rerun_contract_violated`
+rather than being trusted either way. There is deliberately no path by which a re-run can make a day
+available that attempt 1 already collected.
+
+The jobs read stays bounded by one page of 100 executions rather than by pagination, and that is a
+bound rather than an omission. GitHub caps a workflow run at **50 re-runs**, the governed workflows
+carry exactly two jobs per attempt, so a 100-row page covers every job execution a run can ever have.
+A listing whose `total_count` exceeds the rows returned is **truncated and fails closed** — a
+truncated page could be missing exactly the attempt that collected. The jobs listing carries no
+`page` parameter at all.
 
 ### 3.3.2 Candidate discovery is a different, wider window
 
@@ -124,7 +160,7 @@ Two windows exist, and conflating them is a correctness bug rather than untidine
 | | Window | Measured from | Purpose |
 |---|---|---|---|
 | Consumption | current UTC day **or** trailing six hours | the `collect` job's `started_at` | decides whether the day is spent |
-| Candidate discovery | consumption window start **minus 65 days** | the workflow run's `created_at` | finds runs that *might* contain an in-window collect |
+| Candidate discovery | consumption window start **minus 35 days** | the workflow run's `created_at` | finds runs that *might* contain an in-window collect |
 
 The Actions API can only filter a run listing on the run's own `created_at`. Filtering it by the
 consumption window omits exactly the run this guard most needs: one created at 23:50 whose `collect`
@@ -135,28 +171,34 @@ sees the collection it would have correctly refused.
 started inside the consumption window is either examined, or the guard fails closed. Discovery may
 return runs that cannot consume; it must never omit one that could.
 
-**The 65 days is derived from first-party GitHub limits, not chosen.** Two documented limits bound
-how long after a run is created one of its `collect` executions can still begin:
+**The 35 days is derived from a first-party GitHub limit, not chosen.** Because only attempt 1 can
+consume, the only gap discovery has to cover is how long an **original** attempt can wait before its
+`collect` begins, and one documented limit bounds exactly that:
 
-* **Re-run eligibility — 30 days.** "You can re-run a workflow run, all failed jobs in a workflow
-  run, or specific jobs in a workflow run up to 30 days after its initial run."
-  ([Re-running workflows and jobs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs))
 * **Workflow run time — 35 days per workflow run.** "If a workflow run reaches this limit, the
   workflow run is cancelled. This period includes execution duration, and time spent on waiting and
   approval." ([Actions limits](https://docs.github.com/en/actions/reference/limits))
 
-The worst case chains them: a run created at T is re-run at the last eligible moment, T + 30 days,
-and that attempt may then wait and execute for up to a further 35 days, so no `collect` execution of
-that run can begin later than **T + 65 days**.
+So no `collect` execution of a run's original attempt can begin later than **T + 35 days**.
 
-What that derivation deliberately does not lean on:
+**Why the 30-day re-run eligibility is excluded — superseding the earlier 65-day derivation.** An
+earlier revision of this record chained GitHub's re-run eligibility ("You can re-run a workflow run,
+all failed jobs in a workflow run, or specific jobs in a workflow run up to 30 days after its initial
+run") onto the 35-day run limit and reached 65 days. That chaining is only load-bearing if a re-run
+can consume the day, and §3.3.1 establishes that none can: the production entry point refuses every
+attempt after the first before any production work. A repository invariant that **refuses the work**
+is stronger and more specific than a provider window that merely **permits the attempt**. The 65-day
+horizon is therefore withdrawn, and the cost of keeping it was real — 65 days of candidates could not
+be inspected inside any reasonable read bound.
+
+What the 35-day derivation deliberately does not lean on:
 
 * **Environment approval adds nothing.** "A workflow may wait for up to 30 days on environment
   approvals" is already inside the 35-day run limit, which explicitly includes waiting and approval.
-* **The 50-re-run cap cannot extend the chain.** Every re-run must still fall inside the same
-  30-day eligibility window measured from the initial run, so re-runs do not compound.
-* **It does not matter whether `created_at` advances on a re-run.** If it stays the original
-  creation, 65 days covers it; if it were to advance, the run looks newer and is discovered anyway.
+* **The 50-re-run cap is not a discovery input.** It survives in this design only as the reason one
+  100-row jobs page covers every execution a run can have (§3.3.1).
+* **It does not matter whether `created_at` advances on a re-run.** Attempt 1 is dated by the
+  original creation either way; a run that looked newer would only be discovered more easily.
 * **Job-level limits are not used as the bound.** The 6-hour GitHub-hosted job execution limit and
   the 24-hour job queue limit (documented for **self-hosted** runners) bound execution and queueing,
   not the run-creation-to-job-start gap this needs.
@@ -168,10 +210,35 @@ execution that started inside the window, and `run_started_at` describes only th
 An inference that is usually true is not a guard. Correctness is not traded for fewer requests; the
 guard reads jobs for every candidate or fails closed.
 
-**Discovery is one bounded page per governed workflow.** `per_page=100` with the provider's own
-`created>=` filter, and no pagination: a page whose `total_count` exceeds the rows returned is
-truncated and fails closed, because a truncated candidate listing could be missing exactly the run
-that collected.
+**Discovery is a bounded page sequence per governed workflow, and it has to be.** Under Package C
+workflow B gains three dispatch opportunities a day beside workflow A's one, so a 35-day horizon
+holds roughly 35 workflow A runs and 105 workflow B runs — about 140 candidates. One 100-row page
+cannot carry workflow B's share, and a single page would silently omit the run that collected.
+
+The algorithm is fixed before it starts and never recurses:
+
+1. request page 1 at `per_page=100` with the provider's own `created>=` filter and an explicit
+   `page=1`;
+2. take the provider's `total_count` for the whole filtered set and compute the page count from it —
+   `ceil(total_count / 100)` — **before** any further request is issued;
+3. refuse as `guard_read_bound_exhausted` if that exceeds the ten-page cap;
+4. read pages 2..N sequentially with explicit `page=N`, each spending one unit of the same shared
+   read budget;
+5. require every page to carry **exactly** the rows arithmetic says remain — whatever is left after
+   the preceding full pages, capped at the page size — so a short **or** an over-full page is
+   rejected;
+6. require every later page to report the **same** `total_count`;
+7. require the accumulated rows to reconcile exactly with that total, and to contain **no duplicate
+   run id**.
+
+Ordering is never relied on for correctness. Every failure mode is an ambiguity, not a best guess:
+a malformed, unreadable or failing page, a short or over-full page, a `total_count` that changes in
+either direction between pages, a run repeated across pages and a missing row are all
+`guard_read_failed`; exceeding the page cap or the read bound is `guard_read_bound_exhausted`. A
+filtered set that shifts underneath the sequence — a run created or ageing out mid-read — can produce
+exactly those inconsistencies, and the guard then refuses that invocation rather than proceeding on a
+set it cannot prove complete. That is recorded as a limitation: a benign race costs an automatic
+collection opportunity.
 
 ### 3.3.3 The window is dated by when `collect` started
 
@@ -194,20 +261,58 @@ A non-skipped `collect` execution must therefore prove when it began, and anythi
 A `skipped` execution needs no timing at all: it proves nothing happened, so it is not evidence and
 is never the reason for an ambiguity.
 
-### 3.3.4 The read bound, and the open decision it forces
+### 3.3.4 The read bound
 
-The read bound stays at **12** and is deliberately **not** raised here. Discovery costs three
-listings, and each candidate run then costs one jobs read, so **at most nine candidate runs can be
-examined**; the tenth stops the run as `guard_read_bound_exhausted`. That is fail-closed and safe —
-it refuses a collection rather than admitting an unexamined candidate — but it is not free
-operationally: a repository accumulating roughly one governed run per day will pass nine candidates
-inside a 65-day lookback within about nine days, after which the guard refuses every automatic
-collection until the owner acts.
+`OPPORTUNITY_GUARD_MAX_READS` is **200**. It is a **hard cap, not a target**, and it counts every
+GitHub request the guard makes — each candidate-listing page and each run's job listing. The normal
+path exits far below it. On the 201st required request the guard refuses as
+`guard_read_bound_exhausted` and **that request is never issued**.
 
-The worst case, stated exactly: three listings plus one jobs read per candidate, with each listing
-capped at 100 rows, is `3 + 300 = 303` reads. A realistic steady state with both automatic paths
-arriving daily plus occasional attended runs is `3 + 65 + 65 + ~10 ≈ 143`. Raising the constant is a
-separate owner decision and is recorded as limitation **S2C-8**, not taken unilaterally.
+**The budget, stated honestly.** Approximate steady state during the overlap period, across the
+35-day discovery horizon:
+
+| | Requests |
+|---|---|
+| Workflow A candidate runs, one a day | ~35 |
+| Workflow B candidate runs, three a day after Package C | ~105 |
+| Job listings, one per candidate | ~140 |
+| Candidate-listing pages — A one, B two, C normally one | ~4 |
+| **Total** | **~144** |
+| Remaining inside 200 | **~56** |
+
+That remainder covers attended workflow C runs, small variance, additional historical routine runs
+and provider page-shape overhead. A permanent regression drives exactly this population — 35 A runs,
+105 B runs and 2 attended runs — and measures **146** requests with **54** spare.
+
+**What this is not.** It is not a proof that 200 covers every pathological history. A repository with
+an unusual accumulation of governed runs still exceeds it, and pathological history must still fail
+closed — it refuses the collection rather than admitting an unexamined candidate. Two further
+regressions pin the boundary exactly: a cycle needing exactly 200 requests resolves and issues
+exactly 200; a cycle needing a 201st refuses having issued exactly 200 and never reaching the final
+listing.
+
+The superseded position — a twelve-read bound allowing at most nine candidates, and the rejected
+160-read proposal — are both withdrawn. Nine candidates could not sustain the approved cadence at
+all, and 160 was underpriced against the same 35 A + 105 B population. This is recorded as revised
+limitation **S2C-8**.
+
+### 3.3.5 Guard invocation frequency and rate limits
+
+During the overlap period there are **up to four automatic guard invocations in a UTC day** —
+workflow A once, workflow B three times under Package C. The earlier "two automatic invocations per
+day" statement is superseded.
+
+Each invocation is separately bounded at 200 requests. That does **not** mean 800 requests an hour
+will occur: the fires are separated by schedule time, and the normal guard path short-circuits far
+below the cap. Equally, no unused GitHub rate-limit headroom is claimed here. The real safety
+properties are exactly these:
+
+* one invocation is bounded at 200 requests;
+* exceeding 200 fails closed, without issuing the request that would exceed it;
+* during overlap, workflow A plus Package C's three workflow B opportunities create at most four
+  automatic guard invocations in a UTC day;
+* GitHub's token and API limits remain an **external dependency**, to be observed in live Stage C/D
+  rather than asserted from this repository.
 
 ### 3.4 Why the trailing six hours
 
@@ -231,9 +336,17 @@ extra governed workflow; a non-200 response; a body that will not decode; a tran
 an exhausted read bound. Timing that cannot be established is reported as the closed reason
 `guard_collect_timing_unusable`.
 
-The read bound is fixed at 12 GitHub REST GETs. The listing itself is bounded by the provider,
-using the Actions `created=>=` filter over the window's own start date, so the guard never depends
-on an unbounded page happening to be ordered newest first.
+It also includes: a candidate page carrying a different number of rows than the provider's own
+`total_count` arithmetic requires for that page number, a `total_count` that changes between pages,
+a run id repeated across pages, and a later attempt reporting a **successful** `collect`, which
+contradicts the pinned entry-point invariant and is reported as the closed reason
+`guard_rerun_contract_violated`.
+
+The read bound is a hard cap of **200** GitHub REST GETs across every candidate-listing page and
+every job listing, with a further ten-page ceiling per workflow listing (§3.3.4). Every listing is
+bounded by the provider itself, using the Actions `created=>=` filter over the discovery start date
+with an explicit `page=N`, so the guard never depends on an unbounded page happening to be ordered
+newest first and never follows a cursor or a `Link` header.
 
 ### 3.6 Credentials and logging
 
@@ -524,7 +637,27 @@ after run `33948145320`.
 * **The pending-run replacement limitation above is unfixed** and is deliberately out of scope.
 * **The guard is only as good as the Actions API's own view.** It reads run and job metadata; it
   cannot see a collection performed by some path outside these three workflows, and no such path is
-  approved.
+  approved. Actions metadata is external state: an unavailable or ambiguous API read stops automatic
+  collection rather than allowing it.
+* **The 200-request bound is a budget for the approved cadence, not a proof.** It is sized for
+  roughly 35 workflow A runs and 105 workflow B runs across the 35-day horizon — about 146 requests,
+  measured at exactly 146 by regression — leaving about 54 spare. A pathological history still
+  exceeds it and still fails closed. Nothing has run live, so this is arithmetic over the approved
+  cadence, not a measurement of real Actions metadata.
+* **Paginated reads observe live, changing state.** `total_count` reconciliation, exact per-page row
+  counts and duplicate rejection make a shifted set an ambiguity rather than a silent subset, but a
+  run created or ageing out mid-sequence can therefore cost an automatic collection opportunity to a
+  benign race.
+* **The attempt-1-only rule rests on an invariant this package pins but does not own.** A re-run is
+  harmless only because `workers/data-platform/run-production-collection.mjs` refuses every attempt
+  after the first before any production work. A structural regression pins that literal and its
+  source position, and the entry point is unmodified here; if it were ever changed so the refusal
+  moved after identity resolution or the collector, that test fails and the 35-day discovery horizon
+  must be revisited.
+* **Up to four automatic guard invocations occur in a UTC day during overlap** — workflow A once and
+  workflow B three times under Package C — each separately bounded at 200 requests. GitHub token and
+  API limits remain an external dependency to observe in live Stage C/D; no unused rate-limit
+  headroom is claimed.
 * **No device testing** was performed or is required: this is a repository-only backend and workflow
   checkpoint.
 

@@ -17,19 +17,51 @@ truncated, missing-workflow, extra-workflow, bad-clock or bad-identity input fai
 `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with a reason from the closed set.
 
 It separates the two windows the guard depends on: that `candidateDiscoveryStart` is always strictly
-earlier than `opportunityWindowStart` and exactly 65 days earlier, that the lookback is the sum of
-the pinned `RERUN_ELIGIBILITY_DAYS` (30) and `WORKFLOW_RUN_TIME_LIMIT_DAYS` (35), that the whole-date
-filter given to the provider can only widen the search, and that a clock near the epoch cannot
-produce a negative filter date. It then proves discovery end to end through `resolveOpportunity`
+earlier than `opportunityWindowStart` and exactly 35 days earlier, that
+`CANDIDATE_DISCOVERY_LOOKBACK_MS` is the pinned `WORKFLOW_RUN_TIME_LIMIT_DAYS` (35) alone and
+explicitly **not** 65 days, that the superseded `RERUN_ELIGIBILITY_DAYS` constant and the literal
+`65` are both gone from the module, that `MAX_RERUNS_PER_RUN` (50) survives only as what bounds the
+single unpaginated jobs page, that the whole-date filter given to the provider can only widen the
+search, and that a clock near the epoch cannot produce a negative filter date. It then proves
+discovery end to end through `resolveOpportunity`
 with a stubbed Actions API rather than by injecting runs into the classifier: a run created
 `2026-09-06T23:50Z` whose `collect` started `2026-09-07T00:10Z`, read at `2026-09-07T08:00Z`,
 resolves to `OPPORTUNITY_CONSUMED`, and the test inspects the actual generated listing URL to prove
 its `created>=` filter reaches back past the run's creation while the consumption window does not.
-The same holds on the tightest boundary (`23:59` to `00:01`), an old run re-run into the current
-window consumes through its second attempt, a conservatively discovered run whose collect is outside
+The same holds on the tightest boundary (`23:59` to `00:01`), an old run whose *original* attempt
+collected this morning consumes end to end, a conservatively discovered run whose collect is outside
 both rules stays available, the asking run is still excluded when the wider lookback finds it and
-still costs no jobs read, a truncated candidate listing fails closed, and the read bound is proven
-exactly: nine candidates fit inside twelve reads, the tenth is `guard_read_bound_exhausted`.
+still costs no jobs read, and a truncated candidate listing fails closed.
+
+A **structural regression over the production entry point** is the load-bearing justification for
+the 35-day horizon. It reads `workers/data-platform/run-production-collection.mjs` — which DATA-S2C
+does not modify — and proves the exact literal
+`if(process.env.GITHUB_RUN_ATTEMPT!=='1')throw new Error('workflow_retry_forbidden');` appears
+verbatim, exactly once, at module top level, and that after blanking the import lines every call to
+`resolveProductionIdentity`, `maskProductionIdentity` and `runProductionCollection` and every use of
+`fetch` occurs **after** it, with nothing touching the network, Official FPL or D1 before it. If
+that invariant ever moves or disappears, this fails.
+
+**Attempt semantics** are pinned in both directions: attempt 1 consumes from its own `collect`
+start; a later attempt whose `collect` failed, was cancelled, timed out, is queued or is running
+never consumes; a later attempt reporting a *successful* `collect` is impossible state under the
+pinned invariant and returns `guard_rerun_contract_violated`; a later attempt needs no timing and can
+never make the day ambiguous on timing; and no later attempt in any order can make a day available
+that attempt 1 already collected.
+
+**Pagination and the read bound** are proven against a paged stub that pages exactly as GitHub does.
+Every candidate request carries an explicit `page=N` at the fixed page size and rejects an
+out-of-range page as `opportunity_page_invalid`; the jobs listing carries no `page` parameter at all.
+A consuming run reachable only on page 2 of a 101-run workflow B listing is discovered and refuses
+the day; page counts are exact for 0, 1, 100, 101 and 201 candidates, with page numbers an ascending
+sequence with no repeat or gap. A malformed, short, over-full, unreadable or failing later page, a
+`total_count` that changes between pages in either direction, and a run repeated across pages are all
+`guard_read_failed`; exceeding the ten-page cap stops after exactly one listing read. The bound
+itself is proven exactly: a cycle needing exactly 200 requests resolves and issues exactly 200; a
+cycle needing a 201st refuses as `guard_read_bound_exhausted` having issued exactly 200 and never
+reaching the final listing. The approved overlap footprint of 35 workflow A runs, 105 workflow B runs
+and 2 attended runs costs exactly 146 requests with 54 spare, resolves, and still refuses correctly
+when one of those runs collected today.
 
 It holds the two guard-correctness properties that a single-attempt, run-creation reading would
 lose. Across attempts: the jobs request asks for `filter=all` and never `filter=latest`, structurally
