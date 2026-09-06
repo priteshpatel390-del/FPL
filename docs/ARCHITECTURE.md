@@ -31,7 +31,10 @@ A **daily opportunity guard** now runs last in the credential-free gate of workf
 a pure, fail-closed classifier over Actions run and job metadata that refuses when the day's
 opportunity has already been consumed — by an automatic run or by an attended owner collection —
 and refuses just as firmly when it cannot classify what it read. It needs `actions: read`, granted
-on the credential-free job alone so the credentialled job keeps exactly the read scope it had.
+on the credential-free job alone. Because a job with no `permissions:` block inherits the
+workflow-level one, both workflows keep the Actions scope out of their workflow-level default:
+workflow B's credentialled `collect` job declares `contents: read` and `checks: read` explicitly and
+workflow A's inherits exactly those, so neither credentialled job can reach Actions metadata.
 
 A new **isolated Cloudflare dispatcher Worker** lives at `workers/schedule-dispatcher/` under the
 dedicated identity `teamsheet-data-s2-dispatcher`. It is a timer that can do exactly one thing: ask
@@ -65,9 +68,13 @@ Two workflows reach that path and nothing else does. `data-s2-production-collect
 `data-s2-production-scheduled.yml` carries exactly one trigger and no `timezone:` field, so its cron
 is interpreted in UTC — the permanent approved cadence `17 1 * * *` (01:17 UTC), restored after the
 temporary 4 September 2026 acceptance windows closed on the first successful natural scheduled run.
-**That workflow is currently owner-disabled**, after its first permanent-cadence natural run
-`33948145320` committed to D1 and then failed resource enforcement at `postflight_read`; re-enabling
-it is a separate owner decision. It takes no input, is
+**That workflow is currently enabled.** It was owner-disabled after its first permanent-cadence
+natural run `33948145320` committed to D1 and then failed resource enforcement at `postflight_read`;
+the owner re-enabled it after the capacity live-acceptance closeout, and workflow `350014371` now
+reports `state: active`. Its first natural run under that re-enable, `34015422874`, succeeded in
+both jobs on 6 September 2026 — and was created 4h44m26s after its 01:17 UTC nominal minute, so
+**GitHub cron is active enough to produce natural runs but is materially late and unreliable as a
+timer**, which is the problem DATA-S2C addresses. It takes no input, is
 gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
 `Tests and deterministic build` proof, and uses the dedicated unattended
 `data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`

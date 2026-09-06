@@ -100,17 +100,30 @@ export const boundedLatency=value=>
 // Three separate measurements that are never conflated:
 //
 //   A  timer   — Cloudflare timer delivery: the handler starting, against the scheduled instant;
-//   B  dispatch— GitHub run creation, against the instant GitHub accepted the dispatch;
+//   B  request — GitHub run creation, against the instant this client STARTED the dispatch request;
 //   C  total   — GitHub run creation, against the scheduled instant.
+//
+// B is deliberately measured from `dispatchRequestStartedAt`, the client-side instant captured
+// immediately before the POST is issued. It is NOT acceptance-to-run latency, NOT GitHub internal
+// dispatch latency and NOT server processing latency: the instant GitHub internally accepted the
+// dispatch is not observable from this client, and no attempt is made to estimate it. Measuring
+// from the response-return instant instead would be wrong in a way that silently loses data —
+// GitHub may create the run before the successful response returns, so `runCreatedAt` legitimately
+// precedes the response and the difference would be negative and discarded as unavailable. The
+// request-start baseline always precedes run creation, so B stays a real, non-negative,
+// client-observable request-start-to-run-creation measurement that bounds the true server-side
+// figure from above.
 //
 // B is structurally unavailable on ACCEPTED_NO_IDENTITY, because a 204 returns no run to read a
 // creation time from. That stays honestly unavailable and is never filled in with zero.
-export function dispatchTelemetry({classification,scheduledTime,handlerStart,acceptedAt=null,runCreatedAt=null}){
+export function dispatchTelemetry({classification,scheduledTime,handlerStart,
+  dispatchRequestStartedAt=null,runCreatedAt=null}){
   const timerLatencyMs=boundedLatency(handlerStart-scheduledTime);
   const identified=classification===ACCEPTED_WITH_IDENTITY&&Number.isFinite(runCreatedAt);
   return Object.freeze({
     timerLatencyMs,
-    dispatchLatencyMs:identified&&Number.isFinite(acceptedAt)?boundedLatency(runCreatedAt-acceptedAt):null,
+    requestToRunCreationLatencyMs:identified&&Number.isFinite(dispatchRequestStartedAt)
+      ?boundedLatency(runCreatedAt-dispatchRequestStartedAt):null,
     endToEndLatencyMs:identified?boundedLatency(runCreatedAt-scheduledTime):null
   });
 }

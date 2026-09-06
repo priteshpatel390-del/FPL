@@ -130,8 +130,23 @@ re-runs a job, re-requests a check or cancels anything. Its entry point discards
 object on failure, so no request URL, header, token or identifier can reach a workflow log through a
 runtime message; only a closed classification and a closed reason are ever written.
 
-The Actions read scope is granted **on the credential-free repository-gate job alone**, so the
-credentialled production job keeps exactly the top-level read scope it already had.
+The Actions read scope is granted **on the credential-free repository-gate job alone**, and both
+workflows are written so that this is true of their **effective** permissions, not merely of what
+each job happens to declare. GitHub Actions permissions are inherited: a job with no `permissions:`
+block runs with the workflow-level block, so a workflow-level `actions: read` reaches every job in
+the file. Workflow A already satisfied this — its workflow-level default is `contents: read` and
+`checks: read`, and only its gate adds `actions: read`. **Workflow B did not, at the first reviewed
+head**: it declared `actions: read` at workflow level, and its credentialled `collect` job, having
+no block of its own, inherited it. That was a real least-privilege defect and is corrected here.
+Workflow B's workflow-level default now carries `contents: read` and `checks: read` only, and its
+`collect` job declares `contents: read` and `checks: read` **explicitly**, so its effective scope is
+readable in place and cannot widen again if the workflow-level default changes. `collect` reads no
+Actions metadata and holds no `GH_TOKEN`.
+
+`checks: read` is retained on `collect` for parity with workflow A's credentialled job rather than
+narrowed further. No step in either `collect` job reads the Checks API, so a narrower scope looks
+available, but nothing in this remediation proves that the scope is unused by the runner
+environment itself, and narrowing beyond the reviewed shape is not part of this correction.
 
 ## 4. Workflow B — the external receiving path
 
@@ -140,7 +155,9 @@ credentialled production job keeps exactly the top-level read scope it already h
 
 * Trigger: `workflow_dispatch` with **zero inputs**. No `schedule`, `push`, `pull_request`,
   `repository_dispatch`, `workflow_call` or `workflow_run`.
-* Permissions: `contents: read`, `checks: read`, `actions: read`.
+* Permissions: workflow-level `contents: read`, `checks: read`. The credential-free
+  `repository-gate` job adds `actions: read`; the credentialled `collect` job declares
+  `contents: read`, `checks: read` explicitly and never inherits the Actions scope.
 * Concurrency: `group: data-s2-production-collection`, `cancel-in-progress: false`, no `queue:` key.
 
 It reproduces the scheduled workflow's trust boundary rather than approximating it: the event name,
@@ -250,11 +267,26 @@ For a 204 there is no returned identity, so identity-based verification is unava
 
 Three separate bounded, non-negative, safe-integer measurements, never conflated:
 
-| | Measurement | Definition |
-|---|---|---|
-| A | timer delivery | `handlerStart − controller.scheduledTime` |
-| B | dispatch / run creation | GitHub run `created_at` − dispatch acceptance time |
-| C | end to end | GitHub run `created_at` − `controller.scheduledTime` |
+| | Measurement | Telemetry field | Definition |
+|---|---|---|---|
+| A | timer delivery | `timerLatencyMs` | `handlerStart − controller.scheduledTime` |
+| B | request start to run creation | `requestToRunCreationLatencyMs` | GitHub run `created_at` − `dispatchRequestStartedAt` |
+| C | end to end | `endToEndLatencyMs` | GitHub run `created_at` − `controller.scheduledTime` |
+
+`dispatchRequestStartedAt` is captured **immediately before the POST is issued**, and the clock is
+never read again. B is therefore a **client-observable request-start-to-run-creation** measurement.
+It is deliberately **not** acceptance-to-run latency, **not** GitHub internal dispatch latency and
+**not** server processing latency: the instant GitHub internally accepted the dispatch is not
+observable from this client and is never estimated. B bounds the true server-side figure from above
+and nothing more.
+
+The baseline matters, not just the name. Measuring B from the instant the HTTP response returned —
+which is what the first reviewed head did — is wrong in a way that silently loses data: GitHub may
+create the workflow run **before** the successful response comes back, so `created_at` legitimately
+precedes the response, the difference is negative, and a real measurement from a successful live
+cycle is discarded as unavailable. The request-start baseline always precedes run creation, so a
+successful dispatch keeps its measurement. No HTTP round-trip duration is recorded; it was not
+needed for this correction and adding it would widen the telemetry surface for nothing.
 
 **B is structurally unavailable on `ACCEPTED_NO_IDENTITY`**, because a 204 returns no run to read a
 creation time from. Unavailable is reported as unavailable and is **never fabricated as zero**. Any
@@ -281,16 +313,39 @@ It must **not** be claimed that a future 01:17–03:17 Cloudflare dispatch windo
 exposure while workflow A remains armed, because workflow A has already arrived hours outside its
 nominal minute.
 
-## 7. Live evidence supplied by the owner
+## 7. Live evidence for natural scheduled run `34015422874`
 
-The owner supplied the following figures for live production collection run **`34015422874`**:
+Two kinds of evidence, with their provenance kept apart.
 
-> 70 changes, 10,157 `recordsSeen`, 11,348 observations, 10,157 heads, zero orphan, quarantined and
-> rejected, projected 121,103, actual 113,279, writes 494, 6 API calls, 106,483 request bytes.
+**Independently verified from the GitHub Actions API during this remediation.** Workflow
+`DATA-S2 Scheduled Production Collection via D1 REST`, id `350014371`, reports `state: active` — the
+scheduled workflow is **enabled**, having been re-enabled by the owner after the capacity
+live-acceptance closeout. It produced natural run `34015422874`: run number 3, event `schedule`,
+attempt 1, head branch `main`, head SHA `b0637270882f0ab120102dbb04a8eb2eef6a763f`, created
+`2026-09-06T06:01:26Z`, completed `2026-09-06T06:01:59Z`, conclusion **success**, with
+`repository-gate` (job `101438220728`) and `collect` (job `101438250715`) both succeeding at every
+step. Against the 01:17 UTC nominal minute that is **4h44m26s** of schedule-event delivery lateness,
+upstream of the workflow and never a collection delay — the collection itself took about 33 seconds
+once the run existed. Reading this is a read-only GitHub query; nothing was dispatched, enabled or
+disabled.
 
-**This record does not verify those figures and performed no action to obtain them.** They are
-recorded here as owner-supplied evidence. Nothing in Package A read, dispatched, re-ran or
-influenced that run.
+**Owner-supplied, and not independently verified.** The run's Step Summary is not retrievable
+through the GitHub API available here, so these figures are owner evidence:
+
+> `result: changed`, `mutation: definite_completed`, 70 changes, 10,157 `recordsSeen`; committed
+> state `completed`, 70 run observations, 11,348 observations, 10,157 heads equal to 10,157 logical
+> keys, zero orphan, quarantined and rejected; H 11,278, N 10,157, structural 93,999, projected
+> 121,103 classified `expected`, mutation reads 635, amplification 1.35, reserve 2,000; 6 API calls,
+> 113,279 rows read, 494 rows written, 106,483 request bytes, `readClassification: expected`;
+> over-predicting actual by 7,824 rows, about 6.91%, at about 45.31% of the 250,000 hard ceiling
+> with 136,721 of headroom.
+
+Nothing in Package A read, dispatched, re-ran or influenced that run.
+
+**Current operational conclusion.** GitHub cron is active enough to produce natural runs, but
+materially late and unreliable as a timer: three delivered natural runs are now approximately 3h21m,
+4h31m and 4h44m late, and two earlier acceptance windows produced no run at all. That is the case
+for DATA-S2C, and it changes no collection semantics, no cron cadence and no threshold.
 
 **What they support.** A third measured cycle in which the conservative projection again
 over-predicted actual provider reads (121,103 projected against 113,279 actual), well inside the
@@ -306,7 +361,11 @@ still grows.
 
 * The guard is credential-free and read-only, needs `actions: read` alone, and fails closed.
 * The Actions read scope is granted on the credential-free gate job only, never on the credentialled
-  production job.
+  production job — proved against each job's **effective** permissions, which inherit the
+  workflow-level block when the job declares none. Workflow B's workflow-level `actions: read` at
+  the first reviewed head reached its `collect` job by inheritance; that is corrected, and a
+  permanent test now resolves effective scope rather than reading an absent block as an absent
+  permission.
 * Workflow B's credential surface is exactly workflow A's: the same secrets, the same dedicated
   unattended environment, the same masking order, the same reviewed repository constant for the
   production database id, which reaches no workflow or environment value.
@@ -331,7 +390,11 @@ deployable required regeneration.
 
 The existing GitHub cron stays `17 1 * * *` with no `timezone:` field. Whether GitHub currently has
 the scheduled workflow enabled is owner-side state that this repository cannot read or change and
-Package A neither reads nor changes; the last recorded repository evidence had it owner-disabled
+Package A neither reads nor changes. It is, however, readable through the GitHub Actions API, and
+was read for this checkpoint: workflow `350014371` reports `state: active` and produced successful
+natural run `34015422874` on 6 September 2026, so the guard's first live effect will be on genuine
+natural runs. Superseded, and retained only as history: the earlier repository evidence had it
+owner-disabled
 after run `33948145320`.
 
 ## 10. Limitations

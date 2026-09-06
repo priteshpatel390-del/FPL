@@ -1,6 +1,56 @@
 # ROADMAP.md — current and proposed checkpoints
 
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## Current scheduler state — workflow A is enabled and produced a successful natural run
+
+**This block is the canonical current statement of GitHub scheduler state, and it supersedes every
+earlier statement in this file, and in every other canonical document, that the scheduled production
+workflow is owner-disabled or must remain disabled.** Those statements were accurate at the
+checkpoints that recorded them and are retained there as history. They are no longer current.
+
+**Independently verified here from the GitHub Actions API.** Workflow `DATA-S2 Scheduled Production
+Collection via D1 REST`, id `350014371`, path `.github/workflows/data-s2-production-scheduled.yml`,
+reports `state: active` — it is **not** disabled. It produced natural scheduled run
+`34015422874`: run number 3, event `schedule`, attempt 1, head branch `main`, head SHA
+`b0637270882f0ab120102dbb04a8eb2eef6a763f`, created `2026-09-06T06:01:26Z`, conclusion **success**,
+with both jobs succeeding — `repository-gate` (job `101438220728`) and `collect` (job
+`101438250715`), every step of both concluding `success`. The run completed at
+`2026-09-06T06:01:59Z`, about 33 seconds after it was created.
+
+**The owner re-enabled workflow A after the capacity live-acceptance closeout**, and this run is the
+first natural scheduled run produced after that re-enable.
+
+**It arrived 4h44m26s late.** The nominal cron minute is 01:17 UTC and GitHub created the run object
+at 06:01:26Z. That is schedule-event **delivery** lateness upstream of the workflow, never a
+collection delay: once the run existed the whole collection finished in about 33 seconds. GitHub
+exposes no scheduler-registration, armed or next-run state, and documents that schedule events may
+be delayed or dropped, so the lateness has **no proven cause** and none is invented.
+
+**Owner-provided Step Summary evidence for that run, recorded with its provenance.** The Step
+Summary is not retrievable through the GitHub API available here, so the following values are
+**owner-provided and were not independently verified**: `result: changed`,
+`mutation: definite_completed`, 70 changed observations, 10,157 records seen; committed state
+`completed` with 70 run observations, 11,348 observations, 10,157 heads equal to 10,157 logical
+keys, and zero orphan heads, quarantined and rejected; population H 11,278, N 10,157, structural
+93,999, projected provider rows 121,103 classified `expected`, mutation reads 635, amplification
+1.35, reserve 2,000; provider accounting 6 API calls, 113,279 rows read, 494 rows written, 106,483
+request bytes, `readClassification: expected`. The projection over-predicted the actual read by
+7,824 rows, about 6.91% above actual; actual utilisation of the 250,000 hard ceiling was about
+45.31%, leaving 136,721 of headroom. Run identity, timing and conclusion above are independently
+verifiable from GitHub; these Step Summary values are owner evidence. Both are valid to record, and
+the distinction is stated rather than blurred.
+
+**Current operational conclusion.** GitHub cron is **active enough to produce natural runs, but
+materially late and unreliable as a timer**. Three natural runs have now been delivered
+approximately 3h21m, 4h31m and 4h44m after their nominal minutes, and two earlier acceptance windows
+produced no run at all. That is exactly the problem DATA-S2C exists to address, and it does not
+change the collection engine, the cron cadence `17 1 * * *`, or any resource threshold.
+
+**Nothing in this block was executed.** Reading the GitHub Actions API to verify the run is a
+read-only GitHub query. No workflow was dispatched, enabled or disabled, no Cloudflare request, D1
+read or mutation, collection, migration, deployment, cron, environment or credential change was
+performed.
+
 ## Current DATA-S2C checkpoint — Package A repository foundation, review candidate
 
 **Repository implementation only, and nothing is live.** Package A adds the daily opportunity guard
@@ -74,6 +124,11 @@ append-only history and changed-observation counts now have two samples (264 and
 distribution. Not exact future provider billing. Not GitHub schedule reliability. Not that 1.35 and
 2,000 are optimal. Not that no later optimisation will be needed.
 
+> **Superseded on 6 September 2026.** The scheduled workflow `350014371` has since been
+> re-enabled by the owner and reports `state: active`; it produced successful natural run
+> `34015422874`. The statement below was accurate at this checkpoint and is retained as
+> history. See "Current scheduler state" at the top of this document.
+
 **Scheduler unchanged and still gated.** The permanent cron stays `17 1 * * *` and the scheduled
 workflow `350014371` was verified through the GitHub Actions API as still **`disabled_manually`**.
 This checkpoint does not enable it. **GitHub schedule delivery is best-effort**: the cron minute is
@@ -141,7 +196,8 @@ and `rowsReadHard` explicitly.
 0001–0003, five indexes, **no migration 0004**), no index, no schema, no data semantics, no
 postflight weakening. `PROVIDER_READ_AMPLIFICATION = 1.35`, `PROVIDER_READ_SAFETY_RESERVE = 2000`,
 the mutation-read and write estimators, the 40,000 write ceiling, the 8-call API ceiling and the
-`17 1 * * *` cron are all unchanged, and the scheduled workflow remains **owner-disabled**.
+`17 1 * * *` cron are all unchanged, and the scheduled workflow remains **owner-disabled**
+*(historical: the owner has since re-enabled it — see "Current scheduler state" above)*.
 
 **Nothing was executed.** No Cloudflare request, D1 read, D1 mutation, workflow dispatch, Stage 0
 re-run, collection, migration, deployment, cron, schedule, environment or credential change was
@@ -156,7 +212,9 @@ measurement. GitHub schedule-delivery lateness remains a separate matter.
 Next gates, each separate: **(1)** owner review and merge; **(2)** exact-`main` Verify; **(3)** a
 separate owner approval for exactly **one** attended manual production collection while the
 scheduler stays disabled, whose per-call telemetry replaces the inferred factors with measured
-ones. Scheduler re-enable and any schema change remain later, separate gates. See
+ones. Scheduler re-enable and any schema change remain later, separate gates. *(All three gates are
+closed: the collection ran as `33990959542`, and the scheduler has since been re-enabled — see
+"Current scheduler state" above.)* See
 [capacity envelope restoration](../workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).
 
 <!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
@@ -181,8 +239,11 @@ never a collection delay. `repository-gate` succeeded; `collect` failed with
 **completed**, the postflight D1 read **was issued and returned**, and resource enforcement then
 failed on its returned accounting before `validateProductionPostflight()` could validate the
 returned state. The postflight read ran; postflight validation did not. **The state that run left in
-production D1 is therefore unproven — which is not evidence that it is invalid or corrupt**. The owner then disabled the scheduled workflow; it **remains disabled** and this
-checkpoint does not re-enable it.
+production D1 is therefore unproven — which is not evidence that it is invalid or corrupt**. The
+owner then disabled the scheduled workflow; it **remained disabled** and that checkpoint did not
+re-enable it. *(Historical — the owner has since re-enabled it: workflow
+`350014371` reports `state: active` and produced successful natural run `34015422874`. See "Current
+scheduler state" at the top of this document.)*
 
 **The read model is proven defective.** The preceding successful run `33901634593` measured
 **124,430** actual `rowsRead` against a **94,844** structural estimate — a 29,586-row delta, about
@@ -229,7 +290,9 @@ It is not operationally complete at merge: the next live gate was the **first ge
 produced by `17 1 * * *`**, judged on event `schedule`, exact then-current `main`, and
 `repository-gate` and `collect` success. **That gate is closed and it did not pass.** Run
 `33948145320` was that natural run: the gate and the commit succeeded, resource enforcement then
-failed at `postflight_read`, and the scheduler is now owner-disabled. See the checkpoint above.
+failed at `postflight_read`, and the scheduler was owner-disabled at that checkpoint. *(It has
+since been re-enabled and has produced successful natural run `34015422874`.)* See the checkpoint
+above.
 
 The hardened manual normal production collection has run live and succeeded: run `33818972728`,
 attempt 1, event `workflow_dispatch`, head SHA `319dfddd8ac83ae5ab7d20bfb684d3760bf64fbf`, both

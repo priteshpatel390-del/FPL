@@ -46,7 +46,13 @@ function controller({scheduledTime=SCHEDULED_TIME,calls=[]}={}){
     if(state.noRetryAtCall===null)state.noRetryAtCall=calls.length;}}};
 }
 
-const clock=(...values)=>{let index=0;return()=>values[Math.min(index++,values.length-1)];};
+// The clock counts its own reads, so a test can prove exactly how many instants the dispatcher
+// captured and, crucially, when it captured them relative to the outbound request.
+const clock=(...values)=>{
+  const fn=()=>{const value=values[Math.min(fn.calls,values.length-1)];fn.calls+=1;return value;};
+  fn.calls=0;
+  return fn;
+};
 const identityBody=(runId=RUN_ID)=>({workflow_run_id:runId,
   run_url:`https://api.github.com/repos/${DISPATCH_REPOSITORY}/actions/runs/${runId}`,
   html_url:`https://github.com/${DISPATCH_REPOSITORY}/actions/runs/${runId}`});
@@ -59,10 +65,13 @@ async function fire({responses,now=clock(SCHEDULED_TIME+2000,SCHEDULED_TIME+3000
   const logs=[];
   const original=console.log;
   console.log=line=>logs.push(line);
+  // How many clock reads had already happened at the instant each request left the dispatcher.
+  const clockReadsAtRequest=[];
+  const fetchImpl=async(url,init)=>{clockReadsAtRequest.push(now.calls);return t.fetchImpl(url,init);};
   let outcome;
-  try{outcome=await runScheduledDispatch({controller:c.controller,env,fetchImpl:t.fetchImpl,now});}
+  try{outcome=await runScheduledDispatch({controller:c.controller,env,fetchImpl,now});}
   finally{console.log=original;}
-  return {outcome,calls:t.calls,logs,state:c.state};
+  return {outcome,calls:t.calls,logs,state:c.state,clockReadsAtRequest,clockReads:now.calls};
 }
 
 /* -------------------------------- dedicated, isolated identity -------------------------------- */
@@ -174,10 +183,10 @@ test('logs carry closed enums and bounded integers only',async()=>{
   assert.equal(fired.logs.length,1);
   const logged=JSON.parse(fired.logs[0]);
   assert.deepEqual(Object.keys(logged).sort(),
-    ['dispatch','dispatchLatencyMs','endToEndLatencyMs','reason','timerLatencyMs']);
+    ['dispatch','endToEndLatencyMs','reason','requestToRunCreationLatencyMs','timerLatencyMs']);
   assert.equal(logged.dispatch,ACCEPTED_WITH_IDENTITY);
   assert.ok(DISPATCH_REASONS.includes(logged.reason));
-  for(const key of ['timerLatencyMs','dispatchLatencyMs','endToEndLatencyMs'])
+  for(const key of ['timerLatencyMs','requestToRunCreationLatencyMs','endToEndLatencyMs'])
     assert.ok(logged[key]===null||Number.isSafeInteger(logged[key]),key);
   // No token, URL, header, run id, account id or database id may ever reach a log line.
   for(const forbidden of [/Bearer/,/api\.github\.com/,/https:/,new RegExp(String(RUN_ID)),
@@ -328,7 +337,7 @@ test('only the exact returned run id may be read back, and the run list is never
   // A verification read that fails changes nothing about the classification.
   const unreadable=await fire({responses:[json(200,identityBody()),json(500,{})]});
   assert.equal(unreadable.outcome.dispatch,ACCEPTED_WITH_IDENTITY);
-  assert.equal(unreadable.outcome.dispatchLatencyMs,null);
+  assert.equal(unreadable.outcome.requestToRunCreationLatencyMs,null);
   assert.equal(unreadable.outcome.endToEndLatencyMs,null);
   // A read that answers about a different run is not evidence about this one.
   const wrongRun=await fire({responses:[json(200,identityBody()),
@@ -345,21 +354,66 @@ test('the three latency measurements stay separate and are never conflated',asyn
       json(200,{id:RUN_ID,created_at:new Date(SCHEDULED_TIME+11000).toISOString()})]});
   // A: Cloudflare timer delivery — handler start against the scheduled instant.
   assert.equal(fired.outcome.timerLatencyMs,2000);
-  // B: GitHub run creation against the instant GitHub accepted the dispatch.
-  assert.equal(fired.outcome.dispatchLatencyMs,11000-3500);
+  // B: GitHub run creation against the instant this client STARTED the dispatch request.
+  assert.equal(fired.outcome.requestToRunCreationLatencyMs,11000-3500);
   // C: end to end — GitHub run creation against the scheduled instant.
   assert.equal(fired.outcome.endToEndLatencyMs,11000);
   assert.notEqual(fired.outcome.timerLatencyMs,fired.outcome.endToEndLatencyMs);
+  assert.notEqual(fired.outcome.requestToRunCreationLatencyMs,fired.outcome.endToEndLatencyMs);
+  assert.notEqual(fired.outcome.requestToRunCreationLatencyMs,fired.outcome.timerLatencyMs);
+});
+
+// The defect this pins: B used to be measured from a timestamp taken AFTER the HTTP response
+// returned. GitHub may create the workflow run before that response comes back, so a perfectly
+// good run-creation time produced a negative difference and was discarded as unavailable. B is
+// now measured from the request-start instant, which always precedes run creation.
+test('B is measured from the request start, so a run created before the response is still valid',
+  async()=>{
+    const now=clock(SCHEDULED_TIME+2000,SCHEDULED_TIME+2100,SCHEDULED_TIME+2900);
+    const fired=await fire({now,responses:[json(200,identityBody()),
+      json(200,{id:RUN_ID,created_at:new Date(SCHEDULED_TIME+2500).toISOString()})]});
+    // scheduled 01:17:00.000, handler 01:17:02.000, request start 01:17:02.100,
+    // run created 01:17:02.500, response observed 01:17:02.900.
+    assert.equal(fired.outcome.dispatch,ACCEPTED_WITH_IDENTITY);
+    assert.equal(fired.outcome.timerLatencyMs,2000);
+    assert.equal(fired.outcome.requestToRunCreationLatencyMs,400);
+    assert.equal(fired.outcome.endToEndLatencyMs,2500);
+    // The run was created 400 ms before the response was observed and B survives it intact.
+    assert.notEqual(fired.outcome.requestToRunCreationLatencyMs,null);
+    // Had the response-return instant been the baseline, that same live cycle would have lost B.
+    assert.equal(dispatchTelemetry({classification:ACCEPTED_WITH_IDENTITY,
+      scheduledTime:SCHEDULED_TIME,handlerStart:SCHEDULED_TIME+2000,
+      dispatchRequestStartedAt:SCHEDULED_TIME+2900,runCreatedAt:SCHEDULED_TIME+2500})
+      .requestToRunCreationLatencyMs,null);
+  });
+
+test('the request-start instant is captured immediately before the POST and never after it',async()=>{
+  const now=clock(SCHEDULED_TIME+2000,SCHEDULED_TIME+2100,SCHEDULED_TIME+2900);
+  const fired=await fire({now,responses:[json(200,identityBody()),
+    json(200,{id:RUN_ID,created_at:new Date(SCHEDULED_TIME+2500).toISOString()})]});
+  // Exactly two instants exist by the time the POST leaves — handler start and request start —
+  // and the clock is never read again, so no response-return timestamp can become a baseline.
+  assert.deepEqual(fired.clockReadsAtRequest,[2,2]);
+  assert.equal(fired.clockReads,2);
+  // Structurally, inside the handler, both clock reads precede the one outbound dispatch request.
+  const handler=uncommented(read(WORKER_PATH));
+  const body=handler.slice(handler.indexOf('export async function runScheduledDispatch'));
+  const reads=[...body.matchAll(/now\(\)/g)].map(match=>match.index);
+  assert.equal(reads.length,2);
+  assert.ok(reads.every(index=>index<body.indexOf('await fetchImpl')));
+  assert.match(body,/const dispatchRequestStartedAt=now\(\);\n\s*try\{/);
+  // The disproven acceptance-instant vocabulary is gone from the Worker and its contract.
+  assert.doesNotMatch(sources(),/acceptedAt|dispatchLatencyMs/);
 });
 
 test('B is unavailable on an accepted dispatch without identity, and is never fabricated',async()=>{
   const fired=await fire({responses:[json(204,null)],now:clock(SCHEDULED_TIME+1500,SCHEDULED_TIME+1900)});
   assert.equal(fired.outcome.dispatch,ACCEPTED_NO_IDENTITY);
   assert.equal(fired.outcome.timerLatencyMs,1500);
-  assert.equal(fired.outcome.dispatchLatencyMs,null);
+  assert.equal(fired.outcome.requestToRunCreationLatencyMs,null);
   assert.equal(fired.outcome.endToEndLatencyMs,null);
   // Unavailable is null, never zero.
-  assert.notEqual(fired.outcome.dispatchLatencyMs,0);
+  assert.notEqual(fired.outcome.requestToRunCreationLatencyMs,0);
 });
 
 test('telemetry is bounded, non-negative, integral and frozen',()=>{
@@ -369,14 +423,22 @@ test('telemetry is bounded, non-negative, integral and frozen',()=>{
     assert.equal(boundedLatency(value),null,String(value));
   const telemetry=dispatchTelemetry({classification:ACCEPTED_WITH_IDENTITY,
     scheduledTime:SCHEDULED_TIME,handlerStart:SCHEDULED_TIME+10,
-    acceptedAt:SCHEDULED_TIME+20,runCreatedAt:SCHEDULED_TIME+30});
+    dispatchRequestStartedAt:SCHEDULED_TIME+20,runCreatedAt:SCHEDULED_TIME+30});
   assert.ok(Object.isFrozen(telemetry));
-  assert.deepEqual({...telemetry},{timerLatencyMs:10,dispatchLatencyMs:10,endToEndLatencyMs:30});
+  assert.deepEqual({...telemetry},
+    {timerLatencyMs:10,requestToRunCreationLatencyMs:10,endToEndLatencyMs:30});
   // A clock that runs backwards produces unavailable, never a negative number.
   const skewed=dispatchTelemetry({classification:ACCEPTED_WITH_IDENTITY,scheduledTime:SCHEDULED_TIME,
-    handlerStart:SCHEDULED_TIME-5,acceptedAt:SCHEDULED_TIME+20,runCreatedAt:SCHEDULED_TIME+10});
+    handlerStart:SCHEDULED_TIME-5,dispatchRequestStartedAt:SCHEDULED_TIME+20,
+    runCreatedAt:SCHEDULED_TIME+10});
   assert.equal(skewed.timerLatencyMs,null);
-  assert.equal(skewed.dispatchLatencyMs,null);
+  assert.equal(skewed.requestToRunCreationLatencyMs,null);
+  // A missing or non-finite request-start instant is unavailable, never a fabricated zero.
+  for(const absent of [null,undefined,Number.NaN,'x'])
+    assert.equal(dispatchTelemetry({classification:ACCEPTED_WITH_IDENTITY,
+      scheduledTime:SCHEDULED_TIME,handlerStart:SCHEDULED_TIME+10,
+      dispatchRequestStartedAt:absent,runCreatedAt:SCHEDULED_TIME+30})
+      .requestToRunCreationLatencyMs,null,String(absent));
   // An unbounded gap is unavailable rather than a huge integer.
   assert.equal(dispatchTelemetry({classification:ACCEPTED_WITH_IDENTITY,scheduledTime:0,
     handlerStart:MAX_LATENCY_MS+1}).timerLatencyMs,null);

@@ -29,7 +29,9 @@ GitHub exposes no scheduler-registration, armed or next-run state through which 
 approved design and has never been exercised live. A 204 answer is `ACCEPTED_NO_IDENTITY` and is
 handled; a 200 with any other shape is `AMBIGUOUS` and is handled. Both directions fail safe, but
 neither has live evidence, and on `ACCEPTED_NO_IDENTITY` the run-creation latency measurement is
-structurally unavailable and stays unavailable rather than being reported as zero.
+structurally unavailable and stays unavailable rather than being reported as zero. That measurement
+is taken from the instant the dispatch request started, which is client-observable; GitHub's own
+internal acceptance instant is not observable from the dispatcher and is never estimated.
 
 **A future `Actions: write` credential carries real blast radius.** A token able to dispatch the
 external workflow can dispatch and re-run repository workflows generally, not only that workflow. It
@@ -46,15 +48,19 @@ retrievable through the GitHub API available here, and are lost when that retent
 Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow
 accounting.
 
-**Owner-side scheduler state is not readable from here.** The repository declares `17 1 * * *` and
-Package A does not change it. Whether GitHub currently has the scheduled workflow enabled is
-owner-side state this repository cannot read or change and Package A neither reads nor changes; the
-last recorded repository evidence had it owner-disabled after run `33948145320`.
+**Owner-side scheduler state is not repository state.** The repository declares `17 1 * * *` and
+Package A does not change it. Whether GitHub has the scheduled workflow enabled is owner-side
+configuration this repository cannot assert or change from its own contents, and Package A changes
+nothing about it — but it **is** readable through the GitHub Actions API. Read on 6 September 2026,
+workflow `350014371` reports `state: active`, and it produced successful natural run `34015422874`.
+The earlier record of it being owner-disabled after run `33948145320` is historical.
 
-**Owner-supplied run `34015422874` supports but does not calibrate the capacity model.** The
-supplied figures — 70 changes, 10,157 `recordsSeen`, 11,348 observations, 10,157 heads, zero orphan,
-quarantined and rejected, projected 121,103, actual 113,279, writes 494, 6 API calls, 106,483
-request bytes — were not verified by this package and no action was taken to obtain them.
+**Run `34015422874` supports but does not calibrate the capacity model.** Its identity, timing and
+conclusion are independently verifiable from GitHub and were verified. The Step Summary figures —
+70 changes, 10,157 `recordsSeen`, 11,348 observations, 10,157 heads, zero orphan, quarantined and
+rejected, projected 121,103, actual 113,279, writes 494, 6 API calls, 106,483 request bytes — are
+owner-supplied: the Step Summary is not retrievable through the GitHub API available here, so they
+were not independently verified and no action was taken to obtain them.
 `PROVIDER_READ_AMPLIFICATION` stays 1.35 and `PROVIDER_READ_SAFETY_RESERVE` stays 2,000, both
 unchanged and still INFERRED. Three changed-observation counts — 264, 141 and 70 — are three
 samples, not a distribution, and no season-long capacity claim follows.
@@ -143,8 +149,9 @@ day, and is not claimed here.
 **No mechanism exists to read the remaining daily Cloudflare D1 allowance**, and none was added.
 Real-time remaining allowance cannot be proven from this repository.
 
-**The scheduled production workflow is owner-disabled.** Its disabled state is GitHub-side
-configuration that this repository cannot assert, change or detect from its own contents.
+**The scheduled production workflow's enabled state is GitHub-side configuration** that this
+repository cannot assert or change from its own contents. It was owner-disabled at this checkpoint;
+it has since been re-enabled and reports `state: active`.
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2 scheduled production collection limitations

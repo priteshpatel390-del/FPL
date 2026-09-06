@@ -22,8 +22,11 @@ also pins the exact eight-member concurrency-group membership, `cancel-in-progre
 member and the absence of any `queue:` key, so membership drift is detected.
 
 `tests/data-s2c-external-workflow.test.mjs` proves workflow B is `workflow_dispatch`-only with zero
-inputs and no other trigger, declares exactly `contents: read`, `checks: read` and `actions: read`
-with the Actions scope on the credential-free gate alone, is a separate file that never reuses the
+inputs and no other trigger, declares a workflow-level default of exactly `contents: read` and
+`checks: read`, and resolves each job's **effective** permissions — the job's own block when it has
+one, otherwise the inherited workflow-level block — to prove the Actions read scope reaches the
+credential-free gate of workflows A and B and neither credentialled `collect` job, and that no
+effective write scope exists anywhere in either workflow, is a separate file that never reuses the
 attended manual boundary, and adds no second production schedule trigger. It proves the dispatch
 event is the only source of the candidate SHA, that remote `main` is proved by the gate and
 independently again under production credentials, and it **executes** both workflow shells against
@@ -52,8 +55,13 @@ and the exact URL, API version, body and absence of workflow inputs. It proves t
 state machine — 200 with valid identity, 204, 401/403/404/422, 5xx, 429, 3xx, transport failure,
 timeout, malformed 200 body and unknown status — strict run-id and run-URL validation, that only the
 exact returned run id may be read back and the run list is never searched, the three separate
-latency measurements, that the dispatch measurement is unavailable rather than zero on a 204, and
-that logs carry closed enums and bounded integers with no token, URL, header or run id.
+latency measurements and that they are never conflated, that the run-creation measurement is
+unavailable rather than zero on a 204, and that logs carry closed enums and bounded integers with no
+token, URL, header or run id. It proves the run-creation measurement's baseline is the instant the
+dispatch request **started**, captured immediately before the POST with the clock never read again:
+a run created before the HTTP response returned keeps a valid positive value, where a
+response-return baseline would have discarded it, and a missing, non-finite, backwards or
+out-of-bounds clock still fails closed to unavailable.
 
 `tests/data-s2b-scheduled-production-collection.test.mjs` is extended, not weakened: it now proves
 the scheduled gate runs the guard after the bounded Verify wait and before the protected job can

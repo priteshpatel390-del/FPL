@@ -4,13 +4,14 @@
 ## DATA-S2C external scheduler — credential and logging boundary
 
 **The opportunity guard is credential-free and read-only.** It needs GitHub `actions: read` and
-nothing else, issues REST GETs only, and never dispatches a workflow, re-runs a job, re-requests a
-check, cancels anything or writes to GitHub. It holds no Cloudflare credential, no D1 credential and
-no production D1 identifier, and the only host it contacts is `api.github.com`. Its entry point
-discards the original error object on failure, so no request URL, header, token or identifier can
-reach a workflow log through a runtime message; only a closed classification and a closed reason are
-ever written. Every unreadable or unclassifiable response is
-`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` and stops the run — the guard never fails open.
+nothing else — granted on the credential-free gate job alone, and kept out of both workflows'
+workflow-level defaults so no credentialled job inherits it, issues REST GETs only, and never
+dispatches a workflow, re-runs a job, re-requests a check, cancels anything or writes to GitHub. It
+holds no Cloudflare credential, no D1 credential and no production D1 identifier, and the only host
+it contacts is `api.github.com`. Its entry point discards the original error object on failure, so
+no request URL, header, token or identifier can reach a workflow log through a runtime message; only
+a closed classification and a closed reason are ever written. Every unreadable or unclassifiable
+response is `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` and stops the run — the guard never fails open.
 
 **The Actions read scope is narrowly placed.** It is granted on the credential-free repository-gate
 job of workflows A and B alone. The credentialled production job keeps exactly the top-level

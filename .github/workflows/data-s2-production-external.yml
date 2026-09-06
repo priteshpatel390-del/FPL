@@ -25,10 +25,14 @@ name: DATA-S2 External Production Collection via D1 REST
 on:
   workflow_dispatch:
 
+# The workflow-level default is the narrowest scope every job in this file can share. It
+# deliberately excludes `actions: read`: workflow-level permissions are inherited by any job that
+# declares none, so granting the Actions read scope here would silently hand it to the
+# credentialled production job as well. Only the credential-free gate declares it, and only the
+# gate needs it.
 permissions:
   contents: read
   checks: read
-  actions: read
 
 # Shares the production collection group so an external collection can never run beside a
 # scheduled collection, a manual collection, a resume, a reconciliation read, a migration or a
@@ -129,6 +133,15 @@ jobs:
     needs: repository-gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Declared explicitly rather than inherited, so this job's effective scope is readable here
+    # and cannot widen if the workflow-level default ever changes. It is exactly the scope the
+    # scheduled workflow's credentialled job has: `contents: read` for the checkout and nothing
+    # more than the shared default beside it. It deliberately does NOT include `actions: read` —
+    # this job reads no GitHub Actions metadata, holds no `GH_TOKEN`, and the daily opportunity
+    # guard that does read it runs in the credential-free gate above.
+    permissions:
+      contents: read
+      checks: read
     # The dedicated unattended daily production boundary, shared with the scheduled workflow. The
     # attended manual and recovery boundary `data-s2-production-collection` stays human-approved
     # and is deliberately not reused here.

@@ -36,6 +36,30 @@ const COLLECT_RUN_MARKER='      - name: Reconfirm identity and remote main, then
 const GATE_RUN_MARKER='      - name: Gate exact current main and clean tree';
 const sha256=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
+// GitHub Actions permissions are INHERITED: a job that declares no `permissions:` block runs with
+// the workflow-level block. Reading the absence of a job-level block as an absence of permission is
+// exactly the mistake this helper exists to make impossible. It resolves a job's EFFECTIVE scope —
+// the job's own block when it has one, otherwise the workflow-level default.
+function permissionsBlock(source,indent){
+  const marker=`\n${indent}permissions:\n`;
+  const start=source.indexOf(marker);
+  if(start<0)return null;
+  const scopes={};
+  for(const line of source.slice(start+marker.length).split('\n')){
+    const match=line.match(/^\s*([a-z-]+): (read|write|none)$/);
+    if(!match||!line.startsWith(`${indent}  `))break;
+    scopes[match[1]]=match[2];
+  }
+  return scopes;
+}
+
+function effectivePermissions(source,jobBlock){
+  const workflowLevel=permissionsBlock(source,'');
+  const jobLevel=permissionsBlock(jobBlock,'    ');
+  assert.ok(workflowLevel!==null,'a workflow-level permissions block must exist');
+  return jobLevel===null?workflowLevel:jobLevel;
+}
+
 function stepScript(source,marker){
   const start=source.indexOf(marker);
   assert.ok(start>0,marker);
@@ -54,7 +78,8 @@ function stepScript(source,marker){
 test('workflow B exists and is workflow_dispatch-only with zero inputs',()=>{
   assert.ok(fs.existsSync(EXTERNAL_WORKFLOW_PATH));
   assert.match(external,/^name: DATA-S2 External Production Collection via D1 REST$/m);
-  const trigger=external.slice(external.indexOf('\non:'),external.indexOf('\npermissions:'));
+  const body=uncommented(external);
+  const trigger=body.slice(body.indexOf('\non:'),body.indexOf('\npermissions:'));
   assert.equal(trigger.trim(),'on:\n  workflow_dispatch:');
   for(const forbidden of [/^\s{2}schedule:/m,/cron:/,/^\s{2}push:/m,/^\s{2}pull_request:/m,
     /pull_request_target/,/repository_dispatch/,/workflow_call/,/workflow_run/,/^\s{2}release:/m,
@@ -71,15 +96,49 @@ test('workflow B exists and is workflow_dispatch-only with zero inputs',()=>{
 });
 
 test('workflow B declares exactly the permissions it needs and no more',()=>{
-  assert.match(external,/^permissions:\n  contents: read\n  checks: read\n  actions: read\n/m);
-  assert.equal([...external.matchAll(/^permissions:$/gm)].length,1);
+  // The workflow-level default is the scope every job inherits when it declares none, so the
+  // Actions read scope must not live here.
+  assert.match(external,/^permissions:\n  contents: read\n  checks: read\n\n/m);
+  assert.deepEqual(permissionsBlock(external,''),{contents:'read',checks:'read'});
   for(const forbidden of [/contents: write/,/actions: write/,/packages:/,/id-token:/,/pull-requests:/,
     /issues: write/,/deployments:/])
     assert.doesNotMatch(uncommented(external),forbidden,String(forbidden));
-  // The credential-free gate carries the Actions read scope; the credentialled job does not need
-  // it and does not get it.
-  assert.match(gateBlock(),/permissions:\n      contents: read\n      checks: read\n      actions: read/);
-  assert.doesNotMatch(collectBlock(),/^\s*permissions:/m);
+});
+
+// EFFECTIVE permissions, not declared ones. A job with no `permissions:` block inherits the
+// workflow-level block, so proving that the credentialled job simply lacks a block would prove
+// nothing at all about what it can reach.
+test('workflow B grants the Actions read scope to the credential-free gate alone',()=>{
+  const gate=effectivePermissions(external,gateBlock());
+  const collect=effectivePermissions(external,collectBlock());
+  // The daily opportunity guard and the bounded Verify wait read Actions run and job metadata.
+  assert.deepEqual(gate,{contents:'read',checks:'read',actions:'read'});
+  assert.equal(gate.actions,'read');
+  // The credentialled production job reads no Actions metadata and holds no `GH_TOKEN`.
+  assert.deepEqual(collect,{contents:'read',checks:'read'});
+  assert.equal(collect.actions,undefined);
+  assert.ok(!('actions' in collect));
+  // Declared explicitly on the job rather than inherited, so the scope cannot widen silently if
+  // the workflow-level default ever changes again.
+  assert.match(collectBlock(),/^    permissions:\n      contents: read\n      checks: read$/m);
+  // No effective write scope anywhere in workflow B.
+  for(const scopes of [gate,collect])
+    for(const [name,level] of Object.entries(scopes))
+      assert.equal(level,'read',`${name} must be read-only`);
+  assert.doesNotMatch(uncommented(collectBlock()),
+    /GH_TOKEN|github\.token|actions\/runs|api\.github\.com/);
+});
+
+// The same effective reading applied to the scheduled workflow, whose credentialled job also
+// declares no block: its workflow-level default carries no Actions scope, so it inherits none.
+test('workflow A gives the Actions read scope to its gate alone, by the same effective reading',()=>{
+  const gate=scheduled.slice(scheduled.indexOf('  repository-gate:'),scheduled.indexOf('\n  collect:'));
+  const collect=scheduled.slice(scheduled.indexOf('\n  collect:'));
+  assert.deepEqual(permissionsBlock(scheduled,''),{contents:'read',checks:'read'});
+  assert.deepEqual(effectivePermissions(scheduled,gate),{contents:'read',checks:'read',actions:'read'});
+  const collectScopes=effectivePermissions(scheduled,collect);
+  assert.equal(collectScopes.actions,undefined);
+  for(const level of Object.values(collectScopes))assert.equal(level,'read');
 });
 
 test('workflow B is a separate file and never reuses the attended manual boundary',()=>{

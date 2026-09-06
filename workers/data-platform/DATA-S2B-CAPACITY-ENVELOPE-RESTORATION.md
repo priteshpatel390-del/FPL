@@ -3,8 +3,10 @@
 Repository implementation only. Nothing in this package was executed against Cloudflare. No D1
 request, no D1 read, no D1 mutation, no workflow dispatch, no production collection, no migration,
 no index, no deployment, no Cron or schedule change, no environment change and no credential change
-was performed while preparing it. The scheduled production workflow remains **owner-disabled** and
-this package does not re-enable it.
+was performed while preparing it. The scheduled production workflow remained **owner-disabled** and
+this package did not re-enable it. *(Historical, superseded on 6 September 2026: the owner has
+since re-enabled it — workflow `350014371` reports `state: active` and produced successful natural
+run `34015422874`.)*
 
 It changes exactly one thing: the size of the internal per-cycle read envelope. It changes no SQL,
 no query plan, no `EXPLAIN` contract, no migration, no index, no schema, no projection factor, no

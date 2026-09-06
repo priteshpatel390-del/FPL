@@ -1,13 +1,13 @@
 // DATA-S2C — the isolated Cloudflare schedule dispatcher.
 //
 // A timer, and nothing else. It asks GitHub Actions to start the external production collection
-// workflow, records three bounded latency measurements, and stops. It never collects Official FPL
-// data, never touches D1, holds no D1 binding or Cloudflare data credential, imports nothing at
-// all outside this directory, and exposes no HTTP fetch handler, no workers.dev hostname, no
-// preview URL, no route and no custom domain. The historical collector Worker — which still
-// declares a thirty-minute Cron trigger and a D1 binding, and still exposes a scheduled collector
-// — is untouched by this Worker and must never be redeployed by it. This Worker deliberately runs
-// under its own dedicated identity for exactly that reason.
+// workflow, records three bounded, client-observable latency measurements, and stops. It never
+// collects Official FPL data, never touches D1, holds no D1 binding or Cloudflare data credential,
+// imports nothing at all outside this directory, and exposes no HTTP fetch handler, no workers.dev
+// hostname, no preview URL, no route and no custom domain. The historical collector Worker — which
+// still declares a thirty-minute Cron trigger and a D1 binding, and still exposes a scheduled
+// collector — is untouched by this Worker and must never be redeployed by it. This Worker
+// deliberately runs under its own dedicated identity for exactly that reason.
 //
 // Package A ships it with an explicitly empty `triggers.crons`, so deploying it can only ever
 // remove Cron triggers from its own identity and can never arm one. Arming the timer is a later,
@@ -30,9 +30,10 @@ const instant=value=>{
   return Number.isFinite(ms)?ms:null;
 };
 
-// One bounded read of the exact run the acceptance named, used only to measure run-creation
-// latency. It never searches, never guesses and never changes the classification: a read that
-// fails simply leaves the two run-creation measurements unavailable.
+// One bounded read of the exact run the accepted dispatch named, used only to measure run-creation
+// latency against the client's own request-start instant. It never searches, never guesses and
+// never changes the classification: a read that fails simply leaves the two run-creation
+// measurements unavailable.
 async function readRunCreatedAt(runId,token,fetchImpl){
   let response;
   try{
@@ -65,6 +66,12 @@ export async function runScheduledDispatch({controller,env,fetchImpl=fetch,now=D
       dispatchTelemetry({classification:REJECTED,scheduledTime,handlerStart}));
 
   let response;
+  // Captured immediately before the POST is issued, and never after it returns. This is the
+  // baseline for measurement B, and it must be a request-START instant: GitHub may create the
+  // workflow run before the successful response comes back, so measuring from the response would
+  // turn a perfectly good run-creation time into a negative, and therefore unavailable, value.
+  // The instant GitHub internally accepted the dispatch is not observable here and is not guessed.
+  const dispatchRequestStartedAt=now();
   try{
     const request=dispatchRequest(token);
     response=await fetchImpl(request.url,{...request.init,signal:AbortSignal.timeout(DISPATCH_TIMEOUT_MS)});
@@ -74,7 +81,6 @@ export async function runScheduledDispatch({controller,env,fetchImpl=fetch,now=D
     return report(AMBIGUOUS,'dispatch_transport_failed',
       dispatchTelemetry({classification:AMBIGUOUS,scheduledTime,handlerStart}));
   }
-  const acceptedAt=now();
 
   let body=null;
   if(response?.status===200){try{body=await response.json();}catch{body=null;}}
@@ -84,7 +90,8 @@ export async function runScheduledDispatch({controller,env,fetchImpl=fetch,now=D
     ?await readRunCreatedAt(decided.runId,token,fetchImpl):null;
 
   return report(decided.classification,decided.reason,dispatchTelemetry({
-    classification:decided.classification,scheduledTime,handlerStart,acceptedAt,runCreatedAt}));
+    classification:decided.classification,scheduledTime,handlerStart,dispatchRequestStartedAt,
+    runCreatedAt}));
 }
 
 // No `fetch` handler is exported, so this Worker has no public HTTP surface at all.
