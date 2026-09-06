@@ -65,9 +65,11 @@ of explicitly numbered `page=N` reads, the page count fixed from page 1's `total
 second request is issued and capped at ten pages; every later page must report the same total, the
 accumulated rows must reconcile exactly with it, and no run id may repeat. Ordering is never relied
 on, and a short or over-full page, a changed total, a duplicate or a missing page is
-`guard_read_failed`. The jobs listing stays a single 100-row `filter=all` page because GitHub caps a
-run at 50 re-runs and each attempt carries two jobs, so one page covers every execution a run can
-ever have. `OPPORTUNITY_GUARD_MAX_READS` is a hard cap of **200** counting every request of either
+`guard_read_failed`. The jobs listing stays a single 100-row `filter=all` page, and that page is
+bounded by fail-closed truncation rather than by GitHub's re-run cap: 50 re-runs are permitted in
+addition to the original attempt, so 51 attempts at two jobs each is 102 executions, and a listing
+the provider counts higher than it returned refuses the day as ambiguous. That pathological history
+is accepted rather than paginated for. `OPPORTUNITY_GUARD_MAX_READS` is a hard cap of **200** counting every request of either
 kind: the 35 A + 105 B overlap footprint costs about 146, and a cycle needing the 201st request
 refuses with `guard_read_bound_exhausted` without issuing it. It needs `actions: read`, granted
 on the credential-free job alone. Because a job with no `permissions:` block inherits the

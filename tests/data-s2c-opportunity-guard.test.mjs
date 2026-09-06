@@ -12,7 +12,8 @@ import {AMBIGUOUS_REQUIRES_OWNER_ATTENTION,AUTOMATIC_COLLECTION,OPPORTUNITY_AVAI
   COLLECT_JOB_STATUSES,OPPORTUNITY_GUARD_REPOSITORY,OPPORTUNITY_REASONS,
   OPPORTUNITY_TRAILING_WINDOW_MS,
   OWNER_COLLECTION,ROUTINE_COLLECTION_WORKFLOWS,CANDIDATE_DISCOVERY_LOOKBACK_MS,
-  CONSUMING_RUN_ATTEMPT,MAX_RERUNS_PER_RUN,MAX_WORKFLOW_RUN_PAGES,WORKFLOW_RUNS_PAGE_SIZE,
+  CONSUMING_RUN_ATTEMPT,MAX_RERUNS_PER_RUN,MAX_RUN_ATTEMPTS,MAX_WORKFLOW_RUN_PAGES,
+  WORKFLOW_RUNS_PAGE_SIZE,
   WORKFLOW_RUN_TIME_LIMIT_DAYS,candidateDiscoveryDate,
   candidateDiscoveryStart,classifyOpportunity,opportunityWindowStart,resolveOpportunity,
   runJobsRequest,workflowRunsRequest}
@@ -333,6 +334,53 @@ test('a jobs listing the provider counts higher than it returned is truncated an
     assert.equal(outcome.reason,'guard_read_failed');
   });
 
+// The largest history one page CAN carry: 50 attempts of two jobs is exactly 100 rows, and the
+// provider's count matches what it returned, so nothing is truncated and the normal decision stands.
+test('a one-page jobs history at the page bound still decodes normally',async()=>{
+  const jobs=[jobRow('repository-gate','success',at(2026,8,6,1,17),1),
+    jobRow('collect','success',at(2026,8,6,1,18),1)];
+  for(let attempt=2;attempt<=50;attempt+=1){
+    jobs.push(jobRow('repository-gate','failure',at(2026,8,6,4,0),attempt));
+    jobs.push(jobRow('collect','skipped',null,attempt));
+  }
+  assert.equal(jobs.length,WORKFLOW_RUNS_PAGE_SIZE);
+  const t=transport([
+    ['/actions/runs/71/jobs',ok(jobsBody(...jobs))],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
+  // Attempt 1 collected this morning, so the day is consumed — read, not refused.
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+});
+
+// The accepted pathological limit, proved rather than assumed away. GitHub permits 50 re-runs BESIDE
+// the original attempt, so a fully exhausted run carries 51 attempts and, at two governed jobs each,
+// 102 job executions — two more than the single 100-row page can return. The guard neither pages for
+// the remainder nor infers it: the provider's own count exceeds the rows returned, so it fails closed
+// exactly like any other truncation.
+test('the full permitted re-run history exceeds one jobs page and fails closed',async()=>{
+  const jobs=[];
+  for(let attempt=1;attempt<=50;attempt+=1){
+    jobs.push(jobRow('repository-gate','success',at(2026,8,6,1,17),attempt));
+    jobs.push(jobRow('collect','skipped',null,attempt));
+  }
+  assert.equal(jobs.length,WORKFLOW_RUNS_PAGE_SIZE);
+  const t=transport([
+    ['/actions/runs/71/jobs',ok({total_count:MAX_RUN_ATTEMPTS*2,jobs})],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_failed');
+  // Exactly one jobs request was issued for that run, and no second page was ever asked for.
+  const jobCalls=t.calls.filter(call=>call.url.includes('/actions/runs/71/jobs'));
+  assert.equal(jobCalls.length,1);
+  assert.doesNotMatch(jobCalls[0].url,/[?&]page=/,jobCalls[0].url);
+  assert.ok(jobCalls[0].url.includes('per_page=100'),jobCalls[0].url);
+  assert.ok(jobCalls[0].url.includes('filter=all'),jobCalls[0].url);
+});
+
 test('a real two-attempt jobs payload resolves to consumed end to end',async()=>{
   const t=transport([
     ['/actions/runs/71/jobs',ok(jobsBody(
@@ -610,9 +658,30 @@ test('the candidate lookback is the documented workflow-run limit alone, and not
   const source=uncommented(read(GUARD_MODULE_PATH));
   assert.doesNotMatch(source,/RERUN_ELIGIBILITY_DAYS/);
   assert.doesNotMatch(source,/65/);
-  // The 50-re-run cap survives as what bounds the single unpaginated jobs page, and nothing else.
+  // The 50-re-run cap survives as the reasoning about the single unpaginated jobs page, and nothing
+  // else. It is NOT a total attempt count — see the arithmetic regression below.
   assert.equal(MAX_RERUNS_PER_RUN,50);
-  assert.equal(MAX_RERUNS_PER_RUN*2,WORKFLOW_RUNS_PAGE_SIZE);
+  assert.equal(MAX_RUN_ATTEMPTS,51);
+});
+
+// The corrected provider arithmetic. GitHub documents "A workflow run can be re-run a maximum of 50
+// times", and those re-runs are IN ADDITION to the original attempt, so the permitted maximum is 51
+// attempts rather than 50. The superseded reasoning treated 50 as the total, concluded that two jobs
+// per attempt gave exactly 100 executions, and therefore claimed one 100-row page covered every
+// history a run could have. It does not.
+test('50 re-runs is 51 permitted attempts and 102 governed job executions',()=>{
+  assert.equal(MAX_RERUNS_PER_RUN,50);
+  assert.equal(MAX_RUN_ATTEMPTS,1+MAX_RERUNS_PER_RUN);
+  assert.equal(MAX_RUN_ATTEMPTS,51);
+  // Two governed jobs per attempt.
+  assert.equal(MAX_RUN_ATTEMPTS*2,102);
+  // Which is strictly more than the one 100-row page the jobs listing reads, so the page is bounded
+  // by fail-closed truncation rather than by this cap.
+  assert.ok(MAX_RUN_ATTEMPTS*2>WORKFLOW_RUNS_PAGE_SIZE);
+  assert.notEqual(MAX_RERUNS_PER_RUN*2,MAX_RUN_ATTEMPTS*2);
+  // The superseded claim is gone from the module, comments included.
+  const source=read(GUARD_MODULE_PATH);
+  assert.doesNotMatch(source,/50 attempts is 100 job executions/);
 });
 
 // The load-bearing justification for excluding re-run eligibility from the 35-day horizon. If this

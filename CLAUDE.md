@@ -126,9 +126,11 @@ consume; it never omits one that could. No run-level field prunes candidates, be
 documented semantics strong enough to prove exclusion. A
 non-skipped `collect` whose start instant is missing, unparseable, or contradicted by its own run or
 the clock is ambiguous, and one page of 100 job executions is the whole bounded read for jobs — a
-listing the provider counts higher than it returned is truncated and fails closed. GitHub caps a run
-at 50 re-runs and the governed workflows carry two jobs per attempt, so 100 rows covers every
-execution a run can have.
+listing the provider counts higher than it returned is truncated and fails closed. GitHub permits 50
+re-runs **in addition to** the original attempt, so a fully exhausted run carries 51 attempts and, at
+two governed jobs each, 102 job executions — more than one page returns. That one-page read therefore
+deliberately fails closed if that pathological history is ever reached, rather than assuming a page
+covers every permitted history.
 
 **The candidate listing is paginated and the read bound is 200.** Workflow B gains three dispatch
 opportunities a day under Package C, so a 35-day horizon holds about 35 workflow A runs and about

@@ -100,9 +100,12 @@ every later page must report the same total, the accumulated rows must reconcile
 no run id may repeat. Ordering is never relied on for correctness. A short or over-full page, a
 changed `total_count`, a duplicated run or a missing page is `guard_read_failed`; exceeding the page
 cap or the read bound is `guard_read_bound_exhausted`. The jobs listing is deliberately *not*
-paginated: GitHub caps a run at 50 re-runs and the governed workflows carry two jobs per attempt, so
-one 100-row `filter=all` page covers every execution a run can ever have, and a truncated one still
-fails closed. `OPPORTUNITY_GUARD_MAX_READS` is **200**, a hard cap counting every GitHub request of
+paginated. GitHub permits 50 re-runs in addition to the original attempt, so a fully exhausted run
+carries 51 attempts and, at two governed jobs per attempt, 102 job executions — two more than one
+100-row `filter=all` page returns. The page is therefore bounded by fail-closed truncation rather
+than by the re-run cap: a listing the provider counts higher than it returned refuses the day as
+ambiguous instead of being paged through or inferred. Reaching it takes a single run exhausting
+essentially the whole permitted re-run allowance, and it is accepted as a pathological limit. `OPPORTUNITY_GUARD_MAX_READS` is **200**, a hard cap counting every GitHub request of
 either kind. The 35 A + 105 B footprint costs about 146 requests, leaving roughly 54 for attended
 workflow C runs, additional historical routine runs and page-shape variance. That is a budget and
 not a proof: a pathological history still exceeds it and still refuses rather than admitting an

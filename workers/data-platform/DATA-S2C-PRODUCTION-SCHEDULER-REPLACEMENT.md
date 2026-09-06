@@ -146,12 +146,20 @@ and returns `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with the reason `guard_rerun_co
 rather than being trusted either way. There is deliberately no path by which a re-run can make a day
 available that attempt 1 already collected.
 
-The jobs read stays bounded by one page of 100 executions rather than by pagination, and that is a
-bound rather than an omission. GitHub caps a workflow run at **50 re-runs**, the governed workflows
-carry exactly two jobs per attempt, so a 100-row page covers every job execution a run can ever have.
-A listing whose `total_count` exceeds the rows returned is **truncated and fails closed** — a
-truncated page could be missing exactly the attempt that collected. The jobs listing carries no
-`page` parameter at all.
+The jobs read stays bounded by one page of 100 executions rather than by pagination, and what bounds
+it is fail-closed truncation rather than the provider's re-run cap. GitHub permits a run to be re-run
+a maximum of **50 times**, and those re-runs are **in addition to** the original attempt, so a fully
+exhausted run carries **51 attempts** and, at exactly two governed jobs per attempt, **102 job
+executions** — two more than a 100-row page returns. One page therefore cannot be claimed to cover
+every history GitHub permits.
+
+That case is bounded, not assumed away: a listing whose `total_count` exceeds the rows returned is
+**truncated and fails closed** — a truncated page could be missing exactly the attempt that
+collected — so the pathological history returns `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, never
+`OPPORTUNITY_AVAILABLE`, and the two missing rows are never inferred. It is an accepted pathological
+limitation rather than a normal operational problem: reaching it takes a single run exhausting
+essentially the whole permitted re-run allowance. The jobs listing carries no `page` parameter at
+all.
 
 ### 3.3.2 Candidate discovery is a different, wider window
 
@@ -195,8 +203,10 @@ What the 35-day derivation deliberately does not lean on:
 
 * **Environment approval adds nothing.** "A workflow may wait for up to 30 days on environment
   approvals" is already inside the 35-day run limit, which explicitly includes waiting and approval.
-* **The 50-re-run cap is not a discovery input.** It survives in this design only as the reason one
-  100-row jobs page covers every execution a run can have (§3.3.1).
+* **The 50-re-run cap is not a discovery input.** It survives in this design only as the arithmetic
+  behind the single 100-row jobs page — 50 re-runs beside the original attempt is 51 attempts and
+  102 executions, which that page does **not** cover, so the page is bounded by fail-closed
+  truncation instead (§3.3.1).
 * **It does not matter whether `created_at` advances on a re-run.** Attempt 1 is dated by the
   original creation either way; a run that looked newer would only be discovered more easily.
 * **Job-level limits are not used as the bound.** The 6-hour GitHub-hosted job execution limit and

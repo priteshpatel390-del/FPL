@@ -128,10 +128,16 @@ export const MAX_WORKFLOW_RUN_PAGES=10;
 export const WORKFLOW_RUN_TIME_LIMIT_DAYS=35;
 export const CANDIDATE_DISCOVERY_LOOKBACK_MS=WORKFLOW_RUN_TIME_LIMIT_DAYS*24*60*60*1000;
 
-// GitHub caps a workflow run at 50 re-runs. The governed workflows carry exactly two jobs per
-// attempt, so 50 attempts is 100 job executions and one 100-row `filter=all` page covers every
-// attempt a run can ever have. This constant records that reasoning; it bounds no request.
+// GitHub permits a workflow run to be re-run at most 50 times, and those re-runs are IN ADDITION to
+// the original attempt, so a fully exhausted run carries 51 attempts rather than 50. The governed
+// workflows carry exactly two jobs per attempt, so that exhausted history is 102 job executions and
+// a single 100-row `filter=all` page therefore CANNOT be claimed to cover every execution a run is
+// permitted to have. The jobs listing stays one page regardless, because a listing the provider
+// counts higher than it returned is truncated and fails closed in the decoder: the pathological
+// history refuses the day rather than being read as a subset of itself. These constants record that
+// arithmetic; they bound no request.
 export const MAX_RERUNS_PER_RUN=50;
+export const MAX_RUN_ATTEMPTS=1+MAX_RERUNS_PER_RUN;
 
 // Only this attempt of a run can consume the day. See the header: every later attempt is refused by
 // the production entry point before any production work, so it is never evidence of a collection,
@@ -235,11 +241,14 @@ export function workflowRunsRequest(workflowFile,token,now,pageNumber=1){
 // of each job, so a re-run whose newest attempt skipped `collect` would hide the earlier attempt
 // that actually collected — and attempt 1 is the only attempt that can consume the day.
 //
-// This listing is DELIBERATELY NOT PAGINATED, unlike the candidate listing, and that is a bound
-// rather than an omission: GitHub caps a run at `MAX_RERUNS_PER_RUN` re-runs, the governed workflows
-// carry exactly two jobs per attempt, so one 100-row page covers every job execution a run can ever
-// have. A listing whose `total_count` exceeds the rows returned is truncated and fails closed in the
-// decoder rather than being paged through.
+// This listing is DELIBERATELY NOT PAGINATED, unlike the candidate listing. One 100-row page covers
+// every execution of every realistic history, but it does NOT cover every history GitHub permits:
+// `MAX_RUN_ATTEMPTS` attempts of two jobs each is 102 executions, so a run re-run to the provider's
+// limit exceeds the page. That case is bounded rather than assumed away — a listing whose
+// `total_count` exceeds the rows returned is truncated and fails closed in the decoder rather than
+// being paged through, so the pathological history refuses the day as ambiguous instead of being
+// read as a subset. It is an accepted pathological limit, not an incomplete-history assumption: it
+// takes a single run exhausting essentially the whole permitted re-run allowance to reach.
 export function runJobsRequest(runId,token){
   if(!runIdValid(runId))throw new Error('opportunity_run_id_invalid');
   if(typeof token!=='string'||!token)throw new Error('opportunity_token_missing');

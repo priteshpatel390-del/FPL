@@ -20,8 +20,12 @@ It separates the two windows the guard depends on: that `candidateDiscoveryStart
 earlier than `opportunityWindowStart` and exactly 35 days earlier, that
 `CANDIDATE_DISCOVERY_LOOKBACK_MS` is the pinned `WORKFLOW_RUN_TIME_LIMIT_DAYS` (35) alone and
 explicitly **not** 65 days, that the superseded `RERUN_ELIGIBILITY_DAYS` constant and the literal
-`65` are both gone from the module, that `MAX_RERUNS_PER_RUN` (50) survives only as what bounds the
-single unpaginated jobs page, that the whole-date filter given to the provider can only widen the
+`65` are both gone from the module, that `MAX_RERUNS_PER_RUN` (50) survives only as the arithmetic
+behind the single unpaginated jobs page — with a dedicated regression proving 50 re-runs is
+`MAX_RUN_ATTEMPTS` (51) permitted attempts and 102 governed job executions, strictly more than the
+100-row page, so that page is bounded by fail-closed truncation rather than by the cap — that a
+100-row history at the page bound still decodes normally while a 102-execution history fails closed
+as `guard_read_failed` without a second jobs page being requested, that the whole-date filter given to the provider can only widen the
 search, and that a clock near the epoch cannot produce a negative filter date. It then proves
 discovery end to end through `resolveOpportunity`
 with a stubbed Actions API rather than by injecting runs into the classifier: a run created
