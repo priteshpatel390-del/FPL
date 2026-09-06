@@ -11,8 +11,10 @@ import {AMBIGUOUS_REQUIRES_OWNER_ATTENTION,AUTOMATIC_COLLECTION,OPPORTUNITY_AVAI
   OPPORTUNITY_COLLECT_JOB_NAME,OPPORTUNITY_CONSUMED,OPPORTUNITY_GUARD_MAX_READS,
   COLLECT_JOB_STATUSES,OPPORTUNITY_GUARD_REPOSITORY,OPPORTUNITY_REASONS,
   OPPORTUNITY_TRAILING_WINDOW_MS,
-  OWNER_COLLECTION,ROUTINE_COLLECTION_WORKFLOWS,classifyOpportunity,opportunityWindowDate,
-  opportunityWindowStart,resolveOpportunity,runJobsRequest,workflowRunsRequest}
+  OWNER_COLLECTION,ROUTINE_COLLECTION_WORKFLOWS,CANDIDATE_DISCOVERY_LOOKBACK_MS,
+  RERUN_ELIGIBILITY_DAYS,WORKFLOW_RUN_TIME_LIMIT_DAYS,candidateDiscoveryDate,
+  candidateDiscoveryStart,classifyOpportunity,opportunityWindowStart,resolveOpportunity,
+  runJobsRequest,workflowRunsRequest}
   from '../workers/data-platform/scheduled/opportunity-guard.mjs';
 
 const read=file=>fs.readFileSync(file,'utf8');
@@ -369,7 +371,8 @@ test('the trailing six-hour rule closes the UTC-midnight duplicate hole',()=>{
     OPPORTUNITY_AVAILABLE);
   // The window is the union of the two rules, never the intersection.
   assert.equal(opportunityWindowStart(NOW),Math.min(Date.UTC(2026,8,6),NOW-OPPORTUNITY_TRAILING_WINDOW_MS));
-  assert.equal(opportunityWindowDate(justAfterMidnight),'2026-09-06');
+  // Candidate discovery is a different, wider window and is asserted separately below.
+  assert.ok(candidateDiscoveryStart(justAfterMidnight)<opportunityWindowStart(justAfterMidnight));
 });
 
 /* ------------------------------------- fail closed ------------------------------------- */
@@ -452,7 +455,7 @@ test('resolution reads only Actions metadata, read-only, and inside a fixed boun
   }
   // The provider itself bounds the listing by creation date, so the guard never relies on an
   // unbounded page happening to be ordered newest first.
-  assert.ok(t.calls[0].url.includes(`created=${encodeURIComponent('>=2026-09-06')}`));
+  assert.ok(t.calls[0].url.includes(`created=${encodeURIComponent(`>=${candidateDiscoveryDate(NOW)}`)}`));
   assert.ok(t.calls[0].url.includes('per_page=100'));
 });
 
@@ -501,11 +504,182 @@ test('exhausting the read bound is an ambiguity, never a licence to keep reading
   assert.equal(t.calls.length,4);
 });
 
+/* ------------ candidate discovery is a wider window than the consumption decision ------------ */
+
+// The defect this section pins: the classifier decides on `collect.started_at`, but the Actions API
+// can only filter a run listing on the run's own `created_at`. Asking it for runs created inside the
+// consumption window omits the run created at 23:50 whose collect started at 00:10 — the classifier
+// would refuse correctly, and never sees it.
+test('the candidate lookback is derived from documented GitHub limits, not chosen',()=>{
+  // "You can re-run a workflow run ... up to 30 days after its initial run", and a workflow run is
+  // limited to "35 days / workflow run ... includes execution duration, and time spent on waiting
+  // and approval". The worst case chains them.
+  assert.equal(RERUN_ELIGIBILITY_DAYS,30);
+  assert.equal(WORKFLOW_RUN_TIME_LIMIT_DAYS,35);
+  assert.equal(CANDIDATE_DISCOVERY_LOOKBACK_MS,65*24*60*60*1000);
+});
+
+test('candidate discovery reaches strictly further back than the consumption window',()=>{
+  for(const now of [NOW,Date.UTC(2026,8,7,0,3,0),Date.UTC(2026,8,7,8,0,0),Date.UTC(2026,8,6,23,50,0)]){
+    const consumption=opportunityWindowStart(now);
+    const discovery=candidateDiscoveryStart(now);
+    assert.ok(discovery<consumption,String(now));
+    assert.equal(discovery,consumption-CANDIDATE_DISCOVERY_LOOKBACK_MS);
+    // The filter the provider is given is a whole UTC date, which can only ever widen the search.
+    assert.ok(Date.parse(`${candidateDiscoveryDate(now)}T00:00:00Z`)<=discovery);
+  }
+  // A clock close to the epoch cannot produce a negative filter date.
+  assert.equal(candidateDiscoveryStart(0),0);
+  assert.equal(candidateDiscoveryDate(0),'1970-01-01');
+});
+
+// The mandatory end-to-end regression. Nothing is injected into the classifier: the run has to be
+// discovered through the real generated request, read through the real jobs request and classified.
+test('a run created before midnight whose collect started after it is discovered and consumes',
+  async()=>{
+    const now=Date.UTC(2026,8,7,8,0,0);
+    const t=transport([
+      ['/actions/runs/71/jobs',ok(jobsBody(
+        jobRow('repository-gate','success',at(2026,8,6,23,51),1),
+        jobRow('collect','success',at(2026,8,7,0,10),1)))],
+      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,23,50)}))],
+      ['/runs',ok(runsBody())]]);
+    const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
+    assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+    assert.equal(outcome.reason,'automatic_collection_consumed');
+    // The generated request really does reach back past the run's creation date, and the old
+    // consumption-window filter really would have excluded it.
+    const listing=t.calls.find(call=>call.url.includes('/runs?'));
+    const filtered=decodeURIComponent(listing.url.split('created=')[1]).replace('>=','');
+    assert.ok(Date.parse(`${filtered}T00:00:00Z`)<=Date.parse(at(2026,8,6,23,50)),filtered);
+    assert.equal(opportunityWindowStart(now),Date.UTC(2026,8,7,0,0,0));
+    assert.ok(Date.parse(at(2026,8,6,23,50))<opportunityWindowStart(now));
+  });
+
+test('the same discovery holds on the tightest date boundary',async()=>{
+  // 23:59 on the previous UTC day, collect at 00:01 on the current one.
+  const now=Date.UTC(2026,8,7,7,0,0);
+  const t=transport([
+    ['/actions/runs/72/jobs',ok(jobsBody(
+      jobRow('repository-gate','success',at(2026,8,6,23,59),1),
+      jobRow('collect',null,at(2026,8,7,0,1),1)))],
+    ['data-s2-production-external.yml/runs',ok(runsBody({id:72,created_at:at(2026,8,6,23,59)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+});
+
+test('a conservatively discovered run whose collect is outside both rules does not consume',
+  async()=>{
+    const now=Date.UTC(2026,8,7,8,0,0);
+    // Discovered because it was created inside the 65-day lookback; it collected weeks ago.
+    const t=transport([
+      ['/actions/runs/73/jobs',ok(jobsBody(
+        jobRow('repository-gate','success',at(2026,8,1,1,17),1),
+        jobRow('collect','success',at(2026,8,1,1,18),1)))],
+      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:73,created_at:at(2026,8,1,1,17)}))],
+      ['/runs',ok(runsBody())]]);
+    const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
+    assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+    assert.equal(outcome.reason,'opportunity_available');
+  });
+
+test('an old run re-run into the current window is discovered and consumes',async()=>{
+  // The exact case the lookback exists for: the run object was created 40 days ago, was re-run, and
+  // the later attempt's collect started this morning. Its `created_at` is far outside the
+  // consumption window and inside the discovery window.
+  const now=Date.UTC(2026,8,7,8,0,0);
+  const t=transport([
+    ['/actions/runs/74/jobs',ok(jobsBody(
+      jobRow('repository-gate','failure',at(2026,7,29,1,17),1),
+      jobRow('collect','skipped',null,1),
+      jobRow('repository-gate','success',at(2026,8,7,2,0),2),
+      jobRow('collect','success',at(2026,8,7,2,5),2)))],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+});
+
+test('the asking run is still excluded when the wider lookback discovers it',async()=>{
+  const now=Date.UTC(2026,8,7,8,0,0);
+  const t=transport([
+    ['data-s2-production-external.yml/runs',ok(runsBody({id:75,created_at:at(2026,8,6,23,50)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:75});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  // And it costs no jobs read of its own.
+  assert.ok(!t.calls.some(call=>call.url.includes('/actions/runs/75/jobs')));
+});
+
+test('a truncated candidate listing fails closed rather than discovering a subset',async()=>{
+  const t=transport([
+    ['data-s2-production-scheduled.yml/runs',ok({total_count:3,
+      workflow_runs:[{id:71,created_at:at(2026,8,6,23,50)}]})],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_failed');
+});
+
+// The wider lookback returns more candidates, and each one costs a jobs read. The bound is not
+// raised to absorb that here: exceeding it stops the run rather than leaving a candidate unexamined.
+test('more candidates than the read bound allows is an ambiguity, never an assumption',async()=>{
+  // Three listings plus one jobs read per candidate: at most nine candidates fit inside the bound,
+  // and the tenth stops the run.
+  const nine=Array.from({length:9},(_,index)=>({id:index+1,created_at:at(2026,8,6,1,index)}));
+  const jobs=['/jobs',ok(jobsBody(jobRow('repository-gate','failure',at(2026,8,6,1,0))))];
+  const fits=transport([jobs,
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody(...nine))],['/runs',ok(runsBody())]]);
+  assert.equal((await resolveOpportunity({token:'t',fetchImpl:fits.fetchImpl,now:NOW}))
+    .classification,OPPORTUNITY_AVAILABLE);
+  assert.equal(fits.calls.length,OPPORTUNITY_GUARD_MAX_READS);
+  const ten=Array.from({length:10},(_,index)=>({id:index+1,created_at:at(2026,8,6,1,index)}));
+  const t=transport([jobs,
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody(...ten))],['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_bound_exhausted');
+  assert.ok(t.calls.length<=OPPORTUNITY_GUARD_MAX_READS);
+});
+
+test('discovery never changes how consumption is decided',async()=>{
+  // A run created comfortably inside the consumption window, whose collect started before it.
+  // Discovery finds it either way; only `collect.started_at` decides, and it does not consume.
+  const now=Date.UTC(2026,8,7,12,0,0);
+  const t=transport([
+    ['/actions/runs/76/jobs',ok(jobsBody(
+      jobRow('repository-gate','success',at(2026,8,7,5,0),1),
+      jobRow('collect','success',at(2026,8,7,5,1),1)))],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:76,created_at:at(2026,8,7,5,0)}))],
+    ['/runs',ok(runsBody())]]);
+  // At 12:00 the window opens at 00:00, so this one does consume.
+  assert.equal((await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99}))
+    .classification,OPPORTUNITY_CONSUMED);
+  // The jobs request still asks for every attempt.
+  assert.ok(t.calls.some(call=>call.url.includes('filter=all')));
+  assert.ok(!t.calls.some(call=>call.url.includes('filter=latest')));
+});
+
 test('the guard never dispatches, re-runs, cancels or writes anything',()=>{
   const source=uncommented(`${read(GUARD_MODULE_PATH)}\n${read(GUARD_ENTRY_PATH)}`);
+  // Write verbs and the mutating Actions endpoints, matched as URL path segments rather than as
+  // bare words: the module legitimately names GitHub's documented re-run limits as constants, and a
+  // constant carrying a number is not a request. What must never appear is the endpoint itself.
   for(const forbidden of [/'POST'/,/"POST"/,/'PUT'/,/'PATCH'/,/'DELETE'/,/dispatches/,/workflow_dispatch/,
-    /rerun/i,/re-run/i,/rerequest/i,/re-request/i,/cancel/i,/method:'(?!GET)/])
+    /\/rerun/i,/rerun-failed-jobs/i,/\/rerequest/i,/\/cancel/i,/method:'(?!GET)/])
     assert.doesNotMatch(source,forbidden,String(forbidden));
+  // Positively: every URL this module can build is one of exactly two read-only listing shapes.
+  for(const entry of ROUTINE_COLLECTION_WORKFLOWS){
+    const request=workflowRunsRequest(entry.file,'t',NOW);
+    assert.equal(request.init.method,'GET');
+    assert.match(request.url,
+      /^https:\/\/api\.github\.com\/repos\/[\w.-]+\/[\w.-]+\/actions\/workflows\/[\w.-]+\/runs\?/);
+  }
+  assert.match(runJobsRequest(12,'t').url,
+    /^https:\/\/api\.github\.com\/repos\/[\w.-]+\/[\w.-]+\/actions\/runs\/12\/jobs\?/);
   assert.equal(workflowRunsRequest('data-s2-production-external.yml','t',NOW).init.method,'GET');
   assert.equal(runJobsRequest(12,'t').init.method,'GET');
   assert.equal(runJobsRequest(12,'t').url,

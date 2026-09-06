@@ -334,10 +334,13 @@ test('the Verify wait is strictly read-only: it never dispatches, re-runs or re-
     ['node workers/data-platform/scheduled/run-exact-head-verify.mjs',
      'node workers/data-platform/scheduled/run-opportunity-guard.mjs',
      'node workers/data-platform/run-production-collection.mjs']);
-  // The guard is read-only in exactly the same way the Verify wait is.
+  // The guard is read-only in exactly the same way the Verify wait is. Mutating Actions endpoints
+  // are matched as URL path segments rather than as bare words: the guard legitimately names
+  // GitHub's documented re-run limits as constants when deriving its candidate lookback, and a
+  // constant carrying a number is not a request.
   const guard=`${read('workers/data-platform/scheduled/opportunity-guard.mjs')}\n${read('workers/data-platform/scheduled/run-opportunity-guard.mjs')}`;
-  for(const forbidden of [/'POST'/,/"POST"/,/rerun/i,/re-request/i,/rerequest/i,/dispatches/,
-    /workflow_dispatch/,/method:'(?!GET)/,/cancel/i])
+  for(const forbidden of [/'POST'/,/"POST"/,/\/rerun/i,/rerun-failed-jobs/i,/\/rerequest/i,
+    /dispatches/,/workflow_dispatch/,/method:'(?!GET)/,/\/cancel/i])
     assert.doesNotMatch(uncommented(guard),forbidden,String(forbidden));
 });
 

@@ -34,7 +34,17 @@ and refuses just as firmly when it cannot classify what it read. It reads **ever
 governed run (`filter=all`, so a re-run whose newest attempt skips `collect` cannot hide an earlier
 attempt that collected) and dates each collection by the `collect` job's own `started_at` rather
 than the run's `created_at`, because a run can wait on GitHub, on environment admission or behind
-the shared concurrency group long before collection begins. It needs `actions: read`, granted
+the shared concurrency group long before collection begins.
+
+Two windows therefore exist and are deliberately not the same. **Candidate discovery** asks the
+Actions API for runs created in the last 65 days — the only filter that endpoint offers is the run's
+`created_at`, and 65 days is GitHub's documented 30-day re-run eligibility plus its 35-day
+workflow-run limit, which explicitly includes waiting and approval. **The consumption decision** then
+uses `collect.started_at` against the current UTC day or the trailing six hours. Discovery is a
+conservative superset: it may return runs that cannot consume, and it must never omit one that
+could. No run-level timestamp prunes the candidate set, because none is documented strongly enough
+to prove exclusion, so the guard reads jobs for every candidate or fails closed — which, under the
+unchanged twelve-read bound, means at most nine candidates per invocation. It needs `actions: read`, granted
 on the credential-free job alone. Because a job with no `permissions:` block inherits the
 workflow-level one, both workflows keep the Actions scope out of their workflow-level default:
 workflow B's credentialled `collect` job declares `contents: read` and `checks: read` explicitly and

@@ -117,7 +117,63 @@ a listing whose `total_count` exceeds the rows returned is **truncated and fails
 truncated page could be missing exactly the attempt that collected. There is no page cursor, no
 pagination loop and no change to the twelve-read bound.
 
-### 3.3.2 The window is dated by when `collect` started
+### 3.3.2 Candidate discovery is a different, wider window
+
+Two windows exist, and conflating them is a correctness bug rather than untidiness.
+
+| | Window | Measured from | Purpose |
+|---|---|---|---|
+| Consumption | current UTC day **or** trailing six hours | the `collect` job's `started_at` | decides whether the day is spent |
+| Candidate discovery | consumption window start **minus 65 days** | the workflow run's `created_at` | finds runs that *might* contain an in-window collect |
+
+The Actions API can only filter a run listing on the run's own `created_at`. Filtering it by the
+consumption window omits exactly the run this guard most needs: one created at 23:50 whose `collect`
+started at 00:10 is invisible to a `created>=` filter dated on the new day, and the classifier never
+sees the collection it would have correctly refused.
+
+**The invariant discovery must satisfy:** every governed run containing a `collect` execution that
+started inside the consumption window is either examined, or the guard fails closed. Discovery may
+return runs that cannot consume; it must never omit one that could.
+
+**The 65 days is derived from first-party GitHub limits, not chosen.** Two documented limits bound
+how long after a run is created one of its `collect` executions can still begin:
+
+* **Re-run eligibility — 30 days.** "You can re-run a workflow run, all failed jobs in a workflow
+  run, or specific jobs in a workflow run up to 30 days after its initial run."
+  ([Re-running workflows and jobs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs))
+* **Workflow run time — 35 days per workflow run.** "If a workflow run reaches this limit, the
+  workflow run is cancelled. This period includes execution duration, and time spent on waiting and
+  approval." ([Actions limits](https://docs.github.com/en/actions/reference/limits))
+
+The worst case chains them: a run created at T is re-run at the last eligible moment, T + 30 days,
+and that attempt may then wait and execute for up to a further 35 days, so no `collect` execution of
+that run can begin later than **T + 65 days**.
+
+What that derivation deliberately does not lean on:
+
+* **Environment approval adds nothing.** "A workflow may wait for up to 30 days on environment
+  approvals" is already inside the 35-day run limit, which explicitly includes waiting and approval.
+* **The 50-re-run cap cannot extend the chain.** Every re-run must still fall inside the same
+  30-day eligibility window measured from the initial run, so re-runs do not compound.
+* **It does not matter whether `created_at` advances on a re-run.** If it stays the original
+  creation, 65 days covers it; if it were to advance, the run looks newer and is discovered anyway.
+* **Job-level limits are not used as the bound.** The 6-hour GitHub-hosted job execution limit and
+  the 24-hour job queue limit (documented for **self-hosted** runners) bound execution and queueing,
+  not the run-creation-to-job-start gap this needs.
+
+**No run-level field is used to prune candidates.** `updated_at`, `run_started_at`, `status` and
+`conclusion` would each cheaply exclude most old runs, but the REST reference does not define
+semantics strong enough to prove that a run with an old `updated_at` cannot contain a `collect`
+execution that started inside the window, and `run_started_at` describes only the **latest** attempt.
+An inference that is usually true is not a guard. Correctness is not traded for fewer requests; the
+guard reads jobs for every candidate or fails closed.
+
+**Discovery is one bounded page per governed workflow.** `per_page=100` with the provider's own
+`created>=` filter, and no pagination: a page whose `total_count` exceeds the rows returned is
+truncated and fails closed, because a truncated candidate listing could be missing exactly the run
+that collected.
+
+### 3.3.3 The window is dated by when `collect` started
 
 Consumption timing comes from the `collect` job's own `started_at`, **never** from the workflow
 run's `created_at`. A run object can be created and then wait — on GitHub, on environment admission,
@@ -138,6 +194,21 @@ A non-skipped `collect` execution must therefore prove when it began, and anythi
 A `skipped` execution needs no timing at all: it proves nothing happened, so it is not evidence and
 is never the reason for an ambiguity.
 
+### 3.3.4 The read bound, and the open decision it forces
+
+The read bound stays at **12** and is deliberately **not** raised here. Discovery costs three
+listings, and each candidate run then costs one jobs read, so **at most nine candidate runs can be
+examined**; the tenth stops the run as `guard_read_bound_exhausted`. That is fail-closed and safe —
+it refuses a collection rather than admitting an unexamined candidate — but it is not free
+operationally: a repository accumulating roughly one governed run per day will pass nine candidates
+inside a 65-day lookback within about nine days, after which the guard refuses every automatic
+collection until the owner acts.
+
+The worst case, stated exactly: three listings plus one jobs read per candidate, with each listing
+capped at 100 rows, is `3 + 300 = 303` reads. A realistic steady state with both automatic paths
+arriving daily plus occasional attended runs is `3 + 65 + 65 + ~10 ≈ 143`. Raising the constant is a
+separate owner decision and is recorded as limitation **S2C-8**, not taken unilaterally.
+
 ### 3.4 Why the trailing six hours
 
 The current UTC day alone leaves a hole at midnight. A run delivered late at 23:58 UTC and a
@@ -152,8 +223,8 @@ The window is the **union** of the two rules, never the intersection.
 
 Every malformed, partial, truncated, unreadable or unclassifiable input is
 `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, and the workflow stops. There is no fail-open path. That
-includes: a listing whose provider total does not equal the rows returned, whether of runs or of
-job executions; a run row without a positive integer id or a parseable creation instant; a job row
+includes: a listing whose provider total does not equal the rows returned, whether of candidate runs
+or of job executions; a run row without a positive integer id or a parseable creation instant; a job row
 of the wrong shape, or without a status, attempt number or usable start instant where the decision
 depends on one; a started `collect` whose timing contradicts its own run or the clock; a missing or
 extra governed workflow; a non-200 response; a body that will not decode; a transport failure; and

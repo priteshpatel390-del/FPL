@@ -102,7 +102,13 @@ would otherwise open. A `skipped` collect job — exactly what a refused gate pr
 consume; a queued or running one does. The jobs listing is read with **`filter=all`**, never
 `filter=latest`, so a re-run whose newest attempt skips `collect` can never erase an earlier attempt
 that collected, and the window is dated by the `collect` job's own `started_at` rather than the
-run's `created_at`, so a run that waited hours before collecting is dated by the collection. A
+run's `created_at`, so a run that waited hours before collecting is dated by the collection.
+**Candidate discovery is a separate, wider window**: the Actions API can only filter a run listing by
+`created_at`, so discovery reaches back 65 days — GitHub's documented 30-day re-run eligibility plus
+its 35-day workflow-run limit, which explicitly includes waiting and approval — and the classifier
+still decides on `collect.started_at` alone. Discovery may return runs that cannot consume; it never
+omits one that could. No run-level field prunes candidates, because none has documented semantics
+strong enough to prove exclusion. A
 non-skipped `collect` whose start instant is missing, unparseable, or contradicted by its own run or
 the clock is ambiguous, and one page of 100 job executions is the whole bounded read — a listing the
 provider counts higher than it returned is truncated and fails closed.

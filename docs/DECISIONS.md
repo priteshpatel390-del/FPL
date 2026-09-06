@@ -52,6 +52,20 @@ whose credential-free gate refused, so a gate-only failure must leave the opport
 queued or in-progress `collect` job carries a `null` conclusion and **does** consume: it is either
 running or about to, and treating that as free is the one direction this guard must never fail in.
 
+**Why candidate discovery is wider than the consumption window.** The Actions API can only filter a
+run listing by the run's `created_at`, but consumption is decided from `collect.started_at`. Asking
+it for runs created inside the consumption window omits exactly the run that matters — one created
+at 23:50 whose collect started at 00:10 — so the classifier would never see a collection it would
+have correctly refused. Discovery therefore uses its own lookback of 65 days, derived rather than
+chosen: GitHub documents re-run eligibility of "up to 30 days after its initial run" and a workflow
+run time limit of "35 days / workflow run", which "includes execution duration, and time spent on
+waiting and approval". Chaining them bounds the gap between a run's creation and any of its collect
+executions starting. Environment approval waiting is already inside the 35 days, and the 50-re-run
+cap cannot compound because every re-run stays inside the same 30-day eligibility window. No
+run-level field prunes the candidate set: `updated_at`, `run_started_at`, `status` and `conclusion`
+would each be cheaper, but none carries documented semantics strong enough to prove a run cannot
+contain an in-window collect, and an inference that is usually true is not a guard.
+
 **Why every attempt is read, and why job timing decides the window.** The jobs listing uses
 `filter=all`, never `filter=latest`. `latest` shows only the most recent execution of each job, so a
 re-run would hide a real collection: attempt 1 collects and may mutate production, attempt 2's gate

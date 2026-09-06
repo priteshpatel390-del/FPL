@@ -49,6 +49,16 @@
 // run approximately 4h31m and the 6 September run approximately 4h44m — so a collection starting
 // at 23:58 UTC and another starting at 00:03 UTC the next day are two collections in about five
 // minutes that a bare calendar-day rule would both admit.
+//
+// CANDIDATE DISCOVERY AND THE CONSUMPTION DECISION ARE TWO DIFFERENT WINDOWS, and conflating them
+// is a correctness bug rather than a tidiness one. The consumption decision above is made from
+// `collect.started_at`. The Actions API, however, can only filter a run listing by the run's own
+// `created_at`, so asking it for runs created inside the consumption window omits exactly the run
+// this guard most needs: one created at 23:50 whose `collect` started at 00:10 is invisible to a
+// `created>=` filter dated on the new day, and the classifier never sees the collection it would
+// have correctly refused. Discovery therefore uses its own, deliberately wider, provider-justified
+// lookback, and the classifier still decides on `collect.started_at` alone. Discovery may return
+// runs that cannot consume; it must never omit a run that could.
 
 export const OPPORTUNITY_GUARD_REPOSITORY='priteshpatel390-del/FPL';
 export const OPPORTUNITY_COLLECT_JOB_NAME='collect';
@@ -56,10 +66,38 @@ export const OPPORTUNITY_COLLECT_JOB_NAME='collect';
 // legitimate opportunity: the nominal cadence is 01:17 UTC, so a trailing window this size can
 // only ever see the current day's own late arrivals.
 export const OPPORTUNITY_TRAILING_WINDOW_MS=6*60*60*1000;
-// Three workflow listings plus the job listings of the runs those return. In a normal day the
-// listings return zero, one or two runs, so the bound is generous; exceeding it is not a licence
-// to keep reading, it is an ambiguity.
+// Three workflow listings plus the job listings of the runs those return. Exceeding it is not a
+// licence to keep reading, it is an ambiguity.
+//
+// KNOWN OPERATIONAL LIMITATION, recorded rather than worked around: the candidate-discovery
+// lookback below is far wider than a day, so a repository accumulating roughly one governed run a
+// day will exceed this bound and the guard will refuse — fail closed — rather than admit an
+// unexamined candidate. Raising this constant is a separate owner decision and is deliberately not
+// taken here.
 export const OPPORTUNITY_GUARD_MAX_READS=12;
+
+// The candidate-discovery lookback, derived from first-party GitHub Actions limits rather than
+// chosen. Two documented limits bound how long after a workflow run is created one of its `collect`
+// executions can still begin:
+//
+//   * re-run eligibility — "You can re-run a workflow run, all failed jobs in a workflow run, or
+//     specific jobs in a workflow run up to 30 days after its initial run"; and
+//   * workflow run time — "35 days / workflow run ... If a workflow run reaches this limit, the
+//     workflow run is cancelled. This period includes execution duration, and time spent on waiting
+//     and approval."
+//
+// The worst case chains them: a run created at T is re-run at the last eligible moment, T + 30
+// days, and that attempt may then wait and execute for up to a further 35 days, so no `collect`
+// execution of that run can begin later than T + 65 days. Environment approval waiting is already
+// inside the 35 days ("A workflow may wait for up to 30 days on environment approvals"), so it adds
+// nothing, and the 50-re-run cap cannot extend the chain because every re-run must still fall inside
+// the same 30-day eligibility window. The bound holds whichever way GitHub treats `created_at` on a
+// re-run: if it stays the original creation the 65 days covers it, and if it were to advance the run
+// would look newer and be discovered anyway.
+export const RERUN_ELIGIBILITY_DAYS=30;
+export const WORKFLOW_RUN_TIME_LIMIT_DAYS=35;
+export const CANDIDATE_DISCOVERY_LOOKBACK_MS=
+  (RERUN_ELIGIBILITY_DAYS+WORKFLOW_RUN_TIME_LIMIT_DAYS)*24*60*60*1000;
 
 // The complete set of job states the Actions API reports. A `collect` job in any other state is
 // one this guard does not understand, and an unrecognised state is never assumed harmless.
@@ -115,17 +153,32 @@ export function opportunityWindowStart(now){
   return Math.min(dayStart,now-OPPORTUNITY_TRAILING_WINDOW_MS);
 }
 
-// The UTC date the Actions `created` filter is given, so the provider itself bounds the listing
-// rather than this module trusting an unbounded page to be ordered.
-export function opportunityWindowDate(now){
-  return new Date(opportunityWindowStart(now)).toISOString().slice(0,10);
+// Where candidate discovery starts: the consumption window's own start, pushed back by the provider
+// worst case above. It is never the consumption window itself — see the header. A run created
+// before this instant cannot contain a `collect` execution that started inside the consumption
+// window, because GitHub would have cancelled the run first.
+export function candidateDiscoveryStart(now){
+  const start=opportunityWindowStart(now)-CANDIDATE_DISCOVERY_LOOKBACK_MS;
+  return start<0?0:start;
 }
 
+// The UTC date the Actions `created` filter is given. A whole date rather than an instant, which
+// only ever widens the search — the provider bounds the listing, and this module never trusts an
+// unbounded page to be ordered.
+export function candidateDiscoveryDate(now){
+  return new Date(candidateDiscoveryStart(now)).toISOString().slice(0,10);
+}
+
+// One page of at most 100 candidate runs per governed workflow, bounded by the provider's own
+// `created>=` filter over the discovery lookback. There is deliberately no pagination: a page whose
+// `total_count` exceeds the rows returned is truncated and fails closed in the decoder, because a
+// truncated candidate listing could be missing exactly the run that collected. Paging further would
+// also spend reads this guard's bound does not have.
 export function workflowRunsRequest(workflowFile,token,now){
   if(!ROUTINE_COLLECTION_WORKFLOWS.some(entry=>entry.file===workflowFile))
     throw new Error('opportunity_workflow_unknown');
   if(typeof token!=='string'||!token)throw new Error('opportunity_token_missing');
-  const since=encodeURIComponent(`>=${opportunityWindowDate(now)}`);
+  const since=encodeURIComponent(`>=${candidateDiscoveryDate(now)}`);
   return Object.freeze({
     url:`https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/workflows/${workflowFile}/runs`
       +`?per_page=100&exclude_pull_requests=true&created=${since}`,

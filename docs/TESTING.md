@@ -16,6 +16,21 @@ collect job does, that a run cannot consume its own opportunity, and that every 
 truncated, missing-workflow, extra-workflow, bad-clock or bad-identity input fails closed as
 `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with a reason from the closed set.
 
+It separates the two windows the guard depends on: that `candidateDiscoveryStart` is always strictly
+earlier than `opportunityWindowStart` and exactly 65 days earlier, that the lookback is the sum of
+the pinned `RERUN_ELIGIBILITY_DAYS` (30) and `WORKFLOW_RUN_TIME_LIMIT_DAYS` (35), that the whole-date
+filter given to the provider can only widen the search, and that a clock near the epoch cannot
+produce a negative filter date. It then proves discovery end to end through `resolveOpportunity`
+with a stubbed Actions API rather than by injecting runs into the classifier: a run created
+`2026-09-06T23:50Z` whose `collect` started `2026-09-07T00:10Z`, read at `2026-09-07T08:00Z`,
+resolves to `OPPORTUNITY_CONSUMED`, and the test inspects the actual generated listing URL to prove
+its `created>=` filter reaches back past the run's creation while the consumption window does not.
+The same holds on the tightest boundary (`23:59` to `00:01`), an old run re-run into the current
+window consumes through its second attempt, a conservatively discovered run whose collect is outside
+both rules stays available, the asking run is still excluded when the wider lookback finds it and
+still costs no jobs read, a truncated candidate listing fails closed, and the read bound is proven
+exactly: nine candidates fit inside twelve reads, the tenth is `guard_read_bound_exhausted`.
+
 It holds the two guard-correctness properties that a single-attempt, run-creation reading would
 lose. Across attempts: the jobs request asks for `filter=all` and never `filter=latest`, structurally
 as well as in the value it returns, with no page cursor or pagination loop in the module; an earlier
