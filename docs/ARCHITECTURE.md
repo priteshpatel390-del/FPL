@@ -30,7 +30,11 @@ runner. The `GITHUB_RUN_ATTEMPT !== '1'` re-run refusal lives, as before, in the
 A **daily opportunity guard** now runs last in the credential-free gate of workflows A and B. It is
 a pure, fail-closed classifier over Actions run and job metadata that refuses when the day's
 opportunity has already been consumed — by an automatic run or by an attended owner collection —
-and refuses just as firmly when it cannot classify what it read. It needs `actions: read`, granted
+and refuses just as firmly when it cannot classify what it read. It reads **every attempt** of each
+governed run (`filter=all`, so a re-run whose newest attempt skips `collect` cannot hide an earlier
+attempt that collected) and dates each collection by the `collect` job's own `started_at` rather
+than the run's `created_at`, because a run can wait on GitHub, on environment admission or behind
+the shared concurrency group long before collection begins. It needs `actions: read`, granted
 on the credential-free job alone. Because a job with no `permissions:` block inherits the
 workflow-level one, both workflows keep the Actions scope out of their workflow-level default:
 workflow B's credentialled `collect` job declares `contents: read` and `checks: read` explicitly and

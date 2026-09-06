@@ -20,19 +20,35 @@
 //   * every malformed, partial, truncated or unreadable response is AMBIGUOUS. It never fails
 //     open, and a run it cannot classify is always treated as a reason to stop.
 //
-// A run consumes the day's opportunity when its `collect` job exists with any conclusion other
-// than `skipped`. A `skipped` collect job is exactly what a run whose credential-free
-// repository gate refused looks like from the Actions API, so a gate-only failure correctly leaves
-// the opportunity available. A collect job that is queued or in progress carries a null
-// conclusion and DOES consume: it is either running or about to, and treating it as free is the
-// one direction this guard must never fail in.
+// A run consumes the day's opportunity when a `collect` job of ANY of its attempts exists with any
+// conclusion other than `skipped`. A `skipped` collect job is exactly what a run whose
+// credential-free repository gate refused looks like from the Actions API, so a gate-only failure
+// correctly leaves the opportunity available. A collect job that is queued or in progress carries a
+// null conclusion and DOES consume: it is either running or about to, and treating it as free is
+// the one direction this guard must never fail in.
+//
+// EVERY ATTEMPT IS INSPECTED, not only the latest. The jobs listing is requested with
+// `filter=all`, because `filter=latest` returns only the most recent execution of each job and a
+// re-run would then hide a real collection: attempt 1 reaches `collect` and mutates production,
+// somebody later re-runs all jobs, attempt 2's gate refuses, attempt 2's `collect` is `skipped`,
+// and a `latest` view would report the day as free. A newer skipped attempt therefore never erases
+// an older started one — each attempt's `collect` is separate evidence, and any one of them
+// consumes.
+//
+// THE WINDOW IS MEASURED FROM WHEN `collect` STARTED, never from when GitHub created the run
+// object. A run can be created and then wait — on GitHub, on environment admission, or behind the
+// shared production concurrency group — for a long time before its collect job begins, so a run
+// created at 23:50 UTC whose collect starts at 00:10 UTC performed its collection on the following
+// UTC day. Judging that by `created_at` would call the collection stale and admit a second one.
+// A non-skipped `collect` whose start instant cannot be established, or whose start instant
+// contradicts its own run's creation or the current clock, is AMBIGUOUS rather than assumed.
 //
 // The window is the union of two rules. The current UTC day is the primary rule. The trailing six
 // hours exists because GitHub schedule delivery has already been observed hours late — the 4
-// September acceptance run arrived approximately 3h21m after its nominal minute and the
-// 5 September run approximately 4h31m — so a late run created at 23:58 UTC and a punctual run
-// created at 00:03 UTC the next day are two collections in about five minutes that a bare
-// calendar-day rule would both admit.
+// September acceptance run arrived approximately 3h21m after its nominal minute, the 5 September
+// run approximately 4h31m and the 6 September run approximately 4h44m — so a collection starting
+// at 23:58 UTC and another starting at 00:03 UTC the next day are two collections in about five
+// minutes that a bare calendar-day rule would both admit.
 
 export const OPPORTUNITY_GUARD_REPOSITORY='priteshpatel390-del/FPL';
 export const OPPORTUNITY_COLLECT_JOB_NAME='collect';
@@ -44,6 +60,10 @@ export const OPPORTUNITY_TRAILING_WINDOW_MS=6*60*60*1000;
 // listings return zero, one or two runs, so the bound is generous; exceeding it is not a licence
 // to keep reading, it is an ambiguity.
 export const OPPORTUNITY_GUARD_MAX_READS=12;
+
+// The complete set of job states the Actions API reports. A `collect` job in any other state is
+// one this guard does not understand, and an unrecognised state is never assumed harmless.
+export const COLLECT_JOB_STATUSES=Object.freeze(['queued','in_progress','completed']);
 
 export const AUTOMATIC_COLLECTION='automatic';
 export const OWNER_COLLECTION='owner';
@@ -67,7 +87,8 @@ export const AMBIGUOUS_REQUIRES_OWNER_ATTENTION='AMBIGUOUS_REQUIRES_OWNER_ATTENT
 // Closed reason set. Nothing outside it is ever reported, so no run id, URL, header, token or
 // account identifier can reach a log through this module.
 export const OPPORTUNITY_REASONS=Object.freeze(['opportunity_available','automatic_collection_consumed',
-  'owner_collection_today','guard_input_invalid','guard_read_failed','guard_read_bound_exhausted']);
+  'owner_collection_today','guard_input_invalid','guard_collect_timing_unusable','guard_read_failed',
+  'guard_read_bound_exhausted']);
 
 const frozen=(classification,reason)=>{
   if(!OPPORTUNITY_REASONS.includes(reason))throw new Error('opportunity_reason_invalid');
@@ -114,12 +135,18 @@ export function workflowRunsRequest(workflowFile,token,now){
   });
 }
 
+// `filter=all` is load-bearing, not a preference: `latest` returns only the most recent execution
+// of each job, so a re-run whose newest attempt skipped `collect` would hide an earlier attempt
+// that actually collected. One page of 100 is the whole bounded read — the governed workflows carry
+// exactly two jobs per attempt, so 100 rows covers fifty attempts of a single run — and a listing
+// whose `total_count` exceeds the rows returned is truncated and fails closed in the decoder rather
+// than being paged through without limit.
 export function runJobsRequest(runId,token){
   if(!runIdValid(runId))throw new Error('opportunity_run_id_invalid');
   if(typeof token!=='string'||!token)throw new Error('opportunity_token_missing');
   return Object.freeze({
     url:`https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/runs/${runId}/jobs`
-      +'?per_page=100&filter=latest',
+      +'?per_page=100&filter=all',
     init:Object.freeze({method:'GET',headers:Object.freeze({
       authorization:`Bearer ${token}`,accept:'application/vnd.github+json',
       'x-github-api-version':'2022-11-28','user-agent':'teamsheet-data-s2-opportunity-guard'})})
@@ -127,8 +154,9 @@ export function runJobsRequest(runId,token){
 }
 
 // The pure classifier. `workflows` is keyed by the governed repository path and carries only the
-// minimum decoded metadata: the provider's own total for the filtered listing, and for each run
-// its id, its creation instant and its job names and conclusions.
+// minimum decoded metadata: the provider's own total for the filtered listing, and for each run its
+// id, its creation instant and, for every job execution of every attempt, that job's name,
+// conclusion, status, start instant and attempt number.
 export function classifyOpportunity({workflows,now,selfRunId=null}){
   if(!Number.isSafeInteger(now)||now<0)return ambiguous('guard_input_invalid');
   if(selfRunId!==null&&!runIdValid(selfRunId))return ambiguous('guard_input_invalid');
@@ -160,12 +188,33 @@ export function classifyOpportunity({workflows,now,selfRunId=null}){
         if(job===null||typeof job!=='object'||Array.isArray(job))return ambiguous('guard_input_invalid');
         if(typeof job.name!=='string')return ambiguous('guard_input_invalid');
         if(job.conclusion!==null&&typeof job.conclusion!=='string')return ambiguous('guard_input_invalid');
+        if(typeof job.status!=='string')return ambiguous('guard_input_invalid');
+        if(job.startedAt!==null&&typeof job.startedAt!=='string')return ambiguous('guard_input_invalid');
+        // Every job execution names the attempt it belongs to. Missing attempt metadata means the
+        // listing cannot be reasoned about across re-runs at all.
+        if(!Number.isSafeInteger(job.runAttempt)||job.runAttempt<1)return ambiguous('guard_input_invalid');
       }
-      // This run is the one asking. It can never consume its own opportunity.
+      // This run is the one asking. It can never consume its own opportunity, on any attempt.
       if(selfRunId!==null&&run.id===selfRunId)continue;
-      if(created<windowStart)continue;
-      const consumes=run.jobs.some(job=>job.name===OPPORTUNITY_COLLECT_JOB_NAME&&job.conclusion!=='skipped');
-      if(consumes&&consumed===null)consumed=entry.kind;
+      // Every attempt's collect job is separate evidence, and the newest attempt has no power to
+      // erase an older one. A skipped collect is the shape of a refused gate and proves nothing,
+      // so it needs no timing at all; every other collect must prove when it began.
+      for(const job of run.jobs){
+        if(job.name!==OPPORTUNITY_COLLECT_JOB_NAME)continue;
+        if(job.conclusion==='skipped')continue;
+        if(!COLLECT_JOB_STATUSES.includes(job.status))return ambiguous('guard_collect_timing_unusable');
+        const startedAt=instant(job.startedAt);
+        // A collect job that has not started, or whose start will not parse, cannot be placed in or
+        // out of the window. That is a reason to stop, never a reason to proceed.
+        if(startedAt===null)return ambiguous('guard_collect_timing_unusable');
+        // A collect cannot begin before its own run was created, and cannot begin in the future.
+        // Either chronology contradicts the payload rather than dating the collection.
+        if(startedAt<created||startedAt>now)return ambiguous('guard_collect_timing_unusable');
+        // The window is judged on when collection actually began, never on when GitHub created the
+        // run object, so a run that waited hours before collecting is dated by the collection.
+        if(startedAt<windowStart)continue;
+        if(consumed===null)consumed=entry.kind;
+      }
     }
   }
   if(consumed===OWNER_COLLECTION)return frozen(OPPORTUNITY_CONSUMED,'owner_collection_today');
@@ -188,6 +237,10 @@ const decodeRuns=body=>{
   return {totalCount:body.total_count,runs};
 };
 
+// One page of at most 100 job executions across every attempt. `total_count` is the provider's own
+// count for the same `filter=all` listing, so a page that returned fewer rows than the provider
+// counted is truncated — and a truncated listing could be missing exactly the earlier attempt that
+// collected, which is why it is rejected here instead of paged through.
 const decodeJobs=body=>{
   if(body===null||typeof body!=='object'||Array.isArray(body))return null;
   if(!safeCount(body.total_count)||!Array.isArray(body.jobs))return null;
@@ -197,7 +250,11 @@ const decodeJobs=body=>{
     if(row===null||typeof row!=='object'||Array.isArray(row))return null;
     if(typeof row.name!=='string')return null;
     if(row.conclusion!==null&&typeof row.conclusion!=='string')return null;
-    jobs.push({name:row.name,conclusion:row.conclusion??null});
+    if(typeof row.status!=='string')return null;
+    if(row.started_at!==null&&row.started_at!==undefined&&typeof row.started_at!=='string')return null;
+    if(!Number.isSafeInteger(row.run_attempt)||row.run_attempt<1)return null;
+    jobs.push({name:row.name,conclusion:row.conclusion??null,status:row.status,
+      startedAt:row.started_at??null,runAttempt:row.run_attempt});
   }
   return jobs;
 };

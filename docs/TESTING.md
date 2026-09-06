@@ -14,7 +14,24 @@ that cannot drift. It proves the current-UTC-day rule, the trailing-six-hour rul
 that a `skipped` collect job and a gate-only failed run do not consume, that a queued or running
 collect job does, that a run cannot consume its own opportunity, and that every malformed, partial,
 truncated, missing-workflow, extra-workflow, bad-clock or bad-identity input fails closed as
-`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with a reason from the closed set. It proves resolution is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with a reason from the closed set.
+
+It holds the two guard-correctness properties that a single-attempt, run-creation reading would
+lose. Across attempts: the jobs request asks for `filter=all` and never `filter=latest`, structurally
+as well as in the value it returns, with no page cursor or pagination loop in the module; an earlier
+attempt whose `collect` succeeded, and an earlier attempt whose `collect` failed after starting, both
+still consume when the newest attempt's `collect` is `skipped`, in either order the provider returns
+them; a run whose every attempt only ever skipped `collect` leaves the day available; the asking run
+cannot consume itself on any attempt; a jobs page whose provider `total_count` exceeds the rows
+returned is truncated and fails closed; and a real two-attempt payload resolves end to end to
+`OPPORTUNITY_CONSUMED` inside the read bound. On timing: a run created at 23:50 UTC whose `collect`
+started at 00:10 UTC consumes the following day's opportunity, with the test proving the run's own
+`created_at` lies outside the window that the collect start lies inside; a run older than both rules
+whose `collect` started inside the trailing window consumes; every terminal conclusion and both
+`queued` and `in_progress` consume from their own start instant; a `skipped` collect needs no timing
+and never consumes however recent its run; and a non-skipped `collect` whose start instant is
+missing, unparseable, earlier than its own run's creation, later than the clock, or whose status is
+unrecognised, fails closed as `guard_collect_timing_unusable`. It proves resolution is
 GET-only against `api.github.com` alone, bounded by a fixed read count, that exhausting the bound is
 an ambiguity rather than a licence to keep reading, that the guard holds no Cloudflare credential,
 D1 credential or production identifier, and that the entry point discards the original error. It

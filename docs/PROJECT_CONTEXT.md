@@ -79,8 +79,8 @@ exactly; a new **isolated Cloudflare dispatcher Worker** under the dedicated ide
 workflows, each of which carries a credentialled job named `collect`. Resume, migration,
 reconciliation, EXPLAIN and integrity workflows are deliberately excluded and keep their own
 owner-input and approval gates. A run consumes the day when its `collect` job exists with any
-conclusion other than `skipped` and the run was created in the current UTC day **or** within the
-trailing six hours; the trailing rule closes the UTC-midnight duplicate hole that GitHub's observed
+conclusion other than `skipped`, on any attempt, and that `collect` execution **started** in the
+current UTC day **or** within the trailing six hours; the trailing rule closes the UTC-midnight duplicate hole that GitHub's observed
 lateness makes reachable. A `skipped` collect job — what a refused gate looks like — does not
 consume. The attended manual workflow is not guarded, but does consume the day for both automatic
 paths. Every malformed, partial, truncated or unreadable response is

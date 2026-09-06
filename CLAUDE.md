@@ -94,11 +94,18 @@ This documentation.
 workflows, each carrying a credentialled job literally named `collect`. Resume, migration,
 reconciliation, EXPLAIN and integrity workflows are **deliberately excluded**; they keep their own
 owner-input and approval gates and the shared concurrency group, and counting them would let a
-read-only integrity check silently cancel a day's collection. A run consumes the day when its
-`collect` job exists with any conclusion **other than `skipped`** and the run was created in the
-current UTC day **or** within the **trailing six hours**; that trailing rule closes the UTC-midnight
-duplicate hole a late 23:58 arrival plus a punctual 00:03 arrival would otherwise open. A `skipped`
-collect job — exactly what a refused gate produces — does not consume; a queued or running one does.
+read-only integrity check silently cancel a day's collection. A run consumes the day when, on **any of
+its attempts**, a `collect` job execution exists with any conclusion **other than `skipped`** and
+that execution **started** in the current UTC day **or** within the **trailing six hours**; that
+trailing rule closes the UTC-midnight duplicate hole a late 23:58 start plus a punctual 00:03 start
+would otherwise open. A `skipped` collect job — exactly what a refused gate produces — does not
+consume; a queued or running one does. The jobs listing is read with **`filter=all`**, never
+`filter=latest`, so a re-run whose newest attempt skips `collect` can never erase an earlier attempt
+that collected, and the window is dated by the `collect` job's own `started_at` rather than the
+run's `created_at`, so a run that waited hours before collecting is dated by the collection. A
+non-skipped `collect` whose start instant is missing, unparseable, or contradicted by its own run or
+the clock is ambiguous, and one page of 100 job executions is the whole bounded read — a listing the
+provider counts higher than it returned is truncated and fails closed.
 The attended manual workflow is **not** guarded, but does consume the day for both automatic paths.
 Every malformed, partial, truncated or unreadable response is
 `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. **The guard never fails open.**

@@ -9,7 +9,8 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {AMBIGUOUS_REQUIRES_OWNER_ATTENTION,AUTOMATIC_COLLECTION,OPPORTUNITY_AVAILABLE,
   OPPORTUNITY_COLLECT_JOB_NAME,OPPORTUNITY_CONSUMED,OPPORTUNITY_GUARD_MAX_READS,
-  OPPORTUNITY_GUARD_REPOSITORY,OPPORTUNITY_REASONS,OPPORTUNITY_TRAILING_WINDOW_MS,
+  COLLECT_JOB_STATUSES,OPPORTUNITY_GUARD_REPOSITORY,OPPORTUNITY_REASONS,
+  OPPORTUNITY_TRAILING_WINDOW_MS,
   OWNER_COLLECTION,ROUTINE_COLLECTION_WORKFLOWS,classifyOpportunity,opportunityWindowDate,
   opportunityWindowStart,resolveOpportunity,runJobsRequest,workflowRunsRequest}
   from '../workers/data-platform/scheduled/opportunity-guard.mjs';
@@ -24,7 +25,14 @@ const MANUAL_WORKFLOW='.github/workflows/data-s2-production-collection.yml';
 
 const NOW=Date.UTC(2026,8,6,9,0,0);
 const at=(...args)=>new Date(Date.UTC(...args)).toISOString();
-const job=(name,conclusion)=>({name,conclusion});
+// A decoded job execution. Every execution belongs to a numbered attempt, carries a status and, if
+// it ever started, a start instant — and it is that start instant, not the run's creation, that
+// dates a collection.
+const job=(name,conclusion,startedAt=null,{status,attempt=1}={})=>({
+  name,conclusion,status:status??(conclusion===null?'in_progress':'completed'),
+  startedAt,runAttempt:attempt});
+const collect=(conclusion,startedAt,options)=>job('collect',conclusion,startedAt,options);
+const gate=(conclusion,startedAt=null,options)=>job('repository-gate',conclusion,startedAt,options);
 const run=(id,createdAt,jobs)=>({id,createdAt,jobs});
 const empty=()=>({totalCount:0,runs:[]});
 const listing=(...runs)=>({totalCount:runs.length,runs});
@@ -86,7 +94,7 @@ test('an unconsumed day is available for both automatic paths',()=>{
 
 test('workflow A refuses after workflow B has already collected today',()=>{
   const outcome=classify(world({external:listing(
-    run(4101,at(2026,8,6,1,25),[job('repository-gate','success'),job('collect','success')]))}),
+    run(4101,at(2026,8,6,1,25),[gate('success'),collect('success',at(2026,8,6,1,26))]))}),
     {selfRunId:4200});
   assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
   assert.equal(outcome.reason,'automatic_collection_consumed');
@@ -94,7 +102,7 @@ test('workflow A refuses after workflow B has already collected today',()=>{
 
 test('workflow B refuses after workflow A has already collected today',()=>{
   const outcome=classify(world({scheduled:listing(
-    run(4102,at(2026,8,6,1,20),[job('repository-gate','success'),job('collect','failure')]))}),
+    run(4102,at(2026,8,6,1,20),[gate('success'),collect('failure',at(2026,8,6,1,21))]))}),
     {selfRunId:4300});
   assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
   assert.equal(outcome.reason,'automatic_collection_consumed');
@@ -104,7 +112,7 @@ test('workflow B refuses after workflow A has already collected today',()=>{
 
 test('both automatic paths refuse after an attended owner collection today',()=>{
   const outcome=classify(world({manual:listing(
-    run(4103,at(2026,8,6,7,45),[job('repository-gate','success'),job('collect','success')]))}));
+    run(4103,at(2026,8,6,7,45),[gate('success'),collect('success',at(2026,8,6,7,46))]))}));
   assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
   assert.equal(outcome.reason,'owner_collection_today');
 });
@@ -125,28 +133,210 @@ test('a skipped collect job never consumes the day',()=>{
   // A run whose credential-free repository gate refused looks exactly like this from the Actions
   // API: the gate failed and the dependent `collect` job is reported as skipped.
   const gateOnly=classify(world({scheduled:listing(
-    run(4104,at(2026,8,6,1,18),[job('repository-gate','failure'),job('collect','skipped')]))}));
+    run(4104,at(2026,8,6,1,18),[gate('failure'),collect('skipped',null)]))}));
   assert.equal(gateOnly.classification,OPPORTUNITY_AVAILABLE);
   // A run still inside its gate has no collect job at all, and also leaves the day available.
   const inGate=classify(world({external:listing(
-    run(4105,at(2026,8,6,1,18),[job('repository-gate',null)]))}));
+    run(4105,at(2026,8,6,1,18),[gate(null,at(2026,8,6,1,18))]))}));
   assert.equal(inGate.classification,OPPORTUNITY_AVAILABLE);
 });
 
 test('a queued or running collect job does consume the day',()=>{
   for(const conclusion of [null,'success','failure','cancelled','timed_out','neutral','action_required'])
     assert.equal(classify(world({scheduled:listing(
-      run(4106,at(2026,8,6,1,20),[job('collect',conclusion)]))})).classification,OPPORTUNITY_CONSUMED,
+      run(4106,at(2026,8,6,1,20),[collect(conclusion,at(2026,8,6,1,21))]))})).classification,
+      OPPORTUNITY_CONSUMED,
       String(conclusion));
 });
 
 test('a run can never consume its own opportunity',()=>{
   const self=classify(world({external:listing(
-    run(4107,at(2026,8,6,9,0),[job('collect',null)]))}),{selfRunId:4107});
+    run(4107,at(2026,8,6,9,0),[collect(null,at(2026,8,6,9,0))]))}),{selfRunId:4107});
   assert.equal(self.classification,OPPORTUNITY_AVAILABLE);
   const other=classify(world({external:listing(
-    run(4107,at(2026,8,6,9,0),[job('collect',null)]))}),{selfRunId:4108});
+    run(4107,at(2026,8,6,9,0),[collect(null,at(2026,8,6,9,0))]))}),{selfRunId:4108});
   assert.equal(other.classification,OPPORTUNITY_CONSUMED);
+});
+
+/* ------------------------- re-run attempts, and what they cannot hide ------------------------- */
+
+// The defect this section pins: `filter=latest` returns only the most recent execution of each
+// job, so a re-run whose newest attempt skips `collect` would hide an attempt that really did
+// collect, and the guard would call a spent day free.
+test('an earlier attempt that collected is never erased by a later skipped re-run',()=>{
+  const rerun=world({scheduled:listing(run(4301,at(2026,8,6,1,17),[
+    gate('success',at(2026,8,6,1,17),{attempt:1}),
+    collect('success',at(2026,8,6,1,18),{attempt:1}),
+    gate('failure',at(2026,8,6,4,0),{attempt:2}),
+    collect('skipped',null,{attempt:2})]))});
+  const outcome=classify(rerun,{selfRunId:4399});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+  // Order is irrelevant: the newest attempt appearing first changes nothing.
+  const reordered=world({scheduled:listing(run(4301,at(2026,8,6,1,17),[
+    collect('skipped',null,{attempt:2}),
+    collect('success',at(2026,8,6,1,18),{attempt:1})]))});
+  assert.equal(classify(reordered,{selfRunId:4399}).classification,OPPORTUNITY_CONSUMED);
+});
+
+test('an earlier attempt that failed after starting collect still consumes the day',()=>{
+  const rerun=world({external:listing(run(4302,at(2026,8,6,1,30),[
+    gate('success',at(2026,8,6,1,30),{attempt:1}),
+    collect('failure',at(2026,8,6,1,31),{attempt:1}),
+    gate('failure',at(2026,8,6,5,0),{attempt:2}),
+    collect('skipped',null,{attempt:2})]))});
+  // It reached the collector and may have mutated production. A second automatic attempt is
+  // exactly what must not happen.
+  assert.equal(classify(rerun,{selfRunId:4399}).classification,OPPORTUNITY_CONSUMED);
+});
+
+test('multiple attempts that never started collect leave the day available',()=>{
+  const neverCollected=world({scheduled:listing(run(4303,at(2026,8,6,1,17),[
+    gate('failure',at(2026,8,6,1,17),{attempt:1}),
+    collect('skipped',null,{attempt:1}),
+    gate('failure',at(2026,8,6,3,0),{attempt:2}),
+    collect('skipped',null,{attempt:2}),
+    // A third attempt still inside its gate has no collect execution at all.
+    gate(null,at(2026,8,6,8,0),{attempt:3})]))});
+  const outcome=classify(neverCollected,{selfRunId:4399});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  assert.equal(outcome.reason,'opportunity_available');
+});
+
+test('the asking run cannot consume itself on any attempt',()=>{
+  const self=world({external:listing(run(4304,at(2026,8,6,8,50),[
+    gate('success',at(2026,8,6,8,50),{attempt:1}),
+    collect('failure',at(2026,8,6,8,51),{attempt:1}),
+    gate('success',at(2026,8,6,8,58),{attempt:2}),
+    collect(null,at(2026,8,6,8,59),{attempt:2})]))});
+  assert.equal(classify(self,{selfRunId:4304}).classification,OPPORTUNITY_AVAILABLE);
+  // The same history belonging to any other run consumes the day.
+  assert.equal(classify(self,{selfRunId:4305}).classification,OPPORTUNITY_CONSUMED);
+});
+
+test('the jobs listing asks for every attempt and never only the latest',()=>{
+  const url=runJobsRequest(4301,'t').url;
+  assert.ok(url.includes('filter=all'),url);
+  assert.ok(!url.includes('filter=latest'),url);
+  assert.ok(url.includes('per_page=100'),url);
+  // Structurally, not only in the value this call happened to return.
+  const source=uncommented(read(GUARD_MODULE_PATH));
+  assert.match(source,/filter=all/);
+  assert.doesNotMatch(source,/filter=latest/);
+  // One bounded page, with no pagination loop and no page cursor of any kind.
+  assert.doesNotMatch(source,/[?&]page=|\bpage\+\+|while\s*\(|for\s*\(;;\)|link/i);
+});
+
+test('a jobs listing the provider counts higher than it returned is truncated and fails closed',
+  async()=>{
+    // Two attempts of two jobs each is four executions; a page carrying three cannot prove which
+    // attempt is missing, and the missing one may be the attempt that collected.
+    const t=transport([
+      ['/actions/runs/71/jobs',ok({total_count:4,jobs:[
+        jobRow('repository-gate','failure',at(2026,8,6,4,0),2),
+        jobRow('collect','skipped',null,2),
+        jobRow('repository-gate','success',at(2026,8,6,1,17),1)]})],
+      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+      ['/runs',ok(runsBody())]]);
+    const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
+    assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+    assert.equal(outcome.reason,'guard_read_failed');
+  });
+
+test('a real two-attempt jobs payload resolves to consumed end to end',async()=>{
+  const t=transport([
+    ['/actions/runs/71/jobs',ok(jobsBody(
+      jobRow('repository-gate','success',at(2026,8,6,1,17),1),
+      jobRow('collect','success',at(2026,8,6,1,18),1),
+      jobRow('repository-gate','failure',at(2026,8,6,4,0),2),
+      jobRow('collect','skipped',null,2)))],
+    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+    ['/runs',ok(runsBody())]]);
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
+  assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
+  assert.equal(outcome.reason,'automatic_collection_consumed');
+  assert.ok(t.calls.some(call=>call.url.includes('filter=all')));
+  assert.ok(!t.calls.some(call=>call.url.includes('filter=latest')));
+  assert.ok(t.calls.length<=OPPORTUNITY_GUARD_MAX_READS);
+});
+
+/* --------------------- collection is dated by when collect actually began --------------------- */
+
+test('a run created before midnight whose collect started after it belongs to the new day',()=>{
+  // The run object is created at 23:50 and then waits — on GitHub, on environment admission, or
+  // behind the shared production concurrency group — until 00:10, when collection truly begins.
+  const now=Date.UTC(2026,8,7,8,0,0);
+  const delayed=world({scheduled:listing(run(4401,at(2026,8,6,23,50),[
+    gate('success',at(2026,8,6,23,51)),collect('success',at(2026,8,7,0,10))]))});
+  assert.equal(classifyOpportunity({workflows:delayed,now}).classification,OPPORTUNITY_CONSUMED);
+  // Proof that the decision used the collect start and not the run's creation: at 08:00 on the 7th
+  // the window opens at 00:00 on the 7th, so 23:50 on the 6th is outside both rules and a
+  // created_at reading would have called the day free.
+  assert.equal(opportunityWindowStart(now),Date.UTC(2026,8,7,0,0,0));
+  assert.ok(Date.parse(at(2026,8,6,23,50))<opportunityWindowStart(now));
+  assert.ok(Date.parse(at(2026,8,7,0,10))>=opportunityWindowStart(now));
+  // Move only the collect start back outside the window and the same run stops consuming.
+  const early=world({scheduled:listing(run(4401,at(2026,8,6,23,50),[
+    gate('success',at(2026,8,6,23,51)),collect('success',at(2026,8,6,23,52))]))});
+  assert.equal(classifyOpportunity({workflows:early,now}).classification,OPPORTUNITY_AVAILABLE);
+});
+
+test('an old run whose collect started inside the window still consumes',()=>{
+  // 05:00 on the 7th: the trailing rule reaches back to 23:00 on the 6th and is the wider of the
+  // two, so the window opens there.
+  const now=Date.UTC(2026,8,7,5,0,0);
+  assert.equal(opportunityWindowStart(now),Date.UTC(2026,8,6,23,0,0));
+  // The run object was created an hour before the window opened; its collect began inside it.
+  const waited=world({external:listing(run(4402,at(2026,8,6,22,0),[
+    gate('success',at(2026,8,6,22,1)),collect(null,at(2026,8,6,23,30))]))});
+  assert.ok(Date.parse(at(2026,8,6,22,0))<opportunityWindowStart(now));
+  assert.equal(classifyOpportunity({workflows:waited,now}).classification,OPPORTUNITY_CONSUMED);
+});
+
+test('a collect that claims to have started before its own run, or in the future, fails closed',()=>{
+  const beforeRun=world({scheduled:listing(run(4403,at(2026,8,6,8,0),[
+    collect('success',at(2026,8,6,7,0))]))});
+  const impossible=classify(beforeRun);
+  assert.equal(impossible.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(impossible.reason,'guard_collect_timing_unusable');
+  // A start instant later than the current clock is equally contradictory.
+  const future=world({scheduled:listing(run(4404,at(2026,8,6,8,0),[
+    collect(null,at(2026,8,6,23,0))]))});
+  assert.equal(classify(future).reason,'guard_collect_timing_unusable');
+});
+
+test('a started collect whose start instant is missing or unusable is ambiguous, never available',
+  ()=>{
+    for(const startedAt of [null,'','never','2026-13-45T99:99:99Z'])
+      for(const conclusion of [null,'success','failure'])
+        assert.equal(classify(world({scheduled:listing(
+          run(4405,at(2026,8,6,1,17),[collect(conclusion,startedAt)]))})).reason,
+          'guard_collect_timing_unusable',`${String(startedAt)}/${String(conclusion)}`);
+    // An unrecognised job state is not assumed harmless either.
+    assert.equal(classify(world({scheduled:listing(run(4406,at(2026,8,6,1,17),
+      [collect(null,at(2026,8,6,1,18),{status:'waiting'})]))})).reason,
+      'guard_collect_timing_unusable');
+    assert.deepEqual(COLLECT_JOB_STATUSES,['queued','in_progress','completed']);
+  });
+
+test('a skipped collect needs no timing and never consumes, however recent its run',()=>{
+  const skipped=world({scheduled:listing(run(4407,at(2026,8,6,8,59),[
+    gate('failure',at(2026,8,6,8,59)),collect('skipped',null)]))});
+  const outcome=classify(skipped,{selfRunId:4499});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  assert.equal(outcome.reason,'opportunity_available');
+});
+
+test('every terminal collect conclusion consumes the day from its own start instant',()=>{
+  for(const conclusion of ['success','failure','cancelled','timed_out','neutral','action_required'])
+    assert.equal(classify(world({external:listing(run(4408,at(2026,8,6,2,0),
+      [collect(conclusion,at(2026,8,6,2,1))]))}),{selfRunId:4499}).classification,
+      OPPORTUNITY_CONSUMED,conclusion);
+  // Queued and in-progress collect jobs consume too: they are running, or about to.
+  for(const status of ['queued','in_progress'])
+    assert.equal(classify(world({external:listing(run(4409,at(2026,8,6,2,0),
+      [collect(null,at(2026,8,6,2,1),{status})]))}),{selfRunId:4499}).classification,
+      OPPORTUNITY_CONSUMED,status);
 });
 
 /* ------------------------------------ the two windows ------------------------------------ */
@@ -158,7 +348,7 @@ test('the current UTC day rule admits every collection since midnight UTC',()=>{
   // At 23:50 the trailing six hours reaches only 17:50, so the calendar day is the wider rule and
   // a collection at 01:17 that morning still consumes.
   assert.equal(classifyOpportunity({workflows:world({scheduled:listing(
-    run(4201,at(2026,8,6,1,17),[job('collect','success')]))}),now:midnight}).classification,
+    run(4201,at(2026,8,6,1,17),[collect('success',at(2026,8,6,1,18))]))}),now:midnight}).classification,
     OPPORTUNITY_CONSUMED);
 });
 
@@ -168,11 +358,13 @@ test('the trailing six-hour rule closes the UTC-midnight duplicate hole',()=>{
   // though a late run collected five minutes earlier, at 23:58 on the 6th.
   const justAfterMidnight=Date.UTC(2026,8,7,0,3,0);
   assert.equal(opportunityWindowStart(justAfterMidnight),Date.UTC(2026,8,6,18,3,0));
-  const late=world({scheduled:listing(run(4202,at(2026,8,6,23,58),[job('collect','success')]))});
+  const late=world({scheduled:listing(
+    run(4202,at(2026,8,6,23,58),[collect('success',at(2026,8,6,23,59))]))});
   assert.equal(classifyOpportunity({workflows:late,now:justAfterMidnight}).classification,
     OPPORTUNITY_CONSUMED);
   // A collection older than both rules leaves the day available.
-  const yesterday=world({scheduled:listing(run(4203,at(2026,8,6,1,17),[job('collect','success')]))});
+  const yesterday=world({scheduled:listing(
+    run(4203,at(2026,8,6,1,17),[collect('success',at(2026,8,6,1,18))]))});
   assert.equal(classifyOpportunity({workflows:yesterday,now:justAfterMidnight}).classification,
     OPPORTUNITY_AVAILABLE);
   // The window is the union of the two rules, never the intersection.
@@ -192,8 +384,13 @@ test('malformed, partial or truncated metadata is ambiguous and never available'
     world({scheduled:listing({id:0,createdAt:at(2026,8,6,1,17),jobs:[]})}),
     world({scheduled:listing({id:1,createdAt:'not-a-time',jobs:[]})}),
     world({scheduled:listing({id:1,createdAt:at(2026,8,6,1,17),jobs:null})}),
-    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{name:7,conclusion:null}]))}),
-    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{name:'collect',conclusion:5}]))})];
+    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{...gate('success'),name:7}]))}),
+    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{...collect('success',at(2026,8,6,1,18)),conclusion:5}]))}),
+    // Job metadata the cross-attempt reading depends on: status, start instant and attempt number.
+    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{...collect('success',at(2026,8,6,1,18)),status:9}]))}),
+    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{...collect('success',at(2026,8,6,1,18)),startedAt:17}]))}),
+    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{...collect('success',at(2026,8,6,1,18)),runAttempt:0}]))}),
+    world({scheduled:listing(run(1,at(2026,8,6,1,17),[{...collect('success',at(2026,8,6,1,18)),runAttempt:'1'}]))})];
   for(const workflows of bad){
     const outcome=classify(workflows);
     assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION,JSON.stringify(workflows));
@@ -213,8 +410,10 @@ test('malformed, partial or truncated metadata is ambiguous and never available'
 
 test('every reported reason comes from the closed set',()=>{
   assert.ok(Object.isFrozen(OPPORTUNITY_REASONS));
-  for(const workflows of [world(),world({manual:listing(run(1,at(2026,8,6,2,0),[job('collect','success')]))}),
-    world({scheduled:listing(run(2,at(2026,8,6,2,0),[job('collect','success')]))}),null])
+  for(const workflows of [world(),
+    world({manual:listing(run(1,at(2026,8,6,2,0),[collect('success',at(2026,8,6,2,1))]))}),
+    world({scheduled:listing(run(2,at(2026,8,6,2,0),[collect('success',at(2026,8,6,2,1))]))}),
+    world({scheduled:listing(run(3,at(2026,8,6,2,0),[collect('success',null)]))}),null])
     assert.ok(OPPORTUNITY_REASONS.includes(classify(workflows).reason));
 });
 
@@ -223,6 +422,9 @@ test('every reported reason comes from the closed set',()=>{
 const ok=body=>({status:200,json:async()=>body});
 const runsBody=(...rows)=>({total_count:rows.length,workflow_runs:rows});
 const jobsBody=(...rows)=>({total_count:rows.length,jobs:rows});
+// A provider-shaped job row, exactly as the `filter=all` jobs listing returns one.
+const jobRow=(name,conclusion,started_at=null,run_attempt=1)=>({name,conclusion,
+  status:conclusion===null?'in_progress':'completed',started_at,run_attempt});
 
 function transport(routes){
   const calls=[];
@@ -238,8 +440,8 @@ test('resolution reads only Actions metadata, read-only, and inside a fixed boun
     ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,20)}))],
     ['data-s2-production-external.yml/runs',ok(runsBody())],
     ['data-s2-production-collection.yml/runs',ok(runsBody())],
-    ['/actions/runs/71/jobs',ok(jobsBody({name:'repository-gate',conclusion:'success'},
-      {name:'collect',conclusion:'success'}))]].reverse());
+    ['/actions/runs/71/jobs',ok(jobsBody(jobRow('repository-gate','success',at(2026,8,6,1,20)),
+      jobRow('collect','success',at(2026,8,6,1,21))))]].reverse());
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
   assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
   assert.equal(outcome.reason,'automatic_collection_consumed');
@@ -291,7 +493,7 @@ test('an unreadable, malformed, truncated or failing Actions response fails clos
 
 test('exhausting the read bound is an ambiguity, never a licence to keep reading',async()=>{
   const many=Array.from({length:6},(_,index)=>({id:index+1,created_at:at(2026,8,6,1,index)}));
-  const t=transport([['/jobs',ok(jobsBody({name:'repository-gate',conclusion:'failure'}))],
+  const t=transport([['/jobs',ok(jobsBody(jobRow('repository-gate','failure',at(2026,8,6,1,0))))],
     ['data-s2-production-scheduled.yml/runs',ok(runsBody(...many))],['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,maxReads:4});
   assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
@@ -307,7 +509,7 @@ test('the guard never dispatches, re-runs, cancels or writes anything',()=>{
   assert.equal(workflowRunsRequest('data-s2-production-external.yml','t',NOW).init.method,'GET');
   assert.equal(runJobsRequest(12,'t').init.method,'GET');
   assert.equal(runJobsRequest(12,'t').url,
-    `https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/runs/12/jobs?per_page=100&filter=latest`);
+    `https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/runs/12/jobs?per_page=100&filter=all`);
   for(const bad of [0,-1,1.5,'12',null])assert.throws(()=>runJobsRequest(bad,'t'),/opportunity_run_id_invalid/);
   assert.throws(()=>workflowRunsRequest('verify.yml','t',NOW),/opportunity_workflow_unknown/);
   for(const bad of ['',null])assert.throws(()=>workflowRunsRequest('data-s2-production-scheduled.yml',bad,NOW),

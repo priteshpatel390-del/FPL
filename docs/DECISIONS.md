@@ -41,9 +41,9 @@ opportunity guard over GitHub Actions run and job metadata, governing routine co
 because exactly one trigger existed. A second unattended path makes it something the repository must
 prove.
 
-**The rules.** A run consumes the day when its `collect` job exists with any conclusion other than
-`skipped` **and** the run was created in the current UTC day **or** within the trailing six hours.
-Workflow A refuses on either. Workflow B refuses on either. The attended manual workflow C is not
+**The rules.** A run consumes the day when, on any of its attempts, a `collect` job execution exists
+with any conclusion other than `skipped` **and** that execution **started** in the current UTC day
+**or** within the trailing six hours. Workflow A refuses on either. Workflow B refuses on either. The attended manual workflow C is not
 guarded — the owner can always collect — but a manual collection does consume the day for both
 automatic paths.
 
@@ -52,8 +52,19 @@ whose credential-free gate refused, so a gate-only failure must leave the opport
 queued or in-progress `collect` job carries a `null` conclusion and **does** consume: it is either
 running or about to, and treating that as free is the one direction this guard must never fail in.
 
-**Why the trailing six hours.** The calendar day alone leaves a midnight hole: a late run at
-23:58 UTC and a punctual run at 00:03 UTC are two collections five minutes apart that a bare
+**Why every attempt is read, and why job timing decides the window.** The jobs listing uses
+`filter=all`, never `filter=latest`. `latest` shows only the most recent execution of each job, so a
+re-run would hide a real collection: attempt 1 collects and may mutate production, attempt 2's gate
+refuses, attempt 2's `collect` is `skipped`, and a `latest` view calls the spent day free. Each
+attempt's `collect` is separate evidence and any one of them consumes. Timing likewise comes from
+the `collect` job's `started_at`, not the run's `created_at`: a run created at 23:50 whose collect
+starts at 00:10 collected on the following UTC day, and dating it by run creation would admit a
+second collection. A non-skipped `collect` with no usable, self-consistent start instant is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, and so is a jobs page the provider counts higher than it
+returned.
+
+**Why the trailing six hours.** The calendar day alone leaves a midnight hole: a collection starting
+at 23:58 UTC and one starting at 00:03 UTC are two collections five minutes apart that a bare
 day rule admits, and the measured lateness above makes exactly that reachable. Six hours closes it
 without reaching into the previous day's own opportunity, because the cadence is 01:17 UTC.
 

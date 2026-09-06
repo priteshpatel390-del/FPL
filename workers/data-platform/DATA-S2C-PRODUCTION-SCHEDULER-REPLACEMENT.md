@@ -83,10 +83,11 @@ collect. It does, however, **consume** the day for both automatic paths.
 
 ### 3.3 The rules
 
-A run **consumes** the day's opportunity when both hold:
+A run **consumes** the day's opportunity when, on **any of its attempts**, both hold:
 
-* its `collect` job exists with any conclusion **other than `skipped`**; and
-* the run was created **in the current UTC day**, **or** within the **trailing six hours**.
+* a `collect` job execution exists with any conclusion **other than `skipped`**; and
+* that `collect` execution **started** in the current UTC day, **or** within the **trailing six
+  hours**.
 
 Workflow A refuses if either condition is true. Workflow B refuses if either condition is true.
 
@@ -97,14 +98,52 @@ either running or about to, and treating that as free is the one direction this 
 fail in. A run that has not reached `collect` at all has no such job and does not consume; the
 shared concurrency group, not this guard, is what serializes concurrent runs.
 
-A run never consumes its own opportunity: the asking run's id is excluded explicitly.
+A run never consumes its own opportunity, on any attempt: the asking run's id is excluded
+explicitly.
+
+### 3.3.1 Every attempt is inspected
+
+The jobs listing is requested with **`filter=all`**, never `filter=latest`. `latest` returns only
+the most recent execution of each job, and that would let a re-run erase a real collection: attempt 1
+reaches `collect` and may mutate production, somebody later re-runs all jobs, attempt 2's gate
+refuses, attempt 2's `collect` is reported `skipped`, and a `latest` view would report the day as
+free. **Every attempt's `collect` execution is separate evidence and any one of them consumes**; a
+newer skipped attempt never overwrites an older started one, and the order the provider returns
+executions in is irrelevant.
+
+The read stays bounded by one page of 100 executions rather than by pagination. The governed
+workflows carry exactly two jobs per attempt, so a page of 100 covers fifty attempts of one run, and
+a listing whose `total_count` exceeds the rows returned is **truncated and fails closed** — a
+truncated page could be missing exactly the attempt that collected. There is no page cursor, no
+pagination loop and no change to the twelve-read bound.
+
+### 3.3.2 The window is dated by when `collect` started
+
+Consumption timing comes from the `collect` job's own `started_at`, **never** from the workflow
+run's `created_at`. A run object can be created and then wait — on GitHub, on environment admission,
+or behind the shared production concurrency group — long before collection begins, so a run created
+at 23:50 UTC whose `collect` starts at 00:10 UTC performed its collection on the **following** UTC
+day. Dating that by `created_at` would call the collection stale and admit a second one the same
+day.
+
+A non-skipped `collect` execution must therefore prove when it began, and anything less is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, never an assumption:
+
+* a missing or unparseable `started_at` — including a queued execution that has not started;
+* a job `status` outside `queued`, `in_progress`, `completed`;
+* a missing or non-positive `run_attempt`;
+* a `started_at` earlier than its own run's `created_at`, or later than the current clock, both of
+  which contradict the payload rather than dating the collection.
+
+A `skipped` execution needs no timing at all: it proves nothing happened, so it is not evidence and
+is never the reason for an ambiguity.
 
 ### 3.4 Why the trailing six hours
 
 The current UTC day alone leaves a hole at midnight. A run delivered late at 23:58 UTC and a
 punctual run at 00:03 UTC the next day are two collections about five minutes apart that a bare
-calendar-day rule would both admit — and GitHub's observed lateness of 3h21m and 4h31m makes exactly
-that arrival pattern reachable. Six hours closes it without reaching back into the previous day's
+calendar-day rule would both admit — and GitHub's observed lateness of 3h21m, 4h31m and 4h44m makes
+exactly that arrival pattern reachable. Six hours closes it without reaching back into the previous day's
 own legitimate opportunity, because the nominal cadence is 01:17 UTC.
 
 The window is the **union** of the two rules, never the intersection.
@@ -113,10 +152,13 @@ The window is the **union** of the two rules, never the intersection.
 
 Every malformed, partial, truncated, unreadable or unclassifiable input is
 `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, and the workflow stops. There is no fail-open path. That
-includes: a listing whose provider total does not equal the rows returned; a run row without a
-positive integer id or a parseable creation instant; a job row of the wrong shape; a missing or
+includes: a listing whose provider total does not equal the rows returned, whether of runs or of
+job executions; a run row without a positive integer id or a parseable creation instant; a job row
+of the wrong shape, or without a status, attempt number or usable start instant where the decision
+depends on one; a started `collect` whose timing contradicts its own run or the clock; a missing or
 extra governed workflow; a non-200 response; a body that will not decode; a transport failure; and
-an exhausted read bound.
+an exhausted read bound. Timing that cannot be established is reported as the closed reason
+`guard_collect_timing_unusable`.
 
 The read bound is fixed at 12 GitHub REST GETs. The listing itself is bounded by the provider,
 using the Actions `created=>=` filter over the window's own start date, so the guard never depends
