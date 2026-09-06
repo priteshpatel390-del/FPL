@@ -1,5 +1,68 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external scheduler — Package A limitations
+
+**Package A is repository foundation only, and nothing in DATA-S2C is live.** No GitHub token or
+App, no Cloudflare secret, no Worker deployment, no Cloudflare Cron Trigger, no workflow dispatch,
+no D1 request and no collection was performed. The existing GitHub cron remains `17 1 * * *`. Its
+tests prove repository behaviour and nothing about live GitHub, live Cloudflare or a live
+collection.
+
+**Pending-run replacement, stated accurately.** `cancel-in-progress: false` protects a run that is
+already **running**. It does **not** protect a run that is still **pending**: a newly queued
+workflow can replace an existing pending workflow in the same concurrency group. That applies to a
+pending scheduled collection, manual collection, resume, migration, reconciliation, EXPLAIN
+acceptance, integrity check and the new external workflow alike. `queue: max` is deliberately not
+implemented in Package A. It must **not** be claimed that a future 01:17–03:17 Cloudflare dispatch
+window fully bounds this exposure while workflow A remains armed, because workflow A has already
+arrived hours outside its nominal minute.
+
+**Cloudflare Cron punctuality is not guaranteed either.** Cloudflare documents Cron Triggers as
+best-effort. DATA-S2C adds a second independent way to ask for a collection; it does not add a
+punctuality guarantee, and none may be claimed from it. The GitHub schedule-delivery lateness that
+motivated DATA-S2C — approximately 3h21m on 4 September 2026 and approximately 4h31m on 5 September
+2026, with two earlier acceptance windows producing zero runs — still has **no proven cause**, and
+GitHub exposes no scheduler-registration, armed or next-run state through which to find one.
+
+**The exact HTTP 200 dispatch body shape is unproven.** The `return_run_details` request is the
+approved design and has never been exercised live. A 204 answer is `ACCEPTED_NO_IDENTITY` and is
+handled; a 200 with any other shape is `AMBIGUOUS` and is handled. Both directions fail safe, but
+neither has live evidence, and on `ACCEPTED_NO_IDENTITY` the run-creation latency measurement is
+structurally unavailable and stays unavailable rather than being reported as zero.
+
+**A future `Actions: write` credential carries real blast radius.** A token able to dispatch the
+external workflow can dispatch and re-run repository workflows generally, not only that workflow. It
+does not exist yet, its creation and scoping is a separate approval in a later package, and nothing
+in Package A reduces that future scope.
+
+**The guard sees only what the Actions API shows it.** It classifies run and job metadata for the
+three governed routine collection workflows. It cannot see a collection performed by some path
+outside those workflows, and no such path is approved.
+
+**Finite Actions retention.** GitHub Actions Step Summary and log retention is finite. Exact
+provider `meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not
+retrievable through the GitHub API available here, and are lost when that retention expires.
+Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow
+accounting.
+
+**Owner-side scheduler state is not readable from here.** The repository declares `17 1 * * *` and
+Package A does not change it. Whether GitHub currently has the scheduled workflow enabled is
+owner-side state this repository cannot read or change and Package A neither reads nor changes; the
+last recorded repository evidence had it owner-disabled after run `33948145320`.
+
+**Owner-supplied run `34015422874` supports but does not calibrate the capacity model.** The
+supplied figures — 70 changes, 10,157 `recordsSeen`, 11,348 observations, 10,157 heads, zero orphan,
+quarantined and rejected, projected 121,103, actual 113,279, writes 494, 6 API calls, 106,483
+request bytes — were not verified by this package and no action was taken to obtain them.
+`PROVIDER_READ_AMPLIFICATION` stays 1.35 and `PROVIDER_READ_SAFETY_RESERVE` stays 2,000, both
+unchanged and still INFERRED. Three changed-observation counts — 264, 141 and 70 — are three
+samples, not a distribution, and no season-long capacity claim follows.
+
+**No device testing** was performed or is required: this is a repository-only backend and workflow
+checkpoint.
+
+
 <!-- DATA-S2B-CAPACITY-ENVELOPE-RESTORATION-2026-09-05 -->
 ## DATA-S2B capacity envelope — restored, and what it does not prove
 
@@ -275,6 +338,12 @@ Several open rows below — including `ODDS-2`, `UST-1`, `BT-2`, `SCOR-3`, `SIM-
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
+| S2C-1 | A newly queued workflow can replace an existing PENDING workflow in the shared `data-s2-production-collection` concurrency group | `cancel-in-progress: false` protects a running workflow, not a pending one. A pending scheduled collection, manual collection, resume, migration, reconciliation, EXPLAIN acceptance, integrity check or external collection can be replaced by a newer queue entry in the same group. `queue: max` is deliberately not implemented in DATA-S2C Package A, and no future Cloudflare dispatch window may be claimed to bound this while the scheduled workflow remains armed | DATA-S2C, later package | Open (accepted) |
+| S2C-2 | Cloudflare Cron Triggers are documented best-effort, exactly as GitHub schedule delivery is | DATA-S2C adds a second independent way to ask for the daily collection, not a punctuality guarantee. The GitHub lateness that motivated it — approximately 3h21m and 4h31m on consecutive days, plus two acceptance windows that produced zero runs — has no proven cause and GitHub exposes no scheduler state through which to find one | DATA-S2C live acceptance | Open (evidence gate) |
+| S2C-3 | The exact HTTP 200 `workflow_dispatch` response body shape is unproven | The `return_run_details` request is the approved design and has never been exercised live. A 204 is classified `ACCEPTED_NO_IDENTITY` and a 200 of any unexpected shape is classified `AMBIGUOUS`, so both directions fail safe; on `ACCEPTED_NO_IDENTITY` the run-creation latency measurement is structurally unavailable and stays unavailable rather than zero | DATA-S2C live acceptance | Open (evidence gate) |
+| S2C-4 | A future GitHub credential able to dispatch the external workflow must hold `actions: write` on the whole repository | Such a token can dispatch and re-run repository workflows generally, not only the external collection workflow. It does not exist; Package A creates no credential, and its creation and scoping is a separate later approval. The standing mitigations are that the external workflow accepts zero inputs, that its repository-side gates prove current `main` independently of the caller, that the shared concurrency group serializes it, and that the fail-closed opportunity guard refuses a second collection in the same UTC day | DATA-S2C credential package | Open (accepted) |
+| S2C-5 | The daily opportunity guard sees only what the GitHub Actions API shows it | It classifies run and job metadata for the three governed routine collection workflows. It cannot observe a collection performed by a path outside those workflows, and no such path is approved. Every malformed, partial, truncated or unreadable response fails closed as `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` | DATA-S2C | Open (accepted) |
+| S2C-6 | GitHub Actions Step Summary and log retention is finite | Exact provider `meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not retrievable through the GitHub API available here, and are lost when retention expires. Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow accounting | DATA-S2C, later telemetry decision | Open (accepted) |
 | GW1R-1 | The pre-first-deadline Transfers guard resolves the deadline against the device clock | A device clock set far enough in the past could in principle hold the guard open past the real deadline. The guard additionally requires `nextGW` 1, no current Gameweek and no finished Gameweek, so this would also need a simultaneously stale Official FPL payload; every missing or unparseable deadline falls back to normal weekly behaviour rather than claiming unlimited changes. The existing deadline countdown and Stage 10 timing surfaces share the same clock dependency | GW1 readiness safety guard | Open (accepted) |
 | GW1R-2 | The guard window is evaluated when Transfers renders, not on a timer | A session left open across the deadline instant keeps showing the guarded screen until the next render, exactly as the existing countdown chip does not tick. The first route change, assumption edit or verified refresh re-evaluates it, and a `teamsheet:data-rendered` refresh on app resume starts the normal calculation, so returning to the app after the deadline recovers without user action | GW1 readiness safety guard | Open (accepted) |
 | GW1R-3 | The guard's after-deadline transition has automated evidence only | The guarded pre-deadline screen was physically accepted on iPhone Safari, but the transition back to normal weekly behaviour cannot be physically tested before the real first deadline. No approved non-production deadline-override mechanism exists and none was invented | First real Official FPL deadline | Open (evidence gate) |

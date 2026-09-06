@@ -1,5 +1,27 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## Current DATA-S2C checkpoint — Package A repository foundation, review candidate
+
+**Repository implementation only, and nothing is live.** Package A adds the daily opportunity guard
+and wires it into the existing scheduled collection gate; adds the zero-input external receiving
+workflow; adds the isolated Cloudflare dispatcher Worker under the dedicated identity
+`teamsheet-data-s2-dispatcher` with an explicitly empty `"triggers": { "crons": [] }`; and reconciles
+the canonical documentation. No GitHub token or App, no Cloudflare secret, no deployment, no
+Cloudflare Cron Trigger, no workflow dispatch, no D1 request and no collection was performed. The
+existing GitHub cron stays `17 1 * * *`.
+
+Merging Package A does **not** activate DATA-S2C. Its one behavioural effect is that future natural
+runs of the existing scheduled workflow will execute the new fail-closed guard, which is approved.
+
+**Gates after this, each separate:** owner review and merge; exact-`main` Verify Teamsheet on the
+merge commit; then Package B and later for the GitHub credential and its scoping; then Package C for
+the dispatcher deployment and the change from `"crons": []` to live cron entries; then any first
+live external dispatch under its own explicit owner approval. Migration 0004 still does not exist,
+no covering index has been added, and no capacity threshold or projection factor moves in this
+package. See
+[DATA-S2C external scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
+
 ## Decision Intelligence — DI-1 review candidate
 
 DI-1 implements the generic shadow contract approved by DI-0: deterministic observations, canonical identity/timing/provenance, fail-closed rights, signal registry, approval ledger and hard shadow repository boundary. It registers and activates no real source, contains no production approval/read path, and changes no recommendation, provider, DATA-S2B/D1/Cloudflare, Stage 10 or UI behaviour. After owner review, merge remains an explicit gate. The next proposed checkpoint is DI-2 automated evaluation and ablation, separately approved and still shadow-only.

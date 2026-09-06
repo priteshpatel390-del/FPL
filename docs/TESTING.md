@@ -1,5 +1,67 @@
 # TESTING.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external scheduler coverage
+
+`tests/data-s2c-opportunity-guard.test.mjs` permanently pins the guard's governed scope to exactly
+the three routine collection workflows, proves each governed repository file exists and carries a
+job literally named `collect`, and proves resume, migration, reconciliation, integrity and EXPLAIN
+workflows are excluded from the day guard while remaining in the shared production concurrency
+group. It proves workflow A refuses after a workflow B collection today, workflow B refuses after a
+workflow A collection today, both refuse after an attended owner collection today, and the attended
+workflow itself is left unguarded — enumerating which workflow files invoke the guard entry point so
+that cannot drift. It proves the current-UTC-day rule, the trailing-six-hour rule across midnight,
+that a `skipped` collect job and a gate-only failed run do not consume, that a queued or running
+collect job does, that a run cannot consume its own opportunity, and that every malformed, partial,
+truncated, missing-workflow, extra-workflow, bad-clock or bad-identity input fails closed as
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with a reason from the closed set. It proves resolution is
+GET-only against `api.github.com` alone, bounded by a fixed read count, that exhausting the bound is
+an ambiguity rather than a licence to keep reading, that the guard holds no Cloudflare credential,
+D1 credential or production identifier, and that the entry point discards the original error. It
+also pins the exact eight-member concurrency-group membership, `cancel-in-progress: false` on every
+member and the absence of any `queue:` key, so membership drift is detected.
+
+`tests/data-s2c-external-workflow.test.mjs` proves workflow B is `workflow_dispatch`-only with zero
+inputs and no other trigger, declares exactly `contents: read`, `checks: read` and `actions: read`
+with the Actions scope on the credential-free gate alone, is a separate file that never reuses the
+attended manual boundary, and adds no second production schedule trigger. It proves the dispatch
+event is the only source of the candidate SHA, that remote `main` is proved by the gate and
+independently again under production credentials, and it **executes** both workflow shells against
+stubbed `git` and `node` binaries to prove a moved `main`, a wrong head or a dirty tree stops the
+runner. It proves the one-attempt collection identity is fixed once after every identity check, the
+credential-free gate holds no environment, credential, fingerprint or database identity, masking is
+registered before any variable is materialised, and the gate reuses the unchanged exact-head Verify
+module before the guard. It pins SHA-256 byte identity for `production-collection.mjs`,
+`run-production-collection.mjs` and `workers/data-platform/wrangler.jsonc`, and pins the unchanged
+150,000 / 200,000 / 250,000 reads, 40,000 writes, 8 API calls, 1.35 amplification, 2,000 reserve,
+4,000 routine changed observations, 8 MiB response cap, the two Official endpoints, migrations
+0001–0003 and five indexes.
+
+`tests/data-s2c-dispatcher.test.mjs` proves the dispatcher runs under a dedicated identity that is
+not `teamsheet-data-platform`, that its config declares `triggers` explicitly as an empty cron list
+and arms nothing, that it holds no D1, storage, service, queue, route or custom-domain surface with
+`workers_dev` and `preview_urls` both false, that it exposes a scheduled handler and no fetch
+handler, that it imports only its own contract module and cannot escape its directory with `../`,
+and that its raw source never names the collection surface at all. It proves the historical
+collector Worker configuration is byte-unchanged by pinned SHA-256, still declares its thirty-minute
+cron and D1 binding, and that no workflow or script deploys or publishes using that directory or
+config — and that nothing deploys the dispatcher either. It proves `controller.noRetry()` runs
+before any dispatch attempt on every outcome and structurally precedes the credential read, that
+exactly one dispatch request is issued per fire with no loop or timer that could produce a second,
+and the exact URL, API version, body and absence of workflow inputs. It proves the full response
+state machine — 200 with valid identity, 204, 401/403/404/422, 5xx, 429, 3xx, transport failure,
+timeout, malformed 200 body and unknown status — strict run-id and run-URL validation, that only the
+exact returned run id may be read back and the run list is never searched, the three separate
+latency measurements, that the dispatch measurement is unavailable rather than zero on a 204, and
+that logs carry closed enums and bounded integers with no token, URL, header or run id.
+
+`tests/data-s2b-scheduled-production-collection.test.mjs` is extended, not weakened: it now proves
+the scheduled gate runs the guard after the bounded Verify wait and before the protected job can
+exist, that the guard is read-only in the same way the Verify wait is, that the Actions read scope
+is on the credential-free job alone, and that the credential-free entry points invoked by the
+scheduled workflow are exactly the Verify wait, the opportunity guard and the unchanged collection
+entry point in that order.
+
 ## DI-3 Stage A decision-layer coverage
 
 `tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, standalone legal/illegal proofs and legal-only canonical artifact admission, separated and conserved consequences, authentic DI-1 ledger identity plus exact approvals, action/consequence transfer cross-integrity for recommendations and alternatives, complete policy-required selected-domain coverage, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.

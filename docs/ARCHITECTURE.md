@@ -1,5 +1,55 @@
 # ARCHITECTURE.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external production scheduling — 6 September 2026
+
+**The forward collection engine does not change.** It remains GitHub Actions -> fixed Official FPL
+public endpoints -> validation, normalisation, diff and hashing on the runner -> bounded direct
+Cloudflare D1 REST, through the unchanged shared entry point
+`workers/data-platform/run-production-collection.mjs`. Cloudflare Worker collection and the
+historical Cloudflare Cron remain superseded and must not be restored.
+
+What DATA-S2C changes is **how a collection is asked for**. Three routine collection workflows now
+exist, and they share one trust boundary and one collector:
+
+| | Workflow | Trigger | Environment | Guarded |
+|---|---|---|---|---|
+| A | `data-s2-production-scheduled.yml` | `schedule: 17 1 * * *`, no timezone field | `data-s2-production-scheduled` | Yes |
+| B | `data-s2-production-external.yml` | `workflow_dispatch`, zero inputs | `data-s2-production-scheduled` | Yes |
+| C | `data-s2-production-collection.yml` | `workflow_dispatch`, owner-approved SHA | `data-s2-production-collection` | No |
+
+Workflow B is new and is the unattended external-trigger path. It carries no caller-supplied SHA
+input: a caller supplies `ref: main` and nothing else, GitHub resolves the event SHA, and the
+credential-free repository gate re-proves the event name, the ref, the repository, a 40-character
+lowercase SHA, an exact checkout, `HEAD` equality, a fresh remote-`main` proof, a clean tree, the
+unchanged bounded exact-head Verify Teamsheet module and the opportunity guard before the protected
+job can exist. The credentialled job then re-establishes Node, `HEAD`, a clean tree and Wrangler
+removal, and resolves remote `main` again from the remote in the same shell immediately before the
+runner. The `GITHUB_RUN_ATTEMPT !== '1'` re-run refusal lives, as before, in the shared entry point.
+
+A **daily opportunity guard** now runs last in the credential-free gate of workflows A and B. It is
+a pure, fail-closed classifier over Actions run and job metadata that refuses when the day's
+opportunity has already been consumed — by an automatic run or by an attended owner collection —
+and refuses just as firmly when it cannot classify what it read. It needs `actions: read`, granted
+on the credential-free job alone so the credentialled job keeps exactly the read scope it had.
+
+A new **isolated Cloudflare dispatcher Worker** lives at `workers/schedule-dispatcher/` under the
+dedicated identity `teamsheet-data-s2-dispatcher`. It is a timer that can do exactly one thing: ask
+GitHub to start workflow B. It holds no D1 binding, no Cloudflare data credential and no public HTTP
+surface, imports nothing outside its own directory, and its Package A Wrangler configuration
+declares `"triggers": { "crons": [] }` explicitly — present and empty, because Cloudflare treats
+triggers as a total assignment, so an explicit empty array removes triggers from this identity while
+omitting the block would leave whatever exists in place. **Package A arms nothing.**
+
+The identity separation is deliberate and load-bearing: `workers/data-platform/wrangler.jsonc` still
+declares a thirty-minute cron and a D1 binding and `data-platform-rpc.mjs` still exposes a scheduled
+collector, so deploying anything under that identity could re-arm collection that was intentionally
+stopped. The dispatcher can never target it, and permanent tests pin that configuration's SHA-256.
+
+All eight members of the `data-s2-production-collection` concurrency group, workflow B included,
+remain `cancel-in-progress: false` with no `queue:` key. See
+[DATA-S2C external scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
+
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2B production collection scheduling — 4 September 2026
 

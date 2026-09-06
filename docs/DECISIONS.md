@@ -1,5 +1,93 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## D-DATA-S2C-A — an external Cloudflare timer asks; GitHub Actions still collects
+
+**Decision:** add a second, independent way to *ask* for the daily Official FPL production
+collection — an isolated Cloudflare Worker on a timer, dispatching a new zero-input GitHub Actions
+workflow — while leaving the existing GitHub cron `17 1 * * *` in place and leaving the collection
+engine entirely unchanged.
+
+**Why:** GitHub schedule delivery is best-effort, and this repository has measured how loose that
+can be. The 4 September 2026 natural run was created approximately 3h21m after its nominal minute,
+the 5 September run approximately 4h31m, and two earlier acceptance windows produced zero scheduled
+runs. GitHub exposes no scheduler-registration, armed or next-run state through REST or GraphQL and
+documents that schedule events may be delayed or dropped, so no cause is provable and no further
+diagnosis is available from here. The collection itself is not the problem — the accepted run
+finished in about 43 seconds once its run object existed. Adding a second asker addresses the actual
+failure mode without touching the part that works.
+
+**Rejected alternative — move collection into a Cloudflare Worker.** That is the superseded
+architecture. The historical collector was intentionally stopped after being observed at
+approximately 630 ms of Worker CPU against a 10 ms Free-plan Cron ceiling. Cloudflare Worker
+collection stays forbidden.
+
+**Consequence:** the dispatcher must be a timer and nothing else, and it must never be able to
+become a collector. It runs under a **new dedicated identity, `teamsheet-data-s2-dispatcher`**, and
+must not reuse `teamsheet-data-platform`, whose configuration still declares a thirty-minute cron
+and a D1 binding and whose module still exposes a scheduled collector. Deploying under that identity
+could re-arm the stopped collector; a separate identity makes that structurally impossible.
+
+**Limitation:** Cloudflare Cron Triggers are themselves documented best-effort. This decision buys a
+second independent asker, not a punctuality guarantee, and no punctuality guarantee may be claimed
+from it.
+
+## D-DATA-S2C-B — one collection opportunity a day, proved rather than implied
+
+**Decision:** gate both automatic routine collection paths on a pure, deterministic, fail-closed
+opportunity guard over GitHub Actions run and job metadata, governing routine collection only.
+
+**Why:** DATA-S2 offers exactly one full collection opportunity per UTC day. That was true only
+because exactly one trigger existed. A second unattended path makes it something the repository must
+prove.
+
+**The rules.** A run consumes the day when its `collect` job exists with any conclusion other than
+`skipped` **and** the run was created in the current UTC day **or** within the trailing six hours.
+Workflow A refuses on either. Workflow B refuses on either. The attended manual workflow C is not
+guarded — the owner can always collect — but a manual collection does consume the day for both
+automatic paths.
+
+**Why `skipped` does not consume.** That is exactly what the Actions API reports for a `collect` job
+whose credential-free gate refused, so a gate-only failure must leave the opportunity available. A
+queued or in-progress `collect` job carries a `null` conclusion and **does** consume: it is either
+running or about to, and treating that as free is the one direction this guard must never fail in.
+
+**Why the trailing six hours.** The calendar day alone leaves a midnight hole: a late run at
+23:58 UTC and a punctual run at 00:03 UTC are two collections five minutes apart that a bare
+day rule admits, and the measured lateness above makes exactly that reachable. Six hours closes it
+without reaching into the previous day's own opportunity, because the cadence is 01:17 UTC.
+
+**Why resume, migration, reconciliation, EXPLAIN and integrity workflows are excluded.** They are
+not routine collection, they carry their own owner-input and approval gates, and they share the
+production concurrency group. Counting them would let a read-only integrity check silently cancel a
+day's collection, which is worse than the duplication it would prevent.
+
+**Fail-closed, always.** Any malformed, partial, truncated, unreadable or unclassifiable input is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` and the workflow stops. There is no fail-open path.
+
+## D-DATA-S2C-C — one dispatch per fire, and ambiguity is never retried
+
+**Decision:** the dispatcher calls `controller.noRetry()` before any dispatch attempt, issues
+exactly one `workflow_dispatch` request per Cloudflare fire, and never retries — not an ambiguous
+outcome, not a rejected one.
+
+**Why:** a dispatch that may have been accepted must never be repeated, because a second acceptance
+is a second production collection. Only 401, 403, 404 and 422 have documented definite
+no-side-effect semantics and may be classified `REJECTED`; HTTP 5xx, 429, any 3xx, transport
+failures, timeouts, malformed 200 bodies and every unrecognised status are `AMBIGUOUS` by default.
+The later scheduled opportunity is the only automatic recovery, and the opportunity guard is what
+makes that safe.
+
+**Identity verification is bounded and exact.** When a 200 returns a valid run identity — a positive
+safe-integer id whose `run_url` and `html_url` are exactly this repository's canonical paths for
+that same id — one bounded read may verify that exact run. The run list is never searched and no run
+is ever guessed at. A 204 returns no identity, so verification is unavailable and stays honestly
+unavailable.
+
+**Telemetry stays honest.** Timer delivery, run creation against dispatch acceptance, and end-to-end
+are three separate bounded non-negative integers, never conflated. The middle one is structurally
+unavailable on a 204 and is reported as unavailable, never fabricated as zero.
+
 <!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
 ## DATA-S2B production capacity envelope — three distinct read thresholds
 

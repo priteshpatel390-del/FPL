@@ -1,5 +1,56 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## Current DATA-S2C checkpoint — external scheduler repository foundation (Package A)
+
+**Repository implementation only. Nothing in DATA-S2C is live.** No GitHub token or App was
+created, no Cloudflare secret was created, no Worker was deployed, no Cloudflare Cron Trigger was
+created, changed or removed, no workflow was dispatched, no D1 request was performed and no
+Official FPL collection was run. The existing GitHub cron remains `17 1 * * *`, unchanged.
+
+**Why it exists.** GitHub schedule delivery is best-effort and has been measured loose: the
+4 September natural run was created approximately 3h21m after its nominal minute and the
+5 September run approximately 4h31m, while two earlier acceptance windows produced zero scheduled
+runs. GitHub exposes no scheduler-registration or next-run state, so none of that has a proven
+cause. DATA-S2C adds a **second independent way to ask** for the day's collection — an isolated
+Cloudflare timer dispatching a GitHub Actions workflow — while leaving the GitHub cron in place. It
+does not replace the collection engine, which remains the GitHub Actions runner invoking the
+unchanged production entry point.
+
+**Package A adds five things.** A pure, deterministic, fail-closed **daily opportunity guard** over
+GitHub Actions run and job metadata, with a credential-free entry point; that guard **wired into
+the existing scheduled workflow's** credential-free repository gate; a new **external receiving
+workflow** that is `workflow_dispatch` with zero inputs and reproduces the scheduled trust boundary
+exactly; a new **isolated Cloudflare dispatcher Worker** under the dedicated identity
+`teamsheet-data-s2-dispatcher`, whose Wrangler configuration declares an explicitly empty
+`"triggers": { "crons": [] }`; and this documentation.
+
+**The guard governs routine collection only** — the scheduled, external and attended manual
+workflows, each of which carries a credentialled job named `collect`. Resume, migration,
+reconciliation, EXPLAIN and integrity workflows are deliberately excluded and keep their own
+owner-input and approval gates. A run consumes the day when its `collect` job exists with any
+conclusion other than `skipped` and the run was created in the current UTC day **or** within the
+trailing six hours; the trailing rule closes the UTC-midnight duplicate hole that GitHub's observed
+lateness makes reachable. A `skipped` collect job — what a refused gate looks like — does not
+consume. The attended manual workflow is not guarded, but does consume the day for both automatic
+paths. Every malformed, partial, truncated or unreadable response is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`; the guard never fails open.
+
+**The dispatcher is a timer, not a collector.** It imports nothing outside its own directory, holds
+no D1 binding or Cloudflare data credential, exposes no fetch handler, no `workers.dev` hostname, no
+preview URL, no route and no custom domain, and names exactly one future secret binding,
+`GITHUB_DISPATCH_TOKEN`, which does not exist. `controller.noRetry()` runs before any dispatch
+attempt, exactly one dispatch request is issued per fire, and neither an ambiguous nor a rejected
+outcome is ever retried in the same fire. The historical `teamsheet-data-platform` Worker — which
+still declares a thirty-minute cron and a D1 binding — is left byte-unchanged, and its SHA-256 is
+pinned by test.
+
+**Once Package A merges, future natural runs of the existing scheduled workflow will execute the new
+fail-closed guard.** That is the only behavioural change merging carries, and it is approved.
+Merging does not activate DATA-S2C. The credential, the deployment and the cron activation are
+later, separately approved packages. See
+[DATA-S2C external scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
+
 <!-- DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-2026-09-05 -->
 ## Current DATA-S2B checkpoint — capacity restoration live acceptance PASS
 

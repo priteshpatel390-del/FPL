@@ -2,6 +2,100 @@
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+### Current DATA-S2C checkpoint — external scheduler repository foundation (Package A)
+
+**Repository implementation only. Nothing in DATA-S2C is live.** No GitHub personal access token or
+App was created, no Cloudflare secret was created, no Worker was deployed, no Cloudflare Cron
+Trigger was created, changed or removed, no workflow was dispatched, no D1 request was performed and
+no Official FPL collection was run. The existing GitHub cron remains `17 1 * * *`, unchanged.
+
+**Why it exists.** GitHub schedule delivery is best-effort and has been measured loose: the
+4 September 2026 natural run `33901634593` was created approximately **3h21m** after its nominal
+minute, the 5 September run `33948145320` approximately **4h31m**, and the two earlier acceptance
+windows `17 10 * * *` and `30 11 * * *` produced **zero** scheduled runs. GitHub documents that
+schedule events may be delayed or dropped and exposes no scheduler-registration, armed or next-run
+state, so **none of that has a proven cause**. The collection itself is not the problem — the
+accepted run finished in about 43 seconds once its run object existed. DATA-S2C therefore adds a
+**second independent way to ask** for the day's collection — an isolated Cloudflare timer Worker
+dispatching a GitHub Actions workflow — while leaving the GitHub cron in place. The collection
+engine does not change: it remains the GitHub Actions runner invoking the unchanged
+`workers/data-platform/run-production-collection.mjs`, and historical Cloudflare Worker collection
+stays superseded and forbidden.
+
+**Package A adds five things.** (1) A pure, deterministic, fail-closed **daily opportunity guard**
+over GitHub Actions run and job metadata, plus its credential-free entry point. (2) That guard
+**wired into the existing scheduled workflow's** credential-free repository gate, which gains a
+job-level `actions: read` so the credentialled production job keeps exactly the read scope it had.
+(3) A new **external receiving workflow** `data-s2-production-external.yml`, `workflow_dispatch`
+with **zero inputs**, reproducing the scheduled trust boundary exactly — event, ref and repository
+assertions, a 40-character event SHA, exact checkout, `HEAD` equality, a fresh remote-`main` proof,
+a clean tree, the **unchanged** bounded exact-head Verify module, the guard, the dedicated
+unattended `data-s2-production-scheduled` environment, the existing masking order, exact Node
+24.19.0, Wrangler removal and a second remote-main check in the same shell before the runner. There
+is **no caller-supplied SHA input**: the caller sends `ref: main` and nothing else. (4) A new
+**isolated Cloudflare dispatcher Worker** at `workers/schedule-dispatcher/` under the dedicated
+identity **`teamsheet-data-s2-dispatcher`**, which must not reuse `teamsheet-data-platform`. (5)
+This documentation.
+
+**The guard governs routine collection only** — the scheduled, external and attended manual
+workflows, each carrying a credentialled job literally named `collect`. Resume, migration,
+reconciliation, EXPLAIN and integrity workflows are **deliberately excluded**; they keep their own
+owner-input and approval gates and the shared concurrency group, and counting them would let a
+read-only integrity check silently cancel a day's collection. A run consumes the day when its
+`collect` job exists with any conclusion **other than `skipped`** and the run was created in the
+current UTC day **or** within the **trailing six hours**; that trailing rule closes the UTC-midnight
+duplicate hole a late 23:58 arrival plus a punctual 00:03 arrival would otherwise open. A `skipped`
+collect job — exactly what a refused gate produces — does not consume; a queued or running one does.
+The attended manual workflow is **not** guarded, but does consume the day for both automatic paths.
+Every malformed, partial, truncated or unreadable response is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. **The guard never fails open.**
+
+**The dispatcher is a timer, not a collector.** It imports nothing outside its own directory, holds
+no D1 binding and no Cloudflare data credential, reads and writes no D1, and exposes no fetch
+handler, `workers.dev` hostname, preview URL, route or custom domain. Its Package A Wrangler config
+declares `"triggers": { "crons": [] }` **explicitly rather than omitting it**, because Cloudflare
+treats triggers as a total assignment — an explicit empty array removes triggers from this identity
+while omitting the block leaves whatever exists in place. **Package A arms nothing.**
+`controller.noRetry()` runs before any dispatch attempt, exactly one dispatch request is issued per
+fire, and neither an `AMBIGUOUS` nor a `REJECTED` outcome is ever retried in the same fire; only
+401, 403, 404 and 422 are `REJECTED`, and 5xx, 429, any 3xx, transport failures, timeouts, malformed
+200 bodies and every unrecognised status are `AMBIGUOUS`. It names exactly one future secret
+binding, `GITHUB_DISPATCH_TOKEN`, **which does not exist**, and its logs carry closed enums and
+bounded integers only. The historical `teamsheet-data-platform` Worker — still declaring a
+thirty-minute cron and a D1 binding, still exposing a scheduled collector — is left **byte-unchanged**
+with its SHA-256 pinned by test.
+
+**Concurrency is unchanged and the limitation is stated honestly.** All eight members of the
+`data-s2-production-collection` group, the new workflow included, stay `cancel-in-progress: false`
+with **no `queue:` key**, and a permanent test pins that membership. `cancel-in-progress: false`
+protects a **running** workflow, not a **pending** one: a newly queued workflow can replace an
+existing pending workflow in that group. `queue: max` is deliberately not implemented, and no future
+Cloudflare dispatch window may be claimed to bound this exposure while the scheduled workflow
+remains armed.
+
+**Owner-supplied live evidence, recorded but not verified here.** Run `34015422874`: 70 changes,
+10,157 `recordsSeen`, 11,348 observations, 10,157 heads, zero orphan, quarantined and rejected,
+projected 121,103, actual 113,279, writes 494, 6 API calls, 106,483 request bytes. Nothing in
+Package A read, dispatched or influenced that run. It **supports but does not calibrate** the
+capacity model: 1.35 and 2,000 are unchanged and still INFERRED, and 264, 141 and 70 are three
+samples, not a distribution.
+
+**Nothing else moved.** No collector semantics, no threshold (150,000 / 200,000 / 250,000 reads,
+40,000 writes, 8 API calls, 4,000 routine changed observations, 8 MiB per Official response all
+stand), no projection factor, no SQL, no schema, index or migration — still exactly 0001–0003 and
+five indexes, with **no migration 0004** — no provider, model, fixture, captaincy, squad, transfer,
+rank or Mini-League logic, no product or UI code, no build input, and no generated deployable needed
+regeneration.
+
+**Merging does not activate DATA-S2C.** Its one behavioural effect is that future natural runs of
+the existing scheduled workflow will execute the new fail-closed guard, which is approved. Whether
+GitHub currently has that scheduled workflow enabled is owner-side state this repository cannot read
+or change and Package A neither reads nor changes; the last recorded repository evidence had it
+owner-disabled after run `33948145320`. Next gates, each separate: owner review and merge;
+exact-`main` Verify; then the GitHub credential package; then the dispatcher deployment and the
+change from `"crons": []` to live cron entries; then any first live external dispatch. See
+[DATA-S2C external scheduler](workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
+
 ### Current DATA-S2B checkpoint — capacity restoration live acceptance PASS
 
 **FACT: the first attended production collection under the restored envelope succeeded.** Workflow
