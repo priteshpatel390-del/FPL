@@ -62,10 +62,31 @@ Official FPL collection was run. The existing GitHub cron remains `17 1 * * *`, 
 4 September natural run was created approximately 3h21m after its nominal minute and the
 5 September run approximately 4h31m, while two earlier acceptance windows produced zero scheduled
 runs. GitHub exposes no scheduler-registration or next-run state, so none of that has a proven
-cause. DATA-S2C adds a **second independent way to ask** for the day's collection — an isolated
-Cloudflare timer dispatching a GitHub Actions workflow — while leaving the GitHub cron in place. It
+cause. DATA-S2C adds a **separate independent way to ask** for the day's collection — an isolated
+Cloudflare timer dispatching a GitHub Actions workflow. *(Superseded detail retained as history: this
+originally read "while leaving the GitHub cron in place"; see the rollout decision below.)* It
 does not replace the collection engine, which remains the GitHub Actions runner invoking the
 unchanged production entry point.
+
+**Rollout decision, 7 September 2026 — this supersedes the A+B coexistence plan.** GitHub's
+automatic scheduler workflow A is to be **disabled before** Cloudflare automatic scheduling is
+activated, so Cloudflare becomes the **only** automatic clock while GitHub Actions remains the
+execution engine. There is no planned period in which both automatic paths deliberately operate
+together, and a future session must not restore that plan without a new explicit owner approval. The
+reasoning: Teamsheet is still in development and testing, the DATA-S2 history is not yet relied on
+for normal live decision-making, and disabling a scheduler already known to be unreliable is simpler
+than engineering machinery to run two of them safely — *prefer removing an unnecessary failure mode
+over engineering machinery to tolerate it, particularly while Teamsheet remains in development and
+the affected capability is not yet relied upon for normal live decision-making.* A temporary DATA-S2
+history gap during the replacement is an accepted development-stage trade-off, observations lost to
+a gap are not claimed to be reconstructible, and **no gap has occurred**. **FACT: workflow A is not
+disabled** — workflow `350014371` reports `state: active`, and disabling it is a separate approved
+live action that no documentation change performs.
+
+**The guard is still needed.** Cloudflare's planned 01:17, 02:17 and 03:17 UTC dispatches are retry
+**availability**, not three collections: the first collects and the guard refuses the other two. It
+also refuses after an attended manual collection has consumed the day.
+
 
 **Package A adds five things.** A pure, deterministic, fail-closed **daily opportunity guard** over
 GitHub Actions run and job metadata, with a credential-free entry point; that guard **wired into
@@ -106,8 +127,17 @@ pinned by test.
 
 **Once Package A merges, future natural runs of the existing scheduled workflow will execute the new
 fail-closed guard.** That is the only behavioural change merging carries, and it is approved.
-Merging does not activate DATA-S2C. The credential, the deployment and the cron activation are
-later, separately approved packages. See
+Merging does not activate DATA-S2C.
+
+**Next operational steps, each a separate owner approval:** merge Package A and run exact-`main`
+Verify; then disable GitHub scheduler workflow A and verify no running or pending A execution can
+still collect; then provision the Cloudflare dispatcher **dormant** (credential, secret binding,
+Worker deployment, `"crons": []`) and prove it is harmless; then activate the approved
+01:17 / 02:17 / 03:17 UTC cron entries and prove both external execution and guard refusal; then
+observe Cloudflare as the sole automatic scheduler, whose acceptance question is whether it reliably
+produced no more than one production collection per UTC day; then, only later, retire the obsolete
+GitHub scheduled workflow. A-versus-B coexistence evidence is not required, and the absence of
+workflow A during observation is expected rather than a failure. See
 [DATA-S2C external scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
 
 <!-- DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-2026-09-05 -->

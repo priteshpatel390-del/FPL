@@ -1,7 +1,80 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-S2C-ROLLOUT-DECISION-2026-09-07 -->
+## D-DATA-S2C-D — 7 September 2026: Cloudflare replaces the GitHub timer; no A+B coexistence
+
+**Decision:** disable GitHub's automatic scheduler workflow A **before** activating Cloudflare
+automatic scheduling, so Cloudflare becomes the **only** automatic clock while GitHub Actions
+remains the execution engine. **This supersedes the D-DATA-S2C-A rollout below in one respect only:
+the plan to leave the GitHub cron in place and deliberately operate both automatic paths together
+for an acceptance period.** Everything else in D-DATA-S2C-A — the guard, the external workflow, the
+isolated dispatcher, the trust boundary and every constant — stands unchanged.
+
+**Why the change.** Teamsheet is still in development and testing. The DATA-S2 structured history is
+valuable but is not yet relied upon for normal live decision-making in a way that justifies keeping
+a scheduler already known to be unreliable running solely to avoid a temporary collection gap. The
+previous plan spent substantial complexity answering *"how do we safely operate two automatic
+schedulers at the same time?"* when the simpler option was *"disable the scheduler we already know
+we do not trust before activating its replacement."* The revised approach removes the failure mode
+instead of engineering machinery to tolerate it.
+
+**Generalised principle, recorded deliberately as durable rather than scheduler-specific:**
+
+> **Prefer removing an unnecessary failure mode over engineering machinery to tolerate it,
+> particularly while Teamsheet remains in development and the affected capability is not yet relied
+> upon for normal live decision-making.**
+
+Before proposing substantial migration or safety machinery, work this checklist: (1) can the problem
+be removed rather than accommodated? (2) does Teamsheet's current maturity justify the complexity?
+(3) what is the simplest reversible solution? (4) which safe related steps can be combined into one
+owner approval? (5) can validation be automated instead of requiring repeated owner or manual
+checking? **This is not a blanket rule against production hardening**: use complexity when the
+product or the risk actually requires it, but do not automatically design for a zero-downtime
+migration when the current product stage does not need one.
+
+**Owner involvement is exception-based.** Pritesh makes product, risk and approval decisions, and
+safe related actions are grouped into approval packages rather than routed through repeated status
+handoffs between tools. This reduces handoffs and **weakens no gate**: live production mutation,
+credentials, deployment, scheduler activation, provider/data/model changes and merging each still
+require explicit owner approval.
+
+**Accepted risk — a temporary DATA-S2 history gap** may occur between disabling GitHub scheduling
+and successfully activating Cloudflare. It is accepted because the replacement is intended to be
+short and controlled and because reducing migration complexity is worth more at this stage than a
+zero-gap handover. Observations lost to a gap are **not** claimed to be reconstructible. **No gap has
+occurred.** Recorded as limitation **S2C-9**.
+
+**The opportunity guard is retained, not deprecated.** It is still required after workflow A is
+disabled, for reasons unrelated to coexistence: Cloudflare's planned 01:17, 02:17 and 03:17 UTC
+dispatches are retry **availability**, not three collections — the first collects and the guard
+refuses the other two — and the guard also refuses after an attended manual collection has already
+consumed the day. Only the assumption that the guard must support a deliberate long-running A+B
+overlap experiment is superseded.
+
+**Capability versus rollout.** The repository's *capability* to guard both automatic workflows is
+implemented, tested and deliberately **not** rewritten because the rollout changed. The *intended
+rollout* is single-clock. **FACT: workflow A is not disabled** — workflow `350014371` reports
+`state: active`, and disabling it is a separate explicitly owner-approved live action.
+
+**Sequence, each a separate approval:** merge Package A and run exact-`main` Verify; disable
+workflow A and verify no running or pending A execution can still collect; provision the Cloudflare
+dispatcher dormant (credential, secret binding, deployment, `"crons": []`) and prove it harmless;
+activate the approved 01:17 / 02:17 / 03:17 UTC entries and prove execution plus guard refusal;
+observe Cloudflare as sole automatic scheduler, accepted only if it reliably produced no more than
+one production collection per UTC day; then, later, retire the obsolete GitHub scheduled workflow.
+Coexistence evidence is not required and the absence of workflow A during observation is expected.
+
+**Nothing was executed to record this decision.** No workflow enabled, disabled or dispatched; no
+credential or Cloudflare secret created; no Worker deployed; no Cron Trigger created, changed or
+removed; no D1 request; no collection.
+
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## D-DATA-S2C-A — an external Cloudflare timer asks; GitHub Actions still collects
+
+> **Partly superseded by D-DATA-S2C-D (7 September 2026).** Its architecture, guard, workflow and
+> dispatcher decisions all stand. What is superseded is only its rollout assumption that the GitHub
+> cron stays in place beside the Cloudflare timer: workflow A is now to be disabled before Cloudflare
+> activation. The original wording is retained below as history.
 
 **Decision:** add a second, independent way to *ask* for the daily Official FPL production
 collection — an isolated Cloudflare Worker on a timer, dispatching a new zero-input GitHub Actions
@@ -106,7 +179,9 @@ carries 51 attempts and, at two governed jobs per attempt, 102 job executions �
 than by the re-run cap: a listing the provider counts higher than it returned refuses the day as
 ambiguous instead of being paged through or inferred. Reaching it takes a single run exhausting
 essentially the whole permitted re-run allowance, and it is accepted as a pathological limit. `OPPORTUNITY_GUARD_MAX_READS` is **200**, a hard cap counting every GitHub request of
-either kind. The 35 A + 105 B footprint costs about 146 requests, leaving roughly 54 for attended
+either kind. The 35 A + 105 B footprint — a conservative sizing assumption retained from the
+superseded coexistence rollout, larger than the intended single-clock steady state — costs about 146
+requests, leaving roughly 54 for attended
 workflow C runs, additional historical routine runs and page-shape variance. That is a budget and
 not a proof: a pathological history still exceeds it and still refuses rather than admitting an
 unexamined candidate. The rejected 160-read proposal was underpriced against the same population.

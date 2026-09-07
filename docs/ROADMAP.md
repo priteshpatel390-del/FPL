@@ -64,10 +64,40 @@ existing GitHub cron stays `17 1 * * *`.
 Merging Package A does **not** activate DATA-S2C. Its one behavioural effect is that future natural
 runs of the existing scheduled workflow will execute the new fail-closed guard, which is approved.
 
-**Gates after this, each separate:** owner review and merge; exact-`main` Verify Teamsheet on the
-merge commit; then Package B and later for the GitHub credential and its scoping; then Package C for
-the dispatcher deployment and the change from `"crons": []` to live cron entries; then any first
-live external dispatch under its own explicit owner approval. Migration 0004 still does not exist,
+**Rollout decision, 7 September 2026 — this supersedes the A+B coexistence plan.** GitHub's
+automatic scheduler workflow A is to be **disabled before** Cloudflare automatic scheduling is
+activated, so Cloudflare becomes the **only** automatic clock while GitHub Actions remains the
+execution engine. There is no planned period in which both automatic paths deliberately operate
+together, and a future session must not restore that plan without a new explicit owner approval. The
+reasoning: Teamsheet is still in development and testing, the DATA-S2 history is not yet relied on
+for normal live decision-making, and disabling a scheduler already known to be unreliable is simpler
+than engineering machinery to run two of them safely — *prefer removing an unnecessary failure mode
+over engineering machinery to tolerate it, particularly while Teamsheet remains in development and
+the affected capability is not yet relied upon for normal live decision-making.* A temporary DATA-S2
+history gap during the replacement is an accepted development-stage trade-off, observations lost to
+a gap are not claimed to be reconstructible, and **no gap has occurred**. **FACT: workflow A is not
+disabled** — workflow `350014371` reports `state: active`, and disabling it is a separate approved
+live action that no documentation change performs.
+
+**The guard is still needed.** Cloudflare's planned 01:17, 02:17 and 03:17 UTC dispatches are retry
+**availability**, not three collections: the first collects and the guard refuses the other two. It
+also refuses after an attended manual collection has consumed the day.
+
+**Revised forward sequence, each package a separate explicit owner approval.** **Package A —
+current:** owner review and merge, then exact-`main` Verify Teamsheet on the merge commit.
+**Next operational step — GitHub timer retirement:** disable workflow A scheduling, verify the
+disabled state, and verify no running or pending workflow A execution remains that could later
+collect; this happens **before** Cloudflare activation. **Package B — dormant Cloudflare
+provisioning:** preferably one attended package covering the read-only Cloudflare preflight, the
+approved GitHub dispatch credential, the single dispatcher secret binding, the exact-`main`
+dispatcher deployment with `"crons": []` kept, and proof of no automatic invocation. **Package C —
+Cloudflare activation:** change the empty cron list to the approved 01:17 / 02:17 / 03:17 UTC
+opportunities, deploy, prove external workflow execution and prove guard refusal. **Package D —
+observation:** Cloudflare as the sole automatic scheduler, accepted only if it reliably produced no
+more than one production collection per UTC day; coexistence evidence is not required and the
+absence of workflow A is expected. **Package E — repository retirement:** only afterwards, retire the
+obsolete GitHub scheduled workflow and reconcile the docs; it must not be pulled forward.
+Migration 0004 still does not exist,
 no covering index has been added, and no capacity threshold or projection factor moves in this
 package. See
 [DATA-S2C external scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).

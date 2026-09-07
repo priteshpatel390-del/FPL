@@ -18,6 +18,15 @@ exist, and they share one trust boundary and one collector:
 | B | `data-s2-production-external.yml` | `workflow_dispatch`, zero inputs | `data-s2-production-scheduled` | Yes |
 | C | `data-s2-production-collection.yml` | `workflow_dispatch`, owner-approved SHA | `data-s2-production-collection` | No |
 
+**Rollout note, 7 September 2026 — capability is not intent.** The table above is a **capability**
+statement: the repository safely supports both guarded automatic paths. The **intended rollout** is
+that GitHub's automatic scheduler workflow A is **disabled before** Cloudflare automatic scheduling
+is activated, so Cloudflare becomes the only automatic clock and GitHub Actions remains only the
+execution engine. Deliberate automatic A+B coexistence is **superseded** and is not the intended
+future operating mode. Workflow A is **not** disabled today — workflow `350014371` reports
+`state: active` — and disabling it is a separate owner-approved live action. Workflow C, the attended
+manual path, is unaffected and stays available for owner-approved recovery.
+
 Workflow B is new and is the unattended external-trigger path. It carries no caller-supplied SHA
 input: a caller supplies `ref: main` and nothing else, GitHub resolves the event SHA, and the
 credential-free repository gate re-proves the event name, the ref, the repository, a 40-character
@@ -59,8 +68,11 @@ could. No run-level timestamp prunes the candidate set, because none is document
 to prove exclusion, so the guard reads jobs for every candidate or fails closed.
 
 **The candidate listing is paginated; the jobs listing deliberately is not.** Under Package C
-workflow B asks three times a day beside workflow A's once, so a 35-day horizon holds roughly 140
-candidate runs — more than one 100-row page. Candidate listings are a fixed, non-recursive sequence
+workflow B asks three times a day, and the candidate population was sized conservatively as those
+three plus workflow A's once a day — so a 35-day horizon holds roughly 140 candidate runs, more than
+one 100-row page. That sizing is deliberately retained even though workflow A is to be disabled
+before Cloudflare activation, because a conservative budget stays correct while A is still armed and
+through the transition; no constant changes. Candidate listings are a fixed, non-recursive sequence
 of explicitly numbered `page=N` reads, the page count fixed from page 1's `total_count` before the
 second request is issued and capped at ten pages; every later page must report the same total, the
 accumulated rows must reconcile exactly with it, and no run id may repeat. Ordering is never relied

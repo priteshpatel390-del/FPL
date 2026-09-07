@@ -63,9 +63,16 @@ sequence with no repeat or gap. A malformed, short, over-full, unreadable or fai
 `guard_read_failed`; exceeding the ten-page cap stops after exactly one listing read. The bound
 itself is proven exactly: a cycle needing exactly 200 requests resolves and issues exactly 200; a
 cycle needing a 201st refuses as `guard_read_bound_exhausted` having issued exactly 200 and never
-reaching the final listing. The approved overlap footprint of 35 workflow A runs, 105 workflow B runs
-and 2 attended runs costs exactly 146 requests with 54 spare, resolves, and still refuses correctly
-when one of those runs collected today.
+reaching the final listing. The conservative sizing population of 35 workflow A runs, 105 workflow B
+runs and 2 attended runs costs exactly 146 requests with 54 spare, resolves, and still refuses
+correctly when one of those runs collected today. That population is a **repository sizing contract**
+rather than a statement of intended operation: under the 7 September 2026 rollout decision the GitHub
+scheduler is disabled before Cloudflare activation, so the intended steady state is smaller, and the
+test deliberately keeps the larger population so the bound stays proven while workflow A is still
+armed and through the transition. **No live acceptance in this suite requires the two automatic
+workflows to run concurrently**, and none is added: the guard's coexistence behaviour is proven from
+fixtures, and live acceptance asks only whether the sole automatic scheduler produced no more than
+one production collection per UTC day.
 
 It holds the two guard-correctness properties that a single-attempt, run-creation reading would
 lose. Across attempts: the jobs request asks for `filter=all` and never `filter=latest`, structurally

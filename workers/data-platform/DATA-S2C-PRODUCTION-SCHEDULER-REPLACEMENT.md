@@ -10,6 +10,131 @@ this package.
 
 ---
 
+## 0. Owner rollout decision — 7 September 2026
+
+**This section is the canonical statement of how DATA-S2C is to be rolled out, and it supersedes
+every earlier statement in this record describing a deliberate period in which the GitHub scheduled
+workflow A and the Cloudflare-dispatched workflow B both operate automatically.** Those statements
+were accurate when written and are retained below as history, marked SUPERSEDED where they are
+forward-looking.
+
+### 0.1 What was previously planned, and why
+
+The original rollout kept workflow A's GitHub cron armed while workflow B was brought up, ran both
+automatic paths together for an acceptance period, proved the guard stopped them double-collecting,
+and only then retired A. The reasoning was to avoid any gap in DATA-S2 history: the replacement
+would be proven while the incumbent still ran.
+
+### 0.2 What the owner decided instead
+
+That rollout is **superseded**. The revised owner-approved direction is:
+
+1. finish and merge the Package A repository safety foundation;
+2. **before** Cloudflare automatic scheduling is activated, disable GitHub's automatic scheduler
+   workflow A;
+3. confirm no already-running or pending workflow A execution remains that could later collect;
+4. provision the Cloudflare dispatcher **dormant** — credential, secret binding, Worker deployment,
+   and **zero** cron triggers;
+5. prove the dormant dispatcher is harmless;
+6. separately approve Cloudflare scheduler activation;
+7. Cloudflare then becomes the **only** automatic clock;
+8. GitHub Actions remains the execution engine;
+9. the attended manual workflow C remains available for owner-approved recovery;
+10. observe Cloudflare operation and prove no more than one production collection per UTC day;
+11. later delete or retire the obsolete GitHub scheduled workflow, once Cloudflare has demonstrated
+    acceptable operation.
+
+**There is no planned deliberate A+B automatic coexistence acceptance period, and A+B overlap must
+not be described as the intended future operating mode.** A future session must not reconstruct the
+coexistence rollout from the historical text below without a new explicit owner approval.
+
+### 0.3 Why the decision changed
+
+Teamsheet is still in development and testing. The DATA-S2 structured history is useful and
+valuable, but Teamsheet is not yet dependent on it for normal live decision-making in a way that
+justifies keeping a scheduler already known to be unreliable running solely to avoid a temporary
+collection gap.
+
+The previous plan spent substantial complexity answering *"how do we safely operate two automatic
+schedulers at the same time?"* when the simpler option was *"disable the scheduler we already know
+we do not trust before activating its replacement."* The revised approach **removes the failure mode
+rather than engineering machinery to tolerate it**.
+
+### 0.4 Capability versus intended rollout — these are different claims
+
+| | |
+|---|---|
+| **Capability** | The repository safely supports guarded workflow A and guarded workflow B, both governed by the same fail-closed daily opportunity guard. That capability is implemented, tested and unchanged. |
+| **Intended rollout** | Workflow A will be disabled before Cloudflare automatic scheduling is activated, so deliberate automatic A+B coexistence is no longer part of acceptance. |
+
+The implementation is **not** rewritten because the rollout changed. Package A's guard, attempt
+semantics, pagination, read bound and fail-closed behaviour all stand exactly as reviewed.
+
+**FACT, stated precisely: workflow A is not disabled.** Workflow `350014371` reports `state: active`
+as live external state, and this repository cannot change that. Nothing in this documentation
+reconciliation disabled, enabled, dispatched or otherwise altered any workflow, credential, Worker
+or Cron Trigger. Disabling workflow A is a separate, explicitly owner-approved live action.
+
+### 0.5 The guard is not wasted
+
+The guard remains necessary after workflow A is disabled, for two reasons that have nothing to do
+with coexistence:
+
+* **Cloudflare's planned scheduler has three dispatch opportunities a day — 01:17, 02:17 and 03:17
+  UTC — and they are retry *availability*, not three collections.** The intended shape is: 01:17
+  dispatches and the collection succeeds; 02:17 dispatches, the guard sees the day already collected
+  and refuses; 03:17 dispatches, the guard refuses again. Without the guard, three opportunities
+  would mean three collections.
+* **An attended manual workflow C collection can already have consumed the day**, and both automatic
+  opportunities must refuse after it.
+
+What is superseded is only the assumption that the guard must support a deliberate long-running
+GitHub-scheduler plus Cloudflare-scheduler overlap experiment.
+
+### 0.6 Accepted temporary history gap
+
+A temporary DATA-S2 history gap may occur between disabling GitHub scheduling and successfully
+activating Cloudflare. That is an **accepted development-stage trade-off**.
+
+It is accepted because Teamsheet remains in development and testing, the replacement is intended to
+be short and controlled, and reducing migration complexity is worth more at this stage than a
+zero-gap scheduler handover.
+
+It is **not** claimed that observations lost to a gap can be reconstructed later. The next collection
+captures the then-current Official FPL state; intermediate changes that occurred during a gap may
+simply be unavailable. **No gap has occurred**, and none may be reported as having occurred unless
+it actually has.
+
+### 0.7 The durable engineering principle
+
+> **Prefer removing an unnecessary failure mode over engineering machinery to tolerate it,
+> particularly while Teamsheet remains in development and the affected capability is not yet relied
+> upon for normal live decision-making.**
+
+Before proposing substantial migration or safety machinery, work this checklist:
+
+1. Can the problem be removed rather than accommodated?
+2. Does Teamsheet's current maturity justify the complexity?
+3. What is the simplest reversible solution?
+4. Which safe related steps can be combined into one owner approval?
+5. Can validation be automated instead of requiring repeated owner or manual checking?
+
+This is **not** a blanket rule against production hardening. Use complexity when the product or the
+risk actually requires it; do not automatically design for zero-downtime migration when the current
+product stage does not need one.
+
+### 0.8 Owner involvement is exception-based
+
+Pritesh makes product, risk and approval decisions. He should not be required to shuttle routine
+technical status between tools when those steps can safely be combined or automatically verified, so
+safe related actions are grouped into sensible approval packages.
+
+That reduces handoffs; it does **not** weaken any approval gate. Live production mutation,
+credentials, deployment, scheduler activation, provider/data/model changes and merging each still
+require explicit owner approval.
+
+---
+
 ## 1. Why DATA-S2C exists
 
 GitHub Actions schedule delivery is best-effort, and this repository has measured how loosely
@@ -25,9 +150,16 @@ The collection itself is not the problem: once a run object existed, the accepte
 about 43 seconds. The problem is entirely upstream, in whether and when the run object is created
 at all.
 
-DATA-S2C therefore adds a **second, independent way to ask for the day's collection** — an isolated
-Cloudflare timer that dispatches a GitHub Actions workflow — while leaving the existing GitHub cron
-in place. It does not replace the collection engine, and it must never become one.
+DATA-S2C therefore introduces a **separate, independent way to ask for the day's collection** — an
+isolated Cloudflare timer that dispatches a GitHub Actions workflow. It does not replace the
+collection engine, and it must never become one.
+
+> **SUPERSEDED wording, retained as history.** This section previously read "*while leaving the
+> existing GitHub cron in place*". That described the original coexistence rollout. Under the
+> 7 September 2026 owner decision in §0, GitHub's automatic scheduler is to be **disabled before**
+> Cloudflare automatic scheduling is activated, so Cloudflare becomes the only automatic clock
+> rather than a second one running beside GitHub. Workflow A remains active as live external state
+> today; that disable is a separate approved action.
 
 ## 2. What Package A is, and what it is not
 
@@ -278,8 +410,14 @@ GitHub request the guard makes — each candidate-listing page and each run's jo
 path exits far below it. On the 201st required request the guard refuses as
 `guard_read_bound_exhausted` and **that request is never issued**.
 
-**The budget, stated honestly.** Approximate steady state during the overlap period, across the
-35-day discovery horizon:
+**The budget, stated honestly.** The population below was sized for the superseded coexistence
+rollout — workflow A once a day beside workflow B three times a day across the 35-day discovery
+horizon. Under the §0 rollout, workflow A is disabled before Cloudflare activation, so the real
+steady state is **smaller** than this table: roughly 105 workflow B runs and no workflow A runs, and
+the A rows age out of the 35-day horizon after the disable. **The bound is deliberately left at 200
+and the sizing is deliberately left at the larger population**, because a conservative budget stays
+correct while workflow A is still armed, during the transition, and if the owner ever re-enables it.
+No constant changes:
 
 | | Requests |
 |---|---|
@@ -303,14 +441,18 @@ listing.
 
 The superseded position — a twelve-read bound allowing at most nine candidates, and the rejected
 160-read proposal — are both withdrawn. Nine candidates could not sustain the approved cadence at
-all, and 160 was underpriced against the same 35 A + 105 B population. This is recorded as revised
-limitation **S2C-8**.
+all, and 160 was underpriced against the same 35 A + 105 B population. That population is now a
+**conservative sizing assumption rather than a description of intended operation**, and the bound is
+unchanged at 200. This is recorded as revised limitation **S2C-8**.
 
 ### 3.3.5 Guard invocation frequency and rate limits
 
-During the overlap period there are **up to four automatic guard invocations in a UTC day** —
-workflow A once, workflow B three times under Package C. The earlier "two automatic invocations per
-day" statement is superseded.
+**Under the §0 rollout the intended steady state is up to three automatic guard invocations in a UTC
+day** — workflow B's 01:17, 02:17 and 03:17 UTC opportunities, with workflow A disabled. Four is the
+bounding case rather than the plan: it occurs only while workflow A is still armed, which is true
+today and until the separately approved disable happens. The earlier "two automatic invocations per
+day" statement is superseded, and the "four during overlap" statement is retained below as the
+**upper bound**, not as intended operation.
 
 Each invocation is separately bounded at 200 requests. That does **not** mean 800 requests an hour
 will occur: the fires are separated by schedule time, and the normal guard path short-circuits far
@@ -319,7 +461,8 @@ properties are exactly these:
 
 * one invocation is bounded at 200 requests;
 * exceeding 200 fails closed, without issuing the request that would exceed it;
-* during overlap, workflow A plus Package C's three workflow B opportunities create at most four
+* Package C's three workflow B opportunities are the intended automatic invocations once workflow A
+  is disabled; while workflow A is still armed, it plus those three are an upper bound of four
   automatic guard invocations in a UTC day;
 * GitHub's token and API limits remain an **external dependency**, to be observed in live Stage C/D
   rather than asserted from this repository.
@@ -649,11 +792,13 @@ after run `33948145320`.
   cannot see a collection performed by some path outside these three workflows, and no such path is
   approved. Actions metadata is external state: an unavailable or ambiguous API read stops automatic
   collection rather than allowing it.
-* **The 200-request bound is a budget for the approved cadence, not a proof.** It is sized for
-  roughly 35 workflow A runs and 105 workflow B runs across the 35-day horizon — about 146 requests,
-  measured at exactly 146 by regression — leaving about 54 spare. A pathological history still
-  exceeds it and still fails closed. Nothing has run live, so this is arithmetic over the approved
-  cadence, not a measurement of real Actions metadata.
+* **The 200-request bound is a budget for the approved cadence, not a proof.** It is sized
+  conservatively for roughly 35 workflow A runs and 105 workflow B runs across the 35-day horizon —
+  about 146 requests, measured at exactly 146 by regression — leaving about 54 spare. Under the §0
+  rollout workflow A is disabled before Cloudflare activation, so the intended steady state is
+  smaller than that; the larger sizing is kept deliberately and no constant changes. A pathological
+  history still exceeds the bound and still fails closed. Nothing has run live, so this is arithmetic
+  over the approved cadence, not a measurement of real Actions metadata.
 * **Paginated reads observe live, changing state.** `total_count` reconciliation, exact per-page row
   counts and duplicate rejection make a shifted set an ambiguity rather than a silent subset, but a
   run created or ageing out mid-sequence can therefore cost an automatic collection opportunity to a
@@ -664,22 +809,51 @@ after run `33948145320`.
   source position, and the entry point is unmodified here; if it were ever changed so the refusal
   moved after identity resolution or the collector, that test fails and the 35-day discovery horizon
   must be revisited.
-* **Up to four automatic guard invocations occur in a UTC day during overlap** — workflow A once and
-  workflow B three times under Package C — each separately bounded at 200 requests. GitHub token and
-  API limits remain an external dependency to observe in live Stage C/D; no unused rate-limit
-  headroom is claimed.
+* **Automatic guard invocations in a UTC day: three intended, four bounded.** Under the §0 rollout
+  the intended steady state is workflow B's three Package C opportunities with workflow A disabled;
+  four is the upper bound that holds only while workflow A remains armed, as it does today. Each
+  invocation is separately bounded at 200 requests. GitHub token and API limits remain an external
+  dependency to observe in live Stage C/D; no unused rate-limit headroom is claimed.
+* **A temporary DATA-S2 history gap may occur during the scheduler replacement** — between disabling
+  GitHub scheduling and successfully activating Cloudflare — and is an accepted development-stage
+  trade-off (§0.6). Observations lost to a gap are not claimed to be reconstructible. No gap has
+  occurred.
 * **No device testing** was performed or is required: this is a repository-only backend and workflow
   checkpoint.
 
 ## 11. Gates after Package A
 
-Each is separate:
+This sequence replaces the superseded coexistence sequence. Each package is a separate explicit
+owner approval, and safe related steps are grouped so the owner approves packages rather than
+individual handoffs.
 
-1. owner review and merge of this draft pull request;
-2. exact-`main` Verify Teamsheet on the merge commit;
-3. Package B and later — the GitHub credential, its scoping and storage;
-4. Package C — the dispatcher deployment and the change from `"crons": []` to live cron entries;
-5. any first live external dispatch, under its own explicit owner approval.
+**Package A — current, this pull request.** Repository foundation only; no live Cloudflare action.
+After owner approval: merge, then exact-`main` Verify Teamsheet on the merge commit.
+
+**Next operational step — GitHub timer retirement.** A separate explicit owner-approved live action:
+disable GitHub workflow A scheduling; verify the disabled state; verify no running or pending
+workflow A execution remains that could later collect. **This happens before Cloudflare automatic
+scheduler activation**, and nothing in Package A performs or authorises it.
+
+**Package B — dormant Cloudflare provisioning.** Preferably one attended approval package covering
+the safe related setup steps: a read-only Cloudflare cron-budget and environment preflight; creating
+the approved GitHub dispatch credential; binding the single dispatcher secret; deploying the
+exact-`main` isolated dispatcher; keeping `"crons": []`; and proving no automatic invocation and no
+external workflow execution results. **This documentation does not authorise Package B.**
+
+**Package C — Cloudflare activation.** A separate explicit approval: change the empty cron list to
+the approved 01:17 / 02:17 / 03:17 UTC opportunities; deploy; prove external workflow execution;
+prove the guard's refusal behaviour on the second and third opportunities of a day already
+collected.
+
+**Package D — observation.** Observe Cloudflare as the **sole** automatic scheduler. The acceptance
+question is: *did Cloudflare reliably produce no more than one actual production collection per UTC
+day?* A-versus-B coexistence evidence is **not** required, and the absence of workflow A during this
+period is expected rather than a failure.
+
+**Package E — repository retirement.** Only after sufficient Package D evidence: delete or retire the
+obsolete GitHub scheduled workflow and any obsolete scheduler-specific material, if justified, and
+reconcile the canonical documentation. **Package E must not be pulled forward.**
 
 Merging Package A does not activate DATA-S2C. It adds the guard to the existing scheduled path and
 lands the foundation for everything above.
