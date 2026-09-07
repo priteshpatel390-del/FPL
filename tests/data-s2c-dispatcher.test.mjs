@@ -22,6 +22,10 @@ const PLATFORM_CONFIG_PATH='workers/data-platform/wrangler.jsonc';
 const read=file=>fs.readFileSync(file,'utf8');
 const uncommented=source=>source.split('\n').filter(line=>!/^\s*(#|\/\/)/.test(line)).join('\n');
 const config=JSON.parse(read(CONFIG_PATH));
+// The exact owner-approved Package C opportunities: 01:17, 02:17 and 03:17 UTC. They are three
+// dispatch OPPORTUNITIES, not three collection entitlements — the shared fail-closed opportunity
+// guard refuses production collection once a UTC day has been consumed.
+const APPROVED_CRONS=['17 1 * * *','17 2 * * *','17 3 * * *'];
 const sources=()=>uncommented(`${read(WORKER_PATH)}\n${read(CONTRACT_PATH)}`);
 
 const SCHEDULED_TIME=Date.UTC(2026,8,7,1,17,0);
@@ -87,16 +91,65 @@ test('the dispatcher runs under a dedicated Worker identity, never the data plat
     ['dispatch-contract.mjs','dispatcher.mjs','wrangler.jsonc']);
 });
 
-test('the Package A dispatcher config declares triggers explicitly and arms no cron',()=>{
-  // Explicit, not omitted: Cloudflare treats the triggers block as a total assignment, so an
-  // explicit empty array removes Cron triggers from this identity while omitting it would leave
-  // whatever already exists in place.
+// Approved DATA-S2C Package C activation behaviour. This replaces — rather than relaxes — Package
+// A's dormant `"crons": []` expectation, which is now superseded: Package A's requirement was that
+// the repository arm nothing, and Package C's approved requirement is that it declare exactly the
+// three owner-approved daily opportunities and nothing else. Every other dormancy invariant the
+// Package A test carried is unchanged and is still asserted below and in the tests that follow.
+test('the Package C dispatcher config declares exactly the three approved cron opportunities',()=>{
+  // Explicit, not omitted: Cloudflare treats the triggers block as a total assignment, so this
+  // array is the complete set of Cron Triggers this Worker identity may hold, and omitting the
+  // block would instead leave whatever already exists in place.
   assert.ok(Object.prototype.hasOwnProperty.call(config,'triggers'));
-  assert.deepEqual(config.triggers,{crons:[]});
-  assert.equal(config.triggers.crons.length,0);
-  assert.match(read(CONFIG_PATH),/"triggers": \{ "crons": \[\] \}/);
-  // Package A activates no Cloudflare scheduling of any kind.
-  assert.doesNotMatch(read(CONFIG_PATH),/\d+ \* \* \*|\*\/\d+/);
+  assert.deepEqual(Object.keys(config.triggers),['crons']);
+  assert.deepEqual(config.triggers.crons,APPROVED_CRONS);
+  // Exactly three, in the approved order, with no fourth entry and no duplicate.
+  assert.equal(config.triggers.crons.length,3);
+  assert.equal(new Set(config.triggers.crons).size,3);
+  assert.equal(config.triggers.crons[3],undefined);
+  // Every entry is a five-field UTC daily expression at minute 17 of hours 1, 2 and 3.
+  assert.deepEqual(config.triggers.crons.map(entry=>entry.split(' ')),
+    [['17','1','*','*','*'],['17','2','*','*','*'],['17','3','*','*','*']]);
+  // No cron expression anywhere in the file other than those three.
+  assert.deepEqual([...read(CONFIG_PATH).matchAll(/"(\S+ \S+ \S+ \S+ \S+)"/g)].map(row=>row[1]),
+    APPROVED_CRONS);
+  // The historical thirty-minute cadence of the superseded collector Worker never appears here.
+  assert.doesNotMatch(read(CONFIG_PATH),/\*\/\d+/);
+});
+
+test('the dispatcher declares no timezone override, so Cloudflare reads the crons as UTC',()=>{
+  // Cloudflare interprets a Cron Trigger in UTC unless a timezone is configured, and the approved
+  // 01:17 / 02:17 / 03:17 opportunities are UTC instants. No timezone key may exist at any depth.
+  const walk=value=>{
+    if(Array.isArray(value))return value.forEach(walk);
+    if(value===null||typeof value!=='object')return;
+    for(const key of Object.keys(value)){
+      assert.doesNotMatch(key,/timezone|time_zone|tz/i,key);
+      walk(value[key]);
+    }
+  };
+  walk(config);
+  assert.doesNotMatch(read(CONFIG_PATH),/timezone|time_zone|"tz"|Europe\/London|BST/i);
+});
+
+test('Package C arms the dispatcher only, and re-enables no GitHub scheduler',()=>{
+  // Workflow A stays structurally present and unchanged: Package C neither re-enables nor deletes
+  // it. Whether GitHub has it enabled is owner-side state this repository cannot set, and the
+  // repository ships no surface that could enable, disable or dispatch a workflow.
+  const workflowA='.github/workflows/data-s2-production-scheduled.yml';
+  assert.ok(fs.existsSync(workflowA));
+  assert.match(read(workflowA),/^on:\n  schedule:\n    - cron: '17 1 \* \* \*'$/m);
+  const surfaces=[...fs.readdirSync('.github/workflows').filter(name=>/\.ya?ml$/.test(name))
+    .map(name=>`.github/workflows/${name}`),
+    ...fs.readdirSync('scripts').filter(name=>/\.(mjs|sh)$/.test(name)).map(name=>`scripts/${name}`)];
+  for(const path of surfaces){
+    const body=uncommented(read(path));
+    assert.doesNotMatch(body,/actions\/workflows\/[^\s]*\/(enable|disable|dispatches)/,path);
+    assert.doesNotMatch(body,/gh workflow (enable|disable|run)/,path);
+    // Package C adds no repository deployment surface for the dispatcher either. The activation
+    // deploy is an attended owner action.
+    assert.ok(!body.includes('workers/schedule-dispatcher'),path);
+  }
 });
 
 test('the dispatcher config holds no data, storage, service or public routing surface',()=>{

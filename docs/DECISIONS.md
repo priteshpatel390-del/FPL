@@ -62,10 +62,33 @@ the dispatcher is deployed but holds zero Cron Triggers, so **no automatic sched
 disable workflow A and verify no running or pending A execution can still collect **(done,
 7 September 2026)**; provision the Cloudflare dispatcher dormant — credential, secret binding,
 deployment, `"crons": []` — and prove it harmless **(done, 7 September 2026)**; activate the approved
-01:17 / 02:17 / 03:17 UTC entries and prove execution plus guard refusal;
-observe Cloudflare as sole automatic scheduler, accepted only if it reliably produced no more than
-one production collection per UTC day; then, later, retire the obsolete GitHub scheduled workflow.
-Coexistence evidence is not required and the absence of workflow A during observation is expected.
+01:17 / 02:17 / 03:17 UTC entries and prove execution plus guard refusal **(Package C: the repository
+declaration is a candidate under review, and the attended activation and its live acceptance are
+outstanding)**; observe Cloudflare as sole automatic scheduler, accepted only if it reliably produced
+no more than one production collection per UTC day; then, later, retire the obsolete GitHub scheduled
+workflow. Coexistence evidence is not required and the absence of workflow A during observation is
+expected.
+
+**Package C splits into a repository half and a live half, and they must not be conflated.** The
+repository now declares `17 1 * * *`, `17 2 * * *` and `17 3 * * *` — UTC, with no timezone override —
+in place of the empty list. **The deployed Worker still holds zero Cron Triggers**, because a
+declaration is not a deployment: the deployed Worker keeps the configuration it was last deployed
+with until an attended owner deployment replaces it. **The activation boundary is that deployment, and
+nothing else.** The dispatcher is repository-managed through
+`workers/schedule-dispatcher/wrangler.jsonc`, which is the authoritative scheduler configuration, so
+the live trigger set is established by deploying exact verified `main` — a temporary Workers Git
+integration to `priteshpatel390-del/FPL`, targeting the existing `teamsheet-data-s2-dispatcher`
+project, blank build command, deploy command
+`npx wrangler deploy --config workers/schedule-dispatcher/wrangler.jsonc`, disconnected again
+immediately afterwards. Cloudflare's own guidance agrees: a Worker managed with Wrangler should have
+its Cron Triggers managed exclusively through the Wrangler configuration file, because any later
+deploy reasserts what that file declares. **Creating the three triggers by hand in the dashboard is
+therefore explicitly demoted and is not the activation method** — it would be live scheduling with no
+deployment behind it, and it would contradict the boundary above. The dashboard's Package C role is
+verification, observation and emergency rollback only. **Newly recorded constraint:** Cloudflare's published limit is **five Cron
+Triggers per account** on Workers Free, not per Worker, so the account's live trigger count must be
+confirmed attended before activation, and the historical collector's removed trigger must never be
+restored to make room.
 
 **Deployment is attended and deliberately has no standing automation.** Package B's initial
 exact-source deployment used Cloudflare's Workers Git import, and the owner **disconnected that Git
@@ -77,9 +100,18 @@ gate into a merge. The deployed Worker persists; the build integration does not.
 Cloudflare CI/CD system was built to replace it, and none should be without its own proposal:
 attended deployment a few times a year does not justify standing deploy credentials.
 
+**On-demand proof of the deployed handler is not available, and none is invented.** Cloudflare's
+documented ways to fire a `scheduled()` handler outside its cron all run a **local** copy of the code
+— `wrangler dev --test-scheduled` with `/cdn-cgi/local/scheduled`, Miniflare, the Wrangler test
+harness — never the deployed Worker, and would require the real dispatch credential outside
+Cloudflare's secret store. For a deployed Worker, Cloudflare documents no API or dashboard action that
+invokes the handler; the dashboard's Cron Events view is invocation history, not an invocation
+control. Package C acceptance therefore waits for a natural cron opportunity, and no test route,
+temporary cron or fetch handler is added to shorten that wait.
+
 **Nothing was executed to record this decision.** No workflow enabled, disabled or dispatched; no
-credential or Cloudflare secret created; no Worker deployed; no Cron Trigger created, changed or
-removed; no D1 request; no collection.
+credential or Cloudflare secret created; no Worker deployed or modified; no Cron Trigger created,
+changed or removed; no Cloudflare-to-GitHub dispatch attempted; no D1 request; no collection.
 
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## D-DATA-S2C-A — an external Cloudflare timer asks; GitHub Actions still collects

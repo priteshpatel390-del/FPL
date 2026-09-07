@@ -38,11 +38,34 @@ binding and no storage, service or queue binding, and exposes no fetch handler, 
 hostname, preview URL, route or custom domain. Its logs carry **closed enums and bounded
 non-negative integers only** — no URL, header, token, run id, account id or database id.
 
-**Future `Actions: write` blast radius — stated plainly.** A credential that can dispatch workflow B
-must hold `actions: write` on this repository, and such a credential can dispatch and re-run
-repository workflows generally, not only workflow B. It does not exist yet. Creating, scoping and
-storing it is a separate approval in a later package, and nothing in Package A reduces that future
-scope. The mitigations that will still apply are that workflow B accepts no input, that its
+**`Actions: write` blast radius — stated plainly.** A credential that can dispatch workflow B must
+hold `actions: write` on this repository, and such a credential can dispatch and re-run repository
+workflows generally, not only workflow B. **It now exists**: the owner created, scoped and stored it
+in Package B, as recorded above. Scoping it to this single repository narrows which repository it can
+reach; it does **not** narrow what it can do inside this one, and no claim is made that it does. It
+also expires 90 days after creation, which is an operational dependency rather than a security
+weakness: a lapsed token makes every dispatch a refusal instead of a silent collection.
+
+**Package C changes no credential and no permission.** It replaces the dispatcher's declared cron list
+with the approved 01:17 / 02:17 / 03:17 UTC opportunities and nothing else — no new secret, no rotated
+or reprinted token, no widened GitHub scope, no new binding, no route, no custom domain, no
+`workers.dev` exposure and no fetch handler. The dispatcher's own security properties are unchanged:
+one secret binding, no production identifier, closed-enum bounded logs. The live activation remains an
+attended owner action, and the repository deliberately ships **no** deployment workflow and **no**
+Cloudflare deployment credential for the dispatcher, so no repository merge can deploy or arm **that
+Worker** on its own. A standing Git auto-deploy integration for it stays forbidden for exactly that
+reason.
+
+**Stated precisely rather than more broadly than the evidence supports:** a Cloudflare-side Workers
+Build integration does exist on this repository for a *different* Worker, `teamsheet-fpl-gateway` — it
+reports as the `Workers Builds: teamsheet-fpl-gateway` check on pull requests. It is owner-side
+Cloudflare configuration, not repository configuration: no workflow or script in this repository
+references it. Nothing in the repository directs any build integration at
+`workers/schedule-dispatcher`, and a permanent test pins that no workflow or script references that
+directory at all. What cannot be proved from here is the content of another project's Cloudflare-side
+build configuration, so the supportable claim is the narrow one: the dispatcher has no Git build
+integration of its own since Package B disconnected the temporary one, and this repository contains no
+instruction that would deploy it. The mitigations that will still apply are that workflow B accepts no input, that its
 repository-side gates prove current `main` independently of the caller, that the shared production
 concurrency group serializes it, and that the fail-closed opportunity guard refuses a second
 collection in the same day.

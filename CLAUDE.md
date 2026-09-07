@@ -1,4 +1,92 @@
 
+<!-- DATA-S2C-PACKAGE-C-2026-09-07 -->
+### Current DATA-S2C checkpoint — Package C repository activation candidate
+
+**This block supersedes the "next gate" statements of the Package B blocks below, and nothing else in
+them.** Package B's live facts — workflow A `disabled_manually`, the deployed dispatcher, the bound
+credential, zero Cron Triggers, the disconnected Git build integration — are unchanged and remain
+current. What changes here is the repository's declared cron list and the state of the Package C gate.
+
+**LIVE STATE, stated first because it is the fact most easily misread: the deployed Worker
+`teamsheet-data-s2-dispatcher` still holds ZERO Cron Triggers, and this candidate arms nothing.** A
+repository declaration is not a deployment. The deployed Worker keeps the configuration it was last
+deployed with — Package B's empty cron list — until a separately gated attended owner deployment
+replaces it. There is still **no automatic production collection path at all**: GitHub is no longer an
+automatic clock and Cloudflare is not one yet.
+
+**What the repository now declares.** `workers/schedule-dispatcher/wrangler.jsonc` replaces
+`"crons": []` with exactly the three owner-approved daily opportunities — `17 1 * * *`, `17 2 * * *`
+and `17 3 * * *`. Cloudflare executes Cron Triggers on UTC time and **no timezone override is
+declared**, so those are 01:17, 02:17 and 03:17 UTC. There is no fourth entry and no duplicate.
+
+**Three opportunities are not three collections.** 01:17 dispatches workflow B; if that run reaches
+`collect` and collects, the UTC day is consumed; 02:17 and 03:17 may still dispatch and their runs may
+still exist, but the shared fail-closed opportunity guard refuses production collection for a day
+already consumed, so `collect` is skipped. An attended workflow C collection earlier in the day
+consumes the day the same way. A later run **existing** is expected; a later run **collecting** would
+be the failure. The guard, not the cron list, enforces one collection per UTC day.
+
+**Nothing else in the repository moved.** Dispatcher request semantics, `controller.noRetry()`
+placement, timeout, dispatch target, GitHub API version, dispatch body and repository target, the
+REJECTED-versus-AMBIGUOUS classification, the opportunity guard (attempt-1-only consumption,
+`filter=all`, the 35-day horizon, the 200-request bound, fail-closed truncation), workflow A,
+workflow C, the production collection entry point, the collector, every resource threshold, the D1
+schema and migrations — still exactly 0001–0003 with five indexes and **no migration 0004** — and
+every provider, model, fixture, captaincy, squad, transfer, rank, Mini-League, product and UI
+behaviour are all unchanged. The only source edit outside the configuration is a dispatcher header
+comment that would otherwise describe the superseded empty list.
+
+**The permanent regressions were replaced, not relaxed.** The test that pinned the dormant
+`"crons": []` now pins the approved Package C list: exactly three entries, those exact expressions, no
+fourth, no timezone override at any depth, `workers_dev` and `preview_urls` still `false`, the
+isolated identity, no forbidden binding, no fetch handler, the unchanged dispatch contract, and that
+Package C re-enables no GitHub scheduler and adds no repository deployment surface.
+
+**Activation is attended and is a separate gate.** The repository ships no deployment workflow, no
+Cloudflare deployment credential and no Git build integration for this Worker, and Package C adds
+none. **The activation boundary is a deployment, and only a deployment:** the dispatcher is
+repository-managed through `workers/schedule-dispatcher/wrangler.jsonc`, so live scheduling is
+established by deploying that exact verified configuration, never by hand-building live state that
+merely matches it. The approved path temporarily reconnects the Cloudflare Workers Git integration to
+`priteshpatel390-del/FPL`, targets the existing `teamsheet-data-s2-dispatcher` project with a blank
+build command and the deploy command
+`npx wrangler deploy --config workers/schedule-dispatcher/wrangler.jsonc`, deploys exact verified
+`main`, and then **disconnects the integration again immediately**. That preserves one evidence
+chain: reviewed repository, merged `main`, exact-`main` Verify, attended exact-`main` deployment, live
+scheduler. **Direct dashboard creation of the three Cron Triggers is not the activation method** — the
+dashboard is for verifying the resulting trigger set, viewing Cron Events, checking Worker settings
+and emergency rollback only. **A standing Git auto-deploy connection remains forbidden.** Cloudflare
+documents that Cron Trigger changes take up to 15 minutes to propagate.
+
+**One newly recorded constraint: the cron budget is an account limit.** Cloudflare's published limits
+give **5 Cron Triggers per account on Workers Free**, not per Worker. Three opportunities consume three
+of five account-wide, and only if no other Worker in this account holds a live trigger. That cannot be
+read through the tooling available here, so the owner must confirm the account's live trigger count
+before activating — and must not restore the historical collector's removed trigger to make room.
+
+**No on-demand proof is possible, and none is invented.** Cloudflare's documented ways to fire a
+`scheduled()` handler outside its cron — `wrangler dev --test-scheduled` and `/cdn-cgi/local/scheduled`,
+Miniflare, the Wrangler test harness — all run a **local** copy of the code, never the deployed Worker,
+and would need the real credential outside Cloudflare's secret store. For a deployed Worker, Cloudflare
+documents no API or dashboard action that invokes the handler; the dashboard's Cron Events view is
+invocation *history*, not an invocation control. Acceptance therefore uses natural cron observation, and
+no test route, temporary cron or fetch handler is added to shorten the wait.
+
+**Nothing was executed for this checkpoint.** No Cloudflare deployment, no Cron Trigger created,
+changed or removed, no Worker created or modified, no secret created, read or written, no
+Cloudflare-to-GitHub dispatch, no workflow dispatched, enabled, disabled or re-run, no D1 request of
+any kind, and no Official FPL collection. Reading the account's Worker list and the GitHub workflow
+state are read-only queries. Live Cloudflare-to-GitHub dispatch remains **entirely unproven**.
+
+**The accepted history-gap risk stays live and no gap is claimed.** A gap exists only when a UTC day
+actually closes with no production collection through any of the three governed workflows, and
+observations lost to any gap are not claimed to be reconstructible.
+
+**Next gates, each separate:** owner review and merge — the standing merge gate is **not** waived by
+Package C approval; exact-`main` Verify; the attended Cloudflare activation; the first live workflow B
+dispatch acceptance; and the proof that a later opportunity refuses once the day is consumed. See
+[DATA-S2C external scheduler](workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md) §13.
+
 <!-- DATA-S2C-ROLLOUT-DECISION-2026-09-07 -->
 ### Current DATA-S2C rollout decision — Cloudflare replaces the GitHub timer, no A+B coexistence
 

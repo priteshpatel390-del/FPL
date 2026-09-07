@@ -9,9 +9,13 @@
 // collector — is untouched by this Worker and must never be redeployed by it. This Worker
 // deliberately runs under its own dedicated identity for exactly that reason.
 //
-// Package A ships it with an explicitly empty `triggers.crons`, so deploying it can only ever
-// remove Cron triggers from its own identity and can never arm one. Arming the timer is a later,
-// separately approved package.
+// Its Wrangler configuration declares `triggers.crons` explicitly, and Cloudflare treats that block
+// as a total assignment, so an attended deploy sets exactly the Cron Triggers listed there and
+// nothing else. Package A shipped an empty list. The owner-approved Package C list is 01:17, 02:17
+// and 03:17 UTC: three dispatch OPPORTUNITIES a day, never three collection entitlements — the
+// shared fail-closed opportunity guard refuses production collection once the UTC day is consumed.
+// Declaring them in the repository arms nothing by itself; only an attended deployment of that
+// configuration can arm the live Worker.
 //
 // Failure discipline: exactly one dispatch request per Cloudflare fire, `controller.noRetry()`
 // before that request is even built, and no second attempt on any outcome. A rejection is
