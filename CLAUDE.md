@@ -44,11 +44,19 @@ Package C re-enables no GitHub scheduler and adds no repository deployment surfa
 
 **Activation is attended and is a separate gate.** The repository ships no deployment workflow, no
 Cloudflare deployment credential and no Git build integration for this Worker, and Package C adds
-none. Two supported attended paths exist — adding the Cron Triggers to the already-deployed Worker
-through the Cloudflare dashboard, which touches no code and uploads no new version, or a temporary
-Git import performing an exact-`main` Wrangler deploy that is then disconnected again. **A standing
-Git auto-deploy connection remains forbidden.** Cloudflare documents that Cron Trigger changes take up
-to 15 minutes to propagate.
+none. **The activation boundary is a deployment, and only a deployment:** the dispatcher is
+repository-managed through `workers/schedule-dispatcher/wrangler.jsonc`, so live scheduling is
+established by deploying that exact verified configuration, never by hand-building live state that
+merely matches it. The approved path temporarily reconnects the Cloudflare Workers Git integration to
+`priteshpatel390-del/FPL`, targets the existing `teamsheet-data-s2-dispatcher` project with a blank
+build command and the deploy command
+`npx wrangler deploy --config workers/schedule-dispatcher/wrangler.jsonc`, deploys exact verified
+`main`, and then **disconnects the integration again immediately**. That preserves one evidence
+chain: reviewed repository, merged `main`, exact-`main` Verify, attended exact-`main` deployment, live
+scheduler. **Direct dashboard creation of the three Cron Triggers is not the activation method** — the
+dashboard is for verifying the resulting trigger set, viewing Cron Events, checking Worker settings
+and emergency rollback only. **A standing Git auto-deploy connection remains forbidden.** Cloudflare
+documents that Cron Trigger changes take up to 15 minutes to propagate.
 
 **One newly recorded constraint: the cron budget is an account limit.** Cloudflare's published limits
 give **5 Cron Triggers per account on Workers Free**, not per Worker. Three opportunities consume three

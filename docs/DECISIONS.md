@@ -73,11 +73,19 @@ expected.
 repository now declares `17 1 * * *`, `17 2 * * *` and `17 3 * * *` — UTC, with no timezone override —
 in place of the empty list. **The deployed Worker still holds zero Cron Triggers**, because a
 declaration is not a deployment: the deployed Worker keeps the configuration it was last deployed
-with until an attended owner deployment replaces it. Two supported attended paths exist — adding the
-triggers to the already-deployed Worker through the Cloudflare dashboard, which touches no code and
-uploads no new Worker version, or a temporary Git import performing an exact-`main` Wrangler deploy
-that is then disconnected again — and the dashboard path is preferred precisely because Package C
-changes no dispatcher code. **Newly recorded constraint:** Cloudflare's published limit is **five Cron
+with until an attended owner deployment replaces it. **The activation boundary is that deployment, and
+nothing else.** The dispatcher is repository-managed through
+`workers/schedule-dispatcher/wrangler.jsonc`, which is the authoritative scheduler configuration, so
+the live trigger set is established by deploying exact verified `main` — a temporary Workers Git
+integration to `priteshpatel390-del/FPL`, targeting the existing `teamsheet-data-s2-dispatcher`
+project, blank build command, deploy command
+`npx wrangler deploy --config workers/schedule-dispatcher/wrangler.jsonc`, disconnected again
+immediately afterwards. Cloudflare's own guidance agrees: a Worker managed with Wrangler should have
+its Cron Triggers managed exclusively through the Wrangler configuration file, because any later
+deploy reasserts what that file declares. **Creating the three triggers by hand in the dashboard is
+therefore explicitly demoted and is not the activation method** — it would be live scheduling with no
+deployment behind it, and it would contradict the boundary above. The dashboard's Package C role is
+verification, observation and emergency rollback only. **Newly recorded constraint:** Cloudflare's published limit is **five Cron
 Triggers per account** on Workers Free, not per Worker, so the account's live trigger count must be
 confirmed attended before activation, and the historical collector's removed trigger must never be
 restored to make room.
