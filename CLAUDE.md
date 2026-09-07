@@ -59,9 +59,10 @@ guarded workflow A and guarded workflow B, and that implementation is unchanged 
 because the rollout changed. *Intended rollout:* workflow A is disabled before Cloudflare activation,
 so deliberate automatic A+B coexistence is no longer part of acceptance.
 
-**FACT: workflow A is not disabled.** Workflow `350014371` reports `state: active` as live external
-state. Disabling it is a separate explicitly owner-approved live action, and no documentation change
-alters it.
+**FACT AT THE PACKAGE A CHECKPOINT — retained as history: workflow A was not disabled.** Workflow `350014371` reported `state: active` as live external state, and disabling it was a
+separate explicitly owner-approved live action that no documentation change could perform.
+**CURRENT STATE: the owner has since disabled it, and workflow `350014371` reports
+`state: disabled_manually`.** The owner took that action on 7 September 2026. See the Package B current-state blocks below.
 
 **Accepted temporary history gap.** A DATA-S2 history gap may occur between disabling GitHub
 scheduling and successfully activating Cloudflare, and that is an accepted development-stage
@@ -327,12 +328,18 @@ read-only GitHub query. No workflow was dispatched, enabled or disabled, no Clou
 read or mutation, collection, migration, deployment, cron, environment or credential change was
 performed.
 
-### Current DATA-S2C checkpoint — external scheduler repository foundation (Package A)
+### Earlier DATA-S2C checkpoint (closed) — external scheduler repository foundation (Package A)
 
-**Repository implementation only. Nothing in DATA-S2C is live.** No GitHub personal access token or
-App was created, no Cloudflare secret was created, no Worker was deployed, no Cloudflare Cron
-Trigger was created, changed or removed, no workflow was dispatched, no D1 request was performed and
-no Official FPL collection was run. The existing GitHub cron remains `17 1 * * *`, unchanged.
+> **Superseded as a current-state statement on 7 September 2026 by the Package B blocks above.** The
+> design, guard semantics and rationale below are unchanged and remain in force. What is no longer
+> current is its live-state scope: the credential, the Cloudflare secret and the Worker deployment now
+> exist.
+
+**Repository implementation only, and at that checkpoint nothing in DATA-S2C was live.** No GitHub
+personal access token or App had been created, no Cloudflare secret had been created, no Worker had
+been deployed, no Cloudflare Cron Trigger had been created, changed or removed, no workflow had been
+dispatched, no D1 request had been performed and no Official FPL collection had been run. The GitHub
+cron was `17 1 * * *`, unchanged.
 
 **Why it exists.** GitHub schedule delivery is best-effort and has been measured loose: the
 4 September 2026 natural run `33901634593` was created approximately **3h21m** after its nominal
@@ -481,9 +488,11 @@ regeneration.
 the existing scheduled workflow will execute the new fail-closed guard, which is approved. Whether
 GitHub has that scheduled workflow enabled is owner-side state this repository cannot change, and
 Package A changes nothing about it. It **is** readable through the GitHub Actions API, and was read
-for this checkpoint: workflow `350014371` reports `state: active` and produced successful natural
-run `34015422874` on 6 September 2026, so the guard's first live effect will be on genuine natural
-runs. The earlier record of it being owner-disabled after run `33948145320` is historical.
+for that checkpoint: workflow `350014371` reported `state: active` and produced successful natural
+run `34015422874` on 6 September 2026. *(Superseded: the owner disabled it on 7 September 2026 and it
+now reports `state: disabled_manually`, so no armed automatic path remains for the guard to act on
+until Package C activates Cloudflare.)* The earlier record of it being owner-disabled after run
+`33948145320` is historical.
 
 Next gates, each separate, under the revised rollout at the top of this file: owner review and
 merge; exact-`main` Verify; then the owner-approved disable of GitHub scheduler workflow A; then the

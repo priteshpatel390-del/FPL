@@ -5,11 +5,19 @@ retired and the isolated Cloudflare dispatcher deployed dormant with zero Cron T
 1–11 record Package A and were accurate when written. Section 12 records Package B and is the current
 DATA-S2C state. Package C, which arms the Cloudflare timer, is not authorised by this record.
 
-No GitHub personal access token or GitHub App was created. No Cloudflare secret was created. No
-Worker was deployed. No Cloudflare Cron Trigger was created, changed or removed. No workflow was
-dispatched. No D1 request was performed. No Official FPL endpoint was contacted for collection. No
-production collection was run. The existing GitHub cron remains `17 1 * * *` and is untouched by
-this package.
+**FACT AT THE PACKAGE A CHECKPOINT — retained as history.** At the time sections 1–11 were written,
+no GitHub personal access token or GitHub App had been created, no Cloudflare secret had been created,
+no Worker had been deployed, no Cloudflare Cron Trigger had been created, changed or removed, no
+workflow had been dispatched, no D1 request had been performed, no Official FPL endpoint had been
+contacted for collection and no production collection had been run. The GitHub cron was `17 1 * * *`
+and untouched by that package.
+
+**CURRENT STATE — see §12.** The owner has since disabled GitHub scheduled workflow A, created the
+approved fine-grained dispatch credential, bound it as the single encrypted Cloudflare secret
+`GITHUB_DISPATCH_TOKEN`, and deployed the isolated Worker `teamsheet-data-s2-dispatcher`. Still true
+today, and not superseded: **zero Cloudflare Cron Triggers exist**, workflow B has never been
+dispatched, no D1 request has been performed, and no production collection has been run through
+DATA-S2C.
 
 ---
 
@@ -701,10 +709,11 @@ nominal minute.
 
 Two kinds of evidence, with their provenance kept apart.
 
-**Independently verified from the GitHub Actions API during this remediation.** Workflow
-`DATA-S2 Scheduled Production Collection via D1 REST`, id `350014371`, reports `state: active` — the
-scheduled workflow is **enabled**, having been re-enabled by the owner after the capacity
-live-acceptance closeout. It produced natural run `34015422874`: run number 3, event `schedule`,
+**Independently verified from the GitHub Actions API during that remediation, and point-in-time.**
+Workflow `DATA-S2 Scheduled Production Collection via D1 REST`, id `350014371`, reported
+`state: active` — the scheduled workflow was **enabled**, having been re-enabled by the owner after
+the capacity live-acceptance closeout. *(Superseded by §12.1: the owner disabled it on 7 September
+2026 and it now reports `state: disabled_manually`. The run evidence below stands as history.)* It produced natural run `34015422874`: run number 3, event `schedule`,
 attempt 1, head branch `main`, head SHA `b0637270882f0ab120102dbb04a8eb2eef6a763f`, created
 `2026-09-06T06:01:26Z`, completed `2026-09-06T06:01:59Z`, conclusion **success**, with
 `repository-gate` (job `101438220728`) and `collect` (job `101438250715`) both succeeding at every

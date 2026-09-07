@@ -252,12 +252,18 @@ read-only GitHub query. No workflow was dispatched, enabled or disabled, no Clou
 read or mutation, collection, migration, deployment, cron, environment or credential change was
 performed.
 
-## Current DATA-S2C checkpoint — external scheduler repository foundation (Package A)
+## Earlier DATA-S2C checkpoint (closed) — external scheduler repository foundation (Package A)
 
-**Repository implementation only. Nothing in DATA-S2C is live.** No GitHub token or App was
-created, no Cloudflare secret was created, no Worker was deployed, no Cloudflare Cron Trigger was
-created, changed or removed, no workflow was dispatched, no D1 request was performed and no
-Official FPL collection was run. The existing GitHub cron remains `17 1 * * *`, unchanged.
+> **Superseded as a current-state statement on 7 September 2026 by the Package B blocks above.** The
+> design, guard semantics and rationale below are unchanged and remain in force. What is no longer
+> current is its live-state scope: the credential, the Cloudflare secret and the Worker deployment now
+> exist, and GitHub scheduled workflow A is disabled.
+
+**Repository implementation only, and at that checkpoint nothing in DATA-S2C was live.** No GitHub
+token or App had been created, no Cloudflare secret had been created, no Worker had been deployed, no
+Cloudflare Cron Trigger had been created, changed or removed, no workflow had been dispatched, no D1
+request had been performed and no Official FPL collection had been run. The GitHub cron was
+`17 1 * * *`, unchanged.
 
 **Why it exists.** GitHub schedule delivery is best-effort and has been measured loose: the
 4 September natural run was created approximately 3h21m after its nominal minute and the
@@ -280,9 +286,11 @@ than engineering machinery to run two of them safely — *prefer removing an unn
 over engineering machinery to tolerate it, particularly while Teamsheet remains in development and
 the affected capability is not yet relied upon for normal live decision-making.* A temporary DATA-S2
 history gap during the replacement is an accepted development-stage trade-off, observations lost to
-a gap are not claimed to be reconstructible, and **no gap has occurred**. **FACT: workflow A is not
-disabled** — workflow `350014371` reports `state: active`, and disabling it is a separate approved
-live action that no documentation change performs.
+a gap are not claimed to be reconstructible, and no gap had occurred at that checkpoint.
+**FACT AT THE PACKAGE A CHECKPOINT — retained as history: workflow A was not disabled.** Workflow `350014371` reported `state: active`, and disabling it was a separate approved live
+action that no documentation change could perform. **CURRENT STATE: the owner has since disabled it, and workflow `350014371` reports
+`state: disabled_manually`.** See the Package B current-state blocks
+above.
 
 **The guard is still needed.** Cloudflare's planned 01:17, 02:17 and 03:17 UTC dispatches are retry
 **availability**, not three collections: the first collects and the guard refuses the other two. It
