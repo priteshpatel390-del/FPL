@@ -114,10 +114,12 @@ opportunity guard over GitHub Actions run and job metadata, governing routine co
 because exactly one trigger existed. A second unattended path makes it something the repository must
 prove.
 
-**The rules.** A run consumes the day when, on any of its attempts, a `collect` job execution exists
-with any conclusion other than `skipped` **and** that execution **started** in the current UTC day
-**or** within the trailing six hours. Workflow A refuses on either. Workflow B refuses on either. The attended manual workflow C is not
-guarded — the owner can always collect — but a manual collection does consume the day for both
+**The rules.** A run consumes the day **only through attempt 1's** `collect` execution: that
+execution must exist with any conclusion other than `skipped` **and** must have **started** in the
+current UTC day **or** within the trailing six hours. Attempts after the first never consume — see
+"Only attempt 1 can consume" below — and are read only so they cannot hide attempt 1's evidence.
+Workflow A refuses on either condition. Workflow B refuses on either. The attended manual workflow C
+is not guarded — the owner can always collect — but a manual collection does consume the day for both
 automatic paths.
 
 **Why `skipped` does not consume.** That is exactly what the Actions API reports for a `collect` job
@@ -189,8 +191,11 @@ unexamined candidate. The rejected 160-read proposal was underpriced against the
 **Why every attempt is read, and why job timing decides the window.** The jobs listing uses
 `filter=all`, never `filter=latest`. `latest` shows only the most recent execution of each job, so a
 re-run would hide a real collection: attempt 1 collects and may mutate production, attempt 2's gate
-refuses, attempt 2's `collect` is `skipped`, and a `latest` view calls the spent day free. Each
-attempt's `collect` is separate evidence and any one of them consumes. Timing likewise comes from
+refuses, attempt 2's `collect` is `skipped`, and a `latest` view calls the spent day free. Reading
+every attempt therefore exists to keep **attempt 1's** evidence visible, **not** because a later
+attempt can consume: only attempt 1 can, the production entry point refuses every attempt after the
+first before any production work, and a later attempt reporting a *successful* `collect` contradicts
+that pinned invariant and fails closed as `guard_rerun_contract_violated`. Timing likewise comes from
 the `collect` job's `started_at`, not the run's `created_at`: a run created at 23:50 whose collect
 starts at 00:10 collected on the following UTC day, and dating it by run creation would admit a
 second collection. A non-skipped `collect` with no usable, self-consistent start instant is

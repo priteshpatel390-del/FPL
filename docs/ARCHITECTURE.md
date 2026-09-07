@@ -40,8 +40,10 @@ A **daily opportunity guard** now runs last in the credential-free gate of workf
 a pure, fail-closed classifier over Actions run and job metadata that refuses when the day's
 opportunity has already been consumed — by an automatic run or by an attended owner collection —
 and refuses just as firmly when it cannot classify what it read. It reads **every attempt** of each
-governed run (`filter=all`, so a re-run whose newest attempt skips `collect` cannot hide an earlier
-attempt that collected) and dates each collection by the `collect` job's own `started_at` rather
+governed run — `filter=all`, **not because a later attempt can consume the day but so that one can
+never hide attempt 1's evidence**, since a re-run whose newest attempt skips `collect` must not erase
+the earlier attempt that collected — and dates each collection by the `collect` job's own
+`started_at` rather
 than the run's `created_at`, because a run can wait on GitHub, on environment admission or behind
 the shared concurrency group long before collection begins.
 

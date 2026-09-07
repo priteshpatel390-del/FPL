@@ -172,15 +172,17 @@ This documentation.
 workflows, each carrying a credentialled job literally named `collect`. Resume, migration,
 reconciliation, EXPLAIN and integrity workflows are **deliberately excluded**; they keep their own
 owner-input and approval gates and the shared concurrency group, and counting them would let a
-read-only integrity check silently cancel a day's collection. A run consumes the day when, on **any of
-its attempts**, a `collect` job execution exists with any conclusion **other than `skipped`** and
-that execution **started** in the current UTC day **or** within the **trailing six hours**; that
-trailing rule closes the UTC-midnight duplicate hole a late 23:58 start plus a punctual 00:03 start
-would otherwise open. A `skipped` collect job — exactly what a refused gate produces — does not
-consume; a queued or running one does. The jobs listing is read with **`filter=all`**, never
-`filter=latest`, so a re-run whose newest attempt skips `collect` can never erase an earlier attempt
-that collected, and the window is dated by the `collect` job's own `started_at` rather than the
-run's `created_at`, so a run that waited hours before collecting is dated by the collection.
+read-only integrity check silently cancel a day's collection. A run consumes the day only through
+**attempt 1's** `collect` execution: that execution must exist with any conclusion **other than
+`skipped`** and must have **started** in the current UTC day **or** within the **trailing six
+hours**; that trailing rule closes the UTC-midnight duplicate hole a late 23:58 start plus a
+punctual 00:03 start would otherwise open. A `skipped` collect job — exactly what a refused gate
+produces — does not consume; a queued or running attempt-1 one does. The jobs listing is read with
+**`filter=all`**, never `filter=latest`, **not because later attempts can consume but so that they
+can never hide attempt 1's evidence**: a re-run whose newest attempt skips `collect` must never
+erase the earlier attempt that collected. The window is dated by the `collect` job's own
+`started_at` rather than the run's `created_at`, so a run that waited hours before collecting is
+dated by the collection.
 
 **Only attempt 1 can consume the day**, and that is a repository fact rather than a provider one:
 the shared production entry point throws `workflow_retry_forbidden` on every attempt after the
