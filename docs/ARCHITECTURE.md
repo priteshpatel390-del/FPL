@@ -1,5 +1,113 @@
 # ARCHITECTURE.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external production scheduling — 6 September 2026
+
+**The forward collection engine does not change.** It remains GitHub Actions -> fixed Official FPL
+public endpoints -> validation, normalisation, diff and hashing on the runner -> bounded direct
+Cloudflare D1 REST, through the unchanged shared entry point
+`workers/data-platform/run-production-collection.mjs`. Cloudflare Worker collection and the
+historical Cloudflare Cron remain superseded and must not be restored.
+
+What DATA-S2C changes is **how a collection is asked for**. Three routine collection workflows now
+exist, and they share one trust boundary and one collector:
+
+| | Workflow | Trigger | Environment | Guarded |
+|---|---|---|---|---|
+| A | `data-s2-production-scheduled.yml` | `schedule: 17 1 * * *`, no timezone field | `data-s2-production-scheduled` | Yes |
+| B | `data-s2-production-external.yml` | `workflow_dispatch`, zero inputs | `data-s2-production-scheduled` | Yes |
+| C | `data-s2-production-collection.yml` | `workflow_dispatch`, owner-approved SHA | `data-s2-production-collection` | No |
+
+**Rollout note, 7 September 2026 — capability is not intent.** The table above is a **capability**
+statement: the repository safely supports both guarded automatic paths. The **intended rollout** is
+that GitHub's automatic scheduler workflow A is **disabled before** Cloudflare automatic scheduling
+is activated, so Cloudflare becomes the only automatic clock and GitHub Actions remains only the
+execution engine. Deliberate automatic A+B coexistence is **superseded** and is not the intended
+future operating mode. Workflow A is **not** disabled today — workflow `350014371` reports
+`state: active` — and disabling it is a separate owner-approved live action. Workflow C, the attended
+manual path, is unaffected and stays available for owner-approved recovery.
+
+Workflow B is new and is the unattended external-trigger path. It carries no caller-supplied SHA
+input: a caller supplies `ref: main` and nothing else, GitHub resolves the event SHA, and the
+credential-free repository gate re-proves the event name, the ref, the repository, a 40-character
+lowercase SHA, an exact checkout, `HEAD` equality, a fresh remote-`main` proof, a clean tree, the
+unchanged bounded exact-head Verify Teamsheet module and the opportunity guard before the protected
+job can exist. The credentialled job then re-establishes Node, `HEAD`, a clean tree and Wrangler
+removal, and resolves remote `main` again from the remote in the same shell immediately before the
+runner. The `GITHUB_RUN_ATTEMPT !== '1'` re-run refusal lives, as before, in the shared entry point.
+
+A **daily opportunity guard** now runs last in the credential-free gate of workflows A and B. It is
+a pure, fail-closed classifier over Actions run and job metadata that refuses when the day's
+opportunity has already been consumed — by an automatic run or by an attended owner collection —
+and refuses just as firmly when it cannot classify what it read. It reads **every attempt** of each
+governed run — `filter=all`, **not because a later attempt can consume the day but so that one can
+never hide attempt 1's evidence**, since a re-run whose newest attempt skips `collect` must not erase
+the earlier attempt that collected — and dates each collection by the `collect` job's own
+`started_at` rather
+than the run's `created_at`, because a run can wait on GitHub, on environment admission or behind
+the shared concurrency group long before collection begins.
+
+**Only the first attempt of a run can consume the day.** That is a repository invariant, not a
+provider one: `workers/data-platform/run-production-collection.mjs` throws
+`workflow_retry_forbidden` on any attempt after the first, before it resolves the production
+identity and before it reaches the collector, so a re-run can neither call Official FPL nor touch
+D1. A permanent structural regression pins that literal and its position ahead of every identity
+call, the collector and any network use; the entry point itself is unchanged. `filter=all` therefore
+protects attempt 1's evidence from a later attempt rather than making later attempts count, and a
+later attempt reporting a *successful* `collect` is state the invariant forbids, so it fails closed
+rather than being read either way.
+
+Two windows therefore exist and are deliberately not the same. **Candidate discovery** asks the
+Actions API for runs created in the last 35 days — the only filter that endpoint offers is the run's
+`created_at`, and 35 days is GitHub's documented workflow-run time limit, which explicitly includes
+execution duration, waiting and approval, and so is the whole horizon an original attempt's
+`collect` can sit inside. GitHub's 30-day re-run eligibility is deliberately excluded: it would only
+extend the horizon if a re-run could consume the day, and the pinned refusal means none can.
+**The consumption decision** then
+uses `collect.started_at` against the current UTC day or the trailing six hours. Discovery is a
+conservative superset: it may return runs that cannot consume, and it must never omit one that
+could. No run-level timestamp prunes the candidate set, because none is documented strongly enough
+to prove exclusion, so the guard reads jobs for every candidate or fails closed.
+
+**The candidate listing is paginated; the jobs listing deliberately is not.** Under Package C
+workflow B asks three times a day, and the candidate population was sized conservatively as those
+three plus workflow A's once a day — so a 35-day horizon holds roughly 140 candidate runs, more than
+one 100-row page. That sizing is deliberately retained even though workflow A is to be disabled
+before Cloudflare activation, because a conservative budget stays correct while A is still armed and
+through the transition; no constant changes. Candidate listings are a fixed, non-recursive sequence
+of explicitly numbered `page=N` reads, the page count fixed from page 1's `total_count` before the
+second request is issued and capped at ten pages; every later page must report the same total, the
+accumulated rows must reconcile exactly with it, and no run id may repeat. Ordering is never relied
+on, and a short or over-full page, a changed total, a duplicate or a missing page is
+`guard_read_failed`. The jobs listing stays a single 100-row `filter=all` page, and that page is
+bounded by fail-closed truncation rather than by GitHub's re-run cap: 50 re-runs are permitted in
+addition to the original attempt, so 51 attempts at two jobs each is 102 executions, and a listing
+the provider counts higher than it returned refuses the day as ambiguous. That pathological history
+is accepted rather than paginated for. `OPPORTUNITY_GUARD_MAX_READS` is a hard cap of **200** counting every request of either
+kind: the 35 A + 105 B overlap footprint costs about 146, and a cycle needing the 201st request
+refuses with `guard_read_bound_exhausted` without issuing it. It needs `actions: read`, granted
+on the credential-free job alone. Because a job with no `permissions:` block inherits the
+workflow-level one, both workflows keep the Actions scope out of their workflow-level default:
+workflow B's credentialled `collect` job declares `contents: read` and `checks: read` explicitly and
+workflow A's inherits exactly those, so neither credentialled job can reach Actions metadata.
+
+A new **isolated Cloudflare dispatcher Worker** lives at `workers/schedule-dispatcher/` under the
+dedicated identity `teamsheet-data-s2-dispatcher`. It is a timer that can do exactly one thing: ask
+GitHub to start workflow B. It holds no D1 binding, no Cloudflare data credential and no public HTTP
+surface, imports nothing outside its own directory, and its Package A Wrangler configuration
+declares `"triggers": { "crons": [] }` explicitly — present and empty, because Cloudflare treats
+triggers as a total assignment, so an explicit empty array removes triggers from this identity while
+omitting the block would leave whatever exists in place. **Package A arms nothing.**
+
+The identity separation is deliberate and load-bearing: `workers/data-platform/wrangler.jsonc` still
+declares a thirty-minute cron and a D1 binding and `data-platform-rpc.mjs` still exposes a scheduled
+collector, so deploying anything under that identity could re-arm collection that was intentionally
+stopped. The dispatcher can never target it, and permanent tests pin that configuration's SHA-256.
+
+All eight members of the `data-s2-production-collection` concurrency group, workflow B included,
+remain `cancel-in-progress: false` with no `queue:` key. See
+[DATA-S2C external scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
+
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2B production collection scheduling — 4 September 2026
 
@@ -15,9 +123,13 @@ Two workflows reach that path and nothing else does. `data-s2-production-collect
 `data-s2-production-scheduled.yml` carries exactly one trigger and no `timezone:` field, so its cron
 is interpreted in UTC — the permanent approved cadence `17 1 * * *` (01:17 UTC), restored after the
 temporary 4 September 2026 acceptance windows closed on the first successful natural scheduled run.
-**That workflow is currently owner-disabled**, after its first permanent-cadence natural run
-`33948145320` committed to D1 and then failed resource enforcement at `postflight_read`; re-enabling
-it is a separate owner decision. It takes no input, is
+**That workflow is currently enabled.** It was owner-disabled after its first permanent-cadence
+natural run `33948145320` committed to D1 and then failed resource enforcement at `postflight_read`;
+the owner re-enabled it after the capacity live-acceptance closeout, and workflow `350014371` now
+reports `state: active`. Its first natural run under that re-enable, `34015422874`, succeeded in
+both jobs on 6 September 2026 — and was created 4h44m26s after its 01:17 UTC nominal minute, so
+**GitHub cron is active enough to produce natural runs but is materially late and unreliable as a
+timer**, which is the problem DATA-S2C addresses. It takes no input, is
 gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
 `Tests and deterministic build` proof, and uses the dedicated unattended
 `data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`

@@ -255,8 +255,9 @@ It does **not** prove:
 
 The permanent repository cron is unchanged at **`17 1 * * *`**, and the scheduled workflow
 `350014371` was verified through the GitHub Actions API during this closeout as still
-**`disabled_manually`**. This closeout does not enable it, and re-enabling it is a separate owner
-gate.
+**`disabled_manually`**. This closeout does not enable it, and re-enabling it was a separate owner
+gate. *(Historical, superseded on 6 September 2026: the owner has since re-enabled it — workflow
+`350014371` reports `state: active` and produced successful natural run `34015422874`.)*
 
 **GitHub schedule delivery is best-effort and is a separate, unresolved matter.** The cron minute is
 an opportunity, never a guaranteed collection instant: the two natural scheduled runs to date were

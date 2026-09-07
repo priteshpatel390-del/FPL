@@ -1,0 +1,211 @@
+# DATA-S2C — the externally triggered, unattended normal Official FPL production collection.
+#
+# This is the receiving half of the DATA-S2C external scheduler. GitHub's own schedule delivery is
+# best-effort and has already been observed hours late: the 4 September acceptance run arrived
+# approximately 3h21m after its nominal minute and the 5 September run approximately 4h31m. An
+# isolated Cloudflare timer Worker therefore becomes an additional, more punctual way to ask for
+# the day's collection, and this workflow is the only thing that timer is ever allowed to ask for.
+#
+# It is the same collection as the scheduled workflow, through the same trust boundary, with the
+# same collector, the same entry point and the same unchanged resource envelope. There is no
+# external fast path and no external-only ceiling. The only differences are how the run is asked
+# for and that the caller supplies nothing at all: the dispatcher sends `ref: main` and nothing
+# else, GitHub resolves the event SHA itself, and every identity claim below is re-proved from the
+# repository rather than trusted from the caller.
+#
+# It is NOT the attended manual workflow. `data-s2-production-collection.yml` stays the separate,
+# owner-approved, human-dispatched manual and recovery boundary with its own owner-supplied SHA
+# and its own attended environment, and it is untouched.
+#
+# DATA-S2C Package A is repository foundation only. No credential exists for this workflow's
+# caller, no dispatcher Worker is deployed and no Cloudflare timer is armed, so nothing dispatches
+# this workflow today. Arming that timer is a later, separately approved package.
+name: DATA-S2 External Production Collection via D1 REST
+
+on:
+  workflow_dispatch:
+
+# The workflow-level default is the narrowest scope every job in this file can share. It
+# deliberately excludes `actions: read`: workflow-level permissions are inherited by any job that
+# declares none, so granting the Actions read scope here would silently hand it to the
+# credentialled production job as well. Only the credential-free gate declares it, and only the
+# gate needs it.
+permissions:
+  contents: read
+  checks: read
+
+# Shares the production collection group so an external collection can never run beside a
+# scheduled collection, a manual collection, a resume, a reconciliation read, a migration or a
+# live acceptance read. Nothing in this group may cancel anything else in it.
+concurrency:
+  group: data-s2-production-collection
+  cancel-in-progress: false
+
+jobs:
+  # Credential-free. No protected environment, no Cloudflare secret, no account id, no account
+  # fingerprint variable and no D1 identifier exist anywhere in this job.
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The daily opportunity guard reads this repository's own Actions run and job metadata, so the
+    # gate needs `actions: read`. It is granted on the credential-free job alone.
+    permissions:
+      contents: read
+      checks: read
+      actions: read
+    outputs:
+      dispatched_sha: ${{ steps.identity.outputs.dispatched_sha }}
+    steps:
+      # An external caller carries no owner judgement and supplies no SHA. The immutable candidate
+      # source is therefore the SHA the dispatch event itself carries — the default-branch head at
+      # event creation. It is never replaced by a floating ref, a newer commit or a "latest
+      # successful build", and there is deliberately no input through which a caller could name
+      # one.
+      - name: Validate external dispatch event before checkout
+        env:
+          DISPATCHED_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$DISPATCHED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatched revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Gate exact current main and clean tree
+        id: identity
+        env:
+          DISPATCHED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DISPATCHED_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$DISPATCHED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "dispatched_sha=$DISPATCHED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      # An external dispatch can arrive while the exact-head Verify run for the same commit is
+      # still in progress, exactly as a schedule event can. The gate therefore waits, read-only
+      # and inside the same fixed bound, for that exact head's `Tests and deterministic build`
+      # result, through the identical unchanged module. It never dispatches, re-runs or
+      # re-requests anything, never accepts a success on another commit, and stops on a completed
+      # non-success, an absent check or an exhausted bound.
+      - name: Require exact-head Verify Teamsheet success within a bounded wait
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCHEDULED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node workers/data-platform/scheduled/run-exact-head-verify.mjs
+          test -z "$(git status --porcelain)"
+
+      # DATA-S2 offers exactly one full collection opportunity per UTC day across every routine
+      # collection path. This read-only guard refuses when that opportunity has already been taken
+      # by the scheduled workflow, by an earlier external run or by an attended owner collection,
+      # and it refuses just as firmly when it cannot classify what it read.
+      - name: Require an unconsumed daily collection opportunity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node workers/data-platform/scheduled/run-opportunity-guard.mjs
+          test -z "$(git status --porcelain)"
+
+  collect:
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Declared explicitly rather than inherited, so this job's effective scope is readable here
+    # and cannot widen if the workflow-level default ever changes. It is exactly the scope the
+    # scheduled workflow's credentialled job has: `contents: read` for the checkout and nothing
+    # more than the shared default beside it. It deliberately does NOT include `actions: read` —
+    # this job reads no GitHub Actions metadata, holds no `GH_TOKEN`, and the daily opportunity
+    # guard that does read it runs in the credential-free gate above.
+    permissions:
+      contents: read
+      checks: read
+    # The dedicated unattended daily production boundary, shared with the scheduled workflow. The
+    # attended manual and recovery boundary `data-s2-production-collection` stays human-approved
+    # and is deliberately not reused here.
+    environment:
+      name: data-s2-production-scheduled
+    env:
+      SCHEDULED_SHA: ${{ needs.repository-gate.outputs.dispatched_sha }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+      DATA_S2_SEASON: '2026-27'
+    steps:
+      # GitHub echoes each step's resolved environment in that step's log header, and only
+      # `secrets.*` values are masked automatically. The account fingerprint is a `vars.*` value,
+      # so its mask is registered here — derived from the already-masked account credential —
+      # before any step materialises the variable itself. The production database id is a
+      # reviewed repository constant and is not carried in the environment at all.
+      #
+      # This step also fails closed when the environment supplies no account credential, which is
+      # what an unconfigured or wrongly configured environment looks like from inside the run.
+      - name: Register production identifier masks before any other step
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out gated dispatched revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.dispatched_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      # The repository gate proved remote main before this job existed, but environment admission
+      # and the bounded Verify wait both take time, and main may advance in that window. This step
+      # therefore resolves remote main again, from the remote and not from any value carried out of
+      # the gate job, in the same shell and immediately before the production entry point. No
+      # Cloudflare request is made before it. If main has moved the run stops: a later opportunity
+      # is the next collection chance for the newer revision.
+      #
+      # This one attempt's collection identity is also fixed here, once, from the runner clock and
+      # never from a workflow input or the caller's own clock, so no earlier or later mutable
+      # stage can establish production identity. It is derived before the remote-main recheck so
+      # that recheck stays the last thing to happen before the runner.
+      - name: Reconfirm identity and remote main, then collect Official FPL to D1 REST
+        env:
+          CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          test "$(git rev-parse HEAD)" = "$SCHEDULED_SHA"
+          test -z "$(git status --porcelain)"
+          rm -f node_modules/.bin/wrangler
+          rm -rf node_modules/wrangler node_modules/.wrangler-*
+          COLLECTION_SCHEDULED_AT="$(date -u +%Y-%m-%dT%H:%M:00.000Z)"
+          export COLLECTION_SCHEDULED_AT
+          test -n "$COLLECTION_SCHEDULED_AT"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$SCHEDULED_SHA"
+          node workers/data-platform/run-production-collection.mjs

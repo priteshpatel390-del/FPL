@@ -1,5 +1,51 @@
 # SECURITY.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external scheduler — credential and logging boundary
+
+**The opportunity guard is credential-free and read-only.** It needs GitHub `actions: read` and
+nothing else — granted on the credential-free gate job alone, and kept out of both workflows'
+workflow-level defaults so no credentialled job inherits it, issues REST GETs only, and never
+dispatches a workflow, re-runs a job, re-requests a check, cancels anything or writes to GitHub. It
+holds no Cloudflare credential, no D1 credential and no production D1 identifier, and the only host
+it contacts is `api.github.com`. Its entry point discards the original error object on failure, so
+no request URL, header, token or identifier can reach a workflow log through a runtime message; only
+a closed classification and a closed reason are ever written. Every unreadable or unclassifiable
+response is `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` and stops the run — the guard never fails open.
+
+**The Actions read scope is narrowly placed.** It is granted on the credential-free repository-gate
+job of workflows A and B alone. The credentialled production job keeps exactly the top-level
+`contents: read` / `checks: read` scope it already had, and no workflow gains any write permission.
+
+**Workflow B's credential surface is exactly workflow A's.** The same secrets, the same dedicated
+unattended `data-s2-production-scheduled` environment, the same PR #215 masking order — the account
+fingerprint mask registered by the credentialled job's first step before the variable is
+materialised on the final step — and the same reviewed repository constant for the production
+database id, which reaches no workflow or environment value. Workflow B accepts **zero inputs**, so
+no caller can name a revision, timestamp, season, database, endpoint, SQL or statement.
+
+**The dispatcher Worker names one future secret binding and holds no production identifier.** The
+binding is `GITHUB_DISPATCH_TOKEN` and **it does not exist**; Package A creates no credential. The
+Worker contains no `CLOUDFLARE_ACCOUNT_ID`, no `CLOUDFLARE_D1_TOKEN`, no production D1 database id,
+no account fingerprint, no Official FPL endpoint, no Anthropic key and no Odds key. It holds no D1
+binding and no storage, service or queue binding, and exposes no fetch handler, `workers.dev`
+hostname, preview URL, route or custom domain. Its logs carry **closed enums and bounded
+non-negative integers only** — no URL, header, token, run id, account id or database id.
+
+**Future `Actions: write` blast radius — stated plainly.** A credential that can dispatch workflow B
+must hold `actions: write` on this repository, and such a credential can dispatch and re-run
+repository workflows generally, not only workflow B. It does not exist yet. Creating, scoping and
+storing it is a separate approval in a later package, and nothing in Package A reduces that future
+scope. The mitigations that will still apply are that workflow B accepts no input, that its
+repository-side gates prove current `main` independently of the caller, that the shared production
+concurrency group serializes it, and that the fail-closed opportunity guard refuses a second
+collection in the same day.
+
+**Retention.** GitHub Actions Step Summary and log retention is finite. Exact provider
+`meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not retrievable
+through the GitHub API available here, and are lost when that retention expires. Cloudflare
+dashboard aggregates are account-level time-window figures and are never per-workflow accounting.
+
 <!-- DATA-S2B-READ-BUDGET-REMEDIATION-2026-09-05 -->
 ## DATA-S2B resource telemetry and the committed-run integrity diagnostic
 

@@ -1,7 +1,296 @@
 
+<!-- DATA-S2C-ROLLOUT-DECISION-2026-09-07 -->
+### Current DATA-S2C rollout decision — Cloudflare replaces the GitHub timer, no A+B coexistence
+
+**This block is the canonical current statement of how DATA-S2C is to be rolled out, and it
+supersedes every earlier statement in this file describing a deliberate period in which the GitHub
+scheduled workflow A and the Cloudflare-dispatched workflow B both run automatically.** Those
+statements were accurate at the checkpoints that recorded them and are retained there as history.
+They are no longer current. **A future session must not reconstruct the A+B coexistence rollout from
+them without a new explicit owner approval.**
+
+**The revised owner-approved sequence.** (1) Merge the Package A repository safety foundation.
+(2) **Before** Cloudflare automatic scheduling is activated, disable GitHub's automatic scheduler
+workflow A. (3) Confirm no running or pending workflow A execution remains that could later collect.
+(4) Provision the Cloudflare dispatcher **dormant** — credential, secret binding, Worker deployment,
+zero cron triggers. (5) Prove the dormant dispatcher is harmless. (6) Separately approve Cloudflare
+scheduler activation. (7) Cloudflare becomes the **only** automatic clock. (8) GitHub Actions remains
+the execution engine. (9) The attended manual workflow stays available for owner-approved recovery.
+(10) Observe Cloudflare and prove no more than one production collection per UTC day. (11) Later
+retire the obsolete GitHub scheduled workflow once Cloudflare has demonstrated acceptable operation.
+
+**Why it changed.** Teamsheet is still in development and testing. The DATA-S2 history is valuable
+but is not yet relied on for normal live decision-making in a way that justifies keeping a scheduler
+already known to be unreliable running solely to avoid a temporary collection gap. The previous plan
+spent substantial complexity on *"how do we safely operate two automatic schedulers at once?"* when
+the simpler option was *"disable the scheduler we already know we do not trust before activating its
+replacement."*
+
+**Durable engineering principle, recorded deliberately as more than a scheduler decision:**
+
+> **Prefer removing an unnecessary failure mode over engineering machinery to tolerate it,
+> particularly while Teamsheet remains in development and the affected capability is not yet relied
+> upon for normal live decision-making.**
+
+Before proposing substantial migration or safety machinery, work this checklist: (1) can the problem
+be removed rather than accommodated? (2) does Teamsheet's current maturity justify the complexity?
+(3) what is the simplest reversible solution? (4) which safe related steps can be combined into one
+owner approval? (5) can validation be automated instead of requiring repeated owner or manual
+checking? This is **not** a blanket rule against production hardening — use complexity when the
+product or risk actually requires it, but do not automatically design for zero-downtime migration
+when the current product stage does not need one.
+
+**Owner involvement is exception-based.** Pritesh makes product, risk and approval decisions and
+should not have to shuttle routine technical status between tools when steps can safely be combined
+or automatically verified, so safe related actions are grouped into approval packages. That reduces
+handoffs and **weakens no approval gate**: live production mutation, credentials, deployment,
+scheduler activation, provider/data/model changes and merging each still require explicit owner
+approval.
+
+**The guard is not wasted.** Cloudflare's planned scheduler has three dispatch opportunities a day —
+01:17, 02:17 and 03:17 UTC — and they are retry **availability**, not three collections: 01:17
+collects, then the guard sees the day consumed and refuses at 02:17 and again at 03:17. The guard
+also refuses after an attended manual collection has consumed the day. Package A's guard, attempt
+semantics, pagination and fail-closed behaviour therefore all stand; only the assumption that they
+must support a deliberate long-running A+B overlap experiment is superseded.
+
+**Capability versus rollout — do not conflate them.** *Capability:* the repository safely supports
+guarded workflow A and guarded workflow B, and that implementation is unchanged and is not rewritten
+because the rollout changed. *Intended rollout:* workflow A is disabled before Cloudflare activation,
+so deliberate automatic A+B coexistence is no longer part of acceptance.
+
+**FACT: workflow A is not disabled.** Workflow `350014371` reports `state: active` as live external
+state. Disabling it is a separate explicitly owner-approved live action, and no documentation change
+alters it.
+
+**Accepted temporary history gap.** A DATA-S2 history gap may occur between disabling GitHub
+scheduling and successfully activating Cloudflare, and that is an accepted development-stage
+trade-off. Observations lost to a gap are **not** claimed to be reconstructible — the next collection
+captures then-current Official FPL state, and intermediate changes may be unavailable. **No gap has
+occurred**, and none may be reported unless it actually has.
+
+**Nothing in this decision was executed.** No workflow was enabled, disabled or dispatched, no
+credential or Cloudflare secret was created, no Worker was deployed, no Cron Trigger was created,
+changed or removed, no D1 request was performed and no collection was run. See [DATA-S2C external
+scheduler](workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md) §0.
+
 <!-- DECISION-INTELLIGENCE-DI4-2026-08-29 -->
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
+### Current scheduler state — workflow A is enabled and produced a successful natural run
+
+**This block is the canonical current statement of GitHub scheduler state, and it supersedes every
+earlier statement in this file that the scheduled production workflow is owner-disabled or must
+remain disabled.** Those statements were accurate at the checkpoints that recorded them and are
+retained there as history. They are no longer current.
+
+**Independently verified here from the GitHub Actions API.** Workflow `DATA-S2 Scheduled Production
+Collection via D1 REST`, id `350014371`, path `.github/workflows/data-s2-production-scheduled.yml`,
+reports `state: active` — it is **not** disabled. It produced natural scheduled run
+`34015422874`: run number 3, event `schedule`, attempt 1, head branch `main`, head SHA
+`b0637270882f0ab120102dbb04a8eb2eef6a763f`, created `2026-09-06T06:01:26Z`, conclusion **success**,
+with both jobs succeeding — `repository-gate` (job `101438220728`) and `collect` (job
+`101438250715`), every step of both concluding `success`. The run completed at
+`2026-09-06T06:01:59Z`, about 33 seconds after it was created.
+
+**The owner re-enabled workflow A after the capacity live-acceptance closeout**, and this run is the
+first natural scheduled run produced after that re-enable.
+
+**It arrived 4h44m26s late.** The nominal cron minute is 01:17 UTC and GitHub created the run object
+at 06:01:26Z. That is schedule-event **delivery** lateness upstream of the workflow, never a
+collection delay: once the run existed the whole collection finished in about 33 seconds. GitHub
+exposes no scheduler-registration, armed or next-run state, and documents that schedule events may
+be delayed or dropped, so the lateness has **no proven cause** and none is invented.
+
+**Owner-provided Step Summary evidence for that run, recorded with its provenance.** The Step
+Summary is not retrievable through the GitHub API available here, so the following values are
+**owner-provided and were not independently verified**: `result: changed`,
+`mutation: definite_completed`, 70 changed observations, 10,157 records seen; committed state
+`completed` with 70 run observations, 11,348 observations, 10,157 heads equal to 10,157 logical
+keys, and zero orphan heads, quarantined and rejected; population H 11,278, N 10,157, structural
+93,999, projected provider rows 121,103 classified `expected`, mutation reads 635, amplification
+1.35, reserve 2,000; provider accounting 6 API calls, 113,279 rows read, 494 rows written, 106,483
+request bytes, `readClassification: expected`. The projection over-predicted the actual read by
+7,824 rows, about 6.91% above actual; actual utilisation of the 250,000 hard ceiling was about
+45.31%, leaving 136,721 of headroom. Run identity, timing and conclusion above are independently
+verifiable from GitHub; these Step Summary values are owner evidence. Both are valid to record, and
+the distinction is stated rather than blurred.
+
+**Current operational conclusion.** GitHub cron is **active enough to produce natural runs, but
+materially late and unreliable as a timer**. Three natural runs have now been delivered
+approximately 3h21m, 4h31m and 4h44m after their nominal minutes, and two earlier acceptance windows
+produced no run at all. That is exactly the problem DATA-S2C exists to address, and it does not
+change the collection engine, the cron cadence `17 1 * * *`, or any resource threshold.
+
+**Nothing in this block was executed.** Reading the GitHub Actions API to verify the run is a
+read-only GitHub query. No workflow was dispatched, enabled or disabled, no Cloudflare request, D1
+read or mutation, collection, migration, deployment, cron, environment or credential change was
+performed.
+
+### Current DATA-S2C checkpoint — external scheduler repository foundation (Package A)
+
+**Repository implementation only. Nothing in DATA-S2C is live.** No GitHub personal access token or
+App was created, no Cloudflare secret was created, no Worker was deployed, no Cloudflare Cron
+Trigger was created, changed or removed, no workflow was dispatched, no D1 request was performed and
+no Official FPL collection was run. The existing GitHub cron remains `17 1 * * *`, unchanged.
+
+**Why it exists.** GitHub schedule delivery is best-effort and has been measured loose: the
+4 September 2026 natural run `33901634593` was created approximately **3h21m** after its nominal
+minute, the 5 September run `33948145320` approximately **4h31m**, and the two earlier acceptance
+windows `17 10 * * *` and `30 11 * * *` produced **zero** scheduled runs. GitHub documents that
+schedule events may be delayed or dropped and exposes no scheduler-registration, armed or next-run
+state, so **none of that has a proven cause**. The collection itself is not the problem — the
+accepted run finished in about 43 seconds once its run object existed. DATA-S2C therefore adds a
+**separate independent way to ask** for the day's collection — an isolated Cloudflare timer Worker
+dispatching a GitHub Actions workflow. *(Superseded detail, retained as history: this originally read
+"while leaving the GitHub cron in place". Under the 7 September 2026 rollout decision at the top of
+this file, GitHub's automatic scheduler is disabled **before** Cloudflare activation, so Cloudflare
+becomes the only automatic clock rather than a second one beside GitHub.)* The collection
+engine does not change: it remains the GitHub Actions runner invoking the unchanged
+`workers/data-platform/run-production-collection.mjs`, and historical Cloudflare Worker collection
+stays superseded and forbidden.
+
+**Package A adds five things.** (1) A pure, deterministic, fail-closed **daily opportunity guard**
+over GitHub Actions run and job metadata, plus its credential-free entry point. (2) That guard
+**wired into the existing scheduled workflow's** credential-free repository gate, which gains a
+job-level `actions: read`. Because a job that declares no `permissions:` block inherits the
+workflow-level one, the Actions scope is kept out of both workflows' workflow-level defaults, and
+each credentialled `collect` job's **effective** scope is `contents: read` and `checks: read` only —
+workflow A's by inheritance, workflow B's declared explicitly on the job.
+(3) A new **external receiving workflow** `data-s2-production-external.yml`, `workflow_dispatch`
+with **zero inputs**, reproducing the scheduled trust boundary exactly — event, ref and repository
+assertions, a 40-character event SHA, exact checkout, `HEAD` equality, a fresh remote-`main` proof,
+a clean tree, the **unchanged** bounded exact-head Verify module, the guard, the dedicated
+unattended `data-s2-production-scheduled` environment, the existing masking order, exact Node
+24.19.0, Wrangler removal and a second remote-main check in the same shell before the runner. There
+is **no caller-supplied SHA input**: the caller sends `ref: main` and nothing else. (4) A new
+**isolated Cloudflare dispatcher Worker** at `workers/schedule-dispatcher/` under the dedicated
+identity **`teamsheet-data-s2-dispatcher`**, which must not reuse `teamsheet-data-platform`. (5)
+This documentation.
+
+**The guard governs routine collection only** — the scheduled, external and attended manual
+workflows, each carrying a credentialled job literally named `collect`. Resume, migration,
+reconciliation, EXPLAIN and integrity workflows are **deliberately excluded**; they keep their own
+owner-input and approval gates and the shared concurrency group, and counting them would let a
+read-only integrity check silently cancel a day's collection. A run consumes the day only through
+**attempt 1's** `collect` execution: that execution must exist with any conclusion **other than
+`skipped`** and must have **started** in the current UTC day **or** within the **trailing six
+hours**; that trailing rule closes the UTC-midnight duplicate hole a late 23:58 start plus a
+punctual 00:03 start would otherwise open. A `skipped` collect job — exactly what a refused gate
+produces — does not consume; a queued or running attempt-1 one does. The jobs listing is read with
+**`filter=all`**, never `filter=latest`, **not because later attempts can consume but so that they
+can never hide attempt 1's evidence**: a re-run whose newest attempt skips `collect` must never
+erase the earlier attempt that collected. The window is dated by the `collect` job's own
+`started_at` rather than the run's `created_at`, so a run that waited hours before collecting is
+dated by the collection.
+
+**Only attempt 1 can consume the day**, and that is a repository fact rather than a provider one:
+the shared production entry point throws `workflow_retry_forbidden` on every attempt after the
+first, **before** it resolves the production identity and **before** it reaches the collector, so a
+re-run cannot fetch Official FPL, reach D1 or mutate production. A permanent structural regression
+pins that refusal's exact literal and its position ahead of every identity call, the collector and
+any network use in `workers/data-platform/run-production-collection.mjs`, which is **not modified**.
+`filter=all` stays load-bearing so a later attempt can never hide attempt 1's evidence; a later
+attempt is simply never evidence of a collection itself, and a later attempt reporting a
+**successful** `collect` contradicts that invariant outright and fails closed as
+`guard_rerun_contract_violated`.
+
+**Candidate discovery is a separate, wider window**: the Actions API can only filter a run listing by
+`created_at`, so discovery reaches back **35 days** — GitHub's documented workflow-run time limit,
+which explicitly includes execution, waiting and approval, and is therefore the whole horizon an
+original attempt's `collect` can sit inside. GitHub's 30-day re-run eligibility is **deliberately
+excluded**, because re-run eligibility would only matter if a re-run could consume the day and the
+pinned entry-point refusal means none can; the superseded chained 65-day derivation is withdrawn.
+The classifier still decides on `collect.started_at` alone. Discovery may return runs that cannot
+consume; it never omits one that could. No run-level field prunes candidates, because none has
+documented semantics strong enough to prove exclusion. A
+non-skipped `collect` whose start instant is missing, unparseable, or contradicted by its own run or
+the clock is ambiguous, and one page of 100 job executions is the whole bounded read for jobs — a
+listing the provider counts higher than it returned is truncated and fails closed. GitHub permits 50
+re-runs **in addition to** the original attempt, so a fully exhausted run carries 51 attempts and, at
+two governed jobs each, 102 job executions — more than one page returns. That one-page read therefore
+deliberately fails closed if that pathological history is ever reached, rather than assuming a page
+covers every permitted history.
+
+**The candidate listing is paginated and the read bound is 200.** Workflow B gains three dispatch
+opportunities a day under Package C, so a 35-day horizon holds about 35 workflow A runs and about
+105 workflow B runs — roughly 140 candidates — which one 100-row page cannot carry and the former
+twelve-read bound could not inspect. Candidate listings are now a fixed, non-recursive sequence of
+explicitly numbered `page=N` reads at `per_page=100`, capped at ten pages, reconciled against the
+provider's own `total_count`: ordering is never relied on, and a short or over-full page, a
+`total_count` that changes between pages, a run repeated across pages or a missing page is
+`guard_read_failed`. `OPPORTUNITY_GUARD_MAX_READS` is **200**, a hard cap counting every GitHub
+request — each listing page and each job listing. The 35 A + 105 B footprint costs about 146
+requests, leaving roughly 54 for attended workflow C runs and variance; that is a budget, **not** a
+proof that 200 covers every pathological history, and a cycle needing a 201st request refuses with
+`guard_read_bound_exhausted` without issuing it. That population was sized for the superseded
+coexistence rollout and is **deliberately kept as a conservative assumption**: with workflow A
+disabled the real steady state is smaller, and no constant changes. Under the current rollout the
+intended steady state is **three automatic guard invocations in a UTC day** — workflow B's 01:17,
+02:17 and 03:17 UTC opportunities — with **four** as the upper bound that holds only while workflow A
+remains armed, as it does today; each is separately bounded at 200. The earlier "two automatic
+invocations per day" wording is superseded, and no unused GitHub rate-limit headroom is claimed:
+token and API limits remain an external dependency to observe in live Stage C/D.
+The attended manual workflow is **not** guarded, but does consume the day for both automatic paths.
+Every malformed, partial, truncated or unreadable response is
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. **The guard never fails open.**
+
+**The dispatcher is a timer, not a collector.** It imports nothing outside its own directory, holds
+no D1 binding and no Cloudflare data credential, reads and writes no D1, and exposes no fetch
+handler, `workers.dev` hostname, preview URL, route or custom domain. Its Package A Wrangler config
+declares `"triggers": { "crons": [] }` **explicitly rather than omitting it**, because Cloudflare
+treats triggers as a total assignment — an explicit empty array removes triggers from this identity
+while omitting the block leaves whatever exists in place. **Package A arms nothing.**
+`controller.noRetry()` runs before any dispatch attempt, exactly one dispatch request is issued per
+fire, and neither an `AMBIGUOUS` nor a `REJECTED` outcome is ever retried in the same fire; only
+401, 403, 404 and 422 are `REJECTED`, and 5xx, 429, any 3xx, transport failures, timeouts, malformed
+200 bodies and every unrecognised status are `AMBIGUOUS`. It names exactly one future secret
+binding, `GITHUB_DISPATCH_TOKEN`, **which does not exist**, and its logs carry closed enums and
+bounded integers only. The historical `teamsheet-data-platform` Worker — still declaring a
+thirty-minute cron and a D1 binding, still exposing a scheduled collector — is left **byte-unchanged**
+with its SHA-256 pinned by test.
+
+**Concurrency is unchanged and the limitation is stated honestly.** All eight members of the
+`data-s2-production-collection` group, the new workflow included, stay `cancel-in-progress: false`
+with **no `queue:` key**, and a permanent test pins that membership. `cancel-in-progress: false`
+protects a **running** workflow, not a **pending** one: a newly queued workflow can replace an
+existing pending workflow in that group. `queue: max` is deliberately not implemented, and no future
+Cloudflare dispatch window may be claimed to bound this exposure while the scheduled workflow
+remains armed.
+
+**Live evidence for run `34015422874`, with its provenance split.** Its identity, timing and
+conclusion were **independently verified** here from the GitHub Actions API and are recorded in
+"Current scheduler state" above. Its Step Summary detail — 70 changes, 10,157 `recordsSeen`, 11,348
+observations, 10,157 heads, zero orphan, quarantined and rejected, projected 121,103, actual
+113,279, writes 494, 6 API calls, 106,483 request bytes — is **owner-supplied and not independently
+verified**, because the Step Summary is not retrievable through the GitHub API available here.
+Nothing in Package A read, dispatched or influenced that run. It **supports but does not calibrate**
+the capacity model: 1.35 and 2,000 are unchanged and still INFERRED, and 264, 141 and 70 are three
+samples, not a distribution.
+
+**Nothing else moved.** No collector semantics, no threshold (150,000 / 200,000 / 250,000 reads,
+40,000 writes, 8 API calls, 4,000 routine changed observations, 8 MiB per Official response all
+stand), no projection factor, no SQL, no schema, index or migration — still exactly 0001–0003 and
+five indexes, with **no migration 0004** — no provider, model, fixture, captaincy, squad, transfer,
+rank or Mini-League logic, no product or UI code, no build input, and no generated deployable needed
+regeneration.
+
+**Merging does not activate DATA-S2C.** Its one behavioural effect is that future natural runs of
+the existing scheduled workflow will execute the new fail-closed guard, which is approved. Whether
+GitHub has that scheduled workflow enabled is owner-side state this repository cannot change, and
+Package A changes nothing about it. It **is** readable through the GitHub Actions API, and was read
+for this checkpoint: workflow `350014371` reports `state: active` and produced successful natural
+run `34015422874` on 6 September 2026, so the guard's first live effect will be on genuine natural
+runs. The earlier record of it being owner-disabled after run `33948145320` is historical.
+
+Next gates, each separate, under the revised rollout at the top of this file: owner review and
+merge; exact-`main` Verify; then the owner-approved disable of GitHub scheduler workflow A; then the
+dormant Cloudflare provisioning package (credential, secret, deployment, `"crons": []`); then the
+change from `"crons": []` to the approved 01:17 / 02:17 / 03:17 UTC entries; then observation of
+Cloudflare as the sole automatic scheduler; then eventual retirement of the obsolete GitHub
+scheduled workflow. See [DATA-S2C external
+scheduler](workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md).
+
 ### Current DATA-S2B checkpoint — capacity restoration live acceptance PASS
 
 **FACT: the first attended production collection under the restored envelope succeeded.** Workflow
@@ -48,6 +337,11 @@ capacity-restoration incident.
 append-only history and changed-observation counts now have two samples (264 and 141), not a
 distribution. Not exact future provider billing. Not GitHub schedule reliability. Not that 1.35 and
 2,000 are optimal. Not that no later optimisation will be needed.
+
+> **Superseded on 6 September 2026.** The scheduled workflow `350014371` has since been
+> re-enabled by the owner and reports `state: active`; it produced successful natural run
+> `34015422874`. The statement below was accurate at this checkpoint and is retained as history.
+> See "Current scheduler state" at the top of this file.
 
 **Scheduler unchanged and still gated.** The permanent cron stays `17 1 * * *` and the scheduled
 workflow `350014371` was verified through the GitHub Actions API as still **`disabled_manually`**.
@@ -115,7 +409,8 @@ and `rowsReadHard` explicitly.
 0001–0003, five indexes, **no migration 0004**), no index, no schema, no data semantics, no
 postflight weakening. `PROVIDER_READ_AMPLIFICATION = 1.35`, `PROVIDER_READ_SAFETY_RESERVE = 2000`,
 the mutation-read and write estimators, the 40,000 write ceiling, the 8-call API ceiling and the
-`17 1 * * *` cron are all unchanged, and the scheduled workflow remains **owner-disabled**.
+`17 1 * * *` cron are all unchanged, and the scheduled workflow remains **owner-disabled**
+*(historical: the owner has since re-enabled it — see "Current scheduler state" above)*.
 
 **Nothing was executed.** No Cloudflare request, D1 read, D1 mutation, workflow dispatch, Stage 0
 re-run, collection, migration, deployment, cron, schedule, environment or credential change was
@@ -130,7 +425,9 @@ measurement. GitHub schedule-delivery lateness remains a separate matter.
 Next gates, each separate: **(1)** owner review and merge; **(2)** exact-`main` Verify; **(3)** a
 separate owner approval for exactly **one** attended manual production collection while the
 scheduler stays disabled, whose per-call telemetry replaces the inferred factors with measured
-ones. Scheduler re-enable and any schema change remain later, separate gates. See
+ones. Scheduler re-enable and any schema change remain later, separate gates. *(All three gates are
+closed: the collection ran as `33990959542`, and the scheduler has since been re-enabled — see
+"Current scheduler state" above.)* See
 [capacity envelope restoration](workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).
 
 ### Current DATA-S2B checkpoint — read-budget remediation P2+ (repository only)
@@ -158,7 +455,10 @@ and returned**, its `meta.rows_read` was added to cumulative provider accounting
 then threw — so `validateProductionPostflight()` was never reached. **The postflight read ran;
 postflight validation did not.** The commit is `definite_completed` and **the state that run left in
 production D1 is therefore unproven — which is not evidence that it is invalid or corrupt.** The owner then disabled the scheduled
-workflow; GitHub reports it `disabled_manually` and it **must remain disabled**.
+workflow; GitHub reported it `disabled_manually` and, **at that checkpoint**, it had to remain
+disabled. *(Historical. That hold was lifted after the capacity live acceptance passed: workflow
+`350014371` now reports `state: active` and produced successful natural run `34015422874` — see
+"Current scheduler state" at the top of this file.)*
 
 **The read model is proven defective.** The preceding successful run `33901634593` measured
 **124,430** actual `rowsRead` against a **94,844** structural estimate — a delta of 29,586, about

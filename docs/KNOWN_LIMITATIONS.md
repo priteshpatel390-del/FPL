@@ -1,5 +1,128 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external scheduler — Package A limitations
+
+**Package A is repository foundation only, and nothing in DATA-S2C is live.** No GitHub token or
+App, no Cloudflare secret, no Worker deployment, no Cloudflare Cron Trigger, no workflow dispatch,
+no D1 request and no collection was performed. The existing GitHub cron remains `17 1 * * *`. Its
+tests prove repository behaviour and nothing about live GitHub, live Cloudflare or a live
+collection.
+
+**Pending-run replacement, stated accurately.** `cancel-in-progress: false` protects a run that is
+already **running**. It does **not** protect a run that is still **pending**: a newly queued
+workflow can replace an existing pending workflow in the same concurrency group. That applies to a
+pending scheduled collection, manual collection, resume, migration, reconciliation, EXPLAIN
+acceptance, integrity check and the new external workflow alike. `queue: max` is deliberately not
+implemented in Package A. It must **not** be claimed that a future 01:17–03:17 Cloudflare dispatch
+window fully bounds this exposure while workflow A remains armed, because workflow A has already
+arrived hours outside its nominal minute.
+
+**Cloudflare Cron punctuality is not guaranteed either.** Cloudflare documents Cron Triggers as
+best-effort. DATA-S2C adds a separate independent way to ask for a collection; it does not add a
+punctuality guarantee, and none may be claimed from it. The GitHub schedule-delivery lateness that
+motivated DATA-S2C — approximately 3h21m on 4 September 2026 and approximately 4h31m on 5 September
+2026, with two earlier acceptance windows producing zero runs — still has **no proven cause**, and
+GitHub exposes no scheduler-registration, armed or next-run state through which to find one.
+
+**The exact HTTP 200 dispatch body shape is unproven.** The `return_run_details` request is the
+approved design and has never been exercised live. A 204 answer is `ACCEPTED_NO_IDENTITY` and is
+handled; a 200 with any other shape is `AMBIGUOUS` and is handled. Both directions fail safe, but
+neither has live evidence, and on `ACCEPTED_NO_IDENTITY` the run-creation latency measurement is
+structurally unavailable and stays unavailable rather than being reported as zero. That measurement
+is taken from the instant the dispatch request started, which is client-observable; GitHub's own
+internal acceptance instant is not observable from the dispatcher and is never estimated.
+
+**A future `Actions: write` credential carries real blast radius.** A token able to dispatch the
+external workflow can dispatch and re-run repository workflows generally, not only that workflow. It
+does not exist yet, its creation and scoping is a separate approval in a later package, and nothing
+in Package A reduces that future scope.
+
+**Candidate discovery is a 35-day lookback, and it is not free.** The Actions API can only filter a
+run listing by the run's `created_at`, so discovery reaches back GitHub's documented 35-day
+workflow-run time limit — which includes execution duration, waiting and approval — to guarantee it
+never omits a run whose original attempt's `collect` could have started inside the consumption
+window. GitHub's 30-day re-run eligibility is excluded because no re-run can consume the day; the
+superseded 65-day chained derivation is withdrawn. No run-level timestamp prunes that set, because
+none has documented semantics strong enough to prove exclusion, so every candidate costs one job
+listing.
+
+**The 200-request bound is a budget, not a proof (`S2C-8`, revised).** `OPPORTUNITY_GUARD_MAX_READS`
+is a hard cap of 200 counting every GitHub request — each candidate-listing page and each job
+listing. It is sized for the overlap steady state of roughly 35 workflow A runs and 105 workflow B
+runs across the 35-day horizon, about 146 requests, leaving roughly 54 for attended workflow C runs
+and variance. It is **not** a proof that 200 covers every possible history: a repository with a
+pathological accumulation of governed runs still exceeds it, and exceeding it refuses the collection
+as `guard_read_bound_exhausted` rather than admitting an unexamined candidate. Nothing here has run
+live, so the footprint is arithmetic over the approved cadence rather than a measurement.
+
+**A candidate listing read across pages is a read of live, changing state.** Pagination reconciles
+`total_count` across pages, requires the accumulated rows to match it exactly and rejects a repeated
+run id, but a filtered set that shifts between page reads — a run created or ageing out mid-sequence
+— can produce exactly those inconsistencies. The guard then refuses that invocation as
+`guard_read_failed`. That is fail-closed and correct, and it means a busy repository can lose an
+automatic collection opportunity to a benign race rather than to a real conflict.
+
+**Three automatic guard invocations a day are intended; four is the bounded case.** Under the
+7 September 2026 rollout the GitHub scheduler workflow A is disabled before Cloudflare activation, so
+the intended steady state is workflow B's three Package C opportunities alone. Four — workflow A once
+plus those three — is the upper bound, and it holds only while workflow A remains armed, as it does
+today. Each invocation is separately bounded at 200 requests. The earlier "two
+automatic invocations per day" statement is superseded. No claim is made that 200 × 4 requests will
+occur: the fires are separated by schedule time and normal paths short-circuit far below the cap.
+Equally, no unused GitHub rate-limit headroom is claimed — token and API limits remain an external
+dependency to observe in live Stage C/D.
+
+**The attempt-1-only rule rests on a repository invariant that tests pin but cannot enforce.** A
+re-run is harmless only because `workers/data-platform/run-production-collection.mjs` refuses every
+attempt after the first before any production work. A permanent structural regression pins that
+literal and its source position; if the entry point were ever changed so the refusal moved after
+identity resolution or the collector, that test fails, but until it is run the guard's 35-day
+horizon and its attempt-1 semantics both depend on the invariant holding.
+
+**The guard reads every attempt and dates collections by job execution.** The jobs listing uses
+`filter=all` — again, only so a re-run whose newest attempt skips `collect` cannot hide the earlier
+attempt that collected, never because a later attempt can consume the day — and the daily window is
+judged on attempt 1's `collect` job's own `started_at` rather than the
+run's `created_at`. The cost of that precision is a new fail-closed path: a non-skipped `collect`
+with a missing, unparseable or self-contradictory start instant, an unrecognised job status, a
+missing attempt number, or a jobs page the provider counts higher than it returned, all stop the run
+as `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` rather than proceeding. The read stays one bounded page of
+100 job executions with no pagination, which covers every realistic history but not every permitted
+one: 50 re-runs beside the original attempt is 51 attempts and 102 executions, and that pathological
+case fails closed as truncated rather than being paged through.
+
+**The guard sees only what the Actions API shows it.** It classifies run and job metadata for the
+three governed routine collection workflows. It cannot see a collection performed by some path
+outside those workflows, and no such path is approved.
+
+**Finite Actions retention.** GitHub Actions Step Summary and log retention is finite. Exact
+provider `meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not
+retrievable through the GitHub API available here, and are lost when that retention expires.
+Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow
+accounting.
+
+**Owner-side scheduler state is not repository state.** The repository declares `17 1 * * *` and
+Package A does not change it. Whether GitHub has the scheduled workflow enabled is owner-side
+configuration this repository cannot assert or change from its own contents, and Package A changes
+nothing about it — but it **is** readable through the GitHub Actions API. Read on 6 September 2026,
+workflow `350014371` reports `state: active`, and it produced successful natural run `34015422874`.
+The earlier record of it being owner-disabled after run `33948145320` is historical.
+
+**Run `34015422874` supports but does not calibrate the capacity model.** Its identity, timing and
+conclusion are independently verifiable from GitHub and were verified. The Step Summary figures —
+70 changes, 10,157 `recordsSeen`, 11,348 observations, 10,157 heads, zero orphan, quarantined and
+rejected, projected 121,103, actual 113,279, writes 494, 6 API calls, 106,483 request bytes — are
+owner-supplied: the Step Summary is not retrievable through the GitHub API available here, so they
+were not independently verified and no action was taken to obtain them.
+`PROVIDER_READ_AMPLIFICATION` stays 1.35 and `PROVIDER_READ_SAFETY_RESERVE` stays 2,000, both
+unchanged and still INFERRED. Three changed-observation counts — 264, 141 and 70 — are three
+samples, not a distribution, and no season-long capacity claim follows.
+
+**No device testing** was performed or is required: this is a repository-only backend and workflow
+checkpoint.
+
+
 <!-- DATA-S2B-CAPACITY-ENVELOPE-RESTORATION-2026-09-05 -->
 ## DATA-S2B capacity envelope — restored, and what it does not prove
 
@@ -80,8 +203,9 @@ day, and is not claimed here.
 **No mechanism exists to read the remaining daily Cloudflare D1 allowance**, and none was added.
 Real-time remaining allowance cannot be proven from this repository.
 
-**The scheduled production workflow is owner-disabled.** Its disabled state is GitHub-side
-configuration that this repository cannot assert, change or detect from its own contents.
+**The scheduled production workflow's enabled state is GitHub-side configuration** that this
+repository cannot assert or change from its own contents. It was owner-disabled at this checkpoint;
+it has since been re-enabled and reports `state: active`.
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2 scheduled production collection limitations
@@ -275,6 +399,15 @@ Several open rows below — including `ODDS-2`, `UST-1`, `BT-2`, `SCOR-3`, `SIM-
 
 | ID | Description | Current impact | Planned stage | Status |
 |---|---|---|---|---|
+| S2C-1 | A newly queued workflow can replace an existing PENDING workflow in the shared `data-s2-production-collection` concurrency group | `cancel-in-progress: false` protects a running workflow, not a pending one. A pending scheduled collection, manual collection, resume, migration, reconciliation, EXPLAIN acceptance, integrity check or external collection can be replaced by a newer queue entry in the same group. `queue: max` is deliberately not implemented in DATA-S2C Package A, and no future Cloudflare dispatch window may be claimed to bound this while the scheduled workflow remains armed. The exposure narrows once GitHub scheduler workflow A is disabled before Cloudflare activation, because one fewer automatic path queues into the group — but it does not close, since Cloudflare's three daily opportunities, the attended workflow and the non-routine workflows all still share it | DATA-S2C, later package | Open (accepted) |
+| S2C-2 | Cloudflare Cron Triggers are documented best-effort, exactly as GitHub schedule delivery is | DATA-S2C replaces the automatic asker rather than guaranteeing punctuality, and under the 7 September 2026 rollout Cloudflare becomes the sole automatic clock, so its own best-effort delivery is not backstopped by the GitHub cron. The three daily opportunities are retry availability, and the attended workflow remains the owner-approved recovery path. The GitHub lateness that motivated it — approximately 3h21m and 4h31m on consecutive days, plus two acceptance windows that produced zero runs — has no proven cause and GitHub exposes no scheduler state through which to find one | DATA-S2C live acceptance | Open (evidence gate) |
+| S2C-3 | The exact HTTP 200 `workflow_dispatch` response body shape is unproven | The `return_run_details` request is the approved design and has never been exercised live. A 204 is classified `ACCEPTED_NO_IDENTITY` and a 200 of any unexpected shape is classified `AMBIGUOUS`, so both directions fail safe; on `ACCEPTED_NO_IDENTITY` the run-creation latency measurement is structurally unavailable and stays unavailable rather than zero | DATA-S2C live acceptance | Open (evidence gate) |
+| S2C-4 | A future GitHub credential able to dispatch the external workflow must hold `actions: write` on the whole repository | Such a token can dispatch and re-run repository workflows generally, not only the external collection workflow. It does not exist; Package A creates no credential, and its creation and scoping is a separate later approval. The standing mitigations are that the external workflow accepts zero inputs, that its repository-side gates prove current `main` independently of the caller, that the shared concurrency group serializes it, and that the fail-closed opportunity guard refuses a second collection in the same UTC day | DATA-S2C credential package | Open (accepted) |
+| S2C-5 | The daily opportunity guard sees only what the GitHub Actions API shows it | It classifies run and job metadata for the three governed routine collection workflows, reading every attempt of each run — attempt 1 alone can consume the day, and later attempts are read only so they cannot hide attempt 1's evidence — and dating each collection by that `collect` job's own `started_at`. It cannot observe a collection performed by a path outside those workflows, and no such path is approved. Every malformed, partial, truncated or unreadable response fails closed as `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, as does a non-skipped `collect` whose start instant cannot be established or contradicts its own run | DATA-S2C | Open (accepted) |
+| S2C-8 | The 200-request guard bound is a budget for the approved cadence, not a proof against every history (sizing retained conservatively; the intended post-rollout population is smaller) | Discovery reaches back 35 days (GitHub's documented workflow-run time limit); the 30-day re-run eligibility is excluded because the production entry point refuses every attempt after the first before any production work, so no re-run can consume the day. No documented run-level field can safely prune the candidate set, so every candidate costs one job listing. Candidate listings are read as a bounded, explicitly numbered page sequence at `per_page=100`, capped at ten pages and reconciled against the provider's `total_count`. `OPPORTUNITY_GUARD_MAX_READS` is a hard cap of 200 counting every request of either kind, sized conservatively for about 35 workflow A runs plus 105 workflow B runs — roughly 146 requests, leaving about 54 spare. That population was sized under the superseded coexistence rollout; with workflow A disabled before Cloudflare activation the intended steady state is smaller, and the larger sizing and the 200 bound are deliberately kept unchanged so the budget stays correct while A is still armed and through the transition. A pathological history still exceeds it and still refuses as `guard_read_bound_exhausted` without issuing the 201st request. Nothing has run live, so the footprint is arithmetic over the approved cadence, not a measurement | DATA-S2C, re-measure against real Actions metadata in live Stage C/D | **Open (bounded, fail-closed)** |
+| S2C-7 | The guard reads one bounded page of 100 job executions per run and never paginates | With `filter=all` a run's executions accumulate across attempts. GitHub permits 50 re-runs **in addition to** the original attempt, so a fully exhausted run carries 51 attempts and, at two governed jobs each, 102 executions — two more than one page returns. One 100-row page therefore cannot be claimed to cover every permitted history. It is bounded instead by fail-closed truncation: a listing whose provider `total_count` exceeds the rows returned stops the day as `AMBIGUOUS_REQUIRES_OWNER_ATTENTION` rather than being paged through or inferred. Reaching it requires a single run exhausting essentially the entire allowed re-run history | DATA-S2C | Open (accepted) |
+| S2C-9 | A temporary DATA-S2 history gap may occur during the scheduler replacement | Under the 7 September 2026 rollout, GitHub scheduler workflow A is disabled before Cloudflare automatic scheduling is activated, so no automatic collection occurs between those two steps. This is an accepted development-stage trade-off: Teamsheet remains in development and testing, the replacement is intended to be short and controlled, and the attended manual workflow remains available for owner-approved recovery. Observations lost to a gap are **not** claimed to be reconstructible — the next collection captures then-current Official FPL state, and intermediate changes may simply be unavailable. **No gap has occurred**, and none may be reported unless it actually has | DATA-S2C rollout | Open (accepted) |
+| S2C-6 | GitHub Actions Step Summary and log retention is finite | Exact provider `meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not retrievable through the GitHub API available here, and are lost when retention expires. Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow accounting | DATA-S2C, later telemetry decision | Open (accepted) |
 | GW1R-1 | The pre-first-deadline Transfers guard resolves the deadline against the device clock | A device clock set far enough in the past could in principle hold the guard open past the real deadline. The guard additionally requires `nextGW` 1, no current Gameweek and no finished Gameweek, so this would also need a simultaneously stale Official FPL payload; every missing or unparseable deadline falls back to normal weekly behaviour rather than claiming unlimited changes. The existing deadline countdown and Stage 10 timing surfaces share the same clock dependency | GW1 readiness safety guard | Open (accepted) |
 | GW1R-2 | The guard window is evaluated when Transfers renders, not on a timer | A session left open across the deadline instant keeps showing the guarded screen until the next render, exactly as the existing countdown chip does not tick. The first route change, assumption edit or verified refresh re-evaluates it, and a `teamsheet:data-rendered` refresh on app resume starts the normal calculation, so returning to the app after the deadline recovers without user action | GW1 readiness safety guard | Open (accepted) |
 | GW1R-3 | The guard's after-deadline transition has automated evidence only | The guarded pre-deadline screen was physically accepted on iPhone Safari, but the transition back to normal weekly behaviour cannot be physically tested before the real first deadline. No approved non-production deadline-override mechanism exists and none was invented | First real Official FPL deadline | Open (evidence gate) |

@@ -20,8 +20,10 @@
 Repository implementation only. Nothing in this package was executed against Cloudflare. No D1
 request, no workflow dispatch, no production collection, no migration, no deployment, no Cron or
 schedule change, no environment change and no credential change was performed while preparing it.
-The scheduled production workflow remains **owner-disabled** and this package does not re-enable
-it.
+The scheduled production workflow remained **owner-disabled** at this checkpoint and this package
+does not re-enable it. *(Historical, superseded on 6 September 2026: the owner has since re-enabled
+it — workflow `350014371` reports `state: active` and produced successful natural run
+`34015422874`.)*
 
 ## The incident
 
@@ -64,7 +66,9 @@ the state that run left in production D1 has never been validated against the pr
 contract. That is an absence of proof, **not** evidence that the state is invalid or corrupt. That
 unproven state is what Stage 0 exists to resolve, and it is not resolved by this package.
 
-The owner disabled the scheduled workflow after that failure. It remains disabled.
+The owner disabled the scheduled workflow after that failure. It remained disabled at this
+checkpoint. *(Historical, superseded on 6 September 2026: the owner has since re-enabled it — workflow
+`350014371` reports `state: active` and produced successful natural run `34015422874`.)*
 
 ## What is proven, and what is not
 

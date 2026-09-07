@@ -1,5 +1,150 @@
 # TESTING.md
 
+<!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
+## DATA-S2C external scheduler coverage
+
+`tests/data-s2c-opportunity-guard.test.mjs` permanently pins the guard's governed scope to exactly
+the three routine collection workflows, proves each governed repository file exists and carries a
+job literally named `collect`, and proves resume, migration, reconciliation, integrity and EXPLAIN
+workflows are excluded from the day guard while remaining in the shared production concurrency
+group. It proves workflow A refuses after a workflow B collection today, workflow B refuses after a
+workflow A collection today, both refuse after an attended owner collection today, and the attended
+workflow itself is left unguarded — enumerating which workflow files invoke the guard entry point so
+that cannot drift. It proves the current-UTC-day rule, the trailing-six-hour rule across midnight,
+that a `skipped` collect job and a gate-only failed run do not consume, that a queued or running
+collect job does, that a run cannot consume its own opportunity, and that every malformed, partial,
+truncated, missing-workflow, extra-workflow, bad-clock or bad-identity input fails closed as
+`AMBIGUOUS_REQUIRES_OWNER_ATTENTION` with a reason from the closed set.
+
+It separates the two windows the guard depends on: that `candidateDiscoveryStart` is always strictly
+earlier than `opportunityWindowStart` and exactly 35 days earlier, that
+`CANDIDATE_DISCOVERY_LOOKBACK_MS` is the pinned `WORKFLOW_RUN_TIME_LIMIT_DAYS` (35) alone and
+explicitly **not** 65 days, that the superseded `RERUN_ELIGIBILITY_DAYS` constant and the literal
+`65` are both gone from the module, that `MAX_RERUNS_PER_RUN` (50) survives only as the arithmetic
+behind the single unpaginated jobs page — with a dedicated regression proving 50 re-runs is
+`MAX_RUN_ATTEMPTS` (51) permitted attempts and 102 governed job executions, strictly more than the
+100-row page, so that page is bounded by fail-closed truncation rather than by the cap — that a
+100-row history at the page bound still decodes normally while a 102-execution history fails closed
+as `guard_read_failed` without a second jobs page being requested, that the whole-date filter given to the provider can only widen the
+search, and that a clock near the epoch cannot produce a negative filter date. It then proves
+discovery end to end through `resolveOpportunity`
+with a stubbed Actions API rather than by injecting runs into the classifier: a run created
+`2026-09-06T23:50Z` whose `collect` started `2026-09-07T00:10Z`, read at `2026-09-07T08:00Z`,
+resolves to `OPPORTUNITY_CONSUMED`, and the test inspects the actual generated listing URL to prove
+its `created>=` filter reaches back past the run's creation while the consumption window does not.
+The same holds on the tightest boundary (`23:59` to `00:01`), an old run whose *original* attempt
+collected this morning consumes end to end, a conservatively discovered run whose collect is outside
+both rules stays available, the asking run is still excluded when the wider lookback finds it and
+still costs no jobs read, and a truncated candidate listing fails closed.
+
+A **structural regression over the production entry point** is the load-bearing justification for
+the 35-day horizon. It reads `workers/data-platform/run-production-collection.mjs` — which DATA-S2C
+does not modify — and proves the exact literal
+`if(process.env.GITHUB_RUN_ATTEMPT!=='1')throw new Error('workflow_retry_forbidden');` appears
+verbatim, exactly once, at module top level, and that after blanking the import lines every call to
+`resolveProductionIdentity`, `maskProductionIdentity` and `runProductionCollection` and every use of
+`fetch` occurs **after** it, with nothing touching the network, Official FPL or D1 before it. If
+that invariant ever moves or disappears, this fails.
+
+**Attempt semantics** are pinned in both directions: attempt 1 consumes from its own `collect`
+start; a later attempt whose `collect` failed, was cancelled, timed out, is queued or is running
+never consumes; a later attempt reporting a *successful* `collect` is impossible state under the
+pinned invariant and returns `guard_rerun_contract_violated`; a later attempt needs no timing and can
+never make the day ambiguous on timing; and no later attempt in any order can make a day available
+that attempt 1 already collected.
+
+**Pagination and the read bound** are proven against a paged stub that pages exactly as GitHub does.
+Every candidate request carries an explicit `page=N` at the fixed page size and rejects an
+out-of-range page as `opportunity_page_invalid`; the jobs listing carries no `page` parameter at all.
+A consuming run reachable only on page 2 of a 101-run workflow B listing is discovered and refuses
+the day; page counts are exact for 0, 1, 100, 101 and 201 candidates, with page numbers an ascending
+sequence with no repeat or gap. A malformed, short, over-full, unreadable or failing later page, a
+`total_count` that changes between pages in either direction, and a run repeated across pages are all
+`guard_read_failed`; exceeding the ten-page cap stops after exactly one listing read. The bound
+itself is proven exactly: a cycle needing exactly 200 requests resolves and issues exactly 200; a
+cycle needing a 201st refuses as `guard_read_bound_exhausted` having issued exactly 200 and never
+reaching the final listing. The conservative sizing population of 35 workflow A runs, 105 workflow B
+runs and 2 attended runs costs exactly 146 requests with 54 spare, resolves, and still refuses
+correctly when one of those runs collected today. That population is a **repository sizing contract**
+rather than a statement of intended operation: under the 7 September 2026 rollout decision the GitHub
+scheduler is disabled before Cloudflare activation, so the intended steady state is smaller, and the
+test deliberately keeps the larger population so the bound stays proven while workflow A is still
+armed and through the transition. **No live acceptance in this suite requires the two automatic
+workflows to run concurrently**, and none is added: the guard's coexistence behaviour is proven from
+fixtures, and live acceptance asks only whether the sole automatic scheduler produced no more than
+one production collection per UTC day.
+
+It holds the two guard-correctness properties that a single-attempt, run-creation reading would
+lose. Across attempts: the jobs request asks for `filter=all` and never `filter=latest`, structurally
+as well as in the value it returns, with no page cursor or pagination loop in the module; an earlier
+attempt whose `collect` succeeded, and an earlier attempt whose `collect` failed after starting, both
+still consume when the newest attempt's `collect` is `skipped`, in either order the provider returns
+them; a run whose every attempt only ever skipped `collect` leaves the day available; the asking run
+cannot consume itself on any attempt; a jobs page whose provider `total_count` exceeds the rows
+returned is truncated and fails closed; and a real two-attempt payload resolves end to end to
+`OPPORTUNITY_CONSUMED` inside the read bound. On timing: a run created at 23:50 UTC whose `collect`
+started at 00:10 UTC consumes the following day's opportunity, with the test proving the run's own
+`created_at` lies outside the window that the collect start lies inside; a run older than both rules
+whose `collect` started inside the trailing window consumes; every terminal conclusion and both
+`queued` and `in_progress` consume from their own start instant; a `skipped` collect needs no timing
+and never consumes however recent its run; and a non-skipped `collect` whose start instant is
+missing, unparseable, earlier than its own run's creation, later than the clock, or whose status is
+unrecognised, fails closed as `guard_collect_timing_unusable`. It proves resolution is
+GET-only against `api.github.com` alone, bounded by a fixed read count, that exhausting the bound is
+an ambiguity rather than a licence to keep reading, that the guard holds no Cloudflare credential,
+D1 credential or production identifier, and that the entry point discards the original error. It
+also pins the exact eight-member concurrency-group membership, `cancel-in-progress: false` on every
+member and the absence of any `queue:` key, so membership drift is detected.
+
+`tests/data-s2c-external-workflow.test.mjs` proves workflow B is `workflow_dispatch`-only with zero
+inputs and no other trigger, declares a workflow-level default of exactly `contents: read` and
+`checks: read`, and resolves each job's **effective** permissions — the job's own block when it has
+one, otherwise the inherited workflow-level block — to prove the Actions read scope reaches the
+credential-free gate of workflows A and B and neither credentialled `collect` job, and that no
+effective write scope exists anywhere in either workflow, is a separate file that never reuses the
+attended manual boundary, and adds no second production schedule trigger. It proves the dispatch
+event is the only source of the candidate SHA, that remote `main` is proved by the gate and
+independently again under production credentials, and it **executes** both workflow shells against
+stubbed `git` and `node` binaries to prove a moved `main`, a wrong head or a dirty tree stops the
+runner. It proves the one-attempt collection identity is fixed once after every identity check, the
+credential-free gate holds no environment, credential, fingerprint or database identity, masking is
+registered before any variable is materialised, and the gate reuses the unchanged exact-head Verify
+module before the guard. It pins SHA-256 byte identity for `production-collection.mjs`,
+`run-production-collection.mjs` and `workers/data-platform/wrangler.jsonc`, and pins the unchanged
+150,000 / 200,000 / 250,000 reads, 40,000 writes, 8 API calls, 1.35 amplification, 2,000 reserve,
+4,000 routine changed observations, 8 MiB response cap, the two Official endpoints, migrations
+0001–0003 and five indexes.
+
+`tests/data-s2c-dispatcher.test.mjs` proves the dispatcher runs under a dedicated identity that is
+not `teamsheet-data-platform`, that its config declares `triggers` explicitly as an empty cron list
+and arms nothing, that it holds no D1, storage, service, queue, route or custom-domain surface with
+`workers_dev` and `preview_urls` both false, that it exposes a scheduled handler and no fetch
+handler, that it imports only its own contract module and cannot escape its directory with `../`,
+and that its raw source never names the collection surface at all. It proves the historical
+collector Worker configuration is byte-unchanged by pinned SHA-256, still declares its thirty-minute
+cron and D1 binding, and that no workflow or script deploys or publishes using that directory or
+config — and that nothing deploys the dispatcher either. It proves `controller.noRetry()` runs
+before any dispatch attempt on every outcome and structurally precedes the credential read, that
+exactly one dispatch request is issued per fire with no loop or timer that could produce a second,
+and the exact URL, API version, body and absence of workflow inputs. It proves the full response
+state machine — 200 with valid identity, 204, 401/403/404/422, 5xx, 429, 3xx, transport failure,
+timeout, malformed 200 body and unknown status — strict run-id and run-URL validation, that only the
+exact returned run id may be read back and the run list is never searched, the three separate
+latency measurements and that they are never conflated, that the run-creation measurement is
+unavailable rather than zero on a 204, and that logs carry closed enums and bounded integers with no
+token, URL, header or run id. It proves the run-creation measurement's baseline is the instant the
+dispatch request **started**, captured immediately before the POST with the clock never read again:
+a run created before the HTTP response returned keeps a valid positive value, where a
+response-return baseline would have discarded it, and a missing, non-finite, backwards or
+out-of-bounds clock still fails closed to unavailable.
+
+`tests/data-s2b-scheduled-production-collection.test.mjs` is extended, not weakened: it now proves
+the scheduled gate runs the guard after the bounded Verify wait and before the protected job can
+exist, that the guard is read-only in the same way the Verify wait is, that the Actions read scope
+is on the credential-free job alone, and that the credential-free entry points invoked by the
+scheduled workflow are exactly the Verify wait, the opportunity guard and the unchanged collection
+entry point in that order.
+
 ## DI-3 Stage A decision-layer coverage
 
 `tests/decision-intelligence-decision-layer.test.mjs` permanently verifies action identity/validation/ordering, standalone legal/illegal proofs and legal-only canonical artifact admission, separated and conserved consequences, authentic DI-1 ledger identity plus exact approvals, action/consequence transfer cross-integrity for recommendations and alternatives, complete policy-required selected-domain coverage, multidimensional uncertainty, deterministic immutable artifacts, transfer-output parity/non-mutation, partial/no-decision fallback, reconsideration/diff contracts, the 14 reference scenarios and structural isolation from production/UI/build/providers/DATA-S2B.
