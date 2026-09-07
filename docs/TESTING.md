@@ -116,8 +116,15 @@ module before the guard. It pins SHA-256 byte identity for `production-collectio
 0001–0003 and five indexes.
 
 `tests/data-s2c-dispatcher.test.mjs` proves the dispatcher runs under a dedicated identity that is
-not `teamsheet-data-platform`, that its config declares `triggers` explicitly as an empty cron list
-and arms nothing, that it holds no D1, storage, service, queue, route or custom-domain surface with
+not `teamsheet-data-platform`, that its config declares `triggers` explicitly — **approved DATA-S2C
+Package C activation behaviour**: the Package A expectation of an empty cron list is *replaced*, not
+relaxed, by an expectation that pins exactly the three approved opportunities `17 1 * * *`,
+`17 2 * * *` and `17 3 * * *`, in that order, with no fourth entry, no duplicate, no other cron
+expression anywhere in the file and no `timezone`-shaped key at any depth, so Cloudflare reads them as
+01:17, 02:17 and 03:17 UTC; that Package C re-enables no GitHub scheduler, leaving workflow A
+structurally present with its unchanged single `17 1 * * *` trigger while no workflow or script can
+enable, disable or dispatch a workflow and none adds a deployment surface for the dispatcher; that it
+holds no D1, storage, service, queue, route or custom-domain surface with
 `workers_dev` and `preview_urls` both false, that it exposes a scheduled handler and no fetch
 handler, that it imports only its own contract module and cannot escape its directory with `../`,
 and that its raw source never names the collection surface at all. It proves the historical

@@ -1,5 +1,26 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2C-PACKAGE-C-2026-09-07 -->
+## DATA-S2C external scheduler — Package C limitations
+
+**A repository cron declaration is not a deployment.** The dispatcher's Wrangler configuration now
+declares `17 1 * * *`, `17 2 * * *` and `17 3 * * *` — UTC, no timezone override — but **the deployed
+Worker still holds zero Cron Triggers** and will until a separately gated attended owner deployment
+replaces its configuration. Nothing in the Package C repository candidate deploys, dispatches or
+collects, so live Cloudflare-to-GitHub dispatch stays entirely unproven (S2C-10).
+
+**Activation timing is not instant.** Cloudflare documents that adding, changing or deleting a Cron
+Trigger may take up to 15 minutes to propagate, so an activation performed shortly before an
+opportunity may legitimately miss it.
+
+**The first live evidence cannot be hurried.** Cloudflare documents no API or dashboard action that
+invokes a *deployed* Worker's `scheduled()` handler on demand; every documented trigger mechanism
+(`wrangler dev --test-scheduled` and `/cdn-cgi/local/scheduled`, Miniflare, the Wrangler test harness)
+runs a local copy of the code rather than the deployed Worker, and would need the real credential
+outside Cloudflare's secret store. The dashboard's Cron Events view is invocation history, not an
+invocation control. Package C acceptance therefore waits for a natural cron opportunity; no test
+route, temporary cron or fetch handler is added to shorten it.
+
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## DATA-S2C external scheduler — Package A limitations
 
@@ -67,8 +88,9 @@ automatic collection opportunity to a benign race rather than to a real conflict
 **Three automatic guard invocations a day are intended; four is the bounded case.** Under the
 7 September 2026 rollout the GitHub scheduler workflow A is disabled before Cloudflare activation, so
 the intended steady state is workflow B's three Package C opportunities alone. Four — workflow A once
-plus those three — is the upper bound, and it holds only while workflow A remains armed, as it does
-today. Each invocation is separately bounded at 200 requests. The earlier "two
+plus those three — is the upper bound, and it holds only while workflow A remains armed, which it is
+not: the owner disabled it on 7 September 2026 and it reports `state: disabled_manually`. Each
+invocation is separately bounded at 200 requests. The earlier "two
 automatic invocations per day" statement is superseded. No claim is made that 200 × 4 requests will
 occur: the fires are separated by schedule time and normal paths short-circuit far below the cap.
 Equally, no unused GitHub rate-limit headroom is claimed — token and API limits remain an external
@@ -415,7 +437,9 @@ Several open rows below — including `ODDS-2`, `UST-1`, `BT-2`, `SCOR-3`, `SIM-
 | S2C-11 | The dispatcher's Cloudflare-side configuration is not independently readable from this repository's tooling | The read-only Worker tooling available here returns a Worker's name, id and deployed module, which is enough to verify the identity exists and that the running code matches approved `main`. It does **not** expose Cron Triggers, routes, custom domains, bindings, secret names or Git build-integration state. Those Package B facts — zero Cron Triggers, no queue consumer, the `GITHUB_DISPATCH_TOKEN` binding name, and the disconnected Git integration — rest on owner-provided dashboard evidence and owner confirmation, not on independent API reads. The deployed module independently confirms the code reads exactly `env.GITHUB_DISPATCH_TOKEN` and exports no `fetch` handler | DATA-S2C Package C | Open (accepted) |
 | S2C-12 | The Cloudflare secret's exact binding name was not independently readable | The owner's dashboard screenshot visually clipped the secret-name column to `GITHUB`, so the full name `GITHUB_DISPATCH_TOKEN` is **owner-confirmed**, not independently read. The deployed module proves the Worker reads that exact variable, so a mismatch would surface at the first Package C fire as `REJECTED` / `dispatch_token_missing` rather than as a silent wrong-credential dispatch | DATA-S2C Package C | Open (accepted) |
 | S2C-13 | Only the temporary Git build integration was disconnected, not every conceivable deployment path | Package B's initial exact-source deployment used Cloudflare's Workers Git import, which the owner then disconnected so a future `main` push cannot redeploy or arm this Worker through it. That is the supportable claim. It is **not** a claim that no Cloudflare deployment path exists — an attended Wrangler deploy or dashboard action remains possible, which is exactly what Package C requires | DATA-S2C Package C | Open (accepted) |
-| S2C-14 | Cloudflare cron quota headroom for Package C is unverified | Account plan limits and remaining Cron Trigger allowance are not readable through the tooling available here, so the assumption that Package C's three daily opportunities fit the account's cron budget stays an assumption to confirm at activation | DATA-S2C Package C | Open (evidence gate) |
+| S2C-14 | Cloudflare's Cron Trigger limit is an ACCOUNT limit, and this account's live usage is unverified | Cloudflare publishes **5 Cron Triggers per account on Workers Free** and 250 on Workers Paid — per account, never per Worker. This account is Workers Free, so Package C's three opportunities consume three of five account-wide, and only if no other Worker in the account holds a live trigger. The read-only tooling available here cannot enumerate Cron Triggers (S2C-11), so that is unverified and is not a safe assumption: the historical `teamsheet-data-platform` Worker still declares `"crons": ["*/30 * * * *"]` as repository configuration, and its live trigger is recorded as having been deliberately removed when collection was stopped. The owner must confirm the account's live trigger count before activating, and must not restore the historical collector's trigger to make room | DATA-S2C Package C | Open (evidence gate) |
+| S2C-15 | A repository cron declaration is not a deployment, and the two are easy to conflate | The dispatcher's Wrangler configuration declares the approved 01:17 / 02:17 / 03:17 UTC opportunities, but the deployed Worker keeps the configuration it was last deployed with — Package B's empty list — until an attended owner deployment replaces it. Merging the Package C candidate arms nothing, and no documentation, report or PR may state that Cloudflare is scheduled before an attended activation has actually happened. Cloudflare also documents up to 15 minutes of propagation delay for a Cron Trigger change, so even a completed activation may legitimately miss the next opportunity | DATA-S2C Package C | Open (evidence gate) |
+| S2C-16 | A deployed Worker's `scheduled()` handler cannot be invoked on demand | Cloudflare documents no API or dashboard action that fires a deployed Worker's scheduled handler outside its cron. Every documented trigger mechanism — `wrangler dev --test-scheduled` with `/cdn-cgi/local/scheduled`, Miniflare, the Wrangler test harness — runs a local copy of the code rather than the deployed Worker, and would additionally require the real dispatch credential outside Cloudflare's secret store. The dashboard's Cron Events view (100 most recent invocations, with the GraphQL Analytics API as its programmatic equivalent) is invocation history, not an invocation control. Package C acceptance therefore waits for a natural cron opportunity rather than adding a test route, a temporary cron or a fetch handler | DATA-S2C Package C | Open (accepted) |
 | S2C-6 | GitHub Actions Step Summary and log retention is finite | Exact provider `meta.rows_read` and `meta.rows_written` reach only a run's Step Summary, are not retrievable through the GitHub API available here, and are lost when retention expires. Cloudflare dashboard aggregates are account-level time-window figures and are never per-workflow accounting | DATA-S2C, later telemetry decision | Open (accepted) |
 | GW1R-1 | The pre-first-deadline Transfers guard resolves the deadline against the device clock | A device clock set far enough in the past could in principle hold the guard open past the real deadline. The guard additionally requires `nextGW` 1, no current Gameweek and no finished Gameweek, so this would also need a simultaneously stale Official FPL payload; every missing or unparseable deadline falls back to normal weekly behaviour rather than claiming unlimited changes. The existing deadline countdown and Stage 10 timing surfaces share the same clock dependency | GW1 readiness safety guard | Open (accepted) |
 | GW1R-2 | The guard window is evaluated when Transfers renders, not on a timer | A session left open across the deadline instant keeps showing the guarded screen until the next render, exactly as the existing countdown chip does not tick. The first route change, assumption edit or verified refresh re-evaluates it, and a `teamsheet:data-rendered` refresh on app resume starts the normal calculation, so returning to the app after the deadline recovers without user action | GW1 readiness safety guard | Open (accepted) |

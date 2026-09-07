@@ -28,8 +28,17 @@ workflow A, and the GitHub Actions API reports workflow `350014371` as `disabled
 is **not** an automatic clock either: the isolated dispatcher `teamsheet-data-s2-dispatcher` was
 deployed dormant on the same day with its single `GITHUB_DISPATCH_TOKEN` secret bound and **zero Cron
 Triggers**, so nothing can invoke it automatically and there is currently no automatic collection path
-at all. Arming it is Package C and separately gated. Workflow C, the attended manual path, is
-unaffected and stays available for owner-approved recovery.
+at all. Workflow C, the attended manual path, is unaffected and stays available for owner-approved
+recovery.
+
+**Package C status, 7 September 2026 — the repository declares the opportunities; the live Worker is
+still dormant.** The dispatcher's Wrangler configuration now declares exactly `17 1 * * *`,
+`17 2 * * *` and `17 3 * * *` — 01:17, 02:17 and 03:17 UTC, with no timezone override — instead of an
+empty list. **That is a repository declaration, not a deployment: the deployed Worker still holds zero
+Cron Triggers**, and only a separately gated attended owner deployment can change what it holds. The
+three entries are dispatch opportunities rather than collection entitlements: once a UTC day has been
+consumed, the fail-closed opportunity guard refuses production collection at the later opportunities,
+so a later run may exist while its `collect` job is skipped.
 
 Workflow B is new and is the unattended external-trigger path. It carries no caller-supplied SHA
 input: a caller supplies `ref: main` and nothing else, GitHub resolves the event SHA, and the
@@ -98,10 +107,12 @@ workflow A's inherits exactly those, so neither credentialled job can reach Acti
 A new **isolated Cloudflare dispatcher Worker** lives at `workers/schedule-dispatcher/` under the
 dedicated identity `teamsheet-data-s2-dispatcher`. It is a timer that can do exactly one thing: ask
 GitHub to start workflow B. It holds no D1 binding, no Cloudflare data credential and no public HTTP
-surface, imports nothing outside its own directory, and its Package A Wrangler configuration
-declares `"triggers": { "crons": [] }` explicitly — present and empty, because Cloudflare treats
-triggers as a total assignment, so an explicit empty array removes triggers from this identity while
-omitting the block would leave whatever exists in place. **Package A arms nothing.**
+surface, imports nothing outside its own directory, and declares its `triggers.crons` **explicitly**,
+because Cloudflare treats triggers as a total assignment: the declared array becomes the complete set
+of Cron Triggers the deployed identity holds, an explicit empty array removes them, and omitting the
+block would leave whatever exists in place. Package A declared an empty array and armed nothing;
+Package C declares the three approved UTC opportunities. Neither arms the live Worker by itself —
+only an attended deployment of that configuration does.
 
 The identity separation is deliberate and load-bearing: `workers/data-platform/wrangler.jsonc` still
 declares a thirty-minute cron and a D1 binding and `data-platform-rpc.mjs` still exposes a scheduled

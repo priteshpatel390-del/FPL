@@ -62,8 +62,16 @@ automatic scheduler workflow is to be **disabled before** Cloudflare automatic s
 activated, so Cloudflare becomes the only automatic clock rather than a second one beside GitHub;
 there is no planned period of deliberate dual automatic scheduling. That moves a **Cron Trigger**
 onto the dedicated `teamsheet-data-s2-dispatcher` identity, which is a different thing from the
-superseded Cloudflare Worker collector and does not reopen it. Nothing there is live: no credential,
-no deployment and no Cron Trigger exists, and the GitHub scheduler is still active today. See
+superseded Cloudflare Worker collector and does not reopen it. **That direction is now partly live and
+is recorded accurately here rather than as the original "nothing is live" statement:** the owner
+disabled the GitHub scheduler workflow on 7 September 2026 (`state: disabled_manually`), created the
+narrowly scoped dispatch credential, bound it as the single encrypted Cloudflare secret, and deployed
+the isolated dispatcher — with **zero Cron Triggers**, so it cannot yet be invoked automatically. The
+repository now declares the approved 01:17 / 02:17 / 03:17 UTC opportunities, but the deployed Worker
+still holds none of them until a separately gated attended activation, so **there is currently no
+automatic collection path at all** and no Official FPL request has been made through DATA-S2C. The
+Official FPL endpoints, payloads, validation, normalisation and retention rights are untouched by any
+of this: DATA-S2C changes only which clock asks for a collection. See
 [manual collection hardening](../workers/data-platform/DATA-S2B-MANUAL-COLLECTION-HARDENING.md) and
 the [daily GitHub Actions schedule](../workers/data-platform/DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE.md).
 
