@@ -28,8 +28,9 @@ Official FPL facts that run committed are present in D1 but have never been vali
 postflight contract at the time** — an absence of proof, not evidence that they were invalid. That
 absence has since been closed: Stage 0 run `33966125991` proved the state that run committed
 satisfies the production postflight contract. The scheduled workflow was owner-disabled at that
-point and has since been re-enabled; it produced successful natural run `34015422874` on
-6 September 2026. No
+point, was re-enabled and produced successful natural run `34015422874` on 6 September 2026, and was
+then disabled again on 7 September 2026 for the DATA-S2C timer retirement; it now reports
+`state: disabled_manually`. No
 provider, endpoint, rights classification, retention posture, normalisation or canonical identity
 changed as a result; the correction was to the resource model and then to the resource envelope
 only.

@@ -1,7 +1,208 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2C-PACKAGE-B-2026-09-07 -->
+## Current scheduler state — the GitHub automatic timer is retired and no automatic scheduler is armed
+
+**This block is the canonical current statement of scheduler state, and it supersedes every earlier
+statement in this file, and in every other canonical document, that GitHub scheduled workflow A is
+active, enabled, or must remain armed.** Those statements were accurate at the checkpoints that
+recorded them and are retained there as history. They are no longer current.
+
+**Independently verified here from the GitHub Actions API on 7 September 2026.** Workflow `DATA-S2
+Scheduled Production Collection via D1 REST`, id `350014371`, path
+`.github/workflows/data-s2-production-scheduled.yml`, reports **`state: disabled_manually`**, last
+updated `2026-09-07T04:03:30Z`. The owner disabled it. Reading the workflow state is a read-only
+GitHub query; nothing in this checkpoint enabled, disabled, dispatched or re-ran any workflow.
+
+**No workflow A execution remains that could later collect.** At the retirement acceptance read on
+`2026-09-07T04:09:54Z` the repository reported **zero** runs with status `queued` and **zero** with
+status `in_progress`, across every workflow rather than workflow A alone. Workflow A's own run
+population remains exactly **three** runs — `33901634593`, `33948145320` and `34015422874` — with the
+newest still `34015422874`, created `2026-09-06T06:01:26Z`, conclusion `success`. No fresh scheduled
+run appeared, and no run was cancelled to reach that state.
+
+**One unrelated run is `waiting`, and it is recorded rather than acted on.** Run `33620632272` of
+`DATA-S2B Phase 4B Mutation-Free Live Preflight Preparation` (workflow `344574374`, path
+`.github/workflows/data-s2b-phase4b-readonly-preflight.yml`), run number 9, attempt 2, event
+`workflow_dispatch`, has been `waiting` on protected-environment approval since
+`2026-09-02T10:40:00Z`. It is **not** workflow A, it is a strictly read-only Phase 4B preflight, and
+it carries no `collect` job, so it cannot perform a production collection. It was deliberately left
+untouched: a run this old is stale, but cancelling it is a separate decision that Package B did not
+take.
+
+**Workflow B has never been dispatched.** `.github/workflows/data-s2-production-external.yml` reports
+a total run population of **zero**. Workflow C, the attended manual collection, still reports exactly
+three runs, the newest being `33990959542` from 5 September 2026.
+
+**Operational consequence, stated plainly.** GitHub is no longer an automatic clock, and Cloudflare is
+not one either: the dispatcher Worker is now deployed, but it holds **zero** Cron Triggers, so nothing
+can invoke it automatically. **There is currently no automatic production collection path at all.**
+GitHub Actions remains the execution engine, and the attended manual workflow C remains available for
+owner-approved recovery. That is the intended state between GitHub timer retirement and Package C
+Cloudflare activation.
+
+**The accepted history-gap risk is now live, and no gap is claimed to have occurred.** As of the
+closeout read at `2026-09-07T17:29:36Z` no production collection has run on UTC day 2026-09-07 through
+any of the three governed workflows. Whether that day closes without a collection depends on whether an
+attended manual collection is separately approved before `2026-09-07T23:59:59Z`, so **it is not yet a
+completed gap and must not be reported as one.** Observations lost to any gap are not claimed to be
+reconstructible.
+
+
+<!-- DATA-S2C-PACKAGE-B-2026-09-07 -->
+<!-- DATA-S2C-PACKAGE-B-CLOSEOUT-2026-09-07 -->
+## Current DATA-S2C checkpoint — Package B dormant provisioning is complete
+
+**This block supersedes the earlier Package B block that described the repository half as complete
+and the Cloudflare provisioning as outstanding.** That block was accurate when written and is
+retained below as history. The owner has since performed the three attended live actions.
+
+**Package A baseline.** PR #226 merged as `f519e319d107ca1d45834a15c45cd785a173b43f`, and the
+post-merge exact-`main` `Verify Teamsheet` run `34081463226` — run number 623, event `push` —
+concluded **success**. The full repository suite on that tree is **1,717 tests, 1,717 passed, 0
+failed, 0 skipped, 0 cancelled**. `main` has not moved since.
+
+**The isolated dispatcher is deployed, and that is independently verified.** The Cloudflare account
+now holds six Workers rather than five, and the new one is **`teamsheet-data-s2-dispatcher`**,
+script id `1a02fa1c1ae54ff19d9a85d35a205490`, created `2026-09-07T16:36:12Z`, last modified
+`2026-09-07T16:39:30Z`. It is the approved isolated identity; `teamsheet-data-platform` was **not**
+reused and its own `modified_on` is unchanged at `2026-08-31T19:46:27Z`. No second Worker was
+created.
+
+**The deployed module was read back and matches the approved `main` source.** The retrieved script is
+the bundled form of `workers/schedule-dispatcher/dispatcher.mjs` and `dispatch-contract.mjs`, whose
+repository bytes are unchanged from `main`. The read-back independently confirms, in the code
+actually running in production: `controller.noRetry()` as the first statement of the scheduled
+handler; the single credential read `env?.GITHUB_DISPATCH_TOKEN`; the dispatch target
+`data-s2-production-external.yml` on `priteshpatel390-del/FPL`; the body `{"ref":"main",
+"return_run_details":true}` with no workflow inputs; `REJECTED` confined to 401, 403, 404 and 422
+with everything else `AMBIGUOUS`; and **no `fetch` handler exported at all**, so the Worker has no
+public HTTP surface. No D1, KV, R2 or service reference appears anywhere in the deployed module.
+
+**The credential exists and is bound as one encrypted Cloudflare secret.** A GitHub fine-grained
+personal access token named `teamsheet-data-s2-dispatcher`, owned by `priteshpatel390-del`, scoped to
+the single repository `priteshpatel390-del/FPL`, carrying **Actions: read and write** plus the
+mandatory read-only Metadata and **no account permissions**, with a **90-day expiry**. It is stored
+only as the Cloudflare runtime secret `GITHUB_DISPATCH_TOKEN`, and the dashboard reports its value as
+encrypted. Its value is not recorded anywhere in this repository and must never be.
+
+**Zero Cron Triggers, so the dispatcher is dormant.** The Cloudflare Settings page reports
+`Cron triggers — No cron triggers configured` after both the deployment and the secret binding, and
+no queue consumer is configured. The Worker therefore has a scheduled handler and a credential but
+**no timer capable of invoking it**. That is exactly the intended Package B end state.
+
+**The temporary Git build integration was disconnected.** The initial exact-source deployment was
+performed through Cloudflare's Workers Git import against `priteshpatel390-del/FPL`, with a blank
+build command and the deploy command
+`npx wrangler deploy --config workers/schedule-dispatcher/wrangler.jsonc`. After the deployment and
+the secret binding, the owner disconnected the Git repository, and the dashboard now offers
+`Connect` rather than showing an attached repository. The deployed Worker persists; the build
+integration does not. **A future push to `main` cannot silently redeploy or activate this Worker
+through that integration**, so Package C activation still requires a new explicit attended action.
+This is a claim about that one integration, not a claim that every conceivable Cloudflare deployment
+path is impossible.
+
+**Nothing was dispatched and nothing was collected.** Verified from the GitHub Actions API after the
+deployment: workflow A `350014371` remains `disabled_manually`; repository-wide runs with status
+`queued` are **zero** and with status `in_progress` are **zero**; workflow B
+`data-s2-production-external.yml` still reports a total run population of **zero**; workflow C still
+reports exactly three runs with the newest unchanged at `33990959542` from 5 September 2026. No
+Official FPL collection was run, no D1 request of any kind was performed, and the Worker's
+`scheduled()` handler was not invoked manually.
+
+**No repository behaviour changed.** No dispatcher or contract code, no guard semantics, no workflow
+YAML, no collector semantics, no resource threshold, no projection factor, no SQL, schema, index or
+migration — still exactly 0001–0003 with five indexes and **no migration 0004** — and no provider,
+model, fixture, captaincy, squad, transfer, rank, Mini-League, product or UI behaviour.
+
+**What is still unproven, and deliberately so.** Live Cloudflare-to-GitHub dispatch has never been
+attempted, so it remains entirely unproven: nothing is known about whether the deployed dispatcher
+would reach GitHub, what status GitHub would answer, or whether a 200 body carries the identity shape
+the contract expects. Cron activation is unproven because no cron exists. No end-to-end collection
+through workflow B has occurred. The supportable acceptance statement is **"the dispatcher is
+deployed but has no timer capable of invoking it automatically"** — never that it can dispatch
+successfully.
+
+**Next gate: Package C Cloudflare activation**, which requires its own separate explicit owner
+approval: replace `"crons": []` with the approved 01:17 / 02:17 / 03:17 UTC opportunities, deploy,
+prove external workflow execution, and prove the guard refuses the second and third opportunities of
+a day already collected. See [DATA-S2C external
+scheduler](../workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md) §12.
+
+## Current DATA-S2C checkpoint — Package B dormant provisioning, repository half complete
+
+> **Superseded on 7 September 2026 by "Current DATA-S2C checkpoint — Package B dormant provisioning
+> is complete" above.** The owner has since created the dispatch credential, bound it as the single
+> Cloudflare secret, and deployed the isolated dispatcher with zero Cron Triggers. The evidence below
+> for the GitHub timer retirement and the read-only Cloudflare preflight stands and is retained as
+> history; the statements that no credential, secret or deployment existed do not.
+
+**Package A merged and is verified on `main`.** PR #226 merged as
+`f519e319d107ca1d45834a15c45cd785a173b43f`, and the post-merge exact-`main` `Verify Teamsheet` run
+`34081463226` — run number 623, event `push`, head SHA `f519e319d107ca1d45834a15c45cd785a173b43f` —
+concluded **success**. Both facts were read independently from the GitHub Actions API for this
+checkpoint. The full repository suite on that tree is **1,717 tests, 1,717 passed, 0 failed, 0
+skipped, 0 cancelled**.
+
+**What Package B completed.** The GitHub half is done and independently proven: workflow A reports
+`disabled_manually`, no queued or in-progress run exists, workflow A's run population is unchanged at
+three, workflow B has never been dispatched, and no production collection was triggered. The
+read-only Cloudflare preflight was performed. The canonical documentation now records the actual
+state rather than the superseded active-scheduler state.
+
+**What Package B could not complete, and why.** The three live Cloudflare provisioning steps —
+creating the dedicated GitHub dispatch credential, binding it as `GITHUB_DISPATCH_TOKEN`, and
+deploying the dispatcher Worker — **were not performed**, because this session holds no mechanism
+capable of performing them:
+
+* creating a fine-grained GitHub personal access token is an interactive account-owner action, and
+  GitHub exposes no API that can mint one;
+* no Cloudflare deployment credential is present in the environment;
+* Wrangler is not installed, and the repository deliberately ships no Cloudflare deployment workflow
+  for the dispatcher;
+* the read-only Cloudflare tooling available here can deploy nothing and can set no secret.
+
+No substitute credential was used, and **no deployment machinery was invented to work around the
+gap.** Building a bespoke deploy workflow would add exactly the kind of machinery the §0.7 simplicity
+principle rejects, for a step the owner can perform once, attended, in a few minutes. The remaining
+work is therefore one attended owner action rather than new repository code.
+
+**Cloudflare preflight result, with its limits stated.** The authenticated account is the Teamsheet
+account: it holds exactly five Workers — `teamsheet-fpl-gateway`, `teamsheet-evidence-archive`,
+`teamsheet-data-platform`, `teamsheet-data-platform-acceptance-caller` and
+`teamsheet-data-platform-s1b-validation-20260822`. **`teamsheet-data-s2-dispatcher` does not exist**,
+so the approved isolated identity is free: there is no collision, no pre-existing route, binding,
+secret or Cron Trigger under that name, and nothing that a first deployment would overwrite. The
+historical `teamsheet-data-platform` Worker was read but not touched and not redeployed.
+**Limitation:** the read-only tooling available here returns a Worker's name and id only, so the Cron
+Triggers, routes and bindings of the *existing* Workers could not be enumerated. That is a tooling
+limit, and it is not evidence that they are absent.
+
+**Nothing was activated and nothing was collected.** No Cloudflare Cron Trigger was created, changed
+or removed. No Worker was deployed. No credential or Cloudflare secret was created. No workflow was
+dispatched or re-run. No D1 request of any kind was performed. No Official FPL collection was run.
+Workflow A was not re-enabled. No collector semantics, guard semantics, resource constant,
+projection factor, SQL statement, schema, index or migration changed — still exactly 0001–0003 with
+five indexes and **no migration 0004** — and no provider, model, fixture, captaincy, squad, transfer,
+rank, Mini-League, product or UI behaviour changed.
+
+**Next gates, each separate.** First, the remaining attended Package B owner action: create the
+narrowly scoped dispatch credential, bind it as the single dispatcher secret, and deploy the
+exact-`main` dispatcher with `"crons": []`. Then Package C Cloudflare activation — replacing the
+empty cron list with the approved 01:17 / 02:17 / 03:17 UTC opportunities — which requires its own
+separate explicit owner approval. **Live Cloudflare-to-GitHub dispatch remains entirely unproven,**
+because Package B deliberately dispatches nothing.
+
+
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## Current scheduler state — workflow A is enabled and produced a successful natural run
+
+> **Superseded on 7 September 2026 by "Current scheduler state — the GitHub automatic timer is
+> retired and no automatic scheduler is armed" above.** The owner has since disabled workflow A, and
+> the GitHub Actions API now reports it `disabled_manually`. The evidence below for natural run
+> `34015422874` stands and is retained as history; the statement that the workflow is enabled does
+> not.
+
 
 **This block is the canonical current statement of GitHub scheduler state, and it supersedes every
 earlier statement in this file, and in every other canonical document, that the scheduled production
@@ -51,14 +252,21 @@ read-only GitHub query. No workflow was dispatched, enabled or disabled, no Clou
 read or mutation, collection, migration, deployment, cron, environment or credential change was
 performed.
 
-## Current DATA-S2C checkpoint — Package A repository foundation, review candidate
+## Earlier DATA-S2C checkpoint (closed) — Package A repository foundation, review candidate
 
-**Repository implementation only, and nothing is live.** Package A adds the daily opportunity guard
+> **Superseded as a current-state statement on 7 September 2026 by the Package B blocks above.** The
+> design, guard semantics and rationale below are unchanged and remain in force. What is no longer
+> current is its live-state scope: the credential, the Cloudflare secret and the Worker deployment now
+> exist, and GitHub scheduled workflow A is disabled.
+
+**Repository implementation only, and at that checkpoint nothing was live.** Package A adds the daily
+opportunity guard
 and wires it into the existing scheduled collection gate; adds the zero-input external receiving
 workflow; adds the isolated Cloudflare dispatcher Worker under the dedicated identity
 `teamsheet-data-s2-dispatcher` with an explicitly empty `"triggers": { "crons": [] }`; and reconciles
-the canonical documentation. No GitHub token or App, no Cloudflare secret, no deployment, no
-Cloudflare Cron Trigger, no workflow dispatch, no D1 request and no collection was performed. The
+the canonical documentation. At that checkpoint no GitHub token or App, no Cloudflare secret, no
+deployment, no Cloudflare Cron Trigger, no workflow dispatch, no D1 request and no collection had been
+performed. The
 existing GitHub cron stays `17 1 * * *`.
 
 Merging Package A does **not** activate DATA-S2C. Its one behavioural effect is that future natural
@@ -75,22 +283,28 @@ than engineering machinery to run two of them safely — *prefer removing an unn
 over engineering machinery to tolerate it, particularly while Teamsheet remains in development and
 the affected capability is not yet relied upon for normal live decision-making.* A temporary DATA-S2
 history gap during the replacement is an accepted development-stage trade-off, observations lost to
-a gap are not claimed to be reconstructible, and **no gap has occurred**. **FACT: workflow A is not
-disabled** — workflow `350014371` reports `state: active`, and disabling it is a separate approved
-live action that no documentation change performs.
+a gap are not claimed to be reconstructible, and no gap had occurred at that checkpoint.
+**FACT AT THE PACKAGE A CHECKPOINT — retained as history: workflow A was not disabled.** Workflow `350014371` reported `state: active`, and disabling it was a separate approved live
+action that no documentation change could perform. **CURRENT STATE: the owner has since disabled it, and workflow `350014371` reports
+`state: disabled_manually`.** See the Package B current-state blocks
+above.
 
 **The guard is still needed.** Cloudflare's planned 01:17, 02:17 and 03:17 UTC dispatches are retry
 **availability**, not three collections: the first collects and the guard refuses the other two. It
 also refuses after an attended manual collection has consumed the day.
 
 **Revised forward sequence, each package a separate explicit owner approval.** **Package A —
-current:** owner review and merge, then exact-`main` Verify Teamsheet on the merge commit.
-**Next operational step — GitHub timer retirement:** disable workflow A scheduling, verify the
-disabled state, and verify no running or pending workflow A execution remains that could later
-collect; this happens **before** Cloudflare activation. **Package B — dormant Cloudflare
-provisioning:** preferably one attended package covering the read-only Cloudflare preflight, the
-approved GitHub dispatch credential, the single dispatcher secret binding, the exact-`main`
-dispatcher deployment with `"crons": []` kept, and proof of no automatic invocation. **Package C —
+DONE:** merged as `f519e319d107ca1d45834a15c45cd785a173b43f` with exact-`main` Verify Teamsheet run
+`34081463226` passing. **GitHub timer retirement — DONE, 7 September 2026:** the owner disabled
+workflow A scheduling, and the disabled state plus zero queued and zero in-progress runs were
+independently verified from the GitHub Actions API; this happened **before** Cloudflare activation.
+**Package B — dormant Cloudflare provisioning — DONE, 7 September 2026:** the read-only Cloudflare
+preflight, the approved GitHub dispatch credential, the single dispatcher secret binding, the
+exact-`main` dispatcher deployment with `"crons": []` kept, and proof of no automatic invocation.
+`teamsheet-data-s2-dispatcher` is deployed and independently verified to exist with its module
+matching approved `main`; the Cloudflare dashboard reports zero Cron Triggers; the temporary Git
+build integration used for the deployment was disconnected afterwards; and no workflow B dispatch,
+production collection or D1 access occurred. **Package C —
 Cloudflare activation:** change the empty cron list to the approved 01:17 / 02:17 / 03:17 UTC
 opportunities, deploy, prove external workflow execution and prove guard refusal. **Package D —
 observation:** Cloudflare as the sole automatic scheduler, accepted only if it reliably produced no
