@@ -52,8 +52,20 @@ or reprinted token, no widened GitHub scope, no new binding, no route, no custom
 `workers.dev` exposure and no fetch handler. The dispatcher's own security properties are unchanged:
 one secret binding, no production identifier, closed-enum bounded logs. The live activation remains an
 attended owner action, and the repository deliberately ships **no** deployment workflow and **no**
-Cloudflare deployment credential for it, so no repository merge can reach production Cloudflare on its
-own. A standing Git auto-deploy integration stays forbidden for exactly that reason. The mitigations that will still apply are that workflow B accepts no input, that its
+Cloudflare deployment credential for the dispatcher, so no repository merge can deploy or arm **that
+Worker** on its own. A standing Git auto-deploy integration for it stays forbidden for exactly that
+reason.
+
+**Stated precisely rather than more broadly than the evidence supports:** a Cloudflare-side Workers
+Build integration does exist on this repository for a *different* Worker, `teamsheet-fpl-gateway` — it
+reports as the `Workers Builds: teamsheet-fpl-gateway` check on pull requests. It is owner-side
+Cloudflare configuration, not repository configuration: no workflow or script in this repository
+references it. Nothing in the repository directs any build integration at
+`workers/schedule-dispatcher`, and a permanent test pins that no workflow or script references that
+directory at all. What cannot be proved from here is the content of another project's Cloudflare-side
+build configuration, so the supportable claim is the narrow one: the dispatcher has no Git build
+integration of its own since Package B disconnected the temporary one, and this repository contains no
+instruction that would deploy it. The mitigations that will still apply are that workflow B accepts no input, that its
 repository-side gates prove current `main` independently of the caller, that the shared production
 concurrency group serializes it, and that the fail-closed opportunity guard refuses a second
 collection in the same day.

@@ -1277,6 +1277,16 @@ read-only query. No Worker was created, modified, deployed or invoked, no Cron T
 changed or removed, no secret was read or written, no D1 request was performed, no workflow was
 dispatched, enabled, disabled or re-run, and no collection was run.
 
+**One further Cloudflare-side fact, recorded because it bears on the deployment boundary.** A Workers
+Build integration exists on this repository for a **different** Worker, `teamsheet-fpl-gateway`; it
+surfaces as the `Workers Builds: teamsheet-fpl-gateway` check on pull requests. It is owner-side
+Cloudflare configuration rather than repository configuration — no workflow or script here references
+it, and the repository's own workflow set contains nothing that builds or deploys any Worker. It does
+not weaken the dispatcher's boundary: Package B disconnected the dispatcher's temporary Git
+integration, nothing in this repository directs any build integration at `workers/schedule-dispatcher`
+and a permanent test pins that absence. What is **not** claimed is knowledge of another project's
+Cloudflare-side build configuration, which is not readable from here.
+
 **The tooling limitation of §12.7.5 still applies.** The read-only Worker tooling available here
 returns a Worker's name, id and deployed module. It does **not** expose Cron Triggers, so the
 zero-cron claim above rests on Package B's owner evidence plus the fact that nothing since could have
