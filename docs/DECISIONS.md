@@ -53,8 +53,10 @@ overlap experiment is superseded.
 
 **Capability versus rollout.** The repository's *capability* to guard both automatic workflows is
 implemented, tested and deliberately **not** rewritten because the rollout changed. The *intended
-rollout* is single-clock. **FACT: workflow A is not disabled** — workflow `350014371` reports
-`state: active`, and disabling it is a separate explicitly owner-approved live action.
+rollout* is single-clock, and it is now in force. **FACT, verified on 7 September 2026: workflow A is
+disabled** — workflow `350014371` reports `state: disabled_manually`, the owner having taken the
+separate live action that step required. Cloudflare has not replaced it yet, so no automatic
+scheduler is armed.
 
 **Sequence, each a separate approval:** merge Package A and run exact-`main` Verify; disable
 workflow A and verify no running or pending A execution can still collect; provision the Cloudflare
@@ -283,14 +285,16 @@ than at the hard ceiling.
   schema, `PROVIDER_READ_AMPLIFICATION = 1.35`, `PROVIDER_READ_SAFETY_RESERVE = 2000`, the write
   estimator, the 40,000 write ceiling, the 8-call API ceiling, the postflight contract and the
   `17 1 * * *` cron all unchanged, and the scheduled workflow stayed owner-disabled at that
-  decision. *(Historical: the owner has since re-enabled it — workflow `350014371` reports
-  `state: active` and produced successful natural run `34015422874` on 6 September 2026.)*
+  decision. *(Historical: the owner re-enabled it, and it produced successful natural run
+  `34015422874` on 6 September 2026; it was then disabled again on 7 September 2026 as the DATA-S2C
+  timer retirement step, and now reports `state: disabled_manually`.)*
 * **LIMITATION, since partly answered.** This restored an operating envelope; when the decision was
   taken no cycle had run under it. Attended run `33990959542` has since completed successfully at
   113,352 provider rows read against a 121,902 projection, with clean postflight state, so the
   envelope is now proven for one cycle. No season-long capacity guarantee is claimed. The separate
-  owner gate for re-enabling the scheduler has since been taken by the owner: workflow `350014371`
-  reports `state: active` and produced successful natural run `34015422874`. See
+  owner gate for re-enabling the scheduler was taken by the owner, and workflow `350014371` produced
+  successful natural run `34015422874`; it has since been disabled again for the DATA-S2C timer
+  retirement and now reports `state: disabled_manually`. See
   [capacity live acceptance closeout](../workers/data-platform/DATA-S2B-CAPACITY-LIVE-ACCEPTANCE-CLOSEOUT.md).
 
 See [capacity envelope restoration](../workers/data-platform/DATA-S2B-CAPACITY-ENVELOPE-RESTORATION.md).

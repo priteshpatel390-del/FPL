@@ -23,9 +23,11 @@ statement: the repository safely supports both guarded automatic paths. The **in
 that GitHub's automatic scheduler workflow A is **disabled before** Cloudflare automatic scheduling
 is activated, so Cloudflare becomes the only automatic clock and GitHub Actions remains only the
 execution engine. Deliberate automatic A+B coexistence is **superseded** and is not the intended
-future operating mode. Workflow A is **not** disabled today — workflow `350014371` reports
-`state: active` — and disabling it is a separate owner-approved live action. Workflow C, the attended
-manual path, is unaffected and stays available for owner-approved recovery.
+future operating mode. **That retirement has now happened:** on 7 September 2026 the owner disabled
+workflow A, and the GitHub Actions API reports workflow `350014371` as `disabled_manually`. Cloudflare
+is **not** yet an automatic clock either — the dispatcher Worker is not deployed and holds no Cron
+Trigger — so there is currently no automatic collection path at all. Workflow C, the attended manual
+path, is unaffected and stays available for owner-approved recovery.
 
 Workflow B is new and is the unattended external-trigger path. It carries no caller-supplied SHA
 input: a caller supplies `ref: main` and nothing else, GitHub resolves the event SHA, and the
@@ -123,13 +125,15 @@ Two workflows reach that path and nothing else does. `data-s2-production-collect
 `data-s2-production-scheduled.yml` carries exactly one trigger and no `timezone:` field, so its cron
 is interpreted in UTC — the permanent approved cadence `17 1 * * *` (01:17 UTC), restored after the
 temporary 4 September 2026 acceptance windows closed on the first successful natural scheduled run.
-**That workflow is currently enabled.** It was owner-disabled after its first permanent-cadence
-natural run `33948145320` committed to D1 and then failed resource enforcement at `postflight_read`;
-the owner re-enabled it after the capacity live-acceptance closeout, and workflow `350014371` now
-reports `state: active`. Its first natural run under that re-enable, `34015422874`, succeeded in
-both jobs on 6 September 2026 — and was created 4h44m26s after its 01:17 UTC nominal minute, so
-**GitHub cron is active enough to produce natural runs but is materially late and unreliable as a
-timer**, which is the problem DATA-S2C addresses. It takes no input, is
+**That workflow is now disabled and its automatic timer is retired.** Workflow `350014371` reports
+`state: disabled_manually` as of 7 September 2026. Its history is three natural runs: it was first
+owner-disabled after `33948145320` committed to D1 and then failed resource enforcement at
+`postflight_read`, re-enabled after the capacity live-acceptance closeout, produced `34015422874`
+successfully on 6 September 2026, and was disabled again by the owner as the DATA-S2C timer
+retirement step. That last run was created 4h44m26s after its 01:17 UTC nominal minute, and the three
+delivered natural runs were approximately 3h21m, 4h31m and 4h44m late, so **GitHub cron was active
+enough to produce natural runs but materially late and unreliable as a timer**, which is the problem
+DATA-S2C addresses. It takes no input, is
 gated on the SHA the schedule event itself carries plus a bounded read-only exact-head
 `Tests and deterministic build` proof, and uses the dedicated unattended
 `data-s2-production-scheduled` environment. Both begin with a credential-free `repository-gate`

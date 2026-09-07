@@ -106,8 +106,10 @@ accounting.
 Package A does not change it. Whether GitHub has the scheduled workflow enabled is owner-side
 configuration this repository cannot assert or change from its own contents, and Package A changes
 nothing about it — but it **is** readable through the GitHub Actions API. Read on 6 September 2026,
-workflow `350014371` reports `state: active`, and it produced successful natural run `34015422874`.
-The earlier record of it being owner-disabled after run `33948145320` is historical.
+workflow `350014371` reported `state: active` and produced successful natural run `34015422874`. Read
+again on 7 September 2026, after the owner performed the DATA-S2C timer retirement step, it reports
+`state: disabled_manually`, which is the current state. The earlier record of it being owner-disabled
+after run `33948145320` is historical.
 
 **Run `34015422874` supports but does not calibrate the capacity model.** Its identity, timing and
 conclusion are independently verifiable from GitHub and were verified. The Step Summary figures —
@@ -204,8 +206,9 @@ day, and is not claimed here.
 Real-time remaining allowance cannot be proven from this repository.
 
 **The scheduled production workflow's enabled state is GitHub-side configuration** that this
-repository cannot assert or change from its own contents. It was owner-disabled at this checkpoint;
-it has since been re-enabled and reports `state: active`.
+repository cannot assert or change from its own contents. It was owner-disabled at this checkpoint,
+was subsequently re-enabled, and was then disabled again on 7 September 2026 for the DATA-S2C timer
+retirement; it currently reports `state: disabled_manually`.
 
 <!-- DATA-S2B-GITHUB-ACTIONS-DAILY-SCHEDULE-2026-09-04 -->
 ## DATA-S2 scheduled production collection limitations
