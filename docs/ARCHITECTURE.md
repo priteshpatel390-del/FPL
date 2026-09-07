@@ -25,9 +25,11 @@ is activated, so Cloudflare becomes the only automatic clock and GitHub Actions 
 execution engine. Deliberate automatic A+B coexistence is **superseded** and is not the intended
 future operating mode. **That retirement has now happened:** on 7 September 2026 the owner disabled
 workflow A, and the GitHub Actions API reports workflow `350014371` as `disabled_manually`. Cloudflare
-is **not** yet an automatic clock either — the dispatcher Worker is not deployed and holds no Cron
-Trigger — so there is currently no automatic collection path at all. Workflow C, the attended manual
-path, is unaffected and stays available for owner-approved recovery.
+is **not** an automatic clock either: the isolated dispatcher `teamsheet-data-s2-dispatcher` was
+deployed dormant on the same day with its single `GITHUB_DISPATCH_TOKEN` secret bound and **zero Cron
+Triggers**, so nothing can invoke it automatically and there is currently no automatic collection path
+at all. Arming it is Package C and separately gated. Workflow C, the attended manual path, is
+unaffected and stays available for owner-approved recovery.
 
 Workflow B is new and is the unattended external-trigger path. It carries no caller-supplied SHA
 input: a caller supplies `ref: main` and nothing else, GitHub resolves the event SHA, and the

@@ -55,16 +55,27 @@ overlap experiment is superseded.
 implemented, tested and deliberately **not** rewritten because the rollout changed. The *intended
 rollout* is single-clock, and it is now in force. **FACT, verified on 7 September 2026: workflow A is
 disabled** — workflow `350014371` reports `state: disabled_manually`, the owner having taken the
-separate live action that step required. Cloudflare has not replaced it yet, so no automatic
-scheduler is armed.
+separate live action that step required. Cloudflare has not replaced it as an automatic clock either:
+the dispatcher is deployed but holds zero Cron Triggers, so **no automatic scheduler is armed**.
 
-**Sequence, each a separate approval:** merge Package A and run exact-`main` Verify; disable
-workflow A and verify no running or pending A execution can still collect; provision the Cloudflare
-dispatcher dormant (credential, secret binding, deployment, `"crons": []`) and prove it harmless;
-activate the approved 01:17 / 02:17 / 03:17 UTC entries and prove execution plus guard refusal;
+**Sequence, each a separate approval:** merge Package A and run exact-`main` Verify **(done)**;
+disable workflow A and verify no running or pending A execution can still collect **(done,
+7 September 2026)**; provision the Cloudflare dispatcher dormant — credential, secret binding,
+deployment, `"crons": []` — and prove it harmless **(done, 7 September 2026)**; activate the approved
+01:17 / 02:17 / 03:17 UTC entries and prove execution plus guard refusal;
 observe Cloudflare as sole automatic scheduler, accepted only if it reliably produced no more than
 one production collection per UTC day; then, later, retire the obsolete GitHub scheduled workflow.
 Coexistence evidence is not required and the absence of workflow A during observation is expected.
+
+**Deployment is attended and deliberately has no standing automation.** Package B's initial
+exact-source deployment used Cloudflare's Workers Git import, and the owner **disconnected that Git
+repository integration immediately after deploying and binding the secret**. The reasoning is the
+approval boundary itself: a standing "deploy on every push to `main`" integration would let a future
+repository change reach production Cloudflare — including a cron change — without the separate
+attended approval each live step is supposed to require, quietly converting Package C's activation
+gate into a merge. The deployed Worker persists; the build integration does not. No permanent
+Cloudflare CI/CD system was built to replace it, and none should be without its own proposal:
+attended deployment a few times a year does not justify standing deploy credentials.
 
 **Nothing was executed to record this decision.** No workflow enabled, disabled or dispatched; no
 credential or Cloudflare secret created; no Worker deployed; no Cron Trigger created, changed or

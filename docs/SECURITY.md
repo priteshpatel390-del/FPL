@@ -24,8 +24,14 @@ materialised on the final step — and the same reviewed repository constant for
 database id, which reaches no workflow or environment value. Workflow B accepts **zero inputs**, so
 no caller can name a revision, timestamp, season, database, endpoint, SQL or statement.
 
-**The dispatcher Worker names one future secret binding and holds no production identifier.** The
-binding is `GITHUB_DISPATCH_TOKEN` and **it does not exist**; Package A creates no credential. The
+**The dispatcher Worker names one secret binding and holds no production identifier.** The binding is
+`GITHUB_DISPATCH_TOKEN`. Package A created no credential; **the owner created and bound it in Package
+B on 7 September 2026** — a GitHub fine-grained personal access token scoped to the single repository
+`priteshpatel390-del/FPL`, carrying **Actions: read and write** plus mandatory read-only Metadata and
+**no account permissions**, with a **90-day expiry**, held only as an encrypted Cloudflare runtime
+secret. Its value is not recorded in this repository, in any pull request, log or document, and must
+never be. The blast radius is unchanged and is not reduced by scoping: a token able to dispatch the
+external workflow can dispatch and re-run this repository's workflows generally. The
 Worker contains no `CLOUDFLARE_ACCOUNT_ID`, no `CLOUDFLARE_D1_TOKEN`, no production D1 database id,
 no account fingerprint, no Official FPL endpoint, no Anthropic key and no Odds key. It holds no D1
 binding and no storage, service or queue binding, and exposes no fetch handler, `workers.dev`
