@@ -13,8 +13,15 @@ Cloudflare value is stored or manual run attempted, the owner must explicitly cr
 only** is forbidden here because current `main` is not branch-protected and that setting can permit all
 branches when no branch protections exist. Creating the environment first is mandatory because a
 referenced nonexistent environment can otherwise be automatically created without protection rules.
-The current authenticated tooling cannot read the live activation variable (`HTTP 403`), so its
-absent/non-`true` state and full dormant-on-merge live condition remain unproven.
+The authenticated tooling available to this repository received `HTTP 403` when reading the live
+activation variable, so repository tooling proves nothing about it. The owner then verified through
+the GitHub owner UI (**Settings → Secrets and variables → Actions → Variables**) that
+`DATA_STEWARD_SCHEDULED_ENABLED` is **absent**, creating, editing and deleting no variable. That is
+owner UI evidence rather than an independent repository read. An absent variable cannot equal exact
+lowercase `true`, so the scheduled observer is **dormant on merge**. Scheduled activation still
+requires a later explicit owner-approved creation/set of `DATA_STEWARD_SCHEDULED_ENABLED=true`, and
+the separate environment, exact-`main` restriction, Cloudflare credential and first-manual-observation
+gates are unchanged.
 
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->

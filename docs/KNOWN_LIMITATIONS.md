@@ -5,10 +5,14 @@
 
 Observer runtime is repository-ready but not live-accepted. This PR creates no protected environment value, Cloudflare credential, activation variable or live acceptance. A GitHub-hosted observer cannot independently detect a total GitHub outage or complete absence of its own scheduled runs; GitHub run history plus sanitized output are not an independent watchdog or persistent heartbeat. No new persistence is added. A1.2's unobservable Cloudflare per-fire invocation history and bounded D1-read limitations remain.
 
-Repository logic skips schedules unless the activation value is exact lowercase `true`, but available
-authenticated tooling received HTTP 403 when reading that live Actions variable. Its absent/non-`true`
-state is therefore unproven; dormant-on-merge must not be claimed as a live fact until an authorized
-read confirms it.
+Repository logic skips schedules unless the activation value is exact lowercase `true`. Available
+authenticated tooling received HTTP 403 when reading that live Actions variable and therefore proves
+nothing about it; the owner verified through the GitHub owner UI that
+`DATA_STEWARD_SCHEDULED_ENABLED` is absent, with no variable created, edited or deleted, so the
+scheduled observer is dormant on merge. **That basis is owner UI evidence, not an independent
+repository read**, and this repository still holds no authorized read-only path to that variable —
+so it cannot itself detect a later change to it. Scheduled activation remains a separate explicit
+owner-approved step.
 
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->

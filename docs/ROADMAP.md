@@ -3,7 +3,7 @@
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## Current checkpoint — DATA-OPS A1.3 repository-ready observer
 
-A1.2 is merged. A1.3 prepares a dedicated read-only Actions runtime, manual dispatch and fail-closed schedule declarations at 04:17/08:17 UTC. Available tooling cannot prove the live activation variable absent/non-`true` because its read returned HTTP 403, so dormant-on-merge is not claimed as a live fact. Next gates are an authorized variable read; explicit creation of `data-steward-readonly` restricted through Selected branches and tags to exact `main`; credential provisioning; one attended manual live read-only acceptance; then separate approval to set `DATA_STEWARD_SCHEDULED_ENABLED=true`. Independent outage detection, persistence and all remediation remain future checkpoints.
+A1.2 is merged. A1.3 prepares a dedicated read-only Actions runtime, manual dispatch and fail-closed schedule declarations at 04:17/08:17 UTC. Authenticated repository tooling received HTTP 403 reading the live activation variable and proves nothing about it; the owner then verified through the GitHub owner UI that `DATA_STEWARD_SCHEDULED_ENABLED` is absent, creating, editing and deleting nothing, so the scheduled observer is dormant on merge because the workflow requires exact lowercase `true`. Next gates, each separate: explicit creation of `data-steward-readonly` restricted through Selected branches and tags to exact `main`; read-only Cloudflare credential provisioning; one attended manual live read-only observation and acceptance; then separate approval to create/set `DATA_STEWARD_SCHEDULED_ENABLED=true`. Independent outage detection, persistence and all remediation remain future checkpoints.
 
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->

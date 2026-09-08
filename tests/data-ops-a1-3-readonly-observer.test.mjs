@@ -56,8 +56,24 @@ test('activation docs require exact-main environment protection before credentia
     assert.match(text,/before[\s\S]{0,80}Cloudflare/i);
     assert.match(text,/automatically create|automatically created/);
     assert.match(text,/HTTP 403/);
-    assert.match(text,/dormant-on-merge[\s\S]{0,80}(?:not|unproven)/);
+    assert.match(text,/owner UI/i);
+    assert.match(text,/absent/);
+    assert.match(text,/(?:created, edited|created\/set|create\/set|creating, editing)/);
+    assert.match(text,/dormant on merge/);
+    assert.doesNotMatch(text,/dormant-on-merge[\s\S]{0,80}(?:remain|is)[\s\S]{0,20}unproven/);
   }
+  assert.match(activationDoc,/exact lowercase `true`/);
+  assert.match(activationDoc,/no variable was created, edited or deleted/i);
+  assert.match(securityDoc,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
+});
+
+test('activation docs keep every later live gate separate and unclaimed',()=>{
+  for(const gate of [/Selected branches and tags[^\n]*exact branch `main`/,
+    /Workers Scripts Read/,/D1 Read/,/manual/i,/DATA_STEWARD_SCHEDULED_ENABLED=true/])
+    assert.match(activationDoc,gate);
+  assert.doesNotMatch(activationDoc,
+    /\b(?:environment provisioned|credentials? (?:are|is) provisioned|live acceptance (?:is )?complete|scheduled observer is active|live monitoring is active)\b/i);
+  assert.match(activationDoc,/NOT LIVE-ACTIVATED/);
 });
 
 test('observer workflow and adapter expose no mutation route',()=>{

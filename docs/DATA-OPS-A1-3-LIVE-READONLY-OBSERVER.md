@@ -15,9 +15,18 @@ Repository-ready does not mean live-activated. Scheduled runs require repository
 any other value skips the job. Manual `workflow_dispatch` remains independent for later attended
 acceptance, but every event must also have exact ref `refs/heads/main`; branch and tag dispatches are
 skipped before environment credentials can be exposed. This PR creates no variable, environment,
-secret or credential and performs no live run. The available authenticated tooling received HTTP 403
-when reading the live activation variable, so its absent/non-`true` state is **not independently
-proven** and this checkpoint does not claim that live dormant-on-merge state as fact.
+secret or credential and performs no live run.
+
+**Live dormant state is now recorded, with its provenance stated.** The authenticated tooling
+available to this repository received **HTTP 403** when it attempted to read the live Actions
+variable, so repository tooling did not and cannot prove that state itself. The owner subsequently
+verified through the GitHub owner UI — **Settings → Secrets and variables → Actions → Variables** —
+that `DATA_STEWARD_SCHEDULED_ENABLED` is **absent**. That is owner UI evidence, not an independent
+repository read. **No variable was created, edited or deleted** in obtaining it. Because the workflow
+executes a scheduled job only when that variable equals exact lowercase `true`, and an absent variable
+cannot equal it, **the scheduled observer remains dormant on merge**. Scheduled activation still
+requires a later explicit owner-approved creation and setting of `DATA_STEWARD_SCHEDULED_ENABLED=true`;
+merging this checkpoint performs no part of it.
 
 ## Runtime and authority boundary
 
@@ -63,14 +72,18 @@ repository-proven read-only API. These gaps are not reported as healthy evidence
 
 Remaining attended owner steps, in order:
 
-1. Provision protected environment `data-steward-readonly` with Cloudflare account id, separately
-   supplied fingerprint and the read-only Cloudflare token. **First create/configure it with Selected
-   branches and tags → exact branch `main`; do not rely on Protected branches only.**
-2. Obtain an authorized read-only result proving `DATA_STEWARD_SCHEDULED_ENABLED` is absent or not
-   exact lowercase `true`; current tooling cannot prove this because its read returned HTTP 403.
+1. Explicitly create and configure protected environment `data-steward-readonly`, with deployment
+   branches/tags set to **Selected branches and tags → exact branch `main`**; do not rely on
+   **Protected branches only**. The environment must exist and be restricted before it holds any
+   value.
+2. Only then store the read-only Cloudflare credentials in it: account id, the separately supplied
+   account fingerprint and one token limited to **Workers Scripts Read** plus **D1 Read**.
 3. Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.
 4. Only after that acceptance, separately approve and set repository variable
    `DATA_STEWARD_SCHEDULED_ENABLED` to exact `true`.
 
-Repository logic is fail-closed for absent/non-`true` values, but live dormant-on-merge status remains
-unproven until step 2. This checkpoint does not perform any step above or claim live monitoring.
+The activation-variable question that formerly sat at the head of this list is **closed by owner UI
+evidence**: `DATA_STEWARD_SCHEDULED_ENABLED` is absent, repository logic is fail-closed for absent and
+non-`true` values, and the scheduled observer is therefore dormant on merge. Closing it changes no
+other gate. This checkpoint performs no step above and claims no live monitoring, no environment, no
+credential and no accepted observation.
