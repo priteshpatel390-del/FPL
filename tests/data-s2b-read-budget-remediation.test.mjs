@@ -41,7 +41,6 @@ const contractPath='workers/data-platform/integrity/committed-run-integrity-cont
 const helperPath='workers/data-platform/integrity/verify-committed-run.mjs';
 const entryPath='workers/data-platform/run-committed-run-integrity.mjs';
 const workflowPath='.github/workflows/data-s2b-committed-run-integrity.yml';
-const scheduledWorkflowPath='.github/workflows/data-s2-production-scheduled.yml';
 const contractSource=fs.readFileSync(contractPath,'utf8');
 const helperSource=fs.readFileSync(helperPath,'utf8');
 const entrySource=fs.readFileSync(entryPath,'utf8');
@@ -632,15 +631,10 @@ test('a transport failure never carries a request URL into the sanitized classif
 
 /* ------------------------------------------------- the scheduler is untouched here */
 
-test('this remediation changes no schedule, cron, ceiling or scheduler state',()=>{
-  const scheduled=fs.readFileSync(scheduledWorkflowPath,'utf8');
-  // The permanent approved cadence, unchanged, and still exactly one trigger.
+test('this remediation changes no collection cadence or resource ceiling',()=>{
+  // Production cadence remains the value used by collection identity; automatic clock ownership
+  // moved to Cloudflare without changing collector semantics.
   assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
-  assert.match(scheduled,/^on:\n  schedule:\n    - cron: '17 1 \* \* \*'\n/m);
-  assert.equal((uncommented(scheduled).match(/cron:/g)||[]).length,1);
-  assert.equal((uncommented(scheduled).match(/- cron:/g)||[]).length,1);
-  assert.ok(!uncommented(scheduled).includes('workflow_dispatch'));
-  assert.match(scheduled,/test "\$EVENT_SCHEDULE" = '17 1 \* \* \*'/);
   // The read envelope is the one thing the capacity package moved, and it moved by constant
   // values only. The superseded pair is recorded beside it so the change stays legible.
   assert.equal(EXPECTED_D1_ROWS_READ_PER_CYCLE,150000);

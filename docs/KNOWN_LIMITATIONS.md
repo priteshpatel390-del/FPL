@@ -1,5 +1,21 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## Current DATA-S2C limitations after closeout
+
+**Supersedes older DATA-S2C open-state wording below; dated evidence remains historical.** Live
+dispatch and duplicate refusal are now proven by runs `34207638275` and `34209137195`. The previously
+accepted history-gap risk materialised on UTC day 2026-09-07: GitHub reports no governed workflow
+A/B/C run, and missing observations cannot be reconstructed. Workflow A is deleted after retirement.
+
+Repository tooling cannot independently read current Cloudflare Cron Triggers. Final cleanup and the
+saved live set of exactly `17 1 * * *`, `17 2 * * *`, `17 3 * * *` rest on owner dashboard
+observation. Remaining operational risks are monitored by exception: missing/duplicate collection,
+dispatch failure, guard ambiguity, cron drift, credential expiry/failure, D1 integrity failure,
+resource breach, and provider/schema failure. Healthy operation is non-blocking and requires no owner
+action. Autonomous Data Steward is not implemented.
+
+
 <!-- DATA-S2C-PACKAGE-C-2026-09-07 -->
 ## DATA-S2C external scheduler — Package C limitations
 

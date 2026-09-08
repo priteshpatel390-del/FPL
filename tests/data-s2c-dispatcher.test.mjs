@@ -132,13 +132,10 @@ test('the dispatcher declares no timezone override, so Cloudflare reads the cron
   assert.doesNotMatch(read(CONFIG_PATH),/timezone|time_zone|"tz"|Europe\/London|BST/i);
 });
 
-test('Package C arms the dispatcher only, and re-enables no GitHub scheduler',()=>{
-  // Workflow A stays structurally present and unchanged: Package C neither re-enables nor deletes
-  // it. Whether GitHub has it enabled is owner-side state this repository cannot set, and the
-  // repository ships no surface that could enable, disable or dispatch a workflow.
+test('the dispatcher is the only automatic clock after workflow A retirement',()=>{
+  // Workflow A is obsolete after live Cloudflare acceptance and must not return.
   const workflowA='.github/workflows/data-s2-production-scheduled.yml';
-  assert.ok(fs.existsSync(workflowA));
-  assert.match(read(workflowA),/^on:\n  schedule:\n    - cron: '17 1 \* \* \*'$/m);
+  assert.ok(!fs.existsSync(workflowA));
   const surfaces=[...fs.readdirSync('.github/workflows').filter(name=>/\.ya?ml$/.test(name))
     .map(name=>`.github/workflows/${name}`),
     ...fs.readdirSync('scripts').filter(name=>/\.(mjs|sh)$/.test(name)).map(name=>`scripts/${name}`)];

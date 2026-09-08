@@ -1,5 +1,22 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## Current DATA-S2C roadmap state — complete
+
+**Supersedes all earlier DATA-S2C current-state and future Package D/E statements below; those remain
+historical.** Combined owner-approved Packages D/E are complete after live acceptance on 8 September
+2026. T1 run `34207638275` proved Cloudflare → dispatcher → workflow B → gates → Official FPL →
+production D1. T2 run `34209137195` proved same-day duplicate refusal: `OPPORTUNITY_CONSUMED
+(automatic_collection_consumed)`, collection skipped. Workflow A is retired from repository;
+workflow B and attended recovery workflow C remain.
+
+Owner-confirmed final live trigger set is `17 1 * * *`, `17 2 * * *`, `17 3 * * *`; repository
+configuration declares the same. Current tooling cannot independently read live Cloudflare triggers.
+The 7 September accepted gap materialised, with zero governed A/B/C runs, and cannot be reconstructed.
+Ongoing scheduler monitoring is non-blocking, exception-based operations. Next scheduler-related
+checkpoint is separately scoped Autonomous Data Steward work, not further DATA-S2C observation.
+
+
 <!-- DATA-S2C-PACKAGE-C-2026-09-07 -->
 ## Current DATA-S2C checkpoint — Package C repository activation candidate
 

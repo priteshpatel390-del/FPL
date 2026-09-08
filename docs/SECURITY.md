@@ -1,5 +1,22 @@
 # SECURITY.md
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## Current DATA-S2C security state
+
+**Supersedes earlier DATA-S2C activation-state wording below.** First temporary Cloudflare acceptance
+fire safely rejected before dispatch with `dispatch_token_missing` because active Worker version
+`7afb02f1-5425-4d8c-bd85-91fec5e8175c` lacked the runtime secret. No GitHub run or collection occurred.
+Under explicit narrow owner approval, secret-containing version `7c3c8be5...` was manually promoted
+to 100% traffic; later T1/T2 acceptance succeeded. No credential value was exposed, rotated or
+replaced by this repository closeout.
+
+Workflow A is deleted. Workflow B retains its credential-free gate, least-privilege GitHub token
+scope, protected production environment and existing production credential boundary. Current tooling
+cannot independently inspect live Cron Triggers; owner dashboard confirmation supports removal of the
+temporary triggers and final three-trigger state. Ongoing credential expiry/failure and cron drift are
+exception conditions, not proof of healthy state.
+
+
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## DATA-S2C external scheduler — credential and logging boundary
 

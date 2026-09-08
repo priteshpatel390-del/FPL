@@ -50,12 +50,13 @@ const classify=(workflows,options={})=>classifyOpportunity({workflows,now:NOW,..
 
 /* ------------------------------- governed scope is exact ------------------------------- */
 
-test('the guard governs exactly the three routine collection workflows that exist',()=>{
+test('the guard retains retired workflow A history and governs current B and C paths',()=>{
   assert.deepEqual(ROUTINE_COLLECTION_WORKFLOWS.map(entry=>entry.path),
     [SCHEDULED_WORKFLOW,EXTERNAL_WORKFLOW,MANUAL_WORKFLOW]);
   assert.deepEqual(ROUTINE_COLLECTION_WORKFLOWS.map(entry=>entry.kind),
     [AUTOMATIC_COLLECTION,AUTOMATIC_COLLECTION,OWNER_COLLECTION]);
-  for(const entry of ROUTINE_COLLECTION_WORKFLOWS){
+  assert.ok(!fs.existsSync(SCHEDULED_WORKFLOW));
+  for(const entry of ROUTINE_COLLECTION_WORKFLOWS.filter(entry=>entry.path!==SCHEDULED_WORKFLOW)){
     // The repository file the guard names must exist, and the identifier it gives the Actions API
     // must be exactly that file's name, so the two can never drift apart.
     assert.ok(fs.existsSync(entry.path),entry.path);
@@ -129,12 +130,11 @@ test('the attended owner workflow is deliberately left unguarded',()=>{
   const manual=read(MANUAL_WORKFLOW);
   assert.doesNotMatch(manual,/run-opportunity-guard/);
   assert.doesNotMatch(manual,/opportunity/i);
-  // Only the two automatic paths run the guard.
-  assert.match(read(SCHEDULED_WORKFLOW),/node workers\/data-platform\/scheduled\/run-opportunity-guard\.mjs/);
+  // Only current automatic workflow B runs the guard. Retired A stays in historical discovery.
   assert.match(read(EXTERNAL_WORKFLOW),/node workers\/data-platform\/scheduled\/run-opportunity-guard\.mjs/);
   const guarded=fs.readdirSync('.github/workflows').filter(name=>/\.ya?ml$/.test(name))
     .filter(name=>/run-opportunity-guard/.test(read(`.github/workflows/${name}`))).sort();
-  assert.deepEqual(guarded,['data-s2-production-external.yml','data-s2-production-scheduled.yml']);
+  assert.deepEqual(guarded,['data-s2-production-external.yml']);
 });
 
 test('a skipped collect job never consumes the day',()=>{
@@ -1137,7 +1137,7 @@ test('every member of the shared production group stays non-cancelling with no q
     .sort();
   // Membership drift detection: this exact set, no more and no fewer.
   assert.deepEqual(members,['data-s2-first-run-reconciliation.yml','data-s2-production-collection.yml',
-    'data-s2-production-external.yml','data-s2-production-resume.yml','data-s2-production-scheduled.yml',
+    'data-s2-production-external.yml','data-s2-production-resume.yml',
     'data-s2b-committed-run-integrity.yml','data-s2b-explain-acceptance.yml',
     'data-s2b-migration-0003.yml']);
   for(const name of members){

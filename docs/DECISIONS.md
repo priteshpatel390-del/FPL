@@ -1,5 +1,25 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## DATA-S2C closeout decision — 8 September 2026
+
+**Supersedes prior DATA-S2C activation and separate Package D/E gates below while preserving them as
+history.** Owner approved a narrow live-operation exception permitting direct dashboard Cron Trigger
+creation, temporary acceptance triggers, manual promotion of the secret-containing Worker version,
+and combined Package D/E closeout. This does not create a general dashboard-first deployment policy.
+
+T1 `34207638275` succeeded end to end; T2 `34209137195` failed only because the guard correctly found
+`OPPORTUNITY_CONSUMED (automatic_collection_consumed)`, and its collection job was skipped. Earlier
+`dispatch_token_missing` was a safe Cloudflare pre-dispatch rejection from an active version lacking
+the runtime secret, not a GitHub or collection failure. Cloudflare is accepted as sole automatic
+clock; obsolete workflow A is deleted. Workflow B, workflow C, shared guard and production collection
+machinery remain.
+
+Ongoing scheduler monitoring becomes non-blocking, exception-based normal operations. Healthy days
+need no owner intervention. Autonomous Data Steward remains separately gated. The UTC 2026-09-07 gap
+is confirmed from zero governed A/B/C runs; missing observations cannot be reconstructed.
+
+
 <!-- DATA-S2C-ROLLOUT-DECISION-2026-09-07 -->
 ## D-DATA-S2C-D — 7 September 2026: Cloudflare replaces the GitHub timer; no A+B coexistence
 

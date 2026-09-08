@@ -18,7 +18,7 @@ import {ACTIVE_TOKEN_STATUS,CHECK_ACCOUNT_FINGERPRINT,CHECK_API_TOKEN_ACTIVE,CHE
 const WORKFLOW_PATH='.github/workflows/data-s2-scheduled-environment-preflight.yml';
 const MODULE_PATH='workers/data-platform/scheduled/environment-preflight.mjs';
 const ENTRY_PATH='workers/data-platform/scheduled/run-scheduled-environment-preflight.mjs';
-const SCHEDULED_WORKFLOW_PATH='.github/workflows/data-s2-production-scheduled.yml';
+const EXTERNAL_WORKFLOW_PATH='.github/workflows/data-s2-production-external.yml';
 const MANUAL_WORKFLOW_PATH='.github/workflows/data-s2-production-collection.yml';
 const COLLECTOR_PATH='workers/data-platform/production-collection.mjs';
 const COLLECTION_ENTRY_PATH='workers/data-platform/run-production-collection.mjs';
@@ -304,17 +304,14 @@ test('no secret, account, fingerprint or database value can be produced by the m
 
 /* ------------------------- nothing production changes underneath it ------------------------- */
 
-test('the scheduled production cron and its workflow are untouched by this diagnostic',()=>{
-  const scheduled=read(SCHEDULED_WORKFLOW_PATH);
-  const trigger=scheduled.slice(scheduled.indexOf('\non:'),scheduled.indexOf('\npermissions:'));
-  assert.equal(trigger.trim(),"on:\n  schedule:\n    - cron: '17 1 * * *'");
+test('the external production workflow is untouched by this diagnostic',()=>{
+  const external=read(EXTERNAL_WORKFLOW_PATH);
+  const trigger=uncommented(external.slice(external.indexOf('\non:'),external.indexOf('\npermissions:')));
+  assert.equal(trigger.trim(),'on:\n  workflow_dispatch:');
   assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
-  assert.doesNotMatch(uncommented(scheduled),/timezone/i);
-  assert.ok(scheduled.includes(`- cron: '${PRODUCTION_COLLECTION_SCHEDULE}'`));
-  assert.equal([...scheduled.matchAll(/^\s*- cron:/gm)].length,1);
-  assert.doesNotMatch(uncommented(scheduled),/workflow_dispatch/);
-  // The diagnostic is additive: neither production workflow references it.
-  assert.ok(!scheduled.includes('scheduled-environment-preflight'));
+  assert.doesNotMatch(uncommented(external),/^\s*schedule:|cron:/m);
+  // The diagnostic remains separate: neither production workflow references it.
+  assert.ok(!external.includes('scheduled-environment-preflight'));
   assert.ok(!read(MANUAL_WORKFLOW_PATH).includes('scheduled-environment-preflight'));
 });
 
