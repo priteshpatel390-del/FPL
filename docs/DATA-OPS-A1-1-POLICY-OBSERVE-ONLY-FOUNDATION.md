@@ -36,6 +36,13 @@ execution: A1.1 exposes only a lookup for registered, enabled, non-mutating Clas
   and purpose come from the repository's existing provider registry; callers cannot redefine
   purpose, fallback or prohibited influence. It always returns `mayInfluenceProduction: false`.
 
+No dispatch failure currently qualifies for AMBER. `dispatch_token_missing` and the dispatcher's
+generic `dispatch_status_rejected` are RED: bounded, rejected and side-effect-free does not prove
+bounded autonomous repairability. The generic rejection combines 401, 403, 404 and 422, while A1.1
+has no authoritative recovery-state contract capable of proving a pre-approved credential-free,
+permission-preserving repair. Any future AMBER recovery needs a separate exact registered predicate;
+historical recovery of one missing-token incident grants no reusable authority.
+
 ## Safety controls
 
 Overall autonomy and separate Cloudflare, GitHub repository, D1, provider and auto-merge mutation

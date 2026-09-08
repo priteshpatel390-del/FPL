@@ -12,6 +12,10 @@ was created, read, rotated or changed for A1.1.
 Condition labels and proposer evidence grant no authority: exact state predicates prove
 classification, and required typed/hash-bound evidence comes only from trusted context. No generic
 SQL, shell, HTTP, GitHub API or Cloudflare API action is registered.
+`dispatch_token_missing` and generic `dispatch_status_rejected` are RED. Definite no-side-effect
+failure is not safe-repair proof; credential/authentication/authorization uncertainty and the
+generic 401/403/404/422 grouping require owner escalation unless a future separately approved rule
+can prove an exact bounded recovery without secret or permission mutation.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C security state

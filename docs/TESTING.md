@@ -14,6 +14,9 @@ capability.
 Integrity-remediation cases add contradictory-state classification forgeries, proposer evidence and
 trusted-context injection, incident/evidence mismatch, generic-authority requests, and attempts to
 redefine repository-owned provider purpose, fallback and prohibited influence.
+The final dispatch-classification regressions prove missing-token, generic rejection, 401/403-shaped,
+unknown, contradictory, random-evidence, claimed-recoverability, malformed-recovery and secret-bearing
+states all remain RED. No synthetic positive AMBER recovery is invented.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## DATA-S2C live acceptance and retirement regression

@@ -51,7 +51,7 @@ test('unexpected parameters and disguised mutation cannot enter observation',()=
 test('Class 1 and Class 2 remain disabled and no future mutation has an executable surface',()=>{
   const class1={actionId:'repair.dispatch.retry',actionClass:1,parameters:{dispatchIdentity:'d'.repeat(64)}};
   const class2={actionId:'repair.repository.draft_pr',actionClass:2,parameters:{runbookId:'known.runbook'}};
-  assert.equal(reason(class1,{currentClassification:'AMBER',currentClassificationReasonCode:'KNOWN_BOUNDED_DISPATCH_FAILURE',authoritativeEvidence:authoritativeEvidence('dispatch_failure')}),'AUTONOMY_CLASS_DISABLED');
+  assert.equal(reason(class1,{currentClassification:'AMBER',currentClassificationReasonCode:'FUTURE_SEPARATELY_APPROVED_RECOVERY',authoritativeEvidence:authoritativeEvidence('dispatch_failure')}),'AUTONOMY_CLASS_DISABLED');
   assert.equal(reason(class2,{currentClassification:'RED',currentClassificationReasonCode:'REPOSITORY_INCIDENT',authoritativeEvidence:authoritativeEvidence('repository_incident')}),'AUTONOMY_CLASS_DISABLED');
   assert.equal(executableObserveAction(class1.actionId),null);
   assert.equal(executableObserveAction(class2.actionId),null);
@@ -69,7 +69,7 @@ test('Class 3 remains empty and Class 4 escalates to owner',()=>{
 test('overall and independent mutation kill switches fail closed',()=>{
   assert.equal(reason({}, {killSwitches:switches(false)}),'AUTONOMY_DISABLED');
   const killSwitches=switches();killSwitches.cloudflare=false;
-  assert.equal(reason({actionId:'repair.dispatch.retry',actionClass:1,parameters:{dispatchIdentity:'d'.repeat(64)}},{killSwitches,currentClassification:'AMBER',currentClassificationReasonCode:'KNOWN_BOUNDED_DISPATCH_FAILURE',authoritativeEvidence:authoritativeEvidence('dispatch_failure')}),'MUTATION_DOMAIN_DISABLED');
+  assert.equal(reason({actionId:'repair.dispatch.retry',actionClass:1,parameters:{dispatchIdentity:'d'.repeat(64)}},{killSwitches,currentClassification:'AMBER',currentClassificationReasonCode:'FUTURE_SEPARATELY_APPROVED_RECOVERY',authoritativeEvidence:authoritativeEvidence('dispatch_failure')}),'MUTATION_DOMAIN_DISABLED');
   assert.deepEqual(MUTATION_DOMAINS,['cloudflare','github_repository','d1','provider','auto_merge']);
   assert.equal(getActionDefinition('repair.dispatch.retry').mutationDomain,'cloudflare');
 });
@@ -99,26 +99,40 @@ test('classification needs registered deterministic rule, never proposer confide
   const healthy={conditionId:'healthy',domain:'github',expectedState:{status:'healthy'},observedState:{status:'healthy'},evidence};
   assert.deepEqual(classifyOperationalState(healthy),{classification:'GREEN',reasonCode:'HEALTHY_EXPECTED_STATE'});
   assert.equal(classifyOperationalState({...healthy,observedState:{status:'unhealthy'}}).classification,'RED');
-  const bounded={conditionId:'dispatch_failure_bounded',domain:'github',expectedState:{maxAttempts:1,operation:'workflow_dispatch'},observedState:{classification:'REJECTED',reasonCode:'dispatch_status_rejected',retryable:false,status:'failed'},evidence};
-  assert.deepEqual(classifyOperationalState(bounded),{classification:'AMBER',reasonCode:'KNOWN_BOUNDED_DISPATCH_FAILURE'});
-  assert.equal(classifyOperationalState({...bounded,observedState:{classification:'ACCEPTED_WITH_IDENTITY',reasonCode:'dispatch_accepted',retryable:false,status:'success'}}).classification,'RED');
   const consumed={conditionId:'opportunity_consumed',domain:'github',expectedState:{collectionPolicy:'one_routine_per_utc_day'},observedState:{reasonCode:'automatic_collection_consumed',status:'consumed'},evidence};
   assert.deepEqual(classifyOperationalState(consumed),{classification:'GREEN',reasonCode:'ROUTINE_OPPORTUNITY_ALREADY_CONSUMED'});
   assert.equal(classifyOperationalState({...consumed,observedState:{reasonCode:'automatic_collection_consumed',status:'available'}}).classification,'RED');
   assert.equal(classifyOperationalState({conditionId:'novel_issue',domain:'github',expectedState:{},observedState:{},evidence}).classification,'RED');
-  assert.equal(classifyOperationalState({...bounded,domain:'unknown'}).classification,'RED');
-  assert.equal(classifyOperationalState({...bounded,observedState:{status:'failed'}}).classification,'RED');
-  assert.equal(classifyOperationalState({...bounded,observedState:{status:'success'},evidence:[{reference:'random:claim',hash:'f'.repeat(64)}]}).classification,'RED');
-  assert.equal(classifyOperationalState({...bounded,confidence:1}).classification,'RED');
+  assert.equal(classifyOperationalState({...healthy,domain:'unknown'}).classification,'RED');
+  assert.equal(classifyOperationalState({...healthy,observedState:{}}).classification,'RED');
+  assert.equal(classifyOperationalState({...healthy,confidence:1}).classification,'RED');
+});
+
+test('bounded dispatch failure is RED without separately registered safe-recovery proof',()=>{
+  const evidence=[{reference:'cloudflare:dispatch/1',hash:'e'.repeat(64)}];
+  const bounded=reasonCode=>({conditionId:'dispatch_failure_bounded',domain:'cloudflare',expectedState:{maxAttempts:1,operation:'workflow_dispatch'},observedState:{classification:'REJECTED',reasonCode,retryable:false,status:'failed'},evidence});
+  for(const observation of [
+    bounded('dispatch_token_missing'),
+    bounded('dispatch_status_rejected'),
+    {...bounded('dispatch_status_rejected'),observedState:{classification:'REJECTED',httpStatus:401,reasonCode:'dispatch_status_rejected',retryable:false,status:'failed'}},
+    {...bounded('dispatch_status_rejected'),observedState:{classification:'REJECTED',httpStatus:403,reasonCode:'dispatch_status_rejected',retryable:false,status:'failed'}},
+    bounded('dispatch_unknown_rejection'),
+    {...bounded('dispatch_token_missing'),observedState:{status:'failed'}},
+    {...bounded('dispatch_token_missing'),observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',recovery:'bounded',retryable:false,status:'failed'}},
+    {...bounded('dispatch_token_missing'),evidence:[{reference:'random:recovery_claim',hash:'f'.repeat(64)}]},
+    {...bounded('dispatch_token_missing'),observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',recoveryType:'approved_version_promotion',retryable:false,status:'failed'}},
+    {...bounded('dispatch_token_missing'),observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',retryable:false,secret:'never',status:'failed'}}
+  ])assert.equal(classifyOperationalState(observation).classification,'RED');
+  assert.equal(evaluateActionPolicy({...proposal(),recoveryProof:{type:'approved_version_promotion'}},context()).reasonCode,'MALFORMED_REQUEST');
 });
 
 test('incident identity and serialization are deterministic and evidence-bound',async()=>{
-  const input={detectorId:'github.workflow',detectorVersion:'v1',detectedAt:'2026-09-08T11:00:00.000Z',domain:'github',expectedState:{maxAttempts:1,operation:'workflow_dispatch'},observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',retryable:false,status:'failed'},evidence:[{reference:'github:run/1',hash:'e'.repeat(64)}],conditionId:'dispatch_failure_bounded',mainSha:SHA,actionHistory:[],finalDisposition:null};
+  const input={detectorId:'github.workflow',detectorVersion:'v1',detectedAt:'2026-09-08T11:00:00.000Z',domain:'github',expectedState:{status:'healthy'},observedState:{status:'healthy'},evidence:[{reference:'github:run/1',hash:'e'.repeat(64)}],conditionId:'healthy',mainSha:SHA,actionHistory:[],finalDisposition:null};
   const a=await createIncident(input),b=await createIncident(JSON.parse(JSON.stringify(input)));
-  assert.deepEqual(a,b);assert.equal(a.classification,'AMBER');assert.match(a.incidentId,/^incident-[0-9a-f]{24}$/);assert.equal(a.policyVersion,POLICY_VERSION);
+  assert.deepEqual(a,b);assert.equal(a.classification,'GREEN');assert.match(a.incidentId,/^incident-[0-9a-f]{24}$/);assert.equal(a.policyVersion,POLICY_VERSION);
 });
 
-const auditInput=()=>({incidentId:INCIDENT,timestamp:'2026-09-08T11:00:00.000Z',sourceSha:SHA,detectorId:'github.workflow',detectorVersion:'v1',policyVersion:POLICY_VERSION,expectedStateFingerprint:FINGERPRINT,observedStateFingerprint:'d'.repeat(64),evidence:['github:run/1#sha256='+('e'.repeat(64))],classification:'AMBER',diagnosticSummary:'Known bounded dispatch failure',requestedActionId:'observe.health.inspect',decision:'ALLOW',reasonCode:'OBSERVE_ACTION_ALLOWED',executorIdentity:null,beforeStateFingerprint:null,afterStateFingerprint:null,verificationEvidence:[],rollbackTarget:null,rollbackResult:null,finalStatus:'OBSERVED',notificationDisposition:'EXCEPTION_ONLY'});
+const auditInput=()=>({incidentId:INCIDENT,timestamp:'2026-09-08T11:00:00.000Z',sourceSha:SHA,detectorId:'github.workflow',detectorVersion:'v1',policyVersion:POLICY_VERSION,expectedStateFingerprint:FINGERPRINT,observedStateFingerprint:'d'.repeat(64),evidence:['github:run/1#sha256='+('e'.repeat(64))],classification:'RED',diagnosticSummary:'Dispatch failure requires owner review',requestedActionId:'observe.health.inspect',decision:'ALLOW',reasonCode:'OBSERVE_ACTION_ALLOWED',executorIdentity:null,beforeStateFingerprint:null,afterStateFingerprint:null,verificationEvidence:[],rollbackTarget:null,rollbackResult:null,finalStatus:'OBSERVED',notificationDisposition:'EXCEPTION_ONLY'});
 
 test('audit contract is stable, canonical, hash-identified and secret rejecting',async()=>{
   const a=await createAuditRecord(auditInput()),b=await createAuditRecord({...auditInput(),evidence:[...auditInput().evidence]});

@@ -7,8 +7,7 @@ const text=(value,pattern)=>typeof value==='string'&&pattern.test(value);
 const equals=(value,expected)=>stableStringify(value)===stableStringify(expected);
 const RULES=deepFreeze({
   healthy:{classification:'GREEN',reasonCode:'HEALTHY_EXPECTED_STATE',domains:['github','cloudflare','d1','provider','observation'],prove:({expectedState,observedState})=>equals(expectedState,{status:'healthy'})&&equals(observedState,{status:'healthy'})},
-  opportunity_consumed:{classification:'GREEN',reasonCode:'ROUTINE_OPPORTUNITY_ALREADY_CONSUMED',domains:['github'],prove:({expectedState,observedState})=>equals(expectedState,{collectionPolicy:'one_routine_per_utc_day'})&&equals(observedState,{reasonCode:'automatic_collection_consumed',status:'consumed'})},
-  dispatch_failure_bounded:{classification:'AMBER',reasonCode:'KNOWN_BOUNDED_DISPATCH_FAILURE',domains:['github','cloudflare'],prove:({expectedState,observedState})=>equals(expectedState,{maxAttempts:1,operation:'workflow_dispatch'})&&exact(observedState,['classification','reasonCode','retryable','status'])&&observedState.status==='failed'&&observedState.classification==='REJECTED'&&observedState.retryable===false&&['dispatch_token_missing','dispatch_status_rejected'].includes(observedState.reasonCode)}
+  opportunity_consumed:{classification:'GREEN',reasonCode:'ROUTINE_OPPORTUNITY_ALREADY_CONSUMED',domains:['github'],prove:({expectedState,observedState})=>equals(expectedState,{collectionPolicy:'one_routine_per_utc_day'})&&equals(observedState,{reasonCode:'automatic_collection_consumed',status:'consumed'})}
 });
 
 export function classifyOperationalState(observation){
