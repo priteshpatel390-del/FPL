@@ -47,6 +47,9 @@ test('workflow permissions and protected runtime contract are exact and read-onl
   assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
   assert.match(workflow,/DATA_STEWARD_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
   assert.doesNotMatch(workflow,/\bPAT\b|GITHUB_DISPATCH_TOKEN|CLOUDFLARE_D1_TOKEN|ANTHROPIC|OPENAI|ODDS/i);
+  // No steward runtime credential is declared at job level at all — only step level, scoped to
+  // exactly the step that needs it.
+  assert.doesNotMatch(workflow,/^ {4}env:$/m);
 });
 
 test('activation docs require exact-main environment protection before credentials or dispatch',()=>{
@@ -135,4 +138,91 @@ test('migration inventory remains 0001-0003 and production collection surfaces a
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql']);
   assert.doesNotMatch(workflow,/workers\/data-platform|schedule-dispatcher|production-collection/);
+});
+
+// Live first-run evidence (run 34269989975, head 2f8a4850f911779d2ec48db2f835d0f6af5a45c5) proved
+// GitHub echoes each step's resolved `vars.*` environment in its log header, so the fingerprint
+// leaked into Actions logs before any credential was ever exposed. Owner review then tightened the
+// boundary further: no steward runtime credential of any kind may sit at job level, only the exact
+// step that needs a given value may declare it. This block pins that tightened contract.
+const stepEnvBlock=stepText=>{
+  const lines=stepText.split('\n');
+  const envIndex=lines.findIndex(line=>line==='        env:');
+  if(envIndex===-1)return [];
+  const out=[];
+  for(let i=envIndex+1;i<lines.length;i++){
+    if(!lines[i].startsWith('          '))break;
+    out.push(lines[i].trim());
+  }
+  return out;
+};
+
+test('no steward protected value sits at job level; each step declares only the env it needs',()=>{
+  assert.doesNotMatch(workflow,/^ {4}env:$/m);
+  const steps=workflow.split(/\n      - name: /).slice(1);
+  assert.equal(steps.length,4);
+  const [maskStep,checkoutStep,nodeStep,executeStep]=steps;
+  assert.match(maskStep,/^Register Cloudflare account fingerprint mask before any other step/);
+  assert.match(checkoutStep,/^Check out observer source/);
+  assert.match(nodeStep,/^Set up exact Node/);
+  assert.match(executeStep,/^Execute one read-only observation/);
+
+  // The masking step receives exactly the Account ID and nothing else.
+  assert.deepEqual(stepEnvBlock(maskStep),
+    ['DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}']);
+  assert.doesNotMatch(maskStep,/DATA_STEWARD_GITHUB_TOKEN|DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT|DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+
+  // Checkout and setup-node receive no steward value of any kind — no step-level env block at all.
+  assert.deepEqual(stepEnvBlock(checkoutStep),[]);
+  assert.deepEqual(stepEnvBlock(nodeStep),[]);
+  assert.doesNotMatch(checkoutStep,/DATA_STEWARD/);
+  assert.doesNotMatch(nodeStep,/DATA_STEWARD/);
+
+  // Only the final execution step receives the full runtime contract, and exactly that contract —
+  // fingerprint materialised only here, strictly after the masking step has already run.
+  assert.deepEqual(stepEnvBlock(executeStep).sort(),[
+    'DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}',
+    'DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}',
+    'DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}',
+    'DATA_STEWARD_GITHUB_TOKEN: ${{ github.token }}'
+  ].sort());
+  const fingerprintOccurrences=[...workflow.matchAll(
+    /DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: \$\{\{ vars\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT \}\}/g)];
+  assert.equal(fingerprintOccurrences.length,1);
+});
+
+test('the masking step derives from the secret account id, fails closed and touches no network/state surface',()=>{
+  const maskStep=workflow.split(/\n      - name: /)[1];
+  assert.match(maskStep,/test -n "\$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID"/);
+  assert.match(maskStep,/sha256sum/);
+  assert.match(maskStep,/::add-mask::/);
+  assert.doesNotMatch(maskStep,/curl|wget|fetch|http:|https:|wrangler/i);
+  assert.doesNotMatch(maskStep,/GITHUB_ENV|GITHUB_OUTPUT/);
+  assert.doesNotMatch(maskStep,/\buses:/);
+});
+
+test('workflow contract otherwise unchanged by the masking remediation',()=>{
+  assert.match(workflow,/^name: Data Steward Read-Only Observer$/m);
+  assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),
+    ['17 4 * * *','17 8 * * *']);
+  assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
+  const permissions=/permissions:\n([\s\S]*?)\n\njobs:/.exec(workflow)?.[1].trim();
+  assert.equal(permissions,'contents: read\n  actions: read\n  checks: read');
+  assert.doesNotMatch(workflow,/\b(?:write|id-token|deployments|packages|pull-requests|issues):/);
+  assert.match(workflow,
+    /github\.ref == 'refs\/heads\/main' && \(github\.event_name == 'workflow_dispatch' \|\| \(github\.event_name == 'schedule' && vars\.DATA_STEWARD_SCHEDULED_ENABLED == 'true'\)\)/);
+});
+
+test('no full live fingerprint or account id value appears anywhere in repository text',()=>{
+  const scanned=[workflow,activationDoc,securityDoc,
+    fs.readFileSync('docs/KNOWN_LIMITATIONS.md','utf8'),fs.readFileSync('docs/ROADMAP.md','utf8'),
+    fs.readFileSync('docs/PROJECT_CONTEXT.md','utf8'),fs.readFileSync('docs/TESTING.md','utf8'),
+    fs.readFileSync('workers/data-steward/sentinels/environment-contract.mjs','utf8'),
+    fs.readFileSync('workers/data-steward/sentinels/cloudflare-sentinel.mjs','utf8')];
+  for(const text of scanned){
+    // Only a short evidence prefix (7 hex characters) is ever recorded, never the full 64-character
+    // fingerprint or account id.
+    assert.doesNotMatch(text,/\bdbc3bff[0-9a-f]{2,}/i);
+    assert.doesNotMatch(text,/\bsha256:[0-9a-f]{64}\b/);
+  }
 });
