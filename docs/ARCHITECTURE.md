@@ -8,7 +8,9 @@ automatic path is Cloudflare Cron Trigger → isolated `teamsheet-data-s2-dispat
 `.github/workflows/data-s2-production-external.yml` → fail-closed repository/Verify/opportunity gates
 → existing Official FPL production collector → D1 REST. Workflow C remains attended recovery.
 Workflow A `.github/workflows/data-s2-production-scheduled.yml` is deleted; Cloudflare is the only
-automatic clock. Shared guard, collector, D1 and concurrency machinery remain.
+automatic clock. Its bounded historical runs remain in guard discovery through immutable GitHub
+Actions workflow id `350014371`, not the deleted filename. Shared guard, collector, D1 and
+concurrency machinery remain, including fail-closed provider-read handling.
 
 T1 run `34207638275` proved the whole path on 8 September 2026. T2 run `34209137195` proved a second
 same-day dispatch stops at `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` with `collect`

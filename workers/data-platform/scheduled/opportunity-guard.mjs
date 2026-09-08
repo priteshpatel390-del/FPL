@@ -151,16 +151,17 @@ export const COLLECT_JOB_STATUSES=Object.freeze(['queued','in_progress','complet
 export const AUTOMATIC_COLLECTION='automatic';
 export const OWNER_COLLECTION='owner';
 
-// The exact repository files this guard governs, each with the identifier the Actions API accepts
-// for it. Both are pinned: a test proves the repository files exist, and the API identifier can
-// never drift away from the file the repository actually holds.
+// The exact workflow identities this guard governs. `path` is the stable key used by the pure
+// classifier. `apiIdentifier` is independently pinned to what the Actions API accepts: current
+// workflows use their repository filename, while retired workflow A uses its immutable numeric
+// workflow id because its deleted repository path must not remain a live lookup dependency.
 export const ROUTINE_COLLECTION_WORKFLOWS=Object.freeze([
   Object.freeze({path:'.github/workflows/data-s2-production-scheduled.yml',
-    file:'data-s2-production-scheduled.yml',kind:AUTOMATIC_COLLECTION}),
+    apiIdentifier:350014371,kind:AUTOMATIC_COLLECTION}),
   Object.freeze({path:'.github/workflows/data-s2-production-external.yml',
-    file:'data-s2-production-external.yml',kind:AUTOMATIC_COLLECTION}),
+    apiIdentifier:'data-s2-production-external.yml',kind:AUTOMATIC_COLLECTION}),
   Object.freeze({path:'.github/workflows/data-s2-production-collection.yml',
-    file:'data-s2-production-collection.yml',kind:OWNER_COLLECTION})
+    apiIdentifier:'data-s2-production-collection.yml',kind:OWNER_COLLECTION})
 ]);
 
 export const OPPORTUNITY_AVAILABLE='OPPORTUNITY_AVAILABLE';
@@ -220,15 +221,15 @@ export function candidateDiscoveryDate(now){
 // never a `Link` header — so the whole sequence of reads is fixed before the second one is issued
 // and cannot run away. A page carrying the wrong number of rows fails closed in the decoder, because
 // a short or over-full candidate page could be missing exactly the run that collected.
-export function workflowRunsRequest(workflowFile,token,now,pageNumber=1){
-  if(!ROUTINE_COLLECTION_WORKFLOWS.some(entry=>entry.file===workflowFile))
+export function workflowRunsRequest(apiIdentifier,token,now,pageNumber=1){
+  if(!ROUTINE_COLLECTION_WORKFLOWS.some(entry=>entry.apiIdentifier===apiIdentifier))
     throw new Error('opportunity_workflow_unknown');
   if(typeof token!=='string'||!token)throw new Error('opportunity_token_missing');
   if(!Number.isSafeInteger(pageNumber)||pageNumber<1||pageNumber>MAX_WORKFLOW_RUN_PAGES)
     throw new Error('opportunity_page_invalid');
   const since=encodeURIComponent(`>=${candidateDiscoveryDate(now)}`);
   return Object.freeze({
-    url:`https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/workflows/${workflowFile}/runs`
+    url:`https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/workflows/${apiIdentifier}/runs`
       +`?per_page=${WORKFLOW_RUNS_PAGE_SIZE}&exclude_pull_requests=true&created=${since}`
       +`&page=${pageNumber}`,
     init:Object.freeze({method:'GET',headers:Object.freeze({
@@ -394,7 +395,7 @@ const decodeJobs=body=>{
 // run as easily as repeat one. Each page spends one unit of the shared read budget, and both that
 // budget and the page cap stop the sequence rather than extending it.
 const readWorkflowRunsPages=async(entry,token,now,read)=>{
-  const first=await read(workflowRunsRequest(entry.file,token,now,1));
+  const first=await read(workflowRunsRequest(entry.apiIdentifier,token,now,1));
   if(first==='bound')return 'bound';
   const page=first===null?null:decodeRunsPage(first,1);
   if(page===null)return null;
@@ -403,7 +404,7 @@ const readWorkflowRunsPages=async(entry,token,now,read)=>{
   if(pages>MAX_WORKFLOW_RUN_PAGES)return 'bound';
   const runs=[...page.runs];
   for(let pageNumber=2;pageNumber<=pages;pageNumber+=1){
-    const body=await read(workflowRunsRequest(entry.file,token,now,pageNumber));
+    const body=await read(workflowRunsRequest(entry.apiIdentifier,token,now,pageNumber));
     if(body==='bound')return 'bound';
     const next=body===null?null:decodeRunsPage(body,pageNumber);
     if(next===null)return null;

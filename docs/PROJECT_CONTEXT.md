@@ -6,7 +6,9 @@
 **This section supersedes every earlier DATA-S2C current-state and next-gate statement below; earlier
 sections remain dated history.** Owner-approved combined Packages D/E close DATA-S2C. Cloudflare is
 the sole automatic clock, workflow B remains its guarded GitHub execution path, workflow C remains
-the attended recovery path, and obsolete disabled workflow A is deleted.
+the attended recovery path, and obsolete disabled workflow A is deleted. Bounded historical A runs
+remain part of the guard and are queried through immutable GitHub Actions workflow id `350014371`,
+not the deleted filename; lookup failure still fails closed.
 
 Live acceptance on 8 September 2026 is independently supported by GitHub. T1 run `34207638275`
 (`2026-09-08T09:00:53Z`, `main`, SHA `c6708e4940c81b34b96adb53e624e98453ac2800`, attempt 1) succeeded

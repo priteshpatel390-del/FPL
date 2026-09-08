@@ -6,7 +6,9 @@
 blocks remain historical records.** DATA-S2C Packages D and E were explicitly owner-approved as one
 closeout package. Cloudflare is now the sole automatic clock, GitHub Actions remains the execution
 engine through workflow B, and attended workflow C remains the manual recovery path. Obsolete GitHub
-scheduled workflow A is retired from the repository.
+scheduled workflow A is retired from the repository. Its bounded historical runs remain guarded and
+are discovered through immutable GitHub Actions workflow id `350014371`, never through the deleted
+workflow filename; lookup failure remains fail-closed.
 
 GitHub independently confirms T1 run `34207638275` on `main` SHA
 `c6708e4940c81b34b96adb53e624e98453ac2800`, created `2026-09-08T09:00:53Z`, attempt 1: workflow B,

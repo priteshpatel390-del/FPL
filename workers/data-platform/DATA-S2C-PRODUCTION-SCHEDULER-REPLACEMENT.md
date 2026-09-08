@@ -56,8 +56,10 @@ Official FPL state.
 Cloudflare is the sole automatic clock. Workflow B remains the guarded automatic execution path and
 workflow C remains attended recovery. Disabled workflow A had no pending execution, was no longer
 required, and is deleted from the repository. Historical workflow-A run discovery remains inside the
-shared opportunity guard for its bounded lookback; removing that shared safety logic would change
-opportunity-guard behaviour and is outside closeout. Scheduler-environment diagnostics and other
+shared opportunity guard for its bounded lookback and uses immutable GitHub Actions workflow id
+`350014371`, not the deleted filename, as its API identifier. A failed id lookup remains fail-closed;
+removing or silently ignoring that history source would change opportunity-guard behaviour and is
+outside closeout. Scheduler-environment diagnostics and other
 shared production helpers remain because workflow B uses the same protected unattended environment
 and production machinery.
 

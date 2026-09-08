@@ -55,12 +55,14 @@ test('the guard retains retired workflow A history and governs current B and C p
     [SCHEDULED_WORKFLOW,EXTERNAL_WORKFLOW,MANUAL_WORKFLOW]);
   assert.deepEqual(ROUTINE_COLLECTION_WORKFLOWS.map(entry=>entry.kind),
     [AUTOMATIC_COLLECTION,AUTOMATIC_COLLECTION,OWNER_COLLECTION]);
+  assert.deepEqual(ROUTINE_COLLECTION_WORKFLOWS.map(entry=>entry.apiIdentifier),
+    [350014371,'data-s2-production-external.yml','data-s2-production-collection.yml']);
   assert.ok(!fs.existsSync(SCHEDULED_WORKFLOW));
   for(const entry of ROUTINE_COLLECTION_WORKFLOWS.filter(entry=>entry.path!==SCHEDULED_WORKFLOW)){
     // The repository file the guard names must exist, and the identifier it gives the Actions API
     // must be exactly that file's name, so the two can never drift apart.
     assert.ok(fs.existsSync(entry.path),entry.path);
-    assert.equal(entry.path,`.github/workflows/${entry.file}`);
+    assert.equal(entry.path,`.github/workflows/${entry.apiIdentifier}`);
     // Every governed workflow really does carry a credentialled job literally named `collect`.
     assert.match(read(entry.path),/^\n {2}collect:$/m,entry.path);
   }
@@ -327,7 +329,7 @@ test('a jobs listing the provider counts higher than it returned is truncated an
         jobRow('repository-gate','failure',at(2026,8,6,4,0),2),
         jobRow('collect','skipped',null,2),
         jobRow('repository-gate','success',at(2026,8,6,1,17),1)]})],
-      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+      ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
       ['/runs',ok(runsBody())]]);
     const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
     assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
@@ -346,7 +348,7 @@ test('a one-page jobs history at the page bound still decodes normally',async()=
   assert.equal(jobs.length,WORKFLOW_RUNS_PAGE_SIZE);
   const t=transport([
     ['/actions/runs/71/jobs',ok(jobsBody(...jobs))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+    ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
   // Attempt 1 collected this morning, so the day is consumed — read, not refused.
@@ -368,7 +370,7 @@ test('the full permitted re-run history exceeds one jobs page and fails closed',
   assert.equal(jobs.length,WORKFLOW_RUNS_PAGE_SIZE);
   const t=transport([
     ['/actions/runs/71/jobs',ok({total_count:MAX_RUN_ATTEMPTS*2,jobs})],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+    ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
   assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
@@ -388,7 +390,7 @@ test('a real two-attempt jobs payload resolves to consumed end to end',async()=>
       jobRow('collect','success',at(2026,8,6,1,18),1),
       jobRow('repository-gate','failure',at(2026,8,6,4,0),2),
       jobRow('collect','skipped',null,2)))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
+    ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,17)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
   assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
@@ -576,7 +578,7 @@ function transport(routes){
 
 test('resolution reads only Actions metadata, read-only, and inside a fixed bound',async()=>{
   const t=transport([
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,20)}))],
+    ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,20)}))],
     ['data-s2-production-external.yml/runs',ok(runsBody())],
     ['data-s2-production-collection.yml/runs',ok(runsBody())],
     ['/actions/runs/71/jobs',ok(jobsBody(jobRow('repository-gate','success',at(2026,8,6,1,20)),
@@ -597,7 +599,7 @@ test('resolution reads only Actions metadata, read-only, and inside a fixed boun
 
 test('the asking run costs no read of its own jobs',async()=>{
   const t=transport([
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,8,55)}))],
+    ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,8,55)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:71});
   assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
@@ -613,7 +615,7 @@ test('an unreadable, malformed, truncated or failing Actions response fails clos
     [['/runs',{status:200,json:async()=>{throw new Error('bad json');}}]],
     [['/runs',ok(runsBody({id:71,created_at:'never'}))]],
     [['/jobs',ok({total_count:2,jobs:[]})],
-      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,20)}))],
+      ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,1,20)}))],
       ['/runs',ok(runsBody())]]];
   for(const routes of broken){
     const outcome=await resolveOpportunity({token:'t',fetchImpl:transport(routes).fetchImpl,now:NOW});
@@ -633,7 +635,7 @@ test('an unreadable, malformed, truncated or failing Actions response fails clos
 test('exhausting the read bound is an ambiguity, never a licence to keep reading',async()=>{
   const many=Array.from({length:6},(_,index)=>({id:index+1,created_at:at(2026,8,6,1,index)}));
   const t=transport([['/jobs',ok(jobsBody(jobRow('repository-gate','failure',at(2026,8,6,1,0))))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody(...many))],['/runs',ok(runsBody())]]);
+    ['350014371/runs',ok(runsBody(...many))],['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,maxReads:4});
   assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
   assert.equal(outcome.reason,'guard_read_bound_exhausted');
@@ -737,7 +739,7 @@ test('a run created before midnight whose collect started after it is discovered
       ['/actions/runs/71/jobs',ok(jobsBody(
         jobRow('repository-gate','success',at(2026,8,6,23,51),1),
         jobRow('collect','success',at(2026,8,7,0,10),1)))],
-      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:71,created_at:at(2026,8,6,23,50)}))],
+      ['350014371/runs',ok(runsBody({id:71,created_at:at(2026,8,6,23,50)}))],
       ['/runs',ok(runsBody())]]);
     const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
     assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
@@ -773,7 +775,7 @@ test('a conservatively discovered run whose collect is outside both rules does n
       ['/actions/runs/73/jobs',ok(jobsBody(
         jobRow('repository-gate','success',at(2026,8,1,1,17),1),
         jobRow('collect','success',at(2026,8,1,1,18),1)))],
-      ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:73,created_at:at(2026,8,1,1,17)}))],
+      ['350014371/runs',ok(runsBody({id:73,created_at:at(2026,8,1,1,17)}))],
       ['/runs',ok(runsBody())]]);
     const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
     assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
@@ -790,7 +792,7 @@ test('an old run whose original attempt collected this morning is discovered and
     ['/actions/runs/74/jobs',ok(jobsBody(
       jobRow('repository-gate','success',at(2026,7,18,1,17),1),
       jobRow('collect','success',at(2026,8,7,2,5),1)))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,18,1,17)}))],
+    ['350014371/runs',ok(runsBody({id:74,created_at:at(2026,7,18,1,17)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
   assert.equal(outcome.classification,OPPORTUNITY_CONSUMED);
@@ -808,7 +810,7 @@ test('an old run re-run into the current window does not consume through the re-
       jobRow('collect','skipped',null,1),
       jobRow('repository-gate','success',at(2026,8,7,2,0),2),
       jobRow('collect','success',at(2026,8,7,2,5),2)))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
+    ['350014371/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99});
   assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
@@ -823,7 +825,7 @@ test('an old run re-run into the current window does not consume through the re-
       jobRow('collect','skipped',null,1),
       jobRow('repository-gate','success',at(2026,8,7,2,0),2),
       jobRow('collect','failure',at(2026,8,7,2,5),2)))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
+    ['350014371/runs',ok(runsBody({id:74,created_at:at(2026,7,29,1,17)}))],
     ['/runs',ok(runsBody())]]);
   assert.equal((await resolveOpportunity({token:'t',fetchImpl:realistic.fetchImpl,now,selfRunId:99}))
     .classification,OPPORTUNITY_AVAILABLE);
@@ -842,7 +844,7 @@ test('the asking run is still excluded when the wider lookback discovers it',asy
 
 test('a truncated candidate listing fails closed rather than discovering a subset',async()=>{
   const t=transport([
-    ['data-s2-production-scheduled.yml/runs',ok({total_count:3,
+    ['350014371/runs',ok({total_count:3,
       workflow_runs:[{id:71,created_at:at(2026,8,6,23,50)}]})],
     ['/runs',ok(runsBody())]]);
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
@@ -862,11 +864,11 @@ const pageOf=url=>{const match=/[?&]page=([0-9]+)/.exec(url);return match?Number
 const runIdOf=url=>{const match=/\/actions\/runs\/([0-9]+)\/jobs/.exec(url);return match?Number(match[1]):null;};
 const gateOnlyJobs=ok(jobsBody(jobRow('repository-gate','failure',at(2026,8,6,1,0))));
 
-// Routes a whole paginated world: each governed workflow file answers from its own run set, job
+// Routes a whole paginated world: each governed API identifier answers from its own run set, job
 // listings answer per run id, and `override` can corrupt one specific response.
 function paged({scheduled=[],external=[],manual=[],jobs=()=>gateOnlyJobs,override=null}={}){
   const calls=[];
-  const sets=[['data-s2-production-scheduled.yml',scheduled],
+  const sets=[['350014371',scheduled],
     ['data-s2-production-external.yml',external],['data-s2-production-collection.yml',manual]];
   return {calls,fetchImpl:async(url,init)=>{
     calls.push({url,method:init.method});
@@ -895,6 +897,29 @@ test('every candidate-listing request is an explicitly numbered page of the fixe
     MAX_WORKFLOW_RUN_PAGES));
 });
 
+test('retired workflow A is queried by immutable id and never by its deleted filename',async()=>{
+  const request=workflowRunsRequest(350014371,'t',NOW);
+  assert.match(request.url,/\/actions\/workflows\/350014371\/runs\?/);
+  assert.ok(!request.url.includes('/actions/workflows/data-s2-production-scheduled.yml/runs'));
+  assert.throws(()=>workflowRunsRequest('data-s2-production-scheduled.yml','t',NOW),
+    /opportunity_workflow_unknown/);
+
+  const t=paged();
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
+  assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
+  assert.equal(listingCalls(t.calls,'350014371').length,1);
+  assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,0);
+});
+
+test('a failed retired-workflow id lookup still fails closed',async()=>{
+  const t=paged({override:url=>url.includes('/actions/workflows/350014371/runs')
+    ?{status:404,json:async()=>({})}:null});
+  const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW,selfRunId:99});
+  assert.equal(outcome.classification,AMBIGUOUS_REQUIRES_OWNER_ATTENTION);
+  assert.equal(outcome.reason,'guard_read_failed');
+  assert.equal(t.calls.length,1);
+});
+
 // The defect this pins: workflow B gains three dispatch opportunities a day under Package C, so a
 // 35-day horizon holds more than one page of candidates and a single page would silently omit the
 // run that collected.
@@ -920,7 +945,7 @@ test('pagination stops exactly when the provider count is satisfied',async()=>{
       .classification,OPPORTUNITY_AVAILABLE,String(count));
     assert.equal(listingCalls(t.calls,'data-s2-production-external.yml').length,pages,String(count));
     // The other two workflows are empty and cost exactly one page each — never zero, never two.
-    assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,1);
+    assert.equal(listingCalls(t.calls,'350014371').length,1);
     assert.equal(listingCalls(t.calls,'data-s2-production-collection.yml').length,1);
     // Page numbers are the exact ascending sequence, with no repeat and no gap.
     assert.deepEqual(listingCalls(t.calls,'data-s2-production-external.yml').map(call=>pageOf(call.url)),
@@ -1002,7 +1027,7 @@ test('the hard read bound is 200 and counts every GitHub request the guard makes
   assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
   assert.equal(outcome.reason,'opportunity_available');
   assert.equal(t.calls.length,OPPORTUNITY_GUARD_MAX_READS);
-  assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,2);
+  assert.equal(listingCalls(t.calls,'350014371').length,2);
   assert.equal(t.calls.filter(call=>call.url.includes('/jobs')).length,196);
 });
 
@@ -1025,7 +1050,7 @@ test('the approved overlap footprint of 35 A runs and 105 B runs fits inside the
   const outcome=await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now:NOW});
   assert.equal(outcome.classification,OPPORTUNITY_AVAILABLE);
   // 1 + 2 + 1 listing pages, plus one job listing per candidate run.
-  assert.equal(listingCalls(t.calls,'data-s2-production-scheduled.yml').length,1);
+  assert.equal(listingCalls(t.calls,'350014371').length,1);
   assert.equal(listingCalls(t.calls,'data-s2-production-external.yml').length,2);
   assert.equal(listingCalls(t.calls,'data-s2-production-collection.yml').length,1);
   assert.equal(t.calls.filter(call=>call.url.includes('/jobs')).length,142);
@@ -1074,7 +1099,7 @@ test('discovery never changes how consumption is decided',async()=>{
     ['/actions/runs/76/jobs',ok(jobsBody(
       jobRow('repository-gate','success',at(2026,8,7,5,0),1),
       jobRow('collect','success',at(2026,8,7,5,1),1)))],
-    ['data-s2-production-scheduled.yml/runs',ok(runsBody({id:76,created_at:at(2026,8,7,5,0)}))],
+    ['350014371/runs',ok(runsBody({id:76,created_at:at(2026,8,7,5,0)}))],
     ['/runs',ok(runsBody())]]);
   // At 12:00 the window opens at 00:00, so this one does consume.
   assert.equal((await resolveOpportunity({token:'t',fetchImpl:t.fetchImpl,now,selfRunId:99}))
@@ -1094,7 +1119,7 @@ test('the guard never dispatches, re-runs, cancels or writes anything',()=>{
     assert.doesNotMatch(source,forbidden,String(forbidden));
   // Positively: every URL this module can build is one of exactly two read-only listing shapes.
   for(const entry of ROUTINE_COLLECTION_WORKFLOWS){
-    const request=workflowRunsRequest(entry.file,'t',NOW);
+    const request=workflowRunsRequest(entry.apiIdentifier,'t',NOW);
     assert.equal(request.init.method,'GET');
     assert.match(request.url,
       /^https:\/\/api\.github\.com\/repos\/[\w.-]+\/[\w.-]+\/actions\/workflows\/[\w.-]+\/runs\?/);
@@ -1107,7 +1132,7 @@ test('the guard never dispatches, re-runs, cancels or writes anything',()=>{
     `https://api.github.com/repos/${OPPORTUNITY_GUARD_REPOSITORY}/actions/runs/12/jobs?per_page=100&filter=all`);
   for(const bad of [0,-1,1.5,'12',null])assert.throws(()=>runJobsRequest(bad,'t'),/opportunity_run_id_invalid/);
   assert.throws(()=>workflowRunsRequest('verify.yml','t',NOW),/opportunity_workflow_unknown/);
-  for(const bad of ['',null])assert.throws(()=>workflowRunsRequest('data-s2-production-scheduled.yml',bad,NOW),
+  for(const bad of ['',null])assert.throws(()=>workflowRunsRequest(350014371,bad,NOW),
     /opportunity_token_missing/);
 });
 

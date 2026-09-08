@@ -12,7 +12,9 @@ failed at `Require an unconsumed daily collection opportunity` with `OPPORTUNITY
 
 Permanent tests now require obsolete workflow A to be absent while retaining workflow B, workflow C,
 three exact dispatcher crons, shared opportunity guard, production entry point and unchanged collector
-resource contract. Tests do not claim independent visibility into live Cloudflare trigger state.
+resource contract. Workflow A history must be queried through immutable workflow id `350014371`,
+never its deleted filename; a failed historical lookup must still fail closed. Tests do not claim
+independent visibility into live Cloudflare trigger state.
 
 
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
