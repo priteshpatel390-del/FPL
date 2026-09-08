@@ -1,7 +1,22 @@
 # ARCHITECTURE.md
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## Current Data Steward architecture — A1.2 observe-only sentinels
+
+A1.2 adds `workers/data-steward/sentinels/`: a versioned evidence envelope, a pinned production-chain
+contract, three source-specific read-only adapters (GitHub, Cloudflare, D1), a heartbeat/observation-run
+contract and a pure cross-source evaluator. Transport and interpretation are separated, so every
+decision is a pure function over decoded metadata and the whole state machine is provable from
+fixtures without a network. Sentinels normalize provider responses into repository-owned envelopes
+before anything reaches A1.1; raw provider objects never enter classification. The chain observed is
+Cloudflare Cron plus the isolated dispatcher Worker plus GitHub Actions workflow B plus the guard
+plus production D1 — not a Cloudflare Workflow. Timing constants are derived from workflow B's own job
+timeouts, the dispatcher's declared cron list and Cloudflare's published propagation figure, and each
+is pinned by test against its source. No entry point, workflow or scheduler is added, so nothing
+executes an observation run. See [A1.2 sentinels](DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md).
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
-## Current Data Steward architecture — A1.1 observe-only foundation
+## Merged Data Steward foundation — A1.1 observe-only contracts
 
 A1.1 adds pure offline modules in `workers/data-steward/`: closed action registry, deterministic
 incident classification, exact-schema policy evaluation, structured canonical audit records and an

@@ -1,7 +1,23 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## Current checkpoint — DATA-OPS-A1.2 implementation candidate
+
+A1.1 is merged (PR #230). A1.2 adds observe-only production sentinels: GitHub, Cloudflare and D1
+observation domains, versioned evidence envelopes, a heartbeat contract and deterministic
+cross-source causality, all Class 0. Nothing was deployed, provisioned, scheduled or mutated, and no
+live validation was performed. Next work is owner review of A1.2. Then, as separate gates: creating
+the two read-only credentials, choosing and gating a runtime that can execute observation runs, and a
+first live read-only acceptance. Live observers with any capability to act, AI integration, durable
+replay and budget enforcement, and any Class 1+ autonomy all remain later, separately approved
+checkpoints and must not be pulled into A1.2.
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## Current checkpoint — DATA-OPS-A1.1 implementation candidate
+
+> **Superseded on 8 September 2026 by the A1.2 checkpoint above.** A1.1 has since merged as PR #230
+> (`47345a7035eba0071c66dcab778f0edc9fef4048`), so its "next work is owner review of A1.1" statement
+> is closed. Everything else below remains accurate and is retained as history.
 
 Policy, incident, classification, registry, audit, provider-health and safety-brake primitives now
 exist on the draft branch. They are offline and observe-only; no production system is connected or

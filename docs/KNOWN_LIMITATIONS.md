@@ -1,5 +1,28 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## DATA-OPS-A1.2 limitations
+
+A1.2 is a repository implementation with **no live validation**. No Cloudflare, GitHub or D1 request
+was made, no credential exists, and nothing executes an observation run, so every proof here is
+fixture and contract proof only.
+
+**Dispatcher invocation history is not observable.** Cloudflare shows Cron Events in its dashboard,
+but this repository has proven no supported read-only API returning per-fire dispatcher outcomes, and
+this session's network egress to `developers.cloudflare.com` was blocked, so none could be verified
+first-hand. Cloudflare-side health is therefore limited to configuration identity — worker existence,
+live cron set, active deployment and the observability flag — and dispatcher execution causality is
+inferred downstream from GitHub and D1 rather than observed directly. It is reported every cycle as
+`CLOUDFLARE_INVOCATION_HISTORY_UNOBSERVABLE` and can never contribute to a healthy verdict.
+
+The D1 integrity aggregate scans the governed observation history, so its read cost grows with the
+append-only history; it is bounded and fails closed above the bound, but that bound is a budget and
+not a proof. Days are evaluated on strict UTC boundaries dated by when collection began, which is
+deliberately simpler than the opportunity guard's own trailing-window rule. Verify state on current
+`main` is recorded as a fact and is not on its own treated as a production failure. No persistent
+heartbeat monitoring exists: the contract is implemented, and activating a runtime for it is a
+separate owner gate.
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## DATA-OPS-A1.1 limitations
 

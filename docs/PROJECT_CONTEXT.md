@@ -1,7 +1,29 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## Current Data-Ops checkpoint — A1.2 observe-only production sentinels
+
+DATA-S2C remains closed and unchanged, and A1.1 is merged (PR #230,
+`47345a7035eba0071c66dcab778f0edc9fef4048`). A1.2 gives the Autonomous Data Steward eyes, not hands:
+three read-only observation domains under `workers/data-steward/sentinels/` that deterministically
+answer whether the expected production chain operated and whether production data is current and
+internally consistent. The GitHub sentinel classifies on governed job and step outcomes rather than
+run conclusion, so a workflow B run refused by the opportunity guard after an earlier successful
+collection is HEALTHY, not an incident. The Cloudflare sentinel observes the real Cron plus
+dispatcher architecture — never a Cloudflare Workflow — and records dispatcher invocation history as
+a named permanent limitation rather than manufacturing GREEN from missing visibility. The D1 sentinel
+uses three fixed SELECT-only statements with bound parameters and no arbitrary-SQL surface. Missing,
+stale, failed and unavailable observations all fail closed; a crashed sentinel is never GREEN; AMBER
+is not introduced. A1.2 remains Class 0: no remediation, no mutation, no AI, no credential
+provisioned and no scheduler activated. See
+[DATA-OPS-A1.2](DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md).
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## Current Data-Ops checkpoint — A1.1 owner-review candidate
+
+> **Superseded on 8 September 2026 by the A1.2 checkpoint above.** A1.1 has since merged as PR #230
+> (`47345a7035eba0071c66dcab778f0edc9fef4048`) and is the live foundation, unchanged. The text below
+> was accurate as a candidate record and is retained as history.
 
 DATA-S2C remains closed and unchanged. A1.1 now supplies an offline observe-only policy foundation:
 incident and GREEN/AMBER/RED representations, closed action registry, Classes 0–4, fail-closed policy

@@ -1,5 +1,18 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## DATA-OPS-A1.2 observation-source boundary
+
+A1.2 adds **no data provider**. Its three sources are Teamsheet's own infrastructure — the GitHub
+Actions metadata of this repository, the Cloudflare configuration of the dispatcher Worker, and the
+production D1 database — read strictly to observe operational health. Nothing observed by A1.2
+reaches a projection, an expected-minutes estimate, a fixture, a captaincy, squad, transfer,
+simulation, rank or Mini-League calculation, or any product surface, and Official FPL provider
+semantics, approval and cadence are unchanged. The D1 sentinel reads the governed Official FPL
+history only to count and reconcile it; it extracts no player, team or fixture fact and creates no
+new retention. A1.2 is built so further approved providers could later be observed the same way, but
+none is implemented and none is approved here.
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## DATA-OPS-A1.1 provider-health boundary
 

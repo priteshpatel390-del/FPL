@@ -1,5 +1,27 @@
 # SECURITY.md
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## DATA-OPS-A1.2 security boundary
+
+Every A1.2 request builder is read-only. GitHub reads are `GET` only against fixed paths, with no
+dispatch, re-run, cancel, enable/disable, branch, commit, issue, pull request, secrets or settings
+call. Cloudflare reads are `GET` only against three fixed paths under one Worker name, with no
+upload, deploy, version promotion, Cron mutation, secret or route surface. The single `POST` anywhere
+in A1.2 is the D1 read query, and it carries only trusted plans built from a fixed SELECT-only
+registry with bound parameters; the client refuses an untrusted plan and refuses any response
+reporting a written row. Permanent tests pin all of this statically, along with the absence of shell,
+`process.env`, filesystem, generic SQL, generic HTTP actuator and AI-credential surface.
+
+Minimum permissions are least privilege and documented per credential: a repository-scoped GitHub
+fine-grained token with Metadata, Contents, Actions and Checks read; and an account-scoped Cloudflare
+token with Workers Scripts Read and D1 Read. No write permission is required or requested. A1.2
+creates, rotates and uploads no credential, and no secret value appears in source, tests, fixtures,
+documentation, logs, audit records or the pull request description. The production D1 id remains a
+reviewed repository constant rather than an environment value, preserving the PR #215
+identifier-logging remediation. Evidence envelopes carry closed enums, bounded integers and bounded
+identifiers only, run a secret scan before hashing, and restrict provenance to a closed source prefix
+with no scheme, host or query so a provider URL can never become evidence.
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## DATA-OPS-A1.1 security boundary
 
