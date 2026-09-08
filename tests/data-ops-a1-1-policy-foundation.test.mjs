@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {ACTION_REGISTRY,AUTO_MERGE_ALLOWLIST,AUTONOMY_CLASS,DECISION,MUTATION_DOMAINS,POLICY_VERSION,actionRegistryJson,getActionDefinition} from '../workers/data-steward/action-registry.mjs';
-import {classifyOperationalState,createIncident} from '../workers/data-steward/incident.mjs';
+import {OPERATIONAL_STATE,classifyOperationalState,createIncident} from '../workers/data-steward/incident.mjs';
+import {REJECTED_STATUSES,classifyDispatchResponse} from '../workers/schedule-dispatcher/dispatch-contract.mjs';
 import {evaluateActionPolicy,executableObserveAction} from '../workers/data-steward/policy-engine.mjs';
 import {AUDIT_SCHEMA_VERSION,auditRecordJson,createAuditRecord} from '../workers/data-steward/audit.mjs';
 import {PROVIDER_APPROVAL_POLICY,validateProviderHealthContract} from '../workers/data-steward/provider-health-contract.mjs';
@@ -122,8 +123,28 @@ test('bounded dispatch failure is RED without separately registered safe-recover
     {...bounded('dispatch_token_missing'),evidence:[{reference:'random:recovery_claim',hash:'f'.repeat(64)}]},
     {...bounded('dispatch_token_missing'),observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',recoveryType:'approved_version_promotion',retryable:false,status:'failed'}},
     {...bounded('dispatch_token_missing'),observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',retryable:false,secret:'never',status:'failed'}}
-  ])assert.equal(classifyOperationalState(observation).classification,'RED');
+  ])assert.deepEqual(classifyOperationalState(observation),{classification:'RED',reasonCode:'MALFORMED_OR_UNKNOWN_CONDITION'});
   assert.equal(evaluateActionPolicy({...proposal(),recoveryProof:{type:'approved_version_promotion'}},context()).reasonCode,'MALFORMED_REQUEST');
+});
+
+test('no registered A1.1 rule can classify AMBER while the state remains part of the enum',()=>{
+  assert.deepEqual(OPERATIONAL_STATE,{GREEN:'GREEN',AMBER:'AMBER',RED:'RED'});
+  assert.doesNotMatch(fs.readFileSync('workers/data-steward/incident.mjs','utf8'),/classification\s*:\s*['"]AMBER['"]/);
+});
+
+test('the dispatcher still groups every rejected status under one indistinguishable reason',()=>{
+  assert.deepEqual(REJECTED_STATUSES,[401,403,404,422]);
+  for(const status of REJECTED_STATUSES)
+    assert.deepEqual(classifyDispatchResponse({status}),{classification:'REJECTED',reason:'dispatch_status_rejected',runId:null});
+});
+
+test('a dispatch incident carries RED end to end and rejects secret-bearing recovery state',async()=>{
+  const input={detectorId:'github.workflow',detectorVersion:'v1',detectedAt:'2026-09-08T11:00:00.000Z',domain:'github',expectedState:{maxAttempts:1,operation:'workflow_dispatch'},observedState:{classification:'REJECTED',reasonCode:'dispatch_token_missing',retryable:false,status:'failed'},evidence:[{reference:'github:run/1',hash:'e'.repeat(64)}],conditionId:'dispatch_failure_bounded',mainSha:SHA,actionHistory:[],finalDisposition:null};
+  const incident=await createIncident(input);
+  assert.equal(incident.classification,'RED');
+  assert.equal(incident.reasonCode,'MALFORMED_OR_UNKNOWN_CONDITION');
+  await assert.rejects(createIncident({...input,observedState:{...input.observedState,token:'ghp_recovery_value'}}),/incident_secret_forbidden/);
+  await assert.rejects(createIncident({...input,recoveryProof:{versionId:'7c3c8be5'}}),/incident_schema_invalid/);
 });
 
 test('incident identity and serialization are deterministic and evidence-bound',async()=>{

@@ -43,6 +43,13 @@ has no authoritative recovery-state contract capable of proving a pre-approved c
 permission-preserving repair. Any future AMBER recovery needs a separate exact registered predicate;
 historical recovery of one missing-token incident grants no reusable authority.
 
+That is pinned structurally rather than by example. A permanent regression proves the rule set
+registers no AMBER classification at all, while `OPERATIONAL_STATE` keeps AMBER so the removal stays
+a policy decision rather than a lost enum member. A second regression pins the dispatcher fact the
+policy rests on: `REJECTED_STATUSES` is exactly 401, 403, 404 and 422, and all four return the single
+reason `dispatch_status_rejected`. If the dispatcher ever distinguishes them, that test fails and the
+classification policy must be re-decided rather than silently widened.
+
 ## Safety controls
 
 Overall autonomy and separate Cloudflare, GitHub repository, D1, provider and auto-merge mutation

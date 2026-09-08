@@ -16,7 +16,9 @@ trusted-context injection, incident/evidence mismatch, generic-authority request
 redefine repository-owned provider purpose, fallback and prohibited influence.
 The final dispatch-classification regressions prove missing-token, generic rejection, 401/403-shaped,
 unknown, contradictory, random-evidence, claimed-recoverability, malformed-recovery and secret-bearing
-states all remain RED. No synthetic positive AMBER recovery is invented.
+states all remain RED. No synthetic positive AMBER recovery is invented. They also pin the absence of
+any registered AMBER rule, the retained AMBER enum member, the dispatcher's exact 401/403/404/422
+rejection grouping, and end-to-end RED plus secret and schema rejection at incident creation.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## DATA-S2C live acceptance and retirement regression
