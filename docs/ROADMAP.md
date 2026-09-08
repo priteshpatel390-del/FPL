@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+## Current checkpoint — DATA-OPS A1.3 Cloudflare fixed-read diagnostic remediation (draft, unmerged)
+
+PR #233's identifier-masking fix merged and worked live: a second attended dispatch (run `34277208819`, head `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`) proved the masking step succeeded and Cloudflare identity admission now succeeds. GitHub and D1 sentinels observed successfully (D1 `rowsRead: 88580`); the Cloudflare sentinel reached its read phase and failed closed at the collapsed `CLOUDFLARE_READ_FAILED`, which could not say which of its three already-approved fixed reads (`/schedules`, `/deployments`, `/settings`) failed. This draft, unmerged remediation replaces that one code with three closed, stage-named reason codes and preserves the exact sequential fail-closed order (a schedules failure issues 1 request, deployments 2, settings 3), the three-request cap, every decoder byte-for-byte and the exact Workers Scripts Read plus D1 Read credential contract — no permission, endpoint, decoder or Cron change. Next gates, each separate: merge after owner approval; exact-`main` Verify; one further attended manual observation; read the new closed reason code to identify the precise failing stage; only then decide whether the fix is configuration, permission, response-contract correction or another cause; scheduled activation remains separate and unapproved.
+
 <!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
 ## Current checkpoint — DATA-OPS A1.3 first-live-observation remediation (draft, unmerged)
 

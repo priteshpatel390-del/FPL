@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+## Current Data-Ops checkpoint — A1.3 Cloudflare fixed-read diagnostic remediation (draft, unmerged)
+
+The PR #233 identifier-masking remediation merged and worked live: a second attended dispatch, run `34277208819`, head `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`, proved the masking step succeeded and Cloudflare identity admission now succeeds. GitHub and D1 sentinels observed successfully (D1 `rowsRead: 88580`); the Cloudflare sentinel failed closed at `CLOUDFLARE_READ_FAILED` — it reached its read phase, one of its three already-approved fixed `GET` reads (`/schedules`, `/deployments`, `/settings`) failed, but the collapsed code could not say which. This draft, unmerged remediation replaces that single code with three closed, stage-named reason codes (`CLOUDFLARE_SCHEDULES_READ_FAILED`, `CLOUDFLARE_DEPLOYMENTS_READ_FAILED`, `CLOUDFLARE_SETTINGS_READ_FAILED`), preserving the exact sequential fail-closed read order, the three-request cap, every decoder byte-for-byte, and the exact Workers Scripts Read plus D1 Read credential contract. It changes no live credential value, dispatches nothing, and activates no schedule. No collection, repair, write, schema, Cloudflare mutation or provider/model change occurs. See [A1.3](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
 ## Current Data-Ops checkpoint — A1.3 first-live-observation remediation (draft, unmerged)
 

@@ -24,7 +24,9 @@ import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE
   decodeRunsPage,interpretGithubDay,mainRefRequest,parseGuardSemanticOutcome,readGithubChain,
   repositoryGateLogRequest,runJobsRequest,
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
-import {CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,assertProductionAccount,
+import {CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_IDENTITY_MISMATCH,
+  CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_READ_FAILED,
+  CLOUDFLARE_SENTINEL_MAX_READS,CLOUDFLARE_SETTINGS_READ_FAILED,assertProductionAccount,
   cloudflareReadRequest,cronSetMatches,decodeDeployments,decodeEnvelope,decodeSchedules,
   decodeSettings,readCloudflareConfiguration} from '../workers/data-steward/sentinels/cloudflare-sentinel.mjs';
 import {D1_OBSERVATION_QUERIES,D1_OBSERVATION_QUERY_IDS,D1_SENTINEL_MAX_ROWS_READ,
@@ -440,7 +442,9 @@ test('the Cloudflare sentinel can only ever GET three fixed paths under the disp
     assert.equal(request.init.method,'GET');
     assert.equal(request.url,
       `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/${EXPECTED_DISPATCHER_WORKER}/${read}`);
+    assert.ok(!('body' in request.init));
   }
+  assert.equal(CLOUDFLARE_SENTINEL_MAX_READS,3);
   assert.throws(()=>cloudflareReadRequest('versions',{accountId:ACCOUNT,token:'t'}),/cloudflare_read_forbidden/);
   assert.throws(()=>cloudflareReadRequest('schedules',{accountId:'bad account',token:'t'}),/cloudflare_account_invalid/);
   assert.throws(()=>cloudflareReadRequest('schedules',{accountId:ACCOUNT,token:''}),/cloudflare_token_missing/);
@@ -481,15 +485,92 @@ test('Cloudflare configuration reads succeed, fail closed, and never claim invoc
   assert.equal(ok.cronSetExpected,true);
   // The permanent limitation is restated in every successful reading rather than implied.
   assert.equal(ok.invocationHistory,CLOUDFLARE_INVOCATION_UNOBSERVABLE);
+  assert.equal(ok.reads,CLOUDFLARE_SENTINEL_MAX_READS);
   const drifted=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
     token:'t',fetchImpl:fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules:schedulesBody(['17 1 * * *'])}))});
   assert.equal(drifted.reasonCode,'CLOUDFLARE_CRON_SET_MISMATCH');
-  const stale=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
-    token:'t',fetchImpl:async()=>({status:200,json:async()=>({success:true,result:{schedules:'nope'}})})});
-  assert.equal(stale.reasonCode,'CLOUDFLARE_READ_FAILED');
-  const unauthorised=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
-    token:'t',fetchImpl:async()=>({status:403,json:async()=>({})})});
-  assert.equal(unauthorised.reasonCode,'CLOUDFLARE_READ_FAILED');
+});
+
+test('identity mismatch fails closed before any Cloudflare request is issued',async()=>{
+  const impl=fakeFetch(healthyRoutes({bRuns:runsBody([])}));
+  const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:'0'.repeat(64),
+    token:'t',fetchImpl:impl});
+  assert.equal(result.reasonCode,CLOUDFLARE_IDENTITY_MISMATCH);
+  assert.equal(impl.seen.length,0);
+});
+
+// Live evidence (run 34277208819, head d9599c4aa557ce0727c4f8b6ddd24a4778b21497) proved identity
+// admission succeeds live but the collapsed `CLOUDFLARE_READ_FAILED` code could not identify which
+// of the three fixed reads actually failed. Each stage now carries its own closed reason code and
+// the sequence stops the instant one stage fails, so the request count itself is load-bearing
+// diagnostic evidence: a schedules failure issues 1 request, a deployments failure issues 2, and a
+// settings failure issues 3 — never more, and never a retry of the failed stage.
+test('a schedules-stage failure is diagnosed precisely and stops the sequence at exactly one request',async()=>{
+  for(const schedules of ['ERROR',500,cfEnvelope({schedules:'nope'})]){
+    const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules}));
+    const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+      token:'t',fetchImpl:impl});
+    assert.equal(result.ok,false);
+    assert.equal(result.reasonCode,CLOUDFLARE_SCHEDULES_READ_FAILED);
+    assert.equal(impl.seen.length,1);
+    assert.ok(impl.seen[0].url.endsWith('/schedules'));
+    assert.equal(impl.seen[0].method,'GET');
+  }
+});
+
+test('a deployments-stage failure is diagnosed precisely and stops the sequence at exactly two requests',async()=>{
+  for(const deployments of ['ERROR',500,cfEnvelope({deployments:[]})]){
+    const routes=healthyRoutes({bRuns:runsBody([])}).filter(([match])=>match!=='/deployments');
+    const impl=fakeFetch([...routes,['/deployments',deployments]]);
+    const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+      token:'t',fetchImpl:impl});
+    assert.equal(result.ok,false);
+    assert.equal(result.reasonCode,CLOUDFLARE_DEPLOYMENTS_READ_FAILED);
+    assert.equal(impl.seen.length,2);
+    assert.ok(impl.seen[0].url.endsWith('/schedules'));
+    assert.ok(impl.seen[1].url.endsWith('/deployments'));
+  }
+});
+
+test('a settings-stage failure is diagnosed precisely and stops the sequence at exactly three requests',async()=>{
+  for(const settings of ['ERROR',500,cfEnvelope({observability:'yes'})]){
+    const routes=healthyRoutes({bRuns:runsBody([])}).filter(([match])=>match!=='/settings');
+    const impl=fakeFetch([...routes,['/settings',settings]]);
+    const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+      token:'t',fetchImpl:impl});
+    assert.equal(result.ok,false);
+    assert.equal(result.reasonCode,CLOUDFLARE_SETTINGS_READ_FAILED);
+    assert.equal(impl.seen.length,3);
+    assert.ok(impl.seen[0].url.endsWith('/schedules'));
+    assert.ok(impl.seen[1].url.endsWith('/deployments'));
+    assert.ok(impl.seen[2].url.endsWith('/settings'));
+  }
+});
+
+test('a healthy cycle issues exactly three GET requests, in order, against the three fixed paths',async()=>{
+  const impl=fakeFetch(healthyRoutes({bRuns:runsBody([])}));
+  const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:impl});
+  assert.equal(result.ok,true);
+  assert.equal(impl.seen.length,3);
+  assert.deepEqual(impl.seen.map(entry=>entry.method),['GET','GET','GET']);
+  assert.ok(impl.seen[0].url.endsWith('/schedules'));
+  assert.ok(impl.seen[1].url.endsWith('/deployments'));
+  assert.ok(impl.seen[2].url.endsWith('/settings'));
+});
+
+test('the three stage-specific reason codes are closed identifiers carrying no provider text',()=>{
+  const STAGE_REASON=/^CLOUDFLARE_[A-Z]+_READ_FAILED$/;
+  for(const code of [CLOUDFLARE_SCHEDULES_READ_FAILED,CLOUDFLARE_DEPLOYMENTS_READ_FAILED,
+    CLOUDFLARE_SETTINGS_READ_FAILED]){
+    assert.match(code,STAGE_REASON);
+    assert.ok(code.length<=63);
+  }
+  assert.notEqual(CLOUDFLARE_SCHEDULES_READ_FAILED,CLOUDFLARE_DEPLOYMENTS_READ_FAILED);
+  assert.notEqual(CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_SETTINGS_READ_FAILED);
+});
+
+test('a production-account mismatch is not diagnosed as a stage read failure',async()=>{
   const wrongAccount=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:'0'.repeat(64),
     token:'t',fetchImpl:async()=>({status:200,json:async()=>({})})});
   assert.equal(wrongAccount.reasonCode,'CLOUDFLARE_IDENTITY_MISMATCH');
@@ -737,7 +818,9 @@ test('7. a duplicate production collection is RED from either side of the chain'
 test('8. an unavailable source after the evaluation point is RED, never GREEN',async()=>{
   assert.deepEqual(await evaluate({github:{ok:false,reasonCode:'GITHUB_READ_FAILED'}}),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});
-  assert.deepEqual(await evaluate({cloudflare:{ok:false,reasonCode:'CLOUDFLARE_READ_FAILED'}}),
+  // Any stage-specific Cloudflare failure reason folds into the same unavailable-evidence verdict;
+  // evaluateProductionChain branches on `cloudflare.ok` alone, never on which stage failed.
+  assert.deepEqual(await evaluate({cloudflare:{ok:false,reasonCode:CLOUDFLARE_SCHEDULES_READ_FAILED}}),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});
   assert.deepEqual(await evaluate({d1:{ok:false,reasonCode:'D1_READ_FAILED'}}),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});

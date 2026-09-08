@@ -1,3 +1,18 @@
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+### Current Data-Ops checkpoint — A1.3 Cloudflare fixed-read diagnostic remediation (unmerged)
+
+**Supersedes the identifier-masking block below as the current status; that remediation merged as PR #233 and worked live.** The owner performed a second attended `Data Steward Read-Only Observer` dispatch: workflow run `34277208819`, run number 2, event `workflow_dispatch`, branch `main`, head SHA `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
+
+**FACT: the PR #233 masking fix worked.** The job log proved the first masking step succeeded, the account id was masked, the fingerprint was masked before materialisation, and the final observer step's resolved environment displayed every protected value as `***`.
+
+**FACT: Cloudflare identity admission now succeeds.** Sanitized result: `verdict: UNHEALTHY`, `evaluationReason: SENTINEL_EVIDENCE_UNAVAILABLE`, `heartbeat: INCOMPLETE`, `escalationRequired: true`. GitHub sentinel: `OBSERVED` / `GITHUB_CHAIN_OBSERVED`. D1 sentinel: `OBSERVED` / `D1_STATE_OBSERVED`, `rowsRead: 88580`. Cloudflare sentinel: `OBSERVATION_FAILED` / `CLOUDFLARE_READ_FAILED` — the previous identity-mismatch failure is gone, and Cloudflare now fails during one of its three already-approved fixed `GET` reads (`/schedules`, `/deployments`, `/settings`) instead of at identity admission.
+
+**Existing ambiguity, now fixed.** `readCloudflareConfiguration()` in `workers/data-steward/sentinels/cloudflare-sentinel.mjs` collapsed a transport error, a non-200 response, a malformed envelope or an invalid decoded result from *any* of the three sequential reads into the single `CLOUDFLARE_READ_FAILED` code, so the live evidence could not say which stage failed. This remediation replaces it with three closed, stage-named reason codes — `CLOUDFLARE_SCHEDULES_READ_FAILED`, `CLOUDFLARE_DEPLOYMENTS_READ_FAILED`, `CLOUDFLARE_SETTINGS_READ_FAILED` — each naming only the failed stage and carrying no HTTP status, provider error code or message, request URL, response body, header, account id, token or fingerprint. The read sequence, its fail-closed short-circuit (a schedules failure issues 1 request and no more; a deployments failure issues 2; a settings failure issues 3), the exactly-three-read cap, the fixed `GET`-only paths and every decoder (`decodeEnvelope`, `decodeSchedules`, `decodeDeployments`, `decodeSettings`) are all unchanged — this is diagnostic precision through a closed enum, not a decoder or permission change. The Cloudflare credential remains exactly Workers Scripts Read plus D1 Read; no token was recreated, rotated or widened.
+
+**Do not claim.** This checkpoint does not claim the token permission, Cloudflare production configuration, Cron configuration or any decoder is wrong, and does not claim A1.3 is live accepted. The precise failing stage is still unknown until the next attended dispatch reports one of the three new codes.
+
+**Next live gate, in order:** (1) merge this diagnostic remediation after owner approval; (2) exact-`main` Verify success; (3) one further attended manual observer dispatch; (4) read the new closed reason code to identify the precise failing Cloudflare stage; (5) only then determine whether the fix is configuration, credential permission, a response-contract correction, or another cause; (6) scheduled activation remains separate and unapproved. See [A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
 ### Current Data-Ops checkpoint — A1.3 first-live observation and unmerged identifier-masking remediation
 

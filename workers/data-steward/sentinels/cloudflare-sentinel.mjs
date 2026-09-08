@@ -45,7 +45,12 @@ export const CLOUDFLARE_READS=deepFreeze([CLOUDFLARE_READ_SCHEDULES,CLOUDFLARE_R
 export const CLOUDFLARE_SENTINEL_MAX_READS=3;
 
 export const CLOUDFLARE_OBSERVATION_OK='CLOUDFLARE_CONFIGURATION_OBSERVED';
-export const CLOUDFLARE_READ_FAILED='CLOUDFLARE_READ_FAILED';
+// Live evidence (run 34277208819) proved the collapsed `CLOUDFLARE_READ_FAILED` code could not
+// identify which of the three fixed reads actually failed. Each read now carries its own closed
+// reason code instead, naming only the stage — never a status, provider message, URL or body.
+export const CLOUDFLARE_SCHEDULES_READ_FAILED='CLOUDFLARE_SCHEDULES_READ_FAILED';
+export const CLOUDFLARE_DEPLOYMENTS_READ_FAILED='CLOUDFLARE_DEPLOYMENTS_READ_FAILED';
+export const CLOUDFLARE_SETTINGS_READ_FAILED='CLOUDFLARE_SETTINGS_READ_FAILED';
 export const CLOUDFLARE_IDENTITY_MISMATCH='CLOUDFLARE_IDENTITY_MISMATCH';
 export const CLOUDFLARE_CRON_MISMATCH='CLOUDFLARE_CRON_SET_MISMATCH';
 // The permanent, named limitation. It is a reason code rather than a silence so that it appears
@@ -167,11 +172,11 @@ export async function readCloudflareConfiguration({accountId,accountFingerprint,
   try{assertProductionAccount({accountId,accountFingerprint});}
   catch{return deepFreeze({ok:false,reasonCode:CLOUDFLARE_IDENTITY_MISMATCH});}
   const schedules=decodeSchedules(await read(cloudflareReadRequest(CLOUDFLARE_READ_SCHEDULES,{accountId,token}),fetchImpl));
-  if(schedules===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_READ_FAILED});
+  if(schedules===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_SCHEDULES_READ_FAILED});
   const deployment=decodeDeployments(await read(cloudflareReadRequest(CLOUDFLARE_READ_DEPLOYMENTS,{accountId,token}),fetchImpl));
-  if(deployment===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_READ_FAILED});
+  if(deployment===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_DEPLOYMENTS_READ_FAILED});
   const settings=decodeSettings(await read(cloudflareReadRequest(CLOUDFLARE_READ_SETTINGS,{accountId,token}),fetchImpl));
-  if(settings===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_READ_FAILED});
+  if(settings===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_SETTINGS_READ_FAILED});
   const cronSetExpected=cronSetMatches(schedules);
   return deepFreeze({
     ok:cronSetExpected,
