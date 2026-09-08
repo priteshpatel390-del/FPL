@@ -47,6 +47,9 @@ test('workflow permissions and protected runtime contract are exact and read-onl
   assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
   assert.match(workflow,/DATA_STEWARD_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
   assert.doesNotMatch(workflow,/\bPAT\b|GITHUB_DISPATCH_TOKEN|CLOUDFLARE_D1_TOKEN|ANTHROPIC|OPENAI|ODDS/i);
+  // No steward runtime credential is declared at job level at all — only step level, scoped to
+  // exactly the step that needs it.
+  assert.doesNotMatch(workflow,/^ {4}env:$/m);
 });
 
 test('activation docs require exact-main environment protection before credentials or dispatch',()=>{
@@ -139,16 +142,23 @@ test('migration inventory remains 0001-0003 and production collection surfaces a
 
 // Live first-run evidence (run 34269989975, head 2f8a4850f911779d2ec48db2f835d0f6af5a45c5) proved
 // GitHub echoes each step's resolved `vars.*` environment in its log header, so the fingerprint
-// leaked into Actions logs before any credential was ever exposed. This block pins the PR #215
-// masking pattern applied to A1.3.
-test('the fingerprint is absent from job-level env and materialised only in the final step',()=>{
-  const jobEnv=/\n    env:\n([\s\S]*?)\n    steps:/.exec(workflow)?.[1]??'';
-  assert.doesNotMatch(jobEnv,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
-  assert.match(jobEnv,/DATA_STEWARD_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
-  assert.match(jobEnv,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: \$\{\{ secrets\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID \}\}/);
-  assert.match(jobEnv,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN: \$\{\{ secrets\.DATA_STEWARD_CLOUDFLARE_READ_TOKEN \}\}/);
-  const occurrences=[...workflow.matchAll(/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: \$\{\{ vars\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT \}\}/g)];
-  assert.equal(occurrences.length,1);
+// leaked into Actions logs before any credential was ever exposed. Owner review then tightened the
+// boundary further: no steward runtime credential of any kind may sit at job level, only the exact
+// step that needs a given value may declare it. This block pins that tightened contract.
+const stepEnvBlock=stepText=>{
+  const lines=stepText.split('\n');
+  const envIndex=lines.findIndex(line=>line==='        env:');
+  if(envIndex===-1)return [];
+  const out=[];
+  for(let i=envIndex+1;i<lines.length;i++){
+    if(!lines[i].startsWith('          '))break;
+    out.push(lines[i].trim());
+  }
+  return out;
+};
+
+test('no steward protected value sits at job level; each step declares only the env it needs',()=>{
+  assert.doesNotMatch(workflow,/^ {4}env:$/m);
   const steps=workflow.split(/\n      - name: /).slice(1);
   assert.equal(steps.length,4);
   const [maskStep,checkoutStep,nodeStep,executeStep]=steps;
@@ -156,11 +166,29 @@ test('the fingerprint is absent from job-level env and materialised only in the 
   assert.match(checkoutStep,/^Check out observer source/);
   assert.match(nodeStep,/^Set up exact Node/);
   assert.match(executeStep,/^Execute one read-only observation/);
-  // Materialisation happens only in the last step, strictly after the masking step.
-  assert.doesNotMatch(maskStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
-  assert.doesNotMatch(checkoutStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
-  assert.doesNotMatch(nodeStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
-  assert.match(executeStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: \$\{\{ vars\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT \}\}/);
+
+  // The masking step receives exactly the Account ID and nothing else.
+  assert.deepEqual(stepEnvBlock(maskStep),
+    ['DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}']);
+  assert.doesNotMatch(maskStep,/DATA_STEWARD_GITHUB_TOKEN|DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT|DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+
+  // Checkout and setup-node receive no steward value of any kind — no step-level env block at all.
+  assert.deepEqual(stepEnvBlock(checkoutStep),[]);
+  assert.deepEqual(stepEnvBlock(nodeStep),[]);
+  assert.doesNotMatch(checkoutStep,/DATA_STEWARD/);
+  assert.doesNotMatch(nodeStep,/DATA_STEWARD/);
+
+  // Only the final execution step receives the full runtime contract, and exactly that contract —
+  // fingerprint materialised only here, strictly after the masking step has already run.
+  assert.deepEqual(stepEnvBlock(executeStep).sort(),[
+    'DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}',
+    'DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}',
+    'DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}',
+    'DATA_STEWARD_GITHUB_TOKEN: ${{ github.token }}'
+  ].sort());
+  const fingerprintOccurrences=[...workflow.matchAll(
+    /DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: \$\{\{ vars\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT \}\}/g)];
+  assert.equal(fingerprintOccurrences.length,1);
 });
 
 test('the masking step derives from the secret account id, fails closed and touches no network/state surface',()=>{

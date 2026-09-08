@@ -39,17 +39,27 @@ identifier-sanitisation boundary. See "Masking remediation" below.
 ## Masking remediation
 
 This checkpoint applies the existing PR #215 production identifier-masking pattern
-(`.github/workflows/data-s2-production-collection.yml`) to the observer workflow:
+(`.github/workflows/data-s2-production-collection.yml`) to the observer workflow. Owner review of
+the first draft of this fix tightened the boundary further: no steward runtime credential of any
+kind — not just the fingerprint — may sit at job level, so the job's `env:` block is removed
+entirely and every value is declared at the exact step that needs it.
 
-1. `DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT` is removed from the job's `env:` block entirely.
-2. A new first step, `Register Cloudflare account fingerprint mask before any other step`, reads
-   only the already-secret `DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID` (inherited from job-level `env:`,
-   itself `secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID`), fails closed if it is absent, derives its
-   SHA-256 locally with `sha256sum`, and registers `::add-mask::<derived hash>`. It issues no
-   network request, writes no `GITHUB_ENV` or `GITHUB_OUTPUT`, and produces no step output.
-3. Only the final `Execute one read-only observation` step declares
-   `DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}`,
-   at step level, after the mask is already registered.
+1. The job's `env:` block is removed in full. No `DATA_STEWARD_GITHUB_TOKEN`,
+   `DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID`, `DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT` or
+   `DATA_STEWARD_CLOUDFLARE_READ_TOKEN` is declared at job level.
+2. A new first step, `Register Cloudflare account fingerprint mask before any other step`, declares
+   at step level only `DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}`,
+   fails closed if it is absent, derives its SHA-256 locally with `sha256sum`, and registers
+   `::add-mask::<derived hash>`. It issues no network request, writes no `GITHUB_ENV` or
+   `GITHUB_OUTPUT`, and produces no step output.
+3. `Check out observer source` and `Set up exact Node` declare no `env:` of any kind — they receive
+   no steward value.
+4. Only the final `Execute one read-only observation` step declares, at step level, the complete
+   runtime contract: `DATA_STEWARD_GITHUB_TOKEN: ${{ github.token }}`,
+   `DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}`,
+   `DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}`
+   and `DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}` — the
+   fingerprint materialised only here, after the mask is already registered.
 
 The ephemeral GitHub token, the account id secret and the Cloudflare read token secret remain
 exactly as before; no credential is widened, added or converted from a repository variable into a
