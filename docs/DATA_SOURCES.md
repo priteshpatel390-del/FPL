@@ -1,5 +1,14 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+## DATA-OPS-A1.1 provider-health boundary
+
+A1.1 adds only a provider health-contract validator. Caller input contains dynamic health facts, not
+approval policy. Identity, authority and purpose come from immutable repository-controlled
+`APPROVED_PROVIDER_SOURCES`; unknown policy facts remain absent/null. Caller attempts to redefine
+purpose, fallback or prohibited influence fail exact-schema validation. Production influence is
+always false. No provider, endpoint, acquisition, retention, fallback, weighting or model behavior changes.
+
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current Official FPL scheduled collection state
 

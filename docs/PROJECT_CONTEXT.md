@@ -1,5 +1,17 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+## Current Data-Ops checkpoint — A1.1 owner-review candidate
+
+DATA-S2C remains closed and unchanged. A1.1 now supplies an offline observe-only policy foundation:
+incident and GREEN/AMBER/RED representations, closed action registry, Classes 0–4, fail-closed policy
+decisions, safety brakes, deterministic audit records and an approved-provider health contract. It
+contains no live observer, AI integration, credential, persistence or mutation actuator. See
+[DATA-OPS-A1.1](DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md).
+Within A1.1, GREEN/AMBER require registered state predicates, policy evidence comes only from trusted
+incident-bound context, provider approval facts come from repository definitions, and generic
+authority is absent.
+
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C state — rollout closed
 
