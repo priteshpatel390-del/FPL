@@ -1,6 +1,6 @@
 # DATA-OPS-A1.2 — Observe-only production sentinels
 
-Status: **IMPLEMENTED ON DRAFT BRANCH; OWNER REVIEW REQUIRED**
+Status: **MERGED IN PR #231**
 Baseline: `47345a7035eba0071c66dcab778f0edc9fef4048` (merge of PR #230 / DATA-OPS-A1.1)
 
 ## Outcome and boundary
@@ -231,7 +231,7 @@ documentation, logs, audit records or the pull request description.
 
 | Variable | Sentinel | Required | Minimum permission |
 |---|---|---|---|
-| `DATA_STEWARD_GITHUB_TOKEN` | github | yes | fine-grained PAT, single repository: Metadata R, Contents R, Actions R, Checks R |
+| `DATA_STEWARD_GITHUB_TOKEN` | github | yes | ephemeral Actions `GITHUB_TOKEN`: Contents R, Actions R, Checks R |
 | `DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID` | cloudflare | yes | identifier only, no authority on its own |
 | `DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT` | cloudflare | yes | SHA-256 of the account id, supplied separately so the check is not tautological |
 | `DATA_STEWARD_CLOUDFLARE_READ_TOKEN` | cloudflare, d1 | yes | account scoped: Workers Scripts Read, D1 Read |
@@ -257,7 +257,7 @@ was executed for this checkpoint. Everything proven here is fixture and contract
 
 What remains to be proven during a separately approved activation and acceptance step:
 
-1. that the read-only GitHub token, at the stated minimum permissions, can complete every read the
+1. that the ephemeral read-only GitHub Actions token, at the stated permissions, can complete every read the
    GitHub sentinel issues;
 2. that the read-only Cloudflare token, at the stated minimum permissions, can complete the three
    dispatcher reads and the one D1 batch;
@@ -296,7 +296,8 @@ What remains to be proven during a separately approved activation and acceptance
   log within 256 KiB. Retention expiry, access failure or output-format drift makes that observation
   RED, never healthy; no raw log is retained.
 
-## Next gate
+## Current successor gate
 
-**OWNER REVIEW / MERGE APPROVAL.** Live activation, credential provisioning, deployment, scheduler
-changes and any autonomous-remediation work each remain separate, explicit owner gates.
+A1.2 merged in PR #231. [A1.3](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md) supplies a dormant-by-default
+runtime candidate. Protected Cloudflare credential provisioning, first attended live observation and
+scheduled activation remain separate owner gates. Autonomous remediation remains unapproved.

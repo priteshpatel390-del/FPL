@@ -1,4 +1,4 @@
-// DATA-OPS-A1.2 — the configuration contract a future live observation run would need.
+// DATA-OPS A1.3 — configuration contract used by the dormant read-only observer runtime.
 //
 // A1.2 DEFINES this contract; it does not create, rotate, upload, read from a live store or
 // otherwise provision any credential, and merging it provisions nothing. No secret value appears
@@ -8,8 +8,8 @@
 // The contract is least-privilege by construction, and the permissions below are the whole of
 // what the three sentinels actually issue:
 //
-//   GitHub          — a fine-grained personal access token scoped to this one repository, with
-//                     Metadata: Read (mandatory), Contents: Read, Actions: Read and Checks: Read.
+//   GitHub          — the ephemeral GitHub Actions GITHUB_TOKEN, mapped to the established steward
+//                     name, with Contents: Read, Actions: Read and Checks: Read.
 //                     NO write permission of any kind: no contents write, no actions write, no
 //                     workflow dispatch or re-run, no issues, no pull requests, no administration,
 //                     no secrets, no token management.
@@ -27,7 +27,7 @@
 // workflow value.
 import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
 
-export const ENVIRONMENT_CONTRACT_VERSION='data-ops-a1.2-environment-v1';
+export const ENVIRONMENT_CONTRACT_VERSION='data-ops-a1.3-environment-v1';
 
 export const STEWARD_GITHUB_TOKEN='DATA_STEWARD_GITHUB_TOKEN';
 export const STEWARD_CLOUDFLARE_ACCOUNT_ID='DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID';
@@ -40,8 +40,8 @@ export const STEWARD_CLOUDFLARE_READ_TOKEN='DATA_STEWARD_CLOUDFLARE_READ_TOKEN';
 export const STEWARD_ENVIRONMENT=deepFreeze([
   Object.freeze({name:STEWARD_GITHUB_TOKEN,sentinel:'github',required:true,secret:true,
     purpose:'read this repository\'s main ref, Verify check runs, governed workflow runs and jobs',
-    minimumPermission:'GitHub fine-grained PAT, single repository: Metadata Read, Contents Read, Actions Read, Checks Read',
-    rotation:'owner-managed; a fine-grained token expires and must be replaced before expiry'}),
+    minimumPermission:'ephemeral GitHub Actions GITHUB_TOKEN: Contents Read, Actions Read, Checks Read',
+    rotation:'issued automatically for one GitHub Actions job; no owner-created PAT'}),
   Object.freeze({name:STEWARD_CLOUDFLARE_ACCOUNT_ID,sentinel:'cloudflare',required:true,secret:true,
     purpose:'address the reviewed production Cloudflare account',
     minimumPermission:'identifier only, carries no authority on its own',
@@ -86,9 +86,8 @@ export function resolveStewardEnvironment(env={}){
 // The activation requirements this checkpoint deliberately leaves outstanding. They are recorded
 // as data so the documentation and the repository cannot drift apart about what is still unproven.
 export const OUTSTANDING_ACTIVATION_REQUIREMENTS=deepFreeze([
-  'owner creates the read-only GitHub fine-grained token at the stated minimum permissions',
   'owner creates the read-only Cloudflare API token at the stated minimum permissions',
-  'owner supplies both, the account id and the account fingerprint, to a protected runtime',
-  'a separately approved runtime is chosen and gated for executing observation runs on a schedule',
-  'first live read-only observation run is accepted against production GitHub, Cloudflare and D1'
+  'owner provisions the account id, account fingerprint and Cloudflare token in data-steward-readonly',
+  'first manual live read-only observation run is accepted against production GitHub, Cloudflare and D1',
+  'owner separately enables DATA_STEWARD_SCHEDULED_ENABLED with exact value true'
 ]);

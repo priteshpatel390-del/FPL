@@ -1,7 +1,15 @@
 # ARCHITECTURE.md
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## Current Data Steward runtime architecture — A1.3
+
+A dedicated GitHub Actions workflow now hosts one read-only A1.2 observation run, independently of the Cloudflare clock it observes. Manual dispatch is available; schedules at `17 4 * * *` and `17 8 * * *` are declared but the scheduled job runs only when `DATA_STEWARD_SCHEDULED_ENABLED` equals exact `true`. `workers/data-steward/run-observer.mjs` is the sole ambient-environment/logging adapter; deterministic sentinel modules remain dependency-injected. GitHub authority is the ephemeral read-only job token. Cloudflare authority remains Workers Scripts Read and D1 Read. See [A1.3](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## Current Data Steward architecture — A1.2 observe-only sentinels
+
+> **Foundation merged in PR #231.** A1.3 above now supplies its dormant runtime entry point.
 
 A1.2 adds `workers/data-steward/sentinels/`: a versioned evidence envelope, a pinned production-chain
 contract, three source-specific read-only adapters (GitHub, Cloudflare, D1), a heartbeat/observation-run

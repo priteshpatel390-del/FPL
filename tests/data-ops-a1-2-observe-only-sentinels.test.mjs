@@ -903,9 +903,8 @@ test('A1.2 can observe the dispatcher but can never arm, change or redeploy it',
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql',
       '0003_production_query_plan_indexes.sql']);
-  // A1.2 adds no workflow of its own, so merging it schedules nothing.
+  // A1.2 itself added no workflow. A1.3's separate workflow is pinned by its own dormant-runtime tests.
   assert.ok(!fs.existsSync('.github/workflows/data-ops-a1-2-observation.yml'));
-  assert.ok(!fs.readdirSync('.github/workflows').some(name=>/steward|sentinel|data-ops/i.test(name)));
 });
 
 test('the application stays isolated and every steward-to-platform edge is denied unless exactly allowlisted',()=>{

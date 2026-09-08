@@ -1,7 +1,16 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## DATA-OPS A1.3 limitations
+
+Observer runtime is repository-ready but not live-activated. No protected environment value, Cloudflare credential, activation variable or live acceptance exists yet. A GitHub-hosted observer cannot independently detect a total GitHub outage or complete absence of its own scheduled runs; GitHub run history plus sanitized output are not an independent watchdog or persistent heartbeat. No new persistence is added. A1.2's unobservable Cloudflare per-fire invocation history and bounded D1-read limitations remain.
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## DATA-OPS-A1.2 limitations
+
+> **A1.2 merged in PR #231.** A1.3 now supplies a repository-ready runtime, while all live-state
+> limitations and activation gates remain.
 
 A1.2 is a repository implementation with **no live validation**. No Cloudflare, GitHub or D1 request
 was made, no credential exists, and nothing executes an observation run, so every proof here is

@@ -1,5 +1,11 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## Current Data-Ops checkpoint — A1.3 repository-ready, dormant observer
+
+A1.2 merged in PR #231. A1.3 adds a dedicated GitHub Actions read-only observer with manual dispatch and two UTC schedule declarations (`17 4 * * *`, `17 8 * * *`). Scheduled execution remains dormant unless `DATA_STEWARD_SCHEDULED_ENABLED` is exact `true`; no activation variable, environment, credential or live run is created here. Ephemeral `github.token` supplies GitHub read access. Cloudflare remains Workers Scripts Read plus D1 Read. No collection, repair, write, schema or provider/model change occurs. See [A1.3](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## Current Data-Ops checkpoint — A1.2 observe-only production sentinels
 

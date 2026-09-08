@@ -1,5 +1,11 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## D-DATA-OPS-A1.3 — independent, dormant GitHub-hosted observer
+
+Decision: host observation in a dedicated GitHub Actions workflow, not a watched production component or new Cloudflare Worker. Declare 04:17 and 08:17 UTC opportunities, but require exact repository variable value `true` before scheduled job execution; merge therefore does not activate monitoring. Keep manual dispatch independent for attended acceptance. Use ephemeral `github.token` with Contents/Actions/Checks read and one owner-created Cloudflare token limited to Workers Scripts Read and D1 Read. Add no persistence or actuator. [Full boundary](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## D-DATA-OPS-A1.2 — observation is not authorization
 

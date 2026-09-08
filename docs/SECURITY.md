@@ -1,5 +1,11 @@
 # SECURITY.md
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## DATA-OPS A1.3 security boundary
+
+Dedicated observer workflow permissions are exactly `contents: read`, `actions: read`, `checks: read`. Ephemeral `${{ github.token }}` is mapped to `DATA_STEWARD_GITHUB_TOKEN`; no PAT exists. Protected environment `data-steward-readonly` will later hold only Cloudflare account identity/fingerprint and a token limited to Workers Scripts Read plus D1 Read. Scheduled execution requires exact `DATA_STEWARD_SCHEDULED_ENABLED=true`; absent or any other value skips it. Runtime logs use closed repository-owned fields and exclude identifiers, tokens, raw bodies/logs, headers and provider text. No write endpoint, mutation credential, deployment credential, AI key or D1 write surface is added.
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## DATA-OPS-A1.2 security boundary
 
