@@ -5,6 +5,17 @@
 
 Dedicated observer workflow permissions are exactly `contents: read`, `actions: read`, `checks: read`. Ephemeral `${{ github.token }}` is mapped to `DATA_STEWARD_GITHUB_TOKEN`; no PAT exists. Protected environment `data-steward-readonly` will later hold only Cloudflare account identity/fingerprint and a token limited to Workers Scripts Read plus D1 Read. Scheduled execution requires exact `DATA_STEWARD_SCHEDULED_ENABLED=true`; absent or any other value skips it. Runtime logs use closed repository-owned fields and exclude identifiers, tokens, raw bodies/logs, headers and provider text. No write endpoint, mutation credential, deployment credential, AI key or D1 write surface is added.
 
+Every observer job additionally requires exact `github.ref == 'refs/heads/main'`; manual branch or tag
+dispatches are skipped before protected values are exposed. Its environment reference sets
+`deployment: false`, so observer execution creates no GitHub Deployment object or status. Before any
+Cloudflare value is stored or manual run attempted, the owner must explicitly create/configure
+`data-steward-readonly` with **Selected branches and tags → exact branch `main`**. **Protected branches
+only** is forbidden here because current `main` is not branch-protected and that setting can permit all
+branches when no branch protections exist. Creating the environment first is mandatory because a
+referenced nonexistent environment can otherwise be automatically created without protection rules.
+The current authenticated tooling cannot read the live activation variable (`HTTP 403`), so its
+absent/non-`true` state and full dormant-on-merge live condition remain unproven.
+
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## DATA-OPS-A1.2 security boundary

@@ -3,7 +3,12 @@
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## DATA-OPS A1.3 limitations
 
-Observer runtime is repository-ready but not live-activated. No protected environment value, Cloudflare credential, activation variable or live acceptance exists yet. A GitHub-hosted observer cannot independently detect a total GitHub outage or complete absence of its own scheduled runs; GitHub run history plus sanitized output are not an independent watchdog or persistent heartbeat. No new persistence is added. A1.2's unobservable Cloudflare per-fire invocation history and bounded D1-read limitations remain.
+Observer runtime is repository-ready but not live-accepted. This PR creates no protected environment value, Cloudflare credential, activation variable or live acceptance. A GitHub-hosted observer cannot independently detect a total GitHub outage or complete absence of its own scheduled runs; GitHub run history plus sanitized output are not an independent watchdog or persistent heartbeat. No new persistence is added. A1.2's unobservable Cloudflare per-fire invocation history and bounded D1-read limitations remain.
+
+Repository logic skips schedules unless the activation value is exact lowercase `true`, but available
+authenticated tooling received HTTP 403 when reading that live Actions variable. Its absent/non-`true`
+state is therefore unproven; dormant-on-merge must not be claimed as a live fact until an authorized
+read confirms it.
 
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->

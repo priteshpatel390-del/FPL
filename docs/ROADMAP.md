@@ -3,7 +3,7 @@
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## Current checkpoint — DATA-OPS A1.3 repository-ready observer
 
-A1.2 is merged. A1.3 prepares a dedicated read-only Actions runtime, manual dispatch and dormant schedule declarations at 04:17/08:17 UTC. Repository merge alone cannot activate scheduled observation. Next gates are owner provisioning of `data-steward-readonly`, one attended manual live read-only acceptance, then separate approval to set `DATA_STEWARD_SCHEDULED_ENABLED=true`. Independent outage detection, persistence and all remediation remain future checkpoints.
+A1.2 is merged. A1.3 prepares a dedicated read-only Actions runtime, manual dispatch and fail-closed schedule declarations at 04:17/08:17 UTC. Available tooling cannot prove the live activation variable absent/non-`true` because its read returned HTTP 403, so dormant-on-merge is not claimed as a live fact. Next gates are an authorized variable read; explicit creation of `data-steward-readonly` restricted through Selected branches and tags to exact `main`; credential provisioning; one attended manual live read-only acceptance; then separate approval to set `DATA_STEWARD_SCHEDULED_ENABLED=true`. Independent outage detection, persistence and all remediation remain future checkpoints.
 
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->

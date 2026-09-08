@@ -13,7 +13,11 @@ mutates anything. The existing A1.2 evaluation deadline remains 04:02 UTC.
 Repository-ready does not mean live-activated. Scheduled runs require repository variable
 `DATA_STEWARD_SCHEDULED_ENABLED` to equal exact lowercase `true`. Missing, blank, false, uppercase or
 any other value skips the job. Manual `workflow_dispatch` remains independent for later attended
-acceptance. This PR creates no variable, environment, secret or credential and performs no live run.
+acceptance, but every event must also have exact ref `refs/heads/main`; branch and tag dispatches are
+skipped before environment credentials can be exposed. This PR creates no variable, environment,
+secret or credential and performs no live run. The available authenticated tooling received HTTP 403
+when reading the live activation variable, so its absent/non-`true` state is **not independently
+proven** and this checkpoint does not claim that live dormant-on-merge state as fact.
 
 ## Runtime and authority boundary
 
@@ -22,6 +26,16 @@ acceptance. This PR creates no variable, environment, secret or credential and p
 `checks: read`. Its ephemeral `${{ github.token }}` is mapped to `DATA_STEWARD_GITHUB_TOKEN`; no
 long-lived GitHub PAT is required. Later owner-provisioned Cloudflare values are account id, separate
 account fingerprint and one token limited to **Workers Scripts Read** plus **D1 Read**.
+
+The environment reference sets `deployment: false`, retaining environment secrets/variables without
+creating GitHub Deployment objects or statuses for observer jobs. Before storing any Cloudflare value
+or attempting the first manual run, the owner must explicitly create and configure the environment
+with deployment branches/tags set to **Selected branches and tags → exact branch `main`**. Do not use
+**Protected branches only**: current `main` was independently observed as not branch-protected, and
+GitHub documents that option can permit all branches when no repository branch protections exist.
+The environment must exist first because GitHub can automatically create a referenced nonexistent
+environment without protection rules. This environment rule is defense in depth behind the workflow's
+exact `github.ref == 'refs/heads/main'` execution guard.
 
 There is no D1 write token, dispatcher Actions-write token, deployment credential, Odds key, AI key
 or other actuator credential. Production D1 identity and dispatcher Worker identity remain fixed
@@ -50,10 +64,13 @@ repository-proven read-only API. These gaps are not reported as healthy evidence
 Remaining attended owner steps, in order:
 
 1. Provision protected environment `data-steward-readonly` with Cloudflare account id, separately
-   supplied fingerprint and the read-only Cloudflare token.
-2. Manually dispatch one live read-only observer run and accept its sanitized evidence.
-3. Only after that acceptance, separately approve and set repository variable
+   supplied fingerprint and the read-only Cloudflare token. **First create/configure it with Selected
+   branches and tags → exact branch `main`; do not rely on Protected branches only.**
+2. Obtain an authorized read-only result proving `DATA_STEWARD_SCHEDULED_ENABLED` is absent or not
+   exact lowercase `true`; current tooling cannot prove this because its read returned HTTP 403.
+3. Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.
+4. Only after that acceptance, separately approve and set repository variable
    `DATA_STEWARD_SCHEDULED_ENABLED` to exact `true`.
 
-Until step 3, declared schedules remain dormant. This repository checkpoint does not perform any
-step above and does not claim live monitoring.
+Repository logic is fail-closed for absent/non-`true` values, but live dormant-on-merge status remains
+unproven until step 2. This checkpoint does not perform any step above or claim live monitoring.

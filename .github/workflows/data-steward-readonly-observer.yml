@@ -13,11 +13,12 @@ permissions:
 
 jobs:
   observe-production-chain:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.DATA_STEWARD_SCHEDULED_ENABLED == 'true')
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.DATA_STEWARD_SCHEDULED_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
       name: data-steward-readonly
+      deployment: false
     env:
       DATA_STEWARD_GITHUB_TOKEN: ${{ github.token }}
       DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}

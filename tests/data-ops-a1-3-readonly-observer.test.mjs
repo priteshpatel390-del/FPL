@@ -7,6 +7,8 @@ import {STEWARD_ENVIRONMENT_NAMES} from '../workers/data-steward/sentinels/envir
 
 const workflowPath='.github/workflows/data-steward-readonly-observer.yml';
 const workflow=fs.readFileSync(workflowPath,'utf8');
+const activationDoc=fs.readFileSync('docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md','utf8');
+const securityDoc=fs.readFileSync('docs/SECURITY.md','utf8');
 const stewardFiles=()=>fs.readdirSync('workers/data-steward/sentinels')
   .filter(name=>name.endsWith('.mjs')).map(name=>`workers/data-steward/sentinels/${name}`);
 
@@ -21,8 +23,9 @@ test('dedicated observer workflow declares only two approved UTC opportunities a
 
 test('schedule activation is exact and fail-closed while manual dispatch remains independent',()=>{
   const condition=/if:\s*(.+)/.exec(workflow)?.[1]??'';
-  const enabled=(event,value)=>event==='workflow_dispatch'
-    ||(event==='schedule'&&value==='true');
+  const enabled=(event,value,ref='refs/heads/main')=>ref==='refs/heads/main'
+    &&(event==='workflow_dispatch'||(event==='schedule'&&value==='true'));
+  assert.match(condition,/github\.ref == 'refs\/heads\/main'/);
   assert.match(condition,/github\.event_name == 'workflow_dispatch'/);
   assert.match(condition,/github\.event_name == 'schedule'/);
   assert.match(condition,/vars\.DATA_STEWARD_SCHEDULED_ENABLED == 'true'/);
@@ -31,6 +34,9 @@ test('schedule activation is exact and fail-closed while manual dispatch remains
   assert.equal(enabled('schedule','false'),false);
   assert.equal(enabled('schedule','true'),true);
   assert.equal(enabled('workflow_dispatch',undefined),true);
+  assert.equal(enabled('workflow_dispatch',undefined,'refs/heads/feature'),false);
+  assert.equal(enabled('workflow_dispatch',undefined,'refs/tags/v1'),false);
+  assert.equal(enabled('schedule','true','refs/heads/feature'),false);
 });
 
 test('workflow permissions and protected runtime contract are exact and read-only',()=>{
@@ -38,8 +44,20 @@ test('workflow permissions and protected runtime contract are exact and read-onl
   assert.equal(permissions,'contents: read\n  actions: read\n  checks: read');
   assert.doesNotMatch(workflow,/\b(?:write|id-token|deployments|packages|pull-requests|issues):/);
   assert.match(workflow,/name: data-steward-readonly/);
+  assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
   assert.match(workflow,/DATA_STEWARD_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
   assert.doesNotMatch(workflow,/\bPAT\b|GITHUB_DISPATCH_TOKEN|CLOUDFLARE_D1_TOKEN|ANTHROPIC|OPENAI|ODDS/i);
+});
+
+test('activation docs require exact-main environment protection before credentials or dispatch',()=>{
+  for(const text of [activationDoc,securityDoc]){
+    assert.match(text,/Selected branches and tags[^\n]*exact branch `main`/);
+    assert.match(text,/Protected branches\s+only/);
+    assert.match(text,/before[\s\S]{0,80}Cloudflare/i);
+    assert.match(text,/automatically create|automatically created/);
+    assert.match(text,/HTTP 403/);
+    assert.match(text,/dormant-on-merge[\s\S]{0,80}(?:not|unproven)/);
+  }
 });
 
 test('observer workflow and adapter expose no mutation route',()=>{
