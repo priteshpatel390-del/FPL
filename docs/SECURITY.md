@@ -5,12 +5,18 @@
 
 Every A1.2 request builder is read-only. GitHub reads are `GET` only against fixed paths, with no
 dispatch, re-run, cancel, enable/disable, branch, commit, issue, pull request, secrets or settings
-call. Cloudflare reads are `GET` only against three fixed paths under one Worker name, with no
+call. A metadata-proven guard-refusal candidate permits one additional GET of only that exact
+repository-gate job log. Declared and actual response bytes are capped at 256 KiB; only one anchored
+allowlisted outcome line is accepted, immediately reduced to a closed semantic result, and raw logs
+are never retained or carried into evidence. Missing, malformed, duplicate, contradictory, unknown
+or unreadable results fail closed. Cloudflare reads are `GET` only against three fixed paths under one Worker name, with no
 upload, deploy, version promotion, Cron mutation, secret or route surface. The single `POST` anywhere
 in A1.2 is the D1 read query, and it carries only trusted plans built from a fixed SELECT-only
 registry with bound parameters; the client refuses an untrusted plan and refuses any response
 reporting a written row. Permanent tests pin all of this statically, along with the absence of shell,
-`process.env`, filesystem, generic SQL, generic HTTP actuator and AI-credential surface.
+`process.env`, filesystem, generic SQL, generic HTTP actuator and AI-credential surface. A recursive
+whole-steward dependency test denies platform access by default and permits only exact reviewed
+source-file-to-target-module edges; future files inherit no permission.
 
 Minimum permissions are least privilege and documented per credential: a repository-scoped GitHub
 fine-grained token with Metadata, Contents, Actions and Checks read; and an account-scoped Cloudflare

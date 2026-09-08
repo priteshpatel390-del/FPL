@@ -19,9 +19,11 @@ collections**.
 **The central correction: a workflow B `failure` is not a production failure.** The live T2
 acceptance proved that T2 run `34209137195` failed precisely because the gate refused an
 already-consumed day with `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` and `collect` was
-correctly skipped. A1.2 therefore never classifies on `run.conclusion`; it classifies on the governed
-job and step outcomes underneath, and recognises exactly one shape as a legitimate refusal. **That
-refusal is HEALTHY, never an incident.**
+correctly skipped. A1.2 therefore never classifies on `run.conclusion`; job/step shape identifies
+only a candidate refusal. One bounded read of that exact repository-gate job log must independently
+prove the exact allowlisted `OPPORTUNITY_CONSUMED` result. Ambiguous, missing, malformed, duplicate,
+contradictory, unknown or unreadable semantic evidence fails closed. **Only the proven consumed
+refusal is HEALTHY.**
 
 **Fail-closed everywhere.** Missing, stale, failed and unavailable observations are all RED. A
 crashed or silent sentinel can never produce an implicit GREEN — the heartbeat checks the watcher
@@ -48,7 +50,7 @@ D1 schema change (still exactly migrations 0001–0003), and no provider, model,
 squad, transfer, rank, Mini-League, product or UI behaviour changed. Merging deploys and arms
 nothing. **No live validation was performed and none is claimed.** Minimum credentials are documented
 and read-only: GitHub Metadata/Contents/Actions/Checks read, Cloudflare Workers Scripts Read and D1
-Read. Repository suite: **1,761 tests, 1,761 passed, 0 failed**; deterministic build unchanged.
+Read. Repository suite: **1,763 tests, 1,763 passed, 0 failed**; deterministic build unchanged.
 
 Next gate: **owner review and merge**. Credential provisioning, choosing and gating a runtime that
 can execute observation runs, first live read-only acceptance, and any Class 1+ autonomy each remain

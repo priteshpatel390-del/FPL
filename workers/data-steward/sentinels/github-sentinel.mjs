@@ -9,8 +9,9 @@
 // `failure` is not evidence of a production failure. The live T2 acceptance proved the opposite —
 // run `34209137195` failed precisely because the repository gate refused an already-consumed day
 // with `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` and `collect` was correctly skipped.
-// That is the guard working. This module therefore never classifies on `run.conclusion`; it
-// classifies on the governed job and step outcomes underneath it.
+// That is the guard working. This module therefore never classifies on `run.conclusion`, and job
+// shape alone is not semantic proof: candidate refusals require the guard's exact bounded log
+// result before they can receive the healthy consumed classification.
 //
 // READ-ONLY BY CONSTRUCTION. Every request builder here emits `method:'GET'`. There is no
 // dispatch, no re-run, no cancel, no enable or disable, no branch, commit, issue, pull request,
@@ -29,10 +30,15 @@ import {EXPECTED_COLLECT_JOB,EXPECTED_DEFAULT_BRANCH,EXPECTED_GATE_JOB,EXPECTED_
   utcDayWindow} from './production-chain-contract.mjs';
 
 export const GITHUB_SENTINEL_ID='github';
-export const GITHUB_SENTINEL_VERSION='data-ops-a1.2-github-v1';
+export const GITHUB_SENTINEL_VERSION='data-ops-a1.2-github-v2';
 export const GITHUB_API_VERSION='2022-11-28';
 export const GITHUB_USER_AGENT='teamsheet-data-steward-sentinel';
 export const GITHUB_REQUEST_TIMEOUT_MS=15000;
+// Job logs are read only for a repository-gate job whose metadata has the exact guard-refusal
+// shape. GitHub's job-log endpoint returns plain text (possibly after its own redirect). Keep the
+// ceiling small, reject both an oversized declaration and oversized bytes, and reduce the bytes
+// immediately to the closed semantic result below.
+export const GITHUB_GUARD_LOG_MAX_BYTES=256*1024;
 
 // Only the first attempt of a run can have collected: the shared production entry point throws
 // `workflow_retry_forbidden` on every later attempt, before it resolves the production identity
@@ -46,6 +52,11 @@ export const MAX_RUN_PAGES=2;
 // governed runs is at most a handful of runs per workflow, so the normal path exits far below
 // this. Exceeding it is an ambiguity, never a licence to keep reading.
 export const GITHUB_SENTINEL_MAX_READS=32;
+
+export const GUARD_RESULT_CONSUMED='GUARD_RESULT_CONSUMED';
+export const GUARD_RESULT_AMBIGUOUS='GUARD_RESULT_AMBIGUOUS';
+export const GUARD_RESULT_AVAILABLE='GUARD_RESULT_AVAILABLE';
+export const GUARD_RESULT_INVALID='GUARD_RESULT_INVALID';
 
 // The closed set of outcomes one governed run may be decoded into. Anything that does not fit
 // exactly one of the first five is UNCLASSIFIED, and UNCLASSIFIED never contributes to health.
@@ -122,6 +133,13 @@ export function runJobsRequest(runId,token){
   return get(`https://api.github.com/repos/${EXPECTED_REPOSITORY}/actions/runs/${runId}/jobs?per_page=100&filter=all`,token);
 }
 
+// This is deliberately not a generic log reader: callers can name only a decoded job id, and the
+// response is never returned. No path, search term or parser can be supplied.
+export function repositoryGateLogRequest(jobId,token){
+  if(!runIdValid(jobId))fail('github_job_id_invalid');
+  return get(`https://api.github.com/repos/${EXPECTED_REPOSITORY}/actions/jobs/${jobId}/logs`,token);
+}
+
 // ---------------------------------------------------------------- strict decoders
 
 export function decodeMainRef(body){
@@ -161,7 +179,7 @@ export function decodeJobs(body){
   const jobs=[];
   for(const row of body.jobs){
     if(row===null||typeof row!=='object'||Array.isArray(row))return null;
-    if(typeof row.name!=='string'||typeof row.status!=='string')return null;
+    if(!runIdValid(row.id)||typeof row.name!=='string'||typeof row.status!=='string')return null;
     if(row.conclusion!==null&&typeof row.conclusion!=='string')return null;
     if(row.started_at!==null&&row.started_at!==undefined&&typeof row.started_at!=='string')return null;
     if(!Number.isSafeInteger(row.run_attempt)||row.run_attempt<1)return null;
@@ -178,7 +196,7 @@ export function decodeJobs(body){
         steps.push({name:step.name,status:step.status,conclusion:step.conclusion??null});
       }
     }else if(row.steps!==undefined&&row.steps!==null)return null;
-    jobs.push({name:row.name,status:row.status,conclusion:row.conclusion??null,
+    jobs.push({id:row.id,name:row.name,status:row.status,conclusion:row.conclusion??null,
       startedAt:row.started_at??null,runAttempt:row.run_attempt,steps});
   }
   return jobs;
@@ -191,7 +209,7 @@ const attemptOne=(jobs,name)=>jobs.filter(job=>job.name===name&&job.runAttempt==
 // Exactly one shape is a legitimate `OPPORTUNITY_CONSUMED` refusal: the gate job's guard step
 // failed, every step before it succeeded, and `collect` was skipped. A gate that failed anywhere
 // else is a different event and is never reported as the healthy one.
-function guardRefusal(gate){
+function guardRefusalShape(gate){
   if(!Array.isArray(gate.steps))return false;
   const index=gate.steps.findIndex(step=>step.name===EXPECTED_GUARD_STEP);
   if(index===-1)return false;
@@ -200,9 +218,36 @@ function guardRefusal(gate){
   return gate.steps.slice(0,index).every(step=>step.status==='completed'&&step.conclusion==='success');
 }
 
+// GitHub prefixes emitted lines with one UTC timestamp. Only exact whole-line syntax emitted by
+// run-opportunity-guard.mjs is eligible. Consumed has exactly two current allowlisted reasons;
+// every ambiguous reason is reduced to AMBIGUOUS, while unknown vocabulary, missing lines,
+// duplicate lines and contradictions are INVALID.
+const LOG_PREFIX='(?:[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z )?';
+const GUARD_LOG_LINE=new RegExp(`^${LOG_PREFIX}DATA-S2 daily collection opportunity: ([A-Z_]+) \\(([a-z0-9_]+)\\)$`);
+export function parseGuardSemanticOutcome(text){
+  if(typeof text!=='string')return GUARD_RESULT_INVALID;
+  const matches=[];
+  for(const line of text.split(/\r?\n/)){
+    const match=line.match(GUARD_LOG_LINE);
+    if(match)matches.push(match.slice(1));
+  }
+  if(matches.length!==1)return GUARD_RESULT_INVALID;
+  const [[classification,reason]]=matches;
+  if(classification==='OPPORTUNITY_CONSUMED'
+    &&(reason==='automatic_collection_consumed'||reason==='owner_collection_today'))
+    return GUARD_RESULT_CONSUMED;
+  if(classification==='OPPORTUNITY_AVAILABLE'&&reason==='opportunity_available')
+    return GUARD_RESULT_AVAILABLE;
+  if(classification==='AMBIGUOUS_REQUIRES_OWNER_ATTENTION'
+    &&['guard_input_invalid','guard_collect_timing_unusable','guard_read_failed',
+      'guard_read_bound_exhausted','guard_rerun_contract_violated'].includes(reason))
+    return GUARD_RESULT_AMBIGUOUS;
+  return GUARD_RESULT_INVALID;
+}
+
 // Classifies one governed run from its attempt-1 job and step metadata alone. It never reads the
 // run-level conclusion, and it never guesses: anything it cannot place exactly is UNCLASSIFIED.
-export function classifyGovernedRun(jobs){
+export function classifyGovernedRun(jobs,guardSemantic=GUARD_RESULT_INVALID){
   if(!Array.isArray(jobs))return deepFreeze({outcome:RUN_UNCLASSIFIED,collectStartedAt:null});
   const gates=attemptOne(jobs,EXPECTED_GATE_JOB);
   const collects=attemptOne(jobs,EXPECTED_COLLECT_JOB);
@@ -218,7 +263,8 @@ export function classifyGovernedRun(jobs){
     return deepFreeze({outcome:RUN_IN_FLIGHT,collectStartedAt:null});
   if(collect.conclusion==='skipped'){
     if(gate.conclusion==='success')return deepFreeze({outcome:RUN_UNCLASSIFIED,collectStartedAt:null});
-    return deepFreeze({outcome:guardRefusal(gate)?RUN_REFUSED_OPPORTUNITY_CONSUMED:RUN_GATE_REFUSED_OTHER,
+    return deepFreeze({outcome:guardRefusalShape(gate)&&guardSemantic===GUARD_RESULT_CONSUMED
+      ?RUN_REFUSED_OPPORTUNITY_CONSUMED:RUN_GATE_REFUSED_OTHER,
       collectStartedAt:null});
   }
   // A collect that ran must prove when it began, because that instant is what dates the day's
@@ -282,6 +328,48 @@ async function readJson(request,fetchImpl,budget){
   try{return await response.json();}catch{return null;}
 }
 
+async function readGuardSemantic(jobId,token,fetchImpl,budget){
+  if(budget.spent>=budget.max)fail('github_read_bound_exhausted');
+  budget.spent+=1;
+  let response;
+  try{
+    response=await fetchImpl(repositoryGateLogRequest(jobId,token).url,
+      {...repositoryGateLogRequest(jobId,token).init,signal:AbortSignal.timeout(GITHUB_REQUEST_TIMEOUT_MS)});
+  }catch{return null;}
+  if(response?.status!==200)return null;
+  const rawLength=response.headers?.get?.('content-length');
+  let declared=null;
+  if(rawLength!==null&&rawLength!==undefined){
+    if(typeof rawLength!=='string'||!/^(?:0|[1-9][0-9]{0,6})$/.test(rawLength))return null;
+    declared=Number(rawLength);
+    if(declared>GITHUB_GUARD_LOG_MAX_BYTES)return null;
+  }
+  if(typeof response.body?.getReader!=='function')return null;
+  const chunks=[];
+  let total=0;
+  try{
+    const reader=response.body.getReader();
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!(value instanceof Uint8Array)||total+value.byteLength>GITHUB_GUARD_LOG_MAX_BYTES){
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+      total+=value.byteLength;
+    }
+  }catch{return null;}
+  if(declared!==null&&declared!==total)return null;
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  let result;
+  try{result=parseGuardSemanticOutcome(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}
+  catch{return null;}
+  return result===GUARD_RESULT_INVALID?null:result;
+}
+
 async function readRunPages(workflowFile,token,now,fetchImpl,budget){
   const first=decodeRunsPage(await readJson(workflowRunsRequest(workflowFile,token,now,1),fetchImpl,budget),1);
   if(first===null)return null;
@@ -319,8 +407,15 @@ export async function readGithubChain({token,fetchImpl,now,maxReads=GITHUB_SENTI
     for(const run of listed){
       const jobs=decodeJobs(await readJson(runJobsRequest(run.id,token),fetchImpl,budget));
       if(jobs===null)return deepFreeze({ok:false,reasonCode:GITHUB_READ_FAILED});
+      let guardSemantic=GUARD_RESULT_INVALID;
+      const gates=attemptOne(jobs,EXPECTED_GATE_JOB),collects=attemptOne(jobs,EXPECTED_COLLECT_JOB);
+      if(gates.length===1&&collects.length===1&&collects[0].conclusion==='skipped'
+        &&guardRefusalShape(gates[0])){
+        guardSemantic=await readGuardSemantic(gates[0].id,token,fetchImpl,budget);
+        if(guardSemantic===null)return deepFreeze({ok:false,reasonCode:GITHUB_READ_FAILED});
+      }
       runs.push({...run,kind:workflowFile===EXPECTED_WORKFLOW_C_FILE?'owner':'automatic',
-        classification:classifyGovernedRun(jobs)});
+        classification:classifyGovernedRun(jobs,guardSemantic)});
     }
   }
   return deepFreeze({ok:true,reasonCode:GITHUB_OBSERVATION_OK,mainSha,verify,

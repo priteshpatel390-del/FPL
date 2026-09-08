@@ -20,8 +20,10 @@ append-only history; it is bounded and fails closed above the bound, but that bo
 not a proof. Days are evaluated on strict UTC boundaries dated by when collection began, which is
 deliberately simpler than the opportunity guard's own trailing-window rule. Verify state on current
 `main` is recorded as a fact and is not on its own treated as a production failure. No persistent
-heartbeat monitoring exists: the contract is implemented, and activating a runtime for it is a
-separate owner gate.
+heartbeat monitoring exists. Proving a legitimate guard refusal depends on GitHub retaining and
+serving the exact repository-gate job log within the 256 KiB bound; unavailable logs or format drift
+make the observation RED rather than guessed healthy. Raw logs are never retained. The contract is
+implemented, and activating a runtime for it is a separate owner gate.
 
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## DATA-OPS-A1.1 limitations

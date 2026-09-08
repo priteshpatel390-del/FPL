@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import {ACTION_REGISTRY,AUTO_MERGE_ALLOWLIST} from '../workers/data-steward/action-registry.mjs';
 import {classifyOperationalState,createIncident} from '../workers/data-steward/incident.mjs';
 import {DISPATCH_REPOSITORY,DISPATCH_WORKFLOW_FILE} from '../workers/schedule-dispatcher/dispatch-contract.mjs';
@@ -16,9 +17,11 @@ import {EVALUATION_AWAITING_LATER_OPPORTUNITY,EVALUATION_DUE,EVALUATION_NOT_DUE,
   EXPECTED_WORKFLOW_C_FILE,MAX_EVIDENCE_AGE_MS,WORKFLOW_B_COLLECT_TIMEOUT_MINUTES,
   WORKFLOW_B_GATE_TIMEOUT_MINUTES,WORKFLOW_B_MAX_EXECUTION_MS,evaluationDeadline,evaluationPhase,
   opportunityInstants,utcDayWindow} from '../workers/data-steward/sentinels/production-chain-contract.mjs';
-import {RUN_COLLECTED,RUN_COLLECT_FAILED,RUN_GATE_REFUSED_OTHER,RUN_IN_FLIGHT,
+import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE,
+  GUARD_RESULT_CONSUMED,GUARD_RESULT_INVALID,RUN_COLLECTED,RUN_COLLECT_FAILED,RUN_GATE_REFUSED_OTHER,RUN_IN_FLIGHT,
   RUN_REFUSED_OPPORTUNITY_CONSUMED,RUN_UNCLASSIFIED,classifyGovernedRun,decodeJobs,decodeMainRef,
-  decodeRunsPage,interpretGithubDay,mainRefRequest,readGithubChain,runJobsRequest,
+  decodeRunsPage,interpretGithubDay,mainRefRequest,parseGuardSemanticOutcome,readGithubChain,
+  repositoryGateLogRequest,runJobsRequest,
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
 import {CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,assertProductionAccount,
   cloudflareReadRequest,cronSetMatches,decodeDeployments,decodeEnvelope,decodeSchedules,
@@ -57,8 +60,8 @@ const gateSteps=guardConclusion=>[step('Validate external dispatch event before 
   step('Set up exact Node'),step('Require exact-head Verify Teamsheet success within a bounded wait'),
   step(EXPECTED_GUARD_STEP,guardConclusion)];
 
-const job=(name,{conclusion='success',status='completed',startedAt=null,runAttempt=1,steps=null}={})=>
-  ({name,status,conclusion,started_at:startedAt,run_attempt:runAttempt,
+const job=(name,{id=name===EXPECTED_GATE_JOB?501:502,conclusion='success',status='completed',startedAt=null,runAttempt=1,steps=null}={})=>
+  ({id,name,status,conclusion,started_at:startedAt,run_attempt:runAttempt,
     ...(steps===null?{}:{steps})});
 
 const collectedJobs=startedAt=>[job(EXPECTED_GATE_JOB,{steps:gateSteps('success')}),
@@ -135,7 +138,7 @@ const healthyRoutes=({bRuns,bJobs,cRuns=runsBody([]),cJobs={},d1=d1Body(),schedu
 
 // The jobs endpoint has to answer per run id, so it is routed separately.
 function chainFetch({bRuns,jobsById,cRuns=runsBody([]),d1=d1Body(),schedules=schedulesBody(),
-  githubStatus=null}={}){
+  githubStatus=null,guardLogs={501:'DATA-S2 daily collection opportunity: OPPORTUNITY_CONSUMED (automatic_collection_consumed)\n'}}={}){
   return async(url,init)=>{
     if(githubStatus&&url.includes('api.github.com'))return {status:githubStatus,json:async()=>({})};
     if(url.includes('/git/ref/heads/main'))return {status:200,json:async()=>({ref:'refs/heads/main',object:{sha:SHA}})};
@@ -144,6 +147,15 @@ function chainFetch({bRuns,jobsById,cRuns=runsBody([]),d1=d1Body(),schedules=sch
     if(url.includes(`/workflows/${EXPECTED_WORKFLOW_C_FILE}/runs`))return {status:200,json:async()=>cRuns};
     const jobsMatch=/\/actions\/runs\/(\d+)\/jobs/.exec(url);
     if(jobsMatch)return {status:200,json:async()=>jobsBody(jobsById[jobsMatch[1]]??[])};
+    const logMatch=/\/actions\/jobs\/(\d+)\/logs/.exec(url);
+    if(logMatch){
+      const body=guardLogs[logMatch[1]];
+      if(body==='ERROR')throw new Error('transport');
+      if(body===undefined)return {status:404,arrayBuffer:async()=>new ArrayBuffer(0)};
+      const bytes=new TextEncoder().encode(body);
+      return {status:200,headers:{get:name=>name==='content-length'?String(bytes.byteLength):null},
+        body:new ReadableStream({start(controller){controller.enqueue(bytes);controller.close();}})};
+    }
     if(url.includes('/schedules'))return {status:200,json:async()=>schedules};
     if(url.includes('/deployments'))return {status:200,json:async()=>deploymentsBody()};
     if(url.includes('/settings'))return {status:200,json:async()=>settingsBody()};
@@ -269,7 +281,8 @@ test('only a fresh, actually observed envelope can ever prove anything',async()=
 test('every GitHub request this sentinel can build is a GET against a fixed read path',()=>{
   const requests=[mainRefRequest('t'),verifyCheckRunsRequest(SHA,'t'),
     workflowRunsRequest(EXPECTED_WORKFLOW_B_FILE,'t',AFTER_DEADLINE,1),
-    workflowRunsRequest(EXPECTED_WORKFLOW_C_FILE,'t',AFTER_DEADLINE,1),runJobsRequest(101,'t')];
+    workflowRunsRequest(EXPECTED_WORKFLOW_C_FILE,'t',AFTER_DEADLINE,1),runJobsRequest(101,'t'),
+    repositoryGateLogRequest(501,'t')];
   for(const request of requests){
     assert.equal(request.init.method,'GET');
     assert.ok(request.url.startsWith(`https://api.github.com/repos/${EXPECTED_REPOSITORY}/`));
@@ -283,6 +296,7 @@ test('every GitHub request this sentinel can build is a GET against a fixed read
   assert.throws(()=>mainRefRequest(''),/github_token_missing/);
   assert.throws(()=>verifyCheckRunsRequest('not-a-sha','t'),/github_sha_invalid/);
   assert.throws(()=>runJobsRequest(0,'t'),/github_run_id_invalid/);
+  assert.throws(()=>repositoryGateLogRequest(0,'t'),/github_job_id_invalid/);
 });
 
 test('malformed, truncated and over-full GitHub responses fail closed',()=>{
@@ -293,6 +307,7 @@ test('malformed, truncated and over-full GitHub responses fail closed',()=>{
   assert.equal(decodeRunsPage({total_count:1,workflow_runs:[{...runRow(1,`${DAY}T01:00:00Z`),created_at:'nope'}]},1),null);
   assert.equal(decodeRunsPage('nope',1),null);
   assert.equal(decodeJobs({total_count:2,jobs:[job('collect')]}),null);
+  assert.equal(decodeJobs({total_count:1,jobs:[{...job('collect'),id:0}]}),null);
   assert.equal(decodeJobs({total_count:1,jobs:[{...job('collect'),run_attempt:0}]}),null);
   assert.equal(decodeJobs({total_count:1,jobs:[{...job('collect'),steps:[{name:1}]}]}),null);
   assert.deepEqual(decodeJobs(jobsBody([job('collect',{startedAt:`${DAY}T01:17:30.000Z`})]))[0].steps,null);
@@ -301,13 +316,29 @@ test('malformed, truncated and over-full GitHub responses fail closed',()=>{
 test('a run is classified from its governed jobs and steps, never from its run conclusion',()=>{
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody(collectedJobs(`${DAY}T01:17:30.000Z`)))).outcome,RUN_COLLECTED);
   // The T2 acceptance shape: overall failure, guard step failed, collect correctly skipped.
-  assert.equal(classifyGovernedRun(decodeJobs(jobsBody(refusedJobs()))).outcome,RUN_REFUSED_OPPORTUNITY_CONSUMED);
+  assert.equal(classifyGovernedRun(decodeJobs(jobsBody(refusedJobs())),GUARD_RESULT_CONSUMED).outcome,
+    RUN_REFUSED_OPPORTUNITY_CONSUMED);
   // A gate that failed somewhere else is a different event and never wears the healthy label.
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody(otherGateFailureJobs()))).outcome,RUN_GATE_REFUSED_OTHER);
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody([job(EXPECTED_GATE_JOB,{steps:gateSteps('success')}),
     job(EXPECTED_COLLECT_JOB,{conclusion:'failure',startedAt:`${DAY}T01:17:30.000Z`})]))).outcome,RUN_COLLECT_FAILED);
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody([job(EXPECTED_GATE_JOB,{steps:gateSteps('success')}),
     job(EXPECTED_COLLECT_JOB,{status:'in_progress',conclusion:null})]))).outcome,RUN_IN_FLIGHT);
+});
+
+test('guard log evidence reduces exact allowlisted syntax and rejects every ambiguous shape',()=>{
+  const prefix='2026-09-08T02:18:01.1234567Z ';
+  const consumed='DATA-S2 daily collection opportunity: OPPORTUNITY_CONSUMED (automatic_collection_consumed)';
+  assert.equal(parseGuardSemanticOutcome(`${prefix}${consumed}\n`),GUARD_RESULT_CONSUMED);
+  assert.equal(parseGuardSemanticOutcome('DATA-S2 daily collection opportunity: OPPORTUNITY_CONSUMED (owner_collection_today)'),GUARD_RESULT_CONSUMED);
+  assert.equal(parseGuardSemanticOutcome('DATA-S2 daily collection opportunity: AMBIGUOUS_REQUIRES_OWNER_ATTENTION (guard_read_failed)'),GUARD_RESULT_AMBIGUOUS);
+  assert.equal(parseGuardSemanticOutcome('DATA-S2 daily collection opportunity: OPPORTUNITY_AVAILABLE (opportunity_available)'),GUARD_RESULT_AVAILABLE);
+  for(const malformed of ['',`prefix ${consumed}`,`${consumed} suffix`,
+    'DATA-S2 daily collection opportunity: OPPORTUNITY_CONSUMED (future_reason)',
+    'DATA-S2 daily collection opportunity: FUTURE_RESULT (automatic_collection_consumed)',
+    `${consumed}\n${consumed}`,
+    `${consumed}\nDATA-S2 daily collection opportunity: AMBIGUOUS_REQUIRES_OWNER_ATTENTION (guard_read_failed)`])
+    assert.equal(parseGuardSemanticOutcome(malformed),GUARD_RESULT_INVALID,malformed);
 });
 
 test('unprovable, contradictory and unknown run shapes are UNCLASSIFIED rather than assumed benign',()=>{
@@ -331,7 +362,8 @@ test('unprovable, contradictory and unknown run shapes are UNCLASSIFIED rather t
 test('the GitHub day view dates a collection by when it collected and counts executions, not successes',()=>{
   const runs=[
     {createdAt:`${DAY}T01:17:05.000Z`,kind:'automatic',classification:classifyGovernedRun(decodeJobs(jobsBody(collectedJobs(`${DAY}T01:17:30.000Z`))))},
-    {createdAt:`${DAY}T02:17:04.000Z`,kind:'automatic',classification:classifyGovernedRun(decodeJobs(jobsBody(refusedJobs())))}
+    {createdAt:`${DAY}T02:17:04.000Z`,kind:'automatic',classification:classifyGovernedRun(
+      decodeJobs(jobsBody(refusedJobs())),GUARD_RESULT_CONSUMED)}
   ];
   const day=interpretGithubDay({runs,now:AFTER_DEADLINE});
   assert.equal(day.collected,1);
@@ -363,6 +395,32 @@ test('a GitHub read that cannot complete is a failed observation, never an empty
   assert.ok(impl.seen.every(entry=>entry.method==='GET'));
   await assert.rejects(readGithubChain({token:'t',fetchImpl:impl,now:AFTER_DEADLINE,maxReads:1}),
     /github_read_bound_exhausted/);
+});
+
+test('guard refusal is healthy only with independently proven consumed semantics',async()=>{
+  const read=guardLogs=>readGithubChain({token:'t',now:AFTER_DEADLINE,
+    fetchImpl:chainFetch({...HEALTHY_DAY,guardLogs})});
+  const line=value=>`DATA-S2 daily collection opportunity: ${value}\n`;
+  assert.equal((await read({501:line('OPPORTUNITY_CONSUMED (automatic_collection_consumed)')}))
+    .day.refusedOpportunityConsumed,1);
+  for(const evidence of [
+    line('AMBIGUOUS_REQUIRES_OWNER_ATTENTION (guard_read_failed)'),
+    line('AMBIGUOUS_REQUIRES_OWNER_ATTENTION (guard_collect_timing_unusable)'),
+    line('OPPORTUNITY_AVAILABLE (opportunity_available)')]){
+    const result=await read({501:evidence});
+    assert.equal(result.ok,true);
+    assert.equal(result.day.refusedOpportunityConsumed,0);
+    assert.equal(result.day.gateRefusedOther,1);
+  }
+  for(const evidence of [undefined,'ERROR','',
+    line('OPPORTUNITY_CONSUMED (future_reason)'),
+    line('FUTURE_RESULT (automatic_collection_consumed)'),
+    line('OPPORTUNITY_CONSUMED (automatic_collection_consumed)').repeat(2),
+    line('OPPORTUNITY_CONSUMED (automatic_collection_consumed)')
+      +line('AMBIGUOUS_REQUIRES_OWNER_ATTENTION (guard_read_failed)'),
+    'x'.repeat(GITHUB_GUARD_LOG_MAX_BYTES+1)])
+    assert.deepEqual(await read(evidence===undefined?{}:{501:evidence}),
+      {ok:false,reasonCode:'GITHUB_READ_FAILED'});
 });
 
 // ================================================================ Cloudflare sentinel
@@ -797,7 +855,7 @@ test('A1.2 can observe the dispatcher but can never arm, change or redeploy it',
   assert.ok(!fs.readdirSync('.github/workflows').some(name=>/steward|sentinel|data-ops/i.test(name)));
 });
 
-test('the application still cannot reach the steward, and the steward reaches the platform read-only',()=>{
+test('the application stays isolated and every steward-to-platform edge is denied unless exactly allowlisted',()=>{
   // The compensating half of the production dependency scan. A1.2 is the control plane FOR the
   // data platform, so it names it; the deterministic Teamsheet application still may not know the
   // steward exists, and the steward still may not hold the production D1 binding.
@@ -809,13 +867,26 @@ test('the application still cannot reach the steward, and the steward reaches th
   assert.doesNotMatch(fs.readFileSync('app.html','utf8'),/data-steward|observeProductionChain/i);
   for(const file of walk('workers/data-steward'))
     assert.doesNotMatch(fs.readFileSync(file,'utf8'),/TEAMSHEET_DATA_DB/,file);
-  // The steward's data-platform dependencies are a closed allowlist of pure, read-only modules.
-  const imported=new Set();
-  for(const file of A12_FILES)
-    for(const match of source(file).matchAll(/from '\.\.\/\.\.\/data-platform\/([^']+)'/g))
-      imported.add(match[1]);
-  assert.deepEqual([...imported].sort(),['official-fpl-canonical.mjs','production-collection.mjs',
-    'production-identity.mjs','scheduled/exact-head-verify.mjs']);
+  // Exact source-to-target edges only. Discovery covers every current and future steward module;
+  // adding a file gives it no inherited permission to reach any data-platform module.
+  const allowed=new Set([
+    'workers/data-steward/sentinels/cloudflare-sentinel.mjs -> workers/data-platform/production-identity.mjs',
+    'workers/data-steward/sentinels/d1-sentinel.mjs -> workers/data-platform/official-fpl-canonical.mjs',
+    'workers/data-steward/sentinels/d1-sentinel.mjs -> workers/data-platform/production-collection.mjs',
+    'workers/data-steward/sentinels/github-sentinel.mjs -> workers/data-platform/scheduled/exact-head-verify.mjs'
+  ]);
+  const actual=new Set();
+  for(const file of walk('workers/data-steward')){
+    const text=fs.readFileSync(file,'utf8');
+    const references=[...text.matchAll(/(?:from\s*|import\s*\(\s*|require\s*\(\s*)['"]([^'"]*data-platform\/[^'"]+)['"]/g)];
+    for(const [,specifier] of references){
+      const target=path.normalize(path.join(path.dirname(file),specifier));
+      const edge=`${path.normalize(file)} -> ${target}`;
+      assert.ok(allowed.has(edge),`unreviewed steward dependency: ${edge}`);
+      actual.add(edge);
+    }
+  }
+  assert.deepEqual([...actual].sort(),[...allowed].sort());
   // Nothing in A1.2 imports the module that can build production mutations.
   for(const file of A12_FILES)
     assert.doesNotMatch(source(file),/official-fpl-d1-rest-plan|d1-rest-client|official-fpl-history/,file);

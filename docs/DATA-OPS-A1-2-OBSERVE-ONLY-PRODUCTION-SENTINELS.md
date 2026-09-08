@@ -44,21 +44,32 @@ repository gate refused an already-consumed day with
 `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` and `collect` was correctly skipped. That is
 the guard working.
 
-A1.2 therefore never classifies on `run.conclusion`. It classifies on the governed job and step
-outcomes underneath it, and recognises exactly one shape as a legitimate refusal: the
-`repository-gate` job's step named `Require an unconsumed daily collection opportunity` concluded
-`failure`, every step before it concluded `success`, and `collect` concluded `skipped`. A gate that
-failed anywhere else is a different event and never wears the healthy label.
+A1.2 therefore never classifies on `run.conclusion`. Job and step outcomes identify only a candidate
+refusal: the `repository-gate` guard step failed after successful prior steps and `collect` skipped.
+That shape is called `REFUSED_OPPORTUNITY_CONSUMED` only after a bounded read of that exact gate job's
+log independently proves one exact allowlisted `OPPORTUNITY_CONSUMED` result. A failed guard step by
+itself proves nothing semantic and never wears the healthy label.
 
 ## The three sentinels
 
 ### GitHub sentinel — `github-sentinel.mjs`
 
 Reads, all `GET`: the `main` ref; the exact-head `Tests and deterministic build` check runs; the
-governed run listings for workflow B and workflow C; and the `filter=all` job listing of each run.
+governed run listings for workflow B and workflow C; the `filter=all` job listing of each run; and,
+only for a metadata-proven candidate guard refusal, that exact `repository-gate` job's log.
 It decodes strictly — a truncated, over-full or malformed page is refused rather than interpreted —
 and reduces every run to a closed outcome: `COLLECTED`, `COLLECT_FAILED`,
 `REFUSED_OPPORTUNITY_CONSUMED`, `GATE_REFUSED_OTHER`, `IN_FLIGHT` or `UNCLASSIFIED`.
+
+The job log has no generic reader or search interface. Declared and actual response bytes are capped
+at 256 KiB. Parsing accepts one whole line only, with GitHub's optional canonical UTC prefix and the
+exact machine output emitted by `run-opportunity-guard.mjs`; only current classification/reason pairs
+are allowlisted. Raw bytes are reduced immediately to `CONSUMED`, `AMBIGUOUS` or `AVAILABLE` and then
+discarded. Raw or unrelated log text never enters an envelope, incident, audit record or persistent
+state. Missing, malformed, duplicate, contradictory, unknown and future vocabulary, invalid UTF-8,
+oversize data and retrieval failure all fail closed. `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, including
+API/read failure reasons, never becomes consumed; `AVAILABLE` contradicts a failed step and is a
+non-healthy gate refusal.
 
 Only attempt 1 can have collected, because the shared production entry point throws
 `workflow_retry_forbidden` on every later attempt; `filter=all` is still used so a later attempt can
@@ -226,7 +237,7 @@ both tokens are read-only, a lapsed or revoked credential fails the observation 
 
 ## Verification
 
-* Repository suite: **1,761 tests, 1,761 passed, 0 failed, 0 skipped, 0 cancelled** (baseline before
+* Repository suite: **1,763 tests, 1,763 passed, 0 failed, 0 skipped, 0 cancelled** (baseline before
   A1.2 was 1,714/1,714).
 * Two consecutive production builds are byte-identical, and `sourceHash` and `buildInputHash` are
   unchanged from `main` — A1.2 touches no build input, so no product behaviour changed.
@@ -263,12 +274,20 @@ What remains to be proven during a separately approved activation and acceptance
   hole.
 * A GitHub check-run reading proves Verify state for the current `main` only; it is recorded as a
   fact and is not on its own treated as a production failure.
-* One repository invariant changed scope: the recursive production dependency scan in
-  `tests/data-platform.test.mjs` previously forbade every non-`data-platform` file under `workers/`
-  from naming the data platform. The steward is the control plane **for** the data platform, so the
-  `workers/data-steward` tree is now scanned by a separate assertion that still forbids it from
-  holding the production D1 binding, and the application half of the invariant is re-proved
-  unchanged in the A1.2 suite. No assertion was weakened and no coverage was dropped.
+* The broad production dependency scan excludes `workers/data-steward` because the steward is the
+  control plane **for** the platform. Its replacement recursively discovers every steward `.mjs`
+  module, including future files, denies every data-platform edge by default and permits only four
+  exact reviewed source-to-target edges. It also retains the production D1 binding prohibition and
+  the application half of the original invariant. A future steward file cannot inherit platform
+  access; its exact edge must be reviewed and added before tests pass.
+  The complete allowlist is:
+  `cloudflare-sentinel.mjs -> production-identity.mjs`;
+  `d1-sentinel.mjs -> official-fpl-canonical.mjs`;
+  `d1-sentinel.mjs -> production-collection.mjs`; and
+  `github-sentinel.mjs -> scheduled/exact-head-verify.mjs`.
+* Proving a consumed refusal depends on GitHub retaining and serving the exact repository-gate job
+  log within 256 KiB. Retention expiry, access failure or output-format drift makes that observation
+  RED, never healthy; no raw log is retained.
 
 ## Next gate
 
