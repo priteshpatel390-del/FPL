@@ -1,5 +1,22 @@
 # TESTING.md
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## DATA-S2C live acceptance and retirement regression
+
+**Supersedes earlier DATA-S2C acceptance-pending wording below.** GitHub API evidence independently
+confirms T1 run `34207638275` (`main`, SHA
+`c6708e4940c81b34b96adb53e624e98453ac2800`, attempt 1) passed `repository-gate`, `collect`, and
+`Reconfirm identity and remote main, then collect Official FPL to D1 REST`. T2 run `34209137195`
+failed at `Require an unconsumed daily collection opportunity` with `OPPORTUNITY_CONSUMED
+(automatic_collection_consumed)` and skipped `collect`; this is expected duplicate-guard acceptance.
+
+Permanent tests now require obsolete workflow A to be absent while retaining workflow B, workflow C,
+three exact dispatcher crons, shared opportunity guard, production entry point and unchanged collector
+resource contract. Workflow A history must be queried through immutable workflow id `350014371`,
+never its deleted filename; a failed historical lookup must still fail closed. Tests do not claim
+independent visibility into live Cloudflare trigger state.
+
+
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## DATA-S2C external scheduler coverage
 

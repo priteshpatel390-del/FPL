@@ -1,5 +1,82 @@
 # DATA-S2C — external production scheduler
 
+## 14. Package D/E closeout — 8 September 2026
+
+**This section is the canonical current DATA-S2C state and supersedes earlier current-state,
+activation-method, natural-observation, and separate Package D/E next-gate statements below. Earlier
+sections are retained as history and design rationale.** Owner explicitly approved combining Packages
+D and E. DATA-S2C is closed; this is not another observation phase.
+
+### 14.1 Live acceptance evidence
+
+GitHub API evidence independently confirms:
+
+* **T1:** workflow B run `34207638275`, created `2026-09-08T09:00:53Z`, `main`, SHA
+  `c6708e4940c81b34b96adb53e624e98453ac2800`, attempt 1, overall `success`. Both
+  `repository-gate` and `collect` succeeded, including `Reconfirm identity and remote main, then
+  collect Official FPL to D1 REST`. This proves Cloudflare Cron → dispatcher → workflow B →
+  repository gate → opportunity guard → collect → Official FPL → production D1.
+* **T2:** workflow B run `34209137195`, created `2026-09-08T09:17:03Z`, same branch, SHA and attempt,
+  overall `failure` as expected. `repository-gate` failed only at `Require an unconsumed daily
+  collection opportunity`; its log reports `DATA-S2 daily collection opportunity:
+  OPPORTUNITY_CONSUMED (automatic_collection_consumed)`. `collect` was skipped. A second same-day
+  Cloudflare dispatch occurred and no second production collection occurred.
+
+Before T1, one temporary trigger fired at about 09:17 BST. Cloudflare recorded scheduled event
+`outcome: ok`, then dispatcher `REJECTED`, reason `dispatch_token_missing`, `timerLatencyMs: 176`.
+No workflow B run was created. Dashboard investigation found active version
+`7afb02f1-5425-4d8c-bd85-91fec5e8175c` lacked the runtime secret while newer version `7c3c8be5...`
+contained “Add secret: GITH...”. Owner promoted the latter to 100% traffic. This was a safe
+Cloudflare pre-dispatch rejection, **not** a GitHub or collection failure.
+
+### 14.2 Narrow owner-approved exception and final cron state
+
+Owner approval expressly covered direct dashboard Cron Trigger creation, temporary acceptance Cron
+Triggers, live manual secret-version promotion, and combined D/E closeout. This narrow exception
+supersedes Package C's prohibition on dashboard-created or temporary acceptance crons; it does not
+rewrite that earlier rationale into a general operating rule.
+
+Successful pair: `0 9 8 * * *` produced T1 at 09:00 UTC (10:00 BST), and `17 9 8 * * *` produced T2
+at 09:17 UTC (10:17 BST). Owner then deleted both temporary one-day triggers and saved the intended
+final live set: exactly `17 1 * * *`, `17 2 * * *`, `17 3 * * *`. Repository config declares that
+same set. Available repository tooling cannot independently read current Cloudflare Cron Trigger
+state, so final cleanup is accurately recorded as owner-observed and owner-confirmed, not
+machine-verified here.
+
+### 14.3 Materialised history gap
+
+A GitHub API query for each governed A/B/C workflow over `2026-09-07T00:00:00Z` through
+`2026-09-07T23:59:59Z` returned `total_count: 0`. UTC day 2026-09-07 therefore closed with no
+governed production collection. The accepted temporary DATA-S2 history-gap risk materialised.
+Missing intermediate observations cannot be reconstructed; later collection captures only then-current
+Official FPL state.
+
+### 14.4 Final architecture and retirement
+
+Cloudflare is the sole automatic clock. Workflow B remains the guarded automatic execution path and
+workflow C remains attended recovery. Disabled workflow A had no pending execution, was no longer
+required, and is deleted from the repository. Historical workflow-A run discovery remains inside the
+shared opportunity guard for its bounded lookback and uses immutable GitHub Actions workflow id
+`350014371`, not the deleted filename, as its API identifier. A failed id lookup remains fail-closed;
+removing or silently ignoring that history source would change opportunity-guard behaviour and is
+outside closeout. Scheduler-environment diagnostics and other
+shared production helpers remain because workflow B uses the same protected unattended environment
+and production machinery.
+
+### 14.5 Normal operations
+
+Scheduler observation is now non-blocking, exception-based normal operations. Healthy daily operation
+requires no owner intervention. Alert or remediate materially on missing daily collection, duplicate
+production collection, Cloudflare dispatch failure, opportunity-guard ambiguity, missing/incorrect
+permanent Cron Trigger, credential expiry/failure, D1 integrity failure, resource-envelope breach, or
+provider/schema failure. Future Autonomous Data Steward implementation is a separate checkpoint and
+is not included here.
+
+No collector semantics, Official FPL field, D1 schema/migration, resource threshold, guard behaviour,
+provider behaviour, model, projection, expected-minutes, fixture, captaincy, squad, transfer,
+simulation, rank, Mini-League or UI behaviour changed. No Cloudflare live mutation or credential
+rotation is part of repository closeout.
+
 **Status: Package A repository foundation merged; Package B complete — GitHub automatic scheduling
 retired and the isolated Cloudflare dispatcher deployed dormant with zero Cron Triggers; Package C
 is a repository activation candidate under review.** Sections 1–11 record Package A and were accurate

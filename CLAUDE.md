@@ -1,4 +1,40 @@
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+### Current DATA-S2C state — closed after live Cloudflare acceptance
+
+**This block supersedes every earlier DATA-S2C current-state or next-gate statement below; those
+blocks remain historical records.** DATA-S2C Packages D and E were explicitly owner-approved as one
+closeout package. Cloudflare is now the sole automatic clock, GitHub Actions remains the execution
+engine through workflow B, and attended workflow C remains the manual recovery path. Obsolete GitHub
+scheduled workflow A is retired from the repository. Its bounded historical runs remain guarded and
+are discovered through immutable GitHub Actions workflow id `350014371`, never through the deleted
+workflow filename; lookup failure remains fail-closed.
+
+GitHub independently confirms T1 run `34207638275` on `main` SHA
+`c6708e4940c81b34b96adb53e624e98453ac2800`, created `2026-09-08T09:00:53Z`, attempt 1: workflow B,
+`repository-gate` and `collect` all succeeded, including the production Official FPL-to-D1 step.
+GitHub also confirms expected T2 run `34209137195`, created `2026-09-08T09:17:03Z`, attempt 1: the
+repository gate failed specifically at the opportunity guard with `OPPORTUNITY_CONSUMED
+(automatic_collection_consumed)`, and `collect` was skipped. This proves a second same-day dispatch
+did not produce a second collection.
+
+An earlier Cloudflare scheduled event safely stopped before GitHub: `dispatch: REJECTED`, reason
+`dispatch_token_missing`, latency 176 ms, because active Worker version
+`7afb02f1-5425-4d8c-bd85-91fec5e8175c` lacked the runtime secret. It was not a GitHub or collection
+failure. Under a narrow owner-approved live-operation exception, the owner promoted the newer
+secret-containing `7c3c8be5...` version to 100% traffic and used temporary dashboard Cron Triggers
+`0 9 8 * * *` and `17 9 8 * * *` for T1/T2. The owner then deleted those temporary triggers and
+confirmed the saved final live set is exactly `17 1 * * *`, `17 2 * * *`, `17 3 * * *`. Repository
+tooling did not independently read that final Cloudflare trigger state; owner dashboard evidence is
+the stated basis.
+
+The accepted replacement gap materialised: GitHub reports zero governed A/B/C production runs during
+UTC day 2026-09-07. Missing observations cannot be reconstructed. Ongoing monitoring is normal,
+non-blocking and exception-based; healthy days require no owner action. The future Autonomous Data
+Steward remains a separate checkpoint. See
+[DATA-S2C closeout](workers/data-platform/DATA-S2C-PRODUCTION-SCHEDULER-REPLACEMENT.md#14-package-de-closeout--8-september-2026).
+
+
 <!-- DATA-S2C-PACKAGE-C-2026-09-07 -->
 ### Current DATA-S2C checkpoint — Package C repository activation candidate
 

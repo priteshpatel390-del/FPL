@@ -19,14 +19,12 @@ import {MAX_ROUTINE_CHANGED_OBSERVATIONS_PER_RUN}
   from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 
 const EXTERNAL_WORKFLOW_PATH='.github/workflows/data-s2-production-external.yml';
-const SCHEDULED_WORKFLOW_PATH='.github/workflows/data-s2-production-scheduled.yml';
 const MANUAL_WORKFLOW_PATH='.github/workflows/data-s2-production-collection.yml';
 const COLLECTION_ENTRY_PATH='workers/data-platform/run-production-collection.mjs';
 const COLLECTOR_PATH='workers/data-platform/production-collection.mjs';
 const PLATFORM_CONFIG_PATH='workers/data-platform/wrangler.jsonc';
 const read=file=>fs.readFileSync(file,'utf8');
 const external=read(EXTERNAL_WORKFLOW_PATH);
-const scheduled=read(SCHEDULED_WORKFLOW_PATH);
 const uncommented=source=>source.split('\n').filter(line=>!/^\s*(#|\/\/)/.test(line)).join('\n');
 const GATE_START='  repository-gate:';
 const COLLECT_START='\n  collect:';
@@ -129,18 +127,6 @@ test('workflow B grants the Actions read scope to the credential-free gate alone
     /GH_TOKEN|github\.token|actions\/runs|api\.github\.com/);
 });
 
-// The same effective reading applied to the scheduled workflow, whose credentialled job also
-// declares no block: its workflow-level default carries no Actions scope, so it inherits none.
-test('workflow A gives the Actions read scope to its gate alone, by the same effective reading',()=>{
-  const gate=scheduled.slice(scheduled.indexOf('  repository-gate:'),scheduled.indexOf('\n  collect:'));
-  const collect=scheduled.slice(scheduled.indexOf('\n  collect:'));
-  assert.deepEqual(permissionsBlock(scheduled,''),{contents:'read',checks:'read'});
-  assert.deepEqual(effectivePermissions(scheduled,gate),{contents:'read',checks:'read',actions:'read'});
-  const collectScopes=effectivePermissions(scheduled,collect);
-  assert.equal(collectScopes.actions,undefined);
-  for(const level of Object.values(collectScopes))assert.equal(level,'read');
-});
-
 test('workflow B is a separate file and never reuses the attended manual boundary',()=>{
   const manual=read(MANUAL_WORKFLOW_PATH);
   assert.notEqual(EXTERNAL_WORKFLOW_PATH,MANUAL_WORKFLOW_PATH);
@@ -149,11 +135,11 @@ test('workflow B is a separate file and never reuses the attended manual boundar
   // The manual workflow is untouched by DATA-S2C.
   assert.doesNotMatch(manual,/external|opportunity|dispatcher/i);
   assert.ok(!manual.includes(PRODUCTION_COLLECTION_SCHEDULE));
-  // Workflow B adds no second production schedule trigger anywhere.
+  // Retired workflow A is absent, so GitHub carries no automatic production clock.
+  assert.ok(!fs.existsSync('.github/workflows/data-s2-production-scheduled.yml'));
   const scheduledWorkflows=fs.readdirSync('.github/workflows').filter(name=>/\.ya?ml$/.test(name))
     .filter(name=>/^\s*- cron:/m.test(read(`.github/workflows/${name}`)));
-  assert.deepEqual(scheduledWorkflows,['data-s2-production-scheduled.yml']);
-  assert.ok(scheduled.includes(`- cron: '${PRODUCTION_COLLECTION_SCHEDULE}'`));
+  assert.deepEqual(scheduledWorkflows,[]);
   assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
 });
 
@@ -290,7 +276,7 @@ test('production identifier masking is registered before any variable is materia
   assert.ok(!external.includes(PRODUCTION_D1_ID));
 });
 
-/* ------------------------- gate parity with the scheduled workflow ------------------------- */
+/* ------------------------------ permanent repository gate ------------------------------ */
 
 test('workflow B reuses the unchanged bounded exact-head Verify module and adds the guard',()=>{
   const gate=gateBlock();
@@ -303,13 +289,6 @@ test('workflow B reuses the unchanged bounded exact-head Verify module and adds 
     ['node workers/data-platform/scheduled/run-exact-head-verify.mjs',
      'node workers/data-platform/scheduled/run-opportunity-guard.mjs',
      'node workers/data-platform/run-production-collection.mjs']);
-  // The scheduled workflow gained the same guard, in the same order, and nothing else.
-  assert.deepEqual([...uncommented(scheduled).matchAll(/node workers\/data-platform\/[a-z0-9/-]+\.mjs/g)]
-    .map(row=>row[0]),
-    ['node workers/data-platform/scheduled/run-exact-head-verify.mjs',
-     'node workers/data-platform/scheduled/run-opportunity-guard.mjs',
-     'node workers/data-platform/run-production-collection.mjs']);
-  assert.match(scheduled,/permissions:\n      contents: read\n      checks: read\n      actions: read/);
 });
 
 test('workflow B adds no Cron, Wrangler, deployment, migration or provider surface',()=>{

@@ -1,5 +1,41 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## Current DATA-S2C state — rollout closed
+
+**This section supersedes every earlier DATA-S2C current-state and next-gate statement below; earlier
+sections remain dated history.** Owner-approved combined Packages D/E close DATA-S2C. Cloudflare is
+the sole automatic clock, workflow B remains its guarded GitHub execution path, workflow C remains
+the attended recovery path, and obsolete disabled workflow A is deleted. Bounded historical A runs
+remain part of the guard and are queried through immutable GitHub Actions workflow id `350014371`,
+not the deleted filename; lookup failure still fails closed.
+
+Live acceptance on 8 September 2026 is independently supported by GitHub. T1 run `34207638275`
+(`2026-09-08T09:00:53Z`, `main`, SHA `c6708e4940c81b34b96adb53e624e98453ac2800`, attempt 1) succeeded
+through `repository-gate`, `collect`, Official FPL and production D1. T2 run `34209137195`
+(`2026-09-08T09:17:03Z`, same head and attempt) ended in the expected overall failure: the daily guard
+reported `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` and `collect` was skipped. Thus the
+second Cloudflare dispatch caused no duplicate collection.
+
+Before T1, an earlier Cloudflare event safely rejected pre-dispatch with `dispatch_token_missing`
+(176 ms). Active version `7afb02f1-5425-4d8c-bd85-91fec5e8175c` lacked the runtime secret; no GitHub
+run existed and no collection was attempted. The owner promoted secret-containing version
+`7c3c8be5...` to 100% traffic. This was not a GitHub or collection failure.
+
+Owner approval expressly covered direct dashboard trigger creation, temporary acceptance crons,
+manual live secret-version promotion and combined D/E closeout. T1 used `0 9 8 * * *`; T2 used
+`17 9 8 * * *`. Owner dashboard observation confirms both temporary triggers were deleted and final
+live state saved with only `17 1 * * *`, `17 2 * * *`, `17 3 * * *`. This repository cannot
+independently read that Cloudflare trigger state. GitHub independently reports zero A/B/C governed
+runs on UTC day 2026-09-07, so accepted gap risk materialised; lost observations are not
+reconstructible.
+
+Ongoing monitoring is normal, non-blocking, exception-based operations. Healthy daily operation needs
+no owner intervention. Escalate missing or duplicate collection, dispatch failure, guard ambiguity,
+wrong/missing permanent crons, credential failure/expiry, D1 integrity failure, resource breach, or
+provider/schema failure. Autonomous Data Steward work is not part of this closeout.
+
+
 <!-- DATA-S2C-PACKAGE-C-2026-09-07 -->
 ## Current DATA-S2C checkpoint — Package C repository activation candidate
 

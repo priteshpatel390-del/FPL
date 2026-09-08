@@ -1,5 +1,17 @@
 # DATA_SOURCES.md
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## Current Official FPL scheduled collection state
+
+**Supersedes earlier DATA-S2C current-state wording below.** Cloudflare is accepted as sole automatic
+clock after T1 run `34207638275` completed Official FPL collection to production D1 and T2 run
+`34209137195` stopped the second same-day collection at the opportunity guard. Workflow B and the
+unchanged Official FPL collector remain; workflow C remains attended recovery; obsolete workflow A
+is deleted. No provider contract, field, validation, normalisation, retention, D1 schema, collector or
+resource threshold changed in closeout. UTC 2026-09-07 has a confirmed, non-reconstructible history
+gap because no governed A/B/C run occurred.
+
+
 <!-- DATA-S2B-MANUAL-COLLECTION-HARDENING-2026-09-03 -->
 ## DATA-S2B collection state — first run completed, manual collection gate hardened
 

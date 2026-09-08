@@ -1,5 +1,24 @@
 # ARCHITECTURE.md
 
+<!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
+## Current DATA-S2C scheduler architecture
+
+**Supersedes earlier DATA-S2C current-state statements below; historical rationale remains.** Final
+automatic path is Cloudflare Cron Trigger → isolated `teamsheet-data-s2-dispatcher` → workflow B
+`.github/workflows/data-s2-production-external.yml` → fail-closed repository/Verify/opportunity gates
+→ existing Official FPL production collector → D1 REST. Workflow C remains attended recovery.
+Workflow A `.github/workflows/data-s2-production-scheduled.yml` is deleted; Cloudflare is the only
+automatic clock. Its bounded historical runs remain in guard discovery through immutable GitHub
+Actions workflow id `350014371`, not the deleted filename. Shared guard, collector, D1 and
+concurrency machinery remain, including fail-closed provider-read handling.
+
+T1 run `34207638275` proved the whole path on 8 September 2026. T2 run `34209137195` proved a second
+same-day dispatch stops at `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` with `collect`
+skipped. Final permanent repository cron declaration remains exactly `17 1 * * *`, `17 2 * * *`,
+`17 3 * * *`. Owner dashboard evidence, not an independent repository read, confirms temporary
+acceptance triggers were removed and this set was saved live.
+
+
 <!-- DATA-S2C-PACKAGE-A-2026-09-06 -->
 ## DATA-S2C external production scheduling — 6 September 2026
 
