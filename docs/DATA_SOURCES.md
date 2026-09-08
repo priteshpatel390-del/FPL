@@ -1,5 +1,11 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## DATA-OPS A1.3 runtime source boundary
+
+A1.3 activates no provider and changes no Official FPL acquisition, retention, collection or model input. Its dormant observer reads only existing GitHub operational metadata, Cloudflare dispatcher configuration and fixed SELECT-only production D1 aggregates through the A1.2 contracts. Sanitized summaries are operational output, not a new data store or product source.
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## DATA-OPS-A1.2 observation-source boundary
 

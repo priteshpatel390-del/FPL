@@ -1,7 +1,15 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## Current checkpoint — DATA-OPS A1.3 repository-ready observer
+
+A1.2 is merged. A1.3 prepares a dedicated read-only Actions runtime, manual dispatch and fail-closed schedule declarations at 04:17/08:17 UTC. Authenticated repository tooling received HTTP 403 reading the live activation variable and proves nothing about it; the owner then verified through the GitHub owner UI that `DATA_STEWARD_SCHEDULED_ENABLED` is absent, creating, editing and deleting nothing, so the scheduled observer is dormant on merge because the workflow requires exact lowercase `true`. Next gates, each separate: explicit creation of `data-steward-readonly` restricted through Selected branches and tags to exact `main`; read-only Cloudflare credential provisioning; one attended manual live read-only observation and acceptance; then separate approval to create/set `DATA_STEWARD_SCHEDULED_ENABLED=true`. Independent outage detection, persistence and all remediation remain future checkpoints.
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## Current checkpoint — DATA-OPS-A1.2 implementation candidate
+
+> **Superseded by A1.3 above.** A1.2 merged in PR #231; its owner-review gate is closed.
 
 A1.1 is merged (PR #230). A1.2 adds observe-only production sentinels: GitHub, Cloudflare and D1
 observation domains, versioned evidence envelopes, a heartbeat contract and deterministic

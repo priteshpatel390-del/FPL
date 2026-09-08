@@ -1,0 +1,37 @@
+name: Data Steward Read-Only Observer
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * *'
+    - cron: '17 8 * * *'
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+jobs:
+  observe-production-chain:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.DATA_STEWARD_SCHEDULED_ENABLED == 'true'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    env:
+      DATA_STEWARD_GITHUB_TOKEN: ${{ github.token }}
+      DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+      DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+      DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+    steps:
+      - name: Check out observer source
+        uses: actions/checkout@v5
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      - name: Execute one read-only observation
+        run: node workers/data-steward/run-observer.mjs

@@ -1,5 +1,11 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+## DATA-OPS A1.3 permanent runtime coverage
+
+`tests/data-ops-a1-3-readonly-observer.test.mjs` pins dedicated workflow identity, exactly two schedules, fail-closed exact-value activation, independent manual dispatch, exact read-only permissions and protected environment mapping. It proves no mutation route, sole adapter ownership of ambient environment reads, four-name allowlisting, sanitized output, healthy/open-window success, unhealthy failure and unchanged migration inventory. Existing A1.2 semantic, guard ambiguity/contradiction, SELECT-only/write-refusal and whole-steward dependency tests remain intact.
+
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## DATA-OPS-A1.2 permanent sentinel coverage
 

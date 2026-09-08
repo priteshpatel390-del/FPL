@@ -1,8 +1,17 @@
+<!-- DATA-OPS-A1-3-2026-09-08 -->
+### Current Data-Ops checkpoint — A1.3 dormant read-only observer
+
+**Repository-ready; not live-activated.** A1.2 is merged in PR #231 at `b2ce4e4e3e12a4c6b76e0d1075cb22f06ecac2e2`. A1.3 adds a dedicated GitHub Actions observer, manual dispatch and declared UTC opportunities at `17 4 * * *` and `17 8 * * *`. Scheduled execution is fail-closed unless `DATA_STEWARD_SCHEDULED_ENABLED` equals exact `true`, and every event requires exact `refs/heads/main`; this checkpoint creates no variable, protected environment, credential or live run. Authenticated repository tooling received HTTP 403 reading the live activation variable and proves nothing about it; the owner subsequently verified through the GitHub owner UI (Settings → Secrets and variables → Actions → Variables) that `DATA_STEWARD_SCHEDULED_ENABLED` is **absent**, with no variable created, edited or deleted. That is owner UI evidence, not an independent repository read. An absent variable cannot equal exact lowercase `true`, so **the scheduled observer is dormant on merge**. Scheduled activation still requires a later explicit owner-approved creation/set of `DATA_STEWARD_SCHEDULED_ENABLED=true`, and the separate gates for creating/configuring `data-steward-readonly`, restricting it through Selected branches and tags to exact `main`, provisioning read-only Cloudflare credentials and performing one first manual live observation are all unchanged.
+
+The workflow maps ephemeral `${{ github.token }}` to the existing steward contract, grants exactly Contents, Actions and Checks read, and uses `deployment: false` so observer runs create no GitHub Deployment object/status. Before credentials, `data-steward-readonly` must be explicitly created with Selected branches and tags restricted to exact `main`; Protected branches only is unsafe while `main` lacks branch protection. The later Cloudflare token remains Workers Scripts Read plus D1 Read. One narrow adapter reads only four allowlisted environment names, executes one deterministic observation and emits a closed sanitized summary. No remediation, collection, retry, D1 write, production change or migration exists. GitHub-hosted observation cannot independently detect a total GitHub outage or absence of its own scheduled runs. See [A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
+> The A1.2 block below is merged historical foundation. Its former review/merge next gate is superseded by this block.
+
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ### Current Data-Ops checkpoint — A1.2 observe-only production sentinels
 
-**This block supersedes the A1.1 block below as the current Data-Ops statement.** A1.1 is merged
-(PR #230, `47345a7035eba0071c66dcab778f0edc9fef4048`) and unchanged; A1.2 is a review candidate.
+**Superseded as current status by A1.3 above.** A1.1 is merged
+(PR #230, `47345a7035eba0071c66dcab778f0edc9fef4048`) and unchanged; A1.2 merged in PR #231.
 
 DATA-S2C remains closed and is not redesigned. A1.2 gives the Autonomous Data Steward **eyes, not
 hands**: three read-only observation domains under `workers/data-steward/sentinels/` that
@@ -57,10 +66,9 @@ nothing. **No live validation was performed and none is claimed.** Minimum crede
 and read-only: GitHub Metadata/Contents/Actions/Checks read, Cloudflare Workers Scripts Read and D1
 Read. Repository suite: **1,769 tests, 1,769 passed, 0 failed**; deterministic build unchanged.
 
-Next gate: **owner review and merge**. Credential provisioning, choosing and gating a runtime that
-can execute observation runs, first live read-only acceptance, and any Class 1+ autonomy each remain
-separate explicit owner gates. See
-[A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md).
+A1.2's former owner-review/merge gate is closed by PR #231. Protected Cloudflare credential
+provisioning, first live read-only acceptance, scheduled activation and any Class 1+ autonomy remain
+separate explicit owner gates. See [A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md).
 
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ### Current Data-Ops checkpoint — A1.1 observe-only foundation
@@ -1706,7 +1714,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 10. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md)
 12. Before Decision Intelligence work: [Decision Intelligence DI-0 Foundation](docs/DECISION-INTELLIGENCE-FOUNDATION.md)
-12a. Before Autonomous Data Steward work: [DATA-OPS-A1.1](docs/DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md) then [DATA-OPS-A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md)
+12a. Before Autonomous Data Steward work: [DATA-OPS-A1.1](docs/DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md) then [DATA-OPS-A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md) then [DATA-OPS-A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md)
 13. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
 
 ## What Teamsheet is
