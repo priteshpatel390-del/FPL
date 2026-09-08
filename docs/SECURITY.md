@@ -16,7 +16,8 @@ registry with bound parameters; the client refuses an untrusted plan and refuses
 reporting a written row. Permanent tests pin all of this statically, along with the absence of shell,
 `process.env`, filesystem, generic SQL, generic HTTP actuator and AI-credential surface. A recursive
 whole-steward dependency test denies platform access by default and permits only exact reviewed
-source-file-to-target-module edges; future files inherit no permission.
+source-file-to-target-module edges; future files inherit no permission. Ordinary static imports,
+side-effect static imports, dynamic imports and `require()` references are all scanned.
 
 Minimum permissions are least privilege and documented per credential: a repository-scoped GitHub
 fine-grained token with Metadata, Contents, Actions and Checks read; and an account-scoped Cloudflare

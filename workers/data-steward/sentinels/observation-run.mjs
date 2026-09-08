@@ -43,6 +43,8 @@ export const VERDICT_REASONS=deepFreeze([
   'SENTINEL_EVIDENCE_STALE',
   'CLOUDFLARE_CRON_SET_MISMATCH',
   'GITHUB_RUN_STATE_UNRECOGNIZED',
+  'OPPORTUNITY_GUARD_AMBIGUOUS',
+  'OPPORTUNITY_GUARD_CONTRADICTORY',
   'WORKFLOW_B_UNEXPECTED_FAILURE',
   'GUARD_REFUSAL_WITHOUT_COLLECTION',
   'DUPLICATE_PRODUCTION_COLLECTION',
@@ -137,6 +139,11 @@ export function evaluateProductionChain({heartbeat,github,cloudflare,d1,now}){
   // 3. Hard anomalies, in any evaluation phase.
   const day=github.day;
   if(day.unclassified>0)return verdict(VERDICT_UNHEALTHY,'GITHUB_RUN_STATE_UNRECOGNIZED');
+  // A guard ambiguity is itself a production-control-plane incident. A successful earlier
+  // collection cannot forgive it. Likewise, AVAILABLE paired with a failed guard step is an
+  // explicit contradiction rather than a benign refusal.
+  if(day.guardAmbiguous>0)return verdict(VERDICT_UNHEALTHY,'OPPORTUNITY_GUARD_AMBIGUOUS');
+  if(day.guardContradictory>0)return verdict(VERDICT_UNHEALTHY,'OPPORTUNITY_GUARD_CONTRADICTORY');
   if(day.duplicateCollection)return verdict(VERDICT_UNHEALTHY,'DUPLICATE_PRODUCTION_COLLECTION');
   if(d1.runs.completed>1)return verdict(VERDICT_UNHEALTHY,'DUPLICATE_PRODUCTION_COLLECTION');
   if(d1.runs.unresolved>0)return verdict(VERDICT_UNHEALTHY,'D1_RUN_UNRESOLVED');

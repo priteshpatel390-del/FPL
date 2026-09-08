@@ -63,6 +63,8 @@ export async function observeProductionChain({env,fetchImpl,now,cryptoImpl=globa
           collected:github.day.collected,collectExecutions:github.day.collectExecutions,
           collectFailed:github.day.collectFailed,
           refusedConsumed:github.day.refusedOpportunityConsumed,
+          guardAmbiguous:github.day.guardAmbiguous,
+          guardContradictory:github.day.guardContradictory,
           gateRefusedOther:github.day.gateRefusedOther,inFlight:github.day.inFlight,
           unclassified:github.day.unclassified,ownerCollections:github.day.ownerCollections,
           automaticCollections:github.day.automaticCollections,

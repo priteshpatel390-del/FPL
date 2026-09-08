@@ -58,16 +58,19 @@ export const GUARD_RESULT_AMBIGUOUS='GUARD_RESULT_AMBIGUOUS';
 export const GUARD_RESULT_AVAILABLE='GUARD_RESULT_AVAILABLE';
 export const GUARD_RESULT_INVALID='GUARD_RESULT_INVALID';
 
-// The closed set of outcomes one governed run may be decoded into. Anything that does not fit
-// exactly one of the first five is UNCLASSIFIED, and UNCLASSIFIED never contributes to health.
+// The closed set of outcomes one governed run may be decoded into. Anything outside these explicit
+// states is UNCLASSIFIED, and no ambiguous or contradictory guard state contributes to health.
 export const RUN_COLLECTED='COLLECTED';
 export const RUN_COLLECT_FAILED='COLLECT_FAILED';
 export const RUN_REFUSED_OPPORTUNITY_CONSUMED='REFUSED_OPPORTUNITY_CONSUMED';
+export const RUN_GUARD_AMBIGUOUS='GUARD_AMBIGUOUS';
+export const RUN_GUARD_CONTRADICTORY='GUARD_CONTRADICTORY';
 export const RUN_GATE_REFUSED_OTHER='GATE_REFUSED_OTHER';
 export const RUN_IN_FLIGHT='IN_FLIGHT';
 export const RUN_UNCLASSIFIED='UNCLASSIFIED';
 export const RUN_OUTCOMES=deepFreeze([RUN_COLLECTED,RUN_COLLECT_FAILED,
-  RUN_REFUSED_OPPORTUNITY_CONSUMED,RUN_GATE_REFUSED_OTHER,RUN_IN_FLIGHT,RUN_UNCLASSIFIED]);
+  RUN_REFUSED_OPPORTUNITY_CONSUMED,RUN_GUARD_AMBIGUOUS,RUN_GUARD_CONTRADICTORY,
+  RUN_GATE_REFUSED_OTHER,RUN_IN_FLIGHT,RUN_UNCLASSIFIED]);
 
 export const GITHUB_OBSERVATION_OK='GITHUB_CHAIN_OBSERVED';
 export const GITHUB_READ_FAILED='GITHUB_READ_FAILED';
@@ -263,9 +266,15 @@ export function classifyGovernedRun(jobs,guardSemantic=GUARD_RESULT_INVALID){
     return deepFreeze({outcome:RUN_IN_FLIGHT,collectStartedAt:null});
   if(collect.conclusion==='skipped'){
     if(gate.conclusion==='success')return deepFreeze({outcome:RUN_UNCLASSIFIED,collectStartedAt:null});
-    return deepFreeze({outcome:guardRefusalShape(gate)&&guardSemantic===GUARD_RESULT_CONSUMED
-      ?RUN_REFUSED_OPPORTUNITY_CONSUMED:RUN_GATE_REFUSED_OTHER,
-      collectStartedAt:null});
+    if(!guardRefusalShape(gate))
+      return deepFreeze({outcome:RUN_GATE_REFUSED_OTHER,collectStartedAt:null});
+    if(guardSemantic===GUARD_RESULT_CONSUMED)
+      return deepFreeze({outcome:RUN_REFUSED_OPPORTUNITY_CONSUMED,collectStartedAt:null});
+    if(guardSemantic===GUARD_RESULT_AMBIGUOUS)
+      return deepFreeze({outcome:RUN_GUARD_AMBIGUOUS,collectStartedAt:null});
+    if(guardSemantic===GUARD_RESULT_AVAILABLE)
+      return deepFreeze({outcome:RUN_GUARD_CONTRADICTORY,collectStartedAt:null});
+    return deepFreeze({outcome:RUN_UNCLASSIFIED,collectStartedAt:null});
   }
   // A collect that ran must prove when it began, because that instant is what dates the day's
   // collection. A start that will not parse cannot be placed in or out of the day.
@@ -286,7 +295,8 @@ export function classifyGovernedRun(jobs,guardSemantic=GUARD_RESULT_INVALID){
 export function interpretGithubDay({runs,now}){
   const {start,end}=utcDayWindow(now);
   const inDay=value=>value>=start&&value<end;
-  const summary={collected:0,collectFailed:0,refusedOpportunityConsumed:0,gateRefusedOther:0,
+  const summary={collected:0,collectFailed:0,refusedOpportunityConsumed:0,guardAmbiguous:0,
+    guardContradictory:0,gateRefusedOther:0,
     inFlight:0,unclassified:0,ownerCollections:0,automaticCollections:0,
     firstCollectionAt:null,lastRunCreatedAt:null};
   for(const run of runs){
@@ -303,6 +313,8 @@ export function interpretGithubDay({runs,now}){
         break;
       case RUN_COLLECT_FAILED:summary.collectFailed+=1;break;
       case RUN_REFUSED_OPPORTUNITY_CONSUMED:summary.refusedOpportunityConsumed+=1;break;
+      case RUN_GUARD_AMBIGUOUS:summary.guardAmbiguous+=1;break;
+      case RUN_GUARD_CONTRADICTORY:summary.guardContradictory+=1;break;
       case RUN_GATE_REFUSED_OTHER:summary.gateRefusedOther+=1;break;
       case RUN_IN_FLIGHT:summary.inFlight+=1;break;
       default:summary.unclassified+=1;

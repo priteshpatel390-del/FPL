@@ -11,7 +11,8 @@ internally consistent. The GitHub sentinel uses governed job/step metadata only 
 candidate guard refusal, then reads only that repository-gate job's bounded log and requires the
 exact allowlisted `OPPORTUNITY_CONSUMED` result. Ambiguous, missing, malformed, duplicate,
 contradictory, unknown or unreadable result evidence fails closed; a failed guard step alone is never
-healthy. The Cloudflare sentinel observes the real Cron plus
+healthy. Typed guard ambiguity and failed-step/`AVAILABLE` contradiction are hard RED even when an
+earlier collection is independently proven. The Cloudflare sentinel observes the real Cron plus
 dispatcher architecture — never a Cloudflare Workflow — and records dispatcher invocation history as
 a named permanent limitation rather than manufacturing GREEN from missing visibility. The D1 sentinel
 uses three fixed SELECT-only statements with bound parameters and no arbitrary-SQL surface. Missing,

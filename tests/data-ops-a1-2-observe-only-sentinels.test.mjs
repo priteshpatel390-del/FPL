@@ -19,7 +19,8 @@ import {EVALUATION_AWAITING_LATER_OPPORTUNITY,EVALUATION_DUE,EVALUATION_NOT_DUE,
   opportunityInstants,utcDayWindow} from '../workers/data-steward/sentinels/production-chain-contract.mjs';
 import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE,
   GUARD_RESULT_CONSUMED,GUARD_RESULT_INVALID,RUN_COLLECTED,RUN_COLLECT_FAILED,RUN_GATE_REFUSED_OTHER,RUN_IN_FLIGHT,
-  RUN_REFUSED_OPPORTUNITY_CONSUMED,RUN_UNCLASSIFIED,classifyGovernedRun,decodeJobs,decodeMainRef,
+  RUN_GUARD_AMBIGUOUS,RUN_GUARD_CONTRADICTORY,RUN_REFUSED_OPPORTUNITY_CONSUMED,RUN_UNCLASSIFIED,
+  classifyGovernedRun,decodeJobs,decodeMainRef,
   decodeRunsPage,interpretGithubDay,mainRefRequest,parseGuardSemanticOutcome,readGithubChain,
   repositoryGateLogRequest,runJobsRequest,
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
@@ -42,6 +43,9 @@ const A12_FILES=['observation-contract.mjs','production-chain-contract.mjs','git
   'observe-production-chain.mjs'];
 const source=file=>fs.readFileSync(`workers/data-steward/sentinels/${file}`,'utf8');
 const workflowB=fs.readFileSync('.github/workflows/data-s2-production-external.yml','utf8');
+const STEWARD_PLATFORM_IMPORT=/\b(?:from\s*|import\s*(?:\(\s*)?|require\s*\(\s*)['"]([^'"]*data-platform\/[^'"]+)['"]/g;
+const stewardPlatformEdges=(file,text)=>[...text.matchAll(STEWARD_PLATFORM_IMPORT)].map(([,specifier])=>
+  `${path.normalize(file)} -> ${path.normalize(path.join(path.dirname(file),specifier))}`);
 
 const DAY='2026-09-08';
 const t=iso=>Date.parse(iso);
@@ -318,6 +322,10 @@ test('a run is classified from its governed jobs and steps, never from its run c
   // The T2 acceptance shape: overall failure, guard step failed, collect correctly skipped.
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody(refusedJobs())),GUARD_RESULT_CONSUMED).outcome,
     RUN_REFUSED_OPPORTUNITY_CONSUMED);
+  assert.equal(classifyGovernedRun(decodeJobs(jobsBody(refusedJobs())),GUARD_RESULT_AMBIGUOUS).outcome,
+    RUN_GUARD_AMBIGUOUS);
+  assert.equal(classifyGovernedRun(decodeJobs(jobsBody(refusedJobs())),GUARD_RESULT_AVAILABLE).outcome,
+    RUN_GUARD_CONTRADICTORY);
   // A gate that failed somewhere else is a different event and never wears the healthy label.
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody(otherGateFailureJobs()))).outcome,RUN_GATE_REFUSED_OTHER);
   assert.equal(classifyGovernedRun(decodeJobs(jobsBody([job(EXPECTED_GATE_JOB,{steps:gateSteps('success')}),
@@ -410,7 +418,7 @@ test('guard refusal is healthy only with independently proven consumed semantics
     const result=await read({501:evidence});
     assert.equal(result.ok,true);
     assert.equal(result.day.refusedOpportunityConsumed,0);
-    assert.equal(result.day.gateRefusedOther,1);
+    assert.equal(evidence.includes('AMBIGUOUS')?result.day.guardAmbiguous:result.day.guardContradictory,1);
   }
   for(const evidence of [undefined,'ERROR','',
     line('OPPORTUNITY_CONSUMED (future_reason)'),
@@ -612,7 +620,8 @@ test('a crashed or silent sentinel is recorded, and can never look like a comple
 // ================================================================ cross-source causality
 
 const gh=(day={})=>({ok:true,mainSha:SHA,verify:'verify_success',verifySuccess:true,
-  day:{collected:1,collectFailed:0,refusedOpportunityConsumed:1,gateRefusedOther:0,inFlight:0,
+  day:{collected:1,collectFailed:0,refusedOpportunityConsumed:1,guardAmbiguous:0,
+    guardContradictory:0,gateRefusedOther:0,inFlight:0,
     unclassified:0,ownerCollections:0,automaticCollections:1,firstCollectionAt:t(`${DAY}T01:17:30.000Z`),
     lastRunCreatedAt:t(`${DAY}T02:17:04.000Z`),collectExecutions:1,duplicateCollection:false,...day}});
 const cf=(overrides={})=>({ok:true,cronSetExpected:true,...overrides});
@@ -625,9 +634,53 @@ const dd=({runs={},integrity={},governance={}}={})=>({ok:true,
 
 const evaluate=async(parts={},now=AFTER_DEADLINE,states={})=>evaluateProductionChain({
   heartbeat:await heartbeatFor(states),github:gh(),cloudflare:cf(),d1:dd(),...parts,now});
+const evaluateGuardLog=async log=>{
+  const github=await readGithubChain({token:'t',now:AFTER_DEADLINE,
+    fetchImpl:chainFetch({...HEALTHY_DAY,guardLogs:{501:log}})});
+  return evaluate({github});
+};
 
 test('1. an early collection followed by a guard refusal is HEALTHY, not a failure',async()=>{
   assert.deepEqual(await evaluate(),{verdict:VERDICT_HEALTHY,reasonCode:'HEALTHY_EXPECTED_STATE'});
+});
+
+test('proven consumed is the only failed-guard semantic healthy after an earlier collection',async()=>{
+  const consumed='DATA-S2 daily collection opportunity: OPPORTUNITY_CONSUMED (automatic_collection_consumed)\n';
+  assert.deepEqual(await evaluateGuardLog(consumed),
+    {verdict:VERDICT_HEALTHY,reasonCode:'HEALTHY_EXPECTED_STATE'});
+});
+
+test('every approved ambiguous guard reason is RED after an earlier collection',async()=>{
+  for(const reason of ['guard_input_invalid','guard_collect_timing_unusable','guard_read_failed',
+    'guard_read_bound_exhausted','guard_rerun_contract_violated']){
+    const log=`DATA-S2 daily collection opportunity: AMBIGUOUS_REQUIRES_OWNER_ATTENTION (${reason})\n`;
+    assert.deepEqual(await evaluateGuardLog(log),
+      {verdict:VERDICT_UNHEALTHY,reasonCode:'OPPORTUNITY_GUARD_AMBIGUOUS'},reason);
+  }
+});
+
+test('failed guard reporting available is contradictory and RED after an earlier collection',async()=>{
+  const available='DATA-S2 daily collection opportunity: OPPORTUNITY_AVAILABLE (opportunity_available)\n';
+  assert.deepEqual(await evaluateGuardLog(available),
+    {verdict:VERDICT_UNHEALTHY,reasonCode:'OPPORTUNITY_GUARD_CONTRADICTORY'});
+});
+
+test('missing, malformed, unknown and unreadable guard evidence are RED after an earlier collection',async()=>{
+  for(const evidence of [undefined,'',
+    'DATA-S2 daily collection opportunity: FUTURE_RESULT (future_reason)\n','ERROR']){
+    const guardLogs=evidence===undefined?{}:{501:evidence};
+    const github=await readGithubChain({token:'t',now:AFTER_DEADLINE,
+      fetchImpl:chainFetch({...HEALTHY_DAY,guardLogs})});
+    assert.deepEqual(await evaluate({github}),
+      {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});
+  }
+});
+
+test('ambiguous guard is RED without a collection too',async()=>{
+  assert.deepEqual(await evaluate({github:gh({collected:0,collectExecutions:0,
+    refusedOpportunityConsumed:0,guardAmbiguous:1,automaticCollections:0,firstCollectionAt:null}),
+    d1:dd({runs:{total:0,completed:0,latestCompletedAt:null,latestCompletedRunId:null}})}),
+    {verdict:VERDICT_UNHEALTHY,reasonCode:'OPPORTUNITY_GUARD_AMBIGUOUS'});
 });
 
 test('2. a later opportunity collecting after an earlier one produced no run is HEALTHY',async()=>{
@@ -711,7 +764,7 @@ test('10. unknown external state, drifted configuration and contradictions are R
     refusedOpportunityConsumed:0,gateRefusedOther:1,firstCollectionAt:null}),
     d1:dd({runs:{total:0,completed:0,latestCompletedAt:null,latestCompletedRunId:null}})}),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'WORKFLOW_B_UNEXPECTED_FAILURE'});
-  // The same gate failure alongside a proven collection changed nothing and is not RED.
+  // A non-guard gate failure remains distinct and can be immaterial after a proven collection.
   assert.deepEqual(await evaluate({github:gh({gateRefusedOther:1})}),
     {verdict:VERDICT_HEALTHY,reasonCode:'HEALTHY_EXPECTED_STATE'});
 });
@@ -878,10 +931,7 @@ test('the application stays isolated and every steward-to-platform edge is denie
   const actual=new Set();
   for(const file of walk('workers/data-steward')){
     const text=fs.readFileSync(file,'utf8');
-    const references=[...text.matchAll(/(?:from\s*|import\s*\(\s*|require\s*\(\s*)['"]([^'"]*data-platform\/[^'"]+)['"]/g)];
-    for(const [,specifier] of references){
-      const target=path.normalize(path.join(path.dirname(file),specifier));
-      const edge=`${path.normalize(file)} -> ${target}`;
+    for(const edge of stewardPlatformEdges(file,text)){
       assert.ok(allowed.has(edge),`unreviewed steward dependency: ${edge}`);
       actual.add(edge);
     }
@@ -890,4 +940,19 @@ test('the application stays isolated and every steward-to-platform edge is denie
   // Nothing in A1.2 imports the module that can build production mutations.
   for(const file of A12_FILES)
     assert.doesNotMatch(source(file),/official-fpl-d1-rest-plan|d1-rest-client|official-fpl-history/,file);
+});
+
+test('whole-steward scanner rejects regular, side-effect, dynamic and require platform imports',()=>{
+  const future='workers/data-steward/future-module.mjs';
+  const forms=[
+    "import {x} from '../data-platform/unreviewed.mjs';",
+    "import '../data-platform/unreviewed.mjs';",
+    "await import('../data-platform/unreviewed.mjs');",
+    "require('../data-platform/unreviewed.mjs');"
+  ];
+  for(const form of forms){
+    const edges=stewardPlatformEdges(future,form);
+    assert.deepEqual(edges,
+      ['workers/data-steward/future-module.mjs -> workers/data-platform/unreviewed.mjs'],form);
+  }
 });

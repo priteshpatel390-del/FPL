@@ -19,7 +19,11 @@ no write verb, no mutating SQL, no GitHub or Cloudflare mutation endpoint, no sh
 environment access, no AI credential and no enabled Class 1–3 action, and that the application still
 cannot reach the steward. Every `.mjs` file under the whole steward tree is discovered recursively;
 each data-platform import is denied unless its exact source-file-to-target-module edge appears in the
-small reviewed allowlist, so a future steward file receives no implicit platform access.
+small reviewed allowlist, so a future steward file receives no implicit platform access. Synthetic
+cases pin ordinary static `from`, static side-effect, dynamic `import()` and `require()` forms.
+Final-verdict regressions prove every approved guard ambiguity and a failed-guard `AVAILABLE`
+contradiction remain RED even after an earlier successful collection; only proven consumed remains
+healthy.
 Every test uses deterministic fixtures; none depends on live GitHub, Cloudflare or D1.
 
 <!-- DATA-OPS-A1-1-2026-09-08 -->

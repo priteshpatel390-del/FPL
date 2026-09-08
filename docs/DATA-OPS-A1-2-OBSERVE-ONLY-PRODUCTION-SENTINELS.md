@@ -59,7 +59,8 @@ governed run listings for workflow B and workflow C; the `filter=all` job listin
 only for a metadata-proven candidate guard refusal, that exact `repository-gate` job's log.
 It decodes strictly — a truncated, over-full or malformed page is refused rather than interpreted —
 and reduces every run to a closed outcome: `COLLECTED`, `COLLECT_FAILED`,
-`REFUSED_OPPORTUNITY_CONSUMED`, `GATE_REFUSED_OTHER`, `IN_FLIGHT` or `UNCLASSIFIED`.
+`REFUSED_OPPORTUNITY_CONSUMED`, `GUARD_AMBIGUOUS`, `GUARD_CONTRADICTORY`,
+`GATE_REFUSED_OTHER`, `IN_FLIGHT` or `UNCLASSIFIED`.
 
 The job log has no generic reader or search interface. Declared and actual response bytes are capped
 at 256 KiB. Parsing accepts one whole line only, with GitHub's optional canonical UTC prefix and the
@@ -70,6 +71,10 @@ state. Missing, malformed, duplicate, contradictory, unknown and future vocabula
 oversize data and retrieval failure all fail closed. `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, including
 API/read failure reasons, never becomes consumed; `AVAILABLE` contradicts a failed step and is a
 non-healthy gate refusal.
+
+`GUARD_AMBIGUOUS` and `GUARD_CONTRADICTORY` are hard RED conditions before collection health is
+considered. An earlier successful collection cannot forgive a later production-control-plane
+ambiguity. Non-guard repository-gate failures remain separately classified as `GATE_REFUSED_OTHER`.
 
 Only attempt 1 can have collected, because the shared production entry point throws
 `workflow_retry_forbidden` on every later attempt; `filter=all` is still used so a later attempt can
@@ -237,7 +242,7 @@ both tokens are read-only, a lapsed or revoked credential fails the observation 
 
 ## Verification
 
-* Repository suite: **1,763 tests, 1,763 passed, 0 failed, 0 skipped, 0 cancelled** (baseline before
+* Repository suite: **1,769 tests, 1,769 passed, 0 failed, 0 skipped, 0 cancelled** (baseline before
   A1.2 was 1,714/1,714).
 * Two consecutive production builds are byte-identical, and `sourceHash` and `buildInputHash` are
   unchanged from `main` — A1.2 touches no build input, so no product behaviour changed.
@@ -285,6 +290,8 @@ What remains to be proven during a separately approved activation and acceptance
   `d1-sentinel.mjs -> official-fpl-canonical.mjs`;
   `d1-sentinel.mjs -> production-collection.mjs`; and
   `github-sentinel.mjs -> scheduled/exact-head-verify.mjs`.
+  Discovery covers ordinary static `from` imports, static side-effect imports, dynamic `import()` and
+  `require()` references; synthetic regressions pin every form.
 * Proving a consumed refusal depends on GitHub retaining and serving the exact repository-gate job
   log within 256 KiB. Retention expiry, access failure or output-format drift makes that observation
   RED, never healthy; no raw log is retained.

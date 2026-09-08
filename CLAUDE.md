@@ -25,6 +25,11 @@ prove the exact allowlisted `OPPORTUNITY_CONSUMED` result. Ambiguous, missing, m
 contradictory, unknown or unreadable semantic evidence fails closed. **Only the proven consumed
 refusal is HEALTHY.**
 
+Typed guard ambiguity and a failed-step `OPPORTUNITY_AVAILABLE` contradiction are hard RED before
+collection health is considered, so an earlier successful collection cannot forgive them. The
+whole-steward exact-edge dependency scan covers ordinary static, side-effect static, dynamic import
+and `require()` dependency forms.
+
 **Fail-closed everywhere.** Missing, stale, failed and unavailable observations are all RED. A
 crashed or silent sentinel can never produce an implicit GREEN — the heartbeat checks the watcher
 before anything it watched. **AMBER is not introduced**: `NOT_DUE` and `AWAITING_LATER_OPPORTUNITY`
@@ -50,7 +55,7 @@ D1 schema change (still exactly migrations 0001–0003), and no provider, model,
 squad, transfer, rank, Mini-League, product or UI behaviour changed. Merging deploys and arms
 nothing. **No live validation was performed and none is claimed.** Minimum credentials are documented
 and read-only: GitHub Metadata/Contents/Actions/Checks read, Cloudflare Workers Scripts Read and D1
-Read. Repository suite: **1,763 tests, 1,763 passed, 0 failed**; deterministic build unchanged.
+Read. Repository suite: **1,769 tests, 1,769 passed, 0 failed**; deterministic build unchanged.
 
 Next gate: **owner review and merge**. Credential provisioning, choosing and gating a runtime that
 can execute observation runs, first live read-only acceptance, and any Class 1+ autonomy each remain
