@@ -1,5 +1,31 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## DATA-OPS-A1.2 permanent sentinel coverage
+
+`tests/data-ops-a1-2-observe-only-sentinels.test.mjs` pins the observed chain against the modules that
+own it — repository, workflow files, job and step names, the dispatcher cron list read from
+`wrangler.jsonc`, and workflow B's own job timeouts — so a change to the real chain cannot leave the
+sentinels observing a chain that no longer exists. It covers the evidence envelope's determinism,
+fail-closed schema and secret rejection; every GitHub run classification including a legitimate
+`OPPORTUNITY_CONSUMED` refusal only with independent exact log proof, a collect that incorrectly
+runs, a workflow C collection, ambiguous/API guard failure, missing/malformed/duplicate/contradictory
+or future result vocabulary, log retrieval/byte-bound failure, malformed and truncated responses,
+API failure and read-bound exhaustion; Cloudflare identity, cron drift,
+malformed responses and auth failure; the D1 SELECT-only registry, plan trust, written-row refusal,
+read budget and schema-drift interpretation; the heartbeat's treatment of missing and stale
+sentinels; and ten cross-source causality scenarios end to end. Static regressions prove A1.2 contains
+no write verb, no mutating SQL, no GitHub or Cloudflare mutation endpoint, no shell or ambient
+environment access, no AI credential and no enabled Class 1–3 action, and that the application still
+cannot reach the steward. Every `.mjs` file under the whole steward tree is discovered recursively;
+each data-platform import is denied unless its exact source-file-to-target-module edge appears in the
+small reviewed allowlist, so a future steward file receives no implicit platform access. Synthetic
+cases pin ordinary static `from`, static side-effect, dynamic `import()` and `require()` forms.
+Final-verdict regressions prove every approved guard ambiguity and a failed-guard `AVAILABLE`
+contradiction remain RED even after an earlier successful collection; only proven consumed remains
+healthy.
+Every test uses deterministic fixtures; none depends on live GitHub, Cloudflare or D1.
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## DATA-OPS-A1.1 permanent policy coverage
 

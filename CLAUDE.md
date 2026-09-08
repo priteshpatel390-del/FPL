@@ -1,5 +1,73 @@
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+### Current Data-Ops checkpoint — A1.2 observe-only production sentinels
+
+**This block supersedes the A1.1 block below as the current Data-Ops statement.** A1.1 is merged
+(PR #230, `47345a7035eba0071c66dcab778f0edc9fef4048`) and unchanged; A1.2 is a review candidate.
+
+DATA-S2C remains closed and is not redesigned. A1.2 gives the Autonomous Data Steward **eyes, not
+hands**: three read-only observation domains under `workers/data-steward/sentinels/` that
+deterministically answer whether the expected production chain operated and whether production data
+is current and internally consistent.
+
+**The chain observed is the real one:** Cloudflare Cron → isolated dispatcher Worker → GitHub Actions
+workflow B → repository gate → opportunity guard → Official FPL collection → production D1, with
+workflow C as the attended recovery path. **There is no Cloudflare Workflow in this chain** and a
+permanent test refuses any A1.2 module that speaks of one. The permanent cron declaration stays
+exactly `17 1 * * *`, `17 2 * * *`, `17 3 * * *` UTC — **three opportunities, not three
+collections**.
+
+**The central correction: a workflow B `failure` is not a production failure.** The live T2
+acceptance proved that T2 run `34209137195` failed precisely because the gate refused an
+already-consumed day with `OPPORTUNITY_CONSUMED (automatic_collection_consumed)` and `collect` was
+correctly skipped. A1.2 therefore never classifies on `run.conclusion`; job/step shape identifies
+only a candidate refusal. One bounded read of that exact repository-gate job log must independently
+prove the exact allowlisted `OPPORTUNITY_CONSUMED` result. Ambiguous, missing, malformed, duplicate,
+contradictory, unknown or unreadable semantic evidence fails closed. **Only the proven consumed
+refusal is HEALTHY.**
+
+Typed guard ambiguity and a failed-step `OPPORTUNITY_AVAILABLE` contradiction are hard RED before
+collection health is considered, so an earlier successful collection cannot forgive them. The
+whole-steward exact-edge dependency scan covers ordinary static, side-effect static, dynamic import
+and `require()` dependency forms.
+
+**Fail-closed everywhere.** Missing, stale, failed and unavailable observations are all RED. A
+crashed or silent sentinel can never produce an implicit GREEN — the heartbeat checks the watcher
+before anything it watched. **AMBER is not introduced**: `NOT_DUE` and `AWAITING_LATER_OPPORTUNITY`
+are evaluation phases that raise **no incident at all**, never a new operational state and never a
+remediation class. Timing is derived, not chosen: 30 minutes from workflow B's own job timeouts plus
+Cloudflare's published 15-minute propagation figure gives a 04:02 UTC evaluation deadline, and each
+term is pinned by test against its source.
+
+**One named permanent limitation, deliberately not papered over.** No supported read-only Cloudflare
+API for per-fire dispatcher invocation history has been proven by this repository, so dispatcher
+execution is reported as `CLOUDFLARE_INVOCATION_HISTORY_UNOBSERVABLE`, can never contribute to a
+healthy verdict, and causality is established downstream from GitHub and D1 instead. **Absence of
+visibility is never turned into GREEN.**
+
+**No arbitrary SQL exists.** The D1 sentinel holds three frozen `SELECT`-only statements with bound
+parameters, a private trusted-plan set, a written-row refusal and a read bound, enforced in
+application code rather than left to the token. It deliberately does not import the production plan
+module, which can build mutations.
+
+**A1.2 is Class 0 and observes only.** No remediation, no mutation, no AI, no credential created or
+rotated, no Cloudflare or GitHub change, no D1 write, no scheduler activated, no workflow added, no
+D1 schema change (still exactly migrations 0001–0003), and no provider, model, fixture, captaincy,
+squad, transfer, rank, Mini-League, product or UI behaviour changed. Merging deploys and arms
+nothing. **No live validation was performed and none is claimed.** Minimum credentials are documented
+and read-only: GitHub Metadata/Contents/Actions/Checks read, Cloudflare Workers Scripts Read and D1
+Read. Repository suite: **1,769 tests, 1,769 passed, 0 failed**; deterministic build unchanged.
+
+Next gate: **owner review and merge**. Credential provisioning, choosing and gating a runtime that
+can execute observation runs, first live read-only acceptance, and any Class 1+ autonomy each remain
+separate explicit owner gates. See
+[A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md).
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ### Current Data-Ops checkpoint — A1.1 observe-only foundation
+
+> **Superseded as the current Data-Ops checkpoint on 8 September 2026 by the A1.2 block above.**
+> A1.1 is merged and remains the live foundation, unchanged: every contract below is still current,
+> and only its checkpoint status is superseded.
 
 DATA-S2C remains closed. A1.1 adds pure offline incident, classification, action-registry, policy,
 audit and approved-provider-health contracts under `workers/data-steward/`. Only non-mutating Class 0
@@ -1638,6 +1706,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 10. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md)
 12. Before Decision Intelligence work: [Decision Intelligence DI-0 Foundation](docs/DECISION-INTELLIGENCE-FOUNDATION.md)
+12a. Before Autonomous Data Steward work: [DATA-OPS-A1.1](docs/DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md) then [DATA-OPS-A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md)
 13. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
 
 ## What Teamsheet is

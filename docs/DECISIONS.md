@@ -1,5 +1,21 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-OPS-A1-2-2026-09-08 -->
+## D-DATA-OPS-A1.2 — observation is not authorization
+
+Decision: give the steward deterministic observation before any capability to act, and keep the two
+strictly separate. Sentinels supply evidence INTO the A1.1 boundary; they never classify, decide or
+authorize, and A1.1's registered rules remain the sole authority. Three consequences were chosen
+deliberately. (1) Classify on governed job and step outcomes, never on a GitHub run conclusion,
+because the T2 acceptance proved a run can fail precisely because the guard worked. (2) Model an
+unobservable fact as an explicit named limitation rather than inventing an API for it, and never let
+missing visibility become GREEN. (3) Keep the D1 surface a fixed SELECT-only registry with bound
+parameters enforced in application code, not merely by the token's permission, so defence in depth
+survives a future credential mistake. Evaluation phases (`NOT_DUE`, `AWAITING_LATER_OPPORTUNITY`)
+were added instead of a new AMBER-like state so that a legitimately incomplete window raises no
+incident at all rather than inventing a middle operational state.
+[Full decision boundary](DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md).
+
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## D-DATA-OPS-A1.1 — deterministic authority, observe-only runtime
 

@@ -1,7 +1,15 @@
 # DATA-OPS-A1.1 — Policy and observe-only foundation
 
-Status: **IMPLEMENTED ON DRAFT BRANCH; OWNER REVIEW REQUIRED**
+Status: **MERGED AND CURRENT** — PR #230, merged as
+`47345a7035eba0071c66dcab778f0edc9fef4048`. The earlier status line on this record read
+"IMPLEMENTED ON DRAFT BRANCH; OWNER REVIEW REQUIRED"; that was accurate before the merge and is no
+longer current. Everything below describes the foundation as it now stands on `main`.
 Baseline: `df2b307a4ef3ccc10b6c988bc3132694e046f278`
+
+A1.1 remains observe-only and unchanged. The next checkpoint,
+[DATA-OPS-A1.2](DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md), supplies deterministic
+observations INTO this boundary; it registers no new action, enables no autonomy class, and does not
+alter the contracts described here.
 
 ## Outcome and boundary
 
