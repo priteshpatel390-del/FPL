@@ -11,6 +11,9 @@ SHA/incident/pre-state/expiry/nonce binding; replay, cooldown, budgets and circu
 deterministic incident/audit hashing; recursive secret rejection; approved-provider-only health with
 no production influence; and static absence of network, environment, credential, shell and SQL
 capability.
+Integrity-remediation cases add contradictory-state classification forgeries, proposer evidence and
+trusted-context injection, incident/evidence mismatch, generic-authority requests, and attempts to
+redefine repository-owned provider purpose, fallback and prohibited influence.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## DATA-S2C live acceptance and retirement regression

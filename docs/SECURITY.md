@@ -9,6 +9,9 @@ Proposals cannot supply kill-switch state; external trusted context supplies ove
 switches. Class 1–3 execution is disabled, Class 3 allowlist is empty, and Class 4 escalates. Audit
 and incident construction recursively reject secret-bearing keys and values. No credential or secret
 was created, read, rotated or changed for A1.1.
+Condition labels and proposer evidence grant no authority: exact state predicates prove
+classification, and required typed/hash-bound evidence comes only from trusted context. No generic
+SQL, shell, HTTP, GitHub API or Cloudflare API action is registered.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C security state

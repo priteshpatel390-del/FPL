@@ -21,16 +21,20 @@ execution: A1.1 exposes only a lookup for registered, enabled, non-mutating Clas
 
 - `action-registry.mjs` defines stable action IDs, Classes 0–4, metadata, policy version, mutation
   domains and the deliberately empty Class 3 allowlist. Future Class 1–4 definitions are disabled.
-- `incident.mjs` creates evidence-bound deterministic incident identities. Only registered
-  condition/domain pairs can be GREEN or AMBER; unknown or malformed conditions are RED.
+- `incident.mjs` creates evidence-bound deterministic incident identities. Each registered rule has
+  an exact expected/observed-state predicate; its label alone proves nothing. Contradictory,
+  unsupported, malformed or unproven state is RED.
 - `policy-engine.mjs` accepts exact proposal and context schemas and returns `ALLOW`, `DENY` or
   `ESCALATE` plus a stable reason code. Unknown keys/actions/classes, missing evidence, state/SHA
   mismatches, expiry, replay, disabled switches, exhausted budgets, cooldown and tripped breakers
-  fail closed. AI confidence is not accepted input.
+  fail closed. The untrusted proposal contains intent only. Required evidence consists of typed,
+  hashed references in trusted policy context, bound to the current incident; proposer evidence and
+  trusted-context-like fields are invalid. AI confidence is not accepted input.
 - `audit.mjs` canonicalises and hashes a structured audit record. Recursive secret-key/value checks
   reject credential-bearing material; no live audit store exists.
-- `provider-health-contract.mjs` describes health only for the existing approved provider set and
-  always returns `mayInfluenceProduction: false`. It adds no provider or ingestion.
+- `provider-health-contract.mjs` accepts dynamic health only. Immutable provider identity, authority
+  and purpose come from the repository's existing provider registry; callers cannot redefine
+  purpose, fallback or prohibited influence. It always returns `mayInfluenceProduction: false`.
 
 ## Safety controls
 
@@ -47,6 +51,9 @@ No live Cloudflare/GitHub/D1/provider observer, AI model, authorization persiste
 notification adapter, actuator, repair, rollback, repository-repair runtime, provider operation or
 auto-merge exists. Later work needs separate owner approval and must supply independently bounded
 read adapters, durable state and named domain actuators without weakening this policy boundary.
+
+No generic SQL, shell, HTTP, GitHub API, Cloudflare API or owner-command action exists. The Class 4
+example is a non-executable review gate for a separately proposed migration, not migration authority.
 
 ## Verification
 

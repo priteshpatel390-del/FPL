@@ -8,6 +8,8 @@ no AI integration; no durable incident, nonce, budget or audit store; no notific
 and no autonomous repair, rollback, repository edit, provider operation or auto-merge. Kill switches,
 budgets, cooldown, circuit breaking, expiry and replay are deterministic policy inputs only. A later
 adapter must supply trustworthy current context and persistence without exposing raw credentials.
+Offline observations and policy context remain caller-supplied at this checkpoint; predicates and
+hash/incident binding validate their internal contract but do not prove live external truth.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C limitations after closeout

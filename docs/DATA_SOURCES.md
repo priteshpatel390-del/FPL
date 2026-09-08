@@ -3,10 +3,11 @@
 <!-- DATA-OPS-A1-1-2026-09-08 -->
 ## DATA-OPS-A1.1 provider-health boundary
 
-A1.1 adds only a provider health-contract validator. It accepts identities already present in
-`APPROVED_PROVIDER_NAMES`, describes approved purpose/fields/freshness/parser/quota/auth/quality/
-fallback/cost/prohibited-influence properties, and always denies production influence. It adds no
-provider, endpoint, acquisition, retention, fallback, weighting or model behavior.
+A1.1 adds only a provider health-contract validator. Caller input contains dynamic health facts, not
+approval policy. Identity, authority and purpose come from immutable repository-controlled
+`APPROVED_PROVIDER_SOURCES`; unknown policy facts remain absent/null. Caller attempts to redefine
+purpose, fallback or prohibited influence fail exact-schema validation. Production influence is
+always false. No provider, endpoint, acquisition, retention, fallback, weighting or model behavior changes.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current Official FPL scheduled collection state

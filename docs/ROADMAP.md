@@ -7,6 +7,8 @@ Policy, incident, classification, registry, audit, provider-health and safety-br
 exist on the draft branch. They are offline and observe-only; no production system is connected or
 mutated. Next work is owner review of A1.1. Live observers, AI integration, durable replay/budget
 state and every repair actuator remain separate future checkpoints requiring explicit approval.
+Owner-review remediation stays inside A1.1: state-proven classification, trusted-context evidence,
+generic-authority removal and repository-controlled provider policy create no new checkpoint.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C roadmap state — complete

@@ -2,13 +2,14 @@ import {canonicalise,deepFreeze,sha256Hex,stableStringify,secretFinding} from '.
 import {POLICY_VERSION} from './action-registry.mjs';
 
 export const OPERATIONAL_STATE=deepFreeze({GREEN:'GREEN',AMBER:'AMBER',RED:'RED'});
-const RULES=deepFreeze({
-  healthy:{classification:'GREEN',reasonCode:'HEALTHY_EXPECTED_STATE',domains:['github','cloudflare','d1','provider','observation']},
-  opportunity_consumed:{classification:'GREEN',reasonCode:'ROUTINE_OPPORTUNITY_ALREADY_CONSUMED',domains:['github']},
-  dispatch_failure_bounded:{classification:'AMBER',reasonCode:'KNOWN_BOUNDED_DISPATCH_FAILURE',domains:['github','cloudflare']}
-});
 const exact=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value)&&stableStringify(Object.keys(value).sort())===stableStringify(keys.slice().sort());
 const text=(value,pattern)=>typeof value==='string'&&pattern.test(value);
+const equals=(value,expected)=>stableStringify(value)===stableStringify(expected);
+const RULES=deepFreeze({
+  healthy:{classification:'GREEN',reasonCode:'HEALTHY_EXPECTED_STATE',domains:['github','cloudflare','d1','provider','observation'],prove:({expectedState,observedState})=>equals(expectedState,{status:'healthy'})&&equals(observedState,{status:'healthy'})},
+  opportunity_consumed:{classification:'GREEN',reasonCode:'ROUTINE_OPPORTUNITY_ALREADY_CONSUMED',domains:['github'],prove:({expectedState,observedState})=>equals(expectedState,{collectionPolicy:'one_routine_per_utc_day'})&&equals(observedState,{reasonCode:'automatic_collection_consumed',status:'consumed'})},
+  dispatch_failure_bounded:{classification:'AMBER',reasonCode:'KNOWN_BOUNDED_DISPATCH_FAILURE',domains:['github','cloudflare'],prove:({expectedState,observedState})=>equals(expectedState,{maxAttempts:1,operation:'workflow_dispatch'})&&exact(observedState,['classification','reasonCode','retryable','status'])&&observedState.status==='failed'&&observedState.classification==='REJECTED'&&observedState.retryable===false&&['dispatch_token_missing','dispatch_status_rejected'].includes(observedState.reasonCode)}
+});
 
 export function classifyOperationalState(observation){
   if(!exact(observation,['conditionId','domain','expectedState','observedState','evidence']))return deepFreeze({classification:'RED',reasonCode:'MALFORMED_OR_UNKNOWN_CONDITION'});
@@ -17,6 +18,9 @@ export function classifyOperationalState(observation){
     return deepFreeze({classification:'RED',reasonCode:'MALFORMED_OR_UNKNOWN_CONDITION'});
   if(!Array.isArray(observation.evidence)||observation.evidence.length===0)
     return deepFreeze({classification:'RED',reasonCode:'MISSING_CLASSIFICATION_EVIDENCE'});
+  let proven=false;
+  try{proven=rule.prove(observation)===true;}catch{proven=false;}
+  if(!proven)return deepFreeze({classification:'RED',reasonCode:'CONDITION_STATE_UNPROVEN'});
   return deepFreeze({classification:rule.classification,reasonCode:rule.reasonCode});
 }
 

@@ -8,7 +8,9 @@ incident classification, exact-schema policy evaluation, structured canonical au
 approved-provider health contract. AI output is an untrusted proposal; only deterministic policy may
 return `ALLOW`, `DENY` or `ESCALATE`. Only enabled, non-mutating Class 0 actions can be represented as
 executable. No adapter, credential access, network I/O, persistence, actuator or production mutation
-surface exists. See [A1.1 foundation](DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md).
+surface exists. Registered predicates prove GREEN/AMBER from exact state; trusted context, not the
+proposal, supplies incident-bound evidence; repository definitions own provider policy; and no
+generic authority action exists. See [A1.1 foundation](DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md).
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C scheduler architecture

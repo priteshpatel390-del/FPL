@@ -8,6 +8,9 @@ incident and GREEN/AMBER/RED representations, closed action registry, Classes 0â
 decisions, safety brakes, deterministic audit records and an approved-provider health contract. It
 contains no live observer, AI integration, credential, persistence or mutation actuator. See
 [DATA-OPS-A1.1](DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md).
+Within A1.1, GREEN/AMBER require registered state predicates, policy evidence comes only from trusted
+incident-bound context, provider approval facts come from repository definitions, and generic
+authority is absent.
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C state â€” rollout closed

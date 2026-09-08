@@ -1,14 +1,21 @@
-import {APPROVED_PROVIDER_NAMES} from '../../src/providers/registry.mjs';
+import {APPROVED_PROVIDER_NAMES,APPROVED_PROVIDER_SOURCES} from '../../src/providers/registry.mjs';
 import {canonicalise,deepFreeze,stableStringify,secretFinding} from '../../src/decision-intelligence/canonical.mjs';
 
-const KEYS=['providerId','approvedPurpose','approvedFields','freshnessRequirementMs','schemaVersion','parserVersion','requiredFields','quotaStatus','authStatus','qualityStatus','approvedFallbackState','costBoundary','prohibitedInfluence'];
+const HEALTH_KEYS=['providerId','observedAt','availability','quotaStatus','authStatus','freshnessAgeMs','observedSchemaVersion','observedParserVersion','qualityStatus','costUsageMinorUnits'];
 const exact=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value)&&stableStringify(Object.keys(value).sort())===stableStringify(keys.slice().sort());
-const strings=value=>Array.isArray(value)&&value.every(item=>typeof item==='string'&&/^[a-z][a-z0-9_.-]{0,63}$/.test(item));
+const iso=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)&&Number.isFinite(Date.parse(value));
+const version=value=>value===null||typeof value==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/.test(value);
+
+export const PROVIDER_APPROVAL_POLICY=deepFreeze(Object.fromEntries(APPROVED_PROVIDER_NAMES.map(providerId=>{
+  const source=APPROVED_PROVIDER_SOURCES[providerId];
+  return [providerId,{providerId,label:source.label,authority:source.authority,approvedPurpose:source.purpose,approvedFallbackPolicy:null,prohibitedInfluence:['data_steward_production_influence']}];
+})));
 
 export function validateProviderHealthContract(input){
-  if(!exact(input,KEYS))return deepFreeze({ok:false,reasonCode:'PROVIDER_CONTRACT_MALFORMED'});
-  if(secretFinding(input)!==null)return deepFreeze({ok:false,reasonCode:'PROVIDER_CONTRACT_SECRET_FORBIDDEN'});
-  if(!APPROVED_PROVIDER_NAMES.includes(input.providerId))return deepFreeze({ok:false,reasonCode:'PROVIDER_NOT_APPROVED'});
-  if(typeof input.approvedPurpose!=='string'||input.approvedPurpose.length<1||input.approvedPurpose.length>160||!strings(input.approvedFields)||!strings(input.requiredFields)||!Number.isSafeInteger(input.freshnessRequirementMs)||input.freshnessRequirementMs<0||typeof input.schemaVersion!=='string'||typeof input.parserVersion!=='string'||!['AVAILABLE','LIMITED','EXHAUSTED','UNKNOWN'].includes(input.quotaStatus)||!['VALID','MISSING','EXPIRED','UNKNOWN'].includes(input.authStatus)||!['HEALTHY','DEGRADED','UNAVAILABLE','UNKNOWN'].includes(input.qualityStatus)||!['NONE','APPROVED','DISABLED'].includes(input.approvedFallbackState)||!exact(input.costBoundary,['currency','maximumMinorUnits','period'])||typeof input.costBoundary.currency!=='string'||!Number.isSafeInteger(input.costBoundary.maximumMinorUnits)||input.costBoundary.maximumMinorUnits<0||typeof input.costBoundary.period!=='string'||!strings(input.prohibitedInfluence))return deepFreeze({ok:false,reasonCode:'PROVIDER_CONTRACT_MALFORMED'});
-  return deepFreeze({ok:true,reasonCode:'APPROVED_PROVIDER_HEALTH_ONLY',contract:deepFreeze(canonicalise(input)),mayInfluenceProduction:false});
+  if(!exact(input,HEALTH_KEYS))return deepFreeze({ok:false,reasonCode:'PROVIDER_HEALTH_MALFORMED'});
+  if(secretFinding(input)!==null)return deepFreeze({ok:false,reasonCode:'PROVIDER_HEALTH_SECRET_FORBIDDEN'});
+  const policy=PROVIDER_APPROVAL_POLICY[input.providerId];
+  if(!policy)return deepFreeze({ok:false,reasonCode:'PROVIDER_NOT_APPROVED'});
+  if(!iso(input.observedAt)||!['AVAILABLE','DEGRADED','UNAVAILABLE','UNKNOWN'].includes(input.availability)||!['AVAILABLE','LIMITED','EXHAUSTED','UNKNOWN'].includes(input.quotaStatus)||!['VALID','MISSING','EXPIRED','NOT_REQUIRED','UNKNOWN'].includes(input.authStatus)||!Number.isSafeInteger(input.freshnessAgeMs)||input.freshnessAgeMs<0||!version(input.observedSchemaVersion)||!version(input.observedParserVersion)||!['HEALTHY','DEGRADED','UNAVAILABLE','UNKNOWN'].includes(input.qualityStatus)||(input.costUsageMinorUnits!==null&&(!Number.isSafeInteger(input.costUsageMinorUnits)||input.costUsageMinorUnits<0)))return deepFreeze({ok:false,reasonCode:'PROVIDER_HEALTH_MALFORMED'});
+  return deepFreeze({ok:true,reasonCode:'APPROVED_PROVIDER_HEALTH_ONLY',policy,health:deepFreeze(canonicalise(input)),mayInfluenceProduction:false});
 }
