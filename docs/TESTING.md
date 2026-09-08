@@ -1,5 +1,10 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
+## DATA-OPS A1.3 first-live-observation masking coverage
+
+`tests/data-ops-a1-3-readonly-observer.test.mjs` additionally pins the identifier-masking remediation proven necessary by run `34269989975`: the fingerprint is absent from job-level `env:`; exactly one first step registers its SHA-256 mask derived from the already-secret account id, before checkout/setup-node/execution, with no network request and no `GITHUB_ENV`/`GITHUB_OUTPUT`; the fingerprint variable is materialised exactly once, at step level, only in the final `Execute one read-only observation` step; and the rest of the workflow contract (permissions, exact-`main` guard, `deployment: false`, the two schedules, the exact activation condition) is unchanged. `tests/data-ops-a1-2-observe-only-sentinels.test.mjs` additionally proves the account-identity contract rejects a `sha256:`-prefixed and an uppercase fingerprint, pinning that the runtime check requires exactly `^[0-9a-f]{64}$`. A repository-text scan proves no full live fingerprint or account id value is present anywhere in tracked source or documentation.
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## DATA-OPS A1.3 permanent runtime coverage
 

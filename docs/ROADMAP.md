@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
+## Current checkpoint — DATA-OPS A1.3 first-live-observation remediation (draft, unmerged)
+
+The owner performed the first attended observer dispatch (run `34269989975`, head `2f8a4850f911779d2ec48db2f835d0f6af5a45c5`): GitHub and D1 sentinels observed successfully (D1 `rowsRead: 88580`), the Cloudflare sentinel failed closed at `CLOUDFLARE_IDENTITY_MISMATCH` because the live fingerprint was provisioned as `sha256:<hash>` rather than the required raw 64-character lowercase hex, and the run also proved the fingerprint was echoed into resolved-environment step logs. This draft, unmerged remediation removes the fingerprint from job-level `env:`, adds a first step that masks its SHA-256 derived from the already-secret account id before any later step, and materialises the fingerprint only in the final execution step — the PR #215 pattern applied to A1.3. It does not correct the live fingerprint value, dispatch the observer again, or activate scheduling. Next gates, each separate: merge after owner approval; exact-`main` Verify; owner corrects the live fingerprint to raw lowercase hex; one new attended manual observation, accepted only if every sentinel passes; then separate approval to create/set `DATA_STEWARD_SCHEDULED_ENABLED=true`.
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## Current checkpoint — DATA-OPS A1.3 repository-ready observer
 

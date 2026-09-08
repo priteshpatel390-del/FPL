@@ -136,3 +136,65 @@ test('migration inventory remains 0001-0003 and production collection surfaces a
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql']);
   assert.doesNotMatch(workflow,/workers\/data-platform|schedule-dispatcher|production-collection/);
 });
+
+// Live first-run evidence (run 34269989975, head 2f8a4850f911779d2ec48db2f835d0f6af5a45c5) proved
+// GitHub echoes each step's resolved `vars.*` environment in its log header, so the fingerprint
+// leaked into Actions logs before any credential was ever exposed. This block pins the PR #215
+// masking pattern applied to A1.3.
+test('the fingerprint is absent from job-level env and materialised only in the final step',()=>{
+  const jobEnv=/\n    env:\n([\s\S]*?)\n    steps:/.exec(workflow)?.[1]??'';
+  assert.doesNotMatch(jobEnv,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
+  assert.match(jobEnv,/DATA_STEWARD_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(jobEnv,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: \$\{\{ secrets\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID \}\}/);
+  assert.match(jobEnv,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN: \$\{\{ secrets\.DATA_STEWARD_CLOUDFLARE_READ_TOKEN \}\}/);
+  const occurrences=[...workflow.matchAll(/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: \$\{\{ vars\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT \}\}/g)];
+  assert.equal(occurrences.length,1);
+  const steps=workflow.split(/\n      - name: /).slice(1);
+  assert.equal(steps.length,4);
+  const [maskStep,checkoutStep,nodeStep,executeStep]=steps;
+  assert.match(maskStep,/^Register Cloudflare account fingerprint mask before any other step/);
+  assert.match(checkoutStep,/^Check out observer source/);
+  assert.match(nodeStep,/^Set up exact Node/);
+  assert.match(executeStep,/^Execute one read-only observation/);
+  // Materialisation happens only in the last step, strictly after the masking step.
+  assert.doesNotMatch(maskStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
+  assert.doesNotMatch(checkoutStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
+  assert.doesNotMatch(nodeStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT/);
+  assert.match(executeStep,/DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: \$\{\{ vars\.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT \}\}/);
+});
+
+test('the masking step derives from the secret account id, fails closed and touches no network/state surface',()=>{
+  const maskStep=workflow.split(/\n      - name: /)[1];
+  assert.match(maskStep,/test -n "\$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID"/);
+  assert.match(maskStep,/sha256sum/);
+  assert.match(maskStep,/::add-mask::/);
+  assert.doesNotMatch(maskStep,/curl|wget|fetch|http:|https:|wrangler/i);
+  assert.doesNotMatch(maskStep,/GITHUB_ENV|GITHUB_OUTPUT/);
+  assert.doesNotMatch(maskStep,/\buses:/);
+});
+
+test('workflow contract otherwise unchanged by the masking remediation',()=>{
+  assert.match(workflow,/^name: Data Steward Read-Only Observer$/m);
+  assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),
+    ['17 4 * * *','17 8 * * *']);
+  assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
+  const permissions=/permissions:\n([\s\S]*?)\n\njobs:/.exec(workflow)?.[1].trim();
+  assert.equal(permissions,'contents: read\n  actions: read\n  checks: read');
+  assert.doesNotMatch(workflow,/\b(?:write|id-token|deployments|packages|pull-requests|issues):/);
+  assert.match(workflow,
+    /github\.ref == 'refs\/heads\/main' && \(github\.event_name == 'workflow_dispatch' \|\| \(github\.event_name == 'schedule' && vars\.DATA_STEWARD_SCHEDULED_ENABLED == 'true'\)\)/);
+});
+
+test('no full live fingerprint or account id value appears anywhere in repository text',()=>{
+  const scanned=[workflow,activationDoc,securityDoc,
+    fs.readFileSync('docs/KNOWN_LIMITATIONS.md','utf8'),fs.readFileSync('docs/ROADMAP.md','utf8'),
+    fs.readFileSync('docs/PROJECT_CONTEXT.md','utf8'),fs.readFileSync('docs/TESTING.md','utf8'),
+    fs.readFileSync('workers/data-steward/sentinels/environment-contract.mjs','utf8'),
+    fs.readFileSync('workers/data-steward/sentinels/cloudflare-sentinel.mjs','utf8')];
+  for(const text of scanned){
+    // Only a short evidence prefix (7 hex characters) is ever recorded, never the full 64-character
+    // fingerprint or account id.
+    assert.doesNotMatch(text,/\bdbc3bff[0-9a-f]{2,}/i);
+    assert.doesNotMatch(text,/\bsha256:[0-9a-f]{64}\b/);
+  }
+});

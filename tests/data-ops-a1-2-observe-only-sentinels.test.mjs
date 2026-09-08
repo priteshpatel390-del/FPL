@@ -450,6 +450,13 @@ test('the production account must be proved, never derived from the credential i
   assert.equal(assertProductionAccount({accountId:ACCOUNT,accountFingerprint:FINGERPRINT}),true);
   assert.throws(()=>assertProductionAccount({accountId:ACCOUNT,accountFingerprint:'f'.repeat(64)}),/cloudflare_account_mismatch/);
   assert.throws(()=>assertProductionAccount({accountId:ACCOUNT,accountFingerprint:null}),/cloudflare_account_unproven/);
+  // Live first-run evidence (run 34269989975) proved a provisioning mistake: the runtime contract
+  // requires exactly 64 lowercase hex characters and never a `sha256:` prefix, and that must stay
+  // a hard rejection rather than a second accepted shape.
+  assert.throws(()=>assertProductionAccount({accountId:ACCOUNT,accountFingerprint:`sha256:${FINGERPRINT}`}),
+    /cloudflare_account_unproven/);
+  assert.throws(()=>assertProductionAccount({accountId:ACCOUNT,accountFingerprint:FINGERPRINT.toUpperCase()}),
+    /cloudflare_account_unproven/);
 });
 
 test('Cloudflare responses are decoded strictly and the cron set must match exactly',()=>{
