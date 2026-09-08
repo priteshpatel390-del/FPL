@@ -1,3 +1,11 @@
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+### Current Data-Ops checkpoint — A1.1 observe-only foundation
+
+DATA-S2C remains closed. A1.1 adds pure offline incident, classification, action-registry, policy,
+audit and approved-provider-health contracts under `workers/data-steward/`. Only non-mutating Class 0
+is enabled; Classes 1–3 are disabled, Class 3 allowlist is empty, and Class 4 escalates. There is no
+live observer, AI integration, credential access, persistence, actuator or production mutation.
+See [A1.1](docs/DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md).
 
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ### Current DATA-S2C state — closed after live Cloudflare acceptance

@@ -1,5 +1,17 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+## DATA-OPS-A1.1 permanent policy coverage
+
+`tests/data-ops-a1-1-policy-foundation.test.mjs` pins the closed registry and autonomy classes;
+GREEN/AMBER/RED deterministic classification; exact action/context schemas; stable decisions and
+reason codes; unknown/malformed/extra/generic-authority rejection; Class 0-only execution; disabled
+future mutation classes; empty auto-merge allowlist; owner escalation; independent kill switches;
+SHA/incident/pre-state/expiry/nonce binding; replay, cooldown, budgets and circuit breakers;
+deterministic incident/audit hashing; recursive secret rejection; approved-provider-only health with
+no production influence; and static absence of network, environment, credential, shell and SQL
+capability.
+
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## DATA-S2C live acceptance and retirement regression
 

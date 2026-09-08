@@ -1,5 +1,15 @@
 # SECURITY.md
 
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+## DATA-OPS-A1.1 security boundary
+
+The new Data Steward core imports no network, environment, credential, shell or SQL capability and
+has no live binding. Exact schemas reject extra keys and generic shell/SQL/HTTP/API authority.
+Proposals cannot supply kill-switch state; external trusted context supplies overall and per-domain
+switches. Class 1–3 execution is disabled, Class 3 allowlist is empty, and Class 4 escalates. Audit
+and incident construction recursively reject secret-bearing keys and values. No credential or secret
+was created, read, rotated or changed for A1.1.
+
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current DATA-S2C security state
 

@@ -1,5 +1,13 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+## DATA-OPS-A1.1 provider-health boundary
+
+A1.1 adds only a provider health-contract validator. It accepts identities already present in
+`APPROVED_PROVIDER_NAMES`, describes approved purpose/fields/freshness/parser/quota/auth/quality/
+fallback/cost/prohibited-influence properties, and always denies production influence. It adds no
+provider, endpoint, acquisition, retention, fallback, weighting or model behavior.
+
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## Current Official FPL scheduled collection state
 

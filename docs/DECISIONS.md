@@ -1,5 +1,15 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-OPS-A1-1-2026-09-08 -->
+## D-DATA-OPS-A1.1 — deterministic authority, observe-only runtime
+
+AI diagnosis is never authority. Proposed actions cross a closed, versioned deterministic policy
+boundary bound to incident, exact main SHA, expected-state fingerprint, expiry and nonce. Unknown or
+ambiguous conditions classify RED; only registered bounded conditions may classify AMBER. Classes
+1–3 remain disabled, Class 3 allowlist is empty, and Class 4 escalates to the owner. Independent
+mutation kill switches and action/retry/cooldown/circuit inputs are represented, but no mutation
+actuator or durable authorization state is implemented. [Full decision boundary](DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md).
+
 <!-- DATA-S2C-CLOSEOUT-2026-09-08 -->
 ## DATA-S2C closeout decision — 8 September 2026
 
