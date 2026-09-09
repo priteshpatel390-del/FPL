@@ -1,6 +1,6 @@
 # DATA-OPS A1.3 — Live-accepted read-only observer runtime; scheduled activation still separate
 
-Status: **LIVE ACCEPTED (MANUAL OBSERVATION) — 9 September 2026. Scheduled/automatic monitoring remains NOT ACTIVATED; `DATA_STEWARD_SCHEDULED_ENABLED` remains unset and that activation is a later, separate, explicit owner decision.**
+Status: **LIVE ACCEPTED (MANUAL OBSERVATION) — 9 September 2026. Scheduled/automatic monitoring remains NOT ACTIVATED; `DATA_STEWARD_SCHEDULED_ENABLED` was last owner-verified absent (see "Outcome" below), no run or PR creates, sets, modifies or reads it, and activation is a later, separate, explicit owner decision.**
 Source main: `174a7ece2f6c52257902c79ac9a46de846edeb91` (merge of PR #238, A1.3 Cloudflare Cron semantic normalisation). See the "Live acceptance" section below for the decisive evidence, and CLAUDE.md for the current canonical checkpoint summary.
 
 ## First live observation attempt — 8 September 2026
@@ -305,15 +305,16 @@ predicate `decodeSchedules()` evaluates, in the same order:
 * `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED` — the extracted cron is a string but the existing
   `CRON` regular expression rejects it.
 
-**`decodeSchedules()` is not modified.** A new pure function, `classifySchedulesPayload(result)`,
-is the single place these five predicates are written down, evaluated in the exact order the
-decoder always checked them; `decodeSchedules()` is now derived from it — it returns `null` exactly
-when the classifier returns a non-null code, and otherwise extracts the same cron list the same
-way. This is a refactor for a single shared source of truth, not two independent notions of
-"valid": a permanent test proves the decoder and the classifier can never disagree, for every input
-shape covered by the existing decoder tests and every new predicate case. The `CRON` regular
-expression, the 16-entry bound, string-row acceptance, `row.cron` extraction and the returned cron
-list itself are all byte-identical to before.
+**`decodeSchedules()`'s accepted behaviour is not modified.** As merged, a single internal function,
+`analyseSchedulesPayload(result)`, is the sole place these five predicates are written down and
+evaluated — exactly once per payload, in the exact order the decoder always checked them — and the
+exported `classifySchedulesPayload(result)` and `decodeSchedules(result)` are both one-line
+delegations to it: the former returns its reason code, the latter returns its extracted cron list.
+This is a single shared source of truth, not two independent notions of "valid": a permanent test
+proves the two exported functions can never disagree, for every input shape covered by the existing
+decoder tests and every new predicate case. The `CRON` regular expression, the 16-entry bound,
+string-row acceptance, `row.cron` extraction and the returned cron list itself are all byte-identical
+to before.
 
 Which predicate first rejected the live result is read internally, once, purely to select one of
 these five enums. The parsed or raw response body, its object keys, any schedules entry, any Cron
@@ -345,9 +346,9 @@ construction, the Accept header, the 15-second timeout, the sequential read orde
 workflow YAML, the three approved production Cron expressions and the request-count behaviour on
 every other failure path are all unchanged.
 
-## Sixth live observation attempt — 9 September 2026
+## Live observation attempt — 9 September 2026 (run 34342701912)
 
-The owner performed a sixth attended dispatch of `Data Steward Read-Only Observer`, after the
+The owner performed an attended dispatch of `Data Steward Read-Only Observer`, after the
 payload-decode diagnostic split above merged as PR #237: run `34342701912`, run number 7, event
 `workflow_dispatch`, branch `main`, head SHA `dfc78882a507e90662f2937582ab0b35af34bdec`. **This was
 not, by itself, a live acceptance.** No collection, repair, D1 write, schedule activation or
@@ -378,12 +379,12 @@ is not live production state and is recorded here only to rule it out.)
 
 **Do not claim.** This evidence does not itself constitute a fix. It identifies the root cause and
 motivates the correction below; whether that correction is sufficient for live acceptance was
-unknown until the seventh dispatch recorded in "Live acceptance" below. See "Cron semantic
-normalisation" immediately below for the correction this evidence justified.
+unknown until the run recorded in "Live acceptance" below (run `34346126189`, run number 8). See
+"Cron semantic normalisation" immediately below for the correction this evidence justified.
 
 ## Cron semantic normalisation
 
-The sixth live observation above proved the observer required byte-identical Cron text rather than
+The live observation above (run `34342701912`) proved the observer required byte-identical Cron text rather than
 comparing schedule semantics, and that its per-field Cron pattern — sized for the textual wildcard
 form — could reject a legitimate full-domain day-of-month enumeration before any semantic
 comparison ever ran. Even widening that pattern alone would not have been sufficient, because
@@ -420,8 +421,8 @@ This correction merged as **PR #238**. It was **not**, by itself, proof of live 
 ## Live acceptance — 9 September 2026
 
 After PR #238 merged (post-merge `main` `174a7ece2f6c52257902c79ac9a46de846edeb91`) and exact-`main`
-Verify Teamsheet succeeded (run `34345865860`, run number 662, event `push`), the owner performed a
-seventh attended dispatch of `Data Steward Read-Only Observer`: run `34346126189`, run number 8,
+Verify Teamsheet succeeded (run `34345865860`, run number 662, event `push`), the owner performed the
+attended dispatch of `Data Steward Read-Only Observer` recorded here: run `34346126189`, run number 8,
 event `workflow_dispatch`, branch `main`, head SHA `174a7ece2f6c52257902c79ac9a46de846edeb91`, job
 `observe-production-chain` (job id `102448024505`), job result **SUCCESS**.
 
@@ -449,8 +450,9 @@ observer runtime is operational end to end against genuine production Cloudflare
 state on exact verified `main`.
 
 **What this does not prove, stated equally precisely.** It does not prove scheduled/automatic
-monitoring is active: `DATA_STEWARD_SCHEDULED_ENABLED` was neither read nor changed by this run,
-remains unset, and scheduled execution stays fail-closed until a later, separate, explicit owner
+monitoring is active: `DATA_STEWARD_SCHEDULED_ENABLED` was last owner-verified absent (see "Outcome"
+below for that evidence and its provenance); this run and this PR do not create, set,
+modify or read it, and scheduled execution stays fail-closed until a later, separate, explicit owner
 action sets it to exact lowercase `true`. It does not prove Cloudflare per-fire dispatcher invocation
 history is observable — that remains the permanent, named `CLOUDFLARE_INVOCATION_HISTORY_UNOBSERVABLE`
 limitation, unresolved by this run and never turned into a healthy verdict by its absence. It does not
@@ -592,7 +594,8 @@ Steps 1–3 below are now **closed**. Step 4 is the only remaining gate.
    owner has since corrected it to the raw 64-character lowercase SHA-256 hex, proved by the second
    and third attempts' successful identity admission.
 3. ~~Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.~~
-   **Done — accepted.** Seven attempts preceded acceptance, each narrowing the failure by one layer:
+   **Done — accepted.** The following attended dispatches preceded acceptance, each narrowing the
+   failure by one layer:
    run `34269989975` failed closed at Cloudflare identity admission
    (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819` passed identity
    admission but failed in the Cloudflare read phase with the then-collapsed
