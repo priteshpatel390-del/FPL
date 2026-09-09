@@ -135,11 +135,15 @@ test('runtime summary is closed and excludes tokens, account values, raw bodies 
 });
 
 // Live evidence (run 34277208819) proved the Cloudflare sentinel now fails at one of three named
-// stages rather than one collapsed code. The sanitized summary must carry that closed reason code
-// through unchanged while remaining exactly as closed as any other reason code — no request URL,
-// header, status, provider message, account id, fingerprint or raw body can ever ride along.
+// stages rather than one collapsed code, and live evidence (run 34311398342) then proved the
+// `/schedules` stage itself needed five closed categories rather than one. The sanitized summary
+// must carry any of these closed reason codes through unchanged while remaining exactly as closed
+// as any other reason code — no request URL, header, status, provider message, account id,
+// fingerprint or raw body can ever ride along.
 test('the new closed Cloudflare stage reason codes pass through sanitized output with nothing else attached',()=>{
-  for(const reasonCode of ['CLOUDFLARE_SCHEDULES_READ_FAILED','CLOUDFLARE_DEPLOYMENTS_READ_FAILED',
+  for(const reasonCode of ['CLOUDFLARE_SCHEDULES_AUTH_REFUSED','CLOUDFLARE_SCHEDULES_NOT_FOUND',
+    'CLOUDFLARE_SCHEDULES_HTTP_FAILED','CLOUDFLARE_SCHEDULES_RESPONSE_INVALID',
+    'CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED','CLOUDFLARE_DEPLOYMENTS_READ_FAILED',
     'CLOUDFLARE_SETTINGS_READ_FAILED']){
     const input=result({unhealthy:true});
     input.observations[1]={sourceType:'cloudflare',observationState:'OBSERVATION_FAILED',reasonCode,

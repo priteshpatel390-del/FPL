@@ -25,7 +25,9 @@ import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE
   repositoryGateLogRequest,runJobsRequest,
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
 import {CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_IDENTITY_MISMATCH,
-  CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_READ_FAILED,
+  CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_AUTH_REFUSED,
+  CLOUDFLARE_SCHEDULES_HTTP_FAILED,CLOUDFLARE_SCHEDULES_NOT_FOUND,
+  CLOUDFLARE_SCHEDULES_RESPONSE_INVALID,CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED,
   CLOUDFLARE_SENTINEL_MAX_READS,CLOUDFLARE_SETTINGS_READ_FAILED,assertProductionAccount,
   cloudflareReadRequest,cronSetMatches,decodeDeployments,decodeEnvelope,decodeSchedules,
   decodeSettings,readCloudflareConfiguration} from '../workers/data-steward/sentinels/cloudflare-sentinel.mjs';
@@ -505,16 +507,65 @@ test('identity mismatch fails closed before any Cloudflare request is issued',as
 // the sequence stops the instant one stage fails, so the request count itself is load-bearing
 // diagnostic evidence: a schedules failure issues 1 request, a deployments failure issues 2, and a
 // settings failure issues 3 — never more, and never a retry of the failed stage.
-test('a schedules-stage failure is diagnosed precisely and stops the sequence at exactly one request',async()=>{
-  for(const schedules of ['ERROR',500,cfEnvelope({schedules:'nope'})]){
+//
+// Live evidence (run 34311398342, head 465e54260005c96591bd77be0a1fe1cb44547631) then proved the
+// failure narrows specifically to `/schedules`, but the still-collapsed per-stage code could not
+// say which broad category. `/schedules` alone is now classified into five closed categories; the
+// HTTP status is read only to select one of them and never itself leaves the sentinel.
+const scheduleFailureCase=async(schedules,expectedReasonCode)=>{
+  const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules}));
+  const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:impl});
+  assert.equal(result.ok,false);
+  assert.equal(result.reasonCode,expectedReasonCode);
+  assert.equal(impl.seen.length,1);
+  assert.ok(impl.seen[0].url.endsWith('/schedules'));
+  assert.equal(impl.seen[0].method,'GET');
+};
+
+test('a schedules transport failure is classified as CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED',async()=>{
+  await scheduleFailureCase('ERROR',CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED);
+});
+
+test('a schedules 401 or 403 is classified as CLOUDFLARE_SCHEDULES_AUTH_REFUSED',async()=>{
+  await scheduleFailureCase(401,CLOUDFLARE_SCHEDULES_AUTH_REFUSED);
+  await scheduleFailureCase(403,CLOUDFLARE_SCHEDULES_AUTH_REFUSED);
+});
+
+test('a schedules 404 is classified as CLOUDFLARE_SCHEDULES_NOT_FOUND',async()=>{
+  await scheduleFailureCase(404,CLOUDFLARE_SCHEDULES_NOT_FOUND);
+});
+
+test('any other non-200 schedules response is classified as CLOUDFLARE_SCHEDULES_HTTP_FAILED',async()=>{
+  await scheduleFailureCase(429,CLOUDFLARE_SCHEDULES_HTTP_FAILED);
+  await scheduleFailureCase(500,CLOUDFLARE_SCHEDULES_HTTP_FAILED);
+  await scheduleFailureCase(503,CLOUDFLARE_SCHEDULES_HTTP_FAILED);
+});
+
+test('a successful-status but unusable schedules response is classified as CLOUDFLARE_SCHEDULES_RESPONSE_INVALID',async()=>{
+  // 200 but the body cannot be parsed as JSON.
+  await scheduleFailureCase(()=>{throw new Error('bad json');},CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
+  // 200 with a JSON body that is not a valid Cloudflare envelope.
+  await scheduleFailureCase({success:false},CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
+  await scheduleFailureCase({not:'an envelope'},CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
+  // 200 with a valid envelope but a result the existing schedules decoder rejects.
+  await scheduleFailureCase(cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
+  await scheduleFailureCase(cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
+});
+
+test('no schedules failure category ever carries a numeric status, provider text or a URL',async()=>{
+  const cases=[['ERROR',CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED],[401,CLOUDFLARE_SCHEDULES_AUTH_REFUSED],
+    [404,CLOUDFLARE_SCHEDULES_NOT_FOUND],[500,CLOUDFLARE_SCHEDULES_HTTP_FAILED],
+    [cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_RESPONSE_INVALID]];
+  for(const [schedules,expectedReasonCode] of cases){
     const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules}));
     const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
       token:'t',fetchImpl:impl});
-    assert.equal(result.ok,false);
-    assert.equal(result.reasonCode,CLOUDFLARE_SCHEDULES_READ_FAILED);
-    assert.equal(impl.seen.length,1);
-    assert.ok(impl.seen[0].url.endsWith('/schedules'));
-    assert.equal(impl.seen[0].method,'GET');
+    assert.deepEqual(Object.keys(result),['ok','reasonCode']);
+    assert.equal(result.reasonCode,expectedReasonCode);
+    const serialised=JSON.stringify(result);
+    assert.doesNotMatch(serialised,/\b(?:401|403|404|429|500|503)\b/);
+    assert.doesNotMatch(serialised,/https?:\/\/|authorization|bearer|nope|DROP TABLE/i);
   }
 });
 
@@ -559,15 +610,22 @@ test('a healthy cycle issues exactly three GET requests, in order, against the t
   assert.ok(impl.seen[2].url.endsWith('/settings'));
 });
 
-test('the three stage-specific reason codes are closed identifiers carrying no provider text',()=>{
+test('the deployments/settings stage-specific reason codes are closed identifiers carrying no provider text',()=>{
   const STAGE_REASON=/^CLOUDFLARE_[A-Z]+_READ_FAILED$/;
-  for(const code of [CLOUDFLARE_SCHEDULES_READ_FAILED,CLOUDFLARE_DEPLOYMENTS_READ_FAILED,
-    CLOUDFLARE_SETTINGS_READ_FAILED]){
+  for(const code of [CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_SETTINGS_READ_FAILED]){
     assert.match(code,STAGE_REASON);
     assert.ok(code.length<=63);
   }
-  assert.notEqual(CLOUDFLARE_SCHEDULES_READ_FAILED,CLOUDFLARE_DEPLOYMENTS_READ_FAILED);
   assert.notEqual(CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_SETTINGS_READ_FAILED);
+});
+
+test('the five schedules category codes are closed, distinct, uppercase identifiers',()=>{
+  const CATEGORY_REASON=/^[A-Z][A-Z0-9_]{1,63}$/;
+  const codes=[CLOUDFLARE_SCHEDULES_AUTH_REFUSED,CLOUDFLARE_SCHEDULES_NOT_FOUND,
+    CLOUDFLARE_SCHEDULES_HTTP_FAILED,CLOUDFLARE_SCHEDULES_RESPONSE_INVALID,
+    CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED];
+  for(const code of codes)assert.match(code,CATEGORY_REASON);
+  assert.equal(new Set(codes).size,codes.length);
 });
 
 test('a production-account mismatch is not diagnosed as a stage read failure',async()=>{
@@ -820,7 +878,7 @@ test('8. an unavailable source after the evaluation point is RED, never GREEN',a
     {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});
   // Any stage-specific Cloudflare failure reason folds into the same unavailable-evidence verdict;
   // evaluateProductionChain branches on `cloudflare.ok` alone, never on which stage failed.
-  assert.deepEqual(await evaluate({cloudflare:{ok:false,reasonCode:CLOUDFLARE_SCHEDULES_READ_FAILED}}),
+  assert.deepEqual(await evaluate({cloudflare:{ok:false,reasonCode:CLOUDFLARE_SCHEDULES_AUTH_REFUSED}}),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});
   assert.deepEqual(await evaluate({d1:{ok:false,reasonCode:'D1_READ_FAILED'}}),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'SENTINEL_EVIDENCE_UNAVAILABLE'});

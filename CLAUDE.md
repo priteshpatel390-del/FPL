@@ -1,7 +1,24 @@
-<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
-### Current Data-Ops checkpoint — A1.3 Cloudflare fixed-read diagnostic remediation (unmerged)
+<!-- DATA-OPS-A1-3-2026-09-09-SCHEDULES-CLASSIFICATION -->
+### Current Data-Ops checkpoint — A1.3 schedules-read failure classification (unmerged)
 
-**Supersedes the identifier-masking block below as the current status; that remediation merged as PR #233 and worked live.** The owner performed a second attended `Data Steward Read-Only Observer` dispatch: workflow run `34277208819`, run number 2, event `workflow_dispatch`, branch `main`, head SHA `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
+**Supersedes the fixed-read diagnostic block below as the current status; that remediation merged as PR #234.** The owner performed a third attended `Data Steward Read-Only Observer` dispatch: workflow run `34311398342`, run number 3, event `workflow_dispatch`, branch `main`, head SHA `465e54260005c96591bd77be0a1fe1cb44547631`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
+
+**FACT: identity admission continues to succeed.** GitHub sentinel `OBSERVED` / `GITHUB_CHAIN_OBSERVED`. D1 sentinel `OBSERVED` / `D1_STATE_OBSERVED`, `rowsRead: 89066`. Cloudflare sentinel `OBSERVATION_FAILED` / `CLOUDFLARE_SCHEDULES_READ_FAILED` — the failure narrows specifically to the first fixed read, `GET .../schedules`; because reads are sequential and fail closed, `/deployments` and `/settings` were not attempted. Protected runtime values remained masked throughout, per the PR #233 remediation.
+
+**FACT: the per-stage code was itself still ambiguous.** `CLOUDFLARE_SCHEDULES_READ_FAILED` collapsed a transport error, an authorization refusal, a missing-resource response, any other non-200 status, and a successful-but-unusable response into one code. This checkpoint replaces it, for `/schedules` only, with five closed categories: `CLOUDFLARE_SCHEDULES_AUTH_REFUSED` (HTTP 401/403), `CLOUDFLARE_SCHEDULES_NOT_FOUND` (HTTP 404), `CLOUDFLARE_SCHEDULES_HTTP_FAILED` (any other non-200), `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` (200 but unparseable JSON, an invalid envelope, or a result the existing `decodeSchedules` rejects), and `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED` (fetch throws or times out before any response exists). The HTTP status is read only inside the sentinel to select one of these enums; it, any provider body, message, header, URL, account id, token or fingerprint never leave the sentinel. `/deployments` and `/settings` are unchanged and keep their single collapsed codes; no decoder, endpoint, path, method, timeout, read order, read cap or credential contract changed.
+
+**Downstream evidence, not proof.** Production Workflow B runs appeared at approximately the three expected 01:17, 02:17 and 03:17 UTC opportunities on 9 September. That is evidence the dispatch chain is operating; it is not independent proof of the Cloudflare Cron configuration or the `/schedules` API response itself, and is not treated as such here.
+
+**Do not claim.** This checkpoint does not claim the token permission is wrong, the Worker is missing, the response decoder is wrong, the Cron configuration is wrong, or that A1.3 is live accepted. The precise underlying `/schedules` failure category is still unknown until the next attended dispatch reports one of the five new codes.
+
+**Next live gate, in order:** (1) owner reviews and approves this PR; (2) merge only after explicit owner approval; (3) exact-`main` Verify success on the merged commit; (4) one further attended manual observer dispatch; (5) read the new closed `/schedules` category code to identify the precise underlying cause; (6) only then propose the actual correction — configuration, credential permission, response-contract correction, or another cause; (7) scheduled activation remains a later, separate, still-unapproved gate. See [A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+### Current Data-Ops checkpoint — A1.3 Cloudflare fixed-read diagnostic remediation, merged as PR #234
+
+**Its checkpoint status is superseded by the schedules-classification block above; its design and evidence below remain accurate as a record and are retained.** This remediation merged as **PR #234** and its exact-`main` Verify passed. Its statement that "the precise failing stage is still unknown until the next attended dispatch" was accurate when written and has since been answered: the third attended dispatch, run `34311398342`, identified the failing stage as `/schedules` — see the block above.
+
+The owner performed a second attended `Data Steward Read-Only Observer` dispatch: workflow run `34277208819`, run number 2, event `workflow_dispatch`, branch `main`, head SHA `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
 
 **FACT: the PR #233 masking fix worked.** The job log proved the first masking step succeeded, the account id was masked, the fingerprint was masked before materialisation, and the final observer step's resolved environment displayed every protected value as `***`.
 

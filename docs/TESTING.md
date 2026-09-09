@@ -1,9 +1,14 @@
 # TESTING.md
 
-<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
-## DATA-OPS A1.3 Cloudflare fixed-read diagnostic coverage
+<!-- DATA-OPS-A1-3-2026-09-09-SCHEDULES-CLASSIFICATION -->
+## DATA-OPS A1.3 schedules-read failure classification coverage
 
-`tests/data-ops-a1-2-observe-only-sentinels.test.mjs` pins the three new closed reason codes proven necessary by run `34277208819`: an identity mismatch still issues zero Cloudflare requests; a schedules-stage failure (transport error, non-200, or malformed envelope/result) returns `CLOUDFLARE_SCHEDULES_READ_FAILED` after exactly one request; a deployments-stage failure returns `CLOUDFLARE_DEPLOYMENTS_READ_FAILED` after exactly two; a settings-stage failure returns `CLOUDFLARE_SETTINGS_READ_FAILED` after exactly three; a fully healthy cycle still issues exactly three `GET` requests, in order, against `/schedules`, `/deployments` and `/settings`, with no request body; and the three reason codes are closed identifiers matching a fixed pattern, carrying no provider text. `tests/data-ops-a1-3-readonly-observer.test.mjs` additionally proves the new codes pass through `sanitizedSummary()` with nothing else attached — no token, account id, fingerprint, URL, status or provider message. Existing masking, format-contract, workflow-contract and migration-inventory tests remain intact and unweakened.
+`tests/data-ops-a1-2-observe-only-sentinels.test.mjs` pins the five new closed `/schedules` category codes proven necessary by run `34311398342`: a transport exception returns `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED`; HTTP 401/403 return `CLOUDFLARE_SCHEDULES_AUTH_REFUSED`; HTTP 404 returns `CLOUDFLARE_SCHEDULES_NOT_FOUND`; any other non-200 (429/500/503 exercised) returns `CLOUDFLARE_SCHEDULES_HTTP_FAILED`; HTTP 200 with unparseable JSON, an invalid envelope, or a decoder-rejected result all return `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID`; every one of those issues exactly one Cloudflare request and never a numeric status, provider text or a URL in the returned result; deployments/settings-stage failures and the fully healthy three-request cycle are unchanged; and the five codes are closed, distinct, uppercase identifiers. `tests/data-ops-a1-3-readonly-observer.test.mjs` additionally proves the new codes pass through `sanitizedSummary()` with nothing else attached — no token, account id, fingerprint, URL, status or provider message. Existing masking, format-contract, workflow-contract and migration-inventory tests remain intact and unweakened.
+
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+## DATA-OPS A1.3 Cloudflare fixed-read diagnostic coverage, merged as PR #234
+
+`tests/data-ops-a1-2-observe-only-sentinels.test.mjs` pinned the three closed reason codes proven necessary by run `34277208819`: an identity mismatch still issues zero Cloudflare requests; a deployments-stage failure returns `CLOUDFLARE_DEPLOYMENTS_READ_FAILED` after exactly two requests; a settings-stage failure returns `CLOUDFLARE_SETTINGS_READ_FAILED` after exactly three; a fully healthy cycle still issues exactly three `GET` requests, in order, against `/schedules`, `/deployments` and `/settings`, with no request body. `CLOUDFLARE_SCHEDULES_READ_FAILED` no longer exists: its former coverage is superseded by the five-category schedules coverage above.
 
 <!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
 ## DATA-OPS A1.3 first-live-observation masking coverage
