@@ -18,7 +18,7 @@ import {deepFreeze} from '../lib/canonical.mjs';
 import {assertAllowedStatement,CLAIM_SCHEDULED_EVENT,INSERT_BOOTSTRAP,INSERT_NOTIFICATION,
   INSERT_OBSERVATION,PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS,PRUNE_OBSERVATIONS,SELECT_BOOTSTRAP,
   SELECT_INCIDENT,SELECT_LATEST_SCHEDULED_SINCE,UPDATE_INCIDENT_LAST_NOTIFIED,
-  INSERT_OPPORTUNITY_ATTRIBUTION,SELECT_RUN_OPPORTUNITY,SELECT_FAILED_NOTIFICATION,
+  INSERT_OPPORTUNITY_ATTRIBUTION,SELECT_RUN_OPPORTUNITY,SELECT_OPPORTUNITY_OWNER,SELECT_FAILED_NOTIFICATION,
   UPDATE_NOTIFICATION_DELIVERY,UPSERT_INCIDENT} from './statements.mjs';
 
 export const RETENTION_OBSERVATIONS_MS=45*24*60*60*1000;
@@ -99,23 +99,34 @@ export async function opportunityEvidenceSince(db,opportunityAtIso){
     headSha:row.head_sha??null,observedAt:row.observed_at,opportunityAt:row.opportunity_at});
 }
 
-export async function assignedOpportunity(db,workflowRunId,runAttempt,candidateIsos,attributedAt){
+export async function getAssignedOpportunity(db,workflowRunId){
   let existing;
   try{existing=await first(db,SELECT_RUN_OPPORTUNITY,[workflowRunId]);}
   catch{fail('watchdog_opportunity_read_failed');}
-  if(typeof existing?.opportunity_at==='string')return existing.opportunity_at;
-  for(const candidate of candidateIsos){
-    let result;
-    try{result=await run(db,INSERT_OPPORTUNITY_ATTRIBUTION,
-      [candidate,workflowRunId,runAttempt,attributedAt]);}
-    catch{fail('watchdog_opportunity_write_failed');}
-    if(!result?.success)fail('watchdog_opportunity_write_failed');
-    if((result.meta?.changes??0)>0)return candidate;
-    try{existing=await first(db,SELECT_RUN_OPPORTUNITY,[workflowRunId]);}
-    catch{fail('watchdog_opportunity_read_failed');}
-    if(typeof existing?.opportunity_at==='string')return existing.opportunity_at;
-  }
-  return null;
+  return typeof existing?.opportunity_at==='string'?existing.opportunity_at:null;
+}
+
+export async function getOpportunityOwner(db,opportunityAt){
+  let row;
+  try{row=await first(db,SELECT_OPPORTUNITY_OWNER,[opportunityAt]);}
+  catch{fail('watchdog_opportunity_read_failed');}
+  return Number.isSafeInteger(row?.workflow_run_id)?row.workflow_run_id:null;
+}
+
+// Persists one already-resolved pair. A conflict is never resolved here by trying another
+// opportunity: matching happened before this call. The authoritative ledger is re-read so a
+// concurrent winner for this same workflow run can be reconciled, otherwise the caller fails
+// closed on the unresolved conflict.
+export async function persistOpportunityAttribution(db,{workflowRunId,runAttempt,opportunityAt,
+  attributedAt}){
+  let result;
+  try{result=await run(db,INSERT_OPPORTUNITY_ATTRIBUTION,
+    [opportunityAt,workflowRunId,runAttempt,attributedAt]);}
+  catch{fail('watchdog_opportunity_write_failed');}
+  if(!result?.success)fail('watchdog_opportunity_write_failed');
+  const persisted=await getAssignedOpportunity(db,workflowRunId);
+  return Object.freeze({assigned:persisted===opportunityAt,opportunityAt:persisted,
+    conflict:persisted!==opportunityAt});
 }
 
 const incidentFromRow=row=>row===null||row===undefined?null:deepFreeze({

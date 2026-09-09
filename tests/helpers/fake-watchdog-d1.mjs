@@ -137,6 +137,11 @@ export function createFakeWatchdogD1(){
       const result=row?{opportunity_at:row.opportunity_at}:null;
       return single?result:{results:result?[result]:[]};
     }
+    if(sql===S.SELECT_OPPORTUNITY_OWNER){
+      const [opportunityAt]=args;const row=attributions.get(opportunityAt);
+      const result=row?{workflow_run_id:row.workflow_run_id}:null;
+      return single?result:{results:result?[result]:[]};
+    }
     if(sql===S.SELECT_INCIDENT){
       const [fingerprint]=args;
       const row=incidents.get(fingerprint)??null;

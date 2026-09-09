@@ -42,6 +42,28 @@ function emptyFetch(){
 }
 function unavailableFetch(){return async()=>{throw new Error('network down');};}
 
+function overlappingFetch(){
+  const rows=[{id:901,createdAt:OPP_0817+44*60000,conclusion:'failure'},
+    {id:910,createdAt:OPP_0817+53*60000,conclusion:'success'}];
+  return async url=>{
+    const jobs=/\/actions\/runs\/(\d+)\/jobs/.exec(url);
+    if(jobs){const row=rows.find(item=>item.id===Number(jobs[1]));return {status:200,json:async()=>jobsBody([{
+      id:row.id*10+1,name:'observe-production-chain',status:'completed',conclusion:row.conclusion,
+      completed_at:new Date(row.createdAt+60000).toISOString(),run_attempt:1}])};}
+    const logs=/\/actions\/jobs\/(\d+)\/logs/.exec(url);
+    if(logs){const row=rows.find(item=>item.id*10+1===Number(logs[1]));
+      const healthy=row.conclusion==='success';const bytes=new TextEncoder().encode(JSON.stringify({
+        dayDate:'2026-09-09',verdict:healthy?'HEALTHY':'UNHEALTHY',
+        evaluationReason:healthy?'HEALTHY_EXPECTED_STATE':'OBSERVER_RUNTIME_FAILED',
+        heartbeat:healthy?'COMPLETE':'INCOMPLETE',escalationRequired:!healthy,sentinels:[]})+'\n');
+      return {status:200,headers:{get:()=>null},body:new ReadableStream({start(c){c.enqueue(bytes);c.close();}})};}
+    if(/\/workflows\/.*\/runs\?/.test(url))return {status:200,json:async()=>runsBody(rows.map(row=>({
+      id:row.id,created_at:new Date(row.createdAt).toISOString(),event:'schedule',head_sha:SHA,
+      status:'completed',conclusion:row.conclusion})))};
+    return {status:404,json:async()=>({})};
+  };
+}
+
 function makeEnv(db,{sent}){
   return {
     [WATCHDOG_GITHUB_TOKEN]:'t',
@@ -337,4 +359,25 @@ test('same failed GitHub evidence on a later watchdog cycle is replay-safe',asyn
   assert.equal(first.incidents.observerHeartbeat.transition,'NEW');
   assert.equal(replay.incidents.observerHeartbeat.transition,'NONE');
   assert.equal([...db._tables.incidents.values()].find(row=>row.problem_class==='OBSERVER_HEARTBEAT').occurrence_count,1);
+});
+
+test('different-health overlapping runs fail closed as attribution ambiguity, never healthy',async()=>{
+  const db=createFakeWatchdogD1();const sent=[];const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-3600000,
+    EmailMessageCtor:FakeEmailMessage});
+  const result=await runWatchdogCycle({env,fetchImpl:overlappingFetch(),now:OPP_0817+55*60000,
+    EmailMessageCtor:FakeEmailMessage});
+  assert.equal(result.heartbeat.state,'MALFORMED');
+  assert.equal(result.heartbeat.reasonCode,'OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS');
+  assert.equal(result.incidents.observerHeartbeat.transition,'NEW');
+  assert.equal(db._tables.attributions.size,0);
+});
+
+test('genuinely unambiguous healthy 08:17 run remains HEALTHY',async()=>{
+  const db=createFakeWatchdogD1();const sent=[];const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-3600000,
+    EmailMessageCtor:FakeEmailMessage});
+  const result=await runWatchdogCycle({env,fetchImpl:healthyFetch(OPP_0817,61,88),
+    now:OPP_0817+62*60000,EmailMessageCtor:FakeEmailMessage});
+  assert.equal(result.heartbeat.state,'HEALTHY');
 });

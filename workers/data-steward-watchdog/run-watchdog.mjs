@@ -24,12 +24,15 @@ import {classifyHeartbeat} from './lib/heartbeat.mjs';
 import {incidentFingerprint} from './lib/incident-fingerprint.mjs';
 import {reduceIncidentLifecycle,TRANSITION_NONE} from './lib/lifecycle-reducer.mjs';
 import {classifyObserverRun} from './lib/observation-classifier.mjs';
+import {resolveOpportunityAttributions} from './lib/opportunity-attribution.mjs';
 import {attributableOpportunityCandidates,latestExpectedOpportunity,OBSERVER_GRACE_MS}
   from './lib/opportunity-schedule.mjs';
 import {decideNotification} from './notification/decision.mjs';
 import {buildNotificationMessage} from './notification/message.mjs';
 import {sendOwnerNotification} from './notification/transport.mjs';
-import {assignedOpportunity,claimScheduledEvent,ensureBootstrap,getFailedNotification,getIncident,markIncidentNotified,
+import {claimScheduledEvent,ensureBootstrap,getAssignedOpportunity,getFailedNotification,getIncident,
+  getOpportunityOwner,
+  markIncidentNotified,persistOpportunityAttribution,
   opportunityEvidenceSince,pruneRetention,recordNotificationDelivery,recordObservation,
   reserveNotification,saveIncident} from './persistence/repository.mjs';
 
@@ -51,25 +54,60 @@ const hashId=async(prefix,value,cryptoImpl)=>`${prefix}-${(await sha256Hex(stabl
 // new fact rather than overwriting or losing the earlier one.
 async function recordEvidence(db,evidence,nowIso,bootstrapAt,cryptoImpl){
   if(!evidence.ok)return;
+  const prepared=[];
   for(const run of evidence.runs){
     const classified=classifyObserverRun({jobHealth:run.jobHealth,
       summaryAttempted:run.summaryAttempted,summary:run.summary});
     const eventType=run.event==='schedule'||run.event==='workflow_dispatch'?run.event:'unknown';
+    const candidates=eventType==='schedule'&&run.runAttempt!==null
+      ?attributableOpportunityCandidates({createdAt:Date.parse(run.createdAt),bootstrapAt})
+        .map(candidate=>at(candidate)):[];
+    prepared.push({run,classified,eventType,candidates});
+  }
+  const scheduled=prepared.filter(row=>row.eventType==='schedule'&&row.run.runAttempt!==null);
+  const persisted=[];
+  for(const row of scheduled){
+    const opportunityAt=await getAssignedOpportunity(db,row.run.id);
+    if(opportunityAt!==null)persisted.push({workflowRunId:row.run.id,opportunityAt});
+  }
+  const currentIds=new Set(scheduled.map(row=>row.run.id));
+  const occupied=[];
+  for(const opportunityAt of [...new Set(scheduled.flatMap(row=>row.candidates))]){
+    const workflowRunId=await getOpportunityOwner(db,opportunityAt);
+    if(workflowRunId!==null&&!currentIds.has(workflowRunId))occupied.push({workflowRunId,opportunityAt});
+  }
+  const resolution=resolveOpportunityAttributions({runs:scheduled.map(row=>({
+    workflowRunId:row.run.id,candidates:row.candidates})),persisted,occupied});
+  const assigned=new Map();
+  const ambiguousOpportunities=new Set(resolution.ambiguousOpportunities);
+  for(const assignment of resolution.assignments){
+    const row=scheduled.find(candidate=>candidate.run.id===assignment.workflowRunId);
+    const result=await persistOpportunityAttribution(db,{workflowRunId:row.run.id,
+      runAttempt:row.run.runAttempt,opportunityAt:assignment.opportunityAt,attributedAt:nowIso});
+    if(result.assigned)assigned.set(row.run.id,assignment.opportunityAt);
+    else ambiguousOpportunities.add(assignment.opportunityAt);
+  }
+  for(const {run,classified,eventType} of prepared){
     const observationId=await hashId('obs',{workflowRunId:run.id,runAttempt:run.runAttempt,
       healthState:classified.healthState},cryptoImpl);
     const evidenceHash=await sha256Hex(stableStringify({workflowRunId:run.id,eventType,
       runAttempt:run.runAttempt,healthState:classified.healthState,
       reasonCode:classified.reasonCode,headSha:run.headSha}),cryptoImpl);
-    let opportunityAt=null;
-    if(eventType==='schedule'&&run.runAttempt!==null){
-      const candidates=attributableOpportunityCandidates({createdAt:Date.parse(run.createdAt),bootstrapAt});
-      opportunityAt=await assignedOpportunity(db,run.id,run.runAttempt,
-        candidates.map(candidate=>at(candidate)),nowIso);
-    }
+    const opportunityAt=assigned.get(run.id)??null;
     await recordObservation(db,{observationId,sourceKind:eventType==='schedule'?'scheduled_run':'manual_run',
       eventType,workflowRunId:run.id,runAttempt:run.runAttempt,observedAt:nowIso,runCreatedAt:run.createdAt,
       runCompletedAt:run.jobCompletedAt,headSha:run.headSha,healthState:classified.healthState,
       opportunityAt,reasonCode:classified.reasonCode,evidenceHash,createdAt:nowIso});
+  }
+  for(const opportunityAt of [...ambiguousOpportunities].sort()){
+    const observationId=await hashId('obs',{opportunityAt,
+      healthState:'ATTRIBUTION_AMBIGUOUS',workflowRunIds:resolution.ambiguousRuns},cryptoImpl);
+    const evidenceHash=await sha256Hex(stableStringify({opportunityAt,
+      healthState:'ATTRIBUTION_AMBIGUOUS',workflowRunIds:resolution.ambiguousRuns}),cryptoImpl);
+    await recordObservation(db,{observationId,sourceKind:'scheduled_run',eventType:'schedule',
+      workflowRunId:null,runAttempt:null,observedAt:nowIso,runCreatedAt:opportunityAt,
+      runCompletedAt:null,opportunityAt,headSha:null,healthState:'ATTRIBUTION_AMBIGUOUS',
+      reasonCode:'OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS',evidenceHash,createdAt:nowIso});
   }
 }
 

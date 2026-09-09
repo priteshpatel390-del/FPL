@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import {ALLOWED_STATEMENTS,StatementNotAllowedError,assertAllowedStatement}
   from '../workers/data-steward-watchdog/persistence/statements.mjs';
 import {RETENTION_INCIDENTS_MS,RETENTION_NOTIFICATIONS_MS,RETENTION_OBSERVATIONS_MS,
-  assignedOpportunity,claimScheduledEvent,ensureBootstrap,getIncident,markIncidentNotified,opportunityEvidenceSince,
+  claimScheduledEvent,ensureBootstrap,getAssignedOpportunity,getIncident,markIncidentNotified,
+  opportunityEvidenceSince,persistOpportunityAttribution,
   pruneRetention,recordNotificationDelivery,recordObservation,reserveNotification,saveIncident}
   from '../workers/data-steward-watchdog/persistence/repository.mjs';
 import {createFakeWatchdogD1} from './helpers/fake-watchdog-d1.mjs';
@@ -79,14 +80,24 @@ test('a health-state change for the same run id is a new, distinct row',async()=
   assert.equal(db._tables.observations.size,2);
 });
 
-test('one run attempt consumes one opportunity and cannot be reused for another',async()=>{
+test('persisted attribution preserves a workflow run across rerun attempts',async()=>{
   const db=createFakeWatchdogD1();
-  const candidates=['2026-09-09T04:17:00.000Z','2026-09-09T08:17:00.000Z'];
   const now='2026-09-09T09:02:00.000Z';
-  assert.equal(await assignedOpportunity(db,501,1,candidates,now),candidates[0]);
-  await recordObservation(db,observation({opportunityAt:candidates[0]}));
-  assert.equal(await assignedOpportunity(db,501,1,candidates,now),candidates[0]);
-  assert.equal(await assignedOpportunity(db,502,1,candidates,now),candidates[1]);
+  const opportunity='2026-09-09T04:17:00.000Z';
+  assert.equal((await persistOpportunityAttribution(db,{workflowRunId:501,runAttempt:1,
+    opportunityAt:opportunity,attributedAt:now})).assigned,true);
+  assert.equal(await getAssignedOpportunity(db,501),opportunity);
+  assert.equal((await persistOpportunityAttribution(db,{workflowRunId:501,runAttempt:2,
+    opportunityAt:opportunity,attributedAt:now})).assigned,true);
+  assert.equal(db._tables.attributions.size,1);
+});
+
+test('concurrent attribution race cannot give two runs one opportunity',async()=>{
+  const db=createFakeWatchdogD1();const opportunity='2026-09-09T08:17:00.000Z';
+  const results=await Promise.all([501,502].map(workflowRunId=>persistOpportunityAttribution(db,
+    {workflowRunId,runAttempt:1,opportunityAt:opportunity,attributedAt:'2026-09-09T09:20:00.000Z'})));
+  assert.equal(results.filter(result=>result.assigned).length,1);
+  assert.equal(db._tables.attributions.size,1);
 });
 
 test('terminal SUCCESS and FAILED deterministically beat earlier IN_FLIGHT state',async()=>{
