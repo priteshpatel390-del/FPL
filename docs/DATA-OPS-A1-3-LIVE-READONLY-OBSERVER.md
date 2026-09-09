@@ -1,7 +1,7 @@
 # DATA-OPS A1.3 — Dormant live read-only observer runtime
 
-Status: **REPOSITORY-READY; SECOND LIVE OBSERVATION ATTEMPTED, IDENTITY ADMISSION SUCCEEDED, READ PHASE FAILED CLOSED; NOT LIVE-ACCEPTED**
-Source main: `d9599c4aa557ce0727c4f8b6ddd24a4778b21497` (merge of PR #233, A1.3 identifier-masking remediation)
+Status: **REPOSITORY-READY; THIRD LIVE OBSERVATION ATTEMPTED, IDENTITY ADMISSION SUCCEEDED, `/schedules` READ FAILED CLOSED; NOT LIVE-ACCEPTED**
+Source main: `465e54260005c96591bd77be0a1fe1cb44547631` (merge of PR #234, A1.3 Cloudflare fixed-read diagnostic remediation)
 
 ## First live observation attempt — 8 September 2026
 
@@ -105,6 +105,76 @@ Scripts: Read** plus **D1: Read**; no token was recreated, rotated or widened, a
 endpoint or arbitrary path/method was added. `CLOUDFLARE_SENTINEL_MAX_READS` stays exactly `3`. No
 Cloudflare or D1 mutation, no Cron change, no schedule activation and no Workflow B/C or
 opportunity-guard change occurred.
+
+## Third live observation attempt — 9 September 2026
+
+The owner performed a third attended dispatch of `Data Steward Read-Only Observer`, after the
+fixed-read diagnostic remediation above merged as PR #234: run `34311398342`, run number 3, event
+`workflow_dispatch`, branch `main`, head SHA `465e54260005c96591bd77be0a1fe1cb44547631`. **This is
+not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare
+mutation occurred.
+
+| Sentinel | State | Reason | Detail |
+|---|---|---|---|
+| GitHub | OBSERVED | `GITHUB_CHAIN_OBSERVED` | — |
+| D1 | OBSERVED | `D1_STATE_OBSERVED` | `rowsRead: 89066` |
+| Cloudflare | OBSERVATION_FAILED | `CLOUDFLARE_SCHEDULES_READ_FAILED` | fails at the first fixed read |
+
+**FACT: identity admission continues to succeed.** **FACT: the failure narrows specifically to the
+first fixed read, `GET .../schedules`.** Because reads are sequential and fail closed,
+`/deployments` and `/settings` were not attempted in this observation. Protected runtime values
+remained masked throughout, per the PR #233 remediation still holding live.
+
+**Downstream evidence, recorded but not upgraded into proof.** Production Workflow B runs appeared
+at approximately the three expected 01:17, 02:17 and 03:17 UTC opportunities on 9 September. That
+is evidence the dispatch chain is operating; it is **not** independent proof that the Cloudflare
+Cron configuration or the `/schedules` API response itself is correct, and it is not treated as
+such here.
+
+**Existing ambiguity.** `CLOUDFLARE_SCHEDULES_READ_FAILED` itself collapsed a transport error, an
+authorization refusal, a missing-resource response, any other non-200 status and a
+successful-but-unusable response into one code, so this live evidence alone cannot say which of
+those broad categories applied. See "Schedules-read failure classification" below.
+
+**Do not claim.** This evidence does not prove the token permission is wrong, that the Worker is
+missing, that the response decoder is wrong, that the Cron configuration is wrong, or that A1.3 is
+live accepted. It proves only that `/schedules` failed and identity admission did not.
+
+## Schedules-read failure classification
+
+This checkpoint replaces the single collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED` code with five
+closed categories, for `/schedules` only, so a future live run can say which broad category of
+failure applied without widening any permission, endpoint, response shape or logging surface:
+
+* `CLOUDFLARE_SCHEDULES_AUTH_REFUSED` — HTTP 401 or 403 only.
+* `CLOUDFLARE_SCHEDULES_NOT_FOUND` — HTTP 404 only.
+* `CLOUDFLARE_SCHEDULES_HTTP_FAILED` — any other non-200 HTTP response.
+* `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` — HTTP 200 but the JSON cannot be parsed, the Cloudflare
+  envelope is invalid, or the existing `decodeSchedules()` rejects the decoded result.
+* `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED` — the fetch throws, times out, or otherwise fails before
+  any HTTP response exists.
+
+The sentinel reads `response.status` internally, once, purely to select one of these five enums.
+The status itself, any Cloudflare provider error code or message, the response body, the request
+URL, headers, the account id, the fingerprint and the token never leave the sentinel — the same
+sanitisation boundary already in force, made precise per category rather than widened.
+`/deployments` and `/settings` are **unchanged** and keep their single collapsed codes
+(`CLOUDFLARE_DEPLOYMENTS_READ_FAILED`, `CLOUDFLARE_SETTINGS_READ_FAILED`); this checkpoint does not
+add equivalent sub-classification for those two stages.
+
+**Fail-closed read order and count are unchanged.** Exactly one Cloudflare request is issued for
+this classification, matching the previous collapsed behaviour exactly; a schedules failure of any
+of the five categories still stops the sequence before `/deployments` or `/settings` is attempted.
+A fully successful cycle is byte/field-identical to before: three `GET` requests, the same decoders,
+the same Cron-set comparison. `CLOUDFLARE_IDENTITY_MISMATCH` remains earlier and stronger, issuing
+zero Cloudflare requests. `CLOUDFLARE_SENTINEL_MAX_READS` stays exactly `3`.
+
+**What is deliberately unchanged.** `decodeEnvelope`, `decodeSchedules`, `decodeDeployments` and
+`decodeSettings` are byte-identical — this remediation does not guess at or correct the response
+contract those decoders enforce, and does not widen the accepted Cron expression format. The
+Cloudflare credential contract remains exactly **Workers Scripts: Read** plus **D1: Read**; no
+token was recreated, rotated or widened. The `/schedules`, `/deployments` and `/settings` paths,
+the `GET`-only method, the request timeout and the observer workflow YAML are all unchanged.
 
 ## Masking remediation
 
@@ -221,8 +291,8 @@ repository-proven read-only API. These gaps are not reported as healthy evidence
 ## Activation gate
 
 Steps 1–2 below were performed by the owner ahead of the first attended dispatch recorded above;
-step 3 is now attempted twice and still not accepted, with a further corrective sub-step required
-inside it:
+step 3 is now attempted three times and still not accepted, with a further corrective sub-step
+required inside it:
 
 1. ~~Explicitly create and configure protected environment `data-steward-readonly`, with deployment
    branches/tags set to **Selected branches and tags → exact branch `main`**.~~ Done: the first
@@ -231,19 +301,22 @@ inside it:
    fingerprint and one token limited to **Workers Scripts Read** plus **D1 Read**.~~ Done. The
    fingerprint was initially stored in the wrong shape (see "First live observation attempt"); the
    owner has since corrected it to the raw 64-character lowercase SHA-256 hex, proved by the second
-   attempt's successful identity admission (see "Second live observation attempt").
+   and third attempts' successful identity admission.
 3. Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.
-   **Attempted twice and not yet accepted.** Run `34269989975` failed closed at Cloudflare identity
-   admission (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819`, after that
-   merge, passed identity admission but failed closed during the Cloudflare read phase with the
-   then-collapsed `CLOUDFLARE_READ_FAILED`. Before dispatching again: merge this diagnostic
-   remediation, confirm exact-`main` Verify success, then perform one new attended manual dispatch
-   on the then-current `main`. Read the new closed reason code
-   (`CLOUDFLARE_SCHEDULES_READ_FAILED` / `CLOUDFLARE_DEPLOYMENTS_READ_FAILED` /
-   `CLOUDFLARE_SETTINGS_READ_FAILED`) to identify the precise failing stage before deciding whether
-   the fix is configuration, credential permission, a response-contract correction or another
-   cause. Accept the run only if the GitHub, D1 and Cloudflare sentinels all observe successfully
-   and the cross-source verdict is healthy.
+   **Attempted three times and not yet accepted.** Run `34269989975` failed closed at Cloudflare
+   identity admission (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819`,
+   after that merge, passed identity admission but failed closed during the Cloudflare read phase
+   with the then-collapsed `CLOUDFLARE_READ_FAILED`, resolved into per-stage codes by PR #234. Run
+   `34311398342`, after that merge, again passed identity admission and narrowed the failure to
+   `/schedules`, but with the then-collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED`. Before dispatching
+   again: merge this classification remediation, confirm exact-`main` Verify success, then perform
+   one new attended manual dispatch on the then-current `main`. Read the new closed `/schedules`
+   category code (`CLOUDFLARE_SCHEDULES_AUTH_REFUSED` / `CLOUDFLARE_SCHEDULES_NOT_FOUND` /
+   `CLOUDFLARE_SCHEDULES_HTTP_FAILED` / `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` /
+   `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED`) to identify the precise underlying cause before deciding
+   whether the fix is configuration, credential permission, a response-contract correction or
+   another cause. Accept the run only if the GitHub, D1 and Cloudflare sentinels all observe
+   successfully and the cross-source verdict is healthy.
 4. Only after that acceptance, separately approve and set repository variable
    `DATA_STEWARD_SCHEDULED_ENABLED` to exact `true`. Scheduled activation is a later, separate
    approval and remains NOT LIVE-ACTIVATED regardless of how step 3 resolves.

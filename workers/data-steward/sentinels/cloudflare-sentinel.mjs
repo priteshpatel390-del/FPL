@@ -48,9 +48,18 @@ export const CLOUDFLARE_OBSERVATION_OK='CLOUDFLARE_CONFIGURATION_OBSERVED';
 // Live evidence (run 34277208819) proved the collapsed `CLOUDFLARE_READ_FAILED` code could not
 // identify which of the three fixed reads actually failed. Each read now carries its own closed
 // reason code instead, naming only the stage — never a status, provider message, URL or body.
-export const CLOUDFLARE_SCHEDULES_READ_FAILED='CLOUDFLARE_SCHEDULES_READ_FAILED';
 export const CLOUDFLARE_DEPLOYMENTS_READ_FAILED='CLOUDFLARE_DEPLOYMENTS_READ_FAILED';
 export const CLOUDFLARE_SETTINGS_READ_FAILED='CLOUDFLARE_SETTINGS_READ_FAILED';
+// Live evidence (run 34311398342) proved identity admission now succeeds and the failure narrows
+// to the first fixed read, `/schedules`, but the still-collapsed per-stage code could not say
+// which broad category of failure that was. These five replace it for `/schedules` only — the
+// classification is read internally from the HTTP status and then discarded; only the matching
+// enum below ever leaves this module.
+export const CLOUDFLARE_SCHEDULES_AUTH_REFUSED='CLOUDFLARE_SCHEDULES_AUTH_REFUSED';
+export const CLOUDFLARE_SCHEDULES_NOT_FOUND='CLOUDFLARE_SCHEDULES_NOT_FOUND';
+export const CLOUDFLARE_SCHEDULES_HTTP_FAILED='CLOUDFLARE_SCHEDULES_HTTP_FAILED';
+export const CLOUDFLARE_SCHEDULES_RESPONSE_INVALID='CLOUDFLARE_SCHEDULES_RESPONSE_INVALID';
+export const CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED='CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED';
 export const CLOUDFLARE_IDENTITY_MISMATCH='CLOUDFLARE_IDENTITY_MISMATCH';
 export const CLOUDFLARE_CRON_MISMATCH='CLOUDFLARE_CRON_SET_MISMATCH';
 // The permanent, named limitation. It is a reason code rather than a silence so that it appears
@@ -164,6 +173,32 @@ async function read(request,fetchImpl){
   return decodeEnvelope(body);
 }
 
+// The one narrow exception to the generic `read()` helper above: `/schedules` is the read live
+// evidence has now twice named as the actual failure point, so its failure is classified into one
+// of five closed categories instead of collapsing into a single code. The classification reads
+// `response.status` internally to select an enum member and nothing else — the status itself,
+// any provider body, message, header or the request URL never leave this function. Exactly one
+// request is issued, matching the generic helper's shape exactly.
+async function readSchedulesStage(request,fetchImpl){
+  let response;
+  try{
+    response=await fetchImpl(request.url,{...request.init,signal:AbortSignal.timeout(CLOUDFLARE_REQUEST_TIMEOUT_MS)});
+  }catch{
+    return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED};
+  }
+  const status=response?.status;
+  if(status===401||status===403)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_AUTH_REFUSED};
+  if(status===404)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_NOT_FOUND};
+  if(status!==200)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_HTTP_FAILED};
+  let body;
+  try{body=await response.json();}catch{
+    return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_RESPONSE_INVALID};
+  }
+  const crons=decodeSchedules(decodeEnvelope(body));
+  if(crons===null)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_RESPONSE_INVALID};
+  return {crons,reasonCode:null};
+}
+
 // Issues exactly the three fixed reads and returns the decoded configuration view. Every failure
 // is a failed observation carrying a closed reason code; no request URL, account id, token,
 // header, response body or provider error message ever leaves this module.
@@ -171,8 +206,9 @@ export async function readCloudflareConfiguration({accountId,accountFingerprint,
   if(typeof fetchImpl!=='function')fail('cloudflare_input_invalid');
   try{assertProductionAccount({accountId,accountFingerprint});}
   catch{return deepFreeze({ok:false,reasonCode:CLOUDFLARE_IDENTITY_MISMATCH});}
-  const schedules=decodeSchedules(await read(cloudflareReadRequest(CLOUDFLARE_READ_SCHEDULES,{accountId,token}),fetchImpl));
-  if(schedules===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_SCHEDULES_READ_FAILED});
+  const schedulesStage=await readSchedulesStage(cloudflareReadRequest(CLOUDFLARE_READ_SCHEDULES,{accountId,token}),fetchImpl);
+  if(schedulesStage.crons===null)return deepFreeze({ok:false,reasonCode:schedulesStage.reasonCode});
+  const schedules=schedulesStage.crons;
   const deployment=decodeDeployments(await read(cloudflareReadRequest(CLOUDFLARE_READ_DEPLOYMENTS,{accountId,token}),fetchImpl));
   if(deployment===null)return deepFreeze({ok:false,reasonCode:CLOUDFLARE_DEPLOYMENTS_READ_FAILED});
   const settings=decodeSettings(await read(cloudflareReadRequest(CLOUDFLARE_READ_SETTINGS,{accountId,token}),fetchImpl));
