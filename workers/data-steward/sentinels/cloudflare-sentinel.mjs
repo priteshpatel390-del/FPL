@@ -121,28 +121,41 @@ export function decodeEnvelope(body){
   return Object.hasOwn(body,'result')?body.result:null;
 }
 
-// The exact predicates `decodeSchedules` requires a live result to satisfy, evaluated in the same
-// order it always has, each returning its own closed reason code instead of a shared null. This is
-// the one place those predicates are written down; `decodeSchedules` below is derived from it
-// rather than repeating them, so the decoder and this classification cannot drift into two
-// different definitions of "valid".
-export function classifySchedulesPayload(result){
-  if(result===null||typeof result!=='object'||Array.isArray(result))return CLOUDFLARE_SCHEDULES_RESULT_INVALID;
-  if(!Array.isArray(result.schedules))return CLOUDFLARE_SCHEDULES_ARRAY_INVALID;
-  if(result.schedules.length>16)return CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED;
+// The one place the `/schedules` payload predicates are written down, evaluated in a single pass
+// in the exact order they have always been checked. Every other function that needs to know
+// whether a result is a valid schedules payload — the diagnostic classification, the decoder, and
+// the live per-cycle read — calls this once and reads the answer it needs from its result, so the
+// predicates themselves exist in exactly one place and cannot drift into two different notions of
+// "valid". `crons` is the successful extraction (identical to the pre-existing direct extraction,
+// same order, same string-row/`row.cron` acceptance); `reasonCode` is `null` on success and one of
+// the five closed schedules-payload codes otherwise. Exactly one of the two is non-null.
+function analyseSchedulesPayload(result){
+  if(result===null||typeof result!=='object'||Array.isArray(result))
+    return {reasonCode:CLOUDFLARE_SCHEDULES_RESULT_INVALID,crons:null};
+  if(!Array.isArray(result.schedules))
+    return {reasonCode:CLOUDFLARE_SCHEDULES_ARRAY_INVALID,crons:null};
+  if(result.schedules.length>16)
+    return {reasonCode:CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED,crons:null};
+  const crons=[];
   for(const row of result.schedules){
     const cron=typeof row==='string'?row:row?.cron;
-    if(typeof cron!=='string')return CLOUDFLARE_SCHEDULES_CRON_NOT_STRING;
-    if(!CRON.test(cron))return CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED;
+    if(typeof cron!=='string')return {reasonCode:CLOUDFLARE_SCHEDULES_CRON_NOT_STRING,crons:null};
+    if(!CRON.test(cron))return {reasonCode:CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED,crons:null};
+    crons.push(cron);
   }
-  return null;
+  return {reasonCode:null,crons};
+}
+
+// Delegates to `analyseSchedulesPayload` rather than repeating its predicates.
+export function classifySchedulesPayload(result){
+  return analyseSchedulesPayload(result).reasonCode;
 }
 
 // `GET .../schedules` returns `{ schedules: [{ cron, created_on, modified_on }] }`. Only the cron
-// expressions are extracted; timestamps and any other field are deliberately left behind.
+// expressions are extracted; timestamps and any other field are deliberately left behind. Delegates
+// to `analyseSchedulesPayload` rather than repeating its predicates.
 export function decodeSchedules(result){
-  if(classifySchedulesPayload(result)!==null)return null;
-  return result.schedules.map(row=>typeof row==='string'?row:row.cron);
+  return analyseSchedulesPayload(result).crons;
 }
 
 // `GET .../deployments` returns the Worker's deployment history. Only the newest deployment's own
@@ -211,9 +224,11 @@ async function read(request,fetchImpl){
 // response-processing step or decoder predicate first produced an unusable result, entirely
 // internally, to select an enum member and nothing else — the status, any provider body, message,
 // header, the request URL, or any exception/parse-error text never leave this function. Exactly
-// one request is issued, matching the generic helper's shape exactly. `decodeEnvelope` and
-// `decodeSchedules` are called exactly as the generic `read()` helper would call them; only the
-// failure of each step is now named separately instead of both being folded into one code.
+// one request is issued, matching the generic helper's shape exactly. `decodeEnvelope` is called
+// exactly as the generic `read()` helper would call it; a decoded envelope is passed to
+// `analyseSchedulesPayload` exactly once — never through `decodeSchedules` and
+// `classifySchedulesPayload` separately — so a live cycle runs the five payload predicates a single
+// time. Only the failure of each step is named separately instead of being folded into one code.
 async function readSchedulesStage(request,fetchImpl){
   let response;
   try{
@@ -231,11 +246,7 @@ async function readSchedulesStage(request,fetchImpl){
   }
   const envelope=decodeEnvelope(body);
   if(envelope===null)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID};
-  const crons=decodeSchedules(envelope);
-  // `decodeSchedules` is derived from `classifySchedulesPayload`, so `crons===null` here always
-  // means the classifier found a non-null predicate failure; there is no third outcome to guard.
-  if(crons===null)return {crons:null,reasonCode:classifySchedulesPayload(envelope)};
-  return {crons,reasonCode:null};
+  return analyseSchedulesPayload(envelope);
 }
 
 // Issues exactly the three fixed reads and returns the decoded configuration view. Every failure

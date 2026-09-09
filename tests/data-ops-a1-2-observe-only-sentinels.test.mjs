@@ -607,11 +607,17 @@ test('a cron string the existing CRON pattern rejects is classified as CLOUDFLAR
   await scheduleFailureCase(cfEnvelope({schedules:['not a cron']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
 });
 
-// `classifySchedulesPayload` is the single shared definition `decodeSchedules` is derived from, so
-// this is a structural guarantee rather than a coincidence: for every input, `decodeSchedules`
-// returns null if and only if `classifySchedulesPayload` returns a non-null code, and whenever both
-// accept, the extracted cron list is identical to the pre-existing direct extraction.
-test('decodeSchedules and classifySchedulesPayload can never disagree about which live results are valid',()=>{
+// `classifySchedulesPayload` and `decodeSchedules` are both one-line delegations to the single
+// internal `analyseSchedulesPayload`, so on any input they read the `reasonCode` and `crons` fields
+// of the exact same evaluation rather than running the five predicates twice — there is no second
+// implementation that could drift, and this is a property of the source rather than something a
+// finite test suite could prove for every possible input. What this test *does* establish, over the
+// fixture set below, is behavioural: for each fixture, `decodeSchedules` returns `null` exactly when
+// `classifySchedulesPayload` returns a non-null code, and whenever `decodeSchedules` accepts, its
+// extracted cron list matches the pre-existing direct row/`row.cron` extraction exactly. The fixture
+// set exercises every predicate branch and the successful path, but it is a set of examples, not a
+// proof of every input this function could ever receive.
+test('decodeSchedules and classifySchedulesPayload agree on the fixture set exercising every predicate branch',()=>{
   const cases=[null,'nope',42,[],{},{schedules:'nope'},{schedules:null},{schedules:{cron:'17 1 * * *'}},
     {schedules:new Array(17).fill({cron:'17 1 * * *'})},{schedules:[{}]},{schedules:[{cron:null}]},
     {schedules:[{cron:42}]},{schedules:[null]},{schedules:[42]},{schedules:[{cron:'DROP TABLE x'}]},
@@ -625,6 +631,21 @@ test('decodeSchedules and classifySchedulesPayload can never disagree about whic
       assert.deepEqual(decoded,result.schedules.map(row=>typeof row==='string'?row:row.cron));
     }
   }
+});
+
+// Structural regression: a live cycle must evaluate the five schedules-payload predicates exactly
+// once per decoded envelope. `readSchedulesStage` is required to call the shared internal analyser
+// directly rather than calling the public `decodeSchedules`/`classifySchedulesPayload` wrappers
+// separately, which would otherwise run the same predicates twice on a rejected live payload.
+test('readSchedulesStage evaluates the schedules payload once, through the shared analyser, never through decodeSchedules and classifySchedulesPayload separately',()=>{
+  const text=source('cloudflare-sentinel.mjs');
+  const match=text.match(/async function readSchedulesStage\([^)]*\)\{([\s\S]*?)\n\}/);
+  assert.ok(match,'readSchedulesStage function body not found');
+  const body=match[1];
+  assert.doesNotMatch(body,/\bdecodeSchedules\(/);
+  assert.doesNotMatch(body,/\bclassifySchedulesPayload\(/);
+  assert.match(body,/\banalyseSchedulesPayload\(/);
+  assert.equal((body.match(/\banalyseSchedulesPayload\(/g)??[]).length,1);
 });
 
 test('a healthy envelope and a valid schedules payload still succeed and proceed to deployments/settings',async()=>{
