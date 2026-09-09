@@ -1,5 +1,12 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
+## DATA-OPS A1.3 Cloudflare Cron semantic normalisation limitations
+
+The sixth attended observer dispatch (run `34342701912`, head `dfc78882a507e90662f2937582ab0b35af34bdec`) is **not** a live acceptance. It proved identity admission, HTTP 200, JSON parsing, envelope decoding and every payload-decode predicate up to the cron pattern itself all passed, but the then-current per-field-length Cron pattern rejected a row whose cron value was a legitimate string. The owner's Cloudflare dashboard separately showed the approved daily 01:17 trigger can be represented as a full day-of-month enumeration rather than the repository's textual wildcard.
+
+This checkpoint corrects only the narrow text-versus-semantics gap: it canonicalises exactly the supported schedule subset (minute, hour, day-of-month `*`/complete-domain, month `*`, day-of-week `*`) so two legitimate Cloudflare encodings of the same schedule compare equal; it does not accept any schedule other than the three approved expressions, does not widen the payload-decode taxonomy from PR #237, does not correct any live value, does not dispatch the observer again, and does not activate scheduling. Whether this correction is sufficient for live acceptance remains unknown until a further attended dispatch.
+
 <!-- DATA-OPS-A1-3-2026-09-09-SCHEDULES-PAYLOAD-DECODE -->
 ## DATA-OPS A1.3 `decodeSchedules` payload-decode diagnostic limitations
 

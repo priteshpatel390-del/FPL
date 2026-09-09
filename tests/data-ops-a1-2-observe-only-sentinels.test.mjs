@@ -24,7 +24,7 @@ import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE
   decodeRunsPage,interpretGithubDay,mainRefRequest,parseGuardSemanticOutcome,readGithubChain,
   repositoryGateLogRequest,runJobsRequest,
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
-import {CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_IDENTITY_MISMATCH,
+import {CLOUDFLARE_CRON_MISMATCH,CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_IDENTITY_MISMATCH,
   CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_ARRAY_INVALID,
   CLOUDFLARE_SCHEDULES_AUTH_REFUSED,CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED,
   CLOUDFLARE_SCHEDULES_CRON_NOT_STRING,CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED,
@@ -605,6 +605,117 @@ test('a schedule row with no usable cron value is classified as CLOUDFLARE_SCHED
 test('a cron string the existing CRON pattern rejects is classified as CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED',async()=>{
   await scheduleFailureCase(cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
   await scheduleFailureCase(cfEnvelope({schedules:['not a cron']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+// Live evidence (run 34342701912, head dfc78882a507e90662f2937582ab0b35af34bdec) proved a
+// byte-identical-text requirement was itself the defect: the owner's Cloudflare dashboard showed
+// the approved daily 01:17 trigger legitimately represented as a full day-of-month enumeration
+// (`17 1 1,2,...,31 * *`) rather than the repository's textual wildcard. These tests pin the narrow
+// semantic canonicaliser that lets both encodings compare equal, without accepting anything beyond
+// the closed subset this observer needs.
+const fullDayOfMonth=Array.from({length:31},(_,day)=>day+1).join(',');
+const expanded=(minute,hour)=>`${minute} ${hour} ${fullDayOfMonth} * *`;
+
+test('a full day-of-month enumeration for each approved daily schedule canonicalises to the repository textual wildcard',()=>{
+  assert.deepEqual(decodeSchedules({schedules:[expanded(17,1)]}),['17 1 * * *']);
+  assert.deepEqual(decodeSchedules({schedules:[expanded(17,2)]}),['17 2 * * *']);
+  assert.deepEqual(decodeSchedules({schedules:[expanded(17,3)]}),['17 3 * * *']);
+});
+
+test('a mixed API result of wildcard and full day-of-month enumeration rows still canonicalises to the exact approved set',()=>{
+  const decoded=decodeSchedules({schedules:['17 1 * * *',{cron:expanded(17,2)},expanded(17,3)]});
+  assert.deepEqual(decoded,[...EXPECTED_CRON_EXPRESSIONS]);
+  assert.equal(cronSetMatches(decoded),true);
+});
+
+test('a live cycle whose /schedules response uses full day-of-month enumerations still succeeds and uses exactly three reads',async()=>{
+  const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),
+    schedules:cfEnvelope({schedules:[expanded(17,1),expanded(17,2),expanded(17,3)]})}));
+  const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:impl});
+  assert.equal(result.ok,true);
+  assert.equal(result.cronSetExpected,true);
+  assert.deepEqual([...result.cronExpressions],[...EXPECTED_CRON_EXPRESSIONS].sort());
+  assert.equal(impl.seen.length,3);
+  // The canonical output never carries the raw expanded provider text.
+  assert.doesNotMatch(JSON.stringify(result),new RegExp(fullDayOfMonth.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+});
+
+test('a canonicalised but different daily schedule still reaches CLOUDFLARE_CRON_SET_MISMATCH rather than being accepted',async()=>{
+  const minuteDrift=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:fakeFetch(healthyRoutes({bRuns:runsBody([]),
+      schedules:cfEnvelope({schedules:['18 1 * * *','17 2 * * *','17 3 * * *']})}))});
+  assert.equal(minuteDrift.ok,false);
+  assert.equal(minuteDrift.reasonCode,CLOUDFLARE_CRON_MISMATCH);
+  const hourDrift=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:fakeFetch(healthyRoutes({bRuns:runsBody([]),
+      schedules:cfEnvelope({schedules:[expanded(17,4),'17 2 * * *','17 3 * * *']})}))});
+  assert.equal(hourDrift.ok,false);
+  assert.equal(hourDrift.reasonCode,CLOUDFLARE_CRON_MISMATCH);
+  // `18 1 * * *` and the hour-4 enumeration both parse successfully (three requests were issued);
+  // the mismatch comes from set comparison, not from the pattern stage.
+});
+
+test('a partial day-of-month list is not canonicalised to the wildcard and fails closed',async()=>{
+  const partial=Array.from({length:30},(_,day)=>day+1).join(','); // 1..30, missing day 31
+  await scheduleFailureCase(cfEnvelope({schedules:[`17 1 ${partial} * *`]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('a day-of-month list missing entries fails closed rather than being treated as the complete domain',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 1,2,3 * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('a day-of-month list with a duplicate entry fails closed',async()=>{
+  // 31 entries, but day 31 is replaced by a repeat of day 1, so day 31 itself is missing and day 1
+  // appears twice: neither a complete domain nor a supported shape, and there is no existing reason
+  // to treat a duplicated day specially, so this is rejected exactly like any other incomplete list.
+  const withDuplicate=[...Array.from({length:30},(_,day)=>day+1),1].join(',');
+  await scheduleFailureCase(cfEnvelope({schedules:[`17 1 ${withDuplicate} * *`]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('an out-of-range day-of-month value fails closed',async()=>{
+  const zeroBased=Array.from({length:31},(_,day)=>day).join(','); // 0..30, day 0 is out of range
+  await scheduleFailureCase(cfEnvelope({schedules:[`17 1 ${zeroBased} * *`]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  const overflow=fullDayOfMonth.replace(/,31$/,',32'); // day 32 is out of range
+  await scheduleFailureCase(cfEnvelope({schedules:[`17 1 ${overflow} * *`]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('a minute outside 0-59 fails closed',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:['60 1 * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['-1 1 * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('an hour outside 0-23 fails closed',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:['17 24 * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['17 -1 * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('malformed minute/hour number syntax fails closed',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:['1a 1 * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['1.5 1 * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1a * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('a six-field or seven-field cron fails closed',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 * * * *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 * * * * 2026']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('unsupported month or day-of-week semantics fail closed',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 * 1 *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 * JAN *']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 * * 1']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['17 1 * * MON']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+test('a rejected day-of-month enumeration never exposes the raw expanded cron text in the observation result',async()=>{
+  const partial=Array.from({length:30},(_,day)=>day+1).join(',');
+  const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules:cfEnvelope({schedules:[`17 1 ${partial} * *`]})}));
+  const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:impl});
+  assert.deepEqual(Object.keys(result),['ok','reasonCode']);
+  assert.equal(result.reasonCode,CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  assert.doesNotMatch(JSON.stringify(result),/,3\d,|,2\d,/);
 });
 
 // `classifySchedulesPayload` and `decodeSchedules` are both one-line delegations to the single

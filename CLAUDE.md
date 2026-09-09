@@ -1,5 +1,22 @@
+<!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
+### Current Data-Ops checkpoint — A1.3 Cloudflare Cron semantic normalisation (unmerged)
+
+**Supersedes the payload-decode block below as the current status; that remediation merged as PR #237, and post-merge `main` is `dfc78882a507e90662f2937582ab0b35af34bdec` with exact-`main` Verify success (run `34342369935`).** The owner performed a sixth attended `Data Steward Read-Only Observer` dispatch: workflow run `34342701912`, run number 7, event `workflow_dispatch`, branch `main`, head SHA `dfc78882a507e90662f2937582ab0b35af34bdec`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
+
+**FACT: the payload-decode split above now correctly narrows to a single predicate.** GitHub sentinel `OBSERVED` / `GITHUB_CHAIN_OBSERVED`. D1 sentinel `OBSERVED` / `D1_STATE_OBSERVED`, `rowsRead: 89066`. Cloudflare sentinel `OBSERVATION_FAILED` / `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED` — identity admission, HTTP 200, JSON parsing, envelope decoding, result-shape and array-bound checks all passed; a row's cron value was a string but the then-current per-field-length Cron pattern rejected it.
+
+**FACT: owner Cloudflare dashboard evidence showed the correct schedule semantics represented in an unexpected text encoding.** `teamsheet-data-s2-dispatcher` shows exactly three live Cron Triggers at 01:17/02:17/03:17 UTC, matching the repository-declared production crons. Its Cron-expression view for the 01:17 trigger displayed an expanded day-of-month field beginning `17 1 1,2,3,...` rather than the repository's textual wildcard `17 1 * * *` — proving Cloudflare can legitimately represent a daily schedule as a complete day-of-month enumeration rather than only as `*`.
+
+**ROOT CAUSE:** the observer required byte-identical Cron text rather than comparing schedule semantics, and its per-field 16-character bound could reject a legitimate full-domain enumeration before any semantic comparison ran.
+
+**IMPLEMENTATION:** a narrow deterministic canonicaliser for exactly the supported schedule subset — minute `0`-`59`, hour `0`-`23`, day-of-month either `*` or the complete `1`..`31` domain (folded to `*`), month and day-of-week always `*` — replaces the old per-field regex inside the same single-pass `analyseSchedulesPayload()` from PR #237. Two valid Cloudflare encodings of the same schedule now compare equal; `cronSetMatches()` still requires the canonicalised set to equal the three approved expressions exactly, so a different-but-parseable schedule still reaches `CLOUDFLARE_CRON_SET_MISMATCH` rather than being accepted. The five closed payload-decode categories from PR #237 are unchanged and unremoved.
+
+**Do not claim.** This checkpoint does not yet claim live success, A1.3 acceptance, or scheduled activation. Wider documentation cleanup stays deferred until after live acceptance, per explicit owner instruction.
+
+**Next live gate, in order:** (1) owner reviews and approves this PR; (2) merge only after explicit owner approval; (3) exact-`main` Verify success on the merged commit; (4) one further attended manual observer dispatch; (5) if Cloudflare, D1 and GitHub all observe successfully, evaluate A1.3 live acceptance; (6) perform final documentation reconciliation; (7) scheduled activation remains a later, separate, still-unapproved gate. See [A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-SCHEDULES-PAYLOAD-DECODE -->
-### Current Data-Ops checkpoint — A1.3 `decodeSchedules` payload-decode diagnostic split (unmerged)
+### Current Data-Ops checkpoint — A1.3 `decodeSchedules` payload-decode diagnostic split, merged as PR #237
 
 **Supersedes the response-layer block below as the current status; that remediation merged as PR #236, and post-merge `main` is `dea6a3239443970dd2e5495fe7759e187fb34e20` with exact-`main` Verify success.** The owner performed a fifth attended `Data Steward Read-Only Observer` dispatch: workflow run `34325772296`, run number 5, event `workflow_dispatch`, branch `main`, head SHA `dea6a3239443970dd2e5495fe7759e187fb34e20`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
 
