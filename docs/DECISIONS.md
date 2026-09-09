@@ -5,6 +5,8 @@
 
 Decision: host observation in a dedicated GitHub Actions workflow, not a watched production component or new Cloudflare Worker. Declare 04:17 and 08:17 UTC opportunities, but require exact repository variable value `true` before scheduled job execution and exact ref `refs/heads/main` for every event. Use `deployment: false` to prevent observer-created GitHub Deployment objects. Keep manual dispatch independent for attended acceptance. Use ephemeral `github.token` with Contents/Actions/Checks read and one owner-created Cloudflare token limited to Workers Scripts Read and D1 Read. Authenticated repository tooling received HTTP 403 reading that live variable and proves nothing about it; owner UI verification records it as absent, with nothing created, edited or deleted, so the scheduled observer is dormant on merge and activation stays a separate owner-approved step. Add no persistence or actuator. [Full boundary](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
 
+**Outcome, recorded without reopening the decision.** After a Cron text-versus-semantics correction (PR #238), the manual attended path this decision specifies passed live technical acceptance: run `34346126189` on exact `main` `174a7ece2f6c52257902c79ac9a46de846edeb91` returned `HEALTHY`/`HEALTHY_EXPECTED_STATE` with Cloudflare, D1 and GitHub all `OBSERVED`. The architecture above is unchanged by that result — no watched production component or new Worker was introduced, no persistence or actuator was added. Scheduled activation remains the separate owner-approved step this decision already names; the live acceptance does not itself constitute that approval.
+
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->
 ## D-DATA-OPS-A1.2 — observation is not authorization

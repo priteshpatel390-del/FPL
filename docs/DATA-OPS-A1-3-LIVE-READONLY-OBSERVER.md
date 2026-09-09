@@ -1,7 +1,7 @@
-# DATA-OPS A1.3 — Dormant live read-only observer runtime
+# DATA-OPS A1.3 — Live-accepted read-only observer runtime; scheduled activation still separate
 
-Status: **REPOSITORY-READY; SIXTH LIVE OBSERVATION ATTEMPTED, PAYLOAD-DECODE NARROWED TO THE CRON PATTERN STAGE, A CANONICALISATION FIX IS PENDING OWNER REVIEW; NOT LIVE-ACCEPTED**
-Source main: `dfc78882a507e90662f2937582ab0b35af34bdec` (merge of PR #237, A1.3 `decodeSchedules` payload-decode diagnostic split). Wider reconciliation of this document is deferred until after live acceptance, per explicit owner instruction; see CLAUDE.md for the current checkpoint.
+Status: **LIVE ACCEPTED (MANUAL OBSERVATION) — 9 September 2026. Scheduled/automatic monitoring remains NOT ACTIVATED; `DATA_STEWARD_SCHEDULED_ENABLED` was last owner-verified absent (see "Outcome" below), no run or PR creates, sets, modifies or reads it, and activation is a later, separate, explicit owner decision.**
+Source main: `174a7ece2f6c52257902c79ac9a46de846edeb91` (merge of PR #238, A1.3 Cloudflare Cron semantic normalisation). See the "Live acceptance" section below for the decisive evidence, and CLAUDE.md for the current canonical checkpoint summary.
 
 ## First live observation attempt — 8 September 2026
 
@@ -305,15 +305,16 @@ predicate `decodeSchedules()` evaluates, in the same order:
 * `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED` — the extracted cron is a string but the existing
   `CRON` regular expression rejects it.
 
-**`decodeSchedules()` is not modified.** A new pure function, `classifySchedulesPayload(result)`,
-is the single place these five predicates are written down, evaluated in the exact order the
-decoder always checked them; `decodeSchedules()` is now derived from it — it returns `null` exactly
-when the classifier returns a non-null code, and otherwise extracts the same cron list the same
-way. This is a refactor for a single shared source of truth, not two independent notions of
-"valid": a permanent test proves the decoder and the classifier can never disagree, for every input
-shape covered by the existing decoder tests and every new predicate case. The `CRON` regular
-expression, the 16-entry bound, string-row acceptance, `row.cron` extraction and the returned cron
-list itself are all byte-identical to before.
+**`decodeSchedules()`'s accepted behaviour is not modified.** As merged, a single internal function,
+`analyseSchedulesPayload(result)`, is the sole place these five predicates are written down and
+evaluated — exactly once per payload, in the exact order the decoder always checked them — and the
+exported `classifySchedulesPayload(result)` and `decodeSchedules(result)` are both one-line
+delegations to it: the former returns its reason code, the latter returns its extracted cron list.
+This is a single shared source of truth, not two independent notions of "valid": a permanent test
+proves the two exported functions can never disagree, for every input shape covered by the existing
+decoder tests and every new predicate case. The `CRON` regular expression, the 16-entry bound,
+string-row acceptance, `row.cron` extraction and the returned cron list itself are all byte-identical
+to before.
 
 Which predicate first rejected the live result is read internally, once, purely to select one of
 these five enums. The parsed or raw response body, its object keys, any schedules entry, any Cron
@@ -344,6 +345,127 @@ reports one of these five codes.
 construction, the Accept header, the 15-second timeout, the sequential read ordering, the observer
 workflow YAML, the three approved production Cron expressions and the request-count behaviour on
 every other failure path are all unchanged.
+
+## Live observation attempt — 9 September 2026 (run 34342701912)
+
+The owner performed an attended dispatch of `Data Steward Read-Only Observer`, after the
+payload-decode diagnostic split above merged as PR #237: run `34342701912`, run number 7, event
+`workflow_dispatch`, branch `main`, head SHA `dfc78882a507e90662f2937582ab0b35af34bdec`. **This was
+not, by itself, a live acceptance.** No collection, repair, D1 write, schedule activation or
+Cloudflare mutation occurred.
+
+| Sentinel | State | Reason | Detail |
+|---|---|---|---|
+| GitHub | OBSERVED | `GITHUB_CHAIN_OBSERVED` | — |
+| D1 | OBSERVED | `D1_STATE_OBSERVED` | `rowsRead: 89066` |
+| Cloudflare | OBSERVATION_FAILED | `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED` | identity admission, HTTP 200, JSON parsing, envelope decoding, result-shape and array-bound checks all passed; a row's cron value was a string but the then-current Cron pattern rejected it |
+
+**FACT: this narrowed the payload-decode split above to a single predicate.** The result did not
+classify as `CLOUDFLARE_SCHEDULES_RESULT_INVALID`, `CLOUDFLARE_SCHEDULES_ARRAY_INVALID`,
+`CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED` or `CLOUDFLARE_SCHEDULES_CRON_NOT_STRING` — every predicate
+before the Cron pattern test passed. Protected runtime values remained masked throughout, per the
+PR #233 remediation still holding live.
+
+**FACT: separately, the owner's Cloudflare dashboard inspection of `teamsheet-data-s2-dispatcher`
+proved the root cause.** The dashboard shows exactly three live Cron Triggers at 01:17, 02:17 and
+03:17 UTC, matching the repository-declared production crons — confirming configured trigger count
+and timing. Its Cron-expression view for the 01:17 trigger displayed an expanded day-of-month field
+beginning `17 1 1,2,3,...` rather than the repository's textual wildcard `17 1 * * *`: the same
+schedule, a different legitimate Cloudflare text encoding of it, which the then-current
+byte-identical-text Cron pattern could never accept. (A separately opened edit modal briefly showed
+Cloudflare's unrelated `*/30 * * * *` editor default; that modal was cancelled and never saved, and
+the production trigger list continued to show exactly 01:17/02:17/03:17 throughout — that default
+is not live production state and is recorded here only to rule it out.)
+
+**Do not claim.** This evidence does not itself constitute a fix. It identifies the root cause and
+motivates the correction below; whether that correction is sufficient for live acceptance was
+unknown until the run recorded in "Live acceptance" below (run `34346126189`, run number 8). See
+"Cron semantic normalisation" immediately below for the correction this evidence justified.
+
+## Cron semantic normalisation
+
+The live observation above (run `34342701912`) proved the observer required byte-identical Cron text rather than
+comparing schedule semantics, and that its per-field Cron pattern — sized for the textual wildcard
+form — could reject a legitimate full-domain day-of-month enumeration before any semantic
+comparison ever ran. Even widening that pattern alone would not have been sufficient, because
+`cronSetMatches()` compares returned strings literally against the three approved expressions: an
+expanded-but-equivalent representation would still compare unequal.
+
+This checkpoint replaces the old per-field regular expression with a narrow deterministic
+canonicaliser, `canonicaliseCron()`, for exactly the schedule subset this observer needs:
+
+* minute `0`-`59`, hour `0`-`23`, each as one or two decimal digits, canonicalised to plain decimal;
+* day-of-month either the literal `*`, or a comma list that is provably the complete `1`..`31`
+  domain (no gap, no duplicate, no out-of-range value, in any order) — canonicalised to `*`;
+* month and day-of-week always the literal `*`.
+
+Anything outside that closed subset — a partial or incomplete day-of-month list, a duplicate day
+value, an out-of-range day, a non-numeric or out-of-range minute/hour, malformed number syntax, a
+six/seven-field string, arbitrary text, or an unsupported month/day-of-week value — returns `null`
+and is rejected exactly as before, still `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED`. No new
+reason code was introduced and none of the five payload-decode categories from PR #237 changed.
+
+`canonicaliseCron()` is called from inside the same single-pass `analyseSchedulesPayload()`
+introduced by PR #237, in place of the old regex test; `classifySchedulesPayload()` and
+`decodeSchedules()` remain one-line delegations to it, so the single-source-of-truth structure is
+unchanged. Two legitimate Cloudflare encodings of the same schedule now compare equal downstream,
+but `cronSetMatches()` still requires the canonicalised set to equal the three approved expressions
+exactly — a canonicalised-but-different schedule (`18 1 * * *`, or a full enumeration at a different
+hour) still reaches `CLOUDFLARE_CRON_SET_MISMATCH` rather than being mistaken for an approved one.
+The canonical form is always reconstructed from parsed values, never the raw input, so a rejected or
+accepted result can never carry the original expanded provider text.
+
+This correction merged as **PR #238**. It was **not**, by itself, proof of live acceptance — see
+"Live acceptance" below for the decisive evidence.
+
+## Live acceptance — 9 September 2026
+
+After PR #238 merged (post-merge `main` `174a7ece2f6c52257902c79ac9a46de846edeb91`) and exact-`main`
+Verify Teamsheet succeeded (run `34345865860`, run number 662, event `push`), the owner performed the
+attended dispatch of `Data Steward Read-Only Observer` recorded here: run `34346126189`, run number 8,
+event `workflow_dispatch`, branch `main`, head SHA `174a7ece2f6c52257902c79ac9a46de846edeb91`, job
+`observe-production-chain` (job id `102448024505`), job result **SUCCESS**.
+
+Sanitized output:
+
+```json
+{"dayDate":"2026-09-09","verdict":"HEALTHY","evaluationReason":"HEALTHY_EXPECTED_STATE",
+ "heartbeat":"COMPLETE","escalationRequired":false,
+ "sentinels":[
+   {"sentinel":"cloudflare","state":"OBSERVED","reasonCode":"CLOUDFLARE_CONFIGURATION_OBSERVED"},
+   {"sentinel":"d1","state":"OBSERVED","reasonCode":"D1_STATE_OBSERVED","rowsRead":89066},
+   {"sentinel":"github","state":"OBSERVED","reasonCode":"GITHUB_CHAIN_OBSERVED"}]}
+```
+
+**This is A1.3's first complete live `HEALTHY` observation, and it is a live technical acceptance of
+the manual observer runtime.** No collection, repair, D1 write, Cloudflare mutation or schedule
+activation occurred; the observer remains strictly read-only. Runtime credentials remained masked
+throughout the job log, per the PR #233 remediation still holding live.
+
+**Acceptance conclusion, stated precisely.** The merged PR #238 Cron semantic canonicaliser was
+sufficient for the live Cloudflare `/schedules` response to be observed and matched against the
+three approved expressions. All three sentinels — Cloudflare, D1 and GitHub — agreed in the same
+live evaluation, the heartbeat reported `COMPLETE`, and no escalation was required. This proves the
+observer runtime is operational end to end against genuine production Cloudflare, D1 and GitHub
+state on exact verified `main`.
+
+**What this does not prove, stated equally precisely.** It does not prove scheduled/automatic
+monitoring is active: `DATA_STEWARD_SCHEDULED_ENABLED` was last owner-verified absent (see "Outcome"
+below for that evidence and its provenance); this run and this PR do not create, set,
+modify or read it, and scheduled execution stays fail-closed until a later, separate, explicit owner
+action sets it to exact lowercase `true`. It does not prove Cloudflare per-fire dispatcher invocation
+history is observable — that remains the permanent, named `CLOUDFLARE_INVOCATION_HISTORY_UNOBSERVABLE`
+limitation, unresolved by this run and never turned into a healthy verdict by its absence. It does not
+prove a total GitHub outage or complete absence of scheduled runs would be independently detected —
+this remains a GitHub-hosted observer with no independent persistent heartbeat/watchdog outside
+GitHub Actions run history and this sanitized output. A1.3 gained no actuator, repair, AI,
+autonomous-repository-edit, Cloudflare-mutation, D1-write or auto-merge capability from this
+acceptance, and must never be described as autonomous remediation or as continuously-active
+monitoring.
+
+**Next owner gate.** A separate, explicit owner decision whether to set
+`DATA_STEWARD_SCHEDULED_ENABLED=true` and activate scheduled observation. That decision is not
+implied, assumed or performed by this closeout.
 
 ## Masking remediation
 
@@ -397,8 +519,10 @@ opportunities at `17 4 * * *` and `17 8 * * *` UTC. Neither opportunity collects
 mutates anything. The existing A1.2 evaluation deadline remains 04:02 UTC.
 
 Repository-ready does not mean live-activated. Scheduled monitoring remains **NOT LIVE-ACTIVATED**
-regardless of the first attended manual dispatch above: that dispatch used `workflow_dispatch`, not
-`schedule`, and its Cloudflare sentinel failed closed rather than being accepted. Scheduled runs
+regardless of any attended manual dispatch, including the accepted run `34346126189` recorded in
+"Live acceptance" above: every dispatch to date used `workflow_dispatch`, not `schedule`, and manual
+live acceptance is a distinct gate from scheduled activation — passing the former performs none of
+the latter. Scheduled runs
 require repository variable
 `DATA_STEWARD_SCHEDULED_ENABLED` to equal exact lowercase `true`. Missing, blank, false, uppercase or
 any other value skips the job. Manual `workflow_dispatch` remains independent for later attended
@@ -459,9 +583,7 @@ repository-proven read-only API. These gaps are not reported as healthy evidence
 
 ## Activation gate
 
-Steps 1–2 below were performed by the owner ahead of the first attended dispatch recorded above;
-step 3 is now attempted three times and still not accepted, with a further corrective sub-step
-required inside it:
+Steps 1–3 below are now **closed**. Step 4 is the only remaining gate.
 
 1. ~~Explicitly create and configure protected environment `data-steward-readonly`, with deployment
    branches/tags set to **Selected branches and tags → exact branch `main`**.~~ Done: the first
@@ -471,30 +593,27 @@ required inside it:
    fingerprint was initially stored in the wrong shape (see "First live observation attempt"); the
    owner has since corrected it to the raw 64-character lowercase SHA-256 hex, proved by the second
    and third attempts' successful identity admission.
-3. Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.
-   **Attempted five times and not yet accepted.** Run `34269989975` failed closed at Cloudflare
-   identity admission (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819`,
-   after that merge, passed identity admission but failed closed during the Cloudflare read phase
-   with the then-collapsed `CLOUDFLARE_READ_FAILED`, resolved into per-stage codes by PR #234. Run
-   `34311398342`, after that merge, again passed identity admission and narrowed the failure to
-   `/schedules`, but with the then-collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED`, resolved into five
-   `/schedules` category codes by PR #235. Run `34319945520`, after that merge, again passed
-   identity admission, reached HTTP 200 and narrowed the failure to response processing, but with
-   the then-collapsed `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID`, resolved into three response-layer
-   codes by PR #236. Run `34325772296`, after that merge, again passed identity admission, reached
-   HTTP 200, and both `response.json()` and `decodeEnvelope()` succeeded, narrowing the failure to
-   `decodeSchedules()` itself — but with the then-collapsed `CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID`.
-   Before dispatching again: merge this payload-decode diagnostic split, confirm exact-`main` Verify
-   success, then perform one new attended manual dispatch on the then-current `main`. Read the new
-   closed payload-decode category code (`CLOUDFLARE_SCHEDULES_RESULT_INVALID` /
-   `CLOUDFLARE_SCHEDULES_ARRAY_INVALID` / `CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED` /
-   `CLOUDFLARE_SCHEDULES_CRON_NOT_STRING` / `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED`) to identify
-   the precise underlying cause before deciding whether the fix is configuration, credential
-   permission, a response-contract correction or another cause. Accept the run only if the GitHub,
-   D1 and Cloudflare sentinels all observe successfully and the cross-source verdict is healthy.
-4. Only after that acceptance, separately approve and set repository variable
-   `DATA_STEWARD_SCHEDULED_ENABLED` to exact `true`. Scheduled activation is a later, separate
-   approval and remains NOT LIVE-ACTIVATED regardless of how step 3 resolves.
+3. ~~Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.~~
+   **Done — accepted.** The following attended dispatches preceded acceptance, each narrowing the
+   failure by one layer:
+   run `34269989975` failed closed at Cloudflare identity admission
+   (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819` passed identity
+   admission but failed in the Cloudflare read phase with the then-collapsed
+   `CLOUDFLARE_READ_FAILED`, resolved into per-stage codes by PR #234. Run `34311398342` narrowed
+   the failure to `/schedules` with the then-collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED`, resolved
+   into five `/schedules` category codes by PR #235. Run `34319945520` reached HTTP 200 with the
+   then-collapsed `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID`, resolved into three response-layer codes
+   by PR #236. Run `34325772296` narrowed the failure to `decodeSchedules()` itself with the
+   then-collapsed `CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID`, resolved into five payload-decode codes by
+   PR #237. Run `34342701912` narrowed the failure to the exact predicate,
+   `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED`, and separate owner Cloudflare dashboard evidence
+   identified the root cause, resolved by the Cron semantic canonicaliser merged as PR #238. Run
+   `34346126189`, on exact `main` `174a7ece2f6c52257902c79ac9a46de846edeb91`, returned
+   `HEALTHY`/`HEALTHY_EXPECTED_STATE` with Cloudflare, D1 and GitHub all `OBSERVED` — see "Live
+   acceptance" above for the full sanitized output. **This step is accepted.**
+4. Separately approve and set repository variable `DATA_STEWARD_SCHEDULED_ENABLED` to exact `true`.
+   Scheduled activation is a later, separate approval and remains **NOT LIVE-ACTIVATED**; passing
+   step 3 performs no part of it.
 
 The activation-variable question that formerly sat at the head of this list is **closed by owner UI
 evidence**: `DATA_STEWARD_SCHEDULED_ENABLED` is absent, repository logic is fail-closed for absent and
