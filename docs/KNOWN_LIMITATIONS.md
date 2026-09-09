@@ -1,22 +1,42 @@
 # KNOWN_LIMITATIONS.md
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## DATA-OPS A1.4 watchdog limitations
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog limitations (corrected repository candidate)
 
 Repository-only; not live. No isolated D1 database, GitHub credential, `send_email` binding
 destination or Cron Trigger exists live as a result of this PR — `wrangler.jsonc` ships a
-structurally invalid placeholder destination address rather than the owner's real one. A
-Cloudflare-hosted watchdog is independent of GitHub Actions as a process but not independent of
-the world: a simultaneous Cloudflare/GitHub/network failure cannot be perfectly diagnosed by
-anything hosted on either provider, and an inability to reach GitHub proves evidence
-unavailability, never a root cause and never a GitHub outage. The 12h/24h heartbeat thresholds are
-deliberately loose given measured GitHub delivery lateness (3h21m–4h44m in this repository's own
-history) and can still mean a genuinely broken schedule goes unmentioned for up to 24 hours by
-design — this is the approved trade-off against false alarms, not an oversight. The in-memory fake
-D1 test harness faithfully implements this schema's conflict/uniqueness semantics for test
-purposes but is not a substitute for D1's actual behaviour under concurrent overlapping cycles,
-which remains a live-acceptance question. Cloudflare's `send_email` binding's live behaviour is
-documented but unexercised here. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+structurally invalid placeholder destination address and an inert all-zero-UUID `database_id`
+placeholder rather than any owner or live value. A Cloudflare-hosted watchdog is independent of
+GitHub Actions as a process but not independent of the world: a simultaneous Cloudflare/GitHub/
+network failure cannot be perfectly diagnosed by anything hosted on either provider, and an
+inability to reach GitHub proves evidence unavailability, never a root cause and never a GitHub
+outage.
+
+**Heartbeat is schedule-aware, but one narrow trade-off remains and is stated deliberately.** An
+earlier fixed 12h/24h age model was replaced by an expected-opportunity model (the most recent of
+A1.3's two daily opportunities, plus a 5-hour grace window sized above this repository's own
+measured GitHub delivery lateness of 3h21m–4h44m). Because only the *latest due* opportunity is
+load-bearing at any evaluation instant, an isolated missed opportunity that is immediately followed
+by a healthy later one is never separately reported as its own incident — this is an accepted,
+understood trade-off against false alarms from ordinary overnight/inter-opportunity gaps, not an
+oversight, and it is exercised by test.
+
+**Concurrency safety is now proven under real concurrent execution, not merely by construction.**
+The single-writer claim (`watchdog_scheduled_claims`, atomic `INSERT … ON CONFLICT DO NOTHING`) is
+exercised in tests under genuine `Promise.all` overlap, including 2-way and 5-way same-instant
+overlap and a simulated crash between claim and later phases. The in-memory fake D1 test harness's
+synchronous internals correctly model D1's real single-statement atomicity for this purpose, but
+real D1's behaviour under genuine live concurrent Worker invocations remains a live-acceptance
+question this repository-only checkpoint cannot close.
+
+**Email delivery is not claimed exactly-once.** The watchdog claims strong idempotent
+decisioning — at most one notification decision per logical incident transition, safe
+deduplication and retry across cycles — but not perfect exactly-once external delivery: a narrow,
+unavoidable distributed-systems window exists between Cloudflare accepting an outbound message and
+the Worker's own commit completing, and no implementation on this platform can close it.
+Cloudflare's `send_email` binding's live behaviour, and whether the eventual real sender domain is
+actually onboarded to Cloudflare's Email Service, are both documented but unexercised here.
+See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## DATA-OPS A1.3 live read-only observer — accepted, with limitations that remain real

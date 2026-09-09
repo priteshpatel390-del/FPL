@@ -4,14 +4,34 @@
 // semantics (uniqueness, conflict handling, filtering) against plain in-memory Maps rather than a
 // generic SQL engine. It exists purely to exercise the repository/orchestrator logic in Node's
 // test runner without a live Cloudflare D1 database.
+//
+// Deliberately synchronous internals: every `run()`/`first()` resolves immediately with no
+// internal `await`, so two "concurrent" callers created via `Promise.all` still have their claim
+// attempts serialized by Node's single-threaded event loop exactly the way two overlapping D1
+// requests would be serialized by D1's own real auto-commit, single-statement atomicity. This is
+// what lets the concurrency tests prove a real single-writer outcome without a live database.
 import * as S from '../../workers/data-steward-watchdog/persistence/statements.mjs';
 
 export function createFakeWatchdogD1(){
+  const bootstrap={row:null};
+  const claims=new Map();
   const observations=new Map();
   const incidents=new Map();
   const notifications=new Map();
 
   function execWrite(sql,args){
+    if(sql===S.CLAIM_SCHEDULED_EVENT){
+      const [scheduled_time,claimed_at]=args;
+      if(claims.has(scheduled_time))return {success:true,meta:{changes:0}};
+      claims.set(scheduled_time,{scheduled_time,claimed_at});
+      return {success:true,meta:{changes:1}};
+    }
+    if(sql===S.INSERT_BOOTSTRAP){
+      const [bootstrapped_at]=args;
+      if(bootstrap.row!==null)return {success:true,meta:{changes:0}};
+      bootstrap.row={bootstrapped_at};
+      return {success:true,meta:{changes:1}};
+    }
     if(sql===S.INSERT_OBSERVATION){
       const [observation_id,source_kind,event_type,workflow_run_id,run_attempt,observed_at,
         run_created_at,run_completed_at,head_sha,health_state,reason_code,evidence_hash,created_at]=args;
@@ -24,11 +44,13 @@ export function createFakeWatchdogD1(){
     if(sql===S.UPSERT_INCIDENT){
       const [fingerprint,problem_class,component,lifecycle_state,reason_code,first_seen_at,
         last_seen_at,recovered_at,occurrence_count,reopened_count,last_evidence_observed_at,
-        last_evidence_observation_id,,updated_at]=args;
+        evidence_observation_id,evidence_workflow_run_id,evidence_run_attempt,evidence_head_sha,
+        evidence_source_at,,updated_at]=args;
       const existing=incidents.get(fingerprint);
       incidents.set(fingerprint,{fingerprint,problem_class,component,lifecycle_state,reason_code,
         first_seen_at,last_seen_at,recovered_at,occurrence_count,reopened_count,
-        last_evidence_observed_at,last_evidence_observation_id,
+        last_evidence_observed_at,evidence_observation_id,evidence_workflow_run_id,
+        evidence_run_attempt,evidence_head_sha,evidence_source_at,
         last_notified_at:existing?existing.last_notified_at:null,updated_at});
       return {success:true,meta:{changes:1}};
     }
@@ -56,8 +78,8 @@ export function createFakeWatchdogD1(){
     if(sql===S.PRUNE_OBSERVATIONS){
       const [cutoff]=args;
       const activeEvidenceIds=new Set([...incidents.values()]
-        .filter(row=>row.lifecycle_state==='ACTIVE'&&row.last_evidence_observation_id)
-        .map(row=>row.last_evidence_observation_id));
+        .filter(row=>row.lifecycle_state==='ACTIVE'&&row.evidence_observation_id)
+        .map(row=>row.evidence_observation_id));
       let changes=0;
       for(const [id,row] of [...observations.entries()])
         if(row.observed_at<cutoff&&!activeEvidenceIds.has(id)){observations.delete(id);changes+=1;}
@@ -83,11 +105,18 @@ export function createFakeWatchdogD1(){
   }
 
   function execRead(sql,args,single){
-    if(sql===S.SELECT_LAST_SCHEDULED_SUCCESS){
-      const successes=[...observations.values()]
-        .filter(row=>row.event_type==='schedule'&&row.health_state==='SUCCESS'&&row.run_completed_at);
-      const max=successes.reduce((best,row)=>best===null||row.run_completed_at>best?row.run_completed_at:best,null);
-      return single?{last_success_at:max}:{results:[{last_success_at:max}]};
+    if(sql===S.SELECT_BOOTSTRAP){
+      const row=bootstrap.row;
+      return single?row:{results:row?[row]:[]};
+    }
+    if(sql===S.SELECT_LATEST_SCHEDULED_SINCE){
+      const [sinceIso]=args;
+      const candidates=[...observations.values()]
+        .filter(row=>row.event_type==='schedule'&&row.run_created_at!==null&&row.run_created_at!==undefined
+          &&row.run_created_at>=sinceIso)
+        .sort((a,b)=>b.run_created_at.localeCompare(a.run_created_at));
+      const row=candidates[0]??null;
+      return single?row:{results:row?[row]:[]};
     }
     if(sql===S.SELECT_INCIDENT){
       const [fingerprint]=args;
@@ -109,6 +138,6 @@ export function createFakeWatchdogD1(){
         }
       };
     },
-    _tables:{observations,incidents,notifications}
+    _tables:{bootstrap,claims,observations,incidents,notifications}
   };
 }

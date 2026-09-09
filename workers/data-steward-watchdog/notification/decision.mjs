@@ -9,7 +9,7 @@
 // ONGOING never notifies on its own — the owner is not emailed on every unchanged observation —
 // except that an unresolved incident earns one bounded reminder every 24 hours so a long-running
 // problem cannot silently stop being mentioned at all.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze} from '../lib/canonical.mjs';
 import {TRANSITION_CHANGED,TRANSITION_NEW,TRANSITION_ONGOING,TRANSITION_RECOVERED,
   TRANSITION_REOPENED,TRANSITION_NONE} from '../lib/lifecycle-reducer.mjs';
 

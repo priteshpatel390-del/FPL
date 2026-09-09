@@ -1,28 +1,39 @@
 # SECURITY.md
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## DATA-OPS A1.4 watchdog security boundary
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog security boundary (corrected repository candidate, PR #240, unmerged)
 
 `workers/data-steward-watchdog/` is a separate Cloudflare Worker with its own dedicated identity,
 D1 database and GitHub credential (`DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`, distinct from every A1.3
 environment name, minimum permission Metadata: Read plus Actions: Read, no write scope of any
 kind). Every GitHub request builder emits `method:'GET'` except one bounded job-log read per
-cycle, itself also a `GET`; there is no dispatch, re-run, cancel or write endpoint anywhere in the
-package. D1 access is exclusively through the native Worker binding
-(`db.prepare(...).bind(...).run()`), never an HTTP call, and every statement it can ever issue is
-one of ten fixed, parameterized strings in `persistence/statements.mjs`, checked against that
-frozen allowlist by reference before execution — there is no table-name, column-name or generic-SQL
-parameter anywhere. The `send_email` binding is touched by exactly one module
-(`notification/transport.mjs`), which never accepts or specifies a recipient — Cloudflare's own
-`destination_address` binding configuration is the sole, platform-level authority over who can ever
-receive mail, and the tracked `wrangler.jsonc` carries a structurally invalid placeholder rather
-than the owner's real address. A permanent whole-package scan
-(`tests/data-ops-a1-4-worker-config.test.mjs`) refuses any GitHub write endpoint, any Cloudflare
-mutation endpoint, any `child_process`/shell/`process.env` access, and any generic
-`runShell`/`runSql`/`httpRequest`/`apiCall`/`execute*` escape hatch, and confirms the package
-neither imports nor is imported by `workers/data-steward/`, `workers/data-platform/`,
-`workers/schedule-dispatcher/` or `workers/evidence-archive/`. Repository-only: no credential,
-secret, D1 database, Cron Trigger or live binding exists. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+cycle for whichever run is freshest, on either a successful or a failed job (never only success, so
+a genuine execution failure is evidenced rather than silently unread) — itself also a `GET`; there
+is no dispatch, re-run, cancel or write endpoint anywhere in the package. D1 access is exclusively
+through the native Worker binding (`db.prepare(...).bind(...).run()`), never an HTTP call, and every
+statement it can ever issue is one of thirteen fixed, parameterized strings in
+`persistence/statements.mjs` — including the atomic single-writer claim statement that makes
+concurrent Cron fires safe without any process-local state — checked against that frozen allowlist
+by reference before execution; there is no table-name, column-name or generic-SQL parameter
+anywhere. The `send_email` binding is touched by exactly one module (`notification/transport.mjs`),
+which never accepts or specifies a recipient — Cloudflare's own `destination_address` binding
+configuration is the sole, platform-level authority over who can ever receive mail, and the tracked
+`wrangler.jsonc` carries a structurally invalid placeholder rather than the owner's real address.
+The Worker's own runtime failures are no longer silently swallowed: a genuine exception in D1
+access, GitHub evidence reading, lifecycle evaluation, pruning or notification transport now
+produces one bounded sanitized diagnostic (closed reason code only) and is rethrown, so a fatal
+execution is visible to Cloudflare as a failed invocation rather than a silently-successful one — a
+correction made in this pass, since the original always resolved normally regardless of internal
+failure. A permanent whole-package scan (`tests/data-ops-a1-4-worker-config.test.mjs`) refuses any
+GitHub write endpoint, any Cloudflare mutation endpoint, any `child_process`/shell/`process.env`
+access, and any generic `runShell`/`runSql`/`httpRequest`/`apiCall`/`execute*` escape hatch, and
+confirms — checking actual import/require specifiers, not prose — that the package neither imports
+nor is imported by `workers/data-steward/`, `workers/data-platform/`, `workers/schedule-dispatcher/`,
+`workers/evidence-archive/` or `src/`. That last boundary was corrected in this pass: an earlier
+draft imported generic canonicalisation helpers from `src/decision-intelligence/canonical.mjs`,
+contradicting its own isolation claim, and now carries a local copy (`lib/canonical.mjs`) instead.
+Repository-only: no credential, secret, D1 database, Cron Trigger or live binding exists. See
+[A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## DATA-OPS A1.3 live read-only observer acceptance — security evidence

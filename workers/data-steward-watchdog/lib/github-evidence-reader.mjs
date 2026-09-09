@@ -13,7 +13,7 @@
 // `GITHUB_EVIDENCE_UNAVAILABLE` (or, once the bounded read budget is spent,
 // `GITHUB_READ_BOUND_EXHAUSTED`) outcome. Nothing here ever concludes "GitHub is down" — absence
 // of a reachable answer is recorded as exactly that, absence, and nothing stronger.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze} from './canonical.mjs';
 
 export const GITHUB_EVIDENCE_REPOSITORY='priteshpatel390-del/FPL';
 export const GITHUB_EVIDENCE_WORKFLOW_FILE='data-steward-readonly-observer.yml';
@@ -105,7 +105,13 @@ export function decodeRunsPage(body,pageNumber){
     if(typeof row.status!=='string')return null;
     const event=row.event===EVENT_SCHEDULE?EVENT_SCHEDULE
       :row.event===EVENT_WORKFLOW_DISPATCH?EVENT_WORKFLOW_DISPATCH:EVENT_UNKNOWN;
-    runs.push({id:row.id,createdAt:row.created_at,event,headSha:row.head_sha,
+    // Normalized to a millisecond-inclusive `toISOString()` form immediately: GitHub's own
+    // timestamps omit milliseconds (`...T04:17:00Z`), and comparing that lexicographically in SQL
+    // against a `.toISOString()`-formatted bound (`...T04:17:00.000Z`) would put `.` (0x2E) before
+    // `Z` (0x5A) and rank an exact-instant match as earlier than the bound. Normalizing every
+    // stored timestamp to the same format once, here, is what keeps every later TEXT comparison
+    // (`opportunityEvidenceSince`, retention pruning) a correct chronological comparison.
+    runs.push({id:row.id,createdAt:new Date(row.created_at).toISOString(),event,headSha:row.head_sha,
       status:row.status,conclusion:row.conclusion??null});
   }
   return {totalCount:body.total_count,runs};
@@ -123,7 +129,9 @@ export function decodeJobs(body){
     if(row.completed_at!==null&&row.completed_at!==undefined&&typeof row.completed_at!=='string')return null;
     if(!Number.isSafeInteger(row.run_attempt)||row.run_attempt<1)return null;
     jobs.push({id:row.id,name:row.name,status:row.status,conclusion:row.conclusion??null,
-      completedAt:row.completed_at??null,runAttempt:row.run_attempt});
+      completedAt:row.completed_at===null||row.completed_at===undefined?null
+        :new Date(row.completed_at).toISOString(),
+      runAttempt:row.run_attempt});
   }
   return jobs;
 }
@@ -260,16 +268,20 @@ async function decorateRun(run,token,fetchImpl,budget,{readSummary}){
   if(jobs===null)return null;
   const observerJobs=jobs.filter(job=>job.name===GITHUB_EVIDENCE_JOB_NAME);
   if(observerJobs.length===0)
-    return deepFreeze({...run,jobHealth:JOB_HEALTH_UNCLASSIFIED,jobCompletedAt:null,summary:null});
+    return deepFreeze({...run,jobHealth:JOB_HEALTH_UNCLASSIFIED,jobConclusion:null,
+      jobCompletedAt:null,runAttempt:null,summary:null});
   // The most recently attempted execution decides this run's health, exactly like A1.3's own
   // "later evidence wins" rule for anything that is not production-mutation-sensitive.
   const latest=observerJobs.reduce((best,job)=>job.runAttempt>best.runAttempt?job:best,observerJobs[0]);
   const jobHealth=classifyJobHealth(latest);
   let summary=null;
-  if(readSummary&&jobHealth===JOB_HEALTH_SUCCESS){
+  // A summary is worth checking against a SUCCESS or FAILED job, and never for one still in
+  // flight or skipped — there is nothing decisive to compare it against in either of those.
+  if(readSummary&&(jobHealth===JOB_HEALTH_SUCCESS||jobHealth===JOB_HEALTH_FAILED)){
     summary=await readSummaryLog(latest.id,token,fetchImpl,budget).catch(()=>null);
   }
-  return deepFreeze({...run,jobHealth,jobCompletedAt:latest.completedAt,summary});
+  return deepFreeze({...run,jobHealth,jobConclusion:latest.conclusion,
+    jobCompletedAt:latest.completedAt,runAttempt:latest.runAttempt,summary});
 }
 
 // Issues the bounded read set and returns the decoded, per-run view of the observer's own recent

@@ -15,7 +15,7 @@
 //      cycles that both find the same active problem with the same reason code are the same
 //      unchanged incident; a reason-code change while still active is a material change and is
 //      reported as `CHANGED` so the owner is told what shifted.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze} from './canonical.mjs';
 
 export const LIFECYCLE_STATE_ACTIVE='ACTIVE';
 export const LIFECYCLE_STATE_RECOVERED='RECOVERED';
@@ -37,6 +37,21 @@ const fail=code=>{throw new LifecycleError(code);};
 const iso=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
   &&Number.isFinite(Date.parse(value));
 const reasonPattern=/^[A-Z][A-Z0-9_]{1,63}$/;
+const shaPattern=/^[0-9a-f]{40}$/;
+
+// An opaque, caller-defined provenance pointer the reducer carries through unchanged — it never
+// interprets these fields, only validates their shape and passes them on, which is what lets
+// `saveIncident()` persist genuine evidence (a real observation id, run id, attempt, head SHA and
+// the evidence's own timestamp) instead of a placeholder.
+function validEvidenceRef(value){
+  if(value===null)return true;
+  if(!value||typeof value!=='object')return false;
+  return typeof value.observationId==='string'&&value.observationId!==''
+    &&(value.workflowRunId===null||Number.isSafeInteger(value.workflowRunId))
+    &&(value.runAttempt===null||(Number.isSafeInteger(value.runAttempt)&&value.runAttempt>=1))
+    &&(value.headSha===null||shaPattern.test(value.headSha))
+    &&iso(value.observedAt);
+}
 
 function validPrevious(previous){
   if(previous===null)return true;
@@ -48,17 +63,21 @@ function validPrevious(previous){
     &&(previous.recoveredAt===null||iso(previous.recoveredAt))
     &&Number.isSafeInteger(previous.occurrenceCount)&&previous.occurrenceCount>=0
     &&Number.isSafeInteger(previous.reopenedCount)&&previous.reopenedCount>=0
-    &&iso(previous.lastEvidenceObservedAt);
+    &&iso(previous.lastEvidenceObservedAt)
+    &&validEvidenceRef(previous.evidenceRef===undefined?null:previous.evidenceRef);
 }
 
 // `evaluation.active` is true when the fingerprint's problem is currently present; `reasonCode`
 // is required when active and must be `null` otherwise. `evidenceObservedAt` is the timestamp of
 // the observation this evaluation was derived from, used only for the monotonic replay guard.
+// `evidenceRef` is optional real provenance for the decisive evidence (or `null` when there is
+// none, e.g. a PENDING/no-opportunity-yet evaluation).
 function validEvaluation(evaluation){
   if(!evaluation||typeof evaluation!=='object')return false;
   if(typeof evaluation.active!=='boolean')return false;
   if(evaluation.active&&!reasonPattern.test(evaluation.reasonCode))return false;
   if(!evaluation.active&&evaluation.reasonCode!==null)return false;
+  if(!validEvidenceRef(evaluation.evidenceRef===undefined?null:evaluation.evidenceRef))return false;
   return iso(evaluation.evidenceObservedAt)&&iso(evaluation.now);
 }
 
@@ -69,6 +88,7 @@ export function reduceIncidentLifecycle({fingerprint,previous,evaluation}){
   if(previous!==null&&previous.fingerprint!==fingerprint)fail('lifecycle_fingerprint_mismatch');
 
   const {active,reasonCode,evidenceObservedAt,now}=evaluation;
+  const evidenceRef=evaluation.evidenceRef===undefined?null:evaluation.evidenceRef;
 
   // Replay guard: evidence no newer than what is already persisted changes nothing. Strictly
   // older evidence and byte-identical replays of the same evidence both take this exit.
@@ -86,14 +106,14 @@ export function reduceIncidentLifecycle({fingerprint,previous,evaluation}){
       fingerprint,lifecycleState:LIFECYCLE_STATE_RECOVERED,reasonCode:previous.reasonCode,
       firstSeenAt:previous.firstSeenAt,lastSeenAt:now,recoveredAt:now,
       occurrenceCount:previous.occurrenceCount,reopenedCount:previous.reopenedCount,
-      lastEvidenceObservedAt:evidenceObservedAt})});
+      lastEvidenceObservedAt:evidenceObservedAt,evidenceRef})});
   }
 
   if(previous===null){
     return deepFreeze({transition:TRANSITION_NEW,next:deepFreeze({
       fingerprint,lifecycleState:LIFECYCLE_STATE_ACTIVE,reasonCode,
       firstSeenAt:now,lastSeenAt:now,recoveredAt:null,occurrenceCount:1,reopenedCount:0,
-      lastEvidenceObservedAt:evidenceObservedAt})});
+      lastEvidenceObservedAt:evidenceObservedAt,evidenceRef})});
   }
 
   if(previous.lifecycleState===LIFECYCLE_STATE_RECOVERED){
@@ -101,7 +121,7 @@ export function reduceIncidentLifecycle({fingerprint,previous,evaluation}){
       fingerprint,lifecycleState:LIFECYCLE_STATE_ACTIVE,reasonCode,
       firstSeenAt:previous.firstSeenAt,lastSeenAt:now,recoveredAt:null,
       occurrenceCount:previous.occurrenceCount+1,reopenedCount:previous.reopenedCount+1,
-      lastEvidenceObservedAt:evidenceObservedAt})});
+      lastEvidenceObservedAt:evidenceObservedAt,evidenceRef})});
   }
 
   // Already active. Same reason code: no material change. Different reason code: the same
@@ -111,5 +131,5 @@ export function reduceIncidentLifecycle({fingerprint,previous,evaluation}){
     fingerprint,lifecycleState:LIFECYCLE_STATE_ACTIVE,reasonCode,
     firstSeenAt:previous.firstSeenAt,lastSeenAt:now,recoveredAt:null,
     occurrenceCount:previous.occurrenceCount+1,reopenedCount:previous.reopenedCount,
-    lastEvidenceObservedAt:evidenceObservedAt})});
+    lastEvidenceObservedAt:evidenceObservedAt,evidenceRef})});
 }

@@ -1,9 +1,26 @@
 -- DATA-OPS-A1.4 — isolated Data Steward Watchdog D1 foundation.
 --
 -- This database is exclusively the watchdog's own operational state: bounded observation
--- history, incident lifecycle and notification delivery/deduplication records. It holds no
--- Official FPL data, no application/model data and no production collection history, and nothing
--- outside `workers/data-steward-watchdog/` ever reads or writes it.
+-- history, incident lifecycle, notification delivery/deduplication records, the single-writer
+-- scheduled-event claim ledger and the one-row bootstrap marker. It holds no Official FPL data,
+-- no application/model data and no production collection history, and nothing outside
+-- `workers/data-steward-watchdog/` ever reads or writes it. This schema has never been applied to
+-- a live database — see docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md for the live-provisioning gate.
+
+CREATE TABLE watchdog_bootstrap (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  bootstrapped_at TEXT NOT NULL
+);
+
+-- Enforces the single-writer claim on one logical Cron firing, identified by
+-- `controller.scheduledTime` (an exact millisecond instant, formatted here as an ISO-8601
+-- string). Exactly one execution of a given scheduled event can ever insert its own row; every
+-- other concurrent or later attempt over the same scheduled_time affects zero rows and is a safe,
+-- side-effect-free duplicate.
+CREATE TABLE watchdog_scheduled_claims (
+  scheduled_time TEXT PRIMARY KEY,
+  claimed_at TEXT NOT NULL
+);
 
 CREATE TABLE watchdog_observations (
   observation_id TEXT PRIMARY KEY,
@@ -16,15 +33,16 @@ CREATE TABLE watchdog_observations (
   run_completed_at TEXT,
   head_sha TEXT,
   health_state TEXT NOT NULL CHECK (health_state IN
-    ('SUCCESS','FAILED','SKIPPED','IN_FLIGHT','UNCLASSIFIED','READ_FAILURE')),
+    ('SUCCESS','NOT_EVALUATED_OK','FAILED','SKIPPED','IN_FLIGHT','SUMMARY_INVALID',
+     'SUMMARY_UNHEALTHY','SUMMARY_CONTRADICTORY','UNCLASSIFIED','READ_FAILURE')),
   reason_code TEXT NOT NULL,
   evidence_hash TEXT,
   created_at TEXT NOT NULL
 );
 
 CREATE INDEX idx_watchdog_observations_observed_at ON watchdog_observations(observed_at);
-CREATE INDEX idx_watchdog_observations_success_lookup
-  ON watchdog_observations(event_type, health_state, run_completed_at);
+CREATE INDEX idx_watchdog_observations_schedule_lookup
+  ON watchdog_observations(event_type, run_created_at);
 
 CREATE TABLE watchdog_incidents (
   fingerprint TEXT PRIMARY KEY,
@@ -37,8 +55,17 @@ CREATE TABLE watchdog_incidents (
   recovered_at TEXT,
   occurrence_count INTEGER NOT NULL DEFAULT 0,
   reopened_count INTEGER NOT NULL DEFAULT 0,
+  -- The watchdog cycle's own clock reading that produced this row. Used only for the reducer's
+  -- monotonic replay guard; it is never shown to the owner.
   last_evidence_observed_at TEXT NOT NULL,
-  last_evidence_observation_id TEXT,
+  -- Real, bounded, sanitized provenance for the evidence that decided this row — never a
+  -- placeholder. `evidence_source_at` is the underlying observation's own timestamp (e.g. a run's
+  -- completion instant), distinct from `last_evidence_observed_at` above.
+  evidence_observation_id TEXT,
+  evidence_workflow_run_id INTEGER,
+  evidence_run_attempt INTEGER,
+  evidence_head_sha TEXT,
+  evidence_source_at TEXT,
   last_notified_at TEXT,
   updated_at TEXT NOT NULL
 );

@@ -6,7 +6,13 @@ import {WATCHDOG_D1_BINDING,WATCHDOG_EMAIL_BINDING,WATCHDOG_GITHUB_TOKEN}
 import {WATCHDOG_PROBLEMS,WATCHDOG_REASON_CODES} from '../workers/data-steward-watchdog/lib/reason-codes.mjs';
 import {STEWARD_ENVIRONMENT_NAMES} from '../workers/data-steward/sentinels/environment-contract.mjs';
 
-const wrangler=JSON.parse(fs.readFileSync('workers/data-steward-watchdog/wrangler.jsonc','utf8'));
+// wrangler.jsonc is JSONC (JSON with full-line `//` comments); strip only lines whose trimmed
+// content begins with `//` — never an end-of-line strip, which would corrupt a string value that
+// legitimately contains "//" (e.g. a URL).
+const stripJsoncComments=text=>text.split('\n')
+  .filter(line=>!line.trim().startsWith('//')).join('\n');
+const wrangler=JSON.parse(stripJsoncComments(
+  fs.readFileSync('workers/data-steward-watchdog/wrangler.jsonc','utf8')));
 const watchdogSource=fs.readFileSync('workers/data-steward-watchdog/watchdog.mjs','utf8');
 
 test('the watchdog Worker holds its own dedicated identity, never a reused one',()=>{
@@ -35,6 +41,13 @@ test('the D1 binding is its own isolated database, never the production or evide
   assert.equal(wrangler.d1_databases[0].migrations_dir,'migrations');
   assert.deepEqual(fs.readdirSync('workers/data-steward-watchdog/migrations'),
     ['0001_watchdog_foundation.sql']);
+});
+
+test('the tracked D1 database_id is the inert all-zero placeholder, never a fabricated live id',()=>{
+  // Wrangler requires this field; Cloudflare only assigns a real one once the database actually
+  // exists. The all-zero UUID cannot resolve to any real database, so `wrangler deploy` fails
+  // safely against it rather than silently binding to something unintended.
+  assert.equal(wrangler.d1_databases[0].database_id,'00000000-0000-0000-0000-000000000000');
 });
 
 test('the send_email binding restricts delivery to exactly one fixed destination address',()=>{
@@ -85,9 +98,28 @@ function walk(dir){
 }
 const WATCHDOG_FILES=walk('workers/data-steward-watchdog');
 
-test('the watchdog package never imports the production platform, dispatcher or evidence archive',()=>{
-  const forbidden=/workers\/data-platform|workers\/schedule-dispatcher|workers\/evidence-archive|TEAMSHEET_DATA_DB|EVIDENCE_DB|EVIDENCE_BUCKET|GITHUB_DISPATCH_TOKEN/;
-  for(const file of WATCHDOG_FILES)assert.doesNotMatch(fs.readFileSync(file,'utf8'),forbidden,file);
+function importedPaths(text){
+  const paths=[];
+  for(const match of text.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g))paths.push(match[1]);
+  for(const match of text.matchAll(/require\(\s*['"]([^'"]+)['"]\s*\)/g))paths.push(match[1]);
+  return paths;
+}
+
+test('the watchdog package imports nothing from the FPL application, A1.3, or any other production Worker',()=>{
+  // Correction 8 (isolation): the watchdog previously imported the tiny generic canonicalisation
+  // helpers from `src/decision-intelligence/canonical.mjs`, contradicting its own claim of having
+  // no dependency on FPL product code. It now carries its own local copy (`lib/canonical.mjs`)
+  // instead. This checks actual import/require specifiers (not prose that merely names a path
+  // for explanatory purposes) never resolve outside this package, and separately that no
+  // production identifier appears anywhere in the package regardless of context.
+  const forbiddenPathFragment=/(^|\/)src\/|\/workers\/data-platform\/|\/workers\/schedule-dispatcher\/|\/workers\/evidence-archive\/|\/workers\/data-steward\/sentinels\/|\/workers\/data-steward\/[a-z-]+\.mjs$/;
+  const forbiddenIdentities=/TEAMSHEET_DATA_DB|EVIDENCE_DB|EVIDENCE_BUCKET|GITHUB_DISPATCH_TOKEN/;
+  for(const file of WATCHDOG_FILES){
+    const text=fs.readFileSync(file,'utf8');
+    for(const specifier of importedPaths(text))
+      assert.doesNotMatch(specifier,forbiddenPathFragment,`${file} imports ${specifier}`);
+    assert.doesNotMatch(text,forbiddenIdentities,file);
+  }
 });
 
 test('the watchdog package builds no GitHub write, Cloudflare mutation or generic actuator surface',()=>{

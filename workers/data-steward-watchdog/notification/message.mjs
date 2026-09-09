@@ -5,7 +5,7 @@
 // exception's own message into an email by adding an extra field. `secretFinding()` from the
 // shared canonical module runs over the built content as defence in depth even though nothing
 // upstream should ever be able to place a secret here.
-import {secretFinding} from '../../../src/decision-intelligence/canonical.mjs';
+import {secretFinding} from '../lib/canonical.mjs';
 
 export const CONTEXT_KEYS=deepFreezeKeys(['fingerprint','transition','problemClass','component',
   'reasonCode','lastKnownHealthyOrScheduledAt','ageMs','workflowRunId','headSha',

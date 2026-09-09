@@ -1,16 +1,25 @@
 # PROJECT_CONTEXT.md
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## Current Data-Ops checkpoint — A1.4 Persistent Incident Lifecycle + Independent Watchdog, repository candidate
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## Current Data-Ops checkpoint — A1.4 Persistent Incident Lifecycle + Independent Watchdog, corrected repository candidate (PR #240, unmerged)
 
-Draft, unmerged. A1.4 adds `workers/data-steward-watchdog/`, a separate isolated Cloudflare Worker
-that reads A1.3's own GitHub Actions run history, classifies its scheduled-heartbeat freshness
-(HEALTHY within 12h / STALE within 24h / MISSING beyond it), reduces that through a pure,
-replay-safe incident lifecycle (NEW/ONGOING/CHANGED/RECOVERED/REOPENED), persists state in its own
-three-table D1 database, and sends bounded, deduplicated owner-notification email to one
-Cloudflare-fixed recipient. It has no ability to repair, collect, mutate production, or change any
-repository, Cloudflare or GitHub configuration; A1.1–A1.3 are entirely unchanged. Nothing is
-deployed, provisioned or activated. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+Draft, unmerged, and corrected after owner review of the first draft. A1.4 adds
+`workers/data-steward-watchdog/`, a separate isolated Cloudflare Worker that reads A1.3's own
+GitHub Actions run history and classifies its scheduled-heartbeat against an **expected-opportunity
+model** — the most recent of A1.3's two declared daily opportunities (04:17 / 08:17 UTC), a
+documented 5-hour grace window sized above this repository's own measured worst-case GitHub
+schedule-delivery lateness, and explicit HEALTHY/PENDING/FAILED/SKIPPED/MISSING/MALFORMED states —
+never the original age-only 12h/24h model, which was incompatible with that real two-a-day
+schedule. Only a genuinely healthy, contradiction-free A1.3 summary resets the heartbeat; a newer
+failed, skipped or malformed execution opens an incident even if an older run was healthy. A
+database-level single-writer claim keyed on `controller.scheduledTime` makes concurrent Cron fires
+safe (proven under real `Promise.all` concurrency). A genuine watchdog runtime failure now fails
+the Cloudflare Cron invocation rather than resolving silently. Real GitHub evidence provenance
+(run id, run attempt, head SHA, observed timestamp) is persisted in its own three-table D1 database
+in place of the original's always-null placeholders. It has no ability to repair, collect, mutate
+production, or change any repository, Cloudflare or GitHub configuration; A1.1–A1.3 are entirely
+unchanged. Nothing is deployed, provisioned or activated. See
+[A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## Current Data-Ops checkpoint — A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate

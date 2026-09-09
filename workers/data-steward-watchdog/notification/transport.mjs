@@ -12,7 +12,7 @@
 //
 // The message body is a hand-built, minimal RFC 5322 message. This repository's toolchain is
 // zero-dependency by design, so no MIME-building package is introduced for one plain-text email.
-import {secretFinding} from '../../../src/decision-intelligence/canonical.mjs';
+import {secretFinding} from '../lib/canonical.mjs';
 
 export const NOTIFICATION_SENDER_ADDRESS='data-steward-watchdog@fpltsheet.co.uk';
 export const NOTIFICATION_SENDER_NAME='Teamsheet Data Steward Watchdog';

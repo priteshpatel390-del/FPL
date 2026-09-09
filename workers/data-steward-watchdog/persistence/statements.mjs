@@ -8,7 +8,19 @@
 // declared here, by reference equality against this file's own exports, so a future edit cannot
 // quietly add an unreviewed query without also being caught by the permanent test that walks this
 // allowlist.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze} from '../lib/canonical.mjs';
+
+// Single-writer scheduled-event claim: the whole enforcement mechanism is this one atomic insert.
+// `scheduled_time` is `controller.scheduledTime` (formatted as ISO-8601), the exact logical
+// identity of one Cron firing, so two concurrent invocations of the SAME firing race this one
+// statement; exactly one affects a row.
+export const CLAIM_SCHEDULED_EVENT=
+  `INSERT INTO watchdog_scheduled_claims (scheduled_time,claimed_at) VALUES (?,?)
+   ON CONFLICT(scheduled_time) DO NOTHING`;
+
+export const SELECT_BOOTSTRAP=`SELECT bootstrapped_at FROM watchdog_bootstrap WHERE id=1`;
+export const INSERT_BOOTSTRAP=
+  `INSERT INTO watchdog_bootstrap (id,bootstrapped_at) VALUES (1,?) ON CONFLICT(id) DO NOTHING`;
 
 export const INSERT_OBSERVATION=
   `INSERT INTO watchdog_observations
@@ -17,22 +29,30 @@ export const INSERT_OBSERVATION=
    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
    ON CONFLICT(observation_id) DO NOTHING`;
 
-export const SELECT_LAST_SCHEDULED_SUCCESS=
-  `SELECT MAX(run_completed_at) AS last_success_at FROM watchdog_observations
-   WHERE event_type='schedule' AND health_state='SUCCESS' AND run_completed_at IS NOT NULL`;
+// The single most recent scheduled observation created at or after one opportunity instant. Under
+// the expected-opportunity model this row is unambiguous evidence for exactly that opportunity,
+// because by construction nothing else was scheduled between the opportunity and `now`.
+export const SELECT_LATEST_SCHEDULED_SINCE=
+  `SELECT observation_id,health_state,run_created_at,run_completed_at,workflow_run_id,run_attempt,
+      head_sha
+   FROM watchdog_observations
+   WHERE event_type='schedule' AND run_created_at IS NOT NULL AND run_created_at>=?
+   ORDER BY run_created_at DESC LIMIT 1`;
 
 export const SELECT_INCIDENT=
   `SELECT fingerprint,problem_class,component,lifecycle_state,reason_code,first_seen_at,
       last_seen_at,recovered_at,occurrence_count,reopened_count,last_evidence_observed_at,
-      last_evidence_observation_id,last_notified_at
+      evidence_observation_id,evidence_workflow_run_id,evidence_run_attempt,evidence_head_sha,
+      evidence_source_at,last_notified_at
    FROM watchdog_incidents WHERE fingerprint=?`;
 
 export const UPSERT_INCIDENT=
   `INSERT INTO watchdog_incidents
      (fingerprint,problem_class,component,lifecycle_state,reason_code,first_seen_at,last_seen_at,
       recovered_at,occurrence_count,reopened_count,last_evidence_observed_at,
-      last_evidence_observation_id,last_notified_at,updated_at)
-   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      evidence_observation_id,evidence_workflow_run_id,evidence_run_attempt,evidence_head_sha,
+      evidence_source_at,last_notified_at,updated_at)
+   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
    ON CONFLICT(fingerprint) DO UPDATE SET
      lifecycle_state=excluded.lifecycle_state,
      reason_code=excluded.reason_code,
@@ -41,7 +61,11 @@ export const UPSERT_INCIDENT=
      occurrence_count=excluded.occurrence_count,
      reopened_count=excluded.reopened_count,
      last_evidence_observed_at=excluded.last_evidence_observed_at,
-     last_evidence_observation_id=excluded.last_evidence_observation_id,
+     evidence_observation_id=excluded.evidence_observation_id,
+     evidence_workflow_run_id=excluded.evidence_workflow_run_id,
+     evidence_run_attempt=excluded.evidence_run_attempt,
+     evidence_head_sha=excluded.evidence_head_sha,
+     evidence_source_at=excluded.evidence_source_at,
      updated_at=excluded.updated_at`;
 
 export const UPDATE_INCIDENT_LAST_NOTIFIED=
@@ -60,17 +84,18 @@ export const UPDATE_NOTIFICATION_DELIVERY=
 export const PRUNE_OBSERVATIONS=
   `DELETE FROM watchdog_observations
    WHERE observed_at<? AND observation_id NOT IN (
-     SELECT last_evidence_observation_id FROM watchdog_incidents
-     WHERE lifecycle_state='ACTIVE' AND last_evidence_observation_id IS NOT NULL)`;
+     SELECT evidence_observation_id FROM watchdog_incidents
+     WHERE lifecycle_state='ACTIVE' AND evidence_observation_id IS NOT NULL)`;
 
 export const PRUNE_INCIDENTS=
   `DELETE FROM watchdog_incidents WHERE lifecycle_state='RECOVERED' AND recovered_at<?`;
 
 export const PRUNE_NOTIFICATIONS=`DELETE FROM watchdog_notifications WHERE decided_at<?`;
 
-export const ALLOWED_STATEMENTS=deepFreeze([INSERT_OBSERVATION,SELECT_LAST_SCHEDULED_SUCCESS,
-  SELECT_INCIDENT,UPSERT_INCIDENT,UPDATE_INCIDENT_LAST_NOTIFIED,INSERT_NOTIFICATION,
-  UPDATE_NOTIFICATION_DELIVERY,PRUNE_OBSERVATIONS,PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS]);
+export const ALLOWED_STATEMENTS=deepFreeze([CLAIM_SCHEDULED_EVENT,SELECT_BOOTSTRAP,INSERT_BOOTSTRAP,
+  INSERT_OBSERVATION,SELECT_LATEST_SCHEDULED_SINCE,SELECT_INCIDENT,UPSERT_INCIDENT,
+  UPDATE_INCIDENT_LAST_NOTIFIED,INSERT_NOTIFICATION,UPDATE_NOTIFICATION_DELIVERY,PRUNE_OBSERVATIONS,
+  PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS]);
 
 export class StatementNotAllowedError extends Error{
   constructor(){super('watchdog_sql_not_allowlisted');this.name='StatementNotAllowedError';

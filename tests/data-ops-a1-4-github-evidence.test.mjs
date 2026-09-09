@@ -149,14 +149,45 @@ test('a job whose observer summary is malformed is still reported, decoded as nu
   assert.equal(result.runs[0].summary,null);
 });
 
-test('a failed and a skipped run are both observed without a log read',async()=>{
+test('a skipped run is observed without any log read',async()=>{
   const fetchImpl=fakeFetch({
     runsById:{1:runsBody([run({id:901,conclusion:'success'})])},
-    jobsById:{901:[job({id:9401,conclusion:'failure'})]}
+    jobsById:{901:[job({id:9401,conclusion:'skipped'})]}
+  });
+  const result=await readObserverEvidence({token:'t',fetchImpl,now:Date.parse('2026-09-09T12:00:00Z')});
+  assert.equal(result.runs[0].jobHealth,JOB_HEALTH_SKIPPED);
+  assert.equal(result.runs[0].summary,null);
+});
+
+test('the freshest FAILED run IS checked for a summary — this is what proves a job/summary contradiction',async()=>{
+  const fetchImpl=fakeFetch({
+    runsById:{1:runsBody([run({id:902})])},
+    jobsById:{902:[job({id:9402,conclusion:'failure'})]},
+    logsById:{9402:`${summaryLine({verdict:'UNHEALTHY',escalationRequired:true,heartbeat:'INCOMPLETE'})}\n`}
   });
   const result=await readObserverEvidence({token:'t',fetchImpl,now:Date.parse('2026-09-09T12:00:00Z')});
   assert.equal(result.runs[0].jobHealth,JOB_HEALTH_FAILED);
-  assert.equal(result.runs[0].summary,null);
+  assert.equal(result.runs[0].summary.verdict,'UNHEALTHY');
+});
+
+test('a decoded run carries its real run_attempt and raw job conclusion',async()=>{
+  const fetchImpl=fakeFetch({
+    runsById:{1:runsBody([run({id:903})])},
+    jobsById:{903:[job({id:9403,runAttempt:2})]}
+  });
+  const result=await readObserverEvidence({token:'t',fetchImpl,now:Date.parse('2026-09-09T12:00:00Z')});
+  assert.equal(result.runs[0].runAttempt,2);
+  assert.equal(result.runs[0].jobConclusion,'success');
+});
+
+test('run and job timestamps are normalized to millisecond-inclusive ISO so later TEXT comparisons stay correct',async()=>{
+  const fetchImpl=fakeFetch({
+    runsById:{1:runsBody([run({id:904,createdAt:'2026-09-09T04:17:00Z'})])},
+    jobsById:{904:[job({id:9404,completedAt:'2026-09-09T04:20:00Z'})]}
+  });
+  const result=await readObserverEvidence({token:'t',fetchImpl,now:Date.parse('2026-09-09T12:00:00Z')});
+  assert.equal(result.runs[0].createdAt,'2026-09-09T04:17:00.000Z');
+  assert.equal(result.runs[0].jobCompletedAt,'2026-09-09T04:20:00.000Z');
 });
 
 test('an in-flight job is IN_FLIGHT, never counted as success or failure',async()=>{

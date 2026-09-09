@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {resolveWatchdogEnvironment,WATCHDOG_D1_BINDING,WATCHDOG_EMAIL_BINDING,
   WATCHDOG_GITHUB_TOKEN} from '../workers/data-steward-watchdog/lib/environment-contract.mjs';
-import {runWatchdogCycle} from '../workers/data-steward-watchdog/run-watchdog.mjs';
+import {OBSERVER_GRACE_MS} from '../workers/data-steward-watchdog/lib/opportunity-schedule.mjs';
+import {WatchdogExecutionError,runWatchdogCycle} from '../workers/data-steward-watchdog/run-watchdog.mjs';
+import {CLAIM_SCHEDULED_EVENT} from '../workers/data-steward-watchdog/persistence/statements.mjs';
 import {createFakeWatchdogD1} from './helpers/fake-watchdog-d1.mjs';
 
 class FakeEmailMessage{constructor(from,to,raw){this.from=from;this.to=to;this.raw=raw;}}
@@ -10,12 +12,11 @@ class FakeEmailMessage{constructor(from,to,raw){this.from=from;this.to=to;this.r
 function runsBody(runs){return {total_count:runs.length,workflow_runs:runs};}
 function jobsBody(jobs){return {total_count:jobs.length,jobs};}
 const SHA='a'.repeat(40);
-const run=({id,event='schedule',createdAt})=>({id,created_at:createdAt,event,head_sha:SHA,
-  status:'completed',conclusion:id%2===0?'success':'failure'});
 
-// One healthy scheduled run, `minutesAgo` minutes before `now`.
-function healthyFetch(now,minutesAgo){
-  const createdAt=new Date(now-minutesAgo*60000).toISOString();
+// One successful scheduled run, created `minutesAgo` minutes before `opportunityAt` + `offsetMin`
+// minutes, i.e. at `opportunityAt + offsetMin` minutes exactly.
+function healthyFetch(opportunityAtMs,offsetMinutes=1){
+  const createdAt=new Date(opportunityAtMs+offsetMinutes*60000).toISOString();
   return async url=>{
     if(/\/actions\/runs\/1\/jobs/.test(url))
       return {status:200,json:async()=>jobsBody([{id:11,name:'observe-production-chain',
@@ -49,6 +50,10 @@ function makeEnv(db,{sent}){
   };
 }
 
+// 2026-09-09 opportunities, in ms since epoch.
+const OPP_0417=Date.UTC(2026,8,9,4,17);
+const OPP_0817=Date.UTC(2026,8,9,8,17);
+
 test('environment contract resolves exactly the three named bindings and fails closed otherwise',()=>{
   const db=createFakeWatchdogD1();
   const complete=resolveWatchdogEnvironment(makeEnv(db,{sent:[]}));
@@ -56,101 +61,175 @@ test('environment contract resolves exactly the three named bindings and fails c
   assert.equal(resolveWatchdogEnvironment({}).ok,false);
   assert.deepEqual(resolveWatchdogEnvironment({}).missing,
     [WATCHDOG_GITHUB_TOKEN,WATCHDOG_D1_BINDING,WATCHDOG_EMAIL_BINDING]);
-  assert.equal(resolveWatchdogEnvironment({[WATCHDOG_GITHUB_TOKEN]:'t'}).ok,false);
 });
 
-test('a cycle with an incomplete environment does nothing and reports why',async()=>{
-  const result=await runWatchdogCycle({env:{}});
-  assert.equal(result.ok,false);
-  assert.equal(result.reasonCode,'WATCHDOG_ENVIRONMENT_INCOMPLETE');
+test('an incomplete environment is a genuine runtime failure — it throws, it does not resolve quietly',async()=>{
+  await assert.rejects(runWatchdogCycle({env:{}}),error=>{
+    assert.ok(error instanceof WatchdogExecutionError);
+    assert.equal(error.code,'WATCHDOG_ENVIRONMENT_INCOMPLETE');
+    return true;
+  });
 });
 
-test('a healthy scheduled observation inside 12 hours produces no incident and no email',async()=>{
+test('bootstrap: a freshly deployed watchdog does not retroactively judge an opportunity that predates it',async()=>{
   const db=createFakeWatchdogD1();
   const sent=[];
-  const now=Date.parse('2026-09-09T12:00:00.000Z');
-  const result=await runWatchdogCycle({env:makeEnv(db,{sent}),fetchImpl:healthyFetch(now,30),now,
+  // First ever cycle fires well after today's 08:17 opportunity would naturally be "missing".
+  const now=OPP_0817+6*60*60*1000;
+  const result=await runWatchdogCycle({env:makeEnv(db,{sent}),fetchImpl:emptyFetch(),now,
     EmailMessageCtor:FakeEmailMessage});
-  assert.equal(result.ok,true);
-  assert.equal(result.heartbeat.state,'HEALTHY');
+  assert.equal(result.heartbeat.state,'PENDING');
   assert.equal(result.incidents.observerHeartbeat.transition,'NONE');
   assert.equal(sent.length,0);
 });
 
-test('a first missing heartbeat opens NEW and sends exactly one email',async()=>{
+test('a healthy scheduled observation stays HEALTHY across the whole ~20h overnight gap',async()=>{
   const db=createFakeWatchdogD1();
   const sent=[];
-  const now=Date.parse('2026-09-09T12:00:00.000Z');
-  const result=await runWatchdogCycle({env:makeEnv(db,{sent}),fetchImpl:emptyFetch(),now,
+  const env=makeEnv(db,{sent});
+  // Bootstrap before 04:17 so today's opportunities are in scope.
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:healthyFetch(OPP_0817,2),now:OPP_0817+5*60*1000,
     EmailMessageCtor:FakeEmailMessage});
+  const result=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817+15*60*60*1000,
+    EmailMessageCtor:FakeEmailMessage});
+  assert.equal(result.heartbeat.state,'HEALTHY');
+  assert.equal(result.incidents.observerHeartbeat.transition,'NONE');
+});
+
+// These "missing past grace" scenarios are deliberately evaluated against the 08:17 opportunity,
+// never 04:17: grace (5h) exceeds the 4-hour gap to the NEXT same-day opportunity, so by the time
+// 04:17's own grace would expire (09:17), 08:17 has already become the latest due opportunity.
+// 08:17's own next opportunity is the following day's 04:17, roughly 20 hours later — comfortably
+// longer than grace — so evaluating there is unambiguous.
+test('a missing opportunity past grace opens NEW and sends exactly one email',async()=>{
+  const db=createFakeWatchdogD1();
+  const sent=[];
+  const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const result=await runWatchdogCycle({env,fetchImpl:emptyFetch(),
+    now:OPP_0817+OBSERVER_GRACE_MS+1,EmailMessageCtor:FakeEmailMessage});
   assert.equal(result.heartbeat.state,'MISSING');
   assert.equal(result.incidents.observerHeartbeat.transition,'NEW');
   assert.equal(sent.length,1);
   assert.match(sent[0].raw,/NEW/);
 });
 
-test('re-running the exact same cycle (retry) never duplicates the incident or the email',async()=>{
-  const db=createFakeWatchdogD1();
-  const sent=[];
-  const now=Date.parse('2026-09-09T12:00:00.000Z');
-  const env=makeEnv(db,{sent});
-  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now,EmailMessageCtor:FakeEmailMessage});
-  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now,EmailMessageCtor:FakeEmailMessage});
-  assert.equal(sent.length,1,'a retry at the exact same instant must not send a second email');
-  assert.equal(db._tables.incidents.size,1);
-});
-
-test('a later cycle with the same unresolved condition is ONGOING and silent until the reminder window',async()=>{
+test('a real observer job failure opens an incident immediately, without waiting for grace',async()=>{
   const db=createFakeWatchdogD1();
   const sent=[];
   const env=makeEnv(db,{sent});
-  const t0=Date.parse('2026-09-09T12:00:00.000Z');
-  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t0,EmailMessageCtor:FakeEmailMessage});
-  const t1=t0+6*60*60*1000;
-  const result=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t1,EmailMessageCtor:FakeEmailMessage});
-  assert.equal(result.incidents.observerHeartbeat.transition,'ONGOING');
-  assert.equal(sent.length,1,'still within the 24h reminder ceiling, no second email yet');
-});
-
-test('escalation from STALE to MISSING is CHANGED and notifies again',async()=>{
-  const db=createFakeWatchdogD1();
-  const sent=[];
-  const env=makeEnv(db,{sent});
-  const t0=Date.parse('2026-09-09T00:00:00.000Z');
-  // One success 13 hours before t0: STALE, not yet MISSING.
-  await runWatchdogCycle({env,fetchImpl:healthyFetch(t0,13*60),now:t0,EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const failedFetch=async url=>{
+    if(/\/actions\/runs\/1\/jobs/.test(url))
+      return {status:200,json:async()=>jobsBody([{id:11,name:'observe-production-chain',
+        status:'completed',conclusion:'failure',
+        completed_at:new Date(OPP_0417+120000).toISOString(),run_attempt:1}])};
+    if(/\/actions\/jobs\/11\/logs/.test(url))
+      return {status:200,headers:{get:()=>null},
+        body:new ReadableStream({start(controller){
+          controller.enqueue(new TextEncoder().encode(JSON.stringify({dayDate:'2026-09-09',
+            verdict:'UNHEALTHY',evaluationReason:'OBSERVER_RUNTIME_FAILED',heartbeat:'INCOMPLETE',
+            escalationRequired:true,sentinels:[]})+'\n'));controller.close();}})};
+    if(/\/workflows\/.*\/runs\?/.test(url))return {status:200,json:async()=>runsBody([{id:1,
+      created_at:new Date(OPP_0417+60000).toISOString(),event:'schedule',head_sha:SHA,
+      status:'completed',conclusion:'failure'}])};
+    return {status:404,json:async()=>({})};
+  };
+  const result=await runWatchdogCycle({env,fetchImpl:failedFetch,now:OPP_0417+130000,
+    EmailMessageCtor:FakeEmailMessage});
+  assert.equal(result.heartbeat.state,'FAILED');
+  assert.equal(result.incidents.observerHeartbeat.transition,'NEW');
   assert.equal(sent.length,1);
-  // Same success record is still the most recent; 13 hours later it crosses into MISSING.
-  const t2=t0+13*60*60*1000;
-  const result=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t2,EmailMessageCtor:FakeEmailMessage});
-  assert.equal(result.heartbeat.state,'MISSING');
-  assert.equal(result.incidents.observerHeartbeat.transition,'CHANGED');
-  assert.equal(sent.length,2);
 });
 
-test('recovery after a missing heartbeat sends RECOVERED, then a later reopen sends REOPENED',async()=>{
+test('a notification carries real evidence provenance, not a placeholder timestamp',async()=>{
   const db=createFakeWatchdogD1();
   const sent=[];
   const env=makeEnv(db,{sent});
-  const t0=Date.parse('2026-09-09T00:00:00.000Z');
-  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t0,EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817+OBSERVER_GRACE_MS+1,
+    EmailMessageCtor:FakeEmailMessage});
   assert.equal(sent.length,1);
-  const t1=t0+60*60*1000;
-  const recovered=await runWatchdogCycle({env,fetchImpl:healthyFetch(t1,1),now:t1,
+  // A MISSING incident legitimately has no evidence yet — there is nothing to show. The real
+  // provenance check is on the RECOVERED email below, which must show genuine evidence rather
+  // than reusing the MISSING email's placeholder.
+  assert.match(sent[0].raw,/none recorded/);
+  // Now recover with a genuine observed run the NEXT day, and check the RECOVERED email shows
+  // its real run id.
+  const nextDay0417=OPP_0417+24*60*60*1000;
+  const recovered=await runWatchdogCycle({env,fetchImpl:healthyFetch(nextDay0417,3),now:nextDay0417+5*60*1000,
     EmailMessageCtor:FakeEmailMessage});
   assert.equal(recovered.incidents.observerHeartbeat.transition,'RECOVERED');
   assert.equal(sent.length,2);
-  const t2=t1+25*60*60*1000;
-  const reopened=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t2,EmailMessageCtor:FakeEmailMessage});
-  assert.equal(reopened.incidents.observerHeartbeat.transition,'REOPENED');
-  assert.equal(sent.length,3);
+  assert.match(sent[1].raw,/Related GitHub Actions run id: 1/);
+  assert.match(sent[1].raw,new RegExp(SHA));
+});
+
+test('re-running the exact same scheduled event (retry) never duplicates the incident or the email',async()=>{
+  const db=createFakeWatchdogD1();
+  const sent=[];
+  const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const now=OPP_0817+OBSERVER_GRACE_MS+1;
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now,scheduledTime:now,EmailMessageCtor:FakeEmailMessage});
+  const retry=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now,scheduledTime:now,
+    EmailMessageCtor:FakeEmailMessage});
+  assert.equal(retry.duplicate,true);
+  assert.equal(retry.reasonCode,'WATCHDOG_DUPLICATE_SCHEDULED_EVENT');
+  assert.equal(sent.length,1,'a retry of the exact same logical scheduled event must not send a second email');
+});
+
+test('CONCURRENCY: two genuinely overlapping executions of the same scheduled event — only one wins the claim',async()=>{
+  const db=createFakeWatchdogD1();
+  const sent=[];
+  const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const now=OPP_0817+OBSERVER_GRACE_MS+1;
+  const [a,b]=await Promise.all([
+    runWatchdogCycle({env,fetchImpl:emptyFetch(),now,scheduledTime:now,EmailMessageCtor:FakeEmailMessage}),
+    runWatchdogCycle({env,fetchImpl:emptyFetch(),now,scheduledTime:now,EmailMessageCtor:FakeEmailMessage})
+  ]);
+  const duplicates=[a,b].filter(result=>result.duplicate===true);
+  const winners=[a,b].filter(result=>result.duplicate===false);
+  assert.equal(duplicates.length,1,'exactly one of the two concurrent executions must lose the claim');
+  assert.equal(winners.length,1,'exactly one execution must actually run the cycle');
+  assert.equal(db._tables.incidents.size,1,'only one lifecycle mutation happened');
+  assert.equal(sent.length,1,'only one notification was ever sent for this one logical event');
+});
+
+test('CONCURRENCY: a duplicate delivery of the same event cannot duplicate the incident even under many overlapping calls',async()=>{
+  const db=createFakeWatchdogD1();
+  const sent=[];
+  const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const now=OPP_0817+OBSERVER_GRACE_MS+1;
+  const results=await Promise.all(Array.from({length:5},()=>
+    runWatchdogCycle({env,fetchImpl:emptyFetch(),now,scheduledTime:now,EmailMessageCtor:FakeEmailMessage})));
+  assert.equal(results.filter(result=>result.duplicate===false).length,1);
+  assert.equal(sent.length,1);
+});
+
+test('CONCURRENCY: different scheduled events execute fully independently',async()=>{
+  const db=createFakeWatchdogD1();
+  const sent=[];
+  const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const t1=OPP_0817+OBSERVER_GRACE_MS+1;
+  const t2=t1+60000;
+  const [a,b]=await Promise.all([
+    runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t1,scheduledTime:t1,EmailMessageCtor:FakeEmailMessage}),
+    runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t2,scheduledTime:t2,EmailMessageCtor:FakeEmailMessage})
+  ]);
+  assert.equal(a.duplicate,false);
+  assert.equal(b.duplicate,false);
 });
 
 test('GitHub evidence unavailable raises its own independent incident, never a heartbeat lie',async()=>{
   const db=createFakeWatchdogD1();
   const sent=[];
   const env=makeEnv(db,{sent});
-  const now=Date.parse('2026-09-09T12:00:00.000Z');
+  const now=OPP_0417+30*60*1000;
   const result=await runWatchdogCycle({env,fetchImpl:unavailableFetch(),now,EmailMessageCtor:FakeEmailMessage});
   assert.equal(result.githubEvidenceOk,false);
   assert.equal(result.incidents.githubEvidence.transition,'NEW');
@@ -161,25 +240,71 @@ test('heartbeat detection survives a GitHub-unavailable cycle using durable D1 h
   const db=createFakeWatchdogD1();
   const sent=[];
   const env=makeEnv(db,{sent});
-  const t0=Date.parse('2026-09-09T00:00:00.000Z');
-  await runWatchdogCycle({env,fetchImpl:healthyFetch(t0,30),now:t0,EmailMessageCtor:FakeEmailMessage});
-  const t1=t0+60*60*1000;
-  const result=await runWatchdogCycle({env,fetchImpl:unavailableFetch(),now:t1,
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:healthyFetch(OPP_0417,2),now:OPP_0417+5*60*1000,
+    EmailMessageCtor:FakeEmailMessage});
+  const result=await runWatchdogCycle({env,fetchImpl:unavailableFetch(),now:OPP_0417+60*60*1000,
     EmailMessageCtor:FakeEmailMessage});
   assert.equal(result.heartbeat.state,'HEALTHY','the earlier success recorded in D1 is still honoured');
+});
+
+test('a fatal D1 failure propagates and fails the whole cycle, never looking successful',async()=>{
+  const failingDb={prepare(){return {bind(){return {
+    run(){throw new Error('d1 down');},first(){throw new Error('d1 down');}
+  };}};}};
+  const env=makeEnv(failingDb,{sent:[]});
+  await assert.rejects(runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417,
+    EmailMessageCtor:FakeEmailMessage}));
+});
+
+test('a failure after the claim but before later phases still records the claim and never corrupts a later cycle',async()=>{
+  const baseDb=createFakeWatchdogD1();
+  const sent=[];
+  await runWatchdogCycle({env:makeEnv(baseDb,{sent}),fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,
+    EmailMessageCtor:FakeEmailMessage});
+  // A db that lets the claim itself succeed (delegating to the real fake) but throws on every
+  // other statement — simulating a crash the instant after the single-writer claim commits.
+  const crashingDb={
+    prepare(sql){
+      if(sql===CLAIM_SCHEDULED_EVENT)return baseDb.prepare(sql);
+      return {bind(){return {
+        async run(){throw new Error('simulated crash after claim');},
+        async first(){throw new Error('simulated crash after claim');}
+      };}};
+    },
+    _tables:baseDb._tables
+  };
+  const t1=OPP_0817+OBSERVER_GRACE_MS+1;
+  await assert.rejects(runWatchdogCycle({env:makeEnv(crashingDb,{sent}),fetchImpl:emptyFetch(),
+    now:t1,scheduledTime:t1,EmailMessageCtor:FakeEmailMessage}));
+  // The claim was still durably recorded before the crash.
+  assert.ok(baseDb._tables.claims.has(new Date(t1).toISOString()));
+  // A retry of the exact same scheduled event against the healthy db is correctly a duplicate —
+  // the crashed cycle's own work is not silently repeated.
+  const retry=await runWatchdogCycle({env:makeEnv(baseDb,{sent}),fetchImpl:emptyFetch(),now:t1,
+    scheduledTime:t1,EmailMessageCtor:FakeEmailMessage});
+  assert.equal(retry.duplicate,true);
+  // A later, independently-scheduled cycle is completely unaffected — the system self-heals at
+  // the next natural firing, which is the honestly-stated limitation of this mechanism.
+  const t2=t1+6*60*60*1000;
+  const later=await runWatchdogCycle({env:makeEnv(baseDb,{sent}),fetchImpl:emptyFetch(),now:t2,
+    scheduledTime:t2,EmailMessageCtor:FakeEmailMessage});
+  assert.equal(later.duplicate,false);
 });
 
 test('a delivery failure still reserves the notification and self-heals on the next cycle',async()=>{
   const db=createFakeWatchdogD1();
   const env={...makeEnv(db,{sent:[]}),
     [WATCHDOG_EMAIL_BINDING]:{send:async()=>{throw new Error('rejected');}}};
-  const t0=Date.parse('2026-09-09T00:00:00.000Z');
-  const first=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t0,EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817-60*60*1000,EmailMessageCtor:FakeEmailMessage});
+  const t0=OPP_0817+OBSERVER_GRACE_MS+1;
+  const first=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:t0,scheduledTime:t0,
+    EmailMessageCtor:FakeEmailMessage});
   assert.equal(first.incidents.observerHeartbeat.notified,false);
   const sentAfterFix=[];
   const healedEnv={...env,[WATCHDOG_EMAIL_BINDING]:{send:async message=>{sentAfterFix.push(message);}}};
-  const t1=t0+60*60*1000;
-  const second=await runWatchdogCycle({env:healedEnv,fetchImpl:emptyFetch(),now:t1,
+  const t1=t0+6*60*60*1000;
+  const second=await runWatchdogCycle({env:healedEnv,fetchImpl:emptyFetch(),now:t1,scheduledTime:t1,
     EmailMessageCtor:FakeEmailMessage});
   assert.equal(second.incidents.observerHeartbeat.notified,true);
   assert.equal(sentAfterFix.length,1);

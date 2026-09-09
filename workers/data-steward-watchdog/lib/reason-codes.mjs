@@ -4,23 +4,29 @@
 // body, a GitHub error message, a stack trace or a raw log line from ever reaching persisted
 // state or an owner email: every decision point in this package selects one of these fixed
 // strings, never a caught error's own text.
-//
-// A1.4 does not invent a new operational-state vocabulary. Where an A1.2/A1.3 reason already
-// describes the fact precisely (for example `SENTINEL_EVIDENCE_UNAVAILABLE`), the watchdog may
-// carry it through unchanged as informational context; the codes below are the ones specific to
-// watchdog-only concerns — heartbeat freshness and the bounded evidence read that feeds it.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze} from './canonical.mjs';
 
 export const WATCHDOG_REASON_CODES=deepFreeze([
+  // Schedule-aware heartbeat over A1.3's own two declared opportunities (04:17, 08:17 UTC).
   'OBSERVER_HEARTBEAT_HEALTHY',
-  'OBSERVER_HEARTBEAT_STALE',
+  'OBSERVER_HEARTBEAT_PENDING',
   'OBSERVER_HEARTBEAT_MISSING',
   'OBSERVER_HEARTBEAT_INCOMPLETE',
+  // First-class execution-outcome evidence for one expected opportunity.
   'OBSERVER_JOB_SKIPPED',
   'OBSERVER_JOB_FAILED',
+  // Semantic contract over A1.3's sanitized summary line, not merely its JSON shape.
   'OBSERVER_SUMMARY_INVALID',
+  'OBSERVER_SUMMARY_UNHEALTHY',
+  'OBSERVER_SUMMARY_CONTRADICTORY',
+  'OBSERVER_SUMMARY_NOT_EVALUATED',
+  // Bounded GitHub evidence read, as its own independent problem.
   'GITHUB_EVIDENCE_UNAVAILABLE',
-  'GITHUB_READ_BOUND_EXHAUSTED'
+  'GITHUB_READ_BOUND_EXHAUSTED',
+  // Watchdog-runtime-only outcomes, never persisted as an incident reason.
+  'WATCHDOG_DUPLICATE_SCHEDULED_EVENT',
+  'WATCHDOG_ENVIRONMENT_INCOMPLETE',
+  'WATCHDOG_EXECUTION_FAILED'
 ]);
 
 // The closed problem taxonomy an incident fingerprint may be built over. Each entry is a fixed

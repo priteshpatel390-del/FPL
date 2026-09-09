@@ -9,10 +9,16 @@
 // This is the isolated steward-only database. It has no relationship to production Official FPL
 // D1, the evidence archive D1 or any other Teamsheet data store, and no other package imports
 // this module.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
-import {assertAllowedStatement,INSERT_NOTIFICATION,INSERT_OBSERVATION,PRUNE_INCIDENTS,
-  PRUNE_NOTIFICATIONS,PRUNE_OBSERVATIONS,SELECT_INCIDENT,SELECT_LAST_SCHEDULED_SUCCESS,
-  UPDATE_INCIDENT_LAST_NOTIFIED,UPDATE_NOTIFICATION_DELIVERY,UPSERT_INCIDENT} from './statements.mjs';
+//
+// EVERY FUNCTION HERE THROWS ON A REAL D1 FAILURE. None of them swallow an exception into a
+// quiet default — a D1 error is a genuine watchdog-runtime failure, and it is the caller's job
+// (`run-watchdog.mjs`) to let that propagate all the way out of the Worker's `scheduled` handler
+// so Cloudflare records the Cron invocation as failed, never as a silent success.
+import {deepFreeze} from '../lib/canonical.mjs';
+import {assertAllowedStatement,CLAIM_SCHEDULED_EVENT,INSERT_BOOTSTRAP,INSERT_NOTIFICATION,
+  INSERT_OBSERVATION,PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS,PRUNE_OBSERVATIONS,SELECT_BOOTSTRAP,
+  SELECT_INCIDENT,SELECT_LATEST_SCHEDULED_SINCE,UPDATE_INCIDENT_LAST_NOTIFIED,
+  UPDATE_NOTIFICATION_DELIVERY,UPSERT_INCIDENT} from './statements.mjs';
 
 export const RETENTION_OBSERVATIONS_MS=45*24*60*60*1000;
 export const RETENTION_INCIDENTS_MS=365*24*60*60*1000;
@@ -32,6 +38,35 @@ function first(db,sql,args){
   return db.prepare(sql).bind(...args).first();
 }
 
+// The single-writer claim. Returns `{claimed:true}` for exactly one execution of a given
+// `scheduledTime`; every other concurrent or later attempt over the same value gets
+// `{claimed:false}` and must do no further work — no GitHub read, no lifecycle mutation, no
+// notification. This is the sole enforcement point; there is no separate check-then-set anywhere
+// else in the package.
+export async function claimScheduledEvent(db,scheduledTimeIso,claimedAtIso){
+  let result;
+  try{result=await run(db,CLAIM_SCHEDULED_EVENT,[scheduledTimeIso,claimedAtIso]);}
+  catch{fail('watchdog_claim_write_failed');}
+  if(!result?.success)fail('watchdog_claim_write_failed');
+  return Object.freeze({claimed:(result.meta?.changes??0)>0});
+}
+
+// The bootstrap instant is set once, on the very first cycle ever to run against this database,
+// and read back unchanged on every later cycle. It is what stops a freshly deployed watchdog from
+// retroactively judging opportunities that occurred before it ever executed.
+export async function ensureBootstrap(db,nowIso){
+  let inserted;
+  try{inserted=await run(db,INSERT_BOOTSTRAP,[nowIso]);}
+  catch{fail('watchdog_bootstrap_write_failed');}
+  if(!inserted?.success)fail('watchdog_bootstrap_write_failed');
+  if((inserted.meta?.changes??0)>0)return nowIso;
+  let row;
+  try{row=await first(db,SELECT_BOOTSTRAP,[]);}
+  catch{fail('watchdog_bootstrap_read_failed');}
+  if(typeof row?.bootstrapped_at!=='string')fail('watchdog_bootstrap_read_failed');
+  return row.bootstrapped_at;
+}
+
 // Inserts one bounded observation row. `ON CONFLICT ... DO NOTHING` makes this idempotent: the
 // same GitHub run observed again by a retry, a duplicate Cron delivery, or a re-run of the same
 // cycle produces exactly one stored row, never a duplicate.
@@ -47,15 +82,19 @@ export async function recordObservation(db,observation){
   return Object.freeze({inserted:(result.meta?.changes??0)>0});
 }
 
-// The durable freshness fact the heartbeat classifier reads: the most recent SUCCESS among
-// SCHEDULED observations ever recorded, whether or not this cycle's own GitHub read succeeded.
-// That is what makes heartbeat detection independent of any single cycle's GitHub reachability.
-export async function lastScheduledSuccessAt(db){
+// The decisive evidence row for one expected opportunity: the freshest scheduled observation
+// created at or after `opportunityAtIso`, or `null` if none exists yet. This is a durable D1 read,
+// independent of whether this cycle's own GitHub read succeeded — which is what lets heartbeat
+// detection survive a transient GitHub-unavailable cycle using history from an earlier one.
+export async function opportunityEvidenceSince(db,opportunityAtIso){
   let row;
-  try{row=await first(db,SELECT_LAST_SCHEDULED_SUCCESS,[]);}
-  catch{fail('watchdog_heartbeat_read_failed');}
-  const value=row?.last_success_at;
-  return typeof value==='string'&&value!==''?value:null;
+  try{row=await first(db,SELECT_LATEST_SCHEDULED_SINCE,[opportunityAtIso]);}
+  catch{fail('watchdog_opportunity_read_failed');}
+  if(row===null||row===undefined)return null;
+  return Object.freeze({observationId:row.observation_id,healthState:row.health_state,
+    createdAt:Date.parse(row.run_created_at),completedAt:row.run_completed_at??null,
+    workflowRunId:row.workflow_run_id??null,runAttempt:row.run_attempt??null,
+    headSha:row.head_sha??null});
 }
 
 const incidentFromRow=row=>row===null||row===undefined?null:deepFreeze({
@@ -64,7 +103,10 @@ const incidentFromRow=row=>row===null||row===undefined?null:deepFreeze({
   lastSeenAt:row.last_seen_at,recoveredAt:row.recovered_at??null,
   occurrenceCount:row.occurrence_count,reopenedCount:row.reopened_count,
   lastEvidenceObservedAt:row.last_evidence_observed_at,
-  lastEvidenceObservationId:row.last_evidence_observation_id??null,
+  evidenceRef:row.evidence_observation_id===null||row.evidence_observation_id===undefined?null:
+    deepFreeze({observationId:row.evidence_observation_id,
+      workflowRunId:row.evidence_workflow_run_id??null,runAttempt:row.evidence_run_attempt??null,
+      headSha:row.evidence_head_sha??null,observedAt:row.evidence_source_at}),
   lastNotifiedAt:row.last_notified_at??null});
 
 export async function getIncident(db,fingerprint){
@@ -74,16 +116,19 @@ export async function getIncident(db,fingerprint){
   return incidentFromRow(row);
 }
 
-// Persists the lifecycle reducer's `next` state. This is the ONLY write path into
-// `watchdog_incidents`, so the reducer's replay/ordering guarantees are exactly what ends up
-// durable — the repository adds no independent business logic of its own.
-export async function saveIncident(db,{problemClass,component,next,evidenceObservationId,updatedAt}){
+// Persists the lifecycle reducer's `next` state, including its real evidence pointer. This is the
+// ONLY write path into `watchdog_incidents`, so the reducer's replay/ordering guarantees, and now
+// its genuine provenance, are exactly what ends up durable.
+export async function saveIncident(db,{problemClass,component,next,updatedAt}){
+  const evidenceRef=next.evidenceRef??null;
   let result;
   try{
     result=await run(db,UPSERT_INCIDENT,[next.fingerprint,problemClass,component,
       next.lifecycleState,next.reasonCode,next.firstSeenAt,next.lastSeenAt,next.recoveredAt,
       next.occurrenceCount,next.reopenedCount,next.lastEvidenceObservedAt,
-      evidenceObservationId??null,null,updatedAt]);
+      evidenceRef?.observationId??null,evidenceRef?.workflowRunId??null,
+      evidenceRef?.runAttempt??null,evidenceRef?.headSha??null,evidenceRef?.observedAt??null,
+      updatedAt]);
   }catch{fail('watchdog_incident_write_failed');}
   if(!result?.success)fail('watchdog_incident_write_failed');
 }

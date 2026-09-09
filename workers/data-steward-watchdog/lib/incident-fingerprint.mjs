@@ -8,7 +8,7 @@
 // reason code would make an escalation from STALE to MISSING look like an unrelated problem
 // instead of the same incident changing state. Whether a reason-code change is material enough to
 // notify is the lifecycle reducer's job, over a stable identity this module supplies.
-import {deepFreeze,sha256Hex,stableStringify} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
 import {WATCHDOG_PROBLEMS} from './reason-codes.mjs';
 
 export const INCIDENT_FINGERPRINT_VERSION='data-ops-a1.4-fingerprint-v1';

@@ -174,3 +174,45 @@ test('rejects malformed previous/evaluation shapes',()=>{
   assert.throws(()=>reduceIncidentLifecycle({fingerprint:'',previous:null,evaluation:evalHealthy(T0,T0)}),
     LifecycleError);
 });
+
+const evidenceRef=(observationId,createdAtOverrides={})=>({observationId,workflowRunId:501,
+  runAttempt:1,headSha:'a'.repeat(40),observedAt:T0,...createdAtOverrides});
+
+test('a real evidence pointer is carried through to the persisted next state',async()=>{
+  const {fingerprint}=await incidentFingerprint('OBSERVER_HEARTBEAT');
+  const result=reduceIncidentLifecycle({fingerprint,previous:null,
+    evaluation:{active:true,reasonCode:'OBSERVER_HEARTBEAT_MISSING',evidenceObservedAt:T0,now:T0,
+      evidenceRef:evidenceRef('obs-1')}});
+  assert.deepEqual(result.next.evidenceRef,evidenceRef('obs-1'));
+});
+
+test('the evidence pointer updates across ONGOING/CHANGED transitions',async()=>{
+  const {fingerprint}=await incidentFingerprint('OBSERVER_HEARTBEAT');
+  const first=reduceIncidentLifecycle({fingerprint,previous:null,
+    evaluation:{active:true,reasonCode:'OBSERVER_HEARTBEAT_MISSING',evidenceObservedAt:T0,now:T0,
+      evidenceRef:evidenceRef('obs-1')}});
+  const second=reduceIncidentLifecycle({fingerprint,previous:first.next,
+    evaluation:{active:true,reasonCode:'OBSERVER_HEARTBEAT_MISSING',evidenceObservedAt:T1,now:T1,
+      evidenceRef:evidenceRef('obs-2',{observedAt:T1})}});
+  assert.equal(second.next.evidenceRef.observationId,'obs-2');
+});
+
+test('a null evidence pointer is accepted (e.g. the GITHUB_EVIDENCE problem, which has no observation row)',async()=>{
+  const {fingerprint}=await incidentFingerprint('GITHUB_EVIDENCE');
+  const result=reduceIncidentLifecycle({fingerprint,previous:null,
+    evaluation:{active:true,reasonCode:'GITHUB_EVIDENCE_UNAVAILABLE',evidenceObservedAt:T0,now:T0,
+      evidenceRef:null}});
+  assert.equal(result.next.evidenceRef,null);
+});
+
+test('rejects a malformed evidence pointer',async()=>{
+  const {fingerprint}=await incidentFingerprint('OBSERVER_HEARTBEAT');
+  assert.throws(()=>reduceIncidentLifecycle({fingerprint,previous:null,
+    evaluation:{active:true,reasonCode:'OBSERVER_HEARTBEAT_MISSING',evidenceObservedAt:T0,now:T0,
+      evidenceRef:{observationId:'',workflowRunId:null,runAttempt:null,headSha:null,observedAt:T0}}}),
+    LifecycleError);
+  assert.throws(()=>reduceIncidentLifecycle({fingerprint,previous:null,
+    evaluation:{active:true,reasonCode:'OBSERVER_HEARTBEAT_MISSING',evidenceObservedAt:T0,now:T0,
+      evidenceRef:{observationId:'obs-1',workflowRunId:null,runAttempt:null,headSha:'not-hex',
+        observedAt:T0}}}),LifecycleError);
+});

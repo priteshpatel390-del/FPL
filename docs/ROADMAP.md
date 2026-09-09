@@ -1,19 +1,26 @@
 # ROADMAP.md — current and proposed checkpoints
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## Current checkpoint — DATA-OPS A1.4 Persistent Incident Lifecycle + Independent Watchdog, repository candidate
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## Current checkpoint — DATA-OPS A1.4 Persistent Incident Lifecycle + Independent Watchdog, corrected repository candidate (PR #240, unmerged)
 
-Draft, unmerged PR. A1.4 gives the Autonomous Data Steward memory and a voice, implemented in a
-separate isolated Cloudflare Worker (`workers/data-steward-watchdog/`) that reads A1.3's own
-GitHub Actions history, classifies scheduled-heartbeat freshness, reduces it through a replay-safe
-incident lifecycle, persists to its own D1 database and notifies the owner by email, bounded and
-deduplicated. A1.1–A1.3 are unchanged; the watchdog has no repair, collection, mutation or
-configuration-change capability of any kind. Repository suite: 1,915 tests, 1,902 passed, 13
-failed (pre-existing, environment-specific `node:sqlite` failures unrelated to and reproduced
-identically on unmodified `main`); all 93 new A1.4 tests pass. Next gates, each separate: owner
-review and merge; exact-`main` Verify; then the one consolidated live-provisioning/deployment/
-activation package described in [A1.4 §14](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#14-live-closeout--one-consolidated-package-for-a-later-separate-owner-gate).
-A1.3's own separate scheduled-activation gate is unchanged. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+**Supersedes the original-draft summary this block previously carried; the design changed, the PR
+did not.** Owner review of the first A1.4 draft on PR #240 found eight concrete defects — an
+age-only heartbeat incompatible with A1.3's real schedule, an older success able to mask a newer
+failure, acceptance of a structurally-valid-but-unhealthy summary, an insufficient concurrency
+guard, silently-swallowed runtime failures, always-null evidence provenance, an undeployable D1
+config, and a real isolation contradiction (an import from `src/decision-intelligence/`) — plus one
+further defect found in this pass's own required audit (a raw GitHub `conclusion` string that could
+reach the summary contract in a shape it rejected). All eight are corrected, the additional finding
+is fixed, and none required expanding beyond the approved A1.4 boundary. A1.1–A1.3 are unchanged;
+the watchdog still has no repair, collection, mutation or configuration-change capability of any
+kind. Repository suite: 1,979 tests, 1,966 passed, 13 failed (the same pre-existing,
+environment-specific `node:sqlite` failures, unrelated to and reproduced identically on unmodified
+`main`); all 157 A1.4-package tests pass. Next gates, each separate: owner review and merge of the
+corrected PR #240; exact-`main` Verify; then the one consolidated live-provisioning/deployment/
+activation package described in [A1.4 §14](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#14-live-closeout--one-consolidated-package-for-a-later-separate-owner-gate),
+which now also names verifying `@fpltsheet.co.uk` sender-domain onboarding before any live email
+activation. A1.3's own separate scheduled-activation gate is unchanged. See
+[A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## Current checkpoint — DATA-OPS A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate

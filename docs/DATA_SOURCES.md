@@ -1,11 +1,15 @@
 # DATA_SOURCES.md
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## DATA-OPS A1.4 watchdog source boundary
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog source boundary (corrected repository candidate, PR #240, unmerged)
 
-A1.4 activates no provider and adds no data source. Its two inputs are the repository's own
-existing GitHub Actions history for A1.3's workflow (bounded, read-only) and its own isolated
-watchdog D1 database, which holds only its own observation/incident/notification bookkeeping —
+A1.4 activates no provider and adds no data source, unchanged by the owner-directed correction pass
+recorded elsewhere in this repository's Data-Ops checkpoints. Its two inputs are the repository's
+own existing GitHub Actions history for A1.3's workflow (bounded, read-only — now also reading the
+freshest failed run's job log, not only a successful one's, so a genuine execution failure is
+evidenced rather than silently unread) and its own isolated watchdog D1 database, which holds only
+its own observation/incident/notification bookkeeping, now including real GitHub evidence
+provenance fields (run id, run attempt, head SHA, observed timestamp) rather than placeholders —
 never Official FPL data, never application/model data. No Official FPL acquisition, retention,
 collection or model input changes. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 

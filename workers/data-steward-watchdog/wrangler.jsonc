@@ -15,6 +15,15 @@
     {
       "binding": "STEWARD_WATCHDOG_DB",
       "database_name": "teamsheet-data-steward-watchdog",
+      // Wrangler requires a real database_id here; Cloudflare only assigns one once the database
+      // actually exists (`wrangler d1 create teamsheet-data-steward-watchdog`), which has not
+      // happened yet — see docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md §14. The all-zero UUID below
+      // is the conventional inert placeholder: it is not a fabricated production id, it cannot
+      // resolve to any real database, and `wrangler deploy` fails safely against it rather than
+      // silently binding to something unintended. Replace it with the id `wrangler d1 create`
+      // prints (or `wrangler d1 info teamsheet-data-steward-watchdog`) as one step of that later,
+      // separately approved live-provisioning gate — never before.
+      "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }
   ],

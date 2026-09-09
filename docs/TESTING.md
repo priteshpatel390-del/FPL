@@ -1,27 +1,46 @@
 # TESTING.md
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## DATA-OPS A1.4 watchdog permanent coverage
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog permanent coverage (corrected repository candidate, PR #240, unmerged)
 
-Seven new files, 93 tests, all passing: `tests/data-ops-a1-4-heartbeat.test.mjs` pins the pure
-12h/24h heartbeat boundaries exactly (inclusive both sides, one millisecond past each).
-`tests/data-ops-a1-4-lifecycle.test.mjs` proves NEW/ONGOING/CHANGED/RECOVERED/REOPENED/NONE over
-fixtures, fingerprint stability and independence from reason code and head SHA, replay/out-of-order
-safety, and duplicate-execution safety. `tests/data-ops-a1-4-github-evidence.test.mjs` proves the
-bounded `GET`-only decoders, the one-summary-read-per-cycle budget, evidence-unavailable-never-
-outage, and read-bound exhaustion. `tests/data-ops-a1-4-notification.test.mjs` proves the
-always/never/24h-reminder-ceiling notification policy, the sanitized message's closed field set,
-and that the transport can never specify a recipient. `tests/data-ops-a1-4-persistence.test.mjs`
-proves the SQL allowlist, idempotent inserts/reservations against a real (if in-memory) uniqueness
-implementation, and exact 45/365/90-day retention boundaries including an ACTIVE incident
-surviving pruning. `tests/data-ops-a1-4-orchestrator.test.mjs` wires every module together end to
-end — including GitHub-unavailable resilience via durable D1 history and self-healing after a
-delivery failure — entirely against fakes, no live request ever issued.
-`tests/data-ops-a1-4-worker-config.test.mjs` pins the dedicated Worker identity, the single
-six-hourly Cron Trigger, the isolated D1 binding, the maximally-restrictive `send_email` binding
-shape, the absence of any `fetch` handler, and a bidirectional whole-package dependency scan
-against every other Worker and against `src/`. Existing A1.1/A1.2/A1.3 tests are unmodified and
-remain green. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+**Supersedes the original 7-file/93-test record this block previously carried.** Owner-directed
+correction added three new files and rewrote the rest; ten files, 157 tests, all passing.
+
+`tests/data-ops-a1-4-opportunity-schedule.test.mjs` (new) pins `OBSERVER_OPPORTUNITY_MINUTES`
+against the actual workflow YAML cron strings, verifies the grace window exceeds every documented
+historical GitHub-delivery-lateness sample (3h21m/4h31m/4h44m) found in this repository's own
+records, and exercises `latestExpectedOpportunity` including bootstrap clamping.
+`tests/data-ops-a1-4-observer-summary.test.mjs` (new) and
+`tests/data-ops-a1-4-observation-classifier.test.mjs` (new) directly unit-test the semantic
+summary/job-conclusion contract, including every consistent and every contradictory combination.
+`tests/data-ops-a1-4-heartbeat.test.mjs` (rewritten) replaces the original pure-age boundary tests
+with the expected-opportunity model: HEALTHY at both daily opportunities, healthy state persisting
+across the overnight gap and at watchdog-fire instants between them, inclusive/exclusive grace
+boundaries, decisive failure/skip classified immediately without waiting for grace, and a case
+proving a previous day's success can never mask a later demonstrably-missing opportunity.
+`tests/data-ops-a1-4-lifecycle.test.mjs` (extended) keeps its original NEW/ONGOING/CHANGED/
+RECOVERED/REOPENED/NONE, fingerprint-stability, replay-safety and duplicate-safety coverage and
+adds evidence-pointer passthrough tests. `tests/data-ops-a1-4-github-evidence.test.mjs` (extended)
+proves the bounded `GET`-only decoders, that a summary log read is now attempted for a freshest
+*failed* run as well as a successful one, real `run_attempt`/raw-conclusion propagation, and the
+GitHub-vs-`.toISOString()` timestamp-format normalisation fix. `tests/data-ops-a1-4-notification.test.mjs`
+is unchanged and still proves the always/never/24h-reminder-ceiling policy and the closed message
+field set. `tests/data-ops-a1-4-persistence.test.mjs` (rewritten) proves the 13-statement SQL
+allowlist including the new atomic single-writer claim and bootstrap statements, real evidence-ref
+round-tripping, and retention boundaries unchanged from the original design.
+`tests/data-ops-a1-4-orchestrator.test.mjs` (rewritten) wires every module together end to end and
+now includes **three genuine `Promise.all` concurrency tests** (two-way and five-way same-instant
+overlap each proving exactly one winner; independent different-instant events), a simulated
+crash-after-claim-before-later-phases test, real-provenance-in-notification verification, and an
+environment-incomplete-now-throws test (the orchestrator previously returned a soft `{ok:false}`
+for this case; it now throws, consistent with Correction 5). `tests/data-ops-a1-4-worker-config.test.mjs`
+(rewritten) pins the dedicated Worker identity, the single six-hourly Cron Trigger, the isolated D1
+binding including the inert `database_id` placeholder, the maximally-restrictive `send_email`
+binding shape, the absence of any `fetch` handler, JSONC-comment-safe config parsing, and a
+bidirectional whole-package dependency scan — now checking actual import/require specifiers rather
+than whole-file substring matching, so a benign explanatory comment naming another package's path
+cannot false-positive — against every other Worker and against `src/`. Existing A1.1/A1.2/A1.3
+tests are unmodified and remain green. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 
 <!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
 ## DATA-OPS A1.3 Cloudflare Cron semantic-normalisation coverage, and separately, live acceptance evidence

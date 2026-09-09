@@ -1,7 +1,7 @@
 # DECISIONS.md — Architectural decision record
 
-<!-- DATA-OPS-A1-4-2026-09-09 -->
-## D-DATA-OPS-A1.4 — memory and voice live outside the proven sensor, never inside it
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## D-DATA-OPS-A1.4 — memory and voice live outside the proven sensor, never inside it (corrected)
 
 Decision: rather than making the proven read-only A1.3 observer stateful or give it a network
 callback, persistence, freshness detection and notification are implemented in a wholly separate
@@ -9,16 +9,46 @@ Cloudflare Worker (`workers/data-steward-watchdog/`) with its own identity, D1 d
 credential, that only *reads* A1.3's own GitHub Actions run history as evidence. This keeps A1.1's
 deterministic-authority boundary, A1.2's observe-only sentinels and A1.3's no-mutation regressions
 provably untouched — a permanent bidirectional dependency-scan test enforces that neither package
-can import the other. Heartbeat thresholds (12h healthy / 24h missing) were set deliberately loose
-against this repository's own measured GitHub schedule-delivery lateness (3h21m–4h44m), rather than
-invented as round numbers, precisely to avoid manufacturing false incidents from ordinary delivery
-jitter. Incident identity is a fingerprint over a closed (problem class, component) pair only —
-never a reason code, run id or SHA — so a lifecycle continuity model (NEW/ONGOING/CHANGED/
+can import the other, and (corrected in this pass) that the watchdog does not import from `src/`
+either: an earlier draft imported the generic canonicalisation helpers from
+`src/decision-intelligence/canonical.mjs`, which the isolation claim itself forbade, and now
+carries its own local copy instead.
+
+A second decision made in the same correction pass: heartbeat freshness is **not** a fixed age
+threshold. An original 12h-healthy/24h-missing design was found, on review, to be incompatible with
+A1.3's real two-opportunity-a-day schedule (04:17/08:17 UTC) — the roughly 20-hour overnight gap
+between the last opportunity of one day and the first of the next would exceed a 24h age bound only
+sometimes and a 12h one every night, so it could not distinguish "no opportunity was due yet" from
+"an opportunity was due and evidence is missing." The corrected model computes the single most
+recent declared opportunity at or before the evaluation instant and asks only whether *that*
+opportunity's evidence is healthy, missing beyond a documented grace window, or genuinely failed —
+the grace window (5h) is still set against this repository's own measured GitHub schedule-delivery
+lateness (3h21m–4h44m), for the same reason as before: to avoid manufacturing false incidents from
+ordinary delivery jitter. A stated, accepted trade-off: only the latest due opportunity is
+load-bearing, so an isolated missed opportunity immediately followed by a healthy one is never
+separately surfaced.
+
+A third decision: freshness evidence and A1.3's own summary content are evaluated against a pinned
+semantic contract (`observer-summary-contract.mjs`), not merely parsed as JSON — a run whose
+summary is structurally valid but reports `UNHEALTHY`, an incomplete heartbeat, or contradicts its
+own job's GitHub conclusion is treated as a failure, not a mask over it.
+
+A fourth decision: concurrent Cron fires are made safe by a database-level single-writer claim
+(atomic `INSERT … ON CONFLICT DO NOTHING` keyed on `controller.scheduledTime`) rather than a
+process-local or purely date-derived idempotency key, because only a durable atomic claim can
+correctly serialise two genuinely concurrent executions of the same logical scheduled event.
+
+Incident identity remains a fingerprint over a closed (problem class, component) pair only — never
+a reason code, run id or SHA — so a lifecycle continuity model (NEW/ONGOING/CHANGED/
 RECOVERED/REOPENED) is possible without either minting a new incident every run or losing the
-distinction between "unchanged" and "materially worse." Email transport is deliberately the only
-module touching a `send_email` binding, and deliberately never passes a `to`: Cloudflare's own
-`destination_address` binding restriction, not application code, is what makes the Worker
-structurally incapable of relaying to an arbitrary recipient. [Full boundary](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+distinction between "unchanged" and "materially worse," and it now carries a real evidence pointer
+rather than a placeholder. Email transport is deliberately the only module touching a `send_email`
+binding, and deliberately never passes a `to`: Cloudflare's own `destination_address` binding
+restriction, not application code, is what makes the Worker structurally incapable of relaying to
+an arbitrary recipient. Documentation deliberately does not claim exactly-once external email
+delivery — only strong idempotent decisioning, given the narrow unavoidable distributed-systems
+window between Cloudflare accepting a message and the Worker's own commit.
+[Full boundary](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
 
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## D-DATA-OPS-A1.3 — independent, dormant GitHub-hosted observer

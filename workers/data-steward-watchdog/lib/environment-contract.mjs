@@ -6,7 +6,7 @@
 // sharing A1.3's ephemeral Actions token (which does not exist outside a GitHub Actions run at
 // all). The required GitHub permission is the same minimum A1.2/A1.3 already established:
 // read-only Metadata plus Actions. No write scope of any kind is requested.
-import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+import {deepFreeze} from './canonical.mjs';
 
 export const WATCHDOG_GITHUB_TOKEN='DATA_STEWARD_WATCHDOG_GITHUB_TOKEN';
 export const WATCHDOG_D1_BINDING='STEWARD_WATCHDOG_DB';
