@@ -136,16 +136,20 @@ test('runtime summary is closed and excludes tokens, account values, raw bodies 
 
 // Live evidence (run 34277208819) proved the Cloudflare sentinel now fails at one of three named
 // stages rather than one collapsed code, live evidence (run 34311398342) then proved the
-// `/schedules` stage itself needed five closed categories rather than one, and live evidence
+// `/schedules` stage itself needed five closed categories rather than one, live evidence
 // (run 34319945520) then proved the response-processing category itself needed three closed
-// layers rather than one. The sanitized summary must carry any of these closed reason codes
-// through unchanged while remaining exactly as closed as any other reason code — no request URL,
-// header, status, provider message, account id, fingerprint or raw body can ever ride along.
+// layers rather than one, and live evidence (run 34325772296) then proved the payload-decode layer
+// itself needed five closed categories — one per `decodeSchedules` predicate — rather than one.
+// The sanitized summary must carry any of these closed reason codes through unchanged while
+// remaining exactly as closed as any other reason code — no request URL, header, status, provider
+// message, account id, fingerprint or raw body can ever ride along.
 test('the new closed Cloudflare stage reason codes pass through sanitized output with nothing else attached',()=>{
   for(const reasonCode of ['CLOUDFLARE_SCHEDULES_AUTH_REFUSED','CLOUDFLARE_SCHEDULES_NOT_FOUND',
     'CLOUDFLARE_SCHEDULES_HTTP_FAILED','CLOUDFLARE_SCHEDULES_JSON_INVALID',
-    'CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID','CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID',
-    'CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED','CLOUDFLARE_DEPLOYMENTS_READ_FAILED',
+    'CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID','CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED',
+    'CLOUDFLARE_SCHEDULES_RESULT_INVALID','CLOUDFLARE_SCHEDULES_ARRAY_INVALID',
+    'CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED','CLOUDFLARE_SCHEDULES_CRON_NOT_STRING',
+    'CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED','CLOUDFLARE_DEPLOYMENTS_READ_FAILED',
     'CLOUDFLARE_SETTINGS_READ_FAILED']){
     const input=result({unhealthy:true});
     input.observations[1]={sourceType:'cloudflare',observationState:'OBSERVATION_FAILED',reasonCode,
