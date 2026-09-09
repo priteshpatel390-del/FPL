@@ -1,5 +1,17 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## Current Data-Ops checkpoint — A1.4 Persistent Incident Lifecycle + Independent Watchdog, repository candidate
+
+Draft, unmerged. A1.4 adds `workers/data-steward-watchdog/`, a separate isolated Cloudflare Worker
+that reads A1.3's own GitHub Actions run history, classifies its scheduled-heartbeat freshness
+(HEALTHY within 12h / STALE within 24h / MISSING beyond it), reduces that through a pure,
+replay-safe incident lifecycle (NEW/ONGOING/CHANGED/RECOVERED/REOPENED), persists state in its own
+three-table D1 database, and sends bounded, deduplicated owner-notification email to one
+Cloudflare-fixed recipient. It has no ability to repair, collect, mutate production, or change any
+repository, Cloudflare or GitHub configuration; A1.1–A1.3 are entirely unchanged. Nothing is
+deployed, provisioned or activated. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## Current Data-Ops checkpoint — A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate
 

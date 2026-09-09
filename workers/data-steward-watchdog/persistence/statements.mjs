@@ -1,0 +1,83 @@
+// DATA-OPS-A1.4 — the whole allowlisted SQL surface of the watchdog D1 database.
+//
+// Every statement the watchdog can ever issue is a fixed string literal in this module, bound
+// with `?` placeholders and nothing else. There is no string concatenation, no template
+// interpolation of a caller-supplied value into SQL text, and no function anywhere in this
+// package that accepts raw SQL from a caller. `assertAllowedStatement()` is a second, structural
+// line of defence: it checks that the exact string about to run is one of the frozen statements
+// declared here, by reference equality against this file's own exports, so a future edit cannot
+// quietly add an unreviewed query without also being caught by the permanent test that walks this
+// allowlist.
+import {deepFreeze} from '../../../src/decision-intelligence/canonical.mjs';
+
+export const INSERT_OBSERVATION=
+  `INSERT INTO watchdog_observations
+     (observation_id,source_kind,event_type,workflow_run_id,run_attempt,observed_at,
+      run_created_at,run_completed_at,head_sha,health_state,reason_code,evidence_hash,created_at)
+   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+   ON CONFLICT(observation_id) DO NOTHING`;
+
+export const SELECT_LAST_SCHEDULED_SUCCESS=
+  `SELECT MAX(run_completed_at) AS last_success_at FROM watchdog_observations
+   WHERE event_type='schedule' AND health_state='SUCCESS' AND run_completed_at IS NOT NULL`;
+
+export const SELECT_INCIDENT=
+  `SELECT fingerprint,problem_class,component,lifecycle_state,reason_code,first_seen_at,
+      last_seen_at,recovered_at,occurrence_count,reopened_count,last_evidence_observed_at,
+      last_evidence_observation_id,last_notified_at
+   FROM watchdog_incidents WHERE fingerprint=?`;
+
+export const UPSERT_INCIDENT=
+  `INSERT INTO watchdog_incidents
+     (fingerprint,problem_class,component,lifecycle_state,reason_code,first_seen_at,last_seen_at,
+      recovered_at,occurrence_count,reopened_count,last_evidence_observed_at,
+      last_evidence_observation_id,last_notified_at,updated_at)
+   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+   ON CONFLICT(fingerprint) DO UPDATE SET
+     lifecycle_state=excluded.lifecycle_state,
+     reason_code=excluded.reason_code,
+     last_seen_at=excluded.last_seen_at,
+     recovered_at=excluded.recovered_at,
+     occurrence_count=excluded.occurrence_count,
+     reopened_count=excluded.reopened_count,
+     last_evidence_observed_at=excluded.last_evidence_observed_at,
+     last_evidence_observation_id=excluded.last_evidence_observation_id,
+     updated_at=excluded.updated_at`;
+
+export const UPDATE_INCIDENT_LAST_NOTIFIED=
+  `UPDATE watchdog_incidents SET last_notified_at=? WHERE fingerprint=?`;
+
+export const INSERT_NOTIFICATION=
+  `INSERT INTO watchdog_notifications
+     (idempotency_key,fingerprint,transition,decided_at,evidence_observation_id,delivery_status,
+      delivered_at,created_at)
+   VALUES (?,?,?,?,?,'PENDING',NULL,?)
+   ON CONFLICT(idempotency_key) DO NOTHING`;
+
+export const UPDATE_NOTIFICATION_DELIVERY=
+  `UPDATE watchdog_notifications SET delivery_status=?,delivered_at=? WHERE idempotency_key=?`;
+
+export const PRUNE_OBSERVATIONS=
+  `DELETE FROM watchdog_observations
+   WHERE observed_at<? AND observation_id NOT IN (
+     SELECT last_evidence_observation_id FROM watchdog_incidents
+     WHERE lifecycle_state='ACTIVE' AND last_evidence_observation_id IS NOT NULL)`;
+
+export const PRUNE_INCIDENTS=
+  `DELETE FROM watchdog_incidents WHERE lifecycle_state='RECOVERED' AND recovered_at<?`;
+
+export const PRUNE_NOTIFICATIONS=`DELETE FROM watchdog_notifications WHERE decided_at<?`;
+
+export const ALLOWED_STATEMENTS=deepFreeze([INSERT_OBSERVATION,SELECT_LAST_SCHEDULED_SUCCESS,
+  SELECT_INCIDENT,UPSERT_INCIDENT,UPDATE_INCIDENT_LAST_NOTIFIED,INSERT_NOTIFICATION,
+  UPDATE_NOTIFICATION_DELIVERY,PRUNE_OBSERVATIONS,PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS]);
+
+export class StatementNotAllowedError extends Error{
+  constructor(){super('watchdog_sql_not_allowlisted');this.name='StatementNotAllowedError';
+    this.code='watchdog_sql_not_allowlisted';}
+}
+
+export function assertAllowedStatement(sql){
+  if(!ALLOWED_STATEMENTS.includes(sql))throw new StatementNotAllowedError();
+  return sql;
+}

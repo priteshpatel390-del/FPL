@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "teamsheet-data-steward-watchdog",
+  "main": "watchdog.mjs",
+  "compatibility_date": "2026-09-09",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "triggers": {
+    "crons": [
+      "17 5,11,17,23 * * *"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "STEWARD_WATCHDOG_DB",
+      "database_name": "teamsheet-data-steward-watchdog",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "OWNER_NOTIFICATION_EMAIL",
+      "destination_address": "REPLACE_LOCALLY_BEFORE_DEPLOY@example.invalid"
+    }
+  ]
+}

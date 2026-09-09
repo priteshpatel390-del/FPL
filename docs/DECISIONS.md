@@ -1,5 +1,25 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## D-DATA-OPS-A1.4 — memory and voice live outside the proven sensor, never inside it
+
+Decision: rather than making the proven read-only A1.3 observer stateful or give it a network
+callback, persistence, freshness detection and notification are implemented in a wholly separate
+Cloudflare Worker (`workers/data-steward-watchdog/`) with its own identity, D1 database and GitHub
+credential, that only *reads* A1.3's own GitHub Actions run history as evidence. This keeps A1.1's
+deterministic-authority boundary, A1.2's observe-only sentinels and A1.3's no-mutation regressions
+provably untouched — a permanent bidirectional dependency-scan test enforces that neither package
+can import the other. Heartbeat thresholds (12h healthy / 24h missing) were set deliberately loose
+against this repository's own measured GitHub schedule-delivery lateness (3h21m–4h44m), rather than
+invented as round numbers, precisely to avoid manufacturing false incidents from ordinary delivery
+jitter. Incident identity is a fingerprint over a closed (problem class, component) pair only —
+never a reason code, run id or SHA — so a lifecycle continuity model (NEW/ONGOING/CHANGED/
+RECOVERED/REOPENED) is possible without either minting a new incident every run or losing the
+distinction between "unchanged" and "materially worse." Email transport is deliberately the only
+module touching a `send_email` binding, and deliberately never passes a `to`: Cloudflare's own
+`destination_address` binding restriction, not application code, is what makes the Worker
+structurally incapable of relaying to an arbitrary recipient. [Full boundary](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## D-DATA-OPS-A1.3 — independent, dormant GitHub-hosted observer
 

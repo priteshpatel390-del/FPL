@@ -1,5 +1,28 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## DATA-OPS A1.4 watchdog permanent coverage
+
+Seven new files, 93 tests, all passing: `tests/data-ops-a1-4-heartbeat.test.mjs` pins the pure
+12h/24h heartbeat boundaries exactly (inclusive both sides, one millisecond past each).
+`tests/data-ops-a1-4-lifecycle.test.mjs` proves NEW/ONGOING/CHANGED/RECOVERED/REOPENED/NONE over
+fixtures, fingerprint stability and independence from reason code and head SHA, replay/out-of-order
+safety, and duplicate-execution safety. `tests/data-ops-a1-4-github-evidence.test.mjs` proves the
+bounded `GET`-only decoders, the one-summary-read-per-cycle budget, evidence-unavailable-never-
+outage, and read-bound exhaustion. `tests/data-ops-a1-4-notification.test.mjs` proves the
+always/never/24h-reminder-ceiling notification policy, the sanitized message's closed field set,
+and that the transport can never specify a recipient. `tests/data-ops-a1-4-persistence.test.mjs`
+proves the SQL allowlist, idempotent inserts/reservations against a real (if in-memory) uniqueness
+implementation, and exact 45/365/90-day retention boundaries including an ACTIVE incident
+surviving pruning. `tests/data-ops-a1-4-orchestrator.test.mjs` wires every module together end to
+end — including GitHub-unavailable resilience via durable D1 history and self-healing after a
+delivery failure — entirely against fakes, no live request ever issued.
+`tests/data-ops-a1-4-worker-config.test.mjs` pins the dedicated Worker identity, the single
+six-hourly Cron Trigger, the isolated D1 binding, the maximally-restrictive `send_email` binding
+shape, the absence of any `fetch` handler, and a bidirectional whole-package dependency scan
+against every other Worker and against `src/`. Existing A1.1/A1.2/A1.3 tests are unmodified and
+remain green. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
 ## DATA-OPS A1.3 Cloudflare Cron semantic-normalisation coverage, and separately, live acceptance evidence
 

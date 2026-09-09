@@ -1,5 +1,29 @@
 # ARCHITECTURE.md
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## Current Data Steward watchdog architecture — A1.4 (repository candidate, unmerged)
+
+A new, separate Cloudflare Worker, `workers/data-steward-watchdog/`, sits outside the A1.3 runtime
+below and adds the memory and voice A1.1–A1.3 deliberately never had. It has its own identity
+(`teamsheet-data-steward-watchdog`), its own D1 database bound only to itself
+(`STEWARD_WATCHDOG_DB`), its own dedicated GitHub read credential
+(`DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`) and its own narrow `send_email` binding restricted by
+Cloudflare's own `destination_address` config to exactly one recipient. Internally:
+`lib/github-evidence-reader.mjs` (bounded, `GET`-only reads of A1.3's own workflow's run/job
+history) feeds `lib/heartbeat.mjs` (pure 12h/24h freshness classification) and
+`lib/observation-classifier.mjs`; both feed `lib/lifecycle-reducer.mjs` (pure, replay-safe
+NEW/ONGOING/CHANGED/RECOVERED/REOPENED reduction over a fingerprint from
+`lib/incident-fingerprint.mjs` that never depends on a reason code, run id or SHA); persistence
+goes through `persistence/repository.mjs`, whose only SQL surface is the fixed, allowlisted
+statements in `persistence/statements.mjs`; `notification/decision.mjs` (pure policy) and
+`notification/transport.mjs` (the one place a `send_email` binding is touched) are separate
+modules; `run-watchdog.mjs` is the sole orchestrator, and `watchdog.mjs` is the Worker entry point,
+exporting a `scheduled` handler and no `fetch` handler at all. A permanent test pins that this
+package imports nothing from `workers/data-steward/`, `workers/data-platform/`,
+`workers/schedule-dispatcher/` or `workers/evidence-archive/`, and that none of those import it.
+Repository-only: no deployment, D1 database, Cron Trigger, credential or live activation exists.
+See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## Current Data Steward runtime architecture — A1.3
 

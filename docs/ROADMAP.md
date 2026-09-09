@@ -1,5 +1,20 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## Current checkpoint — DATA-OPS A1.4 Persistent Incident Lifecycle + Independent Watchdog, repository candidate
+
+Draft, unmerged PR. A1.4 gives the Autonomous Data Steward memory and a voice, implemented in a
+separate isolated Cloudflare Worker (`workers/data-steward-watchdog/`) that reads A1.3's own
+GitHub Actions history, classifies scheduled-heartbeat freshness, reduces it through a replay-safe
+incident lifecycle, persists to its own D1 database and notifies the owner by email, bounded and
+deduplicated. A1.1–A1.3 are unchanged; the watchdog has no repair, collection, mutation or
+configuration-change capability of any kind. Repository suite: 1,915 tests, 1,902 passed, 13
+failed (pre-existing, environment-specific `node:sqlite` failures unrelated to and reproduced
+identically on unmodified `main`); all 93 new A1.4 tests pass. Next gates, each separate: owner
+review and merge; exact-`main` Verify; then the one consolidated live-provisioning/deployment/
+activation package described in [A1.4 §14](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#14-live-closeout--one-consolidated-package-for-a-later-separate-owner-gate).
+A1.3's own separate scheduled-activation gate is unchanged. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## Current checkpoint — DATA-OPS A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate
 

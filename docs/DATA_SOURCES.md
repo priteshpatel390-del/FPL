@@ -1,5 +1,14 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## DATA-OPS A1.4 watchdog source boundary
+
+A1.4 activates no provider and adds no data source. Its two inputs are the repository's own
+existing GitHub Actions history for A1.3's workflow (bounded, read-only) and its own isolated
+watchdog D1 database, which holds only its own observation/incident/notification bookkeeping —
+never Official FPL data, never application/model data. No Official FPL acquisition, retention,
+collection or model input changes. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## DATA-OPS A1.3 runtime source boundary
 

@@ -1,5 +1,23 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+## DATA-OPS A1.4 watchdog limitations
+
+Repository-only; not live. No isolated D1 database, GitHub credential, `send_email` binding
+destination or Cron Trigger exists live as a result of this PR — `wrangler.jsonc` ships a
+structurally invalid placeholder destination address rather than the owner's real one. A
+Cloudflare-hosted watchdog is independent of GitHub Actions as a process but not independent of
+the world: a simultaneous Cloudflare/GitHub/network failure cannot be perfectly diagnosed by
+anything hosted on either provider, and an inability to reach GitHub proves evidence
+unavailability, never a root cause and never a GitHub outage. The 12h/24h heartbeat thresholds are
+deliberately loose given measured GitHub delivery lateness (3h21m–4h44m in this repository's own
+history) and can still mean a genuinely broken schedule goes unmentioned for up to 24 hours by
+design — this is the approved trade-off against false alarms, not an oversight. The in-memory fake
+D1 test harness faithfully implements this schema's conflict/uniqueness semantics for test
+purposes but is not a substitute for D1's actual behaviour under concurrent overlapping cycles,
+which remains a live-acceptance question. Cloudflare's `send_email` binding's live behaviour is
+documented but unexercised here. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## DATA-OPS A1.3 live read-only observer — accepted, with limitations that remain real
 
