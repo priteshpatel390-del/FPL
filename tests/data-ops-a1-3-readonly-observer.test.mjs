@@ -134,6 +134,26 @@ test('runtime summary is closed and excludes tokens, account values, raw bodies 
   assert.doesNotMatch(output,/gh-secret|account-secret|repository gate log|rawBody|token/i);
 });
 
+// Live evidence (run 34277208819) proved the Cloudflare sentinel now fails at one of three named
+// stages rather than one collapsed code. The sanitized summary must carry that closed reason code
+// through unchanged while remaining exactly as closed as any other reason code — no request URL,
+// header, status, provider message, account id, fingerprint or raw body can ever ride along.
+test('the new closed Cloudflare stage reason codes pass through sanitized output with nothing else attached',()=>{
+  for(const reasonCode of ['CLOUDFLARE_SCHEDULES_READ_FAILED','CLOUDFLARE_DEPLOYMENTS_READ_FAILED',
+    'CLOUDFLARE_SETTINGS_READ_FAILED']){
+    const input=result({unhealthy:true});
+    input.observations[1]={sourceType:'cloudflare',observationState:'OBSERVATION_FAILED',reasonCode,
+      normalizedState:{observed:false}};
+    const summary=sanitizedSummary(input);
+    const cloudflareRow=summary.sentinels.find(row=>row.sentinel==='cloudflare');
+    assert.equal(cloudflareRow.reasonCode,reasonCode);
+    assert.deepEqual(Object.keys(cloudflareRow),['sentinel','state','reasonCode']);
+    const output=JSON.stringify(summary);
+    assert.doesNotMatch(output,
+      /token|authorization|account[_-]?id|fingerprint|https?:\/\/|status\s*:\s*\d|error|message/i);
+  }
+});
+
 test('migration inventory remains 0001-0003 and production collection surfaces are not observer inputs',()=>{
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql']);

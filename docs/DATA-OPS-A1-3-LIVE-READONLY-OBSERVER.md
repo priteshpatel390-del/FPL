@@ -1,7 +1,7 @@
 # DATA-OPS A1.3 — Dormant live read-only observer runtime
 
-Status: **REPOSITORY-READY; FIRST LIVE OBSERVATION ATTEMPTED AND FAILED CLOSED; NOT LIVE-ACCEPTED**
-Source main: `2f8a4850f911779d2ec48db2f835d0f6af5a45c5` (merge of PR #232, A1.3 repository-ready checkpoint)
+Status: **REPOSITORY-READY; SECOND LIVE OBSERVATION ATTEMPTED, IDENTITY ADMISSION SUCCEEDED, READ PHASE FAILED CLOSED; NOT LIVE-ACCEPTED**
+Source main: `d9599c4aa557ce0727c4f8b6ddd24a4778b21497` (merge of PR #233, A1.3 identifier-masking remediation)
 
 ## First live observation attempt — 8 September 2026
 
@@ -35,6 +35,76 @@ environment, including `vars.*` values, in that step's own log header. Because
 resolved-environment header of every step in the job — before any Cloudflare credential was ever
 exposed. The fingerprint is not an authentication credential, but this violated A1.3's own
 identifier-sanitisation boundary. See "Masking remediation" below.
+
+## Second live observation attempt — 8 September 2026
+
+The owner performed a second attended dispatch of `Data Steward Read-Only Observer`, after the
+masking remediation above merged as PR #233: run `34277208819`, run number 2, event
+`workflow_dispatch`, branch `main`, head SHA `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`. **This is
+not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare
+mutation occurred.
+
+**FACT: the masking remediation worked live.** The job log proved the first masking step
+succeeded, the account id was masked, the fingerprint was masked before materialisation, and the
+final observer step's resolved environment displayed every protected value as `***`.
+
+Sanitized result: `verdict: UNHEALTHY`, `evaluationReason: SENTINEL_EVIDENCE_UNAVAILABLE`,
+`heartbeat: INCOMPLETE`, `escalationRequired: true`.
+
+| Sentinel | State | Reason | Detail |
+|---|---|---|---|
+| GitHub | OBSERVED | `GITHUB_CHAIN_OBSERVED` | — |
+| D1 | OBSERVED | `D1_STATE_OBSERVED` | `rowsRead: 88580` |
+| Cloudflare | OBSERVATION_FAILED | `CLOUDFLARE_READ_FAILED` | reached the read phase; stage unidentified |
+
+**FACT: Cloudflare identity admission now succeeds.** The previous `CLOUDFLARE_IDENTITY_MISMATCH`
+is gone. **FACT: the failure now occurs during one of the three already-approved fixed `GET`
+reads** — `/schedules`, `/deployments` or `/settings` — under
+`workers/data-steward/sentinels/cloudflare-sentinel.mjs`.
+
+**Existing ambiguity.** `readCloudflareConfiguration()` collapsed a transport error, a non-200
+response, a malformed envelope or an invalid decoded result from *any* of those three sequential
+reads into the single `CLOUDFLARE_READ_FAILED` code, so this live evidence alone cannot say which
+stage failed. See "Cloudflare fixed-read diagnostic remediation" below.
+
+**Do not claim.** This evidence does not prove the Cloudflare token permission is wrong, that
+production Cloudflare configuration is wrong, that the Cron configuration is wrong, or that any
+decoder is wrong. It proves only that the read phase was reached and one of its three stages
+failed.
+
+## Cloudflare fixed-read diagnostic remediation
+
+This checkpoint replaces the single collapsed `CLOUDFLARE_READ_FAILED` code with three closed,
+stage-named reason codes so a future live run can say which fixed read failed, without widening
+any permission, endpoint, response shape or logging surface:
+
+* `CLOUDFLARE_SCHEDULES_READ_FAILED` — the `GET .../schedules` read failed (transport error,
+  non-200 status, malformed envelope or an invalid decoded result).
+* `CLOUDFLARE_DEPLOYMENTS_READ_FAILED` — schedules succeeded but `GET .../deployments` failed.
+* `CLOUDFLARE_SETTINGS_READ_FAILED` — schedules and deployments succeeded but
+  `GET .../settings` failed.
+
+Each code names only the failed stage. None of them carries, and none of the surrounding code
+retains, an HTTP status, a Cloudflare provider error code or message, a request URL, a response
+body, a header, the account id, the token or the fingerprint — the same sanitisation boundary the
+sentinel already enforced is preserved exactly, just made precise per stage.
+
+**Fail-closed read order is unchanged and is itself diagnostic.** The three reads still run
+strictly in sequence and stop at the first failure: a schedules failure issues exactly one
+Cloudflare request and returns `CLOUDFLARE_SCHEDULES_READ_FAILED`; a deployments failure issues
+exactly two and returns `CLOUDFLARE_DEPLOYMENTS_READ_FAILED`; a settings failure issues exactly
+three and returns `CLOUDFLARE_SETTINGS_READ_FAILED`. A fully successful cycle still issues exactly
+three `GET` requests against the three fixed paths and produces byte/field-identical successful
+observation output to before. `CLOUDFLARE_IDENTITY_MISMATCH` remains earlier and stronger, and
+still issues zero Cloudflare requests.
+
+**What is deliberately unchanged.** `decodeEnvelope`, `decodeSchedules`, `decodeDeployments` and
+`decodeSettings` are byte-identical — this remediation does not guess at or correct the response
+contract those decoders enforce. The Cloudflare credential contract remains exactly **Workers
+Scripts: Read** plus **D1: Read**; no token was recreated, rotated or widened, and no fourth read,
+endpoint or arbitrary path/method was added. `CLOUDFLARE_SENTINEL_MAX_READS` stays exactly `3`. No
+Cloudflare or D1 mutation, no Cron change, no schedule activation and no Workflow B/C or
+opportunity-guard change occurred.
 
 ## Masking remediation
 
@@ -151,21 +221,29 @@ repository-proven read-only API. These gaps are not reported as healthy evidence
 ## Activation gate
 
 Steps 1–2 below were performed by the owner ahead of the first attended dispatch recorded above;
-steps 3–4 remain outstanding, with a corrective sub-step now required inside step 3:
+step 3 is now attempted twice and still not accepted, with a further corrective sub-step required
+inside it:
 
 1. ~~Explicitly create and configure protected environment `data-steward-readonly`, with deployment
    branches/tags set to **Selected branches and tags → exact branch `main`**.~~ Done: the first
    dispatch was admitted to the environment.
 2. ~~Store the read-only Cloudflare credentials in it: account id, the separately supplied account
-   fingerprint and one token limited to **Workers Scripts Read** plus **D1 Read**.~~ Done, but the
-   fingerprint was stored in the wrong shape — see "First live observation attempt" above.
+   fingerprint and one token limited to **Workers Scripts Read** plus **D1 Read**.~~ Done. The
+   fingerprint was initially stored in the wrong shape (see "First live observation attempt"); the
+   owner has since corrected it to the raw 64-character lowercase SHA-256 hex, proved by the second
+   attempt's successful identity admission (see "Second live observation attempt").
 3. Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.
-   **Attempted once (run `34269989975`) and not accepted**: the Cloudflare sentinel failed closed.
-   Before dispatching again: merge this remediation, confirm exact-`main` Verify success, then have
-   the owner correct the live `DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT` value to the raw
-   64-character lowercase SHA-256 hex (no prefix). Only then perform one new attended manual
-   dispatch on the then-current `main`, and accept it only if the GitHub, D1 and Cloudflare
-   sentinels all observe successfully and the cross-source verdict is healthy.
+   **Attempted twice and not yet accepted.** Run `34269989975` failed closed at Cloudflare identity
+   admission (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819`, after that
+   merge, passed identity admission but failed closed during the Cloudflare read phase with the
+   then-collapsed `CLOUDFLARE_READ_FAILED`. Before dispatching again: merge this diagnostic
+   remediation, confirm exact-`main` Verify success, then perform one new attended manual dispatch
+   on the then-current `main`. Read the new closed reason code
+   (`CLOUDFLARE_SCHEDULES_READ_FAILED` / `CLOUDFLARE_DEPLOYMENTS_READ_FAILED` /
+   `CLOUDFLARE_SETTINGS_READ_FAILED`) to identify the precise failing stage before deciding whether
+   the fix is configuration, credential permission, a response-contract correction or another
+   cause. Accept the run only if the GitHub, D1 and Cloudflare sentinels all observe successfully
+   and the cross-source verdict is healthy.
 4. Only after that acceptance, separately approve and set repository variable
    `DATA_STEWARD_SCHEDULED_ENABLED` to exact `true`. Scheduled activation is a later, separate
    approval and remains NOT LIVE-ACTIVATED regardless of how step 3 resolves.

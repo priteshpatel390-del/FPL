@@ -1,5 +1,10 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+## DATA-OPS A1.3 Cloudflare fixed-read diagnostic limitations
+
+The second attended observer dispatch (run `34277208819`, head `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`) is **not** a live acceptance. It proved the PR #233 masking fix worked and Cloudflare identity admission now succeeds, but the Cloudflare sentinel still failed closed — this time inside its read phase, at the collapsed `CLOUDFLARE_READ_FAILED` code, which could not identify which of the three fixed reads (`/schedules`, `/deployments`, `/settings`) failed. This checkpoint corrects that diagnostic ambiguity only: it does not claim the Cloudflare token permission, production configuration, Cron configuration or any decoder is wrong, does not correct any live value, does not dispatch the observer again, and does not activate scheduling. The precise failing stage remains unknown until a further attended dispatch reports one of the three new closed reason codes.
+
 <!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
 ## DATA-OPS A1.3 first-live-observation limitations
 

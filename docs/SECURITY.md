@@ -1,5 +1,12 @@
 # SECURITY.md
 
+<!-- DATA-OPS-A1-3-2026-09-08-CLOUDFLARE-READ-DIAGNOSTICS -->
+## DATA-OPS A1.3 Cloudflare fixed-read diagnostic remediation
+
+A second attended observer dispatch (run `34277208819`, head `d9599c4aa557ce0727c4f8b6ddd24a4778b21497`), after the masking remediation below merged as PR #233, proved the masking fix worked live and Cloudflare identity admission now succeeds. The Cloudflare sentinel then failed closed inside its read phase with the collapsed `CLOUDFLARE_READ_FAILED` code, which could not identify which of the three already-approved fixed `GET` reads (`/schedules`, `/deployments`, `/settings`) failed.
+
+This checkpoint replaces that one code with three closed, stage-named reason codes — `CLOUDFLARE_SCHEDULES_READ_FAILED`, `CLOUDFLARE_DEPLOYMENTS_READ_FAILED`, `CLOUDFLARE_SETTINGS_READ_FAILED` — each naming only the failed stage. None carries an HTTP status, a Cloudflare provider error code or message, a request URL, a response body, a header, the account id, the token or the fingerprint; the sentinel's existing sanitisation boundary is unchanged, only made precise per stage. The three reads still run strictly in sequence and stop at the first failure, so the request count remains itself diagnostic (1 for a schedules failure, 2 for deployments, 3 for settings, and 3 for a fully successful cycle); `CLOUDFLARE_SENTINEL_MAX_READS` stays exactly `3`, and `CLOUDFLARE_IDENTITY_MISMATCH` remains earlier and stronger, still issuing zero Cloudflare requests. Every decoder (`decodeEnvelope`, `decodeSchedules`, `decodeDeployments`, `decodeSettings`) is byte-identical, and the Cloudflare credential contract remains exactly Workers Scripts Read plus D1 Read — no token was recreated, rotated or widened, and no fourth read, endpoint or arbitrary path/method was added. No mutation, no live credential value and no schedule activation occurred in this remediation.
+
 <!-- DATA-OPS-A1-3-2026-09-08-REMEDIATION -->
 ## DATA-OPS A1.3 first-live-observation identifier-masking remediation
 
