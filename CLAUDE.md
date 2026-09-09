@@ -1,7 +1,31 @@
-<!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
-### Current Data-Ops checkpoint — A1.3 Cloudflare Cron semantic normalisation (unmerged)
+<!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
+### Current Data-Ops checkpoint — A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate
 
-**Supersedes the payload-decode block below as the current status; that remediation merged as PR #237, and post-merge `main` is `dfc78882a507e90662f2937582ab0b35af34bdec` with exact-`main` Verify success (run `34342369935`).** The owner performed a sixth attended `Data Steward Read-Only Observer` dispatch: workflow run `34342701912`, run number 7, event `workflow_dispatch`, branch `main`, head SHA `dfc78882a507e90662f2937582ab0b35af34bdec`. **This is not a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
+**Supersedes the Cron semantic-normalisation block below as the current status; that remediation merged as PR #238, post-merge `main` is `174a7ece2f6c52257902c79ac9a46de846edeb91`, and exact-`main` Verify succeeded (run `34345865860`, run number 662, event `push`).** After that merge and Verify, the owner performed a seventh attended `Data Steward Read-Only Observer` dispatch: workflow run `34346126189`, run number 8, event `workflow_dispatch`, branch `main`, head SHA `174a7ece2f6c52257902c79ac9a46de846edeb91`, job `observe-production-chain` (job id `102448024505`), job result **SUCCESS**.
+
+**FACT: this run is A1.3's first complete live HEALTHY observation, and it is a live technical acceptance, not a scheduled-monitoring claim.** Sanitized output:
+
+```json
+{"dayDate":"2026-09-09","verdict":"HEALTHY","evaluationReason":"HEALTHY_EXPECTED_STATE",
+ "heartbeat":"COMPLETE","escalationRequired":false,
+ "sentinels":[
+   {"sentinel":"cloudflare","state":"OBSERVED","reasonCode":"CLOUDFLARE_CONFIGURATION_OBSERVED"},
+   {"sentinel":"d1","state":"OBSERVED","reasonCode":"D1_STATE_OBSERVED","rowsRead":89066},
+   {"sentinel":"github","state":"OBSERVED","reasonCode":"GITHUB_CHAIN_OBSERVED"}]}
+```
+
+All three sentinels observed successfully in one live evaluation; heartbeat `COMPLETE`; no escalation. Runtime credentials remained masked in the job logs throughout, per the PR #233 remediation. No collection, repair, D1 write, Cloudflare mutation or schedule activation occurred — the observer remains strictly read-only.
+
+**Interpretation, stated precisely.** The merged PR #238 Cron semantic canonicaliser was sufficient for the live Cloudflare `/schedules` response to be observed and matched against the three approved expressions. This proves the observer runtime is operational end to end against live production Cloudflare, D1 and GitHub state on exact verified `main`. It does **not** prove scheduled/automatic monitoring is active — `DATA_STEWARD_SCHEDULED_ENABLED` was neither read nor changed by this run, remains unset, and scheduled execution stays fail-closed unless a later, separate, explicit owner action sets it to exact lowercase `true`. A1.3 remains observe-only: no actuator, no repair authority, no AI authority, no persistent incident store, no autonomous repository edit, no Cloudflare mutation capability, no D1 write capability, no auto-merge capability. It must never be described as autonomous remediation or as continuously-active monitoring.
+
+**Remaining limitations, unchanged by this acceptance.** A GitHub-hosted observer cannot independently detect a total GitHub outage or a complete absence of its own scheduled runs. There is no independent persistent heartbeat/watchdog outside GitHub Actions run history and this sanitized output. Cloudflare per-fire dispatcher invocation history remains unobservable through any repository-proven read-only API (`CLOUDFLARE_INVOCATION_HISTORY_UNOBSERVABLE`, restated on every successful read). D1 read-cost/bounds remain exactly as designed. None of these are resolved by this run, and none are claimed to be.
+
+**Next owner gate, in order:** (1) owner reviews and approves this documentation-only closeout PR; (2) merge only after explicit owner approval; (3) exact-`main` Verify success on the merged commit; (4) a **separate, explicit** owner decision whether to set `DATA_STEWARD_SCHEDULED_ENABLED=true` and activate scheduled observation — not implied, not assumed, and not part of this closeout. See [A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md).
+
+<!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
+### Current Data-Ops checkpoint — A1.3 Cloudflare Cron semantic normalisation, merged as PR #238
+
+**Its checkpoint status is superseded by the live-acceptance block above; its design and evidence below remain accurate as a record and are retained.** This remediation merged as **PR #238**. The owner performed a sixth attended `Data Steward Read-Only Observer` dispatch: workflow run `34342701912`, run number 7, event `workflow_dispatch`, branch `main`, head SHA `dfc78882a507e90662f2937582ab0b35af34bdec`. **This was not, by itself, a live acceptance.** No collection, repair, D1 write, schedule activation or Cloudflare mutation occurred.
 
 **FACT: the payload-decode split above now correctly narrows to a single predicate.** GitHub sentinel `OBSERVED` / `GITHUB_CHAIN_OBSERVED`. D1 sentinel `OBSERVED` / `D1_STATE_OBSERVED`, `rowsRead: 89066`. Cloudflare sentinel `OBSERVATION_FAILED` / `CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED` — identity admission, HTTP 200, JSON parsing, envelope decoding, result-shape and array-bound checks all passed; a row's cron value was a string but the then-current per-field-length Cron pattern rejected it.
 

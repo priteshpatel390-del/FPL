@@ -3,7 +3,7 @@
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## DATA-OPS A1.3 runtime source boundary
 
-A1.3 activates no provider and changes no Official FPL acquisition, retention, collection or model input. Its dormant observer reads only existing GitHub operational metadata, Cloudflare dispatcher configuration and fixed SELECT-only production D1 aggregates through the A1.2 contracts. Sanitized summaries are operational output, not a new data store or product source.
+A1.3 activates no provider and changes no Official FPL acquisition, retention, collection or model input. Its observer reads only existing GitHub operational metadata, Cloudflare dispatcher configuration and fixed SELECT-only production D1 aggregates through the A1.2 contracts. Sanitized summaries are operational output, not a new data store or product source. The manual attended path has since executed successfully live (run `34346126189`, exact `main` `174a7ece2f6c52257902c79ac9a46de846edeb91`, `HEALTHY`/`HEALTHY_EXPECTED_STATE`) — that changes nothing about this boundary: still no provider, still no acquisition/retention/collection/model-input change, and the scheduled path remains dormant until a separate owner-approved activation.
 
 
 <!-- DATA-OPS-A1-2-2026-09-08 -->

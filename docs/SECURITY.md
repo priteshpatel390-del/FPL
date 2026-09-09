@@ -1,7 +1,12 @@
 # SECURITY.md
 
+<!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
+## DATA-OPS A1.3 live read-only observer acceptance — security evidence
+
+After PR #237 (payload-decode split) and PR #238 (Cron semantic normalisation) both merged and exact-`main` Verify (`34345865860`) succeeded, one attended manual `Data Steward Read-Only Observer` dispatch — run `34346126189`, exact head `174a7ece2f6c52257902c79ac9a46de846edeb91`, job `observe-production-chain` — completed successfully with `verdict: HEALTHY`. Runtime credentials remained masked throughout the job log, per the PR #233 remediation still holding live: no account id, token or fingerprint value was ever printed. The Cloudflare credential used remained exactly Workers Scripts Read plus D1 Read; no token was created, rotated or widened for this run. GitHub authority remained the ephemeral read-only job token with Contents/Actions/Checks read only. No mutation of any kind occurred — no Cloudflare write, D1 write, GitHub write, collection or repair — and `DATA_STEWARD_SCHEDULED_ENABLED` was neither read nor set, so scheduled activation remains untouched and off. This is the first live proof that the whole read-only credential and sanitisation boundary — identity admission, the three fixed `GET` reads, the closed reason-code taxonomy, and `sanitizedSummary()`'s allowlisted output — holds against genuine production Cloudflare, D1 and GitHub state rather than only against fixtures.
+
 <!-- DATA-OPS-A1-3-2026-09-09-SCHEDULES-PAYLOAD-DECODE -->
-## DATA-OPS A1.3 `decodeSchedules` payload-decode diagnostic split
+## DATA-OPS A1.3 `decodeSchedules` payload-decode diagnostic split, extended by the live-acceptance evidence above
 
 A fifth attended observer dispatch (run `34325772296`, head `dea6a3239443970dd2e5495fe7759e187fb34e20`), after the response-layer remediation below merged as PR #236, proved identity admission continues to succeed, the request reaches HTTP 200, and both `response.json()` and `decodeEnvelope()` succeed. This rules out every other broad `/schedules` category for this run and places the Cloudflare sentinel's failure precisely inside the existing `decodeSchedules()`. The still-collapsed code `CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID` covered five distinct `decodeSchedules` predicates into one code: the result not being an object (or being an array), `result.schedules` being missing or non-array, the array exceeding the existing 16-entry bound, a row's cron value not being a string, and a cron string failing the existing `CRON` regular expression.
 
