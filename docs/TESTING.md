@@ -1,5 +1,95 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
+## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+
+The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
+assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
+overlap could claim the two opportunities in processing order and swap their real identities.
+Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
+Existing ledger assignments are fixed first. For each independent overlap component, the resolver
+enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
+maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
+the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
+unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+
+Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
+reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
+the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
+outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
+Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
+the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
+No live deployment, provisioning, activation, authority, model, provider or calculation change.
+Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Scheduled runs are resolved together by the set-based matching contract above. Only pairs forced
+across every maximum matching are attributed; overlapping pairs that cannot be distinguished remain
+ambiguous and unassigned. Existing workflow-run attribution is reused across rerun attempts, and
+bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+Final local evidence: 165/165 focused A1.4 tests and 1,987/1,987 full repository tests passed;
+two consecutive production builds were byte-identical.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog permanent coverage (corrected repository candidate, PR #240, unmerged)
+
+**Supersedes the original 7-file/93-test record this block previously carried.** Owner-directed
+correction added three new files and rewrote the rest; ten files, 157 tests, all passing.
+
+`tests/data-ops-a1-4-opportunity-schedule.test.mjs` (new) pins `OBSERVER_OPPORTUNITY_MINUTES`
+against the actual workflow YAML cron strings, verifies the grace window exceeds every documented
+historical GitHub-delivery-lateness sample (3h21m/4h31m/4h44m) found in this repository's own
+records, and exercises `latestExpectedOpportunity` including bootstrap clamping.
+`tests/data-ops-a1-4-observer-summary.test.mjs` (new) and
+`tests/data-ops-a1-4-observation-classifier.test.mjs` (new) directly unit-test the semantic
+summary/job-conclusion contract, including every consistent and every contradictory combination.
+`tests/data-ops-a1-4-heartbeat.test.mjs` (rewritten) replaces the original pure-age boundary tests
+with the expected-opportunity model: HEALTHY at both daily opportunities, healthy state persisting
+across the overnight gap and at watchdog-fire instants between them, inclusive/exclusive grace
+boundaries, decisive failure/skip classified immediately without waiting for grace, and a case
+proving a previous day's success can never mask a later demonstrably-missing opportunity.
+`tests/data-ops-a1-4-lifecycle.test.mjs` (extended) keeps its original NEW/ONGOING/CHANGED/
+RECOVERED/REOPENED/NONE, fingerprint-stability, replay-safety and duplicate-safety coverage and
+adds evidence-pointer passthrough tests. `tests/data-ops-a1-4-github-evidence.test.mjs` (extended)
+proves the bounded `GET`-only decoders, that a summary log read is now attempted for a freshest
+*failed* run as well as a successful one, real `run_attempt`/raw-conclusion propagation, and the
+GitHub-vs-`.toISOString()` timestamp-format normalisation fix. `tests/data-ops-a1-4-notification.test.mjs`
+is unchanged and still proves the always/never/24h-reminder-ceiling policy and the closed message
+field set. `tests/data-ops-a1-4-persistence.test.mjs` (rewritten) proves the 13-statement SQL
+allowlist including the new atomic single-writer claim and bootstrap statements, real evidence-ref
+round-tripping, and retention boundaries unchanged from the original design.
+`tests/data-ops-a1-4-orchestrator.test.mjs` (rewritten) wires every module together end to end and
+now includes **three genuine `Promise.all` concurrency tests** (two-way and five-way same-instant
+overlap each proving exactly one winner; independent different-instant events), a simulated
+crash-after-claim-before-later-phases test, real-provenance-in-notification verification, and an
+environment-incomplete-now-throws test (the orchestrator previously returned a soft `{ok:false}`
+for this case; it now throws, consistent with Correction 5). `tests/data-ops-a1-4-worker-config.test.mjs`
+(rewritten) pins the dedicated Worker identity, the single six-hourly Cron Trigger, the isolated D1
+binding including the inert `database_id` placeholder, the maximally-restrictive `send_email`
+binding shape, the absence of any `fetch` handler, JSONC-comment-safe config parsing, and a
+bidirectional whole-package dependency scan — now checking actual import/require specifiers rather
+than whole-file substring matching, so a benign explanatory comment naming another package's path
+cannot false-positive — against every other Worker and against `src/`. Existing A1.1/A1.2/A1.3
+tests are unmodified and remain green. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-CRON-SEMANTIC-NORMALISATION -->
 ## DATA-OPS A1.3 Cloudflare Cron semantic-normalisation coverage, and separately, live acceptance evidence
 

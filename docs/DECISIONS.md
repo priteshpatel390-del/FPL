@@ -1,5 +1,100 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
+## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+
+The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
+assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
+overlap could claim the two opportunities in processing order and swap their real identities.
+Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
+Existing ledger assignments are fixed first. For each independent overlap component, the resolver
+enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
+maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
+the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
+unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+
+Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
+reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
+the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
+outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
+Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
+the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
+No live deployment, provisioning, activation, authority, model, provider or calculation change.
+Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Scheduled runs are resolved together by the set-based matching contract above. Only pairs forced
+across every maximum matching are attributed; overlapping pairs that cannot be distinguished remain
+ambiguous and unassigned. Existing workflow-run attribution is reused across rerun attempts, and
+bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## D-DATA-OPS-A1.4 — memory and voice live outside the proven sensor, never inside it (corrected)
+
+Decision: rather than making the proven read-only A1.3 observer stateful or give it a network
+callback, persistence, freshness detection and notification are implemented in a wholly separate
+Cloudflare Worker (`workers/data-steward-watchdog/`) with its own identity, D1 database and GitHub
+credential, that only *reads* A1.3's own GitHub Actions run history as evidence. This keeps A1.1's
+deterministic-authority boundary, A1.2's observe-only sentinels and A1.3's no-mutation regressions
+provably untouched — a permanent bidirectional dependency-scan test enforces that neither package
+can import the other, and (corrected in this pass) that the watchdog does not import from `src/`
+either: an earlier draft imported the generic canonicalisation helpers from
+`src/decision-intelligence/canonical.mjs`, which the isolation claim itself forbade, and now
+carries its own local copy instead.
+
+A second decision made in the same correction pass: heartbeat freshness is **not** a fixed age
+threshold. An original 12h-healthy/24h-missing design was found, on review, to be incompatible with
+A1.3's real two-opportunity-a-day schedule (04:17/08:17 UTC) — the roughly 20-hour overnight gap
+between the last opportunity of one day and the first of the next would exceed a 24h age bound only
+sometimes and a 12h one every night, so it could not distinguish "no opportunity was due yet" from
+"an opportunity was due and evidence is missing." The corrected model computes the single most
+recent declared opportunity at or before the evaluation instant and asks only whether *that*
+opportunity's evidence is healthy, missing beyond a documented grace window, or genuinely failed —
+the grace window (5h) is still set against this repository's own measured GitHub schedule-delivery
+lateness (3h21m–4h44m), for the same reason as before: to avoid manufacturing false incidents from
+ordinary delivery jitter. A stated, accepted trade-off: only the latest due opportunity is
+load-bearing, so an isolated missed opportunity immediately followed by a healthy one is never
+separately surfaced.
+
+A third decision: freshness evidence and A1.3's own summary content are evaluated against a pinned
+semantic contract (`observer-summary-contract.mjs`), not merely parsed as JSON — a run whose
+summary is structurally valid but reports `UNHEALTHY`, an incomplete heartbeat, or contradicts its
+own job's GitHub conclusion is treated as a failure, not a mask over it.
+
+A fourth decision: concurrent Cron fires are made safe by a database-level single-writer claim
+(atomic `INSERT … ON CONFLICT DO NOTHING` keyed on `controller.scheduledTime`) rather than a
+process-local or purely date-derived idempotency key, because only a durable atomic claim can
+correctly serialise two genuinely concurrent executions of the same logical scheduled event.
+
+Incident identity remains a fingerprint over a closed (problem class, component) pair only — never
+a reason code, run id or SHA — so a lifecycle continuity model (NEW/ONGOING/CHANGED/
+RECOVERED/REOPENED) is possible without either minting a new incident every run or losing the
+distinction between "unchanged" and "materially worse," and it now carries a real evidence pointer
+rather than a placeholder. Email transport is deliberately the only module touching a `send_email`
+binding, and deliberately never passes a `to`: Cloudflare's own `destination_address` binding
+restriction, not application code, is what makes the Worker structurally incapable of relaying to
+an arbitrary recipient. Documentation deliberately does not claim exactly-once external email
+delivery — only strong idempotent decisioning, given the narrow unavoidable distributed-systems
+window between Cloudflare accepting a message and the Worker's own commit.
+[Full boundary](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## D-DATA-OPS-A1.3 — independent, dormant GitHub-hosted observer
 

@@ -1,5 +1,88 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
+## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+
+The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
+assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
+overlap could claim the two opportunities in processing order and swap their real identities.
+Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
+Existing ledger assignments are fixed first. For each independent overlap component, the resolver
+enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
+maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
+the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
+unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+
+Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
+reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
+the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
+outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
+Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
+the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
+No live deployment, provisioning, activation, authority, model, provider or calculation change.
+Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Scheduled runs are resolved together by the set-based matching contract above. Only pairs forced
+across every maximum matching are attributed; overlapping pairs that cannot be distinguished remain
+ambiguous and unassigned. Existing workflow-run attribution is reused across rerun attempts, and
+bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog limitations (corrected repository candidate)
+
+Repository-only; not live. No isolated D1 database, GitHub credential, `send_email` binding
+destination or Cron Trigger exists live as a result of this PR — `wrangler.jsonc` ships a
+structurally invalid placeholder destination address and an inert all-zero-UUID `database_id`
+placeholder rather than any owner or live value. A Cloudflare-hosted watchdog is independent of
+GitHub Actions as a process but not independent of the world: a simultaneous Cloudflare/GitHub/
+network failure cannot be perfectly diagnosed by anything hosted on either provider, and an
+inability to reach GitHub proves evidence unavailability, never a root cause and never a GitHub
+outage.
+
+**Heartbeat is schedule-aware, but one narrow trade-off remains and is stated deliberately.** An
+earlier fixed 12h/24h age model was replaced by an expected-opportunity model (the most recent of
+A1.3's two daily opportunities, plus a 5-hour grace window sized above this repository's own
+measured GitHub delivery lateness of 3h21m–4h44m). Because only the *latest due* opportunity is
+load-bearing at any evaluation instant, an isolated missed opportunity that is immediately followed
+by a healthy later one is never separately reported as its own incident — this is an accepted,
+understood trade-off against false alarms from ordinary overnight/inter-opportunity gaps, not an
+oversight, and it is exercised by test.
+
+**Concurrency safety is now proven under real concurrent execution, not merely by construction.**
+The single-writer claim (`watchdog_scheduled_claims`, atomic `INSERT … ON CONFLICT DO NOTHING`) is
+exercised in tests under genuine `Promise.all` overlap, including 2-way and 5-way same-instant
+overlap and a simulated crash between claim and later phases. The in-memory fake D1 test harness's
+synchronous internals correctly model D1's real single-statement atomicity for this purpose, but
+real D1's behaviour under genuine live concurrent Worker invocations remains a live-acceptance
+question this repository-only checkpoint cannot close.
+
+**Email delivery is not claimed exactly-once.** The watchdog claims strong idempotent
+decisioning — at most one notification decision per logical incident transition, safe
+deduplication and retry across cycles — but not perfect exactly-once external delivery: a narrow,
+unavoidable distributed-systems window exists between Cloudflare accepting an outbound message and
+the Worker's own commit completing, and no implementation on this platform can close it.
+Cloudflare's `send_email` binding's live behaviour, and whether the eventual real sender domain is
+actually onboarded to Cloudflare's Email Service, are both documented but unexercised here.
+See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## DATA-OPS A1.3 live read-only observer — accepted, with limitations that remain real
 

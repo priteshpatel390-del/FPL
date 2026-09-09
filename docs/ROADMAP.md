@@ -1,5 +1,51 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Each scheduled
+run attempt is durably attributed to exactly one declared opportunity: candidates are opportunities
+whose inclusive five-hour window contains `run_created_at`, considered oldest first, with an
+already-consumed opportunity skipped. Existing attribution for the same run id/attempt is reused.
+Thus a 09:01 run consumes 04:17 before 08:17, while a genuinely delayed 08:17 run after 09:17 has
+only 08:17 as a candidate. Bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## Current checkpoint — DATA-OPS A1.4 Persistent Incident Lifecycle + Independent Watchdog, corrected repository candidate (PR #240, unmerged)
+
+**Supersedes the original-draft summary this block previously carried; the design changed, the PR
+did not.** Owner review of the first A1.4 draft on PR #240 found eight concrete defects — an
+age-only heartbeat incompatible with A1.3's real schedule, an older success able to mask a newer
+failure, acceptance of a structurally-valid-but-unhealthy summary, an insufficient concurrency
+guard, silently-swallowed runtime failures, always-null evidence provenance, an undeployable D1
+config, and a real isolation contradiction (an import from `src/decision-intelligence/`) — plus one
+further defect found in this pass's own required audit (a raw GitHub `conclusion` string that could
+reach the summary contract in a shape it rejected). All eight are corrected, the additional finding
+is fixed, and none required expanding beyond the approved A1.4 boundary. A1.1–A1.3 are unchanged;
+the watchdog still has no repair, collection, mutation or configuration-change capability of any
+kind. Repository suite: 1,979 tests, 1,966 passed, 13 failed (the same pre-existing,
+environment-specific `node:sqlite` failures, unrelated to and reproduced identically on unmodified
+`main`); all 157 A1.4-package tests pass. Next gates, each separate: owner review and merge of the
+corrected PR #240; exact-`main` Verify; then the one consolidated live-provisioning/deployment/
+activation package described in [A1.4 §14](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#14-live-closeout--one-consolidated-package-for-a-later-separate-owner-gate),
+which now also names verifying `@fpltsheet.co.uk` sender-domain onboarding before any live email
+activation. A1.3's own separate scheduled-activation gate is unchanged. See
+[A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## Current checkpoint — DATA-OPS A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate
 

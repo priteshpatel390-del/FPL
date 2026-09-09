@@ -1,5 +1,42 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Each scheduled
+run attempt is durably attributed to exactly one declared opportunity: candidates are opportunities
+whose inclusive five-hour window contains `run_created_at`, considered oldest first, with an
+already-consumed opportunity skipped. Existing attribution for the same run id/attempt is reused.
+Thus a 09:01 run consumes 04:17 before 08:17, while a genuinely delayed 08:17 run after 09:17 has
+only 08:17 as a candidate. Bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog source boundary (corrected repository candidate, PR #240, unmerged)
+
+A1.4 activates no provider and adds no data source, unchanged by the owner-directed correction pass
+recorded elsewhere in this repository's Data-Ops checkpoints. Its two inputs are the repository's
+own existing GitHub Actions history for A1.3's workflow (bounded, read-only — now also reading the
+freshest failed run's job log, not only a successful one's, so a genuine execution failure is
+evidenced rather than silently unread) and its own isolated watchdog D1 database, which holds only
+its own observation/incident/notification bookkeeping, now including real GitHub evidence
+provenance fields (run id, run attempt, head SHA, observed timestamp) rather than placeholders —
+never Official FPL data, never application/model data. No Official FPL acquisition, retention,
+collection or model input changes. See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## DATA-OPS A1.3 runtime source boundary
 

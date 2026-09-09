@@ -1,5 +1,85 @@
 # SECURITY.md
 
+<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
+## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+
+The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
+assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
+overlap could claim the two opportunities in processing order and swap their real identities.
+Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
+Existing ledger assignments are fixed first. For each independent overlap component, the resolver
+enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
+maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
+the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
+unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+
+Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
+reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
+the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
+outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
+Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
+the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
+No live deployment, provisioning, activation, authority, model, provider or calculation change.
+Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Scheduled runs are resolved together by the set-based matching contract above. Only pairs forced
+across every maximum matching are attributed; overlapping pairs that cannot be distinguished remain
+ambiguous and unassigned. Existing workflow-run attribution is reused across rerun attempts, and
+bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## DATA-OPS A1.4 watchdog security boundary (corrected repository candidate, PR #240, unmerged)
+
+`workers/data-steward-watchdog/` is a separate Cloudflare Worker with its own dedicated identity,
+D1 database and GitHub credential (`DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`, distinct from every A1.3
+environment name, minimum permission Metadata: Read plus Actions: Read, no write scope of any
+kind). Every GitHub request builder emits `method:'GET'` except one bounded job-log read per
+cycle for whichever run is freshest, on either a successful or a failed job (never only success, so
+a genuine execution failure is evidenced rather than silently unread) — itself also a `GET`; there
+is no dispatch, re-run, cancel or write endpoint anywhere in the package. D1 access is exclusively
+through the native Worker binding (`db.prepare(...).bind(...).run()`), never an HTTP call, and every
+statement it can ever issue is one of thirteen fixed, parameterized strings in
+`persistence/statements.mjs` — including the atomic single-writer claim statement that makes
+concurrent Cron fires safe without any process-local state — checked against that frozen allowlist
+by reference before execution; there is no table-name, column-name or generic-SQL parameter
+anywhere. The `send_email` binding is touched by exactly one module (`notification/transport.mjs`),
+which never accepts or specifies a recipient — Cloudflare's own `destination_address` binding
+configuration is the sole, platform-level authority over who can ever receive mail, and the tracked
+`wrangler.jsonc` carries a structurally invalid placeholder rather than the owner's real address.
+The Worker's own runtime failures are no longer silently swallowed: a genuine exception in D1
+access, GitHub evidence reading, lifecycle evaluation, pruning or notification transport now
+produces one bounded sanitized diagnostic (closed reason code only) and is rethrown, so a fatal
+execution is visible to Cloudflare as a failed invocation rather than a silently-successful one — a
+correction made in this pass, since the original always resolved normally regardless of internal
+failure. A permanent whole-package scan (`tests/data-ops-a1-4-worker-config.test.mjs`) refuses any
+GitHub write endpoint, any Cloudflare mutation endpoint, any `child_process`/shell/`process.env`
+access, and any generic `runShell`/`runSql`/`httpRequest`/`apiCall`/`execute*` escape hatch, and
+confirms — checking actual import/require specifiers, not prose — that the package neither imports
+nor is imported by `workers/data-steward/`, `workers/data-platform/`, `workers/schedule-dispatcher/`,
+`workers/evidence-archive/` or `src/`. That last boundary was corrected in this pass: an earlier
+draft imported generic canonicalisation helpers from `src/decision-intelligence/canonical.mjs`,
+contradicting its own isolation claim, and now carries a local copy (`lib/canonical.mjs`) instead.
+Repository-only: no credential, secret, D1 database, Cron Trigger or live binding exists. See
+[A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## DATA-OPS A1.3 live read-only observer acceptance — security evidence
 

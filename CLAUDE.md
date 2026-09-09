@@ -1,3 +1,74 @@
+<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
+### A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+
+The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
+assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
+overlap could claim the two opportunities in processing order and swap their real identities.
+Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
+Existing ledger assignments are fixed first. For each independent overlap component, the resolver
+enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
+maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
+the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
+unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+
+Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
+reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
+the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
+outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
+Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
+the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
+No live deployment, provisioning, activation, authority, model, provider or calculation change.
+Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+### A1.4 final integration correction — PR #240 remains draft/unmerged
+
+Repository candidate now binds semantic-summary reads to scheduled candidates (maximum two),
+uses bootstrap-clamped set-based opportunity attribution with fail-closed ambiguity, includes
+`run_attempt` in observation identity/evidence hashes, deterministically ranks latest attempt/state
+evidence, drives lifecycle replay from stable source/opportunity evidence rather than watchdog wall
+clock, and retries a FAILED notification through its original row independently of lifecycle replay.
+No live action, authority, provider, model, calculation, deployment or remediation change. See
+[DATA-OPS A1.4](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+### Current Data-Ops checkpoint — A1.4 Persistent Incident Lifecycle + Independent Watchdog, corrected repository candidate (draft PR #240, unmerged)
+
+**This block supersedes the original A1.4 draft block below it as the current design and evidence; that block's own text is retained immediately after this one as a superseded historical record and must not be read as current.** This block adds a new layer alongside A1.3; it does not supersede or reopen any A1.3 fact recorded further below. A1.3's live acceptance, its dormant-scheduling status and `DATA_STEWARD_SCHEDULED_ENABLED` evidence are unchanged.
+
+**Why this correction pass exists.** Owner review of the original PR #240 draft found eight concrete defects before any live provisioning was considered, plus a required isolation contradiction. This block records the corrected design that resulted; the full rationale, the exact previous-problem/new-behaviour pairing for each item, and the live-closeout sequence are in [A1.4](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md), whose own text was rewritten in the same pass rather than merely amended.
+
+**1 — Heartbeat is schedule-aware, not age-only.** The original 12h/HEALTHY-STALE/24h-MISSING age model was incompatible with A1.3's real two-opportunity-a-day schedule (04:17 and 08:17 UTC) and would falsely report STALE every night. It is replaced by an expected-opportunity model (`lib/opportunity-schedule.mjs`, `lib/heartbeat.mjs`): the watchdog computes the single most recent declared opportunity instant at or before now, waits a documented grace window (5 hours, sized above the repository's own measured worst-case GitHub schedule-delivery lateness of 3h21m/4h31m/4h44m recorded elsewhere in this file) before treating missing evidence as a problem, and classifies HEALTHY/PENDING/FAILED/SKIPPED/MISSING/MALFORMED explicitly rather than by raw age. A stated, accepted limitation: only the latest due opportunity is load-bearing at any instant, so an isolated missed opportunity immediately followed by a healthy later one is never separately reported — see [A1.4 §3](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#3-correction-1--the-heartbeat-is-schedule-aware-not-age-only).
+
+**2/3 — A1.3's own execution outcome and summary semantics are both first-class, and only a genuinely healthy summary resets the heartbeat.** A newer failed, skipped or malformed A1.3 execution can no longer be masked by an older success. `lib/observer-summary-contract.mjs` pins the actual `run-observer.mjs` exit/summary contract (it exits non-zero exactly when `escalationRequired` is true), so a structurally-parseable-but-`UNHEALTHY`/incomplete/escalated summary, or one that contradicts its own job's GitHub conclusion, is classified `SUMMARY_UNHEALTHY`/`SUMMARY_CONTRADICTORY`/`SUMMARY_INVALID` rather than accepted at face value. `lib/observation-classifier.mjs` combines job health and summary evaluation into one closed `healthState` enum.
+
+**4 — Concurrent scheduled fires cannot double-act.** `controller.scheduledTime` is the logical event identity, but the fix is a database-level single-writer claim (`watchdog_scheduled_claims`, atomic `INSERT … ON CONFLICT(scheduled_time) DO NOTHING`), not merely a new idempotency key. A losing concurrent execution returns a bounded `duplicate:true` result and performs no lifecycle mutation or notification decision. Proven under genuine `Promise.all` concurrency, including a same-instant 5-way overlap, independent different-instant events, retry of an already-completed event, and a simulated crash after the claim commits but before any later phase runs.
+
+**5 — A genuine watchdog runtime failure now fails the Cron invocation.** The top-level `watchdog.mjs` handler previously swallowed every exception and always resolved normally. It now emits one bounded sanitized diagnostic line (closed reason code only, no raw exception, no secret) and rethrows, so Cloudflare correctly records the invocation as failed. The one deliberate exception is notification-transport failure: a persisted lifecycle transition survives even if the outbound email fails, the delivery is never falsely recorded as complete, and the next cycle's own idempotent decisioning provides retry without an alert storm.
+
+**6 — Real provenance is now persisted, not placeholders.** `run_attempt`, the incident's real evidence pointer (`evidence_observation_id`/`evidence_workflow_run_id`/`evidence_run_attempt`/`evidence_head_sha`/`evidence_source_at`, replacing the old always-null `last_evidence_observation_id`), the notification's evidence reference, and "last known healthy/scheduled" all now derive from genuine GitHub evidence rather than the current evaluation's own timestamp. Only bounded safe identifiers are ever persisted — never raw GitHub response bodies, tokens, arbitrary error strings or account secrets. A timestamp-format bug found during this pass (GitHub's non-millisecond ISO timestamps could lexicographically misorder against this repository's own millisecond-inclusive `.toISOString()` values in a SQL `TEXT` comparison) is fixed by normalising every stored timestamp to `.toISOString()` at decode time.
+
+**7 — The repository configuration is honestly deployable.** `wrangler.jsonc`'s D1 binding now carries the required `database_id` field as the inert all-zero-UUID placeholder (never a fabricated live id) with an inline comment explaining why Wrangler requires the field and why this value fails safely. [A1.4 §14](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#14-live-closeout--one-consolidated-package-for-a-later-separate-owner-gate)'s live-closeout sequence now explicitly includes verifying, before any live email activation, that the `@fpltsheet.co.uk` sender domain is actually onboarded to Cloudflare's Email Service — domain-send readiness is never assumed merely because the `send_email` destination binding exists.
+
+**8 — The isolation claim is now true.** The watchdog previously imported the generic canonicalisation helpers from `src/decision-intelligence/canonical.mjs`, directly contradicting its own no-dependency claim. It now carries a local copy, `workers/data-steward-watchdog/lib/canonical.mjs`. A rewritten permanent bidirectional isolation test checks actual import/require specifiers (not prose mentioning a path) against every forbidden production path and identifier in both directions.
+
+**Bootstrap.** A one-row `watchdog_bootstrap` table records the first execution instant; the expected-opportunity computation is clamped forward from it, so historical pre-activation A1.3 runs (including run #9, which predates the scheduled gate) can never be interpreted as a current incident on first deployment.
+
+**Email delivery language, corrected.** Documentation no longer claims exactly-once external email delivery. It claims strong idempotent decisioning — at most one notification decision per logical incident transition, safe deduplication and retry — while honestly naming the narrow unavoidable distributed-systems window (Cloudflare accepts the message; the Worker's own commit has not yet happened) that no implementation on this platform can close.
+
+**Additional audit finding acted on in this same pass.** `classifyObserverRun()` originally accepted a raw GitHub job `conclusion` string (e.g. `'cancelled'`, `'timed_out'`) and forwarded it unmodified into the observer-summary contract, which strictly requires exactly `'success'`/`'failure'` — a real `cancelled` run would have thrown rather than classified. Fixed by deriving the normalised `'success'`/`'failure'` value internally from the already-computed `jobHealth` enum instead of accepting a second, looser conclusion input. No other implementation/test/doc/Cloudflare-behaviour/A1.3-semantics contradiction was found in the final pass.
+
+**Nothing about A1.1–A1.3's safety boundary changed**, and nothing was executed for this checkpoint — no Cloudflare deployment, D1 database, Cron Trigger, secret, credential, `send_email` binding or GitHub token was created, live-provisioned or activated. Repository suite: **1,979 tests, 1,966 passed, 13 failed** — the 13 failures are the same pre-existing, environment-specific `node:sqlite` failures in `tests/data-s2-production-query-plan.test.mjs`, independently reproduced against unmodified `origin/main`, and are unrelated to and unchanged by this correction. All 157 A1.4-package tests pass.
+
+**Next gates, each separate:** (1) owner review and merge of PR #240 in its corrected state; (2) exact-`main` Verify; (3) the consolidated live-provisioning package in [A1.4 §14](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md#14-live-closeout--one-consolidated-package-for-a-later-separate-owner-gate) — isolated D1 creation/migration, scoped GitHub credential, verified email destination and sender-domain onboarding, attended deployment, Cron activation, safe functional acceptance, natural-fire observation — all one later, explicit, combined owner decision. A1.3's own separate scheduled-activation gate is unchanged by any of this. See [A1.4](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
+<!-- DATA-OPS-A1-4-2026-09-09 -->
+### Retained record — A1.4 original draft candidate, before the owner-directed correction pass
+
+> **Retired by the corrected block immediately above.** This text describes the first A1.4 draft as it stood before owner review found the eight defects and isolation contradiction corrected above. It is retained as a record only; do not treat any claim below as current. In particular, the age-only 12h/24h heartbeat, the always-null evidence pointers, the swallowed-exception failure handling, the missing `database_id`, and the `src/decision-intelligence/canonical.mjs` import it describes are all replaced by the block above.
+
+A1.4 turns the proven read-only A1.3 sensor into an operational monitor **from outside it**: a separate, isolated Cloudflare Worker, `workers/data-steward-watchdog/`, with its own dedicated identity (`teamsheet-data-steward-watchdog`), its own D1 database, its own GitHub read credential (`DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`, distinct from every A1.3 environment name) and its own narrow `send_email` binding. Repository suite at that draft: **1,915 tests, 1,902 passed, 13 failed** (same pre-existing `node:sqlite` failures), with 93 A1.4 tests passing. Nothing was executed for that checkpoint either. See the corrected block above for the current design.
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ### Current Data-Ops checkpoint — A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate
 
@@ -1830,7 +1901,7 @@ Pritesh is a non-developer but rigorous reviewer who primarily works from an iPh
 10. Before model, projection, fixture, squad, captaincy, optimisation, rank or Mini-League calculation work: [Projection Model](docs/PROJECTION_MODEL.md) and [Testing](docs/TESTING.md)
 11. Before any new external-data, provider-evaluation, shadow-evidence or ablation proposal: [External Intelligence Foundation](docs/EXTERNAL-INTELLIGENCE-FOUNDATION.md)
 12. Before Decision Intelligence work: [Decision Intelligence DI-0 Foundation](docs/DECISION-INTELLIGENCE-FOUNDATION.md)
-12a. Before Autonomous Data Steward work: [DATA-OPS-A1.1](docs/DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md) then [DATA-OPS-A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md) then [DATA-OPS-A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md)
+12a. Before Autonomous Data Steward work: [DATA-OPS-A1.1](docs/DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md) then [DATA-OPS-A1.2](docs/DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md) then [DATA-OPS-A1.3](docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md) then [DATA-OPS-A1.4](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md)
 13. Historical A3 records only when needed: [A3-SC-1 Small Stale-Code Cleanup](docs/A3-SC-1-SMALL-STALE-CODE-CLEANUP.md), [Route-Aware Rendering and Performance](docs/ROUTE-AWARE-RENDERING-PERFORMANCE.md), [A3 State-Ownership Cleanup](docs/A3-STATE-OWNERSHIP-CLEANUP.md), [A3 error-boundary separation](docs/A3-ERROR-BOUNDARY-SEPARATION.md) and [Historical Records](docs/HISTORICAL_RECORDS.md)
 
 ## What Teamsheet is

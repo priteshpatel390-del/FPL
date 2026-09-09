@@ -1,5 +1,50 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Each scheduled
+run attempt is durably attributed to exactly one declared opportunity: candidates are opportunities
+whose inclusive five-hour window contains `run_created_at`, considered oldest first, with an
+already-consumed opportunity skipped. Existing attribution for the same run id/attempt is reused.
+Thus a 09:01 run consumes 04:17 before 08:17, while a genuinely delayed 08:17 run after 09:17 has
+only 08:17 as a candidate. Bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## Current Data-Ops checkpoint — A1.4 Persistent Incident Lifecycle + Independent Watchdog, corrected repository candidate (PR #240, unmerged)
+
+Draft, unmerged, and corrected after owner review of the first draft. A1.4 adds
+`workers/data-steward-watchdog/`, a separate isolated Cloudflare Worker that reads A1.3's own
+GitHub Actions run history and classifies its scheduled-heartbeat against an **expected-opportunity
+model** — the most recent of A1.3's two declared daily opportunities (04:17 / 08:17 UTC), a
+documented 5-hour grace window sized above this repository's own measured worst-case GitHub
+schedule-delivery lateness, and explicit HEALTHY/PENDING/FAILED/SKIPPED/MISSING/MALFORMED states —
+never the original age-only 12h/24h model, which was incompatible with that real two-a-day
+schedule. Only a genuinely healthy, contradiction-free A1.3 summary resets the heartbeat; a newer
+failed, skipped or malformed execution opens an incident even if an older run was healthy. A
+database-level single-writer claim keyed on `controller.scheduledTime` makes concurrent Cron fires
+safe (proven under real `Promise.all` concurrency). A genuine watchdog runtime failure now fails
+the Cloudflare Cron invocation rather than resolving silently. Real GitHub evidence provenance
+(run id, run attempt, head SHA, observed timestamp) is persisted in its own three-table D1 database
+in place of the original's always-null placeholders. It has no ability to repair, collect, mutate
+production, or change any repository, Cloudflare or GitHub configuration; A1.1–A1.3 are entirely
+unchanged. Nothing is deployed, provisioned or activated. See
+[A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-09-LIVE-ACCEPTANCE -->
 ## Current Data-Ops checkpoint — A1.3 live read-only observer ACCEPTED (manual); scheduled activation still separate
 

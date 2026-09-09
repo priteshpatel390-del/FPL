@@ -1,5 +1,89 @@
 # ARCHITECTURE.md
 
+<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
+## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+
+The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
+assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
+overlap could claim the two opportunities in processing order and swap their real identities.
+Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
+Existing ledger assignments are fixed first. For each independent overlap component, the resolver
+enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
+maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
+the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
+unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+
+Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
+reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
+the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
+outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
+Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
+the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
+No live deployment, provisioning, activation, authority, model, provider or calculation change.
+Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Scheduled runs are resolved together by the set-based matching contract above. Only pairs forced
+across every maximum matching are attributed; overlapping pairs that cannot be distinguished remain
+ambiguous and unassigned. Existing workflow-run attribution is reused across rerun attempts, and
+bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+<!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
+## Current Data Steward watchdog architecture — A1.4 (corrected repository candidate, PR #240, unmerged)
+
+A new, separate Cloudflare Worker, `workers/data-steward-watchdog/`, sits outside the A1.3 runtime
+below and adds the memory and voice A1.1–A1.3 deliberately never had. It has its own identity
+(`teamsheet-data-steward-watchdog`), its own D1 database bound only to itself
+(`STEWARD_WATCHDOG_DB`), its own dedicated GitHub read credential
+(`DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`) and its own narrow `send_email` binding restricted by
+Cloudflare's own `destination_address` config to exactly one recipient. It carries its own local
+copy of the tiny generic canonicalisation primitives (`lib/canonical.mjs`) rather than importing
+them from `src/decision-intelligence/canonical.mjs` as an earlier draft mistakenly did — a genuine
+isolation contradiction found and fixed in this checkpoint's correction pass.
+
+Internally: `lib/github-evidence-reader.mjs` (bounded, `GET`-only reads of A1.3's own workflow's
+run/job history, normalising every timestamp to millisecond-inclusive ISO at decode time so SQL
+`TEXT` ordering can never misrank an equal instant) feeds `lib/opportunity-schedule.mjs` (the pure
+expected-opportunity computation, bootstrap-clamped) and `lib/heartbeat.mjs` (schedule-aware
+HEALTHY/PENDING/FAILED/SKIPPED/MISSING/MALFORMED classification, replacing the original age-only
+12h/24h model), plus `lib/observer-summary-contract.mjs` (pins A1.3's actual `run-observer.mjs`
+exit/summary semantics so a structurally-valid but unhealthy or job-conclusion-contradicting
+summary is never accepted at face value) and `lib/observation-classifier.mjs` (combines job health
+and summary evaluation into one closed `healthState`); these feed `lib/lifecycle-reducer.mjs`
+(pure, replay-safe NEW/ONGOING/CHANGED/RECOVERED/REOPENED reduction over a fingerprint from
+`lib/incident-fingerprint.mjs` that never depends on a reason code, run id or SHA, now carrying a
+real evidence pointer rather than a placeholder); persistence goes through
+`persistence/repository.mjs`, whose only SQL surface is the fixed, allowlisted statements in
+`persistence/statements.mjs`, including the atomic `watchdog_scheduled_claims` single-writer claim
+that makes concurrent Cron fires safe; `notification/decision.mjs` (pure policy) and
+`notification/transport.mjs` (the one place a `send_email` binding is touched, whose failure is
+deliberately not allowed to hide a persisted lifecycle transition) are separate modules;
+`run-watchdog.mjs` is the sole orchestrator, and `watchdog.mjs` is the Worker entry point, exporting
+a `scheduled` handler and no `fetch` handler at all — and now rethrowing a sanitized error on any
+genuine failure instead of always resolving normally, so Cloudflare correctly records a failed
+invocation. A permanent test pins that this package imports nothing from `workers/data-steward/`,
+`workers/data-platform/`, `workers/schedule-dispatcher/`, `workers/evidence-archive/` or `src/`,
+and that none of those import it, checking actual import/require specifiers rather than prose.
+Repository-only: no deployment, D1 database, Cron Trigger, credential or live activation exists.
+See [A1.4](DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-3-2026-09-08 -->
 ## Current Data Steward runtime architecture — A1.3
 
