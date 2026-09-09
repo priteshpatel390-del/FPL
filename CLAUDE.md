@@ -1,3 +1,14 @@
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+### A1.4 final integration correction — PR #240 remains draft/unmerged
+
+Repository candidate now binds semantic-summary reads to scheduled candidates (maximum two),
+persists one bootstrap-clamped opportunity attribution per workflow run attempt, includes
+`run_attempt` in observation identity/evidence hashes, deterministically ranks latest attempt/state
+evidence, drives lifecycle replay from stable source/opportunity evidence rather than watchdog wall
+clock, and retries a FAILED notification through its original row independently of lifecycle replay.
+No live action, authority, provider, model, calculation, deployment or remediation change. See
+[DATA-OPS A1.4](docs/DATA-OPS-A1-4-WATCHDOG-LIFECYCLE.md).
+
 <!-- DATA-OPS-A1-4-2026-09-09-CORRECTED -->
 ### Current Data-Ops checkpoint — A1.4 Persistent Incident Lifecycle + Independent Watchdog, corrected repository candidate (draft PR #240, unmerged)
 

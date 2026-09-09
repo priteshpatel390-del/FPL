@@ -15,13 +15,13 @@ const SHA='a'.repeat(40);
 
 // One successful scheduled run, created `minutesAgo` minutes before `opportunityAt` + `offsetMin`
 // minutes, i.e. at `opportunityAt + offsetMin` minutes exactly.
-function healthyFetch(opportunityAtMs,offsetMinutes=1){
+function healthyFetch(opportunityAtMs,offsetMinutes=1,runId=1){
   const createdAt=new Date(opportunityAtMs+offsetMinutes*60000).toISOString();
   return async url=>{
-    if(/\/actions\/runs\/1\/jobs/.test(url))
-      return {status:200,json:async()=>jobsBody([{id:11,name:'observe-production-chain',
+    if(new RegExp(`/actions/runs/${runId}/jobs`).test(url))
+      return {status:200,json:async()=>jobsBody([{id:runId*10+1,name:'observe-production-chain',
         status:'completed',conclusion:'success',completed_at:createdAt,run_attempt:1}])};
-    if(/\/actions\/jobs\/11\/logs/.test(url)){
+    if(new RegExp(`/actions/jobs/${runId*10+1}/logs`).test(url)){
       const text=JSON.stringify({dayDate:'2026-09-09',verdict:'HEALTHY',
         evaluationReason:'HEALTHY_EXPECTED_STATE',heartbeat:'COMPLETE',escalationRequired:false,
         sentinels:[]})+'\n';
@@ -29,7 +29,7 @@ function healthyFetch(opportunityAtMs,offsetMinutes=1){
       return {status:200,headers:{get:name=>name==='content-length'?String(bytes.byteLength):null},
         body:new ReadableStream({start(controller){controller.enqueue(bytes);controller.close();}})};
     }
-    if(/\/workflows\/.*\/runs\?/.test(url))return {status:200,json:async()=>runsBody([{id:1,
+    if(/\/workflows\/.*\/runs\?/.test(url))return {status:200,json:async()=>runsBody([{id:runId,
       created_at:createdAt,event:'schedule',head_sha:SHA,status:'completed',conclusion:'success'}])};
     return {status:404,json:async()=>({})};
   };
@@ -89,7 +89,9 @@ test('a healthy scheduled observation stays HEALTHY across the whole ~20h overni
   const env=makeEnv(db,{sent});
   // Bootstrap before 04:17 so today's opportunities are in scope.
   await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-60*60*1000,EmailMessageCtor:FakeEmailMessage});
-  await runWatchdogCycle({env,fetchImpl:healthyFetch(OPP_0817,2),now:OPP_0817+5*60*1000,
+  await runWatchdogCycle({env,fetchImpl:healthyFetch(OPP_0417,2),now:OPP_0417+5*60*1000,
+    EmailMessageCtor:FakeEmailMessage});
+  await runWatchdogCycle({env,fetchImpl:healthyFetch(OPP_0817,2,2),now:OPP_0817+5*60*1000,
     EmailMessageCtor:FakeEmailMessage});
   const result=await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0817+15*60*60*1000,
     EmailMessageCtor:FakeEmailMessage});
@@ -158,11 +160,11 @@ test('a notification carries real evidence provenance, not a placeholder timesta
   // Now recover with a genuine observed run the NEXT day, and check the RECOVERED email shows
   // its real run id.
   const nextDay0417=OPP_0417+24*60*60*1000;
-  const recovered=await runWatchdogCycle({env,fetchImpl:healthyFetch(nextDay0417,3),now:nextDay0417+5*60*1000,
+  const recovered=await runWatchdogCycle({env,fetchImpl:healthyFetch(nextDay0417,3,2),now:nextDay0417+5*60*1000,
     EmailMessageCtor:FakeEmailMessage});
   assert.equal(recovered.incidents.observerHeartbeat.transition,'RECOVERED');
   assert.equal(sent.length,2);
-  assert.match(sent[1].raw,/Related GitHub Actions run id: 1/);
+  assert.match(sent[1].raw,/Related GitHub Actions run id: 2/);
   assert.match(sent[1].raw,new RegExp(SHA));
 });
 
@@ -306,6 +308,33 @@ test('a delivery failure still reserves the notification and self-heals on the n
   const t1=t0+6*60*60*1000;
   const second=await runWatchdogCycle({env:healedEnv,fetchImpl:emptyFetch(),now:t1,scheduledTime:t1,
     EmailMessageCtor:FakeEmailMessage});
+  assert.equal(second.incidents.observerHeartbeat.transition,'NONE');
   assert.equal(second.incidents.observerHeartbeat.notified,true);
   assert.equal(sentAfterFix.length,1);
+  assert.equal(db._tables.notifications.size,1,'retry updates original notification record');
+  assert.equal([...db._tables.incidents.values()][0].occurrence_count,1,
+    'retry creates no lifecycle occurrence');
+});
+
+test('same failed GitHub evidence on a later watchdog cycle is replay-safe',async()=>{
+  const db=createFakeWatchdogD1();const sent=[];const env=makeEnv(db,{sent});
+  await runWatchdogCycle({env,fetchImpl:emptyFetch(),now:OPP_0417-3600000,EmailMessageCtor:FakeEmailMessage});
+  const failure=async url=>{
+    if(/runs\/7\/jobs/.test(url))return {status:200,json:async()=>jobsBody([{id:71,
+      name:'observe-production-chain',status:'completed',conclusion:'failure',run_attempt:1,
+      completed_at:new Date(OPP_0417+120000).toISOString()}])};
+    if(/jobs\/71\/logs/.test(url)){const bytes=new TextEncoder().encode(JSON.stringify({dayDate:'2026-09-09',
+      verdict:'UNHEALTHY',evaluationReason:'OBSERVER_RUNTIME_FAILED',heartbeat:'INCOMPLETE',
+      escalationRequired:true,sentinels:[]})+'\n');return {status:200,headers:{get:()=>null},
+      body:new ReadableStream({start(c){c.enqueue(bytes);c.close();}})};}
+    if(/workflows\/.*\/runs\?/.test(url))return {status:200,json:async()=>runsBody([{id:7,
+      created_at:new Date(OPP_0417+60000).toISOString(),event:'schedule',head_sha:SHA,
+      status:'completed',conclusion:'failure'}])};return {status:404,json:async()=>({})};};
+  const first=await runWatchdogCycle({env,fetchImpl:failure,now:OPP_0417+180000,
+    EmailMessageCtor:FakeEmailMessage});
+  const replay=await runWatchdogCycle({env,fetchImpl:failure,now:OPP_0417+3600000,
+    EmailMessageCtor:FakeEmailMessage});
+  assert.equal(first.incidents.observerHeartbeat.transition,'NEW');
+  assert.equal(replay.incidents.observerHeartbeat.transition,'NONE');
+  assert.equal([...db._tables.incidents.values()].find(row=>row.problem_class==='OBSERVER_HEARTBEAT').occurrence_count,1);
 });

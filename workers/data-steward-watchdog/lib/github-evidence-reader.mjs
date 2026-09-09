@@ -2,8 +2,7 @@
 //
 // This is the ONLY module in the watchdog package that ever builds a GitHub request, and every
 // request it builds is `method: 'GET'`. It reads nothing but the run and job metadata of one
-// fixed workflow file — the A1.3 read-only observer itself — plus, for at most one run per
-// cycle, that run's own job log, solely to recover the exact sanitized one-line JSON summary
+// fixed workflow file — the A1.3 read-only observer itself — plus, for at most two scheduled candidates per cycle, their own job logs, solely to recover the exact sanitized one-line JSON summary
 // `run-observer.mjs` already prints. There is no dispatch, no re-run, no cancel, no write call
 // and no builder that accepts a caller-supplied path, method or body. The minimum GitHub
 // permission this adapter needs is Metadata: Read plus Actions: Read; it never asks for more.
@@ -26,6 +25,7 @@ export const GITHUB_EVIDENCE_LOOKBACK_MS=3*24*60*60*1000;
 export const GITHUB_EVIDENCE_RUNS_PAGE_SIZE=100;
 export const GITHUB_EVIDENCE_MAX_RUN_PAGES=2;
 export const GITHUB_EVIDENCE_MAX_READS=16;
+export const GITHUB_EVIDENCE_MAX_SUMMARY_READS=2;
 
 export const EVENT_SCHEDULE='schedule';
 export const EVENT_WORKFLOW_DISPATCH='workflow_dispatch';
@@ -269,7 +269,7 @@ async function decorateRun(run,token,fetchImpl,budget,{readSummary}){
   const observerJobs=jobs.filter(job=>job.name===GITHUB_EVIDENCE_JOB_NAME);
   if(observerJobs.length===0)
     return deepFreeze({...run,jobHealth:JOB_HEALTH_UNCLASSIFIED,jobConclusion:null,
-      jobCompletedAt:null,runAttempt:null,summary:null});
+      jobCompletedAt:null,runAttempt:null,summaryAttempted:false,summary:null});
   // The most recently attempted execution decides this run's health, exactly like A1.3's own
   // "later evidence wins" rule for anything that is not production-mutation-sensitive.
   const latest=observerJobs.reduce((best,job)=>job.runAttempt>best.runAttempt?job:best,observerJobs[0]);
@@ -277,11 +277,12 @@ async function decorateRun(run,token,fetchImpl,budget,{readSummary}){
   let summary=null;
   // A summary is worth checking against a SUCCESS or FAILED job, and never for one still in
   // flight or skipped — there is nothing decisive to compare it against in either of those.
-  if(readSummary&&(jobHealth===JOB_HEALTH_SUCCESS||jobHealth===JOB_HEALTH_FAILED)){
+  const summaryAttempted=readSummary&&(jobHealth===JOB_HEALTH_SUCCESS||jobHealth===JOB_HEALTH_FAILED);
+  if(summaryAttempted){
     summary=await readSummaryLog(latest.id,token,fetchImpl,budget).catch(()=>null);
   }
   return deepFreeze({...run,jobHealth,jobConclusion:latest.conclusion,
-    jobCompletedAt:latest.completedAt,runAttempt:latest.runAttempt,summary});
+    jobCompletedAt:latest.completedAt,runAttempt:latest.runAttempt,summaryAttempted,summary});
 }
 
 // Issues the bounded read set and returns the decoded, per-run view of the observer's own recent
@@ -303,18 +304,18 @@ export async function readObserverEvidence({token,fetchImpl,now,maxReads=GITHUB_
   if(runs===null)return deepFreeze({ok:false,reasonCode:READ_UNAVAILABLE});
   const sorted=[...runs].sort((a,b)=>instant(b.createdAt)-instant(a.createdAt));
   const decorated=[];
-  let summaryBudgetSpent=false;
+  let summaryReads=0;
   for(const run of sorted){
     let decoratedRun;
     try{
       decoratedRun=await decorateRun(run,token,fetchImpl,budget,
-        {readSummary:!summaryBudgetSpent&&decorated.length===0});
+        {readSummary:run.event===EVENT_SCHEDULE&&summaryReads<GITHUB_EVIDENCE_MAX_SUMMARY_READS});
     }catch(error){
       return deepFreeze({ok:false,
         reasonCode:error?.code==='github_evidence_read_bound_exhausted'?READ_BOUND_EXHAUSTED:READ_UNAVAILABLE});
     }
     if(decoratedRun===null)return deepFreeze({ok:false,reasonCode:READ_UNAVAILABLE});
-    if(decoratedRun.summary!==null)summaryBudgetSpent=true;
+    if(decoratedRun.summaryAttempted)summaryReads+=1;
     decorated.push(decoratedRun);
   }
   return deepFreeze({ok:true,reasonCode:READ_OK,runs:deepFreeze(decorated),reads:budget.spent});

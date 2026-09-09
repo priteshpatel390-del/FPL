@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {ALLOWED_STATEMENTS,StatementNotAllowedError,assertAllowedStatement}
   from '../workers/data-steward-watchdog/persistence/statements.mjs';
 import {RETENTION_INCIDENTS_MS,RETENTION_NOTIFICATIONS_MS,RETENTION_OBSERVATIONS_MS,
-  claimScheduledEvent,ensureBootstrap,getIncident,markIncidentNotified,opportunityEvidenceSince,
+  assignedOpportunity,claimScheduledEvent,ensureBootstrap,getIncident,markIncidentNotified,opportunityEvidenceSince,
   pruneRetention,recordNotificationDelivery,recordObservation,reserveNotification,saveIncident}
   from '../workers/data-steward-watchdog/persistence/repository.mjs';
 import {createFakeWatchdogD1} from './helpers/fake-watchdog-d1.mjs';
@@ -12,6 +12,7 @@ import {createFakeWatchdogD1} from './helpers/fake-watchdog-d1.mjs';
 const observation=(overrides={})=>({observationId:'obs-1',sourceKind:'scheduled_run',
   eventType:'schedule',workflowRunId:501,runAttempt:1,observedAt:'2026-09-09T05:20:00.000Z',
   runCreatedAt:'2026-09-09T04:17:03.000Z',runCompletedAt:'2026-09-09T04:20:00.000Z',
+  opportunityAt:'2026-09-09T04:17:00.000Z',
   headSha:'a'.repeat(40),healthState:'SUCCESS',reasonCode:'OBSERVER_HEARTBEAT_HEALTHY',
   evidenceHash:'b'.repeat(64),createdAt:'2026-09-09T05:20:00.000Z',...overrides});
 
@@ -78,7 +79,41 @@ test('a health-state change for the same run id is a new, distinct row',async()=
   assert.equal(db._tables.observations.size,2);
 });
 
-test('opportunityEvidenceSince returns the freshest scheduled observation at or after the bound',async()=>{
+test('one run attempt consumes one opportunity and cannot be reused for another',async()=>{
+  const db=createFakeWatchdogD1();
+  const candidates=['2026-09-09T04:17:00.000Z','2026-09-09T08:17:00.000Z'];
+  const now='2026-09-09T09:02:00.000Z';
+  assert.equal(await assignedOpportunity(db,501,1,candidates,now),candidates[0]);
+  await recordObservation(db,observation({opportunityAt:candidates[0]}));
+  assert.equal(await assignedOpportunity(db,501,1,candidates,now),candidates[0]);
+  assert.equal(await assignedOpportunity(db,502,1,candidates,now),candidates[1]);
+});
+
+test('terminal SUCCESS and FAILED deterministically beat earlier IN_FLIGHT state',async()=>{
+  for(const terminal of ['SUCCESS','FAILED']){
+    const db=createFakeWatchdogD1();
+    await recordObservation(db,observation({observationId:'obs-inflight',healthState:'IN_FLIGHT',
+      runCompletedAt:null,observedAt:'2026-09-09T05:00:00.000Z'}));
+    await recordObservation(db,observation({observationId:`obs-${terminal.toLowerCase()}`,
+      healthState:terminal,observedAt:'2026-09-09T05:01:00.000Z'}));
+    assert.equal((await opportunityEvidenceSince(db,'2026-09-09T04:17:00.000Z')).healthState,terminal);
+  }
+});
+
+test('attempt 2 beats attempt 1 and older replay cannot replace terminal state',async()=>{
+  const db=createFakeWatchdogD1();
+  await recordObservation(db,observation({observationId:'attempt-1',runAttempt:1}));
+  await recordObservation(db,observation({observationId:'attempt-2-flight',runAttempt:2,
+    healthState:'IN_FLIGHT',runCompletedAt:null,observedAt:'2026-09-09T05:10:00.000Z'}));
+  await recordObservation(db,observation({observationId:'attempt-2-failed',runAttempt:2,
+    healthState:'FAILED',observedAt:'2026-09-09T05:11:00.000Z'}));
+  await recordObservation(db,observation({observationId:'attempt-2-old-replay',runAttempt:2,
+    healthState:'IN_FLIGHT',runCompletedAt:null,observedAt:'2026-09-09T05:12:00.000Z'}));
+  const latest=await opportunityEvidenceSince(db,'2026-09-09T04:17:00.000Z');
+  assert.equal(latest.runAttempt,2);assert.equal(latest.healthState,'FAILED');
+});
+
+test('opportunityEvidenceSince returns deterministic latest evidence attributed to exact opportunity',async()=>{
   const db=createFakeWatchdogD1();
   await recordObservation(db,observation({observationId:'obs-early',
     runCreatedAt:'2026-09-09T04:17:05.000Z'}));
@@ -91,7 +126,7 @@ test('opportunityEvidenceSince returns the freshest scheduled observation at or 
 test('opportunityEvidenceSince ignores evidence strictly before the bound (yesterday cannot mask today)',async()=>{
   const db=createFakeWatchdogD1();
   await recordObservation(db,observation({observationId:'obs-yesterday',
-    runCreatedAt:'2026-09-08T08:17:05.000Z'}));
+    runCreatedAt:'2026-09-08T08:17:05.000Z',opportunityAt:'2026-09-08T08:17:00.000Z'}));
   const evidence=await opportunityEvidenceSince(db,'2026-09-09T04:17:00.000Z');
   assert.equal(evidence,null);
 });
@@ -162,6 +197,7 @@ test('reserving the same notification twice sends exactly once',async()=>{
   const db=createFakeWatchdogD1();
   const args={idempotencyKey:'notif-1',fingerprint:'watchdog-'+'e'.repeat(24),transition:'NEW',
     decidedAt:'2026-09-09T00:00:00.000Z',evidenceObservationId:'obs-1',
+    evidenceObservedAt:'2026-09-09T00:00:00.000Z',
     createdAt:'2026-09-09T00:00:00.000Z'};
   const first=await reserveNotification(db,args);
   const second=await reserveNotification(db,args);
@@ -175,6 +211,7 @@ test('notification delivery status transitions record without duplicating the ro
   const key='notif-2';
   await reserveNotification(db,{idempotencyKey:key,fingerprint:'watchdog-'+'f'.repeat(24),
     transition:'NEW',decidedAt:'2026-09-09T00:00:00.000Z',evidenceObservationId:null,
+    evidenceObservedAt:'2026-09-09T00:00:00.000Z',
     createdAt:'2026-09-09T00:00:00.000Z'});
   await recordNotificationDelivery(db,key,'SENT','2026-09-09T00:00:01.000Z');
   assert.equal(db._tables.notifications.get(key).delivery_status,'SENT');
@@ -233,9 +270,10 @@ test('90-day notification retention prunes strictly older rows',async()=>{
   const now=Date.parse('2026-09-09T00:00:00.000Z');
   await reserveNotification(db,{idempotencyKey:'notif-old',fingerprint:'watchdog-'+'4'.repeat(24),
     transition:'NEW',decidedAt:new Date(now-RETENTION_NOTIFICATIONS_MS-1).toISOString(),
-    evidenceObservationId:null,createdAt:'2026-09-09T00:00:00.000Z'});
+    evidenceObservationId:null,evidenceObservedAt:'2026-09-09T00:00:00.000Z',createdAt:'2026-09-09T00:00:00.000Z'});
   await reserveNotification(db,{idempotencyKey:'notif-fresh',fingerprint:'watchdog-'+'4'.repeat(24),
     transition:'ONGOING',decidedAt:new Date(now).toISOString(),evidenceObservationId:null,
+    evidenceObservedAt:'2026-09-09T00:00:00.000Z',
     createdAt:'2026-09-09T00:00:00.000Z'});
   await pruneRetention(db,now);
   assert.deepEqual([...db._tables.notifications.keys()],['notif-fresh']);

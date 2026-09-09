@@ -5,6 +5,7 @@ import {GITHUB_EVIDENCE_JOB_NAME,GITHUB_EVIDENCE_MAX_RUN_PAGES,GITHUB_EVIDENCE_R
   JOB_HEALTH_SUCCESS,JOB_HEALTH_UNCLASSIFIED,READ_BOUND_EXHAUSTED,READ_OK,READ_UNAVAILABLE,
   classifyJobHealth,decodeJobs,decodeObserverSummary,decodeRunsPage,jobLogRequest,
   readObserverEvidence,runJobsRequest,workflowRunsRequest} from '../workers/data-steward-watchdog/lib/github-evidence-reader.mjs';
+import {classifyObserverRun} from '../workers/data-steward-watchdog/lib/observation-classifier.mjs';
 
 const SHA='a'.repeat(40);
 const summaryLine=(overrides={})=>JSON.stringify({dayDate:'2026-09-09',verdict:'HEALTHY',
@@ -116,7 +117,26 @@ test('a manual dispatch run is observed but distinguishable from a scheduled one
   assert.equal(result.runs[0].event,'workflow_dispatch');
 });
 
-test('the summary log is read for at most one run per cycle',async()=>{
+test('newer manual success cannot steal semantic validation from scheduled heartbeat candidate',async()=>{
+  let logReads=0;
+  const fetchImpl=fakeFetch({runsById:{1:runsBody([
+    run({id:610,event:'workflow_dispatch',createdAt:'2026-09-09T09:10:00Z'}),
+    run({id:611,event:'schedule',createdAt:'2026-09-09T08:20:00Z'})])},
+  jobsById:{610:[job({id:9610})],611:[job({id:9611})]},
+  logsById:{9610:`${summaryLine()}\n`,9611:`${summaryLine({verdict:'UNHEALTHY',
+    escalationRequired:true,heartbeat:'INCOMPLETE'})}\n`}});
+  const counted=async(...args)=>{if(/\/logs$/.test(args[0]))logReads+=1;return fetchImpl(...args);};
+  const result=await readObserverEvidence({token:'t',fetchImpl:counted,
+    now:Date.parse('2026-09-09T12:00:00Z')});
+  const manual=result.runs.find(item=>item.id===610);
+  const scheduled=result.runs.find(item=>item.id===611);
+  assert.equal(manual.summaryAttempted,false);
+  assert.equal(scheduled.summaryAttempted,true);
+  assert.equal(logReads,1,'manual dispatch consumes no summary allowance');
+  assert.equal(classifyObserverRun(scheduled).healthState,'SUMMARY_CONTRADICTORY');
+});
+
+test('summary reads are bounded to two scheduled candidates per cycle',async()=>{
   let logReads=0;
   const fetchImpl=async(url,init)=>{
     if(/\/actions\/jobs\/\d+\/logs/.test(url)){
@@ -134,7 +154,7 @@ test('the summary log is read for at most one run per cycle',async()=>{
   };
   const result=await readObserverEvidence({token:'t',fetchImpl,now:Date.parse('2026-09-09T12:00:00Z')});
   assert.equal(result.ok,true);
-  assert.equal(logReads,1,'only the most recent qualifying run is checked for a summary');
+  assert.equal(logReads,2,'only two qualifying scheduled candidates are checked');
   assert.equal(result.runs[0].summary!==null||result.runs[1].summary!==null,true);
 });
 

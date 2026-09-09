@@ -18,6 +18,7 @@ import {deepFreeze} from '../lib/canonical.mjs';
 import {assertAllowedStatement,CLAIM_SCHEDULED_EVENT,INSERT_BOOTSTRAP,INSERT_NOTIFICATION,
   INSERT_OBSERVATION,PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS,PRUNE_OBSERVATIONS,SELECT_BOOTSTRAP,
   SELECT_INCIDENT,SELECT_LATEST_SCHEDULED_SINCE,UPDATE_INCIDENT_LAST_NOTIFIED,
+  INSERT_OPPORTUNITY_ATTRIBUTION,SELECT_RUN_OPPORTUNITY,SELECT_FAILED_NOTIFICATION,
   UPDATE_NOTIFICATION_DELIVERY,UPSERT_INCIDENT} from './statements.mjs';
 
 export const RETENTION_OBSERVATIONS_MS=45*24*60*60*1000;
@@ -75,7 +76,8 @@ export async function recordObservation(db,observation){
   try{
     result=await run(db,INSERT_OBSERVATION,[observation.observationId,observation.sourceKind,
       observation.eventType,observation.workflowRunId,observation.runAttempt,observation.observedAt,
-      observation.runCreatedAt,observation.runCompletedAt,observation.headSha,
+      observation.runCreatedAt,observation.runCompletedAt,observation.opportunityAt,
+      observation.headSha,
       observation.healthState,observation.reasonCode,observation.evidenceHash,observation.createdAt]);
   }catch{fail('watchdog_observation_write_failed');}
   if(!result?.success)fail('watchdog_observation_write_failed');
@@ -94,7 +96,26 @@ export async function opportunityEvidenceSince(db,opportunityAtIso){
   return Object.freeze({observationId:row.observation_id,healthState:row.health_state,
     createdAt:Date.parse(row.run_created_at),completedAt:row.run_completed_at??null,
     workflowRunId:row.workflow_run_id??null,runAttempt:row.run_attempt??null,
-    headSha:row.head_sha??null});
+    headSha:row.head_sha??null,observedAt:row.observed_at,opportunityAt:row.opportunity_at});
+}
+
+export async function assignedOpportunity(db,workflowRunId,runAttempt,candidateIsos,attributedAt){
+  let existing;
+  try{existing=await first(db,SELECT_RUN_OPPORTUNITY,[workflowRunId]);}
+  catch{fail('watchdog_opportunity_read_failed');}
+  if(typeof existing?.opportunity_at==='string')return existing.opportunity_at;
+  for(const candidate of candidateIsos){
+    let result;
+    try{result=await run(db,INSERT_OPPORTUNITY_ATTRIBUTION,
+      [candidate,workflowRunId,runAttempt,attributedAt]);}
+    catch{fail('watchdog_opportunity_write_failed');}
+    if(!result?.success)fail('watchdog_opportunity_write_failed');
+    if((result.meta?.changes??0)>0)return candidate;
+    try{existing=await first(db,SELECT_RUN_OPPORTUNITY,[workflowRunId]);}
+    catch{fail('watchdog_opportunity_read_failed');}
+    if(typeof existing?.opportunity_at==='string')return existing.opportunity_at;
+  }
+  return null;
 }
 
 const incidentFromRow=row=>row===null||row===undefined?null:deepFreeze({
@@ -145,11 +166,11 @@ export async function markIncidentNotified(db,fingerprint,notifiedAt){
 // second email — is exactly how a duplicate decision (a retry, a replayed cycle, a duplicate Cron
 // delivery) is told apart from a genuinely new one that should be delivered.
 export async function reserveNotification(db,{idempotencyKey,fingerprint,transition,decidedAt,
-  evidenceObservationId,createdAt}){
+  evidenceObservationId,evidenceObservedAt,createdAt}){
   let result;
   try{
     result=await run(db,INSERT_NOTIFICATION,[idempotencyKey,fingerprint,transition,decidedAt,
-      evidenceObservationId??null,createdAt]);
+      evidenceObservationId??null,evidenceObservedAt,createdAt]);
   }catch{fail('watchdog_notification_write_failed');}
   if(!result?.success)fail('watchdog_notification_write_failed');
   return Object.freeze({reserved:(result.meta?.changes??0)>0});
@@ -161,6 +182,15 @@ export async function recordNotificationDelivery(db,idempotencyKey,status,delive
   try{result=await run(db,UPDATE_NOTIFICATION_DELIVERY,[status,deliveredAt,idempotencyKey]);}
   catch{fail('watchdog_notification_write_failed');}
   if(!result?.success)fail('watchdog_notification_write_failed');
+}
+
+export async function getFailedNotification(db,fingerprint){
+  let row;
+  try{row=await first(db,SELECT_FAILED_NOTIFICATION,[fingerprint]);}
+  catch{fail('watchdog_notification_read_failed');}
+  if(row===null||row===undefined)return null;
+  return Object.freeze({idempotencyKey:row.idempotency_key,transition:row.transition,
+    evidenceObservationId:row.evidence_observation_id??null,evidenceObservedAt:row.evidence_observed_at});
 }
 
 // Bounded, deterministic pruning. Observations feeding an ACTIVE incident's evidence pointer are

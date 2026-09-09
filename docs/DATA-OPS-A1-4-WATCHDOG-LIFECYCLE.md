@@ -4,6 +4,33 @@
 live-accepted.** Every fact in this document about the watchdog's behaviour is a claim about
 source code and tests that exist in this repository, never about a running system.
 
+
+<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
+## A1.4 final integration correction (PR #240, draft and unmerged)
+
+This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+
+The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
+candidates per cycle; manual dispatches never consume this fixed read allowance. Each scheduled
+run attempt is durably attributed to exactly one declared opportunity: candidates are opportunities
+whose inclusive five-hour window contains `run_created_at`, considered oldest first, with an
+already-consumed opportunity skipped. Existing attribution for the same run id/attempt is reused.
+Thus a 09:01 run consumes 04:17 before 08:17, while a genuinely delayed 08:17 run after 09:17 has
+only 08:17 as a candidate. Bootstrap excludes older opportunities.
+
+Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
+the exact attributed opportunity by run attempt descending, terminal state before in-flight,
+completion-or-observation time descending, observation time descending, then observation id.
+Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
+opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
+evidence instant. Failed email delivery is retried through the same notification row and key even
+when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
+lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
+resource, credential, schedule, email, deployment, merge, provider, model, calculation or
+remediation authority changed.
+
+Final local evidence: 165/165 focused A1.4 tests and 1,987/1,987 full repository tests passed;
+two consecutive production builds were byte-identical.
 **This is the corrected revision.** An owner review of the first candidate (draft PR #240) found
 eight required-correction groups plus additional audit findings; every one is fixed here and is
 described in its own section below, each stating the previous problem and the corrected behaviour.

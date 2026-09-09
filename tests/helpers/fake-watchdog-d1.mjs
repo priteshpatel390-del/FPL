@@ -16,6 +16,7 @@ export function createFakeWatchdogD1(){
   const bootstrap={row:null};
   const claims=new Map();
   const observations=new Map();
+  const attributions=new Map();
   const incidents=new Map();
   const notifications=new Map();
 
@@ -34,11 +35,20 @@ export function createFakeWatchdogD1(){
     }
     if(sql===S.INSERT_OBSERVATION){
       const [observation_id,source_kind,event_type,workflow_run_id,run_attempt,observed_at,
-        run_created_at,run_completed_at,head_sha,health_state,reason_code,evidence_hash,created_at]=args;
+        run_created_at,run_completed_at,opportunity_at,head_sha,health_state,reason_code,evidence_hash,
+        created_at]=args;
       if(observations.has(observation_id))return {success:true,meta:{changes:0}};
       observations.set(observation_id,{observation_id,source_kind,event_type,workflow_run_id,
-        run_attempt,observed_at,run_created_at,run_completed_at,head_sha,health_state,reason_code,
+        run_attempt,observed_at,run_created_at,run_completed_at,opportunity_at,head_sha,health_state,reason_code,
         evidence_hash,created_at});
+      return {success:true,meta:{changes:1}};
+    }
+    if(sql===S.INSERT_OPPORTUNITY_ATTRIBUTION){
+      const [opportunity_at,workflow_run_id,run_attempt,attributed_at]=args;
+      if(attributions.has(opportunity_at)||[...attributions.values()].some(row=>
+        row.workflow_run_id===workflow_run_id))
+        return {success:true,meta:{changes:0}};
+      attributions.set(opportunity_at,{opportunity_at,workflow_run_id,run_attempt,attributed_at});
       return {success:true,meta:{changes:1}};
     }
     if(sql===S.UPSERT_INCIDENT){
@@ -62,10 +72,11 @@ export function createFakeWatchdogD1(){
       return {success:true,meta:{changes:1}};
     }
     if(sql===S.INSERT_NOTIFICATION){
-      const [idempotency_key,fingerprint,transition,decided_at,evidence_observation_id,created_at]=args;
+      const [idempotency_key,fingerprint,transition,decided_at,evidence_observation_id,
+        evidence_observed_at,created_at]=args;
       if(notifications.has(idempotency_key))return {success:true,meta:{changes:0}};
       notifications.set(idempotency_key,{idempotency_key,fingerprint,transition,decided_at,
-        evidence_observation_id,delivery_status:'PENDING',delivered_at:null,created_at});
+        evidence_observation_id,evidence_observed_at,delivery_status:'PENDING',delivered_at:null,created_at});
       return {success:true,meta:{changes:1}};
     }
     if(sql===S.UPDATE_NOTIFICATION_DELIVERY){
@@ -110,17 +121,32 @@ export function createFakeWatchdogD1(){
       return single?row:{results:row?[row]:[]};
     }
     if(sql===S.SELECT_LATEST_SCHEDULED_SINCE){
-      const [sinceIso]=args;
+      const [opportunityIso]=args;
       const candidates=[...observations.values()]
-        .filter(row=>row.event_type==='schedule'&&row.run_created_at!==null&&row.run_created_at!==undefined
-          &&row.run_created_at>=sinceIso)
-        .sort((a,b)=>b.run_created_at.localeCompare(a.run_created_at));
+        .filter(row=>row.event_type==='schedule'&&row.opportunity_at===opportunityIso)
+        .sort((a,b)=>(b.run_attempt??0)-(a.run_attempt??0)
+          ||Number(a.health_state==='IN_FLIGHT')-Number(b.health_state==='IN_FLIGHT')
+          ||(b.run_completed_at??b.observed_at).localeCompare(a.run_completed_at??a.observed_at)
+          ||b.observed_at.localeCompare(a.observed_at)||b.observation_id.localeCompare(a.observation_id));
       const row=candidates[0]??null;
       return single?row:{results:row?[row]:[]};
+    }
+    if(sql===S.SELECT_RUN_OPPORTUNITY){
+      const [workflowRunId]=args;
+      const row=[...attributions.values()].find(item=>item.workflow_run_id===workflowRunId);
+      const result=row?{opportunity_at:row.opportunity_at}:null;
+      return single?result:{results:result?[result]:[]};
     }
     if(sql===S.SELECT_INCIDENT){
       const [fingerprint]=args;
       const row=incidents.get(fingerprint)??null;
+      return single?row:{results:row?[row]:[]};
+    }
+    if(sql===S.SELECT_FAILED_NOTIFICATION){
+      const [fingerprint]=args;
+      const row=[...notifications.values()].filter(item=>item.fingerprint===fingerprint
+        &&item.delivery_status==='FAILED').sort((a,b)=>b.decided_at.localeCompare(a.decided_at)
+          ||b.idempotency_key.localeCompare(a.idempotency_key))[0]??null;
       return single?row:{results:row?[row]:[]};
     }
     throw new Error(`fake_watchdog_d1_unhandled_read:${sql}`);
@@ -138,6 +164,6 @@ export function createFakeWatchdogD1(){
         }
       };
     },
-    _tables:{bootstrap,claims,observations,incidents,notifications}
+    _tables:{bootstrap,claims,attributions,observations,incidents,notifications}
   };
 }

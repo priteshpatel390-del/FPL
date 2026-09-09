@@ -31,6 +31,7 @@ CREATE TABLE watchdog_observations (
   observed_at TEXT NOT NULL,
   run_created_at TEXT,
   run_completed_at TEXT,
+  opportunity_at TEXT,
   head_sha TEXT,
   health_state TEXT NOT NULL CHECK (health_state IN
     ('SUCCESS','NOT_EVALUATED_OK','FAILED','SKIPPED','IN_FLIGHT','SUMMARY_INVALID',
@@ -40,9 +41,17 @@ CREATE TABLE watchdog_observations (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE watchdog_opportunity_attributions (
+  opportunity_at TEXT PRIMARY KEY,
+  workflow_run_id INTEGER NOT NULL,
+  run_attempt INTEGER NOT NULL,
+  attributed_at TEXT NOT NULL,
+  UNIQUE (workflow_run_id)
+);
+
 CREATE INDEX idx_watchdog_observations_observed_at ON watchdog_observations(observed_at);
 CREATE INDEX idx_watchdog_observations_schedule_lookup
-  ON watchdog_observations(event_type, run_created_at);
+  ON watchdog_observations(event_type, opportunity_at, run_attempt, run_completed_at, observed_at);
 
 CREATE TABLE watchdog_incidents (
   fingerprint TEXT PRIMARY KEY,
@@ -55,8 +64,9 @@ CREATE TABLE watchdog_incidents (
   recovered_at TEXT,
   occurrence_count INTEGER NOT NULL DEFAULT 0,
   reopened_count INTEGER NOT NULL DEFAULT 0,
-  -- The watchdog cycle's own clock reading that produced this row. Used only for the reducer's
-  -- monotonic replay guard; it is never shown to the owner.
+  -- Stable decisive evidence time: source completion/observation for a run, the declared
+  -- opportunity for absence, or the first instant of one unchanged evidence-read failure state.
+  -- Used by the reducer's monotonic replay guard; it is never shown to the owner.
   last_evidence_observed_at TEXT NOT NULL,
   -- Real, bounded, sanitized provenance for the evidence that decided this row — never a
   -- placeholder. `evidence_source_at` is the underlying observation's own timestamp (e.g. a run's
@@ -79,6 +89,7 @@ CREATE TABLE watchdog_notifications (
   transition TEXT NOT NULL CHECK (transition IN ('NEW','CHANGED','RECOVERED','REOPENED','REMINDER')),
   decided_at TEXT NOT NULL,
   evidence_observation_id TEXT,
+  evidence_observed_at TEXT NOT NULL,
   delivery_status TEXT NOT NULL CHECK (delivery_status IN ('PENDING','SENT','FAILED')),
   delivered_at TEXT,
   created_at TEXT NOT NULL

@@ -25,8 +25,8 @@ export const INSERT_BOOTSTRAP=
 export const INSERT_OBSERVATION=
   `INSERT INTO watchdog_observations
      (observation_id,source_kind,event_type,workflow_run_id,run_attempt,observed_at,
-      run_created_at,run_completed_at,head_sha,health_state,reason_code,evidence_hash,created_at)
-   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+      run_created_at,run_completed_at,opportunity_at,head_sha,health_state,reason_code,evidence_hash,created_at)
+   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
    ON CONFLICT(observation_id) DO NOTHING`;
 
 // The single most recent scheduled observation created at or after one opportunity instant. Under
@@ -34,10 +34,20 @@ export const INSERT_OBSERVATION=
 // because by construction nothing else was scheduled between the opportunity and `now`.
 export const SELECT_LATEST_SCHEDULED_SINCE=
   `SELECT observation_id,health_state,run_created_at,run_completed_at,workflow_run_id,run_attempt,
-      head_sha
+      head_sha,observed_at,opportunity_at
    FROM watchdog_observations
-   WHERE event_type='schedule' AND run_created_at IS NOT NULL AND run_created_at>=?
-   ORDER BY run_created_at DESC LIMIT 1`;
+   WHERE event_type='schedule' AND opportunity_at=?
+   ORDER BY run_attempt DESC,
+     CASE health_state WHEN 'IN_FLIGHT' THEN 0 ELSE 1 END DESC,
+     COALESCE(run_completed_at,observed_at) DESC, observed_at DESC, observation_id DESC LIMIT 1`;
+
+export const SELECT_RUN_OPPORTUNITY=
+  `SELECT opportunity_at FROM watchdog_opportunity_attributions
+   WHERE workflow_run_id=?`;
+export const INSERT_OPPORTUNITY_ATTRIBUTION=
+  `INSERT INTO watchdog_opportunity_attributions
+     (opportunity_at,workflow_run_id,run_attempt,attributed_at) VALUES (?,?,?,?)
+   ON CONFLICT DO NOTHING`;
 
 export const SELECT_INCIDENT=
   `SELECT fingerprint,problem_class,component,lifecycle_state,reason_code,first_seen_at,
@@ -73,13 +83,17 @@ export const UPDATE_INCIDENT_LAST_NOTIFIED=
 
 export const INSERT_NOTIFICATION=
   `INSERT INTO watchdog_notifications
-     (idempotency_key,fingerprint,transition,decided_at,evidence_observation_id,delivery_status,
+     (idempotency_key,fingerprint,transition,decided_at,evidence_observation_id,evidence_observed_at,delivery_status,
       delivered_at,created_at)
-   VALUES (?,?,?,?,?,'PENDING',NULL,?)
+   VALUES (?,?,?,?,?,?,'PENDING',NULL,?)
    ON CONFLICT(idempotency_key) DO NOTHING`;
 
 export const UPDATE_NOTIFICATION_DELIVERY=
   `UPDATE watchdog_notifications SET delivery_status=?,delivered_at=? WHERE idempotency_key=?`;
+export const SELECT_FAILED_NOTIFICATION=
+  `SELECT idempotency_key,transition,evidence_observation_id,evidence_observed_at FROM watchdog_notifications
+   WHERE fingerprint=? AND delivery_status='FAILED'
+   ORDER BY decided_at DESC,idempotency_key DESC LIMIT 1`;
 
 export const PRUNE_OBSERVATIONS=
   `DELETE FROM watchdog_observations
@@ -93,9 +107,10 @@ export const PRUNE_INCIDENTS=
 export const PRUNE_NOTIFICATIONS=`DELETE FROM watchdog_notifications WHERE decided_at<?`;
 
 export const ALLOWED_STATEMENTS=deepFreeze([CLAIM_SCHEDULED_EVENT,SELECT_BOOTSTRAP,INSERT_BOOTSTRAP,
-  INSERT_OBSERVATION,SELECT_LATEST_SCHEDULED_SINCE,SELECT_INCIDENT,UPSERT_INCIDENT,
+  INSERT_OBSERVATION,SELECT_LATEST_SCHEDULED_SINCE,SELECT_RUN_OPPORTUNITY,
+  INSERT_OPPORTUNITY_ATTRIBUTION,SELECT_INCIDENT,UPSERT_INCIDENT,
   UPDATE_INCIDENT_LAST_NOTIFIED,INSERT_NOTIFICATION,UPDATE_NOTIFICATION_DELIVERY,PRUNE_OBSERVATIONS,
-  PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS]);
+  SELECT_FAILED_NOTIFICATION,PRUNE_INCIDENTS,PRUNE_NOTIFICATIONS]);
 
 export class StatementNotAllowedError extends Error{
   constructor(){super('watchdog_sql_not_allowlisted');this.name='StatementNotAllowedError';

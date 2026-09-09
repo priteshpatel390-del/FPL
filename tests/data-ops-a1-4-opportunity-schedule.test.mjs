@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {MS_PER_DAY,OBSERVER_GRACE_MS,OBSERVER_OPPORTUNITY_MINUTES,OpportunityScheduleError,
-  latestExpectedOpportunity} from '../workers/data-steward-watchdog/lib/opportunity-schedule.mjs';
+  attributableOpportunityCandidates,latestExpectedOpportunity}
+  from '../workers/data-steward-watchdog/lib/opportunity-schedule.mjs';
 
 const workflow=fs.readFileSync('.github/workflows/data-steward-readonly-observer.yml','utf8');
 
@@ -68,4 +69,23 @@ test('rejects invalid inputs',()=>{
 
 test('MS_PER_DAY is exactly one UTC day',()=>{
   assert.equal(MS_PER_DAY,24*60*60*1000);
+});
+
+test('overlap attribution offers 04:17 before 08:17 for a 09:01 scheduled run',()=>{
+  const bootstrap=Date.UTC(2026,8,9,0,0);
+  assert.deepEqual([...attributableOpportunityCandidates({
+    createdAt:Date.UTC(2026,8,9,9,1),bootstrapAt:bootstrap})],
+  [Date.UTC(2026,8,9,4,17),Date.UTC(2026,8,9,8,17)]);
+});
+
+test('delayed 08:17 evidence after the earlier grace window belongs only to 08:17',()=>{
+  assert.deepEqual([...attributableOpportunityCandidates({createdAt:Date.UTC(2026,8,9,10,0),
+    bootstrapAt:Date.UTC(2026,8,9,0,0)})],[Date.UTC(2026,8,9,8,17)]);
+});
+
+test('overnight candidates never cross into the previous day and bootstrap rejects old runs',()=>{
+  assert.deepEqual([...attributableOpportunityCandidates({createdAt:Date.UTC(2026,8,10,4,30),
+    bootstrapAt:Date.UTC(2026,8,9,12,0)})],[Date.UTC(2026,8,10,4,17)]);
+  assert.deepEqual([...attributableOpportunityCandidates({createdAt:Date.UTC(2026,8,9,9,1),
+    bootstrapAt:Date.UTC(2026,8,9,9,0)})],[]);
 });

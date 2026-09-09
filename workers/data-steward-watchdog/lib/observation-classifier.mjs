@@ -34,8 +34,7 @@ const OUTCOME_TO_CLASSIFICATION=deepFreeze({
 });
 
 // `jobHealth` comes from `classifyJobHealth()`. `summaryAttempted` is true only when a job-log
-// read was actually issued for this run (bounded to the single freshest SUCCESS-or-FAILED run per
-// cycle); `summary` is the structurally-decoded object, or `null` if the read failed or decoded to
+// read was actually issued for this run (bounded to the two freshest scheduled SUCCESS-or-FAILED candidates per cycle); `summary` is the structurally-decoded object, or `null` if the read failed or decoded to
 // nothing. The raw GitHub job conclusion is deliberately not accepted here — see the normalization
 // note below for why `jobHealth` is the only classification this function trusts.
 export function classifyObserverRun({jobHealth,summaryAttempted,summary}){

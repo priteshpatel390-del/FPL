@@ -74,3 +74,22 @@ export function latestExpectedOpportunity({now,bootstrapAt}){
   if(latest<bootstrapAt)return null;
   return latest;
 }
+
+// A scheduled run belongs to the earliest still-eligible declared opportunity. Eligibility is
+// creation within that opportunity's inclusive grace window. Persistence chooses the first
+// candidate not already consumed by another run/attempt, which resolves the 04:17/08:17 overlap
+// without allowing one run to satisfy both opportunities.
+export function attributableOpportunityCandidates({createdAt,bootstrapAt}){
+  if(!safeInstant(createdAt))fail('opportunity_schedule_created_invalid');
+  if(!safeInstant(bootstrapAt))fail('opportunity_schedule_bootstrap_invalid');
+  const candidates=[];
+  for(const daysBack of [1,0]){
+    const start=dayStart(createdAt)-daysBack*MS_PER_DAY;
+    for(const {hour,minute} of OBSERVER_OPPORTUNITY_MINUTES){
+      const opportunity=start+(hour*60+minute)*60*1000;
+      if(opportunity>=bootstrapAt&&createdAt>=opportunity&&createdAt<=opportunity+OBSERVER_GRACE_MS)
+        candidates.push(opportunity);
+    }
+  }
+  return deepFreeze(candidates.sort((a,b)=>a-b));
+}

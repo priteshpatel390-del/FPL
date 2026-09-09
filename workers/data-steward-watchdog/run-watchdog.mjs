@@ -24,11 +24,12 @@ import {classifyHeartbeat} from './lib/heartbeat.mjs';
 import {incidentFingerprint} from './lib/incident-fingerprint.mjs';
 import {reduceIncidentLifecycle,TRANSITION_NONE} from './lib/lifecycle-reducer.mjs';
 import {classifyObserverRun} from './lib/observation-classifier.mjs';
-import {latestExpectedOpportunity} from './lib/opportunity-schedule.mjs';
+import {attributableOpportunityCandidates,latestExpectedOpportunity,OBSERVER_GRACE_MS}
+  from './lib/opportunity-schedule.mjs';
 import {decideNotification} from './notification/decision.mjs';
 import {buildNotificationMessage} from './notification/message.mjs';
 import {sendOwnerNotification} from './notification/transport.mjs';
-import {claimScheduledEvent,ensureBootstrap,getIncident,markIncidentNotified,
+import {assignedOpportunity,claimScheduledEvent,ensureBootstrap,getFailedNotification,getIncident,markIncidentNotified,
   opportunityEvidenceSince,pruneRetention,recordNotificationDelivery,recordObservation,
   reserveNotification,saveIncident} from './persistence/repository.mjs';
 
@@ -43,32 +44,39 @@ const at=now=>new Date(now).toISOString();
 const hashId=async(prefix,value,cryptoImpl)=>`${prefix}-${(await sha256Hex(stableStringify(value),cryptoImpl)).slice(0,24)}`;
 
 // Records every decoded run this cycle observed as a bounded evidence row. Deterministic keying
-// on (runId, healthState) is what makes this idempotent: identical evidence observed again
+// on (runId, runAttempt, healthState) is what makes this idempotent: identical evidence observed again
 // (a retry, a duplicate Cron delivery, an unchanged run seen on the next cycle) writes the same
 // row again and is silently ignored by the schema's own uniqueness constraint; a genuine state
 // change (e.g. a run moving from in-flight to success) has a different key and is recorded as a
 // new fact rather than overwriting or losing the earlier one.
-async function recordEvidence(db,evidence,nowIso,cryptoImpl){
+async function recordEvidence(db,evidence,nowIso,bootstrapAt,cryptoImpl){
   if(!evidence.ok)return;
-  for(const [index,run] of evidence.runs.entries()){
-    const summaryAttempted=index===0&&(run.jobHealth==='SUCCESS'||run.jobHealth==='FAILED');
-    const classified=classifyObserverRun({jobHealth:run.jobHealth,summaryAttempted,summary:run.summary});
+  for(const run of evidence.runs){
+    const classified=classifyObserverRun({jobHealth:run.jobHealth,
+      summaryAttempted:run.summaryAttempted,summary:run.summary});
     const eventType=run.event==='schedule'||run.event==='workflow_dispatch'?run.event:'unknown';
-    const observationId=await hashId('obs',{workflowRunId:run.id,healthState:classified.healthState},cryptoImpl);
+    const observationId=await hashId('obs',{workflowRunId:run.id,runAttempt:run.runAttempt,
+      healthState:classified.healthState},cryptoImpl);
     const evidenceHash=await sha256Hex(stableStringify({workflowRunId:run.id,eventType,
-      healthState:classified.healthState,reasonCode:classified.reasonCode,headSha:run.headSha}),cryptoImpl);
+      runAttempt:run.runAttempt,healthState:classified.healthState,
+      reasonCode:classified.reasonCode,headSha:run.headSha}),cryptoImpl);
+    let opportunityAt=null;
+    if(eventType==='schedule'&&run.runAttempt!==null){
+      const candidates=attributableOpportunityCandidates({createdAt:Date.parse(run.createdAt),bootstrapAt});
+      opportunityAt=await assignedOpportunity(db,run.id,run.runAttempt,
+        candidates.map(candidate=>at(candidate)),nowIso);
+    }
     await recordObservation(db,{observationId,sourceKind:eventType==='schedule'?'scheduled_run':'manual_run',
       eventType,workflowRunId:run.id,runAttempt:run.runAttempt,observedAt:nowIso,runCreatedAt:run.createdAt,
       runCompletedAt:run.jobCompletedAt,headSha:run.headSha,healthState:classified.healthState,
-      reasonCode:classified.reasonCode,evidenceHash,createdAt:nowIso});
+      opportunityAt,reasonCode:classified.reasonCode,evidenceHash,createdAt:nowIso});
   }
 }
 
 // The schedule-aware heartbeat evaluation, bootstrap-clamped. Reads durable D1 state
 // (`ensureBootstrap`, `opportunityEvidenceSince`) rather than only this cycle's own GitHub read,
 // which is what lets heartbeat detection survive a transient GitHub-unavailable cycle.
-async function evaluateHeartbeat(db,now,nowIso){
-  const bootstrapIso=await ensureBootstrap(db,nowIso);
+async function evaluateHeartbeat(db,now,bootstrapIso){
   const bootstrapAt=Date.parse(bootstrapIso);
   const opportunityAt=latestExpectedOpportunity({now,bootstrapAt});
   let evidenceRow=null;
@@ -84,15 +92,15 @@ async function evaluateHeartbeat(db,now,nowIso){
 // a reservation that affects zero rows means an equivalent decision over this exact evidence was
 // already made (by this same cycle running again, a retry, or duplicate Cron delivery), and no
 // second email is ever attempted for it. A transport failure is recorded truthfully as `FAILED`
-// and never propagated as a fatal execution error — it is expected, self-heals on the next cycle
-// (see `decideNotification`'s reminder policy) and must never cause an alert storm of retries.
+// and never propagated as a fatal execution error — it is expected; an explicit failed-delivery lookup retries the same reserved decision on a later cycle and must never cause an alert storm of retries.
 async function deliverNotification(deps,identity,incident,notificationTransition,nowIso){
   const {db,email,EmailMessageCtor,cryptoImpl}=deps;
   const idempotencyKey=await hashId('notif',
     {fingerprint:identity.fingerprint,notificationTransition,evidenceObservedAt:nowIso},cryptoImpl);
   const reservation=await reserveNotification(db,{idempotencyKey,fingerprint:identity.fingerprint,
     transition:notificationTransition,decidedAt:nowIso,
-    evidenceObservationId:incident.evidenceRef?.observationId??null,createdAt:nowIso});
+    evidenceObservationId:incident.evidenceRef?.observationId??null,
+    evidenceObservedAt:incident.lastEvidenceObservedAt,createdAt:nowIso});
   if(!reservation.reserved)return false;
   const evidenceRef=incident.evidenceRef;
   const message=buildNotificationMessage({fingerprint:identity.fingerprint,
@@ -111,17 +119,42 @@ async function deliverNotification(deps,identity,incident,notificationTransition
   return delivery.delivered;
 }
 
+async function retryFailedNotification(deps,identity,incident,failed,nowIso){
+  const evidenceRef=incident.evidenceRef;
+  const message=buildNotificationMessage({fingerprint:identity.fingerprint,
+    transition:failed.transition,problemClass:identity.problemClass,component:identity.component,
+    reasonCode:incident.reasonCode,lastKnownHealthyOrScheduledAt:evidenceRef?.observedAt??null,
+    ageMs:evidenceRef?.observedAt?Date.parse(nowIso)-Date.parse(evidenceRef.observedAt):null,
+    workflowRunId:evidenceRef?.workflowRunId??null,headSha:evidenceRef?.headSha??null,
+    occurrenceCount:incident.occurrenceCount,reopenedCount:incident.reopenedCount});
+  let delivery;
+  try{delivery=await sendOwnerNotification({binding:deps.email,subject:message.subject,
+    body:message.body,EmailMessageCtor:deps.EmailMessageCtor});}
+  catch{delivery=Object.freeze({delivered:false});}
+  await recordNotificationDelivery(deps.db,failed.idempotencyKey,
+    delivery.delivered?'SENT':'FAILED',nowIso);
+  if(delivery.delivered)await markIncidentNotified(deps.db,identity.fingerprint,nowIso);
+  return delivery.delivered;
+}
+
 // One problem's whole cycle: identity, replay-safe lifecycle reduction, persistence (with real
 // evidence provenance), and — only on a notification-worthy transition — the notification
 // decision and delivery attempt.
-async function evaluateProblem(deps,problemKey,{active,reasonCode,nowIso,evidenceRef}){
+async function evaluateProblem(deps,problemKey,{active,reasonCode,nowIso,evidenceObservedAt,evidenceRef}){
   const {db,cryptoImpl}=deps;
   const identity=await incidentFingerprint(problemKey,{cryptoImpl});
   const previous=await getIncident(db,identity.fingerprint);
+  const stableEvidenceAt=active&&previous?.lifecycleState==='ACTIVE'&&previous.reasonCode===reasonCode
+    &&evidenceRef===null?previous.lastEvidenceObservedAt:evidenceObservedAt;
   const {transition,next}=reduceIncidentLifecycle({fingerprint:identity.fingerprint,previous,
-    evaluation:{active,reasonCode:active?reasonCode:null,evidenceObservedAt:nowIso,now:nowIso,
+    evaluation:{active,reasonCode:active?reasonCode:null,evidenceObservedAt:stableEvidenceAt,now:nowIso,
       evidenceRef:evidenceRef??null}});
-  if(transition===TRANSITION_NONE)return deepFreeze({transition,notified:false});
+  if(transition===TRANSITION_NONE){
+    const failed=previous===null?null:await getFailedNotification(db,identity.fingerprint);
+    const notified=failed===null||failed.evidenceObservedAt!==previous.lastEvidenceObservedAt?false
+      :await retryFailedNotification(deps,identity,previous,failed,nowIso);
+    return deepFreeze({transition,notified});
+  }
   await saveIncident(db,{problemClass:identity.problemClass,component:identity.component,next,
     updatedAt:nowIso});
   const decision=decideNotification({transition,lastNotifiedAt:previous?.lastNotifiedAt??null,
@@ -149,19 +182,25 @@ export async function runWatchdogCycle({env,fetchImpl=globalThis.fetch,now=Date.
 
   const deps=Object.freeze({db:resolved.db,email:resolved.email,EmailMessageCtor,cryptoImpl});
 
-  const evidence=await readObserverEvidence({token:resolved.githubToken,fetchImpl,now});
-  await recordEvidence(resolved.db,evidence,nowIso,cryptoImpl);
+  const bootstrapIso=await ensureBootstrap(resolved.db,nowIso);
+  const bootstrapAt=Date.parse(bootstrapIso);
 
-  const {heartbeat,evidenceRow}=await evaluateHeartbeat(resolved.db,now,nowIso);
+  const evidence=await readObserverEvidence({token:resolved.githubToken,fetchImpl,now});
+  await recordEvidence(resolved.db,evidence,nowIso,bootstrapAt,cryptoImpl);
+
+  const {heartbeat,evidenceRow}=await evaluateHeartbeat(resolved.db,now,bootstrapIso);
   const heartbeatEvidenceRef=evidenceRow===null?null:deepFreeze({
     observationId:evidenceRow.observationId,workflowRunId:evidenceRow.workflowRunId,
     runAttempt:evidenceRow.runAttempt,headSha:evidenceRow.headSha,
     observedAt:evidenceRow.completedAt??new Date(evidenceRow.createdAt).toISOString()});
 
   const heartbeatResult=await evaluateProblem(deps,'OBSERVER_HEARTBEAT',
-    {active:heartbeat.active,reasonCode:heartbeat.reasonCode,nowIso,evidenceRef:heartbeatEvidenceRef});
+    {active:heartbeat.active,reasonCode:heartbeat.reasonCode,nowIso,evidenceRef:heartbeatEvidenceRef,
+      evidenceObservedAt:evidenceRow?.completedAt??evidenceRow?.observedAt
+        ??at(heartbeat.opportunityAt??bootstrapAt)});
   const evidenceResult=await evaluateProblem(deps,'GITHUB_EVIDENCE',
-    {active:!evidence.ok,reasonCode:evidence.ok?null:evidence.reasonCode,nowIso,evidenceRef:null});
+    {active:!evidence.ok,reasonCode:evidence.ok?null:evidence.reasonCode,nowIso,evidenceRef:null,
+      evidenceObservedAt:nowIso});
 
   await pruneRetention(resolved.db,now);
 
