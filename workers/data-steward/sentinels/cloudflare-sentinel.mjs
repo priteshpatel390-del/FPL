@@ -58,7 +58,15 @@ export const CLOUDFLARE_SETTINGS_READ_FAILED='CLOUDFLARE_SETTINGS_READ_FAILED';
 export const CLOUDFLARE_SCHEDULES_AUTH_REFUSED='CLOUDFLARE_SCHEDULES_AUTH_REFUSED';
 export const CLOUDFLARE_SCHEDULES_NOT_FOUND='CLOUDFLARE_SCHEDULES_NOT_FOUND';
 export const CLOUDFLARE_SCHEDULES_HTTP_FAILED='CLOUDFLARE_SCHEDULES_HTTP_FAILED';
-export const CLOUDFLARE_SCHEDULES_RESPONSE_INVALID='CLOUDFLARE_SCHEDULES_RESPONSE_INVALID';
+// Live evidence (run 34319945520) proved identity admission succeeds, the request reaches
+// HTTP 200, and the still-collapsed `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` code could not say
+// which of three response-processing layers actually failed. These three replace it: they are
+// read internally from which step (JSON parse, envelope decode, payload decode) first produced
+// an unusable result, and only the matching enum below ever leaves this module. `decodeEnvelope`
+// and `decodeSchedules` are invoked exactly as before and are not changed by this split.
+export const CLOUDFLARE_SCHEDULES_JSON_INVALID='CLOUDFLARE_SCHEDULES_JSON_INVALID';
+export const CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID='CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID';
+export const CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID='CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID';
 export const CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED='CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED';
 export const CLOUDFLARE_IDENTITY_MISMATCH='CLOUDFLARE_IDENTITY_MISMATCH';
 export const CLOUDFLARE_CRON_MISMATCH='CLOUDFLARE_CRON_SET_MISMATCH';
@@ -174,11 +182,15 @@ async function read(request,fetchImpl){
 }
 
 // The one narrow exception to the generic `read()` helper above: `/schedules` is the read live
-// evidence has now twice named as the actual failure point, so its failure is classified into one
-// of five closed categories instead of collapsing into a single code. The classification reads
-// `response.status` internally to select an enum member and nothing else — the status itself,
-// any provider body, message, header or the request URL never leave this function. Exactly one
-// request is issued, matching the generic helper's shape exactly.
+// evidence has now repeatedly named as the actual failure point, so its failure is classified
+// into one of seven closed categories instead of collapsing into a single code. The
+// classification reads `response.status` and which response-processing step first produced an
+// unusable result, entirely internally, to select an enum member and nothing else — the status,
+// any provider body, message, header, the request URL, or any exception/parse-error text never
+// leave this function. Exactly one request is issued, matching the generic helper's shape
+// exactly. `decodeEnvelope` and `decodeSchedules` are called exactly as the generic `read()`
+// helper would call them; only the failure of each step is now named separately instead of both
+// being folded into one code.
 async function readSchedulesStage(request,fetchImpl){
   let response;
   try{
@@ -192,10 +204,12 @@ async function readSchedulesStage(request,fetchImpl){
   if(status!==200)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_HTTP_FAILED};
   let body;
   try{body=await response.json();}catch{
-    return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_RESPONSE_INVALID};
+    return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_JSON_INVALID};
   }
-  const crons=decodeSchedules(decodeEnvelope(body));
-  if(crons===null)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_RESPONSE_INVALID};
+  const envelope=decodeEnvelope(body);
+  if(envelope===null)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID};
+  const crons=decodeSchedules(envelope);
+  if(crons===null)return {crons:null,reasonCode:CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID};
   return {crons,reasonCode:null};
 }
 

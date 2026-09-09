@@ -140,6 +140,39 @@ those broad categories applied. See "Schedules-read failure classification" belo
 missing, that the response decoder is wrong, that the Cron configuration is wrong, or that A1.3 is
 live accepted. It proves only that `/schedules` failed and identity admission did not.
 
+## Fourth live observation attempt — 9 September 2026
+
+The owner performed a fourth attended dispatch of `Data Steward Read-Only Observer`, after the
+schedules-classification remediation above merged as PR #235: run `34319945520`, run number 4,
+event `workflow_dispatch`, branch `main`, head SHA `90d7851d0084f45577c330e9fa7f1c15432f80c0`.
+**This is not a live acceptance.** No collection, repair, D1 write, schedule activation or
+Cloudflare mutation occurred.
+
+| Sentinel | State | Reason | Detail |
+|---|---|---|---|
+| GitHub | OBSERVED | `GITHUB_CHAIN_OBSERVED` | — |
+| D1 | OBSERVED | `D1_STATE_OBSERVED` | `rowsRead: 89066` |
+| Cloudflare | OBSERVATION_FAILED | `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` | HTTP 200 reached; response unusable |
+
+**FACT: identity admission continues to succeed, and the request now reaches HTTP 200.** The
+result did not classify as `CLOUDFLARE_SCHEDULES_AUTH_REFUSED`, `CLOUDFLARE_SCHEDULES_NOT_FOUND`,
+`CLOUDFLARE_SCHEDULES_HTTP_FAILED` or `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED` — it reached response
+processing after a successful HTTP 200. That rules out the four other broad `/schedules`
+categories for this run and places the failure somewhere inside HTTP-200 response processing.
+Protected runtime values remained masked throughout, per the PR #233 remediation still holding
+live.
+
+**Existing ambiguity.** `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` itself collapsed three distinct
+response-processing layers into one code, so this live evidence alone cannot say whether the HTTP
+body failed to parse as JSON, a parsed body failed to decode as a valid Cloudflare envelope, or a
+valid envelope carried a result the existing schedules decoder rejects. See "Response-layer
+diagnostic split" below.
+
+**Do not claim.** This evidence does not prove JSON parsing is the cause, the envelope shape is the
+cause, `decodeSchedules` is the cause, Cloudflare's documentation is wrong, the repository's
+decoder is wrong, or that A1.3 is live accepted. It proves only that the response reached HTTP-200
+processing and that processing then failed to produce a usable schedules payload.
+
 ## Schedules-read failure classification
 
 This checkpoint replaces the single collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED` code with five
@@ -175,6 +208,49 @@ contract those decoders enforce, and does not widen the accepted Cron expression
 Cloudflare credential contract remains exactly **Workers Scripts: Read** plus **D1: Read**; no
 token was recreated, rotated or widened. The `/schedules`, `/deployments` and `/settings` paths,
 the `GET`-only method, the request timeout and the observer workflow YAML are all unchanged.
+
+## Response-layer diagnostic split
+
+The fourth live observation above proved `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` itself still
+collapsed three distinct HTTP-200 response-processing layers into one code. This checkpoint
+replaces it with three closed categories, for the response-processing branch of `/schedules` only:
+
+* `CLOUDFLARE_SCHEDULES_JSON_INVALID` — HTTP 200, but `response.json()` throws or otherwise fails
+  to produce parsed JSON.
+* `CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID` — HTTP 200, the body parses as JSON, but the existing
+  `decodeEnvelope()` returns `null`.
+* `CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID` — HTTP 200, the body parses as JSON, `decodeEnvelope()`
+  succeeds, but the existing `decodeSchedules()` returns `null`.
+
+Which step first produced an unusable result is read internally, once, purely to select one of
+these three enums. The parsed or raw response body, its top-level object keys, its `result` keys,
+any schedules entries, any Cron expression from a failing response, the Cloudflare provider's own
+error code or message, the HTTP status, the request URL, headers, the account id, the fingerprint,
+the token, any caught exception text, stack trace or JSON-parse-error detail never leave the
+sentinel — the same sanitisation boundary already in force, made precise per layer rather than
+widened. `CLOUDFLARE_SCHEDULES_AUTH_REFUSED`, `CLOUDFLARE_SCHEDULES_NOT_FOUND`,
+`CLOUDFLARE_SCHEDULES_HTTP_FAILED` and `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED` are **unchanged**.
+`/deployments` and `/settings` are **unchanged** and keep their single collapsed codes; this
+checkpoint does not add equivalent sub-classification for those two stages. The old
+`CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` code is removed: no live evidence, documentation reference
+or compatibility requirement was found for keeping it once the runtime no longer emits it.
+
+**Fail-closed read order and count are unchanged.** Exactly one Cloudflare request is issued for
+this classification, matching the previous collapsed behaviour exactly; a schedules failure of any
+of the three response-processing categories still stops the sequence before `/deployments` or
+`/settings` is attempted. A fully successful cycle is byte/field-identical to before: three `GET`
+requests, the same decoders, the same Cron-set comparison. `CLOUDFLARE_SENTINEL_MAX_READS` stays
+exactly `3`.
+
+**What is deliberately unchanged.** `decodeEnvelope()` and `decodeSchedules()` are not modified in
+any way — no new accepted shape, no coercion, no normalisation of an otherwise-rejected response,
+no special case for any live production output. They are invoked exactly as the generic `read()`
+helper already invokes them for `/deployments` and `/settings`; only the failure of each of the two
+calls now carries its own reason code instead of both being folded into one. The Cloudflare
+credential contract, the fixed Worker name, the `GET`-only method, the three fixed paths, the
+`redirect:'error'` option, the Authorization Bearer header construction, the Accept header, the
+15-second timeout, the sequential read ordering and the request-count behaviour on every other
+failure path are all unchanged.
 
 ## Masking remediation
 
@@ -303,17 +379,19 @@ required inside it:
    owner has since corrected it to the raw 64-character lowercase SHA-256 hex, proved by the second
    and third attempts' successful identity admission.
 3. Manually dispatch one live read-only observer run on `main` and accept its sanitized evidence.
-   **Attempted three times and not yet accepted.** Run `34269989975` failed closed at Cloudflare
+   **Attempted four times and not yet accepted.** Run `34269989975` failed closed at Cloudflare
    identity admission (`CLOUDFLARE_IDENTITY_MISMATCH`), resolved by PR #233. Run `34277208819`,
    after that merge, passed identity admission but failed closed during the Cloudflare read phase
    with the then-collapsed `CLOUDFLARE_READ_FAILED`, resolved into per-stage codes by PR #234. Run
    `34311398342`, after that merge, again passed identity admission and narrowed the failure to
-   `/schedules`, but with the then-collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED`. Before dispatching
-   again: merge this classification remediation, confirm exact-`main` Verify success, then perform
-   one new attended manual dispatch on the then-current `main`. Read the new closed `/schedules`
-   category code (`CLOUDFLARE_SCHEDULES_AUTH_REFUSED` / `CLOUDFLARE_SCHEDULES_NOT_FOUND` /
-   `CLOUDFLARE_SCHEDULES_HTTP_FAILED` / `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID` /
-   `CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED`) to identify the precise underlying cause before deciding
+   `/schedules`, but with the then-collapsed `CLOUDFLARE_SCHEDULES_READ_FAILED`, resolved into five
+   `/schedules` category codes by PR #235. Run `34319945520`, after that merge, again passed
+   identity admission, reached HTTP 200 and narrowed the failure to response processing, but with
+   the then-collapsed `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID`. Before dispatching again: merge this
+   response-layer diagnostic split, confirm exact-`main` Verify success, then perform one new
+   attended manual dispatch on the then-current `main`. Read the new closed response-layer category
+   code (`CLOUDFLARE_SCHEDULES_JSON_INVALID` / `CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID` /
+   `CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID`) to identify the precise underlying cause before deciding
    whether the fix is configuration, credential permission, a response-contract correction or
    another cause. Accept the run only if the GitHub, D1 and Cloudflare sentinels all observe
    successfully and the cross-source verdict is healthy.

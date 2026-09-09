@@ -26,8 +26,9 @@ import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
 import {CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_IDENTITY_MISMATCH,
   CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_AUTH_REFUSED,
-  CLOUDFLARE_SCHEDULES_HTTP_FAILED,CLOUDFLARE_SCHEDULES_NOT_FOUND,
-  CLOUDFLARE_SCHEDULES_RESPONSE_INVALID,CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED,
+  CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID,CLOUDFLARE_SCHEDULES_HTTP_FAILED,
+  CLOUDFLARE_SCHEDULES_JSON_INVALID,CLOUDFLARE_SCHEDULES_NOT_FOUND,
+  CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID,CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED,
   CLOUDFLARE_SENTINEL_MAX_READS,CLOUDFLARE_SETTINGS_READ_FAILED,assertProductionAccount,
   cloudflareReadRequest,cronSetMatches,decodeDeployments,decodeEnvelope,decodeSchedules,
   decodeSettings,readCloudflareConfiguration} from '../workers/data-steward/sentinels/cloudflare-sentinel.mjs';
@@ -510,8 +511,15 @@ test('identity mismatch fails closed before any Cloudflare request is issued',as
 //
 // Live evidence (run 34311398342, head 465e54260005c96591bd77be0a1fe1cb44547631) then proved the
 // failure narrows specifically to `/schedules`, but the still-collapsed per-stage code could not
-// say which broad category. `/schedules` alone is now classified into five closed categories; the
-// HTTP status is read only to select one of them and never itself leaves the sentinel.
+// say which broad category. `/schedules` alone was then classified into five closed categories.
+//
+// Live evidence (run 34319945520, head 90d7851d0084f45577c330e9fa7f1c15432f80c0) then proved the
+// failure classifies as `CLOUDFLARE_SCHEDULES_RESPONSE_INVALID`: the request reaches HTTP 200, so
+// the failure sits somewhere inside response processing, but that one collapsed code could not say
+// whether the JSON body failed to parse, the Cloudflare envelope failed to decode, or the schedules
+// payload failed to decode. Those three response-processing layers are now separately named. The
+// HTTP status and which processing step first failed are read only to select one enum member and
+// never themselves leave the sentinel.
 const scheduleFailureCase=async(schedules,expectedReasonCode)=>{
   const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules}));
   const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
@@ -542,30 +550,54 @@ test('any other non-200 schedules response is classified as CLOUDFLARE_SCHEDULES
   await scheduleFailureCase(503,CLOUDFLARE_SCHEDULES_HTTP_FAILED);
 });
 
-test('a successful-status but unusable schedules response is classified as CLOUDFLARE_SCHEDULES_RESPONSE_INVALID',async()=>{
-  // 200 but the body cannot be parsed as JSON.
-  await scheduleFailureCase(()=>{throw new Error('bad json');},CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
-  // 200 with a JSON body that is not a valid Cloudflare envelope.
-  await scheduleFailureCase({success:false},CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
-  await scheduleFailureCase({not:'an envelope'},CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
-  // 200 with a valid envelope but a result the existing schedules decoder rejects.
-  await scheduleFailureCase(cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
-  await scheduleFailureCase(cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_RESPONSE_INVALID);
+test('a 200 response whose body cannot be parsed as JSON is classified as CLOUDFLARE_SCHEDULES_JSON_INVALID',async()=>{
+  await scheduleFailureCase(()=>{throw new Error('bad json');},CLOUDFLARE_SCHEDULES_JSON_INVALID);
+  await scheduleFailureCase(()=>{throw new SyntaxError('Unexpected token < in JSON');},CLOUDFLARE_SCHEDULES_JSON_INVALID);
 });
 
-test('no schedules failure category ever carries a numeric status, provider text or a URL',async()=>{
+test('a 200 response with valid JSON that is not a valid Cloudflare envelope is classified as CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID',async()=>{
+  // `decodeEnvelope` itself is not touched by this test; these are the exact same rejection shapes
+  // it has always rejected, now surfaced through their own reason code.
+  await scheduleFailureCase({success:false},CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID);
+  await scheduleFailureCase({not:'an envelope'},CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID);
+  await scheduleFailureCase(null,CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID);
+  await scheduleFailureCase([],CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID);
+  await scheduleFailureCase({success:true},CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID);
+});
+
+test('a 200 response with a valid envelope but a result the existing schedules decoder rejects is classified as CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID',async()=>{
+  // `decodeSchedules` itself is not touched by this test; these are the exact same rejection shapes
+  // it has always rejected, now surfaced through their own reason code.
+  await scheduleFailureCase(cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
+  await scheduleFailureCase(cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
+  await scheduleFailureCase(cfEnvelope({}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
+  await scheduleFailureCase(cfEnvelope({schedules:new Array(17).fill({cron:'17 1 * * *'})}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
+});
+
+test('a healthy envelope and a valid schedules payload still succeed and proceed to deployments/settings',async()=>{
+  const impl=fakeFetch(healthyRoutes({bRuns:runsBody([])}));
+  const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
+    token:'t',fetchImpl:impl});
+  assert.equal(result.ok,true);
+  assert.equal(impl.seen.length,3);
+});
+
+test('no schedules failure category ever carries a numeric status, provider text, a URL or exception text',async()=>{
   const cases=[['ERROR',CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED],[401,CLOUDFLARE_SCHEDULES_AUTH_REFUSED],
     [404,CLOUDFLARE_SCHEDULES_NOT_FOUND],[500,CLOUDFLARE_SCHEDULES_HTTP_FAILED],
-    [cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_RESPONSE_INVALID]];
+    [()=>{throw new Error('bad json');},CLOUDFLARE_SCHEDULES_JSON_INVALID],
+    [{not:'an envelope'},CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID],
+    [cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID]];
   for(const [schedules,expectedReasonCode] of cases){
     const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules}));
     const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
       token:'t',fetchImpl:impl});
     assert.deepEqual(Object.keys(result),['ok','reasonCode']);
     assert.equal(result.reasonCode,expectedReasonCode);
+    assert.equal(impl.seen.length,1);
     const serialised=JSON.stringify(result);
     assert.doesNotMatch(serialised,/\b(?:401|403|404|429|500|503)\b/);
-    assert.doesNotMatch(serialised,/https?:\/\/|authorization|bearer|nope|DROP TABLE/i);
+    assert.doesNotMatch(serialised,/https?:\/\/|authorization|bearer|nope|DROP TABLE|bad json|not an envelope|SyntaxError|Unexpected token/i);
   }
 });
 
@@ -619,13 +651,28 @@ test('the deployments/settings stage-specific reason codes are closed identifier
   assert.notEqual(CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_SETTINGS_READ_FAILED);
 });
 
-test('the five schedules category codes are closed, distinct, uppercase identifiers',()=>{
+test('the seven schedules category codes are closed, distinct, uppercase identifiers',()=>{
   const CATEGORY_REASON=/^[A-Z][A-Z0-9_]{1,63}$/;
   const codes=[CLOUDFLARE_SCHEDULES_AUTH_REFUSED,CLOUDFLARE_SCHEDULES_NOT_FOUND,
-    CLOUDFLARE_SCHEDULES_HTTP_FAILED,CLOUDFLARE_SCHEDULES_RESPONSE_INVALID,
+    CLOUDFLARE_SCHEDULES_HTTP_FAILED,CLOUDFLARE_SCHEDULES_JSON_INVALID,
+    CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID,CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID,
     CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED];
   for(const code of codes)assert.match(code,CATEGORY_REASON);
   assert.equal(new Set(codes).size,codes.length);
+  assert.equal(codes.length,7);
+});
+
+// Frozen-decoder proof: the response-layer split calls `decodeEnvelope` and `decodeSchedules`
+// exactly as the generic `read()` helper always has, so the same inputs must still produce the
+// same outputs as the direct decoder unit test above. This is a behavioural proof rather than a
+// source-hash pin, so it survives any future non-semantic refactor of this file.
+test('decodeEnvelope and decodeSchedules are invoked with unchanged semantics by the schedules-stage split',()=>{
+  assert.equal(decodeEnvelope({success:false,result:{}}),null);
+  assert.equal(decodeEnvelope({success:true}),null);
+  assert.deepEqual(decodeSchedules(decodeEnvelope(schedulesBody())),[...EXPECTED_CRON_EXPRESSIONS]);
+  assert.equal(decodeSchedules({schedules:'nope'}),null);
+  assert.equal(decodeSchedules({schedules:[{cron:'DROP TABLE x'}]}),null);
+  assert.equal(decodeSchedules({}),null);
 });
 
 test('a production-account mismatch is not diagnosed as a stage read failure',async()=>{
