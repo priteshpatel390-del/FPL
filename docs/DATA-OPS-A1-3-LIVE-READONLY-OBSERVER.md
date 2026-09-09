@@ -1,7 +1,7 @@
 # DATA-OPS A1.3 — Dormant live read-only observer runtime
 
-Status: **REPOSITORY-READY; FIFTH LIVE OBSERVATION ATTEMPTED, IDENTITY ADMISSION AND RESPONSE-LAYER DECODING SUCCEEDED, `decodeSchedules()` REJECTED THE RESULT; NOT LIVE-ACCEPTED**
-Source main: `dea6a3239443970dd2e5495fe7759e187fb34e20` (merge of PR #236, A1.3 `/schedules` response-layer diagnostic split)
+Status: **REPOSITORY-READY; SIXTH LIVE OBSERVATION ATTEMPTED, PAYLOAD-DECODE NARROWED TO THE CRON PATTERN STAGE, A CANONICALISATION FIX IS PENDING OWNER REVIEW; NOT LIVE-ACCEPTED**
+Source main: `dfc78882a507e90662f2937582ab0b35af34bdec` (merge of PR #237, A1.3 `decodeSchedules` payload-decode diagnostic split). Wider reconciliation of this document is deferred until after live acceptance, per explicit owner instruction; see CLAUDE.md for the current checkpoint.
 
 ## First live observation attempt — 8 September 2026
 

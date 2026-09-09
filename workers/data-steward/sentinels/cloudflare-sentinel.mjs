@@ -93,9 +93,70 @@ const fail=code=>{throw new CloudflareSentinelError(code);};
 
 const ACCOUNT_ID=/^[A-Za-z0-9_-]{1,128}$/;
 const FINGERPRINT=/^[0-9a-f]{64}$/;
-// A cron expression is echoed back into the observation record, so it is bounded to the shape
-// Cloudflare accepts and nothing else may travel in that field.
-const CRON=/^[0-9A-Z*,\-/?#]{1,16}(?: [0-9A-Z*,\-/?#]{1,16}){4}$/;
+
+// Live evidence (run 34342701912, head dfc78882a507e90662f2937582ab0b35af34bdec) proved that a
+// byte-identical-text requirement was itself wrong: the owner's Cloudflare dashboard showed the
+// approved daily 01:17 trigger can be represented as a full day-of-month enumeration
+// (`17 1 1,2,3,...,31 * *`) rather than the repository's textual wildcard (`17 1 * * *`) — the same
+// schedule, a different valid Cloudflare text encoding of it. A per-field length cap sized for the
+// wildcard form rejected that legitimate encoding before semantic comparison ever ran. This module
+// therefore parses and canonicalises only the narrow schedule subset this observer needs, rather
+// than accepting or further widening arbitrary Cron text: exactly five fields; minute `0`-`59` and
+// hour `0`-`23` as one or two decimal digits; day-of-month either `*` or the complete `1`..`31`
+// domain as a comma list with no gap, duplicate or out-of-range entry; month and day-of-week always
+// `*`. A day-of-month enumeration that is complete canonicalises to `*`; anything else — a partial
+// list, a duplicate, an out-of-range value, a non-numeric minute/hour, a wrong field count, or any
+// unsupported month/day-of-week value — is rejected outright rather than partially interpreted.
+// Canonicalisation never widens what is *accepted* as a schedule: it only lets two different valid
+// Cloudflare encodings of the same schedule compare equal, and `cronSetMatches()` below still
+// requires the canonicalised set to equal the three approved expressions exactly, so a canonicalised
+// but different schedule (`18 1 * * *` say) still reaches `CLOUDFLARE_CRON_SET_MISMATCH` rather than
+// being mistaken for an approved one.
+const CRON_MAX_LENGTH=128;
+const CRON_MINUTE_OR_HOUR=/^[0-9]{1,2}$/;
+const DAY_OF_MONTH_DOMAIN_SIZE=31;
+
+function canonicaliseBoundedInt(field,max){
+  if(!CRON_MINUTE_OR_HOUR.test(field))return null;
+  const value=Number(field);
+  return value<=max?value:null;
+}
+
+// A day-of-month field is accepted only as the literal wildcard, or as a comma list that is
+// provably the complete 1..31 domain — no gap, no duplicate, no out-of-range value, in any order.
+// Anything else fails closed rather than being partially matched against the domain.
+function canonicaliseDayOfMonth(field){
+  if(field==='*')return '*';
+  const parts=field.split(',');
+  if(parts.length!==DAY_OF_MONTH_DOMAIN_SIZE)return null;
+  const days=new Set();
+  for(const part of parts){
+    const day=canonicaliseBoundedInt(part,DAY_OF_MONTH_DOMAIN_SIZE);
+    if(day===null||day<1)return null;
+    if(days.has(day))return null;
+    days.add(day);
+  }
+  return days.size===DAY_OF_MONTH_DOMAIN_SIZE?'*':null;
+}
+
+// Parses exactly the supported schedule subset and returns its canonical text, or `null` if the
+// expression is not exactly one of that subset's legitimate encodings. Never returns the raw input
+// unmodified when a day-of-month enumeration was expanded, so a canonicalised result is always safe
+// to echo: it is one of a closed set of shapes this module itself constructs.
+function canonicaliseCron(cron){
+  if(typeof cron!=='string'||cron.length>CRON_MAX_LENGTH)return null;
+  const fields=cron.split(' ');
+  if(fields.length!==5)return null;
+  const [minuteField,hourField,dayOfMonthField,monthField,dayOfWeekField]=fields;
+  const minute=canonicaliseBoundedInt(minuteField,59);
+  if(minute===null)return null;
+  const hour=canonicaliseBoundedInt(hourField,23);
+  if(hour===null)return null;
+  const dayOfMonth=canonicaliseDayOfMonth(dayOfMonthField);
+  if(dayOfMonth===null)return null;
+  if(monthField!=='*'||dayOfWeekField!=='*')return null;
+  return `${minute} ${hour} ${dayOfMonth} * *`;
+}
 
 // The one Worker this sentinel may ever address, and the three fixed paths under it.
 export function workerBase(accountId){
@@ -126,9 +187,11 @@ export function decodeEnvelope(body){
 // whether a result is a valid schedules payload — the diagnostic classification, the decoder, and
 // the live per-cycle read — calls this once and reads the answer it needs from its result, so the
 // predicates themselves exist in exactly one place and cannot drift into two different notions of
-// "valid". `crons` is the successful extraction (identical to the pre-existing direct extraction,
-// same order, same string-row/`row.cron` acceptance); `reasonCode` is `null` on success and one of
-// the five closed schedules-payload codes otherwise. Exactly one of the two is non-null.
+// "valid". `crons` is the successful extraction, canonicalised through `canonicaliseCron` (same
+// row order, same string-row/`row.cron` acceptance as before; a day-of-month enumeration that is
+// the complete domain is folded to `*`, so two legitimate Cloudflare encodings of the same schedule
+// compare equal downstream); `reasonCode` is `null` on success and one of the five closed
+// schedules-payload codes otherwise. Exactly one of the two is non-null.
 function analyseSchedulesPayload(result){
   if(result===null||typeof result!=='object'||Array.isArray(result))
     return {reasonCode:CLOUDFLARE_SCHEDULES_RESULT_INVALID,crons:null};
@@ -140,8 +203,9 @@ function analyseSchedulesPayload(result){
   for(const row of result.schedules){
     const cron=typeof row==='string'?row:row?.cron;
     if(typeof cron!=='string')return {reasonCode:CLOUDFLARE_SCHEDULES_CRON_NOT_STRING,crons:null};
-    if(!CRON.test(cron))return {reasonCode:CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED,crons:null};
-    crons.push(cron);
+    const canonical=canonicaliseCron(cron);
+    if(canonical===null)return {reasonCode:CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED,crons:null};
+    crons.push(canonical);
   }
   return {reasonCode:null,crons};
 }
