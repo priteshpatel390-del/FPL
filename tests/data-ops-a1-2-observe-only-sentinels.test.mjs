@@ -25,13 +25,15 @@ import {GITHUB_GUARD_LOG_MAX_BYTES,GUARD_RESULT_AMBIGUOUS,GUARD_RESULT_AVAILABLE
   repositoryGateLogRequest,runJobsRequest,
   verifyCheckRunsRequest,workflowRunsRequest} from '../workers/data-steward/sentinels/github-sentinel.mjs';
 import {CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_IDENTITY_MISMATCH,
-  CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_AUTH_REFUSED,
+  CLOUDFLARE_INVOCATION_UNOBSERVABLE,CLOUDFLARE_READS,CLOUDFLARE_SCHEDULES_ARRAY_INVALID,
+  CLOUDFLARE_SCHEDULES_AUTH_REFUSED,CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED,
+  CLOUDFLARE_SCHEDULES_CRON_NOT_STRING,CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED,
   CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID,CLOUDFLARE_SCHEDULES_HTTP_FAILED,
   CLOUDFLARE_SCHEDULES_JSON_INVALID,CLOUDFLARE_SCHEDULES_NOT_FOUND,
-  CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID,CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED,
+  CLOUDFLARE_SCHEDULES_RESULT_INVALID,CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED,
   CLOUDFLARE_SENTINEL_MAX_READS,CLOUDFLARE_SETTINGS_READ_FAILED,assertProductionAccount,
-  cloudflareReadRequest,cronSetMatches,decodeDeployments,decodeEnvelope,decodeSchedules,
-  decodeSettings,readCloudflareConfiguration} from '../workers/data-steward/sentinels/cloudflare-sentinel.mjs';
+  classifySchedulesPayload,cloudflareReadRequest,cronSetMatches,decodeDeployments,decodeEnvelope,
+  decodeSchedules,decodeSettings,readCloudflareConfiguration} from '../workers/data-steward/sentinels/cloudflare-sentinel.mjs';
 import {D1_OBSERVATION_QUERIES,D1_OBSERVATION_QUERY_IDS,D1_SENTINEL_MAX_ROWS_READ,
   D1_SENTINEL_RECENT_RUN_LIMIT,assertReadOnlySql,buildDailyObservationBatch,buildObservationPlan,
   d1QueryUrl,inspectObservationPlan,interpretIntegrity,interpretRuns,readD1State,
@@ -565,13 +567,85 @@ test('a 200 response with valid JSON that is not a valid Cloudflare envelope is 
   await scheduleFailureCase({success:true},CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID);
 });
 
-test('a 200 response with a valid envelope but a result the existing schedules decoder rejects is classified as CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID',async()=>{
-  // `decodeSchedules` itself is not touched by this test; these are the exact same rejection shapes
-  // it has always rejected, now surfaced through their own reason code.
-  await scheduleFailureCase(cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
-  await scheduleFailureCase(cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
-  await scheduleFailureCase(cfEnvelope({}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
-  await scheduleFailureCase(cfEnvelope({schedules:new Array(17).fill({cron:'17 1 * * *'})}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID);
+// Live evidence (run 34325772296, head dea6a3239443970dd2e5495fe7759e187fb34e20) proved identity
+// admission and response-layer decoding both succeed, so the failure sits inside `decodeSchedules`
+// itself, but the collapsed `CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID` code could not say which of its
+// predicates rejected the live result. These five tests pin one closed code per predicate, in the
+// same order `classifySchedulesPayload` (and therefore `decodeSchedules`) evaluates them.
+// `decodeSchedules` itself is not touched: these are the exact same rejection shapes it has always
+// rejected, now surfaced through their own reason code instead of one shared one.
+test('a schedules result that is not an object, or is an array, is classified as CLOUDFLARE_SCHEDULES_RESULT_INVALID',async()=>{
+  await scheduleFailureCase(cfEnvelope('nope'),CLOUDFLARE_SCHEDULES_RESULT_INVALID);
+  await scheduleFailureCase(cfEnvelope(42),CLOUDFLARE_SCHEDULES_RESULT_INVALID);
+  await scheduleFailureCase(cfEnvelope([]),CLOUDFLARE_SCHEDULES_RESULT_INVALID);
+  assert.equal(classifySchedulesPayload(null),CLOUDFLARE_SCHEDULES_RESULT_INVALID);
+});
+
+test('a missing or non-array schedules property is classified as CLOUDFLARE_SCHEDULES_ARRAY_INVALID',async()=>{
+  await scheduleFailureCase(cfEnvelope({}),CLOUDFLARE_SCHEDULES_ARRAY_INVALID);
+  await scheduleFailureCase(cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_ARRAY_INVALID);
+  await scheduleFailureCase(cfEnvelope({schedules:null}),CLOUDFLARE_SCHEDULES_ARRAY_INVALID);
+  await scheduleFailureCase(cfEnvelope({schedules:{cron:'17 1 * * *'}}),CLOUDFLARE_SCHEDULES_ARRAY_INVALID);
+});
+
+test('a schedules array over the 16-entry bound is classified as CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:new Array(17).fill({cron:'17 1 * * *'})}),
+    CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED);
+});
+
+test('a schedule row with no usable cron value is classified as CLOUDFLARE_SCHEDULES_CRON_NOT_STRING',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:[{}]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING);
+  await scheduleFailureCase(cfEnvelope({schedules:[{cron:null}]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING);
+  await scheduleFailureCase(cfEnvelope({schedules:[{cron:42}]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING);
+  await scheduleFailureCase(cfEnvelope({schedules:[{cron:{}}]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING);
+  await scheduleFailureCase(cfEnvelope({schedules:[null]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING);
+  await scheduleFailureCase(cfEnvelope({schedules:[42]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING);
+});
+
+test('a cron string the existing CRON pattern rejects is classified as CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED',async()=>{
+  await scheduleFailureCase(cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+  await scheduleFailureCase(cfEnvelope({schedules:['not a cron']}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED);
+});
+
+// `classifySchedulesPayload` and `decodeSchedules` are both one-line delegations to the single
+// internal `analyseSchedulesPayload`, so on any input they read the `reasonCode` and `crons` fields
+// of the exact same evaluation rather than running the five predicates twice — there is no second
+// implementation that could drift, and this is a property of the source rather than something a
+// finite test suite could prove for every possible input. What this test *does* establish, over the
+// fixture set below, is behavioural: for each fixture, `decodeSchedules` returns `null` exactly when
+// `classifySchedulesPayload` returns a non-null code, and whenever `decodeSchedules` accepts, its
+// extracted cron list matches the pre-existing direct row/`row.cron` extraction exactly. The fixture
+// set exercises every predicate branch and the successful path, but it is a set of examples, not a
+// proof of every input this function could ever receive.
+test('decodeSchedules and classifySchedulesPayload agree on the fixture set exercising every predicate branch',()=>{
+  const cases=[null,'nope',42,[],{},{schedules:'nope'},{schedules:null},{schedules:{cron:'17 1 * * *'}},
+    {schedules:new Array(17).fill({cron:'17 1 * * *'})},{schedules:[{}]},{schedules:[{cron:null}]},
+    {schedules:[{cron:42}]},{schedules:[null]},{schedules:[42]},{schedules:[{cron:'DROP TABLE x'}]},
+    {schedules:['not a cron']},{schedules:[]},{schedules:['17 1 * * *']},
+    {schedules:[...EXPECTED_CRON_EXPRESSIONS].map(cron=>({cron}))}];
+  for(const result of cases){
+    const classification=classifySchedulesPayload(result);
+    const decoded=decodeSchedules(result);
+    assert.equal(decoded===null,classification!==null);
+    if(decoded!==null){
+      assert.deepEqual(decoded,result.schedules.map(row=>typeof row==='string'?row:row.cron));
+    }
+  }
+});
+
+// Structural regression: a live cycle must evaluate the five schedules-payload predicates exactly
+// once per decoded envelope. `readSchedulesStage` is required to call the shared internal analyser
+// directly rather than calling the public `decodeSchedules`/`classifySchedulesPayload` wrappers
+// separately, which would otherwise run the same predicates twice on a rejected live payload.
+test('readSchedulesStage evaluates the schedules payload once, through the shared analyser, never through decodeSchedules and classifySchedulesPayload separately',()=>{
+  const text=source('cloudflare-sentinel.mjs');
+  const match=text.match(/async function readSchedulesStage\([^)]*\)\{([\s\S]*?)\n\}/);
+  assert.ok(match,'readSchedulesStage function body not found');
+  const body=match[1];
+  assert.doesNotMatch(body,/\bdecodeSchedules\(/);
+  assert.doesNotMatch(body,/\bclassifySchedulesPayload\(/);
+  assert.match(body,/\banalyseSchedulesPayload\(/);
+  assert.equal((body.match(/\banalyseSchedulesPayload\(/g)??[]).length,1);
 });
 
 test('a healthy envelope and a valid schedules payload still succeed and proceed to deployments/settings',async()=>{
@@ -587,7 +661,11 @@ test('no schedules failure category ever carries a numeric status, provider text
     [404,CLOUDFLARE_SCHEDULES_NOT_FOUND],[500,CLOUDFLARE_SCHEDULES_HTTP_FAILED],
     [()=>{throw new Error('bad json');},CLOUDFLARE_SCHEDULES_JSON_INVALID],
     [{not:'an envelope'},CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID],
-    [cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID]];
+    [cfEnvelope('nope'),CLOUDFLARE_SCHEDULES_RESULT_INVALID],
+    [cfEnvelope({schedules:'nope'}),CLOUDFLARE_SCHEDULES_ARRAY_INVALID],
+    [cfEnvelope({schedules:new Array(17).fill({cron:'17 1 * * *'})}),CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED],
+    [cfEnvelope({schedules:[{cron:42}]}),CLOUDFLARE_SCHEDULES_CRON_NOT_STRING],
+    [cfEnvelope({schedules:[{cron:'DROP TABLE x'}]}),CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED]];
   for(const [schedules,expectedReasonCode] of cases){
     const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules}));
     const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
@@ -651,15 +729,17 @@ test('the deployments/settings stage-specific reason codes are closed identifier
   assert.notEqual(CLOUDFLARE_DEPLOYMENTS_READ_FAILED,CLOUDFLARE_SETTINGS_READ_FAILED);
 });
 
-test('the seven schedules category codes are closed, distinct, uppercase identifiers',()=>{
+test('the eleven schedules category codes are closed, distinct, uppercase identifiers',()=>{
   const CATEGORY_REASON=/^[A-Z][A-Z0-9_]{1,63}$/;
   const codes=[CLOUDFLARE_SCHEDULES_AUTH_REFUSED,CLOUDFLARE_SCHEDULES_NOT_FOUND,
     CLOUDFLARE_SCHEDULES_HTTP_FAILED,CLOUDFLARE_SCHEDULES_JSON_INVALID,
-    CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID,CLOUDFLARE_SCHEDULES_PAYLOAD_INVALID,
-    CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED];
+    CLOUDFLARE_SCHEDULES_ENVELOPE_INVALID,CLOUDFLARE_SCHEDULES_TRANSPORT_FAILED,
+    CLOUDFLARE_SCHEDULES_RESULT_INVALID,CLOUDFLARE_SCHEDULES_ARRAY_INVALID,
+    CLOUDFLARE_SCHEDULES_COUNT_EXCEEDED,CLOUDFLARE_SCHEDULES_CRON_NOT_STRING,
+    CLOUDFLARE_SCHEDULES_CRON_PATTERN_REJECTED];
   for(const code of codes)assert.match(code,CATEGORY_REASON);
   assert.equal(new Set(codes).size,codes.length);
-  assert.equal(codes.length,7);
+  assert.equal(codes.length,11);
 });
 
 // Frozen-decoder proof: the response-layer split calls `decodeEnvelope` and `decodeSchedules`
