@@ -1,14 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {WATCHDOG_D1_BINDING,WATCHDOG_EMAIL_BINDING,WATCHDOG_GITHUB_TOKEN}
+import {WATCHDOG_D1_BINDING,WATCHDOG_EMAIL_BINDING,WATCHDOG_GITHUB_TOKEN,
+  WATCHDOG_OBSERVER_CLOCK_D1_BINDING}
   from '../workers/data-steward-watchdog/lib/environment-contract.mjs';
 import {WATCHDOG_PROBLEMS,WATCHDOG_REASON_CODES} from '../workers/data-steward-watchdog/lib/reason-codes.mjs';
 import {STEWARD_ENVIRONMENT_NAMES} from '../workers/data-steward/sentinels/environment-contract.mjs';
 
-// wrangler.jsonc is JSONC (JSON with full-line `//` comments); strip only lines whose trimmed
-// content begins with `//` — never an end-of-line strip, which would corrupt a string value that
-// legitimately contains "//" (e.g. a URL).
 const stripJsoncComments=text=>text.split('\n')
   .filter(line=>!line.trim().startsWith('//')).join('\n');
 const wrangler=JSON.parse(stripJsoncComments(
@@ -19,35 +17,44 @@ test('the watchdog Worker holds its own dedicated identity, never a reused one',
   assert.equal(wrangler.name,'teamsheet-data-steward-watchdog');
   const otherNames=[
     JSON.parse(fs.readFileSync('workers/schedule-dispatcher/wrangler.jsonc','utf8')).name,
+    JSON.parse(fs.readFileSync('workers/data-steward-observer-dispatcher/wrangler.jsonc','utf8')).name,
     JSON.parse(fs.readFileSync('workers/data-platform/wrangler.jsonc','utf8')).name,
     JSON.parse(fs.readFileSync('workers/evidence-archive/wrangler.jsonc','utf8')).name
   ];
   assert.ok(!otherNames.includes(wrangler.name));
 });
 
-test('exactly one Cloudflare Cron Trigger entry, firing roughly every six hours',()=>{
-  assert.equal(wrangler.triggers.crons.length,1,
-    'one cron expression is preferred over several separate trigger entries');
-  assert.match(wrangler.triggers.crons[0],/^\d{1,2} \d{1,2}(?:,\d{1,2}){0,3} \* \* \*$/);
-  const hours=wrangler.triggers.crons[0].split(' ')[1].split(',').map(Number);
-  assert.equal(hours.length,4,'roughly every six hours across one UTC day');
-  for(let i=1;i<hours.length;i+=1)assert.equal(hours[i]-hours[i-1],6);
+test('the watchdog declares exactly paired 04:47 and 08:47 UTC Cloudflare Cron Triggers',()=>{
+  assert.deepEqual(wrangler.triggers,{crons:['47 4 * * *','47 8 * * *']});
+  assert.equal(wrangler.triggers.crons.length,2);
+  assert.deepEqual(wrangler.triggers.crons.map(value=>value.split(' ')),
+    [['47','4','*','*','*'],['47','8','*','*','*']]);
+  assert.doesNotMatch(JSON.stringify(wrangler.triggers),/17 5,11,17,23|47 11|47 17|47 23/);
 });
 
-test('the D1 binding is its own isolated database, never the production or evidence one',()=>{
-  assert.equal(wrangler.d1_databases.length,1);
-  assert.equal(wrangler.d1_databases[0].binding,WATCHDOG_D1_BINDING);
-  assert.notEqual(wrangler.d1_databases[0].database_name,'teamsheet-data');
-  assert.equal(wrangler.d1_databases[0].migrations_dir,'migrations');
+test('the watchdog owns one lifecycle D1 and reads one separate observer-clock D1',()=>{
+  assert.equal(wrangler.d1_databases.length,2);
+  const lifecycle=wrangler.d1_databases.find(row=>row.binding===WATCHDOG_D1_BINDING);
+  const clock=wrangler.d1_databases.find(row=>row.binding===WATCHDOG_OBSERVER_CLOCK_D1_BINDING);
+  assert.ok(lifecycle);
+  assert.ok(clock);
+  assert.equal(lifecycle.database_name,'teamsheet-data-steward-watchdog');
+  assert.equal(clock.database_name,'teamsheet-data-steward-observer-clock');
+  assert.notEqual(lifecycle.database_name,clock.database_name);
+  for(const row of [lifecycle,clock]){
+    assert.notEqual(row.database_name,'teamsheet-data');
+    assert.notEqual(row.database_name,'teamsheet-evidence');
+  }
+  assert.equal(lifecycle.migrations_dir,'migrations');
+  assert.equal(clock.migrations_dir,undefined,
+    'watchdog may read the clock database but does not own its schema');
   assert.deepEqual(fs.readdirSync('workers/data-steward-watchdog/migrations'),
     ['0001_watchdog_foundation.sql']);
 });
 
-test('the tracked D1 database_id is the inert all-zero placeholder, never a fabricated live id',()=>{
-  // Wrangler requires this field; Cloudflare only assigns a real one once the database actually
-  // exists. The all-zero UUID cannot resolve to any real database, so `wrangler deploy` fails
-  // safely against it rather than silently binding to something unintended.
-  assert.equal(wrangler.d1_databases[0].database_id,'00000000-0000-0000-0000-000000000000');
+test('both tracked D1 database ids are inert placeholders, never fabricated live ids',()=>{
+  assert.deepEqual(wrangler.d1_databases.map(row=>row.database_id),
+    ['00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000000000']);
 });
 
 test('the send_email binding restricts delivery to exactly one fixed destination address',()=>{
@@ -56,9 +63,6 @@ test('the send_email binding restricts delivery to exactly one fixed destination
   assert.ok('destination_address' in wrangler.send_email[0],
     'destination_address (not allowed_destination_addresses, not omitted) is the maximally restrictive binding type');
   assert.ok(!('allowed_destination_addresses' in wrangler.send_email[0]));
-  // The tracked repository never carries the owner's real address. The placeholder is
-  // structurally invalid as a real destination and must be replaced locally, uncommitted, before
-  // any live deployment — see the A1.4 design doc's live-closeout instructions.
   assert.match(wrangler.send_email[0].destination_address,/^REPLACE_LOCALLY_BEFORE_DEPLOY@/);
   assert.doesNotMatch(JSON.stringify(wrangler),/gmail\.com|priteshpatel390/i);
 });
@@ -71,17 +75,21 @@ test('no public HTTP surface, no workers.dev, no route, no custom domain',()=>{
   assert.match(watchdogSource,/async scheduled\(/);
 });
 
-test('no accidental binding beyond the three the environment contract names',()=>{
+test('no accidental binding beyond lifecycle D1, clock D1 and owner email',()=>{
   assert.deepEqual(Object.keys(wrangler).sort(),
     ['$schema','d1_databases','main','name','observability','preview_urls','send_email',
       'triggers','workers_dev','compatibility_date'].sort());
   assert.ok(!('kv_namespaces' in wrangler)&&!('r2_buckets' in wrangler)&&!('services' in wrangler)
     &&!('vars' in wrangler)&&!('durable_objects' in wrangler));
+  assert.deepEqual(wrangler.d1_databases.map(row=>row.binding).sort(),
+    [WATCHDOG_D1_BINDING,WATCHDOG_OBSERVER_CLOCK_D1_BINDING].sort());
 });
 
-test('the watchdog GitHub credential is its own, distinct from every A1.3 environment name',()=>{
+test('the watchdog GitHub read credential is distinct from A1.3 runtime and dispatch credentials',()=>{
   assert.equal(WATCHDOG_GITHUB_TOKEN,'DATA_STEWARD_WATCHDOG_GITHUB_TOKEN');
   assert.ok(!STEWARD_ENVIRONMENT_NAMES.includes(WATCHDOG_GITHUB_TOKEN));
+  assert.notEqual(WATCHDOG_GITHUB_TOKEN,'DATA_STEWARD_OBSERVER_DISPATCH_TOKEN');
+  assert.notEqual(WATCHDOG_GITHUB_TOKEN,'GITHUB_DISPATCH_TOKEN');
 });
 
 test('the closed reason-code and problem vocabularies cannot be widened at runtime',()=>{
@@ -105,15 +113,9 @@ function importedPaths(text){
   return paths;
 }
 
-test('the watchdog package imports nothing from the FPL application, A1.3, or any other production Worker',()=>{
-  // Correction 8 (isolation): the watchdog previously imported the tiny generic canonicalisation
-  // helpers from `src/decision-intelligence/canonical.mjs`, contradicting its own claim of having
-  // no dependency on FPL product code. It now carries its own local copy (`lib/canonical.mjs`)
-  // instead. This checks actual import/require specifiers (not prose that merely names a path
-  // for explanatory purposes) never resolve outside this package, and separately that no
-  // production identifier appears anywhere in the package regardless of context.
-  const forbiddenPathFragment=/(^|\/)src\/|\/workers\/data-platform\/|\/workers\/schedule-dispatcher\/|\/workers\/evidence-archive\/|\/workers\/data-steward\/sentinels\/|\/workers\/data-steward\/[a-z-]+\.mjs$/;
-  const forbiddenIdentities=/TEAMSHEET_DATA_DB|EVIDENCE_DB|EVIDENCE_BUCKET|GITHUB_DISPATCH_TOKEN/;
+test('the watchdog package imports nothing from the FPL application, A1.3 observer runtime, or production Workers',()=>{
+  const forbiddenPathFragment=/(^|\/)src\/|\/workers\/data-platform\/|\/workers\/schedule-dispatcher\/|\/workers\/data-steward-observer-dispatcher\/|\/workers\/evidence-archive\/|\/workers\/data-steward\/sentinels\/|\/workers\/data-steward\/[a-z-]+\.mjs$/;
+  const forbiddenIdentities=/TEAMSHEET_DATA_DB|EVIDENCE_DB|EVIDENCE_BUCKET|GITHUB_DISPATCH_TOKEN|DATA_STEWARD_OBSERVER_DISPATCH_TOKEN/;
   for(const file of WATCHDOG_FILES){
     const text=fs.readFileSync(file,'utf8');
     for(const specifier of importedPaths(text))
@@ -133,6 +135,14 @@ test('the watchdog package builds no GitHub write, Cloudflare mutation or generi
   }
 });
 
+test('observer-clock access is structurally SELECT-only inside the watchdog package',()=>{
+  const reader=fs.readFileSync('workers/data-steward-watchdog/lib/observer-clock-reader.mjs','utf8');
+  assert.match(reader,/SELECT opportunity_at,cron,dispatch_state,github_run_id/);
+  assert.match(reader,/WHERE opportunity_at=\?1/);
+  assert.doesNotMatch(reader,/\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bALTER\b|\bDROP\b/i);
+  assert.doesNotMatch(reader,/\.run\(\)/);
+});
+
 test('the whole-application source stays unaware the watchdog exists, in both directions',()=>{
   const applicationFiles=[...walk('src'),'app.html'];
   for(const file of applicationFiles){
@@ -144,20 +154,23 @@ test('the whole-application source stays unaware the watchdog exists, in both di
     assert.doesNotMatch(fs.readFileSync(file,'utf8'),/data-steward-watchdog/i,file);
 });
 
-test('only the D1 sentinel-style repository module ever issues a POST, and only to its own database',()=>{
+test('the watchdog issues no HTTP POST; both D1 paths use native bindings',()=>{
   const posters=WATCHDOG_FILES.filter(file=>/method\s*:\s*['"]POST['"]/i.test(fs.readFileSync(file,'utf8')));
   assert.deepEqual(posters,[]);
-  // The D1 access path is the native Worker binding (`db.prepare(...).bind(...).run()`), not an
-  // HTTP call at all, so there is no POST request to find — this assertion pins that shape.
   const repository=fs.readFileSync('workers/data-steward-watchdog/persistence/repository.mjs','utf8');
+  const clockReader=fs.readFileSync('workers/data-steward-watchdog/lib/observer-clock-reader.mjs','utf8');
   assert.match(repository,/\.prepare\(/);
+  assert.match(clockReader,/\.prepare\(/);
   assert.doesNotMatch(repository,/fetch\(/);
+  assert.doesNotMatch(clockReader,/fetch\(/);
 });
 
-test('the migration file declares no destructive or schema-widening statement',()=>{
+test('the watchdog migration remains isolated and non-destructive',()=>{
   const migration=fs.readFileSync('workers/data-steward-watchdog/migrations/0001_watchdog_foundation.sql','utf8');
   assert.doesNotMatch(migration,/DROP |ALTER |ATTACH |PRAGMA /i);
   assert.match(migration,/CREATE TABLE watchdog_observations/);
   assert.match(migration,/CREATE TABLE watchdog_incidents/);
   assert.match(migration,/CREATE TABLE watchdog_notifications/);
+  assert.doesNotMatch(migration,/observer_dispatch_receipts/,
+    'observer clock schema is owned by the dispatcher package, never by the watchdog');
 });

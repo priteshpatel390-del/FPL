@@ -1,23 +1,9 @@
-// DATA-OPS-A1.4 — the schedule-aware heartbeat classifier.
-//
-// This is deliberately NOT an age-only rule. It answers one question: for the single most recent
-// declared A1.3 opportunity that is due (see `opportunity-schedule.mjs`), what happened? The
-// caller supplies `opportunityEvidence` — the outcome of the freshest scheduled-run observation
-// whose `run_created_at` is at or after that opportunity instant, or `null` if none exists yet —
-// and this module is a pure function from that plus explicit timestamps to a closed state.
-//
-// Two rules matter here, both load-bearing:
-//
-//   1. SUCCESS AT THE LATEST OPPORTUNITY IS ALWAYS HEALTHY, REGARDLESS OF HOW LONG AGO IT
-//      HAPPENED. There is no "healthy for 12 hours" decay: the 08:17 success stays HEALTHY all
-//      the way to 23:17 and beyond, because nothing new was due in between. This is what makes
-//      the normal ~20-hour overnight gap a non-event instead of a nightly false alarm.
-//   2. A DECISIVE OUTCOME (success, failure, skip, or a malformed/contradictory summary) NEVER
-//      WAITS FOR GRACE. Grace exists only to cover ordinary GitHub schedule-delivery lateness
-//      before any run for the opportunity has even been created; once a run has reached a
-//      terminal GitHub state, there is nothing further to wait for.
+// DATA-OPS A1.4 — schedule-aware heartbeat classifier for one daily 04:17 UTC observation.
+// Success at the latest due opportunity stays healthy until the next opportunity. Pending exists
+// only inside the bounded Cloudflare-to-GitHub delivery window; at the 30-minute deadline itself,
+// absent or still-in-flight evidence is missing/incomplete.
 import {deepFreeze} from './canonical.mjs';
-import {OBSERVER_GRACE_MS} from './opportunity-schedule.mjs';
+import {OBSERVER_DELIVERY_TOLERANCE_MS} from './opportunity-schedule.mjs';
 
 export const HEARTBEAT_STATE_HEALTHY='HEALTHY';
 export const HEARTBEAT_STATE_PENDING='PENDING';
@@ -28,10 +14,6 @@ export const HEARTBEAT_STATE_MALFORMED='MALFORMED';
 export const HEARTBEAT_STATES=deepFreeze([HEARTBEAT_STATE_HEALTHY,HEARTBEAT_STATE_PENDING,
   HEARTBEAT_STATE_FAILED,HEARTBEAT_STATE_SKIPPED,HEARTBEAT_STATE_MISSING,HEARTBEAT_STATE_MALFORMED]);
 
-// Every decoded observation health state this module accepts as `opportunityEvidence.healthState`.
-// `SUCCESS` and `NOT_EVALUATED_OK` both count as the opportunity having genuinely executed without
-// escalation (see `observer-summary-contract.mjs` for why `NOT_EVALUATED` is acceptable); every
-// other value is a decisive non-healthy outcome.
 const HEALTHY_EVIDENCE_STATES=deepFreeze(['SUCCESS','NOT_EVALUATED_OK']);
 const REASON_BY_EVIDENCE_STATE=deepFreeze({
   FAILED:'OBSERVER_JOB_FAILED',
@@ -56,7 +38,6 @@ export class HeartbeatError extends Error{
   constructor(code){super(code);this.name='HeartbeatError';this.code=code;}
 }
 const fail=code=>{throw new HeartbeatError(code);};
-
 const safeInstant=value=>Number.isSafeInteger(value)&&value>=0;
 
 function validEvidence(value){
@@ -65,9 +46,6 @@ function validEvidence(value){
   return typeof value.healthState==='string'&&safeInstant(value.createdAt);
 }
 
-// `opportunityAt` is `null` when no opportunity is yet due for this watchdog (before bootstrap, or
-// — defensively — before the very first declared opportunity instant exists at all): that is
-// never an incident, only the absence of anything to evaluate yet.
 export function classifyHeartbeat({opportunityAt,opportunityEvidence,now}){
   if(!safeInstant(now))fail('heartbeat_now_invalid');
   if(opportunityAt!==null&&!safeInstant(opportunityAt))fail('heartbeat_opportunity_invalid');
@@ -79,7 +57,7 @@ export function classifyHeartbeat({opportunityAt,opportunityEvidence,now}){
   }
 
   if(opportunityEvidence===null){
-    if(now<=opportunityAt+OBSERVER_GRACE_MS){
+    if(now<opportunityAt+OBSERVER_DELIVERY_TOLERANCE_MS){
       return deepFreeze({state:HEARTBEAT_STATE_PENDING,active:false,reasonCode:null,opportunityAt});
     }
     return deepFreeze({state:HEARTBEAT_STATE_MISSING,active:true,
@@ -92,7 +70,7 @@ export function classifyHeartbeat({opportunityAt,opportunityEvidence,now}){
       reasonCode:'OBSERVER_HEARTBEAT_HEALTHY',opportunityAt});
   }
   if(healthState==='IN_FLIGHT'){
-    if(now<=opportunityAt+OBSERVER_GRACE_MS){
+    if(now<opportunityAt+OBSERVER_DELIVERY_TOLERANCE_MS){
       return deepFreeze({state:HEARTBEAT_STATE_PENDING,active:false,reasonCode:null,opportunityAt});
     }
     return deepFreeze({state:HEARTBEAT_STATE_MISSING,active:true,

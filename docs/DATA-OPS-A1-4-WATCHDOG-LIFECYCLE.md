@@ -1,403 +1,177 @@
 # DATA-OPS A1.4 — Persistent Incident Lifecycle + Independent Watchdog
 
-<!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
-## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
+## Current status — 10 September 2026
 
-The 04:17 and 08:17 UTC five-hour delivery windows overlap from 08:17 through 09:17. Greedily
-assigning each GitHub run while iterating newest-first was unsafe: two runs created inside that
-overlap could claim the two opportunities in processing order and swap their real identities.
-Attribution now evaluates the complete bounded scheduled-run set as a bipartite matching problem.
-Existing ledger assignments are fixed first. For each independent overlap component, the resolver
-enumerates all maximum one-run/one-opportunity matchings; a pair is persisted only when every
-maximum matching agrees on it. A single-candidate run can therefore force a second overlap run onto
-the remaining opportunity, while two runs with identical `{04:17,08:17}` candidates remain
-unassigned regardless of input order. Rerun attempts inherit the workflow run's existing mapping.
+**Repository clock-correction candidate: draft PR #241. Not deployed, not provisioned and not live-accepted under this corrected architecture.**
 
-Unresolved opportunities receive a sanitized synthetic `ATTRIBUTION_AMBIGUOUS` observation with
-reason `OBSERVER_OPPORTUNITY_ATTRIBUTION_AMBIGUOUS`. Heartbeat classifies it as `MALFORMED`, opening
-the normal observer-heartbeat lifecycle; it is neither HEALTHY, MISSING, job failure nor a GitHub
-outage claim. D1 remains final authority through unique opportunity and workflow-run ownership.
-Matching happens before writes; a concurrent write conflict is re-read, accepted only if it matches
-the resolved pair, otherwise represented fail-closed rather than retried against another candidate.
-No live deployment, provisioning, activation, authority, model, provider or calculation change.
-Focused A1.4 verification passes 172/172 tests; full repository verification passes 1,994/1,994 tests.
+PR #240 is merged on `main` as `e358982baef10911c51c00393e02a223716e7943` and established the persistent incident lifecycle/watchdog foundation. PR #241 corrects the automatic A1.3 clock before live activation: Cloudflare owns the 04:17/08:17 observer opportunities, GitHub Actions executes the read-only observer, and A1.4 checks each opportunity 30 minutes later at 04:47/08:47.
 
+The incident lifecycle, notification deduplication/retry, bounded evidence handling, isolated watchdog state and no-repair boundary remain. Production DATA-S2C collection behaviour is explicitly outside this change.
 
-**Status: repository implementation candidate. Not deployed. Not provisioned. Not activated. Not
-live-accepted.** Every fact in this document about the watchdog's behaviour is a claim about
-source code and tests that exist in this repository, never about a running system.
+## Approved chain and scope boundary
 
+`teamsheet-data-s2-dispatcher` remains unchanged from `main`, including the approved 01:17, 02:17 and 03:17 UTC dispatch opportunities and the same-day production opportunity guard. PR #241 must not remove, add or reinterpret those production collection opportunities.
 
-<!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
-## A1.4 final integration correction (PR #240, draft and unmerged)
+The corrected observer/watchdog chain is:
 
-This section supersedes conflicting A1.4 integration details and test counts below; older text remains as review history.
+```text
+04:17 UTC  Cloudflare A1.3 observer dispatcher
+            -> fixed workflow_dispatch to main
+            -> durable receipt with exact workflow_run_id
+            -> existing read-only observer
 
-The watchdog now validates semantic summaries for up to the two newest terminal **scheduled**
-candidates per cycle; manual dispatches never consume this fixed read allowance. Scheduled runs are resolved together by the set-based matching contract above. Only pairs forced
-across every maximum matching are attributed; overlapping pairs that cannot be distinguished remain
-ambiguous and unassigned. Existing workflow-run attribution is reused across rerun attempts, and
-bootstrap excludes older opportunities.
+04:47 UTC  Cloudflare A1.4 watchdog
+            -> read exact 04:17 receipt
+            -> GET exact receipt-proven GitHub run only
+            -> heartbeat / incident lifecycle
 
-Observation identity and evidence hashes include `run_attempt`. Decisive evidence is selected for
-the exact attributed opportunity by run attempt descending, terminal state before in-flight,
-completion-or-observation time descending, observation time descending, then observation id.
-Lifecycle monotonicity uses the decisive run completion/observation timestamp, or the stable logical
-opportunity instant for absence; repeated identical GitHub-unavailable states reuse their persisted
-evidence instant. Failed email delivery is retried through the same notification row and key even
-when lifecycle replay returns `NONE`; retry creates neither a notification reservation nor a
-lifecycle occurrence. Exactly-once external delivery is not claimed. Repository-only: no live
-resource, credential, schedule, email, deployment, merge, provider, model, calculation or
-remediation authority changed.
+08:17 UTC  Cloudflare A1.3 observer dispatcher
+            -> fixed workflow_dispatch to main
+            -> durable receipt with exact workflow_run_id
+            -> existing read-only observer
 
-Final local evidence: 165/165 focused A1.4 tests and 1,987/1,987 full repository tests passed;
-two consecutive production builds were byte-identical.
-**This is the corrected revision.** An owner review of the first candidate (draft PR #240) found
-eight required-correction groups plus additional audit findings; every one is fixed here and is
-described in its own section below, each stating the previous problem and the corrected behaviour.
-
-## 0. What A1.4 is, in one paragraph
-
-A1.1 gave the Data Steward a deterministic, observe-only policy foundation. A1.2 gave it three
-read-only sentinels over the real production chain. A1.3 turned that into a dedicated,
-GitHub-hosted, read-only observer with manual dispatch and (once separately activated) two daily
-schedule opportunities. All three remain exactly what they were: a sensor with no memory and no
-voice. A1.4 adds the memory and the voice, **outside** that sensor: a separate, isolated
-Cloudflare Worker that reads the sensor's own GitHub Actions history, understands which of A1.3's
-own declared opportunities is currently due, decides whether a problem is new, unchanged, worse,
-better or back, and — at most a few times a day — tells the owner by email. It adds no ability to
-fix anything.
-
-## 1. The hard boundary this checkpoint does not cross
-
-A1.3 is not rewritten into a stateful service and does not "phone home." The watchdog is a
-**separate Worker, in a separate directory (`workers/data-steward-watchdog/`), with its own
-Cloudflare identity, its own D1 database, and its own GitHub credential.** A permanent,
-bidirectional test walks every `.mjs` file in the package and every import/require specifier it
-contains: the watchdog cannot import `src/` (the FPL application), `workers/data-steward/`
-(A1.3's own runtime), `workers/data-platform/`, `workers/schedule-dispatcher/` or
-`workers/evidence-archive/`; the reverse direction is checked too. A1.3's own workflow, its
-sentinels and its existing no-mutation regressions are byte-unchanged.
-
-## 2. Architecture
-
-```
-A1.3 GitHub read-only observer (dedicated workflow, unchanged)
-        |  produces ordinary GitHub Actions run/job history, plus one sanitized JSON summary line
-        v
-A1.4 GitHub evidence reader (lib/github-evidence-reader.mjs)
-        |  bounded GET-only reads of that one workflow's own runs/jobs; a job-log read for the
-        |  freshest SUCCESS-or-FAILED run only, bounded to one per cycle
-        v
-A1.4 observer summary semantic contract (lib/observer-summary-contract.mjs)
-        |  is this run's own outcome actually trustworthy, or contradictory/malformed?
-        v
-A1.4 observation classifier (lib/observation-classifier.mjs)
-        |  -> one closed health state per run, persisted with real GitHub provenance
-        v
-A1.4 expected-opportunity model (lib/opportunity-schedule.mjs) + schedule-aware heartbeat
-     (lib/heartbeat.mjs), bootstrap-clamped (persistence/repository.mjs: ensureBootstrap)
-        v
-A1.4 incident lifecycle reducer (lib/lifecycle-reducer.mjs), over a deterministic fingerprint
-     (lib/incident-fingerprint.mjs) -> NEW / ONGOING / CHANGED / RECOVERED / REOPENED / NONE,
-     carrying a real evidence pointer through to persistence
-        v
-A1.4 isolated Data Steward Watchdog D1 (persistence/, migrations/0001_watchdog_foundation.sql) —
-     gated by a single-writer scheduled-event claim before any of the above runs
-        v
-A1.4 notification decision (notification/decision.mjs) -> notification message
-     (notification/message.mjs), built from real evidence -> email transport
-     (notification/transport.mjs) -> Cloudflare `send_email` binding -> one fixed owner recipient
+08:47 UTC  Cloudflare A1.4 watchdog
+            -> read exact 08:17 receipt
+            -> GET exact receipt-proven GitHub run only
+            -> heartbeat / incident lifecycle
 ```
 
-Every arrow above is a function call inside `workers/data-steward-watchdog/run-watchdog.mjs`, the
-one orchestrator that wires the package together. The Worker entry point
-(`workers/data-steward-watchdog/watchdog.mjs`) exports a `scheduled` handler and nothing else — no
-`fetch` handler, no public HTTP surface.
+A1.4 gains no power to collect, retry, rerun, repair, deploy or mutate production.
 
-## 3. Correction 1 — the heartbeat is schedule-aware, not age-only
+## Why the trust model changes
 
-**Previous problem.** The first candidate classified HEALTHY/STALE/MISSING purely from "how long
-since the last success," with fixed 12h/24h age thresholds. A1.3 declares two independent daily
-opportunities, 04:17 and 08:17 UTC, four hours apart, followed by a roughly twenty-hour overnight
-gap back to the next day's 04:17. A watchdog firing at 23:17 UTC under the old rule would see
-~15 hours since the 08:17 success and call a perfectly healthy day STALE or MISSING — every day.
+The old five-hour grace existed because GitHub scheduled workflows were acting as the automatic timer and were observed arriving hours late. With both 04:17 and 08:17 opportunities, those five-hour windows overlapped and forced set-based time attribution.
 
-**Corrected behaviour.** `lib/opportunity-schedule.mjs` computes the single most recent declared
-opportunity instant at or before `now` (`latestExpectedOpportunity()`), pinned by test against the
-exact cron strings in `.github/workflows/data-steward-readonly-observer.yml`.
-`lib/heartbeat.mjs`'s `classifyHeartbeat()` then asks only one question about that one opportunity:
-what happened to it? A success (or an acceptable `NOT_EVALUATED` outcome — see §4) at that
-opportunity is HEALTHY for as long as it remains the latest due opportunity — there is no age
-decay, which is exactly what makes the ~20-hour overnight gap a non-event. A decisive outcome
-(failure, skip, or a malformed/contradictory summary — see §4) never waits for grace; it is
-reported immediately. Absence of any evidence is PENDING (no incident) until grace expires, then
-MISSING.
+The corrected architecture removes GitHub scheduling entirely. A1.3's GitHub workflow uses `workflow_dispatch` for both Cloudflare-created automatic executions and attended manual diagnostics, so the raw GitHub event name is not sufficient provenance. A1.4 therefore trusts an automatic run only when the isolated Cloudflare clock ledger names its exact workflow-run ID.
 
-**Grace, from this repository's own evidence.** CLAUDE.md records three independently measured
-GitHub Actions schedule-delivery delays for this repository's other cron-triggered workflows:
-approximately 3h21m, 4h31m and 4h44m late. `OBSERVER_GRACE_MS = 5 hours` is the smallest clean
-bound that still comfortably exceeds every one of those three samples — pinned by test against
-the exact figures in CLAUDE.md, not invented as a round number.
+A1.4 must not trust actor identity, timestamp proximity, the newest run, a manual `workflow_dispatch`, a time-based candidate match, or a history search performed because expected evidence is missing.
 
-**A consequence, stated honestly.** Because grace (5h) exceeds the 4-hour gap between the two
-same-day opportunities, a missed 04:17 opportunity that is immediately followed by a healthy
-08:17 will never be separately reported as MISSING — by the time 04:17's own grace would expire
-(09:17), 08:17 has already become the latest due opportunity and, once it succeeds, the whole day
-reads HEALTHY. This is the same "later evidence supersedes earlier" principle A1.2 already uses
-for the production chain, applied to A1.3's own two-opportunities-a-day schedule: only the most
-recent opportunity's fate is load-bearing at read time. It is a real, understood limitation, not
-an oversight, and it is why the 08:17 opportunity — whose *own* next opportunity is a full day
-away — is the one used to prove the MISSING/FAILED/CHANGED test scenarios exactly at their
-boundaries.
+## Observer-clock receipt boundary
 
-## 4. Correction 2 + 3 — real execution outcomes are first-class evidence, judged by a genuine semantic contract
+`teamsheet-data-steward-observer-dispatcher` owns the separate D1 database `teamsheet-data-steward-observer-clock`. For each exact 04:17 or 08:17 opportunity it atomically claims one row, sends at most one fixed GitHub dispatch, and finalizes that row only after classifying the response.
 
-**Previous problem.** The first candidate trusted "GitHub says the job succeeded" as sufficient
-proof of health, and separately, an older success could remain the only evidence the heartbeat
-ever looked at, so a genuinely failed later opportunity could not open an incident at all.
+The receipt contains only:
 
-**Corrected behaviour.** `lib/github-evidence-reader.mjs` now reads the observer's own job-log
-summary for the freshest run whose GitHub job conclusion is `success` **or** `failure` (previously
-only `success` was checked), bounded to one such read per cycle.
-`lib/observer-summary-contract.mjs`'s `evaluateObserverSummary()` pins the actual contract
-`run-observer.mjs`/`observation-run.mjs` establish: `escalationRequired` is true exactly when
-`verdict === 'UNHEALTHY'`, which is exactly when the job's own exit code makes GitHub report
-`failure` — so a successful job can never legitimately carry `escalationRequired: true`, an
-incomplete heartbeat, or an unhealthy verdict, and a failed job can never legitimately carry a
-summary claiming otherwise. Either combination is `SUMMARY_CONTRADICTORY`, never trusted as
-evidence of health. `verdict: 'NOT_EVALUATED'` is deliberately accepted (`NOT_EVALUATED_OK`) — it
-describes the underlying production-collection day-window not yet being evaluable, a fact about
-the chain A1.3 *observes*, not about whether A1.3 itself ran correctly; A1.3 exits zero for it
-precisely because it is not an A1.3 problem, and requiring literal `verdict === 'HEALTHY'` here
-would manufacture a false incident every time A1.3 legitimately runs outside that window.
-`lib/observation-classifier.mjs` turns every combination into one closed health state
-(`SUCCESS`, `NOT_EVALUATED_OK`, `FAILED`, `SKIPPED`, `IN_FLIGHT`, `SUMMARY_INVALID`,
-`SUMMARY_UNHEALTHY`, `SUMMARY_CONTRADICTORY`, `UNCLASSIFIED`), and `heartbeat.mjs` treats every one
-except `SUCCESS`/`NOT_EVALUATED_OK` as decisive, active evidence — reported immediately, never
-masked by an older success. `persistence/statements.mjs`'s `SELECT_LATEST_SCHEDULED_SINCE` is
-bound to `run_created_at >= <opportunity instant>`, so a prior day's success structurally cannot
-satisfy today's opportunity query at all.
+- exact opportunity timestamp;
+- exact Cron identity (`17 4 * * *` or `17 8 * * *`);
+- closed dispatch state (`CLAIMED`, `DISPATCHED`, `FAILED`, `AMBIGUOUS`);
+- exact GitHub workflow-run ID only for `DISPATCHED`;
+- closed reason code;
+- claim and finalization timestamps.
 
-## 5. Correction 4 — a real single-writer claim, enforced by the database
+The ledger contains no Official FPL data, application/model data, provider payload or owner data.
 
-**Previous problem.** The first candidate identified a Cron firing by wall-clock execution time
-and relied only on downstream idempotent keys; two genuinely overlapping executions of the same
-logical firing could both evaluate incident state, both attempt a lifecycle mutation, and both
-race to send a notification.
+The dispatcher D1 is deliberately separate from A1.4's lifecycle D1. The dispatcher cannot write watchdog incidents/notifications/observations. A1.4 receives no dispatch credential and accesses the clock D1 through a SELECT-only native binding.
 
-**Corrected behaviour.** `persistence/statements.mjs`'s `CLAIM_SCHEDULED_EVENT` is one atomic
-`INSERT ... ON CONFLICT(scheduled_time) DO NOTHING`, keyed on `controller.scheduledTime` (the
-Cron's own logical firing instant, per Cloudflare's `scheduled()` handler contract — deliberately
-not wall-clock execution time) rather than any application-level check-then-set. It is the
-**first** thing `run-watchdog.mjs`'s `runWatchdogCycle()` does, before any GitHub read, D1 read or
-notification decision. A losing execution — true concurrency, a retried delivery, or a re-fired
-event — does nothing further at all and resolves with
-`{duplicate: true, reasonCode: 'WATCHDOG_DUPLICATE_SCHEDULED_EVENT'}`, never an error.
-`tests/data-ops-a1-4-orchestrator.test.mjs`'s `CONCURRENCY:` tests exercise this with real
-`Promise.all()` overlap (including a five-way overlap), proving exactly one lifecycle mutation and
-exactly one notification per logical event, and prove that different scheduled events remain
-fully independent. A separate test proves that a crash *after* the claim commits but before later
-work completes still leaves the claim durably recorded (so a retry of that exact event is
-correctly treated as a duplicate rather than reprocessed) while a later, independently-scheduled
-cycle is entirely unaffected — the honestly-stated cost of this design is that one scheduled
-event's own work can be lost to a mid-cycle crash, recovered only by the next natural firing, never
-silently repeated.
+## Exact-run evidence path
 
-## 6. Correction 5 — a genuine runtime failure is visible to Cloudflare, never silently successful
+At 04:47 and 08:47, `controller.scheduledTime` identifies the logical watchdog event even if Cloudflare delivers the invocation later. `latestExpectedOpportunity()` derives the paired 04:17 or 08:17 opportunity from that logical scheduled instant rather than using delayed wall-clock time to choose a different opportunity.
 
-**Previous problem.** The first candidate wrapped GitHub reads and retention pruning in
-`.catch(() => null)`-style swallows, and its Worker entry point never let any exception escape the
-`scheduled()` handler, so a real D1 outage, a config error or a code bug would still resolve the
-Cron invocation as a success in Cloudflare's own history.
+A1.4 reads exactly one receipt by exact `opportunity_at`. Only a `DISPATCHED` receipt supplies a trusted run ID. The exact GitHub run must prove:
 
-**Corrected behaviour.** Every D1 access in `persistence/repository.mjs` throws a
-`RepositoryError` on failure and none of them are caught by `run-watchdog.mjs` — a D1 read/write
-failure, an incomplete environment (`resolveWatchdogEnvironment()` failing is now a thrown
-`WatchdogExecutionError('WATCHDOG_ENVIRONMENT_INCOMPLETE')`, not a quiet `{ok:false}` return), a
-retention-pruning failure, or an unexpected bug anywhere in the pipeline propagates all the way out
-of `runWatchdogCycle()`. `watchdog.mjs`'s `scheduled()` handler logs one sanitized diagnostic line
-(a closed reason code only, never the caught error's own message or stack) and then re-throws a
-new, sanitized `Error`, so the Worker's returned promise genuinely rejects and Cloudflare records
-a failed Cron invocation. The one deliberate exception, the lost single-writer claim, resolves
-normally — it is an expected, healthy outcome, not a failure. GitHub read failures that
-`lib/github-evidence-reader.mjs` itself classifies as `{ok:false, reasonCode}` (a non-200 response,
-a decode failure, a transport error) are **not** re-thrown by that module — they are handled,
-expected-degradation paths that open their own `GITHUB_EVIDENCE` incident and let the cycle
-continue; only a genuinely unexpected exception escaping that module's own internal contracts
-would propagate as a fatal failure.
+- exact receipt-proven run ID;
+- workflow name `Data Steward Read-Only Observer`;
+- workflow path `.github/workflows/data-steward-readonly-observer.yml@main`;
+- raw event `workflow_dispatch`;
+- head branch `main`;
+- valid 40-character head SHA;
+- structurally valid run/job state.
 
-**Notification transport is the deliberate, documented exception to "propagate on failure."** A
-`send_email` binding rejection is recorded truthfully as a `FAILED` delivery row and is **not**
-re-thrown — it is expected and transient, and re-throwing it would fail the whole cycle's
-otherwise-successful lifecycle/persistence work over a problem in the one place that is allowed to
-degrade gracefully. Because `markIncidentNotified()` only runs on a successful send, the
-incident's `last_notified_at` stays at its prior value, so the very next cycle's notification
-decision (now `ONGOING`, since the underlying condition persists) treats that unset/stale value as
-due for an immediate reminder and retries automatically — no bespoke retry logic, and no alert
-storm, because the decision policy's own 24-hour reminder ceiling still applies.
+Only then does the existing sanitized observer-summary contract classify the run. The active automatic path never searches recent GitHub run history.
 
-## 7. Correction 6 — real, wired provenance instead of decorative placeholder fields
+For compatibility with the existing A1.4 D1 schema, a receipt-proven automatic run is stored as logical `source_kind='scheduled_run'` and `event_type='schedule'`. That is logical automatic provenance, not a claim that GitHub's raw event was `schedule`; the evidence hash also records the raw `workflow_dispatch` event.
 
-**Previous problem.** `run_attempt` was decoded from GitHub but discarded at the persistence
-boundary (always written as `null`); an incident's evidence pointer was always `null`; a
-notification's "last known healthy/scheduled observation" was populated from the watchdog's own
-evaluation-cycle timestamp rather than the evidence's real timestamp.
+## Manual runs cannot satisfy an automatic heartbeat
 
-**Corrected behaviour.** `github-evidence-reader.mjs`'s `decorateRun()` now returns the real
-`runAttempt`, and `run-watchdog.mjs` persists it. `lib/lifecycle-reducer.mjs` accepts an opaque,
-shape-validated `evidenceRef` (`observationId`, `workflowRunId`, `runAttempt`, `headSha`,
-`observedAt`) that it carries through to the persisted `next` state without interpreting it, so
-the reducer's replay/ordering guarantees and its genuine provenance are the same write.
-`persistence/statements.mjs`/`repository.mjs` widen `watchdog_incidents` with
-`evidence_observation_id`, `evidence_workflow_run_id`, `evidence_run_attempt`, `evidence_head_sha`
-and `evidence_source_at` (the evidence's own real timestamp — deliberately distinct from
-`last_evidence_observed_at`, which stays the watchdog's own cycle-clock reading used only for the
-reducer's monotonic replay guard). `notification/message.mjs`'s "last known healthy/scheduled
-observation" and "related GitHub Actions run id"/"related main SHA" now come from that real
-pointer. A `GITHUB_EVIDENCE` incident, which has no observation row to point to, legitimately
-persists a `null` pointer — the schema and the UI both distinguish "no evidence exists" from "the
-evidence field was wired to a placeholder."
+An attended manual A1.3 run has no Cloudflare clock receipt for either expected opportunity. A1.4 therefore does not read or substitute it when judging automatic health.
 
-**A related fix found during the audit, worth recording precisely.** GitHub's own timestamps omit
-milliseconds (`...T04:17:00Z`); this repository's own `.toISOString()` calls always include them
-(`...T04:17:00.000Z`). Comparing the two lexicographically in SQL — as
-`SELECT_LATEST_SCHEDULED_SINCE`'s `run_created_at >= ?` bound does — would rank an exact-instant
-match as *earlier* than the bound, because `.` (0x2E) sorts before `Z` (0x5A). Every GitHub
-timestamp is now normalized to the millisecond-inclusive form the instant it is decoded
-(`github-evidence-reader.mjs`), which is what keeps that comparison, and retention pruning's own
-TEXT comparisons, correct at exact boundaries. A second, smaller normalization fix: the raw GitHub
-job `conclusion` string (`'cancelled'`, `'timed_out'`, etc.) is never passed to
-`evaluateObserverSummary()`, which accepts only the literal `'success'`/`'failure'` its contract
-defines — `observation-classifier.mjs` derives that normalized value from the already-classified
-`jobHealth` instead, so a cancelled or timed-out job is checked for summary contradiction exactly
-like an ordinary failure rather than throwing on an unrecognized conclusion string.
+If a receipt is absent, `CLAIMED`, `FAILED` or `AMBIGUOUS`, the watchdog does not search for a replacement. At the paired 30-minute deadline the opportunity is missing/incomplete and enters the normal incident lifecycle.
 
-## 8. Correction 7 — a genuinely deployable, honestly-placeholder repository configuration
+A rerun of the same receipt-proven run remains attributable because GitHub keeps the same workflow run ID and increments `run_attempt`.
 
-**Previous problem.** `wrangler.jsonc` omitted the `database_id` field `d1_databases` requires,
-which is not valid Wrangler configuration at all — it would have failed before ever reaching the
-point of asking for a real database.
+## Thirty-minute delivery tolerance
 
-**Corrected behaviour.** `wrangler.jsonc` now declares
-`"database_id": "00000000-0000-0000-0000-000000000000"` — the conventional inert placeholder. It
-is not a fabricated production id: it cannot resolve to any real database, and `wrangler deploy`
-fails safely against it rather than silently binding to something unintended. The real id, from
-`wrangler d1 create teamsheet-data-steward-watchdog` (or `wrangler d1 info` for an
-already-created one), is one step of the later, separately approved live-provisioning gate in
-§14 — never before it. The `send_email` binding's `destination_address` remains the same
-structurally-invalid placeholder (`REPLACE_LOCALLY_BEFORE_DEPLOY@example.invalid`) from the first
-candidate, for the same reason: the owner's real address must never be committed.
+`OBSERVER_DELIVERY_TOLERANCE_MS` is exactly 30 minutes. For either opportunity:
 
-**A live prerequisite this checkpoint had not previously named.** Cloudflare's Email Service
-documentation is explicit: the `send_email` binding's sender address "must always belong to a
-domain you have onboarded to Email Service," and before a sending domain is onboarded, sending is
-possible only to already-verified destination addresses. This means `fpltsheet.co.uk` (the sender
-domain `NOTIFICATION_SENDER_ADDRESS = 'data-steward-watchdog@fpltsheet.co.uk'` uses) must itself be
-onboarded to Cloudflare Email Service — SPF/DKIM DNS records added, via
-**Compute → Email Service → Onboard Domain** — as an explicit step of live provisioning (§14),
-separate from and prior to relying on the `destination_address` restriction. Neither this nor the
-destination address's own verification has been checked or performed; both are unproven live
-facts, not repository claims.
+- before the paired 04:47/08:47 deadline, absence or in-flight evidence is `PENDING`;
+- at the deadline or later, absence is `MISSING`;
+- at the deadline or later, still-in-flight evidence is `OBSERVER_HEARTBEAT_INCOMPLETE`;
+- decisive success, failure, skip or malformed/contradictory summary is classified immediately when observed;
+- a successful 04:17 observation remains healthy until 08:17 becomes due;
+- a successful 08:17 observation remains healthy until the next day's 04:17 opportunity becomes due.
 
-## 9. Correction 8 — the isolation claim is now actually true
+Thirty minutes is an approved operating tolerance for this repository candidate, not an empirically proven Cloudflare SLA. Live acceptance must verify that it is practical; any later widening requires evidence and a deliberate decision.
 
-**Previous problem.** Every module in the package imported the tiny generic canonicalisation
-helpers (`canonicalise`, `deepFreeze`, `sha256Hex`, `stableStringify`, `secretFinding`) from
-`src/decision-intelligence/canonical.mjs` — FPL product code — directly contradicting the
-checkpoint's own claim that the watchdog has no dependency on `src/`.
+## Legacy attribution code
 
-**Corrected behaviour.** `lib/canonical.mjs` is now the watchdog's own byte-for-byte-equivalent
-copy of those five functions, and every module in the package imports from it instead. A
-permanent, bidirectional test (`tests/data-ops-a1-4-worker-config.test.mjs`) parses every actual
-`import`/`require` specifier in the package (not merely a prose mention of a path) and refuses any
-that resolves into `src/`, `workers/data-platform/`, `workers/schedule-dispatcher/`,
-`workers/evidence-archive/` or `workers/data-steward/`'s own runtime modules, and separately
-confirms `src/` and `workers/data-steward/` never mention the watchdog either.
+PR #240's set-based matcher solved overlapping five-hour GitHub-schedule windows. Those windows no longer exist: the active automatic path is receipt-proven and the 30-minute 04:17/08:17 windows do not overlap.
 
-## 10. Bootstrap — no retroactive incidents from before this watchdog ever ran
+Historical attribution helpers may remain temporarily as compatibility/regression code, but they are not authoritative. No production A1.4 decision may fall back from a missing or ambiguous receipt to timestamp matching. Later removal of dead compatibility machinery is a separate cleanup, not part of this activation correction.
 
-A1.3's own scheduled runs are not yet live (`DATA_STEWARD_SCHEDULED_ENABLED` remains
-owner-verified absent), and historical run #9 skipped *before* that variable existed — which is
-not proof of an A1.3 scheduling bug, and this checkpoint does not treat it as one or touch A1.3's
-schedule gate. To make sure a freshly deployed watchdog cannot retroactively judge opportunities
-that occurred (or failed to occur) before it ever executed, `persistence/repository.mjs`'s
-`ensureBootstrap()` records the exact instant of this database's very first cycle, once, and every
-later cycle reads that instant back unchanged. `lib/opportunity-schedule.mjs`'s
-`latestExpectedOpportunity()` clamps forward to it: a natural opportunity instant earlier than the
-bootstrap instant resolves to `null` (nothing due yet, `PENDING`, no incident), never a
-manufactured `MISSING`.
+## Bootstrap and paired-check behaviour
 
-## 11. Email delivery — accurate language, not a perfect-exactly-once claim
+The first legitimate 04:47 watchdog firing should evaluate its own 04:17 observer opportunity rather than bootstrap past it. The corrected orchestrator seeds its bootstrap boundary from the opportunity paired with that first watchdog event.
 
-The repository provides strong idempotent decisioning, deduplication and retry control: a given
-lifecycle transition can reserve at most one notification row (§5/§6), and a delivery failure is
-recorded truthfully and self-heals without duplicating a later send. It cannot honestly claim
-mathematically perfect exactly-once **external** delivery: there is an unavoidable, narrow
-distributed-systems window between Cloudflare's Email Service accepting a message and this
-Worker's own commit of that fact to D1, in which a crash could leave a message sent with no local
-record of it (self-healing on the next reminder cycle would then, in the rare unlucky case, send a
-second reminder rather than none). No document in this repository claims otherwise, and this one
-states it exactly.
+The 08:47 firing independently resolves the newer 08:17 opportunity. A healthy 04:17 observation must not mask a missing 08:17 observation once the latter is due.
 
-## 12. Retention
+## Lifecycle and notification behaviour retained
 
-| Table | Policy | Enforcement |
-|---|---|---|
-| `watchdog_observations` | 45 days | `PRUNE_OBSERVATIONS`, exempting rows an ACTIVE incident's `evidence_observation_id` still points to |
-| `watchdog_incidents` | 365 days, **RECOVERED only** | `PRUNE_INCIDENTS`; an ACTIVE incident is never pruned by age |
-| `watchdog_notifications` | 90 days | `PRUNE_NOTIFICATIONS` |
-| `watchdog_scheduled_claims` | not pruned in this checkpoint | one row per Cron firing (four/day); bounded and negligible |
-| Raw GitHub logs | never stored | only the closed, decoded summary shape is ever kept, never response bytes |
+A1.4 retains the PR #240 operational memory and safety properties:
 
-## 13. Security / authority
+- deterministic incident fingerprint by closed problem class/component;
+- existing `NEW`, `CHANGED`, `RECOVERED`, `REOPENED`, reminder/none transitions;
+- decisive evidence provenance with run ID, run attempt and head SHA where evidence exists;
+- atomic scheduled-event claim keyed by `controller.scheduledTime`;
+- notification reservation before email delivery;
+- failed-email retry through the same reservation;
+- bounded retention that preserves active-incident evidence.
 
-Unchanged in substance from the first candidate, restated against the corrected implementation:
-the watchdog can issue bounded `GET`-only GitHub reads (plus the one bounded job-log read), read
-and write its own D1 tables through the fixed allowlisted statements in
-`persistence/statements.mjs`, and send at most a small, bounded number of emails to the one
-Cloudflare-configured recipient. It cannot dispatch, re-run or cancel a GitHub workflow; write to
-GitHub in any way; mutate any Cloudflare resource; invoke or influence production collection; read
-or write production Official FPL D1, the evidence archive D1, or any database but its own; call a
-football data provider; send email to any recipient other than the one the binding is configured
-with; run arbitrary SQL, an HTTP request to an arbitrary URL, or a shell command; merge or open a
-pull request; or perform any autonomous repair — all confirmed by a permanent whole-package scan
-(`tests/data-ops-a1-4-worker-config.test.mjs`).
+A duplicate firing of the same logical 04:47 or 08:47 event performs no second work. A genuine D1/config/runtime failure is rethrown so Cloudflare can record a failed invocation rather than a false success.
 
-## 14. Live closeout — one consolidated package for a later, separate owner gate
+## Independent problem classes retained
 
-None of the following has been done. All of it is a later, explicit, combined owner decision,
-listed here in the order it would need to happen:
+`OBSERVER_HEARTBEAT` remains the problem about whether the expected automatic observer execution is healthy.
 
-1. Merge this PR after owner review; verify exact-`main` Verify success on the merged commit.
-2. Create the isolated D1 database (`wrangler d1 create teamsheet-data-steward-watchdog`), obtain
-   its real `database_id`, and replace the `00000000-0000-0000-0000-000000000000` placeholder in
-   `wrangler.jsonc` with it. Apply `workers/data-steward-watchdog/migrations/0001_watchdog_foundation.sql`.
-3. Create a narrowly scoped, repository-only-readable GitHub fine-grained token (Metadata: Read,
-   Actions: Read, no write permission of any kind) and bind it as the Worker secret
-   `DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`.
-4. **Onboard `fpltsheet.co.uk` to Cloudflare Email Service** (Compute → Email Service → Onboard
-   Domain; add the SPF/DKIM DNS records) if not already onboarded, and confirm at least one
-   destination address is verified. Locally edit (never commit) `wrangler.jsonc`'s
-   `send_email[0].destination_address` to that verified address.
-5. Deploy the exact reviewed `workers/data-steward-watchdog/` configuration (temporarily
-   reconnecting a Git build integration and disconnecting it again immediately after, exactly as
-   Package C did for the dispatcher, or via an attended local `wrangler deploy`).
-6. Confirm the account's live Cron Trigger count leaves room for one more (Workers Free allows
-   five per account; the dispatcher already holds three).
-7. Perform one safe, attended functional acceptance: trigger the deployed Worker's `scheduled`
-   handler through Wrangler's own local/remote test tooling (`/cdn-cgi/local/scheduled`, or
-   `wrangler dev --test-scheduled`) against the real bindings, without fabricating a fake
-   production incident, and confirm it claims, reads, writes and (if a real problem is present)
-   notifies correctly, and that a second overlapping trigger of the same simulated
-   `scheduledTime` is correctly rejected as a duplicate.
-8. Observe the first two or three natural Cron fires and confirm persistence and, if applicable,
-   notification behaviour, without deliberately harming production or the A1.3 observer to force
-   a test incident.
-9. Record final closeout documentation once live behaviour is observed.
+`GITHUB_EVIDENCE` remains separate and represents inability to validate a receipt-proven exact GitHub run. An unavailable GitHub read never becomes proof of observer health.
 
-## 15. Owner decision required next
+Clock-D1 configuration/read failures use closed runtime reasons such as `WATCHDOG_CLOCK_DB_UNAVAILABLE` and `WATCHDOG_CLOCK_RECEIPT_INVALID`; they are not silently reclassified as healthy.
 
-Whether to approve this repository-side PR for merge. Everything in §14 remains separate, and
-scheduled activation of the underlying A1.3 observer itself remains exactly as separately gated as
-it already was — this checkpoint changes nothing about that gate.
+## Security and authority boundary
+
+A1.4 remains a watchdog, not a repair agent. Its allowed external actions are limited to GET-only reads of the receipt-proven GitHub run/job/log, SELECT-only native reads of the observer-clock D1, reads/writes to its own `teamsheet-data-steward-watchdog` lifecycle D1, and owner notification through one fixed Cloudflare `send_email` binding.
+
+It has no production D1 binding, Official FPL/provider credential, GitHub Actions write credential, `DATA_STEWARD_OBSERVER_DISPATCH_TOKEN`, workflow-dispatch POST, rerun/cancel endpoint, Cloudflare deployment authority, route or public `fetch` handler. Its GitHub read token remains `DATA_STEWARD_WATCHDOG_GITHUB_TOKEN`.
+
+## Fail-closed limitations
+
+GitHub may accept a dispatch and the clock-D1 finalization may then fail. The run can exist without a trusted `DISPATCHED` receipt. A1.4 deliberately refuses to infer it as automatic, potentially generating a false-negative alarm rather than a false healthy state.
+
+The exact GitHub path validator expects `.github/workflows/data-steward-readonly-observer.yml@main`, matching the reviewed REST contract. Repository tests prove strict parsing, but live acceptance must confirm the actual payload. If the live API shape differs, activation stops and the exact contract is corrected from evidence rather than weakened generically.
+
+Exactly-once external email delivery is not claimed. D1 provides idempotent decision/reservation state, but downstream network uncertainty cannot prove an external mail side effect occurred exactly once.
+
+## Corrected live activation package
+
+The old four-times-daily/five-hour-grace A1.4 runbook is superseded. After explicit merge approval, the attended activation package is:
+
+1. Verify exact merged `main`, full repository tests, production build, deterministic bytes and build identity.
+2. Verify production DATA-S2C remains unchanged with exactly `17 1 * * *`, `17 2 * * *` and `17 3 * * *`; do not change collector/provider/model/data contracts.
+3. Provision `teamsheet-data-steward-observer-clock`, apply its one receipt migration, and keep live database IDs outside committed source.
+4. Configure `DATA_STEWARD_OBSERVER_DISPATCH_TOKEN` on the isolated observer dispatcher with repository-limited Actions-write authority only. Deploy with exactly `17 4 * * *` and `17 8 * * *` and no public route.
+5. Provision `teamsheet-data-steward-watchdog`, apply `workers/data-steward-watchdog/migrations/0001_watchdog_foundation.sql`, configure its fixed owner-email binding and separate GitHub read token.
+6. Bind A1.4 to both its own lifecycle D1 and the observer-clock D1. The watchdog does not own the clock schema and uses that binding read-only.
+7. Deploy the watchdog with exactly `47 4 * * *` and `47 8 * * *`, no public route.
+8. Run attended positive acceptance over genuine 04:17 and 08:17 automatic observers: prove Cron event, receipt, exact returned GitHub run, observer summary, paired A1.4 evidence and expected lifecycle result at/after 04:47 and 08:47.
+9. Run attended negative provenance acceptance: an ordinary manual observer run must satisfy neither automatic heartbeat without the exact Cloudflare receipt.
+10. Verify duplicate/rejected/ambiguous/clock-read/GitHub-read failures remain fail-closed and all logs remain sanitized.
+11. Record safe evidence in canonical closeout docs and stop. Do not expand into A1.5 or autonomous repair without a new owner gate.
+
+## Rollback
+
+If corrected live acceptance fails, disable/remove the 04:47 and 08:47 watchdog Crons and the 04:17 and 08:17 observer-dispatcher Crons. Keep the A1.3 workflow available for attended manual diagnosis. Do not restore GitHub Actions scheduling as a hidden fallback, and do not alter the production DATA-S2C 01:17/02:17/03:17 schedule during rollback.
+
+## Repository acceptance evidence
+
+PR #241 is not implementation-complete until its exact final head passes `./run-tests.sh`, production build, deterministic rebuild comparison and build-identity verification. The current working environment cannot independently clone GitHub, so GitHub Actions is the independent execution environment for branch verification.
+
+Exact test counts and build hashes belong here only after the final PR head is green; until then they are deliberately not claimed.

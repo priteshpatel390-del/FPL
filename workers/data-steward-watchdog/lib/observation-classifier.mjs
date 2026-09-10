@@ -33,10 +33,13 @@ const OUTCOME_TO_CLASSIFICATION=deepFreeze({
     reasonCode:'OBSERVER_SUMMARY_CONTRADICTORY'})
 });
 
-// `jobHealth` comes from `classifyJobHealth()`. `summaryAttempted` is true only when a job-log
-// read was actually issued for this run (bounded to the two freshest scheduled SUCCESS-or-FAILED candidates per cycle); `summary` is the structurally-decoded object, or `null` if the read failed or decoded to
-// nothing. The raw GitHub job conclusion is deliberately not accepted here — see the normalization
-// note below for why `jobHealth` is the only classification this function trusts.
+// `jobHealth` comes from `classifyJobHealth()`. `summaryAttempted` is true only when the bounded
+// evidence reader actually issued a job-log read for the trusted run; `summary` is the
+// structurally-decoded object, or `null` if that read failed or decoded to nothing. The active
+// automatic A1.4 path now supplies exactly the receipt-proven run rather than selecting candidates
+// from recent GitHub history. The raw GitHub job conclusion is deliberately not accepted here —
+// see the normalization note below for why `jobHealth` is the only classification this function
+// trusts.
 export function classifyObserverRun({jobHealth,summaryAttempted,summary}){
   if(jobHealth==='IN_FLIGHT')
     return deepFreeze({healthState:HEALTH_IN_FLIGHT,reasonCode:'OBSERVER_HEARTBEAT_INCOMPLETE'});
