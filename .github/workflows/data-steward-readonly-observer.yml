@@ -2,9 +2,6 @@ name: Data Steward Read-Only Observer
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '17 4 * * *'
-    - cron: '17 8 * * *'
 
 permissions:
   contents: read
@@ -13,7 +10,7 @@ permissions:
 
 jobs:
   observe-production-chain:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.DATA_STEWARD_SCHEDULED_ENABLED == 'true'))
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
