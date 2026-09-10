@@ -1,5 +1,11 @@
 # DECISIONS.md — Architectural decision record
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Decision — one Cloudflare-owned daily chain (draft PR #242)
+
+**Supersedes conflicting scheduling decisions below; older decisions remain historical.** Use exactly one Official FPL collection opportunity at 01:17 UTC, one isolated A1.3 Cloudflare observer dispatch at 04:17 UTC, and one A1.4 watchdog check at 04:47 UTC. GitHub Actions remains the observer execution engine through `workflow_dispatch`, not its scheduler. Automatic heartbeat truth requires the isolated receipt D1 and exact returned run ID; no time-nearby or manual run may substitute. At the exact 30-minute boundary, absent trusted success fails closed without legacy five-hour grace. Preserve A1.4 as notification-only and non-repairing. Live provisioning and activation require a separate owner decision.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
 ## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
 

@@ -1,3 +1,10 @@
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+### Current Data-Ops checkpoint — single daily Cloudflare clocks (draft PR #242)
+
+**This block supersedes conflicting current-status claims below; older blocks are retained as historical records.** Cloudflare is the authoritative automatic scheduler. Production Official FPL collection has exactly one opportunity at 01:17 UTC. A dedicated isolated observer dispatcher has exactly one opportunity at 04:17 UTC and invokes the exact A1.3 GitHub workflow on `main` through `workflow_dispatch`; that workflow has no GitHub `schedule:` trigger. The dispatcher atomically claims the opportunity, calls `controller.noRetry()` before its one outbound request, and writes the exact validated returned GitHub run ID to its isolated receipt D1. Manual runs and failed or ambiguous receipts do not count as the automatic heartbeat.
+
+At 04:47 UTC, A1.4 reads the exact trusted receipt and validates that exact repository, workflow, run ID, `main` ref, `workflow_dispatch` event, commit, job and strict observer summary. The 30-minute deadline is exact; missing trusted successful evidence receives no additional GitHub scheduling grace. The watchdog may read the observer-clock D1 and write its separate incident-lifecycle D1, but cannot mutate the clock, production Official FPL data, GitHub, Cloudflare configuration, or repair anything. PR #240 is merged. PR #241 is superseded and must not be revived. PR #242 is repository-only and remains draft; no corrected Worker, D1, secret, Cron Trigger, or email path is claimed live.
+
 <!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
 ### A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
 

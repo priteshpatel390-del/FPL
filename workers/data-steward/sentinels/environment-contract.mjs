@@ -86,8 +86,9 @@ export function resolveStewardEnvironment(env={}){
 // The activation requirements this checkpoint deliberately leaves outstanding. They are recorded
 // as data so the documentation and the repository cannot drift apart about what is still unproven.
 export const OUTSTANDING_ACTIVATION_REQUIREMENTS=deepFreeze([
-  'owner creates the read-only Cloudflare API token at the stated minimum permissions',
-  'owner provisions the account id, account fingerprint and Cloudflare token in data-steward-readonly',
-  'first manual live read-only observation run is accepted against production GitHub, Cloudflare and D1',
-  'owner separately enables DATA_STEWARD_SCHEDULED_ENABLED with exact value true'
+  'owner provisions and migrates the isolated observer clock D1',
+  'owner provisions the dedicated observer dispatcher GitHub Actions-write token',
+  'owner deploys the observer dispatcher and activates its single 04:17 UTC Cron Trigger',
+  'owner binds the watchdog read-only clock D1 and activates its single 04:47 UTC Cron Trigger',
+  'owner completes attended acceptance of the receipt-proven automatic chain'
 ]);

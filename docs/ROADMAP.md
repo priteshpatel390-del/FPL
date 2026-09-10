@@ -1,5 +1,11 @@
 # ROADMAP.md — current and proposed checkpoints
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Current checkpoint — single daily clocks, draft PR #242
+
+PR #240 is merged. PR #241 is superseded and must not be revived. Draft PR #242 corrects repository configuration and contracts to one 01:17 UTC production collection, one isolated 04:17 UTC Cloudflare observer dispatch, and one 04:47 UTC watchdog check. Trusted automatic evidence is the exact returned GitHub run ID in the isolated receipt D1; GitHub manual runs do not count. Remaining gates after repository verification and owner merge approval are separate Cloudflare D1, secret, Worker, Cron Trigger, and email provisioning/activation plus attended live acceptance. No such live action occurs in this checkpoint.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
 ## A1.4 final integration correction (PR #240, draft and unmerged)
 

@@ -1,5 +1,11 @@
 # DATA_SOURCES.md
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Current Data-Ops source boundary — draft PR #242
+
+**Supersedes conflicting current source descriptions below; older sections remain historical.** This correction adds no provider or product/model data source. A1.3 still reads existing operational evidence. Its isolated Cloudflare dispatcher stores only dispatch receipts and exact GitHub run identity in a dedicated clock D1. A1.4 reads that receipt plus the exact GitHub run and strict observer summary, then writes only its separate lifecycle bookkeeping. Neither component gains production Official FPL data mutation access, and manual runs cannot become automatic heartbeat evidence. Active repository schedules are 01:17, 04:17 and 04:47 UTC only; live Cloudflare activation remains unproven.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
 ## A1.4 final integration correction (PR #240, draft and unmerged)
 

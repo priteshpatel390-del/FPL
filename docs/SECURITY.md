@@ -710,3 +710,23 @@ retained as defence in depth. No credential was rotated, no secret renamed, no G
 reclassified as a secret, and no identifier value is recorded in this repository. Permanent tests
 prove no production identifier variable is materialised into a log-visible workflow or job `env:`
 block across the collection, migration-0003, EXPLAIN, resume and reconciliation workflows.
+<!-- DATA-OPS-A1-3-2026-09-10-CLOUDFLARE-CLOCK -->
+## Current A1.3/A1.4 automatic-clock security boundary
+
+Cloudflare is the authoritative automatic clock. The dedicated
+`teamsheet-data-steward-observer-dispatcher` has one scheduled handler at 04:17 UTC, no public
+`fetch` handler, no `workers.dev` hostname, and no production Official FPL or watchdog-lifecycle D1
+binding. It uses only its dedicated GitHub Actions-write token and isolated observer-clock D1. It
+calls `controller.noRetry()` before its single outbound dispatch, performs no retry loop, and stores
+only a strictly validated exact GitHub workflow run ID as a trusted `DISPATCHED` receipt. Failed or
+identity-ambiguous dispatches fail closed and cannot become heartbeat evidence. Tokens, request
+headers, secret-bearing URLs, and run identifiers are excluded from logs.
+
+The A1.3 GitHub workflow remains manually invokable for troubleshooting, exact-`main`, and
+read-only, but has no GitHub `schedule:` trigger or scheduled-enable variable. A manual dispatch
+without the isolated Cloudflare receipt cannot satisfy the automatic heartbeat. The A1.4 watchdog
+runs once at 04:47 UTC, reads the observer-clock D1 through its separate binding, validates only the
+exact receipted repository/workflow/run/ref/event/commit/job and strict observer summary, and writes
+only to its own incident-lifecycle D1. It cannot write production Official FPL data or observer-clock
+receipts and has no repair authority. Repository configuration does not prove live Worker, D1,
+secret, Cron Trigger, or email activation; those remain separately owner-gated.

@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "teamsheet-data-steward-observer-dispatcher",
+  "main": "dispatcher.mjs",
+  "compatibility_date": "2026-09-10",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "triggers": {
+    "crons": [
+      "17 4 * * *"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "STEWARD_OBSERVER_CLOCK_DB",
+      "database_name": "teamsheet-data-steward-observer-clock",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

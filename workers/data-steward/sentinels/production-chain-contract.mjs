@@ -10,11 +10,10 @@
 // the attended recovery path. There is no Cloudflare Workflow anywhere in this chain, and A1.2
 // must never be implemented as though there were.
 //
-// THREE OPPORTUNITIES ARE NOT THREE COLLECTIONS. 01:17, 02:17 and 03:17 UTC are three chances to
-// ask; the shared fail-closed opportunity guard permits at most one production collection per UTC
-// day. A later workflow B run whose repository gate refuses with `OPPORTUNITY_CONSUMED` after an
-// earlier successful collection is the system working, and A1.2 must classify it as healthy
-// rather than as an incident.
+// Exactly one automatic collection opportunity exists at 01:17 UTC. The shared fail-closed
+// opportunity guard remains defence-in-depth and permits at most one production collection per UTC
+// day. An attended recovery run whose guard refuses with `OPPORTUNITY_CONSUMED` after an earlier
+// successful collection is the system working, not an incident.
 //
 // This module is pure. It holds constants and arithmetic, reads no file, issues no request and
 // touches no credential.
@@ -47,18 +46,16 @@ export const EXPECTED_GUARD_STEP='Require an unconsumed daily collection opportu
 // without conversion. A permanent test pins this list byte-for-byte against
 // `workers/schedule-dispatcher/wrangler.jsonc`, so the repository cannot declare one schedule and
 // observe another.
-export const EXPECTED_CRON_EXPRESSIONS=deepFreeze(['17 1 * * *','17 2 * * *','17 3 * * *']);
+export const EXPECTED_CRON_EXPRESSIONS=deepFreeze(['17 1 * * *']);
 export const OPPORTUNITY_MINUTES=deepFreeze([
-  Object.freeze({hour:1,minute:17}),
-  Object.freeze({hour:2,minute:17}),
-  Object.freeze({hour:3,minute:17})
+  Object.freeze({hour:1,minute:17})
 ]);
 
-// The gap between two consecutive opportunities, derived from the schedule above rather than
-// chosen. It is exactly one hour, and it is the natural bound on how long a reading may stay
+// The gap between two consecutive opportunities, derived from the daily schedule above. It is one
+// UTC day, and it is the natural bound on how long a reading may stay
 // load-bearing: a fact observed longer ago than one whole opportunity interval could already have
 // been superseded by the next opportunity, so it is no longer evidence about the current state.
-export const OPPORTUNITY_INTERVAL_MS=60*60*1000;
+export const OPPORTUNITY_INTERVAL_MS=24*60*60*1000;
 export const MAX_EVIDENCE_AGE_MS=OPPORTUNITY_INTERVAL_MS;
 
 // How long one workflow B run may take, derived from the workflow's own declared job timeouts —
@@ -102,7 +99,7 @@ export function utcDayWindow(now){
   return deepFreeze({start,end:start+MS_PER_DAY,date:new Date(start).toISOString().slice(0,10)});
 }
 
-// The three nominal opportunity instants of the UTC day containing `now`.
+// The nominal opportunity instant of the UTC day containing `now`.
 export function opportunityInstants(now){
   const {start}=utcDayWindow(now);
   return deepFreeze(OPPORTUNITY_MINUTES.map(({hour,minute})=>start+((hour*60)+minute)*60*1000));
@@ -124,8 +121,9 @@ export const EVALUATION_PHASES=deepFreeze([EVALUATION_NOT_DUE,
 
 // Where `now` sits in the day's collection contract. This is an evaluation phase and nothing
 // more: it grants no authority, registers no classification and enables no action. It exists so
-// that a missing collection at 01:30 UTC — when two further opportunities remain — is not
-// mistaken for a failed day.
+// that a missing collection before the single opportunity's tolerance expires is not mistaken for
+// a failed day. The legacy awaiting-later phase remains exported for compatibility but is
+// unreachable while only one automatic opportunity exists.
 export function evaluationPhase(now){
   const instants=opportunityInstants(now);
   const deadline=evaluationDeadline(now);
@@ -134,8 +132,8 @@ export function evaluationPhase(now){
     return deepFreeze({phase:EVALUATION_NOT_DUE,deadline,remainingOpportunities:instants.length});
   if(now<deadline){
     const remaining=instants.filter(instant=>now<instant+WORKFLOW_B_MAX_EXECUTION_MS).length;
-    return deepFreeze({phase:EVALUATION_AWAITING_LATER_OPPORTUNITY,deadline,
-      remainingOpportunities:remaining});
+    return deepFreeze({phase:remaining>0?EVALUATION_AWAITING_LATER_OPPORTUNITY:EVALUATION_NOT_DUE,
+      deadline,remainingOpportunities:remaining});
   }
   return deepFreeze({phase:EVALUATION_DUE,deadline,remainingOpportunities:0});
 }
