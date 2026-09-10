@@ -2,9 +2,9 @@
 
 ## Current status — 10 September 2026
 
-**Repository correction candidate: draft PR #241. Not deployed, not provisioned and not live-accepted under this corrected architecture.**
+**Repository correction candidate: draft PR #242. Not deployed, not provisioned and not live-accepted under this corrected architecture.**
 
-PR #240 is merged on `main` as `e358982baef10911c51c00393e02a223716e7943` and established the persistent incident lifecycle/watchdog foundation. PR #241 is the owner-approved simplification and clock correction before live activation. It replaces the old design assumptions of two A1.3 opportunities, five-hour GitHub delivery grace and four watchdog checks per day.
+PR #240 is merged on `main` as `e358982baef10911c51c00393e02a223716e7943` and established the persistent incident lifecycle/watchdog foundation. PR #242 is the owner-approved simplification and clock correction before live activation. It replaces the old design assumptions of two A1.3 opportunities, five-hour GitHub delivery grace and four watchdog checks per day.
 
 The incident lifecycle, notification deduplication/retry, bounded evidence processing, isolated watchdog state and no-repair boundary remain. What changes is how A1.4 knows which automatic A1.3 run belongs to the day.
 

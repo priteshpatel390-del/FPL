@@ -1,5 +1,11 @@
 # ARCHITECTURE.md
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Current Data-Ops architecture — draft PR #242
+
+**Supersedes conflicting current architecture below; older sections remain historical.** Automatic flow is `01:17 Cloudflare collection -> 04:17 isolated Cloudflare observer dispatcher -> exact A1.3 workflow_dispatch on main -> exact run ID in isolated receipt D1 -> 04:47 watchdog -> exact-run and strict-summary validation -> existing lifecycle/notification`. No GitHub `schedule:` drives A1.3. Manual runs have no trusted automatic provenance. Dispatcher has no public fetch surface, no production-data or watchdog-lifecycle D1 binding, calls `controller.noRetry()` before one dispatch, and has no retry loop. Watchdog reads but cannot write the receipt D1; it has no repair or production mutation authority. Repository readiness does not prove live Cloudflare activation.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
 ## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
 

@@ -2,9 +2,9 @@
 
 ## Current status — 10 September 2026
 
-**Repository correction candidate: draft PR #241. NOT LIVE-ACTIVATED under the corrected automatic-clock design.**
+**Repository correction candidate: draft PR #242. NOT LIVE-ACTIVATED under the corrected automatic-clock design.**
 
-A1.3's read-only observer runtime was previously accepted through an attended manual GitHub Actions run on 9 September 2026. That historical proof remains valid for the observer runtime itself. The automatic scheduling architecture is being corrected in PR #241 before scheduled activation: GitHub Actions remains the execution engine, while a dedicated Cloudflare Worker becomes the sole automatic clock.
+A1.3's read-only observer runtime was previously accepted through an attended manual GitHub Actions run on 9 September 2026. That historical proof remains valid for the observer runtime itself. The automatic scheduling architecture is being corrected in PR #242 before scheduled activation: GitHub Actions remains the execution engine, while a dedicated Cloudflare Worker becomes the sole automatic clock.
 
 This correction does not add a provider, change Official FPL acquisition or retention, alter a production D1 schema, change any projection/model/calculation logic, or add repair authority.
 

@@ -1,5 +1,11 @@
 # PROJECT_CONTEXT.md
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Current Data-Ops context — draft PR #242
+
+**Supersedes conflicting current-status sections below; older sections remain historical.** Cloudflare owns the automatic daily chain: Official FPL collection at 01:17 UTC only, A1.3 observer dispatch at 04:17 UTC only, and A1.4 watchdog evaluation at 04:47 UTC. A1.3 remains a read-only GitHub Actions execution reached through `workflow_dispatch`, with no GitHub schedule. Trusted automatic provenance requires the isolated Cloudflare receipt D1 and exact returned GitHub run ID; manual runs cannot satisfy it. A1.4 validates only that exact run and strict summary after the 30-minute deadline, writes only its separate lifecycle store, and never repairs or mutates production. PR #240 is merged; PR #241 is superseded; draft PR #242 is not live-provisioned or activated.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-FINAL-INTEGRATION-CORRECTION -->
 ## A1.4 final integration correction (PR #240, draft and unmerged)
 

@@ -1,5 +1,11 @@
 # KNOWN_LIMITATIONS.md
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Current limitations — corrected automatic clock, draft PR #242
+
+**Supersedes conflicting current limitations below; older sections remain historical.** Repository code can declare and test the 01:17/04:17/04:47 UTC chain but cannot prove any corrected Cloudflare Worker, isolated receipt D1, secret, Cron Trigger, or email binding is live. A missing, malformed, failed, ambiguous, or unverifiable receipt/run fails closed; manual GitHub runs cannot fill that gap. At 04:47 there is no grace beyond the approved 30-minute observer window. A1.4 detects and notifies only: it cannot repair, redispatch, deploy, change configuration, or mutate production Official FPL data.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
 ## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
 

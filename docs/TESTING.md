@@ -1,5 +1,11 @@
 # TESTING.md
 
+<!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
+## Current Data-Ops verification contract — draft PR #242
+
+**Supersedes conflicting current test expectations below; older sections remain historical.** Tests must pin exactly one production collection at `17 1 * * *`, one observer dispatch at `17 4 * * *`, one watchdog check at `47 4 * * *`, no A1.3 GitHub `schedule:`, exact receipt/run validation, manual-run exclusion, `controller.noRetry()` before dispatch, no retry loop, isolated D1 permissions, and exact 30-minute boundary semantics. Historical schedule strings may remain only in clearly historical text or negative fixtures. Completion requires `./run-tests.sh`, production build, and the deterministic two-build/root-deployable checks prescribed below; repository results are not live Cloudflare evidence.
+
+
 <!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
 ## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)
 
