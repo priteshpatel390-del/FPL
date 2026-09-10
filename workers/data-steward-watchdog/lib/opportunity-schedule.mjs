@@ -1,12 +1,13 @@
-// DATA-OPS A1.4 — explicit expected-opportunity model for the single daily A1.3 observation.
+// DATA-OPS A1.4 — explicit expected-opportunity model for the two daily A1.3 observations.
 // Cloudflare, not GitHub Actions, owns the automatic clock. The isolated observer dispatcher
-// declares exactly one opportunity at 04:17 UTC. A1.4 allows a bounded 30-minute delivery window
-// before judging that opportunity missing; successful evidence remains healthy until the next
-// day's 04:17 opportunity becomes due.
+// declares opportunities at 04:17 and 08:17 UTC. A1.4 allows a bounded 30-minute delivery window
+// before judging each opportunity missing; successful evidence remains healthy until the next
+// opportunity becomes due.
 import {deepFreeze} from './canonical.mjs';
 
 export const OBSERVER_OPPORTUNITY_MINUTES=deepFreeze([
-  Object.freeze({hour:4,minute:17})
+  Object.freeze({hour:4,minute:17}),
+  Object.freeze({hour:8,minute:17})
 ]);
 
 export const OBSERVER_DELIVERY_TOLERANCE_MS=30*60*1000;

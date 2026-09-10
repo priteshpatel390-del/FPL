@@ -6,7 +6,7 @@ export const OBSERVER_DISPATCH_WORKFLOW_FILE='data-steward-readonly-observer.yml
 export const OBSERVER_DISPATCH_REF='main';
 export const OBSERVER_DISPATCH_TOKEN_BINDING='DATA_STEWARD_OBSERVER_DISPATCH_TOKEN';
 export const OBSERVER_CLOCK_DB_BINDING='STEWARD_OBSERVER_CLOCK_DB';
-export const OBSERVER_CRON='17 4 * * *';
+export const OBSERVER_CRONS=Object.freeze(['17 4 * * *','17 8 * * *']);
 export const OBSERVER_DISPATCH_TIMEOUT_MS=15000;
 export const OBSERVER_DISPATCH_API_VERSION='2022-11-28';
 export const OBSERVER_DISPATCH_URL=`https://api.github.com/repos/${OBSERVER_DISPATCH_REPOSITORY}/actions/workflows/${OBSERVER_DISPATCH_WORKFLOW_FILE}/dispatches`;
@@ -49,7 +49,9 @@ export function classifyObserverDispatchResponse({status,body=null}={}){
 }
 
 export function validateScheduledOpportunity({scheduledTime,cron}){
-  if(!Number.isSafeInteger(scheduledTime)||scheduledTime<0||cron!==OBSERVER_CRON)return false;
+  if(!Number.isSafeInteger(scheduledTime)||scheduledTime<0||!OBSERVER_CRONS.includes(cron))return false;
   const when=new Date(scheduledTime);
-  return when.getUTCMinutes()===17&&when.getUTCHours()===4&&when.getUTCSeconds()===0;
+  const expectedHour=cron==='17 4 * * *'?4:8;
+  return when.getUTCMinutes()===17&&when.getUTCHours()===expectedHour&&when.getUTCSeconds()===0
+    &&when.getUTCMilliseconds()===0;
 }

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS observer_dispatch_receipts (
   opportunity_at TEXT PRIMARY KEY NOT NULL,
-  cron TEXT NOT NULL CHECK (cron = '17 4 * * *'),
+  cron TEXT NOT NULL CHECK (cron IN ('17 4 * * *','17 8 * * *')),
   dispatch_state TEXT NOT NULL CHECK (dispatch_state IN ('CLAIMED','DISPATCHED','FAILED','AMBIGUOUS')),
   github_run_id INTEGER UNIQUE,
   reason_code TEXT NOT NULL,

@@ -7,6 +7,14 @@ const RECEIPT_BY_OPPORTUNITY=`SELECT opportunity_at,cron,dispatch_state,github_r
 const STATES=Object.freeze(['CLAIMED','DISPATCHED','FAILED','AMBIGUOUS']);
 const RUN_ID=value=>Number.isSafeInteger(value)&&value>0;
 const instant=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
+const expectedCron=value=>{
+  if(!instant(value))return null;
+  const when=new Date(value);
+  if(when.getUTCMinutes()!==17||when.getUTCSeconds()!==0||when.getUTCMilliseconds()!==0)return null;
+  if(when.getUTCHours()===4)return '17 4 * * *';
+  if(when.getUTCHours()===8)return '17 8 * * *';
+  return null;
+};
 
 export class ObserverClockReadError extends Error{
   constructor(code){super(code);this.name='ObserverClockReadError';this.code=code;}
@@ -15,12 +23,13 @@ const fail=code=>{throw new ObserverClockReadError(code);};
 
 export async function readObserverClockReceipt(db,opportunityAt){
   if(!db||typeof db.prepare!=='function')fail('WATCHDOG_CLOCK_DB_UNAVAILABLE');
-  if(!instant(opportunityAt))fail('WATCHDOG_CLOCK_RECEIPT_INVALID');
+  const cron=expectedCron(opportunityAt);
+  if(cron===null)fail('WATCHDOG_CLOCK_RECEIPT_INVALID');
   let row;
   try{row=await db.prepare(RECEIPT_BY_OPPORTUNITY).bind(opportunityAt).first();}
   catch{fail('WATCHDOG_CLOCK_DB_UNAVAILABLE');}
   if(row===null||row===undefined)return null;
-  if(row.opportunity_at!==opportunityAt||row.cron!=='17 4 * * *'||!STATES.includes(row.dispatch_state))
+  if(row.opportunity_at!==opportunityAt||row.cron!==cron||!STATES.includes(row.dispatch_state))
     fail('WATCHDOG_CLOCK_RECEIPT_INVALID');
   if(typeof row.reason_code!=='string'||row.reason_code===''||!instant(row.claimed_at))
     fail('WATCHDOG_CLOCK_RECEIPT_INVALID');

@@ -1,7 +1,8 @@
 // DATA-OPS A1.3 — isolated Cloudflare clock for the read-only observer.
-// One 04:17 UTC opportunity. One GitHub workflow_dispatch attempt. No retry, no public fetch surface.
-// The exact workflow run id returned by GitHub is persisted into a dedicated receipt database so
-// A1.4 can distinguish this automatic run from ordinary manual workflow_dispatch runs.
+// Two fixed UTC opportunities (04:17 and 08:17). One GitHub workflow_dispatch attempt per
+// opportunity. No retry, no public fetch surface. The exact workflow run id returned by GitHub is
+// persisted into a dedicated receipt database so A1.4 can distinguish automatic runs from ordinary
+// manual workflow_dispatch runs.
 import {AMBIGUOUS,DISPATCHED,DUPLICATE,FAILED,OBSERVER_CLOCK_DB_BINDING,
   OBSERVER_DISPATCH_TIMEOUT_MS,OBSERVER_DISPATCH_TOKEN_BINDING,classifyObserverDispatchResponse,
   observerDispatchRequest,validateScheduledOpportunity} from './dispatch-contract.mjs';
