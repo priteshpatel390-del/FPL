@@ -11,17 +11,17 @@
 //
 // Its Wrangler configuration declares `triggers.crons` explicitly, and Cloudflare treats that block
 // as a total assignment, so an attended deploy sets exactly the Cron Triggers listed there and
-// nothing else. The owner-approved schedule is now one opportunity at 01:17 UTC. The existing
-// fail-closed opportunity guard still refuses production collection once the UTC day is consumed,
-// but there is deliberately no 02:17 or 03:17 automatic fallback. A failed 01:17 collection is
-// observed by the later steward chain and uses the attended/manual recovery path when required.
-// Declaring the schedule in the repository arms nothing by itself; only an attended deployment of
-// this configuration can arm the live Worker.
+// nothing else. Package A shipped an empty list. The owner-approved Package C list is 01:17, 02:17
+// and 03:17 UTC: three dispatch OPPORTUNITIES a day, never three collection entitlements — the
+// shared fail-closed opportunity guard refuses production collection once the UTC day is consumed.
+// Declaring them in the repository arms nothing by itself; only an attended deployment of that
+// configuration can arm the live Worker.
 //
 // Failure discipline: exactly one dispatch request per Cloudflare fire, `controller.noRetry()`
-// before that request is even built, and no second attempt on any outcome. A rejection is definite
-// and an ambiguity may already have created a run, so neither is retried inside this Worker. There
-// is no automatic recovery scheduler here.
+// before that request is even built, and no second attempt on any outcome. A rejection is
+// definite and a retry would be pointless; an ambiguity may already have created a run and a
+// retry could create a second collection. The next scheduled opportunity is the only automatic
+// recovery there is.
 //
 // Log discipline: closed enums and bounded integers only. No URL, header, token, run id, account
 // id or database id may ever reach a log line.
