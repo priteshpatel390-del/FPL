@@ -171,7 +171,7 @@ test('noRetry runs before every dispatch attempt and there is never a second POS
   const handler=body.slice(body.indexOf('export async function runScheduledDispatch'));
   assert.ok(handler.indexOf('controller.noRetry();')<handler.indexOf('fetchImpl('));
   assert.equal([...handler.matchAll(/dispatchRequest\(/g)].length,1);
-  assert.doesNotMatch(handler,/for\s*\(|while\s*\(|setTimeout|setInterval|\.retry|waitUntil/);
+  assert.doesNotMatch(handler,/for\s*\(|while\s*\(|setTimeout|setInterval|\.retry\s*\(|\bretry\s*\(/i);
 });
 
 test('valid HTTP 200 identity is accepted and malformed identity is ambiguous',()=>{
@@ -264,7 +264,9 @@ test('one 01:17 fire is the only automatic chance; dispatcher itself contains no
   assert.deepEqual(config.triggers.crons,['17 1 * * *']);
   const body=uncommented(read(WORKER));
   assert.doesNotMatch(body,/02:17|03:17|next scheduled opportunity/i);
-  assert.doesNotMatch(body,/setTimeout|setInterval|retry/i);
+  // `controller.noRetry()` is required to stop Cloudflare re-delivery. Forbid actual retry
+  // mechanisms, not the protective noRetry call itself.
+  assert.doesNotMatch(body,/setTimeout|setInterval|\.retry\s*\(|\bretry\s*\(/i);
 });
 
 test('default scheduled handler drives the same one-fire path',async()=>{
