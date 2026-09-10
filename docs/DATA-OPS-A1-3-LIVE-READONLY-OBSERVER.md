@@ -2,115 +2,108 @@
 
 ## Current status — 10 September 2026
 
-**Repository correction candidate: draft PR #241. NOT LIVE-ACTIVATED under the corrected automatic-clock design.**
+**Repository clock-correction candidate: draft PR #241. Not yet deployed or live-accepted under the corrected automatic-clock architecture.**
 
-A1.3's read-only observer runtime was previously accepted through an attended manual GitHub Actions run on 9 September 2026. That historical proof remains valid for the observer runtime itself. The automatic scheduling architecture is being corrected in PR #241 before scheduled activation: GitHub Actions remains the execution engine, while a dedicated Cloudflare Worker becomes the sole automatic clock.
+The A1.3 read-only observer runtime itself was live-accepted through an attended manual GitHub Actions run on 9 September 2026. That evidence remains valid for the observer runtime. PR #241 changes only who owns the automatic timer: GitHub Actions remains the execution engine, while a dedicated Cloudflare Worker becomes the authoritative automatic clock.
 
-This correction does not add a provider, change Official FPL acquisition or retention, alter a production D1 schema, change any projection/model/calculation logic, or add repair authority.
+PR #240 is merged on `main` as `e358982baef10911c51c00393e02a223716e7943`. PR #241 does not alter Official FPL collection behaviour, production DATA-S2C Cron opportunities, provider/data-source contracts, production D1 schemas, projection/model/calculation logic or repair authority.
 
-## Owner-approved operating model
+## Approved operating model
 
-The complete daily operating sequence is intentionally small:
+The production collection clock is deliberately outside this correction. `teamsheet-data-s2-dispatcher` remains exactly as on `main`, with the existing three 01:17, 02:17 and 03:17 UTC **dispatch opportunities** and the existing same-day production opportunity guard. They are not three collection entitlements, and PR #241 neither removes nor adds any production collection opportunity.
 
-1. **01:17 UTC — Official FPL collection.** `teamsheet-data-s2-dispatcher` gets one Cloudflare Cron opportunity. There is no 02:17 or 03:17 automatic fallback. The existing same-day production opportunity guard remains defence-in-depth. A failed collection moves to observation and attended/manual recovery; it is not automatically retried.
-2. **04:17 UTC — A1.3 observer.** `teamsheet-data-steward-observer-dispatcher` gets one Cloudflare Cron opportunity and dispatches the existing `Data Steward Read-Only Observer` GitHub Actions workflow on exact branch `main`.
-3. **04:47 UTC — A1.4 watchdog.** The independent watchdog evaluates the exact 04:17 opportunity after a bounded 30-minute delivery window.
+The corrected observer/watchdog sequence is:
 
-There is no second 08:17 observer opportunity.
+1. **04:17 UTC — A1.3 observer opportunity.** `teamsheet-data-steward-observer-dispatcher` receives a Cloudflare Cron event and dispatches the existing `Data Steward Read-Only Observer` workflow on exact branch `main`.
+2. **04:47 UTC — A1.4 watchdog check.** The watchdog evaluates the exact 04:17 opportunity after a bounded 30-minute delivery tolerance.
+3. **08:17 UTC — A1.3 observer opportunity.** The same isolated dispatcher creates a second, independently receipted automatic observer run.
+4. **08:47 UTC — A1.4 watchdog check.** The watchdog evaluates the exact 08:17 opportunity after the same bounded tolerance.
+
+No GitHub Actions scheduled trigger remains on the observer workflow.
 
 ## Why Cloudflare owns the observer clock
 
-GitHub's scheduled-workflow delivery was shown by this repository's own earlier evidence to be materially late and irregular. The old A1.3 design therefore needed a five-hour grace window and, once two observer opportunities existed, A1.4 also needed overlapping time-attribution logic.
-
-That was complexity around the wrong clock. Under the corrected design:
+Repository evidence showed GitHub scheduled workflows arriving hours late. That forced A1.4 to tolerate a five-hour delivery window and then solve overlapping 04:17/08:17 attribution. The correction removes the unreliable clock rather than engineering around its lateness.
 
 ```text
-Cloudflare Cron 04:17
+Cloudflare Cron 04:17 / 08:17
         |
         v
 teamsheet-data-steward-observer-dispatcher
-        |  one fixed GitHub workflow_dispatch to main
+        |  one fixed workflow_dispatch per opportunity
         v
-Data Steward Read-Only Observer
+Data Steward Read-Only Observer on main
         |  existing read-only A1.3 runtime
         v
 sanitized observer summary
 ```
 
-The GitHub workflow itself has **no `schedule:` trigger**. It retains `workflow_dispatch` so the Cloudflare dispatcher can invoke it and an owner can still run it manually for diagnostics. Its job condition is restricted to exact branch `main`, and the workflow retains only `contents: read`, `actions: read` and `checks: read` permissions.
+The GitHub workflow retains `workflow_dispatch` so Cloudflare can invoke it and an owner can still perform attended diagnostics. The job is restricted to exact branch `main`; workflow permissions remain `contents: read`, `actions: read` and `checks: read`; the protected environment remains `data-steward-readonly` with deployment creation disabled.
 
-The protected GitHub environment remains `data-steward-readonly`. Its branch policy must continue to be **Selected branches and tags — exact branch `main`**, with **Protected branches only** where applicable. Those protections are established in the owner UI before Cloudflare runtime credentials are provisioned. A protection failure must fail closed (for example HTTP 403 from GitHub), never bypass the environment.
+The previous `DATA_STEWARD_SCHEDULED_ENABLED` variable is no longer part of the architecture because there is no GitHub `schedule:` event to gate.
 
-## Automatic provenance: receipt, not inference
+## Automatic provenance is a receipt, not an inference
 
-A GitHub `workflow_dispatch` event alone cannot tell A1.4 whether a run was created automatically by Cloudflare or manually by the owner. Therefore event type, actor name, timestamp proximity and workflow-run searching are **not** accepted as automatic provenance.
+A raw GitHub `workflow_dispatch` event cannot distinguish a Cloudflare-created automatic run from an ordinary manual run. Actor identity, timestamp proximity, newest-run selection and history searching are therefore not accepted as automatic provenance.
 
-The new dispatcher owns a tiny separate D1 database:
+The new dispatcher owns a tiny isolated D1 ledger:
 
 - Worker: `teamsheet-data-steward-observer-dispatcher`
 - D1: `teamsheet-data-steward-observer-clock`
 - binding: `STEWARD_OBSERVER_CLOCK_DB`
 - dispatch secret: `DATA_STEWARD_OBSERVER_DISPATCH_TOKEN`
-- Cron: `17 4 * * *`
+- Crons: `17 4 * * *` and `17 8 * * *`
 
-For each exact 04:17 opportunity it atomically claims one receipt row. It performs one fixed GitHub Actions `workflow_dispatch` request with `ref: main` and `return_run_details: true`. A dispatch is trusted as automatic only when GitHub returns a valid exact `workflow_run_id` together with the matching API and HTML run URLs. The dispatcher then finalizes that exact receipt as `DISPATCHED` with that run ID.
+For each exact opportunity the dispatcher atomically claims one row, sends at most one fixed GitHub Actions workflow dispatch with `ref: main` and `return_run_details: true`, and finalizes the row only after classifying the response. `DISPATCHED` is trusted only when GitHub returns a valid exact `workflow_run_id` with matching API and HTML run URLs.
 
-A normal manual GitHub `workflow_dispatch` **cannot satisfy the automatic heartbeat** because it has no Cloudflare-created receipt for the 04:17 opportunity. A rerun of a receipt-proven run retains the same workflow run ID and is still the same automatic execution. If a receipt is absent, still `CLAIMED`, `FAILED` or `AMBIGUOUS`, A1.4 must not search for another run that looks convenient.
+An ordinary manual observer run cannot satisfy the automatic heartbeat because it has no matching Cloudflare-created receipt. A rerun of the same receipt-proven workflow run is still attributable because the workflow run ID stays the same while `run_attempt` changes. If a receipt is absent, `CLAIMED`, `FAILED` or `AMBIGUOUS`, A1.4 does not search for a replacement run.
 
 ## Dispatcher failure discipline
 
-The dispatcher is intentionally narrower than a general automation service. It has a scheduled handler only and no public `fetch` handler, route, production D1 binding, provider binding, application binding, watchdog-incident D1 authority or repair path.
+The dispatcher has a scheduled handler only. It has no public `fetch` handler, route, production D1 binding, Official FPL/provider binding, application binding, watchdog-incident D1 authority or repair path.
 
-`controller.noRetry()` is called before the outbound GitHub request. The dispatcher itself never issues a second attempt for one Cron firing. The state contract is:
+`controller.noRetry()` is called before the outbound GitHub request. There is at most one dispatch attempt per Cloudflare Cron event. The receipt states are closed:
 
 - `DISPATCHED` — exact GitHub run identity returned and persisted.
-- `FAILED` — definite no-success condition such as missing credential or a closed rejected GitHub status.
-- `AMBIGUOUS` — transport uncertainty or a response that cannot prove exact run identity. It is deliberately not treated as success.
+- `FAILED` — definite no-success condition such as a missing credential or closed rejected GitHub status.
+- `AMBIGUOUS` — transport uncertainty or a response that cannot prove exact run identity.
 - duplicate claim — no second dispatch is attempted.
 
-There is one deliberate fail-closed edge: GitHub could accept the request and then the D1 finalization write could fail. In that case the GitHub run may exist but A1.4 will not trust it as automatic because the durable receipt is missing. That can create a false negative, but it cannot create a false healthy state.
+There is one deliberate fail-closed distributed edge: GitHub may accept a dispatch and the subsequent receipt-finalization write may fail. The GitHub run can then exist without a trusted `DISPATCHED` receipt. A1.4 must alert rather than infer that run as automatic.
 
-## Security boundaries
+## Security boundary
 
-The dispatcher credential exists for one purpose only: create the fixed A1.3 workflow dispatch in this repository. It should be a fine-grained credential limited to `priteshpatel390-del/FPL` with the minimum GitHub Actions write permission required for workflow dispatch. **Contents write is not required and must not be granted for this purpose.** The credential is stored only as the Cloudflare Worker secret `DATA_STEWARD_OBSERVER_DISPATCH_TOKEN`; it is not committed, rendered, logged or exposed to the browser.
+`DATA_STEWARD_OBSERVER_DISPATCH_TOKEN` exists for one purpose: dispatch the fixed A1.3 workflow in `priteshpatel390-del/FPL`. It should be a fine-grained credential restricted to this repository with the minimum Actions write permission required for workflow dispatch. Contents write is not required and must not be granted for this purpose.
 
-A1.4 uses a different GitHub read credential and must never receive the observer dispatch credential. A1.3's observer workflow uses its existing protected read-only runtime values. The receipt D1 contains operational identifiers only; it holds no Official FPL payload, player/team/fixture facts, application/model data or user data.
+The token is a Cloudflare Worker secret only; it is not committed, rendered, logged or exposed to the browser. A1.4 uses a separate GitHub read credential and never receives the observer-dispatch token. The observer workflow continues to use only its protected read-only runtime values.
 
-The previous `DATA_STEWARD_SCHEDULED_ENABLED` GitHub variable is no longer part of the architecture. The corrected workflow has no GitHub schedule to gate.
+The receipt D1 contains operational identifiers only: opportunity timestamp, Cron identity, closed dispatch state/reason, returned workflow-run ID, and claim/finalization timestamps. It contains no Official FPL payload, player/team/fixture facts, model data, provider body or user data.
 
 ## Corrected live activation runbook
 
-PR #241 is repository work only. Merge, provisioning and live activation remain separate owner gates. Once an owner later approves merge and A1.4 live activation, the attended runbook is:
+PR #241 is repository work only. Merge, provisioning and activation remain separate owner gates. After an explicit merge approval and exact-`main` verification, the attended A1.4 activation package is:
 
-1. Verify exact merged `main`, repository tests, production build and deterministic build evidence before touching Cloudflare.
-2. Verify the production DATA-S2C dispatcher is intended to have exactly the one `01:17 UTC` trigger; do not change collector/provider contracts.
-3. Create the isolated `teamsheet-data-steward-observer-clock` D1 database. Apply only `workers/data-steward-observer-dispatcher/migrations/0001_observer_clock.sql` to that database. Replace the repository's inert all-zero database ID only in the attended deployment configuration; do not commit live IDs.
-4. Create/set `DATA_STEWARD_OBSERVER_DISPATCH_TOKEN` as an encrypted secret on `teamsheet-data-steward-observer-dispatcher`. Confirm the token is repository-limited and Actions-write only for the dispatch purpose.
-5. Deploy `teamsheet-data-steward-observer-dispatcher` with no public route and verify exactly one Cron Trigger: `17 4 * * *`.
-6. Provision A1.4's own isolated `teamsheet-data-steward-watchdog` D1 and email binding as described in the A1.4 document. Give A1.4 a native binding to `teamsheet-data-steward-observer-clock` for SELECT-only use and deploy exactly one watchdog Cron: `47 4 * * *`.
-7. Perform attended acceptance. Prove that a genuine 04:17 Cloudflare opportunity creates exactly one receipt, the receipt names the exact GitHub run, the run is the expected observer on `main`, and A1.4 classifies its result correctly at/after 04:47.
-8. Perform the negative provenance proof: create or inspect an ordinary manual observer run and prove it does **not** become evidence for the automatic heartbeat because no matching Cloudflare receipt points to it.
-9. Verify Cloudflare and GitHub logs contain only the approved sanitized output. Verify no credential, live account ID, full account fingerprint, destination email, provider body or raw response is exposed.
-10. Record exact live resource IDs/evidence outside committed source as required, update canonical closeout documentation with safe identifiers only, and stop. Do not expand into A1.5 or autonomous repair.
-
-The owner must create or edit live credentials/resources through the owner UI or an explicitly approved attended deployment process. Repository merge must not automatically create Cloudflare resources or automatically create credentials. If a required live environment/resource is absent, activation fails closed.
+1. Verify exact merged `main`, full `./run-tests.sh`, production build and deterministic-build evidence.
+2. Re-verify that production `teamsheet-data-s2-dispatcher` is unchanged from the approved DATA-S2C baseline and still declares exactly `17 1 * * *`, `17 2 * * *` and `17 3 * * *`. Do not modify those production collection opportunities in this activation.
+3. Create `teamsheet-data-steward-observer-clock` and apply only `workers/data-steward-observer-dispatcher/migrations/0001_observer_clock.sql` to it. Keep live database IDs out of committed source.
+4. Create/set `DATA_STEWARD_OBSERVER_DISPATCH_TOKEN` on `teamsheet-data-steward-observer-dispatcher` with repository-limited Actions-write authority only.
+5. Deploy `teamsheet-data-steward-observer-dispatcher` with no public route and exactly two Cron Triggers: `17 4 * * *` and `17 8 * * *`.
+6. Provision/deploy A1.4 as described in its lifecycle document, including its own isolated D1, fixed owner email binding, separate GitHub read token, SELECT-only binding to the observer-clock D1, and exactly `47 4 * * *` plus `47 8 * * *` watchdog Crons.
+7. Perform attended positive acceptance for both automatic observer opportunities: prove the Cloudflare Cron event, exact receipt claim/finalization, exact returned GitHub run on `main`, sanitized observer result and paired A1.4 classification at/after 04:47 and 08:47.
+8. Perform negative provenance acceptance: an ordinary manual observer run must not satisfy either automatic heartbeat unless the exact Cloudflare receipt points to that run—which an ordinary manual run will not have.
+9. Verify duplicate, rejected, ambiguous, clock-D1 and GitHub-read failure cases remain fail-closed and that logs expose no credential, live database/account ID, full fingerprint, destination email, provider body or raw response.
+10. Record safe live acceptance evidence in canonical closeout documentation and stop. Do not expand into A1.5 or autonomous repair.
 
 ## Rollback
 
-Rollback is operationally simple because A1.3 itself is still a read-only GitHub workflow:
-
-- remove/disable the 04:17 Cron from `teamsheet-data-steward-observer-dispatcher`;
-- leave the GitHub observer available for attended manual diagnostics;
-- remove/disable the 04:47 watchdog Cron if A1.4 cannot consume trusted receipts;
-- do not re-enable a GitHub Actions schedule as a silent fallback;
-- do not add 08:17, 02:17 or 03:17 opportunities without a new owner decision.
-
-The production collection and the observer remain separate systems. Rolling back observer automation does not authorize changes to Official FPL collection behavior.
+If corrected live acceptance fails, remove/disable the 04:17 and 08:17 observer-dispatcher Crons and the paired 04:47 and 08:47 watchdog Crons. Leave the GitHub observer available for attended manual diagnosis. Do not silently restore GitHub Actions scheduling, and do not change the production DATA-S2C 01:17/02:17/03:17 opportunities as part of observer rollback.
 
 ## Acceptance standard
 
-Repository implementation is not enough to claim scheduled A1.3 is working. Final live acceptance requires evidence for the exact chain:
+Repository implementation is not evidence that scheduled A1.3 is live. Final acceptance requires both exact chains to be observed after approved deployment:
 
-`Cloudflare 04:17 scheduled event → durable receipt → exact GitHub observer run on main → read-only observer summary → A1.4 04:47 classification`.
+`Cloudflare 04:17 -> durable receipt -> exact GitHub observer run on main -> read-only summary -> A1.4 04:47 classification`
 
-Until that evidence exists after an approved live deployment, the corrected automatic A1.3 schedule is **not live-accepted**.
+`Cloudflare 08:17 -> durable receipt -> exact GitHub observer run on main -> read-only summary -> A1.4 08:47 classification`
+
+Until those live proofs exist, the corrected automatic A1.3 clock is not live-accepted.
