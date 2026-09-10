@@ -51,7 +51,9 @@ test('activation docs retain protected exact-main observer execution and describ
   assert.match(activationDoc,/receipt/i);
   assert.match(activationDoc,/manual[\s\S]{0,120}(?:cannot|does not|must not)[\s\S]{0,120}(?:heartbeat|automatic)/i);
   assert.doesNotMatch(activationDoc,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
-  assert.doesNotMatch(securityDoc,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
+  const currentSecurity=securityDoc.split('<!-- DATA-OPS-A1-3-2026-09-10-CLOUDFLARE-CLOCK -->')[1]??'';
+  assert.match(currentSecurity,/Cloudflare[\s\S]{0,160}authoritative/i);
+  assert.doesNotMatch(currentSecurity,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
 });
 
 test('activation docs keep live provisioning and acceptance distinct from repository merge',()=>{

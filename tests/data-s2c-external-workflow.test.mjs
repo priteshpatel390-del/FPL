@@ -139,11 +139,12 @@ test('workflow B is a separate file and never reuses the attended manual boundar
   assert.ok(!fs.existsSync('.github/workflows/data-s2-production-scheduled.yml'));
   const scheduledWorkflows=fs.readdirSync('.github/workflows').filter(name=>/\.ya?ml$/.test(name))
     .filter(name=>/^\s*- cron:/m.test(read(`.github/workflows/${name}`)));
-  // A1.3 adds only its dormant read-only observer; it is not a production collection clock.
-  assert.deepEqual(scheduledWorkflows,['data-steward-readonly-observer.yml']);
+  // Cloudflare owns both automatic clocks; GitHub carries no scheduled workflow.
+  assert.deepEqual(scheduledWorkflows,[]);
   const observer=read('.github/workflows/data-steward-readonly-observer.yml');
   assert.doesNotMatch(observer,/production-collection|run-production-collection|schedule-dispatcher/);
-  assert.match(observer,/vars\.DATA_STEWARD_SCHEDULED_ENABLED == 'true'/);
+  assert.match(observer,/^  workflow_dispatch:$/m);
+  assert.doesNotMatch(observer,/DATA_STEWARD_SCHEDULED_ENABLED|^  schedule:$/m);
   assert.equal(PRODUCTION_COLLECTION_SCHEDULE,'17 1 * * *');
 });
 

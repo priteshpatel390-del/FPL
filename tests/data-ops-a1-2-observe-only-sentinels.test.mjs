@@ -204,7 +204,7 @@ test('the observed cron set is exactly the dispatcher configuration the reposito
   const declared=JSON.parse(fs.readFileSync('workers/schedule-dispatcher/wrangler.jsonc','utf8')
     .split('\n').filter(line=>!line.trim().startsWith('//')).join('\n'));
   assert.deepEqual([...EXPECTED_CRON_EXPRESSIONS],declared.triggers.crons);
-  assert.deepEqual([...EXPECTED_CRON_EXPRESSIONS],['17 1 * * *','17 2 * * *','17 3 * * *']);
+  assert.deepEqual([...EXPECTED_CRON_EXPRESSIONS],['17 1 * * *']);
   assert.equal(declared.name,EXPECTED_DISPATCHER_WORKER);
 });
 
@@ -216,8 +216,8 @@ test('the evaluation tolerance is derived from workflow B and Cloudflare, not ch
   assert.equal(WORKFLOW_B_MAX_EXECUTION_MS,30*60*1000);
   // 30 minutes of permitted execution plus Cloudflare's published 15-minute propagation figure.
   assert.equal(EVALUATION_TOLERANCE_MS,45*60*1000);
-  // One whole opportunity interval, taken from the declared schedule rather than picked.
-  assert.equal(MAX_EVIDENCE_AGE_MS,60*60*1000);
+  // One whole daily opportunity interval, taken from the declared schedule rather than picked.
+  assert.equal(MAX_EVIDENCE_AGE_MS,24*60*60*1000);
 });
 
 test('the governed job and step names exist verbatim in workflow B',()=>{
@@ -230,14 +230,14 @@ test('opportunity instants, deadline and evaluation phases follow the real sched
   const day=utcDayWindow(AFTER_DEADLINE);
   assert.equal(day.date,DAY);
   assert.deepEqual([...opportunityInstants(AFTER_DEADLINE)],
-    [t(`${DAY}T01:17:00.000Z`),t(`${DAY}T02:17:00.000Z`),t(`${DAY}T03:17:00.000Z`)]);
-  assert.equal(evaluationDeadline(AFTER_DEADLINE),t(`${DAY}T04:02:00.000Z`));
+    [t(`${DAY}T01:17:00.000Z`)]);
+  assert.equal(evaluationDeadline(AFTER_DEADLINE),t(`${DAY}T02:02:00.000Z`));
   assert.equal(evaluationPhase(t(`${DAY}T00:30:00.000Z`)).phase,EVALUATION_NOT_DUE);
   assert.equal(evaluationPhase(t(`${DAY}T01:40:00.000Z`)).phase,EVALUATION_NOT_DUE);
-  assert.equal(evaluationPhase(t(`${DAY}T01:55:00.000Z`)).phase,EVALUATION_AWAITING_LATER_OPPORTUNITY);
-  assert.equal(evaluationPhase(t(`${DAY}T01:55:00.000Z`)).remainingOpportunities,2);
-  assert.equal(evaluationPhase(t(`${DAY}T04:01:00.000Z`)).phase,EVALUATION_AWAITING_LATER_OPPORTUNITY);
-  assert.equal(evaluationPhase(t(`${DAY}T04:02:00.000Z`)).phase,EVALUATION_DUE);
+  assert.equal(evaluationPhase(t(`${DAY}T01:55:00.000Z`)).phase,EVALUATION_NOT_DUE);
+  assert.equal(evaluationPhase(t(`${DAY}T01:55:00.000Z`)).remainingOpportunities,0);
+  assert.equal(evaluationPhase(t(`${DAY}T02:01:00.000Z`)).phase,EVALUATION_NOT_DUE);
+  assert.equal(evaluationPhase(t(`${DAY}T02:02:00.000Z`)).phase,EVALUATION_DUE);
   assert.equal(evaluationPhase(AFTER_DEADLINE).phase,EVALUATION_DUE);
 });
 
@@ -492,7 +492,7 @@ test('Cloudflare configuration reads succeed, fail closed, and never claim invoc
   assert.equal(ok.invocationHistory,CLOUDFLARE_INVOCATION_UNOBSERVABLE);
   assert.equal(ok.reads,CLOUDFLARE_SENTINEL_MAX_READS);
   const drifted=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
-    token:'t',fetchImpl:fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules:schedulesBody(['17 1 * * *'])}))});
+    token:'t',fetchImpl:fakeFetch(healthyRoutes({bRuns:runsBody([]),schedules:schedulesBody(['17 2 * * *'])}))});
   assert.equal(drifted.reasonCode,'CLOUDFLARE_CRON_SET_MISMATCH');
 });
 
@@ -622,15 +622,15 @@ test('a full day-of-month enumeration for each approved daily schedule canonical
   assert.deepEqual(decodeSchedules({schedules:[expanded(17,3)]}),['17 3 * * *']);
 });
 
-test('a mixed API result of wildcard and full day-of-month enumeration rows still canonicalises to the exact approved set',()=>{
-  const decoded=decodeSchedules({schedules:['17 1 * * *',{cron:expanded(17,2)},expanded(17,3)]});
+test('the full day-of-month representation canonicalises to the exact approved set',()=>{
+  const decoded=decodeSchedules({schedules:[{cron:expanded(17,1)}]});
   assert.deepEqual(decoded,[...EXPECTED_CRON_EXPRESSIONS]);
   assert.equal(cronSetMatches(decoded),true);
 });
 
 test('a live cycle whose /schedules response uses full day-of-month enumerations still succeeds and uses exactly three reads',async()=>{
   const impl=fakeFetch(healthyRoutes({bRuns:runsBody([]),
-    schedules:cfEnvelope({schedules:[expanded(17,1),expanded(17,2),expanded(17,3)]})}));
+    schedules:cfEnvelope({schedules:[expanded(17,1)]})}));
   const result=await readCloudflareConfiguration({accountId:ACCOUNT,accountFingerprint:FINGERPRINT,
     token:'t',fetchImpl:impl});
   assert.equal(result.ok,true);
@@ -1067,29 +1067,21 @@ test('ambiguous guard is RED without a collection too',async()=>{
     {verdict:VERDICT_UNHEALTHY,reasonCode:'OPPORTUNITY_GUARD_AMBIGUOUS'});
 });
 
-test('2. a later opportunity collecting after an earlier one produced no run is HEALTHY',async()=>{
-  assert.deepEqual(await evaluate({github:gh({refusedOpportunityConsumed:0,
-    firstCollectionAt:t(`${DAY}T02:17:30.000Z`)})}),
-    {verdict:VERDICT_HEALTHY,reasonCode:'HEALTHY_EXPECTED_STATE'});
-});
-
-test('3. an absent early opportunity is NOT prematurely RED while later ones remain',async()=>{
+test('2. absence remains NOT_EVALUATED until the single opportunity tolerance expires',async()=>{
   const nothing={github:gh({collected:0,refusedOpportunityConsumed:0,collectExecutions:0,
     automaticCollections:0,firstCollectionAt:null}),d1:dd({runs:{total:0,completed:0,latestCompletedAt:null,
       latestCompletedRunId:null}})};
   assert.deepEqual(await evaluate(nothing,t(`${DAY}T00:40:00.000Z`)),
     {verdict:VERDICT_NOT_EVALUATED,reasonCode:'EVALUATION_NOT_DUE'});
   assert.deepEqual(await evaluate(nothing,t(`${DAY}T01:55:00.000Z`)),
-    {verdict:VERDICT_NOT_EVALUATED,reasonCode:'AWAITING_LATER_OPPORTUNITY'});
-  assert.deepEqual(await evaluate(nothing,t(`${DAY}T03:50:00.000Z`)),
-    {verdict:VERDICT_NOT_EVALUATED,reasonCode:'AWAITING_LATER_OPPORTUNITY'});
+    {verdict:VERDICT_NOT_EVALUATED,reasonCode:'EVALUATION_NOT_DUE'});
 });
 
-test('4. once every opportunity plus tolerance has passed with no collection, it is RED',async()=>{
+test('3. once the single opportunity tolerance has passed with no collection, it is RED',async()=>{
   assert.deepEqual(await evaluate({github:gh({collected:0,refusedOpportunityConsumed:0,
     collectExecutions:0,automaticCollections:0,firstCollectionAt:null}),
     d1:dd({runs:{total:0,completed:0,latestCompletedAt:null,latestCompletedRunId:null}})},
-    t(`${DAY}T04:02:00.000Z`)),
+    t(`${DAY}T02:02:00.000Z`)),
     {verdict:VERDICT_UNHEALTHY,reasonCode:'PRODUCTION_COLLECTION_NOT_PROVEN'});
 });
 
@@ -1284,8 +1276,8 @@ test('A1.2 contains no mutation, actuator, shell or AI capability of any kind',(
 test('A1.2 can observe the dispatcher but can never arm, change or redeploy it',()=>{
   // The dispatcher, its contract, the guard, the workflows and the migrations are all untouched.
   const dispatcher=fs.readFileSync('workers/schedule-dispatcher/wrangler.jsonc','utf8');
-  assert.ok(dispatcher.includes('"17 1 * * *"')&&dispatcher.includes('"17 2 * * *"')
-    &&dispatcher.includes('"17 3 * * *"'));
+  assert.ok(dispatcher.includes('"17 1 * * *"'));
+  assert.ok(!dispatcher.includes('"17 2 * * *"')&&!dispatcher.includes('"17 3 * * *"'));
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql',
       '0003_production_query_plan_indexes.sql']);

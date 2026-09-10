@@ -12,7 +12,7 @@
 //
 // The one credential this contract can ever name is the future secret binding
 // `GITHUB_DISPATCH_TOKEN`. No Cloudflare account id, D1 token, D1 database id, account
-// fingerprint, Official FPL endpoint, Anthropic key or Odds key appears anywhere in this Worker.
+// fingerprint, Official FPL endpoint, AI provider key or betting-provider key appears in this Worker.
 
 export const DISPATCH_REPOSITORY='priteshpatel390-del/FPL';
 export const DISPATCH_WORKFLOW_FILE='data-s2-production-external.yml';

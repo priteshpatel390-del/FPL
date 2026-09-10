@@ -17,15 +17,19 @@ const RUN_ID=34450000001;
 
 function fakeDb({claim=true,finalize=true}={}){
   const state={claims:[],finals:[]};
-  return {state,prepare(sql){return {bind(...args){return {async run(){
-    if(sql.startsWith('INSERT INTO observer_dispatch_receipts')){
-      state.claims.push(args);return {success:true,meta:{changes:claim?1:0}};
-    }
-    if(sql.startsWith('UPDATE observer_dispatch_receipts')){
-      state.finals.push(args);return {success:true,meta:{changes:finalize?1:0}};
-    }
-    throw new Error('unexpected_sql');
-  }}};}}};
+  return {state,prepare(sql){
+    return {bind(...args){
+      return {async run(){
+        if(sql.startsWith('INSERT INTO observer_dispatch_receipts')){
+          state.claims.push(args);return {success:true,meta:{changes:claim?1:0}};
+        }
+        if(sql.startsWith('UPDATE observer_dispatch_receipts')){
+          state.finals.push(args);return {success:true,meta:{changes:finalize?1:0}};
+        }
+        throw new Error('unexpected_sql');
+      }};
+    }};
+  }};
 }
 
 function controller({scheduledTime=SCHEDULED,cron=OBSERVER_CRON}={}){
