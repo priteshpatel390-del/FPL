@@ -24,11 +24,12 @@ test('the watchdog Worker holds its own dedicated identity, never a reused one',
   assert.ok(!otherNames.includes(wrangler.name));
 });
 
-test('the watchdog declares exactly one 04:47 UTC Cloudflare Cron Trigger',()=>{
-  assert.deepEqual(wrangler.triggers,{crons:['47 4 * * *']});
-  assert.equal(wrangler.triggers.crons.length,1);
-  assert.deepEqual(wrangler.triggers.crons[0].split(' '),['47','4','*','*','*']);
-  assert.doesNotMatch(JSON.stringify(wrangler.triggers),/11|17|23|,|\/\*/);
+test('the watchdog declares exactly paired 04:47 and 08:47 UTC Cloudflare Cron Triggers',()=>{
+  assert.deepEqual(wrangler.triggers,{crons:['47 4 * * *','47 8 * * *']});
+  assert.equal(wrangler.triggers.crons.length,2);
+  assert.deepEqual(wrangler.triggers.crons.map(value=>value.split(' ')),
+    [['47','4','*','*','*'],['47','8','*','*','*']]);
+  assert.doesNotMatch(JSON.stringify(wrangler.triggers),/17 5,11,17,23|47 11|47 17|47 23/);
 });
 
 test('the watchdog owns one lifecycle D1 and reads one separate observer-clock D1',()=>{

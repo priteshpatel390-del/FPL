@@ -14,12 +14,12 @@ const securityDoc=fs.readFileSync('docs/SECURITY.md','utf8');
 const stewardFiles=()=>fs.readdirSync('workers/data-steward/sentinels')
   .filter(name=>name.endsWith('.mjs')).map(name=>`workers/data-steward/sentinels/${name}`);
 
-test('dedicated observer workflow is manual-capable while Cloudflare owns the one automatic clock',()=>{
+test('dedicated observer workflow is manual-capable while Cloudflare owns both automatic clocks',()=>{
   assert.match(workflow,/^name: Data Steward Read-Only Observer$/m);
   assert.match(workflow,/^  workflow_dispatch:$/m);
   assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),[]);
   assert.equal((workflow.match(/^  schedule:$/gm)??[]).length,0);
-  assert.deepEqual(observerDispatcherConfig.triggers.crons,['17 4 * * *']);
+  assert.deepEqual(observerDispatcherConfig.triggers.crons,['17 4 * * *','17 8 * * *']);
   assert.match(workflow,/node workers\/data-steward\/run-observer\.mjs/);
 });
 
@@ -41,12 +41,13 @@ test('workflow permissions and protected runtime contract are exact and read-onl
   assert.doesNotMatch(workflow,/^ {4}env:$/m);
 });
 
-test('activation docs retain protected exact-main observer execution and describe the external clock',()=>{
+test('activation docs retain protected exact-main observer execution and describe the external clocks',()=>{
   for(const text of [activationDoc,securityDoc]){
     assert.match(text,/data-steward-readonly/);
     assert.match(text,/exact branch `main`|exact `main`/i);
     assert.match(text,/Cloudflare/i);
     assert.match(text,/04:17/);
+    assert.match(text,/08:17/);
   }
   assert.match(activationDoc,/receipt/i);
   assert.match(activationDoc,/manual[\s\S]{0,120}(?:cannot|does not|must not)[\s\S]{0,120}(?:heartbeat|automatic)/i);
@@ -59,6 +60,7 @@ test('activation docs keep live provisioning and acceptance distinct from reposi
   assert.match(activationDoc,/teamsheet-data-steward-observer-clock/);
   assert.match(activationDoc,/teamsheet-data-steward-observer-dispatcher/);
   assert.match(activationDoc,/04:47/);
+  assert.match(activationDoc,/08:47/);
   assert.match(activationDoc,/manual/i);
   assert.doesNotMatch(activationDoc,/\b(?:live acceptance (?:is )?complete|live monitoring is active)\b/i);
 });
@@ -118,15 +120,6 @@ test('runtime summary is closed and excludes tokens, account values, raw bodies 
   assert.doesNotMatch(output,/gh-secret|account-secret|repository gate log|rawBody|token/i);
 });
 
-// Live evidence (run 34277208819) proved the Cloudflare sentinel now fails at one of three named
-// stages rather than one collapsed code, live evidence (run 34311398342) then proved the
-// `/schedules` stage itself needed five closed categories rather than one, live evidence
-// (run 34319945520) then proved the response-processing category itself needed three closed
-// layers rather than one, and live evidence (run 34325772296) then proved the payload-decode layer
-// itself needed five closed categories — one per `decodeSchedules` predicate — rather than one.
-// The sanitized summary must carry any of these closed reason codes through unchanged while
-// remaining exactly as closed as any other reason code — no request URL, header, status, provider
-// message, account id, fingerprint or raw body can ever ride along.
 test('the new closed Cloudflare stage reason codes pass through sanitized output with nothing else attached',()=>{
   for(const reasonCode of ['CLOUDFLARE_SCHEDULES_AUTH_REFUSED','CLOUDFLARE_SCHEDULES_NOT_FOUND',
     'CLOUDFLARE_SCHEDULES_HTTP_FAILED','CLOUDFLARE_SCHEDULES_JSON_INVALID',
