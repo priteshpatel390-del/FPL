@@ -80,7 +80,7 @@ The previous `DATA_STEWARD_SCHEDULED_ENABLED` GitHub variable is no longer part 
 
 ## Corrected live activation runbook
 
-PR #241 is repository work only. Merge, provisioning and live activation remain separate owner gates. Once an owner later approves merge and A1.4 live activation, the attended runbook is:
+PR #242 is repository work only. Merge, provisioning and live activation remain separate owner gates. Once an owner later approves merge and A1.4 live activation, the attended runbook is:
 
 1. Verify exact merged `main`, repository tests, production build and deterministic build evidence before touching Cloudflare.
 2. Verify the production DATA-S2C dispatcher is intended to have exactly the one `01:17 UTC` trigger; do not change collector/provider contracts.

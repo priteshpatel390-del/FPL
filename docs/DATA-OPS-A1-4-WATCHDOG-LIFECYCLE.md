@@ -109,7 +109,7 @@ Thirty minutes is an owner-approved operational tolerance in this repository can
 
 PR #240 introduced set-based time attribution because two GitHub-scheduled A1.3 opportunities had overlapping five-hour windows. That problem no longer exists in the active architecture.
 
-The old attribution helper/modules may remain temporarily in the repository as historical regression code while PR #241 is reviewed, but **they are not authoritative in the new automatic path**. `run-watchdog.mjs` now uses receipt-proven exact run identity. No production decision may fall back from a missing/ambiguous receipt to the legacy timestamp matcher.
+The old attribution helper/modules may remain temporarily in the repository as historical regression code while PR #242 is reviewed, but **they are not authoritative in the new automatic path**. `run-watchdog.mjs` now uses receipt-proven exact run identity. No production decision may fall back from a missing/ambiguous receipt to the legacy timestamp matcher.
 
 A later cleanup may remove the dead compatibility machinery only after tests prove nothing still relies on it. This PR does not weaken tests merely to erase history.
 
@@ -193,6 +193,6 @@ If corrected live acceptance fails:
 
 ## Repository acceptance evidence
 
-PR #241 must not be called implementation-complete until its exact head has passed the repository's full `./run-tests.sh` path, production build and deterministic-build verification required by Teamsheet. Local network access in the current working environment cannot resolve GitHub, so GitHub Actions is the independent execution environment for this branch.
+PR #242 must not be called implementation-complete until its exact head has passed the repository's full `./run-tests.sh` path, production build and deterministic-build verification required by Teamsheet. GitHub Actions remains the independent exact-head verification environment for this branch.
 
 Test counts/build hashes belong here only after the exact final PR head is green. Until then they are deliberately not claimed.
