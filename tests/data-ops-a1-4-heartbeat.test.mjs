@@ -7,6 +7,7 @@ import {OBSERVER_DELIVERY_TOLERANCE_MS} from '../workers/data-steward-watchdog/l
 
 const T=(y,m,d,h,mi)=>Date.UTC(y,m-1,d,h,mi);
 const OPP_0417=T(2026,9,9,4,17);
+const OPP_0817=T(2026,9,9,8,17);
 
 test('no opportunity due yet is PENDING, never an incident',()=>{
   const result=classifyHeartbeat({opportunityAt:null,opportunityEvidence:null,now:T(2026,9,9,3,0)});
@@ -22,10 +23,10 @@ test('normal 04:17 success is HEALTHY',()=>{
   assert.equal(result.active,false);
 });
 
-test('one successful daily opportunity stays HEALTHY for the rest of the day',()=>{
-  const evidence={healthState:'SUCCESS',createdAt:OPP_0417+180000};
-  for(const now of [T(2026,9,9,8,17),T(2026,9,9,17,17),T(2026,9,9,23,17),T(2026,9,10,4,16)]){
-    const result=classifyHeartbeat({opportunityAt:OPP_0417,opportunityEvidence:evidence,now});
+test('normal 08:17 success is HEALTHY and remains so until the next expected opportunity is supplied',()=>{
+  const evidence={healthState:'SUCCESS',createdAt:OPP_0817+180000};
+  for(const now of [T(2026,9,9,17,17),T(2026,9,9,23,17),T(2026,9,10,4,16)]){
+    const result=classifyHeartbeat({opportunityAt:OPP_0817,opportunityEvidence:evidence,now});
     assert.equal(result.state,HEARTBEAT_STATE_HEALTHY);
     assert.equal(result.active,false);
   }
@@ -38,12 +39,14 @@ test('inside the 30-minute delivery window with no evidence is PENDING',()=>{
   assert.equal(result.active,false);
 });
 
-test('at the 04:47 deadline with no evidence the opportunity is MISSING',()=>{
-  const result=classifyHeartbeat({opportunityAt:OPP_0417,opportunityEvidence:null,
-    now:OPP_0417+OBSERVER_DELIVERY_TOLERANCE_MS});
-  assert.equal(result.state,HEARTBEAT_STATE_MISSING);
-  assert.equal(result.active,true);
-  assert.equal(result.reasonCode,'OBSERVER_HEARTBEAT_MISSING');
+test('at either 30-minute deadline with no evidence the opportunity is MISSING',()=>{
+  for(const opportunityAt of [OPP_0417,OPP_0817]){
+    const result=classifyHeartbeat({opportunityAt,opportunityEvidence:null,
+      now:opportunityAt+OBSERVER_DELIVERY_TOLERANCE_MS});
+    assert.equal(result.state,HEARTBEAT_STATE_MISSING);
+    assert.equal(result.active,true);
+    assert.equal(result.reasonCode,'OBSERVER_HEARTBEAT_MISSING');
+  }
 });
 
 test('success is decisive even if observed after the delivery deadline',()=>{
@@ -80,7 +83,7 @@ test('a malformed or contradictory summary is MALFORMED and never resets health'
   }
 });
 
-test('an in-flight run is PENDING before 04:47 and incomplete at 04:47',()=>{
+test('an in-flight run is PENDING before its deadline and incomplete at the deadline',()=>{
   const evidence={healthState:'IN_FLIGHT',createdAt:OPP_0417+60000};
   const within=classifyHeartbeat({opportunityAt:OPP_0417,opportunityEvidence:evidence,
     now:OPP_0417+OBSERVER_DELIVERY_TOLERANCE_MS-1});
@@ -98,9 +101,9 @@ test('NOT_EVALUATED_OK means the observer itself ran correctly',()=>{
   assert.equal(result.state,HEARTBEAT_STATE_HEALTHY);
 });
 
-test('a previous day success cannot mask a new missing daily opportunity',()=>{
-  const result=classifyHeartbeat({opportunityAt:OPP_0417,opportunityEvidence:null,
-    now:OPP_0417+OBSERVER_DELIVERY_TOLERANCE_MS});
+test('a previous opportunity success cannot mask a newly due missing opportunity',()=>{
+  const result=classifyHeartbeat({opportunityAt:OPP_0817,opportunityEvidence:null,
+    now:OPP_0817+OBSERVER_DELIVERY_TOLERANCE_MS});
   assert.equal(result.state,HEARTBEAT_STATE_MISSING);
 });
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import dispatcher,{runObserverScheduledDispatch}
   from '../workers/data-steward-observer-dispatcher/dispatcher.mjs';
-import {AMBIGUOUS,DISPATCHED,DUPLICATE,FAILED,OBSERVER_CLOCK_DB_BINDING,OBSERVER_CRON,
+import {AMBIGUOUS,DISPATCHED,DUPLICATE,FAILED,OBSERVER_CLOCK_DB_BINDING,OBSERVER_CRONS,
   OBSERVER_DISPATCH_BODY,OBSERVER_DISPATCH_REPOSITORY,OBSERVER_DISPATCH_TOKEN_BINDING,
   OBSERVER_DISPATCH_URL,observerDispatchRequest}
   from '../workers/data-steward-observer-dispatcher/dispatch-contract.mjs';
@@ -12,7 +12,8 @@ const DIR='workers/data-steward-observer-dispatcher';
 const config=JSON.parse(fs.readFileSync(`${DIR}/wrangler.jsonc`,'utf8'));
 const source=fs.readdirSync(DIR,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?[]:
   entry.name.endsWith('.mjs')?[fs.readFileSync(`${DIR}/${entry.name}`,'utf8')]:[]).join('\n');
-const SCHEDULED=Date.UTC(2026,8,10,4,17,0);
+const SCHEDULED_0417=Date.UTC(2026,8,10,4,17,0);
+const SCHEDULED_0817=Date.UTC(2026,8,10,8,17,0);
 const RUN_ID=34450000001;
 
 function fakeDb({claim=true,finalize=true}={}){
@@ -28,7 +29,7 @@ function fakeDb({claim=true,finalize=true}={}){
   }}};}}};
 }
 
-function controller({scheduledTime=SCHEDULED,cron=OBSERVER_CRON}={}){
+function controller({scheduledTime=SCHEDULED_0417,cron=OBSERVER_CRONS[0]}={}){
   const state={noRetry:0};
   return {state,value:{scheduledTime,cron,noRetry(){state.noRetry+=1;}}};
 }
@@ -45,16 +46,17 @@ async function fire({db=fakeDb(),token='observer-token',reply=response(200,ident
   try{
     result=await runObserverScheduledDispatch({controller:control.value,
       env:{[OBSERVER_CLOCK_DB_BINDING]:db,[OBSERVER_DISPATCH_TOKEN_BINDING]:token},
-      fetchImpl:async(url,init)=>{calls.push({url,init});return reply;},now:()=>SCHEDULED+1000});
+      fetchImpl:async(url,init)=>{calls.push({url,init});return reply;},
+      now:()=>control.value.scheduledTime+1000});
   }catch(value){error=value;}
   finally{console.log=original;}
   return {db,calls,logs,result,error,control};
 }
 
-test('observer dispatcher has one isolated 04:17 UTC Worker identity and no public surface',()=>{
+test('observer dispatcher has one isolated Worker with exactly 04:17 and 08:17 UTC automatic opportunities',()=>{
   assert.equal(config.name,'teamsheet-data-steward-observer-dispatcher');
   assert.equal(config.main,'dispatcher.mjs');
-  assert.deepEqual(config.triggers,{crons:['17 4 * * *']});
+  assert.deepEqual(config.triggers,{crons:['17 4 * * *','17 8 * * *']});
   assert.equal(config.workers_dev,false);
   assert.equal(config.preview_urls,false);
   assert.equal(typeof dispatcher.scheduled,'function');
@@ -76,7 +78,7 @@ test('observer dispatcher owns only its receipt D1 and never a production data b
 });
 
 test('dispatch contract is fixed to the read-only observer on main with no workflow inputs',()=>{
-  assert.equal(OBSERVER_CRON,'17 4 * * *');
+  assert.deepEqual([...OBSERVER_CRONS],['17 4 * * *','17 8 * * *']);
   assert.equal(OBSERVER_DISPATCH_TOKEN_BINDING,'DATA_STEWARD_OBSERVER_DISPATCH_TOKEN');
   assert.notEqual(OBSERVER_DISPATCH_TOKEN_BINDING,'GITHUB_DISPATCH_TOKEN');
   assert.equal(OBSERVER_DISPATCH_BODY,JSON.stringify({ref:'main',return_run_details:true}));
@@ -87,6 +89,17 @@ test('dispatch contract is fixed to the read-only observer on main with no workf
   assert.match(request.url,/data-steward-readonly-observer\.yml\/dispatches$/);
 });
 
+test('both approved Cloudflare opportunities dispatch independently and receipt exact cron/time',async()=>{
+  for(const [scheduledTime,cron] of [[SCHEDULED_0417,OBSERVER_CRONS[0]],[SCHEDULED_0817,OBSERVER_CRONS[1]]]){
+    const outcome=await fire({control:controller({scheduledTime,cron})});
+    assert.equal(outcome.result.dispatch,DISPATCHED);
+    assert.equal(outcome.db.state.claims.length,1);
+    assert.equal(outcome.db.state.claims[0][0],new Date(scheduledTime).toISOString());
+    assert.equal(outcome.db.state.claims[0][1],cron);
+    assert.equal(outcome.calls.length,1);
+  }
+});
+
 test('noRetry happens before the one outbound dispatch and exact returned run identity is receipted',async()=>{
   const db=fakeDb();const control=controller();let noRetryAtRequest;
   const calls=[];const logs=[];const original=console.log;console.log=line=>logs.push(line);
@@ -94,7 +107,7 @@ test('noRetry happens before the one outbound dispatch and exact returned run id
     const result=await runObserverScheduledDispatch({controller:control.value,
       env:{[OBSERVER_CLOCK_DB_BINDING]:db,[OBSERVER_DISPATCH_TOKEN_BINDING]:'secret'},
       fetchImpl:async(url,init)=>{noRetryAtRequest=control.state.noRetry;calls.push({url,init});
-        return response(200,identity(RUN_ID));},now:()=>SCHEDULED+1000});
+        return response(200,identity(RUN_ID));},now:()=>SCHEDULED_0417+1000});
     assert.equal(result.dispatch,DISPATCHED);
   }finally{console.log=original;}
   assert.equal(control.state.noRetry,1);
@@ -136,14 +149,15 @@ test('rejected GitHub response is FAILED; missing identity or transport uncertai
   try{
     await assert.rejects(runObserverScheduledDispatch({controller:control.value,
       env:{[OBSERVER_CLOCK_DB_BINDING]:db,[OBSERVER_DISPATCH_TOKEN_BINDING]:'secret'},
-      fetchImpl:async()=>{throw new Error('possibly accepted');},now:()=>SCHEDULED+1000}));
+      fetchImpl:async()=>{throw new Error('possibly accepted');},now:()=>SCHEDULED_0417+1000}));
   }finally{console.log=original;}
   assert.equal(db.state.finals[0][1],AMBIGUOUS);
   assert.equal(control.state.noRetry,1);
 });
 
-test('wrong cron or logical time fails before any claim or outbound request',async()=>{
-  for(const control of [controller({cron:'17 8 * * *'}),controller({scheduledTime:SCHEDULED+60000})]){
+test('wrong cron, mismatched approved cron or logical time fails before claim or outbound request',async()=>{
+  for(const control of [controller({cron:'17 12 * * *'}),controller({cron:OBSERVER_CRONS[1]}),
+    controller({scheduledTime:SCHEDULED_0417+60000})]){
     const db=fakeDb();let calls=0;
     await assert.rejects(runObserverScheduledDispatch({controller:control.value,
       env:{[OBSERVER_CLOCK_DB_BINDING]:db,[OBSERVER_DISPATCH_TOKEN_BINDING]:'secret'},
@@ -164,10 +178,11 @@ test('package imports stay local and contain no provider, collector or repair au
   }
 });
 
-test('receipt migration is narrow and non-destructive',()=>{
+test('receipt migration is narrow, non-destructive and permits only the two approved crons',()=>{
   const migration=fs.readFileSync(`${DIR}/migrations/0001_observer_clock.sql`,'utf8');
   assert.match(migration,/CREATE TABLE IF NOT EXISTS observer_dispatch_receipts/);
   assert.match(migration,/PRIMARY KEY/);
   assert.match(migration,/github_run_id INTEGER UNIQUE/);
+  assert.match(migration,/cron IN \('17 4 \* \* \*','17 8 \* \* \*'\)/);
   assert.doesNotMatch(migration,/DROP |ALTER |ATTACH |PRAGMA /i);
 });
