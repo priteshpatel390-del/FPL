@@ -73,9 +73,9 @@ A1.4 reads exactly one receipt by exact `opportunity_at`. If it is `DISPATCHED`,
 
 - exact run ID;
 - workflow name `Data Steward Read-Only Observer`;
-- workflow path `.github/workflows/data-steward-readonly-observer.yml@main`;
+- workflow path `.github/workflows/data-steward-readonly-observer.yml`;
 - raw event `workflow_dispatch`;
-- head branch `main`;
+- head branch `main`, validated independently through exact `head_branch === "main"`;
 - valid 40-character head SHA;
 - structurally valid run/job state.
 
@@ -160,7 +160,7 @@ The corrected design deliberately prefers false-negative operational alarms over
 
 A notable distributed edge exists between GitHub acceptance and receipt finalization: GitHub could accept the 04:17 workflow dispatch, then the dispatcher's clock-D1 finalization could fail. The GitHub run may exist, but because no valid `DISPATCHED` receipt proves its automatic provenance A1.4 will not trust it. The owner may receive an alert even though a run exists. This is safer than accepting an unrelated manual run as healthy.
 
-The current exact GitHub path validator expects `.github/workflows/data-steward-readonly-observer.yml@main`, consistent with the reviewed GitHub REST contract. Repository tests can prove strict parsing but cannot prove the live API payload until attended acceptance. If the live API represents the same branch path differently, acceptance must stop and the contract must be corrected with evidence rather than weakened generically.
+Accepted live A1.3 run `34346126189` proved that GitHub returns path `.github/workflows/data-steward-readonly-observer.yml` without a ref suffix, while returning branch identity separately as `head_branch: "main"`. The validator pins that proven API shape: exact workflow path and exact `main` branch are both required as independent fields. A fabricated `@main` path suffix is rejected rather than treated as the live API contract.
 
 Exactly-once **external email delivery** is not claimed; the database provides idempotent decision/reservation semantics, while network uncertainty can never prove that an SMTP-like downstream side effect happened exactly once.
 

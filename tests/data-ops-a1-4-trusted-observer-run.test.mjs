@@ -9,7 +9,7 @@ const RUN_ID=34450000001;
 const JOB_ID=102800000001;
 const SHA='0123456789abcdef0123456789abcdef01234567';
 const run=(overrides={})=>({id:RUN_ID,name:'Data Steward Read-Only Observer',
-  path:'.github/workflows/data-steward-readonly-observer.yml@main',event:'workflow_dispatch',
+  path:'.github/workflows/data-steward-readonly-observer.yml',event:'workflow_dispatch',
   head_branch:'main',head_sha:SHA,status:'completed',conclusion:'success',
   created_at:'2026-09-10T04:17:02Z',...overrides});
 const job=(overrides={})=>({id:JOB_ID,name:'observe-production-chain',status:'completed',conclusion:'success',
@@ -50,7 +50,8 @@ test('exact run request is a GET for only the receipt-proven run id',()=>{
 
 test('trusted run decoder requires exact observer identity, workflow path, main and workflow_dispatch',()=>{
   assert.equal(decodeTrustedWorkflowRun(run(),RUN_ID)?.id,RUN_ID);
-  for(const body of [run({id:RUN_ID+1}),run({name:'Other'}),run({path:'.github/workflows/other.yml@main'}),
+  for(const body of [run({id:RUN_ID+1}),run({name:'Other'}),run({path:'.github/workflows/other.yml'}),
+    run({path:'.github/workflows/data-steward-readonly-observer.yml@main'}),
     run({event:'schedule'}),run({head_branch:'feature'}),run({head_sha:'bad'}),run({created_at:'bad'})])
     assert.equal(decodeTrustedWorkflowRun(body,RUN_ID),null);
 });

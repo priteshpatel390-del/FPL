@@ -8,7 +8,7 @@ import {decodeJobs,decodeObserverSummary,GITHUB_EVIDENCE_API_VERSION,GITHUB_EVID
 import {deepFreeze} from './canonical.mjs';
 
 const WORKFLOW_NAME='Data Steward Read-Only Observer';
-const WORKFLOW_PATH='.github/workflows/data-steward-readonly-observer.yml@main';
+const WORKFLOW_PATH='.github/workflows/data-steward-readonly-observer.yml';
 const SHA=/^[0-9a-f]{40}$/;
 const runIdValid=value=>Number.isSafeInteger(value)&&value>0;
 

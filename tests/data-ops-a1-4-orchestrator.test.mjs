@@ -48,7 +48,7 @@ function observerSummary({healthy=true,day='2026-09-10'}={}){
 }
 
 function exactFetch({runId=RUN_ID,opportunity=OPP_0417,health='success',unavailable=false,
-  path='.github/workflows/data-steward-readonly-observer.yml@main'}={}){
+  path='.github/workflows/data-steward-readonly-observer.yml'}={}){
   const calls=[];
   const fetchImpl=async(url,init)=>{
     calls.push({url,method:init.method});
