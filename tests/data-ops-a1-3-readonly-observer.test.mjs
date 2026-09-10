@@ -7,36 +7,27 @@ import {STEWARD_ENVIRONMENT_NAMES} from '../workers/data-steward/sentinels/envir
 
 const workflowPath='.github/workflows/data-steward-readonly-observer.yml';
 const workflow=fs.readFileSync(workflowPath,'utf8');
+const observerDispatcherConfig=JSON.parse(fs.readFileSync(
+  'workers/data-steward-observer-dispatcher/wrangler.jsonc','utf8'));
 const activationDoc=fs.readFileSync('docs/DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md','utf8');
 const securityDoc=fs.readFileSync('docs/SECURITY.md','utf8');
 const stewardFiles=()=>fs.readdirSync('workers/data-steward/sentinels')
   .filter(name=>name.endsWith('.mjs')).map(name=>`workers/data-steward/sentinels/${name}`);
 
-test('dedicated observer workflow declares only two approved UTC opportunities and manual dispatch',()=>{
+test('dedicated observer workflow is manual-capable while Cloudflare owns the one automatic clock',()=>{
   assert.match(workflow,/^name: Data Steward Read-Only Observer$/m);
   assert.match(workflow,/^  workflow_dispatch:$/m);
-  assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),
-    ['17 4 * * *','17 8 * * *']);
-  assert.equal((workflow.match(/^  schedule:$/gm)??[]).length,1);
+  assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),[]);
+  assert.equal((workflow.match(/^  schedule:$/gm)??[]).length,0);
+  assert.deepEqual(observerDispatcherConfig.triggers.crons,['17 4 * * *']);
   assert.match(workflow,/node workers\/data-steward\/run-observer\.mjs/);
 });
 
-test('schedule activation is exact and fail-closed while manual dispatch remains independent',()=>{
+test('workflow execution is exact-main and workflow_dispatch only; no GitHub schedule gate remains',()=>{
   const condition=/if:\s*(.+)/.exec(workflow)?.[1]??'';
-  const enabled=(event,value,ref='refs/heads/main')=>ref==='refs/heads/main'
-    &&(event==='workflow_dispatch'||(event==='schedule'&&value==='true'));
-  assert.match(condition,/github\.ref == 'refs\/heads\/main'/);
-  assert.match(condition,/github\.event_name == 'workflow_dispatch'/);
-  assert.match(condition,/github\.event_name == 'schedule'/);
-  assert.match(condition,/vars\.DATA_STEWARD_SCHEDULED_ENABLED == 'true'/);
-  assert.equal(enabled('schedule',undefined),false);
-  assert.equal(enabled('schedule','TRUE'),false);
-  assert.equal(enabled('schedule','false'),false);
-  assert.equal(enabled('schedule','true'),true);
-  assert.equal(enabled('workflow_dispatch',undefined),true);
-  assert.equal(enabled('workflow_dispatch',undefined,'refs/heads/feature'),false);
-  assert.equal(enabled('workflow_dispatch',undefined,'refs/tags/v1'),false);
-  assert.equal(enabled('schedule','true','refs/heads/feature'),false);
+  assert.equal(condition,"github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'");
+  assert.doesNotMatch(workflow,/github\.event_name == 'schedule'/);
+  assert.doesNotMatch(workflow,/DATA_STEWARD_SCHEDULED_ENABLED/);
 });
 
 test('workflow permissions and protected runtime contract are exact and read-only',()=>{
@@ -47,36 +38,29 @@ test('workflow permissions and protected runtime contract are exact and read-onl
   assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
   assert.match(workflow,/DATA_STEWARD_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
   assert.doesNotMatch(workflow,/\bPAT\b|GITHUB_DISPATCH_TOKEN|CLOUDFLARE_D1_TOKEN|ANTHROPIC|OPENAI|ODDS/i);
-  // No steward runtime credential is declared at job level at all — only step level, scoped to
-  // exactly the step that needs it.
   assert.doesNotMatch(workflow,/^ {4}env:$/m);
 });
 
-test('activation docs require exact-main environment protection before credentials or dispatch',()=>{
+test('activation docs retain protected exact-main observer execution and describe the external clock',()=>{
   for(const text of [activationDoc,securityDoc]){
-    assert.match(text,/Selected branches and tags[^\n]*exact branch `main`/);
-    assert.match(text,/Protected branches\s+only/);
-    assert.match(text,/before[\s\S]{0,80}Cloudflare/i);
-    assert.match(text,/automatically create|automatically created/);
-    assert.match(text,/HTTP 403/);
-    assert.match(text,/owner UI/i);
-    assert.match(text,/absent/);
-    assert.match(text,/(?:created, edited|created\/set|create\/set|creating, editing)/);
-    assert.match(text,/dormant on merge/);
-    assert.doesNotMatch(text,/dormant-on-merge[\s\S]{0,80}(?:remain|is)[\s\S]{0,20}unproven/);
+    assert.match(text,/data-steward-readonly/);
+    assert.match(text,/exact branch `main`|exact `main`/i);
+    assert.match(text,/Cloudflare/i);
+    assert.match(text,/04:17/);
   }
-  assert.match(activationDoc,/exact lowercase `true`/);
-  assert.match(activationDoc,/no variable was created, edited or deleted/i);
-  assert.match(securityDoc,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
+  assert.match(activationDoc,/receipt/i);
+  assert.match(activationDoc,/manual[\s\S]{0,120}(?:cannot|does not|must not)[\s\S]{0,120}(?:heartbeat|automatic)/i);
+  assert.doesNotMatch(activationDoc,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
+  assert.doesNotMatch(securityDoc,/DATA_STEWARD_SCHEDULED_ENABLED=true/);
 });
 
-test('activation docs keep every later live gate separate and unclaimed',()=>{
-  for(const gate of [/Selected branches and tags[^\n]*exact branch `main`/,
-    /Workers Scripts Read/,/D1 Read/,/manual/i,/DATA_STEWARD_SCHEDULED_ENABLED=true/])
-    assert.match(activationDoc,gate);
-  assert.doesNotMatch(activationDoc,
-    /\b(?:environment provisioned|credentials? (?:are|is) provisioned|live acceptance (?:is )?complete|scheduled observer is active|live monitoring is active)\b/i);
-  assert.match(activationDoc,/NOT LIVE-ACTIVATED/);
+test('activation docs keep live provisioning and acceptance distinct from repository merge',()=>{
+  assert.match(activationDoc,/DATA_STEWARD_OBSERVER_DISPATCH_TOKEN/);
+  assert.match(activationDoc,/teamsheet-data-steward-observer-clock/);
+  assert.match(activationDoc,/teamsheet-data-steward-observer-dispatcher/);
+  assert.match(activationDoc,/04:47/);
+  assert.match(activationDoc,/manual/i);
+  assert.doesNotMatch(activationDoc,/\b(?:live acceptance (?:is )?complete|live monitoring is active)\b/i);
 });
 
 test('observer workflow and adapter expose no mutation route',()=>{
@@ -170,11 +154,6 @@ test('migration inventory remains 0001-0003 and production collection surfaces a
   assert.doesNotMatch(workflow,/workers\/data-platform|schedule-dispatcher|production-collection/);
 });
 
-// Live first-run evidence (run 34269989975, head 2f8a4850f911779d2ec48db2f835d0f6af5a45c5) proved
-// GitHub echoes each step's resolved `vars.*` environment in its log header, so the fingerprint
-// leaked into Actions logs before any credential was ever exposed. Owner review then tightened the
-// boundary further: no steward runtime credential of any kind may sit at job level, only the exact
-// step that needs a given value may declare it. This block pins that tightened contract.
 const stepEnvBlock=stepText=>{
   const lines=stepText.split('\n');
   const envIndex=lines.findIndex(line=>line==='        env:');
@@ -196,20 +175,13 @@ test('no steward protected value sits at job level; each step declares only the 
   assert.match(checkoutStep,/^Check out observer source/);
   assert.match(nodeStep,/^Set up exact Node/);
   assert.match(executeStep,/^Execute one read-only observation/);
-
-  // The masking step receives exactly the Account ID and nothing else.
   assert.deepEqual(stepEnvBlock(maskStep),
     ['DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}']);
   assert.doesNotMatch(maskStep,/DATA_STEWARD_GITHUB_TOKEN|DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT|DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
-
-  // Checkout and setup-node receive no steward value of any kind — no step-level env block at all.
   assert.deepEqual(stepEnvBlock(checkoutStep),[]);
   assert.deepEqual(stepEnvBlock(nodeStep),[]);
   assert.doesNotMatch(checkoutStep,/DATA_STEWARD/);
   assert.doesNotMatch(nodeStep,/DATA_STEWARD/);
-
-  // Only the final execution step receives the full runtime contract, and exactly that contract —
-  // fingerprint materialised only here, strictly after the masking step has already run.
   assert.deepEqual(stepEnvBlock(executeStep).sort(),[
     'DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}',
     'DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}',
@@ -231,16 +203,14 @@ test('the masking step derives from the secret account id, fails closed and touc
   assert.doesNotMatch(maskStep,/\buses:/);
 });
 
-test('workflow contract otherwise unchanged by the masking remediation',()=>{
+test('workflow read-only contract is unchanged apart from removing GitHub scheduling',()=>{
   assert.match(workflow,/^name: Data Steward Read-Only Observer$/m);
-  assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),
-    ['17 4 * * *','17 8 * * *']);
+  assert.deepEqual([...workflow.matchAll(/cron:\s*['"]([^'"]+)['"]/g)].map(match=>match[1]),[]);
   assert.match(workflow,/environment:\n      name: data-steward-readonly\n      deployment: false/);
   const permissions=/permissions:\n([\s\S]*?)\n\njobs:/.exec(workflow)?.[1].trim();
   assert.equal(permissions,'contents: read\n  actions: read\n  checks: read');
   assert.doesNotMatch(workflow,/\b(?:write|id-token|deployments|packages|pull-requests|issues):/);
-  assert.match(workflow,
-    /github\.ref == 'refs\/heads\/main' && \(github\.event_name == 'workflow_dispatch' \|\| \(github\.event_name == 'schedule' && vars\.DATA_STEWARD_SCHEDULED_ENABLED == 'true'\)\)/);
+  assert.match(workflow,/github\.ref == 'refs\/heads\/main' && github\.event_name == 'workflow_dispatch'/);
 });
 
 test('no full live fingerprint or account id value appears anywhere in repository text',()=>{
@@ -250,8 +220,6 @@ test('no full live fingerprint or account id value appears anywhere in repositor
     fs.readFileSync('workers/data-steward/sentinels/environment-contract.mjs','utf8'),
     fs.readFileSync('workers/data-steward/sentinels/cloudflare-sentinel.mjs','utf8')];
   for(const text of scanned){
-    // Only a short evidence prefix (7 hex characters) is ever recorded, never the full 64-character
-    // fingerprint or account id.
     assert.doesNotMatch(text,/\bdbc3bff[0-9a-f]{2,}/i);
     assert.doesNotMatch(text,/\bsha256:[0-9a-f]{64}\b/);
   }
