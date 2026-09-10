@@ -44,7 +44,7 @@ test('workflow permissions and protected runtime contract are exact and read-onl
 test('activation docs retain protected exact-main observer execution and describe the external clock',()=>{
   for(const text of [activationDoc,securityDoc]){
     assert.match(text,/data-steward-readonly/);
-    assert.match(text,/exact branch `main`|exact `main`/i);
+    assert.match(text,/exact(?: branch)?[- ]`main`/i);
     assert.match(text,/Cloudflare/i);
     assert.match(text,/04:17/);
   }
