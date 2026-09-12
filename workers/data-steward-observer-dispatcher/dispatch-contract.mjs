@@ -51,5 +51,13 @@ export function classifyObserverDispatchResponse({status,body=null}={}){
 export function validateScheduledOpportunity({scheduledTime,cron}){
   if(!Number.isSafeInteger(scheduledTime)||scheduledTime<0||cron!==OBSERVER_CRON)return false;
   const when=new Date(scheduledTime);
-  return when.getUTCMinutes()===17&&when.getUTCHours()===4&&when.getUTCSeconds()===0;
+  return !Number.isNaN(when.getTime())&&when.getUTCMinutes()===17&&when.getUTCHours()===4;
+}
+
+export function observerOpportunityAt(scheduledTime){
+  if(!Number.isSafeInteger(scheduledTime)||scheduledTime<0)return null;
+  const when=new Date(scheduledTime);
+  if(Number.isNaN(when.getTime()))return null;
+  when.setUTCSeconds(0,0);
+  return when.toISOString();
 }

@@ -1,3 +1,28 @@
+<!-- DATA-OPS-A1-3-2026-09-12-LOGICAL-MINUTE-REMEDIATION -->
+### Current Data-Ops checkpoint — A1.3 logical-minute remediation after two natural failures
+
+**This block supersedes conflicting current-status claims below; older blocks remain historical.**
+PR #242 merged as `dd6b28f7e29ded41b07a4efec33c75deb15d4490`, after which the first two genuine
+Cloudflare 04:17 opportunities both reached `teamsheet-data-steward-observer-dispatcher` with exact
+Cron `17 4 * * *` but failed at `observer_dispatch_schedule_invalid`: 11 September telemetry
+represented scheduled time as `2026-09-11T04:17:04Z`; 12 September represented it as
+`2026-09-12T04:17:40Z`. The deployed validator incorrectly required UTC second zero, so both
+invocations threw before timestamp construction, D1 claim, token access or GitHub dispatch. Both
+days have no receipt and no observer workflow run.
+
+This owner-approved repository remediation accepts any valid millisecond timestamp in the exact
+04:17 UTC minute, retains exact Cron/hour/minute checks, and normalizes every delivery in that minute
+to the durable logical opportunity key `YYYY-MM-DDT04:17:00.000Z`. Actual `claimed_at`, atomic D1
+claim, `controller.noRetry()`, one fixed GitHub request, exact returned run-ID finalization and all
+fail-closed boundaries remain. Pre-claim failures now log only closed sanitized reason codes and safe
+validation booleans before rethrowing. No live deployment occurs in this change.
+
+A1.4 remains unchanged. No watchdog event or invocation was present in narrow Workers Observability
+queries around either 11 or 12 September 04:47; watchdog D1 remained empty on 12 September. This is
+a repeated natural scheduler/delivery failure requiring separate Cloudflare investigation, not an
+A1.4 code or architecture change. A1.3 and A1.4 remain not live-accepted until a post-merge,
+post-deployment genuine 04:17 receipt/run and 04:47 watchdog evaluation complete.
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ### Current Data-Ops checkpoint — single daily Cloudflare clocks (draft PR #242)
 

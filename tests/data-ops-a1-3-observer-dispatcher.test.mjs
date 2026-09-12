@@ -5,7 +5,7 @@ import dispatcher,{runObserverScheduledDispatch}
   from '../workers/data-steward-observer-dispatcher/dispatcher.mjs';
 import {AMBIGUOUS,DISPATCHED,DUPLICATE,FAILED,OBSERVER_CLOCK_DB_BINDING,OBSERVER_CRON,
   OBSERVER_DISPATCH_BODY,OBSERVER_DISPATCH_REPOSITORY,OBSERVER_DISPATCH_TOKEN_BINDING,
-  OBSERVER_DISPATCH_URL,observerDispatchRequest}
+  OBSERVER_DISPATCH_URL,observerDispatchRequest,observerOpportunityAt,validateScheduledOpportunity}
   from '../workers/data-steward-observer-dispatcher/dispatch-contract.mjs';
 
 const DIR='workers/data-steward-observer-dispatcher';
@@ -15,12 +15,13 @@ const source=fs.readdirSync(DIR,{withFileTypes:true}).flatMap(entry=>entry.isDir
 const SCHEDULED=Date.UTC(2026,8,10,4,17,0);
 const RUN_ID=34450000001;
 
-function fakeDb({claim=true,finalize=true}={}){
+function fakeDb({claim=true,claimError=null,finalize=true}={}){
   const state={claims:[],finals:[]};
   return {state,prepare(sql){
     return {bind(...args){
       return {async run(){
         if(sql.startsWith('INSERT INTO observer_dispatch_receipts')){
+          if(claimError)throw new Error(claimError);
           state.claims.push(args);return {success:true,meta:{changes:claim?1:0}};
         }
         if(sql.startsWith('UPDATE observer_dispatch_receipts')){
@@ -92,7 +93,15 @@ test('dispatch contract is fixed to the read-only observer on main with no workf
 });
 
 test('noRetry happens before the one outbound dispatch and exact returned run identity is receipted',async()=>{
-  const db=fakeDb();const control=controller();let noRetryAtRequest;
+  const db=fakeDb();const control=controller();let noRetryAtClaim;let noRetryAtRequest;
+  const prepare=db.prepare.bind(db);
+  db.prepare=sql=>{
+    const statement=prepare(sql);
+    if(!sql.startsWith('INSERT INTO observer_dispatch_receipts'))return statement;
+    return {bind(...args){const bound=statement.bind(...args);return {async run(){
+      noRetryAtClaim=control.state.noRetry;return bound.run();
+    }};}};
+  };
   const calls=[];const logs=[];const original=console.log;console.log=line=>logs.push(line);
   try{
     const result=await runObserverScheduledDispatch({controller:control.value,
@@ -102,6 +111,7 @@ test('noRetry happens before the one outbound dispatch and exact returned run id
     assert.equal(result.dispatch,DISPATCHED);
   }finally{console.log=original;}
   assert.equal(control.state.noRetry,1);
+  assert.equal(noRetryAtClaim,1);
   assert.equal(noRetryAtRequest,1);
   assert.equal(calls.length,1);
   assert.equal(db.state.claims.length,1);
@@ -154,6 +164,66 @@ test('wrong cron or logical time fails before any claim or outbound request',asy
       fetchImpl:async()=>{calls+=1;return response(200,identity(RUN_ID));}}));
     assert.equal(calls,0);assert.equal(db.state.claims.length,0);assert.equal(control.state.noRetry,1);
   }
+});
+
+test('observer opportunity accepts the full 04:17 minute and normalizes one logical key',()=>{
+  const at=milliseconds=>Date.UTC(2026,8,12,4,17,0,milliseconds);
+  for(const scheduledTime of [at(0),at(4741),Date.UTC(2026,8,12,4,17,59,999)]){
+    assert.equal(validateScheduledOpportunity({scheduledTime,cron:OBSERVER_CRON}),true);
+    assert.equal(observerOpportunityAt(scheduledTime),'2026-09-12T04:17:00.000Z');
+  }
+  for(const scheduledTime of [Date.UTC(2026,8,12,4,16,59,999),Date.UTC(2026,8,12,4,18)])
+    assert.equal(validateScheduledOpportunity({scheduledTime,cron:OBSERVER_CRON}),false);
+});
+
+test('observer opportunity rejects wrong cron and invalid timestamps',()=>{
+  assert.equal(validateScheduledOpportunity({scheduledTime:SCHEDULED,cron:'17 8 * * *'}),false);
+  for(const scheduledTime of ['not-a-number',Number.MAX_SAFE_INTEGER+1,-1]){
+    assert.equal(validateScheduledOpportunity({scheduledTime,cron:OBSERVER_CRON}),false);
+    assert.equal(observerOpportunityAt(scheduledTime),null);
+  }
+  assert.equal(validateScheduledOpportunity({scheduledTime:Number.MAX_SAFE_INTEGER,cron:OBSERVER_CRON}),false);
+  assert.equal(observerOpportunityAt(Number.MAX_SAFE_INTEGER),null);
+});
+
+test('two deliveries in one 04:17 minute share one claim and duplicate dispatches nothing',async()=>{
+  const seen=new Set();
+  const db=fakeDb();
+  const prepare=db.prepare.bind(db);
+  db.prepare=sql=>{
+    const statement=prepare(sql);
+    if(!sql.startsWith('INSERT INTO observer_dispatch_receipts'))return statement;
+    return {bind(...args){return {async run(){
+      db.state.claims.push(args);
+      if(seen.has(args[0]))return {success:true,meta:{changes:0}};
+      seen.add(args[0]);return {success:true,meta:{changes:1}};
+    }};}};
+  };
+  const first=await fire({db,control:controller({scheduledTime:SCHEDULED+4000})});
+  const second=await fire({db,control:controller({scheduledTime:SCHEDULED+59000})});
+  assert.equal(first.result.dispatch,DISPATCHED);
+  assert.equal(second.result.dispatch,DUPLICATE);
+  assert.equal(first.calls.length,1);assert.equal(second.calls.length,0);
+  assert.equal(db.state.claims[0][0],new Date(SCHEDULED).toISOString());
+  assert.equal(db.state.claims[1][0],new Date(SCHEDULED).toISOString());
+});
+
+test('pre-claim failures log only closed sanitized diagnostics and still rethrow',async()=>{
+  const raw='raw token-like persistence detail';
+  const failed=await fire({db:fakeDb({claimError:raw})});
+  assert.equal(failed.error.message,'observer_clock_claim_failed');
+  assert.deepEqual(failed.logs,[JSON.stringify({dispatch:FAILED,reason:'observer_clock_claim_failed'})]);
+  assert.doesNotMatch(failed.logs.join('\n'),/raw|token-like|persistence detail/i);
+
+  const missing=await fire({db:null});
+  assert.equal(missing.error.message,'observer_clock_db_missing');
+  assert.deepEqual(missing.logs,[JSON.stringify({dispatch:FAILED,reason:'observer_clock_db_missing'})]);
+
+  const invalid=await fire({control:controller({scheduledTime:'secret timestamp'})});
+  assert.equal(invalid.error.message,'observer_dispatch_timestamp_invalid');
+  assert.deepEqual(JSON.parse(invalid.logs[0]),{dispatch:FAILED,
+    reason:'observer_dispatch_timestamp_invalid',cronMatched:true,hourMatched:false,minuteMatched:false});
+  assert.doesNotMatch(invalid.logs.join('\n'),/secret timestamp/);
 });
 
 test('package imports stay local and contain no provider, collector or repair authority',()=>{
