@@ -2,24 +2,41 @@
 // One 04:17 UTC opportunity. One GitHub workflow_dispatch attempt. No retry, no public fetch surface.
 // The exact workflow run id returned by GitHub is persisted into a dedicated receipt database so
 // A1.4 can distinguish this automatic run from ordinary manual workflow_dispatch runs.
-import {AMBIGUOUS,DISPATCHED,DUPLICATE,FAILED,OBSERVER_CLOCK_DB_BINDING,
+import {AMBIGUOUS,DISPATCHED,DUPLICATE,FAILED,OBSERVER_CLOCK_DB_BINDING,OBSERVER_CRON,
   OBSERVER_DISPATCH_TIMEOUT_MS,OBSERVER_DISPATCH_TOKEN_BINDING,classifyObserverDispatchResponse,
-  observerDispatchRequest,validateScheduledOpportunity} from './dispatch-contract.mjs';
+  observerDispatchRequest,observerOpportunityAt,validateScheduledOpportunity} from './dispatch-contract.mjs';
 import {claimObserverOpportunity,finalizeObserverOpportunity} from './persistence.mjs';
 
 const iso=value=>new Date(value).toISOString();
+const diagnostic=(reason,details={})=>console.log(JSON.stringify({dispatch:FAILED,reason,...details}));
 
 export async function runObserverScheduledDispatch({controller,env,fetchImpl=fetch,now=Date.now}={}){
   controller?.noRetry?.();
   const scheduledTime=controller?.scheduledTime;
   const cron=controller?.cron;
-  if(!validateScheduledOpportunity({scheduledTime,cron}))throw new Error('observer_dispatch_schedule_invalid');
+  if(!validateScheduledOpportunity({scheduledTime,cron})){
+    const when=Number.isSafeInteger(scheduledTime)&&scheduledTime>=0?new Date(scheduledTime):null;
+    const timestampValid=when!==null&&!Number.isNaN(when.getTime());
+    const reason=timestampValid?'observer_dispatch_schedule_invalid':'observer_dispatch_timestamp_invalid';
+    diagnostic(reason,{cronMatched:cron===OBSERVER_CRON,hourMatched:timestampValid&&when.getUTCHours()===4,
+      minuteMatched:timestampValid&&when.getUTCMinutes()===17});
+    throw new Error(reason);
+  }
 
   const db=env?.[OBSERVER_CLOCK_DB_BINDING];
   const token=env?.[OBSERVER_DISPATCH_TOKEN_BINDING];
-  const opportunityAt=iso(scheduledTime);
-  const claimedAt=iso(now());
-  const claim=await claimObserverOpportunity(db,{opportunityAt,cron,claimedAt});
+  const opportunityAt=observerOpportunityAt(scheduledTime);
+  let claimedAt;
+  try{claimedAt=iso(now());}
+  catch{diagnostic('observer_dispatch_timestamp_invalid');throw new Error('observer_dispatch_timestamp_invalid');}
+  let claim;
+  try{claim=await claimObserverOpportunity(db,{opportunityAt,cron,claimedAt});}
+  catch(error){
+    const reason=error?.code==='observer_clock_db_missing'
+      ?'observer_clock_db_missing':'observer_clock_claim_failed';
+    diagnostic(reason);
+    throw new Error(reason);
+  }
   if(!claim.claimed){
     console.log(JSON.stringify({dispatch:DUPLICATE,reason:'observer_dispatch_opportunity_already_claimed'}));
     return Object.freeze({dispatch:DUPLICATE,reason:'observer_dispatch_opportunity_already_claimed'});

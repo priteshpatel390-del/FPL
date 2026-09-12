@@ -1,10 +1,23 @@
 # DATA-OPS A1.4 — Persistent Incident Lifecycle + Independent Watchdog
 
-## Current status — 10 September 2026
+## Current status — 12 September 2026
 
-**Repository correction candidate: draft PR #242. Not deployed, not provisioned and not live-accepted under this corrected architecture.**
+**Deployed but NOT LIVE-ACCEPTED. A1.4 behavior is unchanged by the A1.3 logical-minute remediation.**
 
-PR #240 is merged on `main` as `e358982baef10911c51c00393e02a223716e7943` and established the persistent incident lifecycle/watchdog foundation. PR #242 is the owner-approved simplification and clock correction before live activation. It replaces the old design assumptions of two A1.3 opportunities, five-hour GitHub delivery grace and four watchdog checks per day.
+Two pre-remediation natural opportunities now provide consistent negative infrastructure evidence.
+Narrow persisted Workers Observability queries around 11 September and 12 September 04:47 returned
+zero events and zero invocations for `teamsheet-data-steward-watchdog`. On 12 September the watchdog
+D1 again contained no scheduled claim, bootstrap, observation, attribution, incident or notification.
+The exact `47 4 * * *` trigger had been active far beyond Cloudflare's documented propagation window.
+This is a repeated natural scheduler/delivery failure: the watchdog handler did not run and therefore
+did not classify the missing A1.3 receipt or exercise its negative-path lifecycle. Available evidence
+does not distinguish scheduler-event creation failure from pre-invocation delivery loss.
+
+No A1.4 scheduler, lifecycle, notification, authority or architecture change is part of the A1.3
+remediation. The repeated miss should be taken separately to Cloudflare. A1.4 remains not
+live-accepted until a genuine 04:47 event evaluates the paired trusted 04:17 evidence.
+
+PR #240 merged on `main` as `e358982baef10911c51c00393e02a223716e7943` and established the persistent incident lifecycle/watchdog foundation. PR #242 later merged the owner-approved simplification and clock correction. It replaced the old design assumptions of two A1.3 opportunities, five-hour GitHub delivery grace and four watchdog checks per day.
 
 The incident lifecycle, notification deduplication/retry, bounded evidence processing, isolated watchdog state and no-repair boundary remain. What changes is how A1.4 knows which automatic A1.3 run belongs to the day.
 

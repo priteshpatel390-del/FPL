@@ -1,10 +1,35 @@
 # DATA-OPS A1.3 — Live Read-Only Observer
 
-## Current status — 10 September 2026
+## Current status — 12 September 2026
 
-**Repository correction candidate: draft PR #242. NOT LIVE-ACTIVATED under the corrected automatic-clock design.**
+**Logical-minute remediation candidate after two failed genuine natural fires. NOT LIVE-ACCEPTED.**
 
-A1.3's read-only observer runtime was previously accepted through an attended manual GitHub Actions run on 9 September 2026. That historical proof remains valid for the observer runtime itself. The automatic scheduling architecture is being corrected in PR #242 before scheduled activation: GitHub Actions remains the execution engine, while a dedicated Cloudflare Worker becomes the sole automatic clock.
+PR #242 merged as `dd6b28f7e29ded41b07a4efec33c75deb15d4490` and its exact source/configuration
+was deployed before the first natural opportunities. Persisted Cloudflare Workers Observability
+evidence established the exact failure:
+
+- 11 September: exact Cron `17 4 * * *`, represented scheduled time
+  `2026-09-11T04:17:04Z`, `observer_dispatch_schedule_invalid` at `dispatcher.mjs:16`;
+- 12 September: exact Cron `17 4 * * *`, represented scheduled time
+  `2026-09-12T04:17:40Z`, the same exception at the same source line;
+- both invocations ended in one millisecond before D1 claim, token access or GitHub dispatch;
+- both days have no observer receipt and no observer GitHub workflow run.
+
+The confirmed defect was an invalid assumption that genuine Cron delivery would always expose a
+scheduled timestamp whose UTC seconds equal zero. The corrected contract requires a safe,
+non-negative millisecond timestamp, exact Cron, UTC hour 04 and UTC minute 17, but accepts any second
+and millisecond within that minute. Before claiming D1 it normalizes the durable logical opportunity
+to exact `YYYY-MM-DDT04:17:00.000Z`; `claimed_at` remains actual execution time. Multiple deliveries
+inside one 04:17 minute therefore contend on the same primary key and cannot dispatch twice.
+
+Pre-claim failures now emit only closed sanitized diagnostics (`observer_dispatch_schedule_invalid`,
+`observer_dispatch_timestamp_invalid`, `observer_clock_db_missing`, or
+`observer_clock_claim_failed`) plus safe validation booleans where relevant, then rethrow. They log
+no token, account/database identity, arbitrary exception, GitHub body, provider or user data.
+No Worker deployment, live configuration change or natural acceptance is claimed by this repository
+candidate.
+
+A1.3's read-only observer runtime was previously accepted through an attended manual GitHub Actions run on 9 September 2026. That historical proof remains valid for the observer runtime itself. PR #242 subsequently made a dedicated Cloudflare Worker the sole automatic clock while retaining GitHub Actions as the observer execution engine; the natural evidence above exposed the logical-second defect in that merged implementation.
 
 This correction does not add a provider, change Official FPL acquisition or retention, alter a production D1 schema, change any projection/model/calculation logic, or add repair authority.
 
