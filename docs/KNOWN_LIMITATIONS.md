@@ -1,5 +1,9 @@
 # KNOWN_LIMITATIONS.md
 
+## EIA-2I1 API-Football limitations
+
+No real credential or provider response was used. Current 2026/27 coverage, target-competition numeric IDs, endpoint fields, correction behavior, quota headers and free-tier sufficiency are unproven. Direct minutes are accepted when valid; missing minutes are not reconstructed. Foundation has no live collector or D1 persistence path and cannot affect production decisions. Owner risk acceptance is private/non-commercial only, is not complete underlying-rights proof, and cannot support redistribution or public/commercial release. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current limitations — corrected automatic clock, draft PR #242
 

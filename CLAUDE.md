@@ -1,3 +1,8 @@
+<!-- EIA-2I1-2026-09-14 -->
+### Current external-intelligence checkpoint — EIA-2I1 API-Football private-use shadow foundation
+
+EIA-2I1 adds a disabled, server-side-capable API-Football adapter for normalized non-Premier-League workload research and the narrow `owner_risk_accepted_private_use` classification. Pritesh accepts residual underlying-rights uncertainty only for private, non-commercial, one-user research; this is not full legal clearance, permits no redistribution/raw-payload warehouse/public/commercial use, and must stop on objection. Direct minutes only; missing evidence remains unknown. Explicit competition configuration, versioned provider-ID mappings, a 100-request/day ceiling, sanitized failures and structural isolation keep it shadow-only. No account, credential, live request, D1 mutation/migration, schedule, deployment, model, recommendation or UI change occurred. Real 2026/27 coverage and free-tier sufficiency remain pending. See [EIA-2I1](docs/EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-2026-09-12-LOGICAL-MINUTE-REMEDIATION -->
 ### Current Data-Ops checkpoint — A1.3 logical-minute remediation after two natural failures
 

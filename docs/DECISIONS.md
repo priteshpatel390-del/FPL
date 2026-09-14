@@ -1,5 +1,9 @@
 # DECISIONS.md — Architectural decision record
 
+## D-EIA-2I1 · 14 September 2026 · Accepted · API-Football may support private shadow workload under explicit owner risk acceptance
+
+Pritesh accepts unresolved underlying third-party rights risk for narrowly normalized API-Football facts used only in private, non-commercial, one-user research. `owner_risk_accepted_private_use` is valid only for exact API-Football/EIA-2I1 metadata; normalized retention is allowed, but redistribution, public/commercial use and raw-payload retention are not. Objection stops collection/use pending review. Prior research-only blocking was correct under the former stricter standard and remains historical truth. Foundation stays disabled, direct-minutes-only and shadow-isolated; live qualification needs a separate gate. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Decision — one Cloudflare-owned daily chain (draft PR #242)
 

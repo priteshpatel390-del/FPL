@@ -1,5 +1,9 @@
 # ARCHITECTURE.md
 
+## EIA-2I1 API-Football shadow architecture
+
+EIA-2I1 adds only pure Decision Intelligence modules: narrow owner-risk rights validation plus an injected-fetch API-Football decoder/normalizer. Explicit competition configuration and exactly one verified provider-ID mapping revision are required. Client mode is `disabled_post_match_only`, budget is capped at 100 requests/day, responses are transient, and failures are sanitized. No application/model import, browser path, Worker binding, scheduler, production D1 write or raw-payload store exists. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current Data-Ops architecture — draft PR #242
 

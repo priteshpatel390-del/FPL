@@ -1,5 +1,9 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## EIA-2I1 checkpoint — API-Football private-use shadow foundation
+
+Repository foundation is implemented but disabled. Rights metadata, injected-fetch client, strict decoding, direct-minutes workload normalization, explicit competition configuration, verified identity mapping, daily request budget, secret sanitization and deterministic tests are in scope. Attended credentialed free-account qualification is next and separately gated; live collection, D1 mutation, scheduling, deployment and model influence remain unapproved. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current checkpoint — single daily clocks, draft PR #242
 
