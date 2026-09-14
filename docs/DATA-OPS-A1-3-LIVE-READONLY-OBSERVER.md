@@ -1,5 +1,28 @@
 # DATA-OPS A1.3 — Live Read-Only Observer
 
+## Current status — 14 September 2026
+
+**LIVE ACCEPTED on the genuine automatic positive path. This block supersedes the 12 September current-status block below, which is retained as historical evidence.**
+
+PR #243 merged as exact `main` commit `955427106a13c71f451c1d621f596c206cf28a6f`. The corrected A1.3 dispatcher was then deployed as Worker version `f0026aab-e21b-48e3-a1e0-93f09534e9dc` without changing its single Cron, D1 binding, secret boundary, public-route state or retry discipline.
+
+On 14 September the first post-remediation genuine 04:17 Cloudflare opportunity proved the correction in production:
+
+- Worker `teamsheet-data-steward-observer-dispatcher` received exact Cron `17 4 * * *`;
+- Cloudflare represented scheduled time as `2026-09-14T04:17:40Z`, again with non-zero seconds;
+- the invocation completed with outcome `ok`;
+- D1 receipt opportunity normalized to `2026-09-14T04:17:00.000Z`;
+- receipt state was `DISPATCHED` with reason `observer_dispatch_accepted`;
+- exact returned GitHub run ID was `34805502138`;
+- receipt was claimed at `2026-09-14T04:17:44.087Z` and finalized at `2026-09-14T04:17:46.660Z`;
+- the exact GitHub observer run executed on branch `main`, head SHA `955427106a13c71f451c1d621f596c206cf28a6f`, and concluded `success`;
+- the observer semantic summary was `HEALTHY`, heartbeat `COMPLETE`, `escalationRequired:false`, with Cloudflare, D1 and GitHub sentinels all `OBSERVED`;
+- the paired natural A1.4 04:47 watchdog later validated this exact receipt-proven run as `SUCCESS` / `OBSERVER_HEARTBEAT_HEALTHY`.
+
+This satisfies the A1.3 live acceptance chain defined below: genuine Cloudflare schedule -> normalized durable receipt -> exact GitHub observer run on `main` -> healthy read-only observer summary -> A1.4 exact-run classification.
+
+The natural evidence is recorded in `docs/DATA-OPS-A1-4-LIVE-ACCEPTANCE-CLOSEOUT.md`. No provider, Official FPL acquisition/retention, production D1 schema, projection/model/calculation or repair-authority change is part of this closeout.
+
 ## Current status — 12 September 2026
 
 **Logical-minute remediation candidate after two failed genuine natural fires. NOT LIVE-ACCEPTED.**
