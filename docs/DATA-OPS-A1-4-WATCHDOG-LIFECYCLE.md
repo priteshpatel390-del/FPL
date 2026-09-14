@@ -1,5 +1,37 @@
 # DATA-OPS A1.4 — Persistent Incident Lifecycle + Independent Watchdog
 
+## Current status — 14 September 2026
+
+**LIVE ACCEPTED on the genuine automatic positive healthy path. This block supersedes the 12 September current-status block below, which is retained as historical evidence.**
+
+The first complete post-remediation natural chain succeeded on exact `main` commit `955427106a13c71f451c1d621f596c206cf28a6f`.
+
+At 04:17 UTC the corrected A1.3 dispatcher accepted a genuine non-zero-second Cloudflare scheduled event, normalized the logical opportunity to `2026-09-14T04:17:00.000Z`, finalized a `DISPATCHED` receipt pointing to GitHub run `34805502138`, and that observer run concluded `success` with semantic result `HEALTHY`, heartbeat `COMPLETE`, `escalationRequired:false`.
+
+At 04:47 UTC the genuine A1.4 Cloudflare Cron then executed successfully:
+
+- Worker: `teamsheet-data-steward-watchdog`;
+- natural-event Worker version: `cd73bce0-56b1-4835-b6af-7321021577fa`;
+- exact Cron: `47 4 * * *`;
+- represented scheduled time: `2026-09-14T04:47:14Z`;
+- Cloudflare outcome: `ok`;
+- scheduled claim persisted for `2026-09-14T04:47:14.000Z`, claimed at `2026-09-14T04:47:15.061Z`;
+- observation source kind `scheduled_run`, logical event type `schedule`, workflow run ID `34805502138`, run attempt `1`;
+- exact opportunity `2026-09-14T04:17:00.000Z` and exact head SHA `955427106a13c71f451c1d621f596c206cf28a6f`;
+- `health_state = SUCCESS`;
+- `reason_code = OBSERVER_HEARTBEAT_HEALTHY`;
+- durable evidence hash persisted;
+- `watchdog_incidents` contained no rows after the healthy evaluation;
+- `watchdog_notifications` contained no rows after the healthy evaluation.
+
+This proves the positive healthy path end-to-end: exact receipt-proven automatic observer evidence was consumed by the genuine 04:47 watchdog and correctly produced a healthy classification with no incident or notification side effect.
+
+The previous 11 and 12 September evidence remains historically valid: in those narrow windows no A1.4 event or invocation was observed. The available evidence did not identify the internal Cloudflare cause. The 14 September natural event demonstrates that the configured trigger can be delivered and that the deployed watchdog path works when invoked; do not rewrite the earlier two misses as a proven code defect or claim a Cloudflare root cause that was never established.
+
+The exact evidence and limits of this acceptance are recorded in `docs/DATA-OPS-A1-4-LIVE-ACCEPTANCE-CLOSEOUT.md`.
+
+This live acceptance proves the positive healthy path. It does not naturally exercise every negative lifecycle/notification branch. Missing/failed/ambiguous observer evidence, incident transitions, email transport failure and retry remain governed by the implemented contracts and repository tests unless separately exercised under a future safe acceptance plan. No A1.5, autonomous repair, retry, rerun, deploy or wider mutation authority is implied.
+
 ## Current status — 12 September 2026
 
 **Deployed but NOT LIVE-ACCEPTED. A1.4 behavior is unchanged by the A1.3 logical-minute remediation.**
