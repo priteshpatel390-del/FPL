@@ -1,6 +1,6 @@
 import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
 import {eia1SecretFinding} from './eia1-safety.mjs';
-import {classifyRights,OWNER_RISK_PRIVATE_USE} from './rights.mjs';
+import {classifyRights,OWNER_RISK_PRIVATE_USE,OWNER_RISK_PROVIDER} from './rights.mjs';
 
 export const EIA1_WORKLOAD_VERSION='1.0.0';
 const RIGHTS=new Set(['durable_allowed','attribution_required','local_research_only','durable_blocked','unknown_fail_closed',OWNER_RISK_PRIVATE_USE]);
@@ -11,6 +11,7 @@ export async function normaliseWorkloadObservation(raw,{cryptoImpl=globalThis.cr
   fail(Boolean(eia1SecretFinding(raw)),'secret_material');
   fail(raw?.schemaVersion!=='eia1-workload-observation-v1','schema');fail(!RIGHTS.has(raw.rights?.classification),'rights');
   const rights=classifyRights(raw.rights);
+  fail(rights.classification===OWNER_RISK_PRIVATE_USE&&raw.source?.sourceKey!==OWNER_RISK_PROVIDER,'rights_source_mismatch');
   fail(raw.rights.classification!=='local_research_only'&&!(rights.valid&&rights.classification===OWNER_RISK_PRIVATE_USE&&rights.retentionAllowed),'retention_not_fail_closed');fail(!STATUS.has(raw.participation?.status),'status');
   const status=raw.participation.status,minutes=nullableNumber(raw.participation.minutes);
   fail(minutes!=null&&(minutes<0||minutes>130),'minutes');fail(status==='not_used'&&minutes!==0,'not_used_minutes');

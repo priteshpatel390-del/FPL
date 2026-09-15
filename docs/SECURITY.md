@@ -2,7 +2,7 @@
 
 ## EIA-2I1 API-Football secret boundary
 
-API-Football credentials are server-side inputs only and travel only in the `x-apisports-key` header. The disabled adapter has no environment reader, logger, browser import, persistence capability or default network transport. Injected-fetch tests require key material to stay out of URLs, normalized observations, safe errors and generated application artefacts. Missing credentials disable collection; raw responses remain transient. No Worker secret or deployed configuration changed. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+API-Football credentials are server-side inputs only and travel only in the `x-apisports-key` header to exact HTTPS origin `https://v3.football.api-sports.io`. R1 removes configurable origins and admits only `fixtures`, `fixtures/lineups`, `fixtures/players` and `fixtures/events`, with endpoint-specific provider-ID parameters. Absolute, protocol-relative, wrong-scheme and unknown paths fail before budget use, header construction or fetch. The disabled adapter has no environment reader, logger, browser import, persistence capability or default network transport. Injected-fetch tests require key material to stay out of URLs, normalized observations, safe errors and generated application artefacts. Missing credentials disable collection; raw responses remain transient. No Worker secret or deployed configuration changed. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
 
 <!-- DATA-OPS-A1-4-2026-09-09-SET-ATTRIBUTION -->
 ## A1.4 set-based opportunity attribution correction (PR #240, draft and unmerged)

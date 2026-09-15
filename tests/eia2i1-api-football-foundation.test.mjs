@@ -2,24 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_DAILY_REQUEST_LIMIT,API_FOOTBALL_SOURCE_KEY,API_FOOTBALL_TARGET_COMPETITIONS,
+  API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_DAILY_REQUEST_LIMIT,API_FOOTBALL_ENDPOINTS,API_FOOTBALL_ORIGIN,API_FOOTBALL_SOURCE_KEY,API_FOOTBALL_TARGET_COMPETITIONS,
   buildApiFootballWorkloadObservation,createApiFootballClient,createDailyRequestBudget,
-  decodeApiFootballResponse,resolveApiFootballCompetition,resolveApiFootballIdentity
+  decodeApiFootballResponse,resolveApiFootballCompetition,resolveApiFootballFplIdentity
 } from '../src/decision-intelligence/api-football-foundation.mjs';
 import {classifyRights,persistenceDecision,RIGHTS_CLASSIFICATIONS} from '../src/decision-intelligence/rights.mjs';
+import {normaliseWorkloadObservation} from '../src/decision-intelligence/eia1-workload-contract.mjs';
 
 const ownerRights=()=>({classification:'owner_risk_accepted_private_use',provider:'api-football',ownerApprovalId:'EIA-2I1',allowedUse:'private_noncommercial_research',retentionAllowed:true,redistributionAllowed:false,publicUseAllowed:false,commercialUseAllowed:false,rawPayloadRetentionAllowed:false,stopOnObjection:true,attributionRequired:false});
 const envelope=(get,response)=>({get,parameters:{fixture:'9001'},errors:{},results:response.length,paging:{current:1,total:1},response});
-const fixture=(status='FT')=>envelope('fixtures',[{fixture:{id:9001,date:'2026-09-01T19:00:00Z',status:{short:status}},league:{id:44,name:'Configured Cup'},teams:{home:{id:10},away:{id:20}}}]);
+const fixture=({status='FT',duration=90}={})=>envelope('fixtures',[{fixture:{id:9001,date:'2026-09-01T19:00:00Z',status:{short:status,...(duration===undefined?{}:{elapsed:duration})}},league:{id:44,name:'Configured Cup'},teams:{home:{id:10},away:{id:20}}}]);
 const lineups=({starter=true,bench=false}={})=>envelope('fixtures/lineups',[{team:{id:10},startXI:starter?[{player:{id:7,name:'Same Name'}}]:[],substitutes:bench?[{player:{id:7,name:'Same Name'}}]:[]}]);
 const players=minutes=>envelope('fixtures/players',[{team:{id:10},players:minutes==='absent'?[]:[{player:{id:7,name:'Same Name'},statistics:[{games:{minutes}}]}]}]);
 const events=(rows=[])=>envelope('fixtures/events',rows);
 const mappings=()=>[
   {provider:'api-football',providerEntityType:'player',providerEntityId:'7',canonicalFplId:'2026-27:fpl:player:351',mappingRevision:'p1',status:'verified'},
-  {provider:'api-football',providerEntityType:'team',providerEntityId:'10',canonicalFplId:'2026-27:fpl:team:1',mappingRevision:'t1',status:'verified'},
-  {provider:'api-football',providerEntityType:'fixture',providerEntityId:'9001',canonicalFplId:'2026-27:fpl:fixture:500',mappingRevision:'f1',status:'verified'}
+  {provider:'api-football',providerEntityType:'team',providerEntityId:'10',canonicalFplId:'2026-27:fpl:team:1',mappingRevision:'t1',status:'verified'}
 ];
-const competitions=()=>[{provider:'api-football',providerLeagueId:'44',targetCompetition:'fa_cup',canonicalCompetitionId:'2026-27:fpl:competition:44',competitionName:'FA Cup',enabled:true,provenance:'owner-reviewed-config-v1'}];
+const competitions=()=>[{provider:'api-football',providerLeagueId:'44',targetCompetition:'fa_cup',competitionName:'FA Cup',enabled:true,provenance:'owner-reviewed-config-v1'}];
 const input=(overrides={})=>({fixtureResponse:fixture(),lineupResponse:lineups(),playersResponse:players(90),eventsResponse:events(),providerPlayerId:7,providerTeamId:10,identityMappings:mappings(),competitionConfig:competitions(),fetchedAt:'2026-09-01T22:00:00Z',sourceRevision:'api-football-r1',rights:ownerRights(),...overrides});
 
 test('owner-risk rights are narrow, retainable, non-redistributable and malformed records fail closed',()=>{
@@ -38,12 +38,14 @@ test('existing rights behaviour remains fail closed',()=>{
   assert.equal(classifyRights({classification:'invented',retentionAllowed:true,attributionRequired:false}).classification,'unknown_fail_closed');
 });
 
-test('identity mapping requires one verified provider-ID target and never uses names',()=>{
-  assert.equal(resolveApiFootballIdentity(mappings(),{providerEntityType:'player',providerEntityId:7}).canonicalFplId,'2026-27:fpl:player:351');
-  assert.equal(resolveApiFootballIdentity([],{providerEntityType:'player',providerEntityId:7}).reason,'identity_missing');
-  assert.equal(resolveApiFootballIdentity([{provider:'api-football',providerEntityType:'player',providerEntityId:'7',canonicalFplId:'2026-27:fpl:player:1',mappingRevision:'p1',status:'verified'},{provider:'api-football',providerEntityType:'player',providerEntityId:'7',canonicalFplId:'2026-27:fpl:player:2',mappingRevision:'p2',status:'verified'}],{providerEntityType:'player',providerEntityId:7}).reason,'identity_ambiguous');
-  assert.equal(resolveApiFootballIdentity([{provider:'api-football',providerEntityType:'player',providerEntityId:'8',displayName:'Same Name',canonicalFplId:'2026-27:fpl:player:351',status:'verified'}],{providerEntityType:'player',providerEntityId:7}).reason,'identity_missing');
-  assert.equal(resolveApiFootballIdentity([{...mappings()[0],canonicalFplId:'display-name-only'}],{providerEntityType:'player',providerEntityId:7}).reason,'identity_missing');
+test('player and PL-team mapping requires one verified FPL identity and never uses names',()=>{
+  assert.equal(resolveApiFootballFplIdentity(mappings(),{providerEntityType:'player',providerEntityId:7}).canonicalFplId,'2026-27:fpl:player:351');
+  assert.equal(resolveApiFootballFplIdentity(mappings(),{providerEntityType:'team',providerEntityId:10}).canonicalFplId,'2026-27:fpl:team:1');
+  assert.equal(resolveApiFootballFplIdentity([],{providerEntityType:'player',providerEntityId:7}).reason,'identity_missing');
+  assert.equal(resolveApiFootballFplIdentity([{provider:'api-football',providerEntityType:'player',providerEntityId:'7',canonicalFplId:'2026-27:fpl:player:1',mappingRevision:'p1',status:'verified'},{provider:'api-football',providerEntityType:'player',providerEntityId:'7',canonicalFplId:'2026-27:fpl:player:2',mappingRevision:'p2',status:'verified'}],{providerEntityType:'player',providerEntityId:7}).reason,'identity_ambiguous');
+  assert.equal(resolveApiFootballFplIdentity([{...mappings()[1],canonicalFplId:'2026-27:fpl:team:2',mappingRevision:'t2'},mappings()[1]],{providerEntityType:'team',providerEntityId:10}).reason,'identity_ambiguous');
+  assert.equal(resolveApiFootballFplIdentity([{provider:'api-football',providerEntityType:'player',providerEntityId:'8',displayName:'Same Name',canonicalFplId:'2026-27:fpl:player:351',mappingRevision:'p1',status:'verified'}],{providerEntityType:'player',providerEntityId:7}).reason,'identity_missing');
+  assert.equal(resolveApiFootballFplIdentity([{...mappings()[0],canonicalFplId:'display-name-only'}],{providerEntityType:'player',providerEntityId:7}).reason,'identity_missing');
 });
 
 test('competition support is explicit configuration, unique and provenance-bound',()=>{
@@ -69,6 +71,17 @@ test('client is disabled without server secret and sanitizes network/schema/quot
   assert.doesNotMatch(JSON.stringify(await client.request('fixtures')),/deliberate-test-key-material/);
 });
 
+test('credential-bearing requests are origin-pinned and endpoint-closed before budget or fetch',async()=>{
+  for(const endpoint of ['https://attacker.test/steal','//attacker.test/steal','ftp://attacker.test/steal','unknown/path']){
+    let calls=0;const budget=createDailyRequestBudget({day:'2026-09-01',limit:4});
+    const client=createApiFootballClient({apiKey:'deliberate-test-key-material',budget,fetchImpl:async()=>{calls+=1;return {ok:true,json:async()=>envelope('fixtures',[])}}});
+    assert.deepEqual(await client.request(endpoint,{id:9001}),{ok:false,reason:'endpoint_not_allowed'});assert.equal(calls,0);assert.equal(budget.used,0);
+  }
+  let captured;const budget=createDailyRequestBudget({day:'2026-09-01',limit:1});
+  const client=createApiFootballClient({apiKey:'deliberate-test-key-material',budget,fetchImpl:async(url,options)=>{captured={url,options};return {ok:true,json:async()=>envelope('fixtures',[])}}});
+  assert.equal((await client.request('fixtures',{id:9001})).ok,true);assert.equal(captured.url.origin,API_FOOTBALL_ORIGIN);assert.equal(captured.options.headers['x-apisports-key'],'deliberate-test-key-material');assert.doesNotMatch(String(captured.url),/deliberate-test-key-material|api[_-]?key/i);assert.deepEqual(API_FOOTBALL_ENDPOINTS,['fixtures','fixtures/lineups','fixtures/players','fixtures/events']);
+});
+
 test('decoder rejects malformed shape, provider errors, drift and key-like material',()=>{
   assert.equal(decodeApiFootballResponse(envelope('fixtures',[]),{endpoint:'fixtures'}).ok,true);assert.equal(decodeApiFootballResponse({...envelope('fixtures',[]),errors:[]},{endpoint:'fixtures'}).ok,true);
   for(const payload of [{...envelope('fixtures',[]),extra:true},{...envelope('fixtures',[]),get:'players'},{...envelope('fixtures',[]),results:1},{...envelope('fixtures',[]),errors:{rate:'bad'}},{...envelope('fixtures',[]),apiKey:'deliberate'}])assert.equal(decodeApiFootballResponse(payload,{endpoint:'fixtures'}).ok,false);
@@ -78,6 +91,7 @@ test('direct starter minutes and deterministic hash normalize without raw payloa
   const a=await buildApiFootballWorkloadObservation(input()),b=await buildApiFootballWorkloadObservation(input());
   assert.equal(a.ok,true);assert.equal(a.observation.participation.status,'starter');assert.equal(a.observation.participation.minutes,90);assert.equal(a.observation.participation.directMinutes,true);assert.equal(a.observation.observationHash,b.observation.observationHash);
   assert.equal(a.observation.identity.canonicalPlayerId,'2026-27:fpl:player:351');assert.equal(a.observation.source.providerRecordIds.playerId,'7');assert.equal(a.observation.rights.redistributionAllowed,false);
+  assert.equal(a.observation.identity.externalFixtureId,'2026-27:api-football:fixture:9001');assert.equal(a.observation.identity.externalCompetitionId,'2026-27:external:competition:fa_cup');assert.doesNotMatch(a.observation.identity.externalFixtureId,/:fpl:/);assert.doesNotMatch(a.observation.identity.externalCompetitionId,/:fpl:/);assert.equal(a.observation.source.providerRecordIds.fixtureId,'9001');assert.equal(a.observation.source.providerRecordIds.leagueId,'44');
   assert.doesNotMatch(JSON.stringify(a.observation),/startXI|statistics|x-apisports-key|deliberate-test-key-material/);
 });
 
@@ -92,12 +106,31 @@ test('starter subbed off, substitute on, unused substitute and dismissal preserv
   assert.deepEqual(dismissed.observation.participation.dismissal,{minute:72,redCard:true});
 });
 
-test('missing player/minutes remain unknown and extra-time direct minutes are bounded',async()=>{
+test('missing player/minutes remain unknown and duration-backed extra time is bounded',async()=>{
   const absent=await buildApiFootballWorkloadObservation(input({lineupResponse:envelope('fixtures/lineups',[]),playersResponse:players('absent')}));
   assert.equal(absent.ok,true);assert.equal(absent.observation.participation.minutes,null);assert.equal(absent.observation.participation.appeared,null);assert.ok(absent.observation.quality.missingFields.includes('minutes'));
-  const extra=await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture('AET'),playersResponse:players(117)}));assert.equal(extra.ok,true);assert.equal(extra.observation.participation.extraTime,true);assert.equal(extra.observation.participation.minutes,117);
-  assert.equal((await buildApiFootballWorkloadObservation(input({playersResponse:players(117)}))).reason,'minutes_invalid');
+  const aet=await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture({status:'AET',duration:120}),playersResponse:players(117)}));assert.equal(aet.ok,true);assert.equal(aet.observation.participation.extraTime,true);assert.equal(aet.observation.fixture.authoritativeDurationMinutes,120);
+  const penExtra=await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture({status:'PEN',duration:120}),playersResponse:players(117)}));assert.equal(penExtra.ok,true);assert.equal(penExtra.observation.participation.extraTime,true);
+  const penUnknown=await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture({status:'PEN',duration:null}),playersResponse:players(90)}));assert.equal(penUnknown.ok,true);assert.equal(penUnknown.observation.participation.extraTime,null);assert.equal(penUnknown.observation.fixture.authoritativeDurationMinutes,null);
+  assert.equal((await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture({status:'PEN',duration:null}),playersResponse:players(117)}))).reason,'minutes_invalid');
+  assert.equal((await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture({status:'AET',duration:'120'}),playersResponse:players(117)}))).reason,'duration_invalid');
+  const maximum=await buildApiFootballWorkloadObservation(input({fixtureResponse:fixture({status:'AET',duration:130}),playersResponse:players(130)}));assert.equal(maximum.ok,true);assert.equal(maximum.observation.participation.minutes,130);
   for(const invalid of [-1,131,'ninety'])assert.equal((await buildApiFootballWorkloadObservation(input({playersResponse:players(invalid)}))).reason,'minutes_invalid');
+});
+
+test('owner-risk workload retention is source-bound and local research behavior is unchanged',async()=>{
+  const base={schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:'api-football'},participation:{status:'unknown',starter:false,minutes:null},quality:{missingFields:[]},rights:ownerRights()};
+  assert.ok((await normaliseWorkloadObservation(base)).observationHash);
+  await assert.rejects(normaliseWorkloadObservation({...base,source:{sourceKey:'another-provider'}}),/rights_source_mismatch/);
+  await assert.rejects(normaliseWorkloadObservation({...base,source:{}}),/rights_source_mismatch/);
+  assert.ok((await normaliseWorkloadObservation({...base,source:{sourceKey:'legacy-research'},rights:{classification:'local_research_only'}})).observationHash);
+  await assert.rejects(normaliseWorkloadObservation({...base,rights:{classification:'durable_allowed',retentionAllowed:true,redistributionAllowed:false,attributionRequired:false}}),/retention_not_fail_closed/);
+});
+
+test('fetchedAt and sourceRevision require bounded explicit provenance',async()=>{
+  assert.equal((await buildApiFootballWorkloadObservation(input())).ok,true);
+  for(const fetchedAt of [null,'','not-a-date','2026-02-31T22:00:00Z',0,true])assert.equal((await buildApiFootballWorkloadObservation(input({fetchedAt}))).reason,'provenance_invalid');
+  for(const sourceRevision of [undefined,'',' '.repeat(2),'x'.repeat(129)])assert.equal((await buildApiFootballWorkloadObservation(input({sourceRevision}))).reason,'provenance_invalid');
 });
 
 test('incomplete fixtures, unsupported competitions, missing lineups and schema drift fail closed',async()=>{
