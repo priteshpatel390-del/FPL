@@ -1,5 +1,9 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## EIA-2I1 checkpoint — API-Football private-use shadow foundation
+
+Repository foundation is implemented but disabled. R1 closes credential origins/endpoints, corrects non-PL identity semantics, makes extra-time duration-backed, source-binds owner-risk workload retention and validates acquisition timestamps/revisions. The maximum-100 request guard remains per-instance/pre-live rather than durable daily accounting. Attended credentialed EIA-2I2 qualification is next and separately gated; live collection, D1 mutation, scheduling, deployment and model influence remain unapproved. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current checkpoint — single daily clocks, draft PR #242
 

@@ -207,6 +207,10 @@ For current refreshes, Provider Health may change only from actual provider-laye
 [Data Architecture D1](DATA-ARCHITECTURE-D1.md) approves D1 plus private R2 behind a separate data Worker as the evidence platform. GW1-P1 implements the backend foundation and canonical pre-deadline ingestion path only. Only accepted normalised inputs actually used may be retained where retention is approved. Raw provider responses/HTML, Odds keys, keyed URLs and secrets must not be retained. Permanent Understat- or Odds-derived retention requires a separate provider-rights review. Google Sheets is downstream reporting only.
 
 The backend does not alter provider acquisition. Normal Teamsheet Stage 10 evidence remains local/manual until the separately approved GW1-P2 browser outbox/sync path is implemented.
+## 14 September 2026 — API-Football private-use shadow exception
+
+EIA-2I1 supersedes the prior API-Football block only for private, non-commercial, one-user research under `owner_risk_accepted_private_use`, source-bound to exact `api-football`. This is Pritesh's risk acceptance, not full underlying-rights proof. Normalized workload facts may be retained; redistribution, public/commercial use and raw-payload warehousing remain prohibited. R1 pins credential transmission to the official HTTPS origin and four closed endpoint paths. Players/PL teams retain verified FPL mappings, while non-PL fixtures and competitions use external identities rather than fabricated FPL IDs. Collection/use stops on objection pending review. Foundation is disabled, no live 2026/27 coverage is proven, and no production model or user-facing provider registration changes. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 Purpose: reference for every external source. Audience: provider work, Stage 3+.
 Last reconciled: 2026-08-12. Related: AUDIT.md §1–3 (full audit tables — kept as the detailed record;
 this file is the maintained summary), STAGE3-DESIGN.md §2 (validation flow), DECISIONS D-05/D-06/D-09/D-10, GW1-P1-CLOUDFLARE-EVIDENCE-FOUNDATION.md.

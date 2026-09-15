@@ -1,5 +1,9 @@
 # ARCHITECTURE.md
 
+## EIA-2I1 API-Football shadow architecture
+
+EIA-2I1 adds only pure Decision Intelligence modules: narrow owner-risk rights validation plus an injected-fetch API-Football decoder/normalizer. R1 pins the key-bearing client to one HTTPS origin, four endpoint paths and endpoint-specific ID parameters before fetch or budget use. Players and PL teams require one verified canonical FPL mapping; non-PL fixtures use season-scoped API-Football identity and competitions use season-scoped external target identity, never fabricated FPL identities. Extra-time state and acceptance of direct minutes above 90 require an authoritative bounded duration field; `PEN` alone is insufficient. Client mode is `disabled_post_match_only`; its maximum-100 guard is per-instance/pre-live, not durable cross-process accounting. Responses are transient and failures sanitized. No application/model import, browser path, Worker binding, scheduler, production D1 write or raw-payload store exists. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current Data-Ops architecture — draft PR #242
 

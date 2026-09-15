@@ -1,5 +1,9 @@
 # TESTING.md
 
+## EIA-2I1 permanent coverage
+
+`tests/eia2i1-api-football-foundation.test.mjs` pins the narrow source-bound owner-risk contract, unchanged legacy rights behavior, verified FPL player/PL-team mapping, same-name safety, external non-PL fixture/competition identities, explicit competition configuration, per-instance maximum-100 pre-live budget, disabled/missing-secret behavior, exact-origin and closed-endpoint credential safety, sanitized network/schema/quota failures, strict acquisition timestamp/revision validation, duration-backed direct-minute and substitution/extra-time/PEN/dismissal facts, unknown missingness, malformed-response rejection, deterministic hashing, absence of raw payloads/secrets and structural separation from production model/application paths.
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current Data-Ops verification contract — draft PR #242
 

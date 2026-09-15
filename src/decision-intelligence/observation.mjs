@@ -1,5 +1,5 @@
 import {canonicalise,deepFreeze,sha256Hex,stableStringify,secretFinding} from './canonical.mjs';
-import {classifyRights,persistenceDecision} from './rights.mjs';
+import {classifyRights,persistenceDecision,OWNER_RISK_PRIVATE_USE,OWNER_RISK_PROVIDER} from './rights.mjs';
 
 export const OBSERVATION_SCHEMA_VERSION='di-observation-v1';
 export const VALIDATION_VERSION='di-validation-v1';
@@ -58,6 +58,7 @@ export async function admitObservation(input,{signal,cryptoImpl=globalThis.crypt
   if(input.identity.subjectType!==signal.subjectType||input.identity.category!==signal.domain)return {ok:false,reason:'signal_identity_mismatch'};
   const timing=validateTiming(input.timing,signal.requiredTimingFields);if(!timing.ok)return timing;
   const rights=classifyRights(input.rights);if(!rights.valid||rights.classification!==signal.rightsClassification)return {ok:false,reason:'rights_mismatch'};
+  if(rights.classification===OWNER_RISK_PRIVATE_USE&&signal.sourceKey!==OWNER_RISK_PROVIDER)return {ok:false,reason:'rights_mismatch'};
   if(signal.persistenceAllowed&&!persistenceDecision(input.rights).ok)return {ok:false,reason:'retention_blocked'};
   if(!requiredText(input?.value?.metric)||!Object.hasOwn(input?.value||{},'value'))return {ok:false,reason:'value_invalid'};
   if(!requiredText(input?.source?.sourceKey)||input.source.sourceKey!==signal.sourceKey||!requiredText(input.source.recordId))return {ok:false,reason:'source_invalid'};
