@@ -1,5 +1,11 @@
 # DECISIONS.md — Architectural decision record
 
+## D-EIA-2I4C · 15 September 2026 · Accepted · API-Football qualified for design and recurring paid use permitted
+
+API-Football is **QUALIFIED** only for a separately approved shadow-collector and fixture-identity design checkpoint. Pritesh intends to continue paying for API-Football; the hard £0 recurring workload-provider requirement is withdrawn for this provider, and EIA-2ALT is no longer required. Paid entitlement remains subject to technical qualification, rights/terms, security, reliability, provenance, validation, quota/rate controls, graceful fallback, storage/retention boundaries, tests and explicit implementation approval.
+
+This decision does not approve a collector, production activation, infrastructure, model use, workload penalties, predictive influence, subscription-tier changes or additional providers. Chelsea–Leeds fixture identity is verified, while exact kickoff remains an unresolved cross-source conflict and fixture-identity contract remediation remains a future approval gate. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
+
 ## D-EIA-2I3 · 15 September 2026 · Accepted · Provider elapsed is evidence, not universally authoritative duration
 
 `PEN` and elapsed 120 cannot establish extra time. `FT`/`AET` require internally consistent elapsed evidence; `PEN` requires verified fixture-specific qualification and provenance to establish true or false, otherwise both authoritative duration and extra time remain null. Direct minutes stay independent. API-Football remains conditionally qualified for private shadow workload only. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

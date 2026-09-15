@@ -1,5 +1,9 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## EIA-2I4C checkpoint — API-Football qualification closeout
+
+API-Football factual workload qualification is complete for progression to a separately approved **EIA-2I5 — API-Football Shadow Collector and Fixture Identity Design** checkpoint. EIA-2I5 is design only and must cover discovery, durable provider IDs, mappings, cross-source identity and kickoff conflicts, provenance/corrections, post-match enrichment, quota/fallback/security, minimal normalized storage and model isolation. It does not authorize implementation or deployment. Permanent Free operation and EIA-2ALT are no longer required after the owner's paid-provider decision. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
+
 ## EIA-2I3 checkpoint — penalty/duration remediation
 
 Repository remediation and bounded live closeout are implemented. API-Football remains conditionally qualified: safe duration tri-state and direct-minute independence are established, while completed 2026/27 detail and non-name-only FPL mapping evidence remain a later bounded gate. No collector, persistence, scheduling, deployment or model influence is approved. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

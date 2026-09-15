@@ -1,5 +1,9 @@
 # KNOWN_LIMITATIONS.md
 
+## API-Football qualification limitations — EIA-2I4C
+
+API-Football is qualified for a design checkpoint, not production. Exact paid tier and contractual entitlement remain unknown; current-season detail was sampled directly only for League Cup and Champions League; one player mapping does not prove automatic full-squad mapping; and no predictive benefit is established. Chelsea–Leeds fixture identity is verified, but its exact kickoff remains unresolved because API-Football and Leeds report 19:00 UTC while Chelsea reports 19:15 UTC. No source error or scheduled-versus-actual explanation is proven. Fixture-identity conflict handling and bounded correction/re-fetch remain future design work. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
+
 ## EIA-2I3 API-Football limitations
 
 Provider `elapsed` is not universally authoritative: penalty fixtures may report 120 without proving extra time. Ambiguous `PEN` duration now remains null unless separately qualified. Historical structured detail does not prove completed 2026/27 coverage; live dismissal and non-name-only FPL mapping remain unproven. Request accounting is still per-instance, not durable. Provider remains private/non-commercial, disabled, shadow-only and conditionally qualified. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
