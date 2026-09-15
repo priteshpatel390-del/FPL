@@ -21,6 +21,7 @@ const mappings=()=>[
 ];
 const competitions=()=>[{provider:'api-football',providerLeagueId:'44',targetCompetition:'fa_cup',competitionName:'FA Cup',enabled:true,provenance:'owner-reviewed-config-v1'}];
 const input=(overrides={})=>({fixtureResponse:fixture(),lineupResponse:lineups(),playersResponse:players(90),eventsResponse:events(),providerPlayerId:7,providerTeamId:10,identityMappings:mappings(),competitionConfig:competitions(),fetchedAt:'2026-09-01T22:00:00Z',sourceRevision:'api-football-r1',rights:ownerRights(),...overrides});
+const contractInput=participation=>({schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:'api-football'},participation:{minutes:null,...participation},quality:{missingFields:[]},rights:ownerRights()});
 
 test('owner-risk rights are narrow, retainable, non-redistributable and malformed records fail closed',()=>{
   assert.ok(RIGHTS_CLASSIFICATIONS.includes('owner_risk_accepted_private_use'));
@@ -120,15 +121,29 @@ test('missing player/minutes remain unknown and duration-backed extra time is bo
 });
 
 test('owner-risk workload retention is source-bound and local research behavior is unchanged',async()=>{
-  const base={schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:'api-football'},participation:{status:'unknown',starter:null,minutes:null},quality:{missingFields:[]},rights:ownerRights()};
+  const base=contractInput({status:'unknown',starter:null,bench:null});
   assert.ok((await normaliseWorkloadObservation(base)).observationHash);
-  await assert.rejects(normaliseWorkloadObservation({...base,participation:{...base.participation,starter:false}}),/starter_semantics/);
-  await assert.rejects(normaliseWorkloadObservation({...base,participation:{...base.participation,status:'starter',starter:false}}),/starter_semantics/);
-  assert.ok((await normaliseWorkloadObservation({...base,participation:{...base.participation,status:'substitute',starter:false}})).observationHash);
   await assert.rejects(normaliseWorkloadObservation({...base,source:{sourceKey:'another-provider'}}),/rights_source_mismatch/);
   await assert.rejects(normaliseWorkloadObservation({...base,source:{}}),/rights_source_mismatch/);
   assert.ok((await normaliseWorkloadObservation({...base,source:{sourceKey:'legacy-research'},rights:{classification:'local_research_only'}})).observationHash);
   await assert.rejects(normaliseWorkloadObservation({...base,rights:{classification:'durable_allowed',retentionAllowed:true,redistributionAllowed:false,attributionRequired:false}}),/retention_not_fail_closed/);
+});
+
+test('reusable workload contract enforces complete lineup state matrix',async()=>{
+  for(const participation of [
+    {status:'starter',starter:true,bench:false},
+    {status:'substitute',starter:false,bench:true},
+    {status:'not_used',starter:false,bench:true,minutes:0},
+    {status:'unknown',starter:null,bench:null}
+  ])assert.ok((await normaliseWorkloadObservation(contractInput(participation))).observationHash);
+  for(const participation of [
+    {status:'starter',starter:true,bench:true},{status:'starter',starter:true,bench:null},{status:'starter',starter:false,bench:false},
+    {status:'substitute',starter:false,bench:false},{status:'substitute',starter:false,bench:null},{status:'substitute',starter:true,bench:true},
+    {status:'not_used',starter:false,bench:false,minutes:0},{status:'not_used',starter:false,bench:null,minutes:0},{status:'not_used',starter:true,bench:true,minutes:0},
+    {status:'unknown',starter:null,bench:false},{status:'unknown',starter:false,bench:null},{status:'unknown',starter:false,bench:false},{status:'unknown',starter:null,bench:true},
+    {status:'unknown',starter:undefined,bench:undefined}
+  ])await assert.rejects(normaliseWorkloadObservation(contractInput(participation)),/lineup_semantics/);
+  await assert.rejects(normaliseWorkloadObservation(contractInput({status:'not_used',starter:false,bench:true,minutes:null})),/not_used_minutes/);
 });
 
 test('fetchedAt and sourceRevision require bounded explicit provenance',async()=>{
