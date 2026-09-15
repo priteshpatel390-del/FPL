@@ -1,3 +1,8 @@
+<!-- EIA-2I4C-2026-09-15 -->
+### Current external-intelligence checkpoint — EIA-2I4C API-Football qualification closeout
+
+EIA-2I4C subsequently canonicalizes EIA-2I4 through EIA-2I4K and qualifies API-Football only for a separately approved shadow-collector and fixture-identity design checkpoint. Paid current-season League Cup and Champions League samples proved structured XI/bench, stable provider IDs, direct minutes and events; one 2026/27 Cole Palmer mapping is verified. Chelsea–Leeds fixture identity is verified, but kickoff remains an unresolved authoritative-source conflict: API-Football and Leeds report 19:00 UTC, Chelsea reports 19:15 UTC. No provider error is proven. Fixture-identity contract remediation and bounded correction/re-fetch design remain future gates. Pritesh intends to maintain paid API-Football, so permanent Free operation and EIA-2ALT are no longer release gates. Rights, server-side credential, transient raw-response, shadow isolation and model gates remain unchanged; no collector, production activation, model influence, infrastructure or deployment is approved. See [EIA-2I4C](docs/EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
+
 <!-- EIA-2I3-2026-09-15 -->
 ### Current external-intelligence checkpoint — EIA-2I3 penalty/duration remediation
 

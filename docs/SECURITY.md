@@ -1,5 +1,9 @@
 # SECURITY.md
 
+## EIA-2I4C API-Football qualified-design security boundary
+
+EIA-2I4C changes no runtime or credential handling. Any later approved API-Football collector must keep the key server-side and absent from generated assets, logs, rendered output, relays and persisted facts; pin credential-bearing requests to the approved HTTPS origin; reject redirects; retain raw responses only transiently; store only necessary normalized provenance-bearing facts; and degrade without corrupting existing valid state or affecting Official FPL behaviour. Paid-provider acceptance does not approve production activation, broaden private/non-commercial rights, or weaken model isolation. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
+
 ## EIA-2I3 security boundary
 
 Duration remediation adds no network capability. Bounded qualification used the existing pinned HTTPS origin, `x-apisports-key`, four approved endpoint classes, redirect rejection and transient in-memory decoding. No credential/raw response entered repository, browser, generated application, store or log. All EIA-2I1 confinement remains. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

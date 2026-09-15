@@ -1,5 +1,9 @@
 # DATA_SOURCES.md
 
+## 15 September 2026 — API-Football paid-window qualification closeout
+
+API-Football is qualified only for a separately approved private shadow-collector and fixture-identity design checkpoint. Current-season League Cup and Champions League samples proved known-ID fixture detail, structured XI/bench, stable IDs, direct player minutes and events; one 2026/27 Cole Palmer mapping is verified. Historical Free known-ID enrichment remains evidence for one 2024 League Cup fixture, not permanent entitlement. Paid runtime headers showed 300 requests/minute and 7,500/day, while exact tier remains unknown. Chelsea–Leeds identity is verified but exact kickoff is unresolved across API-Football/Leeds (19:00 UTC) and Chelsea (19:15 UTC). Pritesh accepts recurring paid API-Football, so Free viability is no longer a release gate. Existing rights, transient raw-response, security, fallback, duration and model-isolation boundaries remain. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
+
 ## 15 September 2026 — API-Football conditional qualification
 
 EIA-2I3 preserves API-Football as a private/non-commercial shadow-only source. Direct player minutes qualify as independent workload facts; provider elapsed qualifies fixture duration only under the explicit FT/AET/PEN state matrix. Bounded live closeout adds no collector, persistence or production source. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

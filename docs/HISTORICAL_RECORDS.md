@@ -54,6 +54,7 @@ Separately tracked live-season evidence gates, D1 implementation, Understat repa
 
 ## Current operational and acceptance records
 
+- [EIA-2I4C API-Football Qualification and Paid-Provider Decision Closeout](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md) — subsequently canonicalizes EIA-2I4 through EIA-2I4K, qualifies API-Football only for a separately approved shadow-collector and fixture-identity design checkpoint, records recurring paid-provider acceptance, preserves the unresolved Chelsea–Leeds kickoff conflict, and authorizes no implementation, production activation or model influence.
 - [DATA-OPS-A1.1 Policy and Observe-Only Foundation](DATA-OPS-A1-1-POLICY-OBSERVE-ONLY-FOUNDATION.md) — offline deterministic incident, classification, action-registry, policy, audit and approved-provider-health contracts; only non-mutating Class 0 is enabled and no live adapter, credential, persistence or actuator exists.
 - [DATA-OPS-A1.2 Observe-Only Production Sentinels](DATA-OPS-A1-2-OBSERVE-ONLY-PRODUCTION-SENTINELS.md) — read-only GitHub, Cloudflare and D1 observation domains, versioned evidence envelopes, a heartbeat contract and deterministic cross-source causality; Class 0 only, with no remediation, credential, scheduler, AI or arbitrary-SQL surface.
 - [DATA-OPS A1.3 Dormant Live Read-Only Observer](DATA-OPS-A1-3-LIVE-READONLY-OBSERVER.md) — dedicated GitHub Actions runtime with manual dispatch, two dormant-by-default observation opportunities, ephemeral GitHub read authority, protected Cloudflare read-only contract and no actuator or persistence.
