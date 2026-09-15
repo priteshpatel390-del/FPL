@@ -1,5 +1,10 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## EIA-2I3 checkpoint — penalty/duration remediation
+
+Repository remediation and bounded live closeout are implemented. API-Football remains conditionally qualified: safe duration tri-state and direct-minute independence are established, while completed 2026/27 detail and non-name-only FPL mapping evidence remain a later bounded gate. No collector, persistence, scheduling, deployment or model influence is approved. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
+
 ## EIA-2I1 checkpoint — API-Football private-use shadow foundation
 
 Repository foundation is implemented but disabled. R1 closes credential origins/endpoints, corrects non-PL identity semantics, makes extra-time duration-backed, source-binds owner-risk workload retention and validates acquisition timestamps/revisions. The maximum-100 request guard remains per-instance/pre-live rather than durable daily accounting. Attended credentialed EIA-2I2 qualification is next and separately gated; live collection, D1 mutation, scheduling, deployment and model influence remain unapproved. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).

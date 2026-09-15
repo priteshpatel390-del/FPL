@@ -22,6 +22,17 @@ function safeFailure(reason){return deepFreeze({ok:false,reason:String(reason)})
 function positiveId(value){const text=String(value??'');return /^\d+$/.test(text)&&Number(text)>0?text:null;}
 function minute(value){return Number.isInteger(value)&&value>=0&&value<=MAX_MATCH_MINUTES?value:null;}
 function matchDuration(value){return Number.isInteger(value)&&value>0&&value<=MAX_MATCH_MINUTES?value:null;}
+function qualifyFixtureDuration({fixtureId,finalStatus,providerElapsed,durationQualifications}={}){
+  if(finalStatus==='FT')return providerElapsed!==null&&providerElapsed<=90?deepFreeze({authoritativeDuration:providerElapsed,extraTime:false,provenance:'fixture.status.elapsed_ft'}):deepFreeze({authoritativeDuration:null,extraTime:null,provenance:null});
+  if(finalStatus==='AET')return providerElapsed!==null&&providerElapsed>90?deepFreeze({authoritativeDuration:providerElapsed,extraTime:true,provenance:'fixture.status.aet_with_consistent_elapsed'}):deepFreeze({authoritativeDuration:null,extraTime:null,provenance:null});
+  if(finalStatus!=='PEN')return deepFreeze({authoritativeDuration:null,extraTime:null,provenance:null});
+  const matches=(durationQualifications||[]).filter(row=>row?.provider===API_FOOTBALL_SOURCE_KEY&&String(row.providerFixtureId)===fixtureId&&row.verified===true&&['played','not_played'].includes(row.extraTimeStatus)&&matchDuration(row.authoritativeDurationMinutes)!==null&&typeof row.provenance==='string'&&row.provenance.length>0);
+  if(matches.length===0)return deepFreeze({authoritativeDuration:null,extraTime:null,provenance:null});
+  if(matches.length!==1)return safeFailure('duration_qualification_ambiguous');
+  const match=matches[0],authoritativeDuration=matchDuration(match.authoritativeDurationMinutes),extraTime=match.extraTimeStatus==='played';
+  if(extraTime!==authoritativeDuration>90)return safeFailure('duration_qualification_invalid');
+  return deepFreeze({authoritativeDuration,extraTime,provenance:match.provenance});
+}
 function exactObject(value,keys){return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).every(key=>keys.includes(key));}
 function strictIsoInstant(value){
   if(typeof value!=='string'||!ISO_INSTANT.test(value))return null;
@@ -71,7 +82,7 @@ export function createApiFootballClient({apiKey,fetchImpl,budget}={}){
     if(entries.length!==1||entries[0][0]!==parameterName||!positiveId(entries[0][1]))return safeFailure('parameters_invalid');
     if(!budget.consume())return safeFailure('quota_exhausted');
     const url=new URL(`/${endpoint}`,API_FOOTBALL_ORIGIN);url.searchParams.set(parameterName,String(entries[0][1]));
-    let response;try{response=await fetchImpl(url,{method:'GET',headers:{'x-apisports-key':apiKey,'accept':'application/json'}});}catch{return safeFailure('provider_unavailable');}
+    let response;try{response=await fetchImpl(url,{method:'GET',redirect:'error',headers:{'x-apisports-key':apiKey,'accept':'application/json'}});}catch{return safeFailure('provider_unavailable');}
     if(!response?.ok)return safeFailure(response?.status===429?'quota_exhausted':'provider_unavailable');
     let payload;try{payload=await response.json();}catch{return safeFailure('provider_schema_invalid');}
     return decodeApiFootballResponse(payload,{endpoint:endpoint.replace(/^\//,'')});
@@ -84,7 +95,7 @@ function eventMinute(event){
   return Number.isInteger(elapsed)&&elapsed>=0&&Number.isInteger(extra)&&extra>=0?minute(elapsed+extra):null;
 }
 
-export async function buildApiFootballWorkloadObservation({fixtureResponse,lineupResponse,playersResponse,eventsResponse,providerPlayerId,providerTeamId,identityMappings,competitionConfig,fetchedAt,sourceRevision,rights,cryptoImpl=globalThis.crypto}={}){
+export async function buildApiFootballWorkloadObservation({fixtureResponse,lineupResponse,playersResponse,eventsResponse,providerPlayerId,providerTeamId,identityMappings,competitionConfig,durationQualifications,fetchedAt,sourceRevision,rights,cryptoImpl=globalThis.crypto}={}){
   for(const [endpoint,payload] of Object.entries({fixtures:fixtureResponse,'fixtures/lineups':lineupResponse,'fixtures/players':playersResponse,'fixtures/events':eventsResponse})){
     const decoded=decodeApiFootballResponse(payload,{endpoint});if(!decoded.ok)return decoded;
   }
@@ -117,10 +128,12 @@ export async function buildApiFootballWorkloadObservation({fixtureResponse,lineu
   const directMinutes=rawMinutes===null||rawMinutes===undefined?null:minute(rawMinutes);
   if(rawMinutes!==null&&rawMinutes!==undefined&&directMinutes===null)return safeFailure('minutes_invalid');
   const rawDuration=row.fixture.status.elapsed;
-  const authoritativeDuration=rawDuration===null||rawDuration===undefined?null:matchDuration(rawDuration);
-  if(rawDuration!==null&&rawDuration!==undefined&&authoritativeDuration===null)return safeFailure('duration_invalid');
+  const providerElapsed=rawDuration===null||rawDuration===undefined?null:matchDuration(rawDuration);
+  if(rawDuration!==null&&rawDuration!==undefined&&providerElapsed===null)return safeFailure('duration_invalid');
+  const duration=qualifyFixtureDuration({fixtureId,finalStatus:row.fixture.status.short,providerElapsed,durationQualifications});
+  if(!('authoritativeDuration' in duration))return duration;
+  const {authoritativeDuration,extraTime}=duration,durationQualificationProvenance=duration.provenance;
   if(directMinutes!==null&&authoritativeDuration!==null&&directMinutes>authoritativeDuration)return safeFailure('minutes_invalid');
-  if(directMinutes>90&&!(authoritativeDuration>90))return safeFailure('minutes_invalid');
   const events=eventsResponse.response;
   const onEvents=events.filter(event=>event?.type==='subst'&&String(event?.assist?.id)===playerId);
   const offEvents=events.filter(event=>event?.type==='subst'&&String(event?.player?.id)===playerId);
@@ -134,6 +147,6 @@ export async function buildApiFootballWorkloadObservation({fixtureResponse,lineu
   const participationStatus=unusedSubstitute?'not_used':status;
   const missingFields=[];
   if(directMinutes===null)missingFields.push('minutes');if(status==='unknown')missingFields.push('lineupStatus');
-  const workload={schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:API_FOOTBALL_SOURCE_KEY,sourceRevision,providerRecordIds:{fixtureId,leagueId:String(row.league.id),teamId,playerId}},identity:{canonicalPlayerId:playerIdentity.canonicalFplId,canonicalTeamId:teamIdentity.canonicalFplId,externalFixtureId,externalCompetitionId,mappingRevisions:{player:playerIdentity.mappingRevision,team:teamIdentity.mappingRevision}},fixture:{competition:competition.competitionName,targetCompetition:competition.targetCompetition,kickoff,finalStatus:row.fixture.status.short,authoritativeDurationMinutes:authoritativeDuration},participation:{status:participationStatus,starter,bench,appeared,unusedSubstitute,directMinutes:directMinutes!==null,minutes:directMinutes,substitutionOnMinute,substitutionOffMinute,extraTime:authoritativeDuration===null?null:authoritativeDuration>90,dismissal:redEvents.length?{redCard:true,minute:eventMinute(redEvents[0])}:null},timing:{fetchedAt:canonicalFetchedAt},provenance:{providerSchema:API_FOOTBALL_SCHEMA_VERSION,competitionConfigProvenance:competition.provenance,durationFieldContract:'fixture.status.elapsed_unqualified'},quality:{missingFields},rights};
+  const workload={schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:API_FOOTBALL_SOURCE_KEY,sourceRevision,providerRecordIds:{fixtureId,leagueId:String(row.league.id),teamId,playerId}},identity:{canonicalPlayerId:playerIdentity.canonicalFplId,canonicalTeamId:teamIdentity.canonicalFplId,externalFixtureId,externalCompetitionId,mappingRevisions:{player:playerIdentity.mappingRevision,team:teamIdentity.mappingRevision}},fixture:{competition:competition.competitionName,targetCompetition:competition.targetCompetition,kickoff,finalStatus:row.fixture.status.short,authoritativeDurationMinutes:authoritativeDuration},participation:{status:participationStatus,starter,bench,appeared,unusedSubstitute,directMinutes:directMinutes!==null,minutes:directMinutes,substitutionOnMinute,substitutionOffMinute,extraTime,dismissal:redEvents.length?{redCard:true,minute:eventMinute(redEvents[0])}:null},timing:{fetchedAt:canonicalFetchedAt},provenance:{providerSchema:API_FOOTBALL_SCHEMA_VERSION,competitionConfigProvenance:competition.provenance,durationFieldContract:'status_qualified_v2',durationQualificationProvenance},quality:{missingFields},rights};
   try{return {ok:true,observation:await normaliseWorkloadObservation(workload,{cryptoImpl})};}catch(error){return safeFailure(error?.message||'workload_invalid');}
 }

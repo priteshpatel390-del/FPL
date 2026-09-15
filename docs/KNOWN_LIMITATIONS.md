@@ -1,5 +1,10 @@
 # KNOWN_LIMITATIONS.md
 
+## EIA-2I3 API-Football limitations
+
+Provider `elapsed` is not universally authoritative: penalty fixtures may report 120 without proving extra time. Ambiguous `PEN` duration now remains null unless separately qualified. Historical structured detail does not prove completed 2026/27 coverage; live dismissal and non-name-only FPL mapping remain unproven. Request accounting is still per-instance, not durable. Provider remains private/non-commercial, disabled, shadow-only and conditionally qualified. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
+
 ## EIA-2I1 API-Football limitations
 
 No real credential or provider response was used. Current 2026/27 coverage, target-competition numeric IDs, endpoint fields, `fixture.status.elapsed` duration semantics, correction behavior, quota headers and free-tier sufficiency are unproven. Direct minutes are accepted when valid; missing minutes are not reconstructed. The maximum-100 request guard is in-memory and per instance, so it is not durable daily accounting across restarts. Foundation has no live collector or D1 persistence path and cannot affect production decisions. Owner risk acceptance is private/non-commercial only, is not complete underlying-rights proof, and cannot support redistribution or public/commercial release. See [EIA-2I1](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).

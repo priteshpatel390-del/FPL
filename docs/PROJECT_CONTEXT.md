@@ -1,5 +1,10 @@
 # PROJECT_CONTEXT.md
 
+## EIA-2I3 API-Football penalty/duration remediation
+
+EIA-2I2 conditionally qualified prospective private shadow workload evidence but found `PEN` plus provider elapsed 120 is not reliable proof of extra time. EIA-2I3 corrects duration to status-qualified tri-state evidence, keeps direct minutes independent, and records bounded League Cup/FA Cup live closeout. Provider stays disabled, shadow-only and conditionally qualified; no production/model/infrastructure path changes. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current Data-Ops context — draft PR #242
 

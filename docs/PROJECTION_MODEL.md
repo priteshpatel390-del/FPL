@@ -1,5 +1,10 @@
 # PROJECTION_MODEL.md — projection engine reference
 
+## EIA-2I3 external-intelligence boundary
+
+Penalty/duration remediation changes only disabled shadow normalization. Direct minutes and extra-time evidence have no import or signal path into production expected minutes, projections, squad, captaincy, transfers, rank or Mini-Leagues. No coefficient, rule or predictive claim changes. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
+
 ## 11 August 2026 — persisted calibration compatibility boundary
 
 `fpl:calib` compatibility is complete and merged through PR #107 at `main` `d112c673310149a4463def1758242460450600dc`. It does not change the projection formula or any calibration factor. It changes only whether unverified persisted calibration may enter model state: all currently stored `fpl:calib` records fail closed, remain stored but inert, and the standard uncalibrated model is used. The existing `S.calib` multiplier semantics remain byte-unchanged for any future separately approved compatible activation path. The current walk-forward evaluation remains a historical diagnostic and does not produce or persist production calibration. This checkpoint makes no predictive-accuracy claim.

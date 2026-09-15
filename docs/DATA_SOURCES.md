@@ -1,5 +1,10 @@
 # DATA_SOURCES.md
 
+## 15 September 2026 — API-Football conditional qualification
+
+EIA-2I3 preserves API-Football as a private/non-commercial shadow-only source. Direct player minutes qualify as independent workload facts; provider elapsed qualifies fixture duration only under the explicit FT/AET/PEN state matrix. Bounded live closeout adds no collector, persistence or production source. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
+
 <!-- DATA-OPS-A1-3-A1-4-2026-09-10-CLOCK-CORRECTION -->
 ## Current Data-Ops source boundary — draft PR #242
 
