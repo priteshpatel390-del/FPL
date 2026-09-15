@@ -4,6 +4,8 @@ Status: **repository foundation implemented; live qualification pending; collect
 Baseline: `ddf467fb9974ace9e247cb5015765e9055679881`  
 Decision date: 14 September 2026
 
+> **Duration semantics superseded:** EIA-2I3 found provider elapsed is not universally authoritative and replaces the EIA-2I1 duration rule with a status-qualified tri-state matrix. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
 ## Owner decision and rights boundary
 
 Pritesh accepts residual uncertainty in API-Football's underlying third-party league, federation and data rights for one-user, private, non-commercial Teamsheet research. This supersedes the earlier block only for API-Football and only under `owner_risk_accepted_private_use`. It is not complete underlying-rights proof or legal clearance.

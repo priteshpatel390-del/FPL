@@ -1,3 +1,8 @@
+<!-- EIA-2I3-2026-09-15 -->
+### Current external-intelligence checkpoint — EIA-2I3 penalty/duration remediation
+
+EIA-2I2 conditionally qualified API-Football for prospective private shadow workload but found that League Cup `PEN` fixtures can expose `fixture.status.elapsed: 120` without safely proving extra time. EIA-2I3 makes provider elapsed non-authoritative until status-qualified: consistent `FT` at most 90 proves no extra time, consistent `AET` above 90 proves extra time, and `PEN` remains tri-state unless one verified fixture-specific, provenance-bearing qualification proves played/not-played with consistent duration. Direct minutes remain independent and never manufacture duration. Bounded live closeout confirms League Cup/FA Cup structured detail and unused bench players represented with player rows and null minutes. Provider remains conditionally qualified, disabled and shadow-only. No production/model/infrastructure change. See [EIA-2I3](docs/EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+
 <!-- EIA-2I1-2026-09-14 -->
 ### Current external-intelligence checkpoint — EIA-2I1 API-Football private-use shadow foundation
 
