@@ -15,7 +15,9 @@ export async function normaliseWorkloadObservation(raw,{cryptoImpl=globalThis.cr
   fail(raw.rights.classification!=='local_research_only'&&!(rights.valid&&rights.classification===OWNER_RISK_PRIVATE_USE&&rights.retentionAllowed),'retention_not_fail_closed');fail(!STATUS.has(raw.participation?.status),'status');
   const status=raw.participation.status,minutes=nullableNumber(raw.participation.minutes);
   fail(minutes!=null&&(minutes<0||minutes>130),'minutes');fail(status==='not_used'&&minutes!==0,'not_used_minutes');
-  fail(status==='starter'&&raw.participation.starter!==true,'starter_semantics');fail(status!=='starter'&&raw.participation.starter===true,'starter_semantics');
+  fail(status==='starter'&&raw.participation.starter!==true,'starter_semantics');
+  fail(['substitute','not_used'].includes(status)&&raw.participation.starter!==false,'starter_semantics');
+  fail(status==='unknown'&&raw.participation.starter!==null,'starter_semantics');
   const core=canonicalise({...raw,rights:raw.rights.classification===OWNER_RISK_PRIVATE_USE?rights:raw.rights,contractVersion:EIA1_WORKLOAD_VERSION,participation:{...raw.participation,minutes,substitutionOnMinute:nullableNumber(raw.participation.substitutionOnMinute),substitutionOffMinute:nullableNumber(raw.participation.substitutionOffMinute),extraTime:raw.participation.extraTime??null},quality:{...raw.quality,missingFields:[...(raw.quality?.missingFields||[])].sort()}});
   return deepFreeze({...core,observationHash:await sha256Hex(stableStringify(core),cryptoImpl)});
 }

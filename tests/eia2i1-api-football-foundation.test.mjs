@@ -90,6 +90,7 @@ test('decoder rejects malformed shape, provider errors, drift and key-like mater
 test('direct starter minutes and deterministic hash normalize without raw payload',async()=>{
   const a=await buildApiFootballWorkloadObservation(input()),b=await buildApiFootballWorkloadObservation(input());
   assert.equal(a.ok,true);assert.equal(a.observation.participation.status,'starter');assert.equal(a.observation.participation.minutes,90);assert.equal(a.observation.participation.directMinutes,true);assert.equal(a.observation.observationHash,b.observation.observationHash);
+  assert.equal(a.observation.participation.starter,true);assert.equal(a.observation.participation.bench,false);
   assert.equal(a.observation.identity.canonicalPlayerId,'2026-27:fpl:player:351');assert.equal(a.observation.source.providerRecordIds.playerId,'7');assert.equal(a.observation.rights.redistributionAllowed,false);
   assert.equal(a.observation.identity.externalFixtureId,'2026-27:api-football:fixture:9001');assert.equal(a.observation.identity.externalCompetitionId,'2026-27:external:competition:fa_cup');assert.doesNotMatch(a.observation.identity.externalFixtureId,/:fpl:/);assert.doesNotMatch(a.observation.identity.externalCompetitionId,/:fpl:/);assert.equal(a.observation.source.providerRecordIds.fixtureId,'9001');assert.equal(a.observation.source.providerRecordIds.leagueId,'44');
   assert.doesNotMatch(JSON.stringify(a.observation),/startXI|statistics|x-apisports-key|deliberate-test-key-material/);
@@ -99,9 +100,9 @@ test('starter subbed off, substitute on, unused substitute and dismissal preserv
   const off=await buildApiFootballWorkloadObservation(input({playersResponse:players(61),eventsResponse:events([{type:'subst',player:{id:7},assist:{id:8},time:{elapsed:61,extra:null}}])}));
   assert.equal(off.observation.participation.substitutionOffMinute,61);
   const on=await buildApiFootballWorkloadObservation(input({lineupResponse:lineups({starter:false,bench:true}),playersResponse:players(29),eventsResponse:events([{type:'subst',player:{id:8},assist:{id:7},time:{elapsed:61,extra:null}}])}));
-  assert.equal(on.observation.participation.status,'substitute');assert.equal(on.observation.participation.appeared,true);assert.equal(on.observation.participation.substitutionOnMinute,61);
+  assert.equal(on.observation.participation.status,'substitute');assert.equal(on.observation.participation.starter,false);assert.equal(on.observation.participation.bench,true);assert.equal(on.observation.participation.appeared,true);assert.equal(on.observation.participation.substitutionOnMinute,61);
   const unused=await buildApiFootballWorkloadObservation(input({lineupResponse:lineups({starter:false,bench:true}),playersResponse:players(0)}));
-  assert.equal(unused.observation.participation.status,'not_used');assert.equal(unused.observation.participation.unusedSubstitute,true);assert.equal(unused.observation.participation.appeared,false);
+  assert.equal(unused.observation.participation.status,'not_used');assert.equal(unused.observation.participation.starter,false);assert.equal(unused.observation.participation.bench,true);assert.equal(unused.observation.participation.unusedSubstitute,true);assert.equal(unused.observation.participation.appeared,false);
   const dismissed=await buildApiFootballWorkloadObservation(input({playersResponse:players(72),eventsResponse:events([{type:'Card',detail:'Red Card',player:{id:7},time:{elapsed:72,extra:0}}])}));
   assert.deepEqual(dismissed.observation.participation.dismissal,{minute:72,redCard:true});
 });
@@ -119,8 +120,11 @@ test('missing player/minutes remain unknown and duration-backed extra time is bo
 });
 
 test('owner-risk workload retention is source-bound and local research behavior is unchanged',async()=>{
-  const base={schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:'api-football'},participation:{status:'unknown',starter:false,minutes:null},quality:{missingFields:[]},rights:ownerRights()};
+  const base={schemaVersion:'eia1-workload-observation-v1',source:{sourceKey:'api-football'},participation:{status:'unknown',starter:null,minutes:null},quality:{missingFields:[]},rights:ownerRights()};
   assert.ok((await normaliseWorkloadObservation(base)).observationHash);
+  await assert.rejects(normaliseWorkloadObservation({...base,participation:{...base.participation,starter:false}}),/starter_semantics/);
+  await assert.rejects(normaliseWorkloadObservation({...base,participation:{...base.participation,status:'starter',starter:false}}),/starter_semantics/);
+  assert.ok((await normaliseWorkloadObservation({...base,participation:{...base.participation,status:'substitute',starter:false}})).observationHash);
   await assert.rejects(normaliseWorkloadObservation({...base,source:{sourceKey:'another-provider'}}),/rights_source_mismatch/);
   await assert.rejects(normaliseWorkloadObservation({...base,source:{}}),/rights_source_mismatch/);
   assert.ok((await normaliseWorkloadObservation({...base,source:{sourceKey:'legacy-research'},rights:{classification:'local_research_only'}})).observationHash);
@@ -136,8 +140,19 @@ test('fetchedAt and sourceRevision require bounded explicit provenance',async()=
 test('incomplete fixtures, unsupported competitions, missing lineups and schema drift fail closed',async()=>{
   assert.equal((await buildApiFootballWorkloadObservation(input({fixtureResponse:envelope('fixtures',[])}))).reason,'fixture_incomplete');
   assert.equal((await buildApiFootballWorkloadObservation(input({competitionConfig:[]}))).reason,'competition_unsupported');
-  const missingLineup=await buildApiFootballWorkloadObservation(input({lineupResponse:envelope('fixtures/lineups',[])}));assert.equal(missingLineup.ok,true);assert.equal(missingLineup.observation.participation.status,'unknown');assert.equal(missingLineup.observation.participation.starter,false);
+  const missingLineup=await buildApiFootballWorkloadObservation(input({lineupResponse:envelope('fixtures/lineups',[])}));assert.equal(missingLineup.ok,true);assert.equal(missingLineup.observation.participation.status,'unknown');assert.equal(missingLineup.observation.participation.starter,null);assert.equal(missingLineup.observation.participation.bench,null);assert.ok(missingLineup.observation.quality.missingFields.includes('lineupStatus'));
   assert.equal((await buildApiFootballWorkloadObservation(input({eventsResponse:{...events(),newField:true}}))).reason,'provider_schema_invalid');
+});
+
+test('missing or unqualified lineup evidence stays tri-state while appearance evidence remains independent',async()=>{
+  const noEvidence=await buildApiFootballWorkloadObservation(input({lineupResponse:envelope('fixtures/lineups',[]),playersResponse:players('absent')}));
+  assert.deepEqual({status:noEvidence.observation.participation.status,starter:noEvidence.observation.participation.starter,bench:noEvidence.observation.participation.bench,appeared:noEvidence.observation.participation.appeared},{status:'unknown',starter:null,bench:null,appeared:null});assert.ok(noEvidence.observation.quality.missingFields.includes('lineupStatus'));
+  const direct=await buildApiFootballWorkloadObservation(input({lineupResponse:envelope('fixtures/lineups',[]),playersResponse:players(25)}));
+  assert.deepEqual({status:direct.observation.participation.status,starter:direct.observation.participation.starter,bench:direct.observation.participation.bench,appeared:direct.observation.participation.appeared},{status:'unknown',starter:null,bench:null,appeared:true});
+  const substitution=await buildApiFootballWorkloadObservation(input({lineupResponse:envelope('fixtures/lineups',[]),playersResponse:players('absent'),eventsResponse:events([{type:'subst',player:{id:8},assist:{id:7},time:{elapsed:65,extra:0}}])}));
+  assert.deepEqual({status:substitution.observation.participation.status,starter:substitution.observation.participation.starter,bench:substitution.observation.participation.bench,appeared:substitution.observation.participation.appeared,substitutionOnMinute:substitution.observation.participation.substitutionOnMinute},{status:'unknown',starter:null,bench:null,appeared:true,substitutionOnMinute:65});
+  const absentFromTeamLineup=await buildApiFootballWorkloadObservation(input({lineupResponse:lineups({starter:false,bench:false}),playersResponse:players('absent')}));
+  assert.deepEqual({status:absentFromTeamLineup.observation.participation.status,starter:absentFromTeamLineup.observation.participation.starter,bench:absentFromTeamLineup.observation.participation.bench},{status:'unknown',starter:null,bench:null});assert.ok(absentFromTeamLineup.observation.quality.missingFields.includes('lineupStatus'));
 });
 
 test('security and shadow topology exclude application/model paths and generated artefacts',()=>{
