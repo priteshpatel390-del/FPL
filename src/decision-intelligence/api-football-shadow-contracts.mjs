@@ -32,12 +32,23 @@ const ID=/^[1-9]\d*$/;
 const fail=reason=>deepFreeze({ok:false,reason});
 const providerId=value=>ID.test(String(value??''))?String(value):null;
 function teamIdentityRow(row){return {id:Number(row.id),name:String(row.name),short_name:String(row.short_name)};}
-function teamIdentityKey(row){return `${Number(row.id)}\0${row.name}\0${row.short_name}`;}
+function teamIdentityKey(row){
+  if(row==null||typeof row!=='object'||Array.isArray(row))return null;
+  const id=Number(row.id);
+  if(!Number.isInteger(id)||id<=0)return null;
+  if(typeof row.name!=='string'||typeof row.short_name!=='string')return null;
+  return `${id}\0${row.name}\0${row.short_name}`;
+}
 function sameTeamUniverse(left,right){
-  if(!Array.isArray(left)||!Array.isArray(right)||left.length!==right.length)return false;
-  const a=[...left].map(teamIdentityKey).sort();
-  const b=[...right].map(teamIdentityKey).sort();
-  return a.every((key,index)=>key===b[index]);
+  try{
+    if(!Array.isArray(left)||!Array.isArray(right)||left.length!==right.length)return false;
+    const a=[...left].map(teamIdentityKey).sort();
+    const b=[...right].map(teamIdentityKey).sort();
+    if(a.some(key=>key==null)||b.some(key=>key==null))return false;
+    return a.every((key,index)=>key===b[index]);
+  }catch{
+    return false;
+  }
 }
 function officialFplInputFingerprint(bootstrap,fixtures){
   return {
@@ -78,30 +89,32 @@ export function officialFplTeamIdentity({season,teamId}={}){
   catch{return fail('official_fpl_team_identity_invalid');}
 }
 export function issueOfficialFplTeamUniverseAuthority(input={}){
-  if(input==null||typeof input!=='object'||Array.isArray(input))return fail('authoritative_pl_team_set_unavailable');
-  const bootstrap=input.bootstrap;
-  const fixtures=input.fixtures;
-  if(!bootstrap||typeof bootstrap!=='object'||Array.isArray(bootstrap)||!Array.isArray(fixtures))return fail('authoritative_pl_team_set_unavailable');
-  if(Array.isArray(input.teams)&&!sameTeamUniverse(input.teams,bootstrap.teams||[]))return fail('official_fpl_team_representation_conflicted');
-  if(!SEASON.test(input.season||''))return fail('season_invalid');
-  let normalised;
-  try{normalised=normaliseOfficialFplHistory({bootstrap,fixtures,season:input.season,fetchedAt:input.fetchedAt});}
-  catch(error){return fail(mapCanonicalFailure(error));}
-  const teams=bootstrap.teams.map(teamIdentityRow).sort((a,b)=>a.id-b.id);
-  const identities=teams.map(row=>canonicalFplIdentity(input.season,'team',String(row.id)));
-  const digest=stableStringify({
-    kind:OFFICIAL_FPL_TEAM_UNIVERSE_KIND,sourceKey:OFFICIAL_FPL_SOURCE_KEY,sourceKind:OFFICIAL_FPL_SOURCE_KIND,
-    sourceRevisionId:OFFICIAL_FPL_SOURCE_REVISION_ID,schemaVersion:OFFICIAL_FPL_SCHEMA_VERSION,
-    validationVersion:OFFICIAL_FPL_VALIDATION_VERSION,transformVersion:OFFICIAL_FPL_TRANSFORM_VERSION,
-    season:normalised.season,fetchedAt:normalised.fetchedAt,teams,identities,counts:normalised.counts,
-    inputFingerprint:officialFplInputFingerprint(bootstrap,fixtures)
-  });
-  return deepFreeze({
-    ok:true,kind:OFFICIAL_FPL_TEAM_UNIVERSE_KIND,sourceKey:OFFICIAL_FPL_SOURCE_KEY,sourceKind:OFFICIAL_FPL_SOURCE_KIND,
-    sourceRevisionId:OFFICIAL_FPL_SOURCE_REVISION_ID,schemaVersion:OFFICIAL_FPL_SCHEMA_VERSION,
-    validationVersion:OFFICIAL_FPL_VALIDATION_VERSION,transformVersion:OFFICIAL_FPL_TRANSFORM_VERSION,
-    season:normalised.season,fetchedAt:normalised.fetchedAt,identities,teams,counts:normalised.counts,digest,bootstrap,fixtures
-  });
+  try{
+    if(input==null||typeof input!=='object'||Array.isArray(input))return fail('authoritative_pl_team_set_unavailable');
+    const bootstrap=input.bootstrap;
+    const fixtures=input.fixtures;
+    if(!bootstrap||typeof bootstrap!=='object'||Array.isArray(bootstrap)||!Array.isArray(fixtures))return fail('authoritative_pl_team_set_unavailable');
+    if(Array.isArray(input.teams)&&!sameTeamUniverse(input.teams,bootstrap.teams||[]))return fail('official_fpl_team_representation_conflicted');
+    if(!SEASON.test(input.season||''))return fail('season_invalid');
+    let normalised;
+    try{normalised=normaliseOfficialFplHistory({bootstrap,fixtures,season:input.season,fetchedAt:input.fetchedAt});}
+    catch(error){return fail(mapCanonicalFailure(error));}
+    const teams=bootstrap.teams.map(teamIdentityRow).sort((a,b)=>a.id-b.id);
+    const identities=teams.map(row=>canonicalFplIdentity(input.season,'team',String(row.id)));
+    const digest=stableStringify({
+      kind:OFFICIAL_FPL_TEAM_UNIVERSE_KIND,sourceKey:OFFICIAL_FPL_SOURCE_KEY,sourceKind:OFFICIAL_FPL_SOURCE_KIND,
+      sourceRevisionId:OFFICIAL_FPL_SOURCE_REVISION_ID,schemaVersion:OFFICIAL_FPL_SCHEMA_VERSION,
+      validationVersion:OFFICIAL_FPL_VALIDATION_VERSION,transformVersion:OFFICIAL_FPL_TRANSFORM_VERSION,
+      season:normalised.season,fetchedAt:normalised.fetchedAt,teams,identities,counts:normalised.counts,
+      inputFingerprint:officialFplInputFingerprint(bootstrap,fixtures)
+    });
+    return deepFreeze({
+      ok:true,kind:OFFICIAL_FPL_TEAM_UNIVERSE_KIND,sourceKey:OFFICIAL_FPL_SOURCE_KEY,sourceKind:OFFICIAL_FPL_SOURCE_KIND,
+      sourceRevisionId:OFFICIAL_FPL_SOURCE_REVISION_ID,schemaVersion:OFFICIAL_FPL_SCHEMA_VERSION,
+      validationVersion:OFFICIAL_FPL_VALIDATION_VERSION,transformVersion:OFFICIAL_FPL_TRANSFORM_VERSION,
+      season:normalised.season,fetchedAt:normalised.fetchedAt,identities,teams,counts:normalised.counts,digest,bootstrap,fixtures
+    });
+  }catch(error){return fail(mapCanonicalFailure(error));}
 }
 export function verifyOfficialFplTeamUniverseAuthority(season,authority){
   if(authority==null||typeof authority!=='object'||Array.isArray(authority)||authority.kind!==OFFICIAL_FPL_TEAM_UNIVERSE_KIND)return fail('authoritative_pl_team_set_unavailable');

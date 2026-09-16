@@ -236,6 +236,15 @@ function auditEntry(fields){
 function quotaSnapshot(quota){
   return quota?.ok?{state:quota.state,requestsLimit:quota.requestsLimit,requestsRemaining:quota.requestsRemaining,rateLimit:quota.rateLimit,remaining:quota.remaining}:null;
 }
+function uncommittedAudit(audit){
+  return audit.map(entry=>{
+    if(entry.category!=='success')return entry;
+    return deepFreeze({...entry,workloadRelevantAdmitted:0,rejected:0,unmapped:0,conflicted:0});
+  });
+}
+function generationCommitted(scanState,succeededCount,plannedCount){
+  return scanState==='completed'&&succeededCount===plannedCount;
+}
 
 async function performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl,sourceRevision,teamMappings,independentCandidates,kickoffObservations}){
   const request=buildApiFootballDiscoveryRequest({logicalCompetitionKey:planItem.logicalCompetitionKey,providerLeagueId:planItem.providerLeagueId,providerSeason:planItem.providerSeason});
@@ -272,43 +281,53 @@ export async function runApiFootballDiscoveryScan({
   const plan=apiFootballDiscoveryPlan();
   if(!plan.ok)return emptyScan(plan.reason);
   const coverage=mappingCoverage(teamMappings,plan.fplSeason,{officialFplAuthority:officialFplAuthority||officialFplEvidence||officialFplSnapshot||officialTeams});
-  const audit=[],fixtures=[];
+  const audit=[],provisionalFixtures=[];
   let attempts=0,needDelay=false,scanState='completed';
   competitionLoop: for(const planItem of plan.items){
     for(let tryNumber=1;tryNumber<=API_FOOTBALL_DISCOVERY_MAX_ATTEMPTS_PER_QUERY;tryNumber++){
       if(attempts>=API_FOOTBALL_DISCOVERY_MAX_SCAN_ATTEMPTS){scanState='stopped_attempt_limit';break competitionLoop;}
       if(needDelay){
         try{await sleepImpl(API_FOOTBALL_DISCOVERY_ATTEMPT_GAP_MS);}
-        catch{return emptyScan('provider_disabled_configuration_invalid',{attempts,audit,mappingCoverage:coverage});}
+        catch{return emptyScan('provider_disabled_configuration_invalid',{attempts,audit:uncommittedAudit(audit),mappingCoverage:coverage});}
       }
       const attempt=await performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl,sourceRevision,teamMappings,independentCandidates,kickoffObservations});
       if(attempt.consumed){attempts+=1;needDelay=true;}else needDelay=false;
       if(attempt.result.ok){
         const admitted=attempt.result.fixtures;
-        fixtures.push(...admitted);
+        provisionalFixtures.push(...admitted);
         const entry=auditEntry({
           logicalCompetitionKey:planItem.logicalCompetitionKey,providerLeagueId:planItem.providerLeagueId,providerSeason:planItem.providerSeason,
           attemptNumber:tryNumber,category:'success',httpClass:attempt.httpClass,quota:quotaSnapshot(attempt.quota),fetchedAt:attempt.fetchedAt,
-          providerRowsObserved:attempt.providerRowsObserved||0,workloadRelevantAdmitted:admitted.filter(row=>row.workloadRelevant).length,
-          rejected:admitted.filter(row=>row.rejected).length,unmapped:admitted.filter(row=>row.unmapped).length,conflicted:admitted.filter(row=>row.conflicted).length
+          providerRowsObserved:attempt.providerRowsObserved||0,workloadRelevantAdmitted:0,rejected:0,unmapped:0,conflicted:0
         });
-        if(!entry.ok)return emptyScan(entry.reason,{attempts,audit,mappingCoverage:coverage});
+        if(!entry.ok)return emptyScan(entry.reason,{attempts,audit:uncommittedAudit(audit),mappingCoverage:coverage});
         audit.push(entry);continue competitionLoop;
       }
       const entry=auditEntry({
         logicalCompetitionKey:planItem.logicalCompetitionKey,providerLeagueId:planItem.providerLeagueId,providerSeason:planItem.providerSeason,
         attemptNumber:tryNumber,category:attempt.result.reason,httpClass:attempt.httpClass||null,quota:quotaSnapshot(attempt.quota),fetchedAt:attempt.fetchedAt||null
       });
-      if(!entry.ok)return emptyScan(entry.reason,{attempts,audit,mappingCoverage:coverage});
+      if(!entry.ok)return emptyScan(entry.reason,{attempts,audit:uncommittedAudit(audit),mappingCoverage:coverage});
       audit.push(entry);
       if(STOP_SCAN.has(attempt.result.reason)){scanState='stopped_quota_exhausted';break competitionLoop;}
       if(!RETRYABLE.has(attempt.result.reason))break;
+      if(attempts>=API_FOOTBALL_DISCOVERY_MAX_SCAN_ATTEMPTS){scanState='stopped_attempt_limit';break competitionLoop;}
     }
   }
   const succeeded=new Set(audit.filter(row=>row.category==='success').map(row=>row.logicalCompetitionKey));
   if(scanState==='completed'&&succeeded.size!==plan.items.length)scanState='completed_with_failures';
+  if(!generationCommitted(scanState,succeeded.size,plan.items.length)){
+    const limitations=[coverage.limitation,scanState].filter(Boolean);
+    const result={
+      ok:false,reason:scanState,scanState,mode:API_FOOTBALL_DISCOVERY_MODE,
+      attempts,fixtures:[],audit:uncommittedAudit(audit),mappingCoverage:coverage,limitations,origin:API_FOOTBALL_ORIGIN,collectionMode:API_FOOTBALL_COLLECTION_MODE
+    };
+    const secret=rejectSecret(result);
+    if(secret)return emptyScan('secret_material',{attempts,mappingCoverage:coverage});
+    return deepFreeze(result);
+  }
   const byIdentity=new Map();
-  for(const row of fixtures){
+  for(const row of provisionalFixtures){
     if(!byIdentity.has(row.identity))byIdentity.set(row.identity,[]);
     byIdentity.get(row.identity).push(row);
   }
@@ -332,9 +351,9 @@ export async function runApiFootballDiscoveryScan({
     const counts=countsByCompetition.get(entry.logicalCompetitionKey)||{workloadRelevantAdmitted:0,rejected:0,unmapped:0,conflicted:0};
     return deepFreeze({...entry,...counts});
   });
-  const limitations=[coverage.limitation,scanState==='completed'?null:scanState].filter(Boolean);
+  const limitations=[coverage.limitation].filter(Boolean);
   const result={
-    ok:scanState==='completed',reason:scanState==='completed'?null:scanState,scanState,mode:API_FOOTBALL_DISCOVERY_MODE,
+    ok:true,reason:null,scanState,mode:API_FOOTBALL_DISCOVERY_MODE,
     attempts,fixtures:reconciled,audit:restated,mappingCoverage:coverage,limitations,origin:API_FOOTBALL_ORIGIN,collectionMode:API_FOOTBALL_COLLECTION_MODE
   };
   const secret=rejectSecret(result);

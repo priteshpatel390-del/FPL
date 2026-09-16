@@ -178,7 +178,7 @@ test('429 stops the scan, authentication and schema failures are not retried',as
   const transport429=mockFetch(async(url,options,n)=>n===2?{ok:false,status:429,headers:headers({'x-ratelimit-requests-remaining':'0'})}:{ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]});
   const stopped=await runApiFootballDiscoveryScan(scanOptions({transport:transport429}));
   assert.equal(stopped.scanState,'stopped_quota_exhausted');assert.equal(stopped.attempts,2);assert.equal(transport429.calls.length,2);
-  assert.equal(stopped.audit.at(-1).category,'quota_exhausted');assert.ok(stopped.fixtures.length>=1);
+  assert.equal(stopped.audit.at(-1).category,'quota_exhausted');assert.equal(stopped.fixtures.length,0);assert.equal(stopped.ok,false);
   const auth=mockFetch(async()=>({ok:false,status:401,headers:headers()}));
   const authScan=await runApiFootballDiscoveryScan(scanOptions({transport:auth}));
   assert.equal(auth.calls.length,5);assert.ok(authScan.audit.every(row=>row.category==='authentication_failure'&&row.attemptNumber===1));
@@ -374,7 +374,7 @@ test('HTTP 429 stops the scan even when quota headers are absent or malformed',a
     const transport=mockFetch(async(url,options,n)=>n===2?{ok:false,status:429,headers:hdrs}:{ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]});
     const stopped=await runApiFootballDiscoveryScan(scanOptions({transport}));
     assert.equal(stopped.scanState,'stopped_quota_exhausted');assert.equal(stopped.attempts,2);assert.equal(transport.calls.length,2);
-    assert.equal(stopped.audit.at(-1).category,'quota_exhausted');
+    assert.equal(stopped.audit.at(-1).category,'quota_exhausted');assert.equal(stopped.fixtures.length,0);assert.equal(stopped.ok,false);
     assert.doesNotMatch(JSON.stringify(stopped),/deliberate-test-key-material|x-apisports-key|Home FC/i);
   }
   const malformedSuccess=mockFetch(async()=>({ok:true,status:200,headers:headers({'x-ratelimit-remaining':'-1'}),json:async()=>({})}));
@@ -415,6 +415,114 @@ test('duplicate provider fixture IDs with incompatible core identity conflict',a
   })}));
   const collided=crossComp.fixtures.filter(row=>row.providerFixtureId==='1636205');
   assert.equal(collided.length,1);assert.equal(collided[0].qualification.state,'CONFLICTED');assert.equal(collided[0].workloadRelevant,false);
+});
+
+test('incomplete discovery generations are atomic and admit no fixture evidence',async()=>{
+  function assertUncommitted(scan,{scanState,attempts,calls,transport}={}){
+    assert.equal(scan.ok,false);assert.equal(scan.scanState,scanState);assert.equal(scan.reason,scanState);
+    assert.equal(scan.fixtures.length,0);assert.deepEqual(scan.fixtures,[]);
+    if(attempts!=null)assert.equal(scan.attempts,attempts);
+    if(calls!=null)assert.equal(transport.calls.length,calls);
+    assert.ok(scan.audit.every(row=>row.workloadRelevantAdmitted===0&&row.rejected===0&&row.unmapped===0&&row.conflicted===0));
+    assert.doesNotMatch(JSON.stringify(scan),/deliberate-test-key-material|x-apisports-key|Home FC/i);
+  }
+  const firstThen=(failing)=>mockFetch(async(url,options,n)=>{
+    if(n===1)return {ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]};
+    return typeof failing==='function'?failing(url,n):failing;
+  });
+
+  const stop429=firstThen({ok:false,status:429,headers:headers()});
+  const stoppedEarly=await runApiFootballDiscoveryScan(scanOptions({transport:stop429}));
+  assertUncommitted(stoppedEarly,{scanState:'stopped_quota_exhausted',attempts:2,calls:2,transport:stop429});
+  assert.equal(stoppedEarly.audit[0].category,'success');assert.equal(stoppedEarly.audit[0].providerRowsObserved,1);
+  assert.equal(stoppedEarly.audit.at(-1).category,'quota_exhausted');assert.equal(stoppedEarly.audit.at(-1).httpClass,'4xx');
+
+  const later429=mockFetch(async(url,options,n)=>n>=4?{ok:false,status:429,headers:headers()}:{ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]});
+  const stoppedLater=await runApiFootballDiscoveryScan(scanOptions({transport:later429}));
+  assertUncommitted(stoppedLater,{scanState:'stopped_quota_exhausted',attempts:4,calls:4,transport:later429});
+  assert.equal(stoppedLater.audit.filter(row=>row.category==='success').length,3);
+
+  const auth=firstThen({ok:false,status:401,headers:headers()});
+  const authScan=await runApiFootballDiscoveryScan(scanOptions({transport:auth}));
+  assertUncommitted(authScan,{scanState:'completed_with_failures',attempts:5,calls:5,transport:auth});
+  assert.ok(authScan.audit.slice(1).every(row=>row.category==='authentication_failure'&&row.attemptNumber===1));
+
+  const schema=firstThen({ok:true,status:200,headers:headers(),json:async()=>({...envelope(3,[]),extra:true})});
+  const schemaScan=await runApiFootballDiscoveryScan(scanOptions({transport:schema}));
+  assertUncommitted(schemaScan,{scanState:'completed_with_failures',attempts:5,calls:5,transport:schema});
+  assert.ok(schemaScan.audit.slice(1).every(row=>row.category==='provider_schema_invalid'&&row.attemptNumber===1));
+
+  const paging=firstThen({ok:true,status:200,headers:headers(),json:async()=>({...envelope(3,[row({id:3001,league:3,home:63,away:532})]),paging:{current:1,total:2}})});
+  const pagingScan=await runApiFootballDiscoveryScan(scanOptions({transport:paging}));
+  assertUncommitted(pagingScan,{scanState:'completed_with_failures',attempts:5,calls:5,transport:paging});
+  assert.equal(pagingScan.audit[1].category,'pagination_unsupported');assert.equal(pagingScan.audit[1].attemptNumber,1);
+
+  const retryTransport=mockFetch(async(url,options,n)=>{
+    if(url.searchParams.get('league')==='3')throw new Error('temporary');
+    return {ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]};
+  });
+  const retriedOut=await runApiFootballDiscoveryScan(scanOptions({transport:retryTransport,budget:createDailyRequestBudget({day:'2026-09-16',limit:10})}));
+  assertUncommitted(retriedOut,{scanState:'completed_with_failures',attempts:6,calls:6,transport:retryTransport});
+  assert.equal(retriedOut.audit.filter(row=>row.logicalCompetitionKey==='uefa_europa_league').length,2);
+
+  const ceiling=mockFetch(async()=>{throw new Error('temporary');});
+  const limitScan=await runApiFootballDiscoveryScan(scanOptions({transport:ceiling,budget:createDailyRequestBudget({day:'2026-09-16',limit:10})}));
+  assert.equal(limitScan.ok,false);assert.equal(limitScan.fixtures.length,0);assert.equal(limitScan.attempts,10);assert.equal(ceiling.calls.length,10);
+  assert.ok(limitScan.scanState==='completed_with_failures'||limitScan.scanState==='stopped_attempt_limit');
+  assert.ok(limitScan.audit.every(row=>row.workloadRelevantAdmitted===0));
+
+  let slept=0;const boomSleep=async()=>{slept+=1;if(slept>=1)throw new Error('sleep-fail');};
+  const configTransport=successFetch();
+  const configScan=await runApiFootballDiscoveryScan(scanOptions({transport:configTransport,sleepImpl:boomSleep}));
+  assert.equal(configScan.ok,false);assert.equal(configScan.reason,'provider_disabled_configuration_invalid');
+  assert.equal(configScan.fixtures.length,0);assert.equal(configTransport.calls.length,1);
+});
+
+test('a complete five-competition scan still returns reconciled fixtures, including valid zero-row competitions',async()=>{
+  const complete=await runApiFootballDiscoveryScan(scanOptions());
+  assert.equal(complete.ok,true);assert.equal(complete.scanState,'completed');assert.equal(complete.reason,null);
+  assert.ok(complete.fixtures.length>=5);assert.ok(complete.audit.every(row=>row.category==='success'));
+  assert.ok(complete.audit.reduce((sum,row)=>sum+row.workloadRelevantAdmitted,0)>=1);
+  const leagueCup=complete.audit.find(row=>row.logicalCompetitionKey==='league_cup');
+  assert.ok(leagueCup.workloadRelevantAdmitted>=1);assert.equal(leagueCup.providerRowsObserved,1);
+
+  const emptyEuropa=envelope(3,[]);
+  const withEmpty=mockFetch(async url=>{
+    const league=url.searchParams.get('league');
+    return {ok:true,status:200,headers:headers(),json:async()=>league==='3'?emptyEuropa:payloads[league]};
+  });
+  const emptyScan=await runApiFootballDiscoveryScan(scanOptions({transport:withEmpty}));
+  assert.equal(emptyScan.ok,true);assert.equal(emptyScan.scanState,'completed');
+  assert.equal(withEmpty.calls.length,5);
+  assert.equal(emptyScan.audit.find(row=>row.logicalCompetitionKey==='uefa_europa_league').category,'success');
+  assert.equal(emptyScan.audit.find(row=>row.logicalCompetitionKey==='uefa_europa_league').providerRowsObserved,0);
+  assert.ok(emptyScan.fixtures.some(row=>row.providerFixtureId==='1636205'));
+  assert.equal(emptyScan.fixtures.some(row=>row.providerLeagueId==='3'),false);
+});
+
+test('malformed optional Official FPL team representations fail closed without throwing',()=>{
+  function conflicted(mutate){
+    const world=officialFplWorld();mutate(world);return issueOfficialFplTeamUniverseAuthority(world);
+  }
+  assert.doesNotThrow(()=>conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:null);}));
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:null);}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:'Chelsea');}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:12);}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:[row]);}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:({...row,id:undefined}));}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:({id:row.id,short_name:row.short_name}));}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:({id:row.id,name:row.name}));}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:({...row,id:99}));}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:({...row,name:'Other Name'}));}).reason,'official_fpl_team_representation_conflicted');
+  assert.equal(conflicted(world=>{world.teams=world.bootstrap.teams.map((row,i)=>i?row:({...row,short_name:'ZZZ'}));}).reason,'official_fpl_team_representation_conflicted');
+  const reordered=officialFplWorld();reordered.teams=[...reordered.bootstrap.teams].reverse();
+  assert.equal(issueOfficialFplTeamUniverseAuthority(reordered).ok,true);
+  const omitted=officialFplWorld();delete omitted.teams;
+  assert.equal(issueOfficialFplTeamUniverseAuthority(omitted).ok,true);
+  const malformedBootstrap=officialFplWorld();malformedBootstrap.bootstrap.teams=[null,...malformedBootstrap.bootstrap.teams.slice(1)];
+  assert.doesNotThrow(()=>issueOfficialFplTeamUniverseAuthority(malformedBootstrap));
+  assert.equal(issueOfficialFplTeamUniverseAuthority(malformedBootstrap).reason,'authoritative_pl_team_set_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,malformedBootstrap).reason,'authoritative_pl_team_set_invalid');
 });
 
 test('API-Football discovery stays isolated from production, live config and migration 0005',()=>{
