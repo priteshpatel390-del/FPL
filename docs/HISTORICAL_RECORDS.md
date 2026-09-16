@@ -151,6 +151,7 @@ Separately tracked live-season evidence gates, D1 implementation, Understat repa
 - [EIA-1 Expected-Minutes Evidence Activation](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
 - [EIA-2I1 API-Football Private-Use Shadow Workload Foundation](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
 - [EIA-2I3 Penalty/Duration Contract Remediation and Live Closeout](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).
+- [EIA-2I5D Repository-Only API-Football Shadow Runtime and Persistence](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
 - [FPL-T1 manual-squad crash record](FPL-T1-MANUAL-SQUAD-CRASH.md).
 - [Transfers exact performance record](TRANSFERS-EXACT-PERFORMANCE.md).
 - [Team T-01/T-02 implementation](TEAM-UX-T01-T02-IMPLEMENTATION.md).

@@ -1,3 +1,7 @@
+## EIA-2I5D limitations
+
+Collector remains deliberately unusable live: no credential, real D1 ID, deployed Worker, Cron, enabled kill switch or approved response-byte ceiling exists. Full 20-club API-Football-to-FPL mapping remains unproven. Provider subscription entitlement remains unknown; observed headers are telemetry only. Repository race tests and local D1 migration tests do not prove live Cloudflare behavior. No model value is established. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 # KNOWN_LIMITATIONS.md
 
 ## EIA-2I5B limitations

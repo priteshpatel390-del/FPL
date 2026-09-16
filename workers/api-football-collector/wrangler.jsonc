@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "teamsheet-api-football-shadow-collector",
+  "main": "collector.mjs",
+  "compatibility_date": "2026-09-16",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "vars": {
+    "API_FOOTBALL_FPL_SEASON": "2026-27",
+    "API_FOOTBALL_PROVIDER_SEASON": "2026",
+    "EIA_2I5D_ACTIVATION": "REPOSITORY_ONLY_BLOCKED"
+  },
+  "triggers": { "crons": [] },
+  "d1_databases": [{
+    "binding": "TEAMSHEET_DATA_DB",
+    "database_name": "teamsheet-data",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "../data-platform/migrations"
+  }]
+}

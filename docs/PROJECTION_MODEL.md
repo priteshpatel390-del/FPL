@@ -1,3 +1,7 @@
+## EIA-2I5D isolation
+
+API-Football persistence remains private shadow evidence with no production calculation read path. EIA-2I5D changes no expected-minutes, xP, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic. Any future influence requires separate approval and prospective validation. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 # PROJECTION_MODEL.md — projection engine reference
 
 ## EIA-2I5B external-intelligence boundary

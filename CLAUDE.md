@@ -1,3 +1,8 @@
+<!-- EIA-2I5D-2026-09-16 -->
+### Current external-intelligence checkpoint — EIA-2I5D repository-only shadow runtime and persistence
+
+EIA-2I5D adds migration 0005 and a dedicated scheduled-only, no-public-fetch API-Football Worker package. Durable D1 contracts cover disabled runtime state, 100-attempt UTC-day accounting, global 30-second lease, normalized quota telemetry, request attempts, atomic discovery generations/heads, append-only fixture revisions and exact generation membership. EIA-2I5D-R1 makes lease/count plus attempt provenance one atomic pre-egress batch, persists 401/403 as a non-retryable credential-invalid/collection-disabled authentication block, and binds every endpoint class to its exact query shape. Official FPL authority is derived from completed DATA-S2A D1 heads, content-bound, exactly 20 teams and no older than 48 hours. The response byte ceiling intentionally remains unqualified (`null`), so runtime activation fails closed. Wrangler declares no Cron, uses an inert D1 UUID and stores no credential. Repository-ready only: not provisioned, deployed, credentialed, scheduled or live accepted. No provider request, live D1 mutation, model/UI/recommendation change or production deployment occurred. See [EIA-2I5D](docs/EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 <!-- EIA-2I5B-2026-09-16 -->
 ### Current external-intelligence checkpoint — EIA-2I5B hardened provider request and fixture discovery
 
