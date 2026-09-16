@@ -1,5 +1,11 @@
 # KNOWN_LIMITATIONS.md
 
+## EIA-2I5A limitations
+
+- No live discovery, collection, correction/re-fetch, quota enforcement or scheduler exists.
+- Mappings require manual or separately evidenced verification; names cannot verify identity.
+- Cross-source verification needs resolved canonical identities. Kickoff conflicts may leave canonical kickoff null.
+
 ## API-Football qualification limitations — EIA-2I4C
 
 API-Football is qualified for a design checkpoint, not production. Exact paid tier and contractual entitlement remain unknown; current-season detail was sampled directly only for League Cup and Champions League; one player mapping does not prove automatic full-squad mapping; and no predictive benefit is established. Chelsea–Leeds fixture identity is verified, but its exact kickoff remains unresolved because API-Football and Leeds report 19:00 UTC while Chelsea reports 19:15 UTC. No source error or scheduled-versus-actual explanation is proven. Fixture-identity conflict handling and bounded correction/re-fetch remain future design work. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).

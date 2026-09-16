@@ -1,5 +1,9 @@
 # EXTERNAL-INTELLIGENCE-FOUNDATION.md — research and shadow-architecture plan
 
+## EIA-2I5A implementation boundary
+
+EIA-2I5A supplies API-Football offline identity/schema contracts only. It preserves `shadow_only`, fail-closed conflict/rights behaviour and model isolation. No acquisition, weighting or production use is activated.
+
 Status: **Owner-approved documentation and research record only — 12 August 2026. No implementation, provider activation, model/calculation change or recommendation change is authorised by this document.**
 
 Purpose: preserve the external-intelligence investigation, define the safe future architecture for free external information, identify prospective evidence that can be lost, and pre-register an evidence-led sequence for post-GW1 work.

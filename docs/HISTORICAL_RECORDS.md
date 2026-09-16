@@ -1,5 +1,7 @@
 # Historical Records Index
 
+- [EIA-2I5A API-Football shadow identity and D1 schema contracts](EIA-2I5A-API-FOOTBALL-SHADOW-IDENTITY-SCHEMA.md) — offline season-scoped identity, exact qualification, explicit conflicts, participation and narrow owner-risk storage; no collector, secret, schedule or model path.
+
 - [Decision Intelligence — DI-0 Foundation & Architecture](DECISION-INTELLIGENCE-FOUNDATION.md) — canonical investigation and proposed architecture; approves no implementation or production behaviour.
 - [DI-2 Automated Evaluation & Ablation](DECISION-INTELLIGENCE-DI2-EVALUATION.md) — offline shadow evaluation implementation record covering immutable manifests, frozen point-in-time views, explicit arms, versioned metrics, deterministic reports and the synthetic-only evidence boundary; creates no production approval.
 - [DI-3 Validated Production Decision Layer](DECISION-INTELLIGENCE-DI3-DECISION-LAYER.md) — Stage-A offline canonical action/consequence/artifact contracts, parity adapter, exact diff tooling and owner gate; changes no production recommendation and grants no production integration approval.

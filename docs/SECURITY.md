@@ -1,5 +1,9 @@
 # SECURITY.md
 
+## EIA-2I5A
+
+Adds no network call, endpoint, relay, credential, secret binding, Cron, public read path or raw-provider payload storage. Contracts remain offline and shadow-only. EIA-2I5B request security is not implemented or approved.
+
 ## EIA-2I4C API-Football qualified-design security boundary
 
 EIA-2I4C changes no runtime or credential handling. Any later approved API-Football collector must keep the key server-side and absent from generated assets, logs, rendered output, relays and persisted facts; pin credential-bearing requests to the approved HTTPS origin; reject redirects; retain raw responses only transiently; store only necessary normalized provenance-bearing facts; and degrade without corrupting existing valid state or affecting Official FPL behaviour. Paid-provider acceptance does not approve production activation, broaden private/non-commercial rights, or weaken model isolation. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).

@@ -1,5 +1,9 @@
 # ARCHITECTURE.md
 
+## EIA-2I5A shadow boundary
+
+API-Football identity, qualification, conflict and participation contracts live only under Decision Intelligence and isolated data-platform D1 schema. Production application/model modules do not import them. Stable provider fixture/player identity is separate from mutable observations and optional FPL mappings. Collection remains disabled.
+
 ## EIA-2I3 API-Football duration architecture
 
 EIA-2I3 supersedes EIA-2I1 duration inference only. Consistent `FT` elapsed at most 90 establishes `extraTime:false`; consistent `AET` elapsed above 90 establishes `true`; `PEN` requires one verified fixture-specific qualification with consistent duration and provenance, otherwise duration and extra time remain null. Direct player minutes never derive fixture duration. Secret, rights, identity, request-budget and shadow/production isolation boundaries are unchanged. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

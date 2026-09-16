@@ -1,5 +1,9 @@
 # Data Architecture D1 — historical and live data platform
 
+## EIA-2I5A additive shadow schema
+
+Migration 0004 adds explicit API-Football private-use rights admission, stable provider fixture identities and append-only participation revisions. It omits request, quota and scheduler state until EIA-2I5B. Optional canonical player mapping permits later historical linking without refetch. No second datastore or production read path is introduced.
+
 Status: **approved architecture; partially implemented.** The GW1-P1 backend evidence foundation is merged through PR #118 at `58b834a…`. GW1-P2 browser delivery is implemented on the unmerged PR #119 candidate and is pending owner physical acceptance. The wider structured-record and downstream-reporting scope remains deferred. **D1 is not wholly deferred.**  
 Approved by: Pritesh, 9 August 2026  
 Repository baseline investigated: `main` `6e725485564a51ee2a17bc08e5c8bf95e8c2778c`  

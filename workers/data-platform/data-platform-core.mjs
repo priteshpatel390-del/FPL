@@ -2,7 +2,7 @@ export const PLATFORM_VERSION='1.0.1';
 export const MODE='shadow_only';
 export const MAX_REQUEST_BYTES=64*1024;
 export const MAX_PAGE_SIZE=100;
-export const RIGHTS=Object.freeze(['durable_allowed','attribution_required','local_research_only','durable_blocked','unknown_fail_closed']);
+export const RIGHTS=Object.freeze(['durable_allowed','attribution_required','local_research_only','durable_blocked','unknown_fail_closed','owner_risk_accepted_private_use']);
 export const MAPPING_METHODS=Object.freeze(['provider_id_crosswalk','manually_verified']);
 export const ADMISSION_STATES=Object.freeze(['accepted','quarantined']);
 export const QUALITY_STATES=Object.freeze(['fresh','stale','conflicting','uncertain']);
@@ -30,6 +30,7 @@ export function validateRevision(revision){
   const attribution=revision.rights_classification==='attribution_required';
   if(Boolean(revision.attribution_required)!==attribution)return {ok:false,reason:'rights_inconsistent'};
   if(attribution&&!String(revision.attribution_text||'').trim())return {ok:false,reason:'attribution_missing'};
+  if(revision.rights_classification==='owner_risk_accepted_private_use'&&!(revision.source_key==='api-football'&&revision.provider==='api-football'&&/^EIA-2I(?:1|5A)(?:[-:][A-Za-z0-9._-]+)?$/.test(String(revision.owner_approval_id||''))&&revision.allowed_use==='private_noncommercial_research'&&Boolean(revision.retention_allowed)&&!Boolean(revision.redistribution_allowed)&&!Boolean(revision.public_use_allowed)&&!Boolean(revision.commercial_use_allowed)&&!Boolean(revision.raw_payload_retention_allowed)&&Boolean(revision.stop_on_objection)))return {ok:false,reason:'rights_inconsistent'};
   return {ok:true};
 }
 export function rightsAdmission(revision){

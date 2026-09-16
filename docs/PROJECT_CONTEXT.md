@@ -1,5 +1,9 @@
 # PROJECT_CONTEXT.md
 
+## EIA-2I5A API-Football shadow identity and schema
+
+EIA-2I5A adds disabled, offline contracts for season-scoped competition configuration, verified provider mappings, stable fixture/player identity, exact cross-source qualification, field conflicts, factual participation and narrow owner-risk D1 admission. It adds no collector, request path, secret, schedule, live infrastructure, model input or UI path. EIA-2I3 duration semantics remain unchanged. See [EIA-2I5A](EIA-2I5A-API-FOOTBALL-SHADOW-IDENTITY-SCHEMA.md).
+
 ## EIA-2I4C API-Football qualification closeout
 
 API-Football is qualified only for a separately approved shadow-collector and fixture-identity design checkpoint. Paid current-season League Cup and Champions League samples established factual workload fields and one season-scoped Cole Palmer mapping. Chelsea–Leeds identity is verified while exact kickoff remains unresolved across authoritative sources; future fixture-identity remediation and bounded correction/re-fetch design are required but not implemented. Pritesh accepts recurring paid API-Football, so permanent Free operation is no longer a release gate. No collector, production/model influence or infrastructure is approved. See [EIA-2I4C](EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md).
