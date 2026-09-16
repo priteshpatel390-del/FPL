@@ -2,7 +2,8 @@ import {deepFreeze} from './canonical.mjs';
 import {eia1SecretFinding} from './eia1-safety.mjs';
 import {
   API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_ENDPOINTS,API_FOOTBALL_ORIGIN,API_FOOTBALL_SOURCE_KEY,
-  apiFootballRequestInit,buildPinnedApiFootballUrl,decodeApiFootballResponse,normalizeApiFootballQuotaHeaders
+  apiFootballRequestInit,buildPinnedApiFootballUrl,decodeApiFootballResponse,normalizeApiFootballQuotaHeaders,
+  sendApiFootballRequest
 } from './api-football-foundation.mjs';
 import {
   apiFootballCompetitionRegistry,apiFootballFixtureIdentity,apiFootballTeamIdentity,crossSourceQualify,
@@ -20,7 +21,7 @@ export const API_FOOTBALL_DISCOVERY_MODE='disabled_fixture_discovery_only';
 const SOURCE_REVISION=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const ISO_INSTANT=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 const STATUS=new Set(['NS','TBD','1H','HT','2H','ET','BT','P','SUSP','INT','FT','AET','PEN','PST','CANC','ABD','AWD','WO','LIVE']);
-const RETRYABLE=new Set(['transport_failure','temporary_server_failure']);
+const RETRYABLE=new Set(['transport_failure','temporary_server_failure','provider_timeout']);
 const STOP_SCAN=new Set(['quota_exhausted']);
 const DISCOVERY_QUERY_KEYS=Object.freeze(['league','season']);
 
@@ -246,7 +247,7 @@ function generationCommitted(scanState,succeededCount,plannedCount){
   return scanState==='completed'&&succeededCount===plannedCount;
 }
 
-async function performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl,sourceRevision,teamMappings,independentCandidates,kickoffObservations}){
+async function performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl,sourceRevision,teamMappings,independentCandidates,kickoffObservations,timeoutSignal}){
   const request=buildApiFootballDiscoveryRequest({logicalCompetitionKey:planItem.logicalCompetitionKey,providerLeagueId:planItem.providerLeagueId,providerSeason:planItem.providerSeason});
   if(!request.ok)return {result:request,consumed:false};
   const pinned=buildPinnedApiFootballUrl(planItem.endpoint,request.search);
@@ -256,9 +257,12 @@ async function performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl
   if(!budget.consume())return {result:safeFailure('quota_exhausted'),consumed:false};
   const fetchedAt=strictIsoInstant(nowImpl());
   if(!fetchedAt)return {result:safeFailure('provenance_invalid'),consumed:true};
-  let response;
-  try{response=await fetchImpl(pinned.url,requestInit.init);}
-  catch{return {result:safeFailure('transport_failure'),consumed:true,fetchedAt,httpClass:'transport'};}
+  const sent=await sendApiFootballRequest({fetchImpl,url:pinned.url,init:requestInit.init,timeoutSignal});
+  if(!sent.ok){
+    const timedOut=sent.reason==='provider_timeout';
+    return {result:sent,consumed:true,fetchedAt,httpClass:timedOut?'timeout':'transport'};
+  }
+  const response=sent.response;
   const quota=normalizeApiFootballQuotaHeaders(response?.headers);
   const failure=classifyAttemptFailure(response?.status);
   if(failure==='quota_exhausted')return {result:safeFailure('quota_exhausted'),consumed:true,fetchedAt,httpClass:httpClass(response.status),quota:quota.ok?quota:null};
@@ -272,12 +276,12 @@ async function performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl
 }
 
 export async function runApiFootballDiscoveryScan({
-  apiKey,fetchImpl,sleepImpl,budget,nowImpl,sourceRevision,rights,teamMappings=[],independentCandidates=[],kickoffObservations=[],officialFplAuthority,officialFplEvidence,officialFplSnapshot,officialTeams
+  apiKey,fetchImpl,sleepImpl,budget,nowImpl,sourceRevision,rights,teamMappings=[],independentCandidates=[],kickoffObservations=[],officialFplAuthority,officialFplEvidence,officialFplSnapshot,officialTeams,timeoutSignal=AbortSignal.timeout
 }={}){
   const classified=classifyRights(rights||{});
   if(!classified.valid||classified.classification!==OWNER_RISK_PRIVATE_USE||classified.provider!==OWNER_RISK_PROVIDER)return emptyScan('rights_invalid');
   if(typeof apiKey!=='string'||!apiKey.length)return emptyScan('provider_disabled_secret_missing');
-  if(typeof fetchImpl!=='function'||typeof sleepImpl!=='function'||!budget?.consume||typeof nowImpl!=='function'||!SOURCE_REVISION.test(sourceRevision||''))return emptyScan('provider_disabled_configuration_invalid');
+  if(typeof fetchImpl!=='function'||typeof sleepImpl!=='function'||!budget?.consume||typeof nowImpl!=='function'||typeof timeoutSignal!=='function'||!SOURCE_REVISION.test(sourceRevision||''))return emptyScan('provider_disabled_configuration_invalid');
   const plan=apiFootballDiscoveryPlan();
   if(!plan.ok)return emptyScan(plan.reason);
   const coverage=mappingCoverage(teamMappings,plan.fplSeason,{officialFplAuthority:officialFplAuthority||officialFplEvidence||officialFplSnapshot||officialTeams});
@@ -290,7 +294,7 @@ export async function runApiFootballDiscoveryScan({
         try{await sleepImpl(API_FOOTBALL_DISCOVERY_ATTEMPT_GAP_MS);}
         catch{return emptyScan('provider_disabled_configuration_invalid',{attempts,audit:uncommittedAudit(audit),mappingCoverage:coverage});}
       }
-      const attempt=await performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl,sourceRevision,teamMappings,independentCandidates,kickoffObservations});
+      const attempt=await performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl,sourceRevision,teamMappings,independentCandidates,kickoffObservations,timeoutSignal});
       if(attempt.consumed){attempts+=1;needDelay=true;}else needDelay=false;
       if(attempt.result.ok){
         const admitted=attempt.result.fixtures;

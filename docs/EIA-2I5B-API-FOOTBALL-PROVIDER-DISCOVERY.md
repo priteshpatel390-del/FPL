@@ -17,7 +17,7 @@ GitHub/Cloudflare did automatically produce a **PR/branch preview deployment** f
 
 No authenticated API-Football request was made while implementing this checkpoint.
 
-Explicit request timeout/abort handling is **not** implemented here and remains a mandatory pre-live gate before any credential, unattended scheduler or production-runtime approval.
+Every API-Football HTTP attempt — discovery and the closed known-ID client — is bounded by `API_FOOTBALL_REQUEST_TIMEOUT_MS` (15000) using `AbortSignal.timeout`. Timeout/abort handling does **not** make the layer live-ready: credential, collector, scheduler, D1 persistence and production runtime remain later gates.
 
 ## Request surfaces
 
@@ -44,11 +44,27 @@ Callers cannot inject arbitrary league IDs, seasons, endpoints, query parameters
 
 Credential-bearing requests stay pinned to `https://v3.football.api-sports.io`, use `GET`, `redirect: 'error'`, and send the key only in `x-apisports-key`. The credential must not appear in the URL, normalized output, errors, logs, audit, generated application assets, D1 or test snapshots. There is no configurable-origin escape hatch and no environment reader. Redirects are rejected. HTTP 200 is not sufficient: the envelope, paging, competition/season identity, fixture/team IDs, dates, status codes and secret-material scan must all validate. Unexpected pagination is an explicit `pagination_unsupported` limitation rather than uncontrolled follow-up calls. Raw provider payloads remain transient; there is no raw-response warehouse.
 
+## Request timeout and abort
+
+`API_FOOTBALL_REQUEST_TIMEOUT_MS` is 15000 milliseconds. That value matches the existing steward, dispatcher and phase4b `AbortSignal.timeout` convention and is not the Official FPL gateway's 10-second bound. Production code always constructs `AbortSignal.timeout(API_FOOTBALL_REQUEST_TIMEOUT_MS)`. Duration cannot be overridden by query input, provider payload, caller URL parameters, external response data or a `timeoutMs` argument.
+
+Each provider attempt receives its own signal. The request passed to `fetchImpl` includes that signal. A wrapper rejects when the signal aborts even if the injected transport ignores it, so a hung provider cannot leave a future unattended collector unresolved. Signals are not reused across attempts and are not exposed in audit, errors or returned results.
+
+Timeout is classified as sanitized `provider_timeout` (audit HTTP class `timeout`), distinct from generic `transport_failure`, HTTP 429, 401/403, 5xx and schema/authentication failures. Classification uses `TimeoutError` on the abort reason or thrown error, never provider error text. `provider_timeout` is retryable once as a transient transport failure, still bounded by two attempts per logical query, ten attempts per scan, serial execution and the injected 1s gap. HTTP 429 still immediately stops the entire scan and is never retried. Authentication, schema, pagination and other non-retryable failures remain non-retryable.
+
+A timeout that prevents a complete five-competition generation is output-atomic: `ok === false`, `fixtures: []`, final admission counters remain zero. Sanitized audit may record the timeout attempt and its one retry.
+
+The closed known-ID client shares `sendApiFootballRequest()` and therefore the same bound and `provider_timeout` category. Known-ID endpoint semantics are otherwise unchanged. Invalid requests still fail before transport and consume zero quota.
+
+`timeoutSignal` is a test-only factory seam, matching the phase4b pattern. Tests inject an already-aborted `TimeoutError` signal so hung `fetchImpl` promises reject immediately; they must not wait the real 15 seconds. The factory still receives `API_FOOTBALL_REQUEST_TIMEOUT_MS` and cannot change that duration.
+
+`AbortSignal.timeout` is runtime-owned. Node 22 unrefs the timer so it does not keep the event loop alive; aborting a discarded signal after a successful request is a no-op. Teamsheet therefore owns no timer to clear. Cloudflare Workers `compatibility_date` values already used in this repository (2026-08-22 and later) support `AbortSignal.timeout`. Isolation tests continue to forbid `setTimeout` / `setInterval` in discovery and foundation source.
+
 ## Quota, retries and audit
 
 Exact subscription tier is still unknown. Historical runtime evidence of approximately 7,500/day and 300/minute is not hardcoded as contractual truth. Where present, case-insensitive `x-ratelimit-requests-limit`, `x-ratelimit-requests-remaining`, `x-ratelimit-limit` and `x-ratelimit-remaining` are normalized to bounded numeric counts. Missing headers are `unknown`; malformed present values fail closed. Raw headers are not persisted.
 
-A normal scan is five successful logical requests, serial (`concurrency = 1`), with an injected delay of 1000 ms between provider attempts. Each logical request allows at most one retry, and only for transport failure or qualifying temporary server failure. Malformed/schema responses and authentication failures are not retried. HTTP 429 **always** stops the scan with a sanitized quota-exhausted result, including when rate-limit headers are absent or malformed, and does not retry. A complete five-competition scan therefore never exceeds ten provider attempts.
+A normal scan is five successful logical requests, serial (`concurrency = 1`), with an injected delay of 1000 ms between provider attempts. Each logical request allows at most one retry, and only for transport failure, timeout (`provider_timeout`) or qualifying temporary server failure. Malformed/schema responses and authentication failures are not retried. HTTP 429 **always** stops the scan with a sanitized quota-exhausted result, including when rate-limit headers are absent or malformed, and does not retry. A complete five-competition scan therefore never exceeds ten provider attempts.
 
 The in-memory audit may record logical competition key, provider league/season, attempt number, success/failure category, sanitized HTTP class, normalized quota counts, fetched timestamp, observed provider-row counts, and bounded admission/rejection counts. Provider-row diagnostics may remain on a failed scan. Final `workloadRelevantAdmitted` / rejected / unmapped / conflicted counters are admissions of a committed generation only; an unsuccessful generation keeps those admission counters at zero. The audit must not record the API key, request headers, raw bodies, provider error text, stacks, credential-bearing URLs, raw team/player names or payload fragments. No D1 request-audit table is added.
 
@@ -70,4 +86,4 @@ Migration 0004 remains the latest D1 schema. EIA-2I5B does not write D1, add lif
 
 ## Next gate
 
-A later owner-approved checkpoint is required before any live credential, collector, scheduler, D1 write path, Cloudflare runtime or model-adjacent use. No part of that work starts automatically.
+A later owner-approved checkpoint is required before any live credential, collector, scheduler, D1 write path, Cloudflare runtime or model-adjacent use. Explicit request timeout/abort is now implemented and is no longer that gate. No part of the remaining live work starts automatically.

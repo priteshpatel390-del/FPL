@@ -9,6 +9,7 @@ export const API_FOOTBALL_SCHEMA_VERSION='api-football-v3-foundation-1';
 export const API_FOOTBALL_DAILY_REQUEST_LIMIT=100;
 export const API_FOOTBALL_COLLECTION_MODE='disabled_post_match_only';
 export const API_FOOTBALL_ENDPOINTS=Object.freeze(['fixtures','fixtures/lineups','fixtures/players','fixtures/events']);
+export const API_FOOTBALL_REQUEST_TIMEOUT_MS=15000;
 export const API_FOOTBALL_TARGET_COMPETITIONS=Object.freeze([
   'uefa_champions_league','uefa_europa_league','uefa_conference_league','fa_cup','league_cup'
 ]);
@@ -78,6 +79,43 @@ export function apiFootballRequestInit(apiKey){
   return {ok:true,init:{method:'GET',redirect:'error',headers:Object.freeze({'x-apisports-key':apiKey,accept:'application/json'})}};
 }
 
+function timeoutFailureReason(){return Object.assign(new Error('timeout'),{name:'TimeoutError'});}
+function isProviderTimeout(error,signal){
+  if(signal?.aborted&&signal.reason?.name==='TimeoutError')return true;
+  return error?.name==='TimeoutError';
+}
+function settleApiFootballFetch(fetchImpl,url,init,signal){
+  return new Promise((resolve,reject)=>{
+    let settled=false;
+    const finish=(fn,value)=>{
+      if(settled)return;
+      settled=true;
+      if(typeof signal.removeEventListener==='function')signal.removeEventListener('abort',onAbort);
+      fn(value);
+    };
+    const onAbort=()=>finish(reject,signal.reason||timeoutFailureReason());
+    if(typeof signal.addEventListener==='function')signal.addEventListener('abort',onAbort,{once:true});
+    let pending;
+    try{pending=Promise.resolve(fetchImpl(url,init));}catch(error){pending=Promise.reject(error);}
+    pending.then(value=>finish(resolve,value),error=>finish(reject,error));
+    if(signal.aborted)onAbort();
+  });
+}
+
+export async function sendApiFootballRequest({fetchImpl,url,init,timeoutSignal=AbortSignal.timeout}={}){
+  if(typeof fetchImpl!=='function'||typeof timeoutSignal!=='function'||typeof AbortSignal?.timeout!=='function')return safeFailure('provider_disabled_configuration_invalid');
+  let signal;
+  try{signal=timeoutSignal(API_FOOTBALL_REQUEST_TIMEOUT_MS);}catch{return safeFailure('provider_disabled_configuration_invalid');}
+  if(!signal||typeof signal!=='object'||typeof signal.aborted!=='boolean')return safeFailure('provider_disabled_configuration_invalid');
+  if(typeof signal.addEventListener!=='function'&&!signal.aborted)return safeFailure('provider_disabled_configuration_invalid');
+  try{
+    const response=await settleApiFootballFetch(fetchImpl,url,{...init,signal},signal);
+    return Object.freeze({ok:true,response});
+  }catch(error){
+    return safeFailure(isProviderTimeout(error,signal)?'provider_timeout':'transport_failure');
+  }
+}
+
 export function normalizeApiFootballQuotaHeaders(headers){
   const counts={};
   let known=false;
@@ -124,11 +162,11 @@ export function decodeApiFootballResponse(payload,{endpoint}={}){
   return deepFreeze({ok:true,response:payload.response});
 }
 
-export function createApiFootballClient({apiKey,fetchImpl,budget}={}){
+export function createApiFootballClient({apiKey,fetchImpl,budget,timeoutSignal=AbortSignal.timeout}={}){
   const enabled=typeof apiKey==='string'&&apiKey.length>0;
   const request=async(endpoint,parameters={})=>{
     if(!enabled)return safeFailure('provider_disabled_secret_missing');
-    if(typeof fetchImpl!=='function'||!budget?.consume)return safeFailure('provider_disabled_configuration_invalid');
+    if(typeof fetchImpl!=='function'||!budget?.consume||typeof timeoutSignal!=='function')return safeFailure('provider_disabled_configuration_invalid');
     if(typeof endpoint!=='string'||!API_FOOTBALL_ENDPOINTS.includes(endpoint))return safeFailure('endpoint_not_allowed');
     const parameterName=ENDPOINT_PARAMETER[endpoint],entries=Object.entries(parameters||{});
     if(entries.length!==1||entries[0][0]!==parameterName||!positiveId(entries[0][1]))return safeFailure('parameters_invalid');
@@ -136,7 +174,9 @@ export function createApiFootballClient({apiKey,fetchImpl,budget}={}){
     if(!pinned.ok)return pinned;
     const requestInit=apiFootballRequestInit(apiKey);if(!requestInit.ok)return requestInit;
     if(!budget.consume())return safeFailure('quota_exhausted');
-    let response;try{response=await fetchImpl(pinned.url,requestInit.init);}catch{return safeFailure('provider_unavailable');}
+    const sent=await sendApiFootballRequest({fetchImpl,url:pinned.url,init:requestInit.init,timeoutSignal});
+    if(!sent.ok)return safeFailure(sent.reason==='provider_timeout'?'provider_timeout':sent.reason==='provider_disabled_configuration_invalid'?sent.reason:'provider_unavailable');
+    const response=sent.response;
     if(!response?.ok)return safeFailure(response?.status===429?'quota_exhausted':'provider_unavailable');
     let payload;try{payload=await response.json();}catch{return safeFailure('provider_schema_invalid');}
     return decodeApiFootballResponse(payload,{endpoint:endpoint.replace(/^\//,'')});

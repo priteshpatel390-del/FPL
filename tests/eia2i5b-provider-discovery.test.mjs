@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_ENDPOINTS,API_FOOTBALL_ORIGIN,buildPinnedApiFootballUrl,
-  createApiFootballClient,createDailyRequestBudget,normalizeApiFootballQuotaHeaders
+  API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_ENDPOINTS,API_FOOTBALL_ORIGIN,API_FOOTBALL_REQUEST_TIMEOUT_MS,buildPinnedApiFootballUrl,
+  createApiFootballClient,createDailyRequestBudget,normalizeApiFootballQuotaHeaders,sendApiFootballRequest
 } from '../src/decision-intelligence/api-football-foundation.mjs';
 import {
   API_FOOTBALL_DISCOVERY_ATTEMPT_GAP_MS,API_FOOTBALL_DISCOVERY_MAX_ATTEMPTS_PER_QUERY,API_FOOTBALL_DISCOVERY_MAX_SCAN_ATTEMPTS,
@@ -147,6 +147,7 @@ test('credential is header-only, origin-pinned, GET, redirect-error and absent f
   for(const call of options.transport.calls){
     assert.equal(call.url.origin,API_FOOTBALL_ORIGIN);assert.equal(call.options.method,'GET');assert.equal(call.options.redirect,'error');
     assert.equal(call.options.headers['x-apisports-key'],KEY);assert.doesNotMatch(call.href,/deliberate-test-key-material|api[_-]?key/i);
+    assert.equal(call.options.signal.aborted,false);assert.notEqual(call.options.signal,undefined);
     assert.equal(call.url.searchParams.get('league')!=null,true);assert.equal(call.url.searchParams.get('season'),'2026');
     assert.equal(call.url.pathname,'/fixtures');assert.deepEqual([...call.url.searchParams.keys()].sort(),['league','season']);
   }
@@ -525,11 +526,115 @@ test('malformed optional Official FPL team representations fail closed without t
   assert.equal(currentSeasonOfficialFplTeamIdentities(season,malformedBootstrap).reason,'authoritative_pl_team_set_invalid');
 });
 
+test('API-Football requests abort at a repository-controlled timeout without waiting on hung transport',async()=>{
+  assert.equal(API_FOOTBALL_REQUEST_TIMEOUT_MS,15000);assert.equal(typeof AbortSignal.timeout,'function');
+  function timeoutReason(){return Object.assign(new Error('timeout'),{name:'TimeoutError'});}
+  function immediateTimeoutSignal(){const controller=new AbortController();controller.abort(timeoutReason());return controller.signal;}
+  const timeoutMsSeen=[];const signals=[];
+  const timeoutSignal=ms=>{timeoutMsSeen.push(ms);const signal=immediateTimeoutSignal();signals.push(signal);return signal;};
+  function hanging(){return mockFetch(()=>new Promise(()=>{}));}
+
+  const hung=hanging();
+  const hungBudget=createDailyRequestBudget({day:'2026-09-16',limit:10});
+  const timedOut=await runApiFootballDiscoveryScan(scanOptions({transport:hung,timeoutSignal,budget:hungBudget}));
+  assert.equal(timedOut.ok,false);assert.equal(timedOut.fixtures.length,0);assert.equal(timedOut.scanState,'stopped_attempt_limit');
+  assert.equal(timedOut.attempts,10);assert.equal(hung.calls.length,10);assert.equal(signals.length,10);assert.equal(hungBudget.used,10);
+  assert.ok(timeoutMsSeen.every(ms=>ms===API_FOOTBALL_REQUEST_TIMEOUT_MS));
+  assert.ok(timedOut.audit.every(row=>row.category==='provider_timeout'&&row.httpClass==='timeout'&&row.attemptNumber<=2));
+  assert.ok(timedOut.audit.filter(row=>row.logicalCompetitionKey==='fa_cup').length<=2);
+  assert.equal(new Set(signals).size,signals.length);
+  assert.equal(new Set(hung.calls.map(call=>call.options.signal)).size,hung.calls.length);
+  assert.ok(hung.calls.every(call=>call.options.signal.aborted===true&&call.options.signal.reason?.name==='TimeoutError'));
+  assert.ok(timedOut.audit.every(row=>!Object.hasOwn(row,'signal')));
+  assert.doesNotMatch(JSON.stringify(timedOut),/deliberate-test-key-material|x-apisports-key|AbortSignal|TimeoutError|stack/i);
+  assert.ok(timedOut.audit.every(row=>row.workloadRelevantAdmitted===0));
+
+  const firstSuccessThenHang=mockFetch(async(url,options,n)=>{
+    if(n<=2)return {ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]};
+    return new Promise(()=>{});
+  });
+  let created=0;
+  const mixedSignal=ms=>{
+    created+=1;
+    if(created<=2)return new AbortController().signal;
+    return immediateTimeoutSignal();
+  };
+  const afterSuccess=await runApiFootballDiscoveryScan(scanOptions({transport:firstSuccessThenHang,timeoutSignal:mixedSignal}));
+  assert.equal(afterSuccess.ok,false);assert.equal(afterSuccess.fixtures.length,0);assert.equal(afterSuccess.scanState,'completed_with_failures');
+  assert.ok(afterSuccess.audit.some(row=>row.category==='success'));
+  assert.ok(afterSuccess.audit.some(row=>row.category==='provider_timeout'));
+  assert.ok(afterSuccess.audit.every(row=>row.workloadRelevantAdmitted===0));
+
+  const thrown=mockFetch(async()=>{throw new Error('socket reset');});
+  const transportScan=await runApiFootballDiscoveryScan(scanOptions({transport:thrown,budget:createDailyRequestBudget({day:'2026-09-16',limit:10})}));
+  assert.ok(transportScan.audit.every(row=>row.category==='transport_failure'));assert.equal(transportScan.fixtures.length,0);
+  assert.notEqual(transportScan.audit[0].category,'provider_timeout');
+
+  const serverError=mockFetch(async(url,options,n)=>{
+    if(n%2===1)return {ok:false,status:500,headers:headers()};
+    return {ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]};
+  });
+  const retried5xx=await runApiFootballDiscoveryScan(scanOptions({transport:serverError,budget:createDailyRequestBudget({day:'2026-09-16',limit:10})}));
+  assert.equal(retried5xx.ok,true);assert.equal(retried5xx.attempts,10);assert.equal(serverError.calls.length,10);
+  assert.ok(retried5xx.audit.some(row=>row.category==='temporary_server_failure'));
+  assert.ok(retried5xx.fixtures.length>=1);assert.equal(retried5xx.audit.some(row=>row.category==='provider_timeout'),false);
+
+  const stop429=mockFetch(async(url,options,n)=>n===2?{ok:false,status:429,headers:headers()}:{ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]});
+  const stopped=await runApiFootballDiscoveryScan(scanOptions({transport:stop429}));
+  assert.equal(stopped.scanState,'stopped_quota_exhausted');assert.equal(stop429.calls.length,2);assert.equal(stopped.audit.at(-1).category,'quota_exhausted');
+  assert.equal(stopped.fixtures.length,0);assert.equal(stop429.calls[1].options.signal.aborted,false);
+
+  const auth=mockFetch(async()=>({ok:false,status:403,headers:headers()}));
+  const authScan=await runApiFootballDiscoveryScan(scanOptions({transport:auth}));
+  assert.equal(auth.calls.length,5);assert.ok(authScan.audit.every(row=>row.category==='authentication_failure'&&row.attemptNumber===1));
+
+  const schema=mockFetch(async()=>({ok:true,status:200,headers:headers(),json:async()=>({...envelope(2,[]),extra:true})}));
+  const schemaScan=await runApiFootballDiscoveryScan(scanOptions({transport:schema}));
+  assert.equal(schema.calls.length,5);assert.ok(schemaScan.audit.every(row=>row.category==='provider_schema_invalid'&&row.attemptNumber===1));
+
+  const success=scanOptions();
+  const clean=await runApiFootballDiscoveryScan(success);
+  assert.equal(clean.ok,true);assert.equal(clean.scanState,'completed');assert.ok(clean.fixtures.length>=1);
+  assert.equal(clean.audit.some(row=>row.category==='provider_timeout'),false);
+  assert.ok(success.transport.calls.every(call=>call.options.signal.aborted===false));
+  assert.equal(new Set(success.transport.calls.map(call=>call.options.signal)).size,success.transport.calls.length);
+
+  const knownHangCalls=[];
+  const known=createApiFootballClient({
+    apiKey:KEY,budget:createDailyRequestBudget({day:'2026-09-16',limit:3}),
+    fetchImpl:async(url,options)=>{knownHangCalls.push(options.signal);return new Promise(()=>{});},
+    timeoutSignal
+  });
+  const knownTimeout=await known.request('fixtures',{id:1636205});
+  assert.equal(knownTimeout.reason,'provider_timeout');assert.equal(knownHangCalls.length,1);
+  assert.doesNotMatch(JSON.stringify(knownTimeout),/deliberate-test-key-material|x-apisports-key/i);
+  const knownThrow=createApiFootballClient({apiKey:KEY,budget:createDailyRequestBudget({day:'2026-09-16',limit:1}),fetchImpl:async()=>{throw new Error('reset');}});
+  assert.equal((await knownThrow.request('fixtures',{id:1636205})).reason,'provider_unavailable');
+  let invalidCalls=0;const invalidBudget=createDailyRequestBudget({day:'2026-09-16',limit:2});
+  const invalid=createApiFootballClient({apiKey:KEY,budget:invalidBudget,fetchImpl:async()=>{invalidCalls+=1;return {ok:true};},timeoutSignal});
+  assert.equal((await invalid.request('fixtures',{league:'2',season:'2026'})).reason,'parameters_invalid');assert.equal(invalidCalls,0);assert.equal(invalidBudget.used,0);
+  const overrideMs=[];
+  const sent=await sendApiFootballRequest({
+    fetchImpl:async()=>new Promise(()=>{}),
+    url:new URL('https://v3.football.api-sports.io/fixtures'),
+    init:{method:'GET',redirect:'error',headers:{}},
+    timeoutMs:1,
+    timeoutSignal:ms=>{overrideMs.push(ms);return immediateTimeoutSignal();}
+  });
+  assert.equal(sent.reason,'provider_timeout');assert.equal(Object.hasOwn(sent,'signal'),false);assert.deepEqual(overrideMs,[API_FOOTBALL_REQUEST_TIMEOUT_MS]);
+  const misconfigured=await runApiFootballDiscoveryScan(scanOptions({timeoutSignal:15000}));
+  assert.equal(misconfigured.reason,'provider_disabled_configuration_invalid');assert.equal(misconfigured.attempts,0);assert.equal(misconfigured.fixtures.length,0);
+});
+
 test('API-Football discovery stays isolated from production, live config and migration 0005',()=>{
   const discovery=fs.readFileSync('src/decision-intelligence/api-football-discovery.mjs','utf8');
   const foundation=fs.readFileSync('src/decision-intelligence/api-football-foundation.mjs','utf8');
   assert.doesNotMatch(discovery,/process\.env|localStorage|setInterval|setTimeout|console\.|wrangler|cron|RapidAPI/i);
   assert.doesNotMatch(foundation,/process\.env|localStorage|setInterval|setTimeout|console\.|RapidAPI/i);
+  assert.match(foundation,/API_FOOTBALL_REQUEST_TIMEOUT_MS=15000/);
+  assert.match(foundation,/timeoutSignal=AbortSignal\.timeout/);
+  assert.match(discovery,/timeoutSignal=AbortSignal\.timeout/);
+  assert.match(discovery,/provider_timeout/);
   const production=['src/model/minutes.mjs','src/model/scoring.mjs','src/squad.mjs','src/model/transfers.mjs','src/main.mjs','src/providers/registry.mjs','src/ui/team-decision-home.mjs','src/ui/transfer-optimiser-view.mjs','dist/index.html','index.html','build.mjs'];
   for(const file of production)assert.doesNotMatch(fs.readFileSync(file,'utf8'),/api-football-discovery|api-football-foundation|x-apisports-key/i,file);
   const migrations=fs.readdirSync('workers/data-platform/migrations').sort();

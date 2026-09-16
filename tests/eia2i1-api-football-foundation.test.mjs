@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_DAILY_REQUEST_LIMIT,API_FOOTBALL_ENDPOINTS,API_FOOTBALL_ORIGIN,API_FOOTBALL_SOURCE_KEY,API_FOOTBALL_TARGET_COMPETITIONS,
+  API_FOOTBALL_COLLECTION_MODE,API_FOOTBALL_DAILY_REQUEST_LIMIT,API_FOOTBALL_ENDPOINTS,API_FOOTBALL_ORIGIN,API_FOOTBALL_REQUEST_TIMEOUT_MS,API_FOOTBALL_SOURCE_KEY,API_FOOTBALL_TARGET_COMPETITIONS,
   buildApiFootballWorkloadObservation,createApiFootballClient,createDailyRequestBudget,
-  decodeApiFootballResponse,resolveApiFootballCompetition,resolveApiFootballFplIdentity
+  decodeApiFootballResponse,resolveApiFootballCompetition,resolveApiFootballFplIdentity,sendApiFootballRequest
 } from '../src/decision-intelligence/api-football-foundation.mjs';
 import {classifyRights,persistenceDecision,RIGHTS_CLASSIFICATIONS} from '../src/decision-intelligence/rights.mjs';
 import {normaliseWorkloadObservation} from '../src/decision-intelligence/eia1-workload-contract.mjs';
@@ -81,6 +81,33 @@ test('credential-bearing requests are origin-pinned and endpoint-closed before b
   let captured;const budget=createDailyRequestBudget({day:'2026-09-01',limit:1});
   const client=createApiFootballClient({apiKey:'deliberate-test-key-material',budget,fetchImpl:async(url,options)=>{captured={url,options};return {ok:true,json:async()=>envelope('fixtures',[])}}});
   assert.equal((await client.request('fixtures',{id:9001})).ok,true);assert.equal(captured.url.origin,API_FOOTBALL_ORIGIN);assert.equal(captured.options.redirect,'error');assert.equal(captured.options.headers['x-apisports-key'],'deliberate-test-key-material');assert.doesNotMatch(String(captured.url),/deliberate-test-key-material|api[_-]?key/i);assert.deepEqual(API_FOOTBALL_ENDPOINTS,['fixtures','fixtures/lineups','fixtures/players','fixtures/events']);
+});
+
+test('known-ID requests abort at the repository timeout and keep generic transport distinct',async()=>{
+  assert.equal(API_FOOTBALL_REQUEST_TIMEOUT_MS,15000);assert.equal(typeof AbortSignal.timeout,'function');
+  function timeoutReason(){return Object.assign(new Error('timeout'),{name:'TimeoutError'});}
+  function immediateTimeoutSignal(){const controller=new AbortController();controller.abort(timeoutReason());return controller.signal;}
+  const seen=[];const signals=[];
+  const timeoutSignal=ms=>{seen.push(ms);const signal=immediateTimeoutSignal();signals.push(signal);return signal;};
+  const budget=createDailyRequestBudget({day:'2026-09-01',limit:3});
+  let calls=0;
+  const client=createApiFootballClient({apiKey:'deliberate-test-key-material',budget,fetchImpl:async()=>{calls+=1;return new Promise(()=>{});},timeoutSignal});
+  const timedOut=await client.request('fixtures',{id:9001});
+  assert.deepEqual(timedOut,{ok:false,reason:'provider_timeout'});assert.equal(calls,1);assert.equal(budget.used,1);
+  assert.deepEqual(seen,[API_FOOTBALL_REQUEST_TIMEOUT_MS]);assert.equal(signals[0].aborted,true);
+  assert.doesNotMatch(JSON.stringify(timedOut),/deliberate-test-key-material|x-apisports-key|TimeoutError|stack/i);
+  const thrown=createApiFootballClient({apiKey:'deliberate-test-key-material',budget:createDailyRequestBudget({day:'2026-09-01',limit:1}),fetchImpl:async()=>{throw new Error('reset');}});
+  assert.deepEqual(await thrown.request('fixtures',{id:9001}),{ok:false,reason:'provider_unavailable'});
+  let invalidCalls=0;const invalidBudget=createDailyRequestBudget({day:'2026-09-01',limit:1});
+  const invalid=createApiFootballClient({apiKey:'deliberate-test-key-material',budget:invalidBudget,fetchImpl:async()=>{invalidCalls+=1;return {ok:true};},timeoutSignal});
+  assert.equal((await invalid.request('fixtures',{league:'2'})).reason,'parameters_invalid');assert.equal(invalidCalls,0);assert.equal(invalidBudget.used,0);
+  const overrideMs=[];
+  const sent=await sendApiFootballRequest({
+    fetchImpl:async()=>new Promise(()=>{}),url:new URL('https://v3.football.api-sports.io/fixtures?id=9001'),
+    init:{method:'GET',redirect:'error',headers:{}},timeoutMs:1,
+    timeoutSignal:ms=>{overrideMs.push(ms);return immediateTimeoutSignal();}
+  });
+  assert.equal(sent.reason,'provider_timeout');assert.equal(Object.hasOwn(sent,'signal'),false);assert.deepEqual(overrideMs,[API_FOOTBALL_REQUEST_TIMEOUT_MS]);
 });
 
 test('decoder rejects malformed shape, provider errors, drift and key-like material',()=>{
@@ -182,6 +209,8 @@ test('missing or unqualified lineup evidence stays tri-state while appearance ev
 test('security and shadow topology exclude application/model paths and generated artefacts',()=>{
   const source=fs.readFileSync('src/decision-intelligence/api-football-foundation.mjs','utf8');
   assert.doesNotMatch(source,/console\.|process\.env|localStorage|setInterval|setTimeout|paid|RapidAPI/i);
+  assert.match(source,/API_FOOTBALL_REQUEST_TIMEOUT_MS=15000/);
+  assert.match(source,/timeoutSignal=AbortSignal\.timeout/);
   for(const file of ['src/model/minutes.mjs','src/model/scoring.mjs','src/squad.mjs','src/model/transfers.mjs','src/main.mjs','dist/index.html','index.html'])assert.doesNotMatch(fs.readFileSync(file,'utf8'),/api-football-foundation|x-apisports-key/i);
   assert.equal(API_FOOTBALL_SOURCE_KEY,'api-football');
 });
