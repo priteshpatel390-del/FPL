@@ -2,7 +2,7 @@
 
 ## EIA-2I5B checkpoint
 
-Repository-only hardened request and fixture-discovery layer. Next proposed, not approved: live credential/runtime design, durable persistence and quota accounting. No collector activation, model use or deployment is implied.
+Repository-only hardened request and fixture-discovery layer. Next proposed, not approved: live credential/runtime design including explicit request timeout/abort, durable persistence and quota accounting. No collector activation, model use or API-Football production runtime is implied. An automatic PR preview is not that activation.
 
 ## EIA-2I5A checkpoint
 

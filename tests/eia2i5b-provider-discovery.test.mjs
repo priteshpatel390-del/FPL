@@ -11,13 +11,15 @@ import {
   API_FOOTBALL_DISCOVERY_MODE,API_FOOTBALL_FPL_SEASON,API_FOOTBALL_PROVIDER_SEASON,apiFootballDiscoveryPlan,
   buildApiFootballDiscoveryRequest,mappingCoverage,qualifyDiscoveredFixture,runApiFootballDiscoveryScan
 } from '../src/decision-intelligence/api-football-discovery.mjs';
-import {apiFootballFixtureIdentity,apiFootballTeamIdentity,crossSourceQualify} from '../src/decision-intelligence/api-football-shadow-contracts.mjs';
+import {apiFootballFixtureIdentity,apiFootballTeamIdentity,crossSourceQualify,currentSeasonOfficialFplTeamIdentities} from '../src/decision-intelligence/api-football-shadow-contracts.mjs';
 
 const KEY='deliberate-test-key-material';
 const season=API_FOOTBALL_FPL_SEASON;
 const rights=()=>({classification:'owner_risk_accepted_private_use',provider:'api-football',ownerApprovalId:'EIA-2I1',allowedUse:'private_noncommercial_research',retentionAllowed:true,redistributionAllowed:false,publicUseAllowed:false,commercialUseAllowed:false,rawPayloadRetentionAllowed:false,stopOnObjection:true,attributionRequired:false});
 const team=(providerEntityId,canonicalFplId,status='VERIFIED')=>({provider:'api-football',entityType:'team',providerEntityId:String(providerEntityId),canonicalFplId,mappingRevision:'r1',revision:1,status,season,method:'manually_verified',provenance:'owner-reviewed'});
-const maps=[team(49,`${season}:fpl:team:6`),team(63,`${season}:fpl:team:10`)];
+const AUTHORITATIVE_PL_TEAM_IDS=Object.freeze([1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21]);
+const officialTeams=AUTHORITATIVE_PL_TEAM_IDS.map(id=>({id}));
+const maps=[team(49,`${season}:fpl:team:6`),team(63,`${season}:fpl:team:13`)];
 const headers=(values={})=>({get(name){const key=String(name).toLowerCase();return values[key]??values[name]??null;},...values});
 const envelope=(league,rows)=>({get:'fixtures',parameters:{league:String(league),season:'2026'},errors:{},results:rows.length,paging:{current:1,total:1},response:rows});
 const row=({id,league,home,away,date='2026-09-16T19:00:00+00:00',status='NS'}={})=>({
@@ -26,7 +28,7 @@ const row=({id,league,home,away,date='2026-09-16T19:00:00+00:00',status='NS'}={}
   teams:{home:{id:home,name:'Home FC',logo:'https://ignored.test/home.png'},away:{id:away,name:'Away FC',logo:'https://ignored.test/away.png'}},
   goals:{home:null,away:null},score:{halftime:{home:null,away:null},fulltime:{home:null,away:null}}
 });
-const chelseaLeeds=row({id:1636205,league:48,home:49,away:63,date:'2026-09-16T19:00:00Z',status:'NS'});
+const chelseaLeeds=row({id:1636205,league:48,home:49,away:63,date:'2026-09-09T19:00:00Z',status:'NS'});
 const nonPl=row({id:9002,league:45,home:49,away:900,date:'2026-09-17T14:00:00Z',status:'NS'});
 const payloads={
   '2':envelope(2,[row({id:2001,league:2,home:49,away:531})]),
@@ -35,6 +37,12 @@ const payloads={
   '45':envelope(45,[nonPl]),
   '48':envelope(48,[chelseaLeeds])
 };
+const chelseaLeedsFixture={
+  identity:'2026-27:api-football:fixture:1636205',providerFixtureId:'1636205',providerLeagueId:'48',canonicalCompetitionId:'league_cup',
+  fplSeason:season,providerHomeTeamId:'49',providerAwayTeamId:'63',providerSeason:2026,
+  kickoffObservation:{value:'2026-09-09T19:00:00.000Z',source:'api-football',sourceRevision:'r1'}
+};
+const candidate=(overrides={})=>({providerFixtureId:'1636205',fixtureId:'club-1',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:6`,awayTeamIdentity:`${season}:fpl:team:13`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'club-site',...overrides});
 function planItem(league){return apiFootballDiscoveryPlan().items.find(item=>item.providerLeagueId===String(league));}
 function mockFetch(handler){
   let inFlight=0,maxInFlight=0,calls=[];
@@ -175,41 +183,59 @@ test('names never map, contradictory verified mappings conflict, and missing map
   assert.equal(named.unmapped,true);assert.equal(named.workloadRelevant,false);assert.equal(named.qualification.state,'DISCOVERED');
   const conflicted=qualifyDiscoveredFixture({...discovered,providerAwayTeamId:'63'},{teamMappings:[maps[1],{...maps[1],canonicalFplId:`${season}:fpl:team:11`,revision:2}]});
   assert.equal(conflicted.conflicted,true);assert.equal(conflicted.qualification.state,'CONFLICTED');assert.equal(conflicted.workloadRelevant,false);
-  const coverage=mappingCoverage(maps);assert.equal(coverage.completeTwentyClubCoverage,false);assert.equal(coverage.limitation,'current_season_pl_team_mapping_incomplete');
+  const coverage=mappingCoverage(maps,season,{officialTeams});assert.equal(coverage.completeTwentyClubCoverage,false);assert.equal(coverage.limitation,'current_season_pl_team_mapping_incomplete');
 });
 
 test('Chelsea-Leeds 19:00 versus 19:15 remains an explicit kickoff conflict without time tolerance',async()=>{
   const scan=await runApiFootballDiscoveryScan(scanOptions({kickoffObservations:[
-    {providerFixtureId:'1636205',value:'2026-09-16T19:00:00.000Z',source:'leeds',sourceRevision:'leeds-r1'},
-    {providerFixtureId:'1636205',value:'2026-09-16T19:15:00.000Z',source:'chelsea',sourceRevision:'chelsea-r1'}
+    {providerFixtureId:'1636205',value:'2026-09-09T19:00:00.000Z',source:'leeds',sourceRevision:'leeds-r1'},
+    {providerFixtureId:'1636205',value:'2026-09-09T19:15:00.000Z',source:'chelsea',sourceRevision:'chelsea-r1'}
   ]}));
   const fixture=scan.fixtures.find(row=>row.providerFixtureId==='1636205');
   assert.equal(fixture.identity,'2026-27:api-football:fixture:1636205');assert.equal(fixture.kickoff.state,'CONFLICTED');assert.equal(fixture.canonicalKickoff,null);
-  assert.equal(fixture.qualification.state,'PROVIDER_QUALIFIED');assert.equal(fixture.kickoffObservation.value,'2026-09-16T19:00:00.000Z');
+  assert.equal(fixture.qualification.state,'PROVIDER_QUALIFIED');assert.equal(fixture.kickoffObservation.value,'2026-09-09T19:00:00.000Z');
+  assert.equal(fixture.providerHomeTeamId,'49');assert.equal(fixture.providerAwayTeamId,'63');
+  assert.equal(fixture.homeTeamIdentity,`${season}:fpl:team:6`);assert.equal(fixture.awayTeamIdentity,`${season}:fpl:team:13`);
+  assert.equal(maps[1].canonicalFplId,`${season}:fpl:team:13`);
   const source=fs.readFileSync('src/decision-intelligence/api-football-discovery.mjs','utf8');
   assert.doesNotMatch(source,/15\s*\*\s*60|900000|tolerance|fuzzy|closest-time|closestTime|scheduled-vs-actual/i);
 });
 
+test('independent candidates are scoped to the provider fixture they belong to',async()=>{
+  const otherSameCompetition={identity:'2026-27:api-football:fixture:9002',providerFixtureId:'9002',providerLeagueId:'45',canonicalCompetitionId:'fa_cup',fplSeason:season,providerHomeTeamId:'49',providerAwayTeamId:'900',providerSeason:2026,kickoffObservation:{value:'2026-09-17T14:00:00.000Z',source:'api-football',sourceRevision:'r1'}};
+  const mismatchOnA=qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps,independentCandidates:[candidate({homeTeamIdentity:`${season}:fpl:team:1`,awayTeamIdentity:`${season}:fpl:team:2`})]});
+  const untouchedB=qualifyDiscoveredFixture(otherSameCompetition,{teamMappings:maps,independentCandidates:[candidate({homeTeamIdentity:`${season}:fpl:team:1`,awayTeamIdentity:`${season}:fpl:team:2`})]});
+  assert.equal(mismatchOnA.qualification.state,'CONFLICTED');assert.equal(mismatchOnA.workloadRelevant,false);
+  assert.equal(untouchedB.qualification.state,'PROVIDER_QUALIFIED');assert.equal(untouchedB.workloadRelevant,true);
+  const sameCompetitionB=qualifyDiscoveredFixture({...otherSameCompetition,providerLeagueId:'48',canonicalCompetitionId:'league_cup',providerAwayTeamId:'900'},{teamMappings:maps,independentCandidates:[candidate({homeTeamIdentity:`${season}:fpl:team:1`,awayTeamIdentity:`${season}:fpl:team:2`})]});
+  assert.equal(sameCompetitionB.qualification.state,'PROVIDER_QUALIFIED');
+  assert.equal(qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps}).qualification.state,'PROVIDER_QUALIFIED');
+  assert.equal(qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps,independentCandidates:[candidate()]}).qualification.state,'CROSS_SOURCE_VERIFIED');
+  assert.equal(qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps,independentCandidates:[candidate(),candidate({fixtureId:'club-2',identityResolutionProvenance:'second-site'})]}).qualification.state,'AMBIGUOUS');
+  const unscopedPoison=await runApiFootballDiscoveryScan(scanOptions({independentCandidates:[
+    {fixtureId:'global',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:1`,awayTeamIdentity:`${season}:fpl:team:2`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'unscoped'}
+  ]}));
+  assert.ok(unscopedPoison.ok);
+  assert.ok(unscopedPoison.fixtures.every(row=>row.qualification.state!=='CONFLICTED'||row.identityCollision));
+  assert.ok(unscopedPoison.fixtures.some(row=>row.qualification.state==='PROVIDER_QUALIFIED'&&row.workloadRelevant===true));
+  const scopedConflictScan=await runApiFootballDiscoveryScan(scanOptions({independentCandidates:[candidate({homeTeamIdentity:`${season}:fpl:team:1`,awayTeamIdentity:`${season}:fpl:team:2`})]}));
+  const leagueCup=scopedConflictScan.fixtures.find(row=>row.providerFixtureId==='1636205');
+  const other=scopedConflictScan.fixtures.find(row=>row.providerFixtureId==='9002');
+  assert.equal(leagueCup.qualification.state,'CONFLICTED');assert.equal(leagueCup.workloadRelevant,false);assert.equal(leagueCup.conflicted,true);
+  assert.equal(other.qualification.state,'PROVIDER_QUALIFIED');assert.equal(other.workloadRelevant,true);
+  const leagueCupAudit=scopedConflictScan.audit.find(row=>row.logicalCompetitionKey==='league_cup'&&row.category==='success');
+  assert.equal(leagueCupAudit.workloadRelevantAdmitted,0);
+  const faCupAudit=scopedConflictScan.audit.find(row=>row.logicalCompetitionKey==='fa_cup'&&row.category==='success');
+  assert.ok(faCupAudit.workloadRelevantAdmitted>=1);
+});
+
 test('multiple independent identity candidates remain ambiguous',()=>{
-  const fixture=qualifyDiscoveredFixture({
-    identity:'2026-27:api-football:fixture:1636205',providerFixtureId:'1636205',providerLeagueId:'48',canonicalCompetitionId:'league_cup',
-    fplSeason:season,providerHomeTeamId:'49',providerAwayTeamId:'63',providerSeason:2026,
-    kickoffObservation:{value:'2026-09-16T19:00:00.000Z',source:'api-football',sourceRevision:'r1'}
-  },{teamMappings:maps,independentCandidates:[
-    {fixtureId:'club-1',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:6`,awayTeamIdentity:`${season}:fpl:team:10`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'a'},
-    {fixtureId:'club-2',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:6`,awayTeamIdentity:`${season}:fpl:team:10`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'b'}
-  ]});
+  const fixture=qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps,independentCandidates:[candidate(),candidate({fixtureId:'club-2',identityResolutionProvenance:'b'})]});
   assert.equal(fixture.qualification.state,'AMBIGUOUS');assert.equal(fixture.workloadRelevant,false);assert.equal(fixture.conflicted,false);
   assert.equal(crossSourceQualify(fixture.qualification,[]).state,'AMBIGUOUS');
 });
 
 test('final qualification, not the preliminary provider state, owns workloadRelevant',()=>{
-  const chelseaLeedsFixture={
-    identity:'2026-27:api-football:fixture:1636205',providerFixtureId:'1636205',providerLeagueId:'48',canonicalCompetitionId:'league_cup',
-    fplSeason:season,providerHomeTeamId:'49',providerAwayTeamId:'63',providerSeason:2026,
-    kickoffObservation:{value:'2026-09-16T19:00:00.000Z',source:'api-football',sourceRevision:'r1'}
-  };
-  const candidate=(overrides={})=>({fixtureId:'club-1',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:6`,awayTeamIdentity:`${season}:fpl:team:10`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'club-site',...overrides});
   const providerOnly=qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps});
   assert.equal(providerOnly.qualification.state,'PROVIDER_QUALIFIED');assert.equal(providerOnly.workloadRelevant,true);assert.equal(providerOnly.conflicted,false);assert.equal(providerOnly.unmapped,false);assert.equal(providerOnly.rejected,false);
   const verified=qualifyDiscoveredFixture(chelseaLeedsFixture,{teamMappings:maps,independentCandidates:[candidate()]});
@@ -220,50 +246,95 @@ test('final qualification, not the preliminary provider state, owns workloadRele
   assert.equal(mismatched.qualification.state,'CONFLICTED');assert.equal(mismatched.workloadRelevant,false);assert.equal(mismatched.conflicted,true);
 });
 
-test('discovery audit does not admit ambiguous or conflicted fixtures as workload relevant',async()=>{
-  const conflictedScan=await runApiFootballDiscoveryScan(scanOptions({independentCandidates:[
-    {fixtureId:'other-1',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:1`,awayTeamIdentity:`${season}:fpl:team:2`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'mismatch'}
-  ]}));
-  assert.ok(conflictedScan.fixtures.length>=1);
-  assert.ok(conflictedScan.fixtures.every(row=>row.qualification.state==='CONFLICTED'&&row.workloadRelevant===false&&row.conflicted===true));
-  assert.ok(conflictedScan.audit.filter(row=>row.category==='success').every(row=>row.workloadRelevantAdmitted===0));
-  const ambiguousScan=await runApiFootballDiscoveryScan(scanOptions({independentCandidates:[
-    {fixtureId:'club-1',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:6`,awayTeamIdentity:`${season}:fpl:team:10`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'a'},
-    {fixtureId:'club-2',season,canonicalCompetitionId:'league_cup',homeTeamIdentity:`${season}:fpl:team:6`,awayTeamIdentity:`${season}:fpl:team:10`,identitiesResolved:true,identityResolutionMethod:'verified_identity_crosswalk',identityResolutionProvenance:'b'}
-  ]}));
-  const leagueCup=ambiguousScan.fixtures.find(row=>row.providerFixtureId==='1636205');
-  assert.equal(leagueCup.qualification.state,'AMBIGUOUS');assert.equal(leagueCup.workloadRelevant,false);
-  const leagueCupAudit=ambiguousScan.audit.find(row=>row.logicalCompetitionKey==='league_cup'&&row.category==='success');
-  assert.equal(leagueCupAudit.workloadRelevantAdmitted,0);
-  assert.ok(ambiguousScan.audit.filter(row=>row.category==='success').every(row=>row.workloadRelevantAdmitted===0));
-});
-
-test('mappingCoverage uses full EIA-2I5A validation rather than a VERIFIED label',()=>{
-  const twenty=Array.from({length:20},(_,i)=>team(100+i,`${season}:fpl:team:${i+1}`));
-  const complete=mappingCoverage(twenty);
+test('mappingCoverage requires exact authoritative current-season PL bijection',()=>{
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialTeams).identities.length,20);
+  assert.ok(!AUTHORITATIVE_PL_TEAM_IDS.includes(10));
+  assert.ok(AUTHORITATIVE_PL_TEAM_IDS.includes(6)&&AUTHORITATIVE_PL_TEAM_IDS.includes(13));
+  const twenty=AUTHORITATIVE_PL_TEAM_IDS.map((id,i)=>team(200+i,`${season}:fpl:team:${id}`));
+  const complete=mappingCoverage(twenty,season,{officialTeams});
   assert.equal(complete.verifiedPremierLeagueTeamCount,20);assert.equal(complete.completeTwentyClubCoverage,true);assert.equal(complete.limitation,null);
-  const nineteen=mappingCoverage(twenty.slice(0,19));
+  const nineteen=mappingCoverage(twenty.slice(0,19),season,{officialTeams});
   assert.equal(nineteen.verifiedPremierLeagueTeamCount,19);assert.equal(nineteen.completeTwentyClubCoverage,false);
-  const noProvenance=mappingCoverage(twenty.map(row=>({...row,provenance:''})));
-  assert.equal(noProvenance.verifiedPremierLeagueTeamCount,0);assert.equal(noProvenance.completeTwentyClubCoverage,false);
-  const badRevision=mappingCoverage(twenty.map(row=>({...row,revision:'r1'})));
-  assert.equal(badRevision.verifiedPremierLeagueTeamCount,0);assert.equal(badRevision.completeTwentyClubCoverage,false);
-  const badMethod=mappingCoverage(twenty.map(row=>({...row,method:'fuzzy_name'})));
-  assert.equal(badMethod.verifiedPremierLeagueTeamCount,0);assert.equal(badMethod.completeTwentyClubCoverage,false);
-  const wrongSeason=mappingCoverage(twenty.map(row=>({...row,season:'2025-26',canonicalFplId:'2025-26:fpl:team:1'})));
-  assert.equal(wrongSeason.verifiedPremierLeagueTeamCount,0);assert.equal(wrongSeason.completeTwentyClubCoverage,false);
-  const otherProvider=mappingCoverage(twenty.map(row=>({...row,provider:'understat'})));
-  assert.equal(otherProvider.verifiedPremierLeagueTeamCount,0);assert.equal(otherProvider.completeTwentyClubCoverage,false);
-  const duplicates=mappingCoverage([...twenty,...twenty.map(row=>({...row,revision:2}))]);
+  const wrongSet=mappingCoverage(Array.from({length:20},(_,i)=>team(100+i,`${season}:fpl:team:${i+1}`)),season,{officialTeams});
+  assert.equal(wrongSet.completeTwentyClubCoverage,false);assert.ok(wrongSet.verifiedPremierLeagueTeamCount<20);
+  const extraNonAuthoritative=mappingCoverage([...twenty,team(999,`${season}:fpl:team:99`)],season,{officialTeams});
+  assert.equal(extraNonAuthoritative.completeTwentyClubCoverage,false);
+  const sameClub=mappingCoverage([...twenty,{...twenty[0],providerEntityId:'999',revision:9}],season,{officialTeams});
+  assert.equal(sameClub.completeTwentyClubCoverage,false);assert.equal(sameClub.verifiedPremierLeagueTeamCount,19);
+  const splitProvider=mappingCoverage([...twenty,{...twenty[0],canonicalFplId:`${season}:fpl:team:${AUTHORITATIVE_PL_TEAM_IDS[1]}`,revision:2}],season,{officialTeams});
+  assert.equal(splitProvider.completeTwentyClubCoverage,false);
+  const duplicates=mappingCoverage([...twenty,...twenty.map(row=>({...row,revision:2}))],season,{officialTeams});
   assert.equal(duplicates.verifiedPremierLeagueTeamCount,20);assert.equal(duplicates.completeTwentyClubCoverage,true);
-  const conflicted=mappingCoverage([...twenty,{...twenty[0],canonicalFplId:`${season}:fpl:team:99`,revision:2}]);
-  assert.equal(conflicted.verifiedPremierLeagueTeamCount,19);assert.equal(conflicted.completeTwentyClubCoverage,false);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,provenance:''})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,revision:'r1'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,method:'fuzzy_name'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,season:'2025-26',canonicalFplId:'2025-26:fpl:team:6'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,provider:'understat'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage([team(1,`${season}:fpl:team:99`)],season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  const unavailable=mappingCoverage(twenty);
+  assert.equal(unavailable.completeTwentyClubCoverage,false);assert.equal(unavailable.limitation,'authoritative_pl_team_set_unavailable');
+  const duplicateOfficial=[{id:6},...officialTeams.slice(1)];
+  duplicateOfficial[1]={id:6};
+  assert.equal(mappingCoverage(twenty,season,{officialTeams:duplicateOfficial}).limitation,'authoritative_pl_team_set_invalid');
   const providerConflict=qualifyDiscoveredFixture({
     identity:'2026-27:api-football:fixture:1',providerFixtureId:'1',providerLeagueId:'45',canonicalCompetitionId:'fa_cup',
     fplSeason:season,providerHomeTeamId:'49',providerAwayTeamId:'63',providerSeason:2026,
     kickoffObservation:{value:'2026-09-16T19:00:00.000Z',source:'api-football',sourceRevision:'r1'}
   },{teamMappings:[maps[0],maps[1],{...maps[1],canonicalFplId:`${season}:fpl:team:11`,revision:2}]});
   assert.equal(providerConflict.qualification.state,'CONFLICTED');assert.equal(providerConflict.workloadRelevant,false);assert.equal(providerConflict.conflicted,true);
+});
+
+test('HTTP 429 stops the scan even when quota headers are absent or malformed',async()=>{
+  const stopCases=[
+    headers({'x-ratelimit-requests-remaining':'0','x-ratelimit-requests-limit':'7500','x-ratelimit-limit':'300','x-ratelimit-remaining':'0'}),
+    headers(),
+    headers({'x-ratelimit-requests-limit':'unlimited'})
+  ];
+  for(const hdrs of stopCases){
+    const transport=mockFetch(async(url,options,n)=>n===2?{ok:false,status:429,headers:hdrs}:{ok:true,status:200,headers:headers(),json:async()=>payloads[url.searchParams.get('league')]});
+    const stopped=await runApiFootballDiscoveryScan(scanOptions({transport}));
+    assert.equal(stopped.scanState,'stopped_quota_exhausted');assert.equal(stopped.attempts,2);assert.equal(transport.calls.length,2);
+    assert.equal(stopped.audit.at(-1).category,'quota_exhausted');
+    assert.doesNotMatch(JSON.stringify(stopped),/deliberate-test-key-material|x-apisports-key|Home FC/i);
+  }
+  const malformedSuccess=mockFetch(async()=>({ok:true,status:200,headers:headers({'x-ratelimit-remaining':'-1'}),json:async()=>({})}));
+  const failed=await runApiFootballDiscoveryScan(scanOptions({transport:malformedSuccess}));
+  assert.equal(failed.ok,false);assert.ok(failed.audit.every(row=>row.category==='quota_headers_invalid'&&row.attemptNumber===1));
+  assert.equal(malformedSuccess.calls.length,5);
+});
+
+test('duplicate provider fixture IDs with incompatible core identity conflict',async()=>{
+  const identical=envelope(48,[chelseaLeeds,chelseaLeeds]);
+  const kickoffOnly=envelope(48,[chelseaLeeds,row({id:1636205,league:48,home:49,away:63,date:'2026-09-09T19:15:00Z'})]);
+  const orientation=envelope(48,[chelseaLeeds,row({id:1636205,league:48,home:63,away:49,date:'2026-09-09T19:00:00Z'})]);
+  const teamChange=envelope(48,[chelseaLeeds,row({id:1636205,league:48,home:49,away:64,date:'2026-09-09T19:00:00Z'})]);
+  async function scanLeagueCup(payload){
+    const transport=mockFetch(async url=>{
+      const league=url.searchParams.get('league');
+      return {ok:true,status:200,headers:headers(),json:async()=>league==='48'?payload:payloads[league]};
+    });
+    return runApiFootballDiscoveryScan(scanOptions({transport}));
+  }
+  const same=await scanLeagueCup(identical);
+  const sameFixture=same.fixtures.filter(row=>row.providerFixtureId==='1636205');
+  assert.equal(sameFixture.length,1);assert.equal(sameFixture[0].identity,'2026-27:api-football:fixture:1636205');assert.equal(sameFixture[0].workloadRelevant,true);
+  const moved=await scanLeagueCup(kickoffOnly);
+  const movedFixture=moved.fixtures.find(row=>row.providerFixtureId==='1636205');
+  assert.equal(movedFixture.identity,'2026-27:api-football:fixture:1636205');assert.equal(movedFixture.kickoff.state,'CONFLICTED');assert.equal(movedFixture.canonicalKickoff,null);assert.equal(movedFixture.qualification.state,'PROVIDER_QUALIFIED');
+  for(const payload of [orientation,teamChange]){
+    const scan=await scanLeagueCup(payload);
+    const fixture=scan.fixtures.find(row=>row.providerFixtureId==='1636205');
+    assert.equal(fixture.qualification.state,'CONFLICTED');assert.equal(fixture.workloadRelevant,false);assert.equal(fixture.conflicted,true);
+    const audit=scan.audit.find(row=>row.logicalCompetitionKey==='league_cup'&&row.category==='success');
+    assert.equal(audit.workloadRelevantAdmitted,0);
+  }
+  const crossComp=await runApiFootballDiscoveryScan(scanOptions({transport:mockFetch(async url=>{
+    const league=url.searchParams.get('league');
+    const payload=league==='45'?envelope(45,[row({id:1636205,league:45,home:49,away:900})]):payloads[league];
+    return {ok:true,status:200,headers:headers(),json:async()=>payload};
+  })}));
+  const collided=crossComp.fixtures.filter(row=>row.providerFixtureId==='1636205');
+  assert.equal(collided.length,1);assert.equal(collided[0].qualification.state,'CONFLICTED');assert.equal(collided[0].workloadRelevant,false);
 });
 
 test('API-Football discovery stays isolated from production, live config and migration 0005',()=>{

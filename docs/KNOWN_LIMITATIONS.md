@@ -2,12 +2,14 @@
 
 ## EIA-2I5B limitations
 
-- The discovery layer is dormant. No authenticated API-Football request, credential, Cloudflare secret, Worker route, Cron, GitHub schedule or deployment exists.
+- The discovery layer is dormant. No authenticated API-Football request, credential, Cloudflare secret, Worker route, Cron, GitHub schedule or API-Football runtime activation exists. Draft PR #249 did receive an automatic Cloudflare/GitHub **branch preview** deployment; that is not provider activation.
 - Discovered fixtures are not written to D1. There is no migration 0005 and no request/quota/scheduler table.
 - Durable quota accounting is not implemented; header normalization is in-memory only. Exact contractual tier remains unknown.
 - Unexpected provider pagination cannot be followed inside the five-request plan and fails closed as `pagination_unsupported`.
-- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate. A `VERIFIED` label alone does not count; coverage uses the full EIA-2I5A mapping validator.
+- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate. Completeness requires the exact authoritative Official FPL current-club set and a 1:1 bijection; a `VERIFIED` label or twenty arbitrary IDs is not sufficient. Coverage fails closed if that Official FPL set cannot be established.
 - Ambiguous or conflicted final qualification is never workload-relevant.
+- Independent cross-source evidence is fixture-scoped; unscoped candidates cannot poison other fixtures.
+- Explicit provider request timeout/abort is not implemented and remains mandatory before live credential, unattended scheduler or production-runtime approval.
 - Actual provider egress/runtime (Worker versus other) is a later decision.
 - Discovery cannot affect production recommendations. Official FPL remains authoritative for Premier League facts.
 

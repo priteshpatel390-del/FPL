@@ -2,7 +2,7 @@
 
 ## EIA-2I5B hardened provider request and fixture discovery
 
-EIA-2I5B adds a disabled, injected-transport discovery capability for the five approved cup competitions. It does not add a credential, secret, scheduler, D1 write path, live migration or production/model/UI influence. Complete current-season PL-team mapping, durable quota accounting and the actual provider egress/runtime remain pre-live limitations. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
+EIA-2I5B adds a disabled, injected-transport discovery capability for the five approved cup competitions. Independent cross-source evidence is fixture-scoped. 20-club completeness requires the exact authoritative Official FPL current-club set. HTTP 429 always stops. Duplicate provider fixture IDs with incompatible core identity fail closed. Draft PR #249 received an automatic branch preview; no API-Football credential, collector or production import was activated. Explicit request timeout remains a pre-live gate. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
 
 ## EIA-2I5A API-Football shadow identity and schema
 

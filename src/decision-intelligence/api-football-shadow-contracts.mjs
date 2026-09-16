@@ -1,4 +1,5 @@
 import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs';
+import {canonicalFplIdentity} from './observation.mjs';
 
 export const API_FOOTBALL_PROVIDER='api-football';
 export const TEAM_MAPPING_STATES=Object.freeze(['UNMAPPED','CANDIDATE','VERIFIED','AMBIGUOUS','CONFLICTED']);
@@ -35,6 +36,25 @@ export function apiFootballPlayerIdentity(providerPlayerId){
 export function apiFootballTeamIdentity({season,providerTeamId}={}){
   const id=providerId(providerTeamId);if(!SEASON.test(season||'')||!id)throw new Error('provider_team_identity_invalid');
   return `${season}:${API_FOOTBALL_PROVIDER}:team:${id}`;
+}
+export function officialFplTeamIdentity({season,teamId}={}){
+  const id=providerId(teamId);
+  if(!SEASON.test(season||'')||!id)return fail('official_fpl_team_identity_invalid');
+  try{return deepFreeze({ok:true,canonicalFplId:canonicalFplIdentity(season,'team',id)});}
+  catch{return fail('official_fpl_team_identity_invalid');}
+}
+export function currentSeasonOfficialFplTeamIdentities(season,officialTeams){
+  if(!SEASON.test(season||''))return fail('season_invalid');
+  if(!Array.isArray(officialTeams)||officialTeams.length!==20)return fail('authoritative_pl_team_set_unavailable');
+  const identities=[];
+  const seen=new Set();
+  for(const row of officialTeams){
+    const identity=officialFplTeamIdentity({season,teamId:row&&typeof row==='object'?row.id:row});
+    if(!identity.ok||seen.has(identity.canonicalFplId))return fail('authoritative_pl_team_set_invalid');
+    seen.add(identity.canonicalFplId);
+    identities.push(identity.canonicalFplId);
+  }
+  return deepFreeze({ok:true,identities});
 }
 export function validateProviderMapping(mapping,{entityType,season}={}){
   if(!mapping||mapping.provider!==API_FOOTBALL_PROVIDER||mapping.entityType!==entityType||!providerId(mapping.providerEntityId)||!SEASON.test(mapping.season||'')||mapping.season!==season||!TEAM_MAPPING_STATES.includes(mapping.status)||!providerId(mapping.revision)||!MAPPING_METHODS.includes(mapping.method)||!String(mapping.provenance||'').trim())return fail('mapping_invalid');

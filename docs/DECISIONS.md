@@ -2,7 +2,7 @@
 
 ## D-EIA-2I5B · 16 September 2026 · Accepted · Hardened discovery before live collection
 
-Add a repository-only, dormant API-Football fixture-discovery layer that reuses pinned EIA-2I1 transport without turning the known-ID client into a generic proxy. Discovery queries are exactly the five repository-controlled league/season pairs for 2026-27. Identity, mapping and kickoff-conflict rules remain EIA-2I5A's. Live credential, D1 persistence, scheduler, Cloudflare runtime and model use remain separately gated.
+Add a repository-only, dormant API-Football fixture-discovery layer that reuses pinned EIA-2I1 transport without turning the known-ID client into a generic proxy. Discovery queries are exactly the five repository-controlled league/season pairs for 2026-27. Independent candidates are fixture-scoped. 20-club completeness is the exact Official FPL current-club bijection. HTTP 429 always stops. Duplicate provider fixture IDs with incompatible core identity fail closed. Identity, mapping and kickoff-conflict rules remain EIA-2I5A's, including Chelsea 49→6 and Leeds 63→13. Live credential, D1 persistence, scheduler, Cloudflare API-Football runtime and model use remain separately gated. An automatic PR/branch preview is not provider activation.
 
 ## D-EIA-2I5A · 16 September 2026 · Accepted · Offline identity before collection
 

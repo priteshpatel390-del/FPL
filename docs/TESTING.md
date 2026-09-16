@@ -2,7 +2,7 @@
 
 ## EIA-2I5B discovery coverage
 
-`tests/eia2i5b-provider-discovery.test.mjs` pins the five approved league/season plans, closed known-ID versus discovery surfaces, origin pinning, header-only credentials, serial attempts, 1s injected delay, one retry bound, ten-attempt ceiling, 429 stop, no-retry auth/schema paths, quota-header normalization, identity/orientation/mapping/conflict behaviour, Chelsea–Leeds kickoff conflict without time tolerance, final-state workload relevance (`PROVIDER_QUALIFIED`/`CROSS_SOURCE_VERIFIED` only), full EIA-2I5A `validateProviderMapping` 20-club coverage, and structural isolation from production, wrangler, workflows and migration 0005. Tests use injected fetch only. Existing EIA-2I1/EIA-2I3/EIA-2I5A tests remain the duration, rights and identity owners.
+`tests/eia2i5b-provider-discovery.test.mjs` pins the five approved league/season plans, closed known-ID versus discovery surfaces, origin pinning, header-only credentials, serial attempts, 1s injected delay, one retry bound, ten-attempt ceiling, 429 stop including absent/malformed quota headers, no-retry auth/schema paths, quota-header normalization, fixture-scoped independent candidates, duplicate provider-fixture-ID core-identity collisions, identity/orientation/mapping/conflict behaviour, canonical Chelsea 49→FPL 6 and Leeds 63→FPL 13 on 9 September 2026 with 19:00 vs 19:15 kickoff conflict and no time tolerance, final-state workload relevance, authoritative Official FPL 20-club bijection, and structural isolation from production, wrangler, workflows and migration 0005. Tests use injected fetch only. Existing EIA-2I1/EIA-2I3/EIA-2I5A tests remain the duration, rights and identity owners.
 
 ## EIA-2I5A offline contract coverage
 

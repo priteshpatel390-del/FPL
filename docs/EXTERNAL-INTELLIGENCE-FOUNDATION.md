@@ -2,7 +2,7 @@
 
 ## EIA-2I5B implementation boundary
 
-EIA-2I5B adds dormant, injected-transport fixture discovery only. It preserves `shadow_only`, fail-closed identity/rights behaviour and model isolation. No live acquisition, weighting, production use, credential or scheduler is activated.
+EIA-2I5B adds dormant, injected-transport fixture discovery only. It preserves `shadow_only`, fail-closed identity/rights behaviour and model isolation. No live acquisition, weighting, production use, credential or scheduler is activated. An automatic PR/branch preview is not API-Football runtime activation.
 
 ## EIA-2I5A implementation boundary
 
