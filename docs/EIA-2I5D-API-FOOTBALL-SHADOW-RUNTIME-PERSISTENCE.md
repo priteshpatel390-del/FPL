@@ -27,13 +27,15 @@ No provider-player/team warehouse or venue, round, logo, image, referee, arbitra
 
 `workers/api-football-collector/` is separate from `teamsheet-data-platform` and the Official FPL dispatcher. Its default export contains only `scheduled`; there is no `fetch` handler, public route or custom domain. Wrangler disables `workers_dev` and preview URLs, declares no Cron, uses an all-zero non-live D1 identifier and contains no secret value. A future credential may exist only as Worker secret `API_FOOTBALL_API_KEY`.
 
-The runtime reuses EIA-2I5B's pinned origin, closed endpoint/query builder, GET-only request init, redirect rejection and 15-second timeout. Local input validation precedes D1 reservation. D1 absence, kill switch off, missing/stale/conflicted Official FPL authority, quota uncertainty, active lease, request spacing, 429 block or daily ceiling all deny provider egress.
+The runtime reuses EIA-2I5B's pinned origin, closed endpoint/query builder, GET-only request init, redirect rejection and 15-second timeout. Local input validation precedes D1 reservation, and the declared endpoint class must exactly match discovery or known-ID endpoint/query shape. D1 absence, kill switch off, missing/stale/conflicted Official FPL authority, quota uncertainty, active lease, request spacing, authentication block, 429 block or daily ceiling all deny provider egress.
 
 ## Quota and concurrency
 
-Teamsheet's ceiling is 100 HTTP attempts per UTC day. It is an internal safety limit, not provider entitlement. Every retry is a distinct durable attempt. Timeout, transport ambiguity and crash after reservation remain consumed. A conditional D1 update acquires one 30-second global lease and increments the durable count before egress. Stale leases may expire but never refund attempts. Minimum spacing remains one second; valid minute telemetry can only increase that gap.
+Teamsheet's ceiling is 100 HTTP attempts per UTC day. It is an internal safety limit, not provider entitlement. Every retry is a distinct durable attempt. Runtime-state lease/count mutation and request-attempt provenance insertion execute in one atomic D1 batch: both commit or both roll back before egress. Duplicate/failed attempt insertion therefore cannot consume count or strand a lease. Timeout, transport ambiguity and crash after a successful reservation remain consumed. Stale leases may expire but never refund attempts. Minimum spacing remains one second; valid minute telemetry can only increase that gap.
 
 First required request on a new UTC day is one bounded header probe. Missing or malformed normalized headers enters `QUOTA_UNCERTAIN`, blocking further unattended requests. HTTP 429 is never retried and enters `BLOCKED_429` until the next UTC day without guessing the exhausted provider window.
+
+HTTP 401/403 is a distinct, non-retryable `AUTH_FAILURE`. Completion atomically records the safe attempt outcome, sets `credential_state='INVALID'`, disables collection with a closed reason and enters `AUTH_BLOCKED`; even valid quota headers cannot keep collection open. Provider bodies and credential material remain unread and unpersisted. Credential rotation/reactivation remains a separate controlled action.
 
 ## Official FPL authority
 
@@ -55,6 +57,6 @@ Exactly five EIA-2I5B competitions, FPL season 2026-27, provider season 2026, id
 
 ## Verification and limitations
 
-Permanent tests cover runtime safety, quota states, UTC reset, stale leases, genuine two- and five-promise races, bounded decoding, scheduler identities, sanitized output, Worker closure, secret absence, migration compatibility, head atomicity, uniqueness and production/browser isolation. Full-suite and deterministic-build results belong in the draft PR at its exact head.
+Permanent tests cover runtime safety, atomic reservation rollback, duplicate identities, conservative post-reservation crash accounting, quota/authentication states, UTC reset, stale leases, genuine two- and five-promise races, exact endpoint-class mapping, bounded decoding, scheduler identities, sanitized output, Worker closure, secret absence, migration compatibility, head atomicity, uniqueness and production/browser isolation. Full-suite and deterministic-build results belong in the draft PR at its exact head.
 
 Remaining live gates require separate owner approval: choose the byte limit from attended evidence; prove all 20 provider-to-FPL mappings; provision the existing D1 binding; apply migration 0005 live; create the Worker secret; enable the kill switch; declare/activate Cron; deploy; run bounded acceptance; and separately consider any model/UI use. None is approved here.

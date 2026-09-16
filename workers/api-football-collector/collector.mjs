@@ -31,6 +31,7 @@ export async function executeReservedRequest({env,request,fetchImpl=globalThis.f
     return safe({ok:false,reason:sent.reason});
   }
   let completion=classifyCompletion({status:sent.response.status,headers:sent.response.headers,now:now()});
+  if(completion.outcome==='AUTH_FAILURE'){await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return safe({ok:false,reason:'provider_authentication_failed'});}
   if(sent.response.status===429){await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return safe({ok:false,reason:'quota_exhausted'});}
   if(!sent.response.ok){await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return safe({ok:false,reason:'provider_unavailable'});}
   let decoded;try{decoded=await readBoundedJson(sent.response,{maxBytes:maxResponseBytes});}catch{decoded=safe({ok:false,reason:'provider_schema_invalid'});}

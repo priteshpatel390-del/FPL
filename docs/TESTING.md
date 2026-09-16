@@ -1,6 +1,6 @@
 ## EIA-2I5D permanent coverage
 
-`tests/eia2i5d-shadow-runtime.test.mjs` covers quota, UTC reset, first-probe failure closure, lease/spacing, two- and five-promise races, authority freshness/bijection, bounded body/row decoding, scheduling, observability, secret/route safety and model/browser isolation. `tests/eia2i5d-migration.test.mjs` applies 0001–0005 to populated local D1, checks retained data/FKs/rights, committed-head enforcement, duplicate-attempt rejection and absence of raw stores. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+`tests/eia2i5d-shadow-runtime.test.mjs` covers quota, UTC reset, first-probe failure closure, atomic lease/count/attempt rollback, duplicate attempt identity, conservative post-reservation crash accounting, lease/spacing, two- and five-promise races, 401/403 durable authentication blocking, exact endpoint-class/query mapping, authority freshness/bijection, bounded body/row decoding, scheduling, observability, secret/route safety and model/browser isolation. `tests/eia2i5d-migration.test.mjs` applies 0001–0005 to populated local D1, checks retained data/FKs/rights, committed-head enforcement, duplicate-attempt rejection and absence of raw stores. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
 
 # TESTING.md
 

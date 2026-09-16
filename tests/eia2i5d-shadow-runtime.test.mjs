@@ -13,7 +13,7 @@ import {reserveAttempt} from '../workers/api-football-collector/d1-persistence.m
 
 const root=path.resolve(import.meta.dirname,'..');
 const authority=(fetchedAt='2026-09-16T00:00:00.000Z')=>({season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runStatus:'completed',fetchedAt,digest:'a'.repeat(64),teamIds:Array.from({length:20},(_,i)=>`2026-27:fpl:team:${i+1}`)});
-const state=overrides=>({provider:'api-football',collection_enabled:1,quota_state:'KNOWN',quota_utc_day:'2026-09-16',daily_attempt_count:0,in_flight_attempt_id:null,in_flight_lease_expires_at:null,earliest_next_request_at:null,...overrides});
+const state=overrides=>({provider:'api-football',collection_enabled:1,credential_state:'AVAILABLE',quota_state:'KNOWN',quota_utc_day:'2026-09-16',daily_attempt_count:0,in_flight_attempt_id:null,in_flight_lease_expires_at:null,earliest_next_request_at:null,...overrides});
 
 test('runtime constants pin operational ceiling, lease, freshness, retention and dormant response limit',()=>{
   assert.equal(API_FOOTBALL_DAILY_REQUEST_LIMIT,100);assert.equal(API_FOOTBALL_LEASE_MS,30_000);
@@ -32,11 +32,12 @@ test('invalid endpoint and query fail before storage or quota',async()=>{
   assert.equal(result.reason,'request_contract_invalid');assert.equal(prepared,0);assert.equal(calls,0);
 });
 test('request contract allows only exact discovery and known-ID query shapes',()=>{
-  const base={logicalRequestId:'discovery:2026-09-16:2',attemptNumber:1,operationClass:'DISCOVERY',endpoint:'fixtures',endpointClass:'fixtures_discovery'};base.attemptId=requestAttemptIdentity(base.logicalRequestId,1);
-  assert.equal(validateCollectorRequest({...base,search:{league:2,season:2026}}).ok,true);
-  assert.equal(validateCollectorRequest({...base,search:{league:1,season:2026}}).reason,'parameters_invalid');
-  assert.equal(validateCollectorRequest({...base,search:{league:2,season:2026,timezone:'UTC'}}).reason,'parameters_invalid');
-  assert.equal(validateCollectorRequest({...base,endpoint:'fixtures/players',endpointClass:'players',search:{fixture:10}}).ok,true);
+  const base={logicalRequestId:'request:1',attemptNumber:1,operationClass:'DISCOVERY'};base.attemptId=requestAttemptIdentity(base.logicalRequestId,1);
+  const valid=[['fixtures','fixtures_discovery',{league:2,season:2026}],['fixtures','fixture',{id:10}],['fixtures/lineups','lineups',{fixture:10}],['fixtures/players','players',{fixture:10}],['fixtures/events','events',{fixture:10}]];
+  for(const [endpoint,endpointClass,search] of valid)assert.equal(validateCollectorRequest({...base,endpoint,endpointClass,search}).ok,true,`${endpoint}:${endpointClass}`);
+  for(const [endpoint,endpointClass,search] of valid)assert.equal(validateCollectorRequest({...base,endpoint,endpointClass:endpointClass==='fixture'?'events':'fixture',search}).reason,'endpoint_class_mismatch',`${endpoint}:${endpointClass}`);
+  assert.equal(validateCollectorRequest({...base,endpoint:'fixtures',endpointClass:'fixtures_discovery',search:{league:1,season:2026}}).reason,'parameters_invalid');
+  assert.equal(validateCollectorRequest({...base,endpoint:'fixtures',endpointClass:'fixtures_discovery',search:{league:2,season:2026,timezone:'UTC'}}).reason,'parameters_invalid');
   assert.equal(validateCollectorRequest({...base,endpoint:'fixtures/players',endpointClass:'players',search:{team:10}}).reason,'parameters_invalid');
 });
 test('activation stays blocked until response byte limit is attended and qualified',()=>{assert.equal(validateRuntimeConfiguration({TEAMSHEET_DATA_DB:{},API_FOOTBALL_API_KEY:'synthetic'}).reason,'response_limit_unqualified');});
@@ -49,17 +50,31 @@ test('active lease serializes provider egress and stale lease recovers',()=>{
   assert.equal(reservationDecision(state({in_flight_attempt_id:'a',in_flight_lease_expires_at:'2026-09-16T01:00:20Z'}),{now:'2026-09-16T01:00:00Z',authority:authority()}).reason,'request_lease_busy');
   assert.equal(reservationDecision(state({in_flight_attempt_id:'a',in_flight_lease_expires_at:'2026-09-16T00:59:59Z'}),{now:'2026-09-16T01:00:00Z',authority:authority()}).ok,true);
 });
-function concurrentDb(){
-  const shared=state({});const attempts=[];
-  return {shared,attempts,prepare(sql){let args=[];return {bind(...values){args=values;return this;},async first(){return {...shared};},async run(){
-    await new Promise(resolve=>setTimeout(resolve,1));
-    if(sql.startsWith('UPDATE api_football_runtime_state')){const now=args.at(-2);if(shared.in_flight_attempt_id&&Date.parse(shared.in_flight_lease_expires_at)>Date.parse(now))return {meta:{changes:0}};shared.quota_utc_day=args[0];shared.daily_attempt_count=args[1];shared.quota_state=args[2];shared.in_flight_attempt_id=args[8];shared.in_flight_lease_expires_at=args[9];return {meta:{changes:1}};}
-    if(sql.startsWith('INSERT INTO api_football_request_attempts')){attempts.push(args[0]);return {meta:{changes:1}};}throw new Error('unexpected SQL');
-  }};}};
+class AtomicDb{
+  constructor({insertFails=false,attempts=[]}={}){this.shared=state({});this.attempts=new Map(attempts.map(id=>[id,{attemptId:id,outcome:'RESERVED'}]));this.insertFails=insertFails;this.lock=Promise.resolve();}
+  prepare(sql){const statement={sql,args:[],bind(...args){this.args=args;return this;},first:async()=>({...this.shared})};statement.first=statement.first.bind(this);return statement;}
+  async batch(statements){let release;const previous=this.lock;this.lock=new Promise(resolve=>{release=resolve;});await previous;const snapshot={shared:{...this.shared},attempts:new Map(this.attempts)};
+    try{await new Promise(resolve=>setTimeout(resolve,1));const first=statements[0];
+      if(first.sql.startsWith('UPDATE api_football_runtime_state SET quota_utc_day=')){
+        const now=first.args.at(-2);if(this.shared.in_flight_attempt_id&&Date.parse(this.shared.in_flight_lease_expires_at)>Date.parse(now))return [{meta:{changes:0}},{meta:{changes:0}}];
+        this.shared={...this.shared,quota_utc_day:first.args[0],daily_attempt_count:first.args[1],quota_state:first.args[2],in_flight_attempt_id:first.args[8],in_flight_lease_expires_at:first.args[9]};
+        const insert=statements[1],attemptId=insert.args[0];if(this.insertFails||this.attempts.has(attemptId))throw new Error('attempt insert failed');
+        this.attempts.set(attemptId,{attemptId,outcome:'RESERVED'});return [{meta:{changes:1}},{meta:{changes:1}}];
+      }
+      const attemptId=first.args.at(-1),attempt=this.attempts.get(attemptId);if(attempt){attempt.outcome=first.args[1];attempt.completedAt=first.args[0];}
+      const runtime=statements[1],outcome=runtime.args[0];this.shared.in_flight_attempt_id=null;this.shared.in_flight_lease_expires_at=null;this.shared.quota_state=runtime.args[3];
+      if(outcome==='AUTH_FAILURE'){this.shared.collection_enabled=0;this.shared.disable_reason='PROVIDER_AUTHENTICATION_FAILED';this.shared.credential_state='INVALID';}
+      return [{meta:{changes:attempt?1:0}},{meta:{changes:1}}];
+    }catch(error){this.shared=snapshot.shared;this.attempts=snapshot.attempts;throw error;}finally{release();}
+  }
 }
-async function reservationRace(size){const db=concurrentDb();const results=await Promise.all(Array.from({length:size},(_,i)=>reserveAttempt(db,{now:'2026-09-16T01:00:00Z',requiresAuthority:false,attemptId:`l${i}:attempt:1`,logicalRequestId:`l${i}`,attemptNumber:1,operationClass:'DISCOVERY',endpointClass:'fixtures_discovery'})));return {db,results};}
-test('two concurrent promises produce one global lease winner',async()=>{const {db,results}=await reservationRace(2);assert.equal(results.filter(row=>row.ok).length,1);assert.equal(db.attempts.length,1);assert.equal(db.shared.daily_attempt_count,1);});
-test('five concurrent promises still produce one global lease winner',async()=>{const {db,results}=await reservationRace(5);assert.equal(results.filter(row=>row.ok).length,1);assert.equal(db.attempts.length,1);assert.equal(db.shared.daily_attempt_count,1);});
+const reservationInput=(id='logical')=>({now:'2026-09-16T01:00:00Z',requiresAuthority:false,attemptId:`${id}:attempt:1`,logicalRequestId:id,attemptNumber:1,operationClass:'DISCOVERY',endpointClass:'fixtures_discovery'});
+async function reservationRace(size){const db=new AtomicDb();const results=await Promise.all(Array.from({length:size},(_,i)=>reserveAttempt(db,reservationInput(`l${i}`))));return {db,results};}
+test('attempt-row failure atomically rolls back count and lease before egress',async()=>{const db=new AtomicDb({insertFails:true});let calls=0;const result=await reserveAttempt(db,reservationInput());if(result.ok)calls++;assert.equal(result.reason,'attempt_reservation_failed');assert.equal(db.shared.daily_attempt_count,0);assert.equal(db.shared.in_flight_attempt_id,null);assert.equal(db.attempts.size,0);assert.equal(calls,0);});
+test('duplicate attempt identity cannot consume count or strand lease',async()=>{const id='logical:attempt:1',db=new AtomicDb({attempts:[id]});const result=await reserveAttempt(db,reservationInput());assert.equal(result.reason,'attempt_reservation_failed');assert.equal(db.shared.daily_attempt_count,0);assert.equal(db.shared.in_flight_attempt_id,null);assert.equal(db.attempts.size,1);});
+test('successful durable reservation remains consumed after simulated crash',async()=>{const db=new AtomicDb();assert.equal((await reserveAttempt(db,reservationInput())).ok,true);assert.equal(db.shared.daily_attempt_count,1);assert.equal(db.shared.in_flight_attempt_id,'logical:attempt:1');assert.equal(db.attempts.size,1);});
+test('two concurrent promises produce one global lease winner',async()=>{const {db,results}=await reservationRace(2);assert.equal(results.filter(row=>row.ok).length,1);assert.equal(db.attempts.size,1);assert.equal(db.shared.daily_attempt_count,1);});
+test('five concurrent promises still produce one global lease winner',async()=>{const {db,results}=await reservationRace(5);assert.equal(results.filter(row=>row.ok).length,1);assert.equal(db.attempts.size,1);assert.equal(db.shared.daily_attempt_count,1);});
 test('quota uncertain and 429 block later attempts until next UTC day',()=>{
   for(const quota_state of ['QUOTA_UNCERTAIN','BLOCKED_429'])assert.equal(reservationDecision(state({quota_state}),{now:'2026-09-16T01:00:00Z',authority:authority()}).ok,false);
   assert.equal(reservationDecision(state({quota_state:'BLOCKED_429'}),{now:'2026-09-17T00:00:00Z',authority:authority()}).ok,true);
@@ -76,6 +91,7 @@ test('timeout and transport-unknown remain consumed completion outcomes',()=>{
   assert.equal(classifyCompletion({transportUnknown:true,now:'2026-09-16T00:00:00Z'}).outcome,'TRANSPORT_UNKNOWN');
 });
 test('429 is non-inferential durable block',()=>{const row=classifyCompletion({status:429,headers:new Headers(),now:'2026-09-16T00:00:00Z'});assert.equal(row.quotaState,'BLOCKED_429');assert.equal(row.outcome,'QUOTA_BLOCKED');assert.equal('window' in row,false);});
+for(const status of [401,403])test(`${status} persists authentication block regardless of valid quota telemetry`,async()=>{const db=new AtomicDb(),request={...reservationInput(`auth-${status}`),operationClass:'FINALITY',endpoint:'fixtures',endpointClass:'fixture',search:{id:10}};let calls=0,bodyReads=0;const response={status,ok:false,headers:new Headers({'x-ratelimit-requests-limit':'7500','x-ratelimit-requests-remaining':'7499'}),get body(){bodyReads++;return null;}};const options={env:{TEAMSHEET_DATA_DB:db,API_FOOTBALL_API_KEY:'synthetic-secret'},request,fetchImpl:async()=>{calls++;return response;},now:()=>status===401?'2026-09-16T01:00:00Z':'2026-09-16T02:00:00Z',maxResponseBytes:100,timeoutSignal:()=>new AbortController().signal};const result=await executeReservedRequest(options);assert.equal(result.reason,'provider_authentication_failed');assert.equal(calls,1);assert.equal(bodyReads,0);assert.equal(db.shared.collection_enabled,0);assert.equal(db.shared.credential_state,'INVALID');assert.equal(db.shared.quota_state,'AUTH_BLOCKED');assert.equal(db.shared.daily_attempt_count,1);assert.equal([...db.attempts.values()][0].outcome,'AUTH_FAILURE');const blocked=await executeReservedRequest(options);assert.equal(blocked.reason,'collection_disabled');assert.equal(calls,1);assert.doesNotMatch(JSON.stringify({result,shared:db.shared,attempts:[...db.attempts.values()]}),/synthetic-secret|response body/i);});
 test('missing quota headers after success enter quota uncertain',()=>{assert.equal(classifyCompletion({status:200,headers:new Headers(),now:'2026-09-16T00:00:00Z'}).quotaState,'QUOTA_UNCERTAIN');});
 test('authority requires successful DATA-S2A identity, exact 20-team bijection and freshness',()=>{
   assert.equal(validateAuthority(authority(),{now:'2026-09-17T23:59:59Z'}).ok,true);

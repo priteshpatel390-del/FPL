@@ -24,10 +24,17 @@ export function requestAttemptIdentity(logicalRequestId,attemptNumber){
 export function validateCollectorRequest(request){
   if(!request||!API_FOOTBALL_OPERATION_CLASSES.includes(request.operationClass)||!['fixtures','fixtures/lineups','fixtures/players','fixtures/events'].includes(request.endpoint))return fail('request_contract_invalid');
   if(request.attemptId!==requestAttemptIdentity(request.logicalRequestId,request.attemptNumber))return fail('request_identity_invalid');
-  const entries=Object.entries(request.search||{});const knownId=request.endpoint==='fixtures'?'id':'fixture';
+  const entries=Object.entries(request.search||{});
+  const discoveryParameters=Object.hasOwn(request.search||{},'league')||Object.hasOwn(request.search||{},'season');
+  const endpointClasses=Object.freeze({fixtures:'fixture','fixtures/lineups':'lineups','fixtures/players':'players','fixtures/events':'events'});
   if(request.endpoint==='fixtures'&&request.endpointClass==='fixtures_discovery'){
+    if(!discoveryParameters)return fail('endpoint_class_mismatch');
     if(entries.length!==2||String(request.search.season)!==String(API_FOOTBALL_PROVIDER_SEASON)||!DISCOVERY_LEAGUES.has(String(request.search.league)))return fail('parameters_invalid');
-  }else if(entries.length!==1||entries[0][0]!==knownId||!/^\d+$/.test(String(entries[0][1]))||Number(entries[0][1])<1)return fail('parameters_invalid');
+  }else{
+    if(discoveryParameters||request.endpointClass!==endpointClasses[request.endpoint])return fail('endpoint_class_mismatch');
+    const parameter=request.endpoint==='fixtures'?'id':'fixture';
+    if(entries.length!==1||entries[0][0]!==parameter||!/^\d+$/.test(String(entries[0][1]))||Number(entries[0][1])<1)return fail('parameters_invalid');
+  }
   return Object.freeze({ok:true});
 }
 
@@ -56,6 +63,7 @@ export function reservationDecision(state,{now,requiresAuthority=true,authority=
   const at=iso(now);if(!at)return fail('timestamp_invalid');
   if(!state||state.provider!==API_FOOTBALL_PROVIDER)return fail('runtime_state_unavailable');
   if(state.collection_enabled!==1)return fail('collection_disabled');
+  if(state.credential_state!=='AVAILABLE')return fail(state.credential_state==='INVALID'?'credential_invalid':'credential_unavailable');
   if(requiresAuthority){const valid=validateAuthority(authority,{now:at});if(!valid.ok)return valid;}
   const day=utcDay(at),newDay=state.quota_utc_day!==day;
   if(!newDay&&state.quota_state==='BLOCKED_429')return fail('quota_blocked_429');
@@ -79,6 +87,7 @@ export function classifyCompletion({status,headers,timedOut=false,transportUnkno
   const at=iso(now);if(!at)return fail('timestamp_invalid');
   if(timedOut)return Object.freeze({ok:true,outcome:'TIMEOUT',timeout:1,quotaState:'QUOTA_UNCERTAIN'});
   if(transportUnknown)return Object.freeze({ok:true,outcome:'TRANSPORT_UNKNOWN',timeout:0,quotaState:'QUOTA_UNCERTAIN'});
+  if(status===401||status===403)return Object.freeze({ok:true,outcome:'AUTH_FAILURE',timeout:0,quotaState:'AUTH_BLOCKED',credentialState:'INVALID'});
   if(status===429)return Object.freeze({ok:true,outcome:'QUOTA_BLOCKED',timeout:0,quotaState:'BLOCKED_429',last429At:at});
   const quota=normalizeQuotaTelemetry(headers);
   if(!quota.ok)return Object.freeze({ok:true,outcome:Number(status)>=200&&Number(status)<300?'SUCCEEDED':'HTTP_FAILURE',timeout:0,quotaState:'QUOTA_UNCERTAIN'});
