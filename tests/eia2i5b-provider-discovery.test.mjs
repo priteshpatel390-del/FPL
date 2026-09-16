@@ -11,14 +11,29 @@ import {
   API_FOOTBALL_DISCOVERY_MODE,API_FOOTBALL_FPL_SEASON,API_FOOTBALL_PROVIDER_SEASON,apiFootballDiscoveryPlan,
   buildApiFootballDiscoveryRequest,mappingCoverage,qualifyDiscoveredFixture,runApiFootballDiscoveryScan
 } from '../src/decision-intelligence/api-football-discovery.mjs';
-import {apiFootballFixtureIdentity,apiFootballTeamIdentity,crossSourceQualify,currentSeasonOfficialFplTeamIdentities} from '../src/decision-intelligence/api-football-shadow-contracts.mjs';
+import {apiFootballFixtureIdentity,apiFootballTeamIdentity,crossSourceQualify,currentSeasonOfficialFplTeamIdentities,OFFICIAL_FPL_SCHEMA_VERSION,OFFICIAL_FPL_SOURCE_KEY,OFFICIAL_FPL_SOURCE_REVISION_ID,OFFICIAL_FPL_TRANSFORM_VERSION,OFFICIAL_FPL_VALIDATION_VERSION} from '../src/decision-intelligence/api-football-shadow-contracts.mjs';
+import {OFFICIAL_FPL_SOURCE_KEY as PLATFORM_OFFICIAL_FPL_SOURCE_KEY} from '../workers/data-platform/data-platform-core.mjs';
+import {DATA_S2_SCHEMA_VERSION,DATA_S2_SOURCE_REVISION_ID,DATA_S2_TRANSFORM_VERSION,DATA_S2_VALIDATION_VERSION} from '../workers/data-platform/official-fpl-canonical.mjs';
 
 const KEY='deliberate-test-key-material';
 const season=API_FOOTBALL_FPL_SEASON;
 const rights=()=>({classification:'owner_risk_accepted_private_use',provider:'api-football',ownerApprovalId:'EIA-2I1',allowedUse:'private_noncommercial_research',retentionAllowed:true,redistributionAllowed:false,publicUseAllowed:false,commercialUseAllowed:false,rawPayloadRetentionAllowed:false,stopOnObjection:true,attributionRequired:false});
 const team=(providerEntityId,canonicalFplId,status='VERIFIED')=>({provider:'api-football',entityType:'team',providerEntityId:String(providerEntityId),canonicalFplId,mappingRevision:'r1',revision:1,status,season,method:'manually_verified',provenance:'owner-reviewed'});
-const AUTHORITATIVE_PL_TEAM_IDS=Object.freeze([1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21]);
-const officialTeams=AUTHORITATIVE_PL_TEAM_IDS.map(id=>({id}));
+const CURRENT_PL_TEAM_IDS=Object.freeze([1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21]);
+function clubRows(ids=CURRENT_PL_TEAM_IDS){return ids.map(id=>({id,name:`Club ${id}`,short_name:`C${id}`}));}
+function officialFplSnapshot(overrides={}){
+  const {teamIds,teams,bootstrap,...rest}=overrides;
+  const snapshot={
+    sourceKey:OFFICIAL_FPL_SOURCE_KEY,sourceKind:'official_fpl',sourceRevisionId:OFFICIAL_FPL_SOURCE_REVISION_ID,
+    schemaVersion:OFFICIAL_FPL_SCHEMA_VERSION,validationVersion:OFFICIAL_FPL_VALIDATION_VERSION,transformVersion:OFFICIAL_FPL_TRANSFORM_VERSION,
+    season,fetchedAt:'2026-09-16T11:00:00.000Z',...rest
+  };
+  if(bootstrap)snapshot.bootstrap=bootstrap;
+  if(teams!==undefined)snapshot.teams=teams;
+  else if(!bootstrap)snapshot.teams=clubRows(teamIds||CURRENT_PL_TEAM_IDS);
+  return snapshot;
+}
+const officialSnapshot=officialFplSnapshot();
 const maps=[team(49,`${season}:fpl:team:6`),team(63,`${season}:fpl:team:13`)];
 const headers=(values={})=>({get(name){const key=String(name).toLowerCase();return values[key]??values[name]??null;},...values});
 const envelope=(league,rows)=>({get:'fixtures',parameters:{league:String(league),season:'2026'},errors:{},results:rows.length,paging:{current:1,total:1},response:rows});
@@ -183,7 +198,7 @@ test('names never map, contradictory verified mappings conflict, and missing map
   assert.equal(named.unmapped,true);assert.equal(named.workloadRelevant,false);assert.equal(named.qualification.state,'DISCOVERED');
   const conflicted=qualifyDiscoveredFixture({...discovered,providerAwayTeamId:'63'},{teamMappings:[maps[1],{...maps[1],canonicalFplId:`${season}:fpl:team:11`,revision:2}]});
   assert.equal(conflicted.conflicted,true);assert.equal(conflicted.qualification.state,'CONFLICTED');assert.equal(conflicted.workloadRelevant,false);
-  const coverage=mappingCoverage(maps,season,{officialTeams});assert.equal(coverage.completeTwentyClubCoverage,false);assert.equal(coverage.limitation,'current_season_pl_team_mapping_incomplete');
+  const coverage=mappingCoverage(maps,season,{officialFplSnapshot:officialSnapshot});assert.equal(coverage.completeTwentyClubCoverage,false);assert.equal(coverage.limitation,'current_season_pl_team_mapping_incomplete');
 });
 
 test('Chelsea-Leeds 19:00 versus 19:15 remains an explicit kickoff conflict without time tolerance',async()=>{
@@ -246,36 +261,75 @@ test('final qualification, not the preliminary provider state, owns workloadRele
   assert.equal(mismatched.qualification.state,'CONFLICTED');assert.equal(mismatched.workloadRelevant,false);assert.equal(mismatched.conflicted,true);
 });
 
+test('Official FPL team universe requires DATA-S2A snapshot provenance and cannot self-certify',()=>{
+  assert.equal(OFFICIAL_FPL_SOURCE_KEY,PLATFORM_OFFICIAL_FPL_SOURCE_KEY);
+  assert.equal(OFFICIAL_FPL_SOURCE_REVISION_ID,DATA_S2_SOURCE_REVISION_ID);
+  assert.equal(OFFICIAL_FPL_SCHEMA_VERSION,DATA_S2_SCHEMA_VERSION);
+  assert.equal(OFFICIAL_FPL_VALIDATION_VERSION,DATA_S2_VALIDATION_VERSION);
+  assert.equal(OFFICIAL_FPL_TRANSFORM_VERSION,DATA_S2_TRANSFORM_VERSION);
+  const twenty=CURRENT_PL_TEAM_IDS.map((id,i)=>team(200+i,`${season}:fpl:team:${id}`));
+  const fabricatedIds=CURRENT_PL_TEAM_IDS.slice();
+  const fabricatedRows=CURRENT_PL_TEAM_IDS.map(id=>({id}));
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,fabricatedIds).ok,false);
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,fabricatedIds).reason,'authoritative_pl_team_set_unavailable');
+  assert.equal(mappingCoverage(twenty,season,{officialTeams:fabricatedRows}).completeTwentyClubCoverage,false);
+  assert.equal(mappingCoverage(twenty,season,{officialTeams:fabricatedRows}).limitation,'authoritative_pl_team_set_unavailable');
+  assert.equal(mappingCoverage(twenty,season,{officialFplSnapshot:fabricatedIds}).completeTwentyClubCoverage,false);
+  assert.equal(mappingCoverage(twenty,season,{officialFplSnapshot:fabricatedIds}).limitation,'authoritative_pl_team_set_unavailable');
+  assert.equal(mappingCoverage(twenty).completeTwentyClubCoverage,false);
+  assert.equal(mappingCoverage(twenty).limitation,'authoritative_pl_team_set_unavailable');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({sourceKey:'understat'})).reason,'authoritative_pl_team_set_unavailable');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({sourceKind:undefined})).reason,'authoritative_pl_team_set_unavailable');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({season:'2025-26'})).reason,'official_fpl_season_mismatch');
+  assert.equal(mappingCoverage(twenty,season,{officialFplSnapshot:officialFplSnapshot({season:'2025-26'})}).completeTwentyClubCoverage,false);
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({fetchedAt:'not-an-instant'})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({fetchedAt:undefined})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({sourceRevisionId:''})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({sourceRevisionId:undefined})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({schemaVersion:'other'})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({validationVersion:'other'})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({transformVersion:'other'})).reason,'official_fpl_provenance_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({teams:fabricatedRows})).reason,'authoritative_pl_team_set_invalid');
+  const duplicateTeams=clubRows();duplicateTeams[1]={...duplicateTeams[1],id:6,name:'Dup',short_name:'DUP'};
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({teams:duplicateTeams})).reason,'authoritative_pl_team_set_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({teamIds:CURRENT_PL_TEAM_IDS.slice(0,19)})).reason,'authoritative_pl_team_set_invalid');
+  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({teamIds:[...CURRENT_PL_TEAM_IDS,99]})).reason,'authoritative_pl_team_set_invalid');
+  const established=currentSeasonOfficialFplTeamIdentities(season,officialSnapshot);
+  assert.equal(established.ok,true);assert.equal(established.identities.length,20);
+  assert.equal(established.sourceKey,OFFICIAL_FPL_SOURCE_KEY);assert.equal(established.sourceRevisionId,OFFICIAL_FPL_SOURCE_REVISION_ID);
+  assert.ok(!CURRENT_PL_TEAM_IDS.includes(10));assert.ok(CURRENT_PL_TEAM_IDS.includes(6)&&CURRENT_PL_TEAM_IDS.includes(13));
+  const bootstrapShaped=currentSeasonOfficialFplTeamIdentities(season,officialFplSnapshot({bootstrap:{teams:clubRows()}}));
+  assert.equal(bootstrapShaped.ok,true);assert.equal(bootstrapShaped.identities.length,20);
+});
+
 test('mappingCoverage requires exact authoritative current-season PL bijection',()=>{
-  assert.equal(currentSeasonOfficialFplTeamIdentities(season,officialTeams).identities.length,20);
-  assert.ok(!AUTHORITATIVE_PL_TEAM_IDS.includes(10));
-  assert.ok(AUTHORITATIVE_PL_TEAM_IDS.includes(6)&&AUTHORITATIVE_PL_TEAM_IDS.includes(13));
-  const twenty=AUTHORITATIVE_PL_TEAM_IDS.map((id,i)=>team(200+i,`${season}:fpl:team:${id}`));
-  const complete=mappingCoverage(twenty,season,{officialTeams});
+  const snapshot=officialSnapshot;
+  const twenty=CURRENT_PL_TEAM_IDS.map((id,i)=>team(200+i,`${season}:fpl:team:${id}`));
+  const complete=mappingCoverage(twenty,season,{officialFplSnapshot:snapshot});
   assert.equal(complete.verifiedPremierLeagueTeamCount,20);assert.equal(complete.completeTwentyClubCoverage,true);assert.equal(complete.limitation,null);
-  const nineteen=mappingCoverage(twenty.slice(0,19),season,{officialTeams});
+  const nineteen=mappingCoverage(twenty.slice(0,19),season,{officialFplSnapshot:snapshot});
   assert.equal(nineteen.verifiedPremierLeagueTeamCount,19);assert.equal(nineteen.completeTwentyClubCoverage,false);
-  const wrongSet=mappingCoverage(Array.from({length:20},(_,i)=>team(100+i,`${season}:fpl:team:${i+1}`)),season,{officialTeams});
+  const wrongSet=mappingCoverage(Array.from({length:20},(_,i)=>team(100+i,`${season}:fpl:team:${i+1}`)),season,{officialFplSnapshot:snapshot});
   assert.equal(wrongSet.completeTwentyClubCoverage,false);assert.ok(wrongSet.verifiedPremierLeagueTeamCount<20);
-  const extraNonAuthoritative=mappingCoverage([...twenty,team(999,`${season}:fpl:team:99`)],season,{officialTeams});
+  const extraNonAuthoritative=mappingCoverage([...twenty,team(999,`${season}:fpl:team:99`)],season,{officialFplSnapshot:snapshot});
   assert.equal(extraNonAuthoritative.completeTwentyClubCoverage,false);
-  const sameClub=mappingCoverage([...twenty,{...twenty[0],providerEntityId:'999',revision:9}],season,{officialTeams});
+  const sameClub=mappingCoverage([...twenty,{...twenty[0],providerEntityId:'999',revision:9}],season,{officialFplSnapshot:snapshot});
   assert.equal(sameClub.completeTwentyClubCoverage,false);assert.equal(sameClub.verifiedPremierLeagueTeamCount,19);
-  const splitProvider=mappingCoverage([...twenty,{...twenty[0],canonicalFplId:`${season}:fpl:team:${AUTHORITATIVE_PL_TEAM_IDS[1]}`,revision:2}],season,{officialTeams});
+  const splitProvider=mappingCoverage([...twenty,{...twenty[0],canonicalFplId:`${season}:fpl:team:${CURRENT_PL_TEAM_IDS[1]}`,revision:2}],season,{officialFplSnapshot:snapshot});
   assert.equal(splitProvider.completeTwentyClubCoverage,false);
-  const duplicates=mappingCoverage([...twenty,...twenty.map(row=>({...row,revision:2}))],season,{officialTeams});
+  const duplicates=mappingCoverage([...twenty,...twenty.map(row=>({...row,revision:2}))],season,{officialFplSnapshot:snapshot});
   assert.equal(duplicates.verifiedPremierLeagueTeamCount,20);assert.equal(duplicates.completeTwentyClubCoverage,true);
-  assert.equal(mappingCoverage(twenty.map(row=>({...row,provenance:''})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
-  assert.equal(mappingCoverage(twenty.map(row=>({...row,revision:'r1'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
-  assert.equal(mappingCoverage(twenty.map(row=>({...row,method:'fuzzy_name'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
-  assert.equal(mappingCoverage(twenty.map(row=>({...row,season:'2025-26',canonicalFplId:'2025-26:fpl:team:6'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
-  assert.equal(mappingCoverage(twenty.map(row=>({...row,provider:'understat'})),season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
-  assert.equal(mappingCoverage([team(1,`${season}:fpl:team:99`)],season,{officialTeams}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,provenance:''})),season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,revision:'r1'})),season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,method:'fuzzy_name'})),season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,season:'2025-26',canonicalFplId:'2025-26:fpl:team:6'})),season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,provider:'understat'})),season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage(twenty.map(row=>({...row,status:'CANDIDATE'})),season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
+  assert.equal(mappingCoverage([team(1,`${season}:fpl:team:99`)],season,{officialFplSnapshot:snapshot}).verifiedPremierLeagueTeamCount,0);
   const unavailable=mappingCoverage(twenty);
   assert.equal(unavailable.completeTwentyClubCoverage,false);assert.equal(unavailable.limitation,'authoritative_pl_team_set_unavailable');
-  const duplicateOfficial=[{id:6},...officialTeams.slice(1)];
-  duplicateOfficial[1]={id:6};
-  assert.equal(mappingCoverage(twenty,season,{officialTeams:duplicateOfficial}).limitation,'authoritative_pl_team_set_invalid');
+  const duplicateOfficial=clubRows();duplicateOfficial[1]={...duplicateOfficial[1],id:6};
+  assert.equal(mappingCoverage(twenty,season,{officialFplSnapshot:officialFplSnapshot({teams:duplicateOfficial})}).limitation,'authoritative_pl_team_set_invalid');
   const providerConflict=qualifyDiscoveredFixture({
     identity:'2026-27:api-football:fixture:1',providerFixtureId:'1',providerLeagueId:'45',canonicalCompetitionId:'fa_cup',
     fplSeason:season,providerHomeTeamId:'49',providerAwayTeamId:'63',providerSeason:2026,
@@ -355,6 +409,11 @@ test('API-Football discovery stays isolated from production, live config and mig
     const source=fs.readFileSync(path.join('.github/workflows',file),'utf8');
     assert.doesNotMatch(source,/API_FOOTBALL|x-apisports-key|v3\.football\.api-sports\.io/i,file);
   }
+  const contracts=fs.readFileSync('src/decision-intelligence/api-football-shadow-contracts.mjs','utf8');
+  assert.doesNotMatch(discovery,/fantasy\.premierleague\.com|bootstrap-static/i);
+  assert.doesNotMatch(contracts,/fantasy\.premierleague\.com|bootstrap-static/i);
+  assert.doesNotMatch(discovery,/\[1,\s*2,\s*3,\s*4,\s*5,\s*6,\s*7,\s*8,\s*9/);
+  assert.doesNotMatch(contracts,/\[1,\s*2,\s*3,\s*4,\s*5,\s*6,\s*7,\s*8,\s*9/);
   assert.doesNotMatch(discovery,/provider_request_audit|quota_accounting|CREATE TABLE/);
   assert.equal(API_FOOTBALL_ENDPOINTS.includes('fixtures'),true);
 });

@@ -2,7 +2,7 @@
 
 ## EIA-2I5B API-Football discovery (dormant)
 
-API-Football remains a private shadow source only. EIA-2I5B can construct the five approved fixture-discovery queries and normalize stable provider fixture/team/season/kickoff/status facts when an injected credential and transport are supplied. Collection, authenticated live requests, D1 persistence and production imports remain disabled. Draft PR #249's automatic branch preview is not provider activation. Independent candidates are fixture-scoped; 20-club completeness is the exact Official FPL current-club bijection. Official FPL remains the production Premier League source.
+API-Football remains a private shadow source only. EIA-2I5B can construct the five approved fixture-discovery queries and normalize stable provider fixture/team/season/kickoff/status facts when an injected credential and transport are supplied. Collection, authenticated live requests, D1 persistence and production imports remain disabled. Draft PR #249's automatic branch preview is not provider activation. Independent candidates are fixture-scoped. 20-club completeness is a 1:1 bijection against a provenance-bearing Official FPL snapshot (`official-fpl` / `official-fpl-r1` / DATA-S2A versions); a caller-supplied 20-ID list cannot self-certify. Official FPL remains the production Premier League source.
 
 ## EIA-2I5A API-Football storage admission
 

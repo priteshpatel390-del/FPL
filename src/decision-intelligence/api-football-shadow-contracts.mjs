@@ -2,6 +2,12 @@ import {canonicalise,deepFreeze,sha256Hex,stableStringify} from './canonical.mjs
 import {canonicalFplIdentity} from './observation.mjs';
 
 export const API_FOOTBALL_PROVIDER='api-football';
+export const OFFICIAL_FPL_SOURCE_KEY='official-fpl';
+export const OFFICIAL_FPL_SOURCE_KIND='official_fpl';
+export const OFFICIAL_FPL_SOURCE_REVISION_ID='official-fpl-r1';
+export const OFFICIAL_FPL_SCHEMA_VERSION='data-s2a-v1';
+export const OFFICIAL_FPL_VALIDATION_VERSION='data-s2a-official-fpl-validation-v2';
+export const OFFICIAL_FPL_TRANSFORM_VERSION='data-s2a-official-fpl-history-v1';
 export const TEAM_MAPPING_STATES=Object.freeze(['UNMAPPED','CANDIDATE','VERIFIED','AMBIGUOUS','CONFLICTED']);
 export const FIXTURE_QUALIFICATION_STATES=Object.freeze(['DISCOVERED','PROVIDER_QUALIFIED','CROSS_SOURCE_VERIFIED','AMBIGUOUS','CONFLICTED','REJECTED']);
 export const LINEUP_ROLES=Object.freeze(['STARTER','BENCH','NO_LINEUP_EVIDENCE','UNKNOWN']);
@@ -19,8 +25,20 @@ export const API_FOOTBALL_COMPETITIONS=deepFreeze([
 
 const SEASON=/^\d{4}-\d{2}$/;
 const ID=/^[1-9]\d*$/;
+const ISO_INSTANT=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 const fail=reason=>deepFreeze({ok:false,reason});
 const providerId=value=>ID.test(String(value??''))?String(value):null;
+function strictIsoInstant(value){
+  if(typeof value!=='string'||!ISO_INSTANT.test(value))return null;
+  const parsed=Date.parse(value);if(!Number.isFinite(parsed))return null;
+  const canonical=new Date(parsed).toISOString(),expected=value.includes('.')?`${value.slice(0,value.indexOf('.')+1)}${value.slice(value.indexOf('.')+1,-1).padEnd(3,'0')}Z`:value.replace(/Z$/,'.000Z');
+  return canonical===expected?canonical:null;
+}
+function snapshotTeams(snapshot){
+  if(Array.isArray(snapshot.teams))return snapshot.teams;
+  if(snapshot.bootstrap&&typeof snapshot.bootstrap==='object'&&Array.isArray(snapshot.bootstrap.teams))return snapshot.bootstrap.teams;
+  return null;
+}
 
 export function apiFootballCompetitionRegistry(season){
   if(!SEASON.test(season||''))throw new Error('competition_season_invalid');
@@ -43,18 +61,28 @@ export function officialFplTeamIdentity({season,teamId}={}){
   try{return deepFreeze({ok:true,canonicalFplId:canonicalFplIdentity(season,'team',id)});}
   catch{return fail('official_fpl_team_identity_invalid');}
 }
-export function currentSeasonOfficialFplTeamIdentities(season,officialTeams){
+export function currentSeasonOfficialFplTeamIdentities(season,snapshot){
   if(!SEASON.test(season||''))return fail('season_invalid');
-  if(!Array.isArray(officialTeams)||officialTeams.length!==20)return fail('authoritative_pl_team_set_unavailable');
+  if(snapshot==null||typeof snapshot!=='object'||Array.isArray(snapshot))return fail('authoritative_pl_team_set_unavailable');
+  if(snapshot.sourceKey!==OFFICIAL_FPL_SOURCE_KEY||snapshot.sourceKind!==OFFICIAL_FPL_SOURCE_KIND)return fail('authoritative_pl_team_set_unavailable');
+  if(snapshot.season!==season)return fail('official_fpl_season_mismatch');
+  if(snapshot.sourceRevisionId!==OFFICIAL_FPL_SOURCE_REVISION_ID||snapshot.schemaVersion!==OFFICIAL_FPL_SCHEMA_VERSION||snapshot.validationVersion!==OFFICIAL_FPL_VALIDATION_VERSION||snapshot.transformVersion!==OFFICIAL_FPL_TRANSFORM_VERSION||!strictIsoInstant(snapshot.fetchedAt))return fail('official_fpl_provenance_invalid');
+  const teams=snapshotTeams(snapshot);
+  if(!Array.isArray(teams))return fail('authoritative_pl_team_set_unavailable');
+  if(teams.length!==20)return fail('authoritative_pl_team_set_invalid');
   const identities=[];
   const seen=new Set();
-  for(const row of officialTeams){
-    const identity=officialFplTeamIdentity({season,teamId:row&&typeof row==='object'?row.id:row});
+  for(const row of teams){
+    if(!row||typeof row!=='object'||typeof row.name!=='string'||!row.name.trim()||typeof row.short_name!=='string'||!row.short_name.trim())return fail('authoritative_pl_team_set_invalid');
+    const identity=officialFplTeamIdentity({season,teamId:row.id});
     if(!identity.ok||seen.has(identity.canonicalFplId))return fail('authoritative_pl_team_set_invalid');
     seen.add(identity.canonicalFplId);
     identities.push(identity.canonicalFplId);
   }
-  return deepFreeze({ok:true,identities});
+  return deepFreeze({
+    ok:true,identities,sourceKey:OFFICIAL_FPL_SOURCE_KEY,sourceKind:OFFICIAL_FPL_SOURCE_KIND,
+    sourceRevisionId:OFFICIAL_FPL_SOURCE_REVISION_ID,season,fetchedAt:strictIsoInstant(snapshot.fetchedAt)
+  });
 }
 export function validateProviderMapping(mapping,{entityType,season}={}){
   if(!mapping||mapping.provider!==API_FOOTBALL_PROVIDER||mapping.entityType!==entityType||!providerId(mapping.providerEntityId)||!SEASON.test(mapping.season||'')||mapping.season!==season||!TEAM_MAPPING_STATES.includes(mapping.status)||!providerId(mapping.revision)||!MAPPING_METHODS.includes(mapping.method)||!String(mapping.provenance||'').trim())return fail('mapping_invalid');

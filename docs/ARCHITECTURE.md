@@ -2,7 +2,7 @@
 
 ## EIA-2I5B discovery boundary
 
-Fixture discovery lives only under Decision Intelligence. The known-ID client remains a closed four-endpoint ID surface; discovery is a separate five-query league/season plan with serial orchestration, bounded retries and injected delay. Independent cross-source evidence is fixture-scoped. Duplicate provider fixture IDs with incompatible core identity fail closed. Production application/model modules do not import it. No Worker, Cron, secret, D1 writer or API-Football runtime is attached. An automatic PR/branch preview is not that runtime. Explicit request timeout/abort remains a later pre-live gate.
+Fixture discovery lives only under Decision Intelligence. The known-ID client remains a closed four-endpoint ID surface; discovery is a separate five-query league/season plan with serial orchestration, bounded retries and injected delay. Independent cross-source evidence is fixture-scoped. Duplicate provider fixture IDs with incompatible core identity fail closed. Current-season PL mapping completeness is established only from a provenance-bearing Official FPL snapshot that reuses the DATA-S2A `official-fpl` / `official-fpl-r1` authority; discovery does not keep its own 20-club table. Production application/model modules do not import it. No Worker, Cron, secret, D1 writer or API-Football runtime is attached. An automatic PR/branch preview is not that runtime. Explicit request timeout/abort remains a later pre-live gate.
 
 ## EIA-2I5A shadow boundary
 
