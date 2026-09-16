@@ -6,7 +6,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {buildCurrentHeadsRead,buildProductionCurrentHeadsExplainRead,buildProductionPopulationAndHeadsRead,buildProductionGovernanceRead,buildProductionPostflightRead,buildRunRead,inspectOfficialFplD1RestPlan,SUPERSEDED_OH_HEADS_SQL,validateProductionCurrentHeadsExplain} from '../workers/data-platform/official-fpl-d1-rest-plan.mjs';
 
-const migrations=['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql'];
+const migrations=['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql'];
 const read=name=>fs.readFileSync(`workers/data-platform/migrations/${name}`,'utf8');
 const sqlite=(db,input)=>{const out=spawnSync('sqlite3',[db],{input,encoding:'utf8'});if(out.status!==0)throw new Error(out.stderr);return out.stdout;};
 const explain=(db,plan)=>sqlite(db,`EXPLAIN QUERY PLAN ${plan.statements[0].sql.replaceAll('?',"'official-fpl-r1'")};`).trim().split('\n');

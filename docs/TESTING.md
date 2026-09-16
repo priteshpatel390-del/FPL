@@ -1,5 +1,9 @@
 # TESTING.md
 
+## EIA-2I5A offline contract coverage
+
+`tests/eia2i5a-shadow-identity-schema.test.mjs` pins disabled registry, stable FPL/provider-scoped identities, complete season-safe mapping validation, contradictory-target conflict, candidate-only player-name evidence, exact oriented PL/non-PL qualification, kickoff conflict, substitution-evidence completeness, null-versus-zero participation, narrow rights, transaction-wrapped SQLite migration with populated revision/mapping/run/observation/head/rejection dependencies, invalid-`NOT_USED` rejection and dependency isolation. `node tests/eia2i5a-d1-local-migration.mjs` independently applies migrations 0001–0004 through pinned Wrangler 4.37.1 local D1/Miniflare and requires every dependent row plus zero `pragma_foreign_key_check` rows. Existing EIA-2I1/EIA-2I3 tests retain duration ownership.
+
 ## EIA-2I3 permanent coverage
 
 EIA-2I1 tests now pin status-qualified duration tri-state: normal FT false, consistent AET true, ambiguous PEN null, verified PEN AET true, verified PEN no-AET false, inconsistent/missing duration unknown, and direct minutes above 90 retained without deriving fixture duration. Existing credential, rights, identity, lineup, request-budget and production-isolation tests remain unchanged. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

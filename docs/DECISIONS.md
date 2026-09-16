@@ -1,5 +1,9 @@
 # DECISIONS.md — Architectural decision record
 
+## D-EIA-2I5A · 16 September 2026 · Accepted · Offline identity before collection
+
+Establish deterministic API-Football identity, exact cross-source qualification, explicit conflicts, factual participation and narrow private-use storage before any request/discovery layer. Provider IDs are not universal IDs; names never verify; mutable kickoff never defines identity; ambiguous evidence fails closed. EIA-2I5B remains separate.
+
 ## D-EIA-2I4C · 15 September 2026 · Accepted · API-Football qualified for design and recurring paid use permitted
 
 API-Football is **QUALIFIED** only for a separately approved shadow-collector and fixture-identity design checkpoint. Pritesh intends to continue paying for API-Football; the hard £0 recurring workload-provider requirement is withdrawn for this provider, and EIA-2ALT is no longer required. Paid entitlement remains subject to technical qualification, rights/terms, security, reliability, provenance, validation, quota/rate controls, graceful fallback, storage/retention boundaries, tests and explicit implementation approval.

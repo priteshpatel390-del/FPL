@@ -343,11 +343,11 @@ test('DATA-S2C changes no production collector byte, resource ceiling or project
   assert.deepEqual([...OFFICIAL_FPL_ENDPOINTS],['https://fantasy.premierleague.com/api/bootstrap-static/',
     'https://fantasy.premierleague.com/api/fixtures/']);
   assert.ok(external.includes(`DATA_S2_SEASON: '${PRODUCTION_SEASON}'`));
-  // Exactly the reviewed migrations and indexes, with no migration 0004.
+  // Exactly the reviewed migrations and indexes, plus the isolated shadow-only migration 0004.
   const migrations=fs.readdirSync('workers/data-platform/migrations').sort();
   assert.deepEqual(migrations,['0001_shadow_data_foundation.sql',
-    '0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql']);
-  assert.equal(migrations.flatMap(name=>
+    '0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql']);
+  assert.equal(migrations.slice(0,3).flatMap(name=>
     read(`workers/data-platform/migrations/${name}`).match(/CREATE (?:UNIQUE )?INDEX (\w+)/g)||[]).length,5);
   const collector=read(COLLECTOR_PATH);
   assert.match(collector,/validateProductionPostflight/);

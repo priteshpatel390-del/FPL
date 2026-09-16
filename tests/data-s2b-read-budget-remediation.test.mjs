@@ -645,11 +645,11 @@ test('this remediation changes no collection cadence or resource ceiling',()=>{
   // The write and API envelopes are untouched.
   assert.equal(MAX_D1_ROWS_WRITTEN_PER_CYCLE,40000);
   assert.equal(MAX_D1_API_CALLS_PER_CYCLE,8);
-  // No migration 0004 exists, and no new index was introduced.
+  // Migration 0004 is shadow-only; no production collection index was introduced.
   const migrations=fs.readdirSync('workers/data-platform/migrations').filter(name=>/^\d{4}_/.test(name)).sort();
   assert.deepEqual(migrations,['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql',
-    '0003_production_query_plan_indexes.sql']);
-  const indexes=migrations.flatMap(name=>
+    '0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql']);
+  const indexes=migrations.slice(0,3).flatMap(name=>
     (fs.readFileSync(`workers/data-platform/migrations/${name}`,'utf8').match(/CREATE (?:UNIQUE )?INDEX (\w+)/g)||[]));
   assert.equal(indexes.length,5);
   // Cloudflare Cron stays intentionally absent from the forward path.

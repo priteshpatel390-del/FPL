@@ -1280,7 +1280,7 @@ test('A1.2 can observe the dispatcher but can never arm, change or redeploy it',
   assert.ok(!dispatcher.includes('"17 2 * * *"')&&!dispatcher.includes('"17 3 * * *"'));
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql',
-      '0003_production_query_plan_indexes.sql']);
+      '0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql']);
   // A1.2 itself added no workflow. A1.3's separate workflow is pinned by its own dormant-runtime tests.
   assert.ok(!fs.existsSync('.github/workflows/data-ops-a1-2-observation.yml'));
 });
