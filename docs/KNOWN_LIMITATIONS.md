@@ -1,5 +1,15 @@
 # KNOWN_LIMITATIONS.md
 
+## EIA-2I5B limitations
+
+- The discovery layer is dormant. No authenticated API-Football request, credential, Cloudflare secret, Worker route, Cron, GitHub schedule or deployment exists.
+- Discovered fixtures are not written to D1. There is no migration 0005 and no request/quota/scheduler table.
+- Durable quota accounting is not implemented; header normalization is in-memory only. Exact contractual tier remains unknown.
+- Unexpected provider pagination cannot be followed inside the five-request plan and fails closed as `pagination_unsupported`.
+- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate.
+- Actual provider egress/runtime (Worker versus other) is a later decision.
+- Discovery cannot affect production recommendations. Official FPL remains authoritative for Premier League facts.
+
 ## EIA-2I5A limitations
 
 - No live discovery, collection, correction/re-fetch, quota enforcement or scheduler exists.

@@ -12,6 +12,12 @@ export const API_FOOTBALL_ENDPOINTS=Object.freeze(['fixtures','fixtures/lineups'
 export const API_FOOTBALL_TARGET_COMPETITIONS=Object.freeze([
   'uefa_champions_league','uefa_europa_league','uefa_conference_league','fa_cup','league_cup'
 ]);
+export const API_FOOTBALL_QUOTA_HEADER_NAMES=Object.freeze({
+  requestsLimit:'x-ratelimit-requests-limit',
+  requestsRemaining:'x-ratelimit-requests-remaining',
+  rateLimit:'x-ratelimit-limit',
+  remaining:'x-ratelimit-remaining'
+});
 const FINAL_STATUS=new Set(['FT','AET','PEN']);
 const MAX_MATCH_MINUTES=130;
 const ISO_INSTANT=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
@@ -39,6 +45,52 @@ function strictIsoInstant(value){
   const parsed=Date.parse(value);if(!Number.isFinite(parsed))return null;
   const canonical=new Date(parsed).toISOString(),expected=value.includes('.')?`${value.slice(0,value.indexOf('.')+1)}${value.slice(value.indexOf('.')+1,-1).padEnd(3,'0')}Z`:value.replace(/Z$/,'.000Z');
   return canonical===expected?canonical:null;
+}
+function headerValue(headers,name){
+  if(!headers)return null;
+  const wanted=String(name).toLowerCase();
+  if(typeof headers.get==='function'){
+    const value=headers.get(name);
+    if(value!=null&&value!=='')return String(value);
+  }
+  for(const [key,value] of Object.entries(headers)){
+    if(typeof value==='function')continue;
+    if(String(key).toLowerCase()===wanted)return value==null||value===''?null:String(value);
+  }
+  return null;
+}
+
+export function buildPinnedApiFootballUrl(endpoint,searchParams){
+  if(typeof endpoint!=='string'||endpoint.includes('://')||endpoint.startsWith('//')||endpoint.startsWith('/')||endpoint.includes('\\')||endpoint.includes('..')||!API_FOOTBALL_ENDPOINTS.includes(endpoint))return safeFailure('endpoint_not_allowed');
+  if(!searchParams||typeof searchParams!=='object'||Array.isArray(searchParams))return safeFailure('parameters_invalid');
+  const url=new URL(`/${endpoint}`,API_FOOTBALL_ORIGIN);
+  if(url.origin!==API_FOOTBALL_ORIGIN||url.protocol!=='https:'||url.username||url.password)return safeFailure('endpoint_not_allowed');
+  for(const [key,value] of Object.entries(searchParams)){
+    if(typeof key!=='string'||!/^[a-z]+$/.test(key)||value==null||typeof value==='object')return safeFailure('parameters_invalid');
+    url.searchParams.set(key,String(value));
+  }
+  if(url.origin!==API_FOOTBALL_ORIGIN||url.protocol!=='https:')return safeFailure('endpoint_not_allowed');
+  return {ok:true,url};
+}
+
+export function apiFootballRequestInit(apiKey){
+  if(typeof apiKey!=='string'||!apiKey.length)return safeFailure('provider_disabled_secret_missing');
+  return {ok:true,init:{method:'GET',redirect:'error',headers:Object.freeze({'x-apisports-key':apiKey,accept:'application/json'})}};
+}
+
+export function normalizeApiFootballQuotaHeaders(headers){
+  const counts={};
+  let known=false;
+  for(const [field,name] of Object.entries(API_FOOTBALL_QUOTA_HEADER_NAMES)){
+    const raw=headerValue(headers,name);
+    if(raw==null){counts[field]=null;continue;}
+    const text=String(raw).trim();
+    if(!/^\d+$/.test(text))return safeFailure('quota_headers_invalid');
+    const number=Number(text);
+    if(!Number.isInteger(number)||number<0)return safeFailure('quota_headers_invalid');
+    counts[field]=number;known=true;
+  }
+  return deepFreeze({ok:true,state:known?'known':'unknown',...counts});
 }
 
 export function createDailyRequestBudget({limit=API_FOOTBALL_DAILY_REQUEST_LIMIT,day,used=0}={}){
@@ -80,9 +132,11 @@ export function createApiFootballClient({apiKey,fetchImpl,budget}={}){
     if(typeof endpoint!=='string'||!API_FOOTBALL_ENDPOINTS.includes(endpoint))return safeFailure('endpoint_not_allowed');
     const parameterName=ENDPOINT_PARAMETER[endpoint],entries=Object.entries(parameters||{});
     if(entries.length!==1||entries[0][0]!==parameterName||!positiveId(entries[0][1]))return safeFailure('parameters_invalid');
+    const pinned=buildPinnedApiFootballUrl(endpoint,{[parameterName]:entries[0][1]});
+    if(!pinned.ok)return pinned;
+    const requestInit=apiFootballRequestInit(apiKey);if(!requestInit.ok)return requestInit;
     if(!budget.consume())return safeFailure('quota_exhausted');
-    const url=new URL(`/${endpoint}`,API_FOOTBALL_ORIGIN);url.searchParams.set(parameterName,String(entries[0][1]));
-    let response;try{response=await fetchImpl(url,{method:'GET',redirect:'error',headers:{'x-apisports-key':apiKey,'accept':'application/json'}});}catch{return safeFailure('provider_unavailable');}
+    let response;try{response=await fetchImpl(pinned.url,requestInit.init);}catch{return safeFailure('provider_unavailable');}
     if(!response?.ok)return safeFailure(response?.status===429?'quota_exhausted':'provider_unavailable');
     let payload;try{payload=await response.json();}catch{return safeFailure('provider_schema_invalid');}
     return decodeApiFootballResponse(payload,{endpoint:endpoint.replace(/^\//,'')});

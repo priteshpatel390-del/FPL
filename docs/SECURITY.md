@@ -1,8 +1,12 @@
 # SECURITY.md
 
+## EIA-2I5B request security
+
+Discovery reuses the pinned HTTPS origin, `x-apisports-key` header, GET-only init and `redirect: 'error'`. The known-ID client stays closed; discovery admits only repository-controlled `fixtures?league=&season=` pairs. Malformed endpoint/query fails before fetch and consumes zero quota. Credentials must not appear in URLs, output, errors, audit, generated assets, D1 or snapshots. No Worker secret, environment binding or live network capability was added. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
+
 ## EIA-2I5A
 
-Adds no network call, endpoint, relay, credential, secret binding, Cron, public read path or raw-provider payload storage. Contracts remain offline and shadow-only. EIA-2I5B request security is not implemented or approved.
+Adds no network call, endpoint, relay, credential, secret binding, Cron, public read path or raw-provider payload storage. Contracts remain offline and shadow-only. Request security for discovery is recorded under EIA-2I5B.
 
 ## EIA-2I4C API-Football qualified-design security boundary
 

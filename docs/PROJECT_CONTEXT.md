@@ -1,5 +1,9 @@
 # PROJECT_CONTEXT.md
 
+## EIA-2I5B hardened provider request and fixture discovery
+
+EIA-2I5B adds a disabled, injected-transport discovery capability for the five approved cup competitions. It does not add a credential, secret, scheduler, D1 write path, live migration or production/model/UI influence. Complete current-season PL-team mapping, durable quota accounting and the actual provider egress/runtime remain pre-live limitations. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
+
 ## EIA-2I5A API-Football shadow identity and schema
 
 EIA-2I5A adds disabled, offline contracts for season-scoped competition configuration, verified provider mappings, stable fixture/player identity, exact cross-source qualification, field conflicts, factual participation and narrow owner-risk D1 admission. It adds no collector, request path, secret, schedule, live infrastructure, model input or UI path. EIA-2I3 duration semantics remain unchanged. See [EIA-2I5A](EIA-2I5A-API-FOOTBALL-SHADOW-IDENTITY-SCHEMA.md).

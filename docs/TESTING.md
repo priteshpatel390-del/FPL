@@ -1,5 +1,9 @@
 # TESTING.md
 
+## EIA-2I5B discovery coverage
+
+`tests/eia2i5b-provider-discovery.test.mjs` pins the five approved league/season plans, closed known-ID versus discovery surfaces, origin pinning, header-only credentials, serial attempts, 1s injected delay, one retry bound, ten-attempt ceiling, 429 stop, no-retry auth/schema paths, quota-header normalization, identity/orientation/mapping/conflict behaviour, Chelsea–Leeds kickoff conflict without time tolerance, and structural isolation from production, wrangler, workflows and migration 0005. Tests use injected fetch only. Existing EIA-2I1/EIA-2I3/EIA-2I5A tests remain the duration, rights and identity owners.
+
 ## EIA-2I5A offline contract coverage
 
 `tests/eia2i5a-shadow-identity-schema.test.mjs` pins disabled registry, stable FPL/provider-scoped identities, complete season-safe mapping validation, contradictory-target conflict, candidate-only player-name evidence, exact oriented PL/non-PL qualification, kickoff conflict, substitution-evidence completeness, null-versus-zero participation, narrow rights, transaction-wrapped SQLite migration with populated revision/mapping/run/observation/head/rejection dependencies, invalid-`NOT_USED` rejection and dependency isolation. `node tests/eia2i5a-d1-local-migration.mjs` independently applies migrations 0001–0004 through pinned Wrangler 4.37.1 local D1/Miniflare and requires every dependent row plus zero `pragma_foreign_key_check` rows. Existing EIA-2I1/EIA-2I3 tests retain duration ownership.

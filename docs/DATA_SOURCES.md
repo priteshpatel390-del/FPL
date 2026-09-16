@@ -1,5 +1,9 @@
 # DATA_SOURCES.md
 
+## EIA-2I5B API-Football discovery (dormant)
+
+API-Football remains a private shadow source only. EIA-2I5B can construct the five approved fixture-discovery queries and normalize stable provider fixture/team/season/kickoff/status facts when an injected credential and transport are supplied. Collection, live requests and D1 persistence remain disabled. Official FPL remains the production Premier League source.
+
 ## EIA-2I5A API-Football storage admission
 
 Only normalized private shadow facts may use `owner_risk_accepted_private_use`, under exact API-Football, owner-approval, private non-commercial, no-redistribution, no-public/commercial-use, no-raw-payload-retention and stop-on-objection constraints. Migration 0004 represents this explicitly. Collection remains disabled.

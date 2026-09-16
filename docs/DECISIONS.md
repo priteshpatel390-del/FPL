@@ -1,5 +1,9 @@
 # DECISIONS.md — Architectural decision record
 
+## D-EIA-2I5B · 16 September 2026 · Accepted · Hardened discovery before live collection
+
+Add a repository-only, dormant API-Football fixture-discovery layer that reuses pinned EIA-2I1 transport without turning the known-ID client into a generic proxy. Discovery queries are exactly the five repository-controlled league/season pairs for 2026-27. Identity, mapping and kickoff-conflict rules remain EIA-2I5A's. Live credential, D1 persistence, scheduler, Cloudflare runtime and model use remain separately gated.
+
 ## D-EIA-2I5A · 16 September 2026 · Accepted · Offline identity before collection
 
 Establish deterministic API-Football identity, exact cross-source qualification, explicit conflicts, factual participation and narrow private-use storage before any request/discovery layer. Provider IDs are not universal IDs; names never verify; mutable kickoff never defines identity; ambiguous evidence fails closed. EIA-2I5B remains separate.

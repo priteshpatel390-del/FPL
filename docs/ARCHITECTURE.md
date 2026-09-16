@@ -1,5 +1,9 @@
 # ARCHITECTURE.md
 
+## EIA-2I5B discovery boundary
+
+Fixture discovery lives only under Decision Intelligence. The known-ID client remains a closed four-endpoint ID surface; discovery is a separate five-query league/season plan with serial orchestration, bounded retries and injected delay. Production application/model modules do not import it. No Worker, Cron, secret or D1 writer is attached.
+
 ## EIA-2I5A shadow boundary
 
 API-Football identity, qualification, conflict and participation contracts live only under Decision Intelligence and isolated data-platform D1 schema. Production application/model modules do not import them. Stable provider fixture/player identity is separate from mutable observations and optional FPL mappings. Collection remains disabled.

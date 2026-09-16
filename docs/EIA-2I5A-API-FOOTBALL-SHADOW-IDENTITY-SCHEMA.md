@@ -36,4 +36,4 @@ No production module imports this contract. No pStart, pAppear, p60, xMins, xP, 
 
 ## Next gate
 
-EIA-2I5B — Hardened Provider Request and Fixture Discovery Layer — remains unapproved. No part starts automatically.
+EIA-2I5B — Hardened Provider Request and Fixture Discovery Layer — is implemented as a later repository-only checkpoint. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md). Live credential, collector, scheduler, D1 write and model-use remain unapproved. No part starts automatically.

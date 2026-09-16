@@ -1,8 +1,12 @@
 # ROADMAP.md — current and proposed checkpoints
 
+## EIA-2I5B checkpoint
+
+Repository-only hardened request and fixture-discovery layer. Next proposed, not approved: live credential/runtime design, durable persistence and quota accounting. No collector activation, model use or deployment is implied.
+
 ## EIA-2I5A checkpoint
 
-Offline identity/schema contracts only. Next proposed, not approved: EIA-2I5B hardened provider request and fixture discovery. No live collection or model-use checkpoint is implied.
+Offline identity/schema contracts only. EIA-2I5B hardened provider request and fixture discovery is the subsequent repository checkpoint. No live collection or model-use checkpoint is implied.
 
 ## EIA-2I4C checkpoint — API-Football qualification closeout
 
