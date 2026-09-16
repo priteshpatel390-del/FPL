@@ -2,7 +2,7 @@
 
 ## EIA-2I5A offline contract coverage
 
-`tests/eia2i5a-shadow-identity-schema.test.mjs` pins disabled registry, stable identities, season-safe mappings, candidate-only player-name evidence, exact qualification, ambiguity/collision failure, kickoff conflict, participation null-versus-zero, narrow rights, migration and dependency isolation. Existing EIA-2I1/EIA-2I3 tests retain duration ownership.
+`tests/eia2i5a-shadow-identity-schema.test.mjs` pins disabled registry, stable FPL/provider-scoped identities, complete season-safe mapping validation, contradictory-target conflict, candidate-only player-name evidence, exact oriented PL/non-PL qualification, kickoff conflict, substitution-evidence completeness, null-versus-zero participation, narrow rights, full ephemeral SQLite migration/source-revision/mapping integration, invalid-`NOT_USED` rejection and dependency isolation. Existing EIA-2I1/EIA-2I3 tests retain duration ownership.
 
 ## EIA-2I3 permanent coverage
 

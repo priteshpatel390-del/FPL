@@ -30,7 +30,7 @@ export function validateRevision(revision){
   const attribution=revision.rights_classification==='attribution_required';
   if(Boolean(revision.attribution_required)!==attribution)return {ok:false,reason:'rights_inconsistent'};
   if(attribution&&!String(revision.attribution_text||'').trim())return {ok:false,reason:'attribution_missing'};
-  if(revision.rights_classification==='owner_risk_accepted_private_use'&&!(revision.source_key==='api-football'&&revision.provider==='api-football'&&/^EIA-2I(?:1|5A)(?:[-:][A-Za-z0-9._-]+)?$/.test(String(revision.owner_approval_id||''))&&revision.allowed_use==='private_noncommercial_research'&&Boolean(revision.retention_allowed)&&!Boolean(revision.redistribution_allowed)&&!Boolean(revision.public_use_allowed)&&!Boolean(revision.commercial_use_allowed)&&!Boolean(revision.raw_payload_retention_allowed)&&Boolean(revision.stop_on_objection)))return {ok:false,reason:'rights_inconsistent'};
+  if(revision.rights_classification==='owner_risk_accepted_private_use'&&!(revision.source_key==='api-football'&&revision.provider==='api-football'&&['EIA-2I1','EIA-2I5A'].includes(String(revision.owner_approval_id||''))&&revision.allowed_use==='private_noncommercial_research'&&Boolean(revision.normalized_facts_only)&&Boolean(revision.retention_allowed)&&!Boolean(revision.redistribution_allowed)&&!Boolean(revision.public_use_allowed)&&!Boolean(revision.commercial_use_allowed)&&!Boolean(revision.raw_payload_retention_allowed)&&Boolean(revision.stop_on_objection)))return {ok:false,reason:'rights_inconsistent'};
   return {ok:true};
 }
 export function rightsAdmission(revision){

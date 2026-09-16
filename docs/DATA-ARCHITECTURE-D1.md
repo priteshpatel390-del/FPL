@@ -2,7 +2,7 @@
 
 ## EIA-2I5A additive shadow schema
 
-Migration 0004 adds explicit API-Football private-use rights admission, stable provider fixture identities and append-only participation revisions. It omits request, quota and scheduler state until EIA-2I5B. Optional canonical player mapping permits later historical linking without refetch. No second datastore or production read path is introduced.
+Migration 0004 extends canonical `data_source_revisions` with tightly checked API-Football private-use fields and source-consistency triggers while preserving every historical rights class. It adds stable provider fixture identities and append-only participation revisions, including enforceable substitution-evidence completeness for `NOT_USED`. It omits request, quota and scheduler state until EIA-2I5B. Optional canonical player mapping permits later historical linking without refetch. No parallel rights store, second datastore or production read path is introduced.
 
 Status: **approved architecture; partially implemented.** The GW1-P1 backend evidence foundation is merged through PR #118 at `58b834a…`. GW1-P2 browser delivery is implemented on the unmerged PR #119 candidate and is pending owner physical acceptance. The wider structured-record and downstream-reporting scope remains deferred. **D1 is not wholly deferred.**  
 Approved by: Pritesh, 9 August 2026  
