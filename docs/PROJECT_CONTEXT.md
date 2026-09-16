@@ -1,3 +1,7 @@
+## EIA-2I5D repository-only shadow runtime and persistence
+
+EIA-2I5D adds dormant migration 0005 and a separate scheduled-only API-Football collector package. Durable quota/lease, generation/head, fixture-revision and DATA-S2A authority contracts are repository-ready but unprovisioned. Collection defaults disabled; no Cron is declared; response byte limit remains deliberately unqualified and blocks activation. No live provider, Cloudflare, model or UI action occurred. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 # PROJECT_CONTEXT.md
 
 ## EIA-2I5B hardened provider request and fixture discovery

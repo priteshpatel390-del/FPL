@@ -648,7 +648,7 @@ test('this remediation changes no collection cadence or resource ceiling',()=>{
   // Migration 0004 is shadow-only; no production collection index was introduced.
   const migrations=fs.readdirSync('workers/data-platform/migrations').filter(name=>/^\d{4}_/.test(name)).sort();
   assert.deepEqual(migrations,['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql',
-    '0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql']);
+    '0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql','0005_api_football_shadow_runtime.sql']);
   const indexes=migrations.slice(0,3).flatMap(name=>
     (fs.readFileSync(`workers/data-platform/migrations/${name}`,'utf8').match(/CREATE (?:UNIQUE )?INDEX (\w+)/g)||[]));
   assert.equal(indexes.length,5);

@@ -1,3 +1,7 @@
+## Current checkpoint — EIA-2I5D repository-only shadow runtime and persistence
+
+Repository implementation is ready for owner review: migration 0005, dormant collector, quota/lease, scheduler, authority and revision contracts. Next steps remain separate live gates, beginning with owner review/merge and then an attended response-size qualification and exact infrastructure activation proposal. No live activation is authorized. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 # ROADMAP.md — current and proposed checkpoints
 
 ## EIA-2I5B checkpoint

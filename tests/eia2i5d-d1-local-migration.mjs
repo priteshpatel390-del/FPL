@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+
+const root=path.resolve(import.meta.dirname,'..'),temp=fs.mkdtempSync(path.join(os.tmpdir(),'eia2i5d-d1-'));
+const config=path.join(temp,'wrangler.jsonc'),persist=path.join(temp,'state'),seed=path.join(temp,'seed.sql');
+const run=args=>spawnSync('npx',['--yes','wrangler@4.37.1',...args,'--config',config],{cwd:root,encoding:'utf8',env:{...process.env,NO_COLOR:'1'}});
+const executeFile=file=>run(['d1','execute','teamsheet-data','--local','--persist-to',persist,'--file',file]);
+const query=sql=>run(['d1','execute','teamsheet-data','--local','--persist-to',persist,'--command',sql]);
+try{
+  fs.writeFileSync(config,JSON.stringify({name:'eia-2i5d-local',main:path.join(root,'workers/data-platform/data-platform-rpc.mjs'),compatibility_date:'2026-08-22',d1_databases:[{binding:'TEAMSHEET_DATA_DB',database_name:'teamsheet-data',database_id:'00000000-0000-0000-0000-000000000000',migrations_dir:path.join(root,'workers/data-platform/migrations')}]}));
+  fs.writeFileSync(seed,`INSERT INTO canonical_entities VALUES('2026-27:fpl:team:1','team','2026-27','fpl','1','2026-09-01T00:00:00.000Z');
+INSERT INTO ingestion_runs VALUES('historical-run','official-fpl-r1','official_fpl_structured_history','shadow_only','2026-09-01T00:00:00.000Z','2026-09-01T00:01:00.000Z','completed','official_fpl_public_core','parser-v1','transform-v1','schema-v1',1,1,0,0,NULL,'2026-09-01T00:00:00.000Z');
+INSERT INTO shadow_observations(observation_id,logical_key,ingestion_run_id,source_revision_id,category,subject_type,subject_entity_id,metric,value_type,value_text,provenance_kind,transform_version,validation_version,input_revision,admission_state,quality_state,mode,fetched_at,created_at) VALUES('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','official-fpl|2026-27|team|1|name','historical-run','official-fpl-r1','official_fpl_team','team','2026-27:fpl:team:1','name','text','Arsenal','canonical_native_fpl','transform-v1','validation-v1','input-v1','accepted','fresh','shadow_only','2026-09-01T00:00:00.000Z','2026-09-01T00:00:00.000Z');
+INSERT INTO observation_heads VALUES('official-fpl|2026-27|team|1|name','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','2026-09-01T00:00:00.000Z');`);
+  for(const file of ['workers/data-platform/migrations/0001_shadow_data_foundation.sql','workers/data-platform/migrations/0002_official_fpl_structured_history.sql','workers/data-platform/migrations/0003_production_query_plan_indexes.sql',seed,'workers/data-platform/migrations/0004_api_football_shadow_identity.sql','workers/data-platform/migrations/0005_api_football_shadow_runtime.sql']){
+    const result=executeFile(file);assert.equal(result.status,0,`${file}\n${result.stdout}\n${result.stderr}`);
+  }
+  let result=query("SELECT (SELECT count(*) FROM shadow_observations WHERE logical_key='official-fpl|2026-27|team|1|name') existing_data,(SELECT count(*) FROM pragma_foreign_key_check) fk_violations,(SELECT collection_enabled FROM api_football_runtime_state WHERE provider='api-football') enabled,(SELECT count(*) FROM data_source_revisions WHERE source_revision_id='api-football:eia-2i5a:1' AND rights_classification='owner_risk_accepted_private_use' AND redistribution_allowed=0 AND raw_payload_retention_allowed=0 AND stop_on_objection=1) rights_ok;");
+  assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/"existing_data"\s*:\s*1/);assert.match(result.stdout,/"fk_violations"\s*:\s*0/);assert.match(result.stdout,/"enabled"\s*:\s*0/);assert.match(result.stdout,/"rights_ok"\s*:\s*1/);
+  const setup=`INSERT INTO ingestion_runs VALUES('api-run','api-football:eia-2i5a:1','api_football_discovery','shadow_only','2026-09-16T00:00:00.000Z',NULL,'started','fixtures_discovery','parser','transform','schema',0,0,0,0,NULL,'2026-09-16T00:00:00.000Z');
+INSERT INTO api_football_discovery_generations(generation_id,logical_opportunity,state,fpl_season,provider_season,ingestion_run_id,source_revision_id,official_fpl_authority_digest,official_fpl_authority_run_id,competition_count,fixture_count,mapping_coverage_count,admitted_count,conflicted_count,failure_class,started_at,completed_at,created_at) VALUES('good','2026-09-16','COMMITTED','2026-27',2026,'api-run','api-football:eia-2i5a:1','digest','historical-run',5,0,0,0,0,NULL,'2026-09-16T00:10:00.000Z','2026-09-16T00:00:00.000Z','2026-09-16T00:00:00.000Z');
+INSERT INTO api_football_discovery_generations(generation_id,logical_opportunity,state,fpl_season,provider_season,ingestion_run_id,source_revision_id,official_fpl_authority_digest,official_fpl_authority_run_id,competition_count,fixture_count,mapping_coverage_count,admitted_count,conflicted_count,failure_class,started_at,completed_at,created_at) VALUES('bad','2026-09-17','FAILED','2026-27',2026,'api-run','api-football:eia-2i5a:1','digest','historical-run',2,0,0,0,0,'timeout','2026-09-17T00:00:00.000Z','2026-09-17T00:10:00.000Z','2026-09-17T00:00:00.000Z');
+INSERT INTO api_football_discovery_heads VALUES('2026-27','good','2026-09-16T00:10:00.000Z');`;
+  fs.writeFileSync(path.join(temp,'setup.sql'),setup);result=executeFile(path.join(temp,'setup.sql'));assert.equal(result.status,0,result.stderr);
+  result=query("UPDATE api_football_discovery_heads SET generation_id='bad' WHERE fpl_season='2026-27'");assert.notEqual(result.status,0,'failed generation must never become head');
+  result=query("SELECT generation_id FROM api_football_discovery_heads WHERE fpl_season='2026-27'");assert.match(result.stdout,/"generation_id"\s*:\s*"good"/);
+  result=query("INSERT INTO api_football_request_attempts(attempt_id,logical_request_id,attempt_number,operation_class,endpoint_class,quota_utc_day,reserved_at,lease_expires_at,outcome) VALUES('a1','logical',1,'DISCOVERY','fixtures_discovery','2026-09-16','2026-09-16T00:00:00.000Z','2026-09-16T00:00:30.000Z','RESERVED'); INSERT INTO api_football_request_attempts(attempt_id,logical_request_id,attempt_number,operation_class,endpoint_class,quota_utc_day,reserved_at,lease_expires_at,outcome) VALUES('a2','logical',1,'DISCOVERY','fixtures_discovery','2026-09-16','2026-09-16T00:00:00.000Z','2026-09-16T00:00:30.000Z','RESERVED');");assert.notEqual(result.status,0,'duplicate logical request attempt must fail');
+  result=query("SELECT count(*) tables FROM sqlite_master WHERE type='table' AND (name LIKE '%payload%' OR name LIKE '%raw%')");assert.match(result.stdout,/"tables"\s*:\s*0/);
+  process.stdout.write('EIA-2I5D populated migration, FK, rights, atomic head and uniqueness: PASS\n');
+}finally{fs.rmSync(temp,{recursive:true,force:true});}

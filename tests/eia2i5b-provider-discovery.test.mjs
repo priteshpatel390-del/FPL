@@ -638,7 +638,7 @@ test('API-Football discovery stays isolated from production, live config and mig
   const production=['src/model/minutes.mjs','src/model/scoring.mjs','src/squad.mjs','src/model/transfers.mjs','src/main.mjs','src/providers/registry.mjs','src/ui/team-decision-home.mjs','src/ui/transfer-optimiser-view.mjs','dist/index.html','index.html','build.mjs'];
   for(const file of production)assert.doesNotMatch(fs.readFileSync(file,'utf8'),/api-football-discovery|api-football-foundation|x-apisports-key/i,file);
   const migrations=fs.readdirSync('workers/data-platform/migrations').sort();
-  assert.deepEqual(migrations.filter(name=>name.startsWith('0005')),[]);
+  assert.deepEqual(migrations.filter(name=>name.startsWith('0005')),['0005_api_football_shadow_runtime.sql']);
   assert.ok(migrations.includes('0004_api_football_shadow_identity.sql'));
   for(const file of ['workers/data-platform/wrangler.jsonc','workers/wrangler.jsonc','workers/evidence-wrangler.jsonc']){
     if(!fs.existsSync(file))continue;

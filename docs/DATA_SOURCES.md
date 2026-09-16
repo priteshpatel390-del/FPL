@@ -1,3 +1,7 @@
+## API-Football EIA-2I5D persistence status
+
+API-Football remains `owner_risk_accepted_private_use`: private one-user non-commercial normalized research only; no redistribution, public/commercial use or raw-payload warehouse; stop on objection. Migration 0005 seeds this narrow source revision and no broader right. Runtime remains disabled and uncredentialed. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 # DATA_SOURCES.md
 
 ## EIA-2I5B API-Football discovery (dormant)
