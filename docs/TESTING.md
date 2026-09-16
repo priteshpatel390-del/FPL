@@ -2,7 +2,7 @@
 
 ## EIA-2I5B discovery coverage
 
-`tests/eia2i5b-provider-discovery.test.mjs` pins the five approved league/season plans, closed known-ID versus discovery surfaces, origin pinning, header-only credentials, serial attempts, 1s injected delay, one retry bound, ten-attempt ceiling, 429 stop, no-retry auth/schema paths, quota-header normalization, identity/orientation/mapping/conflict behaviour, Chelsea–Leeds kickoff conflict without time tolerance, and structural isolation from production, wrangler, workflows and migration 0005. Tests use injected fetch only. Existing EIA-2I1/EIA-2I3/EIA-2I5A tests remain the duration, rights and identity owners.
+`tests/eia2i5b-provider-discovery.test.mjs` pins the five approved league/season plans, closed known-ID versus discovery surfaces, origin pinning, header-only credentials, serial attempts, 1s injected delay, one retry bound, ten-attempt ceiling, 429 stop, no-retry auth/schema paths, quota-header normalization, identity/orientation/mapping/conflict behaviour, Chelsea–Leeds kickoff conflict without time tolerance, final-state workload relevance (`PROVIDER_QUALIFIED`/`CROSS_SOURCE_VERIFIED` only), full EIA-2I5A `validateProviderMapping` 20-club coverage, and structural isolation from production, wrangler, workflows and migration 0005. Tests use injected fetch only. Existing EIA-2I1/EIA-2I3/EIA-2I5A tests remain the duration, rights and identity owners.
 
 ## EIA-2I5A offline contract coverage
 

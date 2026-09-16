@@ -6,7 +6,7 @@ import {
 } from './api-football-foundation.mjs';
 import {
   apiFootballCompetitionRegistry,apiFootballFixtureIdentity,apiFootballTeamIdentity,crossSourceQualify,
-  qualifyProviderFixture,resolveFieldObservations
+  qualifyProviderFixture,resolveFieldObservations,validateProviderMapping
 } from './api-football-shadow-contracts.mjs';
 import {classifyRights,OWNER_RISK_PRIVATE_USE,OWNER_RISK_PROVIDER} from './rights.mjs';
 
@@ -143,10 +143,11 @@ export function qualifyDiscoveredFixture(fixture,{teamMappings=[],independentCan
   const cross=qualification.state==='PROVIDER_QUALIFIED'?crossSourceQualify(qualification,independentCandidates):qualification;
   const extras=kickoffObservations.filter(row=>String(row.providerFixtureId||'')===String(fixture.providerFixtureId)).map(row=>({value:row.value,source:row.source,sourceRevision:row.sourceRevision}));
   const kickoff=resolveFieldObservations('kickoff',[fixture.kickoffObservation,...extras]);
-  const unmapped=qualification.state==='DISCOVERED';
-  const conflicted=qualification.state==='CONFLICTED'||cross.state==='CONFLICTED';
-  const rejected=qualification.state==='REJECTED';
-  const workloadRelevant=qualification.state==='PROVIDER_QUALIFIED';
+  const state=cross.state;
+  const unmapped=state==='DISCOVERED';
+  const conflicted=state==='CONFLICTED';
+  const rejected=state==='REJECTED';
+  const workloadRelevant=state==='PROVIDER_QUALIFIED'||state==='CROSS_SOURCE_VERIFIED';
   return deepFreeze({
     ...fixture,qualification:cross,kickoff,canonicalKickoff:kickoff.canonicalValue,
     homeTeamIdentity:cross.homeTeamIdentity||null,awayTeamIdentity:cross.awayTeamIdentity||null,
@@ -156,9 +157,18 @@ export function qualifyDiscoveredFixture(fixture,{teamMappings=[],independentCan
 }
 
 export function mappingCoverage(teamMappings,fplSeason=API_FOOTBALL_FPL_SEASON){
-  const verified=new Set();
+  const byProvider=new Map();
   for(const row of teamMappings||[]){
-    if(row?.provider===API_FOOTBALL_SOURCE_KEY&&row.entityType==='team'&&row.status==='VERIFIED'&&row.season===fplSeason&&typeof row.canonicalFplId==='string'&&row.canonicalFplId.startsWith(`${fplSeason}:fpl:team:`))verified.add(row.canonicalFplId);
+    const valid=validateProviderMapping(row,{entityType:'team',season:fplSeason});
+    if(!valid.ok)continue;
+    const providerEntityId=String(row.providerEntityId);
+    if(!byProvider.has(providerEntityId))byProvider.set(providerEntityId,new Set());
+    byProvider.get(providerEntityId).add(valid.canonicalFplId);
+  }
+  const verified=new Set();
+  for(const targets of byProvider.values()){
+    if(targets.size!==1)continue;
+    verified.add([...targets][0]);
   }
   const complete=verified.size===20;
   return deepFreeze({

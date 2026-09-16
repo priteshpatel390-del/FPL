@@ -6,7 +6,8 @@
 - Discovered fixtures are not written to D1. There is no migration 0005 and no request/quota/scheduler table.
 - Durable quota accounting is not implemented; header normalization is in-memory only. Exact contractual tier remains unknown.
 - Unexpected provider pagination cannot be followed inside the five-request plan and fails closed as `pagination_unsupported`.
-- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate.
+- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate. A `VERIFIED` label alone does not count; coverage uses the full EIA-2I5A mapping validator.
+- Ambiguous or conflicted final qualification is never workload-relevant.
 - Actual provider egress/runtime (Worker versus other) is a later decision.
 - Discovery cannot affect production recommendations. Official FPL remains authoritative for Premier League facts.
 
