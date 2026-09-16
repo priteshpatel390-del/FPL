@@ -1,5 +1,18 @@
 # KNOWN_LIMITATIONS.md
 
+## EIA-2I5B limitations
+
+- The discovery layer is dormant. No authenticated API-Football request, credential, Cloudflare secret, Worker route, Cron, GitHub schedule or API-Football runtime activation exists. Draft PR #249 did receive an automatic Cloudflare/GitHub **branch preview** deployment; that is not provider activation.
+- Discovered fixtures are not written to D1. There is no migration 0005 and no request/quota/scheduler table. Output atomicity is therefore an in-memory generation rule: incomplete/failed five-competition scans expose no new fixture evidence rather than a stored rollback.
+- Durable quota accounting is not implemented; header normalization is in-memory only. Exact contractual tier remains unknown.
+- Unexpected provider pagination cannot be followed inside the five-request plan and fails closed as `pagination_unsupported`. An incomplete scan that stops for pagination, quota, authentication, schema, retry exhaustion or the ten-attempt ceiling admits no provisional fixtures.
+- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate. Completeness requires a content-bound authority issued from a successful DATA-S2A `normaliseOfficialFplHistory()` result on full Official FPL bootstrap+fixtures evidence, then a 1:1 bijection. A labeled 20-team snapshot cannot self-certify. Malformed optional Official FPL team representations fail closed as `official_fpl_team_representation_conflicted` instead of throwing. Coverage fails closed if that Official FPL authority cannot be established.
+- Ambiguous or conflicted final qualification is never workload-relevant.
+- Independent cross-source evidence is fixture-scoped; unscoped candidates cannot poison other fixtures.
+- Explicit request timeout/abort is implemented: every API-Football HTTP attempt (discovery and known-ID) is bounded by `API_FOOTBALL_REQUEST_TIMEOUT_MS` (15000) using `AbortSignal.timeout`. Timeout is sanitized `provider_timeout`, retryable once, and still cannot override HTTP 429 or the two-attempt/ten-attempt ceilings. This does not approve live credentials, unattended schedulers or production runtime.
+- Actual provider egress/runtime (Worker versus other) is a later decision.
+- Discovery cannot affect production recommendations. Official FPL remains authoritative for Premier League facts.
+
 ## EIA-2I5A limitations
 
 - No live discovery, collection, correction/re-fetch, quota enforcement or scheduler exists.

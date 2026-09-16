@@ -1,5 +1,9 @@
 # DECISIONS.md — Architectural decision record
 
+## D-EIA-2I5B · 16 September 2026 · Accepted · Hardened discovery before live collection
+
+Add a repository-only, dormant API-Football fixture-discovery layer that reuses pinned EIA-2I1 transport without turning the known-ID client into a generic proxy. Discovery queries are exactly the five repository-controlled league/season pairs for 2026-27. Every HTTP attempt is bounded by `API_FOOTBALL_REQUEST_TIMEOUT_MS` (15000) via `AbortSignal.timeout`; timeout is sanitized `provider_timeout` and retryable once as transient transport, still subordinate to HTTP 429 and the two-attempt/ten-attempt ceilings. One five-competition generation is output-atomic; incomplete/failed scans expose no new fixture evidence. Independent candidates are fixture-scoped. 20-club completeness is a 1:1 bijection against a content-bound Official FPL team-universe authority issued only after DATA-S2A `normaliseOfficialFplHistory()` succeeds; a labeled 20-team snapshot cannot self-certify, and malformed optional team representations fail closed instead of throwing. HTTP 429 always stops. Duplicate provider fixture IDs with incompatible core identity fail closed. Identity, mapping and kickoff-conflict rules remain EIA-2I5A's, including Chelsea 49→6 and Leeds 63→13. Live credential, D1 persistence, scheduler, Cloudflare API-Football runtime and model use remain separately gated. An automatic PR/branch preview is not provider activation.
+
 ## D-EIA-2I5A · 16 September 2026 · Accepted · Offline identity before collection
 
 Establish deterministic API-Football identity, exact cross-source qualification, explicit conflicts, factual participation and narrow private-use storage before any request/discovery layer. Provider IDs are not universal IDs; names never verify; mutable kickoff never defines identity; ambiguous evidence fails closed. EIA-2I5B remains separate.

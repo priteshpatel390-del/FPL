@@ -1,5 +1,9 @@
 # PROJECTION_MODEL.md — projection engine reference
 
+## EIA-2I5B external-intelligence boundary
+
+Hardened fixture discovery is structurally isolated from this engine. API-Football discovery output has no import or signal path into `pStart`, `pAppear`, `p60`, `expMin`, xP, scoring, squad, captaincy, transfers, rank or Mini-Leagues. No fatigue coefficient or accuracy claim is added. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
+
 ## EIA-2I3 external-intelligence boundary
 
 Penalty/duration remediation changes only disabled shadow normalization. Direct minutes and extra-time evidence have no import or signal path into production expected minutes, projections, squad, captaincy, transfers, rank or Mini-Leagues. No coefficient, rule or predictive claim changes. See [EIA-2I3](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

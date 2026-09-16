@@ -1,5 +1,9 @@
 # DATA_SOURCES.md
 
+## EIA-2I5B API-Football discovery (dormant)
+
+API-Football remains a private shadow source only. EIA-2I5B can construct the five approved fixture-discovery queries and normalize stable provider fixture/team/season/kickoff/status facts when an injected credential and transport are supplied. A complete five-competition generation is output-atomic; incomplete/failed scans expose no new fixture evidence. Every HTTP attempt is bounded by a 15-second `AbortSignal.timeout`. Collection, authenticated live requests, D1 persistence and production imports remain disabled. Draft PR #249's automatic branch preview is not provider activation. Independent candidates are fixture-scoped. 20-club completeness is a 1:1 bijection against a team universe issued only after DATA-S2A canonical Official FPL validation of bootstrap+fixtures; a labeled 20-team snapshot cannot self-certify, and malformed optional team representations fail closed instead of throwing. Official FPL remains the production Premier League source.
+
 ## EIA-2I5A API-Football storage admission
 
 Only normalized private shadow facts may use `owner_risk_accepted_private_use`, under exact API-Football, owner-approval, private non-commercial, no-redistribution, no-public/commercial-use, no-raw-payload-retention and stop-on-objection constraints. Migration 0004 represents this explicitly. Collection remains disabled.

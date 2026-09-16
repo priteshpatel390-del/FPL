@@ -1,5 +1,9 @@
 # ARCHITECTURE.md
 
+## EIA-2I5B discovery boundary
+
+Fixture discovery lives only under Decision Intelligence. The known-ID client remains a closed four-endpoint ID surface; discovery is a separate five-query league/season plan with serial orchestration, bounded retries and injected delay. Every credential-bearing HTTP attempt is bounded by repository-controlled `API_FOOTBALL_REQUEST_TIMEOUT_MS` (15000) using `AbortSignal.timeout`; a hung transport cannot leave a scan unresolved. A complete five-competition generation is output-atomic: failed or incomplete scans expose no new fixture evidence. Independent cross-source evidence is fixture-scoped. Duplicate provider fixture IDs with incompatible core identity fail closed. Current-season PL mapping completeness is established only from a content-bound authority issued after DATA-S2A `normaliseOfficialFplHistory()` succeeds on full Official FPL bootstrap+fixtures evidence; discovery does not keep its own 20-club table, a labeled 20-team snapshot cannot self-certify, and malformed optional team representations fail closed instead of throwing. Production application/model modules do not import it. No Worker, Cron, secret, D1 writer or API-Football runtime is attached. An automatic PR/branch preview is not that runtime.
+
 ## EIA-2I5A shadow boundary
 
 API-Football identity, qualification, conflict and participation contracts live only under Decision Intelligence and isolated data-platform D1 schema. Production application/model modules do not import them. Stable provider fixture/player identity is separate from mutable observations and optional FPL mappings. Collection remains disabled.

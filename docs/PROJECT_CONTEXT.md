@@ -1,5 +1,9 @@
 # PROJECT_CONTEXT.md
 
+## EIA-2I5B hardened provider request and fixture discovery
+
+EIA-2I5B adds a disabled, injected-transport discovery capability for the five approved cup competitions. A complete five-competition generation is output-atomic; incomplete/failed scans expose no new fixture evidence. Every HTTP attempt is bounded by a repository-controlled 15-second `AbortSignal.timeout`. Independent cross-source evidence is fixture-scoped. 20-club completeness requires a content-bound Official FPL team-universe authority issued after DATA-S2A canonical validation of bootstrap+fixtures, not a labeled 20-team snapshot; malformed optional team representations fail closed instead of throwing. HTTP 429 always stops. Duplicate provider fixture IDs with incompatible core identity fail closed. Draft PR #249 received an automatic branch preview; no API-Football credential, collector or production import was activated. Timeout handling does not make the layer live-ready. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
+
 ## EIA-2I5A API-Football shadow identity and schema
 
 EIA-2I5A adds disabled, offline contracts for season-scoped competition configuration, verified provider mappings, stable fixture/player identity, exact cross-source qualification, field conflicts, factual participation and narrow owner-risk D1 admission. It adds no collector, request path, secret, schedule, live infrastructure, model input or UI path. EIA-2I3 duration semantics remain unchanged. See [EIA-2I5A](EIA-2I5A-API-FOOTBALL-SHADOW-IDENTITY-SCHEMA.md).

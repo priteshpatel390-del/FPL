@@ -1,8 +1,12 @@
 # SECURITY.md
 
+## EIA-2I5B request security
+
+Discovery reuses the pinned HTTPS origin, `x-apisports-key` header, GET-only init and `redirect: 'error'`. The known-ID client stays closed; discovery admits only repository-controlled `fixtures?league=&season=` pairs. Malformed endpoint/query fails before fetch and consumes zero quota. Every HTTP attempt receives a fresh `AbortSignal.timeout(API_FOOTBALL_REQUEST_TIMEOUT_MS)` (15000); a hung transport cannot wait indefinitely. Timeout is sanitized `provider_timeout` and never exposes abort objects, stacks or credentials. HTTP 429 always stops the scan even if quota headers are absent or malformed. An incomplete or failed five-competition generation exposes no new fixture evidence; sanitized audit may retain provider-row diagnostics but must not claim those rows were admitted. Credentials must not appear in URLs, output, errors, audit, generated assets, D1 or snapshots. Malformed optional Official FPL team representations fail closed rather than throwing. No Worker secret, environment binding, collector or live API-Football network capability was added. Draft PR #249's automatic branch preview is not that capability. Timeout/abort handling does not approve live credentials. See [EIA-2I5B](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md).
+
 ## EIA-2I5A
 
-Adds no network call, endpoint, relay, credential, secret binding, Cron, public read path or raw-provider payload storage. Contracts remain offline and shadow-only. EIA-2I5B request security is not implemented or approved.
+Adds no network call, endpoint, relay, credential, secret binding, Cron, public read path or raw-provider payload storage. Contracts remain offline and shadow-only. Request security for discovery is recorded under EIA-2I5B.
 
 ## EIA-2I4C API-Football qualified-design security boundary
 

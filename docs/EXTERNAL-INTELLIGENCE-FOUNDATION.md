@@ -1,5 +1,9 @@
 # EXTERNAL-INTELLIGENCE-FOUNDATION.md — research and shadow-architecture plan
 
+## EIA-2I5B implementation boundary
+
+EIA-2I5B adds dormant, injected-transport fixture discovery only. It preserves `shadow_only`, fail-closed identity/rights behaviour and model isolation. No live acquisition, weighting, production use, credential or scheduler is activated. An automatic PR/branch preview is not API-Football runtime activation.
+
 ## EIA-2I5A implementation boundary
 
 EIA-2I5A supplies API-Football offline identity/schema contracts only. It preserves `shadow_only`, fail-closed conflict/rights behaviour and model isolation. No acquisition, weighting or production use is activated.
