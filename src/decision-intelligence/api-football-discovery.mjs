@@ -192,8 +192,8 @@ export function qualifyDiscoveredFixture(fixture,{teamMappings=[],independentCan
   });
 }
 
-export function mappingCoverage(teamMappings,fplSeason=API_FOOTBALL_FPL_SEASON,{officialFplSnapshot,officialTeams}={}){
-  const clubs=currentSeasonOfficialFplTeamIdentities(fplSeason,officialFplSnapshot||officialTeams);
+export function mappingCoverage(teamMappings,fplSeason=API_FOOTBALL_FPL_SEASON,{officialFplAuthority,officialFplEvidence,officialFplSnapshot,officialTeams}={}){
+  const clubs=currentSeasonOfficialFplTeamIdentities(fplSeason,officialFplAuthority||officialFplEvidence||officialFplSnapshot||officialTeams);
   if(!clubs.ok)return deepFreeze({verifiedPremierLeagueTeamCount:0,completeTwentyClubCoverage:false,limitation:clubs.reason});
   const authoritative=new Set(clubs.identities);
   const providerToClubs=new Map();
@@ -263,7 +263,7 @@ async function performDiscoveryAttempt({planItem,apiKey,fetchImpl,budget,nowImpl
 }
 
 export async function runApiFootballDiscoveryScan({
-  apiKey,fetchImpl,sleepImpl,budget,nowImpl,sourceRevision,rights,teamMappings=[],independentCandidates=[],kickoffObservations=[],officialFplSnapshot,officialTeams
+  apiKey,fetchImpl,sleepImpl,budget,nowImpl,sourceRevision,rights,teamMappings=[],independentCandidates=[],kickoffObservations=[],officialFplAuthority,officialFplEvidence,officialFplSnapshot,officialTeams
 }={}){
   const classified=classifyRights(rights||{});
   if(!classified.valid||classified.classification!==OWNER_RISK_PRIVATE_USE||classified.provider!==OWNER_RISK_PROVIDER)return emptyScan('rights_invalid');
@@ -271,7 +271,7 @@ export async function runApiFootballDiscoveryScan({
   if(typeof fetchImpl!=='function'||typeof sleepImpl!=='function'||!budget?.consume||typeof nowImpl!=='function'||!SOURCE_REVISION.test(sourceRevision||''))return emptyScan('provider_disabled_configuration_invalid');
   const plan=apiFootballDiscoveryPlan();
   if(!plan.ok)return emptyScan(plan.reason);
-  const coverage=mappingCoverage(teamMappings,plan.fplSeason,{officialFplSnapshot:officialFplSnapshot||officialTeams});
+  const coverage=mappingCoverage(teamMappings,plan.fplSeason,{officialFplAuthority:officialFplAuthority||officialFplEvidence||officialFplSnapshot||officialTeams});
   const audit=[],fixtures=[];
   let attempts=0,needDelay=false,scanState='completed';
   competitionLoop: for(const planItem of plan.items){

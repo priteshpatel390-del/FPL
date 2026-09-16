@@ -6,7 +6,7 @@
 - Discovered fixtures are not written to D1. There is no migration 0005 and no request/quota/scheduler table.
 - Durable quota accounting is not implemented; header normalization is in-memory only. Exact contractual tier remains unknown.
 - Unexpected provider pagination cannot be followed inside the five-request plan and fails closed as `pagination_unsupported`.
-- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate. Completeness requires a provenance-bearing Official FPL snapshot (`official-fpl` / `official-fpl-r1` / DATA-S2A versions, requested season, `fetchedAt`, exactly 20 unique bootstrap teams) and a 1:1 bijection. A caller-supplied array of 20 IDs cannot self-certify. Coverage fails closed if that Official FPL authority cannot be established.
+- Complete current-season 20-club API-Football → Official FPL team mapping is not claimed and remains a pre-live gate. Completeness requires a content-bound authority issued from a successful DATA-S2A `normaliseOfficialFplHistory()` result on full Official FPL bootstrap+fixtures evidence, then a 1:1 bijection. A labeled 20-team snapshot cannot self-certify. Coverage fails closed if that Official FPL authority cannot be established.
 - Ambiguous or conflicted final qualification is never workload-relevant.
 - Independent cross-source evidence is fixture-scoped; unscoped candidates cannot poison other fixtures.
 - Explicit provider request timeout/abort is not implemented and remains mandatory before live credential, unattended scheduler or production-runtime approval.
