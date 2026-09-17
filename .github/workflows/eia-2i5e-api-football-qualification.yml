@@ -1,0 +1,264 @@
+# EIA-2I5E-R7A — dormant, manual-only GitHub qualification execution boundary.
+#
+# This workflow can do exactly one thing after owner merge onto main: run the exact reviewed
+# PR #251 qualification candidate once, under the protected environment
+# `eia-api-football-qualification`, and emit only sanitized review evidence.
+#
+# It is not response-size GO. Workflow success means the controlled run completed and produced
+# sanitized evidence. The formal qualification decision comes only from
+# `runAttendedApiFootballQualification()`.
+#
+# It never accepts a SHA, branch, endpoint, plan or credential as a caller input. The candidate
+# SHA, branch and PR are hard-coded below. A dispatcher who can trigger this workflow therefore
+# cannot point the secret-bearing job at arbitrary repository code.
+#
+# The protected environment is an owner-configured precondition: required reviewer, administrator
+# bypass disabled, and deployment branch restriction `main` only. This file does not and cannot
+# verify those GitHub UI settings.
+#
+# A GitHub UI re-run is another provider attempt and requires fresh owner approval. This workflow
+# has no retry action, matrix retry, self-dispatch, continue loop or fallback HTTP client.
+#
+# R7A itself made zero provider calls and did not access the environment secret. Secret-bearing
+# execution is impossible until this workflow exists on main and the owner later dispatches it.
+
+name: EIA-2I5E API-Football Qualification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QUALIFICATION_CANDIDATE_SHA: 03cd231cd3e1d38821194a5d1aad87bc87232154
+  QUALIFICATION_BRANCH: eia-2i5e-prelive-qualification
+  QUALIFICATION_PR: '251'
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Validate dispatch event before checkout
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s' "$QUALIFICATION_CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$QUALIFICATION_CANDIDATE_SHA" = 03cd231cd3e1d38821194a5d1aad87bc87232154
+          test "$QUALIFICATION_BRANCH" = eia-2i5e-prelive-qualification
+          test "$QUALIFICATION_PR" = 251
+
+      - name: Check out the workflow execution revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove current main, pinned candidate branch and a clean tree
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          remote_candidate="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/eia-2i5e-prelive-qualification | cut -f1)"
+          test -n "$remote_candidate"
+          test "$remote_candidate" = "$QUALIFICATION_CANDIDATE_SHA"
+          test "$remote_candidate" = 03cd231cd3e1d38821194a5d1aad87bc87232154
+          test -z "$(git status --porcelain)"
+
+  qualify:
+    if: github.event_name == 'workflow_dispatch'
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    environment:
+      name: eia-api-football-qualification
+    steps:
+      - name: Check out the hard-coded PR #251 candidate
+        uses: actions/checkout@v5
+        with:
+          ref: 03cd231cd3e1d38821194a5d1aad87bc87232154
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reconfirm candidate HEAD and remote qualification branch
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 03cd231cd3e1d38821194a5d1aad87bc87232154
+          test "$(git rev-parse HEAD)" = "$QUALIFICATION_CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+          remote_candidate="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/eia-2i5e-prelive-qualification | cut -f1)"
+          test -n "$remote_candidate"
+          test "$remote_candidate" = "$QUALIFICATION_CANDIDATE_SHA"
+          test "$remote_candidate" = 03cd231cd3e1d38821194a5d1aad87bc87232154
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.19.0
+
+      - name: Run focused R3 qualification tests before any secret is introduced
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          test "$(git rev-parse HEAD)" = 03cd231cd3e1d38821194a5d1aad87bc87232154
+          test -z "$(git status --porcelain)"
+          node --test tests/eia2i5e-prelive-qualification.test.mjs
+          node --input-type=module -e "import {API_FOOTBALL_MAX_RESPONSE_BYTES} from './workers/api-football-collector/runtime-contracts.mjs'; if (API_FOOTBALL_MAX_RESPONSE_BYTES !== null) { console.error('production_byte_ceiling_changed'); process.exit(1); }"
+
+      - name: Invoke attended qualification runner once
+        env:
+          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {pathToFileURL} from 'node:url';
+
+          const CANDIDATE_SHA = '03cd231cd3e1d38821194a5d1aad87bc87232154';
+          const MAX_PROVIDER_ATTEMPTS = 11;
+          const RESULT_NAME = 'eia-2i5e-qualification-result.json';
+          const fail = reason => {
+            console.error(reason);
+            process.exit(1);
+          };
+
+          const apiKey = process.env.API_FOOTBALL_API_KEY;
+          if (typeof apiKey !== 'string' || apiKey.length === 0) fail('qualification_credential_missing');
+          const runnerTemp = process.env.RUNNER_TEMP;
+          if (typeof runnerTemp !== 'string' || runnerTemp.length === 0) fail('qualification_runner_temp_missing');
+
+          const moduleHref = pathToFileURL(join(process.cwd(), 'src/decision-intelligence/api-football-prelive-qualification.mjs')).href;
+          let runAttendedApiFootballQualification;
+          try {
+            ({runAttendedApiFootballQualification} = await import(moduleHref));
+          } catch {
+            fail('qualification_runner_unavailable');
+          }
+          if (typeof runAttendedApiFootballQualification !== 'function') fail('qualification_runner_unavailable');
+
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          let invocations = 0;
+          let result;
+          try {
+            invocations += 1;
+            result = await runAttendedApiFootballQualification({
+              apiKey,
+              fetchImpl: globalThis.fetch,
+              sleep
+            });
+          } catch {
+            fail('qualification_runner_unexpected_exception');
+          }
+          if (invocations !== 1) fail('qualification_runner_invocation_invalid');
+          if (!result || typeof result !== 'object') fail('qualification_result_invalid');
+
+          const measurements = Array.isArray(result.measurements) ? result.measurements : [];
+          const attempts = Number(result.attempts);
+          const logicalIds = measurements.map(row => row && row.logicalRequestId).filter(Boolean);
+          const retryOccurred = logicalIds.length !== new Set(logicalIds).size;
+          if (measurements.some(row => row?.bodyRetained !== false)) fail('qualification_raw_body_retained');
+          if (!Number.isInteger(attempts) || attempts < 0 || attempts > MAX_PROVIDER_ATTEMPTS) fail('qualification_attempt_budget_exceeded');
+          if (retryOccurred) fail('qualification_retry_detected');
+
+          const serialized = JSON.stringify(result);
+          if (serialized.includes(apiKey)) fail('qualification_result_contains_secret');
+          writeFileSync(join(runnerTemp, RESULT_NAME), serialized);
+          console.error('qualification_result_written');
+          EOF
+
+      - name: Write allowlisted job summary
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF'
+          import {readFileSync, appendFileSync} from 'node:fs';
+          import {join} from 'node:path';
+
+          const CANDIDATE_SHA = '03cd231cd3e1d38821194a5d1aad87bc87232154';
+          const CANONICAL_IDS = Object.freeze([
+            'discovery-2','discovery-3','discovery-848','discovery-45','discovery-48',
+            'fixture-1636205','lineups-1636205','players-1636205','events-1636205',
+            'fixture-1635643','players-1635643'
+          ]);
+          const resultPath = join(process.env.RUNNER_TEMP, 'eia-2i5e-qualification-result.json');
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          if (typeof summaryPath !== 'string' || summaryPath.length === 0) {
+            console.error('qualification_summary_unavailable');
+            process.exit(1);
+          }
+          const result = JSON.parse(readFileSync(resultPath, 'utf8'));
+          const measurements = Array.isArray(result.measurements) ? result.measurements : [];
+          const byId = new Map(measurements.map(row => [row?.logicalRequestId, row]));
+          const responseLimit = result.responseLimit && typeof result.responseLimit === 'object' ? result.responseLimit : {};
+          const required = Array.isArray(responseLimit.requiredManifest) ? responseLimit.requiredManifest : [];
+          const skipped = required.filter(row => row?.skipped === true).map(row => row.logicalRequestId).filter(Boolean);
+          const completed = required.filter(row => row?.succeeded === true).map(row => row.logicalRequestId).filter(Boolean);
+          const logicalIds = measurements.map(row => row && row.logicalRequestId).filter(Boolean);
+          const retries = logicalIds.length === new Set(logicalIds).size ? 0 : 'detected';
+          const bodyRetained = measurements.some(row => row?.bodyRetained !== false);
+          const cell = value => value == null || value === '' ? 'n/a' : String(value);
+          const lines = [
+            '### EIA-2I5E API-Football qualification',
+            '',
+            `- Candidate SHA: \`${CANDIDATE_SHA}\``,
+            '- Qualification branch: `eia-2i5e-prelive-qualification`',
+            '- Qualification PR: 251',
+            '- Runner invocation count: 1',
+            `- Attempts used: ${cell(result.attempts)}`,
+            `- Retries: ${cell(retries)}`,
+            `- Stop reason: ${cell(result.stoppedReason)}`,
+            `- Formal response-size decision: ${cell(responseLimit.decision)}`,
+            `- Formal qualification: ${cell(responseLimit.formalQualification)}`,
+            `- Response-limit reason: ${cell(responseLimit.reason)}`,
+            `- Observed maximum bytes: ${cell(responseLimit.observedMaximum)}`,
+            `- Candidate ceiling: ${cell(responseLimit.proposedCeiling)}`,
+            `- Arithmetic state: ${cell(responseLimit.arithmeticState)}`,
+            `- Production constant remains null: ${result.productionByteCeiling === null}`,
+            `- Implemented ceiling: ${cell(result.implementedCeiling)}`,
+            `- Raw body retained: ${bodyRetained}`,
+            `- Canonical requests completed: ${completed.length ? completed.join(', ') : 'none'}`,
+            `- Canonical requests skipped: ${skipped.length ? skipped.join(', ') : 'none'}`,
+            '',
+            '| Request | Class | HTTP class | Bytes | Rows | Pagination | Identity | Participants | Quota state | Remaining |',
+            '|---|---|---|---:|---:|---|---|---|---|---:|'
+          ];
+          for (const id of CANONICAL_IDS) {
+            const row = byId.get(id);
+            if (!row) {
+              lines.push(`| ${id} | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |`);
+              continue;
+            }
+            lines.push(`| ${id} | ${cell(row.endpointClass)} | ${cell(row.httpClass)} | ${cell(row.actualBytes)} | ${cell(row.rowCount)} | ${cell(row.paginationPresent)} | ${cell(row.responseIdentityMatched)} | ${cell(row.rowIdentityValidationState)} | ${cell(row.quota && row.quota.state)} | ${cell(row.quota && row.quota.requestsRemaining)} |`);
+          }
+          lines.push('');
+          lines.push('Workflow success means sanitized evidence was produced. It is not automatic response-size GO.');
+          lines.push('A GitHub UI re-run is another provider attempt and requires fresh owner approval.');
+          appendFileSync(summaryPath, `${lines.join('\n')}\n`);
+          EOF
+
+      - name: Upload sanitized qualification result
+        uses: actions/upload-artifact@v6
+        with:
+          name: eia-2i5e-qualification-result
+          path: ${{ runner.temp }}/eia-2i5e-qualification-result.json
+          if-no-files-found: error
+          retention-days: 7

@@ -1,3 +1,7 @@
+## EIA-2I5E-R7A secure GitHub qualification workflow foundation
+
+R7A adds a dormant, manual-only GitHub Actions workflow that can later execute the exact reviewed PR #251 candidate under protected environment `eia-api-football-qualification`. No API-Football request, secret access, collector activation, model/UI change or merge of PR #251 occurred in R7A. Secret-bearing execution remains blocked until this foundation is merged and the owner later dispatches it. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## EIA-2I5D repository-only shadow runtime and persistence
 
 EIA-2I5D adds dormant migration 0005 and a separate scheduled-only API-Football collector package. Durable quota/lease, generation/head, fixture-revision and DATA-S2A authority contracts are repository-ready but unprovisioned. Collection defaults disabled; no Cron is declared; response byte limit remains deliberately unqualified and blocks activation. No live provider, Cloudflare, model or UI action occurred. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

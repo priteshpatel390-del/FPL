@@ -1,3 +1,7 @@
+## EIA-2I5E-R7A workflow security coverage
+
+`tests/eia2i5e-github-qualification-workflow.test.mjs` inspects the dormant qualification workflow as repository text and executable shell. It pins `workflow_dispatch` with zero inputs, hard-coded PR #251 SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`, environment `eia-api-football-qualification`, `contents: read` only, secret reference `secrets.API_FOOTBALL_API_KEY` on exactly one step, fail-closed candidate-branch movement, no curl/wget/npm install/retry/git push, one runner invocation, result write under `RUNNER_TEMP`, and that R7A does not copy the PR #251 qualification module onto `main`. Existing EIA-2I5B workflow isolation still forbids API-Football material in every other workflow. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## EIA-2I5D permanent coverage
 
 `tests/eia2i5d-shadow-runtime.test.mjs` covers quota, UTC reset, first-probe failure closure, atomic lease/count/attempt rollback, duplicate attempt identity, conservative post-reservation crash accounting, lease/spacing, two- and five-promise races, 401/403 durable authentication blocking, exact endpoint-class/query mapping, authority freshness/bijection, bounded body/row decoding, scheduling, observability, secret/route safety and model/browser isolation. `tests/eia2i5d-migration.test.mjs` applies 0001–0005 to populated local D1, checks retained data/FKs/rights, committed-head enforcement, duplicate-attempt rejection and absence of raw stores. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

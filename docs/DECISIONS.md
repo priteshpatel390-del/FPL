@@ -1,3 +1,7 @@
+## D-EIA-2I5E-R7A · 17 September 2026 · Accepted · Separate main-only GitHub qualification workflow
+
+Do not weaken environment `eia-api-football-qualification` to run from PR #251. Add a separate, manual-only, zero-input workflow on a branch from `main`, hard-code reviewed candidate SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`, keep the secret inside one protected-job step, and fail closed if the candidate branch moves. Grok/Codex must never read the key. R7A authorizes repository foundation only: no provider call, secret access, workflow dispatch, environment approval, PR #251 change, merge, collector activation or model/UI change. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## 16 September 2026 — EIA-2I5D repository-only persistence decision
 
 Approved architecture uses the existing canonical `teamsheet-data` D1, not a second provider database; one separate scheduled-only Worker; durable reservation-before-egress; a 100-attempt UTC-day internal ceiling; 30-second global lease; DATA-S2A-derived 48-hour Official FPL authority; atomic five-competition heads; and append-only correction revisions. Production response-byte ceiling remains intentionally undecided, making activation fail closed. Repository implementation approves no provisioning, deployment, credential, Cron, provider call, model use or UI use. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

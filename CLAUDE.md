@@ -1,3 +1,8 @@
+<!-- EIA-2I5E-R7A-2026-09-17 -->
+### Current external-intelligence checkpoint — EIA-2I5E-R7A secure GitHub qualification workflow foundation
+
+R7A adds a dormant, manual-only GitHub Actions workflow, `.github/workflows/eia-2i5e-api-football-qualification.yml`, branched from latest `main` rather than PR #251. It hard-codes reviewed candidate SHA `03cd231cd3e1d38821194a5d1aad87bc87232154` on `eia-2i5e-prelive-qualification`, accepts no dispatch inputs, and uses two jobs: a credential-free `repository-gate` and a `qualify` job on owner-configured environment `eia-api-football-qualification`. The environment secret `API_FOOTBALL_API_KEY` is exposed only to one execution step. Grok and Codex cannot read it. R7A made zero provider requests and zero secret accesses. Secret-bearing execution is not possible until this foundation is merged and the owner later dispatches it. A GitHub UI re-run requires fresh owner approval. Workflow success is sanitized evidence, not response-size GO. Collector, Cron, live D1, model/UI and PR #251 remain unchanged. See [EIA-2I5E-R7A](docs/EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 <!-- EIA-2I5D-2026-09-16 -->
 ### Current external-intelligence checkpoint — EIA-2I5D repository-only shadow runtime and persistence
 
