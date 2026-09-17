@@ -1,3 +1,24 @@
+## EIA-2I5E-R7A-R1 limitations
+
+- The workflow remains dormant. R7A-R1 made zero provider requests and did not access `API_FOOTBALL_API_KEY`.
+- GitHub UI reruns are structurally blocked. A new provider attempt requires a new manual `workflow_dispatch` and a new protected-environment approval.
+- An active main-protection ruleset targeting `refs/heads/main` is a required owner-configured pre-dispatch precondition and is **still outstanding**. R7A-R1 did not mutate GitHub branch/ruleset settings and does not claim that protection exists.
+- Prevent-self-review on environment `eia-api-football-qualification` is an owner operational preflight. This change did not inspect or infer that setting. If Pritesh both dispatches and approves, Prevent-self-review must not be enabled.
+- Environment reviewer, bypass and branch-restriction settings remain owner-configured preconditions, not programmatically verified.
+- `boundedFetch` is workflow-level defence in depth. It does not change PR #251's qualification runner.
+- Workflow success is still sanitized-evidence completion, not response-size GO.
+- See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
+## EIA-2I5E-R7A limitations
+
+- The workflow is dormant. R7A made zero provider requests and did not access `API_FOOTBALL_API_KEY`.
+- Secret-bearing execution is impossible until this foundation PR is merged onto `main` and the owner later dispatches `EIA-2I5E API-Football Qualification`.
+- GitHub environment reviewer, bypass and branch-restriction settings are owner-configured preconditions, not programmatically verified by R7A.
+- The later run executes exact PR #251 SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`; that candidate becomes trusted computing base for one run only and is not a generic secrets-on-PR mechanism.
+- A GitHub UI re-run is another provider attempt and requires fresh owner approval.
+- Workflow success is sanitized-evidence completion, not response-size GO. `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Collector/runtime activation remains unrelated and blocked.
+- See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## EIA-2I5D limitations
 
 Collector remains deliberately unusable live: no credential, real D1 ID, deployed Worker, Cron, enabled kill switch or approved response-byte ceiling exists. Full 20-club API-Football-to-FPL mapping remains unproven. Provider subscription entitlement remains unknown; observed headers are telemetry only. Repository race tests and local D1 migration tests do not prove live Cloudflare behavior. No model value is established. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

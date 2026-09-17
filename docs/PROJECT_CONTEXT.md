@@ -1,3 +1,11 @@
+## EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
+
+R7A-R1 hardens the dormant GitHub qualification workflow on draft PR #252: immutable action SHAs, structurally blocked UI reruns, post-environment main reconfirmation, a hard 11-call fetch wrapper, and serialized dispatches. Owner-configured main protection is a required pre-dispatch precondition and remains outstanding. Prevent-self-review is an owner operational preflight, not inferred. PR #251, collector, Cron, live D1, model and UI are unchanged. Zero provider requests and zero secret accesses. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
+## EIA-2I5E-R7A secure GitHub qualification workflow foundation
+
+R7A adds a dormant, manual-only GitHub Actions workflow that can later execute the exact reviewed PR #251 candidate under protected environment `eia-api-football-qualification`. No API-Football request, secret access, collector activation, model/UI change or merge of PR #251 occurred in R7A. Secret-bearing execution remains blocked until this foundation is merged and the owner later dispatches it. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## EIA-2I5D repository-only shadow runtime and persistence
 
 EIA-2I5D adds dormant migration 0005 and a separate scheduled-only API-Football collector package. Durable quota/lease, generation/head, fixture-revision and DATA-S2A authority contracts are repository-ready but unprovisioned. Collection defaults disabled; no Cron is declared; response byte limit remains deliberately unqualified and blocks activation. No live provider, Cloudflare, model or UI action occurred. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
