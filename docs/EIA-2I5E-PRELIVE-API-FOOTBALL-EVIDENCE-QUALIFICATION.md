@@ -1,18 +1,49 @@
 # EIA-2I5E — Pre-Live API-Football Evidence Qualification
 
 Date: 17 September 2026
-Base: `6309dae3614aa06e7c021bfab0f138cac2437a2b` (merge of PR #250 / EIA-2I5D)
+Base at closeout: `7314c30580f52a56c014bd5c8fb1e7de6ad14ca2` (merge of PR #252 / EIA-2I5E-R7A)
+Executed candidate: `03cd231cd3e1d38821194a5d1aad87bc87232154`
 
-## Current state — R5 transport preflight stopped safely
+## Current state — R7 successful attended qualification closeout
 
-EIA-2I5E-R5 performed one bounded non-HTTP transport preflight with the API-Football credential removed from the diagnostic process environment. DNS resolution succeeded. TCP/TLS connection to the exact hostname on port 443 did not establish and returned sanitized OS code `ENETUNREACH`; certificate validation was therefore not reached. Classification is `tcp_connection_failed`. The TLS socket sent no HTTP request and no credential material. Per the R5 entry gate, Phase B did not run: the credential was not accessed, the canonical runner was not invoked, and API-Football HTTP attempts were zero.
+The owner manually dispatched `EIA-2I5E API-Football Qualification` from protected `main`. GitHub Actions run `35248079758` (run number 1, attempt 1, event `workflow_dispatch`) checked out and executed exact candidate `03cd231cd3e1d38821194a5d1aad87bc87232154`. The run concluded **success**. Sanitized artifact `eia-2i5e-qualification-result` ID `10508920046` digest `sha256:dd6b907cefe6c5d0b29b8c269d91a622ff45411303a571eeb1831d004b5e3459` had seven-day GitHub retention.
 
-| Current gate | Decision | Reason |
+| Current gate | Decision | Detail |
 |---|---|---|
-| Response size | **NO-GO — `tcp_connection_failed`** | R5 stopped before HTTP because the non-HTTP TCP/TLS preflight returned `ENETUNREACH`. Required current samples remain incomplete, no R5 maximum or arithmetic candidate exists, and historical R1 evidence cannot substitute. |
-| Complete 20-club mapping | **NO-GO — 2/20** | Only Chelsea `49→6` and Leeds `63→13` are admitted through the closed canonical EIA-2I4C adapter. Eighteen clubs remain unproven. Generic caller evidence cannot mint an admitted receipt. |
+| Response size | **GO** | Formal qualification `ATTENDED_CANONICAL_QUALIFIED`. Observed maximum **347,982 bytes**. Qualified proposed ceiling **720,896 bytes**. |
+| Implemented production ceiling | **NO** | `API_FOOTBALL_MAX_RESPONSE_BYTES` remains **`null`**. 720,896 is a qualified proposed value awaiting a separate implementation approval. |
+| Complete 20-club mapping | **NO-GO — 2/20** | Only Chelsea `49→6` and Leeds `63→13` are admitted through the closed canonical EIA-2I4C adapter. Eighteen clubs remain unproven. R7 did not expand mapping. |
+| Collector / infrastructure | **inactive** | Not activated by this checkpoint. No Cloudflare provisioning, D1 migration application, Cron or model/UI influence. |
 
-`API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Collector remains undeployed; migration 0005 is not live; no production D1 binding, collector credential or Cron exists; collection remains disabled; runtime is not live accepted; model/UI influence remains none.
+R7 closeout itself made **0** API-Football requests and **0** credential accesses. The 11 provider requests belong only to attended run `35248079758`.
+
+### R7 formal result
+
+Response-size GO / `ATTENDED_CANONICAL_QUALIFIED`. attempts 11, retries 0, stoppedReason null. observedMaximum 347982. proposedCeiling 720896. doubledMaximum 695964. marginBytes 372914. productionConstant null. implemented false.
+
+### R7 live measurements
+
+Acquisition timestamps are GitHub run/artifact times only: started `2026-09-17T16:40:53Z`, artifact `2026-09-17T16:41:34Z`, updated `2026-09-17T16:41:37Z`.
+
+| Canonical request | HTTP | Bytes | Rows | Quota remaining | Minute remaining |
+|---|---:|---:|---:|---:|---:|
+| `discovery-2` | 200 | 220363 | 234 | 7488 | 299 |
+| `discovery-3` | 200 | 209572 | 224 | 7487 | 298 |
+| `discovery-848` | 200 | 347982 | 366 | 7486 | 297 |
+| `discovery-45` | 200 | 215224 | 224 | 7485 | 296 |
+| `discovery-48` | 200 | 80228 | 83 | 7484 | 295 |
+| `fixture-1636205` | 200 | 38371 | 1 | 7483 | 294 |
+| `lineups-1636205` | 200 | 4068 | 2 | 7482 | 293 |
+| `players-1636205` | 200 | 26226 | 2 | 7481 | 292 |
+| `events-1636205` | 200 | 6006 | 21 | 7480 | 291 |
+| `fixture-1635643` | 200 | 42710 | 1 | 7479 | 290 |
+| `players-1635643` | 200 | 30052 | 2 | 7478 | 289 |
+
+Every sample passed HTTP 200, response identity, exact echoed parameters, sample sufficiency, pagination 1/1, participant checks where applicable, known quota state, and raw-body-retained false. Class maxima: fixtures_discovery 347982, fixture 42710, lineups 4068, players 30052, events 6006. Arithmetic: 347982 * 2 = 695964, rounded to next 65536 = 720896. R1 is historical corroboration only (`discovery-48` 73793/76 then vs 80228/83 now; `fixture-1636205` 38374 then vs 38371 now). Formal GO is exclusively run 35248079758. Known client attempts 23; confirmed successful provider HTTP 22.
+
+## Historical state — R5 transport preflight stopped safely
+
+EIA-2I5E-R5 DNS passed and TCP/TLS failed with `ENETUNREACH`. Phase B did not run.
 
 ## R5 transport preflight result
 
@@ -130,4 +161,4 @@ Rights remain `owner_risk_accepted_private_use`: private, one-user, non-commerci
 
 ## Remaining gate and stop
 
-Current response-size and mapping decisions are independently NO-GO. R5 is complete as a stopped preflight and must not be retried or replayed under this approval. Next checkpoint is owner review of `tcp_connection_failed` / `ENETUNREACH`; any new transport diagnostic or credentialed attempt needs separate explicit approval. EIA-2I5F, infrastructure provisioning, production ceiling implementation, collector activation and work on the remaining 18 mappings do not start. PR #251 remains draft, owner-gated and unmerged.
+Response-size is independently **GO**. Mapping remains independently **NO-GO 2/20**. Do not collapse those into one overall GO. Production ceiling implementation, the remaining 18 mappings, collector activation, Cloudflare provisioning, D1 mutation, Cron and model/UI consumption each need separate owner approval. R7 closeout made zero provider requests. PR #251 remains draft, owner-gated and unmerged.
