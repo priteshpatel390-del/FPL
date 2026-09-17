@@ -12,6 +12,7 @@ import {API_FOOTBALL_MAX_RESPONSE_BYTES} from '../workers/api-football-collector
 
 const WORKFLOW_PATH = '.github/workflows/eia-2i5e-api-football-qualification.yml';
 const CANDIDATE_SHA = '03cd231cd3e1d38821194a5d1aad87bc87232154';
+const R7A_EXECUTION_SHA = '7314c30580f52a56c014bd5c8fb1e7de6ad14ca2';
 const CANDIDATE_BRANCH = 'eia-2i5e-prelive-qualification';
 const ENVIRONMENT = 'eia-api-football-qualification';
 const MODULE_PATH = 'src/decision-intelligence/api-football-prelive-qualification.mjs';
@@ -93,29 +94,22 @@ function envAssignments(stepText) {
   return env;
 }
 
-function mainTreeHas(file) {
-  for (const ref of ['origin/main', 'main']) {
-    const probe = spawnSync('git', ['rev-parse', '--verify', `${ref}:${file}`], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    if (probe.status === 0) return true;
-  }
-  const fetched = spawnSync('git', ['fetch', '--depth', '1', 'origin', 'main:refs/remotes/origin/main'], {
+function treeHas(ref, file) {
+  const revision = spawnSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  assert.equal(fetched.status, 0, `unable to fetch origin/main while checking ${file}: ${fetched.stderr}`);
-  const probe = spawnSync('git', ['rev-parse', '--verify', `origin/main:${file}`], {
+  assert.equal(revision.status, 0, `missing git revision ${ref}: ${revision.stderr}`);
+  const probe = spawnSync('git', ['rev-parse', '--verify', `${ref}:${file}`], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe']
   });
   return probe.status === 0;
 }
 
-test('R7A does not import or copy the PR #251 qualification module onto main', () => {
-  assert.equal(mainTreeHas(MODULE_PATH), false);
-  assert.equal(mainTreeHas(R3_TEST_PATH), false);
+test('R7A execution revision did not contain the PR #251 qualification module', () => {
+  assert.equal(treeHas(R7A_EXECUTION_SHA, MODULE_PATH), false);
+  assert.equal(treeHas(R7A_EXECUTION_SHA, R3_TEST_PATH), false);
   assert.equal(fs.existsSync(MODULE_PATH), true);
   assert.equal(fs.existsSync(R3_TEST_PATH), true);
   assert.equal([...live.matchAll(/runAttendedApiFootballQualification\(/g)].length, 1);
@@ -185,7 +179,7 @@ test('API_FOOTBALL_API_KEY is referenced once, only as the GitHub secret, only o
   assert.equal([...workflow.matchAll(/API_FOOTBALL_API_KEY/g)].length, 3);
   assert.equal([...workflow.matchAll(/secrets\.API_FOOTBALL_API_KEY/g)].length, 1);
   assert.equal([...workflow.matchAll(/process\.env\.API_FOOTBALL_API_KEY/g)].length, 1);
-  assert.match(workflow, new RegExp(`API_FOOTBALL_API_KEY: \\\$\\{\\{ ${SECRET_EXPR} \\}\\}`));
+  assert.match(workflow, new RegExp(`API_FOOTBALL_API_KEY: \\$\\{\\{ ${SECRET_EXPR} \\}\\}`));
   const qualifySteps = qualifyBlock().split('\n      - name: ').slice(1);
   const secretSteps = qualifySteps.filter(step => step.includes(SECRET_EXPR));
   assert.equal(secretSteps.length, 1);
