@@ -12,6 +12,7 @@ import {API_FOOTBALL_MAX_RESPONSE_BYTES} from '../workers/api-football-collector
 
 const WORKFLOW_PATH = '.github/workflows/eia-2i5e-api-football-qualification.yml';
 const CANDIDATE_SHA = '03cd231cd3e1d38821194a5d1aad87bc87232154';
+const R7A_EXECUTION_SHA = '7314c30580f52a56c014bd5c8fb1e7de6ad14ca2';
 const CANDIDATE_BRANCH = 'eia-2i5e-prelive-qualification';
 const ENVIRONMENT = 'eia-api-football-qualification';
 const MODULE_PATH = 'src/decision-intelligence/api-football-prelive-qualification.mjs';
@@ -93,9 +94,24 @@ function envAssignments(stepText) {
   return env;
 }
 
-test('R7A does not import or copy the PR #251 qualification module onto main', () => {
-  assert.equal(fs.existsSync(MODULE_PATH), false);
-  assert.equal(fs.existsSync(R3_TEST_PATH), false);
+function treeHas(ref, file) {
+  const revision = spawnSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  assert.equal(revision.status, 0, `missing git revision ${ref}: ${revision.stderr}`);
+  const probe = spawnSync('git', ['rev-parse', '--verify', `${ref}:${file}`], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  return probe.status === 0;
+}
+
+test('R7A execution revision did not contain the PR #251 qualification module', () => {
+  assert.equal(treeHas(R7A_EXECUTION_SHA, MODULE_PATH), false);
+  assert.equal(treeHas(R7A_EXECUTION_SHA, R3_TEST_PATH), false);
+  assert.equal(fs.existsSync(MODULE_PATH), true);
+  assert.equal(fs.existsSync(R3_TEST_PATH), true);
   assert.equal([...live.matchAll(/runAttendedApiFootballQualification\(/g)].length, 1);
   assert.match(live, /src\/decision-intelligence\/api-football-prelive-qualification\.mjs/);
 });

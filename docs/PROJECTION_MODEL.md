@@ -1,3 +1,7 @@
+## EIA-2I5E isolation
+
+R3 qualification remediation and preserved historical evidence have no production calculation read path. EIA-2I5E changes no expected-minutes, xP, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic. Current response-size and mapping gates are both NO-GO. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## EIA-2I5D isolation
 
 API-Football persistence remains private shadow evidence with no production calculation read path. EIA-2I5D changes no expected-minutes, xP, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic. Any future influence requires separate approval and prospective validation. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
