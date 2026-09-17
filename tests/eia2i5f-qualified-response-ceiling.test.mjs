@@ -32,7 +32,7 @@ test('ceiling implementation does not activate collector infrastructure',()=>{
   assert.match(config,/"EIA_2I5D_ACTIVATION": "REPOSITORY_ONLY_BLOCKED"/);
   assert.match(config,/"crons": \[\]/);
   assert.match(config,/"database_id": "00000000-0000-0000-0000-000000000000"/);
-  assert.match(migration,/VALUES \('api-football',0,'EIA_2I5D_REPOSITORY_ONLY'/);
+  assert.match(migration,/VALUES\s*\(\s*'api-football'\s*,\s*0\s*,\s*'EIA_2I5D_REPOSITORY_ONLY'/);
 });
 
 test('attended evidence remains an immutable historical execution record',()=>{
