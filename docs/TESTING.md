@@ -1,6 +1,10 @@
-## EIA-2I5E permanent coverage
+## EIA-2I5E-R7A-R1 workflow security coverage
 
-`tests/eia2i5e-prelive-qualification.test.mjs` pins candidate-only arithmetic versus attended formal GO, module-owned manifest execution and exact-clone pre-egress rejection, exact `1/1` pagination, fixture competition/season/status/participant identity, exact two-row lineup/player participant matching, event participant containment, stream-read/cancel failure sanitization, terminal reason precedence, all immediate safety stops, closed mapping admission, date-only Chelsea/Leeds provenance, production constant `null`, and production/browser/model isolation. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+`tests/eia2i5e-github-qualification-workflow.test.mjs` additionally pins immutable 40-character action SHAs, `run_attempt == 1` admission, executable rejection of attempt 2, post-environment and final pre-egress remote-`main` reconfirmation, an opaque `boundedFetch` that refuses the 12th `fetch` before network egress, and concurrency group `eia-2i5e-api-football-qualification` with `cancel-in-progress: false`. Existing R7A secret-scope, dispatch-only, fail-closed branch-movement and isolation tests remain. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
+## EIA-2I5E-R7A workflow security coverage
+
+`tests/eia2i5e-github-qualification-workflow.test.mjs` inspects the dormant qualification workflow as repository text and executable shell. It pins `workflow_dispatch` with zero inputs, hard-coded PR #251 SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`, environment `eia-api-football-qualification`, `contents: read` only, secret reference `secrets.API_FOOTBALL_API_KEY` on exactly one step, fail-closed candidate-branch movement, no curl/wget/npm install/retry/git push, one runner invocation, result write under `RUNNER_TEMP`, and that R7A does not copy the PR #251 qualification module onto `main`. Existing EIA-2I5B workflow isolation still forbids API-Football material in every other workflow. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
 ## EIA-2I5D permanent coverage
 

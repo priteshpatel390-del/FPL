@@ -1,6 +1,23 @@
-## EIA-2I5E limitations
+## EIA-2I5E-R7A-R1 limitations
 
-R1 measured an observed 347,982-byte maximum and calculated a 720,896-byte candidate, but did not retain response-side echoed parameters or row-identity facts. R4 stopped on first-request `transport_failure`. R5 then proved DNS resolution but failed its non-HTTP TCP/TLS connection with `ENETUNREACH`; certificate validation and Phase B were not reached. R5 accessed no credential and made zero HTTP attempts. No current bytes, rows, paging, identity or quota evidence exists. `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Complete mapping is unproven: only Chelsea and Leeds qualify through the closed exact-revision EIA-2I4C adapter; 18 clubs remain unmapped. Collector, Cron, live migration 0005, production D1, Worker secret and kill-switch enablement remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md). Historical provider runtime headers showed 7,500/day and 300/minute; those are observations, not guaranteed entitlement or collector budget. Teamsheet’s separate conservative internal ceiling remains 100 attempts/day. Known qualification attempts remain 12; provider accounting of R4's failed transport is unknown.
+- The workflow remains dormant. R7A-R1 made zero provider requests and did not access `API_FOOTBALL_API_KEY`.
+- GitHub UI reruns are structurally blocked. A new provider attempt requires a new manual `workflow_dispatch` and a new protected-environment approval.
+- An active main-protection ruleset targeting `refs/heads/main` is a required owner-configured pre-dispatch precondition and is **still outstanding**. R7A-R1 did not mutate GitHub branch/ruleset settings and does not claim that protection exists.
+- Prevent-self-review on environment `eia-api-football-qualification` is an owner operational preflight. This change did not inspect or infer that setting. If Pritesh both dispatches and approves, Prevent-self-review must not be enabled.
+- Environment reviewer, bypass and branch-restriction settings remain owner-configured preconditions, not programmatically verified.
+- `boundedFetch` is workflow-level defence in depth. It does not change PR #251's qualification runner.
+- Workflow success is still sanitized-evidence completion, not response-size GO.
+- See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
+## EIA-2I5E-R7A limitations
+
+- The workflow is dormant. R7A made zero provider requests and did not access `API_FOOTBALL_API_KEY`.
+- Secret-bearing execution is impossible until this foundation PR is merged onto `main` and the owner later dispatches `EIA-2I5E API-Football Qualification`.
+- GitHub environment reviewer, bypass and branch-restriction settings are owner-configured preconditions, not programmatically verified by R7A.
+- The later run executes exact PR #251 SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`; that candidate becomes trusted computing base for one run only and is not a generic secrets-on-PR mechanism.
+- A GitHub UI re-run is another provider attempt and requires fresh owner approval.
+- Workflow success is sanitized-evidence completion, not response-size GO. `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Collector/runtime activation remains unrelated and blocked.
+- See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
 ## EIA-2I5D limitations
 

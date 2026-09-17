@@ -1,11 +1,14 @@
-## Current checkpoint — EIA-2I5E pre-live API-Football evidence qualification
+## Current checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
 
-EIA-2I5E-R5 stopped safely after DNS passed but its non-HTTP TCP/TLS connection failed with `ENETUNREACH`. It accessed no credential, sent zero HTTP requests and skipped Phase B. Response size remains **NO-GO** with no R5 candidate; R1 evidence stays historical. Mapping remains **NO-GO — 2/20**. Production constant remains `null`; collector, migration 0005, production D1, Worker secret, Cron, collection and model/UI paths remain inactive. Next checkpoint is owner review; any new diagnostic or attended attempt needs separate approval. Merge remains owner-gated; EIA-2I5F does not start. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+Draft PR #252 remains the dormant qualification workflow. R7A-R1 hardens it in place. Next owner actions are: independently configure and verify a main-protection ruleset targeting `refs/heads/main`; review/merge is still not GO; a later manual dispatch still requires environment approval. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
-## EIA-2I5D checkpoint
+## Current checkpoint — EIA-2I5E-R7A secure GitHub qualification workflow foundation
 
-Repository-only shadow runtime and persistence merged as PR #250. Remaining live gates stay separate: attended response-size qualification, complete 20-club mapping, then a later infrastructure activation proposal. No live activation is authorized. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+Repository-only dormant workflow for a later attended API-Football qualification run. Next owner actions after merge are exact-`main` Verify, then a separately approved manual dispatch. Merge is not response-size GO, not collector activation, and not a provider call. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
+## Current checkpoint — EIA-2I5D repository-only shadow runtime and persistence
+
+Repository implementation is ready for owner review: migration 0005, dormant collector, quota/lease, scheduler, authority and revision contracts. Next steps remain separate live gates, beginning with owner review/merge and then an attended response-size qualification and exact infrastructure activation proposal. No live activation is authorized. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
 
 # ROADMAP.md — current and proposed checkpoints
 

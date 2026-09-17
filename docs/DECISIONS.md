@@ -1,14 +1,10 @@
-## 17 September 2026 — EIA-2I5E-R5 transport-preflight decision
+## D-EIA-2I5E-R7A-R1 · 17 September 2026 · Accepted · Secret-bearing qualification workflow final hardening
 
-One bounded non-HTTP preflight resolved the exact API-Football hostname, then failed to establish TCP/TLS on port 443 with sanitized `ENETUNREACH`; certificate validation was not reached. It sent no HTTP request and accessed no credential. Phase B was therefore ineligible and the canonical runner was not invoked. Response size remains NO-GO with no R5 candidate. Mapping remains NO-GO 2/20, production constant remains `null`, and collector/infrastructure/model/UI activation remains prohibited. Next action is owner review; another diagnostic or provider attempt requires separate explicit approval.
+Harden the existing R7A workflow on draft PR #252: pin actions to independently verified full SHAs, structurally block GitHub UI reruns, reconfirm current `main` after environment wait, wrap fetch with a hard 11-call egress ceiling, and serialize dispatches without cancelling in-progress work. Do not mutate GitHub branch/ruleset settings. Owner-configured main protection remains an outstanding pre-dispatch requirement. Prevent-self-review is an owner operational preflight and is not inferred. Zero provider calls, zero secret accesses, no dispatch, no merge, no PR #251 change. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
-## 17 September 2026 — EIA-2I5E-R4 attended requalification decision
+## D-EIA-2I5E-R7A · 17 September 2026 · Accepted · Separate main-only GitHub qualification workflow
 
-One reviewed R3 runner invocation attempted `discovery-2` and stopped immediately with sanitized `transport_failure`: one attempt, zero retries and ten skipped requests. No response or quota telemetry was received, so response size remains NO-GO and no R4 candidate exists. Historical R1 evidence cannot substitute. Mapping remains NO-GO 2/20, production constant remains `null`, and collector/infrastructure/model/UI activation remains prohibited. Next action is owner review; another provider attempt requires separate explicit approval.
-
-## 17 September 2026 — EIA-2I5E pre-live qualification decision
-
-EIA-2I5E-R3 supersedes R1's gate conclusion without deleting its measurements. R1's maximum 347,982 bytes and 720,896-byte arithmetic candidate remain historical, but absent preserved response-side identity makes current response-size NO-GO pending separate credentialed requalification. Mapping remains NO-GO at 2/20 through a closed exact-commit EIA-2I4C adapter; hashing caller assertions grants no admission. Production constant remains `null`. No collector activation, Cron, secret provisioning, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+Do not weaken environment `eia-api-football-qualification` to run from PR #251. Add a separate, manual-only, zero-input workflow on a branch from `main`, hard-code reviewed candidate SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`, keep the secret inside one protected-job step, and fail closed if the candidate branch moves. Grok/Codex must never read the key. R7A authorizes repository foundation only: no provider call, secret access, workflow dispatch, environment approval, PR #251 change, merge, collector activation or model/UI change. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
 ## 16 September 2026 — EIA-2I5D repository-only persistence decision
 

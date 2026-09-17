@@ -646,6 +646,11 @@ test('API-Football discovery stays isolated from production, live config and mig
   }
   for(const file of fs.readdirSync('.github/workflows')){
     const source=fs.readFileSync(path.join('.github/workflows',file),'utf8');
+    if(file==='eia-2i5e-api-football-qualification.yml'){
+      assert.match(source,/secrets\.API_FOOTBALL_API_KEY/);
+      assert.doesNotMatch(source,/x-apisports-key|v3\.football\.api-sports\.io/);
+      continue;
+    }
     assert.doesNotMatch(source,/API_FOOTBALL|x-apisports-key|v3\.football\.api-sports\.io/i,file);
   }
   const contracts=fs.readFileSync('src/decision-intelligence/api-football-shadow-contracts.mjs','utf8');
