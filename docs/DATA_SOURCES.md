@@ -1,6 +1,6 @@
 ## API-Football EIA-2I5E qualification status
 
-API-Football remains `owner_risk_accepted_private_use`. EIA-2I5E-R1 made 11 bounded attended requests and retained only sanitized normalized qualification evidence. Response-size is GO at a proposed 720,896-byte ceiling; mapping is NO-GO with 2/20 receipt-backed clubs. Raw bodies were discarded. Runtime remains disabled, unprovisioned and without a production credential. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+API-Football remains `owner_risk_accepted_private_use`. R2 made zero provider requests and preserves R1's 11 sanitized byte measurements. Because R1 discarded raw bodies without preserving exact response parameters and row identity, current response-size is NO-GO pending separate requalification; 720,896 bytes is historical arithmetic candidate only. Mapping remains NO-GO at 2/20 through exact canonical EIA-2I4C evidence. Runtime remains disabled and unprovisioned. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## API-Football EIA-2I5D persistence status
 

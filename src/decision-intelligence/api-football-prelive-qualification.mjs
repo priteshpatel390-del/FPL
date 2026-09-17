@@ -29,7 +29,9 @@ const REQUIRED_CLASSES=ENDPOINT_CLASSES;
 const KNOWN_ID_PARAMETER=Object.freeze({fixtures:'id','fixtures/lineups':'fixture','fixtures/players':'fixture','fixtures/events':'fixture'});
 const DISCOVERY_LEAGUES=Object.freeze(['2','3','848','45','48']);
 const MAPPING_RECEIPT_KIND='eia-2i5e-team-mapping-evidence-v1';
-const MAPPING_RECEIPT_REVISION='eia-2i5e-r1';
+const MAPPING_RECEIPT_REVISION='eia-2i5e-r2';
+const EIA_2I4C_SOURCE_REVISION='62865c9735095ca6b51006fadce15e0a84e68800';
+const EIA_2I4C_SOURCE_PATH='docs/EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md';
 const fail=reason=>deepFreeze({ok:false,reason:String(reason)});
 const positiveId=value=>{const text=String(value??'');return /^\d+$/.test(text)&&Number(text)>0?text:null;};
 const iso=value=>{const ms=Date.parse(value);return Number.isFinite(ms)?new Date(ms).toISOString():null;};
@@ -40,16 +42,16 @@ export const PREVIOUSLY_QUALIFIED_PL_TEAMS=deepFreeze([
   {club:'Leeds',providerTeamId:'63',officialFplTeamId:'13',expectedName:'Leeds',expectedShortName:'LEE',fixtureId:'1636205',evidenceDate:'2026-09-09',evidenceType:'eia-2i4c-current-season-league-cup-fixture',provenance:'EIA-2I4C verified Leeds API-Football 63 → Official FPL 13 on fixture 1636205'}
 ]);
 
-export function eia2i5eRequestPlan(){
+function buildCanonicalRequestManifest(){
   const discovery=DISCOVERY_LEAGUES.map(league=>({
     id:`discovery-${league}`,operationClass:'DISCOVERY',endpointClass:'fixtures_discovery',endpoint:'fixtures',
-    search:{league,season:String(API_FOOTBALL_PROVIDER_SEASON)},competition:league,highWaterCandidate:league==='48'||league==='2',
+    search:{league,season:String(API_FOOTBALL_PROVIDER_SEASON)},competition:league,highWaterCandidate:league==='48'||league==='2',minimumRows:1,requiredTeamRows:null,
     rationale:league==='48'||league==='2'?'current-season discovery likely to contain many fixtures':'approved discovery coverage'
   }));
   const known=(id,endpointClass,endpoint,highWaterCandidate,rationale)=>({
     id:`${endpointClass}-${id}`,operationClass:'FINAL_ENRICHMENT',endpointClass,endpoint,
     search:endpoint==='fixtures'?{id:String(id)}:{fixture:String(id)},competition:id==='1636205'?'48':'2',
-    highWaterCandidate,rationale
+    highWaterCandidate,rationale,minimumRows:1,requiredTeamRows:endpointClass==='lineups'||endpointClass==='players'?2:null
   });
   return deepFreeze({
     ok:true,checkpoint:EIA_2I5E_CHECKPOINT,maxAttempts:EIA_2I5E_MAX_ATTEMPTS,minGapMs:EIA_2I5E_MIN_GAP_MS,
@@ -66,6 +68,9 @@ export function eia2i5eRequestPlan(){
   });
 }
 
+export const EIA_2I5E_CANONICAL_REQUEST_MANIFEST=buildCanonicalRequestManifest();
+export function eia2i5eRequestPlan(){return EIA_2I5E_CANONICAL_REQUEST_MANIFEST;}
+
 function requestIdentity(item){
   return stableStringify({endpointClass:item.endpointClass,endpoint:item.endpoint,search:item.search});
 }
@@ -75,22 +80,25 @@ function receiptBasis(mapping,evidence,authorityDigest){
     kind:MAPPING_RECEIPT_KIND,revision:MAPPING_RECEIPT_REVISION,provider:'api-football',
     providerTeamId:String(mapping.providerEntityId),canonicalFplId:mapping.canonicalFplId,season:mapping.season,
     evidenceType:evidence.evidenceType,stableEvidenceId:String(evidence.stableEvidenceId),source:evidence.source,
-    sourceRevision:evidence.sourceRevision,observedAt:iso(evidence.observedAt),provenance:evidence.provenance,
+    sourceRevision:evidence.sourceRevision,sourcePath:evidence.sourcePath,evidenceDate:evidence.evidenceDate,
+    timePrecision:evidence.timePrecision,observedAt:null,provenance:evidence.provenance,
     qualificationMethod:evidence.qualificationMethod,officialFplAuthorityDigest:authorityDigest
   });
 }
 
-export async function issueQualificationMappingReceipt({mapping,evidence,authority}={},cryptoImpl=globalThis.crypto){
+export async function issueQualificationMappingReceipt(){return fail('mapping_evidence_not_admitted');}
+
+async function issueTrustedLegacyMappingReceipt({mapping,evidence,authority}={},cryptoImpl=globalThis.crypto){
   const clubs=currentSeasonOfficialFplTeamIdentities(API_FOOTBALL_FPL_SEASON,authority);
   const valid=validateProviderMapping(mapping,{entityType:'team',season:API_FOOTBALL_FPL_SEASON});
   if(!clubs.ok)return clubs;if(!valid.ok)return valid;
   if(!clubs.identities.includes(mapping.canonicalFplId))return fail('mapping_target_not_authoritative');
-  if(!evidence||!['provider_fixture_participant','trusted_eia_2i4c_fixture'].includes(evidence.evidenceType)||
-    !positiveId(evidence.stableEvidenceId)||!String(evidence.source||'').trim()||!String(evidence.sourceRevision||'').trim()||
-    !iso(evidence.observedAt)||!String(evidence.provenance||'').trim()||
-    !['attended_provider_evidence','trusted_legacy_adapter'].includes(evidence.qualificationMethod))return fail('mapping_evidence_invalid');
-  if(evidence.evidenceType==='trusted_eia_2i4c_fixture'&&evidence.qualificationMethod!=='trusted_legacy_adapter')return fail('mapping_evidence_invalid');
-  if(evidence.evidenceType==='provider_fixture_participant'&&evidence.qualificationMethod!=='attended_provider_evidence')return fail('mapping_evidence_invalid');
+  const admitted=PREVIOUSLY_QUALIFIED_PL_TEAMS.find(row=>row.providerTeamId===String(mapping.providerEntityId)&&mapping.canonicalFplId===`${API_FOOTBALL_FPL_SEASON}:fpl:team:${row.officialFplTeamId}`&&row.fixtureId===evidence?.stableEvidenceId&&row.provenance===evidence?.provenance);
+  if(!admitted)return fail('mapping_evidence_not_admitted');
+  if(!evidence||evidence.evidenceType!=='trusted_eia_2i4c_fixture'||evidence.stableEvidenceId!=='1636205'||
+    evidence.source!=='EIA-2I4C'||evidence.sourceRevision!==EIA_2I4C_SOURCE_REVISION||evidence.sourcePath!==EIA_2I4C_SOURCE_PATH||
+    evidence.evidenceDate!=='2026-09-09'||evidence.timePrecision!=='date'||evidence.observedAt!==null||
+    !String(evidence.provenance||'').trim()||evidence.qualificationMethod!=='trusted_legacy_adapter')return fail('mapping_evidence_not_admitted');
   const authorityDigestHash=await sha256Hex(clubs.digest,cryptoImpl);
   const basis=receiptBasis(mapping,evidence,authorityDigestHash);
   return deepFreeze({...basis,integrityHash:await sha256Hex(stableStringify(basis),cryptoImpl)});
@@ -99,14 +107,15 @@ export async function issueQualificationMappingReceipt({mapping,evidence,authori
 async function validateQualificationMappingReceipt(mapping,receipt,authority,cryptoImpl=globalThis.crypto){
   const clubs=currentSeasonOfficialFplTeamIdentities(API_FOOTBALL_FPL_SEASON,authority);if(!clubs.ok)return clubs;
   if(!receipt||receipt.kind!==MAPPING_RECEIPT_KIND||receipt.revision!==MAPPING_RECEIPT_REVISION)return fail('mapping_evidence_receipt_missing');
-  const evidence={evidenceType:receipt.evidenceType,stableEvidenceId:receipt.stableEvidenceId,source:receipt.source,sourceRevision:receipt.sourceRevision,observedAt:receipt.observedAt,provenance:receipt.provenance,qualificationMethod:receipt.qualificationMethod};
-  const expected=await issueQualificationMappingReceipt({mapping,evidence,authority},cryptoImpl);if(!expected.ok&&expected.ok!==undefined)return expected;
+  const evidence={evidenceType:receipt.evidenceType,stableEvidenceId:receipt.stableEvidenceId,source:receipt.source,sourceRevision:receipt.sourceRevision,sourcePath:receipt.sourcePath,evidenceDate:receipt.evidenceDate,timePrecision:receipt.timePrecision,observedAt:receipt.observedAt,provenance:receipt.provenance,qualificationMethod:receipt.qualificationMethod};
+  const expected=await issueTrustedLegacyMappingReceipt({mapping,evidence,authority},cryptoImpl);if(expected.ok===false)return expected;
   if(stableStringify(expected)!==stableStringify(receipt))return fail('mapping_evidence_receipt_invalid');
   return deepFreeze({ok:true,receipt});
 }
 
 export function validateQualificationPlanItem(item){
   if(!item||!ENDPOINT_CLASSES.includes(item.endpointClass)||!API_FOOTBALL_ENDPOINTS.includes(item.endpoint))return fail('request_contract_invalid');
+  if(!EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items.some(canonicalItem=>stableStringify(canonicalItem)===stableStringify(item)))return fail('qualification_plan_not_canonical');
   if(item.endpointClass==='fixtures_discovery'){
     const built=buildApiFootballDiscoveryRequest({parameters:item.search});
     if(!built.ok)return built;
@@ -120,6 +129,11 @@ export function validateQualificationPlanItem(item){
   const pinned=buildPinnedApiFootballUrl(item.endpoint,{[parameter]:String(entries[0][1])});
   if(!pinned.ok)return pinned;
   return deepFreeze({ok:true,url:String(pinned.url),search:{[parameter]:String(entries[0][1])}});
+}
+
+export function validateCanonicalQualificationPlan(plan){
+  if(stableStringify(plan)!==stableStringify(EIA_2I5E_CANONICAL_REQUEST_MANIFEST))return fail('qualification_plan_not_canonical');
+  return deepFreeze({ok:true});
 }
 
 export function resolveAttendedCredential(apiKey){
@@ -154,19 +168,52 @@ function extractFixtureIds(rows){
   return [...new Set((rows||[]).map(row=>positiveId(row?.fixture?.id)).filter(Boolean))];
 }
 
-export async function measureDiscardingBody(response,{logicalRequestId=null,requestIdentity:boundRequestIdentity=null,endpoint,endpointClass,competition=null,fixtureId=null,highWaterCandidate=false,now=()=>new Date().toISOString(),maxBytes=EIA_2I5E_MEASUREMENT_ABORT_BYTES}={}){
+function sanitizedParameters(value){
+  if(!value||typeof value!=='object'||Array.isArray(value))return null;
+  const entries=Object.entries(value);if(entries.some(([key,child])=>!['league','season','id','fixture'].includes(key)||child==null||typeof child==='object'))return null;
+  return Object.fromEntries(entries.map(([key,child])=>[key,String(child)]));
+}
+
+function exactObject(left,right){return stableStringify(left)===stableStringify(right);}
+
+function responseIdentity(item,payload,rows){
+  const echoed=sanitizedParameters(payload?.parameters);
+  if(payload?.get!==item.endpoint||!echoed||!exactObject(echoed,item.search))return {matched:false,rowIdentityState:'NOT_EVALUATED',sampleSufficient:false,reason:'provider_response_identity_mismatch',echoedParameters:echoed};
+  if(item.endpointClass==='fixtures_discovery'){
+    const rowsMatch=rows.every(row=>String(row?.league?.id)===item.search.league&&String(row?.league?.season)===item.search.season);
+    return {matched:rowsMatch,rowIdentityState:rowsMatch?'MATCHED':'MISMATCHED',sampleSufficient:rowsMatch&&rows.length>=item.minimumRows,reason:rowsMatch?null:'provider_response_identity_mismatch',echoedParameters:echoed};
+  }
+  if(item.endpointClass==='fixture'){
+    const rowsMatch=rows.length===1&&String(rows[0]?.fixture?.id)===item.search.id;
+    return {matched:rowsMatch,rowIdentityState:rowsMatch?'MATCHED':'MISMATCHED',sampleSufficient:rowsMatch,reason:rowsMatch?null:'provider_response_identity_mismatch',echoedParameters:echoed};
+  }
+  const teamIds=new Set(rows.map(row=>positiveId(row?.team?.id)).filter(Boolean));
+  const sufficient=rows.length>=item.minimumRows&&(item.requiredTeamRows==null||teamIds.size===item.requiredTeamRows);
+  return {matched:true,rowIdentityState:item.requiredTeamRows==null?'NOT_EXPOSED':'TEAM_CONTEXT_MATCHED',sampleSufficient:sufficient,reason:sufficient?null:'qualification_sample_insufficient',echoedParameters:echoed};
+}
+
+function quotaEvidence(normalized){
+  if(!normalized?.ok)return {state:'invalid',requestsLimit:null,requestsRemaining:null,rateLimit:null,remaining:null};
+  const complete=['requestsLimit','requestsRemaining','rateLimit','remaining'].every(field=>Number.isInteger(normalized[field]));
+  return {state:complete?'known':'uncertain',requestsLimit:normalized.requestsLimit,requestsRemaining:normalized.requestsRemaining,rateLimit:normalized.rateLimit,remaining:normalized.remaining};
+}
+
+export async function measureDiscardingBody(response,{planItem,now=()=>new Date().toISOString(),maxBytes=EIA_2I5E_MEASUREMENT_ABORT_BYTES}={}){
   const fetchedAt=iso(typeof now==='function'?now():now);if(!fetchedAt)return fail('timestamp_invalid');
-  if(!API_FOOTBALL_ENDPOINTS.includes(endpoint)||!ENDPOINT_CLASSES.includes(endpointClass))return fail('request_contract_invalid');
+  const canonical=validateCanonicalQualificationPlan(EIA_2I5E_CANONICAL_REQUEST_MANIFEST);if(!canonical.ok)return canonical;
+  if(!planItem||!EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items.includes(planItem))return fail('qualification_plan_not_canonical');
+  const {id:logicalRequestId,endpoint,endpointClass,competition,highWaterCandidate}=planItem;
+  const fixtureId=planItem.search.id||planItem.search.fixture||null;
   if(!Number.isInteger(maxBytes)||maxBytes<1)return fail('response_limit_unqualified');
   const status=Number(response?.status);
   const headers=headerMap(response?.headers);
   const declared=Number(headers['content-length']);
-  const quota=normalizeApiFootballQuotaHeaders(response?.headers||headers);
+  const quota=quotaEvidence(normalizeApiFootballQuotaHeaders(response?.headers||headers));
   const base={
-    logicalRequestId,requestIdentity:boundRequestIdentity,attempted:true,endpointClass,endpoint,competition,fixtureId:fixtureId?String(fixtureId):null,fetchedAt,
+    logicalRequestId,requestIdentity:requestIdentity(planItem),attempted:true,endpointClass,endpoint,competition,fixtureId:fixtureId?String(fixtureId):null,fetchedAt,
     httpClass:Number.isInteger(status)?(status===401||status===403?'auth':status===429?'quota':status>=200&&status<300?'2xx':status>=300&&status<400?'3xx':status>=400&&status<500?'4xx':status>=500?'5xx':'unknown'):'transport',
     status:Number.isInteger(status)?status:null,contentLengthHeader:Number.isFinite(declared)?declared:null,
-    quota:quota.ok?{state:quota.state,requestsLimit:quota.requestsLimit,requestsRemaining:quota.requestsRemaining,rateLimit:quota.rateLimit,remaining:quota.remaining}:null
+    quota
   };
   if(status===401||status===403)return deepFreeze({ok:false,reason:'provider_authentication_failed',...base,bodyRetained:false});
   if(status===429)return deepFreeze({ok:false,reason:'quota_exhausted',...base,bodyRetained:false});
@@ -187,12 +234,18 @@ export async function measureDiscardingBody(response,{logicalRequestId=null,requ
   const paging=payload?.paging&&typeof payload.paging==='object'?{current:payload.paging.current??null,total:payload.paging.total??null}:null;
   const paginationPresent=Number(paging?.total)>1||Number(paging?.current)>1;
   const rowCount=Array.isArray(payload?.response)?payload.response.length:null;
-  const providerTeamIds=decoded.ok?extractProviderTeamIds(endpoint,decoded.response):[];
-  const providerFixtureIds=decoded.ok&&endpoint==='fixtures'?extractFixtureIds(decoded.response):[];
+  const rows=decoded.ok?decoded.response:[];
+  const identity=decoded.ok?responseIdentity(planItem,payload,rows):{matched:false,rowIdentityState:'NOT_EVALUATED',sampleSufficient:false,reason:'provider_schema_invalid',echoedParameters:sanitizedParameters(payload?.parameters)};
+  const providerTeamIds=decoded.ok?extractProviderTeamIds(endpoint,rows):[];
+  const providerFixtureIds=decoded.ok&&endpoint==='fixtures'?extractFixtureIds(rows):[];
   payload=null;
   const measurement={
-    ok:decoded.ok,reason:decoded.ok?null:decoded.reason,...base,actualBytes:size,rowCount,paging,paginationPresent,
-    schemaMatched:decoded.ok===true,highWaterCandidate:highWaterCandidate===true,providerTeamIds,providerFixtureIds,
+    ok:decoded.ok&&identity.matched&&identity.sampleSufficient&&paginationPresent===false&&quota.state==='known',
+    reason:decoded.ok?(identity.reason||(paginationPresent?'qualification_pagination_unresolved':quota.state==='known'?null:'quota_headers_uncertain')):decoded.reason,
+    ...base,actualBytes:size,rowCount,paging,paginationPresent,schemaMatched:decoded.ok===true,
+    expectedRequestIdentity:requestIdentity(planItem),echoedResponseParameters:identity.echoedParameters,responseIdentityMatched:identity.matched,
+    rowIdentityValidationState:identity.rowIdentityState,sampleSufficient:identity.sampleSufficient,
+    highWaterCandidate:highWaterCandidate===true,providerTeamIds,providerFixtureIds,
     bodyRetained:false
   };
   const blocked=secret(measurement);return blocked||deepFreeze(measurement);
@@ -200,12 +253,13 @@ export async function measureDiscardingBody(response,{logicalRequestId=null,requ
 
 export function recommendResponseByteCeiling(measurements,plan=eia2i5eRequestPlan()){
   if(EIA_2I5E_PRODUCTION_BYTE_CEILING!==null)return fail('production_byte_ceiling_already_set');
-  if(!plan?.ok||!Array.isArray(plan.items)||plan.items.length!==11)return deepFreeze({ok:false,decision:'NO-GO',reason:'qualification_plan_invalid',observedMaximum:null,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
+  const canonical=validateCanonicalQualificationPlan(plan);
+  if(!canonical.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:canonical.reason,observedMaximum:null,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
   const measurementsById=new Map();for(const row of measurements||[]){const id=String(row?.logicalRequestId||'');if(!measurementsById.has(id))measurementsById.set(id,[]);measurementsById.get(id).push(row);}
   const manifest=plan.items.map(item=>{
     const matches=measurementsById.get(item.id)||[];const row=matches.length===1?matches[0]:null;
-    const identityMatches=row?.requestIdentity===requestIdentity(item);
-    const succeeded=matches.length===1&&row?.attempted===true&&row?.ok===true&&row?.schemaMatched===true&&row?.quota?.state==='known'&&Number.isInteger(row?.actualBytes)&&row.actualBytes>=0&&row.paginationPresent!==true&&identityMatches;
+    const identityMatches=row?.requestIdentity===requestIdentity(item)&&row?.expectedRequestIdentity===requestIdentity(item)&&row?.responseIdentityMatched===true;
+    const succeeded=matches.length===1&&row?.attempted===true&&row?.ok===true&&row?.schemaMatched===true&&row?.sampleSufficient===true&&row?.quota?.state==='known'&&Number.isInteger(row?.actualBytes)&&row.actualBytes>=0&&row.paginationPresent!==true&&identityMatches;
     return {logicalRequestId:item.id,required:true,attempted:matches.some(value=>value?.attempted===true),succeeded,failed:matches.length>0&&!succeeded,skipped:matches.length===0,stoppedBySafety:matches.some(value=>value?.stoppedBySafety===true),identityMatches,duplicateMeasurements:matches.length>1};
   });
   const rows=(measurements||[]).filter(row=>manifest.some(state=>state.logicalRequestId===row?.logicalRequestId&&state.succeeded));
@@ -258,8 +312,8 @@ export async function confirmPreviouslyQualifiedTeamMappings(authority,cryptoImp
     };
     const valid=validateProviderMapping(mapping,{entityType:'team',season:API_FOOTBALL_FPL_SEASON});
     if(!valid.ok){rejected.push({...row,status:'CONFLICTED',qualificationStatus:'NOT_REUSED',conflict:valid.reason});continue;}
-    const evidence={evidenceType:'trusted_eia_2i4c_fixture',stableEvidenceId:row.fixtureId,source:'EIA-2I4C',sourceRevision:'eia-2i4c-canonical-2026-09-15',observedAt:`${row.evidenceDate}T23:59:59.000Z`,provenance:row.provenance,qualificationMethod:'trusted_legacy_adapter'};
-    const qualificationEvidenceReceipt=await issueQualificationMappingReceipt({mapping,evidence,authority},cryptoImpl);
+    const evidence={evidenceType:'trusted_eia_2i4c_fixture',stableEvidenceId:row.fixtureId,source:'EIA-2I4C',sourceRevision:EIA_2I4C_SOURCE_REVISION,sourcePath:EIA_2I4C_SOURCE_PATH,evidenceDate:row.evidenceDate,timePrecision:'date',observedAt:null,provenance:row.provenance,qualificationMethod:'trusted_legacy_adapter'};
+    const qualificationEvidenceReceipt=await issueTrustedLegacyMappingReceipt({mapping,evidence,authority},cryptoImpl);
     if(qualificationEvidenceReceipt.ok===false){rejected.push({...row,status:'CONFLICTED',qualificationStatus:'NOT_REUSED',conflict:qualificationEvidenceReceipt.reason});continue;}
     mappings.push({...mapping,qualificationEvidenceReceipt});
   }
@@ -337,13 +391,14 @@ export async function fetchOfficialFplAuthority({fetchImpl,now=()=>new Date().to
 
 export async function runAttendedApiFootballQualification({apiKey,fetchImpl,sleep,now=()=>new Date().toISOString(),timeoutSignal=AbortSignal.timeout,plan=eia2i5eRequestPlan()}={}){
   if(EIA_2I5E_MAX_ATTEMPTS>=API_FOOTBALL_DAILY_REQUEST_LIMIT)return fail('attempt_budget_unsafe');
+  const canonical=validateCanonicalQualificationPlan(plan);if(!canonical.ok)return canonical;
   const credential=resolveAttendedCredential(apiKey);
   const empty={
     ok:false,checkpoint:EIA_2I5E_CHECKPOINT,attempts:0,measurements:[],stoppedReason:credential.ok?null:credential.reason,
     responseLimit:recommendResponseByteCeiling([]),mapping:null,productionByteCeiling:EIA_2I5E_PRODUCTION_BYTE_CEILING,implementedCeiling:false
   };
   if(!credential.ok)return deepFreeze({...empty,reason:credential.reason});
-  if(typeof fetchImpl!=='function'||typeof sleep!=='function'||typeof timeoutSignal!=='function'||!plan?.ok)return fail('provider_disabled_configuration_invalid');
+  if(typeof fetchImpl!=='function'||typeof sleep!=='function'||typeof timeoutSignal!=='function')return fail('provider_disabled_configuration_invalid');
   const init=apiFootballRequestInit(apiKey);if(!init.ok)return init;
   const measurements=[];
   let attempts=0,stoppedReason=null;
@@ -357,16 +412,14 @@ export async function runAttendedApiFootballQualification({apiKey,fetchImpl,slee
     const sent=await sendApiFootballRequest({fetchImpl,url:pinned.url,init:init.init,timeoutSignal});
     if(!sent.ok){
       measurements.push(deepFreeze({ok:false,reason:sent.reason,logicalRequestId:item.id,requestIdentity:requestIdentity(item),attempted:true,stoppedBySafety:sent.reason!=='provider_timeout',endpointClass:item.endpointClass,endpoint:item.endpoint,httpClass:sent.reason==='provider_timeout'?'timeout':'transport',actualBytes:null,bodyRetained:false,fetchedAt:iso(typeof now==='function'?now():now)}));
-      if(sent.reason==='provider_timeout')continue;
       stoppedReason=sent.reason;break;
     }
-    const measured=await measureDiscardingBody(sent.response,{
-      logicalRequestId:item.id,requestIdentity:requestIdentity(item),endpoint:item.endpoint,endpointClass:item.endpointClass,competition:item.competition,
-      fixtureId:item.search.id||item.search.fixture||null,highWaterCandidate:item.highWaterCandidate===true,now
-    });
+    const measured=await measureDiscardingBody(sent.response,{planItem:item,now});
     measurements.push(measured);
-    if(measured.reason==='provider_authentication_failed'||measured.reason==='quota_exhausted'){stoppedReason=measured.reason;break;}
-    if(measured.ok&&(!measured.quota||measured.quota.state!=='known')){stoppedReason='quota_headers_uncertain';break;}
+    const terminal=['provider_authentication_failed','quota_exhausted','redirect_rejected','provider_response_too_large'];
+    if(terminal.includes(measured.reason)){stoppedReason=measured.reason;break;}
+    if(measured.quota?.state!=='known'){stoppedReason='quota_headers_uncertain';break;}
+    if(!measured.ok){stoppedReason=measured.reason||'unexpected_provider_response_state';break;}
   }
   const responseLimit=recommendResponseByteCeiling(measurements,plan);
   const result={

@@ -1,6 +1,6 @@
 ## Current checkpoint — EIA-2I5E pre-live API-Football evidence qualification
 
-EIA-2I5E-R1 completed the approved 11-request attended manifest after integrity remediation. Response-size is **GO** at a proposed 720,896-byte production ceiling, but the constant remains `null`. Complete mapping is **NO-GO** with only receipt-backed Chelsea 49→6 and Leeds 63→13; 18 clubs remain unproven. Collector, migration 0005, Worker secret, Cron, collection and model/UI paths remain inactive. PR #251 remains draft/unmerged; no later checkpoint starts without separate owner approval. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R2 makes both current gates **NO-GO**. R1's 11 responses, 347,982-byte maximum and 720,896-byte arithmetic candidate remain historical, but response-side identity was not preserved and requalification needs separate approval. Mapping remains 2/20 under a closed EIA-2I4C adapter. Production constant remains `null`; collector, migration 0005, production D1, Worker secret, Cron, collection and model/UI paths remain inactive. PR #251 remains draft/unmerged; EIA-2I5F does not start. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D checkpoint
 

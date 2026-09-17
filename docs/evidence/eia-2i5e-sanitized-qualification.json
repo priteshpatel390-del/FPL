@@ -1165,6 +1165,107 @@
     },
     "rawProviderBodyRetained": false,
     "secretPersisted": false,
-    "modelOrUiInfluence": false
+    "modelOrUiInfluence": false,
+    "historicalMeasurementState": "preserved",
+    "qualificationUnderCurrentContract": false,
+    "requalificationRequired": true,
+    "responseSideIdentityEvidencePreserved": false,
+    "proposedProductionByteCeilingStatus": "historical_arithmetic_candidate_only",
+    "legacyMappingReceiptStatusUnderCurrentContract": "superseded_by_r2_closed_adapter"
+  },
+  "r2CurrentQualification": {
+    "checkpoint": "EIA-2I5E-R2",
+    "repositoryOnly": true,
+    "apiFootballAttemptsUsed": 0,
+    "credentialAccessed": false,
+    "currentResponseSizeDecision": "NO-GO",
+    "currentResponseSizeReason": "response_identity_evidence_not_preserved_requalification_required",
+    "historicalR1MeasurementsPreserved": true,
+    "historicalObservedMaximumBytes": 347982,
+    "historicalArithmeticCandidateCeilingBytes": 720896,
+    "qualificationUnderCurrentContract": false,
+    "requalificationRequired": true,
+    "missingEvidence": [
+      "exact echoed provider response parameters for each request",
+      "response-side request identity match",
+      "row-identity validation under R2",
+      "sample-sufficiency admission under R2"
+    ],
+    "canonicalManifest": {
+      "state": "deep_frozen_exact",
+      "requiredLogicalRequestIds": [
+        "discovery-2",
+        "discovery-3",
+        "discovery-848",
+        "discovery-45",
+        "discovery-48",
+        "fixture-1636205",
+        "lineups-1636205",
+        "players-1636205",
+        "events-1636205",
+        "fixture-1635643",
+        "players-1635643"
+      ],
+      "alternateManifestAccepted": false
+    },
+    "mapping": {
+      "decision": "NO-GO",
+      "verifiedPremierLeagueTeamCount": 2,
+      "completeTwentyClubCoverage": false,
+      "genericCallerReceiptIssuanceAllowed": false,
+      "nameOnlyCertified": false,
+      "fuzzyMatchingUsed": false,
+      "trustedLegacyEvidence": [
+        {
+          "club": "Chelsea",
+          "apiFootballTeamId": "49",
+          "officialFplTeamId": "6",
+          "fixtureId": "1636205",
+          "evidenceDate": "2026-09-09",
+          "timePrecision": "date",
+          "observedAt": null,
+          "source": "EIA-2I4C",
+          "sourceRevision": "62865c9735095ca6b51006fadce15e0a84e68800",
+          "sourcePath": "docs/EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md"
+        },
+        {
+          "club": "Leeds",
+          "apiFootballTeamId": "63",
+          "officialFplTeamId": "13",
+          "fixtureId": "1636205",
+          "evidenceDate": "2026-09-09",
+          "timePrecision": "date",
+          "observedAt": null,
+          "source": "EIA-2I4C",
+          "sourceRevision": "62865c9735095ca6b51006fadce15e0a84e68800",
+          "sourcePath": "docs/EIA-2I4C-API-FOOTBALL-QUALIFICATION-CLOSEOUT.md"
+        }
+      ],
+      "remainingUnprovenClubs": 18
+    },
+    "officialFplAuthority": {
+      "state": "historical_r1_authority_preserved",
+      "season": "2026-27",
+      "sourceKey": "official-fpl",
+      "sourceRevisionId": "official-fpl-r1",
+      "teamCount": 20,
+      "rawPayloadRetained": false,
+      "newFetchPerformedInR2": false
+    },
+    "productionByteCeiling": null,
+    "activation": {
+      "collectorDeployed": false,
+      "migration0005Live": false,
+      "productionD1Binding": false,
+      "credentialProvisioned": false,
+      "cronActive": false,
+      "collectionEnabled": false,
+      "providerShadowRuntimeLiveAccepted": false,
+      "modelOrUiInfluence": false
+    },
+    "rawProviderBodyRetained": false,
+    "secretRead": false,
+    "secretPrinted": false,
+    "secretPersisted": false
   }
 }

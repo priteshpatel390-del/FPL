@@ -1,6 +1,6 @@
 ## EIA-2I5E limitations
 
-Response-size evidence supports a proposed 720,896-byte ceiling, but `API_FOOTBALL_MAX_RESPONSE_BYTES` deliberately remains `null`. Complete mapping is still unproven: only Chelsea and Leeds have valid receipts against current Official FPL authority; 18 clubs remain unmapped. Later payload amplification remains possible. Collector, Cron, live migration 0005, Worker secret and kill-switch enablement remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+R1 measured an observed 347,982-byte maximum and calculated a 720,896-byte candidate, but did not retain response-side echoed parameters or row-identity facts. R2 therefore requires a separately approved credentialed requalification; `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Complete mapping is unproven: only Chelsea and Leeds qualify through the closed exact-revision EIA-2I4C adapter; 18 clubs remain unmapped. Collector, Cron, live migration 0005, production D1, Worker secret and kill-switch enablement remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D limitations
 

@@ -1,6 +1,6 @@
 ## EIA-2I5E pre-live qualification boundary
 
-Attended qualification lives only under Decision Intelligence. It can measure injected or credentialed API-Football responses and issue a DATA-S2A-backed mapping table, but it does not deploy the collector, arm Cron, enable collection, provision a secret, apply migration 0005 live, or write `API_FOOTBALL_MAX_RESPONSE_BYTES`. Production/browser/model modules do not import it. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+Qualification lives only under Decision Intelligence. R2 uses one exact deep-frozen manifest, response-side identity and sufficiency validation, immediate safety stops, and a closed EIA-2I4C-only historical mapping adapter; generic callers cannot admit mapping evidence. Historical R1 byte observations do not qualify under R2 without preserved echoed parameters and row identity. It does not deploy the collector, arm Cron, enable collection, provision a secret, apply migration 0005 live, or write `API_FOOTBALL_MAX_RESPONSE_BYTES`. Production/browser/model modules do not import it. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D dormant collector architecture
 

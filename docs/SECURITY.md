@@ -1,6 +1,6 @@
 ## EIA-2I5E attended qualification security
 
-EIA-2I5E-R1 used the pre-existing secure process-environment credential for 11 serial, origin-pinned GET requests with header-only `x-apisports-key`, redirect rejection, 15-second timeout and at least one-second spacing. No key, keyed URL, wholesale headers or raw body was logged or persisted; bodies were bounded, normalized and discarded. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+R2 made zero API-Football requests and did not read the credential. It rejects any alternate manifest before egress, validates exact response identity and meaningful samples, and stops immediately on every safety failure including quota uncertainty even when another failure also exists. R1 credential handling remains historical: no key, keyed URL, wholesale headers or raw body was logged or persisted. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D dormant collector security
 
