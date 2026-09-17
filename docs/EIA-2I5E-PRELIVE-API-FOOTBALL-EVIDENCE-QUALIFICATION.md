@@ -3,16 +3,38 @@
 Date: 17 September 2026
 Base: `6309dae3614aa06e7c021bfab0f138cac2437a2b` (merge of PR #250 / EIA-2I5D)
 
-## Current state — R3 final pre-replay contract hardening
+## Current state — R4 attended requalification stopped safely
 
-EIA-2I5E-R3 is repository-only. It made **zero API-Football requests**, did not access the API-Football credential, and changed no infrastructure, production constant, collector, model, recommendation or UI path. R3 separates arithmetic candidates from formal attended qualification, removes executable plan injection, requires exact `1/1` pagination, cross-checks enrichment against admitted fixture participants, and sanitizes body-stream failures.
+EIA-2I5E-R4 invoked the reviewed R3 runner exactly once with the credential supplied through the secure process environment, real `fetch`, the module-owned manifest, the standard 15-second timeout and real one-second spacing. The first request, `discovery-2`, ended in sanitized `transport_failure`. The runner stopped immediately after one attempt; no retry, replay, manual request or later manifest request occurred. No HTTP response was available, so status, bytes, rows, paging, echoed parameters, participant evidence and quota telemetry are all unknown rather than inferred.
 
 | Current gate | Decision | Reason |
 |---|---|---|
-| Response size | **NO-GO — requalification required** | R1 preserved byte measurements but not the provider response-side echoed parameters and row-identity facts now required by R2. The 720,896-byte value remains historical arithmetic candidate evidence, not a ceiling qualified under the current contract. |
+| Response size | **NO-GO — `transport_failure`** | R4 stopped on its first request. Required current samples remain incomplete, no R4 maximum or arithmetic candidate exists, and the historical 720,896-byte R1 candidate cannot substitute for current qualification. |
 | Complete 20-club mapping | **NO-GO — 2/20** | Only Chelsea `49→6` and Leeds `63→13` are admitted through the closed canonical EIA-2I4C adapter. Eighteen clubs remain unproven. Generic caller evidence cannot mint an admitted receipt. |
 
 `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Collector remains undeployed; migration 0005 is not live; no production D1 binding, collector credential or Cron exists; collection remains disabled; runtime is not live accepted; model/UI influence remains none.
+
+## R4 attended result
+
+Attempt budget was 11; one attempt was used and retries were zero. Known EIA-2I5E qualification attempts are now 12: R1 11, R2 0, R3 0 and R4 1. Whether the failed transport reached provider accounting is not provable without response headers.
+
+| Canonical request | State | HTTP | Bytes | Rows | Paging | Echoed parameters | Identity |
+|---|---|---:|---:|---:|---|---|---|
+| `discovery-2` — `/fixtures?league=2&season=2026` | attempted; `transport_failure` | unavailable | unavailable | unavailable | unavailable | unavailable | not established |
+| `discovery-3` — `/fixtures?league=3&season=2026` | skipped | — | — | — | — | — | not evaluated |
+| `discovery-848` — `/fixtures?league=848&season=2026` | skipped | — | — | — | — | — | not evaluated |
+| `discovery-45` — `/fixtures?league=45&season=2026` | skipped | — | — | — | — | — | not evaluated |
+| `discovery-48` — `/fixtures?league=48&season=2026` | skipped | — | — | — | — | — | not evaluated |
+| `fixture-1636205` — `/fixtures?id=1636205` | skipped | — | — | — | — | — | not evaluated |
+| `lineups-1636205` — `/fixtures/lineups?fixture=1636205` | skipped | — | — | — | — | — | not evaluated |
+| `players-1636205` — `/fixtures/players?fixture=1636205` | skipped | — | — | — | — | — | not evaluated |
+| `events-1636205` — `/fixtures/events?fixture=1636205` | skipped | — | — | — | — | — | not evaluated |
+| `fixture-1635643` — `/fixtures?id=1635643` | skipped | — | — | — | — | — | not evaluated |
+| `players-1635643` — `/fixtures/players?fixture=1635643` | skipped | — | — | — | — | — | not evaluated |
+
+No fixture participant set was admitted, so enrichment participant validation and sample sufficiency were not reached. Provider daily/rate limits and starting/ending remaining counters are unavailable because no response headers were received. Raw body retention is false; no response body existed to retain. Credential value was neither printed nor persisted.
+
+R4 class maxima, overall maximum, doubled maximum, 64-KiB rounding, proposed ceiling and absolute margin are all unavailable. Compared with R1's 347,982-byte maximum and 720,896-byte arithmetic candidate, R4 provides no higher or lower candidate: the transport failure prevented measurement. R1 remains historical evidence only. Residual risk remains unbounded for current responses, including large player-stat rows, pagination and provider schema expansion.
 
 ## Preserved R2 contract corrections
 
@@ -93,4 +115,4 @@ Rights remain `owner_risk_accepted_private_use`: private, one-user, non-commerci
 
 ## Remaining gate and stop
 
-Current response-size and mapping decisions are independently NO-GO. The exact proposed next checkpoint is **EIA-2I5E-R4 — Credentialed Canonical Response Requalification**, using the module-owned 11-request manifest and R3 identity, participant, pagination, stream and stop contracts. No such call is approved here. EIA-2I5F, infrastructure provisioning, production ceiling implementation and collector activation do not start.
+Current response-size and mapping decisions are independently NO-GO. R4 is complete as a stopped attended run and must not be retried or replayed under this approval. Next checkpoint is owner review of the sanitized `transport_failure`; any new credentialed attempt needs separate explicit approval. EIA-2I5F, infrastructure provisioning, production ceiling implementation, collector activation and work on the remaining 18 mappings do not start. PR #251 remains draft, owner-gated and unmerged.

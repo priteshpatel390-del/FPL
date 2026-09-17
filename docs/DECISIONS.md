@@ -1,3 +1,7 @@
+## 17 September 2026 — EIA-2I5E-R4 attended requalification decision
+
+One reviewed R3 runner invocation attempted `discovery-2` and stopped immediately with sanitized `transport_failure`: one attempt, zero retries and ten skipped requests. No response or quota telemetry was received, so response size remains NO-GO and no R4 candidate exists. Historical R1 evidence cannot substitute. Mapping remains NO-GO 2/20, production constant remains `null`, and collector/infrastructure/model/UI activation remains prohibited. Next action is owner review; another provider attempt requires separate explicit approval.
+
 ## 17 September 2026 — EIA-2I5E pre-live qualification decision
 
 EIA-2I5E-R3 supersedes R1's gate conclusion without deleting its measurements. R1's maximum 347,982 bytes and 720,896-byte arithmetic candidate remain historical, but absent preserved response-side identity makes current response-size NO-GO pending separate credentialed requalification. Mapping remains NO-GO at 2/20 through a closed exact-commit EIA-2I4C adapter; hashing caller assertions grants no admission. Production constant remains `null`. No collector activation, Cron, secret provisioning, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
