@@ -1,6 +1,6 @@
 ## EIA-2I5E attended qualification security
 
-R2 made zero API-Football requests and did not read the credential. It rejects any alternate manifest before egress, validates exact response identity and meaningful samples, and stops immediately on every safety failure including quota uncertainty even when another failure also exists. R1 credential handling remains historical: no key, keyed URL, wholesale headers or raw body was logged or persisted. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+R3 made zero API-Football requests and did not read the credential. It rejects any alternate manifest before egress, validates exact response identity and meaningful samples, and stops immediately on every safety failure including quota uncertainty even when another failure also exists. R1 credential handling remains historical: no key, keyed URL, wholesale headers or raw body was logged or persisted. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md). Observed provider runtime headers showed 7,500/day and 300/minute; those are observed account limits, not guaranteed entitlement or collector budget. Teamsheet’s separate conservative internal ceiling remains 100 attempts/day. R1 used 11 provider calls; R2 and R3 used zero.
 
 ## EIA-2I5D dormant collector security
 

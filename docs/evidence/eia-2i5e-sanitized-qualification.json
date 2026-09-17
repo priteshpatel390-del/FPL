@@ -1,5 +1,5 @@
 {
-  "checkpoint": "EIA-2I5E-R1",
+  "checkpoint": "EIA-2I5E-R3",
   "baseMainSha": "6309dae3614aa06e7c021bfab0f138cac2437a2b",
   "previousPrHead": "f2af439f088dde952756c8090fad5c342a3ebdd3",
   "historicalZeroAttemptQualification": {
@@ -1173,7 +1173,8 @@
     "proposedProductionByteCeilingStatus": "historical_arithmetic_candidate_only",
     "legacyMappingReceiptStatusUnderCurrentContract": "superseded_by_r2_closed_adapter"
   },
-  "r2CurrentQualification": {
+  "artifactRevision": "eia-2i5e-sanitized-qualification-r3",
+  "r2HistoricalTransition": {
     "checkpoint": "EIA-2I5E-R2",
     "repositoryOnly": true,
     "apiFootballAttemptsUsed": 0,
@@ -1264,6 +1265,74 @@
       "modelOrUiInfluence": false
     },
     "rawProviderBodyRetained": false,
+    "secretRead": false,
+    "secretPrinted": false,
+    "secretPersisted": false
+  },
+  "r3CurrentQualification": {
+    "checkpoint": "EIA-2I5E-R3",
+    "repositoryOnly": true,
+    "apiFootballAttemptsUsed": 0,
+    "credentialAccessed": false,
+    "currentResponseSizeDecision": "NO-GO",
+    "currentResponseSizeReason": "credentialed_canonical_requalification_required",
+    "formalQualificationRequiresCurrentAttendedExecution": true,
+    "arbitraryMeasurementArraysCanProduceFormalGo": false,
+    "arithmeticCandidateState": "historical_candidate_only",
+    "historicalR1MeasurementsPreserved": true,
+    "historicalR1Attempts": 11,
+    "historicalObservedMaximumBytes": 347982,
+    "historicalArithmeticCandidateCeilingBytes": 720896,
+    "canonicalManifest": {
+      "executionSource": "module_owned_only",
+      "externalPlanExecutionAllowed": false,
+      "requiredRequestCount": 11
+    },
+    "paginationContract": {
+      "current": 1,
+      "total": 1,
+      "otherStatesAccepted": false
+    },
+    "crossRequestIdentity": {
+      "fixtureParticipantsRequired": true,
+      "lineupsExactParticipantSet": true,
+      "playersExactParticipantSet": true,
+      "eventsParticipantSubsetRequired": true,
+      "duplicateTeamRowsAccepted": false
+    },
+    "streamFailure": {
+      "sanitizedReason": "provider_body_read_failed",
+      "partialRawBodyRetained": false,
+      "remainingRequestsIssued": false
+    },
+    "quotaContext": {
+      "observedProviderRuntime": {
+        "requestsPerDay": 7500,
+        "requestsPerMinute": 300,
+        "contractualEntitlementClaimed": false
+      },
+      "historicalR1Attempts": 11,
+      "r2Attempts": 0,
+      "r3Attempts": 0,
+      "internalTeamsheetDailySafetyCeiling": 100,
+      "providerQuotaIsInternalBudget": false
+    },
+    "mapping": {
+      "decision": "NO-GO",
+      "verifiedPremierLeagueTeamCount": 2,
+      "remainingUnprovenClubs": 18
+    },
+    "productionByteCeiling": null,
+    "activation": {
+      "collectorDeployed": false,
+      "migration0005Live": false,
+      "productionD1Binding": false,
+      "credentialProvisioned": false,
+      "cronActive": false,
+      "collectionEnabled": false,
+      "providerShadowRuntimeLiveAccepted": false,
+      "modelOrUiInfluence": false
+    },
     "secretRead": false,
     "secretPrinted": false,
     "secretPersisted": false

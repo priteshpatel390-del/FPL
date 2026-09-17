@@ -1,6 +1,6 @@
 ## EIA-2I5E pre-live API-Football evidence qualification
 
-EIA-2I5E-R2 is repository-only and made zero provider requests. R1's 11 byte measurements, 347,982-byte maximum and 720,896-byte arithmetic candidate remain historical evidence, but exact response-side identity was not retained; current response-size is NO-GO pending separately approved requalification. Mapping remains NO-GO at 2/20 through a closed exact-revision EIA-2I4C adapter. Production constant stays `null`; no collector, infrastructure, browser, model or UI activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R3 is repository-only and made zero provider requests. R1's 11 byte measurements, 347,982-byte maximum and 720,896-byte arithmetic candidate remain historical evidence, but exact response-side identity was not retained; current response-size is NO-GO pending separately approved requalification. Mapping remains NO-GO at 2/20 through a closed exact-revision EIA-2I4C adapter. Production constant stays `null`; no collector, infrastructure, browser, model or UI activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D repository-only shadow runtime and persistence
 

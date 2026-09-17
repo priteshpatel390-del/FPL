@@ -1,6 +1,6 @@
 ## API-Football EIA-2I5E qualification status
 
-API-Football remains `owner_risk_accepted_private_use`. R2 made zero provider requests and preserves R1's 11 sanitized byte measurements. Because R1 discarded raw bodies without preserving exact response parameters and row identity, current response-size is NO-GO pending separate requalification; 720,896 bytes is historical arithmetic candidate only. Mapping remains NO-GO at 2/20 through exact canonical EIA-2I4C evidence. Runtime remains disabled and unprovisioned. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+API-Football remains `owner_risk_accepted_private_use`. R3 made zero provider requests and preserves R1's 11 sanitized byte measurements. Because R1 discarded raw bodies without preserving exact response parameters and row identity, current response-size is NO-GO pending separate requalification; 720,896 bytes is historical arithmetic candidate only. Mapping remains NO-GO at 2/20 through exact canonical EIA-2I4C evidence. Runtime remains disabled and unprovisioned. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md). Observed provider runtime headers showed 7,500/day and 300/minute; those are observed account limits, not guaranteed entitlement or collector budget. Teamsheet’s separate conservative internal ceiling remains 100 attempts/day. R1 used 11 provider calls; R2 and R3 used zero.
 
 ## API-Football EIA-2I5D persistence status
 

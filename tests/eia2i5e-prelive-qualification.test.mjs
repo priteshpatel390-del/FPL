@@ -11,7 +11,7 @@ import {
   EIA_2I5E_MAX_ATTEMPTS,EIA_2I5E_MEASUREMENT_ABORT_BYTES,EIA_2I5E_MIN_GAP_MS,EIA_2I5E_PRODUCTION_BYTE_CEILING,
   OFFICIAL_FPL_BOOTSTRAP_URL,OFFICIAL_FPL_FIXTURES_URL,PREVIOUSLY_QUALIFIED_PL_TEAMS,
   confirmPreviouslyQualifiedTeamMappings,eia2i5eActivationBlocks,eia2i5eRequestPlan,fetchOfficialFplAuthority,
-  issueQualificationMappingReceipt,measureDiscardingBody,qualifyTwentyClubMapping,recommendResponseByteCeiling,
+  calculateResponseByteCeilingCandidate,issueQualificationMappingReceipt,measureDiscardingBody,qualifyTwentyClubMapping,
   resolveAttendedCredential,runAttendedApiFootballQualification,sanitizeOfficialFplAuthority,
   validateCanonicalQualificationPlan,validateQualificationPlanItem
 } from '../src/decision-intelligence/api-football-prelive-qualification.mjs';
@@ -59,12 +59,13 @@ test('one deep-frozen canonical manifest contains only the approved 11 requests'
   assert.ok(plan.items.every(item=>validateQualificationPlanItem(item).ok));assert.equal(validateCanonicalQualificationPlan(plan).ok,true);
 });
 
-test('every alternate manifest fails before provider egress',async()=>{
+test('every supplied manifest, including an exact clone, fails before provider egress',async()=>{
   const mutations=[
+    plan=>{},
     plan=>{plan.items[0].search.league='48';},plan=>{plan.items[5].search.id='1';},plan=>{plan.items[0].endpointClass='fixture';},plan=>{plan.items[0].search={id:'2'};},
     plan=>{plan.items[0].id='changed';},plan=>{plan.items.pop();},plan=>{plan.items.push(clone(plan.items[0]));},plan=>{plan.items[0]=clone(plan.items[1]);},plan=>{plan.items.reverse();}
   ];
-  for(const mutate of mutations){const plan=clone(EIA_2I5E_CANONICAL_REQUEST_MANIFEST);mutate(plan);let calls=0;const result=await runAttendedApiFootballQualification({apiKey:KEY,plan,fetchImpl:async()=>{calls+=1;},sleep:async()=>{}});assert.equal(result.reason,'qualification_plan_not_canonical');assert.equal(calls,0);assert.equal(recommendResponseByteCeiling([],plan).reason,'qualification_plan_not_canonical');}
+  for(const mutate of mutations){const plan=clone(EIA_2I5E_CANONICAL_REQUEST_MANIFEST);mutate(plan);let calls=0;const result=await runAttendedApiFootballQualification({apiKey:KEY,plan,fetchImpl:async()=>{calls+=1;},sleep:async()=>{}});assert.equal(result.reason,'qualification_plan_not_canonical');assert.equal(calls,0);}
 });
 
 test('missing credential is zero-egress and exposes no credential',async()=>{let calls=0;const result=await runAttendedApiFootballQualification({apiKey:'',fetchImpl:async()=>{calls+=1;},sleep:async()=>{}});assert.equal(result.reason,'credential_unavailable');assert.equal(result.attempts,0);assert.equal(calls,0);assert.equal(resolveAttendedCredential(null).reason,'credential_unavailable');});
@@ -76,7 +77,7 @@ test('canonical attended requests are serial, fully completed, spaced, and raw-b
 });
 
 test('response identity validates exact echoed parameters and row identity per endpoint class',async()=>{
-  for(const item of EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items){const measured=await measureDiscardingBody(response(payloadFor(item)),{planItem:item});assert.equal(measured.ok,true,item.id);assert.deepEqual(measured.echoedResponseParameters,item.search);assert.equal(measured.responseIdentityMatched,true);assert.equal(measured.sampleSufficient,true);assert.equal(measured.bodyRetained,false);}
+  for(const item of EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items){const measured=await measureDiscardingBody(response(payloadFor(item)),{planItem:item,expectedParticipantTeamIds:item.endpointClass==='lineups'||item.endpointClass==='players'||item.endpointClass==='events'?['49','63']:null});assert.equal(measured.ok,true,item.id);assert.deepEqual(measured.echoedResponseParameters,item.search);assert.equal(measured.responseIdentityMatched,true);assert.equal(measured.sampleSufficient,true);assert.equal(measured.bodyRetained,false);}
   const discovery=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[0];assert.equal((await measureDiscardingBody(response(payloadFor(discovery,{parameters:{league:'3',season:'2026'}})),{planItem:discovery})).reason,'provider_response_identity_mismatch');
   assert.equal((await measureDiscardingBody(response(payloadFor(discovery,{parameters:{...discovery.search,extra:'x'}})),{planItem:discovery})).reason,'provider_response_identity_mismatch');
   assert.equal((await measureDiscardingBody(response(payloadFor(discovery,{rows:[fixture(1,3)]})),{planItem:discovery})).reason,'provider_response_identity_mismatch');
@@ -87,15 +88,54 @@ test('sample sufficiency rejects empty discovery, fixture, lineup, players, and 
   for(const item of EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items){const rows=item.endpointClass==='fixture'?[fixture(Number(item.search.id),item.competition),fixture(Number(item.search.id),item.competition)]:item.endpointClass==='lineups'||item.endpointClass==='players'?[{team:{id:49}}]:[];const measured=await measureDiscardingBody(response(payloadFor(item,{rows})),{planItem:item});assert.equal(measured.ok,false,item.id);assert.equal(measured.sampleSufficient,false,item.id);}
 });
 
+test('pagination qualifies only exact integer 1/1',async()=>{
+  const item=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[0];
+  for(const paging of [{current:0,total:0},{current:0,total:1},{current:1,total:0},{current:-1,total:1},{current:1,total:-1},{current:1,total:2},{current:2,total:2},null,{current:'1',total:1}]){
+    const payload=payloadFor(item);if(paging===null)delete payload.paging;else payload.paging=paging;
+    const measured=await measureDiscardingBody(response(payload),{planItem:item});assert.equal(measured.reason,'qualification_pagination_unresolved',JSON.stringify(paging));assert.equal(measured.ok,false);
+  }
+  assert.equal((await measureDiscardingBody(response(payloadFor(item,{paging:{current:1,total:1}})),{planItem:item})).ok,true);
+});
+
+test('fixture rows validate competition, season, status and two distinct participants',async()=>{
+  const item=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[5];
+  const good=await measureDiscardingBody(response(payloadFor(item)),{planItem:item});assert.deepEqual(good.fixtureParticipantTeamIds,['49','63']);
+  for(const row of [{...fixture(1636205,2)},{...fixture(1636205,48),league:{id:48,season:2025}},{...fixture(1636205,48),teams:{home:{id:49},away:{id:49}}},{...fixture(1636205,48),fixture:{...fixture(1636205,48).fixture,status:{short:'NS'}}}])assert.equal((await measureDiscardingBody(response(payloadFor(item,{rows:[row]})),{planItem:item})).reason,'provider_response_identity_mismatch');
+});
+
+test('lineups, players and events require admitted matching fixture participants',async()=>{
+  const participantIds=['49','63'];
+  for(const index of [6,7,10]){
+    const item=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[index];
+    assert.equal((await measureDiscardingBody(response(payloadFor(item)),{planItem:item})).reason,'qualification_fixture_evidence_missing');
+    for(const rows of [[{team:{id:70}},{team:{id:71}}],[{team:{id:49}},{team:{id:71}}],[{team:{id:49}},{team:{id:49}}],[{team:{id:49}},{team:{id:63}},{team:{id:49}}],[{team:{id:49}},{team:{id:63}},{team:{id:70}}]])assert.equal((await measureDiscardingBody(response(payloadFor(item,{rows})),{planItem:item,expectedParticipantTeamIds:participantIds})).reason,'qualification_participant_mismatch');
+    assert.equal((await measureDiscardingBody(response(payloadFor(item)),{planItem:item,expectedParticipantTeamIds:participantIds})).ok,true);
+  }
+  const events=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[8];
+  assert.equal((await measureDiscardingBody(response(payloadFor(events,{rows:[{team:{id:70}}]})),{planItem:events,expectedParticipantTeamIds:participantIds})).reason,'qualification_participant_mismatch');
+  const eventGood=await measureDiscardingBody(response(payloadFor(events)),{planItem:events,expectedParticipantTeamIds:participantIds});assert.equal(eventGood.rowIdentityValidationState,'FIXTURE_PARAMETER_PLUS_PARTICIPANT_CONTEXT');
+});
+
+test('stream failures are sanitized, cancelled best-effort, and stop without next request',async()=>{
+  const item=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[0],bytes=new TextEncoder().encode(JSON.stringify(payloadFor(item)));
+  for(const afterChunk of [false,true]){let reads=0,cancels=0;const body={getReader:()=>({read:async()=>{reads+=1;if(afterChunk&&reads===1)return {done:false,value:bytes.subarray(0,8)};throw new Error('secret stream detail');},cancel:async()=>{cancels+=1;throw new Error('cancel detail');}})};const fake={status:200,headers:new Headers({...quotaHeaders(),'content-length':String(bytes.length)}),body};let calls=0;const result=await runAttendedApiFootballQualification({apiKey:KEY,fetchImpl:async()=>{calls+=1;return fake;},sleep:async()=>{}});assert.equal(calls,1);assert.equal(result.stoppedReason,'provider_body_read_failed');assert.equal(result.measurements[0].stoppedBySafety,true);assert.equal(result.measurements[0].bodyRetained,false);assert.equal(cancels,1);assert.doesNotMatch(JSON.stringify(result),/secret stream detail|cancel detail|deliberate-test-key-material/);}
+});
+
+test('unreadable body, timeout and transport failures preserve primary terminal reasons',async()=>{
+  const unreadable=await runAttendedApiFootballQualification({apiKey:KEY,fetchImpl:async()=>({status:200,headers:new Headers(quotaHeaders()),body:null}),sleep:async()=>{}});assert.equal(unreadable.stoppedReason,'provider_body_unreadable');assert.equal(unreadable.measurements[0].stoppedBySafety,true);
+  const timeout=await runAttendedApiFootballQualification({apiKey:KEY,fetchImpl:async()=>new Promise(()=>{}),sleep:async()=>{},timeoutSignal:()=>AbortSignal.abort({name:'TimeoutError'})});assert.equal(timeout.stoppedReason,'provider_timeout');assert.equal(timeout.measurements[0].stoppedBySafety,true);
+  const transport=await runAttendedApiFootballQualification({apiKey:KEY,fetchImpl:async()=>{throw new Error('secret transport');},sleep:async()=>{}});assert.equal(transport.stoppedReason,'transport_failure');assert.equal(transport.measurements[0].stoppedBySafety,true);assert.doesNotMatch(JSON.stringify({unreadable,timeout,transport}),/secret transport|deliberate-test-key-material/);
+});
+
 test('every first-request safety failure stops after exactly one sanitized attempt',async()=>{
   const first=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[0];
   const cases=[
-    ['provider_schema_invalid',()=>response({bad:true})],
+    ['provider_schema_invalid',()=>response({...payloadFor(first),bad:true})],
     ['provider_response_identity_mismatch',()=>response(payloadFor(first,{parameters:{league:'3',season:'2026'}}))],
     ['qualification_pagination_unresolved',()=>response(payloadFor(first,{paging:{current:1,total:2}}))],
     ['provider_response_too_large',()=>response(payloadFor(first),{headers:{'content-length':String(EIA_2I5E_MEASUREMENT_ABORT_BYTES+1)}})],
     ['quota_headers_uncertain',()=>{const body=JSON.stringify(payloadFor(first));return new Response(body,{status:200,headers:{'content-length':String(Buffer.byteLength(body))}});}],
-    ['quota_headers_uncertain',()=>new Response('{}',{status:500})],
+    ['provider_unavailable',()=>new Response('{}',{status:500})],
     ['redirect_rejected',()=>response(payloadFor(first),{status:302})],['provider_authentication_failed',()=>response({}, {status:401})],['quota_exhausted',()=>response({}, {status:429})],['provider_unavailable',()=>response({}, {status:500})]
   ];
   for(const [reason,make] of cases){const {result,calls}=await runWithResponses(()=>make());assert.equal(calls,1,reason);assert.equal(result.attempts,1,reason);assert.equal(result.stoppedReason,reason);assert.ok(result.measurements.every(row=>row.bodyRetained===false));assert.doesNotMatch(JSON.stringify(result),/deliberate-test-key-material|x-apisports-key/i);}
@@ -103,9 +143,9 @@ test('every first-request safety failure stops after exactly one sanitized attem
 
 test('failure after successful samples skips every remaining request',async()=>{const {result,calls}=await runWithResponses((item,call)=>call===4?response(payloadFor(item,{parameters:{league:'2',season:'2026'}})):response(payloadFor(item)));assert.equal(calls,4);assert.equal(result.attempts,4);assert.equal(result.stoppedReason,'provider_response_identity_mismatch');assert.equal(result.responseLimit.requiredManifest.filter(row=>row.skipped).length,7);});
 
-test('complete current-contract evidence alone permits arithmetic ceiling without mutating production',()=>{const rows=completeMeasurements({'players-1636205':{actualBytes:180000}});const result=recommendResponseByteCeiling(rows);assert.equal(result.decision,'GO');assert.equal(result.observedMaximum,180000);assert.equal(result.proposedCeiling,393216);assert.equal(result.proposedCeiling%EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES,0);assert.equal(result.productionConstant,null);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);assert.notEqual(EIA_2I5E_MEASUREMENT_ABORT_BYTES,result.proposedCeiling);});
+test('fabricated facts produce deterministic arithmetic candidate, never formal GO',()=>{const rows=completeMeasurements({'players-1636205':{actualBytes:180000}});const result=calculateResponseByteCeilingCandidate(rows),again=calculateResponseByteCeilingCandidate(clone(rows));assert.deepEqual(result,again);assert.equal(result.decision,'CANDIDATE');assert.equal(result.formalQualification,false);assert.equal(result.arithmeticState,'CALCULATED');assert.equal(result.observedMaximum,180000);assert.equal(result.proposedCeiling,393216);assert.equal(result.proposedCeiling%EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES,0);assert.equal(result.productionConstant,null);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);assert.notEqual(EIA_2I5E_MEASUREMENT_ABORT_BYTES,result.proposedCeiling);});
 
-test('historical R1-shaped measurements lack response identity and are NO-GO under R2',()=>{const historical=completeMeasurements().map(({expectedRequestIdentity,responseIdentityMatched,rowIdentityValidationState,sampleSufficient,...row})=>row);const result=recommendResponseByteCeiling(historical);assert.equal(result.decision,'NO-GO');assert.equal(result.reason,'required_sample_manifest_incomplete');});
+test('historical R1 facts remain arithmetic candidate evidence only',()=>{const result=calculateResponseByteCeilingCandidate(completeMeasurements());assert.equal(result.decision,'CANDIDATE');assert.equal(result.formalQualification,false);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);});
 
 test('generic caller evidence cannot mint an admitted mapping receipt or mapping GO',async()=>{const authority=issued();const complete=IDS.map((id,index)=>team(200+index,`${season}:fpl:team:${id}`));for(const row of complete){const receipt=await issueQualificationMappingReceipt({mapping:row,authority,evidence:{evidenceType:'provider_fixture_participant',stableEvidenceId:'9999',source:'caller',sourceRevision:'caller',observedAt:'2026-09-17T00:00:00Z',provenance:'asserted',qualificationMethod:'attended_provider_evidence'}});assert.equal(receipt.reason,'mapping_evidence_not_admitted');}const result=await qualifyTwentyClubMapping({authority,mappings:complete});assert.equal(result.decision,'NO-GO');assert.equal(result.verifiedPremierLeagueTeamCount,0);});
 
@@ -123,4 +163,4 @@ test('Chelsea/Leeds adapter is closed, date-precision honest, exact-revision bou
 
 test('Official FPL authority remains canonical, sanitized, and redirect rejecting',async()=>{const world=namedWorld();const authority=issueOfficialFplTeamUniverseAuthority(world);const sanitized=sanitizeOfficialFplAuthority(authority);assert.equal(sanitized.teams.length,20);assert.equal(Object.hasOwn(sanitized,'bootstrap'),false);let read=false;const redirect=await fetchOfficialFplAuthority({fetchImpl:async()=>({status:302,json:async()=>{read=true;}}),now:()=>'2026-09-17T06:00:00Z'});assert.equal(redirect.reason,'official_fpl_redirect_rejected');assert.equal(read,false);const urls=[];const fetched=await fetchOfficialFplAuthority({fetchImpl:async(url,options)=>{urls.push(String(url));assert.equal(options.redirect,'error');return {status:200,json:async()=>String(url).includes('bootstrap-static')?world.bootstrap:world.fixtures};},now:()=>'2026-09-17T06:00:00Z'});assert.equal(fetched.ok,true);assert.deepEqual(urls,[OFFICIAL_FPL_BOOTSTRAP_URL,OFFICIAL_FPL_FIXTURES_URL]);});
 
-test('R2 remains isolated from production, browser, collector activation, and secrets',()=>{const source=fs.readFileSync(path.join(root,'src/decision-intelligence/api-football-prelive-qualification.mjs'),'utf8');assert.doesNotMatch(source,/process\.env|localStorage|setInterval|setTimeout|console\.|RapidAPI|collection_enabled\s*=\s*1/i);for(const file of ['src/model/minutes.mjs','src/model/scoring.mjs','src/squad.mjs','src/model/transfers.mjs','src/main.mjs','src/providers/registry.mjs','src/ui/team-decision-home.mjs','dist/index.html','index.html','build.mjs'])assert.doesNotMatch(fs.readFileSync(path.join(root,file),'utf8'),/api-football-prelive-qualification|EIA_2I5E_MAX_ATTEMPTS/i,file);const wrangler=fs.readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8');assert.match(wrangler,/"crons": \[\]/);assert.match(wrangler,/00000000-0000-0000-0000-000000000000/);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);assert.equal(PREVIOUSLY_QUALIFIED_PL_TEAMS.length,2);});
+test('R3 remains isolated from production, browser, collector activation, and secrets',()=>{const source=fs.readFileSync(path.join(root,'src/decision-intelligence/api-football-prelive-qualification.mjs'),'utf8');assert.doesNotMatch(source,/process\.env|localStorage|setInterval|setTimeout|console\.|RapidAPI|collection_enabled\s*=\s*1/i);for(const file of ['src/model/minutes.mjs','src/model/scoring.mjs','src/squad.mjs','src/model/transfers.mjs','src/main.mjs','src/providers/registry.mjs','src/ui/team-decision-home.mjs','dist/index.html','index.html','build.mjs'])assert.doesNotMatch(fs.readFileSync(path.join(root,file),'utf8'),/api-football-prelive-qualification|EIA_2I5E_MAX_ATTEMPTS/i,file);const wrangler=fs.readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8');assert.match(wrangler,/"crons": \[\]/);assert.match(wrangler,/00000000-0000-0000-0000-000000000000/);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);assert.equal(PREVIOUSLY_QUALIFIED_PL_TEAMS.length,2);});

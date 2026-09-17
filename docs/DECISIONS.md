@@ -1,6 +1,6 @@
 ## 17 September 2026 — EIA-2I5E pre-live qualification decision
 
-EIA-2I5E-R2 supersedes R1's gate conclusion without deleting its measurements. R1's maximum 347,982 bytes and 720,896-byte arithmetic candidate remain historical, but absent preserved response-side identity makes current response-size NO-GO pending separate credentialed requalification. Mapping remains NO-GO at 2/20 through a closed exact-commit EIA-2I4C adapter; hashing caller assertions grants no admission. Production constant remains `null`. No collector activation, Cron, secret provisioning, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R3 supersedes R1's gate conclusion without deleting its measurements. R1's maximum 347,982 bytes and 720,896-byte arithmetic candidate remain historical, but absent preserved response-side identity makes current response-size NO-GO pending separate credentialed requalification. Mapping remains NO-GO at 2/20 through a closed exact-commit EIA-2I4C adapter; hashing caller assertions grants no admission. Production constant remains `null`. No collector activation, Cron, secret provisioning, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## 16 September 2026 — EIA-2I5D repository-only persistence decision
 

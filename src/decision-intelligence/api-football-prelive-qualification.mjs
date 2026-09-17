@@ -176,7 +176,9 @@ function sanitizedParameters(value){
 
 function exactObject(left,right){return stableStringify(left)===stableStringify(right);}
 
-function responseIdentity(item,payload,rows){
+function sameIdSet(left,right){return left.length===right.length&&left.every((value,index)=>value===right[index]);}
+
+function responseIdentity(item,payload,rows,expectedParticipantTeamIds){
   const echoed=sanitizedParameters(payload?.parameters);
   if(payload?.get!==item.endpoint||!echoed||!exactObject(echoed,item.search))return {matched:false,rowIdentityState:'NOT_EVALUATED',sampleSufficient:false,reason:'provider_response_identity_mismatch',echoedParameters:echoed};
   if(item.endpointClass==='fixtures_discovery'){
@@ -184,12 +186,20 @@ function responseIdentity(item,payload,rows){
     return {matched:rowsMatch,rowIdentityState:rowsMatch?'MATCHED':'MISMATCHED',sampleSufficient:rowsMatch&&rows.length>=item.minimumRows,reason:rowsMatch?null:'provider_response_identity_mismatch',echoedParameters:echoed};
   }
   if(item.endpointClass==='fixture'){
-    const rowsMatch=rows.length===1&&String(rows[0]?.fixture?.id)===item.search.id;
-    return {matched:rowsMatch,rowIdentityState:rowsMatch?'MATCHED':'MISMATCHED',sampleSufficient:rowsMatch,reason:rowsMatch?null:'provider_response_identity_mismatch',echoedParameters:echoed};
+    const row=rows[0],teamIds=[positiveId(row?.teams?.home?.id),positiveId(row?.teams?.away?.id)].filter(Boolean).sort((a,b)=>Number(a)-Number(b));
+    const rowsMatch=rows.length===1&&String(row?.fixture?.id)===item.search.id&&String(row?.league?.id)===item.competition&&String(row?.league?.season)===String(API_FOOTBALL_PROVIDER_SEASON)&&teamIds.length===2&&teamIds[0]!==teamIds[1]&&['FT','AET','PEN'].includes(row?.fixture?.status?.short);
+    return {matched:rowsMatch,rowIdentityState:rowsMatch?'FIXTURE_IDENTITY_MATCHED':'MISMATCHED',sampleSufficient:rowsMatch,reason:rowsMatch?null:'provider_response_identity_mismatch',echoedParameters:echoed,fixtureParticipantTeamIds:rowsMatch?teamIds:[]};
   }
-  const teamIds=new Set(rows.map(row=>positiveId(row?.team?.id)).filter(Boolean));
-  const sufficient=rows.length>=item.minimumRows&&(item.requiredTeamRows==null||teamIds.size===item.requiredTeamRows);
-  return {matched:true,rowIdentityState:item.requiredTeamRows==null?'NOT_EXPOSED':'TEAM_CONTEXT_MATCHED',sampleSufficient:sufficient,reason:sufficient?null:'qualification_sample_insufficient',echoedParameters:echoed};
+  if(!Array.isArray(expectedParticipantTeamIds)||expectedParticipantTeamIds.length!==2)return {matched:false,rowIdentityState:'FIXTURE_EVIDENCE_MISSING',sampleSufficient:false,reason:'qualification_fixture_evidence_missing',echoedParameters:echoed,observedParticipantTeamIds:[]};
+  const expected=[...expectedParticipantTeamIds].sort((a,b)=>Number(a)-Number(b));
+  const observedRows=rows.map(row=>positiveId(row?.team?.id));
+  const observed=[...new Set(observedRows.filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+  if(item.endpointClass==='lineups'||item.endpointClass==='players'){
+    const sufficient=rows.length===2&&observedRows.every(Boolean)&&observed.length===2&&sameIdSet(observed,expected);
+    return {matched:sufficient,rowIdentityState:sufficient?'FIXTURE_PARTICIPANTS_MATCHED':'PARTICIPANT_MISMATCH',sampleSufficient:sufficient,reason:sufficient?null:'qualification_participant_mismatch',echoedParameters:echoed,expectedParticipantTeamIds:expected,observedParticipantTeamIds:observed,participantSetMatched:sufficient};
+  }
+  const sufficient=rows.length>=item.minimumRows&&observedRows.every(Boolean)&&observed.length>=1&&observed.every(id=>expected.includes(id));
+  return {matched:sufficient,rowIdentityState:sufficient?'FIXTURE_PARAMETER_PLUS_PARTICIPANT_CONTEXT':'PARTICIPANT_MISMATCH',sampleSufficient:sufficient,reason:sufficient?null:'qualification_participant_mismatch',echoedParameters:echoed,expectedParticipantTeamIds:expected,observedParticipantTeamIds:observed,participantSetMatched:sufficient};
 }
 
 function quotaEvidence(normalized){
@@ -198,7 +208,7 @@ function quotaEvidence(normalized){
   return {state:complete?'known':'uncertain',requestsLimit:normalized.requestsLimit,requestsRemaining:normalized.requestsRemaining,rateLimit:normalized.rateLimit,remaining:normalized.remaining};
 }
 
-export async function measureDiscardingBody(response,{planItem,now=()=>new Date().toISOString(),maxBytes=EIA_2I5E_MEASUREMENT_ABORT_BYTES}={}){
+export async function measureDiscardingBody(response,{planItem,expectedParticipantTeamIds=null,now=()=>new Date().toISOString(),maxBytes=EIA_2I5E_MEASUREMENT_ABORT_BYTES}={}){
   const fetchedAt=iso(typeof now==='function'?now():now);if(!fetchedAt)return fail('timestamp_invalid');
   const canonical=validateCanonicalQualificationPlan(EIA_2I5E_CANONICAL_REQUEST_MANIFEST);if(!canonical.ok)return canonical;
   if(!planItem||!EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items.includes(planItem))return fail('qualification_plan_not_canonical');
@@ -220,22 +230,24 @@ export async function measureDiscardingBody(response,{planItem,now=()=>new Date(
   if(status>=300&&status<400)return deepFreeze({ok:false,reason:'redirect_rejected',...base,bodyRetained:false});
   if(!(status>=200&&status<300))return deepFreeze({ok:false,reason:'provider_unavailable',...base,bodyRetained:false});
   if(Number.isFinite(declared)&&declared>maxBytes)return deepFreeze({ok:false,reason:'provider_response_too_large',...base,actualBytes:null,bodyRetained:false});
-  if(!response?.body?.getReader)return fail('provider_body_unreadable');
+  if(!response?.body?.getReader)return deepFreeze({ok:false,reason:'provider_body_unreadable',...base,actualBytes:null,bodyRetained:false});
   const reader=response.body.getReader();const chunks=[];let size=0;
-  while(true){
+  try{while(true){
     const {done,value}=await reader.read();if(done)break;
     size+=value.byteLength;
-    if(size>maxBytes){await reader.cancel();return deepFreeze({ok:false,reason:'provider_response_too_large',...base,actualBytes:size,bodyRetained:false});}
+    if(size>maxBytes){try{await reader.cancel();}catch{}return deepFreeze({ok:false,reason:'provider_response_too_large',...base,actualBytes:size,bodyRetained:false});}
     chunks.push(value);
-  }
+  }}catch{try{await reader.cancel();}catch{}return deepFreeze({ok:false,reason:'provider_body_read_failed',...base,actualBytes:size||null,bodyRetained:false});}
   const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
   let payload;try{payload=JSON.parse(new TextDecoder().decode(bytes));}catch{return deepFreeze({ok:false,reason:'provider_schema_invalid',...base,actualBytes:size,bodyRetained:false});}
-  const decoded=decodeApiFootballResponse(payload,{endpoint});
   const paging=payload?.paging&&typeof payload.paging==='object'?{current:payload.paging.current??null,total:payload.paging.total??null}:null;
-  const paginationPresent=Number(paging?.total)>1||Number(paging?.current)>1;
+  const singlePage=Number.isInteger(paging?.current)&&paging.current===1&&Number.isInteger(paging?.total)&&paging.total===1;
+  if(!singlePage){payload=null;return deepFreeze({ok:false,reason:'qualification_pagination_unresolved',...base,actualBytes:size,rowCount:null,paging,paginationPresent:true,schemaMatched:false,responseIdentityMatched:false,sampleSufficient:false,bodyRetained:false});}
+  const decoded=decodeApiFootballResponse(payload,{endpoint});
+  const paginationPresent=false;
   const rowCount=Array.isArray(payload?.response)?payload.response.length:null;
   const rows=decoded.ok?decoded.response:[];
-  const identity=decoded.ok?responseIdentity(planItem,payload,rows):{matched:false,rowIdentityState:'NOT_EVALUATED',sampleSufficient:false,reason:'provider_schema_invalid',echoedParameters:sanitizedParameters(payload?.parameters)};
+  const identity=decoded.ok?responseIdentity(planItem,payload,rows,expectedParticipantTeamIds):{matched:false,rowIdentityState:'NOT_EVALUATED',sampleSufficient:false,reason:'provider_schema_invalid',echoedParameters:sanitizedParameters(payload?.parameters)};
   const providerTeamIds=decoded.ok?extractProviderTeamIds(endpoint,rows):[];
   const providerFixtureIds=decoded.ok&&endpoint==='fixtures'?extractFixtureIds(rows):[];
   payload=null;
@@ -245,16 +257,30 @@ export async function measureDiscardingBody(response,{planItem,now=()=>new Date(
     ...base,actualBytes:size,rowCount,paging,paginationPresent,schemaMatched:decoded.ok===true,
     expectedRequestIdentity:requestIdentity(planItem),echoedResponseParameters:identity.echoedParameters,responseIdentityMatched:identity.matched,
     rowIdentityValidationState:identity.rowIdentityState,sampleSufficient:identity.sampleSufficient,
+    fixtureParticipantTeamIds:identity.fixtureParticipantTeamIds||[],expectedParticipantTeamIds:identity.expectedParticipantTeamIds||[],
+    observedParticipantTeamIds:identity.observedParticipantTeamIds||[],participantSetMatched:identity.participantSetMatched??null,
     highWaterCandidate:highWaterCandidate===true,providerTeamIds,providerFixtureIds,
     bodyRetained:false
   };
   const blocked=secret(measurement);return blocked||deepFreeze(measurement);
 }
 
-export function recommendResponseByteCeiling(measurements,plan=eia2i5eRequestPlan()){
+export function calculateResponseByteCeilingCandidate(measurements){
   if(EIA_2I5E_PRODUCTION_BYTE_CEILING!==null)return fail('production_byte_ceiling_already_set');
-  const canonical=validateCanonicalQualificationPlan(plan);
-  if(!canonical.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:canonical.reason,observedMaximum:null,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
+  const rows=(measurements||[]).filter(row=>row&&REQUIRED_CLASSES.includes(row.endpointClass)&&Number.isInteger(row.actualBytes)&&row.actualBytes>=0);
+  const byClass=new Map();for(const row of rows){const current=byClass.get(row.endpointClass)||[];current.push(row.actualBytes);byClass.set(row.endpointClass,current);}
+  const missingEndpointClasses=REQUIRED_CLASSES.filter(name=>!byClass.has(name));
+  if(missingEndpointClasses.length)return deepFreeze({ok:false,decision:'CANDIDATE',arithmeticState:'INSUFFICIENT',reason:'endpoint_class_coverage_incomplete',missingEndpointClasses,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING,formalQualification:false});
+  const classMaxima=Object.fromEntries(REQUIRED_CLASSES.map(name=>[name,Math.max(...byClass.get(name))]));
+  const observedMaximum=Math.max(...Object.values(classMaxima)),doubled=observedMaximum*EIA_2I5E_BYTE_CEILING_MULTIPLIER;
+  if(doubled>EIA_2I5E_BYTE_CEILING_HARD_CAP_BYTES)return deepFreeze({ok:false,decision:'CANDIDATE',arithmeticState:'UNBOUNDED',reason:'observed_maximum_too_large_to_bound',classMaxima,observedMaximum,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING,formalQualification:false});
+  const proposedCeiling=Math.ceil(doubled/EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES)*EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES;
+  return deepFreeze({ok:true,decision:'CANDIDATE',arithmeticState:'CALCULATED',reason:null,classMaxima,observedMaximum,proposedCeiling,marginBytes:proposedCeiling-observedMaximum,multiplier:EIA_2I5E_BYTE_CEILING_MULTIPLIER,quantumBytes:EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING,formalQualification:false});
+}
+
+function evaluateAttendedResponseMeasurements(measurements){
+  if(EIA_2I5E_PRODUCTION_BYTE_CEILING!==null)return fail('production_byte_ceiling_already_set');
+  const plan=EIA_2I5E_CANONICAL_REQUEST_MANIFEST;
   const measurementsById=new Map();for(const row of measurements||[]){const id=String(row?.logicalRequestId||'');if(!measurementsById.has(id))measurementsById.set(id,[]);measurementsById.get(id).push(row);}
   const manifest=plan.items.map(item=>{
     const matches=measurementsById.get(item.id)||[];const row=matches.length===1?matches[0]:null;
@@ -264,26 +290,12 @@ export function recommendResponseByteCeiling(measurements,plan=eia2i5eRequestPla
   });
   const rows=(measurements||[]).filter(row=>manifest.some(state=>state.logicalRequestId===row?.logicalRequestId&&state.succeeded));
   if(manifest.some(row=>!row.succeeded))return deepFreeze({ok:false,decision:'NO-GO',reason:'required_sample_manifest_incomplete',requiredManifest:manifest,observedMaximum:rows.length?Math.max(...rows.map(row=>row.actualBytes)):null,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
-  const byClass=new Map();
-  for(const row of rows){
-    const current=byClass.get(row.endpointClass)||[];
-    current.push(row);
-    byClass.set(row.endpointClass,current);
-  }
-  const missing=REQUIRED_CLASSES.filter(name=>!byClass.has(name));
-  if(missing.length)return deepFreeze({ok:false,decision:'NO-GO',reason:'endpoint_class_coverage_incomplete',missingEndpointClasses:missing,observedMaximum:Math.max(...rows.map(row=>row.actualBytes)),proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
-  if(rows.some(row=>row.paginationPresent===true))return deepFreeze({ok:false,decision:'NO-GO',reason:'required_sample_pagination_unresolved',observedMaximum:Math.max(...rows.map(row=>row.actualBytes)),proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
-  const classMaxima=Object.fromEntries(REQUIRED_CLASSES.map(name=>[name,Math.max(...byClass.get(name).map(row=>row.actualBytes))]));
-  const observedMaximum=Math.max(...Object.values(classMaxima));
-  const playersHighWater=(byClass.get('players')||[]).some(row=>row.highWaterCandidate===true);
-  const discoveryHighWater=(byClass.get('fixtures_discovery')||[]).some(row=>row.highWaterCandidate===true&&row.paginationPresent!==true);
-  if(!playersHighWater||!discoveryHighWater)return deepFreeze({ok:false,decision:'NO-GO',reason:'high_water_sample_incomplete',classMaxima,observedMaximum,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
-  const doubled=observedMaximum*EIA_2I5E_BYTE_CEILING_MULTIPLIER;
-  if(doubled>EIA_2I5E_BYTE_CEILING_HARD_CAP_BYTES)return deepFreeze({ok:false,decision:'NO-GO',reason:'observed_maximum_too_large_to_bound',classMaxima,observedMaximum,proposedCeiling:null,productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING});
-  const proposedCeiling=Math.ceil(doubled/EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES)*EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES;
+  const byClass=new Map();for(const row of rows){const current=byClass.get(row.endpointClass)||[];current.push(row);byClass.set(row.endpointClass,current);}
+  const candidate=calculateResponseByteCeilingCandidate(rows);if(!candidate.ok)return deepFreeze({...candidate,decision:'NO-GO',formalQualification:false,requiredManifest:manifest});
+  const playersHighWater=(byClass.get('players')||[]).some(row=>row.highWaterCandidate===true),discoveryHighWater=(byClass.get('fixtures_discovery')||[]).some(row=>row.highWaterCandidate===true);
+  if(!playersHighWater||!discoveryHighWater)return deepFreeze({...candidate,ok:false,decision:'NO-GO',formalQualification:false,reason:'high_water_sample_incomplete',proposedCeiling:null,requiredManifest:manifest});
   return deepFreeze({
-    ok:true,decision:'GO',reason:null,requiredManifest:manifest,classMaxima,observedMaximum,proposedCeiling,marginBytes:proposedCeiling-observedMaximum,
-    multiplier:EIA_2I5E_BYTE_CEILING_MULTIPLIER,quantumBytes:EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES,
+    ...candidate,ok:true,decision:'GO',formalQualification:true,qualificationState:'ATTENDED_CANONICAL_QUALIFIED',requiredManifest:manifest,
     productionConstant:EIA_2I5E_PRODUCTION_BYTE_CEILING,implemented:false,
     rationale:'twice the observed valid maximum, rounded up to the next 64KiB, remaining below a 2MiB amplification cap',
     residualRisk:'a later fixture with unusually large player-stat rows, unexpected pagination, or a provider schema expansion could still exceed the sample'
@@ -389,18 +401,20 @@ export async function fetchOfficialFplAuthority({fetchImpl,now=()=>new Date().to
   return issued;
 }
 
-export async function runAttendedApiFootballQualification({apiKey,fetchImpl,sleep,now=()=>new Date().toISOString(),timeoutSignal=AbortSignal.timeout,plan=eia2i5eRequestPlan()}={}){
+export async function runAttendedApiFootballQualification(options={}){
+  if(Object.hasOwn(options,'plan'))return fail('qualification_plan_not_canonical');
+  const {apiKey,fetchImpl,sleep,now=()=>new Date().toISOString(),timeoutSignal=AbortSignal.timeout}=options;
   if(EIA_2I5E_MAX_ATTEMPTS>=API_FOOTBALL_DAILY_REQUEST_LIMIT)return fail('attempt_budget_unsafe');
-  const canonical=validateCanonicalQualificationPlan(plan);if(!canonical.ok)return canonical;
+  const plan=EIA_2I5E_CANONICAL_REQUEST_MANIFEST;
   const credential=resolveAttendedCredential(apiKey);
   const empty={
     ok:false,checkpoint:EIA_2I5E_CHECKPOINT,attempts:0,measurements:[],stoppedReason:credential.ok?null:credential.reason,
-    responseLimit:recommendResponseByteCeiling([]),mapping:null,productionByteCeiling:EIA_2I5E_PRODUCTION_BYTE_CEILING,implementedCeiling:false
+    responseLimit:evaluateAttendedResponseMeasurements([]),mapping:null,productionByteCeiling:EIA_2I5E_PRODUCTION_BYTE_CEILING,implementedCeiling:false
   };
   if(!credential.ok)return deepFreeze({...empty,reason:credential.reason});
   if(typeof fetchImpl!=='function'||typeof sleep!=='function'||typeof timeoutSignal!=='function')return fail('provider_disabled_configuration_invalid');
   const init=apiFootballRequestInit(apiKey);if(!init.ok)return init;
-  const measurements=[];
+  const measurements=[],fixtureParticipants=new Map();
   let attempts=0,stoppedReason=null;
   for(const item of plan.items){
     if(attempts>=EIA_2I5E_MAX_ATTEMPTS){stoppedReason='attempt_budget_exhausted';break;}
@@ -411,17 +425,23 @@ export async function runAttendedApiFootballQualification({apiKey,fetchImpl,slee
     if(!pinned.ok)return pinned;
     const sent=await sendApiFootballRequest({fetchImpl,url:pinned.url,init:init.init,timeoutSignal});
     if(!sent.ok){
-      measurements.push(deepFreeze({ok:false,reason:sent.reason,logicalRequestId:item.id,requestIdentity:requestIdentity(item),attempted:true,stoppedBySafety:sent.reason!=='provider_timeout',endpointClass:item.endpointClass,endpoint:item.endpoint,httpClass:sent.reason==='provider_timeout'?'timeout':'transport',actualBytes:null,bodyRetained:false,fetchedAt:iso(typeof now==='function'?now():now)}));
+      measurements.push(deepFreeze({ok:false,reason:sent.reason,logicalRequestId:item.id,requestIdentity:requestIdentity(item),attempted:true,stoppedBySafety:true,endpointClass:item.endpointClass,endpoint:item.endpoint,httpClass:sent.reason==='provider_timeout'?'timeout':'transport',actualBytes:null,bodyRetained:false,fetchedAt:iso(typeof now==='function'?now():now)}));
       stoppedReason=sent.reason;break;
     }
-    const measured=await measureDiscardingBody(sent.response,{planItem:item,now});
-    measurements.push(measured);
+    const expectedParticipants=fixtureParticipants.get(String(item.search.fixture||''))||null;
+    const measured=await measureDiscardingBody(sent.response,{planItem:item,expectedParticipantTeamIds:expectedParticipants,now});
     const terminal=['provider_authentication_failed','quota_exhausted','redirect_rejected','provider_response_too_large'];
-    if(terminal.includes(measured.reason)){stoppedReason=measured.reason;break;}
-    if(measured.quota?.state!=='known'){stoppedReason='quota_headers_uncertain';break;}
-    if(!measured.ok){stoppedReason=measured.reason||'unexpected_provider_response_state';break;}
+    let primaryReason=null;
+    if(terminal.includes(measured.reason))primaryReason=measured.reason;
+    else if(['provider_body_read_failed','provider_body_unreadable'].includes(measured.reason))primaryReason=measured.reason;
+    else if(!measured.ok&&measured.reason)primaryReason=measured.reason;
+    else if(measured.quota?.state!=='known')primaryReason='quota_headers_uncertain';
+    else if(!measured.ok)primaryReason='unexpected_provider_response_state';
+    const recorded=primaryReason?deepFreeze({...measured,stoppedBySafety:true}):measured;measurements.push(recorded);
+    if(primaryReason){stoppedReason=primaryReason;break;}
+    if(item.endpointClass==='fixture')fixtureParticipants.set(String(item.search.id),measured.fixtureParticipantTeamIds);
   }
-  const responseLimit=recommendResponseByteCeiling(measurements,plan);
+  const responseLimit=evaluateAttendedResponseMeasurements(measurements);
   const result={
     ok:stoppedReason==null,checkpoint:EIA_2I5E_CHECKPOINT,attempts,measurements,stoppedReason,responseLimit,
     productionByteCeiling:EIA_2I5E_PRODUCTION_BYTE_CEILING,implementedCeiling:false,origin:API_FOOTBALL_ORIGIN

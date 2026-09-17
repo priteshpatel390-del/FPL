@@ -1,6 +1,6 @@
 ## EIA-2I5E isolation
 
-R2 qualification remediation and preserved historical evidence have no production calculation read path. EIA-2I5E changes no expected-minutes, xP, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic. Current response-size and mapping gates are both NO-GO. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+R3 qualification remediation and preserved historical evidence have no production calculation read path. EIA-2I5E changes no expected-minutes, xP, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic. Current response-size and mapping gates are both NO-GO. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D isolation
 

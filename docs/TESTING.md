@@ -1,6 +1,6 @@
 ## EIA-2I5E permanent coverage
 
-`tests/eia2i5e-prelive-qualification.test.mjs` pins exact deep-frozen manifest equality and pre-egress alternate rejection; response `get`, echoed parameters, discovery league/season, fixture row identity, team coverage and non-empty samples; immediate sanitized stops for schema, identity, pagination, size, quota, redirect, authentication, 429 and provider failures; skipped remainder state; closed generic mapping issuance; exact-commit date-precision Chelsea/Leeds adaptation; mapping mismatch/tamper/collision failures; R1 evidence NO-GO under R2; production constant `null`; secret safety and production/browser/model isolation. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+`tests/eia2i5e-prelive-qualification.test.mjs` pins candidate-only arithmetic versus attended formal GO, module-owned manifest execution and exact-clone pre-egress rejection, exact `1/1` pagination, fixture competition/season/status/participant identity, exact two-row lineup/player participant matching, event participant containment, stream-read/cancel failure sanitization, terminal reason precedence, all immediate safety stops, closed mapping admission, date-only Chelsea/Leeds provenance, production constant `null`, and production/browser/model isolation. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D permanent coverage
 

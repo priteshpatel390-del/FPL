@@ -1,5 +1,6 @@
 # Historical Records Index
 
+- [EIA-2I5E-R3 final pre-replay hardening](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md) — current repository-only contract separates arithmetic candidate from formal attended GO, makes canonical execution non-injectable, requires exact pagination and fixture-participant cross-checks, and made zero provider calls.
 - [EIA-2I5E-R2 authenticity remediation](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md) — current repository-only state: historical R1 measurements preserved, response-size NO-GO pending response-identity requalification, mapping NO-GO at 2/20; zero R2 provider calls and no activation.
 - [EIA-2I5E Pre-Live API-Football Evidence Qualification](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md) — preserves historical zero-attempt dual NO-GO, then records R1 response-size GO at proposed 720,896 bytes and mapping NO-GO at 2/20 receipt-backed clubs; production constant remains `null`; no collector activation.
 - [EIA-2I5D Repository-Only API-Football Shadow Runtime and Persistence](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md) — merged repository-ready dormant collector, migration 0005 and fail-closed runtime contracts; not provisioned, deployed, credentialed, scheduled or live accepted.
