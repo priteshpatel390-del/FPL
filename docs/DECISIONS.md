@@ -1,3 +1,7 @@
+## D-EIA-2I5E-R7A-R1 · 17 September 2026 · Accepted · Secret-bearing qualification workflow final hardening
+
+Harden the existing R7A workflow on draft PR #252: pin actions to independently verified full SHAs, structurally block GitHub UI reruns, reconfirm current `main` after environment wait, wrap fetch with a hard 11-call egress ceiling, and serialize dispatches without cancelling in-progress work. Do not mutate GitHub branch/ruleset settings. Owner-configured main protection remains an outstanding pre-dispatch requirement. Prevent-self-review is an owner operational preflight and is not inferred. Zero provider calls, zero secret accesses, no dispatch, no merge, no PR #251 change. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## D-EIA-2I5E-R7A · 17 September 2026 · Accepted · Separate main-only GitHub qualification workflow
 
 Do not weaken environment `eia-api-football-qualification` to run from PR #251. Add a separate, manual-only, zero-input workflow on a branch from `main`, hard-code reviewed candidate SHA `03cd231cd3e1d38821194a5d1aad87bc87232154`, keep the secret inside one protected-job step, and fail closed if the candidate branch moves. Grok/Codex must never read the key. R7A authorizes repository foundation only: no provider call, secret access, workflow dispatch, environment approval, PR #251 change, merge, collector activation or model/UI change. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).

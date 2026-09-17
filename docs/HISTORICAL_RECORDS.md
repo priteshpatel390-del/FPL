@@ -1,6 +1,6 @@
 # Historical Records Index
 
-- [EIA-2I5E-R7A Secure GitHub qualification workflow foundation](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md) — dormant manual-only protected-environment workflow for later attended PR #251 qualification; R7A itself made no provider call and did not access the secret.
+- [EIA-2I5E-R7A Secure GitHub qualification workflow foundation](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md) — dormant manual-only protected-environment workflow for later attended PR #251 qualification; R7A-R1 hardens action SHAs, structurally blocks UI reruns, reconfirms current main before egress, caps fetch at 11, and records outstanding owner-configured main protection; R7A/R7A-R1 made no provider call and did not access the secret.
 - [EIA-2I5B API-Football hardened provider request and fixture discovery](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md) — dormant injected-transport discovery for five approved competitions; no live credential, D1 write, scheduler, API-Football runtime activation or model path. An automatic PR preview is not that activation.
 - [EIA-2I5A API-Football shadow identity and D1 schema contracts](EIA-2I5A-API-FOOTBALL-SHADOW-IDENTITY-SCHEMA.md) — offline season-scoped identity, exact qualification, explicit conflicts, participation and narrow owner-risk storage; no collector, secret, schedule or model path.
 

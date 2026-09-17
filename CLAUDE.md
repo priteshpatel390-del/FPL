@@ -1,3 +1,8 @@
+<!-- EIA-2I5E-R7A-R1-2026-09-17 -->
+### Current external-intelligence checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
+
+R7A-R1 remediates draft PR #252 in place. It pins `actions/checkout`, `actions/setup-node` and `actions/upload-artifact` to independently verified immutable SHAs; structurally blocks GitHub UI reruns (`run_attempt == 1`); reconfirms current remote `main` equals the dispatch SHA after environment wait and immediately before egress; wraps fetch so a 12th HTTP request cannot leave the runner; and serializes dispatches with `cancel-in-progress: false`. An owner-configured main-protection ruleset is a required pre-dispatch precondition and remains outstanding; this change did not mutate GitHub rulesets. Prevent-self-review remains an owner operational preflight, not inferred. PR #251 is unchanged. Zero provider requests. Zero secret accesses. Workflow was not dispatched. Not GO. See [EIA-2I5E-R7A](docs/EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 <!-- EIA-2I5E-R7A-2026-09-17 -->
 ### Current external-intelligence checkpoint — EIA-2I5E-R7A secure GitHub qualification workflow foundation
 

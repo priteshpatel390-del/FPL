@@ -1,3 +1,7 @@
+## Current checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
+
+Draft PR #252 remains the dormant qualification workflow. R7A-R1 hardens it in place. Next owner actions are: independently configure and verify a main-protection ruleset targeting `refs/heads/main`; review/merge is still not GO; a later manual dispatch still requires environment approval. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
+
 ## Current checkpoint — EIA-2I5E-R7A secure GitHub qualification workflow foundation
 
 Repository-only dormant workflow for a later attended API-Football qualification run. Next owner actions after merge are exact-`main` Verify, then a separately approved manual dispatch. Merge is not response-size GO, not collector activation, and not a provider call. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).

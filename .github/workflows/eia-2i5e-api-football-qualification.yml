@@ -1,4 +1,4 @@
-# EIA-2I5E-R7A — dormant, manual-only GitHub qualification execution boundary.
+# EIA-2I5E-R7A / R7A-R1 — dormant, manual-only GitHub qualification execution boundary.
 #
 # This workflow can do exactly one thing after owner merge onto main: run the exact reviewed
 # PR #251 qualification candidate once, under the protected environment
@@ -16,11 +16,25 @@
 # bypass disabled, and deployment branch restriction `main` only. This file does not and cannot
 # verify those GitHub UI settings.
 #
-# A GitHub UI re-run is another provider attempt and requires fresh owner approval. This workflow
-# has no retry action, matrix retry, self-dispatch, continue loop or fallback HTTP client.
+# GitHub UI reruns are structurally blocked. Both jobs require github.run_attempt == 1, so a
+# "Re-run jobs" operation cannot reach environment approval, the secret, the qualification
+# runner or provider egress. A new provider attempt requires a new manual workflow_dispatch
+# and a new protected-environment approval.
 #
-# R7A itself made zero provider calls and did not access the environment secret. Secret-bearing
-# execution is impossible until this workflow exists on main and the owner later dispatches it.
+# External actions are pinned to independently verified immutable full commit SHAs. Tag or
+# branch references are forbidden in this secret-bearing workflow.
+#
+# An independent opaque fetch wrapper makes a 12th HTTP egress impossible even if the reviewed
+# runner miscounts. Concurrent dispatches share one qualification group and do not cancel in
+# progress. That serializes execution; it does not authorize a second dispatch.
+#
+# Before this workflow may become the trusted secret-bearing path on main, the owner must
+# configure and independently verify an active main-protection ruleset. This file does not
+# mutate GitHub branch or ruleset settings.
+#
+# R7A/R7A-R1 itself made zero provider calls and did not access the environment secret.
+# Secret-bearing execution is impossible until this workflow exists on main and the owner
+# later dispatches it.
 
 name: EIA-2I5E API-Football Qualification
 
@@ -30,6 +44,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: eia-2i5e-api-football-qualification
+  cancel-in-progress: false
+
 env:
   QUALIFICATION_CANDIDATE_SHA: 03cd231cd3e1d38821194a5d1aad87bc87232154
   QUALIFICATION_BRANCH: eia-2i5e-prelive-qualification
@@ -37,7 +55,7 @@ env:
 
 jobs:
   repository-gate:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -49,9 +67,11 @@ jobs:
           EVENT_REF: ${{ github.ref }}
           EVENT_REPOSITORY: ${{ github.repository }}
           EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
           test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
           test "$EVENT_REF" = refs/heads/main
           test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
           printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
@@ -61,7 +81,7 @@ jobs:
           test "$QUALIFICATION_PR" = 251
 
       - name: Check out the workflow execution revision
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -83,7 +103,7 @@ jobs:
           test -z "$(git status --porcelain)"
 
   qualify:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
     needs: repository-gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -92,26 +112,47 @@ jobs:
     environment:
       name: eia-api-football-qualification
     steps:
+      - name: Refuse GitHub UI reruns and confirm dispatch identity
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
       - name: Check out the hard-coded PR #251 candidate
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: 03cd231cd3e1d38821194a5d1aad87bc87232154
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Reconfirm candidate HEAD and remote qualification branch
+      - name: Reconfirm candidate HEAD, remote qualification branch and current main
+        env:
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+          test "$EVENT_REF" = refs/heads/main
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
           test "$(git rev-parse HEAD)" = 03cd231cd3e1d38821194a5d1aad87bc87232154
           test "$(git rev-parse HEAD)" = "$QUALIFICATION_CANDIDATE_SHA"
           test -z "$(git status --porcelain)"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
           remote_candidate="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/eia-2i5e-prelive-qualification | cut -f1)"
           test -n "$remote_candidate"
           test "$remote_candidate" = "$QUALIFICATION_CANDIDATE_SHA"
           test "$remote_candidate" = 03cd231cd3e1d38821194a5d1aad87bc87232154
 
       - name: Set up exact Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24.19.0
 
@@ -123,6 +164,29 @@ jobs:
           test -z "$(git status --porcelain)"
           node --test tests/eia2i5e-prelive-qualification.test.mjs
           node --input-type=module -e "import {API_FOOTBALL_MAX_RESPONSE_BYTES} from './workers/api-football-collector/runtime-contracts.mjs'; if (API_FOOTBALL_MAX_RESPONSE_BYTES !== null) { console.error('production_byte_ceiling_changed'); process.exit(1); }"
+
+      - name: Reconfirm remote main and candidate immediately before secret-bearing execution
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$(git rev-parse HEAD)" = 03cd231cd3e1d38821194a5d1aad87bc87232154
+          test "$(git rev-parse HEAD)" = "$QUALIFICATION_CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          remote_candidate="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/eia-2i5e-prelive-qualification | cut -f1)"
+          test -n "$remote_candidate"
+          test "$remote_candidate" = "$QUALIFICATION_CANDIDATE_SHA"
+          test "$remote_candidate" = 03cd231cd3e1d38821194a5d1aad87bc87232154
 
       - name: Invoke attended qualification runner once
         env:
@@ -157,13 +221,21 @@ jobs:
           if (typeof runAttendedApiFootballQualification !== 'function') fail('qualification_runner_unavailable');
 
           const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          let actualEgressAttempts = 0;
+          const boundedFetch = async (...args) => {
+            if (actualEgressAttempts >= MAX_PROVIDER_ATTEMPTS) {
+              throw new Error('qualification_execution_attempt_ceiling_reached');
+            }
+            actualEgressAttempts += 1;
+            return globalThis.fetch(...args);
+          };
           let invocations = 0;
           let result;
           try {
             invocations += 1;
             result = await runAttendedApiFootballQualification({
               apiKey,
-              fetchImpl: globalThis.fetch,
+              fetchImpl: boundedFetch,
               sleep
             });
           } catch {
@@ -178,6 +250,8 @@ jobs:
           const retryOccurred = logicalIds.length !== new Set(logicalIds).size;
           if (measurements.some(row => row?.bodyRetained !== false)) fail('qualification_raw_body_retained');
           if (!Number.isInteger(attempts) || attempts < 0 || attempts > MAX_PROVIDER_ATTEMPTS) fail('qualification_attempt_budget_exceeded');
+          if (!Number.isInteger(actualEgressAttempts) || actualEgressAttempts < 0 || actualEgressAttempts > MAX_PROVIDER_ATTEMPTS) fail('qualification_execution_attempt_ceiling_reached');
+          if (actualEgressAttempts > attempts) fail('qualification_attempt_count_contradiction');
           if (retryOccurred) fail('qualification_retry_detected');
 
           const serialized = JSON.stringify(result);
@@ -251,12 +325,12 @@ jobs:
           }
           lines.push('');
           lines.push('Workflow success means sanitized evidence was produced. It is not automatic response-size GO.');
-          lines.push('A GitHub UI re-run is another provider attempt and requires fresh owner approval.');
+          lines.push('UI reruns are structurally blocked. A new provider attempt requires a new manual workflow_dispatch and a new protected-environment approval.');
           appendFileSync(summaryPath, `${lines.join('\n')}\n`);
           EOF
 
       - name: Upload sanitized qualification result
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: eia-2i5e-qualification-result
           path: ${{ runner.temp }}/eia-2i5e-qualification-result.json
