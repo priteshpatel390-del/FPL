@@ -1,3 +1,7 @@
+## EIA-2I5E pre-live qualification boundary
+
+Attended qualification lives only under Decision Intelligence. It can measure injected or credentialed API-Football responses and issue a DATA-S2A-backed mapping table, but it does not deploy the collector, arm Cron, enable collection, provision a secret, apply migration 0005 live, or write `API_FOOTBALL_MAX_RESPONSE_BYTES`. Production/browser/model modules do not import it. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## EIA-2I5D dormant collector architecture
 
 A dedicated `workers/api-football-collector/` scheduled-only package now owns future provider egress; it is separate from Official FPL collection and scheduling and exports no public fetch handler. Migration 0005 extends the canonical `teamsheet-data` D1 with disabled runtime/quota/lease state, durable attempts, atomic discovery generations/heads and append-only fixture revisions. Official FPL authority is read from completed DATA-S2A heads. No production/browser/model import exists. Missing D1, authority, secret, qualified byte ceiling or enabled kill switch means zero egress. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

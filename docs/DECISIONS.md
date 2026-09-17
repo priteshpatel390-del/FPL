@@ -1,3 +1,7 @@
+## 17 September 2026 — EIA-2I5E pre-live qualification decision
+
+Attended API-Football response-size and 20-club mapping qualification is fail-closed without an already-approved secure credential route. The production byte ceiling stays `null`. Previously qualified Chelsea 49→6 and Leeds 63→13 may be reused only when current Official FPL authority still shows those exact identities; the remaining 18 clubs stay unmapped. No name-only certification, collector activation, Cron, secret, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## 16 September 2026 — EIA-2I5D repository-only persistence decision
 
 Approved architecture uses the existing canonical `teamsheet-data` D1, not a second provider database; one separate scheduled-only Worker; durable reservation-before-egress; a 100-attempt UTC-day internal ceiling; 30-second global lease; DATA-S2A-derived 48-hour Official FPL authority; atomic five-competition heads; and append-only correction revisions. Production response-byte ceiling remains intentionally undecided, making activation fail closed. Repository implementation approves no provisioning, deployment, credential, Cron, provider call, model use or UI use. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

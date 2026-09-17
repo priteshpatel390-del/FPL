@@ -1,3 +1,7 @@
+## EIA-2I5E permanent coverage
+
+`tests/eia2i5e-prelive-qualification.test.mjs` pins the 16-attempt budget, closed request plan, credential-missing zero-egress path, 401/403/429 stop, serial 1s spacing, streamed byte/row/quota measurement without raw-body retention, byte-ceiling GO only from complete high-water class coverage, production constant remaining `null`, DATA-S2A authority (not a labeled snapshot), Chelsea/Leeds reuse only on exact current Official FPL identity, 20-club bijection, rejection of name-only methods, sanitized Official FPL receipts, and production/browser/collector-activation isolation. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## EIA-2I5D permanent coverage
 
 `tests/eia2i5d-shadow-runtime.test.mjs` covers quota, UTC reset, first-probe failure closure, atomic lease/count/attempt rollback, duplicate attempt identity, conservative post-reservation crash accounting, lease/spacing, two- and five-promise races, 401/403 durable authentication blocking, exact endpoint-class/query mapping, authority freshness/bijection, bounded body/row decoding, scheduling, observability, secret/route safety and model/browser isolation. `tests/eia2i5d-migration.test.mjs` applies 0001–0005 to populated local D1, checks retained data/FKs/rights, committed-head enforcement, duplicate-attempt rejection and absence of raw stores. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

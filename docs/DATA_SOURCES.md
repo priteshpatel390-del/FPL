@@ -1,3 +1,7 @@
+## API-Football EIA-2I5E qualification status
+
+API-Football remains `owner_risk_accepted_private_use`. EIA-2I5E made no authenticated provider request. Official FPL public bootstrap+fixtures were used only to issue the current 20-club DATA-S2A authority. Response-size and complete mapping gates are NO-GO. Runtime remains disabled and uncredentialed. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## API-Football EIA-2I5D persistence status
 
 API-Football remains `owner_risk_accepted_private_use`: private one-user non-commercial normalized research only; no redistribution, public/commercial use or raw-payload warehouse; stop on objection. Migration 0005 seeds this narrow source revision and no broader right. Runtime remains disabled and uncredentialed. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

@@ -1,3 +1,7 @@
+## EIA-2I5E pre-live API-Football evidence qualification
+
+EIA-2I5D is merged and exact-main verified, but the collector remains unprovisioned. EIA-2I5E records attended qualification of response size and the 20-club API-Football → Official FPL mapping. Both gates are NO-GO: no authorized API-Football credential was available, so zero provider requests were made; Official FPL authority issued 20 current-season clubs, but only Chelsea 49→6 and Leeds 63→13 are verified. `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. No live activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## EIA-2I5D repository-only shadow runtime and persistence
 
 EIA-2I5D adds dormant migration 0005 and a separate scheduled-only API-Football collector package. Durable quota/lease, generation/head, fixture-revision and DATA-S2A authority contracts are repository-ready but unprovisioned. Collection defaults disabled; no Cron is declared; response byte limit remains deliberately unqualified and blocks activation. No live provider, Cloudflare, model or UI action occurred. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

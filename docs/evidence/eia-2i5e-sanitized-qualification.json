@@ -1,0 +1,103 @@
+{
+  "checkpoint": "EIA-2I5E",
+  "attendedAt": "2026-09-17T05:54:58.321Z",
+  "baseMainSha": "6309dae3614aa06e7c021bfab0f138cac2437a2b",
+  "verifyRunId": 35152280445,
+  "verifyRunNumber": 735,
+  "apiFootball": {
+    "credentialState": "unavailable_in_attended_environment",
+    "approvedAttemptBudget": 16,
+    "attemptsUsed": 0,
+    "endpointClassesSampled": [],
+    "fixturesSampled": [],
+    "httpOutcomes": [],
+    "quotaTelemetry": null,
+    "measurements": [],
+    "observedMaximumByClass": {},
+    "overallObservedMaximumBytes": null,
+    "proposedProductionByteCeiling": null,
+    "decision": "NO-GO",
+    "reason": "credential_unavailable"
+  },
+  "officialFplAuthority": {
+    "season": "2026-27",
+    "sourceKey": "official-fpl",
+    "sourceRevisionId": "official-fpl-r1",
+    "schemaVersion": "data-s2a-v1",
+    "validationVersion": "data-s2a-official-fpl-validation-v2",
+    "transformVersion": "data-s2a-official-fpl-history-v1",
+    "fetchedAt": "2026-09-17T05:54:58.321Z",
+    "gw1Deadline": "2026-08-21T17:30:00Z",
+    "counts": {
+      "events": 38,
+      "teams": 20,
+      "players": 659,
+      "fixtures": 380
+    },
+    "rawPayloadRetained": false,
+    "teams": [
+      {"id": 1, "name": "Arsenal", "short_name": "ARS"},
+      {"id": 2, "name": "Aston Villa", "short_name": "AVL"},
+      {"id": 3, "name": "Bournemouth", "short_name": "BOU"},
+      {"id": 4, "name": "Brentford", "short_name": "BRE"},
+      {"id": 5, "name": "Brighton", "short_name": "BHA"},
+      {"id": 6, "name": "Chelsea", "short_name": "CHE"},
+      {"id": 7, "name": "Coventry City", "short_name": "COV"},
+      {"id": 8, "name": "Crystal Palace", "short_name": "CRY"},
+      {"id": 9, "name": "Everton", "short_name": "EVE"},
+      {"id": 10, "name": "Fulham", "short_name": "FUL"},
+      {"id": 11, "name": "Hull City", "short_name": "HUL"},
+      {"id": 12, "name": "Ipswich Town", "short_name": "IPS"},
+      {"id": 13, "name": "Leeds", "short_name": "LEE"},
+      {"id": 14, "name": "Liverpool", "short_name": "LIV"},
+      {"id": 15, "name": "Man City", "short_name": "MCI"},
+      {"id": 16, "name": "Man Utd", "short_name": "MUN"},
+      {"id": 17, "name": "Newcastle", "short_name": "NEW"},
+      {"id": 18, "name": "Nott'm Forest", "short_name": "NFO"},
+      {"id": 19, "name": "Spurs", "short_name": "TOT"},
+      {"id": 20, "name": "Sunderland", "short_name": "SUN"}
+    ]
+  },
+  "mapping": {
+    "decision": "NO-GO",
+    "reason": "current_season_pl_team_mapping_incomplete",
+    "verifiedPremierLeagueTeamCount": 2,
+    "completeTwentyClubCoverage": false,
+    "nameOnlyCertified": false,
+    "fuzzyMatchingUsed": false,
+    "previouslyQualifiedReuse": [
+      {
+        "club": "Chelsea",
+        "apiFootballTeamId": "49",
+        "officialFplTeamId": "6",
+        "qualificationStatus": "VERIFIED",
+        "evidence": "EIA-2I4C current-season League Cup fixture 1636205 plus current Official FPL team 6 Chelsea/CHE"
+      },
+      {
+        "club": "Leeds",
+        "apiFootballTeamId": "63",
+        "officialFplTeamId": "13",
+        "qualificationStatus": "VERIFIED",
+        "evidence": "EIA-2I4C current-season League Cup fixture 1636205 plus current Official FPL team 13 Leeds/LEE"
+      }
+    ]
+  },
+  "rights": {
+    "classification": "owner_risk_accepted_private_use",
+    "redistributionAllowed": false,
+    "publicUseAllowed": false,
+    "commercialUseAllowed": false,
+    "rawPayloadRetentionAllowed": false,
+    "stopOnObjection": true
+  },
+  "activation": {
+    "collectorDeployed": false,
+    "migration0005Live": false,
+    "credentialProvisioned": false,
+    "cronActive": false,
+    "collectionEnabled": false,
+    "providerShadowRuntimeLiveAccepted": false,
+    "modelOrUiInfluence": false,
+    "productionByteCeiling": null
+  }
+}

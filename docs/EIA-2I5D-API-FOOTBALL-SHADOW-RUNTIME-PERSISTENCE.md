@@ -9,6 +9,8 @@ EIA-2I5D adds repository-ready, dormant infrastructure for a future private API-
 
 No API-Football request, credential access or provisioning, live D1 migration, Worker deployment, Cron activation, model change, recommendation change or UI change occurred.
 
+Post-merge closeout (EIA-2I5E, 17 September 2026): PR #250 merged to `main` as `6309dae3614aa06e7c021bfab0f138cac2437a2b`. Exact-main Verify Teamsheet run `35152280445` (run number 735) passed. The collector remains not deployed, migration 0005 is not applied live, no credential is provisioned, Cron is not active, collection stays disabled, and the response-byte ceiling remains `null`. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## Migration 0005
 
 `0005_api_football_shadow_runtime.sql` extends migration 0004. It seeds only the canonical API-Football source/revision with the existing `owner_risk_accepted_private_use` restrictions and creates:

@@ -1,3 +1,7 @@
+## EIA-2I5E limitations
+
+No authorized API-Football credential was available in this attended environment, so response-size evidence is empty and `API_FOOTBALL_MAX_RESPONSE_BYTES` remains unqualified. Complete 20-club mapping is unproven: only Chelsea and Leeds are verified against current Official FPL authority. Names cannot fill the remaining clubs. Collector, Cron, live migration 0005, Worker secret and kill-switch enablement remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## EIA-2I5D limitations
 
 Collector remains deliberately unusable live: no credential, real D1 ID, deployed Worker, Cron, enabled kill switch or approved response-byte ceiling exists. Full 20-club API-Football-to-FPL mapping remains unproven. Provider subscription entitlement remains unknown; observed headers are telemetry only. Repository race tests and local D1 migration tests do not prove live Cloudflare behavior. No model value is established. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

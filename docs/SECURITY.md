@@ -1,3 +1,7 @@
+## EIA-2I5E attended qualification security
+
+Attended API-Football requests, if a credential is later injected, remain origin-pinned GET, header-only `x-apisports-key`, redirect-rejected and 15-second bounded. This checkpoint found no authorized credential route and performed zero provider HTTP attempts. No key, request header, keyed URL or raw provider body is persisted. Official FPL raw payloads were discarded after authority issuance. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 ## EIA-2I5D dormant collector security
 
 Future API-Football credentials may exist only as Worker secret `API_FOOTBALL_API_KEY`. Dedicated Worker has scheduled handler only, no public fetch route, Workers.dev or preview URL, no Cron and no live D1 ID. Exact-origin/GET/header-only EIA-2I5B requests remain closed; endpoint class must match the exact query shape, and local validation plus an atomic lease/count/provenance D1 reservation precedes fetch. Missing D1, disabled collection, invalid credential state, invalid/stale authority, quota uncertainty or unqualified byte ceiling causes zero egress. HTTP 401/403 records a closed authentication failure, invalidates credential state and disables collection without reading/logging the provider body. No raw body, headers, key, arbitrary provider errors or query URL is persisted/logged. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).

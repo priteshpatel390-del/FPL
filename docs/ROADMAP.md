@@ -1,6 +1,11 @@
-## Current checkpoint — EIA-2I5D repository-only shadow runtime and persistence
+## Current checkpoint — EIA-2I5E pre-live API-Football evidence qualification
 
-Repository implementation is ready for owner review: migration 0005, dormant collector, quota/lease, scheduler, authority and revision contracts. Next steps remain separate live gates, beginning with owner review/merge and then an attended response-size qualification and exact infrastructure activation proposal. No live activation is authorized. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+EIA-2I5D repository implementation is **MERGED** (PR #250) and exact-main verification **PASSED**. Collector is not deployed; migration 0005 is not applied live; credential is not provisioned; Cron is not active; collection remains disabled; provider shadow runtime is not live accepted; model/UI influence is none. Response-size and complete 20-club mapping gates are both **NO-GO** in this attended checkpoint: no authorized API-Football credential was available, so no provider HTTP attempt was made and the production byte ceiling remains `null`. Next live work requires a separate owner approval. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
+## EIA-2I5D checkpoint
+
+Repository-only shadow runtime and persistence merged as PR #250. Remaining live gates stay separate: attended response-size qualification, complete 20-club mapping, then a later infrastructure activation proposal. No live activation is authorized. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
+
 
 # ROADMAP.md — current and proposed checkpoints
 
