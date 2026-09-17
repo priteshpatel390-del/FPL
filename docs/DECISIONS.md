@@ -1,3 +1,7 @@
+## 17 September 2026 — EIA-2I5E-R5 transport-preflight decision
+
+One bounded non-HTTP preflight resolved the exact API-Football hostname, then failed to establish TCP/TLS on port 443 with sanitized `ENETUNREACH`; certificate validation was not reached. It sent no HTTP request and accessed no credential. Phase B was therefore ineligible and the canonical runner was not invoked. Response size remains NO-GO with no R5 candidate. Mapping remains NO-GO 2/20, production constant remains `null`, and collector/infrastructure/model/UI activation remains prohibited. Next action is owner review; another diagnostic or provider attempt requires separate explicit approval.
+
 ## 17 September 2026 — EIA-2I5E-R4 attended requalification decision
 
 One reviewed R3 runner invocation attempted `discovery-2` and stopped immediately with sanitized `transport_failure`: one attempt, zero retries and ten skipped requests. No response or quota telemetry was received, so response size remains NO-GO and no R4 candidate exists. Historical R1 evidence cannot substitute. Mapping remains NO-GO 2/20, production constant remains `null`, and collector/infrastructure/model/UI activation remains prohibited. Next action is owner review; another provider attempt requires separate explicit approval.

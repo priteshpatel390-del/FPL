@@ -1,7 +1,7 @@
 {
-  "checkpoint": "EIA-2I5E-R4",
+  "checkpoint": "EIA-2I5E-R5",
   "baseMainSha": "6309dae3614aa06e7c021bfab0f138cac2437a2b",
-  "previousPrHead": "d8314847f7eb5a8dc2200c47b2f45f0b4c837214",
+  "previousPrHead": "b6da7953d8e3a6ce2c38d9b70335148fb148bc02",
   "historicalZeroAttemptQualification": {
     "checkpoint": "EIA-2I5E",
     "attendedAt": "2026-09-17T05:54:58.321Z",
@@ -1173,7 +1173,7 @@
     "proposedProductionByteCeilingStatus": "historical_arithmetic_candidate_only",
     "legacyMappingReceiptStatusUnderCurrentContract": "superseded_by_r2_closed_adapter"
   },
-  "artifactRevision": "eia-2i5e-sanitized-qualification-r4",
+  "artifactRevision": "eia-2i5e-sanitized-qualification-r5",
   "r2HistoricalTransition": {
     "checkpoint": "EIA-2I5E-R2",
     "repositoryOnly": true,
@@ -1538,5 +1538,212 @@
       "modelOrUiInfluence": false
     },
     "rawProviderBodyRetained": false
+  },
+  "r5CurrentQualification": {
+    "checkpoint": "EIA-2I5E-R5",
+    "baseMainSha": "6309dae3614aa06e7c021bfab0f138cac2437a2b",
+    "previousPrHead": "b6da7953d8e3a6ce2c38d9b70335148fb148bc02",
+    "focusedTestsPassed": true,
+    "phaseA": {
+      "diagnosticCount": 1,
+      "hostname": "v3.football.api-sports.io",
+      "port": 443,
+      "dnsResolved": true,
+      "tcpTlsConnected": false,
+      "certificateValidated": false,
+      "certificateValidationState": "not_reached",
+      "state": "tcp_connection_failed",
+      "sanitizedErrorCode": "ENETUNREACH",
+      "httpRequests": 0,
+      "credentialAccessed": false,
+      "credentialMaterialSent": false,
+      "ipAddressesRetained": false
+    },
+    "phaseB": {
+      "eligible": false,
+      "eligibilityReason": "transport_preflight_failed",
+      "credentialAccessed": false,
+      "credentialSourceCategory": null,
+      "runnerInvocationCount": 0,
+      "approvedAttemptBudget": 11,
+      "attemptsUsed": 0,
+      "retries": 0,
+      "stoppedReason": "tcp_connection_failed",
+      "responseHeadersReceived": false,
+      "measurements": [],
+      "canonicalManifest": [
+        {
+          "logicalRequestId": "discovery-2",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "discovery-3",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "discovery-848",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "discovery-45",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "discovery-48",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "fixture-1636205",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "lineups-1636205",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "players-1636205",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "events-1636205",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "fixture-1635643",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        },
+        {
+          "logicalRequestId": "players-1635643",
+          "required": true,
+          "attempted": false,
+          "succeeded": false,
+          "failed": false,
+          "skipped": true,
+          "stoppedBySafety": false,
+          "identityMatches": false,
+          "duplicateMeasurements": false
+        }
+      ]
+    },
+    "responseSize": {
+      "decision": "NO-GO",
+      "reason": "transport_preflight_failed",
+      "formalQualification": false,
+      "sampleSufficiency": false,
+      "observedMaximumByClass": {},
+      "overallObservedMaximumBytes": null,
+      "doubledMaximumBytes": null,
+      "roundingQuantumBytes": 65536,
+      "proposedCeilingBytes": null,
+      "absoluteMarginBytes": null,
+      "productionConstant": null,
+      "historicalR1ObservedMaximumBytes": 347982,
+      "historicalR1ArithmeticCandidateCeilingBytes": 720896,
+      "comparison": "unavailable_transport_preflight_prevented_r5_measurement",
+      "residualRisk": "current response sizes, pagination, identity and provider schema remain unqualified"
+    },
+    "quotaTelemetry": {
+      "state": "unavailable_no_http_response",
+      "perRequest": [],
+      "startingDailyRemaining": null,
+      "endingDailyRemaining": null,
+      "startingRateRemaining": null,
+      "endingRateRemaining": null,
+      "historicalObservedDailyLimit": 7500,
+      "historicalObservedRateLimitPerMinute": 300,
+      "contractualEntitlementClaimed": false
+    },
+    "cumulativeKnownQualificationAttempts": 12,
+    "fixtureParticipantSets": [],
+    "enrichmentParticipantValidation": "not_reached",
+    "mapping": {
+      "decision": "NO-GO",
+      "verifiedPremierLeagueTeamCount": 2,
+      "remainingUnprovenClubs": 18,
+      "newMappingsAdmitted": 0
+    },
+    "activation": {
+      "collectorDeployed": false,
+      "migration0005Live": false,
+      "productionD1Binding": false,
+      "credentialProvisioned": false,
+      "cronActive": false,
+      "collectionEnabled": false,
+      "providerShadowRuntimeLiveAccepted": false,
+      "modelOrUiInfluence": false
+    },
+    "rawProviderBodyRetained": false,
+    "secretPrinted": false,
+    "secretPersisted": false
   }
 }

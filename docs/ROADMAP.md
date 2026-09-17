@@ -1,6 +1,6 @@
 ## Current checkpoint — EIA-2I5E pre-live API-Football evidence qualification
 
-EIA-2I5E-R4 stopped safely on first canonical request with `transport_failure`: one attempt, zero retries and ten skipped requests. Response size remains **NO-GO** with no R4 candidate; R1 evidence stays historical. Mapping remains **NO-GO — 2/20**. Production constant remains `null`; collector, migration 0005, production D1, Worker secret, Cron, collection and model/UI paths remain inactive. Next checkpoint is owner review; any new attended attempt needs separate approval. Merge remains owner-gated; EIA-2I5F does not start. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R5 stopped safely after DNS passed but its non-HTTP TCP/TLS connection failed with `ENETUNREACH`. It accessed no credential, sent zero HTTP requests and skipped Phase B. Response size remains **NO-GO** with no R5 candidate; R1 evidence stays historical. Mapping remains **NO-GO — 2/20**. Production constant remains `null`; collector, migration 0005, production D1, Worker secret, Cron, collection and model/UI paths remain inactive. Next checkpoint is owner review; any new diagnostic or attended attempt needs separate approval. Merge remains owner-gated; EIA-2I5F does not start. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D checkpoint
 

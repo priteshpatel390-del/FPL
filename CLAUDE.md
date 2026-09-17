@@ -8,6 +8,11 @@ EIA-2I5E-R3 closes caller-minted mapping receipts, binds both execution and eval
 
 R4 invoked the reviewed canonical runner once. `discovery-2` failed with sanitized `transport_failure`; the runner stopped after one attempt with zero retries and skipped the remaining ten requests. No response headers/body, byte measurement, identity evidence or quota telemetry was available. Response size remains NO-GO with no R4 candidate; historical R1 evidence remains historical only. Mapping remains NO-GO 2/20 and `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. No collector, infrastructure, model/UI, deployment or merge action occurred. Any new provider attempt requires separate owner approval. See [EIA-2I5E](docs/EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
+<!-- EIA-2I5E-R5-2026-09-17 -->
+### Current external-intelligence checkpoint — EIA-2I5E-R5 stopped transport preflight
+
+R5 DNS resolution succeeded, but the bounded non-HTTP TCP/TLS connection to the exact provider host failed with sanitized `ENETUNREACH`; certificate validation was not reached. Phase A accessed no credential and sent zero HTTP requests. Phase B was ineligible, so the canonical runner was not invoked and all 11 requests were skipped. Response size remains NO-GO with no R5 candidate; mapping remains NO-GO 2/20 and `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. No collector, infrastructure, model/UI, deployment or merge action occurred. Any new diagnostic or provider attempt requires separate owner approval. See [EIA-2I5E](docs/EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+
 <!-- EIA-2I5D-2026-09-16 -->
 ### Current external-intelligence checkpoint — EIA-2I5D repository-only shadow runtime and persistence
 

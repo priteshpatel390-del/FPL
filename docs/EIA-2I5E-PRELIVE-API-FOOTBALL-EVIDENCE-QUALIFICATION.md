@@ -3,18 +3,33 @@
 Date: 17 September 2026
 Base: `6309dae3614aa06e7c021bfab0f138cac2437a2b` (merge of PR #250 / EIA-2I5D)
 
-## Current state — R4 attended requalification stopped safely
+## Current state — R5 transport preflight stopped safely
 
-EIA-2I5E-R4 invoked the reviewed R3 runner exactly once with the credential supplied through the secure process environment, real `fetch`, the module-owned manifest, the standard 15-second timeout and real one-second spacing. The first request, `discovery-2`, ended in sanitized `transport_failure`. The runner stopped immediately after one attempt; no retry, replay, manual request or later manifest request occurred. No HTTP response was available, so status, bytes, rows, paging, echoed parameters, participant evidence and quota telemetry are all unknown rather than inferred.
+EIA-2I5E-R5 performed one bounded non-HTTP transport preflight with the API-Football credential removed from the diagnostic process environment. DNS resolution succeeded. TCP/TLS connection to the exact hostname on port 443 did not establish and returned sanitized OS code `ENETUNREACH`; certificate validation was therefore not reached. Classification is `tcp_connection_failed`. The TLS socket sent no HTTP request and no credential material. Per the R5 entry gate, Phase B did not run: the credential was not accessed, the canonical runner was not invoked, and API-Football HTTP attempts were zero.
 
 | Current gate | Decision | Reason |
 |---|---|---|
-| Response size | **NO-GO — `transport_failure`** | R4 stopped on its first request. Required current samples remain incomplete, no R4 maximum or arithmetic candidate exists, and the historical 720,896-byte R1 candidate cannot substitute for current qualification. |
+| Response size | **NO-GO — `tcp_connection_failed`** | R5 stopped before HTTP because the non-HTTP TCP/TLS preflight returned `ENETUNREACH`. Required current samples remain incomplete, no R5 maximum or arithmetic candidate exists, and historical R1 evidence cannot substitute. |
 | Complete 20-club mapping | **NO-GO — 2/20** | Only Chelsea `49→6` and Leeds `63→13` are admitted through the closed canonical EIA-2I4C adapter. Eighteen clubs remain unproven. Generic caller evidence cannot mint an admitted receipt. |
 
 `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. Collector remains undeployed; migration 0005 is not live; no production D1 binding, collector credential or Cron exists; collection remains disabled; runtime is not live accepted; model/UI influence remains none.
 
-## R4 attended result
+## R5 transport preflight result
+
+| Check | Result |
+|---|---|
+| DNS resolution | passed |
+| TCP/TLS connection to port 443 with exact-host SNI | failed — `ENETUNREACH` |
+| Certificate validation through normal trust store | not reached |
+| HTTP requests written during preflight | 0 |
+| Credential accessed during preflight | false |
+| Canonical runner invocations | 0 |
+| API-Football HTTP attempts | 0 |
+| Retries | 0 |
+
+R5 stop reason is `tcp_connection_failed`. No response headers or body arrived, so HTTP state, streamed bytes, rows, paging, echoed parameters, identity, participant evidence and quota telemetry are unavailable. All 11 canonical requests were skipped. Known EIA-2I5E qualification attempts therefore remain 12: R1 11, R2 0, R3 0, R4 1 and R5 0.
+
+## Historical R4 attended result
 
 Attempt budget was 11; one attempt was used and retries were zero. Known EIA-2I5E qualification attempts are now 12: R1 11, R2 0, R3 0 and R4 1. Whether the failed transport reached provider accounting is not provable without response headers.
 
@@ -115,4 +130,4 @@ Rights remain `owner_risk_accepted_private_use`: private, one-user, non-commerci
 
 ## Remaining gate and stop
 
-Current response-size and mapping decisions are independently NO-GO. R4 is complete as a stopped attended run and must not be retried or replayed under this approval. Next checkpoint is owner review of the sanitized `transport_failure`; any new credentialed attempt needs separate explicit approval. EIA-2I5F, infrastructure provisioning, production ceiling implementation, collector activation and work on the remaining 18 mappings do not start. PR #251 remains draft, owner-gated and unmerged.
+Current response-size and mapping decisions are independently NO-GO. R5 is complete as a stopped preflight and must not be retried or replayed under this approval. Next checkpoint is owner review of `tcp_connection_failed` / `ENETUNREACH`; any new transport diagnostic or credentialed attempt needs separate explicit approval. EIA-2I5F, infrastructure provisioning, production ceiling implementation, collector activation and work on the remaining 18 mappings do not start. PR #251 remains draft, owner-gated and unmerged.

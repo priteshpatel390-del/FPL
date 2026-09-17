@@ -1,6 +1,6 @@
 ## EIA-2I5E pre-live API-Football evidence qualification
 
-EIA-2I5E-R4 used one of 11 approved attempts and stopped without retry when canonical request `discovery-2` returned sanitized `transport_failure`. No response headers or body were received, later requests were skipped, and current response-size remains NO-GO with no R4 candidate. R1's 347,982-byte maximum and 720,896-byte arithmetic candidate remain historical only. Mapping remains NO-GO at 2/20; production constant stays `null`; no collector, infrastructure, browser, model or UI activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R5 DNS resolution passed, but its non-HTTP TCP/TLS preflight failed before handshake with sanitized `ENETUNREACH`; certificate validation was not reached. Phase A used no credential and sent no HTTP request. Phase B and all 11 canonical requests were skipped, leaving known qualification attempts at 12 and response size NO-GO with no R5 candidate. Historical R1 evidence remains historical only. Mapping remains NO-GO at 2/20; production constant stays `null`; no collector, infrastructure, browser, model or UI activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D repository-only shadow runtime and persistence
 
