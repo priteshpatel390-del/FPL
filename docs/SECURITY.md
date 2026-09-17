@@ -1,6 +1,6 @@
 ## EIA-2I5E attended qualification security
 
-Attended API-Football requests, if a credential is later injected, remain origin-pinned GET, header-only `x-apisports-key`, redirect-rejected and 15-second bounded. This checkpoint found no authorized credential route and performed zero provider HTTP attempts. No key, request header, keyed URL or raw provider body is persisted. Official FPL raw payloads were discarded after authority issuance. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R1 used the pre-existing secure process-environment credential for 11 serial, origin-pinned GET requests with header-only `x-apisports-key`, redirect rejection, 15-second timeout and at least one-second spacing. No key, keyed URL, wholesale headers or raw body was logged or persisted; bodies were bounded, normalized and discarded. Collector secret, Cron and public fetch remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D dormant collector security
 

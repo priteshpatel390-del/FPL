@@ -1,6 +1,6 @@
 ## EIA-2I5E permanent coverage
 
-`tests/eia2i5e-prelive-qualification.test.mjs` pins the 16-attempt budget, closed request plan, credential-missing zero-egress path, 401/403/429 stop, serial 1s spacing, streamed byte/row/quota measurement without raw-body retention, byte-ceiling GO only from complete high-water class coverage, production constant remaining `null`, DATA-S2A authority (not a labeled snapshot), Chelsea/Leeds reuse only on exact current Official FPL identity, 20-club bijection, rejection of name-only methods, sanitized Official FPL receipts, and production/browser/collector-activation isolation. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+`tests/eia2i5e-prelive-qualification.test.mjs` pins the immutable 11-request manifest, exact request identity, missing/duplicate/failed/paginated/quota-uncertain rejection, distinct attended abort and proposed production ceilings, production constant remaining `null`, evidence-receipt binding to provider/canonical IDs, season, evidence, authority and integrity hash, trusted Chelsea/Leeds legacy adaptation, rejection of asserted provenance/name/fuzzy mappings, bijection collisions, secret safety and production/browser/model isolation. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D permanent coverage
 

@@ -1,6 +1,39 @@
 # EIA-2I5E — Pre-Live API-Football Evidence Qualification
 
 Date: 17 September 2026
+
+## R1 attended qualification — current outcome
+
+R1 remediates both reusable qualification-integrity defects before any provider request. Mapping rows now count only when an EIA-2I5E receipt cryptographically binds provider team ID, canonical Official FPL target, season, evidence type/stable identifier, source/revision, observation time, provenance, qualification method and current content-bound Official FPL authority. Chelsea and Leeds use an explicit trusted EIA-2I4C legacy adapter; caller-asserted `manually_verified`, names, fuzzy evidence and free-form provenance do not qualify. Response-size GO now requires exactly one successful, schema-valid, quota-known, identity-matched, unpaginated measurement for every immutable 11-request manifest item. Duplicate, missing, failed, skipped, safety-stopped or mismatched measurements fail closed.
+
+The secure credential came from the pre-existing process environment and was never printed, persisted or placed in a URL. The attended run used **11 of 16** allowed API-Football attempts, with **0 retries** and no stop condition. All 11 returned HTTP 200 with known quota telemetry; remaining request quota moved from 7,499 to 7,489. Raw bodies were byte-counted, bounded, decoded only for approved normalized facts, then discarded.
+
+| Required request | Bytes | Rows | Paging | Schema/quota |
+|---|---:|---:|---|---|
+| `discovery-2` — league 2 / season 2026 | 220,363 | 234 | 1/1 | valid / known |
+| `discovery-3` — league 3 / season 2026 | 209,572 | 224 | 1/1 | valid / known |
+| `discovery-848` — league 848 / season 2026 | 347,982 | 366 | 1/1 | valid / known |
+| `discovery-45` — league 45 / season 2026 | 215,224 | 224 | 1/1 | valid / known |
+| `discovery-48` — league 48 / season 2026 | 73,793 | 76 | 1/1 | valid / known |
+| `fixture-1636205` | 38,374 | 1 | 1/1 | valid / known |
+| `lineups-1636205` | 4,068 | 2 | 1/1 | valid / known |
+| `players-1636205` | 26,226 | 2 | 1/1 | valid / known |
+| `events-1636205` | 6,006 | 21 | 1/1 | valid / known |
+| `fixture-1635643` | 42,710 | 1 | 1/1 | valid / known |
+| `players-1635643` | 30,052 | 2 | 1/1 | valid / known |
+
+Observed maxima: discovery 347,982 bytes; fixture 42,710; lineups 4,068; players 30,052; events 6,006. Overall maximum is 347,982 bytes. Twice that maximum is rounded up to the next 64 KiB, producing an exact proposed production ceiling of **720,896 bytes**, a 372,914-byte absolute margin (2.07165× maximum). This is distinct from the 8 MiB attended abort ceiling. `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`; R1 does not implement the proposal. Residual risk remains unusually large later fixture sets, provider row/schema expansion or newly introduced pagination.
+
+Independent decisions:
+
+- **RESPONSE-SIZE: GO — exact byte ceiling qualified at 720,896 bytes.** Complete required manifest succeeded.
+- **20-CLUB MAPPING: NO-GO — incomplete/unproven mapping.** Current DATA-S2A Official FPL authority again validated exactly 20 clubs. Only receipt-backed Chelsea `49→6` and Leeds `63→13` are admitted through the trusted canonical EIA-2I4C adapter; 18 remain unmapped. No name-only or fuzzy mapping was certified. No extra API-Football request was justified because approved discovery evidence did not independently bind all provider IDs to canonical FPL targets.
+
+The sanitized evidence file records full request state, HTTP classes, bytes, row counts, pagination, normalized quota, current Official FPL authority, full 20-club table and both admitted legacy receipts. Rights remain `owner_risk_accepted_private_use`; no redistribution, public/commercial use or raw warehouse is allowed. Collector, migration 0005, Worker secret, Cron, collection, production/browser read path and model/UI influence remain inactive. PR #251 remains draft and unmerged.
+
+### Historical first attended checkpoint
+
+The original outcome below remains immutable historical context: it used zero API-Football attempts because no approved credential route was then available, so both gates were correctly NO-GO at that time. It must not be read as the R1 credentialed outcome.
 Base: `6309dae3614aa06e7c021bfab0f138cac2437a2b` (merge of PR #250 / EIA-2I5D).
 
 ## Outcome

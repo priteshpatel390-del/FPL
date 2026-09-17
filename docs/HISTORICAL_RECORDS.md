@@ -1,6 +1,6 @@
 # Historical Records Index
 
-- [EIA-2I5E Pre-Live API-Football Evidence Qualification](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md) — attended response-size and 20-club mapping qualification; both gates NO-GO because no authorized API-Football credential was available; production byte ceiling remains `null`; no collector activation.
+- [EIA-2I5E Pre-Live API-Football Evidence Qualification](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md) — preserves historical zero-attempt dual NO-GO, then records R1 response-size GO at proposed 720,896 bytes and mapping NO-GO at 2/20 receipt-backed clubs; production constant remains `null`; no collector activation.
 - [EIA-2I5D Repository-Only API-Football Shadow Runtime and Persistence](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md) — merged repository-ready dormant collector, migration 0005 and fail-closed runtime contracts; not provisioned, deployed, credentialed, scheduled or live accepted.
 - [EIA-2I5B API-Football hardened provider request and fixture discovery](EIA-2I5B-API-FOOTBALL-PROVIDER-DISCOVERY.md) — dormant injected-transport discovery for five approved competitions; no live credential, D1 write, scheduler, API-Football runtime activation or model path. An automatic PR preview is not that activation.
 - [EIA-2I5A API-Football shadow identity and D1 schema contracts](EIA-2I5A-API-FOOTBALL-SHADOW-IDENTITY-SCHEMA.md) — offline season-scoped identity, exact qualification, explicit conflicts, participation and narrow owner-risk storage; no collector, secret, schedule or model path.

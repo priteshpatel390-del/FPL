@@ -1,6 +1,6 @@
 ## API-Football EIA-2I5E qualification status
 
-API-Football remains `owner_risk_accepted_private_use`. EIA-2I5E made no authenticated provider request. Official FPL public bootstrap+fixtures were used only to issue the current 20-club DATA-S2A authority. Response-size and complete mapping gates are NO-GO. Runtime remains disabled and uncredentialed. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+API-Football remains `owner_risk_accepted_private_use`. EIA-2I5E-R1 made 11 bounded attended requests and retained only sanitized normalized qualification evidence. Response-size is GO at a proposed 720,896-byte ceiling; mapping is NO-GO with 2/20 receipt-backed clubs. Raw bodies were discarded. Runtime remains disabled, unprovisioned and without a production credential. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## API-Football EIA-2I5D persistence status
 

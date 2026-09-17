@@ -1,6 +1,6 @@
 ## EIA-2I5E pre-live API-Football evidence qualification
 
-EIA-2I5D is merged and exact-main verified, but the collector remains unprovisioned. EIA-2I5E records attended qualification of response size and the 20-club API-Football → Official FPL mapping. Both gates are NO-GO: no authorized API-Football credential was available, so zero provider requests were made; Official FPL authority issued 20 current-season clubs, but only Chelsea 49→6 and Leeds 63→13 are verified. `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`. No live activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R1 used 11 bounded credentialed requests after proof-integrity tests passed. Complete response evidence qualifies a proposed 720,896-byte ceiling, while `API_FOOTBALL_MAX_RESPONSE_BYTES` stays `null`. Mapping remains incomplete: only receipt-backed Chelsea 49→6 and Leeds 63→13 qualify against current Official FPL authority. No collector, infrastructure, browser, model or UI activation occurred. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D repository-only shadow runtime and persistence
 

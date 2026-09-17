@@ -12,7 +12,7 @@ import {
   EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES,EIA_2I5E_CHECKPOINT,EIA_2I5E_MAX_ATTEMPTS,EIA_2I5E_MEASUREMENT_ABORT_BYTES,
   EIA_2I5E_MIN_GAP_MS,EIA_2I5E_PRODUCTION_BYTE_CEILING,OFFICIAL_FPL_BOOTSTRAP_URL,OFFICIAL_FPL_FIXTURES_URL,
   PREVIOUSLY_QUALIFIED_PL_TEAMS,confirmPreviouslyQualifiedTeamMappings,eia2i5eActivationBlocks,eia2i5eRequestPlan,
-  fetchOfficialFplAuthority,measureDiscardingBody,qualifyTwentyClubMapping,recommendResponseByteCeiling,
+  fetchOfficialFplAuthority,issueQualificationMappingReceipt,measureDiscardingBody,qualifyTwentyClubMapping,recommendResponseByteCeiling,
   resolveAttendedCredential,runAttendedApiFootballQualification,sanitizeOfficialFplAuthority,validateQualificationPlanItem
 } from '../src/decision-intelligence/api-football-prelive-qualification.mjs';
 
@@ -67,6 +67,13 @@ const fixtureRow=(id=1636205,home=49,away=63)=>({
 });
 function measurement(endpointClass,actualBytes,overrides={}){
   return {ok:true,schemaMatched:true,endpointClass,actualBytes,highWaterCandidate:false,paginationPresent:false,bodyRetained:false,...overrides};
+}
+function completeMeasurements(overrides={}){
+  return eia2i5eRequestPlan().items.map((item,index)=>measurement(item.endpointClass,50_000+index*10_000,{
+    logicalRequestId:item.id,requestIdentity:JSON.stringify({endpoint:item.endpoint,endpointClass:item.endpointClass,search:item.search}),
+    attempted:true,quota:{state:'known'},endpoint:item.endpoint,competition:item.competition,
+    fixtureId:item.search.id||item.search.fixture||null,highWaterCandidate:item.highWaterCandidate,...(overrides[item.id]||{})
+  }));
 }
 
 test('EIA-2I5E attempt budget stays far below the UTC safety ceiling and does not set the production byte constant',()=>{
@@ -170,25 +177,16 @@ test('measurement records bytes, rows, paging and quota then discards the payloa
   assert.deepEqual(measured.providerTeamIds,['49']);assert.equal(Object.hasOwn(measured,'payload'),false);
 });
 
-test('pagination on a high-water sample and missing endpoint classes keep the byte ceiling NO-GO',()=>{
+test('partial class coverage and unresolved required pagination keep the byte ceiling NO-GO',()=>{
   assert.equal(recommendResponseByteCeiling([]).decision,'NO-GO');
   const incomplete=[measurement('fixtures_discovery',80000,{highWaterCandidate:true}),measurement('players',180000,{highWaterCandidate:true})];
-  assert.equal(recommendResponseByteCeiling(incomplete).reason,'endpoint_class_coverage_incomplete');
-  const paged=[
-    measurement('fixtures_discovery',90000,{highWaterCandidate:true,paginationPresent:true}),
-    measurement('fixture',12000),measurement('lineups',40000),measurement('players',180000,{highWaterCandidate:true}),measurement('events',25000,{highWaterCandidate:true})
-  ];
-  assert.equal(recommendResponseByteCeiling(paged).reason,'high_water_pagination_unresolved');
+  assert.equal(recommendResponseByteCeiling(incomplete).reason,'required_sample_manifest_incomplete');
+  const paged=completeMeasurements({'discovery-48':{paginationPresent:true}});
+  assert.equal(recommendResponseByteCeiling(paged).reason,'required_sample_manifest_incomplete');
 });
 
-test('complete class coverage yields an exact recommended ceiling without implementing the runtime constant',()=>{
-  const rows=[
-    measurement('fixtures_discovery',80000,{highWaterCandidate:true}),
-    measurement('fixture',12000),
-    measurement('lineups',45000),
-    measurement('players',180000,{highWaterCandidate:true}),
-    measurement('events',25000,{highWaterCandidate:true})
-  ];
+test('complete required manifest yields an exact recommended ceiling without implementing the runtime constant',()=>{
+  const rows=completeMeasurements({'players-1636205':{actualBytes:180000}});
   const result=recommendResponseByteCeiling(rows);
   assert.equal(result.decision,'GO');assert.equal(result.observedMaximum,180000);
   assert.equal(result.classMaxima.players,180000);assert.equal(result.proposedCeiling,393216);
@@ -196,37 +194,72 @@ test('complete class coverage yields an exact recommended ceiling without implem
   assert.equal(result.implemented,false);assert.equal(result.productionConstant,null);
   assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);
   assert.ok(result.proposedCeiling>result.observedMaximum);
-  const huge=[...rows.slice(0,3),measurement('players',2_000_000,{highWaterCandidate:true}),measurement('events',1000,{highWaterCandidate:true})];
+  const huge=completeMeasurements({'players-1636205':{actualBytes:2_000_000}});
   assert.equal(recommendResponseByteCeiling(huge).reason,'observed_maximum_too_large_to_bound');
 });
 
-test('Official FPL authority cannot be a labeled 20-team snapshot and Chelsea/Leeds reuse requires current exact identity',()=>{
+test('required response manifest rejects missing, mismatched, duplicate, failed, and uncertain samples',()=>{
+  const complete=completeMeasurements();
+  const without=id=>complete.filter(row=>row.logicalRequestId!==id);
+  assert.equal(recommendResponseByteCeiling(without('discovery-45')).decision,'NO-GO');
+  assert.equal(recommendResponseByteCeiling(without('players-1635643')).decision,'NO-GO');
+  assert.equal(recommendResponseByteCeiling(complete.map(row=>row.logicalRequestId==='fixture-1636205'?{...row,requestIdentity:'mismatched'}:row)).decision,'NO-GO');
+  assert.equal(recommendResponseByteCeiling([...without('discovery-3'),complete.find(row=>row.logicalRequestId==='discovery-2')]).decision,'NO-GO');
+  assert.equal(recommendResponseByteCeiling(complete.map(row=>row.logicalRequestId==='events-1636205'?{...row,ok:false,reason:'provider_unavailable'}:row)).decision,'NO-GO');
+  assert.equal(recommendResponseByteCeiling(complete.map(row=>row.logicalRequestId==='discovery-848'?{...row,quota:{state:'uncertain'}}:row)).decision,'NO-GO');
+  assert.equal(recommendResponseByteCeiling(complete.map(row=>row.logicalRequestId==='discovery-48'?{...row,paginationPresent:true}:row)).decision,'NO-GO');
+  assert.notEqual(EIA_2I5E_MEASUREMENT_ABORT_BYTES,recommendResponseByteCeiling(complete).proposedCeiling);
+});
+
+test('Official FPL authority cannot be a labeled 20-team snapshot and Chelsea/Leeds reuse requires current exact identity',async()=>{
   const snapshot={season,teams:CURRENT_PL_TEAM_IDS.map(id=>({id,name:`Team ${id}`,short_name:`T${id}`})),sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1'};
-  const coverage=qualifyTwentyClubMapping({authority:snapshot,mappings:[]});
+  const coverage=await qualifyTwentyClubMapping({authority:snapshot,mappings:[]});
   assert.equal(coverage.decision,'NO-GO');assert.notEqual(coverage.reason,'current_season_pl_team_mapping_incomplete');
-  const reused=confirmPreviouslyQualifiedTeamMappings(issued());
+  const reused=await confirmPreviouslyQualifiedTeamMappings(issued());
   assert.equal(reused.ok,true);assert.equal(reused.mappings.length,2);
   assert.deepEqual(reused.mappings.map(row=>row.providerEntityId).sort(),['49','63']);
   const renamed=issueOfficialFplTeamUniverseAuthority(officialFplWorld());
-  const blocked=confirmPreviouslyQualifiedTeamMappings(renamed);
+  const blocked=await confirmPreviouslyQualifiedTeamMappings(renamed);
   assert.equal(blocked.ok,false);assert.equal(blocked.mappings.length,0);
   assert.ok(blocked.rejected.every(row=>row.conflict==='current_official_fpl_identity_mismatch'));
 });
 
-test('20-club mapping is GO only for a verified 1:1 bijection and never certifies name-only rows',()=>{
+test('20-club mapping requires evidence receipts and never certifies asserted or name-only rows',async()=>{
   const authority=issued();
-  const two=qualifyTwentyClubMapping({authority,mappings:confirmPreviouslyQualifiedTeamMappings(authority).mappings});
+  const historical=await confirmPreviouslyQualifiedTeamMappings(authority);
+  const two=await qualifyTwentyClubMapping({authority,mappings:historical.mappings});
   assert.equal(two.decision,'NO-GO');assert.equal(two.verifiedPremierLeagueTeamCount,2);assert.equal(two.nameOnlyCertified,false);
   assert.equal(two.table.filter(row=>row.qualificationStatus==='VERIFIED').length,2);
   assert.equal(two.table.find(row=>row.officialFplTeamId==='6').apiFootballTeamId,'49');
   assert.equal(two.table.find(row=>row.officialFplTeamId==='13').apiFootballTeamId,'63');
   assert.equal(two.unresolved.length,18);
-  const nameOnly=qualifyTwentyClubMapping({authority,mappings:[team('42',`${season}:fpl:team:1`,{method:'name_similarity',club:'Arsenal'})]});
+  const nameOnly=await qualifyTwentyClubMapping({authority,mappings:[team('42',`${season}:fpl:team:1`,{method:'name_similarity',club:'Arsenal'})]});
   assert.equal(nameOnly.decision,'NO-GO');assert.equal(nameOnly.reason,'name_only_mapping_forbidden');
   const complete=CURRENT_PL_TEAM_IDS.map((id,index)=>team(200+index,`${season}:fpl:team:${id}`,{club:`Team ${id}`}));
-  const go=qualifyTwentyClubMapping({authority,mappings:complete});
+  const asserted=await qualifyTwentyClubMapping({authority,mappings:complete});
+  assert.equal(asserted.decision,'NO-GO');assert.equal(asserted.verifiedPremierLeagueTeamCount,0);
+  const receipted=[];
+  for(const [index,row] of complete.entries())receipted.push({...row,qualificationEvidenceReceipt:await issueQualificationMappingReceipt({mapping:row,authority,evidence:{evidenceType:'provider_fixture_participant',stableEvidenceId:String(9000+index),source:'api-football-attended-qualification',sourceRevision:'eia-2i5e-r1-test-fixture',observedAt:'2026-09-17T08:00:00.000Z',provenance:`synthetic regression evidence ${index}`,qualificationMethod:'attended_provider_evidence'}})});
+  const go=await qualifyTwentyClubMapping({authority,mappings:receipted});
   assert.equal(go.decision,'GO');assert.equal(go.completeTwentyClubCoverage,true);assert.equal(go.verifiedPremierLeagueTeamCount,20);
-  assert.equal(mappingCoverage(complete,season,{officialFplAuthority:authority}).completeTwentyClubCoverage,true);
+  assert.equal(mappingCoverage(receipted,season,{officialFplAuthority:authority}).completeTwentyClubCoverage,true);
+});
+
+test('mapping receipts bind provider ID, canonical target, season, authority, and receipt bytes',async()=>{
+  const authority=issued();
+  const base=team('501',`${season}:fpl:team:1`);
+  const evidence={evidenceType:'provider_fixture_participant',stableEvidenceId:'9901',source:'api-football-attended-qualification',sourceRevision:'eia-2i5e-r1-test-fixture',observedAt:'2026-09-17T08:00:00.000Z',provenance:'synthetic binding regression evidence',qualificationMethod:'attended_provider_evidence'};
+  const receipt=await issueQualificationMappingReceipt({mapping:base,evidence,authority});
+  const valid={...base,qualificationEvidenceReceipt:receipt};
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[valid]})).verifiedPremierLeagueTeamCount,1);
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[{...valid,providerEntityId:'502'}]})).verifiedPremierLeagueTeamCount,0);
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[{...valid,canonicalFplId:`${season}:fpl:team:2`}]})).verifiedPremierLeagueTeamCount,0);
+  const tamperedHash=`${receipt.integrityHash.slice(0,-1)}${receipt.integrityHash.endsWith('0')?'1':'0'}`;
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[{...valid,qualificationEvidenceReceipt:{...receipt,integrityHash:tamperedHash}}]})).verifiedPremierLeagueTeamCount,0);
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[valid,{...valid,canonicalFplId:`${season}:fpl:team:2`,qualificationEvidenceReceipt:receipt}]})).decision,'NO-GO');
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[valid,{...valid,providerEntityId:'502'}]})).decision,'NO-GO');
+  const provenanceOnly={...base,provenance:'non-empty but unreceipted'};
+  assert.equal((await qualifyTwentyClubMapping({authority,mappings:[provenanceOnly]})).verifiedPremierLeagueTeamCount,0);
 });
 
 test('sanitized Official FPL authority drops raw bootstrap/fixtures and the fetch path rejects redirects',async()=>{

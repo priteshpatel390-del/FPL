@@ -1,6 +1,6 @@
 ## Current checkpoint — EIA-2I5E pre-live API-Football evidence qualification
 
-EIA-2I5D repository implementation is **MERGED** (PR #250) and exact-main verification **PASSED**. Collector is not deployed; migration 0005 is not applied live; credential is not provisioned; Cron is not active; collection remains disabled; provider shadow runtime is not live accepted; model/UI influence is none. Response-size and complete 20-club mapping gates are both **NO-GO** in this attended checkpoint: no authorized API-Football credential was available, so no provider HTTP attempt was made and the production byte ceiling remains `null`. Next live work requires a separate owner approval. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R1 completed the approved 11-request attended manifest after integrity remediation. Response-size is **GO** at a proposed 720,896-byte production ceiling, but the constant remains `null`. Complete mapping is **NO-GO** with only receipt-backed Chelsea 49→6 and Leeds 63→13; 18 clubs remain unproven. Collector, migration 0005, Worker secret, Cron, collection and model/UI paths remain inactive. PR #251 remains draft/unmerged; no later checkpoint starts without separate owner approval. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D checkpoint
 

@@ -1,6 +1,6 @@
 ## 17 September 2026 — EIA-2I5E pre-live qualification decision
 
-Attended API-Football response-size and 20-club mapping qualification is fail-closed without an already-approved secure credential route. The production byte ceiling stays `null`. Previously qualified Chelsea 49→6 and Leeds 63→13 may be reused only when current Official FPL authority still shows those exact identities; the remaining 18 clubs stay unmapped. No name-only certification, collector activation, Cron, secret, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+EIA-2I5E-R1 accepts response-size GO at a proposed 720,896-byte ceiling from the complete immutable manifest, without implementing the production constant. Mapping remains NO-GO: qualification receipts are mandatory and only trusted Chelsea 49→6 and Leeds 63→13 receipts validate against current Official FPL authority. No name/fuzzy/asserted-provenance certification, collector activation, Cron, secret provisioning, live D1 mutation or model/UI path is approved. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## 16 September 2026 — EIA-2I5D repository-only persistence decision
 

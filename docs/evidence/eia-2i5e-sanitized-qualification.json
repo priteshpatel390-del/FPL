@@ -1,103 +1,1170 @@
 {
-  "checkpoint": "EIA-2I5E",
-  "attendedAt": "2026-09-17T05:54:58.321Z",
+  "checkpoint": "EIA-2I5E-R1",
   "baseMainSha": "6309dae3614aa06e7c021bfab0f138cac2437a2b",
-  "verifyRunId": 35152280445,
-  "verifyRunNumber": 735,
-  "apiFootball": {
-    "credentialState": "unavailable_in_attended_environment",
-    "approvedAttemptBudget": 16,
-    "attemptsUsed": 0,
-    "endpointClassesSampled": [],
-    "fixturesSampled": [],
-    "httpOutcomes": [],
-    "quotaTelemetry": null,
-    "measurements": [],
-    "observedMaximumByClass": {},
-    "overallObservedMaximumBytes": null,
-    "proposedProductionByteCeiling": null,
-    "decision": "NO-GO",
-    "reason": "credential_unavailable"
-  },
-  "officialFplAuthority": {
-    "season": "2026-27",
-    "sourceKey": "official-fpl",
-    "sourceRevisionId": "official-fpl-r1",
-    "schemaVersion": "data-s2a-v1",
-    "validationVersion": "data-s2a-official-fpl-validation-v2",
-    "transformVersion": "data-s2a-official-fpl-history-v1",
-    "fetchedAt": "2026-09-17T05:54:58.321Z",
-    "gw1Deadline": "2026-08-21T17:30:00Z",
-    "counts": {
-      "events": 38,
-      "teams": 20,
-      "players": 659,
-      "fixtures": 380
+  "previousPrHead": "f2af439f088dde952756c8090fad5c342a3ebdd3",
+  "historicalZeroAttemptQualification": {
+    "checkpoint": "EIA-2I5E",
+    "attendedAt": "2026-09-17T05:54:58.321Z",
+    "baseMainSha": "6309dae3614aa06e7c021bfab0f138cac2437a2b",
+    "verifyRunId": 35152280445,
+    "verifyRunNumber": 735,
+    "apiFootball": {
+      "credentialState": "unavailable_in_attended_environment",
+      "approvedAttemptBudget": 16,
+      "attemptsUsed": 0,
+      "endpointClassesSampled": [],
+      "fixturesSampled": [],
+      "httpOutcomes": [],
+      "quotaTelemetry": null,
+      "measurements": [],
+      "observedMaximumByClass": {},
+      "overallObservedMaximumBytes": null,
+      "proposedProductionByteCeiling": null,
+      "decision": "NO-GO",
+      "reason": "credential_unavailable"
     },
-    "rawPayloadRetained": false,
-    "teams": [
-      {"id": 1, "name": "Arsenal", "short_name": "ARS"},
-      {"id": 2, "name": "Aston Villa", "short_name": "AVL"},
-      {"id": 3, "name": "Bournemouth", "short_name": "BOU"},
-      {"id": 4, "name": "Brentford", "short_name": "BRE"},
-      {"id": 5, "name": "Brighton", "short_name": "BHA"},
-      {"id": 6, "name": "Chelsea", "short_name": "CHE"},
-      {"id": 7, "name": "Coventry City", "short_name": "COV"},
-      {"id": 8, "name": "Crystal Palace", "short_name": "CRY"},
-      {"id": 9, "name": "Everton", "short_name": "EVE"},
-      {"id": 10, "name": "Fulham", "short_name": "FUL"},
-      {"id": 11, "name": "Hull City", "short_name": "HUL"},
-      {"id": 12, "name": "Ipswich Town", "short_name": "IPS"},
-      {"id": 13, "name": "Leeds", "short_name": "LEE"},
-      {"id": 14, "name": "Liverpool", "short_name": "LIV"},
-      {"id": 15, "name": "Man City", "short_name": "MCI"},
-      {"id": 16, "name": "Man Utd", "short_name": "MUN"},
-      {"id": 17, "name": "Newcastle", "short_name": "NEW"},
-      {"id": 18, "name": "Nott'm Forest", "short_name": "NFO"},
-      {"id": 19, "name": "Spurs", "short_name": "TOT"},
-      {"id": 20, "name": "Sunderland", "short_name": "SUN"}
-    ]
+    "officialFplAuthority": {
+      "season": "2026-27",
+      "sourceKey": "official-fpl",
+      "sourceRevisionId": "official-fpl-r1",
+      "schemaVersion": "data-s2a-v1",
+      "validationVersion": "data-s2a-official-fpl-validation-v2",
+      "transformVersion": "data-s2a-official-fpl-history-v1",
+      "fetchedAt": "2026-09-17T05:54:58.321Z",
+      "gw1Deadline": "2026-08-21T17:30:00Z",
+      "counts": {
+        "events": 38,
+        "teams": 20,
+        "players": 659,
+        "fixtures": 380
+      },
+      "rawPayloadRetained": false,
+      "teams": [
+        {
+          "id": 1,
+          "name": "Arsenal",
+          "short_name": "ARS"
+        },
+        {
+          "id": 2,
+          "name": "Aston Villa",
+          "short_name": "AVL"
+        },
+        {
+          "id": 3,
+          "name": "Bournemouth",
+          "short_name": "BOU"
+        },
+        {
+          "id": 4,
+          "name": "Brentford",
+          "short_name": "BRE"
+        },
+        {
+          "id": 5,
+          "name": "Brighton",
+          "short_name": "BHA"
+        },
+        {
+          "id": 6,
+          "name": "Chelsea",
+          "short_name": "CHE"
+        },
+        {
+          "id": 7,
+          "name": "Coventry City",
+          "short_name": "COV"
+        },
+        {
+          "id": 8,
+          "name": "Crystal Palace",
+          "short_name": "CRY"
+        },
+        {
+          "id": 9,
+          "name": "Everton",
+          "short_name": "EVE"
+        },
+        {
+          "id": 10,
+          "name": "Fulham",
+          "short_name": "FUL"
+        },
+        {
+          "id": 11,
+          "name": "Hull City",
+          "short_name": "HUL"
+        },
+        {
+          "id": 12,
+          "name": "Ipswich Town",
+          "short_name": "IPS"
+        },
+        {
+          "id": 13,
+          "name": "Leeds",
+          "short_name": "LEE"
+        },
+        {
+          "id": 14,
+          "name": "Liverpool",
+          "short_name": "LIV"
+        },
+        {
+          "id": 15,
+          "name": "Man City",
+          "short_name": "MCI"
+        },
+        {
+          "id": 16,
+          "name": "Man Utd",
+          "short_name": "MUN"
+        },
+        {
+          "id": 17,
+          "name": "Newcastle",
+          "short_name": "NEW"
+        },
+        {
+          "id": 18,
+          "name": "Nott'm Forest",
+          "short_name": "NFO"
+        },
+        {
+          "id": 19,
+          "name": "Spurs",
+          "short_name": "TOT"
+        },
+        {
+          "id": 20,
+          "name": "Sunderland",
+          "short_name": "SUN"
+        }
+      ]
+    },
+    "mapping": {
+      "decision": "NO-GO",
+      "reason": "current_season_pl_team_mapping_incomplete",
+      "verifiedPremierLeagueTeamCount": 2,
+      "completeTwentyClubCoverage": false,
+      "nameOnlyCertified": false,
+      "fuzzyMatchingUsed": false,
+      "previouslyQualifiedReuse": [
+        {
+          "club": "Chelsea",
+          "apiFootballTeamId": "49",
+          "officialFplTeamId": "6",
+          "qualificationStatus": "VERIFIED",
+          "evidence": "EIA-2I4C current-season League Cup fixture 1636205 plus current Official FPL team 6 Chelsea/CHE"
+        },
+        {
+          "club": "Leeds",
+          "apiFootballTeamId": "63",
+          "officialFplTeamId": "13",
+          "qualificationStatus": "VERIFIED",
+          "evidence": "EIA-2I4C current-season League Cup fixture 1636205 plus current Official FPL team 13 Leeds/LEE"
+        }
+      ]
+    },
+    "rights": {
+      "classification": "owner_risk_accepted_private_use",
+      "redistributionAllowed": false,
+      "publicUseAllowed": false,
+      "commercialUseAllowed": false,
+      "rawPayloadRetentionAllowed": false,
+      "stopOnObjection": true
+    },
+    "activation": {
+      "collectorDeployed": false,
+      "migration0005Live": false,
+      "credentialProvisioned": false,
+      "cronActive": false,
+      "collectionEnabled": false,
+      "providerShadowRuntimeLiveAccepted": false,
+      "modelOrUiInfluence": false,
+      "productionByteCeiling": null
+    }
   },
-  "mapping": {
-    "decision": "NO-GO",
-    "reason": "current_season_pl_team_mapping_incomplete",
-    "verifiedPremierLeagueTeamCount": 2,
-    "completeTwentyClubCoverage": false,
-    "nameOnlyCertified": false,
-    "fuzzyMatchingUsed": false,
-    "previouslyQualifiedReuse": [
+  "r1AttendedQualification": {
+    "attendedAt": "2026-09-17T06:48:36.276Z",
+    "credentialSourceCategory": "pre-existing secure process environment variable",
+    "approvedAttemptBudget": 16,
+    "attemptsUsed": 11,
+    "retriesUsed": 0,
+    "stopReason": null,
+    "requiredManifest": [
       {
-        "club": "Chelsea",
-        "apiFootballTeamId": "49",
-        "officialFplTeamId": "6",
-        "qualificationStatus": "VERIFIED",
-        "evidence": "EIA-2I4C current-season League Cup fixture 1636205 plus current Official FPL team 6 Chelsea/CHE"
+        "logicalRequestId": "discovery-2",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
       },
       {
-        "club": "Leeds",
-        "apiFootballTeamId": "63",
-        "officialFplTeamId": "13",
-        "qualificationStatus": "VERIFIED",
-        "evidence": "EIA-2I4C current-season League Cup fixture 1636205 plus current Official FPL team 13 Leeds/LEE"
+        "logicalRequestId": "discovery-3",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "discovery-848",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "discovery-45",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "discovery-48",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "fixture-1636205",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "lineups-1636205",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "players-1636205",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "events-1636205",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "fixture-1635643",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
+      },
+      {
+        "logicalRequestId": "players-1635643",
+        "required": true,
+        "attempted": true,
+        "succeeded": true,
+        "failed": false,
+        "skipped": false,
+        "stoppedBySafety": false,
+        "identityMatches": true,
+        "duplicateMeasurements": false
       }
-    ]
-  },
-  "rights": {
-    "classification": "owner_risk_accepted_private_use",
-    "redistributionAllowed": false,
-    "publicUseAllowed": false,
-    "commercialUseAllowed": false,
-    "rawPayloadRetentionAllowed": false,
-    "stopOnObjection": true
-  },
-  "activation": {
-    "collectorDeployed": false,
-    "migration0005Live": false,
-    "credentialProvisioned": false,
-    "cronActive": false,
-    "collectionEnabled": false,
-    "providerShadowRuntimeLiveAccepted": false,
-    "modelOrUiInfluence": false,
-    "productionByteCeiling": null
+    ],
+    "httpOutcomes": [
+      {
+        "logicalRequestId": "discovery-2",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "discovery-3",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "discovery-848",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "discovery-45",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "discovery-48",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "fixture-1636205",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "lineups-1636205",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "players-1636205",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "events-1636205",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "fixture-1635643",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      },
+      {
+        "logicalRequestId": "players-1635643",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "qualificationState": "QUALIFIED"
+      }
+    ],
+    "quotaTelemetry": {
+      "state": "known",
+      "requestsLimit": 7500,
+      "requestsRemainingStart": 7499,
+      "requestsRemainingEnd": 7489,
+      "rateLimit": 300,
+      "minuteRemainingStart": 299,
+      "minuteRemainingEnd": 289
+    },
+    "measurements": [
+      {
+        "logicalRequestId": "discovery-2",
+        "endpointClass": "fixtures_discovery",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixtures_discovery\",\"search\":{\"league\":\"2\",\"season\":\"2026\"}}",
+        "competition": "2",
+        "fixtureId": null,
+        "fetchedAt": "2026-09-17T06:48:22.608Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 220363,
+        "rowCount": 234,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7499,
+          "rateLimit": 300,
+          "remaining": 299
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": true,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "discovery-3",
+        "endpointClass": "fixtures_discovery",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixtures_discovery\",\"search\":{\"league\":\"3\",\"season\":\"2026\"}}",
+        "competition": "3",
+        "fixtureId": null,
+        "fetchedAt": "2026-09-17T06:48:24.079Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 209572,
+        "rowCount": 224,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7498,
+          "rateLimit": 300,
+          "remaining": 298
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": false,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "discovery-848",
+        "endpointClass": "fixtures_discovery",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixtures_discovery\",\"search\":{\"league\":\"848\",\"season\":\"2026\"}}",
+        "competition": "848",
+        "fixtureId": null,
+        "fetchedAt": "2026-09-17T06:48:25.357Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 347982,
+        "rowCount": 366,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7497,
+          "rateLimit": 300,
+          "remaining": 297
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": false,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "discovery-45",
+        "endpointClass": "fixtures_discovery",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixtures_discovery\",\"search\":{\"league\":\"45\",\"season\":\"2026\"}}",
+        "competition": "45",
+        "fixtureId": null,
+        "fetchedAt": "2026-09-17T06:48:26.847Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 215224,
+        "rowCount": 224,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7496,
+          "rateLimit": 300,
+          "remaining": 296
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": false,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "discovery-48",
+        "endpointClass": "fixtures_discovery",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixtures_discovery\",\"search\":{\"league\":\"48\",\"season\":\"2026\"}}",
+        "competition": "48",
+        "fixtureId": null,
+        "fetchedAt": "2026-09-17T06:48:28.107Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 73793,
+        "rowCount": 76,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7495,
+          "rateLimit": 300,
+          "remaining": 295
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": true,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "fixture-1636205",
+        "endpointClass": "fixture",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixture\",\"search\":{\"id\":\"1636205\"}}",
+        "competition": "48",
+        "fixtureId": "1636205",
+        "fetchedAt": "2026-09-17T06:48:29.374Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 38374,
+        "rowCount": 1,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7494,
+          "rateLimit": 300,
+          "remaining": 294
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": false,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "lineups-1636205",
+        "endpointClass": "lineups",
+        "endpoint": "fixtures/lineups",
+        "requestIdentity": "{\"endpoint\":\"fixtures/lineups\",\"endpointClass\":\"lineups\",\"search\":{\"fixture\":\"1636205\"}}",
+        "competition": "48",
+        "fixtureId": "1636205",
+        "fetchedAt": "2026-09-17T06:48:30.788Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 4068,
+        "rowCount": 2,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7493,
+          "rateLimit": 300,
+          "remaining": 293
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": false,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "players-1636205",
+        "endpointClass": "players",
+        "endpoint": "fixtures/players",
+        "requestIdentity": "{\"endpoint\":\"fixtures/players\",\"endpointClass\":\"players\",\"search\":{\"fixture\":\"1636205\"}}",
+        "competition": "48",
+        "fixtureId": "1636205",
+        "fetchedAt": "2026-09-17T06:48:32.074Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 26226,
+        "rowCount": 2,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7492,
+          "rateLimit": 300,
+          "remaining": 292
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": true,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "events-1636205",
+        "endpointClass": "events",
+        "endpoint": "fixtures/events",
+        "requestIdentity": "{\"endpoint\":\"fixtures/events\",\"endpointClass\":\"events\",\"search\":{\"fixture\":\"1636205\"}}",
+        "competition": "48",
+        "fixtureId": "1636205",
+        "fetchedAt": "2026-09-17T06:48:33.271Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 6006,
+        "rowCount": 21,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7491,
+          "rateLimit": 300,
+          "remaining": 291
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": true,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "fixture-1635643",
+        "endpointClass": "fixture",
+        "endpoint": "fixtures",
+        "requestIdentity": "{\"endpoint\":\"fixtures\",\"endpointClass\":\"fixture\",\"search\":{\"id\":\"1635643\"}}",
+        "competition": "2",
+        "fixtureId": "1635643",
+        "fetchedAt": "2026-09-17T06:48:34.468Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 42710,
+        "rowCount": 1,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7490,
+          "rateLimit": 300,
+          "remaining": 290
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": false,
+        "rawBodyRetained": false
+      },
+      {
+        "logicalRequestId": "players-1635643",
+        "endpointClass": "players",
+        "endpoint": "fixtures/players",
+        "requestIdentity": "{\"endpoint\":\"fixtures/players\",\"endpointClass\":\"players\",\"search\":{\"fixture\":\"1635643\"}}",
+        "competition": "2",
+        "fixtureId": "1635643",
+        "fetchedAt": "2026-09-17T06:48:35.711Z",
+        "httpClass": "2xx",
+        "httpStatus": 200,
+        "contentLengthHeader": null,
+        "actualStreamedBytes": 30052,
+        "rowCount": 2,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "paginationResolved": true,
+        "schemaValid": true,
+        "quota": {
+          "state": "known",
+          "requestsLimit": 7500,
+          "requestsRemaining": 7489,
+          "rateLimit": 300,
+          "remaining": 289
+        },
+        "qualificationState": "QUALIFIED",
+        "highWaterRelevant": true,
+        "rawBodyRetained": false
+      }
+    ],
+    "observedMaximumByClass": {
+      "fixtures_discovery": 347982,
+      "fixture": 42710,
+      "lineups": 4068,
+      "players": 30052,
+      "events": 6006
+    },
+    "overallObservedMaximumBytes": 347982,
+    "proposedProductionByteCeiling": 720896,
+    "absoluteMarginBytes": 372914,
+    "multiplierMargin": 2,
+    "productionConstantImplemented": false,
+    "attendedAbortCeilingBytes": 8388608,
+    "responseSizeDecision": "GO",
+    "responseSizeRationale": "twice the observed valid maximum, rounded up to the next 64KiB, remaining below a 2MiB amplification cap",
+    "responseSizeResidualRisk": "a later fixture with unusually large player-stat rows, unexpected pagination, or a provider schema expansion could still exceed the sample",
+    "officialFplAuthority": {
+      "ok": true,
+      "kind": "official-fpl-team-universe-authority",
+      "sourceKey": "official-fpl",
+      "sourceKind": "official_fpl",
+      "sourceRevisionId": "official-fpl-r1",
+      "schemaVersion": "data-s2a-v1",
+      "validationVersion": "data-s2a-official-fpl-validation-v2",
+      "transformVersion": "data-s2a-official-fpl-history-v1",
+      "season": "2026-27",
+      "fetchedAt": "2026-09-17T06:48:21.427Z",
+      "identities": [
+        "2026-27:fpl:team:1",
+        "2026-27:fpl:team:2",
+        "2026-27:fpl:team:3",
+        "2026-27:fpl:team:4",
+        "2026-27:fpl:team:5",
+        "2026-27:fpl:team:6",
+        "2026-27:fpl:team:7",
+        "2026-27:fpl:team:8",
+        "2026-27:fpl:team:9",
+        "2026-27:fpl:team:10",
+        "2026-27:fpl:team:11",
+        "2026-27:fpl:team:12",
+        "2026-27:fpl:team:13",
+        "2026-27:fpl:team:14",
+        "2026-27:fpl:team:15",
+        "2026-27:fpl:team:16",
+        "2026-27:fpl:team:17",
+        "2026-27:fpl:team:18",
+        "2026-27:fpl:team:19",
+        "2026-27:fpl:team:20"
+      ],
+      "teams": [
+        {
+          "id": 1,
+          "name": "Arsenal",
+          "short_name": "ARS"
+        },
+        {
+          "id": 2,
+          "name": "Aston Villa",
+          "short_name": "AVL"
+        },
+        {
+          "id": 3,
+          "name": "Bournemouth",
+          "short_name": "BOU"
+        },
+        {
+          "id": 4,
+          "name": "Brentford",
+          "short_name": "BRE"
+        },
+        {
+          "id": 5,
+          "name": "Brighton",
+          "short_name": "BHA"
+        },
+        {
+          "id": 6,
+          "name": "Chelsea",
+          "short_name": "CHE"
+        },
+        {
+          "id": 7,
+          "name": "Coventry City",
+          "short_name": "COV"
+        },
+        {
+          "id": 8,
+          "name": "Crystal Palace",
+          "short_name": "CRY"
+        },
+        {
+          "id": 9,
+          "name": "Everton",
+          "short_name": "EVE"
+        },
+        {
+          "id": 10,
+          "name": "Fulham",
+          "short_name": "FUL"
+        },
+        {
+          "id": 11,
+          "name": "Hull City",
+          "short_name": "HUL"
+        },
+        {
+          "id": 12,
+          "name": "Ipswich Town",
+          "short_name": "IPS"
+        },
+        {
+          "id": 13,
+          "name": "Leeds",
+          "short_name": "LEE"
+        },
+        {
+          "id": 14,
+          "name": "Liverpool",
+          "short_name": "LIV"
+        },
+        {
+          "id": 15,
+          "name": "Man City",
+          "short_name": "MCI"
+        },
+        {
+          "id": 16,
+          "name": "Man Utd",
+          "short_name": "MUN"
+        },
+        {
+          "id": 17,
+          "name": "Newcastle",
+          "short_name": "NEW"
+        },
+        {
+          "id": 18,
+          "name": "Nott'm Forest",
+          "short_name": "NFO"
+        },
+        {
+          "id": 19,
+          "name": "Spurs",
+          "short_name": "TOT"
+        },
+        {
+          "id": 20,
+          "name": "Sunderland",
+          "short_name": "SUN"
+        }
+      ],
+      "counts": {
+        "events": 38,
+        "teams": 20,
+        "players": 659,
+        "fixtures": 380
+      },
+      "rawPayloadRetained": false
+    },
+    "mapping": {
+      "decision": "NO-GO",
+      "reason": "current_season_pl_team_mapping_incomplete",
+      "verifiedPremierLeagueTeamCount": 2,
+      "completeTwentyClubCoverage": false,
+      "nameOnlyCertified": false,
+      "fuzzyMatchingUsed": false,
+      "table": [
+        {
+          "club": "Arsenal",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "1",
+          "canonicalFplId": "2026-27:fpl:team:1",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Aston Villa",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "2",
+          "canonicalFplId": "2026-27:fpl:team:2",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Bournemouth",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "3",
+          "canonicalFplId": "2026-27:fpl:team:3",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Brentford",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "4",
+          "canonicalFplId": "2026-27:fpl:team:4",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Brighton",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "5",
+          "canonicalFplId": "2026-27:fpl:team:5",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Chelsea",
+          "apiFootballTeamId": "49",
+          "officialFplTeamId": "6",
+          "canonicalFplId": "2026-27:fpl:team:6",
+          "evidence": "EIA-2I4C verified Chelsea API-Football 49 → Official FPL 6 on fixture 1636205",
+          "qualificationStatus": "VERIFIED",
+          "conflict": null,
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": {
+            "canonicalFplId": "2026-27:fpl:team:6",
+            "evidenceType": "trusted_eia_2i4c_fixture",
+            "kind": "eia-2i5e-team-mapping-evidence-v1",
+            "observedAt": "2026-09-09T23:59:59.000Z",
+            "officialFplAuthorityDigest": "da08641258e7624fc6b4f97be4ace44469b09f2603980415eb092a99834cf869",
+            "provenance": "EIA-2I4C verified Chelsea API-Football 49 → Official FPL 6 on fixture 1636205",
+            "provider": "api-football",
+            "providerTeamId": "49",
+            "qualificationMethod": "trusted_legacy_adapter",
+            "revision": "eia-2i5e-r1",
+            "season": "2026-27",
+            "source": "EIA-2I4C",
+            "sourceRevision": "eia-2i4c-canonical-2026-09-15",
+            "stableEvidenceId": "1636205",
+            "integrityHash": "a44592a8bb46a40b4b581a95e3080d144b7c4b70dde50b967f7d3b09563515b6"
+          }
+        },
+        {
+          "club": "Coventry City",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "7",
+          "canonicalFplId": "2026-27:fpl:team:7",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Crystal Palace",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "8",
+          "canonicalFplId": "2026-27:fpl:team:8",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Everton",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "9",
+          "canonicalFplId": "2026-27:fpl:team:9",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Fulham",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "10",
+          "canonicalFplId": "2026-27:fpl:team:10",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Hull City",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "11",
+          "canonicalFplId": "2026-27:fpl:team:11",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Ipswich Town",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "12",
+          "canonicalFplId": "2026-27:fpl:team:12",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Leeds",
+          "apiFootballTeamId": "63",
+          "officialFplTeamId": "13",
+          "canonicalFplId": "2026-27:fpl:team:13",
+          "evidence": "EIA-2I4C verified Leeds API-Football 63 → Official FPL 13 on fixture 1636205",
+          "qualificationStatus": "VERIFIED",
+          "conflict": null,
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": {
+            "canonicalFplId": "2026-27:fpl:team:13",
+            "evidenceType": "trusted_eia_2i4c_fixture",
+            "kind": "eia-2i5e-team-mapping-evidence-v1",
+            "observedAt": "2026-09-09T23:59:59.000Z",
+            "officialFplAuthorityDigest": "da08641258e7624fc6b4f97be4ace44469b09f2603980415eb092a99834cf869",
+            "provenance": "EIA-2I4C verified Leeds API-Football 63 → Official FPL 13 on fixture 1636205",
+            "provider": "api-football",
+            "providerTeamId": "63",
+            "qualificationMethod": "trusted_legacy_adapter",
+            "revision": "eia-2i5e-r1",
+            "season": "2026-27",
+            "source": "EIA-2I4C",
+            "sourceRevision": "eia-2i4c-canonical-2026-09-15",
+            "stableEvidenceId": "1636205",
+            "integrityHash": "c01571a8595189ac0eddba0ababb9ba985221e01189619f01e1694e71e1a275f"
+          }
+        },
+        {
+          "club": "Liverpool",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "14",
+          "canonicalFplId": "2026-27:fpl:team:14",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Man City",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "15",
+          "canonicalFplId": "2026-27:fpl:team:15",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Man Utd",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "16",
+          "canonicalFplId": "2026-27:fpl:team:16",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Newcastle",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "17",
+          "canonicalFplId": "2026-27:fpl:team:17",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Nott'm Forest",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "18",
+          "canonicalFplId": "2026-27:fpl:team:18",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Spurs",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "19",
+          "canonicalFplId": "2026-27:fpl:team:19",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        },
+        {
+          "club": "Sunderland",
+          "apiFootballTeamId": null,
+          "officialFplTeamId": "20",
+          "canonicalFplId": "2026-27:fpl:team:20",
+          "evidence": "current Official FPL authority only; no verified API-Football provider ID",
+          "qualificationStatus": "UNMAPPED",
+          "conflict": "missing_provider_mapping",
+          "nameOnlyCertified": false,
+          "qualificationEvidenceReceipt": null
+        }
+      ]
+    },
+    "rights": {
+      "classification": "owner_risk_accepted_private_use",
+      "redistributionAllowed": false,
+      "publicUseAllowed": false,
+      "commercialUseAllowed": false,
+      "rawPayloadRetentionAllowed": false,
+      "stopOnObjection": true
+    },
+    "activation": {
+      "collectorDeployed": false,
+      "migration0005Live": false,
+      "credentialProvisioned": false,
+      "cronActive": false,
+      "collectionEnabled": false,
+      "providerShadowRuntimeLiveAccepted": false,
+      "modelOrUiInfluence": false,
+      "productionByteCeiling": null
+    },
+    "rawProviderBodyRetained": false,
+    "secretPersisted": false,
+    "modelOrUiInfluence": false
   }
 }

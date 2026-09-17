@@ -1,6 +1,6 @@
 ## EIA-2I5E limitations
 
-No authorized API-Football credential was available in this attended environment, so response-size evidence is empty and `API_FOOTBALL_MAX_RESPONSE_BYTES` remains unqualified. Complete 20-club mapping is unproven: only Chelsea and Leeds are verified against current Official FPL authority. Names cannot fill the remaining clubs. Collector, Cron, live migration 0005, Worker secret and kill-switch enablement remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
+Response-size evidence supports a proposed 720,896-byte ceiling, but `API_FOOTBALL_MAX_RESPONSE_BYTES` deliberately remains `null`. Complete mapping is still unproven: only Chelsea and Leeds have valid receipts against current Official FPL authority; 18 clubs remain unmapped. Later payload amplification remains possible. Collector, Cron, live migration 0005, Worker secret and kill-switch enablement remain absent. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
 ## EIA-2I5D limitations
 
