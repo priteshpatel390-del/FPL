@@ -16,6 +16,19 @@ const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const evidence = JSON.parse(fs.readFileSync(path.join(root, 'docs/evidence/eia-2i5e-sanitized-qualification.json'), 'utf8'));
 const r7 = evidence.r7AttendedQualification;
 const CANONICAL_IDS = EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items.map(item => item.id);
+const EXPECTED_ROW_IDENTITY_STATES = {
+  'discovery-2': 'MATCHED',
+  'discovery-3': 'MATCHED',
+  'discovery-848': 'MATCHED',
+  'discovery-45': 'MATCHED',
+  'discovery-48': 'MATCHED',
+  'fixture-1636205': 'FIXTURE_IDENTITY_MATCHED',
+  'lineups-1636205': 'FIXTURE_PARTICIPANTS_MATCHED',
+  'players-1636205': 'FIXTURE_PARTICIPANTS_MATCHED',
+  'events-1636205': 'FIXTURE_PARAMETER_PLUS_PARTICIPANT_CONTEXT',
+  'fixture-1635643': 'FIXTURE_IDENTITY_MATCHED',
+  'players-1635643': 'FIXTURE_PARTICIPANTS_MATCHED'
+};
 
 test('R7 evidence identifies the exact GitHub attended run and executed candidate', () => {
   assert.equal(evidence.checkpoint, 'EIA-2I5E-R7');
@@ -31,7 +44,7 @@ test('R7 evidence identifies the exact GitHub attended run and executed candidat
   assert.equal(r7.artifact.digestSha256, 'dd6b907cefe6c5d0b29b8c269d91a622ff45411303a571eeb1831d004b5e3459');
 });
 
-test('R7 evidence contains exactly 11 unique successful canonical measurements and no retries', () => {
+test('R7 evidence contains exactly 11 unique successful canonical measurements and preserves attended identity states', () => {
   assert.equal(r7.attemptsUsed, 11);
   assert.equal(r7.retries, 0);
   assert.equal(r7.httpSuccessCount, 11);
@@ -39,6 +52,7 @@ test('R7 evidence contains exactly 11 unique successful canonical measurements a
   const ids = r7.measurements.map(row => row.logicalRequestId);
   assert.deepEqual(ids, CANONICAL_IDS);
   assert.equal(new Set(ids).size, 11);
+  assert.deepEqual(Object.keys(EXPECTED_ROW_IDENTITY_STATES), CANONICAL_IDS);
   for (const row of r7.measurements) {
     assert.equal(row.ok, true);
     assert.equal(row.httpStatus, 200);
@@ -47,6 +61,11 @@ test('R7 evidence contains exactly 11 unique successful canonical measurements a
     assert.equal(row.sampleSufficient, true);
     assert.equal(row.quota.state, 'known');
     assert.equal(row.bodyRetained, false);
+    assert.equal(
+      row.rowIdentityValidationState,
+      EXPECTED_ROW_IDENTITY_STATES[row.logicalRequestId],
+      `attended row identity state drifted for ${row.logicalRequestId}`
+    );
   }
 });
 
