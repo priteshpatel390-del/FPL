@@ -1,3 +1,7 @@
+## Post-20/20 repository completion addendum — 18 September 2026
+
+The earlier EIA-2I5D runtime foundation remains dormant, but two prerequisites have since closed: the response byte ceiling is qualified at 720,896 bytes and the Premier League team identity gate is GO 20/20. The owner has now approved repository-only completion of the remaining pre-live design gap. Migration 0006 adds private qualified-mapping provenance/head constraints without modifying 0005, and a pre-egress planner/orchestrator connects the existing scheduler to the already-closed request contracts while still refusing provider execution. Current Wrangler remains `REPOSITORY_ONLY_BLOCKED`; migration 0005/0006 live application, real mapping persistence, Cloudflare provisioning, secret provisioning, Worker deployment, Cron, provider egress, workload ingestion and model/UI influence remain separate gates. See [pre-live runtime completion](API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION.md).
+
 # EIA-2I5D — Repository-Only API-Football Shadow Runtime and Persistence
 
 Date: 16 September 2026

@@ -1,3 +1,7 @@
+## API-Football post-20/20 runtime completion remains model-isolated
+
+The qualified team-mapping persistence and pre-egress planner are **shadow infrastructure only**. They do not change expected minutes, fixture inputs, projected points, XI selection, captaincy, transfers, simulations, rank, Mini Leagues, rival analysis or strategy. Workload detail remains explicitly blocked in the planner. No accuracy claim follows from repository readiness; API-Football still requires prospective shadow evidence and separately approved out-of-sample/ablation evaluation before any model influence. Historical r=0.80 remains method-flattered.
+
 ## EIA-2I5E isolation
 
 R3 qualification remediation and preserved historical evidence have no production calculation read path. EIA-2I5E changes no expected-minutes, xP, fixture, squad, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic. Current response-size and mapping gates are both NO-GO. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
