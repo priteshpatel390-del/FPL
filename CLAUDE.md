@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-OWNER-CROSSWALK-QUALIFICATION-2026-09-18 -->
+### Current external-intelligence checkpoint — owner-approved 20-club crosswalk closeout prepared
+
+The owner approved the exact 2026/27 API-Football ↔ Official FPL 20-club crosswalk after attended provider-universe run `35328500278`. Repository implementation deliberately does **not** publish the 18 newly approved provider-ID pairs. The exact crosswalk is bound by SHA-256 `d48c7980d1c39e7d4a6f82cb56d25a750286c925fd4996d0f8c728a4fb45c7f5` and may enter only through protected-environment secret `API_FOOTBALL_OWNER_CROSSWALK_JSON`. A new manual-only exact-`main` workflow reuses sanitized artifact `10540321648` from run `35328500278` (archive SHA-256 `4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97`), fetches the two existing Official FPL bootstrap/fixtures endpoints in memory, issues 18 owner-reviewed receipts plus the two legacy Chelsea/Leeds receipts, and runs the existing exact-20 bijection contract. It makes zero API-Football requests and never receives `API_FOOTBALL_API_KEY`; raw provider/Official-FPL bodies, the crosswalk and mapping receipts are not persisted. Mapping remains NO-GO 2/20 until this repository change is merged and the attended closeout workflow succeeds against current content-bound Official FPL authority. Collector, migration 0005, Cron, D1 persistence and all model/UI paths remain inactive.
+
 <!-- API-FOOTBALL-TEAM-UNIVERSE-ATTENDED-WORKFLOW-2026-09-18 -->
 ### Current external-intelligence checkpoint — dedicated team-universe attended workflow prepared
 
@@ -1998,78 +2003,3 @@ It does not yet provide a validated projected-rank model, protect/balanced/chase
 ## Non-negotiable engineering rules
 
 - Never change projection, expected-minutes, scoring, fixture, captaincy, squad, simulation, transfer, rank, Mini-League or strategy logic without first presenting existing and proposed behaviour, inputs, fallbacks, assumptions, limitations, trade-offs and validating evidence, then receiving explicit approval.
-- Never add a provider or data source without an approved purpose, field contract, reliability assessment, validation/ablation plan, fallback, security/privacy review, cost and tests.
-- Never delete, weaken or skip a test to make a change pass.
-- Never claim improved prediction accuracy without genuine out-of-sample validation. The historical aggregate r=0.80 is method-flattered.
-- Transfer pruning must remain admissible, and `exhaustiveTransferSearch()` must remain independent of production pruning.
-- Preserve deterministic builds, exact reachable `BUILD_COMMIT` identity, complete build-input identity, root/deployable equality and generated-file provenance.
-- Preserve Vanilla JavaScript ES modules, the zero-dependency toolchain, Node built-in tests, the custom bundler, GitHub Pages and the single-file deployment unless separately approved.
-- Generated `dist/` and root `index.html` files come only from `build.mjs`; never hand-edit them.
-- Anthropic keys remain banned client-side. Odds requests remain direct-only and the key must never be relayed, logged, rendered or exposed in diagnostics.
-- Understat remains team-level only. Optional-provider failure must degrade gracefully.
-- Supporting caches contain only validated model inputs: no Understat HTML and no Odds key or keyed URL.
-- Preserve mobile-first iPhone usability and the accepted physical behaviours touched by a future change.
-- For the evidence archive specifically, R2 remains private, the evidence Worker exposes no generic SQL/R2 browser access, Access errors stay generic, sensitive auth/account/provider-key material is never logged/stored, and backend availability must never become a recommendation dependency. GW1-P2's client adds no permanent browser service token and persists no secret, cookie, team domain, policy audience or account identifier.
-
-## Current security and data boundaries
-
-- Official FPL reads use the owner-controlled, allowlisted Cloudflare gateway and still pass client validators.
-- GW1-P1 uses a **separate** Access-authenticated evidence Worker backed by private R2 and D1. On merged `main` the browser does not call it; the unmerged GW1-P2 candidate adds an exact-origin credentialled call as a one-way side effect. No wildcard `Access-Control-Allow-Origin` exists anywhere.
-- Every non-preflight evidence route requires the Worker's own validation of `Cf-Access-Jwt-Assertion`; `TEAM_DOMAIN` and `POLICY_AUD` are runtime configuration and must not be printed or hard-coded.
-- Evidence Wrangler config keeps the accepted production `workers.dev` route enabled and explicitly disables `preview_urls`. Live route-state confirmation is always required separately after deployment; for the current candidate it is recorded from owner-supplied 11 August 2026 Cloudflare Domains dashboard evidence.
-- Provider and user strings use DOM builders; AI output uses restricted Markdown.
-- The Odds key is masked, direct-only, forgettable and scrubbed from diagnostics.
-- The generated single script and style are SHA-256 locked by CSP.
-- Runtime style APIs and style attributes are forbidden.
-- Stage 10 evidence is allowlisted, hash-verified and recovery-oriented; exports are complete, unencrypted and owner controlled.
-- League and manager identifiers stay out of routes, page titles, provider diagnostics and Stage 10 evidence.
-- Permanent Understat/Odds server retention is fail-closed until separately approved.
-
-## Workflow
-
-1. Inspect latest `main` and the live active PR; read this file first.
-2. State the exact baseline, scope, exclusions, risks and approval gate.
-3. Obtain explicit approval where required.
-4. Create a separate branch; never push directly to `main`.
-5. Implement only the approved scope.
-6. Add or update tests without weakening existing protection.
-7. Run `./run-tests.sh` and the production build.
-8. Verify two exact-identity builds, root/deployable equality and manifest identity where relevant.
-9. Update affected canonical documentation.
-10. Open/update a draft pull request with evidence and exclusions.
-11. Where security depends on live Cloudflare route/dashboard state, obtain that evidence explicitly; repository config alone is insufficient.
-12. Move a draft PR to ready only when every gate is satisfied.
-13. Merge only after explicit owner approval, then verify `main`.
-
-## Completion report for every implementation item
-
-Report the exact changes, deliberate exclusions, test count and result, deterministic-build evidence, root/deployable result, documentation updates, judgement calls, remaining limitations, physical-device/live-infrastructure evidence actually performed, branch, commit and pull-request link/state.
-
-
-<!-- DATA-S1-2026-08-22 -->
-## DATA-S1 repository foundation — 22 August 2026
-
-The separately approved [DATA-S1 Shadow Structured Data Foundation](docs/DATA-S1-SHADOW-STRUCTURED-DATA-FOUNDATION.md) adds the isolated, provider-neutral `teamsheet-data-platform` repository service and separate future `teamsheet-data` D1 binding. Only `shadow_only` is valid. It has no production/browser/model/Provider Health read path, no new R2, no provider activation and no Google Sheets integration; existing Stage 10 D1/R2 custody remains separate and unchanged. No live infrastructure was created or modified. PR #145 is merged and repository-verified, but DATA-S1 remains **not live deployed**. DATA-S1A is the current control reconciliation. The separately owner-gated sequence is DATA-S1B live Cloudflare preflight/deployment/acceptance, DATA-S2 Official FPL structured history, DATA-S3 automated Official outcomes, DATA-S4 provider trials/evaluation, DATA-S5 downstream Sheets automation, then later explicit production/model gates. See the [DATA-S1B plan](docs/DATA-S1B-LIVE-DEPLOYMENT-ACCEPTANCE-PLAN.md).
-
-Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cost constraint: free remains preferred where comparable, while a small paid provider may be considered only with explicit pricing, rights and value/cost justification, preferably after a shadow trial. This approves no provider and does not rewrite historical research conducted under the former constraint.
-<!-- EXTERNAL-INTELLIGENCE-EIA1-2026-08-30 -->
-### Current external-intelligence checkpoint — EIA-1 review candidate
-
-EIA-1 adds pure offline adapters for existing snapshot/outcome/DATA-S2B exports and a provider-neutral workload contract. DATA-S2B remains live-unaccepted and is fixture-proven only. TheSportsDB is `local_research_only`, durable retention is blocked, and qualification is FAIL for expected-minutes workload evidence. No signal, provider, model, recommendation, UI or infrastructure behaviour changes. See [EIA-1](docs/EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
-
-<!-- DATA-S2B-E2A-2026-09-01 -->
-### Current DATA-S2B checkpoint — E2A repository-only D1 REST validation candidate
-
-E2A adds deterministic synthetic atomicity, affinity, statement/body and 9,860-write analogue plans plus an unforgeable E2A-factory fake-transport harness, phase-specific derived empty/setup schema fingerprints, exact-table-set disposable-identity firewall, no-retry ambiguity classifications and sanitized evidence. It performs and approves no Cloudflare request, account/token/resource inspection, D1 creation/query/mutation, workflow, Cron or deployment. It proves no live REST atomicity, affinity or size behaviour. E2B/E2C/E2D require separate explicit owner approval. See [E2A record](workers/data-platform/DATA-S2B-E2A-REPOSITORY-D1-REST-VALIDATION.md).
-
-<!-- DATA-S2B-E2C-A-2026-09-01 -->
-### DATA-S2B E2C-A repository-only live-validation contract
-
-E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound authentic-plan-only HTTP adapter, a strict Cloudflare-shaped response decoder, pre-mutation exact metadata and clean-INITIAL-schema gates, closed post-setup object-set plus semantic-schema enforcement, closed adapter-to-orchestrator composition, quote-aware CHECK canonicalisation, response/state-paired atomicity acceptance, reconcile-then-stop mutation ambiguity handling, W00/W01 reconciliation and strictly bounded sanitized evidence including canonical UTC timestamps. It performs no Cloudflare request and proves no live atomicity, parameter affinity or request-size behaviour. Any live experiment, credential, resource, workflow/environment, cleanup or production decision remains separately owner-approved. See [E2C-A record](workers/data-platform/DATA-S2B-E2C-A-LIVE-VALIDATION-CONTRACT.md).
-
-<!-- DATA-S2B-E2C-B-2026-09-01 -->
-### DATA-S2B E2C-B disposable live experiment preparation
-
-E2C-B makes production-account fingerprinting mandatory, adds exact returned-value affinity/storage acceptance, preserves missing versus zero provider metadata with bounded attempts, and adds a dormant manual-only exact-main/exact-Verify protected workflow with rerun rejection and no cleanup. It is repository-only: no resource, credential, environment, workflow dispatch or Cloudflare request occurred. See [E2C-B record](workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
-
-The corrected boundary takes the approved disposable-account fingerprint independently from the protected environment, proves the runtime raw disposable account hashes to it and proves it differs from production before transport. Evidence end time is captured only after the awaited contract settles, on success or failure; it cannot be caller-precomputed.
