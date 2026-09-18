@@ -1,3 +1,7 @@
+## 18 September 2026 — 20-club mapping qualification contract
+
+**Decision:** complete mapping must remain an evidence-backed current-season bijection; do not infer provider↔FPL identity from names. A future attended provider-universe observation may use only `GET /teams?league=39&season=2026`, in a qualification-only path that is not added to the collector. New mappings require explicit owner-reviewed receipts tied to that provider-universe revision and a content-bound Official FPL authority. Chelsea 49→6 and Leeds 63→13 remain immutable conflict anchors. This repository decision authorizes no provider execution or activation. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 ## D-EIA-2I5E-R7A-R1 · 17 September 2026 · Accepted · Secret-bearing qualification workflow final hardening
 
 Harden the existing R7A workflow on draft PR #252: pin actions to independently verified full SHAs, structurally block GitHub UI reruns, reconfirm current `main` after environment wait, wrap fetch with a hard 11-call egress ceiling, and serialize dispatches without cancelling in-progress work. Do not mutate GitHub branch/ruleset settings. Owner-configured main protection remains an outstanding pre-dispatch requirement. Prevent-self-review is an owner operational preflight and is not inferred. Zero provider calls, zero secret accesses, no dispatch, no merge, no PR #251 change. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
