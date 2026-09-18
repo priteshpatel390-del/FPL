@@ -22,6 +22,12 @@ export const EIA_2I5E_MEASUREMENT_ABORT_BYTES=8*1024*1024;
 export const EIA_2I5E_BYTE_CEILING_MULTIPLIER=2;
 export const EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES=64*1024;
 export const EIA_2I5E_BYTE_CEILING_HARD_CAP_BYTES=2*1024*1024;
+export const API_FOOTBALL_PL_TEAM_UNIVERSE_ENDPOINT='teams';
+export const API_FOOTBALL_PL_LEAGUE_ID='39';
+export const API_FOOTBALL_TEAM_MAPPING_MAX_ATTEMPTS=2;
+export const API_FOOTBALL_TEAM_MAPPING_MAX_RESPONSE_BYTES=720_896;
+export const API_FOOTBALL_TEAM_UNIVERSE_EVIDENCE_KIND='api-football-team-universe-evidence-v1';
+export const API_FOOTBALL_TEAM_MAPPING_RECEIPT_REVISION='api-football-team-mapping-r1';
 export const OFFICIAL_FPL_BOOTSTRAP_URL='https://fantasy.premierleague.com/api/bootstrap-static/';
 export const OFFICIAL_FPL_FIXTURES_URL='https://fantasy.premierleague.com/api/fixtures/';
 const ENDPOINT_CLASSES=Object.freeze(['fixtures_discovery','fixture','lineups','players','events']);
@@ -86,7 +92,174 @@ function receiptBasis(mapping,evidence,authorityDigest){
   });
 }
 
-export async function issueQualificationMappingReceipt(){return fail('mapping_evidence_not_admitted');}
+function normalizedProviderTeam(row){
+  const team=row?.team;
+  const id=positiveId(team?.id);
+  const name=typeof team?.name==='string'?team.name.trim():'';
+  const code=team?.code==null?null:(typeof team.code==='string'?team.code.trim():null);
+  if(!id||!name||name.length>160||code===null&&team?.code!=null||code&&code.length>16)return null;
+  const record={providerTeamId:id,name,code:code||null};
+  return secret(record)?null:record;
+}
+
+export function buildApiFootballPlTeamUniverseQualificationRequest(input={}){
+  if(input==null||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length!==0)return fail('parameters_invalid');
+  const url=new URL('/teams',API_FOOTBALL_ORIGIN);
+  url.searchParams.set('league',API_FOOTBALL_PL_LEAGUE_ID);
+  url.searchParams.set('season',String(API_FOOTBALL_PROVIDER_SEASON));
+  if(url.origin!==API_FOOTBALL_ORIGIN||url.protocol!=='https:'||url.pathname!=='/teams')return fail('endpoint_not_allowed');
+  return deepFreeze({
+    ok:true,endpoint:API_FOOTBALL_PL_TEAM_UNIVERSE_ENDPOINT,url:String(url),
+    search:{league:API_FOOTBALL_PL_LEAGUE_ID,season:String(API_FOOTBALL_PROVIDER_SEASON)},
+    fplSeason:API_FOOTBALL_FPL_SEASON,providerSeason:API_FOOTBALL_PROVIDER_SEASON
+  });
+}
+
+export function decodeApiFootballPlTeamUniverseQualificationResponse(payload){
+  const decoded=decodeApiFootballResponse(payload,{endpoint:API_FOOTBALL_PL_TEAM_UNIVERSE_ENDPOINT});
+  if(!decoded.ok)return decoded;
+  const parameters=payload?.parameters;
+  if(!parameters||typeof parameters!=='object'||Array.isArray(parameters)||Object.keys(parameters).length!==2||
+    String(parameters.league)!==API_FOOTBALL_PL_LEAGUE_ID||String(parameters.season)!==String(API_FOOTBALL_PROVIDER_SEASON))return fail('provider_response_identity_mismatch');
+  if(payload.paging.current!==1||payload.paging.total!==1)return fail('qualification_pagination_unresolved');
+  if(decoded.response.length!==20)return fail('provider_team_universe_count_invalid');
+  const teams=decoded.response.map(normalizedProviderTeam);
+  if(teams.some(row=>row==null))return fail('provider_team_identity_invalid');
+  const ids=teams.map(row=>row.providerTeamId);
+  if(new Set(ids).size!==20)return fail('provider_team_universe_conflicted');
+  teams.sort((a,b)=>Number(a.providerTeamId)-Number(b.providerTeamId));
+  return deepFreeze({ok:true,teams});
+}
+
+async function readBoundedTeamUniverseJson(response){
+  const declared=Number(response?.headers?.get?.('content-length'));
+  if(Number.isFinite(declared)&&declared>API_FOOTBALL_TEAM_MAPPING_MAX_RESPONSE_BYTES)return fail('provider_response_too_large');
+  if(!response?.body?.getReader)return fail('provider_body_unreadable');
+  const reader=response.body.getReader(),chunks=[];let size=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    size+=value.byteLength;
+    if(size>API_FOOTBALL_TEAM_MAPPING_MAX_RESPONSE_BYTES){await reader.cancel();return fail('provider_response_too_large');}
+    chunks.push(value);
+  }
+  const bytes=new Uint8Array(size);let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  let payload;try{payload=JSON.parse(new TextDecoder().decode(bytes));}catch{return fail('provider_schema_invalid');}
+  return deepFreeze({ok:true,payload,actualBytes:size});
+}
+
+function teamUniverseBasis({teams,observedAt,executionIdentity}){
+  return canonicalise({
+    kind:API_FOOTBALL_TEAM_UNIVERSE_EVIDENCE_KIND,source:'api-football',
+    endpoint:API_FOOTBALL_PL_TEAM_UNIVERSE_ENDPOINT,league:API_FOOTBALL_PL_LEAGUE_ID,
+    providerSeason:API_FOOTBALL_PROVIDER_SEASON,fplSeason:API_FOOTBALL_FPL_SEASON,
+    observedAt,executionIdentity,teams,rawBodyRetained:false
+  });
+}
+
+async function issueTeamUniverseEvidence({teams,observedAt,executionIdentity}={},cryptoImpl=globalThis.crypto){
+  if(!Array.isArray(teams)||teams.length!==20||new Set(teams.map(row=>String(row?.providerTeamId||''))).size!==20)return fail('provider_team_universe_conflicted');
+  const at=iso(observedAt);
+  if(!at||typeof executionIdentity!=='string'||!executionIdentity.trim()||executionIdentity.length>240)return fail('qualification_provenance_invalid');
+  const normalized=teams.map(row=>normalizedProviderTeam({team:{id:row?.providerTeamId,name:row?.name,code:row?.code}}));
+  if(normalized.some(row=>row==null))return fail('provider_team_identity_invalid');
+  normalized.sort((a,b)=>Number(a.providerTeamId)-Number(b.providerTeamId));
+  const basis=teamUniverseBasis({teams:normalized,observedAt:at,executionIdentity:executionIdentity.trim()});
+  const integrityHash=await sha256Hex(stableStringify(basis),cryptoImpl);
+  return deepFreeze({...basis,revision:`api-football-team-universe:${integrityHash}`,integrityHash});
+}
+
+export async function validateApiFootballTeamUniverseEvidence(evidence,cryptoImpl=globalThis.crypto){
+  if(!evidence||evidence.kind!==API_FOOTBALL_TEAM_UNIVERSE_EVIDENCE_KIND||typeof evidence.integrityHash!=='string'||typeof evidence.revision!=='string')return fail('provider_team_universe_evidence_invalid');
+  const expected=await issueTeamUniverseEvidence({
+    teams:evidence.teams,observedAt:evidence.observedAt,executionIdentity:evidence.executionIdentity
+  },cryptoImpl);
+  if(expected.ok===false)return expected;
+  return stableStringify(expected)===stableStringify(evidence)?deepFreeze({ok:true,evidence}):fail('provider_team_universe_evidence_invalid');
+}
+
+function teamUniverseAttempt(attemptNumber,category,status,quota){
+  return deepFreeze({attemptNumber,category,httpStatus:Number.isInteger(status)?status:null,quota:quota?.ok?{
+    state:quota.state,requestsLimit:quota.requestsLimit,requestsRemaining:quota.requestsRemaining,
+    rateLimit:quota.rateLimit,remaining:quota.remaining
+  }:null});
+}
+
+export async function runAttendedApiFootballTeamUniverseQualification({
+  apiKey,fetchImpl,sleepImpl,nowImpl=()=>new Date().toISOString(),executionIdentity,timeoutSignal=AbortSignal.timeout,cryptoImpl=globalThis.crypto
+}={}){
+  if(typeof fetchImpl!=='function'||typeof sleepImpl!=='function'||typeof nowImpl!=='function'||typeof timeoutSignal!=='function')return fail('provider_disabled_configuration_invalid');
+  const request=buildApiFootballPlTeamUniverseQualificationRequest();if(!request.ok)return request;
+  const init=apiFootballRequestInit(apiKey);if(!init.ok)return init;
+  if(typeof executionIdentity!=='string'||!executionIdentity.trim())return fail('qualification_provenance_invalid');
+  const attempts=[];
+  for(let attemptNumber=1;attemptNumber<=API_FOOTBALL_TEAM_MAPPING_MAX_ATTEMPTS;attemptNumber+=1){
+    const sent=await sendApiFootballRequest({fetchImpl,url:new URL(request.url),init:init.init,timeoutSignal});
+    if(!sent.ok){
+      attempts.push(teamUniverseAttempt(attemptNumber,sent.reason,null,null));
+      if(attemptNumber<API_FOOTBALL_TEAM_MAPPING_MAX_ATTEMPTS&&['transport_failure','provider_timeout'].includes(sent.reason)){await sleepImpl(API_FOOTBALL_DISCOVERY_ATTEMPT_GAP_MS);continue;}
+      return deepFreeze({ok:false,decision:'NO-GO',reason:sent.reason,attempts,attemptsUsed:attempts.length,rawBodyRetained:false});
+    }
+    const response=sent.response,status=Number(response?.status);
+    const quota=normalizeApiFootballQuotaHeaders(response?.headers);
+    if(!quota.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:quota.reason,attempts:[...attempts,teamUniverseAttempt(attemptNumber,quota.reason,status,null)],attemptsUsed:attempts.length+1,rawBodyRetained:false});
+    if(status===401||status===403)return deepFreeze({ok:false,decision:'NO-GO',reason:'authentication_failure',attempts:[...attempts,teamUniverseAttempt(attemptNumber,'authentication_failure',status,quota)],attemptsUsed:attempts.length+1,rawBodyRetained:false});
+    if(status===429)return deepFreeze({ok:false,decision:'NO-GO',reason:'quota_exhausted',attempts:[...attempts,teamUniverseAttempt(attemptNumber,'quota_exhausted',status,quota)],attemptsUsed:attempts.length+1,rawBodyRetained:false});
+    if(status>=500&&status<600){
+      attempts.push(teamUniverseAttempt(attemptNumber,'temporary_server_failure',status,quota));
+      if(attemptNumber<API_FOOTBALL_TEAM_MAPPING_MAX_ATTEMPTS){await sleepImpl(API_FOOTBALL_DISCOVERY_ATTEMPT_GAP_MS);continue;}
+      return deepFreeze({ok:false,decision:'NO-GO',reason:'temporary_server_failure',attempts,attemptsUsed:attempts.length,rawBodyRetained:false});
+    }
+    if(!(status>=200&&status<300))return deepFreeze({ok:false,decision:'NO-GO',reason:'provider_unavailable',attempts:[...attempts,teamUniverseAttempt(attemptNumber,'provider_unavailable',status,quota)],attemptsUsed:attempts.length+1,rawBodyRetained:false});
+    const bounded=await readBoundedTeamUniverseJson(response);
+    if(!bounded.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:bounded.reason,attempts:[...attempts,teamUniverseAttempt(attemptNumber,bounded.reason,status,quota)],attemptsUsed:attempts.length+1,rawBodyRetained:false});
+    const decoded=decodeApiFootballPlTeamUniverseQualificationResponse(bounded.payload);
+    if(!decoded.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:decoded.reason,attempts:[...attempts,teamUniverseAttempt(attemptNumber,decoded.reason,status,quota)],attemptsUsed:attempts.length+1,rawBodyRetained:false});
+    const observedAt=iso(nowImpl());if(!observedAt)return fail('timestamp_invalid');
+    const providerUniverse=await issueTeamUniverseEvidence({teams:decoded.teams,observedAt,executionIdentity},cryptoImpl);
+    if(providerUniverse.ok===false)return providerUniverse;
+    const successAttempts=[...attempts,teamUniverseAttempt(attemptNumber,'success',status,quota)];
+    const result={
+      ok:true,decision:'EVIDENCE_CAPTURED',attempts:successAttempts,attemptsUsed:successAttempts.length,retries:successAttempts.length-1,
+      actualBytes:bounded.actualBytes,providerUniverse,rawBodyRetained:false,credentialPrinted:false,credentialPersisted:false
+    };
+    const blocked=secret(result);return blocked||deepFreeze(result);
+  }
+  return fail('qualification_attempt_limit_reached');
+}
+
+function attendedMappingReceiptBasis(mapping,evidence,authorityDigestHash,providerUniverse){
+  const providerTeam=providerUniverse.teams.find(row=>String(row.providerTeamId)===String(mapping.providerEntityId));
+  return canonicalise({
+    kind:MAPPING_RECEIPT_KIND,revision:API_FOOTBALL_TEAM_MAPPING_RECEIPT_REVISION,provider:'api-football',
+    providerTeamId:String(mapping.providerEntityId),providerObservedName:providerTeam?.name||null,providerObservedCode:providerTeam?.code||null,
+    canonicalFplId:mapping.canonicalFplId,season:mapping.season,evidenceType:evidence.evidenceType,
+    stableEvidenceId:providerUniverse.revision,source:'api-football',sourceRevision:providerUniverse.revision,
+    observedAt:providerUniverse.observedAt,timePrecision:'instant',provenance:evidence.provenance,
+    qualificationMethod:evidence.qualificationMethod,reviewState:evidence.reviewState,reviewReference:evidence.reviewReference,
+    reviewedAt:evidence.reviewedAt,providerUniverseIntegrityHash:providerUniverse.integrityHash,
+    officialFplAuthorityDigest:authorityDigestHash
+  });
+}
+
+export async function issueQualificationMappingReceipt({mapping,evidence,authority,providerUniverse}={},cryptoImpl=globalThis.crypto){
+  const clubs=currentSeasonOfficialFplTeamIdentities(API_FOOTBALL_FPL_SEASON,authority);
+  const valid=validateProviderMapping(mapping,{entityType:'team',season:API_FOOTBALL_FPL_SEASON});
+  if(!clubs.ok)return clubs;
+  if(!valid.ok||mapping.method!=='manually_verified'||!clubs.identities.includes(mapping.canonicalFplId))return fail('mapping_evidence_not_admitted');
+  const universe=await validateApiFootballTeamUniverseEvidence(providerUniverse,cryptoImpl);
+  if(!universe.ok)return fail('mapping_evidence_not_admitted');
+  if(!providerUniverse.teams.some(row=>String(row.providerTeamId)===String(mapping.providerEntityId)))return fail('mapping_evidence_not_admitted');
+  const reviewedAt=iso(evidence?.reviewedAt);
+  if(!evidence||evidence.evidenceType!=='attended_api_football_team_universe'||evidence.qualificationMethod!=='owner_verified_provider_id_crosswalk'||
+    evidence.reviewState!=='OWNER_VERIFIED'||typeof evidence.reviewReference!=='string'||!evidence.reviewReference.trim()||
+    typeof evidence.provenance!=='string'||!evidence.provenance.trim()||!reviewedAt||Date.parse(reviewedAt)<Date.parse(providerUniverse.observedAt))return fail('mapping_evidence_not_admitted');
+  const authorityDigestHash=await sha256Hex(clubs.digest,cryptoImpl);
+  const normalizedEvidence={...evidence,reviewedAt};
+  const basis=attendedMappingReceiptBasis(mapping,normalizedEvidence,authorityDigestHash,providerUniverse);
+  return deepFreeze({...basis,integrityHash:await sha256Hex(stableStringify(basis),cryptoImpl)});
+}
 
 async function issueTrustedLegacyMappingReceipt({mapping,evidence,authority}={},cryptoImpl=globalThis.crypto){
   const clubs=currentSeasonOfficialFplTeamIdentities(API_FOOTBALL_FPL_SEASON,authority);
@@ -104,11 +277,21 @@ async function issueTrustedLegacyMappingReceipt({mapping,evidence,authority}={},
   return deepFreeze({...basis,integrityHash:await sha256Hex(stableStringify(basis),cryptoImpl)});
 }
 
-async function validateQualificationMappingReceipt(mapping,receipt,authority,cryptoImpl=globalThis.crypto){
+async function validateQualificationMappingReceipt(mapping,receipt,authority,providerUniverse,cryptoImpl=globalThis.crypto){
   const clubs=currentSeasonOfficialFplTeamIdentities(API_FOOTBALL_FPL_SEASON,authority);if(!clubs.ok)return clubs;
-  if(!receipt||receipt.kind!==MAPPING_RECEIPT_KIND||receipt.revision!==MAPPING_RECEIPT_REVISION)return fail('mapping_evidence_receipt_missing');
-  const evidence={evidenceType:receipt.evidenceType,stableEvidenceId:receipt.stableEvidenceId,source:receipt.source,sourceRevision:receipt.sourceRevision,sourcePath:receipt.sourcePath,evidenceDate:receipt.evidenceDate,timePrecision:receipt.timePrecision,observedAt:receipt.observedAt,provenance:receipt.provenance,qualificationMethod:receipt.qualificationMethod};
-  const expected=await issueTrustedLegacyMappingReceipt({mapping,evidence,authority},cryptoImpl);if(expected.ok===false)return expected;
+  if(!receipt||receipt.kind!==MAPPING_RECEIPT_KIND)return fail('mapping_evidence_receipt_missing');
+  let expected;
+  if(receipt.revision===MAPPING_RECEIPT_REVISION){
+    const evidence={evidenceType:receipt.evidenceType,stableEvidenceId:receipt.stableEvidenceId,source:receipt.source,sourceRevision:receipt.sourceRevision,sourcePath:receipt.sourcePath,evidenceDate:receipt.evidenceDate,timePrecision:receipt.timePrecision,observedAt:receipt.observedAt,provenance:receipt.provenance,qualificationMethod:receipt.qualificationMethod};
+    expected=await issueTrustedLegacyMappingReceipt({mapping,evidence,authority},cryptoImpl);
+  }else if(receipt.revision===API_FOOTBALL_TEAM_MAPPING_RECEIPT_REVISION){
+    const evidence={
+      evidenceType:receipt.evidenceType,provenance:receipt.provenance,qualificationMethod:receipt.qualificationMethod,
+      reviewState:receipt.reviewState,reviewReference:receipt.reviewReference,reviewedAt:receipt.reviewedAt
+    };
+    expected=await issueQualificationMappingReceipt({mapping,evidence,authority,providerUniverse},cryptoImpl);
+  }else return fail('mapping_evidence_receipt_missing');
+  if(expected.ok===false)return expected;
   if(stableStringify(expected)!==stableStringify(receipt))return fail('mapping_evidence_receipt_invalid');
   return deepFreeze({ok:true,receipt});
 }
@@ -339,14 +522,31 @@ function mappingRow(club,providerTeamId,officialFplTeamId,status,evidence,confli
   };
 }
 
-export async function qualifyTwentyClubMapping({authority,mappings=[]}={},cryptoImpl=globalThis.crypto){
+export async function qualifyTwentyClubMapping({authority,mappings=[],providerUniverse=null}={},cryptoImpl=globalThis.crypto){
   const clubs=currentSeasonOfficialFplTeamIdentities(API_FOOTBALL_FPL_SEASON,authority);
   if(!clubs.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:clubs.reason,completeTwentyClubCoverage:false,verifiedPremierLeagueTeamCount:0,table:[],nameOnlyCertified:false});
   for(const row of mappings){
     if(row?.method&&!['provider_id_crosswalk','manually_verified'].includes(row.method))return deepFreeze({ok:false,decision:'NO-GO',reason:'name_only_mapping_forbidden',completeTwentyClubCoverage:false,verifiedPremierLeagueTeamCount:0,table:[],nameOnlyCertified:false});
   }
+  const anchors=[{provider:'49',canonical:`${API_FOOTBALL_FPL_SEASON}:fpl:team:6`},{provider:'63',canonical:`${API_FOOTBALL_FPL_SEASON}:fpl:team:13`}];
+  for(const anchor of anchors){
+    if(mappings.some(row=>String(row?.providerEntityId)===anchor.provider&&row?.canonicalFplId!==anchor.canonical)||
+      mappings.some(row=>row?.canonicalFplId===anchor.canonical&&String(row?.providerEntityId)!==anchor.provider)){
+      return deepFreeze({ok:false,decision:'NO-GO',reason:'legacy_anchor_conflict',completeTwentyClubCoverage:false,verifiedPremierLeagueTeamCount:0,table:[],nameOnlyCertified:false});
+    }
+  }
+  let verifiedProviderUniverse=null;
+  if(providerUniverse!=null){
+    const universe=await validateApiFootballTeamUniverseEvidence(providerUniverse,cryptoImpl);
+    if(!universe.ok)return deepFreeze({ok:false,decision:'NO-GO',reason:universe.reason,completeTwentyClubCoverage:false,verifiedPremierLeagueTeamCount:0,table:[],nameOnlyCertified:false});
+    verifiedProviderUniverse=providerUniverse;
+  }
   const admitted=[];const receiptFailures=[];
-  for(const row of mappings){const receipt=await validateQualificationMappingReceipt(row,row?.qualificationEvidenceReceipt,authority,cryptoImpl);if(receipt.ok)admitted.push(row);else receiptFailures.push({providerEntityId:String(row?.providerEntityId||''),reason:receipt.reason});}
+  for(const row of mappings){const receipt=await validateQualificationMappingReceipt(row,row?.qualificationEvidenceReceipt,authority,verifiedProviderUniverse,cryptoImpl);if(receipt.ok)admitted.push(row);else receiptFailures.push({providerEntityId:String(row?.providerEntityId||''),reason:receipt.reason});}
+  if(verifiedProviderUniverse){
+    const providerIds=new Set(verifiedProviderUniverse.teams.map(row=>String(row.providerTeamId)));
+    if(admitted.some(row=>!providerIds.has(String(row.providerEntityId))))return deepFreeze({ok:false,decision:'NO-GO',reason:'provider_team_universe_mapping_mismatch',completeTwentyClubCoverage:false,verifiedPremierLeagueTeamCount:0,table:[],nameOnlyCertified:false});
+  }
   const coverage=mappingCoverage(admitted,API_FOOTBALL_FPL_SEASON,{officialFplAuthority:authority});
   const verified=new Map();
   for(const row of admitted){
@@ -367,6 +567,8 @@ export async function qualifyTwentyClubMapping({authority,mappings=[]}={},crypto
     table,unresolved:table.filter(row=>row.qualificationStatus!=='VERIFIED'),nameOnlyCertified:false,
     season:clubs.season,fetchedAt:clubs.fetchedAt,receiptFailures
   };
+  if(verifiedProviderUniverse)result.providerUniverseRevision=verifiedProviderUniverse.revision;
+  result.integrityHash=await sha256Hex(stableStringify(canonicalise(result)),cryptoImpl);
   const blocked=secret(result);return blocked||deepFreeze(result);
 }
 
