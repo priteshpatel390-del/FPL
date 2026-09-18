@@ -1,0 +1,270 @@
+# Manual-only attended closeout for the owner-approved API-Football ↔ Official FPL 20-club crosswalk.
+#
+# This workflow makes zero API-Football requests. It reuses the exact sanitized provider-universe
+# evidence captured by run 35328500278, reads the owner-approved crosswalk only from the protected
+# environment secret API_FOOTBALL_OWNER_CROSSWALK_JSON, fetches current Official FPL bootstrap +
+# fixtures in memory, issues/validates 18 new receipts plus the two legacy anchors, and retains only
+# a sanitized qualification result. Raw Official FPL/provider bodies and mapping receipts are not persisted.
+
+name: API-Football Owner Mapping Qualification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: api-football-owner-mapping-qualification
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Validate dispatch identity before checkout
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatch revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove dispatch revision is current main and tree is clean
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+  qualify:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    environment:
+      name: eia-api-football-qualification
+    steps:
+      - name: Refuse UI reruns and confirm dispatch identity
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatch revision for qualification
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reconfirm exact current main after environment admission
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Run focused mapping qualification tests before crosswalk secret introduction
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test             tests/api-football-team-mapping-qualification.test.mjs             tests/api-football-owner-mapping.test.mjs             tests/api-football-owner-mapping-workflow.test.mjs
+
+      - name: Download and validate exact attended provider-universe evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/api-football-team-universe-qualification-result.zip"
+          result="$RUNNER_TEMP/api-football-team-universe-qualification-result.json"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location             --header "Authorization: Bearer $GITHUB_TOKEN"             --header "Accept: application/vnd.github+json"             --header "X-GitHub-Api-Version: 2022-11-28"             "https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10540321648/zip"             --output "$archive"
+          printf '%s  %s\n'             '4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97'             "$archive" | sha256sum --check -
+          unzip -p "$archive" api-football-team-universe-qualification-result.json > "$result"
+          rm -f "$archive"
+          node --input-type=module <<'EOF_NODE'
+          import {readFileSync} from 'node:fs';
+          import {
+            API_FOOTBALL_APPROVED_PROVIDER_ARTIFACT_ID,
+            API_FOOTBALL_APPROVED_PROVIDER_ARTIFACT_SHA256,
+            API_FOOTBALL_APPROVED_PROVIDER_RUN_ID,
+            API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_EXECUTION_IDENTITY,
+            API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_INTEGRITY_HASH,
+            API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_OBSERVED_AT,
+            API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_REVISION
+          } from './src/decision-intelligence/api-football-owner-mapping.mjs';
+          import {validateApiFootballTeamUniverseEvidence} from './src/decision-intelligence/api-football-prelive-qualification.mjs';
+
+          const result=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/api-football-team-universe-qualification-result.json','utf8'));
+          if(API_FOOTBALL_APPROVED_PROVIDER_RUN_ID!=='35328500278'||
+             API_FOOTBALL_APPROVED_PROVIDER_ARTIFACT_ID!=='10540321648'||
+             API_FOOTBALL_APPROVED_PROVIDER_ARTIFACT_SHA256!=='4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97')process.exit(1);
+          if(result?.ok!==true||result?.decision!=='EVIDENCE_CAPTURED'||result?.attemptsUsed!==1||result?.retries!==0||
+             result?.rawBodyRetained!==false||result?.credentialPrinted!==false||result?.credentialPersisted!==false)process.exit(1);
+          const universe=result.providerUniverse;
+          if(universe?.revision!==API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_REVISION||
+             universe?.integrityHash!==API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_INTEGRITY_HASH||
+             universe?.observedAt!==API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_OBSERVED_AT||
+             universe?.executionIdentity!==API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_EXECUTION_IDENTITY)process.exit(1);
+          const validation=await validateApiFootballTeamUniverseEvidence(universe);
+          if(!validation.ok)process.exit(1);
+          EOF_NODE
+
+      - name: Reconfirm current main immediately before owner-crosswalk execution
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Run owner-approved 20-club mapping qualification
+        env:
+          API_FOOTBALL_OWNER_CROSSWALK_JSON: ${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF_NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {
+            API_FOOTBALL_OWNER_CROSSWALK_HASH,
+            API_FOOTBALL_OWNER_REVIEW_REFERENCE,
+            issueOwnerApprovedTwentyClubMappings
+          } from './src/decision-intelligence/api-football-owner-mapping.mjs';
+          import {
+            OFFICIAL_FPL_BOOTSTRAP_URL,OFFICIAL_FPL_FIXTURES_URL,fetchOfficialFplAuthority
+          } from './src/decision-intelligence/api-football-prelive-qualification.mjs';
+
+          const fail=reason=>{console.error(reason);process.exit(1);};
+          const crosswalkText=process.env.API_FOOTBALL_OWNER_CROSSWALK_JSON;
+          if(typeof crosswalkText!=='string'||crosswalkText.length===0)fail('owner_crosswalk_secret_missing');
+          let crosswalk;
+          try{crosswalk=JSON.parse(crosswalkText);}catch{fail('owner_crosswalk_secret_invalid');}
+          const providerResult=JSON.parse(readFileSync(join(process.env.RUNNER_TEMP,'api-football-team-universe-qualification-result.json'),'utf8'));
+          const allowed=new Set([OFFICIAL_FPL_BOOTSTRAP_URL,OFFICIAL_FPL_FIXTURES_URL]);
+          let officialFplRequests=0;
+          const officialFetch=async(url,init)=>{
+            const target=String(url);
+            if(!allowed.has(target)||officialFplRequests>=2)throw new Error('official_fpl_request_contract_invalid');
+            officialFplRequests+=1;
+            return globalThis.fetch(target,init);
+          };
+          const authority=await fetchOfficialFplAuthority({fetchImpl:officialFetch});
+          if(!authority.ok||officialFplRequests!==2)fail('official_fpl_authority_fetch_failed');
+          const issued=await issueOwnerApprovedTwentyClubMappings({
+            authority,providerUniverse:providerResult.providerUniverse,crosswalk
+          });
+          if(!issued.ok||issued.decision!=='GO')fail('owner_mapping_qualification_no_go');
+          const qualification=issued.qualification;
+          const sanitized={
+            ok:true,decision:'GO',season:qualification.season,
+            verifiedPremierLeagueTeamCount:qualification.verifiedPremierLeagueTeamCount,
+            completeTwentyClubCoverage:qualification.completeTwentyClubCoverage,
+            unresolvedCount:qualification.unresolved.length,
+            receiptFailureCount:qualification.receiptFailures.length,
+            newReceiptCount:issued.newReceiptCount,legacyReceiptCount:issued.legacyReceiptCount,
+            ownerReviewReference:API_FOOTBALL_OWNER_REVIEW_REFERENCE,
+            crosswalkIntegrityHash:API_FOOTBALL_OWNER_CROSSWALK_HASH,
+            providerUniverseRevision:qualification.providerUniverseRevision,
+            providerUniverseIntegrityHash:providerResult.providerUniverse.integrityHash,
+            officialFplFetchedAt:qualification.fetchedAt,
+            qualificationIntegrityHash:qualification.integrityHash,
+            officialFplRequests,apiFootballRequests:0,
+            rawProviderBodyRetained:false,rawOfficialFplBodyRetained:false,
+            mappingReceiptsPersisted:false,crosswalkPersisted:false
+          };
+          const serialized=JSON.stringify(sanitized);
+          if(serialized.includes(crosswalkText)||
+             /providerEntityId|apiFootballTeamId|canonicalFplId|qualificationEvidenceReceipt|"table"|"mappings"/i.test(serialized)){
+            fail('sanitized_mapping_result_invalid');
+          }
+          writeFileSync(join(process.env.RUNNER_TEMP,'api-football-owner-mapping-qualification-result.json'),serialized);
+          console.error('owner_mapping_qualification_result_written');
+          EOF_NODE
+
+      - name: Write allowlisted mapping qualification summary
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF_NODE'
+          import {readFileSync,appendFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const result=JSON.parse(readFileSync(join(process.env.RUNNER_TEMP,'api-football-owner-mapping-qualification-result.json'),'utf8'));
+          const lines=[
+            '### API-Football owner mapping qualification','',
+            `- Result: ${result.decision}`,
+            `- Verified Premier League teams: ${result.verifiedPremierLeagueTeamCount}/20`,
+            `- Complete 20-club coverage: ${result.completeTwentyClubCoverage}`,
+            `- New owner-reviewed receipts validated: ${result.newReceiptCount}`,
+            `- Legacy receipts reused: ${result.legacyReceiptCount}`,
+            `- Unresolved mappings: ${result.unresolvedCount}`,
+            `- Receipt failures: ${result.receiptFailureCount}`,
+            `- Official FPL requests: ${result.officialFplRequests}`,
+            `- API-Football requests: ${result.apiFootballRequests}`,
+            `- Official FPL fetched at: ${result.officialFplFetchedAt}`,
+            `- Provider-universe revision: ${result.providerUniverseRevision}`,
+            `- Qualification integrity hash: ${result.qualificationIntegrityHash}`,
+            '- Raw provider body retained: false',
+            '- Raw Official FPL body retained: false',
+            '- Mapping receipts persisted: false',
+            '- Crosswalk secret persisted: false','',
+            'This workflow proves the approved 20/20 identity crosswalk only. Collector, migration 0005, Cron, D1 persistence and all model/UI paths remain inactive.'
+          ];
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,lines.join('\n')+'\n');
+          EOF_NODE
+
+      - name: Upload sanitized mapping qualification evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-owner-mapping-qualification-result
+          path: ${{ runner.temp }}/api-football-owner-mapping-qualification-result.json
+          if-no-files-found: error
+          retention-days: 7
