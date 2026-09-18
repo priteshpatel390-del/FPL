@@ -102,6 +102,8 @@ test('live storage preflight SQL registry is read-only and rejects mutation/comm
     'SELECT 1; DELETE FROM schema_migrations',
     'SELECT 1 -- hidden',
     'SELECT 1 /* hidden */',
+    'PRAGMA writable_schema=ON',
+    'PRAGMA table_info(unknown_table)',
     'CREATE TABLE x(y)'
   ])assert.throws(()=>assertReadOnlySql(sql),/preflight_sql_invalid/);
 });
