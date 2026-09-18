@@ -1,3 +1,7 @@
+## API-Football 20-club mapping qualification boundary
+
+A qualification-only path in `api-football-prelive-qualification.mjs` can later issue exactly one fixed Premier League team-universe request (`/teams?league=39&season=2026`) under a separate attended owner gate. It is not part of the collector endpoint allowlist or Worker runtime. Provider-universe evidence is content-bound and raw-body-free; mapping receipts require explicit owner verification and current Official FPL authority. Names remain non-authoritative. Chelsea 49→6 and Leeds 63→13 are conflict anchors. No production/browser/model import is introduced. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 ## EIA-2I5E pre-live qualification boundary
 
 Qualification lives only under Decision Intelligence. R3 uses one exact deep-frozen manifest, response-side identity and sufficiency validation, immediate safety stops, and a closed EIA-2I4C-only historical mapping adapter; generic callers cannot admit mapping evidence. Historical R1 byte observations do not qualify under R3 without preserved echoed parameters and row identity. It does not deploy the collector, arm Cron, enable collection, provision a secret, apply migration 0005 live, or write `API_FOOTBALL_MAX_RESPONSE_BYTES`. Production/browser/model modules do not import it. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
