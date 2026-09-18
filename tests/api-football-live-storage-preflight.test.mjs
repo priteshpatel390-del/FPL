@@ -34,6 +34,26 @@ const SCHEMA5_OBJECTS=[
   'api_football_generation_fixture_consistency','api_football_participation_run_insert',
   'api_football_participation_run_update'
 ];
+const SCHEMA6_OBJECTS=[
+  'api_football_team_mapping_qualifications','api_football_team_mapping_members','api_football_team_mapping_heads',
+  'api_football_mapping_member_insert','api_football_mapping_qualification_commit',
+  'api_football_mapping_qualification_immutable','api_football_mapping_member_update_immutable',
+  'api_football_mapping_member_delete_immutable','api_football_mapping_head_insert',
+  'api_football_mapping_head_update','api_football_mapping_members_provider'
+];
+const RUNTIME_0005_COLUMNS=[
+  'provider','collection_enabled','disable_reason','credential_state','quota_state','daily_attempt_count',
+  'in_flight_attempt_id','in_flight_lease_expires_at','earliest_next_request_at','updated_at'
+];
+const QUALIFICATION_0006_COLUMNS=[
+  'qualification_id','fpl_season','provider','source_revision_id','approval_qualification_integrity_hash',
+  'current_qualification_integrity_hash','persistence_integrity_hash','crosswalk_integrity_hash',
+  'provider_universe_revision','provider_universe_integrity_hash','provider_universe_observed_at',
+  'owner_review_reference','owner_reviewed_at','official_fpl_authority_digest',
+  'official_fpl_authority_fetched_at','mapping_count','state','committed_at','created_at'
+];
+const MEMBER_0006_COLUMNS=['qualification_id','mapping_id','provider_team_id','canonical_fpl_team_id','receipt_integrity_hash'];
+const HEAD_0006_COLUMNS=['fpl_season','qualification_id','updated_at'];
 const collectorAbsent={exists:false,deploymentCount:0,crons:[],d1BindingPresent:false,d1BindingMatchesProduction:false,activation:null,apiFootballSecretBindingPresent:false};
 const baseLedger=Object.freeze([
   {version:1,name:'shadow_data_foundation',appliedAt:'2026-08-22T00:00:00.000Z'},
@@ -59,9 +79,17 @@ function baseRowsForLedger(ledger){
   };
 }
 function evaluate({ledger,objects=[],optionalRows={},collector=collectorAbsent,nowIso='2026-09-19T00:00:00.000Z'}){
+  const versions=new Set(ledger.map(row=>row.version));
+  const structuralRows={};
+  if(versions.has(5))structuralRows.runtimeColumns=RUNTIME_0005_COLUMNS.map(name=>({name}));
+  if(versions.has(6)){
+    structuralRows.qualificationColumns=QUALIFICATION_0006_COLUMNS.map(name=>({name}));
+    structuralRows.memberColumns=MEMBER_0006_COLUMNS.map(name=>({name}));
+    structuralRows.headColumns=HEAD_0006_COLUMNS.map(name=>({name}));
+  }
   return evaluateStoragePreflight({
-    ledger,objects,foreignKeys:[],baseRows:baseRowsForLedger(ledger),optionalRows,databaseIdentityMatch:true,
-    dataPlatformBindingMatch:true,collector,nowIso
+    ledger,objects,foreignKeys:[],baseRows:baseRowsForLedger(ledger),optionalRows:{...structuralRows,...optionalRows},
+    databaseIdentityMatch:true,dataPlatformBindingMatch:true,collector,nowIso
   });
 }
 function table(name){return object(name);}
@@ -82,9 +110,15 @@ test('optional D1 queries require every referenced table before execution',()=>{
   const onlyHeads=[table('api_football_team_mapping_heads')];
   assert.deepEqual(optionalQueryKeysForObjects(onlyHeads),[]);
   const completeHead=[...onlyHeads,table('api_football_team_mapping_qualifications')];
-  assert.deepEqual(optionalQueryKeysForObjects(completeHead),['qualifications','mappingHeads']);
+  const headKeys=optionalQueryKeysForObjects(completeHead);
+  assert.ok(headKeys.includes('qualifications'));
+  assert.ok(headKeys.includes('mappingHeads'));
+  assert.ok(headKeys.includes('qualificationColumns'));
+  assert.ok(headKeys.includes('headColumns'));
   const completeMembers=[...completeHead,table('api_football_team_mapping_members')];
-  assert.deepEqual(optionalQueryKeysForObjects(completeMembers),['qualifications','mappingHeads','mappingMembers']);
+  const memberKeys=optionalQueryKeysForObjects(completeMembers);
+  assert.ok(memberKeys.includes('mappingMembers'));
+  assert.ok(memberKeys.includes('memberColumns'));
 });
 
 test('collector settings reveal only secret binding presence, never secret value',()=>{
@@ -136,6 +170,31 @@ test('0005 remains disabled and can advance only to 0006 when its schema is comp
   assert.deepEqual(report.hardStops,[]);
 });
 
+test('0006 complete with no existing head admits only private mapping persistence',()=>{
+  const report=evaluate({
+    ledger:[
+      ...baseLedger,
+      {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},
+      {version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'},
+      {version:6,name:'api_football_mapping_qualification',appliedAt:'2026-09-18T00:00:00.000Z'}
+    ],
+    objects:[...SCHEMA4_OBJECTS,...SCHEMA5_OBJECTS,...SCHEMA6_OBJECTS].map(object),
+    optionalRows:{
+      runtime:[{
+        provider:'api-football',collection_enabled:0,disable_reason:'EIA_2I5D_REPOSITORY_ONLY',
+        credential_state:'UNPROVISIONED',quota_state:'UNOBSERVED',daily_attempt_count:0,
+        updated_at:'2026-09-18T00:00:00.000Z'
+      }],
+      qualifications:[{total:0,staging:0,committed:0}],
+      mappingHeads:[],
+      mappingMembers:[{total:0,unique_provider:0,unique_fpl:0}]
+    }
+  });
+  assert.equal(report.nextAction,'READY_FOR_PRIVATE_MAPPING_PERSISTENCE');
+  assert.equal(report.migrations.schema0006Present,true);
+  assert.deepEqual(report.hardStops,[]);
+});
+
 test('out-of-order or active runtime state fails closed',()=>{
   const outOfOrder=evaluate({
     ledger:[...baseLedger,{version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}]
@@ -149,12 +208,7 @@ test('out-of-order or active runtime state fails closed',()=>{
       {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},
       {version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}
     ],
-    objects:[
-      table('provider_fixture_identities'),table('provider_participation_revisions'),
-      table('api_football_runtime_state'),table('api_football_request_attempts'),
-      table('api_football_discovery_generations'),table('api_football_discovery_heads'),
-      table('api_football_fixture_revisions'),table('api_football_generation_fixtures')
-    ],
+    objects:[...SCHEMA4_OBJECTS,...SCHEMA5_OBJECTS].map(object),
     optionalRows:{runtime:[{
       provider:'api-football',collection_enabled:1,disable_reason:'unexpected',
       credential_state:'AVAILABLE',quota_state:'KNOWN',daily_attempt_count:1,
