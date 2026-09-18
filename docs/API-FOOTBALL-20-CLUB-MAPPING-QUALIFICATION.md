@@ -114,4 +114,4 @@ This checkpoint does not:
 
 Permanent coverage is owned by `tests/api-football-team-mapping-qualification.test.mjs` plus the existing EIA-2I5A/B/E/F suites.
 
-Completion of this repository checkpoint requires the full repository test suite, production build, deterministic rebuild and exact build-identity verification on the final branch head before owner merge approval.
+PR #254 exact-head verification passed 2,162/2,162 tests plus production build, deterministic rebuild and exact build identity. After merge, exact-main Verify Teamsheet run `35321967633` passed the same 2,162/2,162 suite, byte-identical production rebuilds, root/dist equality and manifest identity for merge commit `83c7d5ce86077502ca691f7ff4e1941568dc083d`.
