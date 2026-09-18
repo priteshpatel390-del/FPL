@@ -1,32 +1,28 @@
-## Owner-approved 20-club crosswalk closeout — repository candidate
+## Live attended closeout — GO 20/20
 
-The attended provider-universe observation completed successfully on 18 September 2026 as GitHub Actions run `35328500278` against exact protected `main` `f3a173362feba67020157f7c81c0fa3aaf2ca94a`. The provider request succeeded in one HTTP attempt with zero retries, 7,555 response bytes, raw-body retention false and integrity-bound universe revision `api-football-team-universe:5b404fb0a736a72973b6a1772d984992acea1dff6e2d2d7336c8253a078ae5f1`. Sanitized artifact `10540321648` has archive SHA-256 `4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97` and expires on 25 September 2026.
+The complete 2026/27 API-Football ↔ Official FPL team-identity gate is now **GO 20/20**. PR #257 merged the private/hash-bound closeout path to protected `main` as `aa694bc1d57faa6f197d4118ea0563808fa4ac0b`; post-merge Verify Teamsheet run `35332702502` passed 2,180/2,180 tests with deterministic byte-identical production rebuilds. The owner then dispatched `API-Football Owner Mapping Qualification` once as run `35333898797`, `run_attempt=1`, on that exact main; both `repository-gate` and `qualify` succeeded.
 
-The owner subsequently reviewed and approved the exact complete 20-club API-Football ↔ Official FPL crosswalk. To preserve the source's private/non-commercial/no-redistribution boundary, the 18 newly approved provider-ID pairs are **not** committed to this public repository. The approved crosswalk is content-bound by SHA-256 `d48c7980d1c39e7d4a6f82cb56d25a750286c925fd4996d0f8c728a4fb45c7f5` and may enter qualification only as protected-environment secret `API_FOOTBALL_OWNER_CROSSWALK_JSON`. Public source retains only Official FPL labels, hashes, run/artifact provenance and the pre-existing Chelsea 49→6 / Leeds 63→13 anchors.
+The sanitized live result is: 20 verified Premier League teams; complete coverage true; 18 new owner-reviewed receipts validated; 2 trusted legacy receipts reused; 0 unresolved mappings; 0 receipt failures; exactly 2 Official FPL requests; 0 API-Football requests. Current Official FPL authority was fetched at `2026-09-18T10:17:32.351Z`. Qualification integrity hash is `670ccccbf62764bc076293962ae4aa85085e06db48b503f597397d882f771367`; crosswalk hash remains `d48c7980d1c39e7d4a6f82cb56d25a750286c925fd4996d0f8c728a4fb45c7f5`; provider-universe revision remains `api-football-team-universe:5b404fb0a736a72973b6a1772d984992acea1dff6e2d2d7336c8253a078ae5f1`.
 
-The repository candidate adds a pure owner-mapping contract plus a separate manual-only closeout workflow. After exact-main and protected-environment gates, the workflow downloads only the exact pinned sanitized provider artifact, validates its archive digest and provider-universe integrity, then fetches current Official FPL `bootstrap-static` and `fixtures` exactly once each in memory. DATA-S2A canonical validation must issue a content-bound current-season authority whose 20 FPL IDs/names/short names still match the owner-reviewed identities. The crosswalk secret must be exact-20, bijective, preserve both legacy anchors and match the approved hash and exact provider-universe ID set.
+Sanitized result artifact `10542293263` has GitHub-recorded digest `sha256:2b9d5c00ccd8abdb9b3d1d02f994b6a66284c64333921db8f109775e54226c54`. The live result records `rawProviderBodyRetained=false`, `rawOfficialFplBodyRetained=false`, `mappingReceiptsPersisted=false` and `crosswalkPersisted=false`. The exact crosswalk remains outside public repository content.
 
-If all checks pass, 18 new `owner_verified_provider_id_crosswalk` receipts are issued in memory and combined with the two trusted EIA-2I4C legacy receipts. The existing `qualifyTwentyClubMapping()` contract must then return GO, exactly 20 verified teams, complete coverage, zero unresolved mappings and zero receipt failures. The crosswalk, provider-ID pairs, receipts, full qualification table and raw Official FPL/provider bodies are never persisted. Only counts, review/provenance hashes, current Official FPL fetch time and the final qualification integrity hash may be retained.
+This GO closes only team-identity qualification. It does not apply migration 0005, persist a live mapping table, enable the API-Football collector or Cron, or authorize any expected-minutes/model, projection, captaincy, transfer, rank, Mini-League, recommendation or UI influence. Those remain separate owner approval gates.
 
-This closeout makes **zero** new API-Football requests and never receives `API_FOOTBALL_API_KEY`. Mapping status remains **NO-GO 2/20** until the repository candidate is merged and the attended closeout succeeds against current Official FPL authority. A repository test GO using synthetic private substitutes is contract evidence only and must not be reported as the real 20/20 qualification result. Collector activation, migration 0005, Cron, durable mapping persistence, expected-minutes/model influence and UI use remain separately prohibited.
-
-## Dedicated attended execution workflow remediation
+## Historical dedicated attended execution workflow remediation
 
 The owner-approved remediation adds a separate dormant manual-only GitHub Actions workflow for the provider-universe observation rather than reusing the historical EIA-2I5E R7 response-size workflow. The new path executes exact current `main`, accepts no dispatch inputs, reuses protected environment `eia-api-football-qualification`, exposes `API_FOOTBALL_API_KEY` to one execution step, runs the existing team-universe qualification function once, and independently refuses a third HTTP egress. Focused qualification tests and exact-current-`main` checks run before credential-bearing egress. Sanitized output is integrity-validated, written only under `RUNNER_TEMP`, summarized through an allowlist and retained as a seven-day artifact. Provider names/codes remain review assistance only; the workflow cannot issue mapping receipts.
 
-This repository remediation performs zero provider requests and zero credential accesses. Provider execution remains blocked until this workflow is merged and exact-main verified, active protection for `refs/heads/main` is independently observed, and the protected-environment settings are re-verified. The existing owner execution approval applies only after those preconditions pass. Mapping remains NO-GO 2/20 and no collector/runtime/model/UI activation is authorized.
+At that repository-remediation stage, zero provider requests and zero credential accesses had occurred; provider execution was still blocked pending merge, exact-main verification, active `refs/heads/main` protection and protected-environment re-verification. Mapping was NO-GO 2/20 at that time, and no collector/runtime/model/UI activation was authorized.
 
 # API-Football ↔ Official FPL 20-club mapping qualification
 
 Date: 18 September 2026  
-Status: merged repository qualification contract; provider execution remains separately owner-gated.  
+Status: **live team-identity qualification GO 20/20**; persistence/runtime/model/UI activation remain separately owner-gated.  
 Merged by PR #254 to `main` as `83c7d5ce86077502ca691f7ff4e1941568dc083d`. Post-merge Verify Teamsheet run `35321967633` passed 2,162/2,162 tests, byte-identical production rebuilds and exact manifest identity.
 
 ## Outcome
 
-This checkpoint implements the repository contract needed to qualify the complete 2026/27 Premier League API-Football ↔ Official FPL team mapping without weakening EIA-2I5A identity rules.
-
-It does **not** claim 20/20 mapping completion. Current admitted mappings remain only Chelsea API-Football `49` → Official FPL `6` and Leeds API-Football `63` → Official FPL `13`. No API-Football request, credential access, D1 mutation, Cloudflare provisioning, migration application, collector activation, Cron activation, deployment, model change or UI read path is part of this repository checkpoint.
+PR #254 implemented the repository contract needed to qualify the complete 2026/27 Premier League API-Football ↔ Official FPL team mapping without weakening EIA-2I5A identity rules. PR #257 later added the private/hash-bound owner-closeout path, and attended run `35333898797` completed that contract with **GO 20/20**. The historical PR #254 stage itself made no API-Football request or runtime change; the later closeout likewise made 0 API-Football requests and changed no D1, collector, Cron, model or UI path.
 
 No new EIA checkpoint identifier is assigned here because current canonical `main` did not establish one.
 
@@ -89,7 +85,7 @@ Complete mapping qualification additionally fails closed if either historical an
 - API-Football Chelsea `49` must map to `2026-27:fpl:team:6`;
 - API-Football Leeds `63` must map to `2026-27:fpl:team:13`.
 
-A future GO still requires the existing EIA-2I5A/EIA-2I5B exact bijection:
+The live GO required and satisfied the existing EIA-2I5A/EIA-2I5B exact bijection:
 
 - exactly 20 admitted mappings;
 - every provider ID unique;
@@ -103,13 +99,11 @@ A future GO still requires the existing EIA-2I5A/EIA-2I5B exact bijection:
 
 The final qualification result is canonicalized and integrity-hashed so identical evidence produces identical output independent of mapping input order.
 
-## Current state after merge
+## Current state after live closeout
 
-Mapping remains **NO-GO 2/20** because PR #254 executed no provider request and admitted no new mappings. The remaining 18 crosswalks still require a separately approved attended provider-universe observation plus explicit owner review/admission.
+Mapping qualification is **GO 20/20** by attended run `35333898797`. The 18 owner-reviewed receipts and 2 trusted legacy receipts formed an exact current-season bijection with zero unresolved mappings or receipt failures. The closeout made 0 API-Football requests because it reused the exact prior provider-universe evidence and refreshed only Official FPL authority with two reads.
 
-The next owner gate is the attended qualification execution proposal. Its expected provider cost is one request, with a hard maximum of two attempts under the retry conditions above.
-
-That later execution does not authorize collector deployment or activation.
+The next provider step is intentionally **not selected or auto-authorized**. Any durable mapping persistence, collector/runtime activation, migration 0005 application, Cron, workload ingestion or model/UI influence requires a separate owner-approved checkpoint.
 
 ## Preserved boundaries
 
