@@ -1,3 +1,9 @@
+## Dedicated attended execution workflow remediation
+
+The owner-approved remediation adds a separate dormant manual-only GitHub Actions workflow for the provider-universe observation rather than reusing the historical EIA-2I5E R7 response-size workflow. The new path executes exact current `main`, accepts no dispatch inputs, reuses protected environment `eia-api-football-qualification`, exposes `API_FOOTBALL_API_KEY` to one execution step, runs the existing team-universe qualification function once, and independently refuses a third HTTP egress. Focused qualification tests and exact-current-`main` checks run before credential-bearing egress. Sanitized output is integrity-validated, written only under `RUNNER_TEMP`, summarized through an allowlist and retained as a seven-day artifact. Provider names/codes remain review assistance only; the workflow cannot issue mapping receipts.
+
+This repository remediation performs zero provider requests and zero credential accesses. Provider execution remains blocked until this workflow is merged and exact-main verified, active protection for `refs/heads/main` is independently observed, and the protected-environment settings are re-verified. The existing owner execution approval applies only after those preconditions pass. Mapping remains NO-GO 2/20 and no collector/runtime/model/UI activation is authorized.
+
 ## Attended execution workflow remediation candidate — 18 September 2026
 
 The owner approved repository-only remediation after the pre-execution audit correctly stopped before provider egress. Two blockers were proven: the existing EIA-2I5E R7 workflow still executes its historical 11-request response-size runner rather than the new team-universe runner, and current GitHub rulesets do not protect `refs/heads/main`. No provider request or secret access occurred.
