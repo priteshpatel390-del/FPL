@@ -1,5 +1,6 @@
 # Historical Records Index
 
+- [API-Football Live Storage Foundation — Read-Only Preflight](API-FOOTBALL-LIVE-STORAGE-FOUNDATION.md) — owner-approved mutation-free production-state preflight candidate using the existing least-privilege Cloudflare read-only environment; exact D1/migration/runtime/collector evidence remains pending a post-merge attended dispatch, and migration 0004 is an explicit stop gate before 0005/0006.
 - [API-Football Post-20/20 Pre-Live Runtime Completion](API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION.md) — owner-approved repository candidate for private qualified-mapping provenance and pre-egress planning only; live D1, secrets, provider execution, workload ingestion, Cron and model/UI influence remain separately blocked.
 - [API-Football ↔ Official FPL 20-club mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md) — current-season team identity is live-qualified GO 20/20; the private crosswalk remains hash-bound and unpublished, and persistence/runtime/model/UI activation remains separately gated.
 - [EIA-2I5F Qualified Response Ceiling](EIA-2I5F-QUALIFIED-RESPONSE-CEILING.md) — repository implementation of the attended-qualified 720,896-byte API-Football response ceiling; historical R7 evidence remains unchanged and collector activation remains separately owner-gated.
@@ -17,7 +18,7 @@
 - [GW1-P2C4 Genuine GW1 Stage 10 custody reconciliation](GW1-P2C4-GENUINE-GW1-STAGE10-CUSTODY-RECONCILIATION.md) — read-only live acceptance found no exact D1 manifest and no objects under the canonical 2026–27 GW1 R2 prefix, so genuine cloud custody is not present; browser acknowledgement and the original local full hash remain unverified, and no replay, reconciliation or write was performed.
 - [GW1-P2C3B Same-site transport closeout](GW1-P2C3B-SAME-SITE-TRANSPORT-CLOSEOUT.md) — sanitized physical sibling-domain browser transport PASS, with genuine Stage 10/D1/R2 custody explicitly unproven and rollback retained.
 
-Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 12 August 2026.
+Purpose: make the repository's operational guidance and immutable project history easy to distinguish without deleting, moving or rewriting historical evidence. Last reconciled: 19 September 2026.
 
 Historical records legitimately state the commit SHAs, test counts and merge states that were true at their own checkpoint. Those values are permanent evidence and must not be rewritten to match today. Current status lives only in [Project Context](PROJECT_CONTEXT.md), [Roadmap](ROADMAP.md) and `CLAUDE.md`.
 

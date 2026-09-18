@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-LIVE-STORAGE-PREFLIGHT-2026-09-19 -->
+### Current external-intelligence checkpoint — API-Football live storage read-only preflight candidate
+
+Owner approval now covers the **read-only live storage preflight only**. PR #260 adds a manual exact-current-main workflow under the existing `data-steward-readonly` environment plus a fixed-query adapter that can inspect the authoritative `teamsheet-data` D1, live data-platform binding, exact migration ledger/schema/FK state, sanitized API-Football counts/runtime flags and collector Worker/Cron/secret-binding presence. It performs zero D1 writes, migrations, secret changes, deployments, Cron mutations or API-Football requests. A live ledger stopping at 0003 is a hard stop: migration 0004 is not silently pulled into the approved 0005/0006 checkpoint. No live Cloudflare read has yet occurred from this candidate, so current production schema/collector/secret/Cron state remains unproven until a separately attended post-merge dispatch. See [live storage foundation read-only preflight](docs/API-FOOTBALL-LIVE-STORAGE-FOUNDATION.md).
+
 <!-- API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION-2026-09-18 -->
 ### Current external-intelligence checkpoint — post-20/20 pre-live runtime completion candidate
 
