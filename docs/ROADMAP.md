@@ -4,13 +4,13 @@ The 20-club identity gate is closed. PR #257 merged as `aa694bc1d57faa6f197d4118
 
 No later provider stage starts automatically. Any durable mapping persistence, migration 0005 application, collector provisioning/activation, Cron, workload ingestion, expected-minutes/model influence or UI/product use requires a separate owner-approved checkpoint with its own existing/proposed behaviour, inputs/sources, fallback, assumptions, limitations, tests and evidence. Until such a checkpoint is explicitly approved, API-Football remains shadow-only and inactive in product/model paths.
 
-## Current API-Football next gate — attended provider-universe observation
+## Historical API-Football gate — attended provider-universe observation
 
 The repository remediation sequence is: merge and exact-`main` verify the dedicated team-universe workflow; independently configure/verify active protection for `refs/heads/main` and re-verify the protected environment; then, under the existing owner execution approval, dispatch the manual qualification once. Normal provider cost is one request, hard maximum two attempts under transient-only retry rules. A successful observation produces provider-universe evidence only. Explicit owner-reviewed admission of the remaining 18 provider-to-Official-FPL mappings is a separate gate. Collector/runtime activation remains later and separate.
 
-## Current API-Football checkpoint — 20-club mapping qualification contract merged
+## Historical API-Football checkpoint — 20-club mapping qualification contract merged
 
-PR #254 is merged to `main` as `83c7d5ce86077502ca691f7ff4e1941568dc083d`; post-merge Verify Teamsheet run `35321967633` passed 2,162/2,162 tests and deterministic-build identity. EIA-2I5F is closed with the qualified 720,896-byte response ceiling. The remaining substantive pre-live blocker is complete 20-club API-Football ↔ Official FPL mapping; no new EIA identifier has been assigned. Current admitted mapping remains NO-GO 2/20. The next separate owner gate is an attended `/teams?league=39&season=2026` provider-universe observation (normally one request, hard maximum two attempts), followed by explicit review/admission of remaining mappings. Collector/infrastructure/model/UI activation remains later and separately gated. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+PR #254 is merged to `main` as `83c7d5ce86077502ca691f7ff4e1941568dc083d`; post-merge Verify Teamsheet run `35321967633` passed 2,162/2,162 tests and deterministic-build identity. EIA-2I5F is closed with the qualified 720,896-byte response ceiling. At that checkpoint, the remaining substantive pre-live blocker was complete 20-club API-Football ↔ Official FPL mapping; no new EIA identifier had been assigned. Admitted mapping was NO-GO 2/20, and the next separate owner gate was the attended `/teams?league=39&season=2026` provider-universe observation followed by explicit review/admission of remaining mappings. Collector/infrastructure/model/UI activation remains later and separately gated. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
 
 ## Current checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
 
