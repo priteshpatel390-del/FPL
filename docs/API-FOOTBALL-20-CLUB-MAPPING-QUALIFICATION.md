@@ -4,14 +4,6 @@ The owner-approved remediation adds a separate dormant manual-only GitHub Action
 
 This repository remediation performs zero provider requests and zero credential accesses. Provider execution remains blocked until this workflow is merged and exact-main verified, active protection for `refs/heads/main` is independently observed, and the protected-environment settings are re-verified. The existing owner execution approval applies only after those preconditions pass. Mapping remains NO-GO 2/20 and no collector/runtime/model/UI activation is authorized.
 
-## Attended execution workflow remediation candidate — 18 September 2026
-
-The owner approved repository-only remediation after the pre-execution audit correctly stopped before provider egress. Two blockers were proven: the existing EIA-2I5E R7 workflow still executes its historical 11-request response-size runner rather than the new team-universe runner, and current GitHub rulesets do not protect `refs/heads/main`. No provider request or secret access occurred.
-
-The remediation candidate adds a **separate** manual-only workflow for this mapping checkpoint. It checks out exact current `main`, requires `workflow_dispatch` attempt 1, uses the existing protected environment `eia-api-football-qualification`, exposes the API-Football secret to one step only, runs focused contract tests before secret introduction, reconfirms remote `main` immediately before egress, invokes only `runAttendedApiFootballTeamUniverseQualification()`, and independently refuses a third fetch. Sanitized evidence is retained under runner temporary storage and a seven-day artifact; names/codes remain review assistance only.
-
-This candidate does **not** dispatch the workflow, access the credential, make an API-Football request, admit any of the remaining 18 mappings, apply migration 0005, enable collection, create Cron, mutate D1 or activate model/UI paths. Mapping therefore remains **NO-GO 2/20**. Before a later attended execution, the owner must independently verify an active protection ruleset for `refs/heads/main` and the current protected-environment reviewer/bypass/branch settings. No new EIA checkpoint identifier is introduced.
-
 # API-Football ↔ Official FPL 20-club mapping qualification
 
 Date: 18 September 2026  
