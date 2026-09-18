@@ -1,3 +1,7 @@
+## API-Football 20-club mapping qualification coverage
+
+`tests/api-football-team-mapping-qualification.test.mjs` pins the exact qualification-only `/teams?league=39&season=2026` request, exclusion from the collector allowlist, exactly-20 unique provider identity admission, paging/response identity, 720,896-byte bound, one normal attempt/two-attempt transient ceiling, no retry on auth/429/schema/oversize failures, raw-body/credential absence, integrity-bound provider-universe evidence, explicit owner-review receipt requirements, name-independence, deterministic exact-20 bijection, Chelsea 49→6 and Leeds 63→13 conflict anchors, tamper/19-of-20/duplicate rejection and production/browser/model/D1/Cron isolation. Existing EIA-2I5A/B/E/F tests remain authoritative for the surrounding identity, discovery, attended evidence, runtime and response-ceiling contracts.
+
 ## EIA-2I5E-R7A-R1 workflow security coverage
 
 `tests/eia2i5e-github-qualification-workflow.test.mjs` additionally pins immutable 40-character action SHAs, `run_attempt == 1` admission, executable rejection of attempt 2, post-environment and final pre-egress remote-`main` reconfirmation, an opaque `boundedFetch` that refuses the 12th `fetch` before network egress, and concurrency group `eia-2i5e-api-football-qualification` with `cancel-in-progress: false`. Existing R7A secret-scope, dispatch-only, fail-closed branch-movement and isolation tests remain. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
