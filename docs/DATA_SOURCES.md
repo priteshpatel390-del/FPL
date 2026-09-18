@@ -1,6 +1,6 @@
 ## API-Football live storage read-only preflight
 
-The approved live-storage checkpoint begins with observation only. Draft PR #260 adds a fixed-query production preflight under the existing read-only steward credential so current D1 migration/runtime/mapping counts and collector infrastructure state can be proven without provider egress. It does not acquire new football data, rerun the provider universe, call API-Football, retain a raw payload or broaden rights. Official FPL remains the Premier League identity authority. A missing live migration 0004 is a hard stop before 0005; this preflight does not authorize applying 0004. See [API-Football Live Storage Foundation](API-FOOTBALL-LIVE-STORAGE-FOUNDATION.md).
+The approved live-storage checkpoint begins with observation only. PR #260 adds a fixed-query production preflight under the existing read-only steward credential so current D1 migration/runtime/mapping counts and collector infrastructure state can be proven without provider egress. It does not acquire new football data, rerun the provider universe, call API-Football, retain a raw payload or broaden rights. Official FPL remains the Premier League identity authority. A missing live migration 0004 is a hard stop before 0005; this preflight does not authorize applying 0004. See [API-Football Live Storage Foundation](API-FOOTBALL-LIVE-STORAGE-FOUNDATION.md).
 
 ## API-Football post-20/20 persistence/planner boundary
 
