@@ -1,3 +1,7 @@
+## Current API-Football mapping limitation
+
+The qualified response ceiling does not close team identity. Only Chelsea API-Football 49 → Official FPL 6 and Leeds 63 → Official FPL 13 are admitted; 18 clubs remain unproven. This repository candidate provides a future attended team-universe evidence path and owner-reviewed receipt contract but executes no provider request, so mapping remains NO-GO 2/20. Provider names, aliases and abbreviations still have no admission authority. Collector/infrastructure/model/UI activation remains unapproved. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 ## EIA-2I5E-R7A-R1 limitations
 
 - The workflow remains dormant. R7A-R1 made zero provider requests and did not access `API_FOOTBALL_API_KEY`.

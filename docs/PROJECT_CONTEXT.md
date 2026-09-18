@@ -1,3 +1,7 @@
+## Current API-Football mapping checkpoint — repository qualification contract
+
+The response-ceiling checkpoint EIA-2I5F is merged. The next substantive pre-live blocker remains complete 20-club API-Football ↔ Official FPL mapping. This repository candidate adds the closed qualification-only `/teams?league=39&season=2026` evidence harness and explicit owner-reviewed receipt contract, while current admitted mapping remains 2/20 (Chelsea 49→6, Leeds 63→13). No provider request, credential access, collector activation, infrastructure mutation, model change or UI path occurs. See [20-club mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 ## EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
 
 R7A-R1 hardens the dormant GitHub qualification workflow on draft PR #252: immutable action SHAs, structurally blocked UI reruns, post-environment main reconfirmation, a hard 11-call fetch wrapper, and serialized dispatches. Owner-configured main protection is a required pre-dispatch precondition and remains outstanding. Prevent-self-review is an owner operational preflight, not inferred. PR #251, collector, Cron, live D1, model and UI are unchanged. Zero provider requests and zero secret accesses. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
