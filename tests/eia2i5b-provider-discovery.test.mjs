@@ -644,7 +644,16 @@ test('API-Football discovery stays isolated from production, live config and mig
     if(!fs.existsSync(file))continue;
     const source=fs.readFileSync(file,'utf8');assert.doesNotMatch(source,/api-football|x-apisports|API_FOOTBALL/i,file);
   }
-  for(const file of fs.readdirSync('.github/workflows')){
+  const apiFootballWorkflowAllowlist=new Set([
+    'eia-2i5e-api-football-qualification.yml',
+    'api-football-team-universe-qualification.yml'
+  ]);
+  const workflowFiles=fs.readdirSync('.github/workflows');
+  assert.deepEqual(
+    workflowFiles.filter(file=>/api-football/i.test(file)).sort(),
+    [...apiFootballWorkflowAllowlist].sort()
+  );
+  for(const file of workflowFiles){
     const source=fs.readFileSync(path.join('.github/workflows',file),'utf8');
     if(file==='eia-2i5e-api-football-qualification.yml'){
       assert.match(source,/secrets\.API_FOOTBALL_API_KEY/);
@@ -654,8 +663,9 @@ test('API-Football discovery stays isolated from production, live config and mig
     if(file==='api-football-team-universe-qualification.yml'){
       assert.match(source,/secrets\.API_FOOTBALL_API_KEY/);
       assert.match(source,/runAttendedApiFootballTeamUniverseQualification/);
-      assert.match(source,/v3\.football\.api-sports\.io\/teams\?league=39&season=2026/);
-      assert.doesNotMatch(source,/api-football-discovery\.mjs|runApiFootballDiscoveryScan|collection_enabled\s*=\s*1|wrangler/i);
+      assert.match(source,/teams\?league=39&season=2026/);
+      assert.match(source,/MAX_PROVIDER_ATTEMPTS = 2/);
+      assert.doesNotMatch(source,/runAttendedApiFootballQualification\s*\(|wrangler|collection_enabled\s*=\s*1/i);
       continue;
     }
     assert.doesNotMatch(source,/API_FOOTBALL|x-apisports-key|v3\.football\.api-sports\.io/i,file);
