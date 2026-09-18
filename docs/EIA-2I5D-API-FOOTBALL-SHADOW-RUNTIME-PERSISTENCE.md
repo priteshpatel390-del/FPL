@@ -11,6 +11,8 @@ No API-Football request, credential access or provisioning, live D1 migration, W
 
 Post-merge closeout (EIA-2I5E, 17 September 2026): PR #250 merged to `main` as `6309dae3614aa06e7c021bfab0f138cac2437a2b`. Exact-main Verify Teamsheet run `35152280445` (run number 735) passed. The collector remains not deployed, migration 0005 is not applied live, no credential is provisioned, Cron is not active, collection stays disabled, and the response-byte ceiling remains `null`. See [EIA-2I5E](EIA-2I5E-PRELIVE-API-FOOTBALL-EVIDENCE-QUALIFICATION.md).
 
+EIA-2I5F repository implementation (17 September 2026): after EIA-2I5E R7 formally qualified response size from attended run `35248079758`, the approved production ceiling is exactly **720,896 bytes**. EIA-2I5F writes only that qualified value into `API_FOOTBALL_MAX_RESPONSE_BYTES`, binds it permanently to the attended evidence in tests, and updates repository documentation. It does **not** provision D1, apply migration 0005 live, create or access a Worker secret, enable collection, declare Cron, deploy the collector, expand the 2/20 mapping, or change model/UI behaviour. See [EIA-2I5F](EIA-2I5F-QUALIFIED-RESPONSE-CEILING.md).
+
 ## Migration 0005
 
 `0005_api_football_shadow_runtime.sql` extends migration 0004. It seeds only the canonical API-Football source/revision with the existing `owner_risk_accepted_private_use` restrictions and creates:
@@ -51,7 +53,7 @@ A generation head can advance only after all five competition queries succeed an
 
 ## Raw-response activation gate
 
-Responses are streamed through a byte-counting decoder and row cap before durable admission. Oversize bodies and row amplification fail closed. EIA-2I5D does not guess a production byte ceiling: `API_FOOTBALL_MAX_RESPONSE_BYTES` remains `null`, so the Worker stays blocked even if accidentally provisioned. A later attended checkpoint must measure qualified response sizes and approve a repository constant before any live activation.
+Responses are streamed through a byte-counting decoder and row cap before durable admission. Oversize bodies and row amplification fail closed. EIA-2I5E R7 formally qualified the response-size boundary from 11 canonical attended requests: observed maximum 347,982 bytes, doubled maximum 695,964 bytes, rounded to the next 65,536-byte quantum = **720,896 bytes**. EIA-2I5F implements that exact value as `API_FOOTBALL_MAX_RESPONSE_BYTES`. This closes only the response-size repository gate; every separate infrastructure, collection, mapping, authority, quota and security gate remains in force.
 
 ## Preserved boundaries
 
@@ -59,6 +61,6 @@ Exactly five EIA-2I5B competitions, FPL season 2026-27, provider season 2026, id
 
 ## Verification and limitations
 
-Permanent tests cover runtime safety, atomic reservation rollback, duplicate identities, conservative post-reservation crash accounting, quota/authentication states, UTC reset, stale leases, genuine two- and five-promise races, exact endpoint-class mapping, bounded decoding, scheduler identities, sanitized output, Worker closure, secret absence, migration compatibility, head atomicity, uniqueness and production/browser isolation. Full-suite and deterministic-build results belong in the draft PR at its exact head.
+Permanent tests cover runtime safety, atomic reservation rollback, duplicate identities, conservative post-reservation crash accounting, quota/authentication states, UTC reset, stale leases, genuine two- and five-promise races, exact endpoint-class mapping, bounded decoding, scheduler identities, sanitized output, Worker closure, secret absence, migration compatibility, head atomicity, uniqueness and production/browser isolation. EIA-2I5F additionally binds the runtime constant to the immutable R7 attended evidence and proves the default decoder rejects a declared response one byte over the ceiling. Full-suite and deterministic-build results belong in the draft PR at its exact head.
 
-Remaining live gates require separate owner approval: choose the byte limit from attended evidence; prove all 20 provider-to-FPL mappings; provision the existing D1 binding; apply migration 0005 live; create the Worker secret; enable the kill switch; declare/activate Cron; deploy; run bounded acceptance; and separately consider any model/UI use. None is approved here.
+Remaining live gates require separate owner approval: prove all 20 provider-to-FPL mappings; provision the existing D1 binding; apply migration 0005 live; create the Worker secret; enable the kill switch; declare/activate Cron; deploy; run bounded acceptance; and separately consider any model/UI use. None is approved here.

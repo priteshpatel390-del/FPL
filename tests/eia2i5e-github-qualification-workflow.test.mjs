@@ -8,7 +8,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {API_FOOTBALL_MAX_RESPONSE_BYTES} from '../workers/api-football-collector/runtime-contracts.mjs';
 
 const WORKFLOW_PATH = '.github/workflows/eia-2i5e-api-football-qualification.yml';
 const CANDIDATE_SHA = '03cd231cd3e1d38821194a5d1aad87bc87232154';
@@ -308,18 +307,20 @@ test('the job summary is allowlisted and does not dump arbitrary JSON or secrets
   assert.doesNotMatch(summary, /error\.stack|headers/);
 });
 
-test('focused R3 tests and the null production ceiling are required before secret-bearing execution', () => {
+test('historical R7 workflow requires the null production ceiling before its secret-bearing execution', () => {
   const tests = stepScript(workflow, '      - name: Run focused R3 qualification tests before any secret is introduced');
   assert.match(tests, /node --test tests\/eia2i5e-prelive-qualification\.test\.mjs/);
   assert.match(tests, /API_FOOTBALL_MAX_RESPONSE_BYTES/);
   assert.match(tests, /API_FOOTBALL_MAX_RESPONSE_BYTES !== null/);
-  assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES, null);
 });
 
-test('production constant remains unqualified on this branch', () => {
-  assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES, null);
-  const contracts = read('workers/api-football-collector/runtime-contracts.mjs');
-  assert.match(contracts, /API_FOOTBALL_MAX_RESPONSE_BYTES=null/);
+test('R7 evidence preserves that the production constant was not implemented during attended qualification', () => {
+  const evidence = JSON.parse(read('docs/evidence/eia-2i5e-sanitized-qualification.json'));
+  const responseLimit = evidence.r7AttendedQualification.responseLimit;
+  assert.equal(responseLimit.productionConstant, null);
+  assert.equal(responseLimit.implemented, false);
+  const summary = stepScript(workflow, '      - name: Write allowlisted job summary');
+  assert.match(summary, /Production constant remains null/);
 });
 
 function runGateShell(script, {

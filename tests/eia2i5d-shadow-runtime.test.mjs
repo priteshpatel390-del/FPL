@@ -15,10 +15,10 @@ const root=path.resolve(import.meta.dirname,'..');
 const authority=(fetchedAt='2026-09-16T00:00:00.000Z')=>({season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runStatus:'completed',fetchedAt,digest:'a'.repeat(64),teamIds:Array.from({length:20},(_,i)=>`2026-27:fpl:team:${i+1}`)});
 const state=overrides=>({provider:'api-football',collection_enabled:1,credential_state:'AVAILABLE',quota_state:'KNOWN',quota_utc_day:'2026-09-16',daily_attempt_count:0,in_flight_attempt_id:null,in_flight_lease_expires_at:null,earliest_next_request_at:null,...overrides});
 
-test('runtime constants pin operational ceiling, lease, freshness, retention and dormant response limit',()=>{
+test('runtime constants pin operational ceiling, lease, freshness, retention and qualified response limit',()=>{
   assert.equal(API_FOOTBALL_DAILY_REQUEST_LIMIT,100);assert.equal(API_FOOTBALL_LEASE_MS,30_000);
   assert.equal(API_FOOTBALL_AUTHORITY_MAX_AGE_MS,48*60*60*1000);assert.equal(API_FOOTBALL_ATTEMPT_RETENTION_DAYS,35);
-  assert.equal(API_FOOTBALL_MAX_ROWS,2000);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,null);assert.equal(API_FOOTBALL_SCHEDULE,'15 * * * *');
+  assert.equal(API_FOOTBALL_MAX_ROWS,2000);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,720_896);assert.equal(API_FOOTBALL_SCHEDULE,'15 * * * *');
 });
 test('UTC accounting resets only on UTC date',()=>{assert.equal(utcDay('2026-09-16T23:59:59Z'),'2026-09-16');assert.equal(utcDay('2026-09-17T00:00:00Z'),'2026-09-17');});
 test('kill switch and missing D1 fail before egress',async()=>{
@@ -40,7 +40,11 @@ test('request contract allows only exact discovery and known-ID query shapes',()
   assert.equal(validateCollectorRequest({...base,endpoint:'fixtures',endpointClass:'fixtures_discovery',search:{league:2,season:2026,timezone:'UTC'}}).reason,'parameters_invalid');
   assert.equal(validateCollectorRequest({...base,endpoint:'fixtures/players',endpointClass:'players',search:{team:10}}).reason,'parameters_invalid');
 });
-test('activation stays blocked until response byte limit is attended and qualified',()=>{assert.equal(validateRuntimeConfiguration({TEAMSHEET_DATA_DB:{},API_FOOTBALL_API_KEY:'synthetic'}).reason,'response_limit_unqualified');});
+test('qualified response byte limit satisfies runtime configuration while storage and credential gates remain',()=>{
+  assert.equal(validateRuntimeConfiguration({TEAMSHEET_DATA_DB:{},API_FOOTBALL_API_KEY:'synthetic'}).ok,true);
+  assert.equal(validateRuntimeConfiguration({API_FOOTBALL_API_KEY:'synthetic'}).reason,'storage_unavailable');
+  assert.equal(validateRuntimeConfiguration({TEAMSHEET_DATA_DB:{}}).reason,'credential_unavailable');
+});
 test('100-attempt ceiling blocks attempt 101 and new UTC day permits one probe',()=>{
   assert.equal(reservationDecision(state({daily_attempt_count:100}),{now:'2026-09-16T01:00:00Z',authority:authority()}).reason,'daily_ceiling_reached');
   const next=reservationDecision(state({daily_attempt_count:100}),{now:'2026-09-17T00:00:00Z',authority:authority('2026-09-16T00:00:00Z')});

@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {API_FOOTBALL_MAX_RESPONSE_BYTES} from '../workers/api-football-collector/runtime-contracts.mjs';
 import {
   EIA_2I5E_BYTE_CEILING_QUANTUM_BYTES,
   EIA_2I5E_CANONICAL_REQUEST_MANIFEST,
@@ -86,8 +85,7 @@ test('R7 evidence arithmetic recalculates to the qualified 720896-byte ceiling',
   assert.equal(calculateResponseByteCeilingCandidate(r7.measurements).formalQualification, false);
 });
 
-test('R7 evidence keeps production ceiling unimplemented and mapping separately NO-GO 2/20', () => {
-  assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES, null);
+test('R7 historical evidence keeps its production ceiling unimplemented and mapping separately NO-GO 2/20', () => {
   assert.equal(EIA_2I5E_PRODUCTION_BYTE_CEILING, null);
   assert.equal(r7.responseLimit.productionConstant, null);
   assert.equal(r7.responseLimit.implemented, false);
