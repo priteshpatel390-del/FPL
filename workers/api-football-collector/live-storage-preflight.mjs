@@ -16,6 +16,9 @@ export const EXPECTED_FPL_SEASON='2026-27';
 export const EXPECTED_SOURCE_REVISION='api-football:eia-2i5a:1';
 export const EXPECTED_OFFICIAL_SOURCE_REVISION='official-fpl-r1';
 export const EXPECTED_MIGRATIONS=Object.freeze({
+  1:'shadow_data_foundation',
+  2:'official_fpl_structured_history',
+  3:'production_query_plan_indexes',
   4:'api_football_shadow_identity',
   5:'api_football_shadow_runtime',
   6:'api_football_mapping_qualification'
@@ -222,7 +225,15 @@ export function evaluateStoragePreflight({ledger,objects,foreignKeys,baseRows,op
   };
   if(!databaseIdentityMatch)hardStops.push('production_d1_identity_mismatch');
   if(!dataPlatformBindingMatch)hardStops.push('production_d1_binding_mismatch');
+  for(const version of [1,2,3]){
+    const state=migrationState(ledger,version);
+    if(!state.applied)hardStops.push('migration_000'+version+'_missing');
+    else if(!state.exact)hardStops.push('migration_000'+version+'_name_mismatch');
+  }
   for(const [version,state] of [[4,m4],[5,m5],[6,m6]])if(state.applied&&!state.exact)hardStops.push('migration_000'+version+'_name_mismatch');
+  if(ledger.some(row=>row.version>6))hardStops.push('migration_ledger_ahead_of_repository');
+  const versions=ledger.map(row=>row.version).sort((a,b)=>a-b);
+  if(versions.some((version,index)=>version!==index+1))hardStops.push('migration_ledger_non_contiguous');
   if(m5.applied&&!m4.applied)hardStops.push('migration_0005_without_0004');
   if(m6.applied&&!m5.applied)hardStops.push('migration_0006_without_0005');
   const schema4=requireObjects(4,['provider_fixture_identities','provider_participation_revisions']);
