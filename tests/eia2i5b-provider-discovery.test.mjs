@@ -646,7 +646,8 @@ test('API-Football discovery stays isolated from production, live config and mig
   }
   const apiFootballWorkflowAllowlist=new Set([
     'eia-2i5e-api-football-qualification.yml',
-    'api-football-team-universe-qualification.yml'
+    'api-football-team-universe-qualification.yml',
+    'api-football-owner-mapping-qualification.yml'
   ]);
   const workflowFiles=fs.readdirSync('.github/workflows');
   assert.deepEqual(
@@ -666,6 +667,14 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/teams\?league=39&season=2026/);
       assert.match(source,/MAX_PROVIDER_ATTEMPTS = 2/);
       assert.doesNotMatch(source,/runAttendedApiFootballQualification\s*\(|wrangler|collection_enabled\s*=\s*1/i);
+      continue;
+    }
+    if(file==='api-football-owner-mapping-qualification.yml'){
+      assert.match(source,/secrets\.API_FOOTBALL_OWNER_CROSSWALK_JSON/);
+      assert.match(source,/issueOwnerApprovedTwentyClubMappings/);
+      assert.match(source,/fetchOfficialFplAuthority/);
+      assert.match(source,/apiFootballRequests:0/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler|collection_enabled\s*=\s*1/i);
       continue;
     }
     assert.doesNotMatch(source,/API_FOOTBALL|x-apisports-key|v3\.football\.api-sports\.io/i,file);
