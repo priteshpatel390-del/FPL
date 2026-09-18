@@ -1,0 +1,131 @@
+# Manual-only read-only production preflight for the owner-approved API-Football live storage foundation.
+#
+# This workflow can read only Cloudflare Worker metadata and production D1 state through the
+# existing data-steward read-only credential contract. It performs zero D1 writes/migrations,
+# zero Worker/Cron/secret mutations and zero API-Football requests.
+
+name: API-Football Live Storage Read-Only Preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: api-football-live-storage-readonly-preflight
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate dispatch identity before checkout
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatch revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove dispatch revision is current protected main
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Run storage-preflight safety tests before protected environment admission
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test tests/api-football-live-storage-preflight.test.mjs
+
+  readonly-preflight:
+    needs: repository-gate
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      # GitHub exposes resolved env metadata in logs. Register a mask for the separately stored
+      # account fingerprint before any later step materialises it, matching the existing observer.
+      - name: Register Cloudflare account fingerprint mask before any other step
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out exact dispatch revision after environment admission
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reconfirm exact current main immediately before Cloudflare reads
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Execute bounded read-only live storage preflight
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/api-football-live-storage-preflight.json
+        run: |
+          set -euo pipefail
+          node workers/api-football-collector/live-storage-preflight.mjs
+          test -f "$API_FOOTBALL_PREFLIGHT_REPORT_PATH"
+
+      - name: Upload sanitized preflight evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-live-storage-preflight
+          path: ${{ runner.temp }}/api-football-live-storage-preflight.json
+          if-no-files-found: error
+          retention-days: 7
