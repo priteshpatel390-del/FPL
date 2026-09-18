@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION-2026-09-18 -->
+### Current external-intelligence checkpoint — post-20/20 pre-live runtime completion candidate
+
+Owner approval now covers a **repository-only** post-20/20 runtime-completion candidate. It adds migration 0006 for private qualified team-mapping provenance and a pre-egress planner/orchestrator around the already-existing scheduler. The private 20-pair crosswalk still does not appear in public source; any future live persistence must revalidate the owner-approved crosswalk, 20 qualification receipts, attended provider-universe provenance and current Official FPL authority. The shipped Wrangler activation remains `REPOSITORY_ONLY_BLOCKED`, D1 remains inert/unapplied, Cron remains empty, no Worker secret is provisioned, and `scheduled()` cannot execute provider requests. Final-enrichment/correction workload operations remain explicitly blocked. This checkpoint makes zero API-Football requests and changes no model/calculation/UI behaviour. See [pre-live runtime completion](docs/API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION.md).
+
 <!-- API-FOOTBALL-20-CLUB-LIVE-CLOSEOUT-2026-09-18 -->
 ### Current external-intelligence checkpoint — API-Football team mapping live-qualified 20/20
 

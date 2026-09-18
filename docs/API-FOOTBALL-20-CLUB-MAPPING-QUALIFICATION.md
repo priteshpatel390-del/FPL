@@ -1,3 +1,7 @@
+## Next repository checkpoint after GO 20/20
+
+Owner approval now covers the repository-only [pre-live runtime completion](API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION.md): durable private mapping provenance plus pre-egress planner/orchestration. This does not reopen or repeat the completed 20/20 qualification. No new provider-universe or mapping workflow run is required for this repository checkpoint, and no API-Football request, live D1 mutation, secret, collector deployment, Cron, workload ingestion or model/UI influence is authorized.
+
 ## Live attended closeout — GO 20/20
 
 The complete 2026/27 API-Football ↔ Official FPL team-identity gate is now **GO 20/20**. PR #257 merged the private/hash-bound closeout path to protected `main` as `aa694bc1d57faa6f197d4118ea0563808fa4ac0b`; post-merge Verify Teamsheet run `35332702502` passed 2,180/2,180 tests with deterministic byte-identical production rebuilds. The owner then dispatched `API-Football Owner Mapping Qualification` once as run `35333898797`, `run_attempt=1`, on that exact main; both `repository-gate` and `qualify` succeeded.

@@ -1274,13 +1274,13 @@ test('A1.2 contains no mutation, actuator, shell or AI capability of any kind',(
 });
 
 test('A1.2 can observe the dispatcher but can never arm, change or redeploy it',()=>{
-  // The dispatcher, its contract, the guard, the workflows and the migrations are all untouched.
+  // The dispatcher, its contract, the guard and workflows are untouched; migration inventory may grow only through separately approved append-only data-platform work.
   const dispatcher=fs.readFileSync('workers/schedule-dispatcher/wrangler.jsonc','utf8');
   assert.ok(dispatcher.includes('"17 1 * * *"'));
   assert.ok(!dispatcher.includes('"17 2 * * *"')&&!dispatcher.includes('"17 3 * * *"'));
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
     ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql',
-      '0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql','0005_api_football_shadow_runtime.sql']);
+      '0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql','0005_api_football_shadow_runtime.sql','0006_api_football_mapping_qualification.sql']);
   // A1.2 itself added no workflow. A1.3's separate workflow is pinned by its own dormant-runtime tests.
   assert.ok(!fs.existsSync('.github/workflows/data-ops-a1-2-observation.yml'));
 });

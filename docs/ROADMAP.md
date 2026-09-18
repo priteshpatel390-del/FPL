@@ -1,3 +1,7 @@
+## API-Football post-20/20 next sequence — repository candidate first
+
+The 20-club identity gate is complete. The approved next step is **repository-only pre-live runtime completion**, not collector activation. Current candidate scope: private qualified-mapping persistence provenance (migration 0006) plus pre-egress planner/orchestration around the existing scheduler, while keeping provider execution, workload enrichment, live D1, Cloudflare provisioning, secrets and Cron blocked. After merge and exact-main verification, the next separately proposed live gate is storage foundation only: real D1 binding, migrations 0005/0006 and private 20/20 mapping persistence while collection and Cron remain disabled. Secret provisioning, Worker deployment, provider egress, workload ingestion and model influence remain later gates. See [pre-live runtime completion](API-FOOTBALL-PRELIVE-RUNTIME-COMPLETION.md).
+
 ## API-Football 20-club mapping closeout — completed
 
 **This section supersedes the older API-Football roadmap checkpoints below; those are retained as historical sequencing records.** The 20-club identity gate is closed. PR #257 merged as `aa694bc1d57faa6f197d4118ea0563808fa4ac0b`; exact-main CI passed 2,180/2,180 tests. Attended closeout run `35333898797` then returned **GO 20/20** with 18 new + 2 legacy receipts, complete coverage, 0 unresolved mappings, 0 receipt failures, 2 Official FPL requests and 0 API-Football requests. The result is bound by qualification hash `670ccccbf62764bc076293962ae4aa85085e06db48b503f597397d882f771367`.
