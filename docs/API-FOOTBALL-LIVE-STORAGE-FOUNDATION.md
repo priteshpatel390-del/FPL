@@ -31,7 +31,7 @@ The approved live-storage checkpoint names 0005 and 0006. It does **not** silent
 
 Therefore:
 
-- if the live ledger proves exact migration 0004 is already applied and its required identity tables exist, the preflight may report `READY_FOR_MIGRATION_0005`;
+- if the live ledger proves exact migration 0004 is already applied and its required rights columns, source-consistency triggers, participation index and identity tables exist, the preflight may report `READY_FOR_MIGRATION_0005`;
 - if the live ledger stops at 0003, the preflight reports `STOP_0004_NOT_APPLIED`;
 - if 0005 exists without 0004, 0006 exists without 0005, a migration name differs, or the expected schema objects are incomplete, the preflight fails closed for review.
 
@@ -62,7 +62,7 @@ It issues only five fixed Cloudflare GETs:
 4. API-Football collector schedules;
 5. API-Football collector deployments.
 
-It issues at most two D1 query API calls. Every D1 statement is from a closed repository registry and is either `SELECT` or `PRAGMA foreign_key_check`. Mutation keywords, statement separators and SQL comments are rejected before transport. The adapter additionally rejects any D1 result whose metadata reports a written row.
+It issues at most two D1 query API calls. Every D1 statement is from a closed repository registry and is either `SELECT` or one of the fixed read-only PRAGMAs (`foreign_key_check` / `table_info`). Mutation keywords, statement separators and SQL comments are rejected before transport. The adapter additionally rejects any D1 result whose metadata reports a written row.
 
 ## Sanitized D1 evidence
 
@@ -71,6 +71,7 @@ The first fixed D1 batch reads:
 - the ordered `schema_migrations` ledger;
 - only API-Football-related `sqlite_master` object names;
 - `PRAGMA foreign_key_check`;
+- fixed `PRAGMA table_info` reads for the migration-0004 rights/provenance columns;
 - the latest completed Official FPL run;
 - the 20 current Official FPL team-head provenance rows required to reconstruct the authority digest;
 - the count of API-Football team mapping rows.
@@ -101,7 +102,7 @@ The preflight stops the mutation sequence on any of the following evidence:
 - migration name/order/schema mismatch;
 - 0005 without 0004;
 - 0006 without 0005;
-- invalid Official FPL authority;
+- invalid or stale Official FPL authority;
 - missing/invalid runtime row after 0005;
 - `collection_enabled != 0`;
 - disable reason other than `EIA_2I5D_REPOSITORY_ONLY`;
