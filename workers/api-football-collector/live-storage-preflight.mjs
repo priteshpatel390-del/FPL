@@ -37,9 +37,12 @@ const workerPath=(accountId,worker,suffix)=>apiPath(accountId,'/workers/scripts/
 const d1Path=(accountId,suffix)=>apiPath(accountId,'/d1/database/'+encodeURIComponent(EXPECTED_D1_DATABASE_ID)+suffix);
 
 const FORBIDDEN_SQL=/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|ATTACH|DETACH|VACUUM|REINDEX|BEGIN|COMMIT|ROLLBACK|GRANT|RETURNING)\b/i;
+const ALLOWED_READ_ONLY_PRAGMA=/^PRAGMA (?:foreign_key_check|table_info\((?:data_source_revisions|provider_participation_revisions|api_football_runtime_state|api_football_team_mapping_qualifications|api_football_team_mapping_members|api_football_team_mapping_heads)\))$/;
 export function assertReadOnlySql(sql){
   if(typeof sql!=='string'||!sql)throw new Error('preflight_sql_invalid');
-  if(!/^(SELECT|PRAGMA)\s/i.test(sql))throw new Error('preflight_sql_invalid');
+  const select=/^SELECT\s/.test(sql);
+  const pragma=ALLOWED_READ_ONLY_PRAGMA.test(sql);
+  if(!select&&!pragma)throw new Error('preflight_sql_invalid');
   if(FORBIDDEN_SQL.test(sql)||sql.includes(';')||sql.includes('--')||sql.includes('/*'))throw new Error('preflight_sql_invalid');
   return sql;
 }
