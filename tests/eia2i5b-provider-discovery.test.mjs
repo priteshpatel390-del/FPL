@@ -647,7 +647,8 @@ test('API-Football discovery stays isolated from production, live config and mig
   const apiFootballWorkflowAllowlist=new Set([
     'eia-2i5e-api-football-qualification.yml',
     'api-football-team-universe-qualification.yml',
-    'api-football-owner-mapping-qualification.yml'
+    'api-football-owner-mapping-qualification.yml',
+    'api-football-live-storage-preflight.yml'
   ]);
   const workflowFiles=fs.readdirSync('.github/workflows');
   assert.deepEqual(
@@ -675,6 +676,14 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/fetchOfficialFplAuthority/);
       assert.match(source,/apiFootballRequests:0/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler|collection_enabled\s*=\s*1/i);
+      continue;
+    }
+    if(file==='api-football-live-storage-preflight.yml'){
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+      assert.match(source,/live-storage-preflight\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
       continue;
     }
     assert.doesNotMatch(source,/API_FOOTBALL|x-apisports-key|v3\.football\.api-sports\.io/i,file);
