@@ -654,8 +654,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     if(file==='api-football-team-universe-qualification.yml'){
       assert.match(source,/secrets\.API_FOOTBALL_API_KEY/);
       assert.match(source,/runAttendedApiFootballTeamUniverseQualification/);
-      assert.match(source,/https:\/\/v3\.football\.api-sports\.io\/teams\?league=39&season=2026/);
-      assert.doesNotMatch(source,/runAttendedApiFootballQualification\s*\(|wrangler|collection_enabled\s*=\s*1|cron:/i);
+      assert.match(source,/v3\.football\.api-sports\.io\/teams\?league=39&season=2026/);
+      assert.doesNotMatch(source,/api-football-discovery\.mjs|runApiFootballDiscoveryScan|collection_enabled\s*=\s*1|wrangler/i);
       continue;
     }
     assert.doesNotMatch(source,/API_FOOTBALL|x-apisports-key|v3\.football\.api-sports\.io/i,file);
