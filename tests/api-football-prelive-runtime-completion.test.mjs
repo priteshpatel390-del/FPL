@@ -66,7 +66,7 @@ test('qualified mapping persistence rejects wrong owner crosswalk before any D1 
 });
 
 function runtimeAuthority(){
-  return {season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runStatus:'completed',fetchedAt:'2026-09-18T10:00:00.000Z',digest:'a'.repeat(64),teamIds:IDS.map(id=>'2026-27:fpl:team:'+id)};
+  return {season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runStatus:'completed',fetchedAt:'2026-09-21T12:00:00.000Z',digest:'a'.repeat(64),teamIds:IDS.map(id=>'2026-27:fpl:team:'+id)};
 }
 function runtimeMappings(){
   return {ok:true,completeTwentyClubCoverage:true,verifiedPremierLeagueTeamCount:20,mappings:IDS.map((id,index)=>({provider:'api-football',entityType:'team',providerEntityId:PROVIDER_IDS[index],canonicalFplId:'2026-27:fpl:team:'+id,mappingRevision:'qualified',revision:1,status:'VERIFIED',season:'2026-27',method:'manually_verified',provenance:'owner-qualified'}))};

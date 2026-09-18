@@ -150,9 +150,9 @@ test('the new closed Cloudflare stage reason codes pass through sanitized output
   }
 });
 
-test('migration inventory remains 0001-0003 and production collection surfaces are not observer inputs',()=>{
+test('migration inventory remains append-only and production collection surfaces are not observer inputs',()=>{
   assert.deepEqual(fs.readdirSync('workers/data-platform/migrations').sort(),
-    ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql','0005_api_football_shadow_runtime.sql']);
+    ['0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql','0004_api_football_shadow_identity.sql','0005_api_football_shadow_runtime.sql','0006_api_football_mapping_qualification.sql']);
   assert.doesNotMatch(workflow,/workers\/data-platform|schedule-dispatcher|production-collection/);
 });
 

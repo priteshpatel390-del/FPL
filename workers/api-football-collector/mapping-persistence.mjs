@@ -54,7 +54,8 @@ export async function prepareQualifiedTeamMappingPersistence({
     providerUniverse?.revision!==API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_REVISION||
     providerUniverse?.observedAt!==API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_OBSERVED_AT)return fail('mapping_qualification_provenance_invalid');
   const officialIds=authorityTeamIds(authority);
-  if(!officialIds||authority?.season!==API_FOOTBALL_FPL_SEASON||!hex64(authority?.digest)||!iso(authority?.fetchedAt))return fail('official_fpl_authority_invalid');
+  if(!officialIds||authority?.season!==API_FOOTBALL_FPL_SEASON||typeof authority?.digest!=='string'||!authority.digest||!iso(authority?.fetchedAt))return fail('official_fpl_authority_invalid');
+  const officialFplAuthorityDigest=await sha256Hex(authority.digest,cryptoImpl);
 
   const rows=[];
   for(const mapping of issued.mappings.slice().sort((a,b)=>a.canonicalFplId.localeCompare(b.canonicalFplId))){
@@ -88,7 +89,7 @@ export async function prepareQualifiedTeamMappingPersistence({
     providerUniverseObservedAt:API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_OBSERVED_AT,
     ownerReviewReference:API_FOOTBALL_OWNER_REVIEW_REFERENCE,
     ownerReviewedAt:API_FOOTBALL_OWNER_REVIEWED_AT,
-    officialFplAuthorityDigest:authority.digest,
+    officialFplAuthorityDigest,
     officialFplAuthorityFetchedAt:iso(authority.fetchedAt),
     rows:rows.map(row=>({
       providerTeamId:row.providerTeamId,canonicalFplTeamId:row.canonicalFplTeamId,
@@ -107,7 +108,7 @@ export async function prepareQualifiedTeamMappingPersistence({
     providerUniverseIntegrityHash:API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_INTEGRITY_HASH,
     providerUniverseObservedAt:API_FOOTBALL_APPROVED_PROVIDER_UNIVERSE_OBSERVED_AT,
     ownerReviewReference:API_FOOTBALL_OWNER_REVIEW_REFERENCE,ownerReviewedAt:API_FOOTBALL_OWNER_REVIEWED_AT,
-    officialFplAuthorityDigest:authority.digest,officialFplAuthorityFetchedAt:iso(authority.fetchedAt),
+    officialFplAuthorityDigest,officialFplAuthorityFetchedAt:iso(authority.fetchedAt),
     currentQualificationFetchedAt:qualification.fetchedAt,createdAt,rows
   });
 }
