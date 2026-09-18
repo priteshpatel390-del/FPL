@@ -1,8 +1,8 @@
 # API-Football ↔ Official FPL 20-club mapping qualification
 
 Date: 18 September 2026  
-Status: owner-approved repository implementation candidate; no provider execution approved in this checkpoint.  
-Base main: `50fd39f92894299b3597bef624bbb55ea2482281` (merge of PR #253 / EIA-2I5F).
+Status: merged repository qualification contract; provider execution remains separately owner-gated.  
+Merged by PR #254 to `main` as `83c7d5ce86077502ca691f7ff4e1941568dc083d`. Post-merge Verify Teamsheet run `35321967633` passed 2,162/2,162 tests, byte-identical production rebuilds and exact manifest identity.
 
 ## Outcome
 
@@ -85,11 +85,11 @@ A future GO still requires the existing EIA-2I5A/EIA-2I5B exact bijection:
 
 The final qualification result is canonicalized and integrity-hashed so identical evidence produces identical output independent of mapping input order.
 
-## Current state after this repository checkpoint
+## Current state after merge
 
-Mapping remains **NO-GO 2/20** until a separately approved attended provider-universe observation is executed and the remaining 18 crosswalks are explicitly owner-reviewed and admitted.
+Mapping remains **NO-GO 2/20** because PR #254 executed no provider request and admitted no new mappings. The remaining 18 crosswalks still require a separately approved attended provider-universe observation plus explicit owner review/admission.
 
-The next owner gate after repository verification/merge is therefore an attended qualification execution proposal. Its expected provider cost is one request, with a hard maximum of two attempts under the retry conditions above.
+The next owner gate is the attended qualification execution proposal. Its expected provider cost is one request, with a hard maximum of two attempts under the retry conditions above.
 
 That later execution does not authorize collector deployment or activation.
 
@@ -114,4 +114,4 @@ This checkpoint does not:
 
 Permanent coverage is owned by `tests/api-football-team-mapping-qualification.test.mjs` plus the existing EIA-2I5A/B/E/F suites.
 
-Completion of this repository checkpoint requires the full repository test suite, production build, deterministic rebuild and exact build-identity verification on the final branch head before owner merge approval.
+PR #254 exact-head verification passed 2,162/2,162 tests plus production build, deterministic rebuild and exact build identity. After merge, exact-main Verify Teamsheet run `35321967633` passed the same 2,162/2,162 suite, byte-identical production rebuilds, root/dist equality and manifest identity for merge commit `83c7d5ce86077502ca691f7ff4e1941568dc083d`.
