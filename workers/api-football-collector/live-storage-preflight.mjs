@@ -64,21 +64,23 @@ export const OPTIONAL_QUERIES=Object.freeze({
 
 for(const sql of [...Object.values(BASE_QUERIES),...Object.values(OPTIONAL_QUERIES)])assertReadOnlySql(sql);
 
-const TABLE_QUERY_KEYS=Object.freeze({
-  api_football_runtime_state:['runtime'],
-  api_football_request_attempts:['attempts'],
-  api_football_discovery_generations:['generations'],
-  api_football_discovery_heads:['discoveryHeads'],
-  api_football_fixture_revisions:['fixtureRevisions'],
-  api_football_generation_fixtures:['generationFixtures'],
-  api_football_team_mapping_qualifications:['qualifications'],
-  api_football_team_mapping_heads:['mappingHeads'],
-  api_football_team_mapping_members:['mappingMembers']
+const OPTIONAL_QUERY_REQUIREMENTS=Object.freeze({
+  runtime:['api_football_runtime_state'],
+  attempts:['api_football_request_attempts'],
+  generations:['api_football_discovery_generations'],
+  discoveryHeads:['api_football_discovery_heads'],
+  fixtureRevisions:['api_football_fixture_revisions'],
+  generationFixtures:['api_football_generation_fixtures'],
+  qualifications:['api_football_team_mapping_qualifications'],
+  mappingHeads:['api_football_team_mapping_heads','api_football_team_mapping_qualifications'],
+  mappingMembers:['api_football_team_mapping_members','api_football_team_mapping_heads']
 });
 
 export function optionalQueryKeysForObjects(objects=[]){
   const tableNames=new Set((objects||[]).filter(row=>row?.type==='table').map(row=>String(row.name)));
-  return Object.freeze(Object.entries(TABLE_QUERY_KEYS).flatMap(([table,keys])=>tableNames.has(table)?keys:[]));
+  return Object.freeze(Object.entries(OPTIONAL_QUERY_REQUIREMENTS)
+    .filter(([,tables])=>tables.every(table=>tableNames.has(table)))
+    .map(([key])=>key));
 }
 
 function cloudflareHeaders(token){
