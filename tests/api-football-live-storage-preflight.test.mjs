@@ -110,7 +110,7 @@ test('live storage preflight SQL registry is read-only and rejects mutation/comm
 
 test('optional D1 queries require every referenced table before execution',()=>{
   const onlyHeads=[table('api_football_team_mapping_heads')];
-  assert.deepEqual(optionalQueryKeysForObjects(onlyHeads),[]);
+  assert.deepEqual(optionalQueryKeysForObjects(onlyHeads),['headColumns']);
   const completeHead=[...onlyHeads,table('api_football_team_mapping_qualifications')];
   const headKeys=optionalQueryKeysForObjects(completeHead);
   assert.ok(headKeys.includes('qualifications'));
