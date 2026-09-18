@@ -1,3 +1,7 @@
+## 2026-09-18 — use a dedicated workflow for team-universe qualification
+
+Decision: do not reuse or mutate the historical EIA-2I5E R7 secret-bearing workflow for the 20-club provider-universe observation. That workflow is intentionally pinned to an older 11-request response-size candidate and would execute the wrong provider operation. Instead, the repository owns a separate manual-only workflow around the already-merged team-universe runner. It executes exact current `main`, has no dispatch inputs, reuses the existing protected environment, exposes the credential only to one step, independently caps egress at two, and retains only the approved normalized evidence. Mapping admission remains a later owner-review action; names and codes have no admission authority. No new EIA checkpoint identifier is created by this decision.
+
 ## 18 September 2026 — 20-club mapping qualification contract
 
 **Decision:** complete mapping must remain an evidence-backed current-season bijection; do not infer provider↔FPL identity from names. A future attended provider-universe observation may use only `GET /teams?league=39&season=2026`, in a qualification-only path that is not added to the collector. New mappings require explicit owner-reviewed receipts tied to that provider-universe revision and a content-bound Official FPL authority. Chelsea 49→6 and Leeds 63→13 remain immutable conflict anchors. This repository decision authorizes no provider execution or activation. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
