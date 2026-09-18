@@ -1,6 +1,7 @@
 import {apiFootballRequestInit,buildPinnedApiFootballUrl,sendApiFootballRequest} from '../../src/decision-intelligence/api-football-foundation.mjs';
 import {completeAttempt,readOfficialFplAuthority,reserveAttempt} from './d1-persistence.mjs';
-import {classifyCompletion,readBoundedJson,validateAuthority,validateCollectorRequest,validateRuntimeConfiguration} from './runtime-contracts.mjs';
+import {classifyCompletion,readBoundedJson,validateAuthority,validateCollectorRequest,validatePlannerConfiguration,validateRuntimeActivation,validateRuntimeConfiguration} from './runtime-contracts.mjs';
+import {planScheduledCollection} from './planner-orchestrator.mjs';
 
 const safe=result=>Object.freeze(result);
 export function sanitizedEvent(event={}){
@@ -41,9 +42,16 @@ export async function executeReservedRequest({env,request,fetchImpl=globalThis.f
 }
 
 export async function scheduled(controller,env){
-  const configuration=validateRuntimeConfiguration(env);
+  const activation=validateRuntimeActivation(env);
+  if(!activation.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:activation.reason,requestCount:0})));return activation;}
+  const configuration=validatePlannerConfiguration(env);
   if(!configuration.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:configuration.reason,requestCount:0})));return configuration;}
-  return safe({ok:false,reason:'planner_not_activated'});
+  const scheduledMs=Number(controller?.scheduledTime);
+  if(!Number.isFinite(scheduledMs)){const invalid=safe({ok:false,reason:'planner_timestamp_invalid'});console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:invalid.reason,requestCount:0})));return invalid;}
+  const plan=await planScheduledCollection(env.TEAMSHEET_DATA_DB,{now:new Date(scheduledMs).toISOString()});
+  if(!plan.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:plan.reason,requestCount:0})));return plan;}
+  console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'PLANNED',requestCount:plan.requestCount,mappingCoverageCount:plan.mappingCoverageCount})));
+  return safe({ok:false,reason:'provider_execution_not_approved',plannerReady:true,requestCount:plan.requestCount,blockedOperationCount:plan.blockedOperations.length,deferredOperationCount:plan.deferredOperations.length});
 }
 
 export default {scheduled};

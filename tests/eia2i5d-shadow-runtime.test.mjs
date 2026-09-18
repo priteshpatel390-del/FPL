@@ -5,10 +5,10 @@ import test from 'node:test';
 import {
   API_FOOTBALL_ATTEMPT_RETENTION_DAYS,API_FOOTBALL_AUTHORITY_MAX_AGE_MS,API_FOOTBALL_DAILY_REQUEST_LIMIT,
   API_FOOTBALL_LEASE_MS,API_FOOTBALL_MAX_RESPONSE_BYTES,API_FOOTBALL_MAX_ROWS,API_FOOTBALL_SCHEDULE,
-  classifyCompletion,effectiveRequestGapMs,normalizeQuotaTelemetry,readBoundedJson,requestAttemptIdentity,reservationDecision,utcDay,validateAuthority,validateCollectorRequest,validateRuntimeConfiguration
+  classifyCompletion,effectiveRequestGapMs,normalizeQuotaTelemetry,readBoundedJson,requestAttemptIdentity,reservationDecision,utcDay,validateAuthority,validateCollectorRequest,validatePlannerConfiguration,validateRuntimeActivation,validateRuntimeConfiguration
 } from '../workers/api-football-collector/runtime-contracts.mjs';
 import {discoveryOpportunity,dueOpportunities,fixtureOpportunities} from '../workers/api-football-collector/scheduler.mjs';
-import {executeReservedRequest,sanitizedEvent} from '../workers/api-football-collector/collector.mjs';
+import {executeReservedRequest,sanitizedEvent,scheduled} from '../workers/api-football-collector/collector.mjs';
 import {reserveAttempt} from '../workers/api-football-collector/d1-persistence.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
@@ -44,6 +44,19 @@ test('qualified response byte limit satisfies runtime configuration while storag
   assert.equal(validateRuntimeConfiguration({TEAMSHEET_DATA_DB:{},API_FOOTBALL_API_KEY:'synthetic'}).ok,true);
   assert.equal(validateRuntimeConfiguration({API_FOOTBALL_API_KEY:'synthetic'}).reason,'storage_unavailable');
   assert.equal(validateRuntimeConfiguration({TEAMSHEET_DATA_DB:{}}).reason,'credential_unavailable');
+});
+test('prelive planner activation is explicit and planner configuration needs storage only',()=>{
+  assert.equal(validateRuntimeActivation({EIA_2I5D_ACTIVATION:'REPOSITORY_ONLY_BLOCKED'}).reason,'runtime_activation_not_approved');
+  assert.equal(validateRuntimeActivation({EIA_2I5D_ACTIVATION:'PRELIVE_PLANNER_ONLY'}).ok,true);
+  assert.equal(validatePlannerConfiguration({TEAMSHEET_DATA_DB:{}}).ok,true);
+  assert.equal(validatePlannerConfiguration({}).reason,'storage_unavailable');
+});
+test('repository-blocked scheduled handler touches neither D1 nor provider credential',async()=>{
+  let prepared=0;
+  const env={EIA_2I5D_ACTIVATION:'REPOSITORY_ONLY_BLOCKED',TEAMSHEET_DATA_DB:{prepare(){prepared+=1;throw new Error('D1 must not be read');}}};
+  Object.defineProperty(env,'API_FOOTBALL_API_KEY',{get(){throw new Error('credential must not be read');}});
+  const result=await scheduled({scheduledTime:Date.parse('2026-09-18T12:15:00Z')},env);
+  assert.equal(result.reason,'runtime_activation_not_approved');assert.equal(prepared,0);
 });
 test('100-attempt ceiling blocks attempt 101 and new UTC day permits one probe',()=>{
   assert.equal(reservationDecision(state({daily_attempt_count:100}),{now:'2026-09-16T01:00:00Z',authority:authority()}).reason,'daily_ceiling_reached');
