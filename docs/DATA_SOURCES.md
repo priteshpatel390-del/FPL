@@ -1,3 +1,7 @@
+## API-Football live storage read-only preflight
+
+The approved live-storage checkpoint begins with observation only. Draft PR #260 adds a fixed-query production preflight under the existing read-only steward credential so current D1 migration/runtime/mapping counts and collector infrastructure state can be proven without provider egress. It does not acquire new football data, rerun the provider universe, call API-Football, retain a raw payload or broaden rights. Official FPL remains the Premier League identity authority. A missing live migration 0004 is a hard stop before 0005; this preflight does not authorize applying 0004. See [API-Football Live Storage Foundation](API-FOOTBALL-LIVE-STORAGE-FOUNDATION.md).
+
 ## API-Football post-20/20 persistence/planner boundary
 
 The repository candidate may persist only normalized current-season team identity mappings that have passed the existing owner-approved exact-20 qualification contract. The source remains `api-football` under `owner_risk_accepted_private_use`; Official FPL remains the Premier League identity authority. Public repository content retains only hashes/review metadata, not the 18 private provider-ID pairs. Migration 0006 stores mapping qualification provenance and receipt hashes, not raw provider payloads. The pre-egress planner may only emit the existing five approved fixture-discovery queries and known-fixture `fixtures?id=` checks; workload-detail endpoints remain blocked until a later owner gate. No live provider request is authorized by this checkpoint.
