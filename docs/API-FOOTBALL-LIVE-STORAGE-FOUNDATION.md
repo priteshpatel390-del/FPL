@@ -71,12 +71,12 @@ The first fixed D1 batch reads:
 - the ordered `schema_migrations` ledger;
 - only API-Football-related `sqlite_master` object names;
 - `PRAGMA foreign_key_check`;
-- fixed `PRAGMA table_info` reads for the migration-0004 rights/provenance columns;
+- fixed `PRAGMA table_info` reads for migration-0004 rights/provenance columns and the participation table extended by migration 0005;
 - the latest completed Official FPL run;
 - the 20 current Official FPL team-head provenance rows required to reconstruct the authority digest;
 - the count of API-Football team mapping rows.
 
-A second batch is constructed only from closed predeclared queries whose referenced tables were observed to exist. It may read counts/state for:
+A second batch is constructed only from closed predeclared queries whose referenced tables were observed to exist. It may read counts/state plus fixed `PRAGMA table_info` structure for the runtime and mapping tables:
 
 - `api_football_runtime_state`;
 - `api_football_request_attempts`;
