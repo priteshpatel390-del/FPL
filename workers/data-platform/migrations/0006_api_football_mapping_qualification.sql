@@ -86,12 +86,27 @@ WHEN OLD.state='COMMITTED' AND (
   OR NEW.crosswalk_integrity_hash<>OLD.crosswalk_integrity_hash
   OR NEW.provider_universe_revision<>OLD.provider_universe_revision
   OR NEW.provider_universe_integrity_hash<>OLD.provider_universe_integrity_hash
+  OR NEW.provider_universe_observed_at<>OLD.provider_universe_observed_at
   OR NEW.owner_review_reference<>OLD.owner_review_reference
+  OR NEW.owner_reviewed_at<>OLD.owner_reviewed_at
   OR NEW.official_fpl_authority_digest<>OLD.official_fpl_authority_digest
+  OR NEW.official_fpl_authority_fetched_at<>OLD.official_fpl_authority_fetched_at
   OR NEW.mapping_count<>OLD.mapping_count
   OR NEW.state<>'COMMITTED'
+  OR NEW.committed_at<>OLD.committed_at
+  OR NEW.created_at<>OLD.created_at
 )
 BEGIN SELECT RAISE(ABORT,'api_football_mapping_qualification_immutable'); END;
+
+CREATE TRIGGER api_football_mapping_member_update_immutable
+BEFORE UPDATE ON api_football_team_mapping_members
+WHEN EXISTS (SELECT 1 FROM api_football_team_mapping_qualifications q WHERE q.qualification_id=OLD.qualification_id AND q.state='COMMITTED')
+BEGIN SELECT RAISE(ABORT,'api_football_mapping_member_immutable'); END;
+
+CREATE TRIGGER api_football_mapping_member_delete_immutable
+BEFORE DELETE ON api_football_team_mapping_members
+WHEN EXISTS (SELECT 1 FROM api_football_team_mapping_qualifications q WHERE q.qualification_id=OLD.qualification_id AND q.state='COMMITTED')
+BEGIN SELECT RAISE(ABORT,'api_football_mapping_member_immutable'); END;
 
 CREATE TABLE api_football_team_mapping_heads (
  fpl_season TEXT PRIMARY KEY,

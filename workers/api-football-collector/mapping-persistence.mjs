@@ -125,15 +125,15 @@ function qualifiedProvenanceValid(row){
     hex64(row.current_qualification_integrity_hash)&&hex64(row.official_fpl_authority_digest);
 }
 
-export async function readQualifiedTeamMappings(db,{season=API_FOOTBALL_FPL_SEASON,authority=null}={}){
+export async function readQualifiedTeamMappings(db,{season=API_FOOTBALL_FPL_SEASON,authority=null,cryptoImpl=globalThis.crypto}={}){
   if(!db?.prepare||season!==API_FOOTBALL_FPL_SEASON)return fail('qualified_mapping_unavailable');
-  const qualification=await db.prepare(
+  let qualification;try{qualification=await db.prepare(
     'SELECT q.* FROM api_football_team_mapping_heads h JOIN api_football_team_mapping_qualifications q ON q.qualification_id=h.qualification_id WHERE h.fpl_season=?'
-  ).bind(season).first();
+  ).bind(season).first();}catch{return fail('qualified_mapping_unavailable');}
   if(!qualifiedProvenanceValid(qualification))return fail(qualification?'qualified_mapping_provenance_invalid':'qualified_mapping_unavailable');
-  const result=await db.prepare(
+  let result;try{result=await db.prepare(
     "SELECT m.mapping_id,m.source_revision_id,m.provider_entity_type,m.provider_entity_id,m.canonical_entity_id,m.mapping_method,m.mapping_status,m.mapping_version,mem.receipt_integrity_hash,mem.provider_team_id,mem.canonical_fpl_team_id FROM api_football_team_mapping_members mem JOIN entity_mappings m ON m.mapping_id=mem.mapping_id WHERE mem.qualification_id=? ORDER BY mem.canonical_fpl_team_id"
-  ).bind(qualification.qualification_id).all();
+  ).bind(qualification.qualification_id).all();}catch{return fail('qualified_mapping_unavailable');}
   const rows=result?.results||[];
   if(rows.length!==20||new Set(rows.map(row=>row.provider_team_id)).size!==20||new Set(rows.map(row=>row.canonical_fpl_team_id)).size!==20)return fail('qualified_mapping_members_invalid');
   const mappings=[];
@@ -149,8 +149,23 @@ export async function readQualifiedTeamMappings(db,{season=API_FOOTBALL_FPL_SEAS
       method:row.mapping_method,provenance:'owner-qualified durable mapping '+qualification.qualification_id
     };
     const valid=validateProviderMapping(mapping,{entityType:'team',season});if(!valid.ok)return fail('qualified_mapping_members_invalid');
+    if(await mappingIdFor(mapping,cryptoImpl)!==row.mapping_id)return fail('qualified_mapping_members_invalid');
     mappings.push(deepFreeze(mapping));
   }
+  const persistenceBasis=canonicalise({
+    kind:API_FOOTBALL_MAPPING_PERSISTENCE_KIND,fplSeason:season,sourceRevisionId:qualification.source_revision_id,
+    approvalQualificationIntegrityHash:qualification.approval_qualification_integrity_hash,
+    currentQualificationIntegrityHash:qualification.current_qualification_integrity_hash,
+    crosswalkIntegrityHash:qualification.crosswalk_integrity_hash,
+    providerUniverseRevision:qualification.provider_universe_revision,
+    providerUniverseIntegrityHash:qualification.provider_universe_integrity_hash,
+    providerUniverseObservedAt:qualification.provider_universe_observed_at,
+    ownerReviewReference:qualification.owner_review_reference,ownerReviewedAt:qualification.owner_reviewed_at,
+    officialFplAuthorityDigest:qualification.official_fpl_authority_digest,
+    officialFplAuthorityFetchedAt:qualification.official_fpl_authority_fetched_at,
+    rows:rows.map(row=>({providerTeamId:String(row.provider_team_id),canonicalFplTeamId:row.canonical_fpl_team_id,mappingMethod:row.mapping_method,mappingVersion:Number(row.mapping_version),receiptIntegrityHash:row.receipt_integrity_hash}))
+  });
+  if(await sha256Hex(stableStringify(persistenceBasis),cryptoImpl)!==qualification.persistence_integrity_hash)return fail('qualified_mapping_integrity_mismatch');
   if(mappings.find(row=>row.canonicalFplId===season+':fpl:team:6')?.providerEntityId!=='49'||
     mappings.find(row=>row.canonicalFplId===season+':fpl:team:13')?.providerEntityId!=='63')return fail('qualified_mapping_members_invalid');
   if(authority){

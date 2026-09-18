@@ -48,7 +48,8 @@ export async function scheduled(controller,env){
   if(!configuration.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:configuration.reason,requestCount:0})));return configuration;}
   const scheduledMs=Number(controller?.scheduledTime);
   if(!Number.isFinite(scheduledMs)){const invalid=safe({ok:false,reason:'planner_timestamp_invalid'});console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:invalid.reason,requestCount:0})));return invalid;}
-  const plan=await planScheduledCollection(env.TEAMSHEET_DATA_DB,{now:new Date(scheduledMs).toISOString()});
+  let plan;try{plan=await planScheduledCollection(env.TEAMSHEET_DATA_DB,{now:new Date(scheduledMs).toISOString()});}
+  catch{plan=safe({ok:false,reason:'planner_storage_unavailable'});}
   if(!plan.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:plan.reason,requestCount:0})));return plan;}
   console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'PLANNED',requestCount:plan.requestCount,mappingCoverageCount:plan.mappingCoverageCount})));
   return safe({ok:false,reason:'provider_execution_not_approved',plannerReady:true,requestCount:plan.requestCount,blockedOperationCount:plan.blockedOperations.length,deferredOperationCount:plan.deferredOperations.length});
