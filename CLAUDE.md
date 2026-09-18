@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-OWNER-CROSSWALK-QUALIFICATION-2026-09-18 -->
+### Current external-intelligence checkpoint — owner-approved 20-club crosswalk closeout prepared
+
+The owner approved the exact 2026/27 API-Football ↔ Official FPL 20-club crosswalk after attended provider-universe run `35328500278`. Repository implementation deliberately does **not** publish the 18 newly approved provider-ID pairs. The exact crosswalk is bound by SHA-256 `d48c7980d1c39e7d4a6f82cb56d25a750286c925fd4996d0f8c728a4fb45c7f5` and may enter only through protected-environment secret `API_FOOTBALL_OWNER_CROSSWALK_JSON`. A new manual-only exact-`main` workflow reuses sanitized artifact `10540321648` from run `35328500278` (archive SHA-256 `4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97`), fetches the two existing Official FPL bootstrap/fixtures endpoints in memory, issues 18 owner-reviewed receipts plus the two legacy Chelsea/Leeds receipts, and runs the existing exact-20 bijection contract. It makes zero API-Football requests and never receives `API_FOOTBALL_API_KEY`; raw provider/Official-FPL bodies, the crosswalk and mapping receipts are not persisted. Mapping remains NO-GO 2/20 until this repository change is merged and the attended closeout workflow succeeds against current content-bound Official FPL authority. Collector, migration 0005, Cron, D1 persistence and all model/UI paths remain inactive.
+
 <!-- API-FOOTBALL-TEAM-UNIVERSE-ATTENDED-WORKFLOW-2026-09-18 -->
 ### Current external-intelligence checkpoint — dedicated team-universe attended workflow prepared
 
