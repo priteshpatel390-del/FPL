@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-MAPPING-QUALIFICATION-MERGED-2026-09-18 -->
+### Current external-intelligence checkpoint — 20-club mapping qualification contract merged
+
+PR #254 merged to `main` as `83c7d5ce86077502ca691f7ff4e1941568dc083d`. Post-merge Verify Teamsheet run `35321967633` passed 2,162/2,162 tests, byte-identical production rebuilds and exact manifest identity. The qualified API-Football response ceiling remains 720,896 bytes. The repository now contains a dormant qualification-only `/teams?league=39&season=2026` evidence path plus explicit owner-reviewed mapping receipts; `teams` is not in the collector allowlist. Current admitted team mapping remains NO-GO 2/20 (Chelsea 49→Official FPL 6; Leeds 63→13). No API-Football provider request or credential access occurred in PR #254; migration 0005 remains unapplied live, collection/Cron remain disabled, and no model/UI path is active. The next separate owner gate is an attended provider-universe observation and explicit review/admission of remaining mappings. See [20-club mapping qualification](docs/API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 <!-- EIA-2I5E-R7A-R1-2026-09-17 -->
 ### Current external-intelligence checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
 
