@@ -1,3 +1,7 @@
+## Current API-Football checkpoint — 20-club mapping qualification contract
+
+EIA-2I5F is merged and the qualified response ceiling is implemented. The next substantive pre-live blocker is still complete 20-club API-Football ↔ Official FPL mapping; no new EIA identifier has been assigned. This repository candidate prepares a closed qualification-only provider-universe harness plus owner-reviewed mapping receipts. Current mapping remains 2/20 and no provider request is made here. After repository verification and owner merge approval, the next separate gate is an attended `/teams?league=39&season=2026` observation (normally one request, hard maximum two attempts), followed by explicit review/admission of the remaining mappings. Infrastructure activation remains later. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 ## Current checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
 
 Draft PR #252 remains the dormant qualification workflow. R7A-R1 hardens it in place. Next owner actions are: independently configure and verify a main-protection ruleset targeting `refs/heads/main`; review/merge is still not GO; a later manual dispatch still requires environment approval. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
