@@ -1,3 +1,7 @@
+## API-Football attended team-universe execution limitations
+
+The dedicated team-universe workflow is repository preparation, not proof that a live attended run is currently safe to dispatch. At the time this remediation was prepared, GitHub reported `main` as unprotected and the only active repository ruleset targeted `cloudflare-data-production`; therefore provider egress remains blocked until active `refs/heads/main` protection is independently observed. The connected repository tooling also cannot read the protected-environment configuration endpoint, so required-reviewer/bypass/branch-restriction state must be independently re-verified before dispatch. No provider-universe evidence has yet been obtained and mapping remains 2/20.
+
 ## Current API-Football mapping limitation
 
 PR #254 merged the qualification-only provider-universe evidence path and owner-reviewed receipt contract, but it did not execute a provider request. Only Chelsea API-Football 49 → Official FPL 6 and Leeds 63 → Official FPL 13 are admitted; 18 clubs remain unproven, so mapping remains NO-GO 2/20. The qualified response ceiling is 720,896 bytes, but response-size qualification does not establish team identity. Provider names, aliases and abbreviations still have no admission authority. Collector/infrastructure/model/UI activation remains unapproved. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
