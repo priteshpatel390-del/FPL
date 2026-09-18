@@ -142,3 +142,32 @@ test('preflight source contains no provider request or live mutation surface',()
   assert.match(source,/productionMutations:0/);
   assert.match(source,/apiFootballRequests:0/);
 });
+
+
+test('unexpected deployed collector or secret is a storage hard stop',()=>{
+  const report=evaluate({
+    ledger:[{version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'}],
+    objects:[table('provider_fixture_identities'),table('provider_participation_revisions')],
+    collector:{
+      exists:true,deploymentCount:1,crons:[],d1BindingPresent:true,d1BindingMatchesProduction:true,
+      activation:'REPOSITORY_ONLY_BLOCKED',apiFootballSecretBindingPresent:true
+    }
+  });
+  assert.equal(report.nextAction,'STOP_REVIEW_REQUIRED');
+  assert.ok(report.hardStops.includes('collector_worker_present'));
+  assert.ok(report.hardStops.includes('collector_secret_present'));
+});
+
+test('workflow is manual-only, exact-main gated and uses only the existing read-only Cloudflare environment',()=>{
+  const workflow=fs.readFileSync(path.join(root,'.github/workflows/api-football-live-storage-preflight.yml'),'utf8');
+  assert.match(workflow,/workflow_dispatch:/);
+  assert.match(workflow,/github\.run_attempt == 1/);
+  assert.match(workflow,/refs\/heads\/main/);
+  assert.match(workflow,/name: data-steward-readonly/);
+  assert.match(workflow,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+  assert.doesNotMatch(workflow,/secrets\.API_FOOTBALL_API_KEY/);
+  assert.doesNotMatch(workflow,/wrangler\s+(?:deploy|secret)|schedule:|push:|pull_request:/i);
+  assert.match(workflow,/actions\/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09/);
+  assert.match(workflow,/actions\/setup-node@a0853c24544627f65ddf259abe73b1d18a591444/);
+  assert.match(workflow,/actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f/);
+});
