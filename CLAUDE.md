@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-TEAM-UNIVERSE-WORKFLOW-CANDIDATE-2026-09-18 -->
+### Current external-intelligence checkpoint — attended team-universe workflow remediation candidate
+
+Owner-approved repository-only remediation follows the pre-execution stop on 18 September 2026. The audit proved that the historical EIA-2I5E R7 workflow still executes the old 11-request response-size runner and that current GitHub rulesets do not protect `refs/heads/main`; therefore no provider egress occurred. This candidate adds a separate manual-only current-`main` workflow for only `runAttendedApiFootballTeamUniverseQualification()`: protected environment `eia-api-football-qualification`, one secret-bearing step, immutable action SHAs, UI-rerun rejection, remote-`main` reconfirmation after environment admission and immediately before egress, independent two-fetch ceiling, focused pre-secret tests, sanitized evidence artifact/summary, and no mapping admission or collector/D1/Cron/model/UI activation. It makes 0 provider requests and accesses 0 secrets during implementation. An independently verified active protection ruleset for `refs/heads/main` plus current protected-environment settings remain mandatory pre-dispatch owner gates. No new EIA checkpoint identifier is introduced. See [20-club mapping qualification](docs/API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
+
 <!-- API-FOOTBALL-MAPPING-QUALIFICATION-MERGED-2026-09-18 -->
 ### Current external-intelligence checkpoint — 20-club mapping qualification contract merged
 
