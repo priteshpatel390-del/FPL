@@ -1,0 +1,144 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+import {fileURLToPath} from 'node:url';
+import {
+  BASE_QUERIES,OPTIONAL_QUERIES,assertReadOnlySql,evaluateStoragePreflight,
+  optionalQueryKeysForObjects,summarizeCollectorSettings
+} from '../workers/api-football-collector/live-storage-preflight.mjs';
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const officialRun=[{run_id:'gha-'+('a'.repeat(40)),completed_at:'2026-09-18T12:00:00.000Z',status:'completed'}];
+const officialTeams=Array.from({length:20},(_,index)=>({
+  subject_entity_id:'2026-27:fpl:team:'+(index+1),
+  observation_id:String(index+1).padStart(64,'0'),
+  input_revision:'rev-'+(index+1),
+  logical_key:'official-fpl|2026-27|team|'+String(index+1).padStart(2,'0')
+}));
+const baseRows={officialRun,officialTeams,mappingRows:[{count:0}]};
+const collectorAbsent={exists:false,deploymentCount:0,crons:[],d1BindingPresent:false,d1BindingMatchesProduction:false,activation:null,apiFootballSecretBindingPresent:false};
+
+function evaluate({ledger,objects=[],optionalRows={},collector=collectorAbsent}){
+  return evaluateStoragePreflight({
+    ledger,objects,foreignKeys:[],baseRows,optionalRows,databaseIdentityMatch:true,
+    dataPlatformBindingMatch:true,collector,nowIso:'2026-09-19T00:00:00.000Z'
+  });
+}
+function table(name){return {type:'table',name,tbl_name:name};}
+
+test('live storage preflight SQL registry is read-only and rejects mutation/comment escape hatches',()=>{
+  for(const sql of [...Object.values(BASE_QUERIES),...Object.values(OPTIONAL_QUERIES)])assert.equal(assertReadOnlySql(sql),sql);
+  for(const sql of [
+    'UPDATE schema_migrations SET name=name',
+    'DELETE FROM schema_migrations',
+    'SELECT 1; DELETE FROM schema_migrations',
+    'SELECT 1 -- hidden',
+    'SELECT 1 /* hidden */',
+    'CREATE TABLE x(y)'
+  ])assert.throws(()=>assertReadOnlySql(sql),/preflight_sql_invalid/);
+});
+
+test('optional D1 queries require every referenced table before execution',()=>{
+  const onlyHeads=[table('api_football_team_mapping_heads')];
+  assert.deepEqual(optionalQueryKeysForObjects(onlyHeads),[]);
+  const completeHead=[...onlyHeads,table('api_football_team_mapping_qualifications')];
+  assert.deepEqual(optionalQueryKeysForObjects(completeHead),['qualifications','mappingHeads']);
+  const completeMembers=[...completeHead,table('api_football_team_mapping_members')];
+  assert.deepEqual(optionalQueryKeysForObjects(completeMembers),['qualifications','mappingHeads','mappingMembers']);
+});
+
+test('collector settings reveal only secret binding presence, never secret value',()=>{
+  const summary=summarizeCollectorSettings({bindings:[
+    {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:'01e2b4f9-313a-4a14-8ce6-86c5aecc50d7'},
+    {name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'},
+    {name:'API_FOOTBALL_API_KEY',type:'secret_text',text:'must-never-leak'}
+  ]});
+  assert.equal(summary.d1BindingMatchesProduction,true);
+  assert.equal(summary.activation,'REPOSITORY_ONLY_BLOCKED');
+  assert.equal(summary.apiFootballSecretBindingPresent,true);
+  assert.doesNotMatch(JSON.stringify(summary),/must-never-leak/);
+});
+
+test('production ledger stopping at 0003 is a hard stop before the approved 0005 sequence',()=>{
+  const report=evaluate({ledger:[
+    {version:1,name:'shadow_data_foundation',appliedAt:'2026-08-22T00:00:00.000Z'},
+    {version:2,name:'official_fpl_structured_history',appliedAt:'2026-08-23T00:00:00.000Z'},
+    {version:3,name:'production_query_plan_indexes',appliedAt:'2026-09-01T00:00:00.000Z'}
+  ]});
+  assert.equal(report.nextAction,'STOP_0004_NOT_APPLIED');
+  assert.equal(report.migrations.migration0004.applied,false);
+  assert.deepEqual(report.hardStops,[]);
+});
+
+test('exact migration 0004 plus its required identity tables admits only the 0005 storage gate',()=>{
+  const report=evaluate({
+    ledger:[{version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'}],
+    objects:[table('provider_fixture_identities'),table('provider_participation_revisions')]
+  });
+  assert.equal(report.nextAction,'READY_FOR_MIGRATION_0005');
+  assert.equal(report.migrations.schema0004Present,true);
+  assert.deepEqual(report.hardStops,[]);
+});
+
+test('0005 remains disabled and can advance only to 0006 when its schema is complete',()=>{
+  const report=evaluate({
+    ledger:[
+      {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},
+      {version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}
+    ],
+    objects:[
+      table('provider_fixture_identities'),table('provider_participation_revisions'),
+      table('api_football_runtime_state'),table('api_football_request_attempts'),
+      table('api_football_discovery_generations'),table('api_football_discovery_heads'),
+      table('api_football_fixture_revisions'),table('api_football_generation_fixtures')
+    ],
+    optionalRows:{runtime:[{
+      provider:'api-football',collection_enabled:0,disable_reason:'EIA_2I5D_REPOSITORY_ONLY',
+      credential_state:'UNPROVISIONED',quota_state:'UNOBSERVED',daily_attempt_count:0,
+      updated_at:'2026-09-16T00:00:00.000Z'
+    }]}
+  });
+  assert.equal(report.nextAction,'READY_FOR_MIGRATION_0006');
+  assert.equal(report.apiFootballState.runtimeState.collectionEnabled,0);
+  assert.equal(report.apiFootballState.runtimeState.disableReason,'EIA_2I5D_REPOSITORY_ONLY');
+  assert.deepEqual(report.hardStops,[]);
+});
+
+test('out-of-order or active runtime state fails closed',()=>{
+  const outOfOrder=evaluate({
+    ledger:[{version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}]
+  });
+  assert.equal(outOfOrder.nextAction,'STOP_REVIEW_REQUIRED');
+  assert.ok(outOfOrder.hardStops.includes('migration_0005_without_0004'));
+
+  const active=evaluate({
+    ledger:[
+      {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},
+      {version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}
+    ],
+    objects:[
+      table('provider_fixture_identities'),table('provider_participation_revisions'),
+      table('api_football_runtime_state'),table('api_football_request_attempts'),
+      table('api_football_discovery_generations'),table('api_football_discovery_heads'),
+      table('api_football_fixture_revisions'),table('api_football_generation_fixtures')
+    ],
+    optionalRows:{runtime:[{
+      provider:'api-football',collection_enabled:1,disable_reason:'unexpected',
+      credential_state:'AVAILABLE',quota_state:'KNOWN',daily_attempt_count:1,
+      updated_at:'2026-09-19T00:00:00.000Z'
+    }]}
+  });
+  assert.equal(active.nextAction,'STOP_REVIEW_REQUIRED');
+  assert.ok(active.hardStops.includes('collection_not_disabled'));
+  assert.ok(active.hardStops.includes('runtime_disable_reason_unexpected'));
+});
+
+test('preflight source contains no provider request or live mutation surface',()=>{
+  const source=fs.readFileSync(path.join(root,'workers/api-football-collector/live-storage-preflight.mjs'),'utf8');
+  assert.doesNotMatch(source,/v3\.football\.api-sports\.io|x-apisports-key/);
+  assert.doesNotMatch(source,/wrangler\s+(deploy|secret)|\/secrets(?:\/|['"])/i);
+  assert.doesNotMatch(source,/method\s*:\s*['"](?:PUT|PATCH|DELETE)['"]/i);
+  assert.match(source,/productionMutations:0/);
+  assert.match(source,/apiFootballRequests:0/);
+});
