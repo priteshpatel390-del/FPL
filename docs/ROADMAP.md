@@ -1,3 +1,13 @@
+## API-Football 20-club mapping closeout — current next steps
+
+1. Merge and exact-main verify the owner-crosswalk repository candidate.
+2. Owner adds protected-environment secret `API_FOOTBALL_OWNER_CROSSWALK_JSON` containing the already approved exact crosswalk; its content must hash to `d48c7980d1c39e7d4a6f82cb56d25a750286c925fd4996d0f8c728a4fb45c7f5`.
+3. Before sanitized provider artifact `10540321648` expires on 25 September 2026, manually dispatch `API-Football Owner Mapping Qualification` from exact current `main` and approve the protected environment.
+4. Require two current Official FPL reads, 18 new receipt validations, two legacy receipt validations, exact 20/20 bijection, zero unresolved/receipt failures and final `GO`.
+5. Only after that live closeout may mapping qualification be called 20/20 GO. Durable mapping persistence, collector activation, migration 0005, Cron and any model/UI influence remain separate owner gates.
+
+Until step 4 succeeds, admitted mapping status remains NO-GO 2/20.
+
 ## Current API-Football next gate — attended provider-universe observation
 
 The repository remediation sequence is: merge and exact-`main` verify the dedicated team-universe workflow; independently configure/verify active protection for `refs/heads/main` and re-verify the protected environment; then, under the existing owner execution approval, dispatch the manual qualification once. Normal provider cost is one request, hard maximum two attempts under transient-only retry rules. A successful observation produces provider-universe evidence only. Explicit owner-reviewed admission of the remaining 18 provider-to-Official-FPL mappings is a separate gate. Collector/runtime activation remains later and separate.
