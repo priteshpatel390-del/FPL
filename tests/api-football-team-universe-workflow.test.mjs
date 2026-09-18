@@ -100,3 +100,18 @@ test('external actions are SHA-pinned and repository token remains read-only', (
   assert.equal([...live.matchAll(/contents: read/g)].length, 3);
   assert.doesNotMatch(live, /contents: write|actions: write|deployments: write|id-token: write/);
 });
+
+
+test('independent boundedFetch rejects a third network call before fetch', async () => {
+  const driver = step('      - name: Invoke team-universe qualification runner once');
+  const wrapper = driver.match(/let actualEgressAttempts = 0;\nconst boundedFetch = async \(\.\.\.args\) => \{[\s\S]*?return globalThis\.fetch\(\.\.\.args\);\n\};/);
+  assert.ok(wrapper, 'boundedFetch wrapper');
+  assert.doesNotMatch(wrapper[0], /url|headers|apiKey|console\.|retry|wget|curl/);
+  let calls = 0;
+  const factory = new Function('fetchImpl', 'const MAX_PROVIDER_ATTEMPTS=2; const globalThis={fetch:fetchImpl}; ' + wrapper[0] + '; return boundedFetch;');
+  const boundedFetch = factory(async () => { calls += 1; return {ok:true}; });
+  await boundedFetch('one');
+  await boundedFetch('two');
+  await assert.rejects(() => boundedFetch('three'), /qualification_execution_attempt_ceiling_reached/);
+  assert.equal(calls, 2);
+});
