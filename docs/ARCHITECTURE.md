@@ -1,3 +1,7 @@
+## Qualification-only API-Football team-universe execution path
+
+The 2026 Premier League provider-team universe has a dedicated attended GitHub Actions execution path that is architecturally separate from the API-Football collector. The workflow is manual-only, input-free, read-only at repository level, exact-current-`main` bound, protected-environment gated and limited by an independent two-egress wrapper around the already-merged qualification library. Its only provider operation is the library-owned `GET /teams?league=39&season=2026` request. Output is normalized integrity-bound evidence stored as a short-retention Actions artifact and allowlisted summary. It has no route to D1 migration/application, collection enablement, Cron, mapping admission, browser/model state or recommendation logic.
+
 ## API-Football 20-club mapping qualification boundary
 
 A qualification-only path in `api-football-prelive-qualification.mjs` can later issue exactly one fixed Premier League team-universe request (`/teams?league=39&season=2026`) under a separate attended owner gate. It is not part of the collector endpoint allowlist or Worker runtime. Provider-universe evidence is content-bound and raw-body-free; mapping receipts require explicit owner verification and current Official FPL authority. Names remain non-authoritative. Chelsea 49→6 and Leeds 63→13 are conflict anchors. No production/browser/model import is introduced. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).

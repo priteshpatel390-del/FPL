@@ -1,0 +1,278 @@
+# Dormant, manual-only attended qualification for the API-Football 2026 Premier League team universe.
+#
+# This workflow is repository preparation only until merged. After merge it may run only from the
+# exact current main revision, under the existing protected environment `eia-api-football-qualification`.
+# It invokes only runAttendedApiFootballTeamUniverseQualification(), which owns the closed
+# GET /teams?league=39&season=2026 contract. It does not activate the collector or admit mappings.
+#
+# Owner pre-dispatch requirements remain external to this file: an independently verified active
+# protection ruleset for refs/heads/main and the reviewed protected-environment settings/secret.
+# GitHub UI reruns are structurally blocked; a new provider attempt requires a fresh workflow_dispatch
+# and protected-environment approval.
+
+name: API-Football Premier League Team Universe Qualification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-football-team-universe-qualification
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Validate dispatch identity before checkout
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatch revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove dispatch revision is current main and tree is clean
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+  qualify:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment:
+      name: eia-api-football-qualification
+    steps:
+      - name: Refuse UI reruns and confirm dispatch identity
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatch revision for qualification
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reconfirm exact current main after environment admission
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+
+      - name: Run focused team-universe contract tests before secret introduction
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test tests/api-football-team-mapping-qualification.test.mjs tests/api-football-team-universe-workflow.test.mjs
+          node --input-type=module -e "import {API_FOOTBALL_TEAM_MAPPING_MAX_ATTEMPTS,API_FOOTBALL_TEAM_MAPPING_MAX_RESPONSE_BYTES,buildApiFootballPlTeamUniverseQualificationRequest} from './src/decision-intelligence/api-football-prelive-qualification.mjs'; const r=buildApiFootballPlTeamUniverseQualificationRequest(); if (!r.ok || r.url !== 'https://v3.football.api-sports.io/teams?league=39&season=2026' || API_FOOTBALL_TEAM_MAPPING_MAX_ATTEMPTS !== 2 || API_FOOTBALL_TEAM_MAPPING_MAX_RESPONSE_BYTES !== 720896) process.exit(1);"
+
+      - name: Reconfirm current main immediately before credential-bearing execution
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Invoke team-universe qualification runner once
+        env:
+          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF_NODE'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {
+            runAttendedApiFootballTeamUniverseQualification,
+            validateApiFootballTeamUniverseEvidence
+          } from './src/decision-intelligence/api-football-prelive-qualification.mjs';
+
+          const MAX_PROVIDER_ATTEMPTS = 2;
+          const RESULT_NAME = 'api-football-team-universe-qualification-result.json';
+          const fail = reason => {
+            console.error(reason);
+            process.exit(1);
+          };
+
+          const apiKey = process.env.API_FOOTBALL_API_KEY;
+          if (typeof apiKey !== 'string' || apiKey.length === 0) fail('qualification_credential_missing');
+          const runnerTemp = process.env.RUNNER_TEMP;
+          if (typeof runnerTemp !== 'string' || runnerTemp.length === 0) fail('qualification_runner_temp_missing');
+          const repository = process.env.GITHUB_REPOSITORY;
+          const runId = process.env.GITHUB_RUN_ID;
+          const runAttempt = process.env.GITHUB_RUN_ATTEMPT;
+          const sha = process.env.GITHUB_SHA;
+          if (repository !== 'priteshpatel390-del/FPL' || !/^\d+$/.test(runId || '') || runAttempt !== '1' || !/^[0-9a-f]{40}$/.test(sha || '')) {
+            fail('qualification_execution_identity_invalid');
+          }
+          const executionIdentity = `github:${repository}:run:${runId}:attempt:${runAttempt}:sha:${sha}`;
+
+          let actualEgressAttempts = 0;
+          const boundedFetch = async (...args) => {
+            if (actualEgressAttempts >= MAX_PROVIDER_ATTEMPTS) {
+              throw new Error('qualification_execution_attempt_ceiling_reached');
+            }
+            actualEgressAttempts += 1;
+            return globalThis.fetch(...args);
+          };
+          const sleepImpl = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+          let invocations = 0;
+          let result;
+          try {
+            invocations += 1;
+            result = await runAttendedApiFootballTeamUniverseQualification({
+              apiKey,
+              fetchImpl: boundedFetch,
+              sleepImpl,
+              executionIdentity
+            });
+          } catch {
+            fail('qualification_runner_unexpected_exception');
+          }
+          if (invocations !== 1) fail('qualification_runner_invocation_invalid');
+          if (!result || typeof result !== 'object') fail('qualification_result_invalid');
+          const attemptsUsed = Number.isInteger(result.attemptsUsed) ? result.attemptsUsed : 0;
+          if (actualEgressAttempts !== attemptsUsed || actualEgressAttempts > MAX_PROVIDER_ATTEMPTS) {
+            fail('qualification_attempt_count_contradiction');
+          }
+          if (result.rawBodyRetained !== false) fail('qualification_raw_body_retained');
+          if (result.ok === true) {
+            if (result.decision !== 'EVIDENCE_CAPTURED') fail('qualification_success_state_invalid');
+            const validation = await validateApiFootballTeamUniverseEvidence(result.providerUniverse);
+            if (!validation.ok) fail('qualification_evidence_integrity_invalid');
+            if (!Array.isArray(result.providerUniverse?.teams) || result.providerUniverse.teams.length !== 20) {
+              fail('qualification_team_universe_invalid');
+            }
+          }
+
+          const serialized = JSON.stringify(result);
+          if (serialized.includes(apiKey) || /x-apisports-key/i.test(serialized)) fail('qualification_result_contains_secret');
+          writeFileSync(join(runnerTemp, RESULT_NAME), serialized);
+          console.error('qualification_result_written');
+          EOF_NODE
+
+      - name: Write allowlisted qualification summary
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF_NODE'
+          import {readFileSync, appendFileSync} from 'node:fs';
+          import {join} from 'node:path';
+
+          const result = JSON.parse(readFileSync(join(process.env.RUNNER_TEMP, 'api-football-team-universe-qualification-result.json'), 'utf8'));
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          if (typeof summaryPath !== 'string' || summaryPath.length === 0) process.exit(1);
+          const cell = value => String(value ?? 'n/a').replace(/[|\r\n]/g, ' ').slice(0, 180);
+          const universe = result.providerUniverse && typeof result.providerUniverse === 'object' ? result.providerUniverse : null;
+          const lines = [
+            '### API-Football Premier League team-universe qualification',
+            '',
+            `- Result: ${result.ok === true ? 'EVIDENCE_CAPTURED' : 'NO-GO'}`,
+            `- Stop reason: ${cell(result.reason)}`,
+            `- Attempts used: ${cell(result.attemptsUsed)}`,
+            `- Retries: ${cell(result.retries ?? Math.max(0, Number(result.attemptsUsed || 0) - 1))}`,
+            `- Response bytes: ${cell(result.actualBytes)}`,
+            '- Request contract: `GET /teams?league=39&season=2026`',
+            '- Response ceiling: 720896 bytes',
+            `- Raw body retained: ${result.rawBodyRetained === false ? 'false' : 'INVALID'}`,
+            `- Evidence revision: ${cell(universe?.revision)}`,
+            `- Integrity hash: ${cell(universe?.integrityHash)}`,
+            `- Observed at: ${cell(universe?.observedAt)}`,
+            `- Execution identity: ${cell(universe?.executionIdentity)}`
+          ];
+          if (Array.isArray(universe?.teams)) {
+            lines.push('', '| Provider team ID | Review name | Code |', '|---:|---|---|');
+            for (const team of universe.teams) {
+              lines.push(`| ${cell(team.providerTeamId)} | ${cell(team.name)} | ${cell(team.code)} |`);
+            }
+          }
+          lines.push('', 'Provider names/codes are review assistance only. This workflow does not admit provider→Official-FPL mappings.');
+          lines.push('Collector, migration 0005, Cron, D1 persistence and all model/UI paths remain inactive.');
+          appendFileSync(summaryPath, `${lines.join('\n')}\n`);
+          EOF_NODE
+
+      - name: Upload sanitized team-universe evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-team-universe-qualification-result
+          path: ${{ runner.temp }}/api-football-team-universe-qualification-result.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Enforce qualification outcome after evidence preservation
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF_NODE'
+          import {readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const result = JSON.parse(readFileSync(join(process.env.RUNNER_TEMP, 'api-football-team-universe-qualification-result.json'), 'utf8'));
+          if (result.ok !== true || result.decision !== 'EVIDENCE_CAPTURED') {
+            console.error('qualification_no_go');
+            process.exit(1);
+          }
+          console.error('qualification_evidence_captured');
+          EOF_NODE

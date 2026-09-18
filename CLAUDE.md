@@ -1,3 +1,8 @@
+<!-- API-FOOTBALL-TEAM-UNIVERSE-ATTENDED-WORKFLOW-2026-09-18 -->
+### Current external-intelligence checkpoint — dedicated team-universe attended workflow prepared
+
+Owner-approved remediation adds a separate dormant manual-only GitHub Actions path for the already-merged qualification-only `GET /teams?league=39&season=2026` contract. It executes exact current `main`, rechecks remote `main` before credential-bearing egress, reuses protected environment `eia-api-football-qualification`, exposes `API_FOOTBALL_API_KEY` to one step only, invokes only `runAttendedApiFootballTeamUniverseQualification()`, and independently refuses a third HTTP egress. Normal success remains one request; the hard maximum remains two attempts under the existing transient-only retry contract. Sanitized integrity-bound evidence is retained outside the repository tree; provider names/codes remain review assistance only and cannot admit mappings. This repository change makes zero provider requests and does not access the credential. Before any later dispatch, an active protection ruleset for `refs/heads/main` and the protected-environment settings must be independently verified. Current mapping remains NO-GO 2/20; collector, migration 0005, Cron, live D1 and every model/UI path remain inactive. No new EIA checkpoint identifier is introduced.
+
 <!-- API-FOOTBALL-MAPPING-QUALIFICATION-MERGED-2026-09-18 -->
 ### Current external-intelligence checkpoint — 20-club mapping qualification contract merged
 
