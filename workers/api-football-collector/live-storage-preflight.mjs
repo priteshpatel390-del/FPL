@@ -265,9 +265,12 @@ export function evaluateStoragePreflight({ledger,objects,foreignKeys,baseRows,op
     if(memberCounts&&(memberCounts.total!==20||memberCounts.unique_provider!==20||memberCounts.unique_fpl!==20))hardStops.push('mapping_head_member_count_invalid');
   }
   if(collector?.exists){
-    if(collector.d1BindingPresent&&!collector.d1BindingMatchesProduction)hardStops.push('collector_d1_binding_mismatch');
+    hardStops.push('collector_worker_present');
+    if(!collector.d1BindingPresent)hardStops.push('collector_d1_binding_missing');
+    else if(!collector.d1BindingMatchesProduction)hardStops.push('collector_d1_binding_mismatch');
     if(collector.activation!==EXPECTED_ACTIVATION)hardStops.push('collector_activation_unexpected');
     if((collector.crons||[]).length!==0)hardStops.push('collector_cron_present');
+    if(collector.apiFootballSecretBindingPresent)hardStops.push('collector_secret_present');
   }
   let nextAction='STOP_REVIEW_REQUIRED';
   if(hardStops.length===0){
