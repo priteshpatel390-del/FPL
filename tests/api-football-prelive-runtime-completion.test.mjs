@@ -98,7 +98,8 @@ test('daily discovery planning is deterministic and exactly five requests',()=>{
 });
 
 test('planner refuses stale authority and mismatched mapping authority',()=>{
-  const stale=buildScheduledCollectionPlan({now:'2026-09-21T13:00:00Z',authority:runtimeAuthority(),mappingAuthority:runtimeMappings()});
+  const staleAuthority=runtimeAuthority();staleAuthority.fetchedAt='2026-09-18T10:00:00.000Z';
+  const stale=buildScheduledCollectionPlan({now:'2026-09-21T13:00:00Z',authority:staleAuthority,mappingAuthority:runtimeMappings()});
   assert.equal(stale.reason,'official_fpl_authority_stale');
   const fresh=runtimeAuthority();fresh.fetchedAt='2026-09-21T12:00:00Z';
   const broken=runtimeMappings();broken.mappings=broken.mappings.slice(1);
