@@ -3,6 +3,7 @@ import {writeFileSync,appendFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {stableStringify} from '../../src/decision-intelligence/canonical.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
+import {API_FOOTBALL_AUTHORITY_MAX_AGE_MS,API_FOOTBALL_FPL_SEASON} from './runtime-contracts.mjs';
 
 export const API_FOOTBALL_LIVE_STORAGE_PREFLIGHT_VERSION='api-football-live-storage-preflight-v1';
 export const CLOUDFLARE_API_BASE='https://api.cloudflare.com/client/v4';
@@ -12,7 +13,7 @@ export const EXPECTED_COLLECTOR_WORKER='teamsheet-api-football-shadow-collector'
 export const EXPECTED_COLLECTOR_BINDING='TEAMSHEET_DATA_DB';
 export const EXPECTED_ACTIVATION='REPOSITORY_ONLY_BLOCKED';
 export const EXPECTED_RUNTIME_DISABLE_REASON='EIA_2I5D_REPOSITORY_ONLY';
-export const EXPECTED_FPL_SEASON='2026-27';
+export const EXPECTED_FPL_SEASON=API_FOOTBALL_FPL_SEASON;
 export const EXPECTED_SOURCE_REVISION='api-football:eia-2i5a:1';
 export const EXPECTED_OFFICIAL_SOURCE_REVISION='official-fpl-r1';
 export const EXPECTED_MIGRATIONS=Object.freeze({
@@ -216,7 +217,7 @@ function officialAuthority(rowsRun,rowsTeams,nowIso){
     fetchedAt:completedAt,teamIds,
     content:rows.map(row=>({logical_key:row.logical_key,observation_id:row.observation_id,input_revision:row.input_revision}))
   })):null;
-  const fresh=validRows&&(Date.parse(nowIso)-Date.parse(completedAt)<=48*60*60*1000)&&(Date.parse(nowIso)>=Date.parse(completedAt));
+  const fresh=validRows&&(Date.parse(nowIso)-Date.parse(completedAt)<=API_FOOTBALL_AUTHORITY_MAX_AGE_MS)&&(Date.parse(nowIso)>=Date.parse(completedAt));
   return Object.freeze({
     present:true,valid:validRows,fresh,completedAt,teamCount:teamIds.length,digest:authorityDigest
   });
