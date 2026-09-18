@@ -64,7 +64,11 @@ export const OPTIONAL_QUERIES=Object.freeze({
   generationFixtures:"SELECT COUNT(*) AS count FROM api_football_generation_fixtures",
   qualifications:"SELECT COUNT(*) AS total,SUM(CASE WHEN state='STAGING' THEN 1 ELSE 0 END) AS staging,SUM(CASE WHEN state='COMMITTED' THEN 1 ELSE 0 END) AS committed FROM api_football_team_mapping_qualifications",
   mappingHeads:"SELECT h.fpl_season,h.qualification_id,q.state,q.mapping_count,q.crosswalk_integrity_hash,q.approval_qualification_integrity_hash,q.current_qualification_integrity_hash,q.persistence_integrity_hash,q.provider_universe_revision,q.provider_universe_integrity_hash,q.official_fpl_authority_digest,q.official_fpl_authority_fetched_at FROM api_football_team_mapping_heads h JOIN api_football_team_mapping_qualifications q ON q.qualification_id=h.qualification_id WHERE h.fpl_season='2026-27'",
-  mappingMembers:"SELECT COUNT(*) AS total,COUNT(DISTINCT provider_team_id) AS unique_provider,COUNT(DISTINCT canonical_fpl_team_id) AS unique_fpl FROM api_football_team_mapping_members WHERE qualification_id=(SELECT qualification_id FROM api_football_team_mapping_heads WHERE fpl_season='2026-27')"
+  mappingMembers:"SELECT COUNT(*) AS total,COUNT(DISTINCT provider_team_id) AS unique_provider,COUNT(DISTINCT canonical_fpl_team_id) AS unique_fpl FROM api_football_team_mapping_members WHERE qualification_id=(SELECT qualification_id FROM api_football_team_mapping_heads WHERE fpl_season='2026-27')",
+  runtimeColumns:"PRAGMA table_info(api_football_runtime_state)",
+  qualificationColumns:"PRAGMA table_info(api_football_team_mapping_qualifications)",
+  memberColumns:"PRAGMA table_info(api_football_team_mapping_members)",
+  headColumns:"PRAGMA table_info(api_football_team_mapping_heads)"
 });
 
 for(const sql of [...Object.values(BASE_QUERIES),...Object.values(OPTIONAL_QUERIES)])assertReadOnlySql(sql);
@@ -78,7 +82,11 @@ const OPTIONAL_QUERY_REQUIREMENTS=Object.freeze({
   generationFixtures:['api_football_generation_fixtures'],
   qualifications:['api_football_team_mapping_qualifications'],
   mappingHeads:['api_football_team_mapping_heads','api_football_team_mapping_qualifications'],
-  mappingMembers:['api_football_team_mapping_members','api_football_team_mapping_heads']
+  mappingMembers:['api_football_team_mapping_members','api_football_team_mapping_heads'],
+  runtimeColumns:['api_football_runtime_state'],
+  qualificationColumns:['api_football_team_mapping_qualifications'],
+  memberColumns:['api_football_team_mapping_members'],
+  headColumns:['api_football_team_mapping_heads']
 });
 
 export function optionalQueryKeysForObjects(objects=[]){
@@ -264,16 +272,35 @@ export function evaluateStoragePreflight({ledger,objects,foreignKeys,baseRows,op
     'api_football_generation_fixture_consistency','api_football_participation_run_insert',
     'api_football_participation_run_update'
   ]);
-  const schema5Columns=!m5.applied?false:hasColumns(baseRows.participationColumns,['ingestion_run_id']);
+  const schema5Columns=!m5.applied?false:
+    hasColumns(baseRows.participationColumns,['ingestion_run_id'])&&
+    hasColumns(optionalRows.runtimeColumns,[
+      'provider','collection_enabled','disable_reason','credential_state','quota_state','daily_attempt_count',
+      'in_flight_attempt_id','in_flight_lease_expires_at','earliest_next_request_at','updated_at'
+    ]);
   if(m5.applied&&!schema5Columns)hardStops.push('migration_0005_schema_incomplete');
   const schema5=schema5Objects&&schema5Columns;
-  const schema6=requireObjects(6,[
+  const schema6Objects=requireObjects(6,[
     'api_football_team_mapping_qualifications','api_football_team_mapping_members','api_football_team_mapping_heads',
     'api_football_mapping_member_insert','api_football_mapping_qualification_commit',
     'api_football_mapping_qualification_immutable','api_football_mapping_member_update_immutable',
     'api_football_mapping_member_delete_immutable','api_football_mapping_head_insert',
     'api_football_mapping_head_update','api_football_mapping_members_provider'
   ]);
+  const schema6Columns=!m6.applied?false:
+    hasColumns(optionalRows.qualificationColumns,[
+      'qualification_id','fpl_season','provider','source_revision_id','approval_qualification_integrity_hash',
+      'current_qualification_integrity_hash','persistence_integrity_hash','crosswalk_integrity_hash',
+      'provider_universe_revision','provider_universe_integrity_hash','provider_universe_observed_at',
+      'owner_review_reference','owner_reviewed_at','official_fpl_authority_digest',
+      'official_fpl_authority_fetched_at','mapping_count','state','committed_at','created_at'
+    ])&&
+    hasColumns(optionalRows.memberColumns,[
+      'qualification_id','mapping_id','provider_team_id','canonical_fpl_team_id','receipt_integrity_hash'
+    ])&&
+    hasColumns(optionalRows.headColumns,['fpl_season','qualification_id','updated_at']);
+  if(m6.applied&&!schema6Columns)hardStops.push('migration_0006_schema_incomplete');
+  const schema6=schema6Objects&&schema6Columns;
   const fkViolations=Array.isArray(foreignKeys)?foreignKeys.length:null;
   if(fkViolations===null)hardStops.push('foreign_key_state_unreadable');
   else if(fkViolations!==0)hardStops.push('foreign_key_violation');
