@@ -4,23 +4,23 @@
 
 No later provider stage starts automatically. Any durable mapping persistence, migration 0005 application, collector provisioning/activation, Cron, workload ingestion, expected-minutes/model influence or UI/product use requires a separate owner-approved checkpoint with its own existing/proposed behaviour, inputs/sources, fallback, assumptions, limitations, tests and evidence. Until such a checkpoint is explicitly approved, API-Football remains shadow-only and inactive in product/model paths.
 
-## Historical API-Football gate — attended provider-universe observation
+## Earlier API-Football gate — attended provider-universe observation
 
 The repository remediation sequence is: merge and exact-`main` verify the dedicated team-universe workflow; independently configure/verify active protection for `refs/heads/main` and re-verify the protected environment; then, under the existing owner execution approval, dispatch the manual qualification once. Normal provider cost is one request, hard maximum two attempts under transient-only retry rules. A successful observation produces provider-universe evidence only. Explicit owner-reviewed admission of the remaining 18 provider-to-Official-FPL mappings is a separate gate. Collector/runtime activation remains later and separate.
 
-## Historical API-Football checkpoint — 20-club mapping qualification contract merged
+## Earlier API-Football checkpoint — 20-club mapping qualification contract merged
 
 PR #254 is merged to `main` as `83c7d5ce86077502ca691f7ff4e1941568dc083d`; post-merge Verify Teamsheet run `35321967633` passed 2,162/2,162 tests and deterministic-build identity. EIA-2I5F is closed with the qualified 720,896-byte response ceiling. At that checkpoint, the remaining substantive pre-live blocker was complete 20-club API-Football ↔ Official FPL mapping; no new EIA identifier had been assigned. Admitted mapping was NO-GO 2/20, and the next separate owner gate was the attended `/teams?league=39&season=2026` provider-universe observation followed by explicit review/admission of remaining mappings. Collector/infrastructure/model/UI activation remains later and separately gated. See [mapping qualification](API-FOOTBALL-20-CLUB-MAPPING-QUALIFICATION.md).
 
-## Historical checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
+## Earlier checkpoint — EIA-2I5E-R7A-R1 secret-bearing workflow final hardening
 
 Draft PR #252 remains the dormant qualification workflow. R7A-R1 hardens it in place. Next owner actions are: independently configure and verify a main-protection ruleset targeting `refs/heads/main`; review/merge is still not GO; a later manual dispatch still requires environment approval. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
-## Historical checkpoint — EIA-2I5E-R7A secure GitHub qualification workflow foundation
+## Earlier checkpoint — EIA-2I5E-R7A secure GitHub qualification workflow foundation
 
 Repository-only dormant workflow for a later attended API-Football qualification run. Next owner actions after merge are exact-`main` Verify, then a separately approved manual dispatch. Merge is not response-size GO, not collector activation, and not a provider call. See [EIA-2I5E-R7A](EIA-2I5E-R7A-GITHUB-QUALIFICATION-WORKFLOW.md).
 
-## Historical checkpoint — EIA-2I5D repository-only shadow runtime and persistence
+## Earlier checkpoint — EIA-2I5D repository-only shadow runtime and persistence
 
 Repository implementation is ready for owner review: migration 0005, dormant collector, quota/lease, scheduler, authority and revision contracts. Next steps remain separate live gates, beginning with owner review/merge and then an attended response-size qualification and exact infrastructure activation proposal. No live activation is authorized. See [EIA-2I5D](EIA-2I5D-API-FOOTBALL-SHADOW-RUNTIME-PERSISTENCE.md).
 
