@@ -1,12 +1,8 @@
-## API-Football 20-club mapping closeout — current next steps
+## API-Football 20-club mapping closeout — completed
 
-1. Merge and exact-main verify the owner-crosswalk repository candidate.
-2. Owner adds protected-environment secret `API_FOOTBALL_OWNER_CROSSWALK_JSON` containing the already approved exact crosswalk; its content must hash to `d48c7980d1c39e7d4a6f82cb56d25a750286c925fd4996d0f8c728a4fb45c7f5`.
-3. Before sanitized provider artifact `10540321648` expires on 25 September 2026, manually dispatch `API-Football Owner Mapping Qualification` from exact current `main` and approve the protected environment.
-4. Require two current Official FPL reads, 18 new receipt validations, two legacy receipt validations, exact 20/20 bijection, zero unresolved/receipt failures and final `GO`.
-5. Only after that live closeout may mapping qualification be called 20/20 GO. Durable mapping persistence, collector activation, migration 0005, Cron and any model/UI influence remain separate owner gates.
+The 20-club identity gate is closed. PR #257 merged as `aa694bc1d57faa6f197d4118ea0563808fa4ac0b`; exact-main CI passed 2,180/2,180 tests. Attended closeout run `35333898797` then returned **GO 20/20** with 18 new + 2 legacy receipts, complete coverage, 0 unresolved mappings, 0 receipt failures, 2 Official FPL requests and 0 API-Football requests. The result is bound by qualification hash `670ccccbf62764bc076293962ae4aa85085e06db48b503f597397d882f771367`.
 
-Until step 4 succeeds, admitted mapping status remains NO-GO 2/20.
+No later provider stage starts automatically. Any durable mapping persistence, migration 0005 application, collector provisioning/activation, Cron, workload ingestion, expected-minutes/model influence or UI/product use requires a separate owner-approved checkpoint with its own existing/proposed behaviour, inputs/sources, fallback, assumptions, limitations, tests and evidence. Until such a checkpoint is explicitly approved, API-Football remains shadow-only and inactive in product/model paths.
 
 ## Current API-Football next gate — attended provider-universe observation
 
