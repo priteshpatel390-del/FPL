@@ -18,6 +18,11 @@ const officialTeams=Array.from({length:20},(_,index)=>({
 }));
 const baseRows={officialRun,officialTeams,mappingRows:[{count:0}]};
 const collectorAbsent={exists:false,deploymentCount:0,crons:[],d1BindingPresent:false,d1BindingMatchesProduction:false,activation:null,apiFootballSecretBindingPresent:false};
+const baseLedger=Object.freeze([
+  {version:1,name:'shadow_data_foundation',appliedAt:'2026-08-22T00:00:00.000Z'},
+  {version:2,name:'official_fpl_structured_history',appliedAt:'2026-08-26T00:00:00.000Z'},
+  {version:3,name:'production_query_plan_indexes',appliedAt:'2026-09-02T00:00:00.000Z'}
+]);
 
 function evaluate({ledger,objects=[],optionalRows={},collector=collectorAbsent}){
   return evaluateStoragePreflight({
@@ -61,11 +66,7 @@ test('collector settings reveal only secret binding presence, never secret value
 });
 
 test('production ledger stopping at 0003 is a hard stop before the approved 0005 sequence',()=>{
-  const report=evaluate({ledger:[
-    {version:1,name:'shadow_data_foundation',appliedAt:'2026-08-22T00:00:00.000Z'},
-    {version:2,name:'official_fpl_structured_history',appliedAt:'2026-08-23T00:00:00.000Z'},
-    {version:3,name:'production_query_plan_indexes',appliedAt:'2026-09-01T00:00:00.000Z'}
-  ]});
+  const report=evaluate({ledger:[...baseLedger]});
   assert.equal(report.nextAction,'STOP_0004_NOT_APPLIED');
   assert.equal(report.migrations.migration0004.applied,false);
   assert.deepEqual(report.hardStops,[]);
@@ -73,7 +74,7 @@ test('production ledger stopping at 0003 is a hard stop before the approved 0005
 
 test('exact migration 0004 plus its required identity tables admits only the 0005 storage gate',()=>{
   const report=evaluate({
-    ledger:[{version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'}],
+    ledger:[...baseLedger,{version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'}],
     objects:[table('provider_fixture_identities'),table('provider_participation_revisions')]
   });
   assert.equal(report.nextAction,'READY_FOR_MIGRATION_0005');
@@ -84,6 +85,7 @@ test('exact migration 0004 plus its required identity tables admits only the 000
 test('0005 remains disabled and can advance only to 0006 when its schema is complete',()=>{
   const report=evaluate({
     ledger:[
+      ...baseLedger,
       {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},
       {version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}
     ],
@@ -107,13 +109,14 @@ test('0005 remains disabled and can advance only to 0006 when its schema is comp
 
 test('out-of-order or active runtime state fails closed',()=>{
   const outOfOrder=evaluate({
-    ledger:[{version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}]
+    ledger:[...baseLedger,{version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}]
   });
   assert.equal(outOfOrder.nextAction,'STOP_REVIEW_REQUIRED');
   assert.ok(outOfOrder.hardStops.includes('migration_0005_without_0004'));
 
   const active=evaluate({
     ledger:[
+      ...baseLedger,
       {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},
       {version:5,name:'api_football_shadow_runtime',appliedAt:'2026-09-16T00:00:00.000Z'}
     ],
@@ -132,6 +135,21 @@ test('out-of-order or active runtime state fails closed',()=>{
   assert.equal(active.nextAction,'STOP_REVIEW_REQUIRED');
   assert.ok(active.hardStops.includes('collection_not_disabled'));
   assert.ok(active.hardStops.includes('runtime_disable_reason_unexpected'));
+});
+
+
+test('missing or ahead-of-repository base migration ledger fails closed',()=>{
+  const missing=evaluate({ledger:[
+    baseLedger[0],baseLedger[2],
+    {version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'}
+  ],objects:[table('provider_fixture_identities'),table('provider_participation_revisions')]});
+  assert.equal(missing.nextAction,'STOP_REVIEW_REQUIRED');
+  assert.ok(missing.hardStops.includes('migration_0002_missing'));
+  assert.ok(missing.hardStops.includes('migration_ledger_non_contiguous'));
+
+  const ahead=evaluate({ledger:[...baseLedger,{version:4,name:'api_football_shadow_identity',appliedAt:'2026-09-16T00:00:00.000Z'},{version:7,name:'unexpected_future',appliedAt:'2026-09-19T00:00:00.000Z'}],objects:[table('provider_fixture_identities'),table('provider_participation_revisions')]});
+  assert.equal(ahead.nextAction,'STOP_REVIEW_REQUIRED');
+  assert.ok(ahead.hardStops.includes('migration_ledger_ahead_of_repository'));
 });
 
 test('preflight source contains no provider request or live mutation surface',()=>{
