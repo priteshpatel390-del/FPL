@@ -236,23 +236,27 @@ export async function applyMigration0004(options){
   }
 
   if(before.state===MIGRATION_0004_STATE_EXACT_POST){
+    const applied=await client.reconcile({post:true,nowIso:nowIso()});
     validateMigration0004Post({
-      state:before.state,preCounts:{...before.counts,schema_migrations:Number(before.counts.schema_migrations)-1},
-      postCounts:before.counts,foreignKeys:before.foreignKeys,providerRows:before.providerRows,
-      fixtureRows:{count:0},participationRows:{count:0}
+      state:applied.state,preCounts:{...applied.counts,schema_migrations:Number(applied.counts.schema_migrations)-1},
+      postCounts:applied.counts,foreignKeys:applied.foreignKeys,providerRows:applied.providerRows,
+      fixtureRows:applied.fixtureRows,participationRows:applied.participationRows
     });
     return reportBase({classification:MIGRATION_0004_ALREADY_APPLIED,ok:true,mutationIssued:false,recoveryIssued:false,
-      before,after:before,accounting:client.accounting});
+      before:applied,after:applied,accounting:client.accounting});
   }
 
   validateMigration0004Pre({state:before.state,counts:before.counts,foreignKeys:before.foreignKeys,providerRows:before.providerRows});
 
-  const recoveryCheckpointAt=nowIso();
   let preBookmark;
   try{preBookmark=await client.bookmark();}
   catch(error){
     error.migration0004Phase='time_travel_preflight';error.mutationIssued=false;throw error;
   }
+  // Captured after the successful bookmark read. While the shared production writer lock is held,
+  // no admitted writer can move D1 between the bookmark and this timestamp. A later operator can
+  // resolve the nearest bookmark at/before this timestamp and require its digest to match.
+  const recoveryCheckpointAt=nowIso();
   const preBookmarkDigest=sha256(preBookmark);
 
   let mutationIssued=false,mutationDefinite=false,mutationError=null;
