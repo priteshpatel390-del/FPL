@@ -304,18 +304,32 @@ export async function applyMigration0004(options){
   // A mutation was issued but exact acceptance was not proved. While the production writer lock is
   // still held, make one restore attempt to the exact pre-mutation bookmark and then independently
   // prove the original pre-state and Official FPL authority. No second migration mutation is issued.
-  let restored=null,recoveryError=null;
+  let restored=null,recoveryError=null,restoreOutcomeKnown=false;
   try{
     await client.restore(preBookmark);
-    restored=await client.reconcile({post:false,nowIso:nowIso()});
-    validateMigration0004Pre({state:restored.state,counts:restored.counts,foreignKeys:restored.foreignKeys,providerRows:restored.providerRows});
-    assertSameOfficialFplAuthority(before.authority,restored.authority);
+    restoreOutcomeKnown=true;
   }catch(error){recoveryError=error;}
+
+  // A lost restore response is itself an unknown mutation outcome. Do not retry the restore.
+  // Spend the final bounded D1 call on reconciliation instead: an exact original pre-state with
+  // unchanged Official FPL authority is sufficient evidence that the database is safe again.
+  try{
+    const candidate=await client.reconcile({post:false,nowIso:nowIso()});
+    validateMigration0004Pre({
+      state:candidate.state,counts:candidate.counts,foreignKeys:candidate.foreignKeys,providerRows:candidate.providerRows
+    });
+    assertSameOfficialFplAuthority(before.authority,candidate.authority);
+    restored=candidate;
+  }catch(error){
+    if(!recoveryError)recoveryError=error;
+  }
 
   if(restored){
     return reportBase({classification:MIGRATION_0004_RECOVERED,ok:false,mutationIssued:true,recoveryIssued:true,
       before,after:restored,recoveryCheckpointAt,preBookmarkDigest,
-      note:'postwrite_acceptance_failed_and_time_travel_recovered',accounting:client.accounting});
+      note:restoreOutcomeKnown?'postwrite_acceptance_failed_and_time_travel_recovered':
+        'postwrite_acceptance_failed_restore_transport_unknown_reconciled_exact_prestate',
+      accounting:client.accounting});
   }
 
   return reportBase({classification:MIGRATION_0004_AMBIGUOUS,ok:false,mutationIssued:true,recoveryIssued:true,
