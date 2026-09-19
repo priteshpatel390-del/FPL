@@ -61,8 +61,8 @@ function reconciliationPayload({post=false,inconsistent=false}={}){
   return rows.map(value=>resultRow(value));
 }
 
-function fakeMigrationTransport({recover=false}={}){
-  let queryCalls=0,bookmarkCalls=0,restoreCalls=0;
+function fakeMigrationTransport({recover=false,unknownMutation=false,unknownLeavesPre=false}={}){
+  let queryCalls=0,bookmarkCalls=0,restoreCalls=0,mutationCalls=0;
   const transport=async request=>{
     const url=String(request.url);
     if(url.endsWith('/time_travel/bookmark')){
@@ -77,8 +77,18 @@ function fakeMigrationTransport({recover=false}={}){
       const body=JSON.parse(request.body),batch=body.batch;
       assert.ok(Array.isArray(batch));
       queryCalls+=1;
-      if(batch.length===40)return response(batch.map(()=>resultRow([],{read:0,written:1})));
-      if(batch.length===10)return response(reconciliationPayload({post:true,inconsistent:recover}));
+      if(batch.length===40){
+        mutationCalls+=1;
+        if(unknownMutation||unknownLeavesPre)throw new Error('simulated_mutation_transport_loss');
+        return response(batch.map(()=>resultRow([],{read:0,written:1})));
+      }
+      if(batch.length===10){
+        if(unknownLeavesPre){
+          const rows=reconciliationPayload({post:false});
+          return response([...rows,...[resultRow([{count:0}]),resultRow([{count:0}])]]);
+        }
+        return response(reconciliationPayload({post:true,inconsistent:recover}));
+      }
       if(batch.length===8){
         if(recover&&queryCalls>=4)return response(reconciliationPayload({post:false}));
         return response(reconciliationPayload({post:false}));
@@ -87,7 +97,7 @@ function fakeMigrationTransport({recover=false}={}){
     }
     assert.fail(`unexpected request ${url}`);
   };
-  return {transport,stats:()=>({queryCalls,bookmarkCalls,restoreCalls})};
+  return {transport,stats:()=>({queryCalls,bookmarkCalls,restoreCalls,mutationCalls})};
 }
 
 test('migration 0004 bytes are pinned and split into the reviewed 40 statements',()=>{
@@ -160,7 +170,35 @@ test('application succeeds only after exact post-state reconciliation and captur
   assert.equal(report.recoveryIssued,false);
   assert.match(report.recovery.preBookmarkDigest,/^[0-9a-f]{64}$/);
   assert.match(report.recovery.postBookmarkDigest,/^[0-9a-f]{64}$/);
-  assert.deepEqual(fake.stats(),{queryCalls:3,bookmarkCalls:2,restoreCalls:0});
+  assert.deepEqual(fake.stats(),{queryCalls:3,bookmarkCalls:2,restoreCalls:0,mutationCalls:1});
+});
+
+test('unknown migration transport reconciles exact post-state without a second mutation',async()=>{
+  const fake=fakeMigrationTransport({unknownMutation:true});
+  const report=await applyMigration0004({
+    accountId:'account-1',accountFingerprint:sha256('account-1'),databaseId:EXPECTED_D1_DATABASE_ID,
+    token:'token',transport:fake.transport,clock:()=>new Date('2026-09-19T02:00:00.000Z')
+  });
+  assert.equal(report.ok,true);
+  assert.equal(report.classification,MIGRATION_0004_APPLIED);
+  assert.equal(report.mutationIssued,true);
+  assert.equal(report.recoveryIssued,false);
+  assert.match(report.note,/reconciled_after_unknown_mutation_transport/);
+  assert.deepEqual(fake.stats(),{queryCalls:3,bookmarkCalls:2,restoreCalls:0,mutationCalls:1});
+});
+
+test('unknown migration transport reconciles exact pre-state without retry or restore',async()=>{
+  const fake=fakeMigrationTransport({unknownLeavesPre:true});
+  const report=await applyMigration0004({
+    accountId:'account-1',accountFingerprint:sha256('account-1'),databaseId:EXPECTED_D1_DATABASE_ID,
+    token:'token',transport:fake.transport,clock:()=>new Date('2026-09-19T02:00:00.000Z')
+  });
+  assert.equal(report.ok,false);
+  assert.equal(report.classification,MIGRATION_0004_NOT_APPLIED);
+  assert.equal(report.mutationIssued,true);
+  assert.equal(report.recoveryIssued,false);
+  assert.match(report.note,/reconciled_exact_prestate/);
+  assert.deepEqual(fake.stats(),{queryCalls:3,bookmarkCalls:1,restoreCalls:0,mutationCalls:1});
 });
 
 test('invalid applied post-state triggers one Time Travel restore and proves exact pre-state',async()=>{
@@ -174,7 +212,7 @@ test('invalid applied post-state triggers one Time Travel restore and proves exa
   assert.equal(report.mutationIssued,true);
   assert.equal(report.recoveryIssued,true);
   assert.equal(report.state.after,MIGRATION_0004_STATE_EXACT_PRE);
-  assert.deepEqual(fake.stats(),{queryCalls:4,bookmarkCalls:1,restoreCalls:1});
+  assert.deepEqual(fake.stats(),{queryCalls:4,bookmarkCalls:1,restoreCalls:1,mutationCalls:1});
 });
 
 test('migration-specific read-only preflight blocks a restored legacy data-platform Cron',async()=>{
