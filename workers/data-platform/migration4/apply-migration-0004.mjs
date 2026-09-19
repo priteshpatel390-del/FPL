@@ -36,7 +36,7 @@ const LEDGER_SQL='SELECT version,name,applied_at FROM schema_migrations ORDER BY
 const OBJECT_NAMES=Object.freeze([...new Set([
   ...MIGRATION_0004_REQUIRED_OBJECTS.map(row=>row.name),...MIGRATION_0004_FORBIDDEN_LATER_OBJECTS
 ])]);
-const OBJECT_SQL=`SELECT type,name,tbl_name FROM sqlite_master WHERE name IN (${OBJECT_NAMES.map(name=>`'${name}'`).join(',')}) ORDER BY type,name`
+const OBJECT_SQL=`SELECT type,name,tbl_name FROM sqlite_master WHERE name IN (${OBJECT_NAMES.map(name=>`'${name}'`).join(',')}) ORDER BY type,name`;
 const FK_SQL='PRAGMA foreign_key_check';
 const COLUMNS_SQL='PRAGMA table_info(data_source_revisions)';
 const COUNTS_SQL=`SELECT
