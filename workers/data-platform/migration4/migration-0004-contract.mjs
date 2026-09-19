@@ -46,9 +46,22 @@ export const MIGRATION_0004_RIGHTS_COLUMNS=Object.freeze([
 ]);
 
 export const MIGRATION_0004_FORBIDDEN_LATER_OBJECTS=Object.freeze([
-  'api_football_runtime_state','api_football_request_attempts','api_football_discovery_generations',
-  'api_football_discovery_heads','api_football_fixture_revisions','api_football_generation_fixtures',
-  'api_football_team_mapping_qualifications','api_football_team_mapping_members','api_football_team_mapping_heads'
+  // Migration 0005 — tables, indexes and triggers. Any one of these without ledger 0005 is
+  // partial/rogue later-schema state and therefore blocks 0004 rather than being ignored.
+  'api_football_runtime_state','api_football_discovery_generations','api_football_discovery_heads',
+  'api_football_committed_head_insert','api_football_committed_head_update',
+  'api_football_committed_generation_immutable','api_football_request_attempts',
+  'api_football_attempt_retention','api_football_fixture_revisions',
+  'api_football_fixture_revision_history','api_football_fixture_supersession_insert',
+  'api_football_generation_fixtures','api_football_generation_fixture_consistency',
+  'api_football_participation_run_insert','api_football_participation_run_update',
+  // Migration 0006 — tables, index and triggers.
+  'api_football_team_mapping_qualifications','api_football_team_mapping_members',
+  'api_football_mapping_member_insert','api_football_mapping_qualification_commit',
+  'api_football_mapping_qualification_immutable','api_football_mapping_member_update_immutable',
+  'api_football_mapping_member_delete_immutable','api_football_team_mapping_heads',
+  'api_football_mapping_head_insert','api_football_mapping_head_update',
+  'api_football_mapping_members_provider'
 ]);
 
 export const MIGRATION_0004_PROTECTED_COUNT_KEYS=Object.freeze([
