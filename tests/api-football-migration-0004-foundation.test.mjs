@@ -272,4 +272,9 @@ test('workflow is manual-only, exact-main gated, one-shot, serialized and has no
   assert.match(workflow,/actions\/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09/);
   assert.match(workflow,/actions\/setup-node@a0853c24544627f65ddf259abe73b1d18a591444/);
   assert.match(workflow,/actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f/);
+  // The runner context exists only after a job has been assigned to a runner. Using runner.temp
+  // in job-level env makes GitHub reject the workflow before any job starts.
+  const jobLevelRunnerContext=/^ {0,6}[^#\n]*\$\{\{\s*runner\./m;
+  assert.doesNotMatch(workflow,jobLevelRunnerContext);
+  assert.match(workflow,/Reconfirm current main immediately before exact migration 0004[\s\S]*?MIGRATION_0004_REPORT_PATH: \$\{\{ runner\.temp \}\}\/migration-0004-application\.json/);
 });
