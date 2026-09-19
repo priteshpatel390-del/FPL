@@ -1,13 +1,15 @@
 # API-Football Live Storage Foundation — Read-Only Preflight
 
 Date: 19 September 2026  
-Status: **owner-approved read-only preflight implementation candidate only**. No production mutation is authorized by this document.
+Status: **first live read completed; owner-approved read-only authority-remediation candidate only**. No production mutation is authorized by this document.
 
 ## Outcome
 
-The next approved API-Football checkpoint is live storage foundation, but production mutation must not begin until current Cloudflare/D1 state is observed directly.
+PR #260 merged the manual-only, exact-current-main, read-only preflight to protected `main` as `d71be7f95b31093d167ce8e33ad3e3fb41785650`. Owner-attended run `35426768910` then completed both jobs successfully under the existing `data-steward-readonly` environment, with zero production mutations and zero API-Football requests.
 
-This repository candidate adds one manual-only, exact-current-main, read-only preflight that reuses the existing protected `data-steward-readonly` environment. Its Cloudflare token contract is already limited to **Workers Scripts Read + D1 Read**. The preflight performs no D1 write, migration, Worker deployment, secret change, Cron change or API-Football request.
+That first live read directly proved the reviewed production D1 identity and deployed data-platform binding match, the migration ledger is exactly 0001–0003, migrations 0004/0005/0006 are absent, foreign-key violations are zero, and the API-Football collector Worker/deployments/Cron/API-key secret binding are absent. It also exposed one repository validation defect: the Official FPL authority query selected every current team metric while the validator required exactly 20 rows. Canonical DATA-S2A stores ten team metrics per club, so the run's `official_fpl_authority_invalid` hard stop does not establish bad Official FPL data.
+
+The owner-approved remediation remains read-only and repository-only: select only active `present=true` team heads, require exactly the canonical 20 `official-fpl|2026-27|team|<id>|present` logical keys, and add regression coverage for the real multi-metric DATA-S2A shape. No migration, D1 write, deployment, secret change, Cron change or API-Football request is authorized.
 
 The preflight exists to answer the storage-state questions that repository configuration alone cannot prove:
 
@@ -22,6 +24,29 @@ The preflight exists to answer the storage-state questions that repository confi
 - collector D1 binding/activation if it exists;
 - collector Cron count;
 - whether an `API_FOOTBALL_API_KEY` secret binding is present.
+
+## First live preflight evidence
+
+Run `35426768910`, dispatched by the owner on 19 September 2026 from exact protected main `d71be7f95b31093d167ce8e33ad3e3fb41785650`, established the following sanitized live state:
+
+- production D1 identity: match;
+- deployed data-platform D1 binding: match;
+- migration ledger: 0001 `shadow_data_foundation`, 0002 `official_fpl_structured_history`, 0003 `production_query_plan_indexes`;
+- migration 0004: not applied;
+- migration 0005: not applied;
+- migration 0006: not applied;
+- foreign-key violations: 0;
+- API-Football mapping rows: 0;
+- API-Football runtime row: absent;
+- API-Football request attempts: 0;
+- API-Football collector Worker: absent;
+- collector deployments: 0;
+- collector Cron count: 0;
+- collector `API_FOOTBALL_API_KEY` secret binding: absent;
+- production mutations: 0;
+- API-Football requests: 0.
+
+The latest completed Official FPL run observed by the preflight was at `2026-09-19T01:18:00Z`, around five hours before the live preflight and therefore inside the repository's 48-hour authority freshness ceiling. The run nevertheless reported authority invalid because its query returned the full multi-metric team-head set. That classification is a validator defect under remediation, not evidence that Official FPL itself was stale or malformed.
 
 ## Mandatory 0004 stop gate
 

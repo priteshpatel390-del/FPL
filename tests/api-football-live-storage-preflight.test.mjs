@@ -9,13 +9,20 @@ import {
 } from '../workers/api-football-collector/live-storage-preflight.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const officialRun=[{run_id:'gha-'+('a'.repeat(40)),completed_at:'2026-09-18T12:00:00.000Z',status:'completed'}];
-const officialTeams=Array.from({length:20},(_,index)=>({
+const officialRun=[{run_id:'gha-'+('a'.repeat(40)),completed_at:'2026-09-19T01:18:00.000Z',status:'completed'}];
+const OFFICIAL_TEAM_METRICS=['present','name','short_name','strength','strength_overall_home','strength_overall_away','strength_attack_home','strength_attack_away','strength_defence_home','strength_defence_away'];
+const officialTeamMetricRows=Array.from({length:20},(_,index)=>OFFICIAL_TEAM_METRICS.map((metric,metricIndex)=>({
   subject_entity_id:'2026-27:fpl:team:'+(index+1),
-  observation_id:String(index+1).padStart(64,'0'),
+  observation_id:String((index+1)*100+metricIndex+1).padStart(64,'0'),
   input_revision:'rev-'+(index+1),
-  logical_key:'official-fpl|2026-27|team|'+String(index+1).padStart(2,'0')
-}));
+  logical_key:'official-fpl|2026-27|team|'+(index+1)+'|'+metric,
+  metric,
+  value_type:metric==='present'?'boolean':metric==='name'||metric==='short_name'?'text':'number',
+  value_boolean:metric==='present'?1:null
+}))).flat();
+const officialTeams=officialTeamMetricRows
+  .filter(row=>row.metric==='present'&&row.value_type==='boolean'&&row.value_boolean===1)
+  .map(({metric,value_type,value_boolean,...row})=>row);
 const baseRows={officialRun,officialTeams,mappingRows:[{count:0}]};
 const DATA_SOURCE_REVISION_0004_COLUMNS=[
   'provider','source_key','owner_approval_id','allowed_use','normalized_facts_only','public_use_allowed',
@@ -78,7 +85,7 @@ function baseRowsForLedger(ledger){
     participationColumns:versions.has(5)?[{name:'ingestion_run_id'}]:[]
   };
 }
-function evaluate({ledger,objects=[],optionalRows={},collector=collectorAbsent,nowIso='2026-09-19T00:00:00.000Z'}){
+function evaluate({ledger,objects=[],optionalRows={},collector=collectorAbsent,nowIso='2026-09-19T06:30:35.000Z',authorityRows=officialTeams}){
   const versions=new Set(ledger.map(row=>row.version));
   const structuralRows={};
   if(versions.has(5))structuralRows.runtimeColumns=RUNTIME_0005_COLUMNS.map(name=>({name}));
@@ -88,7 +95,7 @@ function evaluate({ledger,objects=[],optionalRows={},collector=collectorAbsent,n
     structuralRows.headColumns=HEAD_0006_COLUMNS.map(name=>({name}));
   }
   return evaluateStoragePreflight({
-    ledger,objects,foreignKeys:[],baseRows:baseRowsForLedger(ledger),optionalRows:{...structuralRows,...optionalRows},
+    ledger,objects,foreignKeys:[],baseRows:{...baseRowsForLedger(ledger),officialTeams:authorityRows},optionalRows:{...structuralRows,...optionalRows},
     databaseIdentityMatch:true,dataPlatformBindingMatch:true,collector,nowIso
   });
 }
@@ -106,6 +113,28 @@ test('live storage preflight SQL registry is read-only and rejects mutation/comm
     'PRAGMA table_info(unknown_table)',
     'CREATE TABLE x(y)'
   ])assert.throws(()=>assertReadOnlySql(sql),/preflight_sql_invalid/);
+});
+
+test('Official FPL authority read reduces the real multi-metric team shape to 20 active present heads',()=>{
+  assert.equal(officialTeamMetricRows.length,200);
+  assert.equal(officialTeams.length,20);
+  assert.match(BASE_QUERIES.officialTeams,/o\.metric='present'/);
+  assert.match(BASE_QUERIES.officialTeams,/o\.value_type='boolean'/);
+  assert.match(BASE_QUERIES.officialTeams,/o\.value_boolean=1/);
+  assert.ok(officialTeams.every((row,index)=>row.logical_key==='official-fpl|2026-27|team|'+(index+1)+'|present'));
+  const report=evaluate({ledger:[...baseLedger]});
+  assert.equal(report.officialFplAuthority.valid,true);
+  assert.equal(report.officialFplAuthority.fresh,true);
+  assert.equal(report.officialFplAuthority.teamCount,20);
+  assert.equal(report.nextAction,'STOP_0004_NOT_APPLIED');
+  assert.deepEqual(report.hardStops,[]);
+});
+
+test('Official FPL authority rejects non-canonical logical-key spelling even with 20 unique team ids',()=>{
+  const malformed=officialTeams.map((row,index)=>index===0?{...row,logical_key:'official-fpl|2026-27|team|01|present'}:row);
+  const report=evaluate({ledger:[...baseLedger],authorityRows:malformed});
+  assert.equal(report.nextAction,'STOP_REVIEW_REQUIRED');
+  assert.ok(report.hardStops.includes('official_fpl_authority_invalid'));
 });
 
 test('optional D1 queries require every referenced table before execution',()=>{
