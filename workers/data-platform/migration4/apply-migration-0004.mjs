@@ -15,7 +15,8 @@ import {createHash} from 'node:crypto';
 import {EXPECTED_D1_DATABASE_ID} from '../phase4b/live-contract.mjs';
 import {
   MIGRATION_0004_ALREADY_APPLIED,MIGRATION_0004_AMBIGUOUS,MIGRATION_0004_APPLIED,
-  MIGRATION_0004_GIT_BLOB_SHA,MIGRATION_0004_NOT_APPLIED,MIGRATION_0004_PATH,
+  MIGRATION_0004_FORBIDDEN_LATER_OBJECTS,MIGRATION_0004_GIT_BLOB_SHA,MIGRATION_0004_NOT_APPLIED,MIGRATION_0004_PATH,
+  MIGRATION_0004_REQUIRED_OBJECTS,
   MIGRATION_0004_RECOVERED,MIGRATION_0004_STATE_EXACT_POST,MIGRATION_0004_STATE_EXACT_PRE,
   assertPinnedMigration0004Statements,assertSameOfficialFplAuthority,classifyMigration0004State,
   officialFplAuthoritySnapshot,splitMigration0004Sql,validateMigration0004Post,validateMigration0004Pre
@@ -32,15 +33,10 @@ const gitBlobSha=content=>createHash('sha1').update(`blob ${Buffer.byteLength(co
 const d1Url=(accountId,databaseId,suffix)=>`${API_BASE}/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}${suffix}`;
 
 const LEDGER_SQL='SELECT version,name,applied_at FROM schema_migrations ORDER BY version';
-const OBJECT_SQL=`SELECT type,name,tbl_name FROM sqlite_master WHERE name IN (
-'shadow_observation_idempotency','shadow_observation_replay','observation_heads_observation_id',
-'shadow_observations_ingestion_run','observation_rejections_source_revision',
-'owner_risk_source_revision_insert','owner_risk_source_revision_update',
-'provider_fixture_identities','provider_participation_revisions','provider_participation_history',
-'api_football_runtime_state','api_football_request_attempts','api_football_discovery_generations',
-'api_football_discovery_heads','api_football_fixture_revisions','api_football_generation_fixtures',
-'api_football_team_mapping_qualifications','api_football_team_mapping_members','api_football_team_mapping_heads')
-ORDER BY type,name`;
+const OBJECT_NAMES=Object.freeze([...new Set([
+  ...MIGRATION_0004_REQUIRED_OBJECTS.map(row=>row.name),...MIGRATION_0004_FORBIDDEN_LATER_OBJECTS
+])]);
+const OBJECT_SQL=`SELECT type,name,tbl_name FROM sqlite_master WHERE name IN (${OBJECT_NAMES.map(name=>`'${name}'`).join(',')}) ORDER BY type,name`
 const FK_SQL='PRAGMA foreign_key_check';
 const COLUMNS_SQL='PRAGMA table_info(data_source_revisions)';
 const COUNTS_SQL=`SELECT
