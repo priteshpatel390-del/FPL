@@ -648,7 +648,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     'eia-2i5e-api-football-qualification.yml',
     'api-football-team-universe-qualification.yml',
     'api-football-owner-mapping-qualification.yml',
-    'api-football-live-storage-preflight.yml'
+    'api-football-live-storage-preflight.yml',
+    'api-football-migration-0004.yml'
   ]);
   const workflowFiles=fs.readdirSync('.github/workflows');
   assert.deepEqual(
