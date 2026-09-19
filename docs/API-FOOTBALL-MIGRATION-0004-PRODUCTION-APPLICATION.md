@@ -1,6 +1,8 @@
 # API-Football Migration 0004 Production Application Foundation
 
-Status: **repository candidate only — draft PR #262. Migration 0004 is not applied to production.**
+Status: **foundation merged in PR #262 at `3892f2c6448d951538cf318ad28392ca95ca2449`; workflow-context remediation pending. Migration 0004 is not applied to production.**
+
+Post-merge verification: Verify Teamsheet run `35439821265` passed 2,214/2,214 tests with byte-identical production rebuilds and exact manifest identity; Pages run `35439819493` succeeded. GitHub also emitted zero-job failure `35439820507` for this workflow on the merge push. That was a definition-validation failure, not a dispatch: the job-level `MIGRATION_0004_REPORT_PATH: ${{ runner.temp }}/...` referenced the runner context before a runner existed. The remediation moves only that path into the mutation step's `env`; corrected branch pushes no longer produce the validation failure. No environment, credential, Cloudflare call or D1 mutation occurred in the failed zero-job run. A production migration dispatch remains separately owner-gated after this remediation is merged and verified.
 
 Baseline reviewed from protected `main`:
 
