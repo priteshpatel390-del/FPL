@@ -55,7 +55,7 @@ export const BASE_QUERIES=Object.freeze({
   dataSourceRevisionColumns:"PRAGMA table_info(data_source_revisions)",
   participationColumns:"PRAGMA table_info(provider_participation_revisions)",
   officialRun:"SELECT run_id,completed_at,status FROM ingestion_runs WHERE source_revision_id='official-fpl-r1' AND status='completed' AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 1",
-  officialTeams:"SELECT o.subject_entity_id,o.observation_id,o.input_revision,o.logical_key FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE h.logical_key>='official-fpl|2026-27|team|' AND h.logical_key<'official-fpl|2026-27|team|￿' AND o.source_revision_id='official-fpl-r1' AND o.category='official_fpl_team' AND r.status='completed' ORDER BY o.logical_key",
+  officialTeams:"SELECT o.subject_entity_id,o.observation_id,o.input_revision,o.logical_key FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE h.logical_key>='official-fpl|2026-27|team|' AND h.logical_key<'official-fpl|2026-27|team|￿' AND o.source_revision_id='official-fpl-r1' AND o.category='official_fpl_team' AND o.metric='present' AND o.value_type='boolean' AND o.value_boolean=1 AND r.status='completed' ORDER BY o.logical_key",
   mappingRows:"SELECT COUNT(*) AS count FROM entity_mappings WHERE source_revision_id='api-football:eia-2i5a:1' AND provider_entity_type='team'"
 });
 
@@ -205,13 +205,14 @@ function officialAuthority(rowsRun,rowsTeams,nowIso){
   if(!Array.isArray(rowsRun)||rowsRun.length!==1||!Array.isArray(rowsTeams))return Object.freeze({present:false,valid:false});
   const run=rowsRun[0],completedAt=iso(run?.completed_at);
   if(typeof run?.run_id!=='string'||run.status!=='completed'||!completedAt)return Object.freeze({present:false,valid:false});
-  const rows=rowsTeams.slice();
+  const rows=rowsTeams.slice().sort((a,b)=>String(a?.logical_key||'').localeCompare(String(b?.logical_key||'')));
   const teamIds=[...new Set(rows.map(row=>String(row?.subject_entity_id||'')).filter(Boolean))].sort();
-  const logicalUnique=new Set(rows.map(row=>String(row?.logical_key||'')));
+  const logicalKeys=rows.map(row=>String(row?.logical_key||'')).sort();
   const expectedTeamIds=Array.from({length:20},(_,index)=>EXPECTED_FPL_SEASON+':fpl:team:'+(index+1)).sort();
-  const validRows=rows.length===20&&teamIds.length===20&&logicalUnique.size===20&&
-    teamIds.join('|')===expectedTeamIds.join('|')&&rows.every(row=>
-      typeof row?.logical_key==='string'&&typeof row?.observation_id==='string'&&typeof row?.input_revision==='string');
+  const expectedLogicalKeys=Array.from({length:20},(_,index)=>'official-fpl|'+EXPECTED_FPL_SEASON+'|team|'+(index+1)+'|present').sort();
+  const validRows=rows.length===20&&teamIds.length===20&&new Set(logicalKeys).size===20&&
+    teamIds.join('|')===expectedTeamIds.join('|')&&logicalKeys.join('|')===expectedLogicalKeys.join('|')&&
+    rows.every(row=>typeof row?.observation_id==='string'&&typeof row?.input_revision==='string');
   const authorityDigest=validRows?digest(stableStringify({
     season:EXPECTED_FPL_SEASON,sourceRevisionId:EXPECTED_OFFICIAL_SOURCE_REVISION,runId:run.run_id,
     fetchedAt:completedAt,teamIds,
