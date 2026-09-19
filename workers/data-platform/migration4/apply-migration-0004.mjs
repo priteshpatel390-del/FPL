@@ -242,7 +242,7 @@ export async function applyMigration0004(options){
       postCounts:applied.counts,foreignKeys:applied.foreignKeys,providerRows:applied.providerRows,
       fixtureRows:applied.fixtureRows,participationRows:applied.participationRows
     });
-    return reportBase({classification:MIGRATION_0004_ALREADY_APPLIED,ok:true,mutationIssued:false,recoveryIssued:false,
+    return reportBase({classification:MIGRATION_0004_ALREADY_APPLIED,ok:false,mutationIssued:false,recoveryIssued:false,
       before:applied,after:applied,accounting:client.accounting});
   }
 
