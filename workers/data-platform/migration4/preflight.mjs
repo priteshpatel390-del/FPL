@@ -29,10 +29,10 @@ async function readSchedules(fetchImpl,{accountId,token}){
   return {ok:true,count:crons.length};
 }
 
-export async function runMigration0004Preflight({env=process.env,fetchImpl=globalThis.fetch,now=()=>new Date().toISOString()}={}){
+export async function runMigration0004Preflight({env=process.env,fetchImpl=globalThis.fetch,now=()=>new Date().toISOString(),livePreflightImpl=runApiFootballLiveStoragePreflight}={}){
   const mode=env.MIGRATION_0004_PREFLIGHT_MODE;
   if(!['pre','post'].includes(mode))return {ok:false,reason:'migration_0004_preflight_mode_invalid'};
-  const report=await runApiFootballLiveStoragePreflight({env,fetchImpl,now});
+  const report=await livePreflightImpl({env,fetchImpl,now});
   if(!report?.ok)return {ok:false,reason:report?.reason??'live_storage_preflight_failed'};
   if(report.hardStops.length!==0)return {ok:false,reason:'live_storage_preflight_hard_stop',hardStops:report.hardStops};
   const admitted=mode==='pre'
