@@ -1,8 +1,8 @@
 # API-Football Migration 0004 Production Application Foundation
 
-Status: **foundation merged in PR #262 at `3892f2c6448d951538cf318ad28392ca95ca2449`; workflow-context remediation pending. Migration 0004 is not applied to production.**
+Status: **migration 0004 applied successfully to production D1 and independently postflight-accepted.**
 
-Post-merge verification: Verify Teamsheet run `35439821265` passed 2,214/2,214 tests with byte-identical production rebuilds and exact manifest identity; Pages run `35439819493` succeeded. GitHub also emitted zero-job failure `35439820507` for this workflow on the merge push. That was a definition-validation failure, not a dispatch: the job-level `MIGRATION_0004_REPORT_PATH: ${{ runner.temp }}/...` referenced the runner context before a runner existed. The remediation moves only that path into the mutation step's `env`; corrected branch pushes no longer produce the validation failure. No environment, credential, Cloudflare call or D1 mutation occurred in the failed zero-job run. A production migration dispatch remains separately owner-gated after this remediation is merged and verified.
+PR #263 merged to protected `main` as `bc87334dbdebce4e19d92374e6640a9fed0f44fa`; post-merge Verify Teamsheet run `35442144198` passed 2,214/2,214 tests with byte-identical production rebuilds and exact manifest identity, and Pages run `35442143907` succeeded. Owner-attended workflow run `35467787882` then completed successfully with `run_attempt=1`. Repository gate and mutation-free preflight passed; preflight returned `STOP_0004_NOT_APPLIED`. The application stage returned `DEFINITELY_APPLIED_SUCCESSFULLY`, `mutationIssued=true`, `recoveryIssued=false`, `apiFootballRequests=0` and `workerCronSecretChanges=0`. Independent read-only postflight returned `READY_FOR_MIGRATION_0005`. Sanitized evidence artifacts were retained for preflight, application and postflight. No API-Football provider request, collector deployment, Cron/secret activation, private 20/20 mapping persistence or model/UI change occurred.
 
 Baseline reviewed from protected `main`:
 

@@ -1,6 +1,6 @@
-## API-Football migration 0004 application boundary
+## API-Football migration 0004 live source boundary
 
-Draft PR #262 does not change API-Football source qualification, rights or collection status. Migration 0004 remains only the schema foundation for normalized private-use shadow identity/participation facts under `owner_risk_accepted_private_use`: one-user non-commercial research, normalized facts only, no raw payload retention, no redistribution/public/commercial use and stop-on-objection. The production application foundation makes zero API-Football requests, receives no API-Football credential and persists no private 20/20 crosswalk. Official FPL remains authoritative. Applying 0004 later would still not authorize migration 0005/0006, provider collection, mapping persistence or model/product use. See [migration 0004 production application foundation](API-FOOTBALL-MIGRATION-0004-PRODUCTION-APPLICATION.md).
+Migration 0004 is now live after attended run `35467787882` on exact protected main `bc87334dbdebce4e19d92374e6640a9fed0f44fa`. The run made zero API-Football requests, used no API-Football credential and persisted no private 20/20 crosswalk; it only installed the normalized private-use shadow identity/participation schema and rights metadata under `owner_risk_accepted_private_use`. Official FPL remains authoritative. Postflight returned `READY_FOR_MIGRATION_0005`, which is a storage-sequence state only: it does not authorize 0005/0006, provider collection, mapping persistence or model/product use. See [migration 0004 production application foundation](API-FOOTBALL-MIGRATION-0004-PRODUCTION-APPLICATION.md).
 
 ## API-Football live storage read-only preflight
 
