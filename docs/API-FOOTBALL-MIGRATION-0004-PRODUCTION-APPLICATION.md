@@ -174,6 +174,7 @@ This foundation preserves:
 - no public/commercial use;
 - stop-on-objection;
 - no API-Football credential access or provider request;
+- the earlier GitHub `eia-api-football-qualification` key was an attended qualification-only boundary, not a production-runtime precedent; any future collector credential remains restricted by canonical security policy to Cloudflare Worker secret `API_FOOTBALL_API_KEY`;
 - no private 20/20 crosswalk or receipt exposure;
 - no client-side secret;
 - no collector deployment or Cron change.
