@@ -33,6 +33,8 @@ export const MIGRATION_0004_REQUIRED_OBJECTS=Object.freeze([
   Object.freeze({type:'index',name:'provider_participation_history',table:'provider_participation_revisions'})
 ]);
 
+export const MIGRATION_0004_BASE_OBJECTS=Object.freeze(MIGRATION_0004_REQUIRED_OBJECTS.slice(0,5));
+
 export const MIGRATION_0004_NEW_OBJECT_NAMES=Object.freeze([
   'owner_risk_source_revision_insert','owner_risk_source_revision_update',
   'provider_fixture_identities','provider_participation_revisions','provider_participation_history'
@@ -180,7 +182,11 @@ export function classifyMigration0004State({ledger,objects,dataSourceRevisionCol
   const newObjects=MIGRATION_0004_NEW_OBJECT_NAMES.filter(name=>objectMap.has(name));
   const rights=MIGRATION_0004_RIGHTS_COLUMNS.filter(name=>columns.has(name));
 
-  if(rows.length===3&&version4.length===0&&newObjects.length===0&&rights.length===0)
+  const baseObjectsExact=MIGRATION_0004_BASE_OBJECTS.every(expected=>{
+    const actual=objectMap.get(expected.name);
+    return actual?.type===expected.type&&actual?.table===expected.table;
+  });
+  if(rows.length===3&&version4.length===0&&newObjects.length===0&&rights.length===0&&baseObjectsExact)
     return MIGRATION_0004_STATE_EXACT_PRE;
 
   const exactV4=rows.length===4&&version4.length===1&&version4[0].name===MIGRATION_0004_NAME;
