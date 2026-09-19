@@ -61,7 +61,7 @@ function reconciliationPayload({post=false,inconsistent=false}={}){
   return rows.map(value=>resultRow(value));
 }
 
-function fakeMigrationTransport({recover=false,unknownMutation=false,unknownLeavesPre=false}={}){
+function fakeMigrationTransport({recover=false,unknownMutation=false,unknownLeavesPre=false,unknownRestore=false}={}){
   let queryCalls=0,bookmarkCalls=0,restoreCalls=0,mutationCalls=0;
   const transport=async request=>{
     const url=String(request.url);
@@ -71,6 +71,7 @@ function fakeMigrationTransport({recover=false,unknownMutation=false,unknownLeav
     }
     if(url.includes('/time_travel/restore?bookmark=')){
       restoreCalls+=1;
+      if(unknownRestore)throw new Error('simulated_restore_transport_loss');
       return response({bookmark:'bookmark-restored',previous_bookmark:'bookmark-after'});
     }
     if(url.endsWith('/query')){
@@ -212,6 +213,21 @@ test('invalid applied post-state triggers one Time Travel restore and proves exa
   assert.equal(report.mutationIssued,true);
   assert.equal(report.recoveryIssued,true);
   assert.equal(report.state.after,MIGRATION_0004_STATE_EXACT_PRE);
+  assert.deepEqual(fake.stats(),{queryCalls:4,bookmarkCalls:1,restoreCalls:1,mutationCalls:1});
+});
+
+test('unknown Time Travel restore transport is reconciled to exact pre-state without retry',async()=>{
+  const fake=fakeMigrationTransport({recover:true,unknownRestore:true});
+  const report=await applyMigration0004({
+    accountId:'account-1',accountFingerprint:sha256('account-1'),databaseId:EXPECTED_D1_DATABASE_ID,
+    token:'token',transport:fake.transport,clock:()=>new Date('2026-09-19T02:00:00.000Z')
+  });
+  assert.equal(report.ok,false);
+  assert.equal(report.classification,MIGRATION_0004_RECOVERED);
+  assert.equal(report.mutationIssued,true);
+  assert.equal(report.recoveryIssued,true);
+  assert.equal(report.state.after,MIGRATION_0004_STATE_EXACT_PRE);
+  assert.match(report.note,/restore_transport_unknown_reconciled_exact_prestate/);
   assert.deepEqual(fake.stats(),{queryCalls:4,bookmarkCalls:1,restoreCalls:1,mutationCalls:1});
 });
 
