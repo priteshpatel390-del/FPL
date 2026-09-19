@@ -87,6 +87,10 @@ const integer=value=>{
   if(!Number.isSafeInteger(number)||number<0)fail('migration_0004_contract_invalid');
   return number;
 };
+// Locale collation is runtime/ICU dependent. Production authority ordering must be byte-stable
+// across developer machines and the pinned GitHub Node runtime, so all canonical identifiers use
+// one explicit code-unit comparator.
+const lexical=(a,b)=>a<b?-1:a>b?1:0;
 
 function withoutLineComments(sql){
   return sql.replace(/^[ \t]*--.*(?:\r?\n|$)/gm,'');
@@ -253,10 +257,10 @@ export function officialFplAuthoritySnapshot(runRows,teamRows,nowIso){
   const rows=teamRows.map(row=>({
     logicalKey:String(row?.logical_key??''),subjectEntityId:String(row?.subject_entity_id??''),
     observationId:String(row?.observation_id??''),inputRevision:String(row?.input_revision??'')
-  })).sort((a,b)=>a.logicalKey.localeCompare(b.logicalKey));
-  const expectedKeys=Array.from({length:20},(_,index)=>`official-fpl|${MIGRATION_0004_FPL_SEASON}|team|${index+1}|present`).sort();
-  const expectedIds=Array.from({length:20},(_,index)=>`${MIGRATION_0004_FPL_SEASON}:fpl:team:${index+1}`).sort();
-  const keys=rows.map(row=>row.logicalKey),ids=rows.map(row=>row.subjectEntityId).sort();
+  })).sort((a,b)=>lexical(a.logicalKey,b.logicalKey));
+  const expectedKeys=Array.from({length:20},(_,index)=>`official-fpl|${MIGRATION_0004_FPL_SEASON}|team|${index+1}|present`).sort(lexical);
+  const expectedIds=Array.from({length:20},(_,index)=>`${MIGRATION_0004_FPL_SEASON}:fpl:team:${index+1}`).sort(lexical);
+  const keys=rows.map(row=>row.logicalKey),ids=rows.map(row=>row.subjectEntityId).sort(lexical);
   if(rows.length!==20||new Set(keys).size!==20||new Set(ids).size!==20||
      keys.join('|')!==expectedKeys.join('|')||ids.join('|')!==expectedIds.join('|')||
      rows.some(row=>!row.observationId||!row.inputRevision))
