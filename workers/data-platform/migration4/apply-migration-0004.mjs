@@ -23,7 +23,7 @@ import {
 
 const API_BASE='https://api.cloudflare.com/client/v4';
 const TIMEOUT_MS=20000;
-const MAX_READ_STATEMENTS=9;
+const MAX_READ_STATEMENTS=10;
 const MAX_MUTATION_STATEMENTS=40;
 const encoder=new TextEncoder();
 const hex64=value=>typeof value==='string'&&/^[0-9a-f]{64}$/.test(value);
