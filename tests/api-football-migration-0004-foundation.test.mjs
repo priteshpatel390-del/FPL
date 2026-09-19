@@ -115,6 +115,13 @@ test('state classifier admits only exact 0001-0003 pre-state or exact 0004 post-
   assert.equal(classifyMigration0004State({
     ledger:priorLedger,objects:[],dataSourceRevisionColumns:baseColumns
   }),'inconsistent');
+  assert.equal(classifyMigration0004State({
+    ledger:priorLedger,
+    objects:[...objectRows(MIGRATION_0004_BASE_OBJECTS),{
+      type:'trigger',name:'api_football_participation_run_insert',tbl_name:'provider_participation_revisions'
+    }],
+    dataSourceRevisionColumns:baseColumns
+  }),'inconsistent');
 });
 
 test('pre/post validators preserve the rebuilt graph and reject active collection or count drift',()=>{
