@@ -23,7 +23,8 @@ import {
 } from './migration-0004-contract.mjs';
 
 const API_BASE='https://api.cloudflare.com/client/v4';
-const TIMEOUT_MS=20000;
+const READ_TIMEOUT_MS=20000;
+const MUTATION_TIMEOUT_MS=180000;
 const MAX_READ_STATEMENTS=10;
 const MAX_MUTATION_STATEMENTS=40;
 const encoder=new TextEncoder();
@@ -85,7 +86,7 @@ function validateIdentity({accountId,accountFingerprint,databaseId,token}){
 
 async function requestJson(transport,request,{mutation=false}={}){
   let response;
-  try{response=await transport(Object.freeze({...request,signal:AbortSignal.timeout(TIMEOUT_MS)}));}
+  try{response=await transport(Object.freeze({...request,signal:AbortSignal.timeout(mutation?MUTATION_TIMEOUT_MS:READ_TIMEOUT_MS)}));}
   catch{
     const error=new Error(mutation?'migration_0004_mutation_outcome_unknown':'migration_0004_transport_failed');
     error.outcomeUnknown=mutation;throw error;
@@ -271,10 +272,17 @@ export async function applyMigration0004(options){
         providerRows:after.providerRows,fixtureRows:after.fixtureRows,participationRows:after.participationRows
       });
       assertSameOfficialFplAuthority(before.authority,after.authority);
-      const postBookmark=await client.bookmark();
+      // The pre-mutation bookmark is the rollback target and has already proved Time Travel
+      // capability. A post-state bookmark is useful evidence but is not allowed to turn an exact,
+      // fully validated migration into a destructive restore merely because this optional read
+      // failed transiently.
+      let postBookmarkDigest=null,postBookmarkNote=null;
+      try{postBookmarkDigest=sha256(await client.bookmark());}
+      catch{postBookmarkNote='post_bookmark_unavailable';}
+      const mutationNote=mutationDefinite?null:'reconciled_after_unknown_mutation_transport';
       return reportBase({classification:MIGRATION_0004_APPLIED,ok:true,mutationIssued,recoveryIssued:false,
-        before,after,recoveryCheckpointAt,preBookmarkDigest,postBookmarkDigest:sha256(postBookmark),
-        note:mutationDefinite?null:'reconciled_after_unknown_mutation_transport',accounting:client.accounting});
+        before,after,recoveryCheckpointAt,preBookmarkDigest,postBookmarkDigest,
+        note:[mutationNote,postBookmarkNote].filter(Boolean).join('+')||null,accounting:client.accounting});
     }
     if(after.state===MIGRATION_0004_STATE_EXACT_PRE&&!mutationDefinite){
       validateMigration0004Pre({state:after.state,counts:after.counts,foreignKeys:after.foreignKeys,providerRows:after.providerRows});
