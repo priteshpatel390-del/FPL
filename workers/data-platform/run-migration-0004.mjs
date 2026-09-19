@@ -50,9 +50,10 @@ export async function main(){
       transport:request=>fetch(request.url,request)
     });
   }catch(error){
+    const mutationIssued=Boolean(error?.mutationIssued);
     const failure=Object.freeze({
-      ok:false,classification:'DEFINITELY_NOT_APPLIED',mutationIssued:Boolean(error?.mutationIssued),
-      recoveryIssued:false,note:String(error?.message??'migration_0004_failed').slice(0,96),
+      ok:false,classification:mutationIssued?'AMBIGUOUS_REQUIRES_OWNER_ATTENTION':'DEFINITELY_NOT_APPLIED',
+      mutationIssued,recoveryIssued:false,note:String(error?.message??'migration_0004_failed').slice(0,96),
       phase:error?.migration0004Phase??'before_mutation_or_unclassified',
       migration:null,recovery:Object.freeze({mechanism:'cloudflare_d1_time_travel',checkpointAt:null,preBookmarkDigest:null,postBookmarkDigest:null}),
       state:Object.freeze({before:null,after:null}),ledger:Object.freeze([]),counts:Object.freeze({before:null,after:null}),
