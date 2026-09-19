@@ -27,6 +27,9 @@ const READ_TIMEOUT_MS=20000;
 const MUTATION_TIMEOUT_MS=180000;
 const MAX_READ_STATEMENTS=10;
 const MAX_MUTATION_STATEMENTS=40;
+const MAX_D1_API_CALLS=6;
+const MAX_SQL_BYTES=100000;
+const MAX_REQUEST_BYTES=16*1024*1024;
 const encoder=new TextEncoder();
 const hex64=value=>typeof value==='string'&&/^[0-9a-f]{64}$/.test(value);
 const sha256=value=>createHash('sha256').update(String(value)).digest('hex');
@@ -122,14 +125,19 @@ function createClient({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATAB
   if(typeof transport!=='function')throw new Error('migration_0004_transport_invalid');
   const base=d1Url(accountId,databaseId,'');
   let calls=0,rowsRead=0,rowsWritten=0,requestBytes=0;
+  const takeCall=()=>{calls+=1;if(calls>MAX_D1_API_CALLS)throw new Error('migration_0004_api_call_ceiling_exceeded');};
   const accounting=()=>Object.freeze({apiCalls:calls,rowsRead,rowsWritten,requestBytes});
 
   const d1Batch=async(queries,{mutation=false}={})=>{
     if(!Array.isArray(queries)||queries.length<1||queries.length>(mutation?MAX_MUTATION_STATEMENTS:MAX_READ_STATEMENTS))
       throw new Error('migration_0004_batch_contract_invalid');
-    calls+=1;
+    for(const query of queries)if(typeof query?.sql!=='string'||encoder.encode(query.sql).byteLength>MAX_SQL_BYTES)
+      throw new Error('migration_0004_sql_size_invalid');
+    takeCall();
     const bodyObject={batch:queries.map(query=>({sql:query.sql,params:[]}))};
-    const body=JSON.stringify(bodyObject);requestBytes+=encoder.encode(body).byteLength;
+    const body=JSON.stringify(bodyObject),bytes=encoder.encode(body).byteLength;
+    if(bytes>MAX_REQUEST_BYTES)throw new Error('migration_0004_request_too_large');
+    requestBytes+=bytes;
     const result=await requestJson(transport,{method:'POST',url:base+'/query',headers:headers(token),body,redirect:'error'},{mutation});
     if(!Array.isArray(result)||result.length!==queries.length)throw new Error('migration_0004_result_contract_invalid');
     const rows={};
@@ -168,7 +176,7 @@ function createClient({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATAB
   };
 
   const bookmark=async({timestamp=null}={})=>{
-    calls+=1;
+    takeCall();
     const query=timestamp===null?'':`?timestamp=${encodeURIComponent(timestamp)}`;
     const result=await requestJson(transport,{method:'GET',url:base+'/time_travel/bookmark'+query,headers:headers(token),redirect:'error'});
     if(typeof result?.bookmark!=='string'||!result.bookmark)throw new Error('migration_0004_time_travel_bookmark_invalid');
@@ -177,7 +185,7 @@ function createClient({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATAB
 
   const restore=async rawBookmark=>{
     if(typeof rawBookmark!=='string'||!rawBookmark)throw new Error('migration_0004_time_travel_bookmark_invalid');
-    calls+=1;
+    takeCall();
     const result=await requestJson(transport,{
       method:'POST',url:base+'/time_travel/restore?bookmark='+encodeURIComponent(rawBookmark),
       headers:headers(token),body:'{}',redirect:'error'
