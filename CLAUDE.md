@@ -1,3 +1,7 @@
+## Current checkpoint — API-Football migration 0004 production application foundation
+
+Draft PR #262 prepares, but does not execute, a manual-only application boundary for `workers/data-platform/migrations/0004_api_football_shadow_identity.sql`. The exact source baseline is protected main `22c58f87571393422f38f24615eae1b8cc01da32`; live preflight run `35427688308` proved `STOP_0004_NOT_APPLIED`, ledger 0001-0003, zero FK violations and no API-Football runtime/collector state. The candidate pins the migration bytes, shares the production-writer concurrency group, requires the historical direct data-platform Cron to remain absent, captures a D1 Time Travel bookmark before any future write, performs exact pre/post history and Official FPL authority reconciliation, and makes at most one same-run Time Travel restore attempt if post-write acceptance fails. This repository checkpoint performs no production mutation. Migration 0004 application, 0005/0006, private mapping persistence, collector/secret/Cron activation, provider egress and model/UI use remain separately owner-gated. See [migration 0004 production application foundation](docs/API-FOOTBALL-MIGRATION-0004-PRODUCTION-APPLICATION.md).
+
 <!-- API-FOOTBALL-LIVE-STORAGE-PREFLIGHT-REMEDIATION-2026-09-19 -->
 ### Current external-intelligence checkpoint — live storage preflight authority remediation
 
