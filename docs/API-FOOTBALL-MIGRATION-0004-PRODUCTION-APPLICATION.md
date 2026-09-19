@@ -151,8 +151,8 @@ Because a Time Travel restore overwrites the complete database, it is never trea
 If exact post-write acceptance fails after the mutation was issued, the runner:
 
 1. issues no second migration attempt;
-2. makes at most one restore request to the exact raw pre-mutation bookmark held in memory;
-3. performs a fresh exact-pre reconciliation;
+2. makes at most one restore request to the exact raw pre-mutation bookmark held in memory and never retries it, even if the restore response is lost;
+3. performs a fresh exact-pre reconciliation regardless of whether the restore response was received;
 4. requires zero FK violations, identical protected counts and identical Official FPL authority.
 
 If that proof succeeds, the run is classified `RECOVERED_TO_EXACT_PRESTATE` and still fails operationally so owner review is mandatory. Migration 0004 is then unapplied.
