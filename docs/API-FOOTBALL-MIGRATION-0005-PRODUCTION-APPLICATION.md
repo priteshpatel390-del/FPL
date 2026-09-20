@@ -1,3 +1,57 @@
+# API-Football Migration 0005 — Live Production Closeout
+
+Date: 20 September 2026  
+Status: **LIVE AND ACCEPTED. Migration 0005 is applied in production; migration 0006 remains unapplied and separately owner-gated.**
+
+## Authoritative live outcome
+
+**This section supersedes the historical candidate/remediation sections below.** PR #266 merged as `f07c8acee8aecacfd55ae0e7f015e7799d190294`. Post-merge Verify Teamsheet run `35497426515` passed 2,225/2,225 tests, two exact-identity production builds were byte-identical and manifest identity was exact; Pages run `35497425916` succeeded.
+
+Owner-attended production run `35497565060`, `run_attempt=1`, then completed all four jobs successfully:
+
+- repository gate: exact approved/current main and exact-head Verify success;
+- preflight: `READY_FOR_MIGRATION_0005`, zero production mutations and zero API-Football requests;
+- application: `DEFINITELY_APPLIED_SUCCESSFULLY`, `mutationIssued=true`, `recoveryIssued=false`, `automaticRestorePermitted=false`;
+- postflight: `READY_FOR_MIGRATION_0006`, zero production mutations and zero API-Football requests.
+
+The preflight observed current-UTC-day account-wide D1 `rowsWritten=1439`, below the 50,000-row admission ceiling and leaving the reserved 50,000-row safety headroom intact before mutation.
+
+The exact application evidence records:
+
+- migration path `workers/data-platform/migrations/0005_api_football_shadow_runtime.sql`;
+- Git blob `a65c57924a5e18ad8e72e491c376fe0f1c149e88`;
+- 20 statements;
+- state `exact_pre_state -> exact_post_state`;
+- 6 D1 API calls;
+- 417,635 rows read;
+- 41 rows written;
+- 24,014 request bytes;
+- one pre- and one post-Time-Travel bookmark digest retained only as sanitized evidence;
+- no recovery/restore invocation.
+
+Protected history counts were preserved exactly except for the intended additions: `data_sources 1->2`, `data_source_revisions 1->2`, and `schema_migrations 4->5`. Official FPL authority digest remained identical before and after the migration.
+
+Independent postflight at `2026-09-20T07:43:31.726Z` proved:
+
+- ledger exactly 0001–0005;
+- zero foreign-key violations;
+- fresh/valid Official FPL authority, 20 teams, completed `2026-09-20T01:18:00.000Z`;
+- zero historical direct data-platform Cron;
+- API-Football runtime present with collection disabled;
+- zero request attempts;
+- zero fixture revisions;
+- zero mapping rows;
+- zero mapping qualifications;
+- collector absent, deployment count zero, Cron count zero and API-key binding absent.
+
+Artifacts: preflight `10600727043`, application `10601327215`, postflight `10601392106`.
+
+## Remaining approval boundary
+
+This closeout authorizes **nothing beyond migration 0005 already applied**. Migration 0006, private 20/20 mapping persistence, collector deployment/live D1 binding, `API_FOOTBALL_API_KEY` provisioning, Cron/runtime activation, provider egress/workload ingestion and every model/calculation/UI path remain separate explicit owner gates.
+
+---
+
 ## First attended dispatch — failed safely before production; remediation candidate
 
 Owner-approved run `35496920942` executed on exact protected main `985cd1427dfa358c45be0e0dc54f1c746f16648d`. Dispatch identity, exact-main proof, exact-head Verify and all 27 focused migration tests passed. The repository-gate then failed `test -z "$(git status --porcelain)"`, so GitHub skipped the read-only production preflight, migration0005 mutation and postflight. Migration 0005 remains unapplied; the run made no production mutation and no API-Football request.
