@@ -32,9 +32,9 @@ async function sendBatch({transport,url,token,statements,mutation}){
   return payload.result.map(row=>row.results??[]);
 }
 
-export function createParameterizedD1Adapter({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATABASE_ID,token,transport=globalThis.fetch}){
+export function createParameterizedD1Adapter({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATABASE_ID,token,transport=globalThis.fetch,onMutationSubmitted=()=>{}}){
   validateIdentity({accountId,accountFingerprint,databaseId,token});
-  if(typeof transport!=='function')throw fixedError('migration_0006_transport_invalid');
+  if(typeof transport!=='function'||typeof onMutationSubmitted!=='function')throw fixedError('migration_0006_transport_invalid');
   const url=queryUrl(accountId,databaseId);
   const prepared=(sql,params=[])=>Object.freeze({
     sql,params:Object.freeze([...params]),
@@ -47,6 +47,7 @@ export function createParameterizedD1Adapter({accountId,accountFingerprint,datab
     async batch(statements){
       if(!Array.isArray(statements)||statements.length<1||statements.some(row=>typeof row?.sql!=='string'||!Array.isArray(row?.params)))
         throw fixedError('migration_0006_parameterized_batch_invalid');
+      onMutationSubmitted();
       return sendBatch({transport,url,token,statements,mutation:true});
     },
     async checkpoint(){

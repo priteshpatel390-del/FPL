@@ -9,6 +9,7 @@ import {
   classifyMigration0006State,readPinnedMigration0006
 } from '../workers/data-platform/migration6/migration-0006-contract.mjs';
 import {createParameterizedD1Adapter,sanitizedPrivateMappingEvidence} from '../workers/data-platform/migration6/production.mjs';
+import {executeMigration0006} from '../workers/data-platform/run-migration-0006.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
 
 const workflowPath='.github/workflows/api-football-migration-0006.yml';
@@ -51,12 +52,14 @@ test('state classifier admits only exact 0005, empty 0006, or exact persisted ca
 });
 
 test('D1 adapter keeps private values exclusively in parameter bindings',async()=>{
-  const accountId='account';const bodies=[];
+  const accountId='account';const bodies=[];let mutationSubmitted=false;
   const db=createParameterizedD1Adapter({accountId,accountFingerprint:await crypto.subtle.digest('SHA-256',new TextEncoder().encode(accountId)).then(value=>Buffer.from(value).toString('hex')),databaseId:EXPECTED_D1_DATABASE_ID,token:'secret',
+    onMutationSubmitted:()=>{mutationSubmitted=true;},
     transport:async(_url,init)=>{bodies.push(init.body);return {ok:true,status:200,json:async()=>({success:true,result:[{success:true,results:[]}]})};}});
   const sentinelProvider='987654321987654321',sentinelFpl='2026-27:fpl:team:999999';
   await db.batch([db.prepare('INSERT INTO private_mapping(provider_id,fpl_id) VALUES(?,?)').bind(sentinelProvider,sentinelFpl)]);
   const body=JSON.parse(bodies[0]);assert.equal(body.batch[0].sql,'INSERT INTO private_mapping(provider_id,fpl_id) VALUES(?,?)');
+  assert.equal(mutationSubmitted,true);
   assert.deepEqual(body.batch[0].params,[sentinelProvider,sentinelFpl]);assert.doesNotMatch(body.batch[0].sql,/987654321|999999/);
 });
 
@@ -101,6 +104,39 @@ test('private persistence reuses strict mapping contract and performs exactly tw
   assert.match(source,/prepareQualifiedTeamMappingPersistence/);assert.match(source,/persistQualifiedTeamMappingPlan/);assert.match(source,/readQualifiedTeamMappings/);
   assert.match(source,/officialFplRequests>=2/);assert.match(source,/officialFplRequests!==2/);
   assert.match(source,/apiFootballRequests:0/);assert.doesNotMatch(source,/API_FOOTBALL_API_KEY|api-sports\.io/);
+});
+
+const runnerOptions=overrides=>({
+  env:{GITHUB_RUN_ATTEMPT:'1',MIGRATION_0006_PHASE:'schema'},identityImpl:()=>Object.freeze({}),
+  transport:async()=>{throw new Error('network_forbidden_in_test');},readProviderUniverse:()=>Object.freeze({}),
+  schemaImpl:async()=>Object.freeze({ok:true,classification:'DEFINITELY_APPLIED_SUCCESSFULLY',mutationIssued:true}),
+  mappingImpl:async()=>Object.freeze({ok:true,classification:'DEFINITELY_APPLIED_SUCCESSFULLY',mutationIssued:true}),
+  ...overrides
+});
+
+test('runner classifies an unexpected pre-mutation failure as definitely non-mutating',async()=>{
+  const report=await executeMigration0006(runnerOptions({schemaImpl:async()=>{throw new Error('unexpected');}}));
+  assert.equal(report.classification,'DEFINITELY_NOT_APPLIED');assert.equal(report.mutationIssued,false);
+});
+
+test('runner cannot erase schema mutation uncertainty after submission',async()=>{
+  const report=await executeMigration0006(runnerOptions({schemaImpl:async({onMutationSubmitted})=>{onMutationSubmitted();throw new Error('unexpected');}}));
+  assert.equal(report.classification,'AMBIGUOUS_REQUIRES_OWNER_ATTENTION');assert.equal(report.mutationIssued,true);
+});
+
+test('runner cannot erase private-mapping mutation uncertainty after submission',async()=>{
+  const report=await executeMigration0006(runnerOptions({env:{GITHUB_RUN_ATTEMPT:'1',MIGRATION_0006_PHASE:'mapping',API_FOOTBALL_OWNER_CROSSWALK_JSON:'private'},mappingImpl:async({onMutationSubmitted})=>{onMutationSubmitted();throw new Error('unexpected');}}));
+  assert.equal(report.classification,'AMBIGUOUS_REQUIRES_OWNER_ATTENTION');assert.equal(report.mutationIssued,true);
+});
+
+test('runner preserves lower-level definite reconciliation classifications',async()=>{
+  for(const expected of [
+    {ok:true,classification:'DEFINITELY_APPLIED_SUCCESSFULLY',mutationIssued:true},
+    {ok:false,classification:'DEFINITELY_NOT_APPLIED',mutationIssued:true,note:'reconciled_exact_prestate'}
+  ]){
+    const report=await executeMigration0006(runnerOptions({schemaImpl:async({onMutationSubmitted})=>{onMutationSubmitted();return Object.freeze(expected);}}));
+    assert.deepEqual(report,expected);
+  }
 });
 
 test('production foundation does not touch product or model paths',()=>{
