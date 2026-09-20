@@ -159,22 +159,23 @@ function objectSet(rows){
     return objectKey(row);
   }));
 }
-function hasExactObjects(set,rows){
-  const expected=expectedKeys(rows);
-  return [...expected].every(key=>set.has(key));
+function setEquals(actual,expected){
+  if(actual.size!==expected.size)return false;
+  return [...expected].every(key=>actual.has(key));
 }
-function hasForbidden(set){return MIGRATION_0005_FORBIDDEN_LATER_OBJECTS.some(name=>[...set].some(key=>key.includes(`:${name}:`)));}
 function columnNames(rows){return new Set((rows??[]).map(row=>String(row?.name??'')).filter(Boolean));}
 
 export function classifyMigration0005State({ledger,objects,participationColumns}){
   const rows=normalizedLedger(ledger),set=objectSet(objects),columns=columnNames(participationColumns);
-  if(!ledgerPrefix(rows)||!hasExactObjects(set,MIGRATION_0005_BASE_OBJECTS)||hasForbidden(set))return MIGRATION_0005_STATE_INCONSISTENT;
+  if(!ledgerPrefix(rows))return MIGRATION_0005_STATE_INCONSISTENT;
   const fifth=rows.filter(row=>row.version===MIGRATION_0005_VERSION);
-  const newObjectsPresent=hasExactObjects(set,MIGRATION_0005_REQUIRED_OBJECTS);
-  const anyNew=MIGRATION_0005_REQUIRED_OBJECTS.some(row=>set.has(objectKey({type:row.type,name:row.name,tbl_name:row.table})));
   const hasRunColumn=columns.has('ingestion_run_id');
-  if(rows.length===4&&fifth.length===0&&!anyNew&&!hasRunColumn)return MIGRATION_0005_STATE_EXACT_PRE;
-  if(rows.length===5&&fifth.length===1&&fifth[0].name===MIGRATION_0005_NAME&&fifth[0].appliedAt===MIGRATION_0005_APPLIED_AT&&newObjectsPresent&&hasRunColumn)
+  const exactPreObjects=expectedKeys(MIGRATION_0005_BASE_OBJECTS);
+  const exactPostObjects=expectedKeys([...MIGRATION_0005_BASE_OBJECTS,...MIGRATION_0005_REQUIRED_OBJECTS]);
+  if(rows.length===4&&fifth.length===0&&setEquals(set,exactPreObjects)&&!hasRunColumn)
+    return MIGRATION_0005_STATE_EXACT_PRE;
+  if(rows.length===5&&fifth.length===1&&fifth[0].name===MIGRATION_0005_NAME&&fifth[0].appliedAt===MIGRATION_0005_APPLIED_AT&&
+     setEquals(set,exactPostObjects)&&hasRunColumn)
     return MIGRATION_0005_STATE_EXACT_POST;
   return MIGRATION_0005_STATE_INCONSISTENT;
 }
@@ -218,16 +219,12 @@ export function validateMigration0005Pre({state,counts,foreignKeys,rightsColumns
   return true;
 }
 
-export function validateMigration0005Post({state,preCounts,postCounts,foreignKeys,rightsColumns,sourceRows,revisionRows,runtimeRows,emptyCounts}){
+export function validateMigration0005SettledPost({state,counts,foreignKeys,rightsColumns,sourceRows,revisionRows,runtimeRows,emptyCounts}){
   if(state!==MIGRATION_0005_STATE_EXACT_POST)fail('migration_0005_post_state_invalid');
-  const before=validateMigration0005Counts(preCounts),after=validateMigration0005Counts(postCounts);
+  const settled=validateMigration0005Counts(counts);
+  if(settled.started_runs!==0)fail('migration_0005_collection_in_progress');
   if(!Array.isArray(foreignKeys)||foreignKeys.length!==0)fail('migration_0005_foreign_key_violation');
   const rights=columnNames(rightsColumns);if(!MIGRATION_0005_RIGHTS_COLUMNS.every(name=>rights.has(name)))fail('migration_0005_rights_schema_invalid');
-  for(const key of MIGRATION_0005_PROTECTED_COUNT_KEYS){
-    let expected=before[key];
-    if(key==='schema_migrations'||key==='data_sources'||key==='data_source_revisions')expected+=1;
-    if(after[key]!==expected)fail('migration_0005_history_not_preserved');
-  }
   if(!exactSubset(oneRow(sourceRows,'migration_0005_source_post_invalid'),expectedApiFootballSource()))fail('migration_0005_source_post_invalid');
   if(!exactSubset(oneRow(revisionRows,'migration_0005_revision_post_invalid'),expectedApiFootballRevision()))fail('migration_0005_revision_post_invalid');
   const runtime=oneRow(runtimeRows,'migration_0005_runtime_post_invalid');
@@ -237,5 +234,16 @@ export function validateMigration0005Post({state,preCounts,postCounts,foreignKey
     last_successful_request_at:null,updated_at:MIGRATION_0005_APPLIED_AT};
   if(!exactSubset(runtime,expectedRuntime))fail('migration_0005_runtime_post_invalid');
   for(const [key,row] of Object.entries(emptyCounts??{}))zeroCount(row,`migration_0005_${key}_not_empty`);
+  return true;
+}
+
+export function validateMigration0005Post({state,preCounts,postCounts,foreignKeys,rightsColumns,sourceRows,revisionRows,runtimeRows,emptyCounts}){
+  const before=validateMigration0005Counts(preCounts),after=validateMigration0005Counts(postCounts);
+  validateMigration0005SettledPost({state,counts:after,foreignKeys,rightsColumns,sourceRows,revisionRows,runtimeRows,emptyCounts});
+  for(const key of MIGRATION_0005_PROTECTED_COUNT_KEYS){
+    let expected=before[key];
+    if(key==='schema_migrations'||key==='data_sources'||key==='data_source_revisions')expected+=1;
+    if(after[key]!==expected)fail('migration_0005_history_not_preserved');
+  }
   return true;
 }
