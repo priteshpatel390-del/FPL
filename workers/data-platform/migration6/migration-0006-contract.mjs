@@ -7,7 +7,7 @@ export const MIGRATION_0006_BYTES=6632;
 export const MIGRATION_0006_VERSION=6;
 export const MIGRATION_0006_NAME='api_football_mapping_qualification';
 export const MIGRATION_0006_APPLIED_AT='2026-09-18T00:00:00.000Z';
-export const MIGRATION_0006_STATEMENT_COUNT=11;
+export const MIGRATION_0006_STATEMENT_COUNT=12;
 export const MIGRATION_0006_REQUIRED_OBJECTS=Object.freeze([
   'api_football_team_mapping_qualifications','api_football_team_mapping_members',
   'api_football_mapping_member_insert','api_football_mapping_qualification_commit',
@@ -51,7 +51,7 @@ export function assertPinnedMigration0006Statements(statements){
     'CREATE TRIGGER api_football_mapping_member_delete_immutable',
     'CREATE TABLE api_football_team_mapping_heads (',
     'CREATE TRIGGER api_football_mapping_head_insert',
-    'CREATE TRIGGER api_football_mapping_head_update'
+    'CREATE TRIGGER api_football_mapping_head_update',\n    'CREATE INDEX api_football_mapping_members_provider'
   ];
   for(let i=0;i<prefixes.length;i++)if(!String(statements[i]??'').startsWith(prefixes[i]))fail('migration_0006_statement_contract_invalid');
   return Object.freeze([...statements]);
