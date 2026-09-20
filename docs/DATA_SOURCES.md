@@ -1,3 +1,7 @@
+## API-Football private mapping persistence boundary
+
+The migration-0006 production candidate adds no provider acquisition. Future mapping persistence may consume the protected owner crosswalk in memory, the pinned sanitized provider-universe evidence and exactly two fresh Official FPL requests. It permits zero API-Football requests and retains no raw provider/Official FPL body or crosswalk artifact. No production persistence occurred in this checkpoint.
+
 ## API-Football live storage status after migration 0005
 
 API-Football remains a separately gated private-use shadow source. Production D1 now has the migration-0005 dormant runtime/provenance schema, but there were **0 API-Football requests** in the migration run and postflight still shows zero request attempts, fixture revisions, mappings and mapping qualifications. The collector Worker is not deployed, no `API_FOOTBALL_API_KEY` binding exists and no Cron is active. Migration 0005 therefore changes storage readiness only; it does not constitute source activation, data ingestion, provider validation or model admission. Migration 0006/private mapping persistence and any later provider collection remain separate owner approvals.

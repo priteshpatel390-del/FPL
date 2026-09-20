@@ -650,7 +650,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-owner-mapping-qualification.yml',
     'api-football-live-storage-preflight.yml',
     'api-football-migration-0004.yml',
-    'api-football-migration-0005.yml'
+    'api-football-migration-0005.yml',
+    'api-football-migration-0006.yml'
   ]);
   const workflowFiles=fs.readdirSync('.github/workflows');
   assert.deepEqual(
@@ -685,6 +686,12 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
       assert.match(source,/live-storage-preflight\.mjs/);
       assert.match(source,/github\.run_attempt == 1/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
+      continue;
+    }
+    if(file==='api-football-migration-0006.yml'){
+      assert.match(source,/secrets\.API_FOOTBALL_OWNER_CROSSWALK_JSON/);
+      assert.match(source,/MIGRATION_0006_PHASE: mapping/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
       continue;
     }

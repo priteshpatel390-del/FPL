@@ -1,3 +1,7 @@
+## Private 20/20 mapping handling
+
+Only the private-persistence workflow step receives `API_FOOTBALL_OWNER_CROSSWALK_JSON`. Parsed values remain in memory and are sent to D1 only through positional parameter bindings. SQL strings, logs, summaries, thrown errors and retained reports cannot contain mapping rows, request bodies or parameters. Reports expose only allowlisted counts, hashes, provenance and classifications. Tests use synthetic sentinel values to pin this non-disclosure boundary.
+
 ## API-Football migration 0005 production security closeout
 
 Owner-attended run `35497565060` completed successfully on exact main `f07c8acee8aecacfd55ae0e7f015e7799d190294`. Repository gate, read-only admission, exact migration application and independent postflight all passed. The application issued one reviewed production D1 mutation and no recovery; automatic restore remained disabled. The workflow received no `API_FOOTBALL_API_KEY`, made 0 API-Football requests and changed 0 Worker Cron/secret bindings. Sanitized evidence retained only bounded state/count/digest/resource data. Live postflight still proves collector absent, Cron absent and API-key binding absent. Migration 0006, private mapping persistence, collector deployment/credentialing and provider egress remain outside this closeout.

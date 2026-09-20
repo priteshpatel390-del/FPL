@@ -1,3 +1,7 @@
+## Current API-Football gate — migration 0006 foundation review
+
+Migration-0006/private-mapping repository foundation is the current candidate. Next step is review and exact-head verification, not production dispatch. After merge, a separate owner gate must review fresh production preflight, D1 budget and Time Travel evidence before one attended attempt. Collector deployment/binding/key/Cron/provider egress and model/product use remain later independent gates.
+
 ## Current next gate — migration 0006 remains separately owner-gated
 
 Migration 0005 production closeout is complete. Run `35497565060` applied exact migration 0005 successfully and independent postflight returned `READY_FOR_MIGRATION_0006`. The live runtime is still disabled and empty; collector, Cron, API key, mappings and provider requests remain absent. The next possible storage step is migration 0006, but it is **not authorized by the 0005 closeout**. Before any 0006 application or private 20/20 mapping persistence, present the exact proposed behaviour, inputs/provenance, fallback/recovery, assumptions/trade-offs and validation evidence, then obtain explicit owner approval. Collector deployment/credential/Cron/provider egress and model/product influence remain later gates.
