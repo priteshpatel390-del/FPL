@@ -1,0 +1,272 @@
+# Owner-gated production foundation for exactly migration 0005.
+#
+# Repository code only until a later explicit owner dispatch from protected current main. This
+# workflow cannot choose another migration/path/SQL/table/version, cannot issue an API-Football
+# request, and cannot activate migration 0006, private mapping persistence, collector, secret,
+# Cron, provider egress, model or UI paths.
+name: API-Football Migration 0005 Production Application
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact protected current main commit approved for one migration-0005 application attempt only
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: data-s2-production-collection
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - name: Validate one-shot dispatch identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact approved revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove exact protected current main
+        id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          http="$(curl --silent --output "$response" --write-out '%{http_code}' --max-time 20 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs")"
+          test "$http" = 200
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const matches=(body.check_runs??[]).filter(row=>
+            row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&
+            row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&
+            row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/'));
+          if(matches.length<1)throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+          rm -f "$response"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Run focused migration-0005 foundation tests before credentials
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test tests/api-football-migration-0005-foundation.test.mjs tests/eia2i5d-migration.test.mjs tests/api-football-live-storage-preflight.test.mjs
+          test -z "$(git status --porcelain)"
+
+  preflight:
+    needs: repository-gate
+    if: github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    env:
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+    steps:
+      - name: Register production account fingerprint mask
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out gated approved revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Reconfirm current main then execute mutation-free migration admission
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          MIGRATION_0005_PREFLIGHT_MODE: pre
+          MIGRATION_0005_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/migration-0005-preflight.json
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test "$remote_main" = "$APPROVED_SHA"
+          node workers/data-platform/migration5/preflight.mjs
+
+      - name: Upload sanitized pre-write evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-migration-0005-preflight
+          path: ${{ runner.temp }}/migration-0005-preflight.json
+          if-no-files-found: error
+          retention-days: 7
+
+  migration0005:
+    needs: [repository-gate, preflight]
+    if: github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    environment:
+      name: data-s2-production-collection
+    env:
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+    steps:
+      - name: Register production identifier masks before any request
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out gated approved revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Reconfirm current main immediately before exact migration 0005
+        env:
+          CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+          MIGRATION_0005_REPORT_PATH: ${{ runner.temp }}/migration-0005-application.json
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          node workers/data-platform/run-migration-0005.mjs
+
+      - name: Upload sanitized application evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-migration-0005-application
+          path: ${{ runner.temp }}/migration-0005-application.json
+          if-no-files-found: error
+          retention-days: 7
+
+  postflight:
+    needs: [repository-gate, migration0005]
+    if: always() && needs.repository-gate.result == 'success' && needs.migration0005.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    env:
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+    steps:
+      - name: Register production account fingerprint mask
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID"
+          printf '::add-mask::%s\n' "$(printf '%s' "$DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -d' ' -f1)"
+
+      - name: Check out gated approved revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Independently prove migration 0005 post-state
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          MIGRATION_0005_PREFLIGHT_MODE: post
+          MIGRATION_0005_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/migration-0005-postflight.json
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          node workers/data-platform/migration5/preflight.mjs
+
+      - name: Upload sanitized post-write read-only evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-migration-0005-postflight
+          path: ${{ runner.temp }}/migration-0005-postflight.json
+          if-no-files-found: error
+          retention-days: 7
