@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {
-  MIGRATION_0005_AMBIGUOUS,MIGRATION_0005_APPLIED,MIGRATION_0005_BASE_OBJECTS,MIGRATION_0005_GIT_BLOB_SHA,
+  MIGRATION_0005_ALREADY_APPLIED,MIGRATION_0005_AMBIGUOUS,MIGRATION_0005_APPLIED,MIGRATION_0005_BASE_OBJECTS,MIGRATION_0005_GIT_BLOB_SHA,
   MIGRATION_0005_NOT_APPLIED,MIGRATION_0005_REQUIRED_OBJECTS,MIGRATION_0005_RIGHTS_COLUMNS,
   MIGRATION_0005_STATE_EXACT_POST,MIGRATION_0005_STATE_EXACT_PRE,
   assertPinnedMigration0005Statements,classifyMigration0005State,expectedApiFootballRevision,expectedApiFootballSource,
@@ -60,11 +60,12 @@ function basePayload({post=false,inconsistent=false}={}){
     [post?postCounts:preCounts],officialRun,officialTeams,post?sourceRows:[],post?revisionRows:[],[zero],[zero],[zero]
   ].map(value=>resultRow(value));
 }
-function postPayload({inconsistent=false}={}){
+function postPayload({inconsistent=false,activeRuntime=false}={}){
   const rows=basePayload({post:true,inconsistent});
-  return [...rows,resultRow(runtimeRows),resultRow([zero]),resultRow([zero]),resultRow([zero]),resultRow([zero]),resultRow([zero])];
+  const runtime=activeRuntime?[{...runtimeRows[0],collection_enabled:1,disable_reason:null,credential_state:'AVAILABLE'}]:runtimeRows;
+  return [...rows,resultRow(runtime),resultRow([zero]),resultRow([zero]),resultRow([zero]),resultRow([zero]),resultRow([zero])];
 }
-function fakeTransport({unknownMutation=false,unknownLeavesPre=false,inconsistent=false}={}){
+function fakeTransport({unknownMutation=false,unknownLeavesPre=false,inconsistent=false,alreadyApplied=false,activeRuntime=false}={}){
   let queryCalls=0,mutationCalls=0,bookmarkCalls=0,restoreCalls=0;
   const transport=async request=>{
     const url=String(request.url);
@@ -74,11 +75,11 @@ function fakeTransport({unknownMutation=false,unknownLeavesPre=false,inconsisten
       const batch=JSON.parse(request.body).batch;queryCalls+=1;
       if(batch.length===20){mutationCalls+=1;if(unknownMutation||unknownLeavesPre)throw new Error('simulated_mutation_transport_loss');return response(batch.map(()=>resultRow([],{written:1})));}
       if(batch.length===13){
-        if(queryCalls===1)return response(basePayload({post:false}));
+        if(queryCalls===1)return response(basePayload({post:alreadyApplied}));
         if(unknownLeavesPre)return response(basePayload({post:false}));
         return response(basePayload({post:true,inconsistent}));
       }
-      if(batch.length===19)return response(postPayload({inconsistent}));
+      if(batch.length===19)return response(postPayload({inconsistent,activeRuntime}));
       assert.fail(`unexpected batch length ${batch.length}`);
     }
     assert.fail(`unexpected request ${url}`);
@@ -99,6 +100,7 @@ test('state contract admits only exact 0004 pre-state and exact 0005 post-state'
   assert.equal(classifyMigration0005State({ledger:postLedger,objects:objectRows([...MIGRATION_0005_BASE_OBJECTS,...MIGRATION_0005_REQUIRED_OBJECTS]),participationColumns:postParticipationColumns}),MIGRATION_0005_STATE_EXACT_POST);
   assert.equal(classifyMigration0005State({ledger:postLedger,objects:objectRows([...MIGRATION_0005_BASE_OBJECTS,...MIGRATION_0005_REQUIRED_OBJECTS.slice(0,-1)]),participationColumns:postParticipationColumns}),'inconsistent');
   assert.equal(classifyMigration0005State({ledger:priorLedger,objects:[...objectRows(MIGRATION_0005_BASE_OBJECTS),{type:'table',name:'api_football_team_mapping_heads',tbl_name:'api_football_team_mapping_heads'}],participationColumns:preParticipationColumns}),'inconsistent');
+  assert.equal(classifyMigration0005State({ledger:priorLedger,objects:[...objectRows(MIGRATION_0005_BASE_OBJECTS),{type:'table',name:'api_football_rogue_future_object',tbl_name:'api_football_rogue_future_object'}],participationColumns:preParticipationColumns}),'inconsistent');
 });
 
 test('pre/post validators require empty provider state and preserve every existing history population',()=>{
@@ -113,6 +115,15 @@ test('application succeeds only through exact post reconciliation and never rest
   const report=await applyMigration0005({accountId:'account-1',accountFingerprint:sha256('account-1'),databaseId:EXPECTED_D1_DATABASE_ID,token:'token',transport:fake.transport,clock:()=>new Date('2026-09-20T02:00:00Z')});
   assert.equal(report.ok,true);assert.equal(report.classification,MIGRATION_0005_APPLIED);assert.equal(report.mutationIssued,true);assert.equal(report.recoveryIssued,false);assert.equal(report.automaticRestorePermitted,false);
   assert.deepEqual(fake.stats(),{queryCalls:4,mutationCalls:1,bookmarkCalls:2,restoreCalls:0});
+});
+
+test('already-applied state is accepted only after disabled runtime and empty provider state are proven',async()=>{
+  const fake=fakeTransport({alreadyApplied:true});
+  const report=await applyMigration0005({accountId:'account-1',accountFingerprint:sha256('account-1'),databaseId:EXPECTED_D1_DATABASE_ID,token:'token',transport:fake.transport,clock:()=>new Date('2026-09-20T02:00:00Z')});
+  assert.equal(report.ok,false);assert.equal(report.classification,MIGRATION_0005_ALREADY_APPLIED);assert.equal(report.mutationIssued,false);
+  assert.deepEqual(fake.stats(),{queryCalls:2,mutationCalls:0,bookmarkCalls:0,restoreCalls:0});
+  const active=fakeTransport({alreadyApplied:true,activeRuntime:true});
+  await assert.rejects(()=>applyMigration0005({accountId:'account-1',accountFingerprint:sha256('account-1'),databaseId:EXPECTED_D1_DATABASE_ID,token:'token',transport:active.transport,clock:()=>new Date('2026-09-20T02:00:00Z')}),/runtime_post_invalid/);
 });
 
 test('lost mutation response reconciles exact post-state without retry',async()=>{
