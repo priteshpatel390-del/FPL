@@ -77,9 +77,12 @@ export async function runMigration0005Preflight({
 
   const accountId=env.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID;
   const token=env.DATA_STEWARD_CLOUDFLARE_READ_TOKEN;
+  const analyticsToken=env.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN;
   const fingerprint=env.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT;
   if(typeof accountId!=='string'||!accountId||typeof token!=='string'||!token||typeof fingerprint!=='string'||digest(accountId)!==fingerprint)
     return {ok:false,reason:'migration_0005_preflight_identity_invalid'};
+  if(mode==='pre'&&(typeof analyticsToken!=='string'||!analyticsToken))
+    return {ok:false,reason:'d1_write_usage_credential_missing'};
   const schedules=await readSchedules(fetchImpl,{accountId,token});
   if(!schedules.ok)return schedules;
   if(schedules.count!==0)return {ok:false,reason:'legacy_data_platform_cron_present',count:schedules.count};
@@ -87,7 +90,7 @@ export async function runMigration0005Preflight({
   let writeBudget=null;
   if(mode==='pre'){
     const nowIso=new Date(now()).toISOString();
-    const usage=await usageImpl(fetchImpl,{accountId,token,nowIso});
+    const usage=await usageImpl(fetchImpl,{accountId,token:analyticsToken,nowIso});
     if(!usage?.ok)return {ok:false,reason:usage?.reason??'d1_write_usage_unreadable'};
     if(usage.rowsWritten>MIGRATION_0005_ACCOUNT_ROWS_WRITTEN_ADMISSION_MAX)
       return {ok:false,reason:'d1_daily_write_headroom_insufficient',rowsWritten:usage.rowsWritten,admissionMax:MIGRATION_0005_ACCOUNT_ROWS_WRITTEN_ADMISSION_MAX};
