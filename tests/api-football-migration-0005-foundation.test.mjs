@@ -151,11 +151,13 @@ test('account-wide D1 write usage is summed for the current UTC day and malforme
 });
 
 test('migration preflight requires READY_FOR_MIGRATION_0005, zero legacy Cron and conservative daily write headroom',async()=>{
-  const env={MIGRATION_0005_PREFLIGHT_MODE:'pre',DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID:'account-1',DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT:sha256('account-1'),DATA_STEWARD_CLOUDFLARE_READ_TOKEN:'read-token'};
+  const env={MIGRATION_0005_PREFLIGHT_MODE:'pre',DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID:'account-1',DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT:sha256('account-1'),DATA_STEWARD_CLOUDFLARE_READ_TOKEN:'read-token',DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN:'analytics-read-token'};
   const livePreflightImpl=async()=>({ok:true,observedAt:'2026-09-20T02:00:00Z',hardStops:[],nextAction:'READY_FOR_MIGRATION_0005',migrations:{ledger:priorLedger},foreignKeyViolations:0,officialFplAuthority:{valid:true,fresh:true,teamCount:20,completedAt:'2026-09-20T01:18:00Z'},apiFootballState:{mappingRowCount:0,runtimeState:{present:false},requestAttemptCount:0,fixtureRevisionCount:0,mappingQualifications:{total:0}},collector:{exists:false,deploymentCount:0,crons:[],apiFootballSecretBindingPresent:false},evidence:{cloudflareGets:5,d1QueryCalls:1,d1RowsRead:100}});
   const fetchImpl=async()=>response({schedules:[]});
-  const pass=await runMigration0005Preflight({env,livePreflightImpl,fetchImpl,usageImpl:async()=>({ok:true,utcDate:'2026-09-20',rowsWritten:MIGRATION_0005_ACCOUNT_ROWS_WRITTEN_ADMISSION_MAX})});
+  const pass=await runMigration0005Preflight({env,livePreflightImpl,fetchImpl,usageImpl:async(_fetch,{token})=>{assert.equal(token,'analytics-read-token');return {ok:true,utcDate:'2026-09-20',rowsWritten:MIGRATION_0005_ACCOUNT_ROWS_WRITTEN_ADMISSION_MAX};}});
   assert.equal(pass.ok,true);assert.equal(pass.writeBudget.reservedHeadroom,50000);
+  const missingCredential=await runMigration0005Preflight({env:{...env,DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN:''},livePreflightImpl,fetchImpl,usageImpl:async()=>assert.fail('analytics request must not run without its credential')});
+  assert.equal(missingCredential.reason,'d1_write_usage_credential_missing');
   const blocked=await runMigration0005Preflight({env,livePreflightImpl,fetchImpl,usageImpl:async()=>({ok:true,utcDate:'2026-09-20',rowsWritten:MIGRATION_0005_ACCOUNT_ROWS_WRITTEN_ADMISSION_MAX+1})});
   assert.equal(blocked.reason,'d1_daily_write_headroom_insufficient');
   const cron=await runMigration0005Preflight({env,livePreflightImpl,fetchImpl:async()=>response({schedules:[{cron:'*/30 * * * *'}]}),usageImpl:async()=>({ok:true,utcDate:'2026-09-20',rowsWritten:0})});
@@ -166,7 +168,7 @@ test('workflow is manual, exact-main, serialized, migration-0005-only and creden
   const workflow=fs.readFileSync('.github/workflows/api-football-migration-0005.yml','utf8');
   assert.match(workflow,/workflow_dispatch:/);assert.doesNotMatch(workflow,/\n\s+schedule:/);assert.match(workflow,/github\.run_attempt == 1/);
   assert.match(workflow,/group: data-s2-production-collection/);assert.match(workflow,/cancel-in-progress: false/);assert.match(workflow,/Require exact-head Verify Teamsheet success/);
-  assert.match(workflow,/MIGRATION_0005_PREFLIGHT_MODE: pre/);assert.match(workflow,/node workers\/data-platform\/run-migration-0005\.mjs/);assert.match(workflow,/MIGRATION_0005_PREFLIGHT_MODE: post/);
+  assert.match(workflow,/MIGRATION_0005_PREFLIGHT_MODE: pre/);assert.match(workflow,/secrets\.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN/);assert.match(workflow,/node workers\/data-platform\/run-migration-0005\.mjs/);assert.match(workflow,/MIGRATION_0005_PREFLIGHT_MODE: post/);
   assert.doesNotMatch(workflow,/API_FOOTBALL_API_KEY|v3\.football\.api-sports\.io|migration_0006|team_mapping_qualification/);
   assert.doesNotMatch(workflow,/migration_path:|table_name:|migration_version:/);assert.doesNotMatch(workflow,/time_travel\/restore/);
   assert.match(workflow,/actions\/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09/);assert.match(workflow,/actions\/setup-node@a0853c24544627f65ddf259abe73b1d18a591444/);assert.match(workflow,/actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f/);
