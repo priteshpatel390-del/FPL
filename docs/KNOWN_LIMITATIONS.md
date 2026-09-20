@@ -1,6 +1,6 @@
 ## Migration 0005 dispatch — checkout-side-effect limitation under remediation
 
-Run `35496920942` exposed that the local Wrangler/D1 focused migration harness can leave the GitHub Actions checkout non-clean when executed with the repository as its process working directory. The workflow correctly failed before production preflight or mutation. The run did not print the dirty path, so the exact artefact is unknown. The current remediation candidate moves the harness process working directory to its disposable OS temp directory and adds before/after git-status regression coverage. This limitation is not closed until candidate CI/full verification passes and the remediation is merged.
+Run `35496920942` exposed that the local Wrangler/D1 focused migration harness can leave the GitHub Actions checkout non-clean when executed with the repository as its process working directory. The workflow correctly failed before production preflight or mutation. The run did not print the dirty path, so the exact artefact is unknown. The remediation candidate moves the harness process working directory to its disposable OS temp directory and adds before/after git-status regression coverage. Candidate Verify Teamsheet run `35497159414` passed 2,225/2,225 tests and deterministic exact-identity builds on head `158da28c0884c48f72931d798da389dc924611c7`; the limitation remains open only until this remediation is merged and exact-main verification succeeds.
 
 ## Migration 0005 production-application foundation limitations
 
