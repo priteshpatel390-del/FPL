@@ -1,3 +1,9 @@
+## First attended dispatch — failed safely before production; remediation candidate
+
+Owner-approved run `35496920942` executed on exact protected main `985cd1427dfa358c45be0e0dc54f1c746f16648d`. Dispatch identity, exact-main proof, exact-head Verify and all 27 focused migration tests passed. The repository-gate then failed `test -z "$(git status --porcelain)"`, so GitHub skipped the read-only production preflight, migration0005 mutation and postflight. Migration 0005 remains unapplied; the run made no production mutation and no API-Football request.
+
+The failed workflow did not print the dirty path. The exact generated artefact is therefore unknown and must not be invented from inference. The approved narrow remediation isolates the local Wrangler/D1 migration harness in its own OS temp directory, resolves repository migration files to absolute paths, and adds regression coverage proving the harness leaves the checkout's git status unchanged. The workflow cleanliness guard is preserved. Candidate Verify Teamsheet run `35497159414` on head `158da28c0884c48f72931d798da389dc924611c7` passed 2,225/2,225 tests with byte-identical exact-identity production builds and exact manifest identity, including the new no-checkout-delta regression. After merge and exact-main verification, any new migration-0005 production application still requires a fresh explicit owner approval and a new manual dispatch; GitHub rerun of the failed run remains prohibited.
+
 # API-Football Migration 0005 Production Application Foundation
 
 Date: 20 September 2026  

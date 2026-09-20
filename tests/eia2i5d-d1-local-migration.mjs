@@ -6,8 +6,9 @@ import {spawnSync} from 'node:child_process';
 
 const root=path.resolve(import.meta.dirname,'..'),temp=fs.mkdtempSync(path.join(os.tmpdir(),'eia2i5d-d1-'));
 const config=path.join(temp,'wrangler.jsonc'),persist=path.join(temp,'state'),seed=path.join(temp,'seed.sql');
-const run=args=>spawnSync('npx',['--yes','wrangler@4.37.1',...args,'--config',config],{cwd:root,encoding:'utf8',env:{...process.env,NO_COLOR:'1'}});
-const executeFile=file=>run(['d1','execute','teamsheet-data','--local','--persist-to',persist,'--file',file]);
+const run=args=>spawnSync('npx',['--yes','wrangler@4.37.1',...args,'--config',config],{cwd:temp,encoding:'utf8',env:{...process.env,NO_COLOR:'1'}});
+const absoluteFile=file=>path.isAbsolute(file)?file:path.join(root,file);
+const executeFile=file=>run(['d1','execute','teamsheet-data','--local','--persist-to',persist,'--file',absoluteFile(file)]);
 const query=sql=>run(['d1','execute','teamsheet-data','--local','--persist-to',persist,'--command',sql]);
 try{
   fs.writeFileSync(config,JSON.stringify({name:'eia-2i5d-local',main:path.join(root,'workers/data-platform/data-platform-rpc.mjs'),compatibility_date:'2026-08-22',d1_databases:[{binding:'TEAMSHEET_DATA_DB',database_name:'teamsheet-data',database_id:'00000000-0000-0000-0000-000000000000',migrations_dir:path.join(root,'workers/data-platform/migrations')}]}));
